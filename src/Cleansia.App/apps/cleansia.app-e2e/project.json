@@ -1,0 +1,9 @@
+{
+  "name": "cleansia.app-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/cleansia.app-e2e/src",
+  "implicitDependencies": ["cleansia.app"],
+  "// targets": "to see all targets run: nx show project cleansia.app-e2e --web",
+  "targets": {}
+}

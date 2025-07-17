@@ -1,0 +1,11 @@
+{
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  },
+  "files.autoSave": "onWindowChange",
+  "prettier.singleQuote": true,
+  "prettier.tabWidth": 2,
+  "nxConsole.nxWorkspacePath": "src\\Cleansia.App",
+  "nxConsole.generateAiAgentRules": true
+}

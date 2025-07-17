@@ -1,1 +1,1 @@
-export * from './lib/assets/assets';
+export * from './lib';

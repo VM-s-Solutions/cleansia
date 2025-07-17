@@ -21,7 +21,10 @@
             "input": "apps/cleansia.app/public"
           }
         ],
-        "styles": ["apps/cleansia.app/src/styles.scss"]
+        "styles": [
+          "apps/cleansia.app/src/styles.scss",
+          "libs/shared/assets/src/shared-styles.scss"
+        ]
       },
       "configurations": {
         "production": {

@@ -15,13 +15,13 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@cleansia.app/assets": ["libs/shared/assets/src/index.ts"],
-      "@cleansia.app/cleansia": ["libs/cleansia/src/index.ts"],
-      "@cleansia.app/components": ["libs/shared/components/src/index.ts"],
-      "@cleansia.app/models": ["libs/shared/models/src/index.ts"],
-      "@cleansia.app/services": ["libs/core/services/src/index.ts"],
-      "@cleansia.app/stores": ["libs/data-access/stores/src/index.ts"],
-      "@cleansia.app/utils": ["libs/shared/utils/src/index.ts"]
+      "@cleansia/assets": ["libs/shared/assets/src/index.ts"],
+      "@cleansia/cleansia": ["libs/cleansia/src/index.ts"],
+      "@cleansia/components": ["libs/shared/components/src/index.ts"],
+      "@cleansia/models": ["libs/shared/models/src/index.ts"],
+      "@cleansia/services": ["libs/core/services/src/index.ts"],
+      "@cleansia/stores": ["libs/data-access/stores/src/index.ts"],
+      "@cleansia/utils": ["libs/shared/utils/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

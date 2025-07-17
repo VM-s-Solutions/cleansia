@@ -1,1 +1,1 @@
-export * from './lib/stores/stores';
+export * from './lib';

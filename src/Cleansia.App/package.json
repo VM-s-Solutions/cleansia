@@ -2,7 +2,14 @@
   "name": "@cleansia.app/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "start": "nx serve cleansia.app --configuration=development",
+    "build": "nx build cleansia.app --configuration=development",
+    "build:prod": "nx build cleansia.app --configuration=production",
+    "test": "nx e2e cleansia.app-e2e",
+    "lint": "nx lint",
+    "e2e": "nx e2e"
+  },
   "private": true,
   "dependencies": {
     "@angular/common": "~20.0.0",

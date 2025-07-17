@@ -1,13 +1,12 @@
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { NxWelcome } from './nx-welcome';
+import { CleansiaButtonComponent } from '@cleansia/components';
 
 @Component({
-  imports: [NxWelcome, RouterModule],
+  imports: [RouterModule, CleansiaButtonComponent],
   selector: 'app-root',
   templateUrl: './app.html',
-  styleUrl: './app.scss',
 })
-export class App {
+export class AppComponent {
   protected title = 'cleansia.app';
 }

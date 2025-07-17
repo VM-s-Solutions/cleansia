@@ -17,8 +17,24 @@ export default [
           allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
           depConstraints: [
             {
-              sourceTag: '*',
-              onlyDependOnLibsWithTags: ['*'],
+              sourceTag: 'scope:shared',
+              onlyDependOnLibsWithTags: ['scope:shared'],
+            },
+            {
+              sourceTag: 'scope:cleansia',
+              onlyDependOnLibsWithTags: ['scope:shared', 'scope:cleansia'],
+            },
+            {
+              sourceTag: 'type:feature',
+              onlyDependOnLibsWithTags: ['type:feature', 'type:ui', 'type:data', 'type:util'],
+            },
+            {
+              sourceTag: 'type:data',
+              onlyDependOnLibsWithTags: ['type:data', 'type:util'],
+            },
+            {
+              sourceTag: 'type:ui',
+              onlyDependOnLibsWithTags: ['type:ui', 'type:util'],
             },
           ],
         },

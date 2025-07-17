@@ -1,16 +1,16 @@
 {
-  "name": "cleansia",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/cleansia/src",
+  "name": "models",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/models/src",
   "prefix": "lib",
   "projectType": "library",
-  "tags": ["scope:cleansia"],
+  "tags": ["scope:shared type:util"],
   "targets": {
     "test": {
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
-        "jestConfig": "libs/cleansia/jest.config.ts"
+        "jestConfig": "libs/shared/models/jest.config.ts"
       }
     },
     "lint": {

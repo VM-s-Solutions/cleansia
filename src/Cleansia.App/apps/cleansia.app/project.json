@@ -11,6 +11,7 @@
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/apps/cleansia.app",
+        "index": "apps/cleansia.app/src/index.html",
         "browser": "apps/cleansia.app/src/main.ts",
         "polyfills": ["zone.js"],
         "tsConfig": "apps/cleansia.app/tsconfig.app.json",

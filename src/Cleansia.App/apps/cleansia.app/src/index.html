@@ -1,106 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cleansia - Cleaning Services</title>
-    <link rel="stylesheet" href="styles.css" />
-    <!-- Add PrimeNG CDN for demo; in Angular, use imports -->
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/primeng@18.0.0/themes/aura/theme.css"
-    />
-    <link rel="stylesheet" href="https://unpkg.com/primeicons/primeicons.css" />
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/primeflex@3.3.1/primeflex.min.css"
-    />
+    <meta charset="utf-8" />
+    <title>cleansia.app</title>
+    <base href="/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
   </head>
   <body>
-    <header class="header">
-      <nav class="nav">
-        <div class="logo">Cleansia</div>
-        <ul class="nav-links">
-          <li>Home</li>
-          <li>Services</li>
-          <li>About</li>
-          <li>Contact</li>
-          <li><button class="book-btn">Book Now</button></li>
-        </ul>
-      </nav>
-    </header>
-
-    <section class="hero">
-      <div class="hero-content">
-        <h1>Professional Cleaning at Your Doorstep</h1>
-        <p>Order by specifying rooms, date, and more. Get an instant quote!</p>
-        <button class="cta-btn">Get Started</button>
-      </div>
-    </section>
-
-    <section class="services">
-      <h2>Our Services</h2>
-      <div class="service-grid">
-        <div class="service-card">
-          <i class="pi pi-home"></i>
-          <h3>Standard Clean</h3>
-          <p>From 1000 CZK</p>
-        </div>
-        <div class="service-card">
-          <i class="pi pi-wrench"></i>
-          <h3>Deep Clean</h3>
-          <p>From 1500 CZK</p>
-        </div>
-        <div class="service-card">
-          <i class="pi pi-window-maximize"></i>
-          <h3>Window Washing</h3>
-          <p>From 500 CZK</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="booking">
-      <h2>Book Your Cleaning</h2>
-      <form class="booking-form">
-        <label
-          >Number of Rooms: <input type="number" min="1" value="1" id="rooms"
-        /></label>
-        <label
-          >Service Type:
-          <select>
-            <option>Standard</option>
-            <option>Deep</option>
-          </select>
-        </label>
-        <label>Date: <input type="date" /></label>
-        <label
-          >Extras: <input type="checkbox" /> Windows
-          <input type="checkbox" /> Carpets</label
-        >
-        <div id="price">Estimated Price: 1000 CZK</div>
-        <!-- Add JS for calc -->
-        <button type="submit" class="submit-btn">Book Now</button>
-      </form>
-    </section>
-
-    <section class="testimonials">
-      <h2>What Our Customers Say</h2>
-      <div class="testimonial">"Excellent service!" - Jan Novak ★★★★★</div>
-    </section>
-
-    <footer class="footer">
-      <p>&copy; 2025 Cleansia. All rights reserved. | Privacy Policy</p>
-    </footer>
-
-    <script>
-      // Simple price calculator demo
-      document.getElementById('rooms').addEventListener('input', updatePrice);
-      function updatePrice() {
-        const rooms = document.getElementById('rooms').value;
-        document.getElementById('price').textContent = `Estimated Price: ${
-          rooms * 500
-        } CZK`;
-      }
-    </script>
+    <app-root></app-root>
   </body>
 </html>

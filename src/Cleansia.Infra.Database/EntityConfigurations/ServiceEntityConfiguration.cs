@@ -32,9 +32,5 @@ public class ServiceEntityConfiguration : AuditableEntityConfiguration<Service, 
             .HasConversion(new JsonValueConverter<Dictionary<string, Translation>>())
             .Metadata
             .SetValueComparer(new JsonValueComparer<Dictionary<string, Translation>>());
-
-        builder.HasMany(s => s.Packages)
-            .WithMany(p => p.IncludedServices)
-            .UsingEntity(j => j.ToTable("PackageServices"));
     }
 }

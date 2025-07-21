@@ -1,8 +1,11 @@
 ﻿using System.Security.Claims;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Internalization;
+using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
-using Cleansia.Infra.Database.EntityConfigurations;
+using Cleansia.Core.Domain.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
@@ -85,6 +88,13 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     }
 
     // Entities
+
+    public virtual DbSet<Service> Services { get; set; }
+    public virtual DbSet<Package> Packages { get; set; }
+    public virtual DbSet<Currency> Currencies { get; set; }
+    public virtual DbSet<Language> Languages { get; set; }
+    public virtual DbSet<PackageService> PackageServices { get; set; }
+    public virtual DbSet<Order> Orders { get; set; }
 
     // Views
 }

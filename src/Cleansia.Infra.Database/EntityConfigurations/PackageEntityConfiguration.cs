@@ -1,4 +1,6 @@
-﻿using Cleansia.Core.Domain.Packages;
+﻿using Cleansia.Core.Domain.Internalization;
+using Cleansia.Core.Domain.Packages;
+using Cleansia.Infra.Database.Converters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -22,8 +24,9 @@ public class PackageEntityConfiguration : AuditableEntityConfiguration<Package, 
             .IsRequired()
             .HasPrecision(18, 2);
 
-        builder.HasMany(p => p.IncludedServices)
-            .WithMany(s => s.Packages)
-            .UsingEntity(j => j.ToTable("PackageServices"));
+        builder.Property(s => s.Translations)
+            .HasConversion(new JsonValueConverter<Dictionary<string, Translation>>())
+            .Metadata
+            .SetValueComparer(new JsonValueComparer<Dictionary<string, Translation>>());
     }
 }

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class BaseEntityConfiguration<T> : IEntityTypeConfiguration<T>
+public class BaseEntityConfiguration<T, TKey> : IEntityTypeConfiguration<T>
     where T : BaseEntity
 {
     public virtual void Configure(EntityTypeBuilder<T> builder)
@@ -17,7 +17,7 @@ public class BaseEntityConfiguration<T> : IEntityTypeConfiguration<T>
     }
 }
 
-public class AuditableEntityConfiguration<T, TKey> : BaseEntityConfiguration<T>
+public class AuditableEntityConfiguration<T, TKey> : BaseEntityConfiguration<T, TKey>
     where T : Auditable
 {
     public override void Configure(EntityTypeBuilder<T> builder)

@@ -7,12 +7,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Compile Remove="Sorting\NewFolder\**" />
-	  <EmbeddedResource Remove="Sorting\NewFolder\**" />
-	  <None Remove="Sorting\NewFolder\**" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.7" />
 		<PackageReference Include="Npgsql" Version="9.0.3" />
 		<PackageReference Include="Ulid" Version="1.3.4" />
@@ -20,6 +14,7 @@
 
 	<ItemGroup>
 	  <Folder Include="Specifications\" />
+	  <Folder Include="Packages\" />
 	</ItemGroup>
 
 </Project>

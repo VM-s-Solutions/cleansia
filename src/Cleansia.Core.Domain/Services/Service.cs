@@ -28,4 +28,12 @@ public class Service : Auditable
 
     private ICollection<OrderService> _includedInOrders = [];
     public IReadOnlyCollection<OrderService> IncludedInOrders => _includedInOrders.ToList().AsReadOnly();
+
+    public static Service Create(string name, string description, decimal basePrice, decimal perRoomPrice) => new()
+    {
+        Name = name,
+        Description = description,
+        BasePrice = basePrice,
+        PerRoomPrice = perRoomPrice
+    };
 }

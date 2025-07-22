@@ -22,7 +22,7 @@ public class CurrencyMockFactory
             "Kč",
             "Czech Koruna",
             1);
-        currency.Created(TestUtilities.Constants.TestUserSession.TestUserName, DateTime.UtcNow);
+        currency.Created(Constants.TestUserSession.TestUserName, DateTime.UtcNow);
 
         return currency.Merge(mergeFrom);
     }

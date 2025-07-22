@@ -14,4 +14,8 @@
 		<ProjectReference Include="..\Cleansia.Core.Domain\Cleansia.Core.Domain.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="MockDataFactories\Packages\" />
+	</ItemGroup>
+
 </Project>

@@ -141,30 +141,6 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "PackageService",
-                columns: table => new
-                {
-                    IncludedServicesId = table.Column<string>(type: "character varying(26)", nullable: false),
-                    PackagesId = table.Column<string>(type: "character varying(26)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PackageService", x => new { x.IncludedServicesId, x.PackagesId });
-                    table.ForeignKey(
-                        name: "FK_PackageService_Packages_PackagesId",
-                        column: x => x.PackagesId,
-                        principalTable: "Packages",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_PackageService_Services_IncludedServicesId",
-                        column: x => x.IncludedServicesId,
-                        principalTable: "Services",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "PackageServices",
                 columns: table => new
                 {
@@ -262,11 +238,6 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "OrderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PackageService_PackagesId",
-                table: "PackageService",
-                column: "PackagesId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_PackageServices_PackageId",
                 table: "PackageServices",
                 column: "PackageId");
@@ -288,9 +259,6 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "OrderStatusHistory");
-
-            migrationBuilder.DropTable(
-                name: "PackageService");
 
             migrationBuilder.DropTable(
                 name: "PackageServices");

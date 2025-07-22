@@ -23,8 +23,8 @@ public class Service : Auditable
     public IDictionary<string, Translation> _translations = new Dictionary<string, Translation>();
     public IReadOnlyDictionary<string, Translation> Translations => _translations.AsReadOnly();
 
-    private ICollection<Package> _packages = [];
-    public IReadOnlyCollection<Package> Packages => _packages.ToList().AsReadOnly();
+    private ICollection<PackageService> _packages = [];
+    public IReadOnlyCollection<PackageService> Packages => _packages.ToList().AsReadOnly();
 
     private ICollection<OrderService> _includedInOrders = [];
     public IReadOnlyCollection<OrderService> IncludedInOrders => _includedInOrders.ToList().AsReadOnly();

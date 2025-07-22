@@ -1,7 +1,6 @@
 ﻿using Cleansia.Core.Domain.Internalization;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Infra.Database.Converters;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;

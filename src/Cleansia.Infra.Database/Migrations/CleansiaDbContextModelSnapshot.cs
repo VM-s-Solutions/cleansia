@@ -391,21 +391,6 @@ namespace Cleansia.Infra.Database.Migrations
                     b.ToTable("Services");
                 });
 
-            modelBuilder.Entity("PackageService", b =>
-                {
-                    b.Property<string>("IncludedServicesId")
-                        .HasColumnType("character varying(26)");
-
-                    b.Property<string>("PackagesId")
-                        .HasColumnType("character varying(26)");
-
-                    b.HasKey("IncludedServicesId", "PackagesId");
-
-                    b.HasIndex("PackagesId");
-
-                    b.ToTable("PackageService");
-                });
-
             modelBuilder.Entity("Cleansia.Core.Domain.Orders.Order", b =>
                 {
                     b.HasOne("Cleansia.Core.Domain.Internalization.Currency", "Currency")
@@ -456,13 +441,13 @@ namespace Cleansia.Infra.Database.Migrations
             modelBuilder.Entity("Cleansia.Core.Domain.Packages.PackageService", b =>
                 {
                     b.HasOne("Cleansia.Core.Domain.Packages.Package", "Package")
-                        .WithMany()
+                        .WithMany("IncludedServices")
                         .HasForeignKey("PackageId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Cleansia.Core.Domain.Services.Service", "Service")
-                        .WithMany()
+                        .WithMany("Packages")
                         .HasForeignKey("ServiceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -472,21 +457,6 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("Service");
                 });
 
-            modelBuilder.Entity("PackageService", b =>
-                {
-                    b.HasOne("Cleansia.Core.Domain.Services.Service", null)
-                        .WithMany()
-                        .HasForeignKey("IncludedServicesId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Cleansia.Core.Domain.Packages.Package", null)
-                        .WithMany()
-                        .HasForeignKey("PackagesId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("Cleansia.Core.Domain.Orders.Order", b =>
                 {
                     b.Navigation("OrderStatusHistory");
@@ -494,9 +464,16 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("SelectedServices");
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.Packages.Package", b =>
+                {
+                    b.Navigation("IncludedServices");
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Services.Service", b =>
                 {
                     b.Navigation("IncludedInOrders");
+
+                    b.Navigation("Packages");
                 });
 #pragma warning restore 612, 618
         }

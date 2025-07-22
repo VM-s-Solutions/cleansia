@@ -25,6 +25,8 @@ jobs:
       - name: Build
         run: dotnet build --configuration Release
         working-directory: ./src
+        continue-on-error: true
+
       - name: Run tests
-        run: dotnet test --configuration Release --no-build
+        run: dotnet test --configuration Release
         working-directory: ./src

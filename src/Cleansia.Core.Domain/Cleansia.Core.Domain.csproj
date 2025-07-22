@@ -14,9 +14,6 @@
 
 	<ItemGroup>
 	  <Folder Include="Specifications\" />
-	  <Folder Include="Packages\" />
-	  <Folder Include="Orders\" />
-	  <Folder Include="Services\" />
 	</ItemGroup>
 
 </Project>

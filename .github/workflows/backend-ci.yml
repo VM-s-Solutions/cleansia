@@ -21,6 +21,9 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
         working-directory: ./src
+        
+      - name: List files in Core.Domain
+        run: ls -R ./src/Cleansia.Core.Domain
 
       - name: Build
         run: dotnet build --configuration Release

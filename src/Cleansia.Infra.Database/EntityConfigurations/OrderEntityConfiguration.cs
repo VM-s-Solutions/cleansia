@@ -35,9 +35,9 @@ public class OrderEntityConfiguration : AuditableEntityConfiguration<Order, stri
             .HasPrecision(18, 2);
 
         builder.Property(o => o.Extras)
-            .HasConversion(new JsonValueConverter<Dictionary<string, bool>>())
+            .HasConversion(new JsonValueConverter<IReadOnlyDictionary<string, bool>>())
             .Metadata
-            .SetValueComparer(new JsonValueComparer<Dictionary<string, bool>>());
+            .SetValueComparer(new JsonValueComparer<IReadOnlyDictionary<string, bool>>());
 
         builder.Property(o => o.ConfirmationCode)
             .IsRequired()

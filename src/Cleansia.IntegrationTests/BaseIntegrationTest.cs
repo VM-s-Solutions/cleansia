@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using Respawn;
-using AssemblyReference = Cleansia.Core.Domain.AssemblyReference;
+using AssemblyReference = Cleansia.Infra.Database.AssemblyReference;
 
 namespace Cleansia.IntegrationTests;
 

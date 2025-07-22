@@ -11,4 +11,10 @@ public class Language : BaseEntity
 
     [MaxLength(50)]
     public string Name { get; private set; }
+
+    public static Language Create(string code, string name) => new()
+    {
+        Code = code,
+        Name = name
+    };
 }

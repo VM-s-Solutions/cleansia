@@ -17,13 +17,23 @@ public abstract class BaseRepository<TEntity>(CleansiaDbContext context) : IRepo
         return GetDbSet().AnyAsync(entity => entity.Id!.Equals(id), cancellationToken);
     }
 
+    public async Task<bool> ExistWithIdsAsync(IEnumerable<string> ids, CancellationToken cancellationToken)
+    {
+        ids = ids.Distinct().ToArray();
+        var count = await GetQueryable()
+            .Where(e => ids.Contains(e.Id))
+            .CountAsync(cancellationToken);
+
+        return count == ids.Count();
+    }
+
     public virtual Task<TEntity?> GetByIdAsync(string id, CancellationToken cancellationToken)
     {
         var query = GetQueryable();
         return query.FirstOrDefaultAsync(x => x.Id == id, cancellationToken)!;
     }
 
-    public virtual IQueryable<TEntity> GetByIds(string[] ids)
+    public virtual IQueryable<TEntity> GetByIds(IEnumerable<string> ids)
     {
         ids = ids.Distinct().ToArray();
         var query = GetQueryable();

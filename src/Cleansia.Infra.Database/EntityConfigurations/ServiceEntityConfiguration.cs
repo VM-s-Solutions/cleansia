@@ -29,8 +29,8 @@ public class ServiceEntityConfiguration : AuditableEntityConfiguration<Service, 
             .HasPrecision(18, 2);
 
         builder.Property(s => s.Translations)
-            .HasConversion(new JsonValueConverter<Dictionary<string, Translation>>())
+            .HasConversion(new JsonValueConverter<IReadOnlyDictionary<string, Translation>>())
             .Metadata
-            .SetValueComparer(new JsonValueComparer<Dictionary<string, Translation>>());
+            .SetValueComparer(new JsonValueComparer<IReadOnlyDictionary<string, Translation>>());
     }
 }

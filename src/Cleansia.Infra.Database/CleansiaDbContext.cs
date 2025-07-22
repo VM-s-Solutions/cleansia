@@ -37,7 +37,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
 
     public void Migrate()
     {
-        // Database.Migrate();
+        Database.Migrate();
     }
 
     public async Task<int> CommitAsync(CancellationToken cancellationToken)
@@ -95,6 +95,9 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<Language> Languages { get; set; }
     public virtual DbSet<PackageService> PackageServices { get; set; }
     public virtual DbSet<Order> Orders { get; set; }
+    public virtual DbSet<OrderService> OrderServices { get; set; }
+    public virtual DbSet<OrderStatusTrack> OrderStatusHistory { get; set; }
+
 
     // Views
 }

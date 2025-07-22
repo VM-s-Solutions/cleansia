@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20250721194222_Initial")]
+    [Migration("20250722193548_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -114,7 +114,7 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<int>("Bathrooms")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime>("CleaningDate")
+                    b.Property<DateTime>("CleaningDateTime")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("ConfirmationCode")
@@ -185,9 +185,6 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<string>("SelectedPackageId")
                         .HasColumnType("character varying(26)");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
                     b.Property<string>("StripeSessionId")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -211,6 +208,53 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("SelectedPackageId");
 
                     b.ToTable("Orders");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Orders.OrderService", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("OrderId")
+                        .IsRequired()
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("ServiceId")
+                        .IsRequired()
+                        .HasColumnType("character varying(26)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("ServiceId");
+
+                    b.ToTable("OrderServices");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Orders.OrderStatusTrack", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("OrderId")
+                        .IsRequired()
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("OrderStatusHistory");
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Packages.Package", b =>
@@ -330,9 +374,6 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("OrderId")
-                        .HasColumnType("character varying(26)");
-
                     b.Property<decimal>("PerRoomPrice")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
@@ -349,8 +390,6 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("OrderId");
 
                     b.ToTable("Services");
                 });
@@ -387,6 +426,36 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("SelectedPackage");
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.Orders.OrderService", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Orders.Order", "Order")
+                        .WithMany("SelectedServices")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Cleansia.Core.Domain.Services.Service", "Service")
+                        .WithMany("IncludedInOrders")
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("Service");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Orders.OrderStatusTrack", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Orders.Order", "Order")
+                        .WithMany("OrderStatusHistory")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Packages.PackageService", b =>
                 {
                     b.HasOne("Cleansia.Core.Domain.Packages.Package", "Package")
@@ -406,13 +475,6 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("Service");
                 });
 
-            modelBuilder.Entity("Cleansia.Core.Domain.Services.Service", b =>
-                {
-                    b.HasOne("Cleansia.Core.Domain.Orders.Order", null)
-                        .WithMany("SelectedServices")
-                        .HasForeignKey("OrderId");
-                });
-
             modelBuilder.Entity("PackageService", b =>
                 {
                     b.HasOne("Cleansia.Core.Domain.Services.Service", null)
@@ -430,7 +492,14 @@ namespace Cleansia.Infra.Database.Migrations
 
             modelBuilder.Entity("Cleansia.Core.Domain.Orders.Order", b =>
                 {
+                    b.Navigation("OrderStatusHistory");
+
                     b.Navigation("SelectedServices");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Services.Service", b =>
+                {
+                    b.Navigation("IncludedInOrders");
                 });
 #pragma warning restore 612, 618
         }

@@ -10,7 +10,12 @@
       "executor": "@nx/angular:ng-packagr-lite",
       "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
       "options": {
-        "project": "libs/shared/components/ng-package.json"
+        "project": "libs/shared/components/ng-package.json",
+        "styles": [
+          "node_modules/primeng/resources/primeng.min.css",
+          "node_modules/primeicons/primeicons.css",
+          "/cleansia/src/Cleansia.App/apps/cleansia.app/src/styles.scss", "libs/shared/assets/src/shared-styles.scss"],
+        "assets": ["../assets/logo.png"]
       },
       "configurations": {
         "production": {

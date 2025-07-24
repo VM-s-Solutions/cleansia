@@ -1,1 +1,69 @@
 @use './styles/' as styles;
+
+/* src/styles.scss */
+
+.clean-menus {
+    background-color: #ffffff !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 2rem;
+  
+    /* celý wrapper jako flex */
+    .p-menubar-wrapper {
+      display: flex;
+      align-items: center;
+    }
+  
+    /* LOGO vlevo */
+    .p-menubar-start {
+      display: flex;
+      align-items: center;
+  
+      img {
+        height: 40px;
+        margin-right: 1rem;
+      }
+    }
+  
+    /* položky menu */
+    .p-menuitem {
+      margin: 0 1rem;
+    }
+    .p-menuitem-link {
+      color: #333333 !important;
+      font-weight: 500;
+      padding: 1rem 0;
+      transition: color .2s;
+  
+      &:hover {
+        color: #0ea5e9 !important;
+      }
+    }
+  
+    .p-menubar-end {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+  
+      .icon-link {
+        display: inline-flex;
+        align-items: center;
+        margin-left: 1.5rem;
+        font-weight: 500;
+        text-decoration: none;
+        color: #0ea5e9 !important;
+  
+        .pi {
+          margin-right: .5rem;
+        }
+      }
+  
+      .phone-button {
+        margin-left: 1.5rem !important;
+        background-color: white !important;
+        border: none !important;
+        color: black !important;
+      }
+    }
+  }
+  

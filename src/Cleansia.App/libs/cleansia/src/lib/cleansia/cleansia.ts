@@ -1,10 +1,11 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit } from '@angular/core';
+import { MenuItem, MessageService } from 'primeng/api';
 
 @Component({
-  selector: 'lib-cleansia',
-  imports: [CommonModule],
-  templateUrl: './cleansia.html',
-  styleUrl: './cleansia.scss',
+  selector: 'cleansia-home',
+  templateUrl: './cleansia.component.html',
+  styleUrls: ['./cleansia.component.scss'],
+  providers: [MessageService]
 })
-export class Cleansia {}
+export class CleansiaComponent
+}

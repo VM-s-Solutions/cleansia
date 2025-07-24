@@ -1,3 +1,264 @@
-<cleansia-button />
+<header>
+    <p-menubar [model]="navItems" styleClass="px-4 py-2 shadow-1">
+        <ng-template pTemplate="start">
+            <img src="../logo.png" height="40" width="40" alt="Cleansia logo" loading="lazy" decoding="async"/>
+        </ng-template>
+        <ng-template pTemplate="end">
+            <a href="tel:+420739788108" class="no-underline text-primary font-medium mr-3" aria-label="Call us">+420 739 788 108</a>
+            <button pButton type="button" label="Zanechat poptávku" class="p-button-sm p-button-outlined"
+                aria-label="Request a quote"></button>
+        </ng-template>
+    </p-menubar>
+</header>
 
-<router-outlet></router-outlet>
+<main>
+    <section class="bg-white fullscreen-section">
+        <div class="flex justify-content-around">
+            <div class="col-12 col-md-6">
+                <h1>Lorem ipsum dolor sit amet consectetur adipisicing elit. Quos eos ea facilis pariatur veritatis corporis laboriosam earum vitae, alias exercitationem debitis recusandae repellendus doloremque perferendis voluptate ipsa eum animi nostrum!</h1>
+                <p>Lorem, ipsum dolor sit amet consectetur adipisicing elit. Suscipit, recusandae. Pariatur dicta quis at, nulla perspiciatis facere. Nihil accusamus recusandae repudiandae, placeat inventore unde exercitationem dicta facere nemo cum id.</p>
+            </div>
+            <div class="lazy z-2 background" style="height: 50svh; width: 50svh;">
+            </div>
+        </div>
+    </section>
+    <section class="bg-white fullscreen-section">
+        <div class="flex justify-content-around text-center w-full">
+            <div class="col-8 col-md-5">
+                <h1>Jak funguje celý proces?</h1>
+                <div class="flex gap-4 flex-nowrap text-center justify-content-center">
+                    <p-card header="1. Vyberete si službu" styleClass="glassy-card flex-1 text-center how-it-works__card">
+                        <div class="flex flex-col align-items-center gap-2">
+                            <i class="pi pi-list text-3xl text-primary"></i>
+                            <p>Zvolíte jednu nebo více <a href="#services" class="underline text-blue-500">služeb</a>, které nabízíme.</p>
+                        </div>
+                    </p-card>
+
+                    <p-card header="2. Přijedeme k vám" styleClass="glassy-card flex-1 text-center how-it-works__card">
+                        <div class="flex flex-col align-items-center gap-2">
+                            <i class="pi pi-send text-3xl text-primary"></i>
+                            <p>Dorazíme ve vámi zvoleném termínu a profesionálně uklidíme.</p>
+                        </div>
+                    </p-card>
+
+                    <p-card header="3. Čistota bez starostí" styleClass="glassy-card flex-1 text-center how-it-works__card">
+                        <div class="flex flex-col align-items-center gap-2">
+                            <i class="pi pi-face-smile text-3xl text-primary"></i>
+                            <p>Vy si jen užíváte výsledek – voňavý a čistý prostor.</p>
+                        </div>
+                    </p-card>
+                </div>
+            </div>
+            <div class="col-4 col-md-3 z-2 background-smile-thinking lazy" style="height: 50svh;">
+            </div>
+            <div class="bg-raketa">
+                <h1 class="text-primary">Celkově jsme provedli již</h1>
+                <h3><span class="text-green-600">{{displayedCount}}</span> úklidů</h3>
+            </div>
+        </div>
+    </section>
+    <section class="fullscreen-section bg-white">
+        <div class="flex w-full">
+            <div class="col-6 col-md-3 bg-typek-napad lazy" style="height: 50svh;">
+            </div>
+            <div class="col-5"></div>
+            <div class="col-6 col-md-6 justify-center text-center">
+                <h2 class="mb-4">Proč je mobilní čištění lepší než běžný úklid?</h2>
+                <div class="col-12 col-md-6">
+                    <p><i class="pi pi-check-circle text-green-600"></i> Odstraňuje špínu zevnitř, ne jen z povrchu.</p>
+                    <p><i class="pi pi-check-circle text-green-600"></i> Nezanechává lepkavý film, který přitahuje další nečistoty.</p>
+                </div>
+                <div class="col-12 col-md-6">
+                    <p><i class="pi pi-check-circle text-green-600"></i> Likviduje bakterie, roztoče, plísně.</p>
+                    <p><i class="pi pi-check-circle text-green-600"></i> Rychle schne — 2-4 hodiny (při silném znečištění do 6 hodin).</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-5 fullscreen-section relative overflow-hidden">
+        <div class="container relative z-10">
+          <h2 class="text-center mb-6 text-3xl font-semibold">Služby a ceník</h2>
+      
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 services">
+            <p-card header="Čištění pohovky" subheader="od 1500 Kč" styleClass="glassy-card text-center services__card">
+              <div class="flex flex-col align-items-center gap-2">
+                <i class="pi pi-home text-4xl text-primary"></i>
+                <p>Hloubkové čištění sedací soupravy včetně dezinfekce.</p>
+              </div>
+            </p-card>
+      
+            <p-card header="Čištění matrace" subheader="od 1800 Kč" styleClass="glassy-card text-center services__card">
+              <div class="flex flex-col align-items-center gap-2">
+                <i class="pi pi-cloud text-4xl text-primary"></i>
+                <p>Odstranění roztočů, skvrn i zápachu z matrací.</p>
+              </div>
+            </p-card>
+       
+            <p-card header="Čištění koberce" subheader="od 1500 Kč" styleClass="glassy-card text-center services__card">
+              <div class="flex flex-col align-items-center gap-2">
+                <i class="pi pi-star text-4xl text-primary"></i>
+                <p>Strojové i ruční čištění koberců všech typů.</p>
+              </div>
+            </p-card>
+      
+            <p-card header="Mytí oken" subheader="od 800 Kč" styleClass="glassy-card text-center services__card">
+              <div class="flex flex-col align-items-center gap-2">
+                <i class="pi pi-window-maximize text-4xl text-primary"></i>
+                <p>Kompletní mytí skel, rámů i žaluzií.</p>
+              </div>
+            </p-card>
+      
+            <p-card header="Generální úklid" subheader="od 2500 Kč" styleClass="glassy-card text-center services__card">
+              <div class="flex flex-col align-items-center gap-2">
+                <i class="pi pi-refresh text-4xl text-primary"></i>
+                <p>Kompletní úklid domácnosti včetně všech místností.</p>
+              </div>
+            </p-card>
+      
+            <p-card header="Úklid po malování" subheader="od 2000 Kč" styleClass="glassy-card text-center services__card">
+              <div class="flex flex-col align-items-center gap-2">
+                <i class="pi pi-palette text-4xl text-primary"></i>
+                <p>Odstraníme prach, barvu a zbytky po rekonstrukci.</p>
+              </div>
+            </p-card>
+          </div>
+      
+          <div class="text-center mt-6 text-sm text-gray-600">
+            <small>
+              <strong>Extra služby:</strong> Odstranění odolných skvrn + 500 Kč | Neutralizace zápachu + 500 Kč
+            </small>
+          </div>
+        </div>
+      
+        <div class="bg-typek-ready-to-go lazy"></div>
+      </section>
+      
+
+
+    <section id="beforeafter" class="py-5 fullscreen-section">
+        <div class="container">
+            <h2 class="text-center mb-4">Před / Po</h2>
+            <div class="bg-typek-flexi lazy"></div>
+            <p-carousel [value]="[1,2,3,4,5,6]" [numVisible]="3" [numScroll]="3">
+                <ng-template pTemplate="item" let-item>
+                    <div class="before-after-card">
+                        <img src="../pes.webp" class="img-fluid" loading="lazy" alt="After cleaning image" decoding="async" />
+                        <img src="../kocka.webp" class="img-fluid" loading="lazy" alt="Before cleaning image" decoding="async"/>
+                    </div>
+                </ng-template>
+            </p-carousel>
+        </div>
+    </section>
+
+    <section class="py-5 fullscreen-section">
+        <div class="container">
+            <h2 class="text-center mb-4">Reference</h2>
+            <div class="reviews-row mb-3">
+                <a class="review-card glassy-card" href="#" target="_blank" rel="noopener">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"
+                        alt="Google logo" class="review-logo" loading="lazy" decoding="async" >
+                    <div>
+                        <div class="review-title">Cleansia</div>
+                        <div class="review-score"><strong>4.6</strong>/5<i
+                                class="pl-1 pi pi-star-fill text-yellow-400"></i></div>
+                        <div class="review-source">Google hodnocení</div>
+                    </div>
+                </a>
+                <a class="review-card glassy-card" href="#" target="_blank" rel="noopener">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg"
+                        alt="Facebook logo" class="review-logo" decoding="async" loading="lazy">
+                    <div>
+                        <div class="review-title">Cleansia</div>
+                        <div class="review-score"><strong>4.8</strong>/5<i
+                                class="pl-1 pi pi-star-fill text-yellow-400"></i></div>
+                        <div class="review-source">Facebook hodnocení</div>
+                    </div>
+                </a>
+            </div>
+            <p-carousel [value]="[1,2,3]" [numVisible]="1" [numScroll]="1" circular styleClass="sexy-carousel">
+                <ng-template pTemplate="item" let-i>
+                    <p-card styleClass="glassy-card">
+                        <ng-template pTemplate="title">
+                            <div class="glassy-card-header">
+                                <p-avatar image="https://randomuser.me/api/portraits/men/1.jpg" shape="circle"
+                                    size="large" styleClass="glassy-avatar">
+                                </p-avatar>
+                                <div>
+                                    <div class="glassy-name">Honza</div>
+                                    <div>
+                                        <i class="pi pi-star-fill star-yellow" *ngFor="let star of [1,2,3,4,5]"
+                                            aria-label="5-star rating"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </ng-template>
+                        <div class="glassy-body">
+                            Skvělá práce! Nábytek jako nový, velmi příjemná komunikace a rychlé jednání. Moc doporučuji!
+                        </div>
+                        <ng-template pTemplate="footer">
+                            <div class="glassy-footer">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"
+                                    class="footer-logo" alt="Google logo" loading="lazy" decoding="async">
+                                <span>Google recenze</span>
+                            </div>
+                        </ng-template>
+                    </p-card>
+                </ng-template>
+            </p-carousel>
+        </div>
+    </section>
+
+    <section class="py-5 fullscreen-section">
+        <div class="container">
+            <h2 class="text-center mb-4">Často kladené otázky</h2>
+            <p-accordion>
+                <p-accordionTab *ngFor="let faq of faqs" [header]="faq.question">
+                    <p>{{ faq.answer }}</p>
+                </p-accordionTab>
+            </p-accordion>
+        </div>
+    </section>
+    <div class="section-nav-buttons">
+        <button pButton [disabled]="!buttonUpVisible" type="button" icon="pi pi-arrow-up"
+            class="navigation-button p-button-icon-only border-none shadow-1 text-black" (click)="scrollToPrev()"
+            aria-label="Scroll to previous section">
+        </button>
+        <button pButton type="button" [disabled]="!buttonDownVisible" [attr.visible]="buttonUpVisible"
+            icon="pi pi-arrow-down" class="navigation-button p-button-icon-only border-none text-black shadow-1"
+            (click)="scrollToNext()" aria-label="Scroll to next section">
+        </button>
+    </div>
+</main>
+
+<footer class="bg-primary text-white py-4 fullscreen-section flex-column justify-content-center">
+    <div class="container">
+        <div class="row w-100">
+            <div class="col-md-4">
+                <h5>Kontakty</h5>
+                <p>+7 (999) 123-45-67</p>
+                <p [innerHTML]="'info@cleansia.cz'"></p>
+            </div>
+            <div class="col-md-4">
+                <h5>Zanechat poptávku</h5>
+                <form #reqForm="" (ngSubmit)="submitRequest(reqForm)">
+                    <input pInputText name="name" placeholder="Vaše jméno" ngModel required class="form-control mb-2"
+                        aria-label="Vaše jméno" aria-required="true" />
+                    <input pInputText name="phone" placeholder="Váš telefon" ngModel required class="form-control mb-2"
+                        aria-label="Váš telefon" aria-required="true" />
+                    <button pButton type="submit" label="Odeslat" class="mt-2 p-button-sm"
+                        aria-label="Submit request"></button>
+                </form>
+            </div>
+            <div class="col-md-4">
+                <h5>Sociální sítě</h5>
+                <a href="#" aria-label="Instagram" rel="noopener noreferrer"><i class="pi pi-instagram pi-2x mr-2 text-white"></i></a>
+                <a href="#" aria-label="VK" rel="noopener noreferrer"><i class="pi pi-vk pi-2x mr-2 text-white"></i></a>
+                <a href="#" aria-label="Telegram" rel="noopener noreferrer"><i class="pi pi-telegram pi-2x mr-2 text-white"></i></a>
+            </div>
+        </div>
+        <div class="text-center mt-3">
+            <small>© 2025 Cleansia s.r.o.</small>
+        </div>
+    </div>
+</footer>

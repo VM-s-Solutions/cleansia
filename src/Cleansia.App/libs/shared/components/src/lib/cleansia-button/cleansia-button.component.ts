@@ -8,6 +8,7 @@ import { ButtonModule } from 'primeng/button';
   imports: [ButtonModule],
 })
 export class CleansiaButtonComponent {
+  icon = input<string>('');
   label = input<string>('');
   severity = input<'primary' | 'secondary'>('primary');
 }

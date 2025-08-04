@@ -1,0 +1,32 @@
+<p-menubar [model]="items" styleClass="custom-menubar">
+    <ng-template pTemplate="start">
+      <a routerLink="/">
+        <img src="assets/logo.png" alt="xd" />
+      </a>
+    </ng-template>
+  
+    <ng-template pTemplate="end">
+      <a
+        href="https://t.me/your_telegram"
+        target="_blank"
+        class="icon-link telegram"
+      >
+        <i class="pi pi-telegram"></i>
+        Telegram
+      </a>
+      <a
+        href="https://wa.me/420123456789"
+        target="_blank"
+        class="icon-link whatsapp"
+      >
+        <i class="pi pi-whatsapp"></i>
+        WhatsApp
+      </a>
+      <cleansia-button
+        class="p-button-rounded "
+        label="+420 739 788 108"
+        icon="pi pi-trash"
+      ></cleansia-button>
+    </ng-template>
+  </p-menubar>
+  

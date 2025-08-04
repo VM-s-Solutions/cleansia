@@ -17,6 +17,7 @@
         "tsConfig": "apps/cleansia.app/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
         "assets": [
+          "apps/cleansia.app/src",
           {
             "glob": "**/*",
             "input": "apps/cleansia.app/public"
@@ -24,29 +25,30 @@
         ],
         "styles": [
           "apps/cleansia.app/src/styles.scss",
-          "libs/shared/assets/src/shared-styles.scss"
+          "libs/shared/assets/src/shared-styles.scss",
+          "node_modules/primeicons/primeicons.css"
         ]
       },
       "configurations": {
-        "production": {
+      "production": {
+          "optimization": true,
+          "outputHashing": "all",
+          "sourceMap": false,
+          "namedChunks": false,
+          "extractLicenses": true,
           "budgets": [
             {
               "type": "initial",
-              "maximumWarning": "500kb",
-              "maximumError": "1mb"
-            },
-            {
-              "type": "anyComponentStyle",
-              "maximumWarning": "4kb",
-              "maximumError": "8kb"
+              "maximumWarning": "2mb",
+              "maximumError": "5mb"
             }
-          ],
-          "outputHashing": "all"
+          ]
         },
         "development": {
           "optimization": false,
-          "extractLicenses": false,
-          "sourceMap": true
+          "sourceMap": true,
+          "namedChunks": true,
+          "extractLicenses": false
         }
       },
       "defaultConfiguration": "production"

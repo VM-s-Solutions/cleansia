@@ -15,6 +15,9 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
+      "@cleansia.app/cleansia-services": [
+        "libs/cleansia-services/src/index.ts"
+      ],
       "@cleansia/assets": ["libs/shared/assets/src/index.ts"],
       "@cleansia/cleansia": ["libs/cleansia/src/index.ts"],
       "@cleansia/components": ["libs/shared/components/src/index.ts"],

@@ -1,0 +1,14 @@
+version: "3.4"
+
+services:
+  db:
+    build:
+      context: .
+    ports:
+      - 5432:5432
+    networks:
+      - cleansia-network
+
+networks:
+  cleansia-network:
+    driver: bridge

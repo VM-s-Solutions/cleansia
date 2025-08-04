@@ -51,7 +51,7 @@ public static class ServiceExtensions
         services.AddSwaggerGen(c =>
         {
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "Cleansia.API", Version = "v1" });
-            c.CustomSchemaIds(type => type.FullName);
+            c.CustomSchemaIds(type => type.FullName?.Replace("+", string.Empty));
             c.SchemaFilter<EnumSchemaFilter>();
             c.CustomOperationIds(e => e.ActionDescriptor.DisplayName);
         });

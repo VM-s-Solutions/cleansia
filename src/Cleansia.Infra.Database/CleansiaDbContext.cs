@@ -6,6 +6,7 @@ using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Services;
+using Cleansia.Core.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
@@ -89,6 +90,10 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
 
     // Entities
 
+    public virtual DbSet<User> Users { get; set; }
+    public virtual DbSet<Cart> Carts { get; set; }
+    public virtual DbSet<CartServiceItem> CartServiceItems { get; set; }
+    public virtual DbSet<CartPackageItem> CartPackageItems { get; set; }
     public virtual DbSet<Service> Services { get; set; }
     public virtual DbSet<Package> Packages { get; set; }
     public virtual DbSet<Currency> Currencies { get; set; }

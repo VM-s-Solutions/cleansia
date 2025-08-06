@@ -16,4 +16,8 @@
 	  <Folder Include="Specifications\" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <ProjectReference Include="..\Cleansia.Infra.Common\Cleansia.Infra.Common.csproj" />
+	</ItemGroup>
+
 </Project>

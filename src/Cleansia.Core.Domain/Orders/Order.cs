@@ -4,6 +4,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Extensions;
 using Cleansia.Core.Domain.Internalization;
 using Cleansia.Core.Domain.Packages;
+using Cleansia.Core.Domain.Users;
 
 namespace Cleansia.Core.Domain.Orders;
 
@@ -51,6 +52,9 @@ public class Order : Auditable
 
     public string CurrencyId { get; private set; }
     public Currency Currency { get; private set; }
+
+    public string? UserId { get; private set; }
+    public User? User { get; private set; }
 
     public IDictionary<string, bool> _extras = new Dictionary<string, bool>();
     public IReadOnlyDictionary<string, bool> Extras => _extras.AsReadOnly();

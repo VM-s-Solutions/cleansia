@@ -11,11 +11,13 @@ const baseURL = process.env['BASE_URL'] || 'http://localhost:4200';
  */
 // require('dotenv').config();
 
+const nxConfig = nxE2EPreset(__filename, { testDir: './src' });
+
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  ...nxE2EPreset(__filename, { testDir: './src' }),
+  ...nxConfig,
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     baseURL,
@@ -26,7 +28,7 @@ export default defineConfig({
   webServer: {
     command: 'npx nx run cleansia.app:serve',
     url: 'http://localhost:4200',
-    reuseExistingServer: true,
+    reuseExistingServer: !process.env.CI,
     cwd: workspaceRoot,
   },
   projects: [

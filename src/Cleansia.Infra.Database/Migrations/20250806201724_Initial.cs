@@ -12,6 +12,7 @@ namespace Cleansia.Infra.Database.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterDatabase()
+                .Annotation("Npgsql:PostgresExtension:citext", ",,")
                 .Annotation("Npgsql:PostgresExtension:pg_trgm", ",,");
 
             migrationBuilder.CreateTable(
@@ -96,6 +97,90 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Users",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    Password = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    FirstName = table.Column<string>(type: "citext", maxLength: 50, nullable: false),
+                    LastName = table.Column<string>(type: "citext", maxLength: 50, nullable: false),
+                    Email = table.Column<string>(type: "citext", maxLength: 150, nullable: false),
+                    PhoneNumber = table.Column<string>(type: "citext", maxLength: 50, nullable: true),
+                    GoogleId = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: true),
+                    ResetPasswordCode = table.Column<string>(type: "character varying(6)", maxLength: 6, nullable: true),
+                    ResetPasswordCodeExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    BirthDate = table.Column<DateOnly>(type: "date", nullable: true),
+                    Profile = table.Column<int>(type: "integer", nullable: false),
+                    AuthenticationType = table.Column<int>(type: "integer", nullable: false),
+                    ProfilePhotoName = table.Column<string>(type: "text", nullable: true),
+                    ConfirmationCode = table.Column<string>(type: "character varying(6)", maxLength: 6, nullable: true),
+                    ConfirmationCodeExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    IsEmailConfirmed = table.Column<bool>(type: "boolean", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Users", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PackageServices",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    PackageId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    ServiceId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PackageServices", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PackageServices_Packages_PackageId",
+                        column: x => x.PackageId,
+                        principalTable: "Packages",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_PackageServices_Services_ServiceId",
+                        column: x => x.ServiceId,
+                        principalTable: "Services",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Carts",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    UserId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Carts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Carts_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Orders",
                 columns: table => new
                 {
@@ -115,6 +200,7 @@ namespace Cleansia.Infra.Database.Migrations
                     StripeSessionId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     SelectedPackageId = table.Column<string>(type: "character varying(26)", nullable: true),
                     CurrencyId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    UserId = table.Column<string>(type: "character varying(26)", nullable: true),
                     Extras = table.Column<string>(type: "text", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
@@ -138,28 +224,62 @@ namespace Cleansia.Infra.Database.Migrations
                         column: x => x.SelectedPackageId,
                         principalTable: "Packages",
                         principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Orders_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "PackageServices",
+                name: "CartPackageItems",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    Quantity = table.Column<int>(type: "integer", nullable: false),
+                    CartId = table.Column<string>(type: "character varying(26)", nullable: false),
                     PackageId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CartPackageItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CartPackageItems_Carts_CartId",
+                        column: x => x.CartId,
+                        principalTable: "Carts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CartPackageItems_Packages_PackageId",
+                        column: x => x.PackageId,
+                        principalTable: "Packages",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CartServiceItems",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    Quantity = table.Column<int>(type: "integer", nullable: false),
+                    CartId = table.Column<string>(type: "character varying(26)", nullable: false),
                     ServiceId = table.Column<string>(type: "character varying(26)", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PackageServices", x => x.Id);
+                    table.PrimaryKey("PK_CartServiceItems", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_PackageServices_Packages_PackageId",
-                        column: x => x.PackageId,
-                        principalTable: "Packages",
+                        name: "FK_CartServiceItems_Carts_CartId",
+                        column: x => x.CartId,
+                        principalTable: "Carts",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_PackageServices_Services_ServiceId",
+                        name: "FK_CartServiceItems_Services_ServiceId",
                         column: x => x.ServiceId,
                         principalTable: "Services",
                         principalColumn: "Id",
@@ -213,6 +333,32 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_CartPackageItems_CartId",
+                table: "CartPackageItems",
+                column: "CartId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CartPackageItems_PackageId",
+                table: "CartPackageItems",
+                column: "PackageId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Carts_UserId",
+                table: "Carts",
+                column: "UserId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CartServiceItems_CartId",
+                table: "CartServiceItems",
+                column: "CartId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CartServiceItems_ServiceId",
+                table: "CartServiceItems",
+                column: "ServiceId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Orders_CurrencyId",
                 table: "Orders",
                 column: "CurrencyId");
@@ -221,6 +367,11 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_Orders_SelectedPackageId",
                 table: "Orders",
                 column: "SelectedPackageId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Orders_UserId",
+                table: "Orders",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrderServices_OrderId",
@@ -252,6 +403,12 @@ namespace Cleansia.Infra.Database.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "CartPackageItems");
+
+            migrationBuilder.DropTable(
+                name: "CartServiceItems");
+
+            migrationBuilder.DropTable(
                 name: "Languages");
 
             migrationBuilder.DropTable(
@@ -264,6 +421,9 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "PackageServices");
 
             migrationBuilder.DropTable(
+                name: "Carts");
+
+            migrationBuilder.DropTable(
                 name: "Orders");
 
             migrationBuilder.DropTable(
@@ -274,6 +434,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "Packages");
+
+            migrationBuilder.DropTable(
+                name: "Users");
         }
     }
 }

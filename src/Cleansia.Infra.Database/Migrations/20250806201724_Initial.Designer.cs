@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20250722205632_Initial")]
+    [Migration("20250806201724_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -23,6 +23,7 @@ namespace Cleansia.Infra.Database.Migrations
                 .HasAnnotation("ProductVersion", "9.0.7")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
+            NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "citext");
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "pg_trgm");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
@@ -201,11 +202,16 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<DateTimeOffset?>("UpdatedOn")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("UserId")
+                        .HasColumnType("character varying(26)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CurrencyId");
 
                     b.HasIndex("SelectedPackageId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Orders");
                 });
@@ -394,6 +400,199 @@ namespace Cleansia.Infra.Database.Migrations
                     b.ToTable("Services");
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.Users.Cart", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeactivatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("DeactivatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("character varying(26)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("Carts");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Users.CartPackageItem", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("CartId")
+                        .IsRequired()
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("PackageId")
+                        .IsRequired()
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CartId");
+
+                    b.HasIndex("PackageId");
+
+                    b.ToTable("CartPackageItems");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Users.CartServiceItem", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("CartId")
+                        .IsRequired()
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ServiceId")
+                        .IsRequired()
+                        .HasColumnType("character varying(26)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CartId");
+
+                    b.HasIndex("ServiceId");
+
+                    b.ToTable("CartServiceItems");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Users.User", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<int>("AuthenticationType")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly?>("BirthDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("ConfirmationCode")
+                        .HasMaxLength(6)
+                        .HasColumnType("character varying(6)");
+
+                    b.Property<DateTimeOffset?>("ConfirmationCodeExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeactivatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("DeactivatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("citext");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("citext");
+
+                    b.Property<string>("GoogleId")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsEmailConfirmed")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("citext");
+
+                    b.Property<string>("Password")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("citext");
+
+                    b.Property<int>("Profile")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ProfilePhotoName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ResetPasswordCode")
+                        .HasMaxLength(6)
+                        .HasColumnType("character varying(6)");
+
+                    b.Property<DateTimeOffset?>("ResetPasswordCodeExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Users");
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Orders.Order", b =>
                 {
                     b.HasOne("Cleansia.Core.Domain.Internalization.Currency", "Currency")
@@ -406,9 +605,16 @@ namespace Cleansia.Infra.Database.Migrations
                         .WithMany()
                         .HasForeignKey("SelectedPackageId");
 
+                    b.HasOne("Cleansia.Core.Domain.Users.User", "User")
+                        .WithMany("Orders")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Currency");
 
                     b.Navigation("SelectedPackage");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Orders.OrderService", b =>
@@ -460,6 +666,55 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("Service");
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.Users.Cart", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Users.User", "User")
+                        .WithOne("Cart")
+                        .HasForeignKey("Cleansia.Core.Domain.Users.Cart", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Users.CartPackageItem", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Users.Cart", "Cart")
+                        .WithMany("PackageItems")
+                        .HasForeignKey("CartId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Cleansia.Core.Domain.Packages.Package", "Package")
+                        .WithMany()
+                        .HasForeignKey("PackageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Cart");
+
+                    b.Navigation("Package");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Users.CartServiceItem", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Users.Cart", "Cart")
+                        .WithMany("ServiceItems")
+                        .HasForeignKey("CartId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Cleansia.Core.Domain.Services.Service", "Service")
+                        .WithMany()
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Cart");
+
+                    b.Navigation("Service");
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Orders.Order", b =>
                 {
                     b.Navigation("OrderStatusHistory");
@@ -477,6 +732,20 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("IncludedInOrders");
 
                     b.Navigation("Packages");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Users.Cart", b =>
+                {
+                    b.Navigation("PackageItems");
+
+                    b.Navigation("ServiceItems");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Users.User", b =>
+                {
+                    b.Navigation("Cart");
+
+                    b.Navigation("Orders");
                 });
 #pragma warning restore 612, 618
         }

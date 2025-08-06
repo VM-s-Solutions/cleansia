@@ -11,6 +11,8 @@ public static class ConfigurationExtensions
         // Add Configurations here
         services.AddSingleton<IStripeConfig, StripeConfig>();
         services.AddSingleton<ISendGridConfig, SendGridConfig>();
+        services.AddSingleton<IJwtSettings, JwtSettingsConfig>();
+        services.AddSingleton<IGoogleConfig, GoogleConfig>();
 
         return services;
     }

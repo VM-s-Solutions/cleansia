@@ -3,10 +3,10 @@ Launch Azurite: "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7
 ```
 
 ```
-Add Migration: Add-Migration Initial -Context StroytorgDbContext -Project '03 Infrastructure\Stroytorg.Infra.Database' -StartupProject '05 Web\Stroytorg.Host'
-Update Database: Update-Database -Context StroytorgDbContext -Project '03 Infrastructure\Stroytorg.Infra.Database' -StartupProject '05 Web\Stroytorg.Host'
+Add Migration: Add-Migration Initial -Context CleansiaDbContext -Project '03 Infrastructure\Cleansia.Infra.Database' -StartupProject '05 Web\Cleansia.Web'
+Update Database: Update-Database -Context CleansiaDbContext -Project '03 Infrastructure\Cleansia.Infra.Database' -StartupProject '05 Web\Cleansia.Web'
 ```
 
 ```
-Login to Docker Postgres container: psql -h localhost -p 5432 -U postgres -d Stroytorg
+Login to Docker Postgres container: psql -h localhost -p 5432 -U postgres -d Cleansia
 ```

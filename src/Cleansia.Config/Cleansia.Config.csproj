@@ -8,11 +8,12 @@
 
 	<ItemGroup>
 	  <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
-	  <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.6" />
+	  <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.7" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\Cleansia.Core.AppServices\Cleansia.Core.AppServices.csproj" />
+		<ProjectReference Include="..\Cleansia.Infra.Clients\Cleansia.Infra.Clients.csproj" />
 		<ProjectReference Include="..\Cleansia.Infra.Database\Cleansia.Infra.Database.csproj" />
 	</ItemGroup>
 

@@ -1,8 +1,12 @@
 ﻿using System.Security.Claims;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Internalization;
+using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
-using Cleansia.Infra.Database.EntityConfigurations;
+using Cleansia.Core.Domain.Services;
+using Cleansia.Core.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
@@ -34,7 +38,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
 
     public void Migrate()
     {
-        // Database.Migrate();
+        Database.Migrate();
     }
 
     public async Task<int> CommitAsync(CancellationToken cancellationToken)
@@ -85,6 +89,20 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     }
 
     // Entities
+
+    public virtual DbSet<User> Users { get; set; }
+    public virtual DbSet<Cart> Carts { get; set; }
+    public virtual DbSet<CartServiceItem> CartServiceItems { get; set; }
+    public virtual DbSet<CartPackageItem> CartPackageItems { get; set; }
+    public virtual DbSet<Service> Services { get; set; }
+    public virtual DbSet<Package> Packages { get; set; }
+    public virtual DbSet<Currency> Currencies { get; set; }
+    public virtual DbSet<Language> Languages { get; set; }
+    public virtual DbSet<PackageService> PackageServices { get; set; }
+    public virtual DbSet<Order> Orders { get; set; }
+    public virtual DbSet<OrderService> OrderServices { get; set; }
+    public virtual DbSet<OrderStatusTrack> OrderStatusHistory { get; set; }
+
 
     // Views
 }

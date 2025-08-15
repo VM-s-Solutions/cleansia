@@ -1,0 +1,18 @@
+﻿using Cleansia.Core.AppServices.Features.Services.DTOs;
+using Cleansia.Core.Domain.Services;
+
+namespace Cleansia.Core.AppServices.Mappers;
+
+public static class ServiceMappers
+{
+    public static ServiceListItem MapToDto(this Service service)
+    {
+        return new ServiceListItem(
+            Id: service.Id,
+            Name: service.Name,
+            Description: service.Description,
+            BasePrice: service.BasePrice,
+            PerRoomPrice: service.PerRoomPrice,
+            Translations: service.Translations.ToDictionary());
+    }
+}

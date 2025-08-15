@@ -20,4 +20,9 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Cleansia.Core.AppServices\Cleansia.Core.AppServices.csproj" />
+    <ProjectReference Include="..\Cleansia.TestUtilities\Cleansia.TestUtilities.csproj" />
+  </ItemGroup>
+
 </Project>

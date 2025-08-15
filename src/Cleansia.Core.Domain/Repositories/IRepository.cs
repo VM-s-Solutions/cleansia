@@ -10,9 +10,11 @@ public interface IRepository<TEntity, in TKey> : IUnitOfWork
 {
     Task<bool> ExistsAsync(TKey id, CancellationToken cancellationToken);
 
+    Task<bool> ExistWithIdsAsync(IEnumerable<string> ids, CancellationToken cancellationToken);
+
     Task<TEntity?> GetByIdAsync(TKey id, CancellationToken cancellationToken);
 
-    IQueryable<TEntity> GetByIds(TKey[] ids);
+    IQueryable<TEntity> GetByIds(IEnumerable<TKey> ids);
 
     IQueryable<TEntity> GetPaged(int offset, int limit);
 

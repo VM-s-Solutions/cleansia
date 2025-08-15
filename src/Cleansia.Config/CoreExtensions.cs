@@ -4,6 +4,8 @@ using Cleansia.Config.MediatR;
 using Cleansia.Config.Repositories;
 using Cleansia.Config.Services;
 using Cleansia.Config.Validation;
+using Cleansia.Infra.Clients.SendGrid;
+using Cleansia.Infra.Clients.Stripe;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -20,6 +22,8 @@ public static class CoreExtensions
             .AddServices()
             .AddRepositories()
             .AddDbContextBindings(configuration, env)
-            .AddConfigurationBindings();
+            .AddConfigurationBindings()
+            .AddStripe(configuration, env)
+            .AddSendGrid();
     }
 }

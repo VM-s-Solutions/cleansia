@@ -8,7 +8,8 @@
     "build:prod": "nx build cleansia.app --configuration=production",
     "test": "nx e2e cleansia.app-e2e",
     "lint": "nx lint",
-    "e2e": "nx e2e"
+    "e2e": "nx e2e",
+    "generate-client": "npx nswag run nswag.json"
   },
   "private": true,
   "dependencies": {
@@ -35,6 +36,7 @@
     "zone.js": "~0.15.0"
   },
   "devDependencies": {
+    "@angular-devkit/build-angular": "~19.2.0",
     "@angular-devkit/core": "~19.2.0",
     "@angular-devkit/schematics": "~19.2.0",
     "@angular/build": "~19.2.0",
@@ -59,7 +61,7 @@
     "@types/jest": "^29.5.12",
     "@types/node": "18.16.9",
     "@typescript-eslint/utils": "^8.29.0",
-    "angular-eslint": "^19.0.0",
+    "angular-eslint": "^19.2.0",
     "autoprefixer": "^10.4.0",
     "eslint": "^9.8.0",
     "eslint-config-prettier": "^10.0.0",

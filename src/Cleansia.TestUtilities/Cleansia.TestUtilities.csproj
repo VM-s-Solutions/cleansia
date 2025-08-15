@@ -8,10 +8,15 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.6" />
+		<PackageReference Include="Moq" Version="4.20.72" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\Cleansia.Core.Domain\Cleansia.Core.Domain.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="MockDataFactories\Packages\" />
 	</ItemGroup>
 
 </Project>

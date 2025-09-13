@@ -21,8 +21,8 @@ public class Order : Auditable
     [MaxLength(50)]
     public string CustomerPhone { get; private set; }
 
-    [MaxLength(200)]
-    public string CustomerAddress { get; private set; }
+    public string CustomerAddressId { get; private set; }
+    public Address? CustomerAddress { get; private set; }
 
     [Required]
     [MaxLength(50)]
@@ -56,6 +56,10 @@ public class Order : Auditable
     public string? UserId { get; private set; }
     public User? User { get; private set; }
 
+    public string? EmployeeId { get; private set; }
+    public Employee? Employee { get; private set; }
+
+
     public IDictionary<string, bool> _extras = new Dictionary<string, bool>();
     public IReadOnlyDictionary<string, bool> Extras => _extras.AsReadOnly();
 
@@ -65,8 +69,11 @@ public class Order : Auditable
     private ICollection<OrderStatusTrack> _orderStatusHistory = [];
     public IReadOnlyCollection<OrderStatusTrack> OrderStatusHistory => _orderStatusHistory.ToList().AsReadOnly();
 
+    private ICollection<OrderEmployee> _assignedEmployees = [];
+    public IReadOnlyCollection<OrderEmployee> AssignedEmployees => _assignedEmployees.ToList().AsReadOnly();
+
     public static Order Create(string customerName, string customerEmail, string customerPhone,
-        string customerAddress, string? selectedPackageId, int rooms, int bathrooms,
+        Address customerAddress, string? selectedPackageId, int rooms, int bathrooms,
         Dictionary<string, bool> extras, DateTime cleaningDateTime, PaymentType paymentType,
         decimal totalPrice, string currencyId, PaymentStatus paymentStatus) => new()
     {
@@ -102,6 +109,13 @@ public class Order : Auditable
     public Order UpdatePaymentStatus(PaymentStatus paymentStatus)
     {
         PaymentStatus = paymentStatus;
+
+        return this;
+    }
+
+    public Order UpdatePhone(string phone)
+    {
+        CustomerPhone = phone;
 
         return this;
     }

@@ -26,10 +26,6 @@ public class OrderEntityConfiguration : AuditableEntityConfiguration<Order, stri
             .IsRequired()
             .HasMaxLength(20);
 
-        builder.Property(o => o.CustomerAddress)
-            .IsRequired()
-            .HasMaxLength(150);
-
         builder.Property(o => o.TotalPrice)
             .IsRequired()
             .HasPrecision(18, 2);

@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Emails;
 using Cleansia.Core.Domain.Internalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Packages;
@@ -90,6 +91,9 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
 
     // Entities
 
+    public virtual DbSet<Country> Countries { get; set; }
+    public virtual DbSet<Address> Addresses { get; set; }
+    public virtual DbSet<Employee> Employees { get; set; }
     public virtual DbSet<User> Users { get; set; }
     public virtual DbSet<Cart> Carts { get; set; }
     public virtual DbSet<CartServiceItem> CartServiceItems { get; set; }
@@ -101,8 +105,9 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<PackageService> PackageServices { get; set; }
     public virtual DbSet<Order> Orders { get; set; }
     public virtual DbSet<OrderService> OrderServices { get; set; }
+    public virtual DbSet<OrderEmployee> OrderEmployees { get; set; }
     public virtual DbSet<OrderStatusTrack> OrderStatusHistory { get; set; }
-
+    public virtual DbSet<EmailTranslation> EmailTranslations { get; set; }
 
     // Views
 }

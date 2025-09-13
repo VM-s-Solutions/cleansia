@@ -4,6 +4,7 @@ using Cleansia.Config.MediatR;
 using Cleansia.Config.Repositories;
 using Cleansia.Config.Services;
 using Cleansia.Config.Validation;
+using Cleansia.Infra.Azure.Storage.Blobs;
 using Cleansia.Infra.Clients.SendGrid;
 using Cleansia.Infra.Clients.Stripe;
 using Microsoft.Extensions.Configuration;
@@ -24,6 +25,7 @@ public static class CoreExtensions
             .AddDbContextBindings(configuration, env)
             .AddConfigurationBindings()
             .AddStripe(configuration, env)
-            .AddSendGrid();
+            .AddSendGrid()
+            .AddAzureBlobStorage(configuration, env);
     }
 }

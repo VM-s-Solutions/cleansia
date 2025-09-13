@@ -18,6 +18,26 @@ public static class UserMappers
                 Profile: user.Profile.MapToCode(),
                 AuthenticationType: user.AuthenticationType.MapToCode(),
                 IsEmailConfirmed: user.IsEmailConfirmed,
-                BirthDate: user.BirthDate);
+                BirthDate: user.BirthDate,
+                ProfilePhoto: user.ProfilePhotoName?.MapToDto());
+    }
+
+    public static UserItem? MapToDetailDto(this User? user)
+    {
+        return user is null
+            ? null
+            : new UserItem(
+                Email: user.Email,
+                FirstName: user.FirstName,
+                LastName: user.LastName,
+                PhoneNumber: user.PhoneNumber,
+                Profile: user.Profile.MapToCode(),
+                AuthenticationType: user.AuthenticationType.MapToCode(),
+                IsEmailConfirmed: user.IsEmailConfirmed,
+                BirthDate: user.BirthDate,
+                Orders: [], // TODO: user.Orders.Select(x => x.MapToDto())!
+                ProfilePhoto: user.ProfilePhotoName?.MapToDto(),
+                Id: user.Id,
+                IsActive: user.IsActive);
     }
 }

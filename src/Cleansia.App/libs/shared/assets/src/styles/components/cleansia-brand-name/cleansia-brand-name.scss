@@ -1,0 +1,15 @@
+@use '../../common/variables.scss';
+
+.cleansia-brand-name {
+  a {
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    user-select: none;
+    gap: 0.25rem;
+
+    h2 {
+      color: variables.$cleansia-primary;
+    }
+  }
+}

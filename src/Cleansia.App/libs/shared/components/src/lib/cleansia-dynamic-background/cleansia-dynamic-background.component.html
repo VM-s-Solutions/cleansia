@@ -1,0 +1,8 @@
+@if (showIcons()) { @for (icon of icons; track icon) {
+<i
+  class="fa-solid {{ icon }} cleansia-dynamic-background__icons__{{
+    icon | lowercase | replace : '-' : ''
+  }}"
+></i>
+} }
+<ng-content></ng-content>

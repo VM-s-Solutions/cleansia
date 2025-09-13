@@ -29,7 +29,8 @@ public class RegisterTests(PostgresContainerFixture fixture) : BaseIntegrationTe
                     Email: Constants.TestUserSession.TestUserEmail,
                     Password: Constants.TestUserSession.TestUserPassword,
                     FirstName: Constants.TestUserSession.TestFirstName,
-                    LastName: Constants.TestUserSession.TestLastName
+                    LastName: Constants.TestUserSession.TestLastName,
+                    "cz"
                 );
                 return await mediator.Send(command);
             },

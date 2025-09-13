@@ -1,0 +1,60 @@
+<cleansia-dynamic-background>
+  <div class="cleansia-login">
+    <form class="cleansia-login__login-card" [formGroup]="facade.formGroup">
+      <div class="cleansia-login__brand-name-container">
+        <cleansia-brand-name />
+      </div>
+      <div class="cleansia-login__header">
+        <cleansia-title [title]="'global.actions.login' | translate" />
+      </div>
+      <div class="cleansia-login__email">
+        <cleansia-text-input
+          [label]="'pages.login.email' | translate"
+          [floatVariant]="'on'"
+          formControlName="email"
+          dataType="email"
+          [showErrors]="true"
+        />
+      </div>
+      <div class="cleansia-login__password">
+        <cleansia-text-input
+          [label]="'pages.login.password' | translate"
+          [floatVariant]="'on'"
+          formControlName="password"
+          dataType="password"
+          [required]="true"
+          [showErrors]="true"
+        />
+      </div>
+      <div class="cleansia-login__password-actions">
+        <div class="cleansia-login__remember-me">
+          <cleansia-checkbox
+            [title]="'global.user.remember_me' | translate"
+            formControlName="rememberMe"
+          />
+          <span>{{ 'pages.login.remember_me' | translate }}</span>
+        </div>
+        <a [routerLink]="'/' + routes.FORGOT_PASSWORD">
+          <small>{{ 'pages.login.forgot_password' | translate }}</small>
+        </a>
+      </div>
+      <div class="cleansia-login__user-actions">
+        <cleansia-button
+          [buttonType]="'submit'"
+          [style]="'raised-button'"
+          [title]="'global.actions.login' | translate"
+          (clickFn)="facade.login()"
+          [loading]="false"
+        />
+        <div>
+          <span tabindex="-1">
+            {{ 'pages.login.dont_have_account' | translate }}
+            <a [routerLink]="'/' + routes.REGISTER">
+              {{ 'global.actions.register' | translate }}
+            </a>
+          </span>
+        </div>
+      </div>
+    </form>
+  </div>
+</cleansia-dynamic-background>

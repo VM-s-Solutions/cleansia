@@ -13,9 +13,10 @@ public class ResendConfirmationEmailValidatorTests
     public async Task When_Email_Is_Null_Then_Validation_Fails_With_Required_Error()
     {
         // Arrange
-        var mockRepo = new Mock<IUserRepository>();
-        var validator = new ResendConfirmationEmail.Validator(mockRepo.Object);
-        var command = new ResendConfirmationEmail.Command(null);
+        var mockUserRepo = new Mock<IUserRepository>();
+        var mockLangRepo = new Mock<ILanguageRepository>();
+        var validator = new ResendConfirmationEmail.Validator(mockUserRepo.Object, mockLangRepo.Object);
+        var command = new ResendConfirmationEmail.Command(null, "CZ");
 
         // Act
         var result = await validator.ValidateAsync(command);
@@ -33,9 +34,10 @@ public class ResendConfirmationEmailValidatorTests
     public async Task When_Email_Is_Empty_Then_Validation_Fails_With_Required_Error()
     {
         // Arrange
-        var mockRepo = new Mock<IUserRepository>();
-        var validator = new ResendConfirmationEmail.Validator(mockRepo.Object);
-        var command = new ResendConfirmationEmail.Command("");
+        var mockUserRepo = new Mock<IUserRepository>();
+        var mockLangRepo = new Mock<ILanguageRepository>();
+        var validator = new ResendConfirmationEmail.Validator(mockUserRepo.Object, mockLangRepo.Object);
+        var command = new ResendConfirmationEmail.Command("", "CZ");
 
         // Act
         var result = await validator.ValidateAsync(command);
@@ -54,10 +56,11 @@ public class ResendConfirmationEmailValidatorTests
     {
         // Arrange
         var email = "test@example.com";
-        var mockRepo = new Mock<IUserRepository>();
-        mockRepo.Setup(r => r.ExistsWithEmailAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(false);
-        var validator = new ResendConfirmationEmail.Validator(mockRepo.Object);
-        var command = new ResendConfirmationEmail.Command(email);
+        var mockUserRepo = new Mock<IUserRepository>();
+        var mockLangRepo = new Mock<ILanguageRepository>();
+        mockUserRepo.Setup(r => r.ExistsWithEmailAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        var validator = new ResendConfirmationEmail.Validator(mockUserRepo.Object, mockLangRepo.Object);
+        var command = new ResendConfirmationEmail.Command(email, "CZ");
 
         // Act
         var result = await validator.ValidateAsync(command);
@@ -76,11 +79,12 @@ public class ResendConfirmationEmailValidatorTests
     {
         // Arrange
         var email = "test@example.com";
-        var mockRepo = new Mock<IUserRepository>();
-        mockRepo.Setup(r => r.ExistsWithEmailAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        mockRepo.Setup(r => r.GetByEmailAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(UserMockFactory.Generate());
-        var validator = new ResendConfirmationEmail.Validator(mockRepo.Object);
-        var command = new ResendConfirmationEmail.Command(email);
+        var mockUserRepo = new Mock<IUserRepository>();
+        var mockLangRepo = new Mock<ILanguageRepository>();
+        mockUserRepo.Setup(r => r.ExistsWithEmailAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        mockUserRepo.Setup(r => r.GetByEmailAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(UserMockFactory.Generate());
+        var validator = new ResendConfirmationEmail.Validator(mockUserRepo.Object, mockLangRepo.Object);
+        var command = new ResendConfirmationEmail.Command(email, "CZ");
 
         // Act
         var result = await validator.ValidateAsync(command);
@@ -99,15 +103,16 @@ public class ResendConfirmationEmailValidatorTests
     {
         // Arrange
         var email = "test@example.com";
-        var mockRepo = new Mock<IUserRepository>();
-        mockRepo.Setup(r => r.ExistsWithEmailAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        mockRepo.Setup(r => r.GetByEmailAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(User.CreateWithPassword(
+        var mockUserRepo = new Mock<IUserRepository>();
+        var mockLangRepo = new Mock<ILanguageRepository>();
+        mockUserRepo.Setup(r => r.ExistsWithEmailAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        mockUserRepo.Setup(r => r.GetByEmailAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(User.CreateWithPassword(
             TestUtilities.Constants.TestUserSession.TestUserEmail,
             TestUtilities.Constants.TestUserSession.TestUserPassword,
             TestUtilities.Constants.TestUserSession.TestFirstName,
             TestUtilities.Constants.TestUserSession.TestLastName));
-        var validator = new ResendConfirmationEmail.Validator(mockRepo.Object);
-        var command = new ResendConfirmationEmail.Command(email);
+        var validator = new ResendConfirmationEmail.Validator(mockUserRepo.Object, mockLangRepo.Object);
+        var command = new ResendConfirmationEmail.Command(email, "CZ");
 
         // Act
         var result = await validator.ValidateAsync(command);

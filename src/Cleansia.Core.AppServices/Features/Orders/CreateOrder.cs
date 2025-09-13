@@ -1,10 +1,12 @@
 ﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Addresses.DTOs;
 using Cleansia.Core.Clients.Abstractions.SendGrid;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -93,7 +95,7 @@ public class CreateOrder
         string CustomerName,
         string CustomerEmail,
         string CustomerPhone,
-        string CustomerAddress,
+        AddressDto CustomerAddress,
         string? SelectedPackageId,
         IEnumerable<string> SelectedServiceIds,
         int Rooms,
@@ -112,17 +114,26 @@ public class CreateOrder
     public class Handler(
         ISendGridConfig sendGridConfig,
         IOrderRepository orderRepository,
+        IAddressRepository addressRepository,
         IServiceRepository serviceRepository,
         ISendGridClientFactory clientFactory,
         IStripeClientFactory stripeClientFactory) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
+            var address = await addressRepository.GetAddressAsync(command.CustomerAddress.Street,
+                command.CustomerAddress.City, command.CustomerAddress.ZipCode, command.CustomerAddress.CountryId,
+                cancellationToken) ?? Address.Create(
+                command.CustomerAddress.Street,
+                command.CustomerAddress.City,
+                command.CustomerAddress.ZipCode,
+                command.CustomerAddress.CountryId);
+
             var order = Order.Create(
                 command.CustomerName,
                 command.CustomerEmail,
                 command.CustomerPhone,
-                command.CustomerAddress,
+                address,
                 command.SelectedPackageId,
                 command.Rooms,
                 command.Bathrooms,

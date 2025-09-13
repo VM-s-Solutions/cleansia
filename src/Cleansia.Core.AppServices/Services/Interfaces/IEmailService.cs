@@ -1,4 +1,5 @@
-﻿using Cleansia.Core.Domain.Orders;
+﻿using Cleansia.Core.Domain.Emails;
+using Cleansia.Core.Domain.Orders;
 
 namespace Cleansia.Core.AppServices.Services.Interfaces;
 
@@ -8,5 +9,5 @@ public interface IEmailService
 
     Task<string> SendOrderReceiptEmailAsync(string email, Order order, CancellationToken ct = default);
 
-    Task<string> SendEmailConfirmationAsync(string email, string userName, string verificationCode, CancellationToken ct = default);
+    Task<string> SendEmailConfirmationAsync(string email, string userName, string verificationCode, EmailTranslation emailTranslation, CancellationToken ct = default);
 }

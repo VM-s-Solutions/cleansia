@@ -13,6 +13,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\Cleansia.Core.AppServices\Cleansia.Core.AppServices.csproj" />
+		<ProjectReference Include="..\Cleansia.Infra.Azure.Storage.Blobs\Cleansia.Infra.Azure.Storage.Blobs.csproj" />
 		<ProjectReference Include="..\Cleansia.Infra.Clients\Cleansia.Infra.Clients.csproj" />
 		<ProjectReference Include="..\Cleansia.Infra.Database\Cleansia.Infra.Database.csproj" />
 	</ItemGroup>

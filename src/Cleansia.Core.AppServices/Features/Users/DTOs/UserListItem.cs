@@ -1,4 +1,6 @@
-﻿using Cleansia.Core.AppServices.Shared.DTOs.Enums;
+﻿#nullable enable
+using Cleansia.Core.AppServices.Shared.DTOs.Enums;
+using Cleansia.Core.AppServices.Shared.DTOs.Files;
 
 namespace Cleansia.Core.AppServices.Features.Users.DTOs;
 
@@ -11,4 +13,5 @@ public record UserListItem(
     Code Profile,
     Code AuthenticationType,
     bool IsEmailConfirmed,
-    DateOnly? BirthDate);
+    DateOnly? BirthDate,
+    BlobFile? ProfilePhoto);

@@ -1,0 +1,84 @@
+{
+  "name": "Cleansia",
+  "pages": {
+    "login": {
+      "email": "E-mail",
+      "password": "Heslo",
+      "remember_me": "Zapamatovat si mě",
+      "forgot_password": "Zapomněli jste heslo?",
+      "dont_have_account": "Nemáte účet?"
+    },
+    "register": {
+      "first_name": "Jméno",
+      "last_name": "Příjmení",
+      "email": "E-mail",
+      "password": "Heslo",
+      "confirm_password": "Potvrdit heslo",
+      "phone": "Telefonní číslo",
+      "street": "Ulice",
+      "city": "Město",
+      "zip_code": "PSČ",
+      "country": "Země",
+      "ico": "IČO",
+      "already_have_account": "Už máte účet?",
+      "terms_and_conditions": "Souhlasím s <a href='/terms-and-conditions' target='_blank'>Obchodními podmínkami</a> a <a href='/privacy-policy' target='_blank'>Zásadami ochrany osobních údajů</a>.",
+      "have_account": "Už máte účet?",
+      "remember_me": "Zapamatovat si mě",
+      "validation": {
+        "password_lowercase": "Heslo musí obsahovat alespoň jedno malé písmeno",
+        "password_uppercase": "Heslo musí obsahovat alespoň jedno velké písmeno",
+        "password_number": "Heslo musí obsahovat alespoň jedno číslo",
+        "password_min_length": "Heslo musí mít alespoň 6 znaků",
+        "passwords_match": "Hesla musí být stejná"
+      }
+    },
+    "email_confirm": {
+      "title": "Potvrzení e-mailu",
+      "description": "Prosím, zkontrolujte svůj e-mail a zadejte kód pro potvrzení.",
+      "resend_email": "Odeslat e-mail znovu",
+      "verify_email": "Potvrdit",
+      "resend_code": "Odeslat kód",
+      "email_sent": "E-mail byl úspěšně odeslán",
+      "verify_code": "Potvrdit kód",
+      "code_cooldown": "Kód potvrzení byl odeslán. Prosím, počkejte {{ cooldown }} sekund, než požádáte o nový kód."
+    }
+  },
+  "global": {
+    "actions": {
+      "add_to_cart": "Přidat do košíku",
+      "remove_from_cart": "Odebrat z košíku",
+      "remove_from_favorites": "Odebrat z oblíbených",
+      "add_to_favorites": "Přidat do oblíbených",
+      "view_details": "Zobrazit podrobnosti",
+      "close": "Zavřít",
+      "remove": "Odebrat",
+      "checkout": "Dokončit objednávku",
+      "sort_by": "Seřadit podle",
+      "login": "Přihlásit se",
+      "register": "Registrovat se",
+      "reset_password": "Obnovit heslo",
+      "go_back": "Vrátit se zpět",
+      "go_home": "Přejít na hlavní stránku",
+      "stay_anonymous": "Zůstat anonymní",
+      "reset": "Resetovat",
+      "reset_filter": "Resetovat filtr",
+      "save": "Uložit",
+      "back": "Zpět",
+      "cancel": "Zrušit",
+      "details": "Podrobnosti",
+      "load_more": "Načíst další"
+    }
+  },
+  "validation": {
+    "common": {
+      "not_all_fields_filled": "Ne všechna pole jsou správně vyplněna",
+      "required": "Toto pole je povinné",
+      "email": "Pole musí obsahovat platnou e-mailovou adresu",
+      "birth_date": "Datum narození je neplatné. Uživatel musí být mladší než {{ yearsRange }} let",
+      "min_length": "Pole musí obsahovat alespoň {{ minLength }} znaků",
+      "max_length": "Pole může obsahovat maximálně {{ maxLength }} znaků",
+      "invalid_quantity": "Množství produktu {{ name }} je zadáno nesprávně",
+      "pattern": "Pole neodpovídá zadanému vzoru"
+    }
+  }
+}

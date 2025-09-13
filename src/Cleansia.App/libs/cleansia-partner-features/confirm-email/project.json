@@ -1,0 +1,21 @@
+{
+  "name": "confirm-email",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/cleansia-partner-features/confirm-email/src",
+  "prefix": "cleansia-partner",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/cleansia-partner-features/confirm-email/jest.config.ts",
+        "tsConfig": "libs/cleansia-partner-features/confirm-email/tsconfig.spec.json"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

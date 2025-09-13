@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Cleansia.Core.Blobs.Abstractions\Cleansia.Core.Blobs.Abstractions.csproj" />
     <ProjectReference Include="..\Cleansia.Core.Clients.Abstractions\Cleansia.Core.Clients.Abstractions.csproj" />
     <ProjectReference Include="..\Cleansia.Core.Domain\Cleansia.Core.Domain.csproj" />
     <ProjectReference Include="..\Cleansia.Infra.Common\Cleansia.Infra.Common.csproj" />
@@ -24,6 +25,7 @@
     <Folder Include="Features\Codes\" />
     <Folder Include="Features\Currencies\DTOs\" />
     <Folder Include="Features\Orders\DTOs\" />
+    <Folder Include="Shared\DTOs\Files\" />
   </ItemGroup>
 
 </Project>

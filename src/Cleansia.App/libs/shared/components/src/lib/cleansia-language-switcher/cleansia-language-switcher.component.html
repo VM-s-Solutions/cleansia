@@ -1,0 +1,29 @@
+<div class="cleansia-language-switcher">
+  <p-dropdown
+    [options]="languages"
+    [(ngModel)]="selectedLanguage"
+    optionLabel="short"
+    optionValue="value"
+    (onChange)="changeLanguage($event.value)"
+  >
+    <ng-template let-lang pTemplate="item">
+      <span class="cleansia-language-switcher__language-item">
+        <span
+          [ngClass]="['fi', 'fi-' + lang.icon]"
+          class="cleansia-language-switcher__flag"
+        ></span>
+        {{ lang.short }}
+      </span>
+    </ng-template>
+
+    <ng-template let-lang pTemplate="selectedItem">
+      <span class="cleansia-language-switcher__language-item">
+        <span
+          [ngClass]="['fi', 'fi-' + lang.icon]"
+          class="cleansia-language-switcher__flag"
+        ></span>
+        {{ lang.short }}
+      </span>
+    </ng-template>
+  </p-dropdown>
+</div>

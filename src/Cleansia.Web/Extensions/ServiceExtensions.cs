@@ -9,6 +9,8 @@ using Cleansia.Web.Middlewares;
 using Cleansia.Web.SwaggerSchemaFilters;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Cleansia.Core.AppServices.Authentication;
+using Cleansia.Core.Domain.Enums;
 
 namespace Cleansia.Web.Extensions;
 
@@ -21,7 +23,8 @@ public static class ServiceExtensions
             .AddCoreBindings(configuration, env)
             .AddMiddlewares()
             .AddSwagger()
-            .AddJwt(configuration);
+            .AddJwt(configuration)
+            .AddUserAuthorization();
     }
 
     public static void MigrateDatabase(this IApplicationBuilder app, IWebHostEnvironment environment)
@@ -111,6 +114,48 @@ public static class ServiceExtensions
                 .Build())
             .AddPolicy("AdminOnly", policy => policy
                 .RequireRole(UserRole.Admin)); // Define a named policy for clarity
+
+        return services;
+    }
+
+    public static IServiceCollection AddUserAuthorization(this IServiceCollection services)
+    {
+        services.AddAuthorizationBuilder()
+            // 1. Authenticated users
+            .AddPolicy(PhysicalPolicy.Authenticated,
+                p => p.RequireAuthenticatedUser())
+
+            // 2. Employee or Administrator
+            .AddPolicy(PhysicalPolicy.EmployeeOrAdmin,
+                p => p.RequireRole(
+                    UserProfile.Employee.ToString(),
+                    UserProfile.Administrator.ToString()))
+
+            // 3. Administrator only
+            .AddPolicy(PhysicalPolicy.AdminOnly,
+                p => p.RequireRole(UserProfile.Administrator.ToString()))
+
+            // 4. Owner OR Employee/Admin
+            .AddPolicy(PhysicalPolicy.OwnerOrElevated, p =>
+                p.RequireAssertion(ctx =>
+                {
+                    var user = ctx.User;
+
+                    // fast-path: elevated role
+                    if (user.IsInRole(UserProfile.Administrator.ToString()) ||
+                        user.IsInRole(UserProfile.Employee.ToString()))
+                        return true;
+
+                    // owner check: compare sub claim with route id
+                    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    if (ctx.Resource is HttpContext http &&
+                        http.Request.RouteValues.TryGetValue("id", out var routeId))
+                    {
+                        return routeId?.ToString() == sub;
+                    }
+
+                    return false;
+                }));
 
         return services;
     }

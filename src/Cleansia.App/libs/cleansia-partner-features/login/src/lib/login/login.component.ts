@@ -6,6 +6,7 @@ import {
   CleansiaButtonComponent,
   CleansiaCheckboxComponent,
   CleansiaDynamicBackgroundComponent,
+  CleansiaLanguageSwitcherComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
@@ -26,6 +27,7 @@ import { LoginFacade } from './login.facade';
     CleansiaCheckboxComponent,
     CleansiaBrandNameComponent,
     CleansiaTextInputComponent,
+    CleansiaLanguageSwitcherComponent,
     CleansiaDynamicBackgroundComponent,
   ],
   providers: [LoginFacade],

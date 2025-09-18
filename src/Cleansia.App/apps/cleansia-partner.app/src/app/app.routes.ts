@@ -19,4 +19,23 @@ export const appRoutes: Route[] = [
         (m) => m.confirmEmailRoutes
       ),
   },
+  {
+    path: CleansiaPartnerRoute.PROFILE,
+    loadChildren: () =>
+      import('@cleansia-partner/profile').then((m) => m.profileRoutes),
+  },
+  {
+    path: CleansiaPartnerRoute.ORDERS,
+    loadChildren: () =>
+      import('@cleansia-partner/orders').then((m) => m.ordersRoutes),
+  },
+  {
+    path: CleansiaPartnerRoute.HOME,
+    redirectTo: CleansiaPartnerRoute.DASHBOARD,
+    pathMatch: 'full',
+  },
+  // {
+  //   path: '**',
+  //   redirectTo: CleansiaPartnerRoute.LOGIN,
+  // },
 ];

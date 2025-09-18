@@ -1,0 +1,148 @@
+{
+  "name": "Cleansia",
+  "pages": {
+    "login": {
+      "email": "Email",
+      "password": "Password",
+      "remember_me": "Remember me",
+      "forgot_password": "Forgot your password?",
+      "dont_have_account": "Don't have an account?"
+    },
+    "register": {
+      "first_name": "First Name",
+      "last_name": "Last Name",
+      "email": "Email",
+      "password": "Password",
+      "confirm_password": "Confirm Password",
+      "phone": "Phone Number",
+      "street": "Street",
+      "city": "City",
+      "zip_code": "Zip Code",
+      "country": "Country",
+      "ico": "Business ID",
+      "already_have_account": "Already have an account?",
+      "terms_and_conditions": "I agree to the <a href='/terms-and-conditions' target='_blank'>Terms and Conditions</a> and <a href='/privacy-policy' target='_blank'>Privacy Policy</a>.",
+      "have_account": "Already have an account?",
+      "remember_me": "Remember me",
+      "validation": {
+        "password_lowercase": "Password must contain at least one lowercase letter",
+        "password_uppercase": "Password must contain at least one uppercase letter",
+        "password_number": "Password must contain at least one number",
+        "password_min_length": "Password must be at least 6 characters long",
+        "passwords_match": "Passwords must match"
+      }
+    },
+    "email_confirm": {
+      "title": "Email Confirmation",
+      "description": "Please check your email and enter the confirmation code.",
+      "resend_email": "Resend email",
+      "verify_email": "Verify",
+      "resend_code": "Resend code",
+      "email_sent": "Email sent successfully",
+      "verify_code": "Verify code",
+      "code_cooldown": "Confirmation code has been sent. Please wait {{ cooldown }} seconds before requesting a new code."
+    },
+    "profile": {
+      "title": "Employee Onboarding Profile",
+      "description": "Please fill in all required information and upload the necessary documents to complete the onboarding process.",
+      "personal_info": "Personal Information",
+      "full_name": "Full Name",
+      "date_of_birth": "Date of Birth",
+      "street": "Street Address",
+      "city": "City",
+      "zip_code": "Zip Code",
+      "country": "Country",
+      "phone": "Phone Number",
+      "email": "Email",
+      "national_id": "National ID / Passport Number",
+      "tax_id": "Tax ID (if available)",
+      "bank_details": "Bank Details for Payroll",
+      "iban": "IBAN",
+      "emergency_contact": "Emergency Contact",
+      "emergency_name": "Name",
+      "emergency_phone": "Phone",
+      "documents": "Upload Required Documents",
+      "upload_requirements": "Upload: Photos, CV, Educational Certificates, Criminal Record Check (if required), Work Permit (for non-EU citizens), Signed Contract/NDA",
+      "consent": "Consent",
+      "consent_text": "I agree to the processing of my personal data in accordance with GDPR and Czech labor laws.",
+      "submit": "Submit Onboarding"
+    },
+    "orders": {
+      "title": "Order Management & Time Tracking",
+      "description": "Manage your active orders and track your working time.",
+      "active_orders": "Active Orders",
+      "time_logs": "Time Logs",
+      "order_id": "Order ID",
+      "title": "Title",
+      "description": "Description",
+      "due_date": "Due Date",
+      "status": "Status",
+      "actions": "Actions",
+      "date": "Date",
+      "start_time": "Start Time",
+      "end_time": "End Time",
+      "total_hours": "Total Hours",
+      "notes": "Notes",
+      "log_time": "Log Time",
+      "edit": "Edit",
+      "delete": "Delete",
+      "save_log": "Save Log",
+      "cancel": "Cancel",
+      "submit_report": "Submit Weekly Report",
+      "no_orders": "No orders to display",
+      "no_logs": "No time logs to display"
+    }
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "orders": "Orders",
+    "logout": "Logout"
+  },
+  "global": {
+    "no_data": "No data to display",
+    "loading": "Loading...",
+    "actions": {
+      "actions": "Actions",
+      "add_to_cart": "Add to Cart",
+      "remove_from_cart": "Remove from Cart",
+      "remove_from_favorites": "Remove from Favorites",
+      "add_to_favorites": "Add to Favorites",
+      "view_details": "View Details",
+      "close": "Close",
+      "remove": "Remove",
+      "checkout": "Checkout",
+      "sort_by": "Sort by",
+      "login": "Login",
+      "register": "Register",
+      "reset_password": "Reset Password",
+      "go_back": "Go Back",
+      "go_home": "Go Home",
+      "stay_anonymous": "Stay Anonymous",
+      "reset": "Reset",
+      "reset_filter": "Reset Filter",
+      "save": "Save",
+      "back": "Back",
+      "cancel": "Cancel",
+      "details": "Details",
+      "load_more": "Load More"
+    },
+    "status": {
+      "Pending": "Pending",
+      "In Progress": "In Progress",
+      "Completed": "Completed"
+    }
+  },
+  "validation": {
+    "common": {
+      "not_all_fields_filled": "Not all fields are properly filled",
+      "required": "This field is required",
+      "email": "Field must contain a valid email address",
+      "birth_date": "Birth date is invalid. User must be younger than {{ yearsRange }} years",
+      "min_length": "Field must contain at least {{ minLength }} characters",
+      "max_length": "Field can contain a maximum of {{ maxLength }} characters",
+      "invalid_quantity": "Quantity for product {{ name }} is entered incorrectly",
+      "pattern": "Field does not match the required pattern"
+    }
+  }
+}

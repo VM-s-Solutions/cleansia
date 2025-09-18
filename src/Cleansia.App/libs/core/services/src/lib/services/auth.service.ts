@@ -35,7 +35,9 @@ export class AuthService {
   readonly isLoggedIn$ = new BehaviorSubject<boolean>(false);
   readonly isLoggedInAction$: Observable<boolean> = this.isLoggedIn$.pipe(
     map((isLoggedIn: boolean) => {
-      this.logout();
+      if (!isLoggedIn) {
+        this.logout();
+      }
       return isLoggedIn;
     })
   );

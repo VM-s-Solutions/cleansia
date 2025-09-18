@@ -1,0 +1,164 @@
+// Profile Page Styles
+.cleansia-profile {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+  max-width: 100vw;
+  overflow-x: hidden;
+  position: relative;
+
+  &__form-card {
+    background: var(--cleansia-white);
+    border-radius: 12px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 1200px;
+
+    @media (max-width: 768px) {
+      padding: 1rem;
+      margin: 0;
+    }
+  }
+
+  &__header {
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+
+  &__description {
+    color: var(--cleansia-text-secondary);
+    font-size: 1rem;
+    margin-top: 0.5rem;
+    line-height: 1.5;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
+    max-width: 100%;
+
+    @media (max-width: 968px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: 640px) {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+
+  // Specific layout adjustments
+  &__address-row {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.25rem;
+    width: 100%;
+
+    @media (max-width: 640px) {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+
+  &__contact-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    width: 100%;
+
+    @media (max-width: 640px) {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+
+  &__field {
+    max-width: 100%;
+
+    &--full {
+      grid-column: 1 / -1;
+    }
+
+    &--half {
+      width: 100%;
+    }
+  }
+
+  &__label {
+    display: block;
+    font-weight: 500;
+    color: var(--cleansia-text-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  &__upload {
+    margin-top: 1rem;
+
+    &-info {
+      margin-top: 1rem;
+      font-size: 0.875rem;
+      color: var(--cleansia-text-secondary);
+      line-height: 1.4;
+    }
+  }
+
+  &__consent {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin: 1rem 0;
+    padding: 0.75rem;
+    background: var(--cleansia-primary-50);
+    border-radius: 8px;
+    border-left: 4px solid var(--cleansia-primary-500);
+
+    &-text {
+      font-size: 0.875rem;
+      line-height: 1.5;
+      color: var(--cleansia-text-primary);
+    }
+  }
+
+  &__actions {
+    text-align: center;
+    margin-top: 1rem;
+  }
+}
+
+// Profile host styles
+cleansia-partner-profile {
+  display: block;
+  background: var(--cleansia-primary-0);
+  min-height: 100vh;
+
+  // Section spacing
+  cleansia-section {
+    margin-bottom: 1rem;
+
+    &:last-of-type {
+      margin-bottom: 0.75rem;
+    }
+  }
+
+  // Calendar styling
+  ::ng-deep {
+    .p-calendar {
+      width: 100%;
+
+      .p-inputtext {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid var(--cleansia-border-color);
+        border-radius: 6px;
+        font-size: 1rem;
+
+        &:focus {
+          border-color: var(--cleansia-primary-500);
+          box-shadow: 0 0 0 2px rgba(var(--cleansia-primary-rgb), 0.2);
+        }
+      }
+    }
+  }
+}

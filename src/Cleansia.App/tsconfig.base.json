@@ -21,10 +21,15 @@
       "@cleansia-partner/login": [
         "libs/cleansia-partner-features/login/src/index.ts"
       ],
+      "@cleansia-partner/profile": [
+        "libs/cleansia-partner-features/profile/src/index.ts"
+      ],
       "@cleansia-partner/register": [
         "libs/cleansia-partner-features/register/src/index.ts"
       ],
-      "@cleansia/types": ["libs/shared/types/src/index.ts"],
+      "@cleansia-partner/orders": [
+        "libs/cleansia-partner-features/orders/src/index.ts"
+      ],
       "@cleansia/assets": ["libs/shared/assets/src/index.ts"],
       "@cleansia/cleansia": ["libs/cleansia/src/index.ts"],
       "@cleansia/cleansia-services": ["libs/cleansia-services/src/index.ts"],
@@ -34,6 +39,7 @@
       "@cleansia/pipes": ["libs/shared/pipes/src/index.ts"],
       "@cleansia/services": ["libs/core/services/src/index.ts"],
       "@cleansia/stores": ["libs/data-access/stores/src/index.ts"],
+      "@cleansia/types": ["libs/shared/types/src/index.ts"],
       "@cleansia/utils": ["libs/shared/utils/src/index.ts"]
     }
   },

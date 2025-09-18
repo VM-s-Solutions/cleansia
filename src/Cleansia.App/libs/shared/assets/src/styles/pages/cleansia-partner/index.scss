@@ -1,3 +1,5 @@
 @use './cleansia-login' as login;
 @use './cleansia-register' as register;
 @use './cleansia-confirm-email' as confirm-email;
+@use './cleansia-orders' as orders;
+@use './cleansia-profile' as profile;

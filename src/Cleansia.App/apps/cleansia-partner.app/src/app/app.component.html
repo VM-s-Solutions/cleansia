@@ -1,1 +1,11 @@
-<router-outlet></router-outlet>
+<div class="app-layout" [attr.data-sidebar-collapsed]="sidebarCollapsed()">
+  @if (!isLoggedIn) {
+  <cleansia-sidebar-menu
+    [menuItems]="sidebarMenuItems"
+    (collapsedChange)="onSidebarCollapsedChange($event)"
+  />
+  }
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

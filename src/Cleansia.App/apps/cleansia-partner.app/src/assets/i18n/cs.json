@@ -41,10 +41,67 @@
       "email_sent": "E-mail byl úspěšně odeslán",
       "verify_code": "Potvrdit kód",
       "code_cooldown": "Kód potvrzení byl odeslán. Prosím, počkejte {{ cooldown }} sekund, než požádáte o nový kód."
+    },
+    "profile": {
+      "title": "Onboarding profil zaměstnance",
+      "description": "Prosím, vyplňte všechny požadované informace a nahrajte potřebné dokumenty pro dokončení procesu onboardingu.",
+      "personal_info": "Osobní údaje",
+      "full_name": "Celé jméno",
+      "date_of_birth": "Datum narození",
+      "street": "Ulice a číslo popisné",
+      "city": "Město",
+      "zip_code": "PSČ",
+      "country": "Země",
+      "phone": "Telefonní číslo",
+      "email": "E-mail",
+      "national_id": "Číslo občanského průkazu / Pasu",
+      "tax_id": "DIČ (pokud je k dispozici)",
+      "bank_details": "Bankovní údaje pro výplatu",
+      "iban": "IBAN",
+      "emergency_contact": "Kontakt v nouzi",
+      "emergency_name": "Jméno",
+      "emergency_phone": "Telefon",
+      "documents": "Nahrát požadované dokumenty",
+      "upload_requirements": "Nahrajte: Fotografie, CV, Vzdělávací certifikáty, Výpis z trestního rejstříku (pokud je potřeba), Pracovní povolení (pro osoby mimo EU), Podepsaná smlouva/NDA",
+      "consent": "Souhlas",
+      "consent_text": "Souhlasím se zpracováním svých osobních údajů v souladu s GDPR a českými pracovními zákony.",
+      "submit": "Odeslat onboarding"
+    },
+    "orders": {
+      "title": "Správa objednávek a časové záznamy",
+      "description": "Spravujte své aktivní objednávky a zaznamenávejte odpracovaný čas.",
+      "active_orders": "Aktivní objednávky",
+      "time_logs": "Časové záznamy",
+      "order_id": "ID objednávky",
+      "due_date": "Termín dokončení",
+      "status": "Stav",
+      "actions": "Akce",
+      "date": "Datum",
+      "start_time": "Čas začátku",
+      "end_time": "Čas konce",
+      "total_hours": "Celkem hodin",
+      "notes": "Poznámky",
+      "log_time": "Zaznamenat čas",
+      "edit": "Upravit",
+      "delete": "Smazat",
+      "save_log": "Uložit záznam",
+      "cancel": "Zrušit",
+      "submit_report": "Odeslat týdenní report",
+      "no_orders": "Žádné objednávky k zobrazení",
+      "no_logs": "Žádné časové záznamy k zobrazení"
     }
   },
+  "sidebar": {
+    "dashboard": "Nástěnka",
+    "profile": "Profil",
+    "orders": "Objednávky",
+    "logout": "Odhlásit se"
+  },
   "global": {
+    "no_data": "Žádná data k zobrazení",
+    "loading": "Načítání...",
     "actions": {
+      "actions": "Akce",
       "add_to_cart": "Přidat do košíku",
       "remove_from_cart": "Odebrat z košíku",
       "remove_from_favorites": "Odebrat z oblíbených",
@@ -67,6 +124,11 @@
       "cancel": "Zrušit",
       "details": "Podrobnosti",
       "load_more": "Načíst další"
+    },
+    "status": {
+      "Pending": "Čekající",
+      "In Progress": "Probíhá",
+      "Completed": "Dokončeno"
     }
   },
   "validation": {

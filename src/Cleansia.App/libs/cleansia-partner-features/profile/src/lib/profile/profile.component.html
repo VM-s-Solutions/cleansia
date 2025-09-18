@@ -1,0 +1,175 @@
+<div class="cleansia-profile">
+  <cleansia-language-switcher />
+  <form class="cleansia-profile__form-card" [formGroup]="facade.formGroup">
+    <div class="cleansia-profile__header">
+      <cleansia-title [title]="'pages.profile.title' | translate" />
+      <p class="cleansia-profile__description">
+        {{ 'pages.profile.description' | translate }}
+      </p>
+    </div>
+
+    <!-- Personal Information Section -->
+    <cleansia-section [title]="'pages.profile.personal_info' | translate">
+      <div class="cleansia-profile__grid">
+        <div class="cleansia-profile__field">
+          <cleansia-text-input
+            [label]="'pages.profile.full_name' | translate"
+            [floatVariant]="'on'"
+            formControlName="fullName"
+            dataType="text"
+          />
+        </div>
+        <div class="cleansia-profile__field">
+          <cleansia-calendar
+            [label]="'pages.profile.date_of_birth' | translate"
+            [floatVariant]="'on'"
+            formControlName="dateOfBirth"
+            [required]="true"
+            [showIcon]="true"
+            [iconDisplay]="'input'"
+            [dateFormat]="'dd.mm.yy'"
+          />
+        </div>
+        <div class="cleansia-profile__address-row">
+          <div class="cleansia-profile__field">
+            <cleansia-text-input
+              [label]="'pages.profile.street' | translate"
+              [floatVariant]="'on'"
+              formControlName="street"
+              dataType="text"
+            />
+          </div>
+          <div class="cleansia-profile__field">
+            <cleansia-text-input
+              [label]="'pages.profile.city' | translate"
+              [floatVariant]="'on'"
+              formControlName="city"
+              dataType="text"
+            />
+          </div>
+          <div class="cleansia-profile__field">
+            <cleansia-text-input
+              [label]="'pages.profile.zip_code' | translate"
+              [floatVariant]="'on'"
+              formControlName="zipCode"
+              dataType="text"
+            />
+          </div>
+          <div class="cleansia-profile__field">
+            <cleansia-text-input
+              [label]="'pages.profile.country' | translate"
+              [floatVariant]="'on'"
+              formControlName="countryId"
+              dataType="text"
+            />
+          </div>
+        </div>
+        <div class="cleansia-profile__contact-row">
+          <div class="cleansia-profile__field">
+            <cleansia-telephone
+              [label]="'pages.profile.phone' | translate"
+              [floatVariant]="'on'"
+              formControlName="phone"
+              dataType="text"
+            />
+          </div>
+          <div class="cleansia-profile__field">
+            <cleansia-text-input
+              [label]="'pages.profile.email' | translate"
+              [floatVariant]="'on'"
+              formControlName="email"
+              dataType="email"
+            />
+          </div>
+        </div>
+        <div class="cleansia-profile__field">
+          <cleansia-text-input
+            [label]="'pages.profile.national_id' | translate"
+            [floatVariant]="'on'"
+            formControlName="nationalId"
+            dataType="text"
+          />
+        </div>
+        <div class="cleansia-profile__field">
+          <cleansia-text-input
+            [label]="'pages.profile.tax_id' | translate"
+            [floatVariant]="'on'"
+            formControlName="taxId"
+            dataType="text"
+          />
+        </div>
+      </div>
+    </cleansia-section>
+
+    <!-- Bank Details Section -->
+    <cleansia-section [title]="'pages.profile.bank_details' | translate">
+      <div class="cleansia-profile__field cleansia-profile__field--full">
+        <cleansia-text-input
+          [label]="'pages.profile.iban' | translate"
+          [floatVariant]="'on'"
+          formControlName="iban"
+          dataType="text"
+        />
+      </div>
+    </cleansia-section>
+
+    <!-- Emergency Contact Section -->
+    <cleansia-section [title]="'pages.profile.emergency_contact' | translate">
+      <div class="cleansia-profile__contact-row">
+        <div class="cleansia-profile__field">
+          <cleansia-text-input
+            [label]="'pages.profile.emergency_name' | translate"
+            [floatVariant]="'on'"
+            formControlName="emergencyName"
+            dataType="text"
+          />
+        </div>
+        <div class="cleansia-profile__field">
+          <cleansia-telephone
+            [label]="'pages.profile.emergency_phone' | translate"
+            [floatVariant]="'on'"
+            formControlName="emergencyPhone"
+            dataType="text"
+          />
+        </div>
+      </div>
+    </cleansia-section>
+
+    <!-- Document Upload Section -->
+    <cleansia-section [title]="'pages.profile.documents' | translate">
+      <div class="cleansia-profile__upload">
+        <cleansia-file
+          [multiple]="true"
+          [accept]="'image/*,.pdf,.doc,.docx'"
+          [maxFileSize]="10000000"
+        />
+        <p class="cleansia-profile__upload-info">
+          {{ 'pages.profile.upload_requirements' | translate }}
+        </p>
+      </div>
+    </cleansia-section>
+
+    <!-- Consent Section -->
+    <div class="cleansia-profile__consent">
+      <cleansia-checkbox
+        [title]="'pages.profile.consent' | translate"
+        formControlName="consent"
+      />
+      <span class="cleansia-profile__consent-text">
+        {{ 'pages.profile.consent_text' | translate }}
+      </span>
+    </div>
+
+    <!-- Submit Button -->
+    <div class="cleansia-profile__actions">
+      <cleansia-button
+        [buttonType]="'submit'"
+        [style]="'raised-button'"
+        [title]="'pages.profile.submit' | translate"
+        (clickFn)="facade.onSubmit()"
+        [loading]="false"
+      />
+    </div>
+  </form>
+</div>
+<p-toast />

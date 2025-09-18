@@ -1,0 +1,67 @@
+<div class="file-component">
+  <p-fileUpload
+    #fileUpload
+    chooseLabel="Select Files"
+    uploadLabel="Upload"
+    cancelLabel="Cancel"
+    [multiple]="multiple()"
+    [accept]="accept()"
+    [maxFileSize]="maxFileSize()"
+    [url]="'/api/upload'"
+    (onUpload)="onUpload($event)"
+    (onSelect)="onSelect($event)"
+    (onRemove)="onRemove($event)"
+    [showUploadButton]="true"
+    [showCancelButton]="true"
+    chooseIcon="pi pi-fw pi-plus"
+    uploadIcon="pi pi-fw pi-upload"
+    cancelIcon="pi pi-fw pi-times"
+    invalidFileSizeMessageSummary="{0}: Invalid file size"
+    invalidFileSizeMessageDetail="Maximum file size is {0}"
+    invalidFileTypeMessageSummary="{0}: Invalid file type"
+    invalidFileTypeMessageDetail="Allowed types: {0}"
+  >
+    <ng-template pTemplate="content">
+      <div *ngIf="files().length > 0" class="file-list">
+        <h4>Selected Files:</h4>
+        <ul>
+          @for (file of files(); track file.name) {
+          <li class="file-item">
+            <span
+              >{{ file.name }} ({{ file.size | number : '1.0-0' }} bytes)</span
+            >
+            <p-button
+              icon="pi pi-trash"
+              [text]="true"
+              severity="danger"
+              size="small"
+              (onClick)="removeFile(file)"
+            />
+          </li>
+          }
+        </ul>
+        @if (progress() > 0) {
+        <p-progressBar [value]="progress()" [showValue]="true" />
+        }
+      </div>
+    </ng-template>
+  </p-fileUpload>
+  @if (messages().length > 0) {
+  <div class="messages">
+    @for (msg of messages(); track $index) {
+    <p-message [severity]="msg.severity" [text]="msg.text" />
+    }
+  </div>
+  }
+  <div *ngIf="uploadedFiles().length > 0" class="uploaded-files">
+    <h4>Uploaded Files:</h4>
+    <ul>
+      @for (file of uploadedFiles(); track file.name) {
+      <li>
+        <a [href]="file.url" target="_blank">{{ file.name }}</a>
+        ({{ file.size | number : '1.0-0' }} bytes)
+      </li>
+      }
+    </ul>
+  </div>
+</div>

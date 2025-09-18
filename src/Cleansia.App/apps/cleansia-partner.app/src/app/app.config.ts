@@ -3,6 +3,7 @@ import {
   HttpClient,
   provideHttpClient,
   withFetch,
+  withInterceptors,
   withJsonpSupport,
 } from '@angular/common/http';
 import localeCs from '@angular/common/locales/cs';
@@ -16,7 +17,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter } from '@angular/router';
 import { CleansiaPreset } from '@cleansia/assets';
-import { JsonTranslationLoader } from '@cleansia/services';
+import { INTERCEPTORS_FN, JsonTranslationLoader } from '@cleansia/services';
 import { effects, reducers } from '@cleansia/stores';
 import { EffectsModule } from '@ngrx/effects';
 import { provideStore, StoreModule } from '@ngrx/store';
@@ -49,8 +50,8 @@ export const appConfig: ApplicationConfig = {
     MessageService,
     provideHttpClient(
       withFetch(),
-      withJsonpSupport()
-      // withInterceptors(INTERCEPTORS_FN)
+      withJsonpSupport(),
+      withInterceptors(INTERCEPTORS_FN)
     ),
     { provide: LOCALE_ID, useValue: 'cs' },
     provideStore(),

@@ -10,4 +10,5 @@ import { RouterLink } from '@angular/router';
 })
 export class CleansiaBrandNameComponent {
   defaultRoute = input<string>('');
+  showName = input<boolean>(true);
 }

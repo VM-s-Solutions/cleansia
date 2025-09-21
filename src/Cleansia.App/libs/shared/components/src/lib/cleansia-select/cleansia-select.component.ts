@@ -2,15 +2,10 @@ import { CommonModule } from '@angular/common';
 import { Component, forwardRef, input, output } from '@angular/core';
 import { FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { ErrorPipe } from '@cleansia/pipes';
-import { DropdownModule } from 'primeng/dropdown';
 import { FloatLabelModule } from 'primeng/floatlabel';
+import { SelectModule } from 'primeng/select';
 import { CleansiaBaseFormInputComponent } from '../cleansia-base-form';
-
-export interface SelectOption {
-  label: string;
-  value: any;
-  disabled?: boolean;
-}
+import { ICleansiaSelectOption } from './cleansia-select.models';
 
 @Component({
   selector: 'cleansia-select',
@@ -18,7 +13,7 @@ export interface SelectOption {
   imports: [
     CommonModule,
     ErrorPipe,
-    DropdownModule,
+    SelectModule,
     FormsModule,
     FloatLabelModule,
   ],
@@ -34,9 +29,9 @@ export interface SelectOption {
 })
 export class CleansiaSelectComponent extends CleansiaBaseFormInputComponent {
   id = input<string>(this.getDefaultLabelId());
-  options = input<SelectOption[]>([]);
-  floatVariant = input<'over' | 'in' | 'on' | null>(null);
-  showClear = input(false);
+  options = input<ICleansiaSelectOption[]>([]);
+  floatVariant = input<'over' | 'in' | 'on'>('on');
+  showClear = input(true);
   filter = input(false);
   filterBy = input<string>('label');
 

@@ -3,10 +3,34 @@ cleansia-select {
   width: 100%;
 
   ::ng-deep {
-    .p-dropdown {
+    // Fix for float label overlay issue with PrimNG select
+    .p-floatlabel {
+      .p-select {
+        width: 100%;
+
+        .p-select-label {
+          padding-top: 1.5rem;
+          padding-bottom: 0.75rem;
+          min-height: 3rem;
+        }
+      }
+
+      label {
+        transition: all 0.2s ease;
+
+        &.p-label-active {
+          transform: translateY(-50%) scale(0.75);
+          top: 0.75rem;
+          left: 0.75rem;
+          color: var(--cleansia-primary-500);
+        }
+      }
+    }
+
+    .p-select {
       width: 100%;
 
-      .p-dropdown-label {
+      .p-select-label {
         padding: 0.75rem;
         border: 1px solid var(--cleansia-border-color);
         border-radius: 6px;
@@ -26,36 +50,36 @@ cleansia-select {
         }
       }
 
-      .p-dropdown-trigger {
+      .p-select-dropdown {
         background: transparent;
         color: var(--cleansia-text-secondary);
         border-left: 1px solid var(--cleansia-border-color);
         padding: 0 0.75rem;
       }
 
-      &:not(.p-disabled):hover .p-dropdown-label {
+      &:not(.p-disabled):hover .p-select-label {
         border-color: var(--cleansia-primary-400);
       }
 
-      &.p-focus .p-dropdown-label {
+      &.p-focus .p-select-label {
         border-color: var(--cleansia-primary-500);
         box-shadow: 0 0 0 2px rgba(var(--cleansia-primary-rgb), 0.2);
       }
 
-      &.ng-invalid.ng-dirty .p-dropdown-label {
+      &.ng-invalid.ng-dirty .p-select-label {
         border-color: var(--cleansia-error-500);
         box-shadow: 0 0 0 2px rgba(var(--cleansia-error-rgb), 0.2);
       }
     }
 
-    .p-dropdown-panel {
+    .p-select-overlay {
       border: 1px solid var(--cleansia-border-color);
       border-radius: 6px;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
       background: var(--cleansia-white);
 
-      .p-dropdown-items {
-        .p-dropdown-item {
+      .p-select-list {
+        .p-select-option {
           padding: 0.75rem;
           color: var(--cleansia-text-primary);
           border: none;
@@ -72,11 +96,11 @@ cleansia-select {
         }
       }
 
-      .p-dropdown-filter-container {
+      .p-select-filter-container {
         padding: 0.75rem;
         border-bottom: 1px solid var(--cleansia-border-color);
 
-        .p-dropdown-filter {
+        .p-select-filter {
           width: 100%;
           padding: 0.5rem;
           border: 1px solid var(--cleansia-border-color);

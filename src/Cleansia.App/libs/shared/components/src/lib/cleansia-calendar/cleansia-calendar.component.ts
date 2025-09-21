@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, forwardRef, input, output } from '@angular/core';
 import { FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { ErrorPipe } from '@cleansia/pipes';
-import { CalendarModule } from 'primeng/calendar';
+import { DatePickerModule } from 'primeng/datepicker';
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { CleansiaBaseFormInputComponent } from '../cleansia-base-form';
 
@@ -12,7 +12,7 @@ import { CleansiaBaseFormInputComponent } from '../cleansia-base-form';
   imports: [
     CommonModule,
     ErrorPipe,
-    CalendarModule,
+    DatePickerModule,
     FormsModule,
     FloatLabelModule,
   ],

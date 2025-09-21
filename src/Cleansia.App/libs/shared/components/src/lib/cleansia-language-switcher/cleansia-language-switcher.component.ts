@@ -3,14 +3,14 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { LocalStorageKey } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 
 @Component({
   selector: 'cleansia-language-switcher',
   templateUrl: './cleansia-language-switcher.component.html',
   styleUrls: ['./cleansia-language-switcher.component.scss'],
   standalone: true,
-  imports: [FormsModule, CommonModule, DropdownModule],
+  imports: [FormsModule, CommonModule, SelectModule],
 })
 export class CleansiaLanguageSwitcherComponent implements OnInit {
   languages: any[] = [];

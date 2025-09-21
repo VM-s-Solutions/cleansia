@@ -15,6 +15,7 @@ public class GetCountryOverview
         public async Task<IEnumerable<CountryListItem>> Handle(Request request, CancellationToken cancellationToken)
         {
             return await countryRepository.GetAll()
+                .OrderBy(c => c.Name)
                 .Select(c => c.MapToDto())
                 .ToListAsync(cancellationToken);
         }

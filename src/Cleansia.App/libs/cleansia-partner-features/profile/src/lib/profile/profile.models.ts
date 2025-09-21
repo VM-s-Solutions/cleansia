@@ -9,14 +9,14 @@ import { FileTransformationUtils } from '@cleansia/utils';
 export class ProfileFormFactory {
   static createEmployeeProfileForm(): FormGroup {
     return new FormGroup({
-      employeeId: new FormControl(''),
-      firstName: new FormControl('', [
+      employeeId: new FormControl(undefined),
+      firstName: new FormControl(undefined, [
         Validators.required,
         Validators.minLength(2),
         Validators.maxLength(100),
         CustomValidators.alphabeticOnly(),
       ]),
-      lastName: new FormControl('', [
+      lastName: new FormControl(undefined, [
         Validators.required,
         Validators.minLength(2),
         Validators.maxLength(100),
@@ -26,56 +26,58 @@ export class ProfileFormFactory {
         Validators.required,
         CustomValidators.minimumAge(18),
       ]),
-      street: new FormControl('', [
+      street: new FormControl(undefined, [
         Validators.required,
         Validators.minLength(5),
         Validators.maxLength(255),
       ]),
-      city: new FormControl('', [
+      city: new FormControl(undefined, [
         Validators.required,
         Validators.minLength(2),
         Validators.maxLength(100),
         CustomValidators.alphabeticOnly(),
       ]),
-      zipCode: new FormControl('', [
+      zipCode: new FormControl(undefined, [
         Validators.required,
         Validators.minLength(3),
         Validators.maxLength(20),
         CustomValidators.zipCode(),
       ]),
-      countryId: new FormControl('', [Validators.required]),
-      nationalityId: new FormControl('', [Validators.required]),
-      phone: new FormControl('', [
+      countryId: new FormControl(undefined, [Validators.required]),
+      nationalityId: new FormControl(undefined, [Validators.required]),
+      phone: new FormControl(undefined, [
         Validators.required,
         CustomValidators.phoneNumber(),
       ]),
-      email: new FormControl('', [
+      email: new FormControl(undefined, [
         Validators.required,
         Validators.email,
         Validators.maxLength(254),
       ]),
-      passportId: new FormControl('', [
+      passportId: new FormControl(undefined, [
         Validators.required,
         Validators.minLength(5),
         Validators.maxLength(20),
         CustomValidators.passportId(),
       ]),
-      taxId: new FormControl('', [
+      taxId: new FormControl(undefined, [
         Validators.required,
         Validators.maxLength(20),
         CustomValidators.taxId(),
       ]),
-      iban: new FormControl('', [
+      iban: new FormControl(undefined, [
         Validators.required,
         Validators.minLength(15),
         Validators.maxLength(34),
         CustomValidators.iban(),
       ]),
-      emergencyName: new FormControl('', [
+      emergencyName: new FormControl(undefined, [
         Validators.maxLength(100),
         CustomValidators.alphabeticOnly(),
       ]),
-      emergencyPhone: new FormControl('', [CustomValidators.phoneNumber()]),
+      emergencyPhone: new FormControl(undefined, [
+        CustomValidators.phoneNumber(),
+      ]),
       documents: new FormControl(null, [
         CustomValidators.documentFile(),
         CustomValidators.fileSize(10),
@@ -87,22 +89,22 @@ export class ProfileFormFactory {
 
   static mapEmployeeToFormData(employee: any): any {
     return {
-      employeeId: employee.employeeId || '',
-      firstName: employee.firstName || '',
-      lastName: employee.lastName || '',
-      email: employee.email || '',
-      phone: employee.phoneNumber || employee.phone || '',
+      employeeId: employee.employeeId || undefined,
+      firstName: employee.firstName || undefined,
+      lastName: employee.lastName || undefined,
+      email: employee.email || undefined,
+      phone: employee.phoneNumber || employee.phone || undefined,
       dateOfBirth: employee.birthDate || employee.dateOfBirth || null,
-      street: employee.street || '',
-      city: employee.city || '',
-      zipCode: employee.zipCode || '',
-      countryId: employee.countryId || '',
-      nationalityId: employee.nationalityId || '',
-      passportId: employee.passportId || '',
-      taxId: employee.taxId || '',
-      iban: employee.iban || '',
-      emergencyName: employee.emergencyName || '',
-      emergencyPhone: employee.emergencyPhone || '',
+      street: employee.street || undefined,
+      city: employee.city || undefined,
+      zipCode: employee.zipCode || undefined,
+      countryId: employee.countryId || undefined,
+      nationalityId: employee.nationalityId || undefined,
+      passportId: employee.passportId || undefined,
+      taxId: employee.taxId || undefined,
+      iban: employee.iban || undefined,
+      emergencyName: employee.emergencyName || undefined,
+      emergencyPhone: employee.emergencyPhone || undefined,
       consent: employee.consent || false,
     };
   }

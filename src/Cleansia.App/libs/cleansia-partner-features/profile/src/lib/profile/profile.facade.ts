@@ -60,11 +60,9 @@ export class ProfileFacade extends UnsubscribeControlDirective {
         const countryOptions: ICleansiaSelectOption[] = countries.map(
           (country) => {
             const translation =
-              country.translations &&
-              country.translations[this.translate.currentLang];
+              country.translations![this.translate.currentLang].name;
             return {
-              label:
-                typeof translation === 'string' ? translation : country.name!,
+              label: translation ?? country.name!,
               value: country.id!,
             };
           }

@@ -1,6 +1,6 @@
 @if (floatVariant(); as variant) {
 <p-floatlabel [variant]="variant">
-  <p-dropdown
+  <p-select
     [inputId]="id()"
     [options]="options()"
     [ngModel]="innerValue"
@@ -27,7 +27,7 @@
   }
 </p-floatlabel>
 } @else {
-<p-dropdown
+<p-select
   [inputId]="id()"
   [options]="options()"
   [ngModel]="innerValue"

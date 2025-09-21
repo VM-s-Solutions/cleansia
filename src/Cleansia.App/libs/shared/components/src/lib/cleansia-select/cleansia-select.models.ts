@@ -1,4 +1,5 @@
 export interface ICleansiaSelectOption {
   label: string;
-  value: string | number;
+  value: any;
+  disabled?: boolean;
 }

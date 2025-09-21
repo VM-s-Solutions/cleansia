@@ -53,6 +53,7 @@ export class AppComponent implements OnInit, OnDestroy {
   constructor() {
     this.translate.addLangs(['cs', 'en']);
     this.translate.setDefaultLang('cs');
+    this.translate.use('cs');
   }
 
   ngOnInit() {
@@ -67,10 +68,7 @@ export class AppComponent implements OnInit, OnDestroy {
       this.registrationService.isRegistrationComplete();
 
     combineLatest([currentUrl$, isLoggedIn$, registrationStatus$])
-      .pipe(
-        distinctUntilChanged(),
-        takeUntil(this.destroy$)
-      )
+      .pipe(distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe(([url, isLoggedIn, isComplete]) => {
         if (isLoggedIn && !this.hasCheckedEmployee) {
           this.store.dispatch(checkEmployeeCurrent());

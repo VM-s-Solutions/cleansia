@@ -11,7 +11,6 @@ import {
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { TranslatePipe } from '@ngx-translate/core';
-import { MessageService } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
 import { ToastModule } from 'primeng/toast';
 import { InvoicesFacade, Invoice } from './invoices.facade';
@@ -32,7 +31,8 @@ import { InvoicesFacade, Invoice } from './invoices.facade';
     CleansiaLanguageSwitcherComponent,
   ],
   templateUrl: './invoices.component.html',
-  providers: [InvoicesFacade, MessageService],
+  styleUrls: ['./invoices.component.scss'],
+  providers: [InvoicesFacade],
 })
 export class InvoicesComponent {
   protected readonly facade: InvoicesFacade = inject(InvoicesFacade);

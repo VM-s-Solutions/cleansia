@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, ElementRef, ViewChild } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { MessageService } from 'primeng/api';
+import { SnackbarService } from '@cleansia/services';
 import { MenubarModule } from 'primeng/menubar'; // p-menubar
 import { ButtonModule } from 'primeng/button'; // pButton
 import { CardModule, Card } from 'primeng/card'; // p-card
@@ -17,7 +17,7 @@ import { fromEvent, debounceTime } from 'rxjs';
   templateUrl: './cleansia.html',
   styleUrls: ['./cleansia.scss'],
   standalone: true,
-  providers: [MessageService],
+  providers: [],
   imports: [Accordion, Avatar, Carousel, Card,
     RouterModule,
     ButtonModule,
@@ -75,7 +75,7 @@ export class CleansiaComponent implements AfterViewInit
   sections: HTMLElement[] = [];
   currentSectionIndex = 0;
 
-  constructor(private messageService: MessageService) {
+  constructor(private snackbarService: SnackbarService) {
     // Lazy loading for images AND background images
 document.addEventListener('DOMContentLoaded', () => {
   let lazyloadElements: NodeListOf<HTMLElement>;
@@ -200,11 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   submitRequest(form: any) {
-    this.messageService.add({
-      severity: 'success',
-      summary: 'Poptávka odeslána',
-      detail: 'Brzy se Vám ozveme.',
-    });
+    this.snackbarService.showSuccessTranslated('global.messages.form.request_sent');
     form.reset();
   }
 

@@ -1,3 +1,6 @@
+@if(facade.profileLoading()){
+<cleansia-loader />
+}
 <div class="cleansia-profile">
   <cleansia-language-switcher />
   <form class="cleansia-profile__form-card" [formGroup]="facade.formGroup">
@@ -7,15 +10,22 @@
         {{ 'pages.profile.description' | translate }}
       </p>
     </div>
-
     <!-- Personal Information Section -->
     <cleansia-section [title]="'pages.profile.personal_info' | translate">
       <div class="cleansia-profile__grid">
         <div class="cleansia-profile__field">
           <cleansia-text-input
-            [label]="'pages.profile.full_name' | translate"
+            [label]="'pages.profile.first_name' | translate"
             [floatVariant]="'on'"
-            formControlName="fullName"
+            formControlName="firstName"
+            dataType="text"
+          />
+        </div>
+        <div class="cleansia-profile__field">
+          <cleansia-text-input
+            [label]="'pages.profile.last_name' | translate"
+            [floatVariant]="'on'"
+            formControlName="lastName"
             dataType="text"
           />
         </div>
@@ -56,11 +66,11 @@
             />
           </div>
           <div class="cleansia-profile__field">
-            <cleansia-text-input
+            <cleansia-select
+              [options]="facade.countries()"
               [label]="'pages.profile.country' | translate"
               [floatVariant]="'on'"
               formControlName="countryId"
-              dataType="text"
             />
           </div>
         </div>
@@ -82,21 +92,31 @@
             />
           </div>
         </div>
-        <div class="cleansia-profile__field">
-          <cleansia-text-input
-            [label]="'pages.profile.national_id' | translate"
-            [floatVariant]="'on'"
-            formControlName="nationalId"
-            dataType="text"
-          />
-        </div>
-        <div class="cleansia-profile__field">
-          <cleansia-text-input
-            [label]="'pages.profile.tax_id' | translate"
-            [floatVariant]="'on'"
-            formControlName="taxId"
-            dataType="text"
-          />
+        <div class="cleansia-profile__nationality-row">
+          <div class="cleansia-profile__field">
+            <cleansia-select
+              [options]="facade.countries()"
+              [label]="'pages.profile.nationality' | translate"
+              [floatVariant]="'on'"
+              formControlName="nationalityId"
+            />
+          </div>
+          <div class="cleansia-profile__field">
+            <cleansia-text-input
+              [label]="'pages.profile.national_id' | translate"
+              [floatVariant]="'on'"
+              formControlName="passportId"
+              dataType="text"
+            />
+          </div>
+          <div class="cleansia-profile__field">
+            <cleansia-text-input
+              [label]="'pages.profile.tax_id' | translate"
+              [floatVariant]="'on'"
+              formControlName="taxId"
+              dataType="text"
+            />
+          </div>
         </div>
       </div>
     </cleansia-section>
@@ -167,9 +187,8 @@
         [style]="'raised-button'"
         [title]="'pages.profile.submit' | translate"
         (clickFn)="facade.onSubmit()"
-        [loading]="false"
+        [loading]="facade.profileSubmitLoading()"
       />
     </div>
   </form>
 </div>
-a

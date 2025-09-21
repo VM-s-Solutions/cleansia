@@ -17,6 +17,7 @@ import { LoginFacade } from './login.facade';
 @Component({
   selector: 'cleansia-partner-login',
   templateUrl: './login.component.html',
+  styleUrls: ['./login.component.scss'],
   standalone: true,
   imports: [
     RouterLink,

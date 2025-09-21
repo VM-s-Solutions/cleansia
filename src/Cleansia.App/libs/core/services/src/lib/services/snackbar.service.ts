@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { MessageService } from 'primeng/api';
 import { TranslateService } from '@ngx-translate/core';
+import { MessageService } from 'primeng/api';
 
-const DEFAULT_SNACKBAR_DURATION = 300000;
+const DEFAULT_SNACKBAR_DURATION = 3_000;
 
 @Injectable({
   providedIn: 'root',
@@ -16,6 +16,16 @@ export class SnackbarService {
   }
 
   showError(message: string, duration?: number): void {
+    this.showSnackbar(message, false, duration);
+  }
+
+  showSuccessTranslated(translationKey: string, duration?: number): void {
+    const message = this.translate.instant(translationKey);
+    this.showSnackbar(message, true, duration);
+  }
+
+  showErrorTranslated(translationKey: string, duration?: number): void {
+    const message = this.translate.instant(translationKey);
     this.showSnackbar(message, false, duration);
   }
 

@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using Cleansia.Core.Domain.Internalization;
+using Cleansia.Core.Domain.Internationalization;
 
 namespace Cleansia.TestUtilities.MockDataFactories.Languages;
 

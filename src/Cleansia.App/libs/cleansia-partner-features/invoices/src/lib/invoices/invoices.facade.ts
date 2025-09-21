@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { MessageService } from 'primeng/api';
+import { SnackbarService } from '@cleansia/services';
 import { DialogService } from 'primeng/dynamicdialog';
 
 export interface Invoice {
@@ -15,7 +15,7 @@ export interface Invoice {
 
 @Injectable()
 export class InvoicesFacade {
-  private readonly messageService = inject(MessageService);
+  private readonly snackbarService = inject(SnackbarService);
 
   // Signals for reactive data
   pendingInvoices = signal<Invoice[]>([
@@ -48,22 +48,14 @@ export class InvoicesFacade {
       };
       this.pendingInvoices.update(prev => [...prev, newInvoice]);
       this.allInvoices.update(prev => [...prev, newInvoice]);
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Generated',
-        detail: 'Invoice generated from time logs.'
-      });
+      this.snackbarService.showSuccessTranslated('global.messages.invoices.invoice_generated');
       this.isGenerating.set(false);
     }, 2000);
   }
 
   previewInvoice(): void {
     // Simulate PDF preview (e.g., open modal or window)
-    this.messageService.add({
-      severity: 'info',
-      summary: 'Preview',
-      detail: 'Invoice preview opened.'
-    });
+    this.snackbarService.showSuccessTranslated('global.messages.invoices.invoice_preview');
     // Integrate with jsPDF or similar for actual preview
   }
 
@@ -73,11 +65,7 @@ export class InvoicesFacade {
     link.href = `/api/invoices/${invoice.id}/pdf`; // Mock URL
     link.download = `${invoice.number}.pdf`;
     link.click();
-    this.messageService.add({
-      severity: 'success',
-      summary: 'Downloaded',
-      detail: 'Invoice downloaded successfully.'
-    });
+    this.snackbarService.showSuccessTranslated('global.messages.invoices.invoice_downloaded');
   }
 
   public viewInvoiceDetails(invoice: Invoice): void {

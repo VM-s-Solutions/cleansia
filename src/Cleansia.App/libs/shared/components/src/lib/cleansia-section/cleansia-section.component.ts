@@ -6,6 +6,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './cleansia-section.component.html',
+  styleUrls: ['./cleansia-section.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaSectionComponent {

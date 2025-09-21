@@ -1,6 +1,5 @@
 ﻿using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auth;
-using Cleansia.Core.Domain.Internalization;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.TestUtilities.MockDataFactories.Users;

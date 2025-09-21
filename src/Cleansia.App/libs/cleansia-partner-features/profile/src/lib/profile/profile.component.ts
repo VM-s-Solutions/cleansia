@@ -1,18 +1,19 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import {
   CleansiaButtonComponent,
   CleansiaCalendarComponent,
   CleansiaCheckboxComponent,
+  CleansiaFileComponent,
   CleansiaLanguageSwitcherComponent,
+  CleansiaLoaderComponent,
   CleansiaSectionComponent,
+  CleansiaSelectComponent,
   CleansiaTelephoneComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
-  FileComponent,
 } from '@cleansia/components';
 import { TranslatePipe } from '@ngx-translate/core';
-import { MessageService } from 'primeng/api';
 import { CalendarModule } from 'primeng/calendar';
 import { ToastModule } from 'primeng/toast';
 import { ProfileFacade } from './profile.facade';
@@ -22,22 +23,29 @@ import { ProfileFacade } from './profile.facade';
   standalone: true,
   imports: [
     ToastModule,
-    FileComponent,
     TranslatePipe,
     CalendarModule,
     ReactiveFormsModule,
+    CleansiaFileComponent,
     CleansiaTitleComponent,
     CleansiaButtonComponent,
+    CleansiaLoaderComponent,
     CleansiaSectionComponent,
     CleansiaCalendarComponent,
     CleansiaCheckboxComponent,
+    CleansiaSelectComponent,
     CleansiaTelephoneComponent,
     CleansiaTextInputComponent,
     CleansiaLanguageSwitcherComponent,
   ],
   templateUrl: './profile.component.html',
-  providers: [ProfileFacade, MessageService],
+  styleUrls: ['./profile.component.scss'],
+  providers: [ProfileFacade],
 })
-export class ProfileComponent {
+export class ProfileComponent implements OnInit {
   protected readonly facade = inject(ProfileFacade);
+
+  ngOnInit(): void {
+    this.facade.loadProfile();
+  }
 }

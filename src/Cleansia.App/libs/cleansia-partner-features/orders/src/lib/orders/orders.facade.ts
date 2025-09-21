@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MessageService } from 'primeng/api';
+import { SnackbarService } from '@cleansia/services';
 import { DialogService } from 'primeng/dynamicdialog';
 
 export interface Order {
@@ -23,7 +23,7 @@ export interface TimeLog {
 @Injectable()
 export class OrdersFacade {
   private readonly formBuilder = inject(FormBuilder);
-  private readonly messageService = inject(MessageService);
+  private readonly snackbarService = inject(SnackbarService);
   private readonly dialogService = inject(DialogService);
 
   // Signals for reactive data
@@ -101,19 +101,11 @@ export class OrdersFacade {
         ...this.timeLogForm.value,
       };
       this.timeLogs.update((prev) => [...prev, { ...logData, id: Date.now() }]); // Mock ID; use real from API
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Success',
-        detail: 'Time log saved successfully.',
-      });
+      this.snackbarService.showSuccessTranslated('global.messages.orders.time_log_saved');
       this.showDialog.set(false);
       this.resetDialog();
     } else {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Error',
-        detail: 'Please fill in all required fields.',
-      });
+      this.snackbarService.showErrorTranslated('global.messages.profile.fill_required_fields');
     }
   }
 
@@ -133,22 +125,14 @@ export class OrdersFacade {
 
   deleteTimeLog(log: TimeLog): void {
     this.timeLogs.update((prev) => prev.filter((l) => l.id !== log.id));
-    this.messageService.add({
-      severity: 'warn',
-      summary: 'Deleted',
-      detail: 'Time log removed.',
-    });
+    this.snackbarService.showSuccessTranslated('global.messages.orders.time_log_removed');
   }
 
   onSubmitReport(): void {
     this.isSubmitting.set(true);
     // Simulate API call for weekly report submission
     setTimeout(() => {
-      this.messageService.add({
-        severity: 'info',
-        summary: 'Submitted',
-        detail: 'Your time report has been submitted for review.',
-      });
+      this.snackbarService.showSuccessTranslated('global.messages.orders.report_submitted');
       this.isSubmitting.set(false);
       console.log('Time Logs Report:', this.timeLogs());
     }, 2000);

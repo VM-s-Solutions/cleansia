@@ -16,11 +16,12 @@
     [readonly]="readonlyInput()"
     [placeholder]="placeholder()"
     [autocomplete]="autocomplete()"
-    [ngClass]="{
-      'p-invalid':
-        formControl.invalid && (formControl.dirty || formControl.touched)
-    }"
-    [class]="inputSize() + ' ' + (className() ?? '')"
+    [class]="
+      inputSize() +
+      ' ' +
+      (className() ?? '') +
+      (hasErrors() ? 'ng-invalid ng-dirty' : '')
+    "
   />
 </p-floatlabel>
 } @else { @if (label()) {
@@ -39,12 +40,12 @@
   [readonly]="readonlyInput()"
   [placeholder]="placeholder()"
   [autocomplete]="autocomplete()"
-  [class]="className() ?? ''"
-  [ngClass]="{
-    'p-invalid':
-      formControl.invalid && (formControl.dirty || formControl.touched)
-  }"
-  [class]="inputSize() + ' ' + (className() ?? '')"
+  [class]="
+    inputSize() +
+    ' ' +
+    (className() ?? '') +
+    (hasErrors() ? 'ng-invalid ng-dirty' : '')
+  "
 />
 } @if (showErrors() && formControl.invalid && (formControl.dirty ||
 formControl.touched)) {

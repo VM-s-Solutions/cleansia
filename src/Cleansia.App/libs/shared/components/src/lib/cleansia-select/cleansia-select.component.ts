@@ -1,0 +1,61 @@
+import { CommonModule } from '@angular/common';
+import { Component, forwardRef, input, output } from '@angular/core';
+import { FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ErrorPipe } from '@cleansia/pipes';
+import { DropdownModule } from 'primeng/dropdown';
+import { FloatLabelModule } from 'primeng/floatlabel';
+import { CleansiaBaseFormInputComponent } from '../cleansia-base-form';
+
+export interface SelectOption {
+  label: string;
+  value: any;
+  disabled?: boolean;
+}
+
+@Component({
+  selector: 'cleansia-select',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ErrorPipe,
+    DropdownModule,
+    FormsModule,
+    FloatLabelModule,
+  ],
+  templateUrl: './cleansia-select.component.html',
+  styleUrls: ['./cleansia-select.component.scss'],
+  providers: [
+    {
+      provide: NG_VALUE_ACCESSOR,
+      useExisting: forwardRef(() => CleansiaSelectComponent),
+      multi: true,
+    },
+  ],
+})
+export class CleansiaSelectComponent extends CleansiaBaseFormInputComponent {
+  id = input<string>(this.getDefaultLabelId());
+  options = input<SelectOption[]>([]);
+  floatVariant = input<'over' | 'in' | 'on' | null>(null);
+  showClear = input(false);
+  filter = input(false);
+  filterBy = input<string>('label');
+
+  valueChanges = output<any>();
+
+  innerValue: any = null;
+
+  override writeValue(value: any): void {
+    this.innerValue = value ?? null;
+  }
+
+  handleChange(event: any): void {
+    const value = event.value;
+    this.innerValue = value;
+    this.onChange(value);
+    this.valueChanges.emit(value);
+  }
+
+  private getDefaultLabelId() {
+    return 'cleansia-select-' + Math.random().toString(36).substring(2);
+  }
+}

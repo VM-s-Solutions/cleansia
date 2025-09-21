@@ -1,0 +1,149 @@
+%cleansia-dynamic-background__icon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 4rem;
+  -webkit-text-stroke: 1px var(--cleansia-black);
+  text-shadow: 3px 3px var(--cleansia-black);
+  color: var(--cleansia-white);
+  z-index: -1;
+  opacity: 0.7;
+}
+
+.cleansia-dynamic-background__icons {
+  &__fabroom {
+    // fa-broom
+    @extend %cleansia-dynamic-background__icon;
+    animation: broomAnimation 19s linear infinite;
+  }
+
+  &__fasoap {
+    // fa-soap
+    @extend %cleansia-dynamic-background__icon;
+    animation: soapAnimation 16s linear infinite;
+  }
+
+  &__faspraycansparkles {
+    // fa-spray-can-sparkles
+    @extend %cleansia-dynamic-background__icon;
+    animation: sprayCanSparklesAnimation 20s linear infinite;
+  }
+
+  &__favacuum {
+    // fa-vacuum
+    @extend %cleansia-dynamic-background__icon;
+    animation: vacuumAnimation 18s linear infinite;
+  }
+
+  &__fabucket {
+    // fa-bucket
+    @extend %cleansia-dynamic-background__icon;
+    animation: bucketAnimation 17s linear infinite;
+  }
+
+  &__fahandsbubbles {
+    // fa-hands-bubbles
+    @extend %cleansia-dynamic-background__icon;
+    animation: handsBubblesAnimation 21s linear infinite;
+  }
+
+  &__fashower {
+    // fa-shower
+    @extend %cleansia-dynamic-background__icon;
+    animation: showerAnimation 15s linear infinite;
+  }
+
+  &__fatrashcan {
+    // fa-trash-can
+    @extend %cleansia-dynamic-background__icon;
+    animation: trashCanAnimation 22s linear infinite;
+  }
+}
+
+@keyframes broomAnimation {
+  0% {
+    translate: 30dvw -10rem;
+    rotate: 0deg;
+  }
+  100% {
+    translate: 85dvw 40rem;
+    rotate: 360deg;
+  }
+}
+
+@keyframes soapAnimation {
+  0% {
+    translate: -5dvw 40rem;
+    rotate: 0deg;
+  }
+  100% {
+    translate: 50dvw -10rem;
+    rotate: -360deg;
+  }
+}
+
+@keyframes sprayCanSparklesAnimation {
+  0% {
+    translate: 60dvw 40rem;
+    rotate: 0deg;
+  }
+  100% {
+    translate: 20dvw -10rem;
+    rotate: 360deg;
+  }
+}
+
+@keyframes vacuumAnimation {
+  0% {
+    translate: 75dvw -10rem;
+    rotate: 0deg;
+  }
+  100% {
+    translate: 45dvw 40rem;
+    rotate: -360deg;
+  }
+}
+
+@keyframes bucketAnimation {
+  0% {
+    translate: 10dvw 30rem;
+    rotate: 0deg;
+  }
+  100% {
+    translate: 90dvw -5rem;
+    rotate: 180deg;
+  }
+}
+
+@keyframes handsBubblesAnimation {
+  0% {
+    translate: 40dvw -15rem;
+    rotate: 0deg;
+  }
+  100% {
+    translate: 5dvw 45rem;
+    rotate: -180deg;
+  }
+}
+
+@keyframes showerAnimation {
+  0% {
+    translate: -10dvw 35rem;
+    rotate: 0deg;
+  }
+  100% {
+    translate: 70dvw -20rem;
+    rotate: 360deg;
+  }
+}
+
+@keyframes trashCanAnimation {
+  0% {
+    translate: 80dvw 25rem;
+    rotate: 0deg;
+  }
+  100% {
+    translate: 15dvw -25rem;
+    rotate: -360deg;
+  }
+}

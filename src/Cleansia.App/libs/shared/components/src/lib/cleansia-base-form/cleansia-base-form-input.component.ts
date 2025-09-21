@@ -62,6 +62,12 @@ export class CleansiaBaseFormInputComponent
   onChange: (value: any) => void = () => {};
   onTouch: () => void = () => {};
 
+  hasErrors(): boolean {
+    return (
+      !!this.formControl && this.formControl.invalid && this.formControl.touched
+    );
+  }
+
   ngOnInit(): void {
     this.ngControl = this.injector.get(NgControl, null, {
       optional: true,

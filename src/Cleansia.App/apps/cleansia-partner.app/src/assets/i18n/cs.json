@@ -46,7 +46,8 @@
       "title": "Onboarding profil zaměstnance",
       "description": "Prosím, vyplňte všechny požadované informace a nahrajte potřebné dokumenty pro dokončení procesu onboardingu.",
       "personal_info": "Osobní údaje",
-      "full_name": "Celé jméno",
+      "first_name": "Jméno",
+      "last_name": "Příjmení",
       "date_of_birth": "Datum narození",
       "street": "Ulice a číslo popisné",
       "city": "Město",
@@ -54,8 +55,9 @@
       "country": "Země",
       "phone": "Telefonní číslo",
       "email": "E-mail",
+      "nationality": "Národnost",
       "national_id": "Číslo občanského průkazu / Pasu",
-      "tax_id": "DIČ (pokud je k dispozici)",
+      "tax_id": "DIČ",
       "bank_details": "Bankovní údaje pro výplatu",
       "iban": "IBAN",
       "emergency_contact": "Kontakt v nouzi",
@@ -121,12 +123,46 @@
     "invoices": "Faktury",
     "logout": "Odhlásit se"
   },
+  "components": {
+    "file": {
+      "click_to_select": "Klikněte pro výběr souborů",
+      "or_drag_drop": "nebo přetáhněte",
+      "accepted": "Povolené",
+      "max_size": "Max. velikost",
+      "selected_files": "Vybrané soubory"
+    }
+  },
   "global": {
     "no_data": "Žádná data k zobrazení",
     "loading": "Načítání...",
     "messages": {
       "success": "Úspěch",
-      "error": "Chyba"
+      "error": "Chyba",
+      "profile": {
+        "documents_uploaded": "Dokumenty byly úspěšně nahrány",
+        "onboarding_submitted": "Vaše údaje pro onboarding byly odeslány.",
+        "fill_required_fields": "Prosím vyplňte všechna povinná pole.",
+        "no_files_selected": "Nebyly vybrány žádné soubory",
+        "invalid_file_type": "Neplatný typ souboru. Prosím nahrajte PDF, DOC, DOCX, TXT, JPG, JPEG nebo PNG soubory.",
+        "file_too_large": "Soubor je příliš velký. Maximální povolená velikost je 10MB na soubor.",
+        "too_few_files": "Prosím nahrajte alespoň 1 soubor.",
+        "too_many_files": "Příliš mnoho souborů. Maximální povolený počet je 10 souborů.",
+        "files_required": "Nahrání dokumentů je povinné.",
+        "file_removed": "Soubor byl úspěšně odstraněn"
+      },
+      "orders": {
+        "time_log_saved": "Časový záznam byl úspěšně uložen.",
+        "time_log_removed": "Časový záznam byl odstraněn.",
+        "report_submitted": "Váš časový report byl odeslán ke kontrole."
+      },
+      "invoices": {
+        "invoice_generated": "Faktura byla vygenerována z časových záznamů.",
+        "invoice_preview": "Náhled faktury byl otevřen.",
+        "invoice_downloaded": "Faktura byla úspěšně stažena."
+      },
+      "form": {
+        "request_sent": "Poptávka odeslána. Brzy se Vám ozveme."
+      }
     },
     "actions": {
       "actions": "Akce",
@@ -176,7 +212,35 @@
       "min_length": "Pole musí obsahovat alespoň {{ minLength }} znaků",
       "max_length": "Pole může obsahovat maximálně {{ maxLength }} znaků",
       "invalid_quantity": "Množství produktu {{ name }} je zadáno nesprávně",
-      "pattern": "Pole neodpovídá zadanému vzoru"
+      "pattern": "Pole neodpovídá zadanému vzoru",
+      "minimum_age": "Minimální věk je {{ requiredAge }} let. Současný věk: {{ actualAge }} let",
+      "maximum_age": "Maximální věk je {{ maxAge }} let. Současný věk: {{ actualAge }} let",
+      "phone_number": "Neplatný formát telefonního čísla",
+      "iban": "Neplatný formát IBAN",
+      "alphabetic_only": "Pole může obsahovat pouze písmena",
+      "alphanumeric_only": "Pole může obsahovat pouze písmena a číslice",
+      "zip_code": "Neplatný formát PSČ",
+      "national_id": "Neplatný formát rodného čísla",
+      "tax_id": "Neplatný formát DIČ",
+      "confirm_password": "Hesla se neshodují",
+      "no_whitespace": "Pole nesmí obsahovat mezery",
+      "url": "Neplatný formát URL"
+    },
+    "file": {
+      "required": "Soubory jsou povinné",
+      "invalid_type": "Neplatný typ souboru. Vyberte prosím platný dokument.",
+      "size_too_large": "Velikost souboru je příliš velká. Maximální povolená velikost je {{ maxSize }}MB.",
+      "too_few_files": "Příliš málo souborů vybráno. Minimálně požadováno: {{ min }}",
+      "too_many_files": "Příliš mnoho souborů vybráno. Maximálně povoleno: {{ max }}",
+      "generic_error": "Došlo k chybě při validaci souboru"
+    },
+    "password": {
+      "uppercase": "alespoň jedno velké písmeno",
+      "lowercase": "alespoň jedno malé písmeno",
+      "number": "alespoň jednu číslici",
+      "special_char": "alespoň jeden speciální znak",
+      "min_length": "minimálně 8 znaků",
+      "requirements": "Heslo musí obsahovat: {{ requirements }}"
     }
   },
   "api": {
@@ -230,21 +294,45 @@
     },
     "employee": {
       "not_existing_email": "Zaměstnanec s tímto e-mailem neexistuje",
+      "not_allowed_to_update": "Nemáte oprávnění aktualizovat tohoto zaměstnance",
       "data_not_available": "Data zaměstnance nejsou k dispozici",
       "profile_incomplete": "Dokončete informace v profilu",
       "documents_missing": "Nahrajte požadované dokumenty"
     },
     "file": {
-      "content_type_doesnt_match": "Typ souboru neodpovídá obsahu"
+      "content_type_doesnt_match": "Typ souboru neodpovídá obsahu",
+      "invalid_file_type": "Neplatný typ souboru. Prosím nahrajte platné dokumenty.",
+      "size_exceeded": "Velikost souboru překračuje maximální povolený limit.",
+      "count_exceeded": "Příliš mnoho souborů. Překročen maximální povolený počet.",
+      "count_too_few": "Nedostatek souborů. Nesplněn minimální požadovaný počet.",
+      "required": "Nahrání souboru je povinné."
+    },
+    "address": {
+      "invalid_length": "Neplatná délka pole adresy"
     },
     "language": {
       "not_supported": "Jazyk není podporován"
+    },
+    "country": {
+      "not_existing_id": "Země s tímto ID neexistuje"
     },
     "validation": {
       "invalid_password": "Neplatné heslo",
       "invalid_date": "Neplatné datum",
       "date_must_be_in_past": "Datum musí být v minulosti",
-      "invalid_age": "Neplatný věk"
+      "invalid_age": "Neplatný věk",
+      "invalid_phone_number": "Neplatný formát telefonního čísla",
+      "invalid_national_id": "Neplatný formát čísla občanského průkazu",
+      "invalid_tax_id": "Neplatný formát DIČ",
+      "invalid_iban": "Neplatný formát IBAN",
+      "invalid_zip_code": "Neplatný formát PSČ",
+      "file": {
+        "max_size": "Soubor \"{{fileName}}\" překračuje maximální velikost {{maxSize}}MB",
+        "invalid_type": "Soubor \"{{fileName}}\" má nepovolený typ. Povolené: {{acceptedTypes}}"
+      }
+    },
+    "general": {
+      "not_found": "Požadovaný zdroj nebyl nalezen"
     }
   }
 }

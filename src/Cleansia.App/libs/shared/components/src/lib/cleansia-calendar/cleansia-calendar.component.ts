@@ -49,12 +49,6 @@ export class CleansiaCalendarComponent extends CleansiaBaseFormInputComponent {
     this.valueChanges.emit(value);
   }
 
-  hasErrors(): boolean {
-    return (
-      !!this.formControl && this.formControl.invalid && this.formControl.touched
-    );
-  }
-
   private getDefaultLabelId() {
     return 'cleansia-calendar-' + Math.random().toString(36).substring(2);
   }

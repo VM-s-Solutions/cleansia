@@ -17,6 +17,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { ToastModule } from 'primeng/toast';
 import {
   combineLatest,
+  distinctUntilChanged,
   filter,
   map,
   startWith,
@@ -44,6 +45,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private readonly registrationService = inject(RegistrationCompletionService);
 
   private readonly destroy$ = new Subject<void>();
+  private hasCheckedEmployee = false;
 
   sidebarCollapsed = signal(false);
   shouldShowRegistrationLock = signal(false);
@@ -54,10 +56,6 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    if (this.isLoggedIn) {
-      this.store.dispatch(checkEmployeeCurrent());
-    }
-
     const currentUrl$ = this.router.events.pipe(
       filter((event) => event instanceof NavigationEnd),
       map((event) => (event as NavigationEnd).url),
@@ -69,10 +67,16 @@ export class AppComponent implements OnInit, OnDestroy {
       this.registrationService.isRegistrationComplete();
 
     combineLatest([currentUrl$, isLoggedIn$, registrationStatus$])
-      .pipe(takeUntil(this.destroy$))
+      .pipe(
+        distinctUntilChanged(),
+        takeUntil(this.destroy$)
+      )
       .subscribe(([url, isLoggedIn, isComplete]) => {
-        if (isLoggedIn) {
+        if (isLoggedIn && !this.hasCheckedEmployee) {
           this.store.dispatch(checkEmployeeCurrent());
+          this.hasCheckedEmployee = true;
+        } else if (!isLoggedIn) {
+          this.hasCheckedEmployee = false;
         }
 
         const isProtectedRoute = this.shouldCheckRegistrationCompletion(url);

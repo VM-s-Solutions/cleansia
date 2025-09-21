@@ -20,6 +20,18 @@ public class EmployeeEntityConfiguration : AuditableEntityConfiguration<Employee
         builder.Property(e => e.ICO)
             .HasMaxLength(50);
 
+        builder.Property(e => e.PassportId)
+            .HasMaxLength(50);
+
+        builder.Property(e => e.IBAN)
+            .HasMaxLength(50);
+
+        builder.Property(e => e.EmergencyContactName)
+            .HasMaxLength(100);
+
+        builder.Property(e => e.EmergencyContactPhone)
+            .HasMaxLength(20);
+
         builder.Property(e => e.AverageRating)
             .HasPrecision(18, 2)
             .IsRequired()
@@ -35,9 +47,20 @@ public class EmployeeEntityConfiguration : AuditableEntityConfiguration<Employee
             .HasForeignKey<Employee>(o => o.UserId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        builder
+            .HasOne(e => e.Nationality)
+            .WithMany(c => c.Employees)
+            .HasForeignKey(e => e.NationalityId)
+            .OnDelete(DeleteBehavior.NoAction);
+
         builder.Property(s => s.Availability)
             .HasConversion(new JsonValueConverter<IReadOnlyDictionary<string, List<TimeRange>>>())
             .Metadata
             .SetValueComparer(new JsonValueComparer<IReadOnlyDictionary<string, List<TimeRange>>>());
+
+        builder.Property(s => s.DocumentFileNames)
+            .HasConversion(new JsonValueConverter<IReadOnlyCollection<string>>())
+            .Metadata
+            .SetValueComparer(new JsonValueComparer<IReadOnlyCollection<string>>());
     }
 }

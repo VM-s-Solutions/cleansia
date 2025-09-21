@@ -35,6 +35,11 @@
     [class]="'w-full ' + (hasErrors() ? 'ng-invalid ng-dirty' : '')"
   />
 </div>
-} @if (showErrors() && hasErrors()) {
-<small class="p-error">{{ formControl.errors | error }}</small>
+} @if (showErrors() && formControl.invalid && (formControl.dirty ||
+formControl.touched)) {
+<ul class="cleansia-error-message-container">
+  @for (error of formControl.errors | error; track $index) {
+  <li>{{ error }}</li>
+  }
+</ul>
 }

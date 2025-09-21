@@ -6,6 +6,12 @@ public class Constants
     {
         public const string UserFiles = "user-files";
         public const string BetaWhiteList = "beta-whitelist";
+        public const string EmployeeDocuments = "employee-documents";
+    }
+
+    public class VirtualDirectories
+    {
+        public const string EmployeeDocuments = "employees/{0}/documents";
     }
 
     public class StripeEventType

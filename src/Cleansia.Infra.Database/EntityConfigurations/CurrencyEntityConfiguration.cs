@@ -1,4 +1,4 @@
-﻿using Cleansia.Core.Domain.Internalization;
+﻿using Cleansia.Core.Domain.Internationalization;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;

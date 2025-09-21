@@ -19,7 +19,6 @@ public class UserEmailValidator<TRequest> : AbstractValidator<TRequest>
 
         RuleFor(request => request)
             .MustAsync(UserWithEmailExistsAsync)
-            .WithErrorCode(nameof(ClaimTypes.Email))
             .WithMessage(BusinessErrorMessage.NotExistingUserWithEmail);
     }
 
@@ -37,62 +36,46 @@ public abstract class BaseUserValidator<TRequest> : AbstractValidator<TRequest>
 {
     protected void AddEmailRules(Expression<Func<TRequest, string>> emailExpression)
     {
-        var propertyName = GetPropertyName(emailExpression);
-
         RuleFor(emailExpression)
             .Cascade(CascadeMode.Stop)
             .NotEmpty()
             .WithMessage(BusinessErrorMessage.Required)
-            .WithErrorCode(propertyName)
             .EmailAddress()
             .WithMessage(BusinessErrorMessage.InvalidEmailFormat)
-            .WithErrorCode(propertyName)
             .MaximumLength(50)
-            .WithMessage(BusinessErrorMessage.MaxLength)
-            .WithErrorCode(propertyName);
+            .WithMessage(BusinessErrorMessage.MaxLength);
     }
 
     protected void AddFirstNameRules(Expression<Func<TRequest, string>> firstNameExpression)
     {
-        var propertyName = GetPropertyName(firstNameExpression);
-
         RuleFor(firstNameExpression)
             .Cascade(CascadeMode.Stop)
             .NotEmpty()
             .WithMessage(BusinessErrorMessage.Required)
-            .WithErrorCode(propertyName)
             .MaximumLength(50)
-            .WithMessage(BusinessErrorMessage.MaxLength)
-            .WithErrorCode(propertyName);
+            .WithMessage(BusinessErrorMessage.MaxLength);
     }
 
     protected void AddLastNameRules(Expression<Func<TRequest, string>> lastNameExpression)
     {
-        var propertyName = GetPropertyName(lastNameExpression);
-
         RuleFor(lastNameExpression)
             .Cascade(CascadeMode.Stop)
             .NotEmpty()
             .WithMessage(BusinessErrorMessage.Required)
-            .WithErrorCode(propertyName)
             .MaximumLength(50)
-            .WithMessage(BusinessErrorMessage.MaxLength)
-            .WithErrorCode(propertyName);
+            .WithMessage(BusinessErrorMessage.MaxLength);
     }
 
     protected void AddPasswordRules(Expression<Func<TRequest, string>> passwordExpression)
     {
-        var propertyName = GetPropertyName(passwordExpression);
         const string passwordPattern = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$";
 
         RuleFor(passwordExpression)
             .Cascade(CascadeMode.Stop)
             .NotEmpty()
             .WithMessage(BusinessErrorMessage.Required)
-            .WithErrorCode(propertyName)
             .Matches(passwordPattern)
-            .WithMessage(BusinessErrorMessage.InvalidPasswordFormat)
-            .WithErrorCode(propertyName);
+            .WithMessage(BusinessErrorMessage.InvalidPasswordFormat);
     }
 
     private static string GetPropertyName<T, TProperty>(Expression<Func<T, TProperty>> expression)

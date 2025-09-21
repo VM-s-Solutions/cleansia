@@ -1,5 +1,5 @@
 ﻿using Cleansia.Core.AppServices.Features.Currencies.DTOs;
-using Cleansia.Core.Domain.Internalization;
+using Cleansia.Core.Domain.Internationalization;
 
 namespace Cleansia.Core.AppServices.Mappers;
 

@@ -1,4 +1,5 @@
 export * from './cleansia-availability';
+export * from './cleansia-base-form';
 export * from './cleansia-brand-name';
 export * from './cleansia-button';
 export * from './cleansia-calendar';
@@ -10,6 +11,7 @@ export * from './cleansia-loader';
 export * from './cleansia-menu';
 export * from './cleansia-registration-lock';
 export * from './cleansia-section';
+export * from './cleansia-select';
 export * from './cleansia-sidebar-menu';
 export * from './cleansia-table';
 export * from './cleansia-telephone';

@@ -11,7 +11,5 @@ public record EmployeeListItem(
     string? PhoneNumber,
     Code Profile,
     Code AuthenticationType,
-    bool IsEmailConfirmed,
-    bool IsEmployeeConfirmed,
     DateOnly? BirthDate,
     BlobFileDto? ProfilePhoto);

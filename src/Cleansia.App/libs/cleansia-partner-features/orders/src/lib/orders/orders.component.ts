@@ -14,7 +14,6 @@ import {
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { TranslatePipe } from '@ngx-translate/core';
-import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CalendarModule } from 'primeng/calendar';
 import { DialogModule } from 'primeng/dialog';
@@ -45,7 +44,8 @@ import { OrdersFacade } from './orders.facade';
     CleansiaLanguageSwitcherComponent,
   ],
   templateUrl: './orders.component.html',
-  providers: [OrdersFacade, MessageService, DialogService],
+  styleUrls: ['./orders.component.scss'],
+  providers: [OrdersFacade, DialogService],
 })
 export class OrdersComponent {
   protected readonly facade = inject(OrdersFacade);

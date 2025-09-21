@@ -19,6 +19,7 @@ import { ConfirmEmailFacade } from './confirm-email.facade';
 @Component({
   selector: 'cleansia-partner-confirm-email',
   templateUrl: './confirm-email.component.html',
+  styleUrls: ['./confirm-email.component.scss'],
   standalone: true,
   imports: [
     CommonModule,

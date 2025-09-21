@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
-using Cleansia.Core.Domain.Internalization;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Packages;
 

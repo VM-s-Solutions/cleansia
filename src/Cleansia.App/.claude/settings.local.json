@@ -9,7 +9,14 @@
       "mcp__ide__getDiagnostics",
       "Bash(npx tsc:*)",
       "Bash(nx lint:*)",
-      "Bash(move:*)"
+      "Bash(move:*)",
+      "Bash(find:*)",
+      "Bash(nx reset:*)",
+      "Bash(npm run build:cleansia-partner:*)",
+      "Bash(npm run:*)",
+      "Bash(npx nx build:*)",
+      "Bash(npx nx lint:*)",
+      "Bash(npx nx serve:*)"
     ],
     "deny": [],
     "ask": []

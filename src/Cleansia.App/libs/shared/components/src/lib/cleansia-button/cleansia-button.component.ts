@@ -9,6 +9,7 @@ import { InputSize } from '../cleansia-base-form/cleansia-base-form.models';
   standalone: true,
   imports: [CommonModule, ButtonModule, TranslateModule],
   templateUrl: './cleansia-button.component.html',
+  styleUrls: ['./cleansia-button.component.scss'],
 })
 export class CleansiaButtonComponent {
   buttonType = input<'button' | 'submit' | 'reset'>('button');

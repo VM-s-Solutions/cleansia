@@ -1,71 +1,86 @@
-<div class="file-component">
-  <p-fileUpload
-    #fileUpload
-    chooseLabel="Select Files"
-    uploadLabel="Upload"
-    cancelLabel="Cancel"
+<div class="cleansia-file-component">
+  @if (label()) {
+  <label [for]="id()" [class.required]="isRequired() && showRequired()">
+    {{ label() }}
+  </label>
+  }
+
+  <!-- Hidden file input -->
+  <input
+    #fileInput
+    type="file"
+    [id]="id()"
     [multiple]="multiple()"
     [accept]="accept()"
-    [maxFileSize]="maxFileSize()"
-    [url]="'/api/upload'"
-    (onUpload)="onUpload($event)"
-    (onSelect)="onSelect($event)"
-    (onRemove)="onRemove($event)"
-    [showUploadButton]="true"
-    [showCancelButton]="true"
-    chooseIcon="pi pi-fw pi-plus"
-    uploadIcon="pi pi-fw pi-upload"
-    cancelIcon="pi pi-fw pi-times"
-    invalidFileSizeMessageSummary="{0}: Invalid file size"
-    invalidFileSizeMessageDetail="Maximum file size is {0}"
-    invalidFileTypeMessageSummary="{0}: Invalid file type"
-    invalidFileTypeMessageDetail="Allowed types: {0}"
+    [disabled]="disabled()"
+    (change)="onFileSelect($event)"
+    style="display: none"
+  />
+
+  <!-- File upload area -->
+  <div
+    class="file-upload-area"
+    [class.disabled]="disabled()"
+    [class.has-error]="
+      formControl.invalid && (formControl.dirty || formControl.touched)
+    "
+    [class.drag-over]="isDragOver"
+    (click)="triggerFileSelect()"
+    (drop)="onDrop($event)"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave($event)"
+    [attr.tabindex]="disabled() ? -1 : 0"
+    (keydown.enter)="triggerFileSelect()"
+    (keydown.space)="triggerFileSelect()"
   >
-    <ng-template pTemplate="content">
-      @if (files().length > 0) {
-        <div class="file-list">
-          <h4>Selected Files:</h4>
-          <ul>
-            @for (file of files(); track file.name) {
-            <li class="file-item">
-              <span
-                >{{ file.name }} ({{ file.size | number : '1.0-0' }} bytes)</span
-              >
-              <p-button
-                icon="pi pi-trash"
-                [text]="true"
-                severity="danger"
-                size="small"
-                (onClick)="removeFile(file)"
-              />
-            </li>
-            }
-          </ul>
-          @if (progress() > 0) {
-          <p-progressBar [value]="progress()" [showValue]="true" />
-          }
-        </div>
-      }
-    </ng-template>
-  </p-fileUpload>
-  @if (messages().length > 0) {
-  <div class="messages">
-    @for (msg of messages(); track $index) {
-    <p-message [severity]="msg.severity" [text]="msg.text" />
-    }
-  </div>
-  }
-  @if (uploadedFiles().length > 0) {
-    <div class="uploaded-files">
-      <h4>Uploaded Files:</h4>
-      <ul>
-        @for (file of uploadedFiles(); track file.name) {
-        <li>
-          <a [href]="file.url" target="_blank">{{ file.name }}</a>
-          ({{ file.size | number : '1.0-0' }} bytes)
-        </li>
-        }
-      </ul>
+    <div class="upload-content">
+      <i class="pi pi-cloud-upload upload-icon"></i>
+      <div class="upload-text">
+        <span class="primary-text">{{ 'components.file.click_to_select' | translate }}</span>
+        <span class="secondary-text">{{ 'components.file.or_drag_drop' | translate }}</span>
+      </div>
+      <div class="upload-hint">
+        {{ 'components.file.accepted' | translate }}: {{ accept() }} |
+        {{ 'components.file.max_size' | translate }}: {{ formatFileSize(maxFileSize()) }}
+      </div>
     </div>
+  </div>
+
+  <!-- Selected files list -->
+  @if (selectedFiles.length > 0) {
+  <div class="selected-files">
+    <div class="files-header">
+      {{ 'components.file.selected_files' | translate }} ({{ selectedFiles.length }})
+    </div>
+    <div class="files-list">
+      @for (file of selectedFiles; track file.name; let i = $index) {
+      <div class="file-item">
+        <div class="file-info">
+          <i class="pi pi-file file-icon"></i>
+          <div class="file-details">
+            <span class="file-name">{{ file.name }}</span>
+            <span class="file-size">{{ formatFileSize(file.size) }}</span>
+          </div>
+        </div>
+        <p-button
+          icon="pi pi-times"
+          [text]="true"
+          severity="secondary"
+          size="small"
+          (onClick)="removeFile(i)"
+          [disabled]="disabled()"
+          [title]="'Remove ' + file.name"
+        />
+      </div>
+      }
+    </div>
+  </div>
+  } @if (showErrors() && formControl.invalid && (formControl.dirty ||
+  formControl.touched)) {
+  <ul class="cleansia-error-message-container">
+    @for (error of formControl.errors | error; track $index) {
+    <li>{{ error }}</li>
+    }
+  </ul>
   }
 </div>

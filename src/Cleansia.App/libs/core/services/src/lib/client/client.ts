@@ -556,6 +556,92 @@ export class CodeClient implements ICodeClient {
     }
 }
 
+export interface ICountryClient {
+    /**
+     * @return OK
+     */
+    getOverview(): Observable<CountryListItem[]>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class CountryClient implements ICountryClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(APIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @return OK
+     */
+    getOverview(): Observable<CountryListItem[]> {
+        let url = this.baseUrl + "/api/Country/GetOverview";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetOverview(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetOverview(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<CountryListItem[]>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<CountryListItem[]>;
+        }));
+    }
+
+    protected processGetOverview(response: HttpResponseBase): Observable<CountryListItem[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(CountryListItem.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
 export interface ICurrencyClient {
     /**
      * @return OK
@@ -648,6 +734,16 @@ export interface IEmployeeClient {
      * @return OK
      */
     checkCurrentEmployee(query?: CheckCurrentEmployeeQuery | undefined): Observable<RegistrationCompletionStatus>;
+    /**
+     * @param query (optional) 
+     * @return OK
+     */
+    getCurrentEmployee(query?: GetCurrentEmployeeDetailQuery | undefined): Observable<EmployeeItem>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    updateEmployee(body?: UpdateEmployeeCommand | undefined): Observable<CreateOrderResponse>;
 }
 
 @Injectable({
@@ -717,6 +813,132 @@ export class EmployeeClient implements IEmployeeClient {
             let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result401 = ProblemDetails.fromJS(resultData401);
             return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param query (optional) 
+     * @return OK
+     */
+    getCurrentEmployee(query?: GetCurrentEmployeeDetailQuery | undefined): Observable<EmployeeItem> {
+        let url = this.baseUrl + "/api/Employee/GetCurrentEmployee?";
+        if (query === null)
+            throw new globalThis.Error("The parameter 'query' cannot be null.");
+        else if (query !== undefined)
+            url += "query=" + encodeURIComponent("" + query) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetCurrentEmployee(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetCurrentEmployee(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<EmployeeItem>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<EmployeeItem>;
+        }));
+    }
+
+    protected processGetCurrentEmployee(response: HttpResponseBase): Observable<EmployeeItem> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = EmployeeItem.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    updateEmployee(body?: UpdateEmployeeCommand | undefined): Observable<CreateOrderResponse> {
+        let url = this.baseUrl + "/api/Employee/UpdateEmployee";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("put", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processUpdateEmployee(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processUpdateEmployee(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<CreateOrderResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<CreateOrderResponse>;
+        }));
+    }
+
+    protected processUpdateEmployee(response: HttpResponseBase): Observable<CreateOrderResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = CreateOrderResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -2056,6 +2278,66 @@ export interface IResendConfirmationEmailCommand {
     language: string | undefined;
 }
 
+export class CountryListItem implements ICountryListItem {
+    id!: string | undefined;
+    name!: string | undefined;
+    isoCode!: string | undefined;
+    translations!: { [key: string]: Translation; } | undefined;
+
+    constructor(data?: ICountryListItem) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.name = Data["name"];
+            this.isoCode = Data["isoCode"];
+            if (Data["translations"]) {
+                this.translations = {} as any;
+                for (let key in Data["translations"]) {
+                    if (Data["translations"].hasOwnProperty(key))
+                        (this.translations as any)![key] = Data["translations"][key] ? Translation.fromJS(Data["translations"][key]) : new Translation();
+                }
+            }
+        }
+    }
+
+    static fromJS(data: any): CountryListItem {
+        data = typeof data === 'object' ? data : {};
+        let result = new CountryListItem();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["isoCode"] = this.isoCode;
+        if (this.translations) {
+            data["translations"] = {};
+            for (let key in this.translations) {
+                if (this.translations.hasOwnProperty(key))
+                    (data["translations"] as any)[key] = this.translations[key] ? this.translations[key].toJSON() : undefined as any;
+            }
+        }
+        return data;
+    }
+}
+
+export interface ICountryListItem {
+    id: string | undefined;
+    name: string | undefined;
+    isoCode: string | undefined;
+    translations: { [key: string]: Translation; } | undefined;
+}
+
 export class CurrencyListItem implements ICurrencyListItem {
     id!: string | undefined;
     code!: string | undefined;
@@ -2138,6 +2420,110 @@ export class CheckCurrentEmployeeQuery implements ICheckCurrentEmployeeQuery {
 export interface ICheckCurrentEmployeeQuery {
 }
 
+export class EmployeeItem implements IEmployeeItem {
+    id!: string | undefined;
+    email!: string | undefined;
+    firstName!: string | undefined;
+    lastName!: string | undefined;
+    phoneNumber!: string | undefined;
+    birthDate!: Date | undefined;
+    street!: string | undefined;
+    city!: string | undefined;
+    zipCode!: string | undefined;
+    countryId!: string | undefined;
+    passportId!: string | undefined;
+    taxId!: string | undefined;
+    iban!: string | undefined;
+    emergencyContactName!: string | undefined;
+    emergencyContactPhone!: string | undefined;
+    profilePhoto!: BlobFileDto;
+    profile!: Code;
+    authenticationType!: Code;
+
+    constructor(data?: IEmployeeItem) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.email = Data["email"];
+            this.firstName = Data["firstName"];
+            this.lastName = Data["lastName"];
+            this.phoneNumber = Data["phoneNumber"];
+            this.birthDate = Data["birthDate"] ? new Date(Data["birthDate"].toString()) : undefined as any;
+            this.street = Data["street"];
+            this.city = Data["city"];
+            this.zipCode = Data["zipCode"];
+            this.countryId = Data["countryId"];
+            this.passportId = Data["passportId"];
+            this.taxId = Data["taxId"];
+            this.iban = Data["iban"];
+            this.emergencyContactName = Data["emergencyContactName"];
+            this.emergencyContactPhone = Data["emergencyContactPhone"];
+            this.profilePhoto = Data["profilePhoto"] ? BlobFileDto.fromJS(Data["profilePhoto"]) : undefined as any;
+            this.profile = Data["profile"] ? Code.fromJS(Data["profile"]) : undefined as any;
+            this.authenticationType = Data["authenticationType"] ? Code.fromJS(Data["authenticationType"]) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): EmployeeItem {
+        data = typeof data === 'object' ? data : {};
+        let result = new EmployeeItem();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["email"] = this.email;
+        data["firstName"] = this.firstName;
+        data["lastName"] = this.lastName;
+        data["phoneNumber"] = this.phoneNumber;
+        data["birthDate"] = this.birthDate ? formatDate(this.birthDate) : undefined as any;
+        data["street"] = this.street;
+        data["city"] = this.city;
+        data["zipCode"] = this.zipCode;
+        data["countryId"] = this.countryId;
+        data["passportId"] = this.passportId;
+        data["taxId"] = this.taxId;
+        data["iban"] = this.iban;
+        data["emergencyContactName"] = this.emergencyContactName;
+        data["emergencyContactPhone"] = this.emergencyContactPhone;
+        data["profilePhoto"] = this.profilePhoto ? this.profilePhoto.toJSON() : undefined as any;
+        data["profile"] = this.profile ? this.profile.toJSON() : undefined as any;
+        data["authenticationType"] = this.authenticationType ? this.authenticationType.toJSON() : undefined as any;
+        return data;
+    }
+}
+
+export interface IEmployeeItem {
+    id: string | undefined;
+    email: string | undefined;
+    firstName: string | undefined;
+    lastName: string | undefined;
+    phoneNumber: string | undefined;
+    birthDate: Date | undefined;
+    street: string | undefined;
+    city: string | undefined;
+    zipCode: string | undefined;
+    countryId: string | undefined;
+    passportId: string | undefined;
+    taxId: string | undefined;
+    iban: string | undefined;
+    emergencyContactName: string | undefined;
+    emergencyContactPhone: string | undefined;
+    profilePhoto: BlobFileDto;
+    profile: Code;
+    authenticationType: Code;
+}
+
 export class RegistrationCompletionStatus implements IRegistrationCompletionStatus {
     areDocumentsUploaded!: boolean;
     hasCompletedProfile!: boolean;
@@ -2176,6 +2562,148 @@ export class RegistrationCompletionStatus implements IRegistrationCompletionStat
 export interface IRegistrationCompletionStatus {
     areDocumentsUploaded: boolean;
     hasCompletedProfile: boolean;
+}
+
+export class GetCurrentEmployeeDetailQuery implements IGetCurrentEmployeeDetailQuery {
+
+    constructor(data?: IGetCurrentEmployeeDetailQuery) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+    }
+
+    static fromJS(data: any): GetCurrentEmployeeDetailQuery {
+        data = typeof data === 'object' ? data : {};
+        let result = new GetCurrentEmployeeDetailQuery();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        return data;
+    }
+}
+
+export interface IGetCurrentEmployeeDetailQuery {
+}
+
+export class UpdateEmployeeCommand implements IUpdateEmployeeCommand {
+    employeeId!: string | undefined;
+    firstName!: string | undefined;
+    lastName!: string | undefined;
+    birthDate!: Date;
+    street!: string | undefined;
+    city!: string | undefined;
+    zipCode!: string | undefined;
+    countryId!: string | undefined;
+    nationalityId!: string | undefined;
+    phone!: string | undefined;
+    email!: string | undefined;
+    passportId!: string | undefined;
+    taxId!: string | undefined;
+    iban!: string | undefined;
+    emergencyName!: string | undefined;
+    emergencyPhone!: string | undefined;
+    consent!: boolean;
+    documents!: BlobFileDto[] | undefined;
+
+    constructor(data?: IUpdateEmployeeCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.employeeId = Data["employeeId"];
+            this.firstName = Data["firstName"];
+            this.lastName = Data["lastName"];
+            this.birthDate = Data["birthDate"] ? new Date(Data["birthDate"].toString()) : undefined as any;
+            this.street = Data["street"];
+            this.city = Data["city"];
+            this.zipCode = Data["zipCode"];
+            this.countryId = Data["countryId"];
+            this.nationalityId = Data["nationalityId"];
+            this.phone = Data["phone"];
+            this.email = Data["email"];
+            this.passportId = Data["passportId"];
+            this.taxId = Data["taxId"];
+            this.iban = Data["iban"];
+            this.emergencyName = Data["emergencyName"];
+            this.emergencyPhone = Data["emergencyPhone"];
+            this.consent = Data["consent"];
+            if (Array.isArray(Data["documents"])) {
+                this.documents = [] as any;
+                for (let item of Data["documents"])
+                    this.documents!.push(BlobFileDto.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): UpdateEmployeeCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateEmployeeCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["employeeId"] = this.employeeId;
+        data["firstName"] = this.firstName;
+        data["lastName"] = this.lastName;
+        data["birthDate"] = this.birthDate ? formatDate(this.birthDate) : undefined as any;
+        data["street"] = this.street;
+        data["city"] = this.city;
+        data["zipCode"] = this.zipCode;
+        data["countryId"] = this.countryId;
+        data["nationalityId"] = this.nationalityId;
+        data["phone"] = this.phone;
+        data["email"] = this.email;
+        data["passportId"] = this.passportId;
+        data["taxId"] = this.taxId;
+        data["iban"] = this.iban;
+        data["emergencyName"] = this.emergencyName;
+        data["emergencyPhone"] = this.emergencyPhone;
+        data["consent"] = this.consent;
+        if (Array.isArray(this.documents)) {
+            data["documents"] = [];
+            for (let item of this.documents)
+                data["documents"].push(item ? item.toJSON() : undefined as any);
+        }
+        return data;
+    }
+}
+
+export interface IUpdateEmployeeCommand {
+    employeeId: string | undefined;
+    firstName: string | undefined;
+    lastName: string | undefined;
+    birthDate: Date;
+    street: string | undefined;
+    city: string | undefined;
+    zipCode: string | undefined;
+    countryId: string | undefined;
+    nationalityId: string | undefined;
+    phone: string | undefined;
+    email: string | undefined;
+    passportId: string | undefined;
+    taxId: string | undefined;
+    iban: string | undefined;
+    emergencyName: string | undefined;
+    emergencyPhone: string | undefined;
+    consent: boolean;
+    documents: BlobFileDto[] | undefined;
 }
 
 export class LanguageListItem implements ILanguageListItem {

@@ -1,7 +1,7 @@
 ﻿using System.Security.Claims;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Emails;
-using Cleansia.Core.Domain.Internalization;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;

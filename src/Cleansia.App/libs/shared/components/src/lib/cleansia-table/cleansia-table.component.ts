@@ -18,6 +18,7 @@ import {
   selector: 'cleansia-table',
   standalone: true,
   templateUrl: './cleansia-table.component.html',
+  styleUrls: ['./cleansia-table.component.scss'],
   imports: [CommonModule, TableModule, TranslatePipe],
 })
 export class CleansiaTableComponent {

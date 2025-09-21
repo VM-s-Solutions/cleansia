@@ -1,1 +1,3 @@
-@use './pages/' as pages;
+// Styles have been moved to component-specific files
+// Only common styles remain centralized
+@use './common';

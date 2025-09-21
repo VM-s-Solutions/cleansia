@@ -109,7 +109,57 @@ namespace Cleansia.Infra.Database.Migrations
                     b.ToTable("EmailTranslations");
                 });
 
-            modelBuilder.Entity("Cleansia.Core.Domain.Internalization.Currency", b =>
+            modelBuilder.Entity("Cleansia.Core.Domain.Internationalization.Country", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeactivatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("DeactivatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("IsoCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Translations")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Countries");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Internationalization.Currency", b =>
                 {
                     b.Property<string>("Id")
                         .HasMaxLength(26)
@@ -164,7 +214,7 @@ namespace Cleansia.Infra.Database.Migrations
                     b.ToTable("Currencies");
                 });
 
-            modelBuilder.Entity("Cleansia.Core.Domain.Internalization.Language", b =>
+            modelBuilder.Entity("Cleansia.Core.Domain.Internationalization.Language", b =>
                 {
                     b.Property<string>("Id")
                         .HasMaxLength(26)
@@ -668,51 +718,6 @@ namespace Cleansia.Infra.Database.Migrations
                     b.ToTable("CartServiceItems");
                 });
 
-            modelBuilder.Entity("Cleansia.Core.Domain.Users.Country", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasMaxLength(26)
-                        .HasColumnType("character varying(26)");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<DateTimeOffset>("CreatedOn")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DeactivatedBy")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<DateTimeOffset?>("DeactivatedOn")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("Translations")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<DateTimeOffset?>("UpdatedOn")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Countries");
-                });
-
             modelBuilder.Entity("Cleansia.Core.Domain.Users.Employee", b =>
                 {
                     b.Property<string>("Id")
@@ -755,12 +760,35 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<DateTimeOffset?>("DeactivatedOn")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("DocumentFileNames")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("EmergencyContactName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("EmergencyContactPhone")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("IBAN")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<string>("ICO")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("NationalityId")
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("PassportId")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255)
@@ -776,6 +804,8 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AddressId");
+
+                    b.HasIndex("NationalityId");
 
                     b.ToTable("Employees");
                 });
@@ -888,7 +918,7 @@ namespace Cleansia.Infra.Database.Migrations
 
             modelBuilder.Entity("Cleansia.Core.Domain.Emails.EmailTranslation", b =>
                 {
-                    b.HasOne("Cleansia.Core.Domain.Internalization.Language", "Language")
+                    b.HasOne("Cleansia.Core.Domain.Internationalization.Language", "Language")
                         .WithMany()
                         .HasForeignKey("LanguageId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -899,7 +929,7 @@ namespace Cleansia.Infra.Database.Migrations
 
             modelBuilder.Entity("Cleansia.Core.Domain.Orders.Order", b =>
                 {
-                    b.HasOne("Cleansia.Core.Domain.Internalization.Currency", "Currency")
+                    b.HasOne("Cleansia.Core.Domain.Internationalization.Currency", "Currency")
                         .WithMany()
                         .HasForeignKey("CurrencyId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1006,7 +1036,7 @@ namespace Cleansia.Infra.Database.Migrations
 
             modelBuilder.Entity("Cleansia.Core.Domain.Users.Address", b =>
                 {
-                    b.HasOne("Cleansia.Core.Domain.Users.Country", "Country")
+                    b.HasOne("Cleansia.Core.Domain.Internationalization.Country", "Country")
                         .WithMany()
                         .HasForeignKey("CountryId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1059,7 +1089,14 @@ namespace Cleansia.Infra.Database.Migrations
                         .WithMany()
                         .HasForeignKey("AddressId");
 
+                    b.HasOne("Cleansia.Core.Domain.Internationalization.Country", "Nationality")
+                        .WithMany("Employees")
+                        .HasForeignKey("NationalityId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.Navigation("Address");
+
+                    b.Navigation("Nationality");
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Users.User", b =>
@@ -1079,6 +1116,11 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("Cart");
 
                     b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Internationalization.Country", b =>
+                {
+                    b.Navigation("Employees");
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Orders.Order", b =>

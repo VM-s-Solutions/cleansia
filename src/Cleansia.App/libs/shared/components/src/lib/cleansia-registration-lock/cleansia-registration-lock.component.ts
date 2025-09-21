@@ -13,6 +13,7 @@ import { Observable } from 'rxjs';
   selector: 'cleansia-registration-lock',
   imports: [CommonModule, TranslateModule],
   templateUrl: './cleansia-registration-lock.component.html',
+  styleUrls: ['./cleansia-registration-lock.component.scss'],
 })
 export class CleansiaRegistrationLockComponent implements OnInit {
   private readonly registrationService = inject(RegistrationCompletionService);

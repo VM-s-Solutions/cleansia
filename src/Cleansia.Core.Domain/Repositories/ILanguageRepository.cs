@@ -1,4 +1,4 @@
-﻿using Cleansia.Core.Domain.Internalization;
+﻿using Cleansia.Core.Domain.Internationalization;
 
 namespace Cleansia.Core.Domain.Repositories;
 

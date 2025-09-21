@@ -41,16 +41,36 @@ public static class BusinessErrorMessage
 
     // Employee
     public const string NotExistingEmployeeWithEmail = "employee.not_existing_email";
+    public const string NotAllowedToUpdateEmployee = "employee.not_allowed_to_update";
 
     // File
     public const string FileNotMatchContentType = "file.content_type_doesnt_match";
+    public const string InvalidFileType = "file.invalid_file_type";
+    public const string FileSizeExceeded = "file.size_exceeded";
+    public const string FileCountExceeded = "file.count_exceeded";
+    public const string FileCountTooFew = "file.count_too_few";
+    public const string FileRequired = "file.required";
+
+    // Address
+    public const string InvalidLength = "address.invalid_length";
 
     // Language
     public const string LanguageNotSupported = "language.not_supported";
+
+    // Country
+    public const string NotExistingCountryWithId = "country.not_existing_id";
 
     // Validation
     public const string InvalidPassword = "validation.invalid_password";
     public const string InvalidDate = "validation.invalid_date";
     public const string DateMustBeInPast = "validation.date_must_be_in_past";
     public const string InvalidAge = "validation.invalid_age";
+    public const string InvalidPhoneNumber = "validation.invalid_phone_number";
+    public const string InvalidNationalId = "validation.invalid_national_id";
+    public const string InvalidTaxId = "validation.invalid_tax_id";
+    public const string InvalidIban = "validation.invalid_iban";
+    public const string InvalidZipCode = "validation.invalid_zip_code";
+
+    // General
+    public const string NotFound = "general.not_found";
 }

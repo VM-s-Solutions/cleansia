@@ -41,6 +41,7 @@ import { InputTextModule } from 'primeng/inputtext';
     },
   ],
   templateUrl: './cleansia-time-picker.component.html',
+  styleUrls: ['./cleansia-time-picker.component.scss'],
 })
 export class CleansiaTimePickerComponent implements ControlValueAccessor {
   // Inputs

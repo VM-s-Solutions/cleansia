@@ -10,13 +10,7 @@
     [readonly]="readonlyInput()"
     [slotChar]="'_'"
     [autocomplete]="autocomplete()"
-    [class]="className() ?? ''"
-    [ngClass]="{
-      'p-invalid':
-        showErrors() &&
-        formControl.invalid &&
-        (formControl.dirty || formControl.touched)
-    }"
+    [class]="className() ?? '' + (hasErrors() ? 'ng-invalid ng-dirty' : '')"
   />
   @if (label()) {
   <label [for]="id()" [class.required]="isRequired() && showRequired()">{{
@@ -43,9 +37,7 @@
   [class]="className() ?? ''"
   [ngClass]="{
     'p-invalid':
-      showErrors() &&
-      formControl.invalid &&
-      (formControl.dirty || formControl.touched)
+      formControl.invalid && (formControl.dirty || formControl.touched)
   }"
 />
 } @if (showErrors() && formControl.invalid && (formControl.dirty ||

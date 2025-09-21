@@ -54,8 +54,9 @@
       "country": "Country",
       "phone": "Phone Number",
       "email": "Email",
+      "nationality": "Nationality",
       "national_id": "National ID / Passport Number",
-      "tax_id": "Tax ID (if available)",
+      "tax_id": "Tax ID",
       "bank_details": "Bank Details for Payroll",
       "iban": "IBAN",
       "emergency_contact": "Emergency Contact",
@@ -73,8 +74,6 @@
       "active_orders": "Active Orders",
       "time_logs": "Time Logs",
       "order_id": "Order ID",
-      "title": "Title",
-      "description": "Description",
       "due_date": "Due Date",
       "status": "Status",
       "actions": "Actions",
@@ -123,12 +122,46 @@
     "invoices": "Invoices",
     "logout": "Logout"
   },
+  "components": {
+    "file": {
+      "click_to_select": "Click to select files",
+      "or_drag_drop": "or drag and drop",
+      "accepted": "Accepted",
+      "max_size": "Max size",
+      "selected_files": "Selected Files"
+    }
+  },
   "global": {
     "no_data": "No data to display",
     "loading": "Loading...",
     "messages": {
       "success": "Success",
-      "error": "Error"
+      "error": "Error",
+      "profile": {
+        "documents_uploaded": "Documents uploaded successfully",
+        "onboarding_submitted": "Your onboarding information has been submitted.",
+        "fill_required_fields": "Please fill in all required fields.",
+        "no_files_selected": "No files selected",
+        "invalid_file_type": "Invalid file type. Please upload PDF, DOC, DOCX, TXT, JPG, JPEG, or PNG files.",
+        "file_too_large": "File size too large. Maximum allowed size is 10MB per file.",
+        "too_few_files": "Please upload at least 1 file.",
+        "too_many_files": "Too many files. Maximum allowed is 10 files.",
+        "files_required": "Document upload is required.",
+        "file_removed": "File removed successfully"
+      },
+      "orders": {
+        "time_log_saved": "Time log saved successfully.",
+        "time_log_removed": "Time log removed.",
+        "report_submitted": "Your time report has been submitted for review."
+      },
+      "invoices": {
+        "invoice_generated": "Invoice generated from time logs.",
+        "invoice_preview": "Invoice preview opened.",
+        "invoice_downloaded": "Invoice downloaded successfully."
+      },
+      "form": {
+        "request_sent": "Request sent. We will contact you soon."
+      }
     },
     "actions": {
       "actions": "Actions",
@@ -178,7 +211,35 @@
       "min_length": "Field must contain at least {{ minLength }} characters",
       "max_length": "Field can contain a maximum of {{ maxLength }} characters",
       "invalid_quantity": "Quantity for product {{ name }} is entered incorrectly",
-      "pattern": "Field does not match the required pattern"
+      "pattern": "Field does not match the required pattern",
+      "minimum_age": "Minimum age is {{ requiredAge }} years. Current age: {{ actualAge }} years",
+      "maximum_age": "Maximum age is {{ maxAge }} years. Current age: {{ actualAge }} years",
+      "phone_number": "Invalid phone number format",
+      "iban": "Invalid IBAN format",
+      "alphabetic_only": "Field must contain only alphabetic characters",
+      "alphanumeric_only": "Field must contain only alphanumeric characters",
+      "zip_code": "Invalid zip code format",
+      "national_id": "Invalid national ID format",
+      "tax_id": "Invalid tax ID format",
+      "confirm_password": "Passwords do not match",
+      "no_whitespace": "Field cannot contain whitespace characters",
+      "url": "Invalid URL format"
+    },
+    "file": {
+      "required": "Files are required",
+      "invalid_type": "Invalid file type. Please select a valid document file.",
+      "size_too_large": "File size too large. Maximum allowed size is {{ maxSize }}MB.",
+      "too_few_files": "Too few files selected. Minimum required: {{ min }}",
+      "too_many_files": "Too many files selected. Maximum allowed: {{ max }}",
+      "generic_error": "File validation error occurred"
+    },
+    "password": {
+      "uppercase": "at least one uppercase letter",
+      "lowercase": "at least one lowercase letter",
+      "number": "at least one number",
+      "special_char": "at least one special character",
+      "min_length": "minimum 8 characters",
+      "requirements": "Password must contain: {{ requirements }}"
     }
   },
   "api": {
@@ -232,21 +293,45 @@
     },
     "employee": {
       "not_existing_email": "Employee with this email does not exist",
+      "not_allowed_to_update": "You are not allowed to update this employee",
       "data_not_available": "Employee data not available",
       "profile_incomplete": "Complete profile information",
       "documents_missing": "Upload required documents"
     },
     "file": {
-      "content_type_doesnt_match": "File type does not match content"
+      "content_type_doesnt_match": "File type does not match content",
+      "invalid_file_type": "Invalid file type. Please upload valid document files.",
+      "size_exceeded": "File size exceeds the maximum allowed limit.",
+      "count_exceeded": "Too many files. Maximum allowed number exceeded.",
+      "count_too_few": "Not enough files. Minimum required number not met.",
+      "required": "File upload is required."
+    },
+    "address": {
+      "invalid_length": "Invalid length for address field"
     },
     "language": {
       "not_supported": "Language is not supported"
+    },
+    "country": {
+      "not_existing_id": "Country with this ID does not exist"
     },
     "validation": {
       "invalid_password": "Invalid password",
       "invalid_date": "Invalid date",
       "date_must_be_in_past": "Date must be in the past",
-      "invalid_age": "Invalid age"
+      "invalid_age": "Invalid age",
+      "invalid_phone_number": "Invalid phone number format",
+      "invalid_national_id": "Invalid national ID format",
+      "invalid_tax_id": "Invalid tax ID format",
+      "invalid_iban": "Invalid IBAN format",
+      "invalid_zip_code": "Invalid zip code format",
+      "file": {
+        "max_size": "File \"{{fileName}}\" exceeds maximum size of {{maxSize}}MB",
+        "invalid_type": "File \"{{fileName}}\" type is not allowed. Accepted: {{acceptedTypes}}"
+      }
+    },
+    "general": {
+      "not_found": "Requested resource not found"
     }
   }
 }

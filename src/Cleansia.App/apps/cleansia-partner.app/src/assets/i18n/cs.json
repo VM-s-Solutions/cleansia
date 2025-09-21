@@ -89,17 +89,45 @@
       "submit_report": "Odeslat týdenní report",
       "no_orders": "Žádné objednávky k zobrazení",
       "no_logs": "Žádné časové záznamy k zobrazení"
+    },
+    "invoices": {
+      "title": "Správa faktur",
+      "description": "Spravujte své faktury a sledujte platby.",
+      "pending_invoices": "Nevyřízené faktury",
+      "all_invoices": "Všechny faktury",
+      "generate_invoice": "Vygenerovat fakturu",
+      "invoice_number": "Číslo faktury",
+      "date": "Datum",
+      "amount": "Částka",
+      "due_date": "Datum splatnosti",
+      "status": "Stav",
+      "actions": "Akce",
+      "download": "Stáhnout",
+      "view_details": "Zobrazit detaily",
+      "generate_from_logs": "Vygenerovat z časových záznamů",
+      "preview": "Náhled",
+      "invoice_details": "Detaily faktury",
+      "vat": "DPH",
+      "total": "Celkem",
+      "payment_status": "Stav platby",
+      "no_pending": "Žádné nevyřízené faktury",
+      "no_invoices": "Žádné faktury k zobrazení"
     }
   },
   "sidebar": {
     "dashboard": "Nástěnka",
     "profile": "Profil",
     "orders": "Objednávky",
+    "invoices": "Faktury",
     "logout": "Odhlásit se"
   },
   "global": {
     "no_data": "Žádná data k zobrazení",
     "loading": "Načítání...",
+    "messages": {
+      "success": "Úspěch",
+      "error": "Chyba"
+    },
     "actions": {
       "actions": "Akce",
       "add_to_cart": "Přidat do košíku",
@@ -131,6 +159,14 @@
       "Completed": "Dokončeno"
     }
   },
+  "registrationLock": {
+    "title": "Vyžadováno dokončení profilu",
+    "description": "Pro přístup k této sekci musíte dokončit nastavení profilu a nahrát požadované dokumenty.",
+    "missingRequirements": "Chybějící požadavky:",
+    "profileCompletion": "Dokončit informace v profilu",
+    "documentUpload": "Nahrát požadované dokumenty",
+    "completeProfile": "Dokončit profil"
+  },
   "validation": {
     "common": {
       "not_all_fields_filled": "Ne všechna pole jsou správně vyplněna",
@@ -141,6 +177,74 @@
       "max_length": "Pole může obsahovat maximálně {{ maxLength }} znaků",
       "invalid_quantity": "Množství produktu {{ name }} je zadáno nesprávně",
       "pattern": "Pole neodpovídá zadanému vzoru"
+    }
+  },
+  "api": {
+    "auth": {
+      "google_type_error": "Chyba typu Google autentizace",
+      "internal_type_error": "Chyba typu interní autentizace",
+      "invalid_confirmation_code": "Neplatný potvrzovací kód",
+      "invalid_google_token": "Neplatný Google token",
+      "invalid_password_format": "Neplatný formát hesla",
+      "invalid_reset_token": "Neplatný token pro obnovení hesla",
+      "same_reset_password": "Nové heslo se shoduje se starým heslem"
+    },
+    "common": {
+      "invalid_enum_value": "Neplatná hodnota výčtu",
+      "max_length": "Překročena maximální délka",
+      "required": "Povinné pole",
+      "unauthorized": "Nemáte oprávnění k provedení této akce",
+      "error_occurred": "Došlo k chybě. Zkuste to prosím znovu.",
+      "user_not_authenticated": "Uživatel není přihlášen"
+    },
+    "currency": {
+      "invalid": "Neplatná měna"
+    },
+    "email": {
+      "sending_failed": "Odeslání e-mailu se nezdařilo",
+      "invalid_format": "Neplatný formát e-mailu"
+    },
+    "order": {
+      "cleaning_date": {
+        "future": "Datum úklidu musí být v budoucnosti"
+      },
+      "empty": "Objednávka je prázdná",
+      "selected_package": {
+        "invalid": "Neplatný vybraný balíček"
+      },
+      "selected_services": {
+        "invalid": "Neplatné vybrané služby"
+      },
+      "total_price": {
+        "positive": "Celková cena musí být kladná",
+        "not_match": "Celková cena se neshoduje"
+      }
+    },
+    "user": {
+      "email_confirmed": "E-mail je již potvrzen",
+      "existing_email": "Uživatel s tímto e-mailem již existuje",
+      "not_existing_email": "Uživatel s tímto e-mailem neexistuje",
+      "not_existing_id": "Uživatel s tímto ID neexistuje",
+      "not_allowed_to_update": "Nemáte oprávnění aktualizovat tohoto uživatele",
+      "existing_phone_number": "Telefonní číslo již existuje"
+    },
+    "employee": {
+      "not_existing_email": "Zaměstnanec s tímto e-mailem neexistuje",
+      "data_not_available": "Data zaměstnance nejsou k dispozici",
+      "profile_incomplete": "Dokončete informace v profilu",
+      "documents_missing": "Nahrajte požadované dokumenty"
+    },
+    "file": {
+      "content_type_doesnt_match": "Typ souboru neodpovídá obsahu"
+    },
+    "language": {
+      "not_supported": "Jazyk není podporován"
+    },
+    "validation": {
+      "invalid_password": "Neplatné heslo",
+      "invalid_date": "Neplatné datum",
+      "date_must_be_in_past": "Datum musí být v minulosti",
+      "invalid_age": "Neplatný věk"
     }
   }
 }

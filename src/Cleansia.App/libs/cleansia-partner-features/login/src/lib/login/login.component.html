@@ -45,7 +45,7 @@
           [style]="'raised-button'"
           [title]="'global.actions.login' | translate"
           (clickFn)="facade.login()"
-          [loading]="false"
+          [loading]="facade.loading() ?? false"
         />
         <div>
           <span tabindex="-1">

@@ -25,4 +25,7 @@ public class Policy
     public const string CanChangePassword = nameof(CanChangePassword);
     public const string CanUpdateCurrentUser = nameof(CanUpdateCurrentUser); // Authenticated (All roles)
     public const string CanAddPhoneNumber = nameof(CanAddPhoneNumber); // Authenticated (All roles)
+
+    // Employee
+    public const string CanGetCurrentEmployee = nameof(CanGetCurrentEmployee); // Authenticated (All roles)
 }

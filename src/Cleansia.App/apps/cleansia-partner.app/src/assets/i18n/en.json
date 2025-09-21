@@ -91,17 +91,45 @@
       "submit_report": "Submit Weekly Report",
       "no_orders": "No orders to display",
       "no_logs": "No time logs to display"
+    },
+    "invoices": {
+      "title": "Invoice Management",
+      "description": "Manage your invoices and track payments.",
+      "pending_invoices": "Pending Invoices",
+      "all_invoices": "All Invoices",
+      "generate_invoice": "Generate Invoice",
+      "invoice_number": "Invoice Number",
+      "date": "Date",
+      "amount": "Amount",
+      "due_date": "Due Date",
+      "status": "Status",
+      "actions": "Actions",
+      "download": "Download",
+      "view_details": "View Details",
+      "generate_from_logs": "Generate from Time Logs",
+      "preview": "Preview",
+      "invoice_details": "Invoice Details",
+      "vat": "VAT",
+      "total": "Total",
+      "payment_status": "Payment Status",
+      "no_pending": "No pending invoices",
+      "no_invoices": "No invoices to display"
     }
   },
   "sidebar": {
     "dashboard": "Dashboard",
     "profile": "Profile",
     "orders": "Orders",
+    "invoices": "Invoices",
     "logout": "Logout"
   },
   "global": {
     "no_data": "No data to display",
     "loading": "Loading...",
+    "messages": {
+      "success": "Success",
+      "error": "Error"
+    },
     "actions": {
       "actions": "Actions",
       "add_to_cart": "Add to Cart",
@@ -133,6 +161,14 @@
       "Completed": "Completed"
     }
   },
+  "registrationLock": {
+    "title": "Profile Completion Required",
+    "description": "To access this section, you need to complete your profile setup and upload required documents.",
+    "missingRequirements": "Missing Requirements:",
+    "profileCompletion": "Complete Profile Information",
+    "documentUpload": "Upload Required Documents",
+    "completeProfile": "Complete Profile"
+  },
   "validation": {
     "common": {
       "not_all_fields_filled": "Not all fields are properly filled",
@@ -143,6 +179,74 @@
       "max_length": "Field can contain a maximum of {{ maxLength }} characters",
       "invalid_quantity": "Quantity for product {{ name }} is entered incorrectly",
       "pattern": "Field does not match the required pattern"
+    }
+  },
+  "api": {
+    "auth": {
+      "google_type_error": "Google authentication type error",
+      "internal_type_error": "Internal authentication type error",
+      "invalid_confirmation_code": "Invalid confirmation code",
+      "invalid_google_token": "Invalid Google token",
+      "invalid_password_format": "Invalid password format",
+      "invalid_reset_token": "Invalid password reset token",
+      "same_reset_password": "New password matches the old password"
+    },
+    "common": {
+      "invalid_enum_value": "Invalid enum value",
+      "max_length": "Maximum length exceeded",
+      "required": "Required field",
+      "unauthorized": "You are not authorized to perform this action",
+      "error_occurred": "An error occurred. Please try again.",
+      "user_not_authenticated": "User not authenticated"
+    },
+    "currency": {
+      "invalid": "Invalid currency"
+    },
+    "email": {
+      "sending_failed": "Email sending failed",
+      "invalid_format": "Invalid email format"
+    },
+    "order": {
+      "cleaning_date": {
+        "future": "Cleaning date must be in the future"
+      },
+      "empty": "Order is empty",
+      "selected_package": {
+        "invalid": "Invalid selected package"
+      },
+      "selected_services": {
+        "invalid": "Invalid selected services"
+      },
+      "total_price": {
+        "positive": "Total price must be positive",
+        "not_match": "Total price does not match"
+      }
+    },
+    "user": {
+      "email_confirmed": "Email is already confirmed",
+      "existing_email": "User with this email already exists",
+      "not_existing_email": "User with this email does not exist",
+      "not_existing_id": "User with this ID does not exist",
+      "not_allowed_to_update": "You are not allowed to update this user",
+      "existing_phone_number": "Phone number already exists"
+    },
+    "employee": {
+      "not_existing_email": "Employee with this email does not exist",
+      "data_not_available": "Employee data not available",
+      "profile_incomplete": "Complete profile information",
+      "documents_missing": "Upload required documents"
+    },
+    "file": {
+      "content_type_doesnt_match": "File type does not match content"
+    },
+    "language": {
+      "not_supported": "Language is not supported"
+    },
+    "validation": {
+      "invalid_password": "Invalid password",
+      "invalid_date": "Invalid date",
+      "date_must_be_in_past": "Date must be in the past",
+      "invalid_age": "Invalid age"
     }
   }
 }

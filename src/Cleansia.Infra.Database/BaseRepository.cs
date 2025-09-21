@@ -158,9 +158,9 @@ public abstract class BaseRepository<TEntity>(CleansiaDbContext context) : IRepo
         return query;
     }
 
-    public async Task<int> CommitAsync(CancellationToken cancellationToken)
+    public async Task CommitAsync(CancellationToken cancellationToken)
     {
-        return await Context.CommitAsync(cancellationToken);
+        await Context.CommitAsync(cancellationToken);
     }
 
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken)

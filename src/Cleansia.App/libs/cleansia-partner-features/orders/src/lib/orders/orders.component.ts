@@ -2,19 +2,16 @@ import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import {
-  CleansiaAvailabilityComponent,
   CleansiaButtonComponent,
   CleansiaCalendarComponent,
-  CleansiaCheckboxComponent,
   CleansiaLanguageSwitcherComponent,
   CleansiaSectionComponent,
-  CleansiaTableComponent,
-  CleansiaTableColumn,
   CleansiaTableAction,
+  CleansiaTableColumn,
+  CleansiaTableComponent,
   CleansiaTextInputComponent,
   CleansiaTimePickerComponent,
   CleansiaTitleComponent,
-  FileComponent,
 } from '@cleansia/components';
 import { TranslatePipe } from '@ngx-translate/core';
 import { MessageService } from 'primeng/api';
@@ -24,32 +21,27 @@ import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { TableModule } from 'primeng/table';
 import { ToastModule } from 'primeng/toast';
-import { Tooltip } from 'primeng/tooltip';
 import { OrdersFacade } from './orders.facade';
 
 @Component({
   selector: 'cleansia-partner-orders',
   standalone: true,
   imports: [
-    Tooltip,
     TableModule,
     ToastModule,
     DialogModule,
     CommonModule,
     ButtonModule,
-    FileComponent,
     TranslatePipe,
     CalendarModule,
     ReactiveFormsModule,
+    CleansiaTableComponent,
     CleansiaTitleComponent,
     CleansiaButtonComponent,
     CleansiaSectionComponent,
-    CleansiaTableComponent,
     CleansiaCalendarComponent,
-    CleansiaCheckboxComponent,
     CleansiaTextInputComponent,
     CleansiaTimePickerComponent,
-    CleansiaAvailabilityComponent,
     CleansiaLanguageSwitcherComponent,
   ],
   templateUrl: './orders.component.html',
@@ -63,7 +55,12 @@ export class OrdersComponent {
     { field: 'id', header: 'pages.orders.order_id', sortable: true },
     { field: 'title', header: 'pages.orders.title', sortable: true },
     { field: 'description', header: 'pages.orders.description' },
-    { field: 'dueDate', header: 'pages.orders.due_date', pipe: 'date', sortable: true },
+    {
+      field: 'dueDate',
+      header: 'pages.orders.due_date',
+      pipe: 'date',
+      sortable: true,
+    },
     { field: 'status', header: 'pages.orders.status' },
   ];
 
@@ -79,7 +76,12 @@ export class OrdersComponent {
   // Time logs table configuration
   timeLogsColumns: CleansiaTableColumn[] = [
     { field: 'orderId', header: 'pages.orders.order_id', sortable: true },
-    { field: 'date', header: 'pages.orders.date', pipe: 'date', sortable: true },
+    {
+      field: 'date',
+      header: 'pages.orders.date',
+      pipe: 'date',
+      sortable: true,
+    },
     { field: 'startTime', header: 'pages.orders.start_time' },
     { field: 'endTime', header: 'pages.orders.end_time' },
     { field: 'totalHours', header: 'pages.orders.total_hours', pipe: 'number' },
@@ -123,7 +125,7 @@ export class OrdersComponent {
       case 'number':
         return Number(value).toLocaleString('cs-CZ', {
           minimumFractionDigits: 2,
-          maximumFractionDigits: 2
+          maximumFractionDigits: 2,
         });
       default:
         return value;

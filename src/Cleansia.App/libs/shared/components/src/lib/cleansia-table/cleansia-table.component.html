@@ -11,26 +11,27 @@
   [globalFilterFields]="globalFilterFields()"
 >
   <!-- Header Template -->
-  <ng-template pTemplate="header" *ngIf="showHeader()">
-    <tr>
-      @for (column of columns(); track column.field) {
-      <th
-        [pSortableColumn]="column.sortable ? column.field : undefined"
-        [style.width]="column.width"
-        [class]="column.headerClass"
-      >
-        {{ column.header | translate }}
-        @if (column.sortable) {
-        <p-sortIcon [field]="column.field"></p-sortIcon>
+  @if (showHeader()) {
+    <ng-template pTemplate="header">
+      <tr>
+        @for (column of columns(); track column.field) {
+        <th
+          [pSortableColumn]="column.sortable ? column.field : undefined"
+          [class]="getColumnClasses(column)"
+        >
+          {{ column.header | translate }}
+          @if (column.sortable) {
+          <p-sortIcon [field]="column.field"></p-sortIcon>
+          }
+        </th>
+        } @if (actions().length > 0 || customActionTemplate()) {
+        <th class="actions-column">
+          {{ actionsHeader() | translate }}
+        </th>
         }
-      </th>
-      } @if (actions().length > 0 || customActionTemplate()) {
-      <th class="actions-column">
-        {{ actionsHeader() | translate }}
-      </th>
-      }
-    </tr>
-  </ng-template>
+      </tr>
+    </ng-template>
+  }
 
   <!-- Body Template -->
   <ng-template pTemplate="body" let-item let-ri="rowIndex">
@@ -84,12 +85,14 @@
   </ng-template>
 
   <!-- Loading Template -->
-  <ng-template pTemplate="loadingbody" *ngIf="loading()">
-    <tr>
-      <td [attr.colspan]="totalColumns()" class="text-center p-4">
-        <i class="pi pi-spinner pi-spin"></i>
-        {{ loadingMessage() | translate }}
-      </td>
-    </tr>
-  </ng-template>
+  @if (loading()) {
+    <ng-template pTemplate="loadingbody">
+      <tr>
+        <td [attr.colspan]="totalColumns()" class="text-center p-4">
+          <i class="pi pi-spinner pi-spin"></i>
+          {{ loadingMessage() | translate }}
+        </td>
+      </tr>
+    </ng-template>
+  }
 </p-table>

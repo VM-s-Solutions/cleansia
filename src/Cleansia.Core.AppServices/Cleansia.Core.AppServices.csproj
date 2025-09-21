@@ -25,7 +25,6 @@
     <Folder Include="Features\Codes\" />
     <Folder Include="Features\Currencies\DTOs\" />
     <Folder Include="Features\Orders\DTOs\" />
-    <Folder Include="Shared\DTOs\Files\" />
   </ItemGroup>
 
 </Project>

@@ -14,4 +14,4 @@ public record UserListItem(
     Code AuthenticationType,
     bool IsEmailConfirmed,
     DateOnly? BirthDate,
-    BlobFile? ProfilePhoto);
+    BlobFileDto? ProfilePhoto);

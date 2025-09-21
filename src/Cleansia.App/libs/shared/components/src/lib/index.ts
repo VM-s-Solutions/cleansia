@@ -8,6 +8,7 @@ export * from './cleansia-file';
 export * from './cleansia-language-switcher';
 export * from './cleansia-loader';
 export * from './cleansia-menu';
+export * from './cleansia-registration-lock';
 export * from './cleansia-section';
 export * from './cleansia-sidebar-menu';
 export * from './cleansia-table';

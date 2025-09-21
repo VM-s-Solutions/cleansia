@@ -1,54 +1,124 @@
-import { Component, inject, signal } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { NgClass } from '@angular/common';
+import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import {
+  CleansiaRegistrationLockComponent,
   CleansiaSidebarMenuComponent,
   SidebarMenuItem,
 } from '@cleansia/components';
-import { AuthService } from '@cleansia/services';
+import {
+  AuthService,
+  CleansiaPartnerRoute,
+  RegistrationCompletionService,
+} from '@cleansia/services';
+import { checkEmployeeCurrent } from '@cleansia/stores';
+import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
+import { ToastModule } from 'primeng/toast';
+import {
+  combineLatest,
+  filter,
+  map,
+  startWith,
+  Subject,
+  takeUntil,
+} from 'rxjs';
 
 @Component({
-  imports: [RouterModule, CleansiaSidebarMenuComponent],
+  imports: [
+    NgClass,
+    ToastModule,
+    RouterModule,
+    CleansiaSidebarMenuComponent,
+    CleansiaRegistrationLockComponent,
+  ],
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
-export class AppComponent {
+export class AppComponent implements OnInit, OnDestroy {
+  private readonly store = inject(Store);
+  private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
   private readonly translate = inject(TranslateService);
+  private readonly registrationService = inject(RegistrationCompletionService);
 
-  // Track sidebar collapsed state
+  private readonly destroy$ = new Subject<void>();
+
   sidebarCollapsed = signal(false);
+  shouldShowRegistrationLock = signal(false);
 
   constructor() {
     this.translate.addLangs(['cs', 'en']);
     this.translate.setDefaultLang('cs');
   }
 
+  ngOnInit() {
+    if (this.isLoggedIn) {
+      this.store.dispatch(checkEmployeeCurrent());
+    }
+
+    const currentUrl$ = this.router.events.pipe(
+      filter((event) => event instanceof NavigationEnd),
+      map((event) => (event as NavigationEnd).url),
+      startWith(this.router.url)
+    );
+
+    const isLoggedIn$ = this.authService.isLoggedIn$.asObservable();
+    const registrationStatus$ =
+      this.registrationService.isRegistrationComplete();
+
+    combineLatest([currentUrl$, isLoggedIn$, registrationStatus$])
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(([url, isLoggedIn, isComplete]) => {
+        if (isLoggedIn) {
+          this.store.dispatch(checkEmployeeCurrent());
+        }
+
+        const isProtectedRoute = this.shouldCheckRegistrationCompletion(url);
+        const shouldShow = isLoggedIn && isProtectedRoute && !isComplete;
+
+        this.shouldShowRegistrationLock.set(shouldShow);
+      });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   get isLoggedIn(): boolean {
     return this.authService.isLoggedIn();
   }
 
-  // Handle sidebar collapse state change
   onSidebarCollapsedChange(collapsed: boolean): void {
     this.sidebarCollapsed.set(collapsed);
+  }
+
+  private shouldCheckRegistrationCompletion(url: string): boolean {
+    return !url.startsWith(`/${CleansiaPartnerRoute.PROFILE}`);
   }
 
   sidebarMenuItems: SidebarMenuItem[] = [
     {
       label: this.translate.instant('sidebar.dashboard'),
       icon: 'pi pi-home',
-      route: '/dashboard',
+      route: `/${CleansiaPartnerRoute.DASHBOARD}`,
     },
     {
       label: this.translate.instant('sidebar.profile'),
       icon: 'pi pi-user',
-      route: '/profile',
+      route: `/${CleansiaPartnerRoute.PROFILE}`,
     },
     {
       label: this.translate.instant('sidebar.orders'),
       icon: 'pi pi-shopping-cart',
-      route: '/orders',
+      route: `/${CleansiaPartnerRoute.ORDERS}`,
+    },
+    {
+      label: this.translate.instant('sidebar.invoices'),
+      icon: 'pi pi-file',
+      route: `/${CleansiaPartnerRoute.INVOICES}`,
     },
     {
       label: this.translate.instant('sidebar.logout'),

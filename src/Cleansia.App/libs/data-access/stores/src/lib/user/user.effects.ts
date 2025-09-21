@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import {
-  BlobFile,
+  BlobFileDto,
   Client,
   SnackbarService,
   UpdateCurrentUserCommand,
@@ -88,7 +88,7 @@ export class UserEffects {
           lastName,
           phoneNumber,
           birthDate,
-          photo = new BlobFile({
+          photo = new BlobFileDto({
             fileName: '',
             contentType: '',
             base64Content: '',

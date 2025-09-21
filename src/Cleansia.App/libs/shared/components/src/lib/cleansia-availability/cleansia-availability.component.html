@@ -19,17 +19,14 @@
         @if ((availability()[day.key] || []).length > 0) {
         <div class="ranges-list mb-4">
           <h3 class="text-sm font-medium mb-2">Current Ranges:</h3>
-          <p-chip
-            *ngFor="
-              let range of availability()[day.key];
-              let i = index;
-              track: i
-            "
-            [label]="range.start + ' - ' + range.end"
-            class="mr-2 mb-2"
-            removable="true"
-            (onRemove)="removeRange(day.key, i)"
-          />
+          @for (range of availability()[day.key]; track range; let i = $index) {
+            <p-chip
+              [label]="range.start + ' - ' + range.end"
+              class="mr-2 mb-2"
+              removable="true"
+              (onRemove)="removeRange(day.key, i)"
+            />
+          }
         </div>
         } @else {
         <p class="text-gray-500 italic mb-4">
@@ -53,7 +50,7 @@
     header="Add Time Range"
     [(visible)]="showDialog"
     [modal]="true"
-    [style]="{ width: '300px' }"
+    styleClass="cleansia-availability__dialog"
     (onHide)="resetDialog()"
   >
     <div class="dialog-content">

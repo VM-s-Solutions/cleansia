@@ -42,31 +42,23 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
         Database.Migrate();
     }
 
-    public async Task<int> CommitAsync(CancellationToken cancellationToken)
+    public async Task CommitAsync(CancellationToken cancellationToken)
     {
-        try
+        var fullUserName = userSessionProvider.GetTypedUserClaim(ClaimTypes.Name)?.Value;
+        var stateUser = string.IsNullOrWhiteSpace(fullUserName) ? "System" : fullUserName;
+        var currentTime = DateTime.UtcNow;
+        foreach (var entity in ChangeTracker.Entries<Auditable>())
         {
-            var fullUserName = userSessionProvider.GetTypedUserClaim(ClaimTypes.Name)?.Value;
-            var stateUser = string.IsNullOrWhiteSpace(fullUserName) ? "System" : fullUserName;
-            var currentTime = DateTime.UtcNow;
-            foreach (var entity in ChangeTracker.Entries<Auditable>())
+            if (entity.State == EntityState.Added)
             {
-                if (entity.State == EntityState.Added)
-                {
-                    entity.Entity.Created(stateUser, currentTime);
-                }
-                else if (entity.State == EntityState.Modified)
-                {
-                    entity.Entity.Updated(stateUser, currentTime);
-                }
+                entity.Entity.Created(stateUser, currentTime);
             }
-            return await SaveChangesAsync(cancellationToken);
+            else if (entity.State == EntityState.Modified)
+            {
+                entity.Entity.Updated(stateUser, currentTime);
+            }
         }
-        catch (Exception e)
-        {
-            Rollback();
-        }
-        return 0;
+        await SaveChangesAsync(cancellationToken);
     }
 
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken)

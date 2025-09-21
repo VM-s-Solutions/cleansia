@@ -1,7 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import {
-  CleansiaAvailabilityComponent,
   CleansiaButtonComponent,
   CleansiaCalendarComponent,
   CleansiaCheckboxComponent,
@@ -16,14 +15,12 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { MessageService } from 'primeng/api';
 import { CalendarModule } from 'primeng/calendar';
 import { ToastModule } from 'primeng/toast';
-import { Tooltip } from 'primeng/tooltip';
 import { ProfileFacade } from './profile.facade';
 
 @Component({
   selector: 'cleansia-partner-profile',
   standalone: true,
   imports: [
-    Tooltip,
     ToastModule,
     FileComponent,
     TranslatePipe,
@@ -36,7 +33,6 @@ import { ProfileFacade } from './profile.facade';
     CleansiaCheckboxComponent,
     CleansiaTelephoneComponent,
     CleansiaTextInputComponent,
-    CleansiaAvailabilityComponent,
     CleansiaLanguageSwitcherComponent,
   ],
   templateUrl: './profile.component.html',

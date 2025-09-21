@@ -1,6 +1,6 @@
 ﻿namespace Cleansia.Core.AppServices.Shared.DTOs.Files;
 
-public record BlobFile(
+public record BlobFileDto(
     string FileName,
     string? Base64Content,
     string? ContentType);

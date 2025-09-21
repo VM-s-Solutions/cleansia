@@ -43,8 +43,6 @@ public class User : Auditable
 
     public AuthenticationType AuthenticationType { get; private set; } = AuthenticationType.Internal;
 
-    public virtual Cart? Cart { get; private set; }
-
     public string? ProfilePhotoName { get; private set; }
 
     public string? ConfirmationCode { get; private set; }
@@ -53,11 +51,16 @@ public class User : Auditable
 
     public bool IsEmailConfirmed { get; private set; }
 
-    private ICollection<Order> _orders = [];
+    public string CartId { get; private set; }
+    public Cart? Cart { get; private set; }
 
+    public string EmployeeId { get; private set; }
+    public Employee? Employee { get; private set; }
+
+    private ICollection<Order> _orders = [];
     public virtual IReadOnlyCollection<Order> Orders => _orders.ToList().AsReadOnly();
 
-    public static User CreateWithPassword(string email, string password, string firstName, string lastName)
+    public static User CreateWithPassword(string email, string password, string firstName, string lastName, UserProfile profile = UserProfile.Customer)
         => new()
         {
             Email = email,
@@ -65,7 +68,8 @@ public class User : Auditable
             FirstName = firstName,
             LastName = lastName,
             ConfirmationCode = new Random().Next(100000, 999999).ToString(),
-            ConfirmationCodeExpiresAt = DateTime.UtcNow.AddMinutes(15)
+            ConfirmationCodeExpiresAt = DateTime.UtcNow.AddMinutes(15),
+            Profile = profile,
         };
 
     public static User CreateWithGoogle(string email, string firstName, string lastName, string googleId)

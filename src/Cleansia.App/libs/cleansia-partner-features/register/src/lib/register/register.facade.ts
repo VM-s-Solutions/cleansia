@@ -28,7 +28,7 @@ export class RegisterFacade extends UnsubscribeControlDirective {
 
     const { email, password, firstName, lastName } = this.formGroup.value;
     this.authService
-      .register(email, password, firstName, lastName)
+      .registerEmployee(email, password, firstName, lastName)
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
         next: () => {

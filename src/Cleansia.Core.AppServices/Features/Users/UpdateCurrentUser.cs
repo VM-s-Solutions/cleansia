@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Extensions;
+using Cleansia.Core.AppServices.Shared.DTOs.Files;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Blobs.Abstractions.Extensions;
 using Cleansia.Core.Domain.Orders;
@@ -11,7 +12,6 @@ using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
-using BlobFile = Cleansia.Core.AppServices.Shared.DTOs.Files.BlobFile;
 
 namespace Cleansia.Core.AppServices.Features.Users;
 
@@ -97,7 +97,7 @@ public class UpdateCurrentUser
         string LastName,
         string PhoneNumber,
         DateOnly? BirthDate,
-        BlobFile? Photo) : ICommand<Response>;
+        BlobFileDto? Photo) : ICommand<Response>;
 
     public record Response(string Id);
 

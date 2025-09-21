@@ -1,0 +1,66 @@
+@if (registrationStatus$ | async; as status) {
+  <div class="cleansia-registration-lock">
+    <div class="cleansia-registration-lock__modal">
+      <div class="cleansia-registration-lock__lock-icon">
+        <i class="pi pi-lock"></i>
+      </div>
+
+      <h2 class="cleansia-registration-lock__title">{{ 'registrationLock.title' | translate }}</h2>
+
+      <p class="cleansia-registration-lock__description">
+        {{ 'registrationLock.description' | translate }}
+      </p>
+
+      @if (status.missingRequirements.length > 0) {
+        <div class="cleansia-registration-lock__requirements-list">
+          <h3 class="cleansia-registration-lock__requirements-title">{{ 'registrationLock.missingRequirements' | translate }}</h3>
+          <ul class="cleansia-registration-lock__requirements-items">
+            @for (requirement of status.missingRequirements; track requirement) {
+              <li class="cleansia-registration-lock__requirement-item">
+                <i class="pi pi-times-circle"></i>
+                {{ requirement }}
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
+      <div class="cleansia-registration-lock__completion-status">
+        <div
+          class="cleansia-registration-lock__status-item"
+          [class.cleansia-registration-lock__status-item--completed]="status.hasCompletedProfile"
+        >
+          <i
+            class="pi"
+            [class.pi-check-circle]="status.hasCompletedProfile"
+            [class.pi-times-circle]="!status.hasCompletedProfile"
+          ></i>
+          {{ 'registrationLock.profileCompletion' | translate }}
+        </div>
+
+        <div
+          class="cleansia-registration-lock__status-item"
+          [class.cleansia-registration-lock__status-item--completed]="status.hasUploadedDocuments"
+        >
+          <i
+            class="pi"
+            [class.pi-check-circle]="status.hasUploadedDocuments"
+            [class.pi-times-circle]="!status.hasUploadedDocuments"
+          ></i>
+          {{ 'registrationLock.documentUpload' | translate }}
+        </div>
+      </div>
+
+      <div class="cleansia-registration-lock__actions">
+        <button
+          class="cleansia-registration-lock__complete-profile-btn"
+          (click)="goToProfile()"
+          type="button"
+        >
+          <i class="pi pi-user"></i>
+          {{ 'registrationLock.completeProfile' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

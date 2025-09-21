@@ -22,30 +22,30 @@
         <ng-template #bodyTemplate let-order let-rowIndex="rowIndex">
           <tr>
             @for (column of ordersColumns; track column.field) {
-              <td [class]="column.class">
-                @if (column.field === 'status') {
-                  <span [class]="'status-' + order.status.toLowerCase()">
-                    {{ order.status | translate }}
-                  </span>
-                } @else {
-                  {{ getFieldValue(order, column) }}
-                }
-              </td>
+            <td [class]="column.class">
+              @if (column.field === 'status') {
+              <span [class]="'status-' + order.status.toLowerCase()">
+                {{ order.status | translate }}
+              </span>
+              } @else {
+              {{ getFieldValue(order, column) }}
+              }
+            </td>
             }
             <td class="actions-column">
               @for (action of ordersActions; track action.label) {
-                <button
-                  type="button"
-                  [class]="'p-button ' + (action.class || 'p-button-outlined')"
-                  [disabled]="action.disabled?.(order)"
-                  (click)="action.action(order)"
-                  [title]="action.label | translate"
-                >
-                  @if (action.icon) {
-                    <i [class]="action.icon"></i>
-                  }
-                  {{ action.label | translate }}
-                </button>
+              <button
+                type="button"
+                [class]="'p-button ' + (action.class || 'p-button-outlined')"
+                [disabled]="action.disabled?.(order)"
+                (click)="action.action(order)"
+                [title]="action.label | translate"
+              >
+                @if (action.icon) {
+                <i [class]="action.icon"></i>
+                }
+                {{ action.label | translate }}
+              </button>
               }
             </td>
           </tr>
@@ -67,28 +67,28 @@
         <ng-template #bodyTemplate let-log let-rowIndex="rowIndex">
           <tr>
             @for (column of timeLogsColumns; track column.field) {
-              <td [class]="column.class">
-                @if (column.field === 'totalHours') {
-                  {{ calculateHours(log) | number : '1.2-2' }}
-                } @else {
-                  {{ getFieldValue(log, column) }}
-                }
-              </td>
+            <td [class]="column.class">
+              @if (column.field === 'totalHours') {
+              {{ calculateHours(log) | number : '1.2-2' }}
+              } @else {
+              {{ getFieldValue(log, column) }}
+              }
+            </td>
             }
             <td class="actions-column">
               @for (action of timeLogsActions; track action.label) {
-                <button
-                  type="button"
-                  [class]="'p-button ' + (action.class || 'p-button-outlined')"
-                  [disabled]="action.disabled?.(log)"
-                  (click)="action.action(log)"
-                  [title]="action.label | translate"
-                >
-                  @if (action.icon) {
-                    <i [class]="action.icon"></i>
-                  }
-                  {{ action.label | translate }}
-                </button>
+              <button
+                type="button"
+                [class]="'p-button ' + (action.class || 'p-button-outlined')"
+                [disabled]="action.disabled?.(log)"
+                (click)="action.action(log)"
+                [title]="action.label | translate"
+              >
+                @if (action.icon) {
+                <i [class]="action.icon"></i>
+                }
+                {{ action.label | translate }}
+              </button>
               }
             </td>
           </tr>
@@ -181,4 +181,3 @@
     </form>
   </p-dialog>
 </div>
-<p-toast />

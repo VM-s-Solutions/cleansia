@@ -7,17 +7,19 @@
 .main-content {
   flex: 1;
   overflow-y: auto;
-  background: var(--cleansia-primary-0); // Or your preferred bg
-  margin-left: var(--sidebar-width-expanded, 16rem); // Use CSS custom property with fallback
-  transition: margin-left 0.2s ease-in-out;
+  background: var(--cleansia-primary-0);
+
+  &__margin {
+    margin-left: var(--sidebar-width-expanded, 16rem);
+    transition: margin-left 0.2s ease-in-out;
+  }
 
   @media (max-width: 768px) {
-    margin-left: 0; // No margin on mobile since sidebar is hidden/overlays
+    margin-left: 0;
   }
 }
 
-// Dynamic margin based on sidebar state
-.app-layout[data-sidebar-collapsed="true"] .main-content {
+.app-layout[data-sidebar-collapsed='true'] .main-content__margin {
   margin-left: var(--sidebar-width-collapsed, 4rem);
 
   @media (max-width: 768px) {
@@ -25,7 +27,7 @@
   }
 }
 
-.app-layout[data-sidebar-collapsed="false"] .main-content {
+.app-layout[data-sidebar-collapsed='false'] .main-content__margin {
   margin-left: var(--sidebar-width-expanded, 16rem);
 
   @media (max-width: 768px) {

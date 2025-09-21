@@ -39,6 +39,9 @@ public static class BusinessErrorMessage
     public const string NotAllowedToUpdateUser = "user.not_allowed_to_update";
     public const string ExistingPhoneNumber = "user.existing_phone_number";
 
+    // Employee
+    public const string NotExistingEmployeeWithEmail = "employee.not_existing_email";
+
     // File
     public const string FileNotMatchContentType = "file.content_type_doesnt_match";
 

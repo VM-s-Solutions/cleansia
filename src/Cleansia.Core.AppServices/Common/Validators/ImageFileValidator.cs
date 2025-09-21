@@ -4,25 +4,25 @@ using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Common.Validators;
 
-public class ImageFileValidator : AbstractValidator<BlobFile>
+public class ImageFileValidator : AbstractValidator<BlobFileDto>
 {
     public ImageFileValidator()
     {
         RuleFor(file => file)
             .Cascade(CascadeMode.Stop)
             .Must(FileMatchesImageContentType)
-            .WithErrorCode(nameof(BlobFile))
+            .WithErrorCode(nameof(BlobFileDto))
             .WithMessage(BusinessErrorMessage.FileNotMatchContentType);
     }
 
-    private static bool FileMatchesImageContentType(BlobFile file)
+    private static bool FileMatchesImageContentType(BlobFileDto fileDto)
     {
-        if (string.IsNullOrWhiteSpace(file.Base64Content))
+        if (string.IsNullOrWhiteSpace(fileDto.Base64Content))
         {
             return false;
         }
 
-        var base64Data = file.Base64Content.ExtractBase64Data();
+        var base64Data = fileDto.Base64Content.ExtractBase64Data();
 
         var buffer = new byte[base64Data.Length * 3 / 4];
         if (!Convert.TryFromBase64String(base64Data, buffer, out var bytesWritten))

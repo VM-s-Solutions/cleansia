@@ -4,14 +4,14 @@ namespace Cleansia.Core.AppServices.Mappers;
 
 public static class BlobMapper
 {
-    public static IEnumerable<BlobFile> MapToDto(this IEnumerable<string> fileNames)
+    public static IEnumerable<BlobFileDto> MapToDto(this IEnumerable<string> fileNames)
     {
         return fileNames.Select(MapToDto);
     }
 
-    public static BlobFile MapToDto(this string fileName)
+    public static BlobFileDto MapToDto(this string fileName)
     {
-        return new BlobFile(
+        return new BlobFileDto(
             FileName: fileName,
             Base64Content: null,
             ContentType: null);

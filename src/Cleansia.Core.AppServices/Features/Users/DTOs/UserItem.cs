@@ -16,7 +16,7 @@ public record UserItem(
     bool IsEmailConfirmed,
     DateOnly? BirthDate,
     IEnumerable<OrderListItem> Orders,
-    BlobFile? ProfilePhoto,
+    BlobFileDto? ProfilePhoto,
     string Id,
     bool IsActive)
     : BaseRecord<string>(Id, IsActive);

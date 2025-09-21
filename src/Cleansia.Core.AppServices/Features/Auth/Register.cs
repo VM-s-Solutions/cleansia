@@ -65,7 +65,7 @@ public class Register
             {
                 userEntity = User.CreateWithPassword(command.Email, command.Password, command.FirstName, command.LastName);
                 userRepository.Add(userEntity);
-                cartRepository.Add(Cart.CreateWithUser(userEntity.Id));
+                cartRepository.Add(Cart.CreateWithUser(userEntity));
             }
 
             var userName = $"{userEntity.FirstName} {userEntity.LastName}";

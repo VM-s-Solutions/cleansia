@@ -50,9 +50,21 @@ public class UserEntityConfiguration : AuditableEntityConfiguration<User, string
             .HasMaxLength(6);
 
         builder
+            .HasOne(u => u.Employee)
+            .WithOne(e => e.User)
+            .HasForeignKey<User>(u => u.EmployeeId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder
             .HasMany(u => u.Orders)
             .WithOne(o => o.User)
             .HasForeignKey(o => o.UserId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder
+            .HasOne(u => u.Cart)
+            .WithOne(c => c.User)
+            .HasForeignKey<User>(u => u.CartId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

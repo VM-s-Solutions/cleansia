@@ -1,11 +1,18 @@
 <div class="app-layout" [attr.data-sidebar-collapsed]="sidebarCollapsed()">
-  @if (!isLoggedIn) {
+  @if (isLoggedIn) {
   <cleansia-sidebar-menu
     [menuItems]="sidebarMenuItems"
     (collapsedChange)="onSidebarCollapsedChange($event)"
   />
   }
-  <main class="main-content">
+  <main class="main-content" [ngClass]="{ 'main-content__margin': isLoggedIn }">
     <router-outlet></router-outlet>
   </main>
+
+  <!-- Registration completion lock overlay -->
+  @if (isLoggedIn && shouldShowRegistrationLock()) {
+  <cleansia-registration-lock></cleansia-registration-lock>
+  }
+
+  <p-toast></p-toast>
 </div>

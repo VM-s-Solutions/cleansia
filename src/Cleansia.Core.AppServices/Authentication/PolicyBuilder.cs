@@ -27,6 +27,9 @@ public static class PolicyBuilder
         //[Policy.CanChangePassword] = PhysicalPolicy.Anonymous,
         [Policy.CanUpdateCurrentUser] = PhysicalPolicy.Authenticated,
         [Policy.CanAddPhoneNumber] = PhysicalPolicy.Authenticated,
+
+        // Employee
+        [Policy.CanGetCurrentEmployee] = PhysicalPolicy.Authenticated,
     };
 
     public static string ToPhysicalPolicy(this string permission) =>

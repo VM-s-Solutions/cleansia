@@ -1,5 +1,8 @@
 import { Route } from '@angular/router';
-import { CleansiaPartnerRoute } from '@cleansia/services';
+import {
+  CleansiaPartnerRoute,
+  authGuard,
+} from '@cleansia/services';
 
 export const appRoutes: Route[] = [
   {
@@ -19,19 +22,33 @@ export const appRoutes: Route[] = [
         (m) => m.confirmEmailRoutes
       ),
   },
+  // {
+  //   path: CleansiaPartnerRoute.DASHBOARD,
+  //   loadChildren: () =>
+  //     import('@cleansia-partner/dashboard').then((m) => m.dashboardRoutes),
+  //   canActivate: [authGuard],
+  // },
   {
     path: CleansiaPartnerRoute.PROFILE,
     loadChildren: () =>
       import('@cleansia-partner/profile').then((m) => m.profileRoutes),
+    canActivate: [authGuard],
   },
   {
     path: CleansiaPartnerRoute.ORDERS,
     loadChildren: () =>
       import('@cleansia-partner/orders').then((m) => m.ordersRoutes),
+    canActivate: [authGuard],
+  },
+  {
+    path: CleansiaPartnerRoute.INVOICES,
+    loadChildren: () =>
+      import('@cleansia-partner/invoices').then((m) => m.invoicesRoutes),
+    canActivate: [authGuard],
   },
   {
     path: CleansiaPartnerRoute.HOME,
-    redirectTo: CleansiaPartnerRoute.DASHBOARD,
+    redirectTo: CleansiaPartnerRoute.PROFILE,
     pathMatch: 'full',
   },
   // {

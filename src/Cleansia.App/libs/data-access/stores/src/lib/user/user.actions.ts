@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { UserFilter } from '@cleansia/models';
 import {
   ApiException,
-  BlobFile,
+  BlobFileDto,
   SortDefinition,
   UserListItem,
   UserListItemPagedData,
@@ -60,7 +60,7 @@ export const updateUserCurrent = createAction(
     lastName: string;
     phoneNumber?: string;
     birthDate?: Date;
-    photo?: BlobFile;
+    photo?: BlobFileDto;
   }>()
 );
 export const updateUserCurrentSuccess = createAction(

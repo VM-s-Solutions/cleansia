@@ -24,6 +24,18 @@ public class AuthController(IMediator mediator) : ApiController(mediator)
     }
 
     [AllowAnonymous]
+    [HttpPost("RegisterEmployee")]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> RegisterEmployee([FromBody] RegisterEmployee.Command command)
+    {
+        var result = await Mediator.Send(command);
+
+        return HandleResult<bool>(result);
+    }
+
+    [AllowAnonymous]
     [HttpPost("Login")]
     [ProducesResponseType(typeof(JwtTokenResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]

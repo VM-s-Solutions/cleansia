@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20250907214037_Initial")]
+    [Migration("20250920204720_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -606,12 +606,9 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("character varying(26)");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
 
                     b.ToTable("Carts");
                 });
@@ -726,11 +723,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(26)");
 
                     b.Property<string>("AddressId")
-                        .IsRequired()
                         .HasColumnType("character varying(26)");
-
-                    b.Property<int>("AuthenticationType")
-                        .HasColumnType("integer");
 
                     b.Property<string>("Availability")
                         .IsRequired()
@@ -742,23 +735,10 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("numeric(18,2)")
                         .HasDefaultValue(0m);
 
-                    b.Property<DateOnly?>("BirthDate")
-                        .HasColumnType("date");
-
-                    b.Property<string>("CartId")
-                        .HasColumnType("character varying(26)");
-
                     b.Property<int>("ComplaintsCount")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
-
-                    b.Property<string>("ConfirmationCode")
-                        .HasMaxLength(6)
-                        .HasColumnType("character varying(6)");
-
-                    b.Property<DateTimeOffset?>("ConfirmationCodeExpiresAt")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("ContractStatus")
                         .HasColumnType("integer");
@@ -778,56 +758,12 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<DateTimeOffset?>("DeactivatedOn")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("citext");
-
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("citext");
-
-                    b.Property<string>("GoogleId")
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
-
                     b.Property<string>("ICO")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
-
-                    b.Property<bool>("IsEmailConfirmed")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("citext");
-
-                    b.Property<string>("Password")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasMaxLength(50)
-                        .HasColumnType("citext");
-
-                    b.Property<int>("Profile")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("ProfilePhotoName")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ResetPasswordCode")
-                        .HasMaxLength(6)
-                        .HasColumnType("character varying(6)");
-
-                    b.Property<DateTimeOffset?>("ResetPasswordCodeExpiresAt")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255)
@@ -836,11 +772,13 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<DateTimeOffset?>("UpdatedOn")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AddressId");
-
-                    b.HasIndex("CartId");
 
                     b.ToTable("Employees");
                 });
@@ -856,6 +794,10 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.Property<DateOnly?>("BirthDate")
                         .HasColumnType("date");
+
+                    b.Property<string>("CartId")
+                        .IsRequired()
+                        .HasColumnType("character varying(26)");
 
                     b.Property<string>("ConfirmationCode")
                         .HasMaxLength(6)
@@ -884,6 +826,10 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("citext");
 
+                    b.Property<string>("EmployeeId")
+                        .IsRequired()
+                        .HasColumnType("character varying(26)");
+
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -933,6 +879,12 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CartId")
+                        .IsUnique();
+
+                    b.HasIndex("EmployeeId")
+                        .IsUnique();
 
                     b.ToTable("Users");
                 });
@@ -1066,17 +1018,6 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("Country");
                 });
 
-            modelBuilder.Entity("Cleansia.Core.Domain.Users.Cart", b =>
-                {
-                    b.HasOne("Cleansia.Core.Domain.Users.User", "User")
-                        .WithOne("Cart")
-                        .HasForeignKey("Cleansia.Core.Domain.Users.Cart", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Cleansia.Core.Domain.Users.CartPackageItem", b =>
                 {
                     b.HasOne("Cleansia.Core.Domain.Users.Cart", "Cart")
@@ -1119,17 +1060,28 @@ namespace Cleansia.Infra.Database.Migrations
                 {
                     b.HasOne("Cleansia.Core.Domain.Users.Address", "Address")
                         .WithMany()
-                        .HasForeignKey("AddressId")
+                        .HasForeignKey("AddressId");
+
+                    b.Navigation("Address");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Users.User", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Users.Cart", "Cart")
+                        .WithOne("User")
+                        .HasForeignKey("Cleansia.Core.Domain.Users.User", "CartId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Cleansia.Core.Domain.Users.Cart", "Cart")
-                        .WithMany()
-                        .HasForeignKey("CartId");
-
-                    b.Navigation("Address");
+                    b.HasOne("Cleansia.Core.Domain.Users.Employee", "Employee")
+                        .WithOne("User")
+                        .HasForeignKey("Cleansia.Core.Domain.Users.User", "EmployeeId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .IsRequired();
 
                     b.Navigation("Cart");
+
+                    b.Navigation("Employee");
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Orders.Order", b =>
@@ -1158,6 +1110,8 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("PackageItems");
 
                     b.Navigation("ServiceItems");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Users.Employee", b =>
@@ -1165,12 +1119,12 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("AssignedOrders");
 
                     b.Navigation("Orders");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Users.User", b =>
                 {
-                    b.Navigation("Cart");
-
                     b.Navigation("Orders");
                 });
 #pragma warning restore 612, 618

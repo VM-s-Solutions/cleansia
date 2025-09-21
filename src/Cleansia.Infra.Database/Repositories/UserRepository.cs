@@ -17,6 +17,7 @@ public class UserRepository(CleansiaDbContext context)
     public Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         return GetDbSet()
+            .Include(user => user.Employee)
             .FirstOrDefaultAsync(user => user.Email == email, cancellationToken);
     }
 

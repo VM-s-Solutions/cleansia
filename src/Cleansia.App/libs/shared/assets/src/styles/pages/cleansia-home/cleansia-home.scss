@@ -101,6 +101,20 @@ body {
   padding: 1rem;
 }
 
+/* Cleansia background elements */
+.cleansia-hero__background {
+  height: 50svh;
+  width: 50svh;
+}
+
+.cleansia-process__background {
+  height: 50svh;
+}
+
+.cleansia-benefits__background {
+  height: 50svh;
+}
+
 /* Media Queries for Responsiveness */
 @media (max-width: 768px) {
   .nav-links {

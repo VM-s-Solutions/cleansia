@@ -22,28 +22,30 @@
     invalidFileTypeMessageDetail="Allowed types: {0}"
   >
     <ng-template pTemplate="content">
-      <div *ngIf="files().length > 0" class="file-list">
-        <h4>Selected Files:</h4>
-        <ul>
-          @for (file of files(); track file.name) {
-          <li class="file-item">
-            <span
-              >{{ file.name }} ({{ file.size | number : '1.0-0' }} bytes)</span
-            >
-            <p-button
-              icon="pi pi-trash"
-              [text]="true"
-              severity="danger"
-              size="small"
-              (onClick)="removeFile(file)"
-            />
-          </li>
+      @if (files().length > 0) {
+        <div class="file-list">
+          <h4>Selected Files:</h4>
+          <ul>
+            @for (file of files(); track file.name) {
+            <li class="file-item">
+              <span
+                >{{ file.name }} ({{ file.size | number : '1.0-0' }} bytes)</span
+              >
+              <p-button
+                icon="pi pi-trash"
+                [text]="true"
+                severity="danger"
+                size="small"
+                (onClick)="removeFile(file)"
+              />
+            </li>
+            }
+          </ul>
+          @if (progress() > 0) {
+          <p-progressBar [value]="progress()" [showValue]="true" />
           }
-        </ul>
-        @if (progress() > 0) {
-        <p-progressBar [value]="progress()" [showValue]="true" />
-        }
-      </div>
+        </div>
+      }
     </ng-template>
   </p-fileUpload>
   @if (messages().length > 0) {
@@ -53,15 +55,17 @@
     }
   </div>
   }
-  <div *ngIf="uploadedFiles().length > 0" class="uploaded-files">
-    <h4>Uploaded Files:</h4>
-    <ul>
-      @for (file of uploadedFiles(); track file.name) {
-      <li>
-        <a [href]="file.url" target="_blank">{{ file.name }}</a>
-        ({{ file.size | number : '1.0-0' }} bytes)
-      </li>
-      }
-    </ul>
-  </div>
+  @if (uploadedFiles().length > 0) {
+    <div class="uploaded-files">
+      <h4>Uploaded Files:</h4>
+      <ul>
+        @for (file of uploadedFiles(); track file.name) {
+        <li>
+          <a [href]="file.url" target="_blank">{{ file.name }}</a>
+          ({{ file.size | number : '1.0-0' }} bytes)
+        </li>
+        }
+      </ul>
+    </div>
+  }
 </div>

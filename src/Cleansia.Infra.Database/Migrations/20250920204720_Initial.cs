@@ -16,6 +16,25 @@ namespace Cleansia.Infra.Database.Migrations
                 .Annotation("Npgsql:PostgresExtension:pg_trgm", ",,");
 
             migrationBuilder.CreateTable(
+                name: "Carts",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    UserId = table.Column<string>(type: "text", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Carts", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Countries",
                 columns: table => new
                 {
@@ -117,39 +136,6 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Users",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    Password = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    FirstName = table.Column<string>(type: "citext", maxLength: 50, nullable: false),
-                    LastName = table.Column<string>(type: "citext", maxLength: 50, nullable: false),
-                    Email = table.Column<string>(type: "citext", maxLength: 150, nullable: false),
-                    PhoneNumber = table.Column<string>(type: "citext", maxLength: 50, nullable: true),
-                    GoogleId = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: true),
-                    ResetPasswordCode = table.Column<string>(type: "character varying(6)", maxLength: 6, nullable: true),
-                    ResetPasswordCodeExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    BirthDate = table.Column<DateOnly>(type: "date", nullable: true),
-                    Profile = table.Column<int>(type: "integer", nullable: false),
-                    AuthenticationType = table.Column<int>(type: "integer", nullable: false),
-                    ProfilePhotoName = table.Column<string>(type: "text", nullable: true),
-                    ConfirmationCode = table.Column<string>(type: "character varying(6)", maxLength: 6, nullable: true),
-                    ConfirmationCodeExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    IsEmailConfirmed = table.Column<bool>(type: "boolean", nullable: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Users", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Addresses",
                 columns: table => new
                 {
@@ -212,57 +198,6 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "PackageServices",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "text", nullable: false),
-                    PackageId = table.Column<string>(type: "character varying(26)", nullable: false),
-                    ServiceId = table.Column<string>(type: "character varying(26)", nullable: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PackageServices", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_PackageServices_Packages_PackageId",
-                        column: x => x.PackageId,
-                        principalTable: "Packages",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_PackageServices_Services_ServiceId",
-                        column: x => x.ServiceId,
-                        principalTable: "Services",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Carts",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    UserId = table.Column<string>(type: "character varying(26)", nullable: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Carts", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Carts_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "CartPackageItems",
                 columns: table => new
                 {
@@ -317,31 +252,42 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PackageServices",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    PackageId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    ServiceId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PackageServices", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PackageServices_Packages_PackageId",
+                        column: x => x.PackageId,
+                        principalTable: "Packages",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_PackageServices_Services_ServiceId",
+                        column: x => x.ServiceId,
+                        principalTable: "Services",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Employees",
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    Password = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    FirstName = table.Column<string>(type: "citext", maxLength: 50, nullable: false),
-                    LastName = table.Column<string>(type: "citext", maxLength: 50, nullable: false),
-                    Email = table.Column<string>(type: "citext", maxLength: 150, nullable: false),
-                    PhoneNumber = table.Column<string>(type: "citext", maxLength: 50, nullable: true),
-                    GoogleId = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: true),
-                    ResetPasswordCode = table.Column<string>(type: "character varying(6)", maxLength: 6, nullable: true),
-                    ResetPasswordCodeExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    BirthDate = table.Column<DateOnly>(type: "date", nullable: true),
-                    Profile = table.Column<int>(type: "integer", nullable: false),
-                    AuthenticationType = table.Column<int>(type: "integer", nullable: false),
-                    CartId = table.Column<string>(type: "character varying(26)", nullable: true),
-                    ProfilePhotoName = table.Column<string>(type: "text", nullable: true),
-                    ConfirmationCode = table.Column<string>(type: "character varying(6)", maxLength: 6, nullable: true),
-                    ConfirmationCodeExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    IsEmailConfirmed = table.Column<bool>(type: "boolean", nullable: false),
-                    ICO = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    AddressId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    ICO = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     AverageRating = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
                     ComplaintsCount = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     ContractStatus = table.Column<int>(type: "integer", nullable: false),
+                    AddressId = table.Column<string>(type: "character varying(26)", nullable: true),
+                    UserId = table.Column<string>(type: "text", nullable: false),
                     Availability = table.Column<string>(type: "text", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
@@ -358,13 +304,54 @@ namespace Cleansia.Infra.Database.Migrations
                         name: "FK_Employees_Addresses_AddressId",
                         column: x => x.AddressId,
                         principalTable: "Addresses",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Users",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    Password = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    FirstName = table.Column<string>(type: "citext", maxLength: 50, nullable: false),
+                    LastName = table.Column<string>(type: "citext", maxLength: 50, nullable: false),
+                    Email = table.Column<string>(type: "citext", maxLength: 150, nullable: false),
+                    PhoneNumber = table.Column<string>(type: "citext", maxLength: 50, nullable: true),
+                    GoogleId = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: true),
+                    ResetPasswordCode = table.Column<string>(type: "character varying(6)", maxLength: 6, nullable: true),
+                    ResetPasswordCodeExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    BirthDate = table.Column<DateOnly>(type: "date", nullable: true),
+                    Profile = table.Column<int>(type: "integer", nullable: false),
+                    AuthenticationType = table.Column<int>(type: "integer", nullable: false),
+                    ProfilePhotoName = table.Column<string>(type: "text", nullable: true),
+                    ConfirmationCode = table.Column<string>(type: "character varying(6)", maxLength: 6, nullable: true),
+                    ConfirmationCodeExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    IsEmailConfirmed = table.Column<bool>(type: "boolean", nullable: false),
+                    CartId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    EmployeeId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Users", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Users_Carts_CartId",
+                        column: x => x.CartId,
+                        principalTable: "Carts",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Employees_Carts_CartId",
-                        column: x => x.CartId,
-                        principalTable: "Carts",
-                        principalColumn: "Id");
+                        name: "FK_Users_Employees_EmployeeId",
+                        column: x => x.EmployeeId,
+                        principalTable: "Employees",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
@@ -520,12 +507,6 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "PackageId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Carts_UserId",
-                table: "Carts",
-                column: "UserId",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_CartServiceItems_CartId",
                 table: "CartServiceItems",
                 column: "CartId");
@@ -544,11 +525,6 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_Employees_AddressId",
                 table: "Employees",
                 column: "AddressId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Employees_CartId",
-                table: "Employees",
-                column: "CartId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrderEmployees_EmployeeId",
@@ -609,6 +585,18 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_PackageServices_ServiceId",
                 table: "PackageServices",
                 column: "ServiceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_CartId",
+                table: "Users",
+                column: "CartId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_EmployeeId",
+                table: "Users",
+                column: "EmployeeId",
+                unique: true);
         }
 
         /// <inheritdoc />
@@ -648,22 +636,22 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "Currencies");
 
             migrationBuilder.DropTable(
-                name: "Employees");
-
-            migrationBuilder.DropTable(
                 name: "Packages");
 
             migrationBuilder.DropTable(
-                name: "Addresses");
+                name: "Users");
 
             migrationBuilder.DropTable(
                 name: "Carts");
 
             migrationBuilder.DropTable(
-                name: "Countries");
+                name: "Employees");
 
             migrationBuilder.DropTable(
-                name: "Users");
+                name: "Addresses");
+
+            migrationBuilder.DropTable(
+                name: "Countries");
         }
     }
 }

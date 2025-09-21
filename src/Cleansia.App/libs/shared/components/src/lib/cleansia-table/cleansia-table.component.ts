@@ -66,6 +66,14 @@ export class CleansiaTableComponent {
     return this.applyPipe(value, column.pipe, column.pipeArgs);
   }
 
+  getColumnClasses(column: CleansiaTableColumn): string {
+    let classes = column.headerClass || '';
+    if (column.width) {
+      classes += ` column-width-${column.width.replace(/\D/g, '')}`;
+    }
+    return classes.trim();
+  }
+
   private getNestedValue(obj: any, path: string): any {
     return path.split('.').reduce((current, prop) => current?.[prop], obj);
   }

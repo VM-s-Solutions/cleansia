@@ -32,7 +32,7 @@ export class AuthService {
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
 
-  readonly isLoggedIn$ = new BehaviorSubject<boolean>(false);
+  readonly isLoggedIn$ = new BehaviorSubject<boolean>(this.isLoggedIn());
   readonly isLoggedInAction$: Observable<boolean> = this.isLoggedIn$.pipe(
     map((isLoggedIn: boolean) => {
       if (!isLoggedIn) {
@@ -59,6 +59,23 @@ export class AuthService {
     lastName: string
   ): Observable<boolean> {
     return this.client.authClient.register(
+      new RegisterCommand({
+        email,
+        password,
+        firstName,
+        lastName,
+        language: this.translate.currentLang || this.translate.getDefaultLang(),
+      })
+    );
+  }
+
+  registerEmployee(
+    email: string,
+    password: string,
+    firstName: string,
+    lastName: string
+  ): Observable<boolean> {
+    return this.client.authClient.registerEmployee(
       new RegisterCommand({
         email,
         password,

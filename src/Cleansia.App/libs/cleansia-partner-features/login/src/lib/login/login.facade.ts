@@ -1,4 +1,5 @@
 import { inject, Injectable } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
@@ -8,7 +9,7 @@ import {
   JwtTokenResponse,
   SnackbarService,
 } from '@cleansia/services';
-import { loadUserCurrent } from '@cleansia/stores';
+import { loadUserCurrent, selectLoading } from '@cleansia/stores';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { takeUntil } from 'rxjs';
@@ -22,6 +23,7 @@ export class LoginFacade extends UnsubscribeControlDirective {
   private readonly snackbarService = inject(SnackbarService);
 
   formGroup = this.createFormGroup();
+  loading = toSignal(this.store.select(selectLoading));
 
   login() {
     if (this.formGroup.invalid) {

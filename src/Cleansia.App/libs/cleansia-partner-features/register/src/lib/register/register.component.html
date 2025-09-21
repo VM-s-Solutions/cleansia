@@ -105,56 +105,6 @@
         </div>
         }
       </div>
-      <!-- <div class="cleansia-register__phone">
-        <cleansia-telephone
-          [label]="'pages.register.phone' | translate"
-          [floatVariant]="'on'"
-          formControlName="phone"
-          [required]="true"
-          [showErrors]="true"
-        />
-      </div>
-      <div class="cleansia-register__address-group">
-        <cleansia-text-input
-          [label]="'pages.register.street' | translate"
-          formControlName="street"
-          [required]="true"
-          [floatVariant]="'on'"
-          [showErrors]="true"
-        />
-        <div class="cleansia-register__address-row">
-          <cleansia-text-input
-            [label]="'pages.register.city' | translate"
-            formControlName="city"
-            [required]="true"
-            [floatVariant]="'on'"
-            [showErrors]="true"
-          />
-          <cleansia-text-input
-            [label]="'pages.register.zip_code' | translate"
-            formControlName="zipCode"
-            [required]="true"
-            [floatVariant]="'on'"
-            [showErrors]="true"
-          />
-        </div>
-        <cleansia-text-input
-          [label]="'pages.register.country' | translate"
-          formControlName="country"
-          [required]="true"
-          [floatVariant]="'on'"
-          [showErrors]="true"
-        />
-      </div>
-      <div class="cleansia-register__ico">
-        <cleansia-text-input
-          [label]="'pages.register.ico' | translate"
-          [floatVariant]="'on'"
-          formControlName="ico"
-          [required]="true"
-          [showErrors]="true"
-        />
-      </div> -->
       <div class="cleansia-register__terms">
         <cleansia-checkbox
           [title]="'pages.register.terms_agreement' | translate"
@@ -172,7 +122,7 @@
           [style]="'raised-button'"
           [title]="'global.actions.register' | translate"
           (clickFn)="facade.register()"
-          [loading]="false"
+          [loading]="loading() ?? false"
           [disabled]="facade.formGroup.invalid"
         />
         <div>

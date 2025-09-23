@@ -116,6 +116,7 @@ public class CreateOrder
         IOrderRepository orderRepository,
         IAddressRepository addressRepository,
         IServiceRepository serviceRepository,
+        IPackageRepository packageRepository,
         ISendGridClientFactory clientFactory,
         IStripeClientFactory stripeClientFactory) : ICommandHandler<Command, Response>
     {
@@ -150,6 +151,15 @@ public class CreateOrder
                 .ToListAsync(cancellationToken);
 
             order.AddSelectedServices(selectedServices);
+
+            var estimatedTime = selectedServices.Sum(s => s.Service!.EstimatedTime);
+            if (!string.IsNullOrWhiteSpace(command.SelectedPackageId))
+            {
+                var package = await packageRepository.GetByIdAsync(command.SelectedPackageId, cancellationToken);
+                estimatedTime += package!.IncludedServices.Sum(s => s.Service!.EstimatedTime);
+            }
+
+            order.UpdateEstimatedTime(estimatedTime);
             orderRepository.Add(order);
 
             string? stripeSessionId = null;

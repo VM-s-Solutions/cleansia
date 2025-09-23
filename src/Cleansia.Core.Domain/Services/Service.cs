@@ -20,6 +20,8 @@ public class Service : Auditable
 
     public decimal PerRoomPrice { get; private set; }
 
+    public int EstimatedTime { get; private set; }
+
     public IDictionary<string, Translation> _translations = new Dictionary<string, Translation>();
     public IReadOnlyDictionary<string, Translation> Translations => _translations.AsReadOnly();
 

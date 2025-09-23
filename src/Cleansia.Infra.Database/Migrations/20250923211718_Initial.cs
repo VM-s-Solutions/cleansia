@@ -122,6 +122,7 @@ namespace Cleansia.Infra.Database.Migrations
                     Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     BasePrice = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     PerRoomPrice = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    EstimatedTime = table.Column<int>(type: "integer", nullable: false),
                     Translations = table.Column<string>(type: "text", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
@@ -382,8 +383,12 @@ namespace Cleansia.Infra.Database.Migrations
                     PaymentType = table.Column<int>(type: "integer", nullable: false),
                     PaymentStatus = table.Column<int>(type: "integer", nullable: false),
                     TotalPrice = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    EstimatedTime = table.Column<int>(type: "integer", nullable: false),
                     ConfirmationCode = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     StripeSessionId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Notes = table.Column<string>(type: "text", nullable: true),
+                    SpecialInstructions = table.Column<string>(type: "text", nullable: true),
+                    AccessInstructions = table.Column<string>(type: "text", nullable: true),
                     SelectedPackageId = table.Column<string>(type: "character varying(26)", nullable: true),
                     CurrencyId = table.Column<string>(type: "character varying(26)", nullable: false),
                     UserId = table.Column<string>(type: "character varying(26)", nullable: true),
@@ -490,7 +495,13 @@ namespace Cleansia.Infra.Database.Migrations
                     Id = table.Column<string>(type: "text", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     OrderId = table.Column<string>(type: "character varying(26)", nullable: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "text", nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "text", nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "text", nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {

@@ -72,24 +72,64 @@
       "title": "Order Management & Time Tracking",
       "description": "Manage your active orders and track your working time.",
       "active_orders": "Active Orders",
-      "time_logs": "Time Logs",
+      "order_number": "Order Number",
+      "view_details": "View Details",
+      "customer_name": "Customer Name",
+      "customer_email": "Customer Email",
+      "customer_phone": "Customer Phone",
+      "address": "Address",
+      "cleaning_date": "Cleaning Date",
+      "total_price": "Total Price",
+      "payment_status": "Payment Status",
+      "order_status": "Order Status",
       "order_id": "Order ID",
       "due_date": "Due Date",
       "status": "Status",
       "actions": "Actions",
       "date": "Date",
-      "start_time": "Start Time",
-      "end_time": "End Time",
-      "total_hours": "Total Hours",
       "notes": "Notes",
-      "log_time": "Log Time",
       "edit": "Edit",
       "delete": "Delete",
-      "save_log": "Save Log",
       "cancel": "Cancel",
-      "submit_report": "Submit Weekly Report",
-      "no_orders": "No orders to display",
-      "no_logs": "No time logs to display"
+      "no_orders": "No orders to display"
+    },
+    "order_details": {
+      "title": "Order Details",
+      "order_number": "Order Number",
+      "print": "Print",
+      "download_invoice": "Download Invoice",
+      "order_status": "Order Status",
+      "payment_status": "Payment Status",
+      "confirmation_code": "Confirmation Code",
+      "customer_information": "Customer Information",
+      "customer_name": "Customer Name",
+      "customer_email": "Customer Email",
+      "customer_phone": "Customer Phone",
+      "address": "Address",
+      "service_details": "Service Details",
+      "cleaning_date": "Cleaning Date",
+      "rooms": "Rooms",
+      "bathrooms": "Bathrooms",
+      "estimated_time": "Estimated Time",
+      "selected_package": "Selected Package",
+      "included_services": "Included Services",
+      "additional_services": "Additional Services",
+      "extras": "Extras",
+      "payment_information": "Payment Information",
+      "payment_type": "Payment Type",
+      "total_price": "Total Price",
+      "currency": "Currency",
+      "assigned_employee": "Assigned Employee",
+      "employee_name": "Employee Name",
+      "employee_phone": "Employee Phone",
+      "notes_instructions": "Notes & Instructions",
+      "notes": "Notes",
+      "special_instructions": "Special Instructions",
+      "access_instructions": "Access Instructions",
+      "order_history": "Order History",
+      "audit_information": "Audit Information",
+      "created_on": "Created On",
+      "updated_on": "Updated On"
     },
     "invoices": {
       "title": "Invoice Management",
@@ -150,9 +190,10 @@
         "file_removed": "File removed successfully"
       },
       "orders": {
-        "time_log_saved": "Time log saved successfully.",
-        "time_log_removed": "Time log removed.",
-        "report_submitted": "Your time report has been submitted for review."
+        "failed_to_load_details": "Failed to load order details. Please try again.",
+        "invoice_download_not_available": "Invoice download is not yet available.",
+        "no_order_selected": "No order selected.",
+        "print_failed": "Failed to print order. Please try again."
       },
       "invoices": {
         "invoice_generated": "Invoice generated from time logs.",
@@ -186,12 +227,16 @@
       "back": "Back",
       "cancel": "Cancel",
       "details": "Details",
-      "load_more": "Load More"
+      "load_more": "Load More",
+      "retry": "Retry"
     },
     "status": {
       "Pending": "Pending",
       "In Progress": "In Progress",
       "Completed": "Completed"
+    },
+    "time": {
+      "minutes": "minutes"
     }
   },
   "registrationLock": {

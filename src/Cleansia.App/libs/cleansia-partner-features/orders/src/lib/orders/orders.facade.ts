@@ -1,140 +1,73 @@
-import { Injectable, inject, signal } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { SnackbarService } from '@cleansia/services';
-import { DialogService } from 'primeng/dynamicdialog';
+import { Injectable, inject, signal, computed, OnDestroy } from '@angular/core';
+import { SnackbarService, OrderListItem, SortDefinition } from '@cleansia/services';
+import { OrderFilter, Page } from '@cleansia/models';
+import { Store } from '@ngrx/store';
+import { Observable, Subject, takeUntil } from 'rxjs';
+import * as OrderActions from '@cleansia/stores';
+import {
+  selectOrderItems,
+  selectOrderPage,
+  selectOrderLoading,
+  selectOrderError
+} from '@cleansia/stores';
 
-export interface Order {
-  id: number;
-  title: string;
-  description: string;
-  dueDate: Date;
-  status: 'Pending' | 'In Progress' | 'Completed';
-}
-
-export interface TimeLog {
-  id?: number;
-  orderId: number;
-  date: Date;
-  startTime: string;
-  endTime: string;
-  notes: string;
-}
 
 @Injectable()
-export class OrdersFacade {
-  private readonly formBuilder = inject(FormBuilder);
+export class OrdersFacade implements OnDestroy {
   private readonly snackbarService = inject(SnackbarService);
-  private readonly dialogService = inject(DialogService);
+  private readonly store = inject(Store);
+  private readonly destroy$ = new Subject<void>();
+
+  // NgRx selectors
+  readonly orders$ = this.store.select(selectOrderItems);
+  readonly orderPage$ = this.store.select(selectOrderPage);
+  readonly loading$ = this.store.select(selectOrderLoading('paged'));
+  readonly error$ = this.store.select(selectOrderError('paged'));
 
   // Signals for reactive data
-  activeOrders = signal<Order[]>([
-    // Sample data; replace with API fetch
-    {
-      id: 1,
-      title: 'Website Redesign',
-      description: 'Update UI for client site',
-      dueDate: new Date('2025-10-01'),
-      status: 'In Progress',
-    },
-    {
-      id: 2,
-      title: 'Bug Fixes',
-      description: 'Resolve reported issues',
-      dueDate: new Date('2025-09-25'),
-      status: 'Pending',
-    },
-  ]);
-  timeLogs = signal<TimeLog[]>([
-    // Sample data; replace with API fetch
-    {
-      id: 1,
-      orderId: 1,
-      date: new Date('2025-09-17'),
-      startTime: '09:00',
-      endTime: '12:00',
-      notes: 'UI updates',
-    },
-  ]);
-  showDialog = signal(false);
-  selectedOrder = signal<Order | null>(null);
-  isSubmitting = signal(false);
+  orders = signal<OrderListItem[]>([]);
+  currentFilter = signal<OrderFilter>(new OrderFilter({}));
+  currentSort = signal<SortDefinition[]>([]);
 
-  timeLogForm: FormGroup = this.formBuilder.group({
-    date: [new Date(), [Validators.required]],
-    startTime: ['', [Validators.required]],
-    endTime: ['', [Validators.required]],
-    notes: ['', [Validators.maxLength(500)]],
-  });
-
-  // Computed for total hours per log
-  calculateHours(log: TimeLog): number {
-    const start = new Date(`2000-01-01T${log.startTime}:00`).getTime();
-    const end = new Date(`2000-01-01T${log.endTime}:00`).getTime();
-    return (end - start) / (1000 * 60 * 60); // Hours
-  }
-
-  openTimeLogDialog(order: Order): void {
-    this.selectedOrder.set(order);
-    this.timeLogForm.patchValue({
-      date: new Date(),
-      startTime: '',
-      endTime: '',
-      notes: '',
+  constructor() {
+    // Subscribe to orders data and update signal
+    this.orders$.pipe(takeUntil(this.destroy$)).subscribe(orders => {
+      // Create a mutable copy to prevent sorting errors with read-only arrays
+      this.orders.set([...(orders || [])]);
     });
-    this.showDialog.set(true);
+
+    // Load initial data
+    this.loadOrders();
   }
 
-  resetDialog(): void {
-    this.timeLogForm.reset({
-      date: new Date(),
-      startTime: '',
-      endTime: '',
-      notes: '',
-    });
-    this.selectedOrder.set(null);
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
-  saveTimeLog(): void {
-    if (this.timeLogForm.valid && this.selectedOrder()) {
-      const logData: TimeLog = {
-        orderId: this.selectedOrder()!.id,
-        ...this.timeLogForm.value,
-      };
-      this.timeLogs.update((prev) => [...prev, { ...logData, id: Date.now() }]); // Mock ID; use real from API
-      this.snackbarService.showSuccessTranslated('global.messages.orders.time_log_saved');
-      this.showDialog.set(false);
-      this.resetDialog();
-    } else {
-      this.snackbarService.showErrorTranslated('global.messages.profile.fill_required_fields');
-    }
+
+  // Load orders with current filter and sort
+  loadOrders(offset = 0, limit = 20): void {
+    this.store.dispatch(OrderActions.loadOrderPaged({
+      filter: this.currentFilter(),
+      sort: this.currentSort(),
+      offset,
+      limit
+    }));
   }
 
-  editTimeLog(log: TimeLog): void {
-    // Open dialog with pre-filled data
-    const order = this.activeOrders().find((o) => o.id === log.orderId);
-    if (order) {
-      this.openTimeLogDialog(order);
-      this.timeLogForm.patchValue({
-        date: log.date,
-        startTime: log.startTime,
-        endTime: log.endTime,
-        notes: log.notes,
-      });
-    }
+  // Update filter and reload data
+  updateFilter(filter: Partial<OrderFilter>): void {
+    const currentFilter = this.currentFilter();
+    const newFilter = new OrderFilter({ ...currentFilter, ...filter });
+    this.currentFilter.set(newFilter);
+    this.loadOrders();
   }
 
-  deleteTimeLog(log: TimeLog): void {
-    this.timeLogs.update((prev) => prev.filter((l) => l.id !== log.id));
-    this.snackbarService.showSuccessTranslated('global.messages.orders.time_log_removed');
+  // Update sort and reload data
+  updateSort(sort: SortDefinition[]): void {
+    this.currentSort.set(sort);
+    this.loadOrders();
   }
 
-  onSubmitReport(): void {
-    this.isSubmitting.set(true);
-    // Simulate API call for weekly report submission
-    setTimeout(() => {
-      this.snackbarService.showSuccessTranslated('global.messages.orders.report_submitted');
-      this.isSubmitting.set(false);
-      console.log('Time Logs Report:', this.timeLogs());
-    }, 2000);
-  }
 }

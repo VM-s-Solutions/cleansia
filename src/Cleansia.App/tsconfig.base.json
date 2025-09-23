@@ -18,6 +18,9 @@
       "@cleansia-partner/confirm-email": [
         "libs/cleansia-partner-features/confirm-email/src/index.ts"
       ],
+      "@cleansia-partner/invoices": [
+        "libs/cleansia-partner-features/invoices/src/index.ts"
+      ],
       "@cleansia-partner/login": [
         "libs/cleansia-partner-features/login/src/index.ts"
       ],
@@ -30,8 +33,8 @@
       "@cleansia-partner/register": [
         "libs/cleansia-partner-features/register/src/index.ts"
       ],
-      "@cleansia-partner/invoices": [
-        "libs/cleansia-partner-features/invoices/src/index.ts"
+      "@cleansia.app/order-details": [
+        "cleansia-partner-features/order-details/src/index.ts"
       ],
       "@cleansia/assets": ["libs/shared/assets/src/index.ts"],
       "@cleansia/cleansia": ["libs/cleansia/src/index.ts"],

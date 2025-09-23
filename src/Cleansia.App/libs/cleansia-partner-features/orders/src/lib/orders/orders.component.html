@@ -10,174 +10,31 @@
 
     <!-- Active Orders Section -->
     <cleansia-section [title]="'pages.orders.active_orders' | translate">
+      @if (facade.loading$ | async) {
+      <cleansia-loader />
+      } @else {
       <cleansia-table
-        [data]="facade.activeOrders()"
-        [columns]="ordersColumns"
-        [actions]="ordersActions"
+        [data]="facade.orders()"
+        [tableDefinition]="ordersTableDefinition"
         [paginator]="true"
         [rows]="10"
         [emptyMessage]="'pages.orders.no_orders'"
         tableClass="cleansia-orders__table"
       >
-        <ng-template #bodyTemplate let-order let-rowIndex="rowIndex">
-          <tr>
-            @for (column of ordersColumns; track column.field) {
-            <td [class]="column.class">
-              @if (column.field === 'status') {
-              <span [class]="'status-' + order.status.toLowerCase()">
-                {{ order.status | translate }}
-              </span>
-              } @else {
-              {{ getFieldValue(order, column) }}
-              }
-            </td>
-            }
-            <td class="actions-column">
-              @for (action of ordersActions; track action.label) {
-              <button
-                type="button"
-                [class]="'p-button ' + (action.class || 'p-button-outlined')"
-                [disabled]="action.disabled?.(order)"
-                (click)="action.action(order)"
-                [title]="action.label | translate"
-              >
-                @if (action.icon) {
-                <i [class]="action.icon"></i>
-                }
-                {{ action.label | translate }}
-              </button>
-              }
-            </td>
-          </tr>
-        </ng-template>
       </cleansia-table>
+      }
     </cleansia-section>
-
-    <!-- Time Logs Section -->
-    <cleansia-section [title]="'pages.orders.time_logs' | translate">
-      <cleansia-table
-        [data]="facade.timeLogs()"
-        [columns]="timeLogsColumns"
-        [actions]="timeLogsActions"
-        [paginator]="true"
-        [rows]="10"
-        [emptyMessage]="'pages.orders.no_logs'"
-        tableClass="cleansia-orders__table"
-      >
-        <ng-template #bodyTemplate let-log let-rowIndex="rowIndex">
-          <tr>
-            @for (column of timeLogsColumns; track column.field) {
-            <td [class]="column.class">
-              @if (column.field === 'totalHours') {
-              {{ calculateHours(log) | number : '1.2-2' }}
-              } @else {
-              {{ getFieldValue(log, column) }}
-              }
-            </td>
-            }
-            <td class="actions-column">
-              @for (action of timeLogsActions; track action.label) {
-              <button
-                type="button"
-                [class]="'p-button ' + (action.class || 'p-button-outlined')"
-                [disabled]="action.disabled?.(log)"
-                (click)="action.action(log)"
-                [title]="action.label | translate"
-              >
-                @if (action.icon) {
-                <i [class]="action.icon"></i>
-                }
-                {{ action.label | translate }}
-              </button>
-              }
-            </td>
-          </tr>
-        </ng-template>
-      </cleansia-table>
-    </cleansia-section>
-
-    <!-- Submit Reports Section -->
-    <div class="cleansia-orders__actions">
-      <cleansia-button
-        [buttonType]="'submit'"
-        [style]="'raised-button'"
-        [title]="'pages.orders.submit_report' | translate"
-        (clickFn)="facade.onSubmitReport()"
-        [loading]="facade.isSubmitting()"
-      />
-    </div>
   </div>
-
-  <!-- Time Log Dialog -->
-  <p-dialog
-    header="{{ 'pages.orders.log_time' | translate }}"
-    [visible]="facade.showDialog()"
-    [modal]="true"
-    [style]="{ width: '400px' }"
-    (onHide)="facade.resetDialog(); facade.showDialog.set(false)"
-  >
-    <form [formGroup]="facade.timeLogForm">
-      <div class="cleansia-orders__dialog-field">
-        <cleansia-calendar
-          [label]="'pages.orders.date' | translate"
-          [floatVariant]="'on'"
-          formControlName="date"
-          [showErrors]="true"
-          [required]="true"
-          [showIcon]="true"
-          [dateFormat]="'dd.mm.yy'"
-        />
-      </div>
-      <div class="cleansia-orders__dialog-field">
-        <cleansia-time-picker
-          [label]="'pages.orders.start_time' | translate"
-          [floatVariant]="'on'"
-          formControlName="startTime"
-          [showErrors]="true"
-          [required]="true"
-          [showIcon]="true"
-          [hourFormat]="'24'"
-          [stepMinute]="15"
-          [placeholder]="'Select start time'"
-        />
-      </div>
-      <div class="cleansia-orders__dialog-field">
-        <cleansia-time-picker
-          [label]="'pages.orders.end_time' | translate"
-          [floatVariant]="'on'"
-          formControlName="endTime"
-          [showErrors]="true"
-          [required]="true"
-          [showIcon]="true"
-          [hourFormat]="'24'"
-          [stepMinute]="15"
-          [placeholder]="'Select end time'"
-        />
-      </div>
-      <div class="cleansia-orders__dialog-field">
-        <cleansia-text-input
-          [label]="'pages.orders.notes' | translate"
-          [floatVariant]="'on'"
-          formControlName="notes"
-          [dataType]="'text'"
-          [showErrors]="true"
-        />
-      </div>
-      <div class="cleansia-orders__dialog-actions">
-        <cleansia-button
-          [buttonType]="'submit'"
-          [style]="'raised-button'"
-          [title]="'pages.orders.save_log' | translate"
-          (clickFn)="facade.saveTimeLog()"
-          [disabled]="facade.timeLogForm.invalid"
-        />
-        <cleansia-button
-          [buttonType]="'button'"
-          [style]="'basic-button'"
-          [title]="'pages.orders.cancel' | translate"
-          (clickFn)="facade.showDialog.set(false)"
-        />
-      </div>
-    </form>
-  </p-dialog>
 </div>
+
+<ng-template #statusTemplate let-item>
+  <span [class]="getStatusClass(item)">
+    {{ item.paymentStatus?.name }}
+  </span>
+</ng-template>
+
+<ng-template #orderStatusTemplate let-item>
+  <span [class]="getOrderStatusClass(item)">
+    {{ item.orderStatus?.name }}
+  </span>
+</ng-template>

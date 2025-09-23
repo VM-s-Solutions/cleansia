@@ -12,6 +12,9 @@ import { TableModule } from 'primeng/table';
 import {
   CleansiaTableAction,
   CleansiaTableColumn,
+  TableDefinition,
+  TableColumn,
+  TableColumnAction,
 } from './cleansia-table.models';
 
 @Component({
@@ -25,6 +28,7 @@ export class CleansiaTableComponent {
   data = input<any[]>([]);
   columns = input<CleansiaTableColumn[]>([]);
   actions = input<CleansiaTableAction[]>([]);
+  tableDefinition = input<TableDefinition>();
   paginator = input(true);
   rows = input(10);
   responsiveLayout = input<'stack' | 'scroll'>('scroll');
@@ -49,6 +53,9 @@ export class CleansiaTableComponent {
   tableClasses = computed(() => `cleansia-table ${this.tableClass()}`);
 
   totalColumns = computed(() => {
+    if (this.tableDefinition()) {
+      return this.tableDefinition()!.columns.length;
+    }
     const columnsCount = this.columns().length;
     const actionsCount =
       this.actions().length > 0 || this.customActionTemplate() ? 1 : 0;
@@ -77,6 +84,32 @@ export class CleansiaTableComponent {
 
   private getNestedValue(obj: any, path: string): any {
     return path.split('.').reduce((current, prop) => current?.[prop], obj);
+  }
+
+  getTableDefinitionValue(item: any, column: TableColumn): any {
+    if (column.template) {
+      return null; // Template will handle rendering
+    }
+
+    if (typeof column.value === 'string') {
+      return this.getNestedValue(item, column.value);
+    }
+
+    if (typeof column.value === 'function') {
+      return column.value(item);
+    }
+
+    return '';
+  }
+
+  onRowClick(item: any): void {
+    if (this.tableDefinition()?.onRowClick) {
+      this.tableDefinition()!.onRowClick!(item);
+    }
+  }
+
+  onColumnAction(action: TableColumnAction, item: any): void {
+    action.onClick(item);
   }
 
   private applyPipe(value: any, pipe?: string, pipeArgs?: any[]): any {

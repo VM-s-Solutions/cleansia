@@ -5,6 +5,7 @@ using Cleansia.Core.Domain.Extensions;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Users;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 
 namespace Cleansia.Core.Domain.Orders;
 
@@ -42,10 +43,19 @@ public class Order : Auditable
     [Required]
     public decimal TotalPrice { get; private set; }
 
+    [Required]
+    public int EstimatedTime { get; private set; }
+
     [MaxLength(50)]
     public string ConfirmationCode { get; private set; } = OrderExtensions.GenerateConfirmationCode();
 
     public string StripeSessionId { get; private set; }
+
+    public string? Notes { get; private set; }
+
+    public string? SpecialInstructions { get; private set; }
+
+    public string? AccessInstructions { get; private set; }
 
     public string? SelectedPackageId { get; private set; }
     public Package? SelectedPackage { get; private set; }
@@ -76,21 +86,21 @@ public class Order : Auditable
         Address customerAddress, string? selectedPackageId, int rooms, int bathrooms,
         Dictionary<string, bool> extras, DateTime cleaningDateTime, PaymentType paymentType,
         decimal totalPrice, string currencyId, PaymentStatus paymentStatus) => new()
-    {
-        CustomerName = customerName,
-        CustomerEmail = customerEmail,
-        CustomerPhone = customerPhone,
-        CustomerAddress = customerAddress,
-        SelectedPackageId = selectedPackageId,
-        Rooms = rooms,
-        Bathrooms = bathrooms,
-        _extras = extras,
-        CleaningDateTime = cleaningDateTime,
-        PaymentType = paymentType,
-        TotalPrice = totalPrice,
-        CurrencyId = currencyId,
-        PaymentStatus = paymentStatus
-    };
+        {
+            CustomerName = customerName,
+            CustomerEmail = customerEmail,
+            CustomerPhone = customerPhone,
+            CustomerAddress = customerAddress,
+            SelectedPackageId = selectedPackageId,
+            Rooms = rooms,
+            Bathrooms = bathrooms,
+            _extras = extras,
+            CleaningDateTime = cleaningDateTime,
+            PaymentType = paymentType,
+            TotalPrice = totalPrice,
+            CurrencyId = currencyId,
+            PaymentStatus = paymentStatus
+        };
 
     public Order AddSelectedServices(IEnumerable<OrderService> selectedServices)
     {
@@ -116,6 +126,13 @@ public class Order : Auditable
     public Order UpdatePhone(string phone)
     {
         CustomerPhone = phone;
+
+        return this;
+    }
+
+    public Order UpdateEstimatedTime(int estimatedTime)
+    {
+        EstimatedTime = estimatedTime;
 
         return this;
     }

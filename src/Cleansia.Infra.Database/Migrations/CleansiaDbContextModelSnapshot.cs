@@ -244,6 +244,9 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
+                    b.Property<string>("AccessInstructions")
+                        .HasColumnType("text");
+
                     b.Property<int>("Bathrooms")
                         .HasColumnType("integer");
 
@@ -301,12 +304,18 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<string>("EmployeeId")
                         .HasColumnType("character varying(26)");
 
+                    b.Property<int>("EstimatedTime")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Extras")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
 
                     b.Property<int>("PaymentStatus")
                         .HasColumnType("integer");
@@ -319,6 +328,9 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.Property<string>("SelectedPackageId")
                         .HasColumnType("character varying(26)");
+
+                    b.Property<string>("SpecialInstructions")
+                        .HasColumnType("text");
 
                     b.Property<string>("StripeSessionId")
                         .IsRequired()
@@ -409,6 +421,19 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("text");
 
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeactivatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("DeactivatedOn")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
@@ -418,6 +443,12 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
@@ -534,6 +565,9 @@ namespace Cleansia.Infra.Database.Migrations
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
+
+                    b.Property<int>("EstimatedTime")
+                        .HasColumnType("integer");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");

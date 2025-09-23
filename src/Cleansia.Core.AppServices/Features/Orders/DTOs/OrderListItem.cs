@@ -19,6 +19,7 @@ public record OrderListItem(
     Code PaymentType,
     Code PaymentStatus,
     decimal TotalPrice,
+    int EstimatedTime,
     Code OrderStatus,
     string ConfirmationCode,
     string StripeSessionId,

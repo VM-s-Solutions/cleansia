@@ -173,41 +173,53 @@ export class UserFilter extends BaseFilter implements IUserFilter {
 
 export interface IOrderFilter {
   id?: string;
-  fullname?: string;
-  email?: string;
-  phoneNumber?: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  displayOrderNumber?: string;
+  employeeId?: string;
+  packageId?: string;
+  cleaningDateFrom?: Date;
+  cleaningDateTo?: Date;
+  paymentStatuses?: number[];
+  paymentTypes?: number[];
   minTotalPrice?: number;
   maxTotalPrice?: number;
-  shippingTypes?: number[];
-  paymentTypes?: number[];
-  paymentStatuses?: number[];
-  orderStatuses?: number[];
+  isActive?: boolean;
 }
 
 export class OrderFilter extends BaseFilter implements IOrderFilter {
   id?: string;
-  fullname?: string;
-  email?: string;
-  phoneNumber?: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  displayOrderNumber?: string;
+  employeeId?: string;
+  packageId?: string;
+  cleaningDateFrom?: Date;
+  cleaningDateTo?: Date;
+  paymentStatuses?: number[];
+  paymentTypes?: number[];
   minTotalPrice?: number;
   maxTotalPrice?: number;
-  shippingTypes?: number[];
-  paymentTypes?: number[];
-  paymentStatuses?: number[];
-  orderStatuses?: number[];
+  isActive?: boolean;
 
   constructor(filter: IOrderFilter) {
     super();
     this.id = filter.id;
-    this.fullname = filter.fullname;
-    this.email = filter.email;
-    this.phoneNumber = filter.phoneNumber;
+    this.customerName = filter.customerName;
+    this.customerEmail = filter.customerEmail;
+    this.customerPhone = filter.customerPhone;
+    this.displayOrderNumber = filter.displayOrderNumber;
+    this.employeeId = filter.employeeId;
+    this.packageId = filter.packageId;
+    this.cleaningDateFrom = filter.cleaningDateFrom;
+    this.cleaningDateTo = filter.cleaningDateTo;
+    this.paymentStatuses = filter.paymentStatuses;
+    this.paymentTypes = filter.paymentTypes;
     this.minTotalPrice = filter.minTotalPrice;
     this.maxTotalPrice = filter.maxTotalPrice;
-    this.shippingTypes = filter.shippingTypes;
-    this.paymentTypes = filter.paymentTypes;
-    this.paymentStatuses = filter.paymentStatuses;
-    this.orderStatuses = filter.orderStatuses;
+    this.isActive = filter.isActive;
   }
 }
 

@@ -28,6 +28,7 @@ public static class BusinessErrorMessage
     public const string EmptyOrder = "order.empty";
     public const string InvalidSelectedPackage = "order.selected_package.invalid";
     public const string InvalidSelectedServices = "order.selected_services.invalid";
+    public const string OrderNotFound = "order.not_found";
     public const string TotalPriceMustBePositive = "order.total_price.positive";
     public const string TotalPriceNotMatch = "order.total_price.not_match";
 

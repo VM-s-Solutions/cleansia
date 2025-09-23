@@ -14,4 +14,14 @@ public static class CurrencyMappers
             Name: currency.Name,
             ExchangeRate: currency.ExchangeRate);
     }
+
+    public static CurrencyDetails MapToDetails(this Currency currency)
+    {
+        return new CurrencyDetails(
+            Id: currency.Id,
+            Code: currency.Code,
+            Name: currency.Name,
+            Symbol: currency.Symbol
+        );
+    }
 }

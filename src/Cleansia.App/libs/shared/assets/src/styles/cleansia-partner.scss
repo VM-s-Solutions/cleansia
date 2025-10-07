@@ -1,3 +1,11 @@
-// Components and pages now have their styles co-located with their respective components
-// Only common styles (variables, fonts, etc.) are centralized here
+// Cleansia Partner Portal Global Styles
+// Common styles, components, and pages are all imported here
+
+// 1. Common styles (variables, fonts, etc.)
 @use './common';
+
+// 2. Shared component styles
+@import './components/index.scss';
+
+// 3. Partner portal page styles
+@import './pages/cleansia-partner/index.scss';

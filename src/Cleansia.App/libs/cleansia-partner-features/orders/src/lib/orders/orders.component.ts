@@ -51,7 +51,6 @@ import {
     CleansiaLanguageSwitcherComponent,
   ],
   templateUrl: './orders.component.html',
-  styleUrls: ['./orders.component.scss'],
   providers: [OrdersFacade],
 })
 export class OrdersComponent implements AfterViewInit {

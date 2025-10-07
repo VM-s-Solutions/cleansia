@@ -961,6 +961,10 @@ export interface IEmployeePayrollClient {
      */
     getPagedInvoices(employeeId?: string | undefined, payPeriodId?: string | undefined, statuses?: number[] | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<EmployeeInvoiceDtoPagedData>;
     /**
+     * @return OK
+     */
+    getInvoiceById(invoiceId: string): Observable<EmployeeInvoiceDetailDto>;
+    /**
      * @param employeeId (optional) 
      * @param payPeriodId (optional) 
      * @return OK
@@ -1104,6 +1108,81 @@ export class EmployeePayrollClient implements IEmployeePayrollClient {
             let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result403 = ProblemDetails.fromJS(resultData403);
             return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getInvoiceById(invoiceId: string): Observable<EmployeeInvoiceDetailDto> {
+        let url = this.baseUrl + "/api/EmployeePayroll/GetInvoiceById/{invoiceId}";
+        if (invoiceId === undefined || invoiceId === null)
+            throw new globalThis.Error("The parameter 'invoiceId' must be defined.");
+        url = url.replace("{invoiceId}", encodeURIComponent("" + invoiceId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetInvoiceById(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetInvoiceById(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<EmployeeInvoiceDetailDto>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<EmployeeInvoiceDetailDto>;
+        }));
+    }
+
+    protected processGetInvoiceById(response: HttpResponseBase): Observable<EmployeeInvoiceDetailDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = EmployeeInvoiceDetailDto.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result404: any = null;
+            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, ResponseText, Headers, result404);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -4485,6 +4564,138 @@ export class CalculateOrderPayResponse implements ICalculateOrderPayResponse {
 
 export interface ICalculateOrderPayResponse {
     employeePayrollId: string | undefined;
+}
+
+export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
+    id!: string | undefined;
+    employeeId!: string | undefined;
+    employeeName!: string | undefined;
+    payPeriodId!: string | undefined;
+    payPeriodLabel!: string | undefined;
+    invoiceNumber!: string | undefined;
+    variableSymbol!: string | undefined;
+    specificSymbol!: string | undefined;
+    totalOrders!: number;
+    subTotal!: number;
+    bonusAmount!: number;
+    deductionAmount!: number;
+    totalAmount!: number;
+    currencyCode!: string | undefined;
+    status!: string | undefined;
+    pdfBlobUrl!: string | undefined;
+    generatedAt!: Date;
+    approvedAt!: Date | undefined;
+    approvedBy!: string | undefined;
+    paidAt!: Date | undefined;
+    adminNotes!: string | undefined;
+    bankTransferNote!: string | undefined;
+    orderPays!: OrderEmployeePayDto[] | undefined;
+
+    constructor(data?: IEmployeeInvoiceDetailDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.employeeId = Data["employeeId"];
+            this.employeeName = Data["employeeName"];
+            this.payPeriodId = Data["payPeriodId"];
+            this.payPeriodLabel = Data["payPeriodLabel"];
+            this.invoiceNumber = Data["invoiceNumber"];
+            this.variableSymbol = Data["variableSymbol"];
+            this.specificSymbol = Data["specificSymbol"];
+            this.totalOrders = Data["totalOrders"];
+            this.subTotal = Data["subTotal"];
+            this.bonusAmount = Data["bonusAmount"];
+            this.deductionAmount = Data["deductionAmount"];
+            this.totalAmount = Data["totalAmount"];
+            this.currencyCode = Data["currencyCode"];
+            this.status = Data["status"];
+            this.pdfBlobUrl = Data["pdfBlobUrl"];
+            this.generatedAt = Data["generatedAt"] ? new Date(Data["generatedAt"].toString()) : undefined as any;
+            this.approvedAt = Data["approvedAt"] ? new Date(Data["approvedAt"].toString()) : undefined as any;
+            this.approvedBy = Data["approvedBy"];
+            this.paidAt = Data["paidAt"] ? new Date(Data["paidAt"].toString()) : undefined as any;
+            this.adminNotes = Data["adminNotes"];
+            this.bankTransferNote = Data["bankTransferNote"];
+            if (Array.isArray(Data["orderPays"])) {
+                this.orderPays = [] as any;
+                for (let item of Data["orderPays"])
+                    this.orderPays!.push(OrderEmployeePayDto.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): EmployeeInvoiceDetailDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new EmployeeInvoiceDetailDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["employeeId"] = this.employeeId;
+        data["employeeName"] = this.employeeName;
+        data["payPeriodId"] = this.payPeriodId;
+        data["payPeriodLabel"] = this.payPeriodLabel;
+        data["invoiceNumber"] = this.invoiceNumber;
+        data["variableSymbol"] = this.variableSymbol;
+        data["specificSymbol"] = this.specificSymbol;
+        data["totalOrders"] = this.totalOrders;
+        data["subTotal"] = this.subTotal;
+        data["bonusAmount"] = this.bonusAmount;
+        data["deductionAmount"] = this.deductionAmount;
+        data["totalAmount"] = this.totalAmount;
+        data["currencyCode"] = this.currencyCode;
+        data["status"] = this.status;
+        data["pdfBlobUrl"] = this.pdfBlobUrl;
+        data["generatedAt"] = this.generatedAt ? this.generatedAt.toISOString() : undefined as any;
+        data["approvedAt"] = this.approvedAt ? this.approvedAt.toISOString() : undefined as any;
+        data["approvedBy"] = this.approvedBy;
+        data["paidAt"] = this.paidAt ? this.paidAt.toISOString() : undefined as any;
+        data["adminNotes"] = this.adminNotes;
+        data["bankTransferNote"] = this.bankTransferNote;
+        if (Array.isArray(this.orderPays)) {
+            data["orderPays"] = [];
+            for (let item of this.orderPays)
+                data["orderPays"].push(item ? item.toJSON() : undefined as any);
+        }
+        return data;
+    }
+}
+
+export interface IEmployeeInvoiceDetailDto {
+    id: string | undefined;
+    employeeId: string | undefined;
+    employeeName: string | undefined;
+    payPeriodId: string | undefined;
+    payPeriodLabel: string | undefined;
+    invoiceNumber: string | undefined;
+    variableSymbol: string | undefined;
+    specificSymbol: string | undefined;
+    totalOrders: number;
+    subTotal: number;
+    bonusAmount: number;
+    deductionAmount: number;
+    totalAmount: number;
+    currencyCode: string | undefined;
+    status: string | undefined;
+    pdfBlobUrl: string | undefined;
+    generatedAt: Date;
+    approvedAt: Date | undefined;
+    approvedBy: string | undefined;
+    paidAt: Date | undefined;
+    adminNotes: string | undefined;
+    bankTransferNote: string | undefined;
+    orderPays: OrderEmployeePayDto[] | undefined;
 }
 
 export class EmployeeInvoiceDto implements IEmployeeInvoiceDto {

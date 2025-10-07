@@ -7,11 +7,13 @@ import {
   CountryClient,
   CurrencyClient,
   EmployeeClient,
+  EmployeePayrollClient,
   IAuthClient,
   ICodeClient,
   ICountryClient,
   ICurrencyClient,
   IEmployeeClient,
+  IEmployeePayrollClient,
   ILanguageClient,
   IOrderClient,
   IPackageClient,
@@ -34,6 +36,7 @@ interface IClient {
   countryClient: ICountryClient;
   currencyClient: ICurrencyClient;
   employeeClient: IEmployeeClient;
+  employeePayrollClient: IEmployeePayrollClient;
   languageClient: ILanguageClient;
   packageClient: IPackageClient;
   paymentClient: IPaymentClient;
@@ -61,6 +64,10 @@ export class Client implements IClient {
     this.apiBaseUrl
   );
   employeeClient: IEmployeeClient = new EmployeeClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  employeePayrollClient: IEmployeePayrollClient = new EmployeePayrollClient(
     this.httpClient,
     this.apiBaseUrl
   );

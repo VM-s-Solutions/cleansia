@@ -4,7 +4,6 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'order-additional-services',
-  styleUrls: ['../order-details.component.scss'],
   standalone: true,
   imports: [CommonModule, TranslatePipe],
   template: `

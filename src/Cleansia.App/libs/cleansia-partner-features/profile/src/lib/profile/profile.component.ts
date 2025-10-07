@@ -39,7 +39,6 @@ import { ProfileFacade } from './profile.facade';
     CleansiaLanguageSwitcherComponent,
   ],
   templateUrl: './profile.component.html',
-  styleUrls: ['./profile.component.scss'],
   providers: [ProfileFacade],
 })
 export class ProfileComponent implements OnInit {

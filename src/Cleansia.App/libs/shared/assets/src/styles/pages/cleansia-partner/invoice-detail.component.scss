@@ -1,0 +1,248 @@
+.cleansia-invoice-detail {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+  min-height: 100vh;
+
+  &__container {
+    background: var(--cleansia-white);
+    border-radius: 12px;
+    padding: 2rem;
+    max-width: 1200px;
+    width: 100%;
+  }
+}
+
+.error-container {
+  text-align: center;
+  padding: 2rem;
+
+  .error-message {
+    color: var(--error-color);
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .error-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+  }
+}
+
+.invoice-header {
+  margin-bottom: 2rem;
+
+  &__main {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+}
+
+.invoice-info {
+  flex: 1;
+
+  .invoice-number {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+    color: var(--primary-color);
+  }
+
+  .invoice-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+
+    .pay-period {
+      color: var(--text-color-secondary);
+      font-weight: 500;
+    }
+  }
+}
+
+.invoice-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    justify-content: center;
+  }
+}
+
+.invoice-summary {
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    .label {
+      font-weight: 600;
+      color: var(--text-color-secondary);
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+    }
+
+    span:not(.label) {
+      font-weight: 500;
+      color: var(--text-color);
+    }
+  }
+}
+
+.amount-breakdown {
+  border-top: 1px solid var(--surface-border);
+  padding-top: 1.5rem;
+
+  .amount-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--surface-50);
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &.positive {
+      color: var(--green-600);
+    }
+
+    &.negative {
+      color: var(--red-600);
+    }
+
+    &.total {
+      font-weight: 700;
+      font-size: 1.125rem;
+      border-top: 2px solid var(--primary-color);
+      margin-top: 0.5rem;
+      padding-top: 1rem;
+      color: var(--primary-color);
+    }
+
+    .amount {
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+}
+
+.no-orders {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-color-secondary);
+
+  p {
+    font-size: 1.1rem;
+    margin: 0;
+  }
+}
+
+.notes-section {
+  .note-item {
+    margin-bottom: 1.5rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    .label {
+      display: block;
+      font-weight: 600;
+      color: var(--text-color-secondary);
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+      margin-bottom: 0.5rem;
+    }
+
+    p {
+      margin: 0;
+      line-height: 1.6;
+      padding: 1rem;
+      background: var(--surface-50);
+      border-radius: 8px;
+      border-left: 4px solid var(--primary-color);
+    }
+  }
+}
+
+// Status badges - same as invoices list
+::ng-deep {
+  .status-badge {
+    display: inline-block;
+    padding: 0.375rem 0.875rem;
+    border-radius: 16px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+
+    &.status-pending {
+      background-color: rgba(245, 158, 11, 0.15);
+      color: #b45309;
+    }
+
+    &.status-approved {
+      background-color: rgba(59, 130, 246, 0.15);
+      color: #1e3a8a;
+    }
+
+    &.status-paid {
+      background-color: rgba(34, 197, 94, 0.15);
+      color: #14532d;
+    }
+
+    &.status-disputed {
+      background-color: rgba(239, 68, 68, 0.15);
+      color: #991b1b;
+    }
+
+    &.status-rejected {
+      background-color: rgba(107, 114, 128, 0.15);
+      color: #374151;
+    }
+  }
+}
+
+// Print styles
+@media print {
+  .cleansia-invoice-detail {
+    padding: 0;
+    min-height: auto;
+
+    &__container {
+      box-shadow: none;
+      border-radius: 0;
+      padding: 1rem;
+      max-width: none;
+    }
+  }
+
+  .invoice-actions {
+    display: none !important;
+  }
+
+  cleansia-language-switcher {
+    display: none !important;
+  }
+}

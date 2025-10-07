@@ -8,166 +8,28 @@
       </p>
     </div>
 
-    <!-- Pending Invoices Section -->
-    <cleansia-section [title]="'pages.invoices.pending_invoices' | translate">
+    <cleansia-section [title]="'pages.invoices.my_invoices' | translate">
+      @if (facade.loading() && facade.invoices().length === 0) {
+      <cleansia-loader />
+      } @else {
       <cleansia-table
-        [data]="facade.pendingInvoices()"
-        [columns]="pendingInvoicesColumns"
-        [actions]="pendingInvoicesActions"
-        [paginator]="true"
-        [rows]="5"
-        [emptyMessage]="'pages.invoices.no_pending'"
-        tableClass="cleansia-invoices__table"
-      >
-        <ng-template #bodyTemplate let-invoice let-rowIndex="rowIndex">
-          <tr>
-            @for (column of pendingInvoicesColumns; track column.field) {
-            <td [class]="column.class">
-              @if (column.field === 'status') {
-              <span [class]="'status-' + invoice.status.toLowerCase()">
-                {{ invoice.status | translate }}
-              </span>
-              } @else {
-              {{ getFieldValue(invoice, column) }}
-              }
-            </td>
-            }
-            <td class="actions-column">
-              @for (action of pendingInvoicesActions; track action.label) {
-              <button
-                type="button"
-                [class]="'p-button ' + (action.class || 'p-button-outlined')"
-                [disabled]="action.disabled?.(invoice)"
-                (click)="action.action(invoice)"
-                [title]="action.label | translate"
-              >
-                @if (action.icon) {
-                <i [class]="action.icon"></i>
-                }
-                {{ action.label | translate }}
-              </button>
-              }
-            </td>
-          </tr>
-        </ng-template>
-      </cleansia-table>
-    </cleansia-section>
-
-    <!-- All Invoices Section -->
-    <cleansia-section [title]="'pages.invoices.all_invoices' | translate">
-      <cleansia-table
-        [data]="facade.allInvoices()"
-        [columns]="allInvoicesColumns"
-        [actions]="allInvoicesActions"
+        [data]="facade.invoices()"
+        [tableDefinition]="invoicesTableDefinition"
         [paginator]="true"
         [rows]="10"
         [emptyMessage]="'pages.invoices.no_invoices'"
         tableClass="cleansia-invoices__table"
+        [loading]="facade.loading()"
+        (sortChange)="onSortChange($event)"
       >
-        <ng-template #bodyTemplate let-invoice let-rowIndex="rowIndex">
-          <tr>
-            @for (column of allInvoicesColumns; track column.field) {
-            <td [class]="column.class">
-              @if (column.field === 'status') {
-              <span [class]="'status-' + invoice.status.toLowerCase()">
-                {{ invoice.status | translate }}
-              </span>
-              } @else {
-              {{ getFieldValue(invoice, column) }}
-              }
-            </td>
-            }
-            <td class="actions-column">
-              @for (action of allInvoicesActions; track action.label) {
-              <button
-                type="button"
-                [class]="'p-button ' + (action.class || 'p-button-outlined')"
-                [disabled]="action.disabled?.(invoice)"
-                (click)="action.action(invoice)"
-                [title]="action.label | translate"
-              >
-                @if (action.icon) {
-                <i [class]="action.icon"></i>
-                }
-                {{ action.label | translate }}
-              </button>
-              }
-            </td>
-          </tr>
-        </ng-template>
       </cleansia-table>
+      }
     </cleansia-section>
-
-    <!-- Generate Invoice Section -->
-    <div class="cleansia-invoices__generate">
-      <cleansia-section [title]="'pages.invoices.generate_invoice' | translate">
-        <div class="cleansia-invoices__generate-actions">
-          <cleansia-button
-            [buttonType]="'submit'"
-            [style]="'raised-button'"
-            [title]="'pages.invoices.generate_from_logs' | translate"
-            (clickFn)="facade.generateFromTimeLogs()"
-            [loading]="facade.isGenerating()"
-          />
-          <cleansia-button
-            [buttonType]="'button'"
-            [title]="'pages.invoices.preview' | translate"
-            (clickFn)="facade.previewInvoice()"
-          />
-        </div>
-      </cleansia-section>
-    </div>
   </div>
-
-  <!-- Invoice Details Dialog -->
-  <p-dialog
-    header="{{ 'pages.invoices.invoice_details' | translate }}"
-    [modal]="true"
-    styleClass="cleansia-invoices__details-dialog"
-    (onHide)="facade.resetDetailsDialog()"
-  >
-    @if (facade.selectedInvoice()) {
-      <div>
-      <p class="mb-2">
-        <strong>{{ 'pages.invoices.invoice_number' | translate }}:</strong>
-        {{ facade.selectedInvoice()?.number }}
-      </p>
-      <p class="mb-2">
-        <strong>{{ 'pages.invoices.date' | translate }}:</strong>
-        {{ facade.selectedInvoice()?.date | date : 'dd.MM.yyyy' }}
-      </p>
-      <p class="mb-2">
-        <strong>{{ 'pages.invoices.amount' | translate }}:</strong>
-        {{
-          facade.selectedInvoice()?.amount
-            | currency : 'CZK' : 'symbol' : '1.2-2'
-        }}
-      </p>
-      <p class="mb-2">
-        <strong>{{ 'pages.invoices.vat' | translate }}:</strong>
-        {{
-          facade.selectedInvoice()?.vat | currency : 'CZK' : 'symbol' : '1.2-2'
-        }}
-        (21%)
-      </p>
-      <p class="mb-2">
-        <strong>{{ 'pages.invoices.total' | translate }}:</strong>
-        {{
-          facade.selectedInvoice()?.total
-            | currency : 'CZK' : 'symbol' : '1.2-2'
-        }}
-      </p>
-      <p class="mb-4">
-        <strong>{{ 'pages.invoices.payment_status' | translate }}:</strong>
-        {{ facade.selectedInvoice()?.status ?? '' | translate }}
-      </p>
-      <cleansia-button
-        [buttonType]="'button'"
-        [style]="'raised-button'"
-        [title]="'pages.invoices.download' | translate"
-        (clickFn)="facade.downloadInvoice(facade.selectedInvoice()!)"
-      />
-      </div>
-    }
-  </p-dialog>
 </div>
+
+<ng-template #statusTemplate let-item>
+  <span [class]="getStatusClass(item)">
+    {{ 'pages.invoices.status_' + item.status.toLowerCase() | translate }}
+  </span>
+</ng-template>

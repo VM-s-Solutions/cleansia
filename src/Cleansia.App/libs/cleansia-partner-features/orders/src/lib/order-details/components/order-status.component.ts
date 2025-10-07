@@ -11,7 +11,6 @@ import { ICleansiaSelectOption } from '@cleansia/components';
 
 @Component({
   selector: 'order-status',
-  styleUrls: ['../order-details.component.scss'],
   standalone: true,
   imports: [
     CommonModule,

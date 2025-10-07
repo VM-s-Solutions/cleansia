@@ -17,7 +17,6 @@ export interface FileItem {
   standalone: true,
   imports: [CommonModule, ButtonModule, ErrorPipe, TranslateModule],
   templateUrl: './cleansia-file.component.html',
-  styleUrls: ['./cleansia-file.component.scss'],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,

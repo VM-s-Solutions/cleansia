@@ -19,7 +19,7 @@
         "assets": ["apps/cleansia-partner.app/src/assets"],
         "styles": [
           "apps/cleansia-partner.app/src/styles.scss",
-          "libs/shared/assets/src/styles/index.scss"
+          "libs/shared/assets/src/styles/cleansia-partner.scss"
         ]
       },
       "configurations": {

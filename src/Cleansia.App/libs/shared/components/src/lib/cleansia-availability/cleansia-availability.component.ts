@@ -43,7 +43,6 @@ const DAYS = [
     DividerModule,
   ],
   templateUrl: './cleansia-availability.component.html',
-  styleUrls: ['./cleansia-availability.component.scss'],
   styles: [
     `
       .availability-module {

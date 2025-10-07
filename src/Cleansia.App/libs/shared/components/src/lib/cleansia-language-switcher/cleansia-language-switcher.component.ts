@@ -9,7 +9,6 @@ import { SelectModule } from 'primeng/select';
 @Component({
   selector: 'cleansia-language-switcher',
   templateUrl: './cleansia-language-switcher.component.html',
-  styleUrls: ['./cleansia-language-switcher.component.scss'],
   standalone: true,
   imports: [FormsModule, CommonModule, SelectModule],
 })

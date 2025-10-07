@@ -116,6 +116,11 @@ export class AppComponent implements OnInit, OnDestroy {
       route: `/${CleansiaPartnerRoute.ORDERS}`,
     },
     {
+      label: this.translate.instant('sidebar.invoices'),
+      icon: 'pi pi-file',
+      route: `/${CleansiaPartnerRoute.INVOICES}`,
+    },
+    {
       label: this.translate.instant('sidebar.logout'),
       icon: 'pi pi-sign-out',
       onClickFn: () => {

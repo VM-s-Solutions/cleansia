@@ -46,7 +46,6 @@ import { OrderDetailsFacade } from './order-details.facade';
     CleansiaLanguageSwitcherComponent,
   ],
   templateUrl: './order-details.component.html',
-  styleUrls: ['./order-details.component.scss'],
   providers: [OrderDetailsFacade],
 })
 export class OrderDetailsComponent implements OnInit {

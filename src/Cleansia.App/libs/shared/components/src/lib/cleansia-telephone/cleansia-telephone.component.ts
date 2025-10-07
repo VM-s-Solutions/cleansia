@@ -9,7 +9,6 @@ import { CleansiaBaseFormInputComponent } from '../cleansia-base-form';
 @Component({
   selector: 'cleansia-telephone',
   templateUrl: './cleansia-telephone.component.html',
-  styleUrls: ['./cleansia-telephone.component.scss'],
   standalone: true,
   imports: [
     ErrorPipe,

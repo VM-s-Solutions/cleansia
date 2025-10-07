@@ -5,7 +5,6 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'order-header',
-  styleUrls: ['../order-details.component.scss'],
   standalone: true,
   imports: [CommonModule, CleansiaButtonComponent, TranslatePipe],
   template: `

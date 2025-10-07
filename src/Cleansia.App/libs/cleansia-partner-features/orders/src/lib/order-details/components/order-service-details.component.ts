@@ -9,7 +9,6 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'order-service-details',
-  styleUrls: ['../order-details.component.scss'],
   standalone: true,
   imports: [
     CommonModule,

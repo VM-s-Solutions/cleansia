@@ -84,4 +84,31 @@ public static class EmployeePayrollMappers
             config.Description,
             config.CreatedOn.DateTime
         );
+
+    public static EmployeeInvoiceDetailDto MapToDetailDto(this EmployeeInvoice invoice) =>
+        new(
+            invoice.Id,
+            invoice.EmployeeId,
+            invoice.Employee != null ? $"{invoice.Employee.User?.FirstName} {invoice.Employee.User?.LastName}".Trim() : "Unknown",
+            invoice.PayPeriodId,
+            invoice.PayPeriod?.GetPeriodLabel() ?? "",
+            invoice.InvoiceNumber,
+            invoice.VariableSymbol,
+            invoice.SpecificSymbol,
+            invoice.TotalOrders,
+            invoice.SubTotal,
+            invoice.BonusAmount,
+            invoice.DeductionAmount,
+            invoice.TotalAmount,
+            invoice.Currency?.Code ?? "",
+            invoice.Status.ToString(),
+            invoice.PdfBlobUrl,
+            invoice.GeneratedAt,
+            invoice.ApprovedAt,
+            invoice.ApprovedBy,
+            invoice.PaidAt,
+            invoice.AdminNotes,
+            invoice.BankTransferNote,
+            invoice.OrderPays.Select(op => op.MapToDto()).ToList()
+        );
 }

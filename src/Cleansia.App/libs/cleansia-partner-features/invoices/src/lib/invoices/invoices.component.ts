@@ -1,108 +1,102 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
+import {
+  AfterViewInit,
+  ChangeDetectorRef,
+  Component,
+  inject,
+  TemplateRef,
+  viewChild,
+} from '@angular/core';
+import { Router } from '@angular/router';
 import {
   CleansiaButtonComponent,
   CleansiaLanguageSwitcherComponent,
+  CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTableComponent,
-  CleansiaTableColumn,
-  CleansiaTableAction,
   CleansiaTitleComponent,
+  TableDefinition,
 } from '@cleansia/components';
-import { TranslatePipe } from '@ngx-translate/core';
-import { DialogModule } from 'primeng/dialog';
+import { SortDefinition, SortDirection } from '@cleansia/services';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { ButtonModule } from 'primeng/button';
+import { TableModule } from 'primeng/table';
 import { ToastModule } from 'primeng/toast';
-import { InvoicesFacade, Invoice } from './invoices.facade';
+import { EmployeeInvoice, InvoicesFacade } from './invoices.facade';
+import { getInvoicesTableDefinition } from './invoices.models';
 
 @Component({
   selector: 'cleansia-partner-invoices',
   standalone: true,
   imports: [
-    CommonModule,
+    TableModule,
     ToastModule,
+    CommonModule,
+    ButtonModule,
     TranslatePipe,
-    DialogModule,
-    ReactiveFormsModule,
+    CleansiaTableComponent,
     CleansiaTitleComponent,
     CleansiaButtonComponent,
+    CleansiaLoaderComponent,
     CleansiaSectionComponent,
-    CleansiaTableComponent,
     CleansiaLanguageSwitcherComponent,
   ],
   templateUrl: './invoices.component.html',
-  styleUrls: ['./invoices.component.scss'],
   providers: [InvoicesFacade],
 })
-export class InvoicesComponent {
-  protected readonly facade: InvoicesFacade = inject(InvoicesFacade);
+export class InvoicesComponent implements AfterViewInit {
+  private readonly router = inject(Router);
+  private readonly cd = inject(ChangeDetectorRef);
+  protected readonly facade = inject(InvoicesFacade);
+  private readonly translate = inject(TranslateService);
 
-  // Pending invoices table configuration
-  pendingInvoicesColumns: CleansiaTableColumn[] = [
-    { field: 'number', header: 'pages.invoices.invoice_number', sortable: true },
-    { field: 'date', header: 'pages.invoices.date', pipe: 'date', sortable: true },
-    { field: 'amount', header: 'pages.invoices.amount', pipe: 'currency', sortable: true },
-    { field: 'dueDate', header: 'pages.invoices.due_date', pipe: 'date', sortable: true },
-    { field: 'status', header: 'pages.invoices.status' },
-  ];
+  statusTemplate = viewChild<TemplateRef<any>>('statusTemplate');
 
-  pendingInvoicesActions: CleansiaTableAction[] = [
-    {
-      label: 'pages.invoices.download',
-      icon: 'pi pi-download',
-      class: 'p-button-text p-button-sm',
-      action: (invoice: Invoice) => this.facade.downloadInvoice(invoice),
-    },
-  ];
+  invoicesTableDefinition!: TableDefinition<EmployeeInvoice>;
 
-  // All invoices table configuration
-  allInvoicesColumns: CleansiaTableColumn[] = [
-    { field: 'number', header: 'pages.invoices.invoice_number', sortable: true },
-    { field: 'date', header: 'pages.invoices.date', pipe: 'date', sortable: true },
-    { field: 'amount', header: 'pages.invoices.amount', pipe: 'currency', sortable: true },
-    { field: 'dueDate', header: 'pages.invoices.due_date', pipe: 'date', sortable: true },
-    { field: 'status', header: 'pages.invoices.status' },
-  ];
+  private lastSortField: string | null = null;
+  private lastSortOrder: number | null = null;
 
-  allInvoicesActions: CleansiaTableAction[] = [
-    {
-      label: 'pages.invoices.download',
-      icon: 'pi pi-download',
-      class: 'p-button-outlined p-button-sm',
-      action: (invoice: Invoice) => this.facade.downloadInvoice(invoice),
-    },
-    {
-      label: 'pages.invoices.view_details',
-      icon: 'pi pi-eye',
-      class: 'p-button-outlined p-button-sm',
-      action: (invoice: Invoice) => this.facade.viewInvoiceDetails(invoice),
-    },
-  ];
+  ngAfterViewInit(): void {
+    this.invoicesTableDefinition = getInvoicesTableDefinition(
+      {
+        onViewDetails: this.viewInvoiceDetails.bind(this),
+        onDownload: this.downloadInvoice.bind(this),
+      },
+      this.translate,
+      this.statusTemplate()
+    );
 
-  getFieldValue(item: Record<string, unknown>, column: CleansiaTableColumn): unknown {
-    const value = this.getNestedValue(item, column.field);
-    return this.applyPipe(value, column.pipe);
+    this.cd.detectChanges();
   }
 
-  private getNestedValue(obj: Record<string, unknown>, path: string): unknown {
-    return path.split('.').reduce((current: unknown, prop: string) => {
-      return (current as Record<string, unknown>)?.[prop];
-    }, obj as unknown);
-  }
-
-  private applyPipe(value: unknown, pipe?: string): unknown {
-    if (!pipe || value == null) return value;
-
-    switch (pipe) {
-      case 'date':
-        return new Date(value as string | number | Date).toLocaleDateString('cs-CZ');
-      case 'currency':
-        return new Intl.NumberFormat('cs-CZ', {
-          style: 'currency',
-          currency: 'CZK'
-        }).format(value as number);
-      default:
-        return value;
+  onSortChange(event: { field: string; order: number }): void {
+    // Check if sort actually changed to prevent duplicate requests
+    if (event.field === this.lastSortField && event.order === this.lastSortOrder) {
+      return;
     }
+
+    // Update last sort state
+    this.lastSortField = event.field;
+    this.lastSortOrder = event.order;
+
+    const sortDef = [new SortDefinition({
+      field: event.field,
+      direction: event.order === 1 ? SortDirection.Ascending : SortDirection.Descending
+    })];
+    this.facade.updateSort(sortDef);
+  }
+
+  viewInvoiceDetails(invoice: EmployeeInvoice): void {
+    this.router.navigate(['/invoices', invoice.id]);
+  }
+
+  downloadInvoice(invoice: EmployeeInvoice): void {
+    this.facade.downloadInvoice(invoice);
+  }
+
+  getStatusClass(invoice: EmployeeInvoice): string {
+    const statusName = invoice.status.toLowerCase();
+    return `status-badge status-${statusName}`;
   }
 }

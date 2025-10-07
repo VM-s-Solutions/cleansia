@@ -18,7 +18,6 @@ import { ICleansiaSelectOption } from './cleansia-select.models';
     FloatLabelModule,
   ],
   templateUrl: './cleansia-select.component.html',
-  styleUrls: ['./cleansia-select.component.scss'],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,

@@ -5,7 +5,6 @@ import { ReplacePipe } from '@cleansia/pipes';
 @Component({
   selector: 'cleansia-dynamic-background',
   templateUrl: './cleansia-dynamic-background.component.html',
-  styleUrls: ['./cleansia-dynamic-background.component.scss'],
   standalone: true,
   imports: [LowerCasePipe, ReplacePipe],
 })

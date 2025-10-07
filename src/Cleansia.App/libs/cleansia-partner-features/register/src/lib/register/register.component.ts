@@ -23,7 +23,6 @@ import { PasswordCheck, checkIfPasswordsValid } from './register.models';
 @Component({
   selector: 'cleansia-partner-register',
   templateUrl: './register.component.html',
-  styleUrls: ['./register.component.scss'],
   imports: [
     RouterLink,
     CommonModule,

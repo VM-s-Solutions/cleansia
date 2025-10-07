@@ -25,6 +25,22 @@ public class EmployeePayrollController(IMediator mediator) : ApiController(media
         return await Mediator.Send(request, cancellationToken);
     }
 
+    [HttpGet("GetInvoiceById/{invoiceId}")]
+    [Permission(Policy.CanViewPagedInvoices)]
+    [ProducesResponseType(typeof(EmployeeInvoiceDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetInvoiceById(string invoiceId, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new GetInvoiceById.Query(invoiceId), cancellationToken);
+        if (result == null)
+        {
+            return NotFound();
+        }
+        return Ok(result);
+    }
+
     [HttpGet("GetPeriodPays")]
     [Permission(Policy.CanViewPeriodPays)]
     [ProducesResponseType(typeof(PeriodPaySummaryDto), StatusCodes.Status200OK)]

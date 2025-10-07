@@ -38,7 +38,6 @@ import { SidebarMenuItem } from './cleansia-sidebar-menu.models';
     CleansiaBrandNameComponent,
   ],
   templateUrl: './cleansia-sidebar-menu.component.html',
-  styleUrls: ['./cleansia-sidebar-menu.component.scss'],
   animations: [
     trigger('sidebarWidth', [
       state(

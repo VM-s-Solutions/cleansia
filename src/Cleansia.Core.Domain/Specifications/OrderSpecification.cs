@@ -1,4 +1,6 @@
-﻿using System.Linq.Expressions;
+﻿using System.Linq;
+using System.Linq.Expressions;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Infra.Common.Specifications;
 
@@ -11,13 +13,13 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
     public string? CustomerPhone { get; set; }
     public string? DisplayOrderNumber { get; set; }
     public string? EmployeeId { get; set; }
-    public string? PackageId { get; set; }
     public DateTime? CleaningDateFrom { get; set; }
     public DateTime? CleaningDateTo { get; set; }
-    public int[]? PaymentStatuses { get; set; }
-    public int[]? PaymentTypes { get; set; }
+    public IEnumerable<PaymentStatus>? PaymentStatuses { get; set; }
+    public IEnumerable<PaymentType>? PaymentTypes { get; set; }
     public decimal? MinTotalPrice { get; set; }
     public decimal? MaxTotalPrice { get; set; }
+    public IEnumerable<OrderStatus>? OrderStatuses { get; set; }
 
     public Expression<Func<Order, bool>> SatisfiedBy()
     {
@@ -58,11 +60,6 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
             specification &= new DirectSpecification<Order>(x => x.EmployeeId == EmployeeId);
         }
 
-        if (!string.IsNullOrEmpty(PackageId))
-        {
-            specification &= new DirectSpecification<Order>(x => x.SelectedPackageId == PackageId);
-        }
-
         if (CleaningDateFrom.HasValue)
         {
             specification &= new DirectSpecification<Order>(x => x.CleaningDateTime >= CleaningDateFrom.Value);
@@ -75,12 +72,12 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
 
         if (PaymentStatuses is not null && PaymentStatuses.Any())
         {
-            specification &= new DirectSpecification<Order>(x => PaymentStatuses.Contains((int)x.PaymentStatus));
+            specification &= new DirectSpecification<Order>(x => PaymentStatuses.Contains(x.PaymentStatus));
         }
 
         if (PaymentTypes is not null && PaymentTypes.Any())
         {
-            specification &= new DirectSpecification<Order>(x => PaymentTypes.Contains((int)x.PaymentType));
+            specification &= new DirectSpecification<Order>(x => PaymentTypes.Contains(x.PaymentType));
         }
 
         if (MinTotalPrice.HasValue)
@@ -93,14 +90,19 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
             specification &= new DirectSpecification<Order>(x => x.TotalPrice <= MaxTotalPrice.Value);
         }
 
+        if (OrderStatuses is not null && OrderStatuses.Any())
+        {
+            specification &= new DirectSpecification<Order>(x => OrderStatuses.Contains(x.OrderStatusHistory.OrderByDescending(s => s.CreatedOn).First().Status));
+        }
+
         return specification.SatisfiedBy();
     }
 
     public static OrderSpecification Create(string? id = null, bool? isActive = null, string? customerName = null,
         string? customerEmail = null, string? customerPhone = null, string? displayOrderNumber = null,
-        string? employeeId = null, string? packageId = null, DateTime? cleaningDateFrom = null,
-        DateTime? cleaningDateTo = null, int[]? paymentStatuses = null, int[]? paymentTypes = null,
-        decimal? minTotalPrice = null, decimal? maxTotalPrice = null) =>
+        string? employeeId = null, DateTime? cleaningDateFrom = null,
+        DateTime? cleaningDateTo = null, IEnumerable<PaymentStatus>? paymentStatuses = null, IEnumerable<PaymentType>? paymentTypes = null,
+        decimal? minTotalPrice = null, decimal? maxTotalPrice = null, IEnumerable<OrderStatus>? orderStatuses = null) =>
         new()
         {
             Id = id,
@@ -110,12 +112,12 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
             CustomerPhone = customerPhone,
             DisplayOrderNumber = displayOrderNumber,
             EmployeeId = employeeId,
-            PackageId = packageId,
             CleaningDateFrom = cleaningDateFrom,
             CleaningDateTo = cleaningDateTo,
             PaymentStatuses = paymentStatuses,
             PaymentTypes = paymentTypes,
             MinTotalPrice = minTotalPrice,
-            MaxTotalPrice = maxTotalPrice
+            MaxTotalPrice = maxTotalPrice,
+            OrderStatuses = orderStatuses
         };
 }

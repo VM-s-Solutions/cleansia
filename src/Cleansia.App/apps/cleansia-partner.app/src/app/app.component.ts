@@ -2,7 +2,6 @@ import { NgClass } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import {
-  CleansiaRegistrationLockComponent,
   CleansiaSidebarMenuComponent,
   SidebarMenuItem,
 } from '@cleansia/components';
@@ -11,7 +10,10 @@ import {
   CleansiaPartnerRoute,
   RegistrationCompletionService,
 } from '@cleansia/services';
-import { checkEmployeeCurrent } from '@cleansia/stores';
+import {
+  checkEmployeeCurrent,
+  selectEmployeeConfirmation,
+} from '@cleansia/stores';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { ToastModule } from 'primeng/toast';
@@ -26,13 +28,7 @@ import {
 } from 'rxjs';
 
 @Component({
-  imports: [
-    NgClass,
-    ToastModule,
-    RouterModule,
-    CleansiaSidebarMenuComponent,
-    CleansiaRegistrationLockComponent,
-  ],
+  imports: [NgClass, ToastModule, RouterModule, CleansiaSidebarMenuComponent],
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
@@ -64,12 +60,14 @@ export class AppComponent implements OnInit, OnDestroy {
     );
 
     const isLoggedIn$ = this.authService.isLoggedIn$.asObservable();
-    const registrationStatus$ =
-      this.registrationService.isRegistrationComplete();
+    const employeeStatus$ = this.store.select(selectEmployeeConfirmation);
 
-    combineLatest([currentUrl$, isLoggedIn$, registrationStatus$])
+    combineLatest([currentUrl$, isLoggedIn$, employeeStatus$])
       .pipe(distinctUntilChanged(), takeUntil(this.destroy$))
-      .subscribe(([url, isLoggedIn, isComplete]) => {
+      .subscribe(([url, isLoggedIn, employeeStatus]) => {
+        const isComplete = this.registrationService.isRegistrationComplete(
+          employeeStatus || null
+        );
         if (isLoggedIn && !this.hasCheckedEmployee) {
           this.store.dispatch(checkEmployeeCurrent());
           this.hasCheckedEmployee = true;
@@ -116,11 +114,6 @@ export class AppComponent implements OnInit, OnDestroy {
       label: this.translate.instant('sidebar.orders'),
       icon: 'pi pi-shopping-cart',
       route: `/${CleansiaPartnerRoute.ORDERS}`,
-    },
-    {
-      label: this.translate.instant('sidebar.invoices'),
-      icon: 'pi pi-file',
-      route: `/${CleansiaPartnerRoute.INVOICES}`,
     },
     {
       label: this.translate.instant('sidebar.logout'),

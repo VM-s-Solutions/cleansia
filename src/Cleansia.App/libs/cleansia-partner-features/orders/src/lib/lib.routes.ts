@@ -1,6 +1,6 @@
 import { Route } from '@angular/router';
 import { OrderDetailsComponent } from './order-details';
-import { OrdersComponent } from './orders/orders.component';
+import { OrdersComponent } from './orders';
 
 export const ordersRoutes: Route[] = [
   { path: '', component: OrdersComponent },

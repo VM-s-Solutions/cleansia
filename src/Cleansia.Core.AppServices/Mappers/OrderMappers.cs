@@ -31,11 +31,11 @@ public static class OrderMappers
             EstimatedTime: order.EstimatedTime,
             OrderStatus: order.GetCurrentOrderStatus().MapToCode(),
             ConfirmationCode: order.ConfirmationCode,
-            StripeSessionId: order.StripeSessionId ?? "",
-            SelectedPackageId: order.SelectedPackageId,
-            SelectedPackage: order.SelectedPackage?.MapToDto(),
+            StripeSessionId: order.StripeSessionId,
+            SelectedPackages: order.SelectedPackages.Select(op => op.Package.MapToDto()),
             CurrencyId: order.CurrencyId,
             Currency: order.Currency.MapToDto(),
+            AssignedEmployees: order.AssignedEmployees.Select(e => e.Id),
             SelectedServices: order.SelectedServices.Select(os => os.Service.MapToDto())
         );
     }
@@ -63,7 +63,7 @@ public static class OrderMappers
             Notes: order.Notes,
             SpecialInstructions: order.SpecialInstructions,
             AccessInstructions: order.AccessInstructions,
-            SelectedPackage: order.SelectedPackage?.MapToDetails(order.Currency.Code),
+            SelectedPackages: order.SelectedPackages.Select(op => op.Package.MapToDetails(order.Currency.Code)),
             Currency: order.Currency.MapToDetails(),
             SelectedServices: order.SelectedServices.Select(os => os.Service.MapToDetails(order.Currency.Code)),
             StatusHistory: order.OrderStatusHistory.Select(sh => sh.MapToDto()) ?? [],

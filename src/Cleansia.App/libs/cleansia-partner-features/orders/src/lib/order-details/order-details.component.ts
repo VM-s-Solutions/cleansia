@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit, computed, effect } from '@angular/core';
+import { Component, computed, effect, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
@@ -7,13 +7,19 @@ import {
   CleansiaLanguageSwitcherComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
-  CleansiaTitleComponent,
-  CleansiaTextInputComponent,
   CleansiaTelephoneComponent,
-  CleansiaCalendarComponent,
-  CleansiaSelectComponent,
+  CleansiaTextInputComponent,
+  CleansiaTitleComponent,
 } from '@cleansia/components';
 import { TranslatePipe } from '@ngx-translate/core';
+import { OrderAdditionalServicesComponent } from './components/order-additional-services.component';
+import { OrderCustomerInfoComponent } from './components/order-customer-info.component';
+import { OrderExtrasComponent } from './components/order-extras.component';
+import { OrderHeaderComponent } from './components/order-header.component';
+import { OrderPackagesComponent } from './components/order-packages.component';
+import { OrderPaymentInfoComponent } from './components/order-payment-info.component';
+import { OrderServiceDetailsComponent } from './components/order-service-details.component';
+import { OrderStatusComponent } from './components/order-status.component';
 import { OrderDetailsFacade } from './order-details.facade';
 
 @Component({
@@ -21,16 +27,22 @@ import { OrderDetailsFacade } from './order-details.facade';
   standalone: true,
   imports: [
     CommonModule,
-    ReactiveFormsModule,
     TranslatePipe,
+    ReactiveFormsModule,
+    OrderExtrasComponent,
+    OrderHeaderComponent,
+    OrderStatusComponent,
+    OrderPackagesComponent,
     CleansiaTitleComponent,
     CleansiaButtonComponent,
-    CleansiaSelectComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
-    CleansiaCalendarComponent,
+    OrderPaymentInfoComponent,
     CleansiaTextInputComponent,
     CleansiaTelephoneComponent,
+    OrderCustomerInfoComponent,
+    OrderServiceDetailsComponent,
+    OrderAdditionalServicesComponent,
     CleansiaLanguageSwitcherComponent,
   ],
   templateUrl: './order-details.component.html',
@@ -45,31 +57,41 @@ export class OrderDetailsComponent implements OnInit {
 
   protected formGroup: FormGroup = this.createFormGroup();
 
-  // Computed properties for better performance
   protected readonly orderDetails = this.facade.orderDetails;
   protected readonly loading = this.facade.loading;
   protected readonly error = this.facade.error;
 
-  // Status and payment type options for selects
   protected readonly statusOptions = computed(() => [
-    { label: this.orderDetails()?.orderStatus.name || '', value: this.orderDetails()?.orderStatus.name || '' },
+    {
+      label: this.orderDetails()?.orderStatus.name || '',
+      value: this.orderDetails()?.orderStatus.name || '',
+    },
   ]);
-
   protected readonly paymentStatusOptions = computed(() => [
-    { label: this.orderDetails()?.paymentStatus.name || '', value: this.orderDetails()?.paymentStatus.name || '' },
+    {
+      label: this.orderDetails()?.paymentStatus.name || '',
+      value: this.orderDetails()?.paymentStatus.name || '',
+    },
   ]);
 
   protected readonly paymentTypeOptions = computed(() => [
-    { label: this.orderDetails()?.paymentType.name || '', value: this.orderDetails()?.paymentType.name || '' },
+    {
+      label: this.orderDetails()?.paymentType.name || '',
+      value: this.orderDetails()?.paymentType.name || '',
+    },
   ]);
 
   protected readonly currencyOptions = computed(() => [
     {
       label: this.orderDetails()?.currency
-        ? `${this.orderDetails()?.currency.name} (${this.orderDetails()?.currency.code})`
+        ? `${this.orderDetails()?.currency.name} (${
+            this.orderDetails()?.currency.code
+          })`
         : '',
       value: this.orderDetails()?.currency
-        ? `${this.orderDetails()?.currency.name} (${this.orderDetails()?.currency.code})`
+        ? `${this.orderDetails()?.currency.name} (${
+            this.orderDetails()?.currency.code
+          })`
         : '',
     },
   ]);
@@ -86,15 +108,19 @@ export class OrderDetailsComponent implements OnInit {
 
   protected readonly hasNotes = computed(() => {
     const order = this.orderDetails();
-    return order?.notes || order?.specialInstructions || order?.accessInstructions;
+    return (
+      order?.notes || order?.specialInstructions || order?.accessInstructions
+    );
   });
 
   protected readonly hasStatusHistory = computed(() => {
-    return this.orderDetails()?.statusHistory && this.orderDetails()!.statusHistory!.length > 0;
+    return (
+      this.orderDetails()?.statusHistory &&
+      this.orderDetails()!.statusHistory!.length > 0
+    );
   });
 
   constructor() {
-    // Update form when order details change using effect
     effect(() => {
       const orderDetails = this.orderDetails();
       if (orderDetails) {
@@ -169,11 +195,6 @@ export class OrderDetailsComponent implements OnInit {
       bathrooms: [{ value: '', disabled: true }],
       estimatedTime: [{ value: '', disabled: true }],
 
-      // Package Information
-      packageName: [{ value: '', disabled: true }],
-      packagePrice: [{ value: '', disabled: true }],
-      packageDescription: [{ value: '', disabled: true }],
-
       // Payment Information
       paymentType: [{ value: '', disabled: true }],
       totalPrice: [{ value: '', disabled: true }],
@@ -210,12 +231,14 @@ export class OrderDetailsComponent implements OnInit {
       cleaningDateTime: this.formatDateTime(orderDetails.cleaningDateTime),
       rooms: orderDetails.rooms?.toString(),
       bathrooms: orderDetails.bathrooms?.toString(),
-      estimatedTime: `${orderDetails.estimatedTime} ${this.getMinutesTranslation()}`,
-      packageName: orderDetails.selectedPackage?.name || '',
-      packagePrice: orderDetails.selectedPackage ? this.formatCurrency(orderDetails.selectedPackage.price, orderDetails.currency.symbol) : '',
-      packageDescription: orderDetails.selectedPackage?.description || '',
+      estimatedTime: `${
+        orderDetails.estimatedTime
+      } ${this.getMinutesTranslation()}`,
       paymentType: orderDetails.paymentType.name,
-      totalPrice: this.formatCurrency(orderDetails.totalPrice, orderDetails.currency.symbol),
+      totalPrice: this.formatCurrency(
+        orderDetails.totalPrice,
+        orderDetails.currency.symbol
+      ),
       currency: `${orderDetails.currency.name} (${orderDetails.currency.code})`,
       assignedEmployeeName: orderDetails.assignedEmployeeName || '',
       assignedEmployeePhone: orderDetails.assignedEmployeePhone || '',
@@ -223,7 +246,9 @@ export class OrderDetailsComponent implements OnInit {
       specialInstructions: orderDetails.specialInstructions || '',
       accessInstructions: orderDetails.accessInstructions || '',
       createdOn: this.formatDateTime(orderDetails.createdOn),
-      updatedOn: orderDetails.updatedOn ? this.formatDateTime(orderDetails.updatedOn) : '',
+      updatedOn: orderDetails.updatedOn
+        ? this.formatDateTime(orderDetails.updatedOn)
+        : '',
     });
   }
 

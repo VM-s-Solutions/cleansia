@@ -18,6 +18,8 @@ public class Currency : Auditable
     [Required]
     public decimal ExchangeRate { get; private set; } = 1.0m;
 
+    public bool IsDefault { get; private set; }
+
     public static Currency Create(string code, string symbol, string name, decimal exchangeRate) => new()
     {
         Code = code,

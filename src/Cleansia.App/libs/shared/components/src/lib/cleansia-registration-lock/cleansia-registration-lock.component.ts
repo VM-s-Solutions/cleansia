@@ -5,9 +5,10 @@ import {
   CleansiaPartnerRoute,
   RegistrationCompletionResult,
   RegistrationCompletionService,
+  RegistrationCompletionStatus,
 } from '@cleansia/services';
 import { TranslateModule } from '@ngx-translate/core';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 @Component({
   selector: 'cleansia-registration-lock',
@@ -22,8 +23,11 @@ export class CleansiaRegistrationLockComponent implements OnInit {
   registrationStatus$!: Observable<RegistrationCompletionResult | null>;
 
   ngOnInit() {
-    this.registrationStatus$ =
-      this.registrationService.checkRegistrationCompletion();
+    // TODO: Get actual employee status from store/service when available
+    // For now, using null to indicate no employee data available
+    const employeeStatus: RegistrationCompletionStatus | null = null;
+    const result = this.registrationService.checkRegistrationCompletion(employeeStatus);
+    this.registrationStatus$ = of(result);
   }
 
   goToProfile() {

@@ -92,6 +92,15 @@
       "delete": "Smazat",
       "save_log": "Uložit záznam",
       "cancel": "Zrušit",
+      "available_orders": "Dostupné objednávky",
+      "my_orders": "Moje objednávky",
+      "available_orders_section": "Objednávky k převzetí",
+      "my_orders_section": "Objednávky, které jste dokončili",
+      "take_order": "Převzít objednávku",
+      "no_available_orders": "Žádné dostupné objednávky",
+      "no_my_orders": "Ještě jste nedokončili žádné objednávky",
+      "order_taken_success": "Objednávka úspěšně převzata!",
+      "employee_not_found": "Informace o zaměstnanci nebyly nalezeny",
       "no_orders": "Žádné objednávky k zobrazení",
       "no_logs": "Žádné časové záznamy k zobrazení"
     },
@@ -114,6 +123,7 @@
       "bathrooms": "Koupelny",
       "estimated_time": "Odhadovaný čas",
       "selected_package": "Vybraný balíček",
+      "selected_packages": "Vybrané balíčky",
       "included_services": "Zahrnuté služby",
       "additional_services": "Další služby",
       "extras": "Doplňky",
@@ -152,6 +162,7 @@
       "bathrooms": "Koupelny",
       "estimated_time": "Odhadovaný čas",
       "selected_package": "Vybraný balíček",
+      "selected_packages": "Vybrané balíčky",
       "included_services": "Zahrnuté služby",
       "additional_services": "Dodatečné služby",
       "extras": "Doplňky",
@@ -193,6 +204,95 @@
       "payment_status": "Stav platby",
       "no_pending": "Žádné nevyřízené faktury",
       "no_invoices": "Žádné faktury k zobrazení"
+    },
+    "payslips": {
+      "title": "Mzdy a výplatní pásky",
+      "description": "Zobrazte si své výplatní pásky, historii mezd a spravujte daňové výhody.",
+      "current_year_payslips": "Výplatní pásky aktuálního roku",
+      "salary_history": "Kompletní mzdová historie",
+      "generate_payslip": "Vygenerovat výplatní pásku",
+      "generate_from_timesheet": "Vygenerovat z docházkových záznamů",
+      "preview": "Náhled výplatní pásky",
+      "payslip_details": "Detail výplatní pásky",
+      "no_current_payslips": "Žádné výplatní pásky pro aktuální rok",
+      "no_payslips": "Žádné výplatní pásky k zobrazení",
+      "month": "Měsíc",
+      "year": "Rok",
+      "pay_date": "Datum výplaty",
+      "gross_salary": "Hrubá mzda",
+      "net_salary": "Čistá mzda",
+      "employee": "Zaměstnanec",
+      "employee_info": "Informace o zaměstnanci",
+      "employee_name": "Jméno zaměstnance",
+      "employee_email": "Email zaměstnance",
+      "personal_number": "Rodné číslo",
+      "salary_breakdown": "Rozpis mzdy",
+      "base_salary": "Základní mzda",
+      "bonuses": "Bonusy",
+      "overtime": "Přesčasy",
+      "deductions": "Srážky",
+      "social_insurance": "Sociální pojištění",
+      "health_insurance": "Zdravotní pojištění",
+      "tax_advance": "Daň ze mzdy",
+      "other_deductions": "Ostatní srážky",
+      "ytd_summary": "Souhrn od začátku roku",
+      "ytd_gross": "Hrubá mzda od začátku roku",
+      "ytd_net": "Čistá mzda od začátku roku",
+      "ytd_tax_paid": "Zaplacené daně od začátku roku",
+      "ytd_social_insurance": "Sociální pojištění od začátku roku",
+      "ytd_health_insurance": "Zdravotní pojištění od začátku roku",
+      "benefits": "Benefity",
+      "meal_vouchers": "Stravenky",
+      "notes": "Poznámky",
+      "download": "Stáhnout PDF",
+      "status": {
+        "draft": "Návrh",
+        "approved": "Schváleno",
+        "paid": "Vyplaceno",
+        "archived": "Archivováno",
+        "unknown": "Neznámý"
+      },
+      "months": {
+        "january": "Leden",
+        "february": "Únor",
+        "march": "Březen",
+        "april": "Duben",
+        "may": "Květen",
+        "june": "Červen",
+        "july": "Červenec",
+        "august": "Srpen",
+        "september": "Září",
+        "october": "Říjen",
+        "november": "Listopad",
+        "december": "Prosinec"
+      }
+    },
+    "tax_benefits": {
+      "title": "Daňové výhody a slevy",
+      "description": "Spravujte své daňové slevy a nastavení benefitů pro výpočet mezd.",
+      "tax_deductions": "Daňové slevy",
+      "benefits_enrollment": "Registrace benefitů",
+      "tax_withholding": "Nastavení srážkové daně",
+      "spouse_deduction": "Sleva na manžela/manželku",
+      "child_deduction": "Sleva na dítě",
+      "disability_deduction": "Sleva na invaliditu",
+      "student_deduction": "Sleva pro studenty",
+      "meal_vouchers": "Stravenky",
+      "meal_voucher_value": "Měsíční hodnota stravenek",
+      "pension_contribution": "Příspěvek na penzijní pojištění",
+      "pension_monthly": "Měsíční příspěvek na penzijní pojištění",
+      "life_insurance": "Životní pojištění",
+      "life_insurance_monthly": "Měsíční životní pojištění",
+      "transportation_benefit": "Dopravní benefit",
+      "transportation_monthly": "Měsíční dopravní benefit",
+      "tax_advance_percentage": "Požadované procento zálohy na daň",
+      "signed_declaration": "Podepsané daňové prohlášení",
+      "notes": "Dodatečné poznámky",
+      "save_changes": "Uložit změny",
+      "reset_form": "Resetovat formulář",
+      "total_deductions": "Celkové daňové slevy",
+      "total_benefits_value": "Celková měsíční hodnota benefitů",
+      "basic_deduction": "Základní daňová sleva"
     }
   },
   "sidebar": {
@@ -200,6 +300,7 @@
     "profile": "Profil",
     "orders": "Objednávky",
     "invoices": "Faktury",
+    "payroll": "Mzdy",
     "logout": "Odhlásit se"
   },
   "components": {
@@ -214,6 +315,8 @@
   "global": {
     "no_data": "Žádná data k zobrazení",
     "loading": "Načítání...",
+    "refresh": "Obnovit",
+    "common": "Obecné",
     "messages": {
       "success": "Úspěch",
       "error": "Chyba",
@@ -239,6 +342,19 @@
         "invoice_generated": "Faktura byla vygenerována z časových záznamů.",
         "invoice_preview": "Náhled faktury byl otevřen.",
         "invoice_downloaded": "Faktura byla úspěšně stažena."
+      },
+      "payslips": {
+        "load_failed": "Nepodařilo se načíst výplatní pásky. Zkuste to prosím znovu.",
+        "details_failed": "Nepodařilo se načíst detail výplatní pásky. Zkuste to prosím znovu.",
+        "download_failed": "Nepodařilo se stáhnout výplatní pásku. Zkuste to prosím znovu.",
+        "generate_coming_soon": "Generování výplatní pásky z docházkových záznamů bude brzy k dispozici.",
+        "preview_coming_soon": "Náhled výplatní pásky bude brzy k dispozici.",
+        "payslip_downloaded": "Výplatní páska byla úspěšně stažena."
+      },
+      "tax_benefits": {
+        "load_failed": "Nepodařilo se načíst daňové výhody. Zkuste to prosím znovu.",
+        "save_failed": "Nepodařilo se uložit daňové výhody. Zkuste to prosím znovu.",
+        "save_success": "Daňové výhody byly úspěšně uloženy."
       },
       "form": {
         "request_sent": "Poptávka odeslána. Brzy se Vám ozveme."
@@ -358,6 +474,7 @@
       },
       "empty": "Objednávka je prázdná",
       "selected_package": {
+      "selected_packages": "Vybrané balíčky",
         "invalid": "Neplatný vybraný balíček"
       },
       "selected_services": {

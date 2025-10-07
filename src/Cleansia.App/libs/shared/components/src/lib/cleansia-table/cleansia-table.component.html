@@ -9,6 +9,7 @@
   [rowsPerPageOptions]="rowsPerPageOptions()"
   [class]="tableClasses()"
   [globalFilterFields]="globalFilterFields()"
+  (onSort)="onSort($event)"
 >
   <!-- Header Template -->
   @if (showHeader()) {

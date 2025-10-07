@@ -60,10 +60,11 @@ namespace Cleansia.Infra.Database.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    Code = table.Column<string>(type: "character varying(5)", maxLength: 5, nullable: false),
+                    Code = table.Column<string>(type: "citext", maxLength: 5, nullable: false),
                     Symbol = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
-                    Name = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Name = table.Column<string>(type: "citext", maxLength: 50, nullable: false),
                     ExchangeRate = table.Column<decimal>(type: "numeric(18,6)", precision: 18, scale: 6, nullable: false),
+                    IsDefault = table.Column<bool>(type: "boolean", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
@@ -111,6 +112,31 @@ namespace Cleansia.Infra.Database.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Packages", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PayPeriods",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    StartDate = table.Column<DateOnly>(type: "date", nullable: false),
+                    EndDate = table.Column<DateOnly>(type: "date", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    Notes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    ClosedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ClosedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    PaidAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PayPeriods", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -254,6 +280,52 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "EmployeePayConfigs",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    ServiceId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    PackageId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    BasePay = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    ExtraPerRoom = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
+                    ExtraPerBathroom = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
+                    DistanceRatePerKm = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
+                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    CurrencyId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    MinimumPay = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
+                    MaximumPay = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EmployeePayConfigs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_EmployeePayConfigs_Currencies_CurrencyId",
+                        column: x => x.CurrencyId,
+                        principalTable: "Currencies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_EmployeePayConfigs_Packages_PackageId",
+                        column: x => x.PackageId,
+                        principalTable: "Packages",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_EmployeePayConfigs_Services_ServiceId",
+                        column: x => x.ServiceId,
+                        principalTable: "Services",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PackageServices",
                 columns: table => new
                 {
@@ -295,6 +367,7 @@ namespace Cleansia.Infra.Database.Migrations
                     EmergencyContactPhone = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     AddressId = table.Column<string>(type: "character varying(26)", nullable: true),
                     UserId = table.Column<string>(type: "text", nullable: false),
+                    PreferredCurrencyCode = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: true),
                     Availability = table.Column<string>(type: "text", nullable: false),
                     DocumentFileNames = table.Column<string>(type: "text", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
@@ -318,6 +391,61 @@ namespace Cleansia.Infra.Database.Migrations
                         column: x => x.NationalityId,
                         principalTable: "Countries",
                         principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "EmployeeInvoices",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    EmployeeId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    PayPeriodId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    InvoiceNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    TotalOrders = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    SubTotal = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    BonusAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
+                    DeductionAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
+                    TotalAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    CurrencyId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    PdfBlobUrl = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    GeneratedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ApprovedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ApprovedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    PaidAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    AdminNotes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    VariableSymbol = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
+                    SpecificSymbol = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: true),
+                    BankTransferNote = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EmployeeInvoices", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_EmployeeInvoices_Currencies_CurrencyId",
+                        column: x => x.CurrencyId,
+                        principalTable: "Currencies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_EmployeeInvoices_Employees_EmployeeId",
+                        column: x => x.EmployeeId,
+                        principalTable: "Employees",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_EmployeeInvoices_PayPeriods_PayPeriodId",
+                        column: x => x.PayPeriodId,
+                        principalTable: "PayPeriods",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -384,12 +512,13 @@ namespace Cleansia.Infra.Database.Migrations
                     PaymentStatus = table.Column<int>(type: "integer", nullable: false),
                     TotalPrice = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     EstimatedTime = table.Column<int>(type: "integer", nullable: false),
+                    EmployeePayCalculated = table.Column<bool>(type: "boolean", nullable: false),
+                    TravelDistance = table.Column<decimal>(type: "numeric", nullable: true),
                     ConfirmationCode = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     StripeSessionId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     Notes = table.Column<string>(type: "text", nullable: true),
                     SpecialInstructions = table.Column<string>(type: "text", nullable: true),
                     AccessInstructions = table.Column<string>(type: "text", nullable: true),
-                    SelectedPackageId = table.Column<string>(type: "character varying(26)", nullable: true),
                     CurrencyId = table.Column<string>(type: "character varying(26)", nullable: false),
                     UserId = table.Column<string>(type: "character varying(26)", nullable: true),
                     EmployeeId = table.Column<string>(type: "character varying(26)", nullable: true),
@@ -424,14 +553,66 @@ namespace Cleansia.Infra.Database.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_Orders_Packages_SelectedPackageId",
-                        column: x => x.SelectedPackageId,
-                        principalTable: "Packages",
-                        principalColumn: "Id");
-                    table.ForeignKey(
                         name: "FK_Orders_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "OrderEmployeePays",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    OrderId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    EmployeeId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    PayPeriodId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    BasePay = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    ExtrasPay = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
+                    ExpensesPay = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
+                    BonusPay = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
+                    DeductionPay = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
+                    TotalPay = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    Notes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    PayBreakdown = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    IsApproved = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    ApprovedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ApprovedBy = table.Column<string>(type: "text", nullable: true),
+                    EmployeeInvoiceId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OrderEmployeePays", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_OrderEmployeePays_EmployeeInvoices_EmployeeInvoiceId",
+                        column: x => x.EmployeeInvoiceId,
+                        principalTable: "EmployeeInvoices",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_OrderEmployeePays_Employees_EmployeeId",
+                        column: x => x.EmployeeId,
+                        principalTable: "Employees",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_OrderEmployeePays_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_OrderEmployeePays_PayPeriods_PayPeriodId",
+                        column: x => x.PayPeriodId,
+                        principalTable: "PayPeriods",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -458,6 +639,32 @@ namespace Cleansia.Infra.Database.Migrations
                         name: "FK_OrderEmployees_Orders_OrderId",
                         column: x => x.OrderId,
                         principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "OrderPackages",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    OrderId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    PackageId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OrderPackages", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_OrderPackages_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_OrderPackages_Packages_PackageId",
+                        column: x => x.PackageId,
+                        principalTable: "Packages",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -545,6 +752,69 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "LanguageId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_EmployeeInvoices_CurrencyId",
+                table: "EmployeeInvoices",
+                column: "CurrencyId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeeInvoices_EmployeeId",
+                table: "EmployeeInvoices",
+                column: "EmployeeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeeInvoices_EmployeeId_PayPeriodId",
+                table: "EmployeeInvoices",
+                columns: new[] { "EmployeeId", "PayPeriodId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeeInvoices_InvoiceNumber",
+                table: "EmployeeInvoices",
+                column: "InvoiceNumber",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeeInvoices_PayPeriodId",
+                table: "EmployeeInvoices",
+                column: "PayPeriodId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeeInvoices_Status",
+                table: "EmployeeInvoices",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeeInvoices_Status_GeneratedAt",
+                table: "EmployeeInvoices",
+                columns: new[] { "Status", "GeneratedAt" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeeInvoices_VariableSymbol",
+                table: "EmployeeInvoices",
+                column: "VariableSymbol",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeePayConfigs_CurrencyId",
+                table: "EmployeePayConfigs",
+                column: "CurrencyId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeePayConfigs_PackageId",
+                table: "EmployeePayConfigs",
+                column: "PackageId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeePayConfigs_ServiceId",
+                table: "EmployeePayConfigs",
+                column: "ServiceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeePayConfigs_ServiceId_PackageId",
+                table: "EmployeePayConfigs",
+                columns: new[] { "ServiceId", "PackageId" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Employees_AddressId",
                 table: "Employees",
                 column: "AddressId");
@@ -555,6 +825,37 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "NationalityId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_OrderEmployeePays_EmployeeId",
+                table: "OrderEmployeePays",
+                column: "EmployeeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderEmployeePays_EmployeeId_PayPeriodId",
+                table: "OrderEmployeePays",
+                columns: new[] { "EmployeeId", "PayPeriodId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderEmployeePays_EmployeeInvoiceId",
+                table: "OrderEmployeePays",
+                column: "EmployeeInvoiceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderEmployeePays_OrderId",
+                table: "OrderEmployeePays",
+                column: "OrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderEmployeePays_OrderId_EmployeeId",
+                table: "OrderEmployeePays",
+                columns: new[] { "OrderId", "EmployeeId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderEmployeePays_PayPeriodId",
+                table: "OrderEmployeePays",
+                column: "PayPeriodId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_OrderEmployees_EmployeeId",
                 table: "OrderEmployees",
                 column: "EmployeeId");
@@ -563,6 +864,16 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_OrderEmployees_OrderId",
                 table: "OrderEmployees",
                 column: "OrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderPackages_OrderId",
+                table: "OrderPackages",
+                column: "OrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderPackages_PackageId",
+                table: "OrderPackages",
+                column: "PackageId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Orders_CurrencyId",
@@ -578,11 +889,6 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_Orders_EmployeeId",
                 table: "Orders",
                 column: "EmployeeId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Orders_SelectedPackageId",
-                table: "Orders",
-                column: "SelectedPackageId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Orders_UserId",
@@ -615,6 +921,26 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "ServiceId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_PayPeriods_EndDate",
+                table: "PayPeriods",
+                column: "EndDate");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PayPeriods_StartDate",
+                table: "PayPeriods",
+                column: "StartDate");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PayPeriods_StartDate_EndDate",
+                table: "PayPeriods",
+                columns: new[] { "StartDate", "EndDate" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PayPeriods_Status",
+                table: "PayPeriods",
+                column: "Status");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Users_CartId",
                 table: "Users",
                 column: "CartId",
@@ -640,7 +966,16 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "EmailTranslations");
 
             migrationBuilder.DropTable(
+                name: "EmployeePayConfigs");
+
+            migrationBuilder.DropTable(
+                name: "OrderEmployeePays");
+
+            migrationBuilder.DropTable(
                 name: "OrderEmployees");
+
+            migrationBuilder.DropTable(
+                name: "OrderPackages");
 
             migrationBuilder.DropTable(
                 name: "OrderServices");
@@ -655,16 +990,22 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "Languages");
 
             migrationBuilder.DropTable(
+                name: "EmployeeInvoices");
+
+            migrationBuilder.DropTable(
                 name: "Orders");
+
+            migrationBuilder.DropTable(
+                name: "Packages");
 
             migrationBuilder.DropTable(
                 name: "Services");
 
             migrationBuilder.DropTable(
-                name: "Currencies");
+                name: "PayPeriods");
 
             migrationBuilder.DropTable(
-                name: "Packages");
+                name: "Currencies");
 
             migrationBuilder.DropTable(
                 name: "Users");

@@ -29,6 +29,11 @@ export class SnackbarService {
     this.showSnackbar(message, false, duration);
   }
 
+  showInfoTranslated(translationKey: string, duration?: number): void {
+    const message = this.translate.instant(translationKey);
+    this.showSnackbar(message, true, duration);
+  }
+
   private showSnackbar(
     message: string,
     success: boolean,

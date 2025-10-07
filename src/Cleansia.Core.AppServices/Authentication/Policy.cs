@@ -30,4 +30,28 @@ public class Policy
     public const string CanGetCurrentEmployee = nameof(CanGetCurrentEmployee); // Authenticated (All roles)
     public const string CanCheckCurrentEmployee = nameof(CanCheckCurrentEmployee); // Authenticated (All roles)
     public const string CanUpdateCurrentEmployee = nameof(CanUpdateCurrentEmployee); // Authenticated (All roles)
+
+    // Employee Payroll
+    public const string CanViewPagedInvoices = nameof(CanViewPagedInvoices); // Admin
+    public const string CanViewPeriodPays = nameof(CanViewPeriodPays); // Admin + Employee (own data)
+    public const string CanCalculateOrderPay = nameof(CanCalculateOrderPay); // Admin
+    public const string CanGenerateInvoice = nameof(CanGenerateInvoice); // Admin
+    public const string CanApproveInvoice = nameof(CanApproveInvoice); // Admin
+    public const string CanMarkInvoicePaid = nameof(CanMarkInvoicePaid); // Admin
+    public const string CanClosePayPeriod = nameof(CanClosePayPeriod); // Admin
+
+    // Pay Period
+    public const string CanViewPayPeriods = nameof(CanViewPayPeriods); // Admin + Employee
+    public const string CanViewPayPeriod = nameof(CanViewPayPeriod); // Admin + Employee
+    public const string CanCreatePayPeriod = nameof(CanCreatePayPeriod); // Admin
+    public const string CanUpdatePayPeriod = nameof(CanUpdatePayPeriod); // Admin
+    public const string CanOpenPayPeriod = nameof(CanOpenPayPeriod); // Admin
+    public const string CanDeletePayPeriod = nameof(CanDeletePayPeriod); // Admin
+
+    // Pay Config
+    public const string CanViewPayConfigs = nameof(CanViewPayConfigs); // Admin
+    public const string CanViewPayConfig = nameof(CanViewPayConfig); // Admin
+    public const string CanCreatePayConfig = nameof(CanCreatePayConfig); // Admin
+    public const string CanUpdatePayConfig = nameof(CanUpdatePayConfig); // Admin
+    public const string CanDeletePayConfig = nameof(CanDeletePayConfig); // Admin
 }

@@ -23,8 +23,8 @@ public record OrderListItem(
     Code OrderStatus,
     string ConfirmationCode,
     string StripeSessionId,
-    string? SelectedPackageId,
-    PackageListItem? SelectedPackage,
+    IEnumerable<PackageListItem> SelectedPackages,
     string CurrencyId,
     CurrencyListItem Currency,
+    IEnumerable<string> AssignedEmployees,
     IEnumerable<ServiceListItem> SelectedServices);

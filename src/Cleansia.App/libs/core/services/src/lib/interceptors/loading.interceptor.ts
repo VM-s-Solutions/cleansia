@@ -1,17 +1,16 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { setLoadingOffAction, setLoadingOnAction } from '@cleansia/stores';
-import { Store } from '@ngrx/store';
 import { finalize } from 'rxjs';
+import { LoadingService } from '../services/loading.service';
 
 export const LoadingInterceptorFn: HttpInterceptorFn = (req, next) => {
-  const store = inject(Store);
+  const loadingService = inject(LoadingService);
 
-  store.dispatch(setLoadingOnAction());
+  loadingService.show();
 
   return next(req).pipe(
     finalize(() => {
-      store.dispatch(setLoadingOffAction());
+      loadingService.hide();
     })
   );
 };

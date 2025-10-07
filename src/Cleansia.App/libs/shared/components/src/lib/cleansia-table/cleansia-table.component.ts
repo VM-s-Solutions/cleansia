@@ -111,6 +111,13 @@ export class CleansiaTableComponent {
   onColumnAction(action: TableColumnAction, item: any): void {
     action.onClick(item);
   }
+  onSort(event: any): void {
+    this.sortChange.emit({
+      field: event.field,
+      order: event.order,
+    });
+  }
+
 
   private applyPipe(value: any, pipe?: string, pipeArgs?: any[]): any {
     if (!pipe || value == null) return value;

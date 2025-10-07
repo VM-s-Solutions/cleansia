@@ -18,9 +18,10 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
             .Include(o => o.Currency)
             .Include(o => o.SelectedServices)
                 .ThenInclude(s => s.Service)
-            .Include(o => o.SelectedPackage)
-                .ThenInclude(p => p.IncludedServices)
-                    .ThenInclude(s => s.Service)
+            .Include(o => o.SelectedPackages)
+                .ThenInclude(op => op.Package)
+                    .ThenInclude(p => p.IncludedServices)
+                        .ThenInclude(s => s.Service)
             .AsSplitQuery()
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }

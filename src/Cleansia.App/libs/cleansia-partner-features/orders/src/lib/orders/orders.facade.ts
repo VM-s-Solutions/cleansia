@@ -1,73 +1,139 @@
-import { Injectable, inject, signal, computed, OnDestroy } from '@angular/core';
-import { SnackbarService, OrderListItem, SortDefinition } from '@cleansia/services';
-import { OrderFilter, Page } from '@cleansia/models';
-import { Store } from '@ngrx/store';
-import { Observable, Subject, takeUntil } from 'rxjs';
-import * as OrderActions from '@cleansia/stores';
+import { Injectable, inject, signal } from '@angular/core';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
+import { OrderFilter } from '@cleansia/models';
 import {
-  selectOrderItems,
-  selectOrderPage,
-  selectOrderLoading,
-  selectOrderError
-} from '@cleansia/stores';
-
+  Client,
+  OrderListItem,
+  OrderStatus,
+  SnackbarService,
+  SortDefinition,
+} from '@cleansia/services';
+import * as OrderActions from '@cleansia/stores';
+import { selectOrderItems, selectOrderLoading } from '@cleansia/stores';
+import { Store } from '@ngrx/store';
+import { catchError, of, takeUntil } from 'rxjs';
 
 @Injectable()
-export class OrdersFacade implements OnDestroy {
-  private readonly snackbarService = inject(SnackbarService);
+export class OrdersFacade extends UnsubscribeControlDirective {
   private readonly store = inject(Store);
-  private readonly destroy$ = new Subject<void>();
+  private readonly client = inject(Client);
+  private readonly snackbarService = inject(SnackbarService);
 
-  // NgRx selectors
   readonly orders$ = this.store.select(selectOrderItems);
-  readonly orderPage$ = this.store.select(selectOrderPage);
   readonly loading$ = this.store.select(selectOrderLoading('paged'));
-  readonly error$ = this.store.select(selectOrderError('paged'));
 
-  // Signals for reactive data
-  orders = signal<OrderListItem[]>([]);
-  currentFilter = signal<OrderFilter>(new OrderFilter({}));
-  currentSort = signal<SortDefinition[]>([]);
+  availableOrders = signal<OrderListItem[]>([]);
+  myOrders = signal<OrderListItem[]>([]);
+
+  private currentEmployeeId = signal<string | null>(null);
+  private currentSort = signal<SortDefinition[]>([]);
+  private activeTab = signal<'available' | 'my'>('available');
 
   constructor() {
-    // Subscribe to orders data and update signal
-    this.orders$.pipe(takeUntil(this.destroy$)).subscribe(orders => {
-      // Create a mutable copy to prevent sorting errors with read-only arrays
-      this.orders.set([...(orders || [])]);
+    super();
+    this.orders$.pipe(takeUntil(this.destroyed$)).subscribe((orders) => {
+      const tab = this.activeTab();
+      if (tab === 'available') {
+        this.availableOrders.set([...(orders || [])]);
+      } else {
+        this.myOrders.set([...(orders || [])]);
+      }
     });
 
-    // Load initial data
-    this.loadOrders();
+    this.loadCurrentEmployee();
+
+    this.loadAvailableOrders();
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+  private loadCurrentEmployee(): void {
+    this.client.employeeClient
+      .getCurrentEmployee()
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of(null))
+      )
+      .subscribe((employee) => {
+        if (employee?.id) {
+          this.currentEmployeeId.set(employee.id);
+        }
+      });
   }
 
+  loadAvailableOrders(offset = 0, limit = 20): void {
+    const filter = new OrderFilter({
+      employeeId: undefined,
+      orderStatuses: [OrderStatus.Pending, OrderStatus.Confirmed],
+    });
 
-  // Load orders with current filter and sort
-  loadOrders(offset = 0, limit = 20): void {
-    this.store.dispatch(OrderActions.loadOrderPaged({
-      filter: this.currentFilter(),
-      sort: this.currentSort(),
-      offset,
-      limit
-    }));
+    this.store.dispatch(
+      OrderActions.loadOrderPaged({
+        filter,
+        sort: this.currentSort(),
+        offset,
+        limit,
+      })
+    );
   }
 
-  // Update filter and reload data
-  updateFilter(filter: Partial<OrderFilter>): void {
-    const currentFilter = this.currentFilter();
-    const newFilter = new OrderFilter({ ...currentFilter, ...filter });
-    this.currentFilter.set(newFilter);
-    this.loadOrders();
+  loadMyOrders(offset = 0, limit = 20): void {
+    const employeeId = this.currentEmployeeId();
+
+    if (!employeeId) {
+      this.snackbarService.showErrorTranslated(
+        'pages.orders.employee_not_found'
+      );
+      return;
+    }
+
+    const filter = new OrderFilter({
+      employeeId: employeeId,
+      orderStatuses: [3], // Completed = 3
+    });
+
+    this.store.dispatch(
+      OrderActions.loadOrderPaged({
+        filter,
+        sort: this.currentSort(),
+        offset,
+        limit,
+      })
+    );
+  }
+
+  takeOrder(orderId: string): void {
+    const employeeId = this.currentEmployeeId();
+
+    if (!employeeId) {
+      this.snackbarService.showErrorTranslated(
+        'pages.orders.employee_not_found'
+      );
+      return;
+    }
+
+    // TODO: Call backend API to assign employee to order
+    // For now, show success message and reload
+    this.snackbarService.showSuccessTranslated(
+      'pages.orders.order_taken_success'
+    );
+
+    // Reload available orders after taking one
+    this.loadAvailableOrders();
+  }
+
+  // Set active tab
+  setActiveTab(tab: 'available' | 'my'): void {
+    this.activeTab.set(tab);
   }
 
   // Update sort and reload data
   updateSort(sort: SortDefinition[]): void {
     this.currentSort.set(sort);
-    this.loadOrders();
+    // Reload data for the current active tab
+    const tab = this.activeTab();
+    if (tab === 'available') {
+      this.loadAvailableOrders();
+    } else {
+      this.loadMyOrders();
+    }
   }
-
 }

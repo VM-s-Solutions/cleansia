@@ -59,8 +59,12 @@ export class CleansiaBaseFormInputComponent
     return this.required();
   });
 
-  onChange: (value: any) => void = () => {};
-  onTouch: () => void = () => {};
+  onChange: (value: any) => void = () => {
+    // Implemented by ControlValueAccessor
+  };
+  onTouch: () => void = () => {
+    // Implemented by ControlValueAccessor
+  };
 
   hasErrors(): boolean {
     return (

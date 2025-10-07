@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, input, output, signal } from '@angular/core';
+import { Component, input, output, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AccordionModule } from 'primeng/accordion';
 import { ButtonModule } from 'primeng/button';
@@ -69,7 +69,7 @@ const DAYS = [
     `,
   ],
 })
-export class CleansiaAvailabilityComponent {
+export class CleansiaAvailabilityComponent implements OnInit {
   availability = input<Availability>({});
   days = DAYS;
 

@@ -1,9 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import {
-  Client,
-  OrderListItem,
-  SnackbarService,
-} from '@cleansia/services';
+import { Client, SnackbarService } from '@cleansia/services';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
@@ -31,13 +27,13 @@ export class OrderEffects {
             req.filter?.customerPhone,
             req.filter?.displayOrderNumber,
             req.filter?.employeeId,
-            req.filter?.packageId,
             req.filter?.cleaningDateFrom,
             req.filter?.cleaningDateTo,
             req.filter?.paymentStatuses,
             req.filter?.paymentTypes,
             req.filter?.minTotalPrice,
             req.filter?.maxTotalPrice,
+            req.filter?.orderStatuses,
             req.sort,
             req.offset,
             req.limit
@@ -63,7 +59,7 @@ export class OrderEffects {
               return OrderActions.loadOrderDetailSuccess({ order });
             } else {
               return OrderActions.loadOrderDetailFailure({
-                error: { message: 'Order not found' } as any
+                error: { message: 'Order not found' } as any,
               });
             }
           }),

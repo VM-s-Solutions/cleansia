@@ -1,5 +1,7 @@
 ﻿#nullable enable
 
+using Cleansia.Core.Domain.Enums;
+
 namespace Cleansia.Core.AppServices.Features.Orders.Filters;
 
 public record OrderFilter(
@@ -10,11 +12,10 @@ public record OrderFilter(
     string? CustomerPhone,
     string? DisplayOrderNumber,
     string? EmployeeId,
-    string? PackageId,
     DateTime? CleaningDateFrom,
     DateTime? CleaningDateTo,
-    int[]? PaymentStatuses,
-    int[]? PaymentTypes,
+    IEnumerable<PaymentStatus>? PaymentStatuses,
+    IEnumerable<PaymentType>? PaymentTypes,
     decimal? MinTotalPrice,
-    decimal? MaxTotalPrice
-);
+    decimal? MaxTotalPrice,
+    IEnumerable<OrderStatus>? OrderStatuses);

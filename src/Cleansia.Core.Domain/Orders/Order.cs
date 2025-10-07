@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Extensions;
@@ -46,6 +46,10 @@ public class Order : Auditable
     [Required]
     public int EstimatedTime { get; private set; }
 
+    public bool EmployeePayCalculated { get; private set; } = false;
+
+    public decimal? TravelDistance { get; private set; }
+
     [MaxLength(50)]
     public string ConfirmationCode { get; private set; } = OrderExtensions.GenerateConfirmationCode();
 
@@ -56,9 +60,6 @@ public class Order : Auditable
     public string? SpecialInstructions { get; private set; }
 
     public string? AccessInstructions { get; private set; }
-
-    public string? SelectedPackageId { get; private set; }
-    public Package? SelectedPackage { get; private set; }
 
     public string CurrencyId { get; private set; }
     public Currency Currency { get; private set; }
@@ -76,6 +77,9 @@ public class Order : Auditable
     private ICollection<OrderService> _selectedServices = [];
     public IReadOnlyCollection<OrderService> SelectedServices => _selectedServices.ToList().AsReadOnly();
 
+    private ICollection<OrderPackage> _selectedPackages = [];
+    public IReadOnlyCollection<OrderPackage> SelectedPackages => _selectedPackages.ToList().AsReadOnly();
+
     private ICollection<OrderStatusTrack> _orderStatusHistory = [];
     public IReadOnlyCollection<OrderStatusTrack> OrderStatusHistory => _orderStatusHistory.ToList().AsReadOnly();
 
@@ -83,7 +87,7 @@ public class Order : Auditable
     public IReadOnlyCollection<OrderEmployee> AssignedEmployees => _assignedEmployees.ToList().AsReadOnly();
 
     public static Order Create(string customerName, string customerEmail, string customerPhone,
-        Address customerAddress, string? selectedPackageId, int rooms, int bathrooms,
+        Address customerAddress, int rooms, int bathrooms,
         Dictionary<string, bool> extras, DateTime cleaningDateTime, PaymentType paymentType,
         decimal totalPrice, string currencyId, PaymentStatus paymentStatus) => new()
         {
@@ -91,7 +95,6 @@ public class Order : Auditable
             CustomerEmail = customerEmail,
             CustomerPhone = customerPhone,
             CustomerAddress = customerAddress,
-            SelectedPackageId = selectedPackageId,
             Rooms = rooms,
             Bathrooms = bathrooms,
             _extras = extras,
@@ -106,6 +109,12 @@ public class Order : Auditable
     {
         _selectedServices = selectedServices.ToList();
 
+        return this;
+    }
+
+    public Order AddSelectedPackages(IEnumerable<OrderPackage> selectedPackages)
+    {
+        _selectedPackages = selectedPackages.ToList();
         return this;
     }
 
@@ -134,6 +143,23 @@ public class Order : Auditable
     {
         EstimatedTime = estimatedTime;
 
+        return this;
+    }
+
+    public Order MarkEmployeePayCalculated()
+    {
+        EmployeePayCalculated = true;
+        return this;
+    }
+
+    public Order SetTravelDistance(decimal distance)
+    {
+        if (distance < 0)
+        {
+            throw new ArgumentException("Travel distance cannot be negative", nameof(distance));
+        }
+
+        TravelDistance = distance;
         return this;
     }
 }

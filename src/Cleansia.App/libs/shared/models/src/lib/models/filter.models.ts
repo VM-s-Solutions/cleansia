@@ -178,10 +178,10 @@ export interface IOrderFilter {
   customerPhone?: string;
   displayOrderNumber?: string;
   employeeId?: string;
-  packageId?: string;
   cleaningDateFrom?: Date;
   cleaningDateTo?: Date;
   paymentStatuses?: number[];
+  orderStatuses?: number[];
   paymentTypes?: number[];
   minTotalPrice?: number;
   maxTotalPrice?: number;
@@ -195,11 +195,11 @@ export class OrderFilter extends BaseFilter implements IOrderFilter {
   customerPhone?: string;
   displayOrderNumber?: string;
   employeeId?: string;
-  packageId?: string;
   cleaningDateFrom?: Date;
   cleaningDateTo?: Date;
   paymentStatuses?: number[];
   paymentTypes?: number[];
+  orderStatuses?: number[];
   minTotalPrice?: number;
   maxTotalPrice?: number;
   isActive?: boolean;
@@ -212,13 +212,13 @@ export class OrderFilter extends BaseFilter implements IOrderFilter {
     this.customerPhone = filter.customerPhone;
     this.displayOrderNumber = filter.displayOrderNumber;
     this.employeeId = filter.employeeId;
-    this.packageId = filter.packageId;
     this.cleaningDateFrom = filter.cleaningDateFrom;
     this.cleaningDateTo = filter.cleaningDateTo;
     this.paymentStatuses = filter.paymentStatuses;
     this.paymentTypes = filter.paymentTypes;
     this.minTotalPrice = filter.minTotalPrice;
     this.maxTotalPrice = filter.maxTotalPrice;
+    this.orderStatuses = filter.orderStatuses;
     this.isActive = filter.isActive;
   }
 }

@@ -92,6 +92,15 @@
       "delete": "Delete",
       "cancel": "Cancel",
       "no_orders": "No orders to display"
+      "available_orders": "Available Orders",
+      "my_orders": "My Orders",
+      "available_orders_section": "Orders available to take",
+      "my_orders_section": "Orders you have completed",
+      "take_order": "Take Order",
+      "no_available_orders": "No available orders",
+      "no_my_orders": "You haven't completed any orders yet",
+      "order_taken_success": "Order taken successfully!",
+      "employee_not_found": "Employee information not found",
     },
     "order_details": {
       "title": "Order Details",
@@ -112,6 +121,7 @@
       "bathrooms": "Bathrooms",
       "estimated_time": "Estimated Time",
       "selected_package": "Selected Package",
+      "selected_packages": "Selected Packages",
       "included_services": "Included Services",
       "additional_services": "Additional Services",
       "extras": "Extras",
@@ -153,6 +163,95 @@
       "payment_status": "Payment Status",
       "no_pending": "No pending invoices",
       "no_invoices": "No invoices to display"
+    },
+    "payslips": {
+      "title": "Payroll & Salary Management",
+      "description": "View your payslips, salary history, and manage tax benefits.",
+      "current_year_payslips": "Current Year Payslips",
+      "salary_history": "Complete Salary History",
+      "generate_payslip": "Generate Payslip",
+      "generate_from_timesheet": "Generate from Timesheet",
+      "preview": "Preview Payslip",
+      "payslip_details": "Payslip Details",
+      "no_current_payslips": "No payslips for current year",
+      "no_payslips": "No payslips to display",
+      "month": "Month",
+      "year": "Year",
+      "pay_date": "Pay Date",
+      "gross_salary": "Gross Salary",
+      "net_salary": "Net Salary",
+      "employee": "Employee",
+      "employee_info": "Employee Information",
+      "employee_name": "Employee Name",
+      "employee_email": "Employee Email",
+      "personal_number": "Personal Number",
+      "salary_breakdown": "Salary Breakdown",
+      "base_salary": "Base Salary",
+      "bonuses": "Bonuses",
+      "overtime": "Overtime",
+      "deductions": "Deductions",
+      "social_insurance": "Social Insurance",
+      "health_insurance": "Health Insurance",
+      "tax_advance": "Tax Advance",
+      "other_deductions": "Other Deductions",
+      "ytd_summary": "Year-to-Date Summary",
+      "ytd_gross": "YTD Gross Salary",
+      "ytd_net": "YTD Net Salary",
+      "ytd_tax_paid": "YTD Tax Paid",
+      "ytd_social_insurance": "YTD Social Insurance",
+      "ytd_health_insurance": "YTD Health Insurance",
+      "benefits": "Benefits",
+      "meal_vouchers": "Meal Vouchers",
+      "notes": "Notes",
+      "download": "Download PDF",
+      "status": {
+        "draft": "Draft",
+        "approved": "Approved",
+        "paid": "Paid",
+        "archived": "Archived",
+        "unknown": "Unknown"
+      },
+      "months": {
+        "january": "January",
+        "february": "February",
+        "march": "March",
+        "april": "April",
+        "may": "May",
+        "june": "June",
+        "july": "July",
+        "august": "August",
+        "september": "September",
+        "october": "October",
+        "november": "November",
+        "december": "December"
+      }
+    },
+    "tax_benefits": {
+      "title": "Tax Benefits & Deductions",
+      "description": "Manage your tax deductions and benefit preferences for payroll calculations.",
+      "tax_deductions": "Tax Deductions",
+      "benefits_enrollment": "Benefits Enrollment",
+      "tax_withholding": "Tax Withholding Preferences",
+      "spouse_deduction": "Spouse Tax Deduction",
+      "child_deduction": "Child Tax Deduction",
+      "disability_deduction": "Disability Tax Deduction",
+      "student_deduction": "Student Tax Deduction",
+      "meal_vouchers": "Meal Vouchers",
+      "meal_voucher_value": "Monthly Meal Voucher Value",
+      "pension_contribution": "Pension Contribution",
+      "pension_monthly": "Monthly Pension Contribution",
+      "life_insurance": "Life Insurance",
+      "life_insurance_monthly": "Monthly Life Insurance",
+      "transportation_benefit": "Transportation Benefit",
+      "transportation_monthly": "Monthly Transportation Benefit",
+      "tax_advance_percentage": "Requested Tax Advance Percentage",
+      "signed_declaration": "Signed Tax Declaration",
+      "notes": "Additional Notes",
+      "save_changes": "Save Changes",
+      "reset_form": "Reset Form",
+      "total_deductions": "Total Tax Deductions",
+      "total_benefits_value": "Total Monthly Benefits Value",
+      "basic_deduction": "Basic Tax Deduction"
     }
   },
   "sidebar": {
@@ -160,6 +259,7 @@
     "profile": "Profile",
     "orders": "Orders",
     "invoices": "Invoices",
+    "payroll": "Payroll",
     "logout": "Logout"
   },
   "components": {
@@ -174,6 +274,8 @@
   "global": {
     "no_data": "No data to display",
     "loading": "Loading...",
+    "refresh": "Refresh",
+    "common": "Common",
     "messages": {
       "success": "Success",
       "error": "Error",
@@ -199,6 +301,19 @@
         "invoice_generated": "Invoice generated from time logs.",
         "invoice_preview": "Invoice preview opened.",
         "invoice_downloaded": "Invoice downloaded successfully."
+      },
+      "payslips": {
+        "load_failed": "Failed to load payslips. Please try again.",
+        "details_failed": "Failed to load payslip details. Please try again.",
+        "download_failed": "Failed to download payslip. Please try again.",
+        "generate_coming_soon": "Payslip generation from timesheet coming soon.",
+        "preview_coming_soon": "Payslip preview coming soon.",
+        "payslip_downloaded": "Payslip downloaded successfully."
+      },
+      "tax_benefits": {
+        "load_failed": "Failed to load tax benefits. Please try again.",
+        "save_failed": "Failed to save tax benefits. Please try again.",
+        "save_success": "Tax benefits saved successfully."
       },
       "form": {
         "request_sent": "Request sent. We will contact you soon."
@@ -318,6 +433,7 @@
       },
       "empty": "Order is empty",
       "selected_package": {
+      "selected_packages": "Selected Packages",
         "invalid": "Invalid selected package"
       },
       "selected_services": {

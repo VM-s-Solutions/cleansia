@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { LocalStorageKey } from '@cleansia/services';
+// Inlined from @cleansia/services to avoid module boundary issues
+const PREFERRED_LANGUAGE_KEY = 'preferred_language';
 import { TranslateService } from '@ngx-translate/core';
 import { SelectModule } from 'primeng/select';
 
@@ -54,6 +55,6 @@ export class CleansiaLanguageSwitcherComponent implements OnInit {
 
   changeLanguage(lang: string): void {
     this.translate.use(lang);
-    localStorage.setItem(LocalStorageKey.PREFERRED_LANGUAGE, lang);
+    localStorage.setItem(PREFERRED_LANGUAGE_KEY, lang);
   }
 }

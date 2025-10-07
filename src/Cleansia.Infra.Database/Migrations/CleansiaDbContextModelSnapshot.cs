@@ -109,6 +109,428 @@ namespace Cleansia.Infra.Database.Migrations
                     b.ToTable("EmailTranslations");
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.EmployeePayroll.EmployeeInvoice", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("AdminNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ApprovedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("BankTransferNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<decimal>("BonusAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CurrencyId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("DeactivatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("DeactivatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("DeductionAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<string>("EmployeeId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<DateTime>("GeneratedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("InvoiceNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PayPeriodId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("PdfBlobUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("SpecificSymbol")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<int>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<decimal>("SubTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<int>("TotalOrders")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("VariableSymbol")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CurrencyId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("InvoiceNumber")
+                        .IsUnique();
+
+                    b.HasIndex("PayPeriodId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("VariableSymbol")
+                        .IsUnique();
+
+                    b.HasIndex("EmployeeId", "PayPeriodId")
+                        .IsUnique();
+
+                    b.HasIndex("Status", "GeneratedAt");
+
+                    b.ToTable("EmployeeInvoices");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.EmployeePayroll.EmployeePayConfig", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<decimal>("BasePay")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CurrencyId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("DeactivatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("DeactivatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<decimal>("DistanceRatePerKm")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<decimal>("ExtraPerBathroom")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<decimal>("ExtraPerRoom")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("MaximumPay")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<decimal>("MinimumPay")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<string>("PackageId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("ServiceId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CurrencyId");
+
+                    b.HasIndex("PackageId");
+
+                    b.HasIndex("ServiceId");
+
+                    b.HasIndex("ServiceId", "PackageId");
+
+                    b.ToTable("EmployeePayConfigs");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.EmployeePayroll.OrderEmployeePay", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ApprovedBy")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("BasePay")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("BonusPay")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeactivatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("DeactivatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("DeductionPay")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<string>("EmployeeId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("EmployeeInvoiceId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<decimal>("ExpensesPay")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<decimal>("ExtrasPay")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsApproved")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("OrderId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("PayBreakdown")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("PayPeriodId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<decimal>("TotalPay")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("EmployeeInvoiceId");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("PayPeriodId");
+
+                    b.HasIndex("EmployeeId", "PayPeriodId");
+
+                    b.HasIndex("OrderId", "EmployeeId")
+                        .IsUnique();
+
+                    b.ToTable("OrderEmployeePays");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.EmployeePayroll.PayPeriod", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ClosedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeactivatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("DeactivatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EndDate");
+
+                    b.HasIndex("StartDate");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("StartDate", "EndDate");
+
+                    b.ToTable("PayPeriods");
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Internationalization.Country", b =>
                 {
                     b.Property<string>("Id")
@@ -168,7 +590,7 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(5)
-                        .HasColumnType("character varying(5)");
+                        .HasColumnType("citext");
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
@@ -192,10 +614,13 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("citext");
 
                     b.Property<string>("Symbol")
                         .IsRequired()
@@ -304,6 +729,9 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<string>("EmployeeId")
                         .HasColumnType("character varying(26)");
 
+                    b.Property<bool>("EmployeePayCalculated")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("EstimatedTime")
                         .HasColumnType("integer");
 
@@ -326,9 +754,6 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<int>("Rooms")
                         .HasColumnType("integer");
 
-                    b.Property<string>("SelectedPackageId")
-                        .HasColumnType("character varying(26)");
-
                     b.Property<string>("SpecialInstructions")
                         .HasColumnType("text");
 
@@ -340,6 +765,9 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<decimal>("TotalPrice")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal?>("TravelDistance")
+                        .HasColumnType("numeric");
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255)
@@ -358,8 +786,6 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("CustomerAddressId");
 
                     b.HasIndex("EmployeeId");
-
-                    b.HasIndex("SelectedPackageId");
 
                     b.HasIndex("UserId");
 
@@ -389,6 +815,31 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("OrderId");
 
                     b.ToTable("OrderEmployees");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Orders.OrderPackage", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("OrderId")
+                        .IsRequired()
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("PackageId")
+                        .IsRequired()
+                        .HasColumnType("character varying(26)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("PackageId");
+
+                    b.ToTable("OrderPackages");
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Orders.OrderService", b =>
@@ -824,6 +1275,10 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<string>("PreferredCurrencyCode")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
@@ -961,6 +1416,92 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("Language");
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.EmployeePayroll.EmployeeInvoice", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Internationalization.Currency", "Currency")
+                        .WithMany()
+                        .HasForeignKey("CurrencyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Cleansia.Core.Domain.Users.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Cleansia.Core.Domain.EmployeePayroll.PayPeriod", "PayPeriod")
+                        .WithMany("Invoices")
+                        .HasForeignKey("PayPeriodId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Currency");
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("PayPeriod");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.EmployeePayroll.EmployeePayConfig", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Internationalization.Currency", "Currency")
+                        .WithMany()
+                        .HasForeignKey("CurrencyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Cleansia.Core.Domain.Packages.Package", "Package")
+                        .WithMany()
+                        .HasForeignKey("PackageId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Cleansia.Core.Domain.Services.Service", "Service")
+                        .WithMany()
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Currency");
+
+                    b.Navigation("Package");
+
+                    b.Navigation("Service");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.EmployeePayroll.OrderEmployeePay", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Users.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Cleansia.Core.Domain.EmployeePayroll.EmployeeInvoice", "EmployeeInvoice")
+                        .WithMany("OrderPays")
+                        .HasForeignKey("EmployeeInvoiceId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Cleansia.Core.Domain.Orders.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Cleansia.Core.Domain.EmployeePayroll.PayPeriod", "PayPeriod")
+                        .WithMany("OrderPays")
+                        .HasForeignKey("PayPeriodId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("EmployeeInvoice");
+
+                    b.Navigation("Order");
+
+                    b.Navigation("PayPeriod");
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Orders.Order", b =>
                 {
                     b.HasOne("Cleansia.Core.Domain.Internationalization.Currency", "Currency")
@@ -980,10 +1521,6 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("Cleansia.Core.Domain.Packages.Package", "SelectedPackage")
-                        .WithMany()
-                        .HasForeignKey("SelectedPackageId");
-
                     b.HasOne("Cleansia.Core.Domain.Users.User", "User")
                         .WithMany("Orders")
                         .HasForeignKey("UserId")
@@ -994,8 +1531,6 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("CustomerAddress");
 
                     b.Navigation("Employee");
-
-                    b.Navigation("SelectedPackage");
 
                     b.Navigation("User");
                 });
@@ -1017,6 +1552,25 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("Employee");
 
                     b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Orders.OrderPackage", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Orders.Order", "Order")
+                        .WithMany("SelectedPackages")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Cleansia.Core.Domain.Packages.Package", "Package")
+                        .WithMany()
+                        .HasForeignKey("PackageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("Package");
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Orders.OrderService", b =>
@@ -1152,6 +1706,18 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("Employee");
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.EmployeePayroll.EmployeeInvoice", b =>
+                {
+                    b.Navigation("OrderPays");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.EmployeePayroll.PayPeriod", b =>
+                {
+                    b.Navigation("Invoices");
+
+                    b.Navigation("OrderPays");
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Internationalization.Country", b =>
                 {
                     b.Navigation("Employees");
@@ -1162,6 +1728,8 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("AssignedEmployees");
 
                     b.Navigation("OrderStatusHistory");
+
+                    b.Navigation("SelectedPackages");
 
                     b.Navigation("SelectedServices");
                 });

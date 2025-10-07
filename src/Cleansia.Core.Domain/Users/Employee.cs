@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -32,6 +32,9 @@ public class Employee : Auditable
 
     public string UserId { get; private set; }
     public User? User { get; private set; }
+
+    [MaxLength(10)]
+    public string? PreferredCurrencyCode { get; private set; }
 
     private IDictionary<string, List<TimeRange>> _availability = new Dictionary<string, List<TimeRange>>();
     public IReadOnlyDictionary<string, List<TimeRange>> Availability => _availability.ToDictionary().AsReadOnly();
@@ -68,6 +71,12 @@ public class Employee : Auditable
     {
         AverageRating = newRating;
         ComplaintsCount = newComplaints;
+        return this;
+    }
+
+    public Employee UpdatePreferredCurrency(string? preferredCurrencyCode)
+    {
+        PreferredCurrencyCode = preferredCurrencyCode;
         return this;
     }
 

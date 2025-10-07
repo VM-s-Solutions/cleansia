@@ -33,7 +33,6 @@ public class GetPagedOrders
                 request.Filter?.CustomerPhone,
                 request.Filter?.DisplayOrderNumber,
                 request.Filter?.EmployeeId,
-                request.Filter?.PackageId,
                 request.Filter?.CleaningDateFrom,
                 request.Filter?.CleaningDateTo,
                 request.Filter?.PaymentStatuses,
@@ -46,13 +45,18 @@ public class GetPagedOrders
             var totalItems = await orderRepository.GetCountAsync(filter, cancellationToken);
             var items = await orderRepository
                 .GetPagedSort<OrderSort>(request.Offset, request.Limit, filter, request.Sort.MapToDomain())
-                .AsNoTracking()
                 .Include(o => o.OrderStatusHistory)
                 .Include(o => o.Currency)
-                .Include(o => o.SelectedPackage)
+                .Include(o => o.SelectedPackages)
+                    .ThenInclude(sp => sp.Package)
+                .Include(o => o.SelectedServices)
+                    .ThenInclude(sp => sp.Service)
                 .Include(o => o.Employee)
                     .ThenInclude(e => e.User)
                 .Include(o => o.CustomerAddress)
+                .Include(o => o.AssignedEmployees)
+                .AsSplitQuery()
+                .AsNoTracking()
                 .Select(order => order.MapToDto())
                 .ToListAsync(cancellationToken);
 

@@ -19,6 +19,10 @@ public class Constants
         public const string CompletedSession = "checkout.session.completed";
     }
 
+    public class Currency
+    {
+        public const string CZK = nameof(CZK);
+    }
 
     public static readonly (byte[] Signature, string MimeType)[] ImageSignatures =
     [

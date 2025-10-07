@@ -26,7 +26,7 @@ public record OrderItem(
     string? Notes,
     string? SpecialInstructions,
     string? AccessInstructions,
-    PackageDetails? SelectedPackage,
+    IEnumerable<PackageDetails> SelectedPackages,
     CurrencyDetails Currency,
     IEnumerable<ServiceDetails> SelectedServices,
     IEnumerable<OrderStatusTrackDto> StatusHistory,

@@ -63,8 +63,12 @@ export class CleansiaTimePickerComponent implements ControlValueAccessor {
   internalValue = signal<Date | null>(null);
 
   private touched = signal(false);
-  private onChange = (value: string) => {};
-  private onTouched = () => {};
+  private onChange = (value: string) => {
+    // Implemented by ControlValueAccessor
+  };
+  private onTouched = () => {
+    // Implemented by ControlValueAccessor
+  };
 
   // Computed properties
   timeValue = computed(() => {

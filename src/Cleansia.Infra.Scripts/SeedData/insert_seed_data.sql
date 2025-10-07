@@ -187,24 +187,24 @@ VALUES
 
 -- 5. CURRENCIES
 INSERT INTO public."Currencies" (
-  "Id", "IsActive", "CreatedBy", "CreatedOn",
+  "Id", "IsActive", "IsDefault", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy",
   "DeactivatedOn", "Code", "Symbol", "Name", "ExchangeRate"
 )
 VALUES
   -- European Currencies
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'CZK', 'Kč', 'Czech Koruna', 1.0),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'EUR', '€', 'Euro', 0.041),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'USD', '$', 'US Dollar', 0.044),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'GBP', '£', 'British Pound', 0.035),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'PLN', 'zł', 'Polish Zloty', 0.18),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'CHF', 'CHF', 'Swiss Franc', 0.039),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'SEK', 'kr', 'Swedish Krona', 0.47),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'NOK', 'kr', 'Norwegian Krone', 0.47),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'DKK', 'kr', 'Danish Krone', 0.31),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'HUF', 'Ft', 'Hungarian Forint', 16.2),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'RON', 'lei', 'Romanian Leu', 0.20),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'BGN', 'лв', 'Bulgarian Lev', 0.080);
+  (generate_ulid()::TEXT, true, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'CZK', 'Kč', 'Czech Koruna', 1.0),
+  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'EUR', '€', 'Euro', 0.041),
+  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'USD', '$', 'US Dollar', 0.044),
+  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'GBP', '£', 'British Pound', 0.035),
+  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'PLN', 'zł', 'Polish Zloty', 0.18),
+  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'CHF', 'CHF', 'Swiss Franc', 0.039),
+  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'SEK', 'kr', 'Swedish Krona', 0.47),
+  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'NOK', 'kr', 'Norwegian Krone', 0.47),
+  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'DKK', 'kr', 'Danish Krone', 0.31),
+  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'HUF', 'Ft', 'Hungarian Forint', 16.2),
+  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'RON', 'lei', 'Romanian Leu', 0.20),
+  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'BGN', 'лв', 'Bulgarian Lev', 0.080);
 
 -- 6. SERVICES
 INSERT INTO public."Services" (
@@ -607,19 +607,19 @@ VALUES
 
 -- Insert Orders
 INSERT INTO public."Orders" (
-  "Id", "IsActive", "CreatedBy", "CreatedOn",
+  "Id", "IsActive", "EmployeePayCalculated", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy",
   "DeactivatedOn", "CustomerName", "CustomerEmail",
   "CustomerPhone", "CustomerAddressId", "DisplayOrderNumber",
   "Rooms", "Bathrooms", "CleaningDateTime", "PaymentType",
   "PaymentStatus", "TotalPrice", "EstimatedTime",
   "ConfirmationCode", "StripeSessionId", "Notes",
-  "SpecialInstructions", "AccessInstructions", "SelectedPackageId",
+  "SpecialInstructions", "AccessInstructions",
   "CurrencyId", "UserId", "EmployeeId", "Extras"
 )
 VALUES
   -- Order 1: Jan Novák - Essential Clean
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Jan Novák', 'jan.novak@email.cz', '+420123456789',
    (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Wenceslas Square 1' LIMIT 1),
    'CLS-2025-0001', 3, 2, '2025-01-15 10:00:00', 1, 1, 1299.00, 180,
@@ -627,14 +627,13 @@ VALUES
    'Regular maintenance cleaning for family apartment',
    'Please be careful with the antique furniture in the living room',
    'Key under the mat, ring bell twice',
-   (SELECT "Id" FROM public."Packages" WHERE "Name" = 'Essential Clean' LIMIT 1),
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'jan.novak@email.cz' LIMIT 1),
    (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654321' LIMIT 1),
    '{"eco_products": true, "pet_friendly": false, "extra_vacuum": true}'),
 
   -- Order 2: Marie Svobodová - Deep Clean Premium
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Marie Svobodová', 'marie.svobodova@email.cz', '+420234567890',
    (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Národní třída 25' LIMIT 1),
    'CLS-2025-0002', 4, 3, '2025-01-16 09:00:00', 0, 0, 2199.00, 240,
@@ -642,14 +641,13 @@ VALUES
    'Deep cleaning after renovation work',
    'There was recent painting work, please be extra careful with dust removal',
    'Security code: 1234, apartment 3B',
-   (SELECT "Id" FROM public."Packages" WHERE "Name" = 'Deep Clean Premium' LIMIT 1),
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'marie.svobodova@email.cz' LIMIT 1),
    (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654322' LIMIT 1),
    '{"eco_products": false, "pet_friendly": true, "extra_vacuum": false}'),
 
   -- Order 3: Petr Dvořák - Moving Day Special
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Petr Dvořák', 'petr.dvorak@email.cz', '+420345678901',
    (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Vinohrady 456' LIMIT 1),
    'CLS-2025-0003', 2, 1, '2025-01-17 14:00:00', 1, 1, 2799.00, 300,
@@ -657,14 +655,13 @@ VALUES
    'Move-out cleaning for apartment rental',
    'Need to return security deposit, please ensure everything is spotless',
    'Landlord will be present for inspection',
-   (SELECT "Id" FROM public."Packages" WHERE "Name" = 'Moving Day Special' LIMIT 1),
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'petr.dvorak@email.cz' LIMIT 1),
    (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654323' LIMIT 1),
    '{"eco_products": true, "pet_friendly": false, "extra_vacuum": true}'),
 
   -- Order 4: Anna Černá - Kitchen & Bathroom Focus
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Anna Černá', 'anna.cerna@email.cz', '+420456789012',
    (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Karlínské náměstí 12' LIMIT 1),
    'CLS-2025-0004', 3, 2, '2025-01-18 11:00:00', 0, 0, 1399.00, 150,
@@ -672,14 +669,13 @@ VALUES
    'Focus on kitchen and bathrooms only, other rooms are fine',
    'Kitchen has stubborn grease stains from cooking',
    'Use main entrance, elevator to 4th floor',
-   (SELECT "Id" FROM public."Packages" WHERE "Name" = 'Kitchen & Bathroom Focus' LIMIT 1),
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'anna.cerna@email.cz' LIMIT 1),
    (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654324' LIMIT 1),
    '{"eco_products": false, "pet_friendly": true, "extra_vacuum": false}'),
 
   -- Order 5: Tomáš Procházka - Eco-Green Package
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Tomáš Procházka', 'tomas.prochazka@email.cz', '+420567890123',
    (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Smíchov 789' LIMIT 1),
    'CLS-2025-0005', 5, 3, '2025-01-19 08:00:00', 1, 1, 1899.00, 210,
@@ -687,14 +683,13 @@ VALUES
    'Eco-friendly cleaning for family with small children',
    'Please use only non-toxic products due to allergies',
    'Doorbell broken, please call when arriving',
-   (SELECT "Id" FROM public."Packages" WHERE "Name" = 'Eco-Green Package' LIMIT 1),
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'tomas.prochazka@email.cz' LIMIT 1),
    (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654325' LIMIT 1),
    '{"eco_products": true, "pet_friendly": true, "extra_vacuum": true}'),
 
   -- Order 6: Complete Home Clean (No package, individual services)
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Jan Novák', 'jan.novak@email.cz', '+420123456789',
    (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Wenceslas Square 1' LIMIT 1),
    'CLS-2025-0006', 3, 2, '2025-01-20 13:00:00', 0, 0, 1150.00, 165,
@@ -702,7 +697,6 @@ VALUES
    'Follow-up cleaning with individual services',
    'Focus on areas missed in previous cleaning',
    'Same access as before',
-   NULL,
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'jan.novak@email.cz' LIMIT 1),
    (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654321' LIMIT 1),
@@ -725,6 +719,25 @@ VALUES
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0006' LIMIT 1),
    (SELECT "Id" FROM public."Services" WHERE "Name" = 'Carpet Cleaning' LIMIT 1));
+
+-- Insert Order Packages (Junction table for orders and individual packages)
+INSERT INTO public."OrderPackages" (
+  "Id", "IsActive", "OrderId", "PackageId"
+)
+VALUES
+  -- Additional services for Order 6
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0006' LIMIT 1),
+   (SELECT "Id" FROM public."Packages" WHERE "Name" = 'Essential Clean' LIMIT 1)),
+
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0006' LIMIT 1),
+   (SELECT "Id" FROM public."Packages" WHERE "Name" = 'Deep Clean Premium' LIMIT 1)),
+
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0006' LIMIT 1),
+   (SELECT "Id" FROM public."Packages" WHERE "Name" = 'Moving Day Special' LIMIT 1));
+
 
 -- Insert Order Status Tracks (Order history)
 INSERT INTO public."OrderStatusHistory" (

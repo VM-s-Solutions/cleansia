@@ -1,4 +1,4 @@
-﻿namespace Cleansia.Core.AppServices.Common;
+namespace Cleansia.Core.AppServices.Common;
 
 public static class BusinessErrorMessage
 {
@@ -41,8 +41,43 @@ public static class BusinessErrorMessage
     public const string ExistingPhoneNumber = "user.existing_phone_number";
 
     // Employee
+    public const string EmployeeNotFound = "employee.not_found";
     public const string NotExistingEmployeeWithEmail = "employee.not_existing_email";
     public const string NotAllowedToUpdateEmployee = "employee.not_allowed_to_update";
+
+    // Payroll
+    public const string PayPeriodNotFound = "payroll.pay_period.not_found";
+    public const string InvoiceNotFound = "payroll.invoice.not_found";
+    public const string InvalidInvoiceStatus = "payroll.invoice.invalid_status";
+    public const string InvoiceAlreadyExists = "payroll.invoice.already_exists";
+    public const string PayPeriodNotOpen = "payroll.pay_period.not_open";
+    public const string UnpaidInvoicesExist = "payroll.unpaid_invoices_exist";
+    public const string PayAlreadyCalculated = "payroll.pay.already_calculated";
+    public const string NoUnpaidOrderPays = "payroll.no_unpaid_order_pays";
+    public const string NoActivePeriod = "payroll.no_active_period";
+    public const string NoPayConfiguration = "payroll.no_pay_configuration";
+    public const string NoCurrencyFound = "payroll.no_currency";
+    public const string EmployeeNotAssigned = "payroll.employee_not_assigned";
+
+    // Pay Period
+    public const string InvalidDuration = "pay_period.invalid_duration";
+    public const string OverlappingPeriod = "pay_period.overlapping_period";
+    public const string HasOrderPays = "pay_period.has_order_pays";
+    public const string PayPeriodNotClosed = "pay_period.not_closed";
+
+    // Pay Config
+    public const string PayConfigServiceOrPackageRequired = "pay_config.service_or_package_required";
+    public const string PayConfigCannotHaveBoth = "pay_config.cannot_have_both";
+    public const string PayConfigAlreadyExists = "pay_config.already_exists";
+    public const string PayConfigNotFound = "pay_config.not_found";
+    public const string PayConfigHasOrderPays = "pay_config.has_order_pays";
+    public const string PayConfigBasePayNegative = "pay_config.base_pay_negative";
+    public const string PayConfigExtraPerRoomNegative = "pay_config.extra_per_room_negative";
+    public const string PayConfigExtraPerBathroomNegative = "pay_config.extra_per_bathroom_negative";
+    public const string PayConfigDistanceRateNegative = "pay_config.distance_rate_negative";
+    public const string PayConfigMinimumPayNegative = "pay_config.minimum_pay_negative";
+    public const string PayConfigMaximumPayNegative = "pay_config.maximum_pay_negative";
+    public const string PayConfigMaximumLessThanMinimum = "pay_config.maximum_less_than_minimum";
 
     // File
     public const string FileNotMatchContentType = "file.content_type_doesnt_match";

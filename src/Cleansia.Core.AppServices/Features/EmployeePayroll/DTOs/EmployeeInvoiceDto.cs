@@ -15,7 +15,7 @@ public record EmployeeInvoiceDto(
     decimal TotalAmount,
     string CurrencyCode,
     string Status,
-    string? PdfBlobUrl,
+    string? PdfBlobName,
     DateTime GeneratedAt,
     DateTime? ApprovedAt,
     string? ApprovedBy,

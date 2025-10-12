@@ -58,6 +58,8 @@ public static class BusinessErrorMessage
     public const string NoPayConfiguration = "payroll.no_pay_configuration";
     public const string NoCurrencyFound = "payroll.no_currency";
     public const string EmployeeNotAssigned = "payroll.employee_not_assigned";
+    public const string PdfGenerationFailed = "payroll.invoice.pdf_generation_failed";
+    public const string TemplateNotFound = "payroll.invoice.template_not_found";
 
     // Pay Period
     public const string InvalidDuration = "pay_period.invalid_duration";

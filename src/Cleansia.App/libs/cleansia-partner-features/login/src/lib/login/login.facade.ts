@@ -47,7 +47,7 @@ export class LoginFacade extends UnsubscribeControlDirective {
           }
           this.authService.setSession(authResult);
           this.store.dispatch(loadUserCurrent());
-          this.router.navigate([CleansiaPartnerRoute.DASHBOARD]);
+          this.router.navigate([CleansiaPartnerRoute.ORDERS]);
         },
       });
   }

@@ -6,6 +6,7 @@ using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Web.Abstractions;
 using Cleansia.Web.Attributes;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Cleansia.Web.Controllers;
@@ -111,5 +112,36 @@ public class EmployeePayrollController(IMediator mediator) : ApiController(media
     {
         var result = await Mediator.Send(command);
         return HandleResult<ClosePayPeriod.Response>(result);
+    }
+
+    [HttpPost("RegenerateInvoicePdf")]
+    //[Permission(Policy.CanGenerateInvoice)]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(RegenerateInvoicePdf.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> RegenerateInvoicePdf([FromBody] RegenerateInvoicePdf.Command command)
+    {
+        var result = await Mediator.Send(command);
+        return HandleResult<RegenerateInvoicePdf.Response>(result);
+    }
+
+    [HttpGet("DownloadInvoice/{invoiceId}")]
+    [Permission(Policy.CanViewPagedInvoices)]
+    [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> DownloadInvoice(string invoiceId, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new DownloadInvoice.Query(invoiceId), cancellationToken);
+
+        if (result == null)
+        {
+            return NotFound("Invoice or PDF not found");
+        }
+
+        return File(result.PdfBytes, "application/pdf", result.FileName);
     }
 }

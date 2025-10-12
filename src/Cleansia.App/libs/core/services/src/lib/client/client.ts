@@ -995,6 +995,15 @@ export interface IEmployeePayrollClient {
      * @return OK
      */
     closePayPeriod(body?: ClosePayPeriodCommand | undefined): Observable<ClosePayPeriodResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    regenerateInvoicePdf(body?: RegenerateInvoicePdfCommand | undefined): Observable<RegenerateInvoicePdfResponse>;
+    /**
+     * @return OK
+     */
+    downloadInvoice(invoiceId: string): Observable<FileResponse>;
 }
 
 @Injectable({
@@ -1650,6 +1659,162 @@ export class EmployeePayrollClient implements IEmployeePayrollClient {
             let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result403 = ProblemDetails.fromJS(resultData403);
             return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    regenerateInvoicePdf(body?: RegenerateInvoicePdfCommand | undefined): Observable<RegenerateInvoicePdfResponse> {
+        let url = this.baseUrl + "/api/EmployeePayroll/RegenerateInvoicePdf";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processRegenerateInvoicePdf(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processRegenerateInvoicePdf(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<RegenerateInvoicePdfResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<RegenerateInvoicePdfResponse>;
+        }));
+    }
+
+    protected processRegenerateInvoicePdf(response: HttpResponseBase): Observable<RegenerateInvoicePdfResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = RegenerateInvoicePdfResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    downloadInvoice(invoiceId: string): Observable<FileResponse> {
+        let url = this.baseUrl + "/api/EmployeePayroll/DownloadInvoice/{invoiceId}";
+        if (invoiceId === undefined || invoiceId === null)
+            throw new globalThis.Error("The parameter 'invoiceId' must be defined.");
+        url = url.replace("{invoiceId}", encodeURIComponent("" + invoiceId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processDownloadInvoice(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processDownloadInvoice(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<FileResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<FileResponse>;
+        }));
+    }
+
+    protected processDownloadInvoice(response: HttpResponseBase): Observable<FileResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200 || status === 206) {
+            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
+            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
+            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
+            if (fileName) {
+                fileName = decodeURIComponent(fileName);
+            } else {
+                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
+                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
+            }
+            return ObservableOf({ fileName: fileName, data: responseBlob as any, status: status, headers: Headers });
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result404: any = null;
+            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, ResponseText, Headers, result404);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -4582,7 +4747,7 @@ export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
     totalAmount!: number;
     currencyCode!: string | undefined;
     status!: string | undefined;
-    pdfBlobUrl!: string | undefined;
+    pdfBlobName!: string | undefined;
     generatedAt!: Date;
     approvedAt!: Date | undefined;
     approvedBy!: string | undefined;
@@ -4617,7 +4782,7 @@ export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
             this.totalAmount = Data["totalAmount"];
             this.currencyCode = Data["currencyCode"];
             this.status = Data["status"];
-            this.pdfBlobUrl = Data["pdfBlobUrl"];
+            this.pdfBlobName = Data["pdfBlobName"];
             this.generatedAt = Data["generatedAt"] ? new Date(Data["generatedAt"].toString()) : undefined as any;
             this.approvedAt = Data["approvedAt"] ? new Date(Data["approvedAt"].toString()) : undefined as any;
             this.approvedBy = Data["approvedBy"];
@@ -4656,7 +4821,7 @@ export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
         data["totalAmount"] = this.totalAmount;
         data["currencyCode"] = this.currencyCode;
         data["status"] = this.status;
-        data["pdfBlobUrl"] = this.pdfBlobUrl;
+        data["pdfBlobName"] = this.pdfBlobName;
         data["generatedAt"] = this.generatedAt ? this.generatedAt.toISOString() : undefined as any;
         data["approvedAt"] = this.approvedAt ? this.approvedAt.toISOString() : undefined as any;
         data["approvedBy"] = this.approvedBy;
@@ -4688,7 +4853,7 @@ export interface IEmployeeInvoiceDetailDto {
     totalAmount: number;
     currencyCode: string | undefined;
     status: string | undefined;
-    pdfBlobUrl: string | undefined;
+    pdfBlobName: string | undefined;
     generatedAt: Date;
     approvedAt: Date | undefined;
     approvedBy: string | undefined;
@@ -4713,7 +4878,7 @@ export class EmployeeInvoiceDto implements IEmployeeInvoiceDto {
     totalAmount!: number;
     currencyCode!: string | undefined;
     status!: string | undefined;
-    pdfBlobUrl!: string | undefined;
+    pdfBlobName!: string | undefined;
     generatedAt!: Date;
     approvedAt!: Date | undefined;
     approvedBy!: string | undefined;
@@ -4746,7 +4911,7 @@ export class EmployeeInvoiceDto implements IEmployeeInvoiceDto {
             this.totalAmount = Data["totalAmount"];
             this.currencyCode = Data["currencyCode"];
             this.status = Data["status"];
-            this.pdfBlobUrl = Data["pdfBlobUrl"];
+            this.pdfBlobName = Data["pdfBlobName"];
             this.generatedAt = Data["generatedAt"] ? new Date(Data["generatedAt"].toString()) : undefined as any;
             this.approvedAt = Data["approvedAt"] ? new Date(Data["approvedAt"].toString()) : undefined as any;
             this.approvedBy = Data["approvedBy"];
@@ -4779,7 +4944,7 @@ export class EmployeeInvoiceDto implements IEmployeeInvoiceDto {
         data["totalAmount"] = this.totalAmount;
         data["currencyCode"] = this.currencyCode;
         data["status"] = this.status;
-        data["pdfBlobUrl"] = this.pdfBlobUrl;
+        data["pdfBlobName"] = this.pdfBlobName;
         data["generatedAt"] = this.generatedAt ? this.generatedAt.toISOString() : undefined as any;
         data["approvedAt"] = this.approvedAt ? this.approvedAt.toISOString() : undefined as any;
         data["approvedBy"] = this.approvedBy;
@@ -4805,7 +4970,7 @@ export interface IEmployeeInvoiceDto {
     totalAmount: number;
     currencyCode: string | undefined;
     status: string | undefined;
-    pdfBlobUrl: string | undefined;
+    pdfBlobName: string | undefined;
     generatedAt: Date;
     approvedAt: Date | undefined;
     approvedBy: string | undefined;
@@ -5160,6 +5325,78 @@ export class MarkInvoicePaidResponse implements IMarkInvoicePaidResponse {
 
 export interface IMarkInvoicePaidResponse {
     invoiceId: string | undefined;
+}
+
+export class RegenerateInvoicePdfCommand implements IRegenerateInvoicePdfCommand {
+    invoiceId!: string | undefined;
+
+    constructor(data?: IRegenerateInvoicePdfCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.invoiceId = Data["invoiceId"];
+        }
+    }
+
+    static fromJS(data: any): RegenerateInvoicePdfCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new RegenerateInvoicePdfCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["invoiceId"] = this.invoiceId;
+        return data;
+    }
+}
+
+export interface IRegenerateInvoicePdfCommand {
+    invoiceId: string | undefined;
+}
+
+export class RegenerateInvoicePdfResponse implements IRegenerateInvoicePdfResponse {
+    pdfBlobName!: string | undefined;
+
+    constructor(data?: IRegenerateInvoicePdfResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.pdfBlobName = Data["pdfBlobName"];
+        }
+    }
+
+    static fromJS(data: any): RegenerateInvoicePdfResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new RegenerateInvoicePdfResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["pdfBlobName"] = this.pdfBlobName;
+        return data;
+    }
+}
+
+export interface IRegenerateInvoicePdfResponse {
+    pdfBlobName: string | undefined;
 }
 
 export class CheckCurrentEmployeeQuery implements ICheckCurrentEmployeeQuery {
@@ -8173,6 +8410,13 @@ function formatDate(d: Date) {
     return d.getFullYear() + '-' + 
         (d.getMonth() < 9 ? ('0' + (d.getMonth()+1)) : (d.getMonth()+1)) + '-' +
         (d.getDate() < 10 ? ('0' + d.getDate()) : d.getDate());
+}
+
+export interface FileResponse {
+    data: Blob;
+    status: number;
+    fileName?: string;
+    headers?: { [name: string]: any };
 }
 
 export class ApiException extends Error {

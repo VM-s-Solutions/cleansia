@@ -1,4 +1,9 @@
-﻿namespace Cleansia.Core.AppServices.Extensions;
+﻿using Cleansia.Core.Domain.EmployeePayroll;
+using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Users;
+using Cleansia.Infra.Services.Pdf.Models;
+
+namespace Cleansia.Core.AppServices.Extensions;
 
 public static class FileExtensions
 {
@@ -17,5 +22,40 @@ public static class FileExtensions
 
         var parts = base64Content.Split(',');
         return parts.Length > 1 ? parts[1] : parts[0];
+    }
+
+    public static InvoicePdfData CreatePdfData(this EmployeeInvoice invoice, Employee employee, Currency? currency,
+        List<OrderEmployeePay> orderPays, CountryInvoiceContext? countryContext)
+    {
+        return new InvoicePdfData
+        {
+            InvoiceNumber = invoice.InvoiceNumber,
+            VariableSymbol = invoice.VariableSymbol,
+            GeneratedAt = invoice.GeneratedAt,
+            EmployeeName = $"{employee.User?.FirstName} {employee.User?.LastName}",
+            EmployeeAddress = employee.Address != null
+                ? $"{employee.Address.Street}, {employee.Address.City}, {employee.Address.ZipCode}"
+                : "N/A",
+            EmployeeEmail = employee.User?.Email ?? "N/A",
+            PayPeriodStart = invoice.PayPeriod!.StartDate.ToString("dd.MM.yyyy"),
+            PayPeriodEnd = invoice.PayPeriod.EndDate.ToString("dd.MM.yyyy"),
+            SubTotal = invoice.SubTotal,
+            BonusAmount = invoice.BonusAmount,
+            DeductionAmount = invoice.DeductionAmount,
+            VatAmount = 0,
+            TotalAmount = invoice.TotalAmount,
+            CurrencyCode = currency?.Code ?? "CZK",
+            CurrencySymbol = currency?.Symbol ?? "Kč",
+            Orders = orderPays.Select(op => new OrderLineItem
+            {
+                OrderNumber = op.Order?.DisplayOrderNumber ?? "N/A",
+                CompletedAt = op.Order?.CleaningDateTime ?? DateTime.UtcNow,
+                BasePay = op.BasePay,
+                ExtrasPay = op.ExtrasPay,
+                ExpensesPay = op.ExpensesPay,
+                TotalPay = op.TotalPay
+            }).ToList(),
+            LegalDisclaimer = countryContext?.LegalDisclaimerTemplate
+        };
     }
 }

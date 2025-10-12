@@ -70,4 +70,14 @@ public class EmployeeInvoiceRepository(CleansiaDbContext context) : BaseReposito
         return GetDbSet()
             .AnyAsync(i => i.EmployeeId == employeeId && i.PayPeriodId == payPeriodId, cancellationToken);
     }
+
+    public override Task<EmployeeInvoice?> GetByIdAsync(string id, CancellationToken cancellationToken)
+    {
+        return GetDbSet()
+            .Include(i => i.Employee)
+                .ThenInclude(e => e.User)
+            .Include(i => i.PayPeriod)
+            .Include(i => i.OrderPays)
+            .FirstOrDefaultAsync(i => i.Id == id, cancellationToken);
+    }
 }

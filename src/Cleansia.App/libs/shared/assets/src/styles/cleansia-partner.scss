@@ -5,7 +5,7 @@
 @use './common';
 
 // 2. Shared component styles
-@import './components/index.scss';
+@use './components/index.scss' as components;
 
 // 3. Partner portal page styles
-@import './pages/cleansia-partner/index.scss';
+@use './pages/cleansia-partner/index.scss' as partner;

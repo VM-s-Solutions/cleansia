@@ -192,6 +192,31 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "CountryInvoiceConfigs",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    CountryId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    VatRequired = table.Column<bool>(type: "boolean", nullable: false),
+                    VatRate = table.Column<decimal>(type: "numeric(5,4)", precision: 5, scale: 4, nullable: false),
+                    DigitalSignatureRequired = table.Column<bool>(type: "boolean", nullable: false),
+                    EInvoiceFormat = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    AdditionalFieldsJson = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    LegalDisclaimerTemplate = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CountryInvoiceConfigs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CountryInvoiceConfigs_Countries_CountryId",
+                        column: x => x.CountryId,
+                        principalTable: "Countries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "EmailTranslations",
                 columns: table => new
                 {
@@ -223,6 +248,43 @@ namespace Cleansia.Infra.Database.Migrations
                         principalTable: "Languages",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "InvoiceTemplates",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    TemplateName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    CountryId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    LanguageId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    Version = table.Column<int>(type: "integer", nullable: false),
+                    BlobUrl = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    ActivatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    Description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_InvoiceTemplates", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_InvoiceTemplates_Countries_CountryId",
+                        column: x => x.CountryId,
+                        principalTable: "Countries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_InvoiceTemplates_Languages_LanguageId",
+                        column: x => x.LanguageId,
+                        principalTable: "Languages",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -409,6 +471,9 @@ namespace Cleansia.Infra.Database.Migrations
                     CurrencyId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     PdfBlobUrl = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    TemplateId = table.Column<string>(type: "character varying(26)", nullable: true),
+                    CountryId = table.Column<string>(type: "character varying(26)", nullable: true),
+                    LanguageId = table.Column<string>(type: "character varying(26)", nullable: true),
                     GeneratedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     ApprovedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     ApprovedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -429,6 +494,12 @@ namespace Cleansia.Infra.Database.Migrations
                 {
                     table.PrimaryKey("PK_EmployeeInvoices", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_EmployeeInvoices_Countries_CountryId",
+                        column: x => x.CountryId,
+                        principalTable: "Countries",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
                         name: "FK_EmployeeInvoices_Currencies_CurrencyId",
                         column: x => x.CurrencyId,
                         principalTable: "Currencies",
@@ -438,6 +509,18 @@ namespace Cleansia.Infra.Database.Migrations
                         name: "FK_EmployeeInvoices_Employees_EmployeeId",
                         column: x => x.EmployeeId,
                         principalTable: "Employees",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_EmployeeInvoices_InvoiceTemplates_TemplateId",
+                        column: x => x.TemplateId,
+                        principalTable: "InvoiceTemplates",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_EmployeeInvoices_Languages_LanguageId",
+                        column: x => x.LanguageId,
+                        principalTable: "Languages",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
@@ -747,9 +830,20 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "ServiceId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_CountryInvoiceConfigs_CountryId",
+                table: "CountryInvoiceConfigs",
+                column: "CountryId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_EmailTranslations_LanguageId",
                 table: "EmailTranslations",
                 column: "LanguageId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeeInvoices_CountryId",
+                table: "EmployeeInvoices",
+                column: "CountryId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_EmployeeInvoices_CurrencyId",
@@ -774,6 +868,11 @@ namespace Cleansia.Infra.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_EmployeeInvoices_LanguageId",
+                table: "EmployeeInvoices",
+                column: "LanguageId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_EmployeeInvoices_PayPeriodId",
                 table: "EmployeeInvoices",
                 column: "PayPeriodId");
@@ -787,6 +886,11 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_EmployeeInvoices_Status_GeneratedAt",
                 table: "EmployeeInvoices",
                 columns: new[] { "Status", "GeneratedAt" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeeInvoices_TemplateId",
+                table: "EmployeeInvoices",
+                column: "TemplateId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_EmployeeInvoices_VariableSymbol",
@@ -823,6 +927,16 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_Employees_NationalityId",
                 table: "Employees",
                 column: "NationalityId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InvoiceTemplates_CountryId_LanguageId_IsActive",
+                table: "InvoiceTemplates",
+                columns: new[] { "CountryId", "LanguageId", "IsActive" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InvoiceTemplates_LanguageId",
+                table: "InvoiceTemplates",
+                column: "LanguageId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrderEmployeePays_EmployeeId",
@@ -963,6 +1077,9 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "CartServiceItems");
 
             migrationBuilder.DropTable(
+                name: "CountryInvoiceConfigs");
+
+            migrationBuilder.DropTable(
                 name: "EmailTranslations");
 
             migrationBuilder.DropTable(
@@ -987,9 +1104,6 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "PackageServices");
 
             migrationBuilder.DropTable(
-                name: "Languages");
-
-            migrationBuilder.DropTable(
                 name: "EmployeeInvoices");
 
             migrationBuilder.DropTable(
@@ -1002,6 +1116,9 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "Services");
 
             migrationBuilder.DropTable(
+                name: "InvoiceTemplates");
+
+            migrationBuilder.DropTable(
                 name: "PayPeriods");
 
             migrationBuilder.DropTable(
@@ -1009,6 +1126,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "Users");
+
+            migrationBuilder.DropTable(
+                name: "Languages");
 
             migrationBuilder.DropTable(
                 name: "Carts");

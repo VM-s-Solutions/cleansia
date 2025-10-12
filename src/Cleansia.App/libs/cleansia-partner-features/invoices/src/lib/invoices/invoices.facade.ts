@@ -23,7 +23,7 @@ export interface EmployeeInvoice {
   totalAmount: number;
   currencyCode: string;
   status: 'Pending' | 'Approved' | 'Paid' | 'Disputed' | 'Rejected';
-  pdfBlobUrl?: string;
+  pdfBlobName?: string;
   generatedAt: Date;
   approvedAt?: Date;
   approvedBy?: string;
@@ -41,7 +41,7 @@ export class InvoicesFacade implements OnDestroy {
   // Signals for reactive data
   invoices = signal<EmployeeInvoice[]>([]);
   loading = signal<boolean>(false);
-  
+
   private currentEmployeeId = signal<string | null>(null);
   private currentSort = signal<SortDefinition[]>([]);
 
@@ -85,8 +85,13 @@ export class InvoicesFacade implements OnDestroy {
       deductionAmount: dto.deductionAmount!,
       totalAmount: dto.totalAmount!,
       currencyCode: dto.currencyCode!,
-      status: dto.status! as 'Pending' | 'Approved' | 'Paid' | 'Disputed' | 'Rejected',
-      pdfBlobUrl: dto.pdfBlobUrl ?? undefined,
+      status: dto.status! as
+        | 'Pending'
+        | 'Approved'
+        | 'Paid'
+        | 'Disputed'
+        | 'Rejected',
+      pdfBlobName: dto.pdfBlobName ?? undefined,
       generatedAt: new Date(dto.generatedAt!),
       approvedAt: dto.approvedAt ? new Date(dto.approvedAt) : undefined,
       approvedBy: dto.approvedBy ?? undefined,
@@ -98,7 +103,7 @@ export class InvoicesFacade implements OnDestroy {
 
   loadInvoices(offset = 0, limit = 20): void {
     const employeeId = this.currentEmployeeId();
-    
+
     if (!employeeId) {
       return;
     }
@@ -106,19 +111,30 @@ export class InvoicesFacade implements OnDestroy {
     this.loading.set(true);
 
     this.client.employeePayrollClient
-      .getPagedInvoices(employeeId, undefined, undefined, this.currentSort(), offset, limit)
+      .getPagedInvoices(
+        employeeId,
+        undefined,
+        undefined,
+        this.currentSort(),
+        offset,
+        limit
+      )
       .pipe(
         takeUntil(this.destroy$),
         catchError((error) => {
           console.error('Failed to load invoices:', error);
-          this.snackbarService.showError('Failed to load invoices. Please try again.');
+          this.snackbarService.showError(
+            'Failed to load invoices. Please try again.'
+          );
           this.loading.set(false);
           return of(null);
         })
       )
       .subscribe((pagedData: EmployeeInvoiceDtoPagedData | null) => {
         if (pagedData && pagedData.data) {
-          const invoices = pagedData.data.map((dto: EmployeeInvoiceDto) => this.mapDtoToInvoice(dto));
+          const invoices = pagedData.data.map((dto: EmployeeInvoiceDto) =>
+            this.mapDtoToInvoice(dto)
+          );
           this.invoices.set(invoices);
         } else {
           this.invoices.set([]);
@@ -133,17 +149,41 @@ export class InvoicesFacade implements OnDestroy {
   }
 
   downloadInvoice(invoice: EmployeeInvoice): void {
-    if (invoice.pdfBlobUrl) {
-      // Download from blob URL
-      window.open(invoice.pdfBlobUrl, '_blank');
-      this.snackbarService.showSuccessTranslated('global.messages.invoices.invoice_downloaded');
-    } else {
-      this.snackbarService.showErrorTranslated('pages.invoices.pdf_not_available');
+    if (!invoice.pdfBlobName) {
+      this.snackbarService.showErrorTranslated(
+        'pages.invoices.pdf_not_available'
+      );
+      return;
     }
-  }
 
-  viewInvoiceDetails(invoice: EmployeeInvoice): void {
-    // TODO: Navigate to invoice details page
-    console.log('View details for invoice:', invoice.id);
+    this.client.employeePayrollClient
+      .downloadInvoice(invoice.id)
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError((error) => {
+          console.error('Failed to download invoice:', error);
+          this.snackbarService.showErrorTranslated(
+            'pages.invoices.download_failed'
+          );
+          return of(null);
+        })
+      )
+      .subscribe((fileResponse) => {
+        if (fileResponse) {
+          // Create a blob from the file data and trigger download
+          const blob = fileResponse.data;
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download =
+            fileResponse.fileName || `invoice-${invoice.invoiceNumber}.pdf`;
+          link.click();
+          window.URL.revokeObjectURL(url);
+
+          this.snackbarService.showSuccessTranslated(
+            'global.messages.invoices.invoice_downloaded'
+          );
+        }
+      });
   }
 }

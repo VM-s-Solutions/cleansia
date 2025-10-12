@@ -9,7 +9,6 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import {
-  CleansiaButtonComponent,
   CleansiaLanguageSwitcherComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
@@ -45,7 +44,6 @@ import {
     TabsModule,
     CleansiaTableComponent,
     CleansiaTitleComponent,
-    CleansiaButtonComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     CleansiaLanguageSwitcherComponent,

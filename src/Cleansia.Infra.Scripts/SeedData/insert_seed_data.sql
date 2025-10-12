@@ -1067,6 +1067,160 @@ VALUES
    'Good performance. One customer complaint resulted in minor deduction.',
    '0322876543', '2412', 'Payment for Invoice INV-202412-MK001');
 
+-- ============================================================
+-- INVOICE TEMPLATES
+-- ============================================================
+INSERT INTO public."InvoiceTemplates" (
+  "Id", "IsActive", "CreatedBy", "CreatedOn",
+  "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
+  "TemplateName", "CountryId", "LanguageId", "Version",
+  "BlobUrl", "ActivatedAt", "Description"
+)
+VALUES
+  -- Czech Republic + English
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   'StandardInvoice',
+   (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1),
+   (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en' LIMIT 1),
+   1, 'invoice-templates/cze/en/standard-v1.html', CURRENT_TIMESTAMP,
+   'Default English invoice template for Czech Republic'),
+
+  -- Czech Republic + Czech
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   'StandardInvoice',
+   (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1),
+   (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs' LIMIT 1),
+   1, 'invoice-templates/cze/cs/standard-v1.html', CURRENT_TIMESTAMP,
+   'Výchozí česká šablona faktury pro Českou republiku');
+
+-- ============================================================
+-- COUNTRY INVOICE CONFIGS
+-- ============================================================
+INSERT INTO public."CountryInvoiceConfigs" (
+  "Id", "IsActive", "CountryId", "VatRequired", "VatRate",
+  "DigitalSignatureRequired", "EInvoiceFormat",
+  "AdditionalFieldsJson", "LegalDisclaimerTemplate"
+)
+VALUES
+  -- Czech Republic - VAT 21%
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1),
+   true, 0.21, false, 'PDF', NULL,
+   'This invoice is issued in accordance with Czech law. Payment terms: 14 days from issue date.'),
+
+  -- Germany - VAT 19%
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'DEU' LIMIT 1),
+   true, 0.19, false, 'PDF',
+   '{"TaxNumber": "required", "UStIdNr": "optional"}',
+   'Rechnung gemäß deutschem Steuerrecht. Zahlungsbedingungen: 14 Tage ab Rechnungsdatum.'),
+
+  -- Austria - VAT 20%
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'AUT' LIMIT 1),
+   true, 0.20, false, 'PDF', NULL,
+   'Rechnung gemäß österreichischem Steuerrecht. Zahlungsbedingungen: 14 Tage ab Rechnungsdatum.'),
+
+  -- Poland - VAT 23%
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'POL' LIMIT 1),
+   true, 0.23, false, 'PDF',
+   '{"NIP": "required"}',
+   'Faktura wystawiona zgodnie z polskim prawem podatkowym. Termin płatności: 14 dni od daty wystawienia.'),
+
+  -- Slovakia - VAT 20%
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'SVK' LIMIT 1),
+   true, 0.20, false, 'PDF', NULL,
+   'Faktúra vystavená v súlade so slovenským právom. Splatnosť: 14 dní odo dňa vystavenia.'),
+
+  -- United States - No VAT
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'USA' LIMIT 1),
+   false, 0.00, false, 'PDF',
+   '{"EIN": "optional", "StateTaxId": "optional"}',
+   'Invoice issued in accordance with US law. Payment terms: 14 days from invoice date.'),
+
+  -- United Kingdom - VAT 20%
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'GBR' LIMIT 1),
+   true, 0.20, false, 'PDF',
+   '{"VATNumber": "required"}',
+   'Invoice issued in accordance with UK law. Payment terms: 14 days from invoice date.'),
+
+  -- France - VAT 20%
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'FRA' LIMIT 1),
+   true, 0.20, false, 'PDF',
+   '{"SIRET": "required"}',
+   'Facture émise conformément à la loi française. Conditions de paiement: 14 jours à compter de la date d''émission.'),
+
+  -- Italy - VAT 22%
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'ITA' LIMIT 1),
+   true, 0.22, false, 'PDF+XML',
+   '{"CodiceFiscale": "required", "PartitaIVA": "required"}',
+   'Fattura emessa in conformità alla legge italiana. Condizioni di pagamento: 14 giorni dalla data di emissione.'),
+
+  -- Spain - VAT 21%
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'ESP' LIMIT 1),
+   true, 0.21, false, 'PDF',
+   '{"NIF": "required"}',
+   'Factura emitida de acuerdo con la ley española. Condiciones de pago: 14 días desde la fecha de emisión.');
+
+-- FIX EMPLOYEE ADDRESS CONNECTIONS
+-- Create proper residential addresses for employees and connect them
+INSERT INTO public."Addresses" (
+    "Id", "IsActive", "CreatedBy", "CreatedOn",
+    "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
+    "Street", "City", "ZipCode", "CountryId"
+)
+VALUES
+    -- Employee Residential Address 1: Kateřina Novotná
+    (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+     'Vinohrady 15', 'Prague 2', '12000',
+     (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1)),
+
+    -- Employee Residential Address 2: Michal Krejčí
+    (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+     'Karlín 28', 'Prague 8', '18600',
+     (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1)),
+
+    -- Employee Residential Address 3: Zuzana Horáková
+    (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+     'Smíchov 42', 'Prague 5', '15000',
+     (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1)),
+
+    -- Employee Residential Address 4: Pavel Veselý
+    (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+     'Břevnov 67', 'Prague 6', '16900',
+     (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1)),
+
+    -- Employee Residential Address 5: Lenka Marková
+    (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+     'Dejvice 89', 'Prague 6', '16000',
+     (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1));
+
+-- Update Employee records to link them to their residential addresses
+UPDATE public."Employees" 
+SET "AddressId" = (
+    SELECT a."Id" 
+    FROM public."Addresses" a 
+    WHERE a."Street" = CASE 
+        WHEN EXISTS (SELECT 1 FROM public."Users" u WHERE u."Id" = public."Employees"."UserId" AND u."Email" = 'katerina.novotna@cleansia.cz') THEN 'Vinohrady 15'
+        WHEN EXISTS (SELECT 1 FROM public."Users" u WHERE u."Id" = public."Employees"."UserId" AND u."Email" = 'michal.krejci@cleansia.cz') THEN 'Karlín 28'
+        WHEN EXISTS (SELECT 1 FROM public."Users" u WHERE u."Id" = public."Employees"."UserId" AND u."Email" = 'zuzana.horakova@cleansia.cz') THEN 'Smíchov 42'
+        WHEN EXISTS (SELECT 1 FROM public."Users" u WHERE u."Id" = public."Employees"."UserId" AND u."Email" = 'pavel.vesely@cleansia.cz') THEN 'Břevnov 67'
+        WHEN EXISTS (SELECT 1 FROM public."Users" u WHERE u."Id" = public."Employees"."UserId" AND u."Email" = 'lenka.markova@cleansia.cz') THEN 'Dejvice 89'
+    END
+    AND a."CreatedOn" >= CURRENT_TIMESTAMP - INTERVAL '1 minute'  -- Only newly created addresses
+    LIMIT 1
+)
+WHERE "UserId" IN (
+    SELECT "Id" FROM public."Users" WHERE "Email" LIKE '%@cleansia.cz'
+);
+
 -- Re-enable foreign key constraints
 SET session_replication_role = DEFAULT;
 

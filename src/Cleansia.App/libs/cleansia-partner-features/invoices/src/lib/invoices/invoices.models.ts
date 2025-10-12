@@ -1,6 +1,6 @@
 import { TemplateRef } from '@angular/core';
-import { TranslateService } from '@ngx-translate/core';
 import { TableDefinition } from '@cleansia/components';
+import { TranslateService } from '@ngx-translate/core';
 import { EmployeeInvoice } from './invoices.facade';
 
 export interface InvoicesActions {
@@ -32,7 +32,9 @@ export function getInvoicesTableDefinition(
         id: 'generatedAt',
         headerName: translate.instant('pages.invoices.generated_date'),
         value: (invoice?: EmployeeInvoice) =>
-          invoice ? new Date(invoice.generatedAt).toLocaleDateString('cs-CZ') : '',
+          invoice
+            ? new Date(invoice.generatedAt).toLocaleDateString('cs-CZ')
+            : '',
         sortable: true,
       },
       {
@@ -45,10 +47,12 @@ export function getInvoicesTableDefinition(
         id: 'totalAmount',
         headerName: translate.instant('pages.invoices.total_amount'),
         value: (invoice?: EmployeeInvoice) =>
-          invoice ? new Intl.NumberFormat('cs-CZ', {
-            style: 'currency',
-            currency: invoice.currencyCode || 'CZK',
-          }).format(invoice.totalAmount) : '',
+          invoice
+            ? new Intl.NumberFormat('cs-CZ', {
+                style: 'currency',
+                currency: invoice.currencyCode || 'CZK',
+              }).format(invoice.totalAmount)
+            : '',
         sortable: true,
       },
       {
@@ -64,16 +68,22 @@ export function getInvoicesTableDefinition(
         columnActions: [
           {
             icon: 'pi pi-eye',
-            tooltip: { title: translate.instant('pages.invoices.view_details'), position: 'left' },
+            tooltip: {
+              title: translate.instant('pages.invoices.view_details'),
+              position: 'left',
+            },
             buttonPalette: 'p-button-text p-button-sm',
             onClick: actions.onViewDetails,
           },
           {
             icon: 'pi pi-download',
-            tooltip: { title: translate.instant('pages.invoices.download_pdf'), position: 'left' },
+            tooltip: {
+              title: translate.instant('pages.invoices.download_pdf'),
+              position: 'left',
+            },
             buttonPalette: 'p-button-text p-button-sm',
             onClick: actions.onDownload,
-            disabled: (invoice: EmployeeInvoice) => !invoice.pdfBlobUrl,
+            disabled: (invoice: EmployeeInvoice) => !invoice.pdfBlobName,
           },
         ],
       },

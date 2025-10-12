@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.InvoiceTemplates;
 using Cleansia.Core.Domain.Users;
 
 namespace Cleansia.Core.Domain.EmployeePayroll;
@@ -42,6 +43,15 @@ public class EmployeeInvoice : Auditable
 
     [MaxLength(500)]
     public string? PdfBlobUrl { get; private set; }
+
+    public string? TemplateId { get; private set; }
+    public InvoiceTemplate? Template { get; private set; }
+
+    public string? CountryId { get; private set; }
+    public Country? Country { get; private set; }
+
+    public string? LanguageId { get; private set; }
+    public Language? Language { get; private set; }
 
     [Required]
     public DateTime GeneratedAt { get; private set; } = DateTime.UtcNow;
@@ -129,6 +139,14 @@ public class EmployeeInvoice : Auditable
     public EmployeeInvoice SetSpecificSymbol(string? specificSymbol)
     {
         SpecificSymbol = specificSymbol;
+        return this;
+    }
+
+    public EmployeeInvoice AssignTemplate(string templateId, string countryId, string languageId)
+    {
+        TemplateId = templateId;
+        CountryId = countryId;
+        LanguageId = languageId;
         return this;
     }
 

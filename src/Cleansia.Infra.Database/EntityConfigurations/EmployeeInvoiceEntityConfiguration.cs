@@ -93,6 +93,27 @@ public class EmployeeInvoiceEntityConfiguration : AuditableEntityConfiguration<E
             .HasForeignKey(e => e.CurrencyId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder
+            .HasOne(e => e.Template)
+            .WithMany()
+            .HasForeignKey(e => e.TemplateId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
+
+        builder
+            .HasOne(e => e.Country)
+            .WithMany()
+            .HasForeignKey(e => e.CountryId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
+
+        builder
+            .HasOne(e => e.Language)
+            .WithMany()
+            .HasForeignKey(e => e.LanguageId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
+
         // Indexes
         builder.HasIndex(e => e.InvoiceNumber)
             .IsUnique();

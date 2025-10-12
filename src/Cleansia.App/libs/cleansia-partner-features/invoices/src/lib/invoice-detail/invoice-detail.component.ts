@@ -7,7 +7,6 @@ import {
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTableComponent,
-  CleansiaTitleComponent,
   TableDefinition,
 } from '@cleansia/components';
 import { OrderEmployeePayDto } from '@cleansia/services';
@@ -20,7 +19,6 @@ import { InvoiceDetailFacade } from './invoice-detail.facade';
   imports: [
     CommonModule,
     TranslatePipe,
-    CleansiaTitleComponent,
     CleansiaButtonComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,

@@ -9,7 +9,6 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import {
-  CleansiaButtonComponent,
   CleansiaLanguageSwitcherComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
@@ -36,7 +35,6 @@ import { getInvoicesTableDefinition } from './invoices.models';
     TranslatePipe,
     CleansiaTableComponent,
     CleansiaTitleComponent,
-    CleansiaButtonComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     CleansiaLanguageSwitcherComponent,
@@ -72,7 +70,10 @@ export class InvoicesComponent implements AfterViewInit {
 
   onSortChange(event: { field: string; order: number }): void {
     // Check if sort actually changed to prevent duplicate requests
-    if (event.field === this.lastSortField && event.order === this.lastSortOrder) {
+    if (
+      event.field === this.lastSortField &&
+      event.order === this.lastSortOrder
+    ) {
       return;
     }
 
@@ -80,10 +81,15 @@ export class InvoicesComponent implements AfterViewInit {
     this.lastSortField = event.field;
     this.lastSortOrder = event.order;
 
-    const sortDef = [new SortDefinition({
-      field: event.field,
-      direction: event.order === 1 ? SortDirection.Ascending : SortDirection.Descending
-    })];
+    const sortDef = [
+      new SortDefinition({
+        field: event.field,
+        direction:
+          event.order === 1
+            ? SortDirection.Ascending
+            : SortDirection.Descending,
+      }),
+    ];
     this.facade.updateSort(sortDef);
   }
 

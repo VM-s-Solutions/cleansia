@@ -20,6 +20,7 @@
     <ProjectReference Include="..\Cleansia.Core.Clients.Abstractions\Cleansia.Core.Clients.Abstractions.csproj" />
     <ProjectReference Include="..\Cleansia.Core.Domain\Cleansia.Core.Domain.csproj" />
     <ProjectReference Include="..\Cleansia.Infra.Common\Cleansia.Infra.Common.csproj" />
+    <ProjectReference Include="..\Cleansia.Infra.Services\Cleansia.Infra.Services.csproj" />
   </ItemGroup>
 
   <ItemGroup>

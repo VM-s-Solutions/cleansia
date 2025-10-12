@@ -2,6 +2,7 @@ import { NgClass } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import {
+  CleansiaRegistrationLockComponent,
   CleansiaSidebarMenuComponent,
   SidebarMenuItem,
 } from '@cleansia/components';
@@ -28,7 +29,13 @@ import {
 } from 'rxjs';
 
 @Component({
-  imports: [NgClass, ToastModule, RouterModule, CleansiaSidebarMenuComponent],
+  imports: [
+    NgClass,
+    ToastModule,
+    RouterModule,
+    CleansiaSidebarMenuComponent,
+    CleansiaRegistrationLockComponent,
+  ],
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',

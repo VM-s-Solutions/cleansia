@@ -3,6 +3,7 @@ using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Emails;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.InvoiceTemplates;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
@@ -106,6 +107,8 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<OrderEmployeePay> OrderEmployeePays { get; set; }
     public virtual DbSet<PayPeriod> PayPeriods { get; set; }
     public virtual DbSet<EmployeeInvoice> EmployeeInvoices { get; set; }
+    public virtual DbSet<InvoiceTemplate> InvoiceTemplates { get; set; }
+    public virtual DbSet<CountryInvoiceConfig> CountryInvoiceConfigs { get; set; }
 
     // Views
 }

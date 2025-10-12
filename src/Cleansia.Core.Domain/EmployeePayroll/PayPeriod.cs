@@ -158,11 +158,6 @@ public class PayPeriod : Auditable
         return date >= StartDate && date <= EndDate;
     }
 
-    public bool IsWithinPeriod(DateTime dateTime)
-    {
-        return IsWithinPeriod(DateOnly.FromDateTime(dateTime));
-    }
-
     public int GetPeriodDays()
     {
         return EndDate.DayNumber - StartDate.DayNumber + 1;

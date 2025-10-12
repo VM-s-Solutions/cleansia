@@ -57,15 +57,37 @@ export class InvoiceDetailFacade {
       return;
     }
 
-    if (!invoice.pdfBlobUrl) {
+    if (!invoice.pdfBlobName) {
       this.snackbarService.showErrorTranslated(
         'pages.invoices.pdf_not_available'
       );
       return;
     }
 
-    // Open PDF in new tab
-    window.open(invoice.pdfBlobUrl, '_blank');
+    // Download PDF from server
+    this.client.employeePayrollClient
+      .downloadInvoice(invoice.id!)
+      .pipe(
+        catchError((error) => {
+          console.error('Failed to download invoice:', error);
+          this.snackbarService.showErrorTranslated('pages.invoices.download_failed');
+          return of(null);
+        })
+      )
+      .subscribe((fileResponse) => {
+        if (fileResponse) {
+          // Create a blob from the file data and trigger download
+          const blob = fileResponse.data;
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = fileResponse.fileName || `invoice-${invoice.invoiceNumber}.pdf`;
+          link.click();
+          window.URL.revokeObjectURL(url);
+
+          this.snackbarService.showSuccessTranslated('global.messages.invoices.invoice_downloaded');
+        }
+      });
   }
 
   printInvoice(): void {

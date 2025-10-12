@@ -1,0 +1,63 @@
+@if (floatVariant() === 'on') {
+<p-floatlabel>
+  <p-calendar
+    [id]="'time-picker-' + label()"
+    [timeOnly]="true"
+    [hourFormat]="hourFormat()"
+    [stepMinute]="stepMinute()"
+    [showIcon]="showIcon()"
+    [disabled]="isDisabled"
+    [placeholder]="placeholder()"
+    [ngModel]="internalValue()"
+    (ngModelChange)="onTimeChange($event)"
+    (onBlur)="onBlur()"
+    [inputStyle]="{ width: '100%' }"
+    [style]="{ width: '100%' }"
+    styleClass="cleansia-time-picker"
+  />
+  <label [for]="'time-picker-' + label()">
+    {{ label() }}
+    @if (isRequired) {
+    <span class="required-asterisk">*</span>
+    }
+  </label>
+</p-floatlabel>
+} @else {
+<div class="cleansia-time-picker-container">
+  @if (label()) {
+  <label
+    [for]="'time-picker-' + label()"
+    class="cleansia-time-picker-label"
+    [class.required]="isRequired"
+  >
+    {{ label() }}
+    @if (isRequired) {
+    <span class="required-asterisk">*</span>
+    }
+  </label>
+  }
+  <p-calendar
+    [id]="'time-picker-' + label()"
+    [timeOnly]="true"
+    [hourFormat]="hourFormat()"
+    [stepMinute]="stepMinute()"
+    [showIcon]="showIcon()"
+    [disabled]="isDisabled"
+    [placeholder]="placeholder()"
+    [ngModel]="internalValue()"
+    (ngModelChange)="onTimeChange($event)"
+    (onBlur)="onBlur()"
+    [inputStyle]="{ width: '100%' }"
+    [style]="{ width: '100%' }"
+    styleClass="cleansia-time-picker"
+  />
+</div>
+}
+
+@if (shouldShowErrors) {
+<div class="cleansia-time-picker-error">
+  <small class="error-message">
+    {{ 'validation.common.required' | translate }}
+  </small>
+</div>
+}

@@ -1,0 +1,12 @@
+@use './variables' as variables;
+
+.cleansia-error-message-container {
+  width: 100%;
+  text-align: start;
+  padding: 0.5rem 1rem 0.25rem 1rem !important;
+
+  & > li {
+    font-size: 14px;
+    color: variables.$cleansia-red;
+  }
+}

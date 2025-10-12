@@ -15,4 +15,14 @@ public static class ServiceMappers
             PerRoomPrice: service.PerRoomPrice,
             Translations: service.Translations.ToDictionary());
     }
+
+    public static ServiceDetails MapToDetails(this Service service, string currencyCode)
+    {
+        return new ServiceDetails(
+            Id: service.Id,
+            Name: service.Name,
+            Description: service.Description,
+            EstimatedTime: service.EstimatedTime,
+            CurrencyCode: currencyCode);
+    }
 }

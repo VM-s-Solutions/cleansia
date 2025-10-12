@@ -1,3 +1,8 @@
-<section class="fullscreen-section">
+<section class="cleansia-section">
+  @if (title()) {
+  <h2 class="cleansia-section__title">{{ title() }}</h2>
+  }
+  <div class="cleansia-section__content">
     <ng-content></ng-content>
+  </div>
 </section>

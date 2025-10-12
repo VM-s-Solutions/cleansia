@@ -1,10 +1,12 @@
 ﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Addresses.DTOs;
 using Cleansia.Core.Clients.Abstractions.SendGrid;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -36,53 +38,54 @@ public class CreateOrder
 
             RuleFor(x => x.CustomerEmail)
                 .Cascade(CascadeMode.Stop)
-                .NotEmpty().WithMessage(BusinessErrorMessage.Required)
-                .EmailAddress().WithMessage(BusinessErrorMessage.InvalidEmailFormat);
+                .NotEmpty()
+                .WithMessage(BusinessErrorMessage.Required)
+                .EmailAddress()
+                .WithMessage(BusinessErrorMessage.InvalidEmailFormat);
 
             RuleFor(x => x.CleaningDate)
-                .GreaterThan(DateTime.UtcNow).WithMessage(BusinessErrorMessage.CleaningDateInFuture);
+                .GreaterThan(DateTime.UtcNow)
+                .WithMessage(BusinessErrorMessage.CleaningDateInFuture);
 
             RuleFor(x => x.TotalPrice)
-                .GreaterThan(0).WithMessage(BusinessErrorMessage.TotalPriceMustBePositive);
+                .GreaterThan(0)
+                .WithMessage(BusinessErrorMessage.TotalPriceMustBePositive);
 
             RuleFor(x => x.CurrencyId)
                 .Cascade(CascadeMode.Stop)
-                .NotEmpty().WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(currencyRepository.ExistsAsync).WithMessage(BusinessErrorMessage.InvalidCurrency);
+                .NotEmpty()
+                .WithMessage(BusinessErrorMessage.Required)
+                .MustAsync(currencyRepository.ExistsAsync)
+                .WithMessage(BusinessErrorMessage.InvalidCurrency);
 
             RuleFor(x => x.SelectedServiceIds)
-                .MustAsync(serviceRepository.ExistWithIdsAsync).WithMessage(BusinessErrorMessage.InvalidSelectedServices);
+                .MustAsync(serviceRepository.ExistWithIdsAsync)
+                .WithMessage(BusinessErrorMessage.InvalidSelectedServices);
 
-            RuleFor(x => x.SelectedPackageId)
-                .MustAsync(async (id, ct) => string.IsNullOrWhiteSpace(id) || await packageRepository.ExistsAsync(id, ct))
+            RuleFor(x => x.SelectedPackageIds)
+                .MustAsync(packageRepository.ExistWithIdsAsync)
                 .WithMessage(BusinessErrorMessage.InvalidSelectedPackage);
 
             RuleFor(x => x)
                 .Cascade(CascadeMode.Stop)
-                .Must(OrderMustNotBeEmpty).WithMessage(BusinessErrorMessage.EmptyOrder)
-                .MustAsync(PriceMatchesAsync).WithMessage(BusinessErrorMessage.TotalPriceNotMatch);
+                .Must(OrderMustNotBeEmpty)
+                .WithMessage(BusinessErrorMessage.EmptyOrder)
+                .MustAsync(PriceMatchesAsync)
+                .WithMessage(BusinessErrorMessage.TotalPriceNotMatch);
         }
 
-        private static bool OrderMustNotBeEmpty(Command command) => !string.IsNullOrWhiteSpace(command.SelectedPackageId) ||
+        private static bool OrderMustNotBeEmpty(Command command) => command.SelectedPackageIds.Any() ||
                                                                     command.SelectedServiceIds.Any();
 
         private async Task<bool> PriceMatchesAsync(Command command, CancellationToken cancellationToken)
         {
             decimal? basePrice = 0.0M;
 
-            if (!string.IsNullOrWhiteSpace(command.SelectedPackageId))
-            {
-                var package = await _packageRepository.GetByIdAsync(command.SelectedPackageId, cancellationToken);
-                basePrice = package?.Price ?? 0;
-            }
-            else
-            {
-                foreach (var serviceId in command.SelectedServiceIds)
-                {
-                    var service = await _serviceRepository.GetByIdAsync(serviceId, cancellationToken);
-                    basePrice += service?.BasePrice + service?.PerRoomPrice * (command.Rooms + command.Bathrooms);
-                }
-            }
+            var packages = await _packageRepository.GetByIds(command.SelectedPackageIds).ToListAsync(cancellationToken);
+            basePrice += packages.Sum(p => p.Price);
+
+            var services = await _serviceRepository.GetByIds(command.SelectedServiceIds).ToListAsync(cancellationToken);
+            basePrice += services.Sum(s => s?.BasePrice + s?.PerRoomPrice * (command.Rooms + command.Bathrooms));
 
             var currency = await _currencyRepository.GetByIdAsync(command.CurrencyId, cancellationToken);
             return basePrice * currency?.ExchangeRate == command.TotalPrice;
@@ -93,8 +96,8 @@ public class CreateOrder
         string CustomerName,
         string CustomerEmail,
         string CustomerPhone,
-        string CustomerAddress,
-        string? SelectedPackageId,
+        AddressDto CustomerAddress,
+        IEnumerable<string> SelectedPackageIds,
         IEnumerable<string> SelectedServiceIds,
         int Rooms,
         int Bathrooms,
@@ -112,18 +115,27 @@ public class CreateOrder
     public class Handler(
         ISendGridConfig sendGridConfig,
         IOrderRepository orderRepository,
+        IAddressRepository addressRepository,
         IServiceRepository serviceRepository,
+        IPackageRepository packageRepository,
         ISendGridClientFactory clientFactory,
         IStripeClientFactory stripeClientFactory) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
+            var address = await addressRepository.GetAddressAsync(command.CustomerAddress.Street,
+                command.CustomerAddress.City, command.CustomerAddress.ZipCode, command.CustomerAddress.CountryId,
+                cancellationToken) ?? Address.Create(
+                command.CustomerAddress.Street,
+                command.CustomerAddress.City,
+                command.CustomerAddress.ZipCode,
+                command.CustomerAddress.CountryId);
+
             var order = Order.Create(
                 command.CustomerName,
                 command.CustomerEmail,
                 command.CustomerPhone,
-                command.CustomerAddress,
-                command.SelectedPackageId,
+                address,
                 command.Rooms,
                 command.Bathrooms,
                 command.Extras,
@@ -137,8 +149,19 @@ public class CreateOrder
                 .GetByIds(command.SelectedServiceIds)
                 .Select(s => OrderService.Create(order, s))
                 .ToListAsync(cancellationToken);
+            var selectedPackages = await packageRepository
+                .GetByIds(command.SelectedPackageIds)
+                .Include(p => p.IncludedServices)
+                    .ThenInclude(s => s.Service)
+                .Select(p => OrderPackage.Create(order, p))
+                .ToListAsync(cancellationToken);
 
             order.AddSelectedServices(selectedServices);
+            order.AddSelectedPackages(selectedPackages);
+            var estimatedTime = selectedServices.Sum(s => s.Service!.EstimatedTime) +
+                                selectedPackages.Sum(p => p.Package!.IncludedServices.Sum(s => s.Service!.EstimatedTime));
+
+            order.UpdateEstimatedTime(estimatedTime);
             orderRepository.Add(order);
 
             string? stripeSessionId = null;

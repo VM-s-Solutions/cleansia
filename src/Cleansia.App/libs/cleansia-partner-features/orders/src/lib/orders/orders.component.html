@@ -1,0 +1,75 @@
+<div class="cleansia-orders">
+  <cleansia-language-switcher />
+  <div class="cleansia-orders__container">
+    <div class="cleansia-orders__header">
+      <cleansia-title [title]="'pages.orders.title' | translate" />
+      <p class="cleansia-orders__description">
+        {{ 'pages.orders.description' | translate }}
+      </p>
+    </div>
+
+    <!-- Tabs for Available and My Orders -->
+    <p-tabs value="0" (valueChange)="onTabChange($event)">
+      <!-- Available Orders Tab -->
+      <p-tablist>
+        <p-tab value="0">{{
+          'pages.orders.available_orders' | translate
+        }}</p-tab>
+        <p-tab value="1">{{ 'pages.orders.my_orders' | translate }}</p-tab>
+      </p-tablist>
+      <p-tabpanel value="0">
+        <cleansia-section>
+          @if ((facade.loading$ | async) && facade.availableOrders().length ===
+          0) {
+          <cleansia-loader />
+          } @else {
+          <cleansia-table
+            [data]="facade.availableOrders()"
+            [tableDefinition]="availableOrdersTableDefinition"
+            [paginator]="true"
+            [rows]="10"
+            [emptyMessage]="'pages.orders.no_available_orders'"
+            tableClass="cleansia-orders__table"
+            [loading]="(facade.loading$ | async) || false"
+            (sortChange)="onSortChange($event)"
+          >
+          </cleansia-table>
+          }
+        </cleansia-section>
+      </p-tabpanel>
+
+      <!-- My Orders Tab -->
+      <p-tabpanel value="1">
+        <cleansia-section>
+          @if ((facade.loading$ | async) && facade.myOrders().length === 0) {
+          <cleansia-loader />
+          } @else {
+          <cleansia-table
+            [data]="facade.myOrders()"
+            [tableDefinition]="myOrdersTableDefinition"
+            [paginator]="true"
+            [rows]="10"
+            [emptyMessage]="'pages.orders.no_my_orders'"
+            tableClass="cleansia-orders__table"
+            [loading]="(facade.loading$ | async) || false"
+            (sortChange)="onSortChange($event)"
+          >
+          </cleansia-table>
+          }
+        </cleansia-section>
+      </p-tabpanel>
+    </p-tabs>
+  </div>
+</div>
+
+<ng-template #statusTemplate let-item>
+  <span [class]="getStatusClass(item)">
+    {{ item.paymentStatus?.name }}
+  </span>
+</ng-template>
+
+<ng-template #orderStatusTemplate let-item>
+  <span [class]="getOrderStatusClass(item)">
+    {{ item.orderStatus?.name }}
+  </span>
+</ng-template>

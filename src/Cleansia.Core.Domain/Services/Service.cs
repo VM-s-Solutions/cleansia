@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
-using Cleansia.Core.Domain.Internalization;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Packages;
 
@@ -19,6 +19,8 @@ public class Service : Auditable
     public decimal BasePrice { get; private set; }
 
     public decimal PerRoomPrice { get; private set; }
+
+    public int EstimatedTime { get; private set; }
 
     public IDictionary<string, Translation> _translations = new Dictionary<string, Translation>();
     public IReadOnlyDictionary<string, Translation> Translations => _translations.AsReadOnly();

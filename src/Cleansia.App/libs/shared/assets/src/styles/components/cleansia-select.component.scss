@@ -1,0 +1,120 @@
+cleansia-select {
+  display: block;
+  width: 100%;
+
+  ::ng-deep {
+    // Fix for float label overlay issue with PrimNG select
+    .p-floatlabel {
+      .p-select {
+        width: 100%;
+
+        .p-select-label {
+          padding-top: 1.5rem;
+          padding-bottom: 0.75rem;
+          min-height: 3rem;
+        }
+      }
+
+      label {
+        transition: all 0.2s ease;
+
+        &.p-label-active {
+          transform: translateY(-50%) scale(0.75);
+          top: 0.75rem;
+          left: 0.75rem;
+          color: var(--cleansia-primary-500);
+        }
+      }
+    }
+
+    .p-select {
+      width: 100%;
+
+      .p-select-label {
+        padding: 0.75rem;
+        border: 1px solid var(--cleansia-border-color);
+        border-radius: 6px;
+        font-size: 1rem;
+        background: var(--cleansia-white);
+        color: var(--cleansia-text-primary);
+        transition: border-color 0.2s ease;
+
+        &:focus {
+          border-color: var(--cleansia-primary-500);
+          box-shadow: 0 0 0 2px rgba(var(--cleansia-primary-rgb), 0.2);
+          outline: none;
+        }
+
+        &.p-placeholder {
+          color: var(--cleansia-text-placeholder);
+        }
+      }
+
+      .p-select-dropdown {
+        background: transparent;
+        color: var(--cleansia-text-secondary);
+        border-left: 1px solid var(--cleansia-border-color);
+        padding: 0 0.75rem;
+      }
+
+      &:not(.p-disabled):hover .p-select-label {
+        border-color: var(--cleansia-primary-400);
+      }
+
+      &.p-focus .p-select-label {
+        border-color: var(--cleansia-primary-500);
+        box-shadow: 0 0 0 2px rgba(var(--cleansia-primary-rgb), 0.2);
+      }
+
+      &.ng-invalid.ng-dirty .p-select-label {
+        border-color: var(--cleansia-error-500);
+        box-shadow: 0 0 0 2px rgba(var(--cleansia-error-rgb), 0.2);
+      }
+    }
+
+    .p-select-overlay {
+      border: 1px solid var(--cleansia-border-color);
+      border-radius: 6px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      background: var(--cleansia-white);
+
+      .p-select-list {
+        .p-select-option {
+          padding: 0.75rem;
+          color: var(--cleansia-text-primary);
+          border: none;
+          transition: background-color 0.2s ease;
+
+          &:hover {
+            background: var(--cleansia-primary-50);
+          }
+
+          &.p-highlight {
+            background: var(--cleansia-primary-100);
+            color: var(--cleansia-primary-700);
+          }
+        }
+      }
+
+      .p-select-filter-container {
+        padding: 0.75rem;
+        border-bottom: 1px solid var(--cleansia-border-color);
+
+        .p-select-filter {
+          width: 100%;
+          padding: 0.5rem;
+          border: 1px solid var(--cleansia-border-color);
+          border-radius: 4px;
+          font-size: 0.875rem;
+
+          &:focus {
+            border-color: var(--cleansia-primary-500);
+            box-shadow: 0 0 0 1px rgba(var(--cleansia-primary-rgb), 0.2);
+            outline: none;
+          }
+        }
+      }
+    }
+  }
+}

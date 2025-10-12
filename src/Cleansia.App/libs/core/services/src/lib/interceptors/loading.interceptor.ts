@@ -8,7 +8,6 @@ export const LoadingInterceptorFn: HttpInterceptorFn = (req, next) => {
   const store = inject(Store);
 
   store.dispatch(setLoadingOnAction());
-
   return next(req).pipe(
     finalize(() => {
       store.dispatch(setLoadingOffAction());

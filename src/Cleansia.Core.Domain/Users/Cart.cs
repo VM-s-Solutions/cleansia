@@ -18,7 +18,11 @@ public class Cart : Auditable
     private ICollection<CartPackageItem> _packageItems = [];
     public virtual IReadOnlyCollection<CartPackageItem> PackageItems => _packageItems.ToList().AsReadOnly();
 
-    public static Cart CreateWithUser(string userId) => new() { UserId = userId };
+    public static Cart CreateWithUser(User user) => new()
+    {
+        User = user ?? throw new ArgumentNullException(nameof(user)),
+        UserId = user.Id
+    };
 
     public void AddService(Service service, int quantity)
     {

@@ -1,5 +1,9 @@
-﻿using Cleansia.Core.AppServices.Features.Orders;
+﻿using Cleansia.Core.AppServices.Authentication;
+using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Features.Orders.DTOs;
+using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Web.Abstractions;
+using Cleansia.Web.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,5 +21,28 @@ public class OrderController(IMediator mediator) : ApiController(mediator)
         var result = await Mediator.Send(command);
 
         return HandleResult<CreateOrder.Response>(result);
+    }
+
+    [HttpGet("GetPaged")]
+    [Permission(Policy.CanViewPagedOrder)]
+    [ProducesResponseType(typeof(PagedData<OrderListItem>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<PagedData<OrderListItem>> GetPaged([FromQuery] GetPagedOrders.Request request, CancellationToken cancellationToken)
+    {
+        return await Mediator.Send(request, cancellationToken);
+    }
+
+    [HttpGet("GetById")]
+    [Permission(Policy.CanViewOrderDetail)]
+    [ProducesResponseType(typeof(OrderItem), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetById([FromQuery] GetOrderDetails.Query query, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(query, cancellationToken);
+        return HandleResult<OrderItem>(result);
     }
 }

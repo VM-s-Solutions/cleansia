@@ -1,14 +1,32 @@
-import { Component, input } from '@angular/core';
-import { ButtonModule } from 'primeng/button';
+import { CommonModule } from '@angular/common';
+import { Component, input, output } from '@angular/core';
+import { TranslateModule } from '@ngx-translate/core';
+import { ButtonModule, ButtonSeverity } from 'primeng/button';
+import { InputSize } from '../cleansia-base-form/cleansia-base-form.models';
 
 @Component({
   selector: 'cleansia-button',
-  templateUrl: './cleansia-button.component.html',
   standalone: true,
-  imports: [ButtonModule],
+  imports: [CommonModule, ButtonModule, TranslateModule],
+  templateUrl: './cleansia-button.component.html',
 })
 export class CleansiaButtonComponent {
-  icon = input<string>('');
-  label = input<string>('');
-  severity = input<'primary' | 'secondary'>('primary');
+  buttonType = input<'button' | 'submit' | 'reset'>('button');
+  style = input<'basic-button' | 'raised-button'>('basic-button');
+  severity = input<ButtonSeverity>('info');
+  title = input<string>('');
+  size = input<InputSize>('full-width');
+  icon = input<string | undefined>(undefined);
+  iconPosition = input<'left' | 'right'>('left');
+  iconOutlined = input<boolean>(false);
+  rounded = input<boolean>(false);
+  disabled = input<boolean>(false);
+  loading = input<boolean>(false);
+  className = input<string>('');
+
+  clickFn = output<MouseEvent>();
+
+  handleClick(event: MouseEvent): void {
+    this.clickFn.emit(event);
+  }
 }

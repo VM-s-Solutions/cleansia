@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using Cleansia.Core.Domain.Internalization;
 using Cleansia.Core.Domain.Packages;
 
 namespace Cleansia.TestUtilities.MockDataFactories.Packages;

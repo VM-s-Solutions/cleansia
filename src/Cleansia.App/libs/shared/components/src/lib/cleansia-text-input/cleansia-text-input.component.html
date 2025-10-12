@@ -1,0 +1,57 @@
+@if (floatVariant(); as variant) {
+<p-floatlabel [variant]="variant">
+  @if (label()) {
+  <label [for]="id()" [class.required]="isRequired() && showRequired()">{{
+    label()
+  }}</label>
+  }
+  <input
+    pInputText
+    [id]="id()"
+    [type]="dataType()"
+    [value]="innerValue"
+    (input)="handleChange($event)"
+    (blur)="onTouch()"
+    [disabled]="disabled()"
+    [readonly]="readonlyInput()"
+    [placeholder]="placeholder()"
+    [autocomplete]="autocomplete()"
+    [class]="
+      inputSize() +
+      ' ' +
+      (className() ?? '') +
+      (hasErrors() ? 'ng-invalid ng-dirty' : '')
+    "
+  />
+</p-floatlabel>
+} @else { @if (label()) {
+<label [for]="id()" [class.required]="isRequired() && showRequired()">{{
+  label()
+}}</label>
+}
+<input
+  pInputText
+  [id]="id()"
+  [type]="dataType()"
+  [value]="innerValue"
+  (input)="handleChange($event)"
+  (blur)="onTouch()"
+  [disabled]="disabled()"
+  [readonly]="readonlyInput()"
+  [placeholder]="placeholder()"
+  [autocomplete]="autocomplete()"
+  [class]="
+    inputSize() +
+    ' ' +
+    (className() ?? '') +
+    (hasErrors() ? 'ng-invalid ng-dirty' : '')
+  "
+/>
+} @if (showErrors() && formControl.invalid && (formControl.dirty ||
+formControl.touched)) {
+<ul class="cleansia-error-message-container">
+  @for (error of formControl.errors | error; track $index) {
+  <li>{{ error }}</li>
+  }
+</ul>
+}

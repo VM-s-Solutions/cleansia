@@ -36,7 +36,7 @@
       "generateConstructorInterface": true,
       "importRequiredTypes": true,
       "baseUrlTokenName": "API_BASE_URL",
-      "output": "libs/cleansia-services/src/lib/client/client.ts",
+      "output": "libs/core/services/src/lib/client/client.ts",
       "newLineBehavior": "Auto",
       "typeMappers": {
         "DateOnly": "string",

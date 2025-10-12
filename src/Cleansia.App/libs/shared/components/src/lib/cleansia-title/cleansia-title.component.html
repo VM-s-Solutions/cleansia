@@ -1,0 +1,21 @@
+@switch (size()) { @case ('default') {
+<h3 class="cleansia-title--default {{ className() }}">
+  {{ title() | translate }}
+</h3>
+} @case ('small') {
+<h5 class="cleansia-title--small {{ className() }}">
+  {{ title() | translate }}
+</h5>
+} @case ('big') {
+<h2 class="cleansia-title--big {{ className() }}">
+  {{ title() | translate }}
+</h2>
+} @case ('large') {
+<h1 class="cleansia-title--large {{ className() }}">
+  {{ title() | translate }}
+</h1>
+} @default {
+<h3 class="cleansia-title--default {{ className() }}">
+  {{ title() | translate }}
+</h3>
+} }

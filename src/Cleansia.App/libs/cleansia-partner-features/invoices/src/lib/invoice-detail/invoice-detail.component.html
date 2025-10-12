@@ -1,0 +1,212 @@
+<div class="cleansia-invoice-detail">
+  <cleansia-language-switcher />
+
+  <div class="cleansia-invoice-detail__container">
+    @if (loading() && !invoiceDetail()) {
+    <cleansia-loader />
+    } @else if (error()) {
+    <cleansia-section [title]="'global.error' | translate">
+      <div class="error-container">
+        <p class="error-message">{{ error() }}</p>
+        <div class="error-actions">
+          <cleansia-button
+            [title]="'global.actions.retry' | translate"
+            (click)="retryLoadInvoice()"
+            type="primary"
+          >
+          </cleansia-button>
+          <cleansia-button
+            [title]="'global.actions.back' | translate"
+            (click)="navigateToInvoices()"
+            type="secondary"
+          >
+          </cleansia-button>
+        </div>
+      </div>
+    </cleansia-section>
+    } @else if (invoiceDetail()) {
+    <!-- Invoice Header -->
+    <cleansia-section
+      [title]="'pages.invoice_detail.invoice_details' | translate"
+    >
+      <div class="invoice-header">
+        <div class="invoice-header__main">
+          <div class="invoice-info">
+            <h2 class="invoice-number">{{ invoiceDetail()!.invoiceNumber }}</h2>
+            <div class="invoice-meta">
+              <span class="pay-period">{{
+                invoiceDetail()!.payPeriodLabel
+              }}</span>
+              <span [class]="getStatusClass(invoiceDetail()!.status!)">
+                {{
+                  'pages.invoices.status_' +
+                    invoiceDetail()!.status!.toLowerCase() | translate
+                }}
+              </span>
+            </div>
+          </div>
+
+          <div class="invoice-actions">
+            @if (invoiceDetail()!.pdfBlobName) {
+            <cleansia-button
+              [title]="'pages.invoices.download_pdf' | translate"
+              (click)="downloadPdf()"
+              type="primary"
+              icon="pi pi-download"
+            >
+            </cleansia-button>
+            }
+            <cleansia-button
+              [title]="'pages.invoice_detail.print' | translate"
+              (click)="printInvoice()"
+              type="secondary"
+              icon="pi pi-print"
+            >
+            </cleansia-button>
+            <cleansia-button
+              [title]="'global.actions.back' | translate"
+              (click)="navigateToInvoices()"
+              type="secondary"
+              icon="pi pi-arrow-left"
+            >
+            </cleansia-button>
+          </div>
+        </div>
+      </div>
+    </cleansia-section>
+
+    <!-- Invoice Summary -->
+    <cleansia-section [title]="'pages.invoice_detail.summary' | translate">
+      <div class="invoice-summary">
+        <div class="summary-grid">
+          <div class="summary-item">
+            <span class="label">{{
+              'pages.invoice_detail.employee_name' | translate
+            }}</span>
+            <span>{{ invoiceDetail()!.employeeName }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="label">{{
+              'pages.invoice_detail.variable_symbol' | translate
+            }}</span>
+            <span>{{ invoiceDetail()!.variableSymbol }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="label">{{
+              'pages.invoice_detail.total_orders' | translate
+            }}</span>
+            <span>{{ invoiceDetail()!.totalOrders }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="label">{{
+              'pages.invoice_detail.generated_date' | translate
+            }}</span>
+            <span>{{
+              invoiceDetail()!.generatedAt | date : 'dd.MM.yyyy HH:mm'
+            }}</span>
+          </div>
+          @if (invoiceDetail()!.approvedAt) {
+          <div class="summary-item">
+            <span class="label">{{
+              'pages.invoice_detail.approved_date' | translate
+            }}</span>
+            <span>{{
+              invoiceDetail()!.approvedAt | date : 'dd.MM.yyyy HH:mm'
+            }}</span>
+          </div>
+          } @if (invoiceDetail()!.paidAt) {
+          <div class="summary-item">
+            <span class="label">{{
+              'pages.invoice_detail.paid_date' | translate
+            }}</span>
+            <span>{{
+              invoiceDetail()!.paidAt | date : 'dd.MM.yyyy HH:mm'
+            }}</span>
+          </div>
+          }
+        </div>
+
+        <!-- Amount Breakdown -->
+        <div class="amount-breakdown">
+          <div class="amount-row">
+            <span>{{ 'pages.invoice_detail.subtotal' | translate }}</span>
+            <span class="amount"
+              >{{ invoiceDetail()!.subTotal.toFixed(2) }}
+              {{ invoiceDetail()!.currencyCode }}</span
+            >
+          </div>
+          @if (invoiceDetail()!.bonusAmount && invoiceDetail()!.bonusAmount > 0)
+          {
+          <div class="amount-row positive">
+            <span>{{ 'pages.invoice_detail.bonus_amount' | translate }}</span>
+            <span class="amount"
+              >+{{ invoiceDetail()!.bonusAmount.toFixed(2) }}
+              {{ invoiceDetail()!.currencyCode }}</span
+            >
+          </div>
+          } @if (invoiceDetail()!.deductionAmount &&
+          invoiceDetail()!.deductionAmount > 0) {
+          <div class="amount-row negative">
+            <span>{{
+              'pages.invoice_detail.deduction_amount' | translate
+            }}</span>
+            <span class="amount"
+              >-{{ invoiceDetail()!.deductionAmount.toFixed(2) }}
+              {{ invoiceDetail()!.currencyCode }}</span
+            >
+          </div>
+          }
+          <div class="amount-row total">
+            <span>{{ 'pages.invoice_detail.total_amount' | translate }}</span>
+            <span class="amount"
+              >{{ invoiceDetail()!.totalAmount.toFixed(2) }}
+              {{ invoiceDetail()!.currencyCode }}</span
+            >
+          </div>
+        </div>
+      </div>
+    </cleansia-section>
+
+    <!-- Order Details Table -->
+    <cleansia-section
+      [title]="'pages.invoice_detail.order_details' | translate"
+    >
+      @if (invoiceDetail()!.orderPays && invoiceDetail()!.orderPays!.length > 0)
+      {
+      <cleansia-table
+        [data]="invoiceDetail()!.orderPays!"
+        [tableDefinition]="orderPaysTableDefinition()"
+        [loading]="loading()"
+      >
+      </cleansia-table>
+      } @else {
+      <div class="no-orders">
+        <p>{{ 'pages.invoice_detail.no_orders' | translate }}</p>
+      </div>
+      }
+    </cleansia-section>
+
+    <!-- Notes Section -->
+    @if (invoiceDetail()!.adminNotes || invoiceDetail()!.bankTransferNote) {
+    <cleansia-section [title]="'pages.invoice_detail.notes' | translate">
+      <div class="notes-section">
+        @if (invoiceDetail()!.adminNotes) {
+        <div class="note-item">
+          <span class="label">{{
+            'pages.invoice_detail.admin_notes' | translate
+          }}</span>
+          <p>{{ invoiceDetail()!.adminNotes }}</p>
+        </div>
+        } @if (invoiceDetail()!.bankTransferNote) {
+        <div class="note-item">
+          <span class="label">{{
+            'pages.invoice_detail.bank_transfer_note' | translate
+          }}</span>
+          <p>{{ invoiceDetail()!.bankTransferNote }}</p>
+        </div>
+        }
+      </div>
+    </cleansia-section>
+    } }
+  </div>
+</div>

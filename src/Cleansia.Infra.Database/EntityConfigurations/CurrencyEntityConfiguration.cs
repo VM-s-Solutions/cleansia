@@ -1,4 +1,5 @@
-﻿using Cleansia.Core.Domain.Internalization;
+﻿using Cleansia.Core.Domain.Internationalization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
@@ -11,11 +12,13 @@ public class CurrencyEntityConfiguration : AuditableEntityConfiguration<Currency
 
         builder.Property(c => c.Code)
             .IsRequired()
-            .HasMaxLength(5);
+            .HasMaxLength(5)
+            .HasColumnType("citext");
 
         builder.Property(c => c.Name)
             .IsRequired()
-            .HasMaxLength(50);
+            .HasMaxLength(50)
+            .HasColumnType("citext");
 
         builder.Property(c => c.Symbol)
             .IsRequired()

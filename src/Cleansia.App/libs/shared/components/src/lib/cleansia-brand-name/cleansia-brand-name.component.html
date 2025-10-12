@@ -1,0 +1,17 @@
+<div class="cleansia-brand-name">
+  <a [routerLink]="'/' + defaultRoute()">
+    <picture>
+      <source srcset="assets/logos/Logo.webp" type="image/webp" />
+      <img
+        src="assets/logos/Logo.webp"
+        alt="Cleansia logo"
+        width="45"
+        loading="lazy"
+        decoding="async"
+      />
+    </picture>
+    @if(showName()) {
+    <h2>Cleansia</h2>
+    }
+  </a>
+</div>

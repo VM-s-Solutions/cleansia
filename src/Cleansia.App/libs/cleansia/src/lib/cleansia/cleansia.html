@@ -18,7 +18,7 @@
                 <h1>Lorem ipsum dolor sit amet consectetur adipisicing elit. Quos eos ea facilis pariatur veritatis corporis laboriosam earum vitae, alias exercitationem debitis recusandae repellendus doloremque perferendis voluptate ipsa eum animi nostrum!</h1>
                 <p>Lorem, ipsum dolor sit amet consectetur adipisicing elit. Suscipit, recusandae. Pariatur dicta quis at, nulla perspiciatis facere. Nihil accusamus recusandae repudiandae, placeat inventore unde exercitationem dicta facere nemo cum id.</p>
             </div>
-            <div class="lazy z-2 background" style="height: 50svh; width: 50svh;">
+            <div class="lazy z-2 background cleansia-hero__background">
             </div>
         </div>
     </section>
@@ -49,7 +49,7 @@
                     </p-card>
                 </div>
             </div>
-            <div class="col-4 col-md-3 z-2 background-smile-thinking lazy" style="height: 50svh;">
+            <div class="col-4 col-md-3 z-2 background-smile-thinking lazy cleansia-process__background">
             </div>
             <div class="bg-raketa">
                 <h1 class="text-primary">Celkově jsme provedli již</h1>
@@ -59,7 +59,7 @@
     </section>
     <section class="fullscreen-section bg-white">
         <div class="flex w-full">
-            <div class="col-6 col-md-3 bg-typek-napad lazy" style="height: 50svh;">
+            <div class="col-6 col-md-3 bg-typek-napad lazy cleansia-benefits__background">
             </div>
             <div class="col-5"></div>
             <div class="col-6 col-md-6 justify-center text-center">
@@ -187,8 +187,9 @@
                                 <div>
                                     <div class="glassy-name">Honza</div>
                                     <div>
-                                        <i class="pi pi-star-fill star-yellow" *ngFor="let star of [1,2,3,4,5]"
-                                            aria-label="5-star rating"></i>
+                                        @for (star of [1,2,3,4,5]; track star) {
+                                          <i class="pi pi-star-fill star-yellow" aria-label="5-star rating"></i>
+                                        }
                                     </div>
                                 </div>
                             </div>
@@ -213,9 +214,11 @@
         <div class="container">
             <h2 class="text-center mb-4">Často kladené otázky</h2>
             <p-accordion>
-                <p-accordion-tab *ngFor="let faq of faqs" [header]="faq.question">
-                    <p>{{ faq.answer }}</p>
-                </p-accordion-tab>
+                @for (faq of faqs; track faq.question) {
+                  <p-accordion-tab [header]="faq.question">
+                      <p>{{ faq.answer }}</p>
+                  </p-accordion-tab>
+                }
             </p-accordion>
         </div>
     </section>

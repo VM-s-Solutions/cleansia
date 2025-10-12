@@ -1,0 +1,50 @@
+@if (floatVariant(); as variant) {
+<p-floatlabel [variant]="variant" class="cleansia-telephone">
+  <p-inputMask
+    [id]="id()"
+    [mask]="mask()"
+    [(ngModel)]="innerValue"
+    (ngModelChange)="handleChange($event)"
+    (onBlur)="onTouch()"
+    [disabled]="disabled()"
+    [readonly]="readonlyInput()"
+    [slotChar]="'_'"
+    [autocomplete]="autocomplete()"
+    [class]="className() ?? '' + (hasErrors() ? 'ng-invalid ng-dirty' : '')"
+  />
+  @if (label()) {
+  <label [for]="id()" [class.required]="isRequired() && showRequired()">{{
+    label()
+  }}</label>
+  }
+</p-floatlabel>
+} @else { @if (label()) {
+<label [for]="id()" [class.required]="isRequired() && showRequired()">{{
+  label()
+}}</label>
+}
+<p-inputMask
+  [id]="id()"
+  [mask]="mask()"
+  [(ngModel)]="innerValue"
+  (ngModelChange)="handleChange($event)"
+  (onBlur)="onTouch()"
+  [disabled]="disabled()"
+  [readonly]="readonlyInput()"
+  [placeholder]="getPlaceholder()"
+  [slotChar]="'_'"
+  [autocomplete]="autocomplete()"
+  [class]="className() ?? ''"
+  [ngClass]="{
+    'p-invalid':
+      formControl.invalid && (formControl.dirty || formControl.touched)
+  }"
+/>
+} @if (showErrors() && formControl.invalid && (formControl.dirty ||
+formControl.touched)) {
+<ul class="cleansia-error-message-container">
+  @for (error of formControl.errors | error; track $index) {
+  <li>{{ error }}</li>
+  }
+</ul>
+}

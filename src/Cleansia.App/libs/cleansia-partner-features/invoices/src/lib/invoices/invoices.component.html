@@ -1,0 +1,35 @@
+<div class="cleansia-invoices">
+  <cleansia-language-switcher />
+  <div class="cleansia-invoices__container">
+    <div class="cleansia-invoices__header">
+      <cleansia-title [title]="'pages.invoices.title' | translate" />
+      <p class="cleansia-invoices__description">
+        {{ 'pages.invoices.description' | translate }}
+      </p>
+    </div>
+
+    <cleansia-section [title]="'pages.invoices.my_invoices' | translate">
+      @if (facade.loading() && facade.invoices().length === 0) {
+      <cleansia-loader />
+      } @else {
+      <cleansia-table
+        [data]="facade.invoices()"
+        [tableDefinition]="invoicesTableDefinition"
+        [paginator]="true"
+        [rows]="10"
+        [emptyMessage]="'pages.invoices.no_invoices'"
+        tableClass="cleansia-invoices__table"
+        [loading]="facade.loading()"
+        (sortChange)="onSortChange($event)"
+      >
+      </cleansia-table>
+      }
+    </cleansia-section>
+  </div>
+</div>
+
+<ng-template #statusTemplate let-item>
+  <span [class]="getStatusClass(item)">
+    {{ 'pages.invoices.status_' + item.status.toLowerCase() | translate }}
+  </span>
+</ng-template>

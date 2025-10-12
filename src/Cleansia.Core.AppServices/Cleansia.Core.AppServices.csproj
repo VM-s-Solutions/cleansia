@@ -10,20 +10,22 @@
     <PackageReference Include="FluentValidation" Version="12.0.0" />
     <PackageReference Include="Google.Apis.Auth" Version="1.70.0" />
     <PackageReference Include="MediatR" Version="13.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.1" />
     <PackageReference Include="Polly" Version="8.6.2" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.13.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Cleansia.Core.Blobs.Abstractions\Cleansia.Core.Blobs.Abstractions.csproj" />
     <ProjectReference Include="..\Cleansia.Core.Clients.Abstractions\Cleansia.Core.Clients.Abstractions.csproj" />
     <ProjectReference Include="..\Cleansia.Core.Domain\Cleansia.Core.Domain.csproj" />
     <ProjectReference Include="..\Cleansia.Infra.Common\Cleansia.Infra.Common.csproj" />
+    <ProjectReference Include="..\Cleansia.Infra.Services\Cleansia.Infra.Services.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Features\Codes\" />
     <Folder Include="Features\Currencies\DTOs\" />
-    <Folder Include="Features\Orders\DTOs\" />
   </ItemGroup>
 
 </Project>

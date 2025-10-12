@@ -6,4 +6,14 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Remove="SeedData\insert_seed_data.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="SeedData\insert_seed_data.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

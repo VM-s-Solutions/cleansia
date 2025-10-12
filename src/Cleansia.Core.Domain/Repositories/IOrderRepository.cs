@@ -2,4 +2,7 @@
 
 namespace Cleansia.Core.Domain.Repositories;
 
-public interface IOrderRepository: IRepository<Order, string>;
+public interface IOrderRepository : IRepository<Order, string>
+{
+    IQueryable<Order> GetOrdersByPhoneNumber(string phoneNumber);
+}

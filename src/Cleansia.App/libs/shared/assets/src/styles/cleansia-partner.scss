@@ -1,0 +1,11 @@
+// Cleansia Partner Portal Global Styles
+// Common styles, components, and pages are all imported here
+
+// 1. Common styles (variables, fonts, etc.)
+@use './common';
+
+// 2. Shared component styles
+@use './components/index.scss' as components;
+
+// 3. Partner portal page styles
+@use './pages/cleansia-partner/index.scss' as partner;

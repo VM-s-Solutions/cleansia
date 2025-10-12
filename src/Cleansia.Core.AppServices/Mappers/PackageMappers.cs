@@ -13,4 +13,17 @@ public static class PackageMappers
             Price: package.Price,
             Translations: package.Translations.ToDictionary());
     }
+
+    public static PackageDetails MapToDetails(this Domain.Packages.Package package, string currencyCode)
+    {
+        return new PackageDetails(
+            Id: package.Id,
+            Name: package.Name,
+            Description: package.Description,
+            Price: package.Price,
+            EstimatedTime: package.IncludedServices.Sum(s => s.Service.EstimatedTime),
+            CurrencyCode: currencyCode,
+            IncludedServices: package.IncludedServices.Select(s => s.Service.Name)
+        );
+    }
 }

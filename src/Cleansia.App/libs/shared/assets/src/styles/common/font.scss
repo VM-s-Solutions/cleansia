@@ -1,0 +1,24 @@
+$base-font-size: 14px;
+
+html {
+  font-size: $base-font-size;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin: 0 !important;
+}
+
+ul {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.text-center {
+  text-align: center !important;
+}

@@ -1,0 +1,203 @@
+@if(loading()){
+<cleansia-loader />
+}
+<div class="cleansia-order-details">
+  <cleansia-language-switcher />
+
+  <div class="cleansia-order-details__form-card">
+    <!-- Header with back button and title -->
+    <div class="cleansia-order-details__header">
+      <div class="cleansia-order-details__header-actions">
+        <cleansia-button
+          [buttonType]="'button'"
+          [style]="'basic-button'"
+          [title]="'global.actions.back' | translate"
+          [icon]="'pi pi-arrow-left'"
+          (clickFn)="navigateToOrders()"
+        />
+      </div>
+      <cleansia-title [title]="'pages.order_details.title' | translate" />
+    </div>
+
+    <!-- Error state -->
+    @if (error()) {
+    <div class="cleansia-order-details__error">
+      <div class="cleansia-order-details__error-message">
+        <i class="pi pi-exclamation-triangle"></i>
+        <span>{{ error() }}</span>
+      </div>
+      <cleansia-button
+        [buttonType]="'button'"
+        [style]="'raised-button'"
+        [title]="'global.actions.retry' | translate"
+        (clickFn)="retryLoadOrder()"
+      />
+    </div>
+    }
+
+    <!-- Order details content -->
+    @if (orderDetails() && !loading()) {
+    <form [formGroup]="formGroup" class="cleansia-order-details__form-content">
+      <!-- Order Header with order number and action buttons -->
+      <order-header
+        [orderNumber]="orderDetails()!.displayOrderNumber!"
+        (onPrint)="printOrder()"
+        (onDownloadInvoice)="downloadInvoice()"
+      />
+
+      <!-- Order Status Section -->
+      <order-status
+        [formGroup]="formGroup"
+        [statusOptions]="statusOptions()"
+        [paymentStatusOptions]="paymentStatusOptions()"
+      />
+
+      <!-- Customer Information Section -->
+      <order-customer-info [formGroup]="formGroup" />
+
+      <!-- Service Details Section -->
+      <order-service-details [formGroup]="formGroup" />
+
+      <!-- Packages -->
+      @if (orderDetails()!.selectedPackages && orderDetails()!.selectedPackages!.length > 0) {
+        <order-packages [packages]="orderDetails()!.selectedPackages!" />
+      }
+
+      <!-- Additional Services -->
+      @if (orderDetails()!.selectedServices && orderDetails()!.selectedServices!.length > 0) {
+        <order-additional-services [services]="orderDetails()!.selectedServices!" />
+      }
+
+      <!-- Extras -->
+      @if (hasExtras()) {
+        <order-extras [extrasEntries]="extrasEntries()" />
+      }
+
+      <!-- Payment Information Section -->
+      <order-payment-info
+        [formGroup]="formGroup"
+        [paymentTypeOptions]="paymentTypeOptions()"
+        [currencyOptions]="currencyOptions()"
+      />
+
+      <!-- Employee Assignment Section -->
+      @if (orderDetails()!.assignedEmployeeId) {
+      <cleansia-section
+        [title]="'pages.order_details.assigned_employee' | translate"
+      >
+        <div class="cleansia-order-details__grid">
+          <div class="cleansia-order-details__field">
+            <cleansia-text-input
+              [label]="'pages.order_details.employee_name' | translate"
+              [floatVariant]="'on'"
+              formControlName="assignedEmployeeName"
+              dataType="text"
+              [disabled]="true"
+            />
+          </div>
+          @if (orderDetails()!.assignedEmployeePhone) {
+          <div class="cleansia-order-details__field">
+            <cleansia-telephone
+              [label]="'pages.order_details.employee_phone' | translate"
+              [floatVariant]="'on'"
+              formControlName="assignedEmployeePhone"
+              [disabled]="true"
+            />
+          </div>
+          }
+        </div>
+      </cleansia-section>
+      }
+
+      <!-- Notes Section -->
+      @if (hasNotes()) {
+      <cleansia-section
+        [title]="'pages.order_details.notes_instructions' | translate"
+      >
+        <div class="cleansia-order-details__grid">
+          @if (orderDetails()!.notes) {
+          <div class="cleansia-order-details__field cleansia-order-details__field--full">
+            <cleansia-text-input
+              [label]="'pages.order_details.notes' | translate"
+              [floatVariant]="'on'"
+              formControlName="notes"
+              dataType="text"
+              [disabled]="true"
+            />
+          </div>
+          } @if (orderDetails()!.specialInstructions) {
+          <div class="cleansia-order-details__field cleansia-order-details__field--full">
+            <cleansia-text-input
+              [label]="'pages.order_details.special_instructions' | translate"
+              [floatVariant]="'on'"
+              formControlName="specialInstructions"
+              dataType="text"
+              [disabled]="true"
+            />
+          </div>
+          } @if (orderDetails()!.accessInstructions) {
+          <div class="cleansia-order-details__field cleansia-order-details__field--full">
+            <cleansia-text-input
+              [label]="'pages.order_details.access_instructions' | translate"
+              [floatVariant]="'on'"
+              formControlName="accessInstructions"
+              dataType="text"
+              [disabled]="true"
+            />
+          </div>
+          }
+        </div>
+      </cleansia-section>
+      }
+
+      <!-- Order History Section -->
+      @if (hasStatusHistory()) {
+      <cleansia-section
+        [title]="'pages.order_details.order_history' | translate"
+      >
+        <div class="cleansia-order-details__history">
+          @for (historyItem of orderDetails()!.statusHistory; track $index) {
+          <div class="history-item">
+            <div class="history-marker"></div>
+            <div class="history-content">
+              <div class="history-status">
+                <span class="history-status-name">{{ historyItem.status.name }}</span>
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+      </cleansia-section>
+      }
+
+      <!-- Audit Information Section -->
+      <cleansia-section
+        [title]="'pages.order_details.audit_information' | translate"
+      >
+        <div class="cleansia-order-details__grid">
+          <div class="cleansia-order-details__field">
+            <cleansia-text-input
+              [label]="'pages.order_details.created_on' | translate"
+              [floatVariant]="'on'"
+              formControlName="createdOn"
+              dataType="text"
+              [disabled]="true"
+            />
+          </div>
+          @if (orderDetails()!.updatedOn) {
+          <div class="cleansia-order-details__field">
+            <cleansia-text-input
+              [label]="'pages.order_details.updated_on' | translate"
+              [floatVariant]="'on'"
+              formControlName="updatedOn"
+              dataType="text"
+              [disabled]="true"
+            />
+          </div>
+          }
+        </div>
+      </cleansia-section>
+    </form>
+    }
+  </div>
+</div>

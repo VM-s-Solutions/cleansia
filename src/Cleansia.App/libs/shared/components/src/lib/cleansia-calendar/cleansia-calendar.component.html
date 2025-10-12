@@ -1,0 +1,45 @@
+@if (floatVariant()) {
+<p-floatlabel [variant]="floatVariant()">
+  <p-datepicker
+    [inputId]="id()"
+    [(ngModel)]="innerValue"
+    (ngModelChange)="handleChange($event)"
+    [showIcon]="showIcon()"
+    [iconDisplay]="iconDisplay()"
+    [dateFormat]="dateFormat()"
+    [placeholder]="placeholder()"
+    [minDate]="minDate()"
+    [maxDate]="maxDate()"
+    [class]="'w-full ' + (hasErrors() ? 'ng-invalid ng-dirty' : '')"
+  />
+  <label [for]="id()">{{ label() }}</label>
+</p-floatlabel>
+} @else {
+<div class="cleansia-calendar-wrapper">
+  @if (label()) {
+  <label [for]="id()" class="cleansia-calendar-label">
+    {{ label() }}
+    @if (required()) { <span class="required-asterisk">*</span> }
+  </label>
+  }
+  <p-datepicker
+    [inputId]="id()"
+    [(ngModel)]="innerValue"
+    (ngModelChange)="handleChange($event)"
+    [showIcon]="showIcon()"
+    [iconDisplay]="iconDisplay()"
+    [dateFormat]="dateFormat()"
+    [placeholder]="placeholder()"
+    [minDate]="minDate()"
+    [maxDate]="maxDate()"
+    [class]="'w-full ' + (hasErrors() ? 'ng-invalid ng-dirty' : '')"
+  />
+</div>
+} @if (showErrors() && formControl.invalid && (formControl.dirty ||
+formControl.touched)) {
+<ul class="cleansia-error-message-container">
+  @for (error of formControl.errors | error; track $index) {
+  <li>{{ error }}</li>
+  }
+</ul>
+}

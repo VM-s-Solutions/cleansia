@@ -1,5 +1,8 @@
-﻿using Cleansia.Core.Domain.Internalization;
+﻿using Cleansia.Core.Domain.Internationalization;
 
 namespace Cleansia.Core.Domain.Repositories;
 
-public interface ILanguageRepository : IRepository<Language, string>;
+public interface ILanguageRepository : IRepository<Language, string>
+{
+    Task<bool> ExistsWithCodeAsync(string code, CancellationToken cancellationToken);
+}

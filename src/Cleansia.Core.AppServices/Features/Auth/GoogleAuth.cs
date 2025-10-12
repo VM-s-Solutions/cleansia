@@ -99,7 +99,7 @@ public class GoogleAuth
             var userEntity = User.CreateWithGoogle(command.Email, command.FirstName, command.LastName, command.GoogleId);
 
             userRepository.Add(userEntity);
-            cartRepository.Add(Cart.CreateWithUser(userEntity.Id));
+            cartRepository.Add(Cart.CreateWithUser(userEntity));
 
             return BusinessResult.Success(tokenService.GenerateToken(userEntity, rememberMe: true));
         }

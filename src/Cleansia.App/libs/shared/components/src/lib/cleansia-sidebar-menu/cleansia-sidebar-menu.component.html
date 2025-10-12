@@ -1,0 +1,140 @@
+@if (isRoot()) {
+<div class="sidebar-container">
+  @if (isMobile() && !isSidebarExpanded()) {
+  <div class="sidebar-toggler">
+    <p-button
+      icon="pi pi-bars"
+      [rounded]="true"
+      [text]="true"
+      severity="primary"
+      size="small"
+      (onClick)="toggleSidebar()"
+      pRipple
+    />
+  </div>
+  }
+  <aside
+    class="sidebar"
+    [@sidebarWidth]="effectiveCollapsed() ? 'collapsed' : 'expanded'"
+    [class.sidebar--mobile]="isMobile()"
+    [class.sidebar--mobile-expanded]="isMobile() && isSidebarExpanded()"
+    [class.sidebar--collapsed]="effectiveCollapsed()"
+    pRipple
+  >
+    <header class="sidebar-header">
+      <cleansia-brand-name [showName]="!effectiveCollapsed()" />
+      @if (isMobile()) {
+      <p-button
+        icon="pi pi-times"
+        [rounded]="true"
+        [text]="true"
+        severity="secondary"
+        size="small"
+        (onClick)="toggleSidebar()"
+        pRipple
+      />
+      }
+    </header>
+    <nav class="sidebar-nav">
+      <ul class="menu-list">
+        @for (item of menuItems(); track $index) {
+        <li
+          class="menu-item"
+          (click)="onMenuItemClick(item)"
+          (keydown.enter)="onMenuItemClick(item)"
+          tabindex="0"
+          pRipple
+        >
+          <div
+            [@menuItemContent]="effectiveCollapsed() ? 'collapsed' : 'expanded'"
+            class="menu-item-content"
+            [ngClass]="{ 'menu-item-content--collapsed': effectiveCollapsed() }"
+          >
+            @if (item.icon) {
+            <i [class]="item.icon"></i>
+            } @if (!effectiveCollapsed()) {<span
+              class="menu-item-label"
+              [@menuItemLabel]="effectiveCollapsed() ? 'collapsed' : 'expanded'"
+              >{{ item.label | translate }}</span
+            >
+            } @if (item.children?.length && !effectiveCollapsed()) {
+            <i
+              class="pi pi-chevron-down toggle-icon"
+              [@toggleIcon]="item.expanded ? 'expanded' : 'collapsed'"
+            ></i>
+            }
+          </div>
+          @if (item.children?.length && item.expanded) {
+          <div class="sub-menu" [@subMenu]>
+            <cleansia-sidebar-menu
+              [menuItems]="item.children ?? []"
+              [isRoot]="false"
+              [collapsed]="effectiveCollapsed()"
+            />
+          </div>
+          }
+        </li>
+        }
+      </ul>
+    </nav>
+    <footer class="sidebar-footer">
+      <p-button
+        [icon]="
+          effectiveCollapsed()
+            ? 'pi pi-angle-double-right'
+            : 'pi pi-angle-double-left'
+        "
+        [rounded]="true"
+        [text]="true"
+        severity="secondary"
+        size="small"
+        (onClick)="toggleCollapsed()"
+        pRipple
+        class="toggle-button"
+      />
+    </footer>
+  </aside>
+</div>
+} @else {
+<ul class="menu-list pl-3">
+  @for (item of menuItems(); track $index) {
+  <li
+    class="menu-item"
+    (click)="onMenuItemClick(item)"
+    (keydown.enter)="onMenuItemClick(item)"
+    tabindex="0"
+    pRipple
+  >
+    <div
+      [@menuItemContent]="effectiveCollapsed() ? 'collapsed' : 'expanded'"
+      class="menu-item-content"
+      [ngClass]="{ 'menu-item-content--collapsed': effectiveCollapsed() }"
+    >
+      @if (item.icon) {
+      <i [class]="item.icon"></i>
+      } @if (!collapsed()) {
+      <span
+        class="menu-item-label"
+        [@menuItemLabel]="effectiveCollapsed() ? 'collapsed' : 'expanded'"
+        >{{ item.label | translate }}</span
+      >
+      } @if (item.children?.length && !collapsed()) {
+      <i
+        class="pi pi-chevron-down toggle-icon"
+        [@toggleIcon]="item.expanded ? 'expanded' : 'collapsed'"
+      ></i>
+      }
+    </div>
+    @if (item.children?.length && item.expanded) {
+    <div class="sub-menu" [@subMenu]>
+      <cleansia-sidebar-menu
+        [menuItems]="item.children ?? []"
+        [isRoot]="false"
+        [collapsed]="collapsed()"
+      />
+    </div>
+    }
+  </li>
+  }
+</ul>
+}

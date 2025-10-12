@@ -1,0 +1,86 @@
+<div class="cleansia-file-component">
+  @if (label()) {
+  <label [for]="id()" [class.required]="isRequired() && showRequired()">
+    {{ label() }}
+  </label>
+  }
+
+  <!-- Hidden file input -->
+  <input
+    #fileInput
+    type="file"
+    [id]="id()"
+    [multiple]="multiple()"
+    [accept]="accept()"
+    [disabled]="disabled()"
+    (change)="onFileSelect($event)"
+    style="display: none"
+  />
+
+  <!-- File upload area -->
+  <div
+    class="file-upload-area"
+    [class.disabled]="disabled()"
+    [class.has-error]="
+      formControl.invalid && (formControl.dirty || formControl.touched)
+    "
+    [class.drag-over]="isDragOver"
+    (click)="triggerFileSelect()"
+    (drop)="onDrop($event)"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave($event)"
+    [attr.tabindex]="disabled() ? -1 : 0"
+    (keydown.enter)="triggerFileSelect()"
+    (keydown.space)="triggerFileSelect()"
+  >
+    <div class="upload-content">
+      <i class="pi pi-cloud-upload upload-icon"></i>
+      <div class="upload-text">
+        <span class="primary-text">{{ 'components.file.click_to_select' | translate }}</span>
+        <span class="secondary-text">{{ 'components.file.or_drag_drop' | translate }}</span>
+      </div>
+      <div class="upload-hint">
+        {{ 'components.file.accepted' | translate }}: {{ accept() }} |
+        {{ 'components.file.max_size' | translate }}: {{ formatFileSize(maxFileSize()) }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Selected files list -->
+  @if (selectedFiles.length > 0) {
+  <div class="selected-files">
+    <div class="files-header">
+      {{ 'components.file.selected_files' | translate }} ({{ selectedFiles.length }})
+    </div>
+    <div class="files-list">
+      @for (file of selectedFiles; track file.name; let i = $index) {
+      <div class="file-item">
+        <div class="file-info">
+          <i class="pi pi-file file-icon"></i>
+          <div class="file-details">
+            <span class="file-name">{{ file.name }}</span>
+            <span class="file-size">{{ formatFileSize(file.size) }}</span>
+          </div>
+        </div>
+        <p-button
+          icon="pi pi-times"
+          [text]="true"
+          severity="secondary"
+          size="small"
+          (onClick)="removeFile(i)"
+          [disabled]="disabled()"
+          [title]="'Remove ' + file.name"
+        />
+      </div>
+      }
+    </div>
+  </div>
+  } @if (showErrors() && formControl.invalid && (formControl.dirty ||
+  formControl.touched)) {
+  <ul class="cleansia-error-message-container">
+    @for (error of formControl.errors | error; track $index) {
+    <li>{{ error }}</li>
+    }
+  </ul>
+  }
+</div>

@@ -1,7 +1,9 @@
 ﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Features.Auth.Validators;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
@@ -13,11 +15,13 @@ public class Register
 {
     public class Validator : BaseAuthValidator<Command>
     {
-        private readonly IUserRepository userRepository;
+        private readonly IUserRepository _userRepository;
 
-        public Validator(IUserRepository userRepository)
+        public Validator(
+            IUserRepository userRepository,
+            ILanguageRepository languageRepository)
         {
-            this.userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
+            _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
 
             AddEmailRules(command => command.Email);
             AddFirstNameRules(command => command.FirstName);
@@ -28,24 +32,30 @@ public class Register
                 .MustAsync(UserWithEmailNotExistsAsync)
                 .WithMessage(BusinessErrorMessage.ExistingUserWithEmail)
                 .WithErrorCode(nameof(Command.Email));
+
+            RuleFor(user => user.Language)
+                .SetValidator(new LanguageValidator(languageRepository));
         }
 
         private Task<bool> UserWithEmailNotExistsAsync(string email, CancellationToken cancellationToken) =>
-            userRepository.GetByEmailAsync(email, cancellationToken)
-                .ContinueWith(t => t.Result is null || (t.Result is not null && !t.Result.IsEmailConfirmed), cancellationToken);
+            _userRepository.GetByEmailAsync(email, cancellationToken)
+                .ContinueWith(t => t.Result is null || (t.Result is not null && !t.Result.IsEmailConfirmed),
+                    cancellationToken);
     }
 
     public record Command(
         string Email,
         string Password,
         string FirstName,
-        string LastName)
+        string LastName,
+        string Language)
         : ICommand<bool>;
 
     internal class Handler(
         IEmailService emailService,
         ICartRepository cartRepository,
-        IUserRepository userRepository)
+        IUserRepository userRepository,
+        IEmailTranslationRepository emailTranslationRepository)
         : ICommandHandler<Command, bool>
     {
         public async Task<BusinessResult<bool>> Handle(Command command, CancellationToken cancellationToken)
@@ -55,11 +65,14 @@ public class Register
             {
                 userEntity = User.CreateWithPassword(command.Email, command.Password, command.FirstName, command.LastName);
                 userRepository.Add(userEntity);
-                cartRepository.Add(Cart.CreateWithUser(userEntity.Id));
+                cartRepository.Add(Cart.CreateWithUser(userEntity));
             }
 
             var userName = $"{userEntity.FirstName} {userEntity.LastName}";
-            await emailService.SendEmailConfirmationAsync(userEntity.Email, userName, userEntity.ConfirmationCode, cancellationToken);
+
+            var emailTranslation = await emailTranslationRepository.GetByLanguageCodeAndTypeAsync(command.Language, EmailType.ConfirmationEmail, cancellationToken);
+
+            await emailService.SendEmailConfirmationAsync(userEntity.Email, userName, userEntity.ConfirmationCode!, emailTranslation!, cancellationToken);
 
             return BusinessResult.Success(true);
         }

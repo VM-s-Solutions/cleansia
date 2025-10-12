@@ -1,6 +1,6 @@
 #!/bin/bash
-# Directory containing your TypeScript filesfile="libs/cleansia-services/src/lib/client/client.ts"
-file="libs/cleansia-services/src/lib/client/client.ts"
+# Directory containing your TypeScript files
+file="libs/core/services/src/lib/client/client.ts"
 echo "Processing $file..."
 # Use sed to rename classes and interfaces
 sed -i.bak -E '

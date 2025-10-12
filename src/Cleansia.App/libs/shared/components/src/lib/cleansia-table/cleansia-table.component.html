@@ -1,0 +1,136 @@
+<p-table
+  [value]="data()"
+  [paginator]="paginator()"
+  [rows]="rows()"
+  [responsiveLayout]="responsiveLayout()"
+  [loading]="loading()"
+  [sortField]="sortField()"
+  [sortOrder]="sortOrder() ?? 0"
+  [rowsPerPageOptions]="rowsPerPageOptions()"
+  [class]="tableClasses()"
+  [globalFilterFields]="globalFilterFields()"
+  (onSort)="onSort($event)"
+>
+  <!-- Header Template -->
+  @if (showHeader()) {
+  <ng-template pTemplate="header">
+    <tr>
+      @if (tableDefinition()) { @for (column of tableDefinition()!.columns;
+      track column.id) {
+      <th
+        [pSortableColumn]="column.sortable ? column.id : undefined"
+        [class]="column.columnClass"
+      >
+        {{ column.headerName }}
+        @if (column.sortable) {
+        <p-sortIcon [field]="column.id"></p-sortIcon>
+        }
+      </th>
+      } } @else { @for (column of columns(); track column.field) {
+      <th
+        [pSortableColumn]="column.sortable ? column.field : undefined"
+        [class]="getColumnClasses(column)"
+      >
+        {{ column.header | translate }}
+        @if (column.sortable) {
+        <p-sortIcon [field]="column.field"></p-sortIcon>
+        }
+      </th>
+      } @if (actions().length > 0 || customActionTemplate()) {
+      <th class="actions-column">
+        {{ actionsHeader() | translate }}
+      </th>
+      } }
+    </tr>
+  </ng-template>
+  }
+
+  <!-- Body Template -->
+  <ng-template pTemplate="body" let-item let-ri="rowIndex">
+    @if (customBodyTemplate()) {
+    <ng-container
+      [ngTemplateOutlet]="customBodyTemplate()!"
+      [ngTemplateOutletContext]="{ $implicit: item, rowIndex: ri }"
+    ></ng-container>
+    } @else {
+    <tr
+      [class]="tableDefinition()?.onRowClick ? 'cursor-pointer' : ''"
+      (click)="onRowClick(item)"
+    >
+      @if (tableDefinition()) { @for (column of tableDefinition()!.columns;
+      track column.id) {
+      <td [class]="column.columnClass">
+        @if (column.template) {
+        <ng-container
+          [ngTemplateOutlet]="column.template"
+          [ngTemplateOutletContext]="{ $implicit: item, rowIndex: ri }"
+        ></ng-container>
+        } @else if (column.columnActions && column.columnActions.length > 0) {
+        @for (action of column.columnActions; track action.icon) {
+        <button
+          type="button"
+          [class]="'p-button ' + (action.buttonPalette || 'p-button-outlined')"
+          [disabled]="action.disabled?.(item)"
+          (click)="onColumnAction(action, item); $event.stopPropagation()"
+          [title]="action.tooltip?.title"
+        >
+          <i [class]="action.icon"></i>
+        </button>
+        } } @else {
+        {{ getTableDefinitionValue(item, column) }}
+        }
+      </td>
+      } } @else { @for (column of columns(); track column.field) {
+      <td [class]="column.class">
+        {{ getFieldValue(item, column) }}
+      </td>
+      } @if (actions().length > 0 || customActionTemplate()) {
+      <td class="actions-column">
+        @if (customActionTemplate()) {
+        <ng-container
+          [ngTemplateOutlet]="customActionTemplate()!"
+          [ngTemplateOutletContext]="{ $implicit: item, rowIndex: ri }"
+        ></ng-container>
+        } @else { @for (action of visibleActions()(item); track action.label) {
+        <button
+          type="button"
+          [class]="
+            'p-button p-button-sm ' + (action.class || 'p-button-outlined')
+          "
+          [disabled]="action.disabled?.(item)"
+          (click)="action.action(item)"
+          [title]="action.label | translate"
+        >
+          @if (action.icon) {
+          <i [class]="action.icon"></i>
+          }
+          {{ action.label | translate }}
+        </button>
+        } }
+      </td>
+      } }
+    </tr>
+    }
+  </ng-template>
+
+  <!-- Empty Message Template -->
+  <ng-template pTemplate="emptymessage">
+    <tr>
+      <td [attr.colspan]="totalColumns()" class="text-center p-4">
+        {{ emptyMessage() | translate }}
+      </td>
+    </tr>
+  </ng-template>
+
+  <!-- Loading Template -->
+  @if (loading()) {
+  <ng-template pTemplate="loadingbody">
+    <tr>
+      <td [attr.colspan]="totalColumns()" class="text-center p-4">
+        <i class="pi pi-spinner pi-spin"></i>
+        {{ loadingMessage() | translate }}
+      </td>
+    </tr>
+  </ng-template>
+  }
+</p-table>

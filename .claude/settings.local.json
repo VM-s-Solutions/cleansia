@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/cmisa/Desktop/Mike/Projects/stroytorg/src/Stroytorg.App/libs/stroytorg-components/src/lib/components/stroytorg-table/**)",
+      "Bash(npx nx g:*)",
+      "Bash(psql:*)",
+      "Bash(dotnet --version)",
+      "Bash(dotnet ef:*)",
+      "Bash(dotnet tool:*)",
+      "Bash(dotnet build)",
+      "Bash(findstr:*)",
+      "Bash(npm run build:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

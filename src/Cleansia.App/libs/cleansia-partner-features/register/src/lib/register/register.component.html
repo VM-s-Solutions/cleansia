@@ -1,0 +1,139 @@
+<cleansia-dynamic-background>
+  <cleansia-language-switcher />
+  <div class="cleansia-register">
+    <form
+      class="cleansia-register__register-card"
+      [formGroup]="facade.formGroup"
+    >
+      <div class="cleansia-register__brand-name-container">
+        <cleansia-brand-name />
+      </div>
+      <div class="cleansia-register__header">
+        <cleansia-title [title]="'global.actions.register' | translate" />
+      </div>
+      <div class="cleansia-register__first-last-name">
+        <cleansia-text-input
+          [label]="'pages.register.first_name' | translate"
+          [floatVariant]="'on'"
+          formControlName="firstName"
+          [required]="true"
+          [showErrors]="true"
+          [autocomplete]="'given-name'"
+        />
+        <cleansia-text-input
+          [label]="'pages.register.last_name' | translate"
+          [floatVariant]="'on'"
+          formControlName="lastName"
+          [showErrors]="false"
+          [autocomplete]="'family-name'"
+        />
+      </div>
+      <div class="cleansia-register__email">
+        <cleansia-text-input
+          [label]="'pages.register.email' | translate"
+          [floatVariant]="'on'"
+          formControlName="email"
+          dataType="email"
+          [showErrors]="false"
+        />
+      </div>
+      <div class="cleansia-register__password">
+        <cleansia-text-input
+          [label]="'pages.register.password' | translate"
+          [floatVariant]="'on'"
+          formControlName="password"
+          [dataType]="'password'"
+          [autocomplete]="'new-password'"
+          [showErrors]="false"
+        />
+        @if (isPasswordValid; as passwordValidation) {
+        <div class="cleansia-register__password-validation">
+          <ul>
+            <li
+              [class.cleansia-register__password-validation--valid]="
+                passwordValidation?.hasLowerCase
+              "
+            >
+              {{ 'pages.register.validation.password_lowercase' | translate }}
+            </li>
+            <li
+              [class.cleansia-register__password-validation--valid]="
+                passwordValidation?.hasUpperCase
+              "
+            >
+              {{ 'pages.register.validation.password_uppercase' | translate }}
+            </li>
+            <li
+              [class.cleansia-register__password-validation--valid]="
+                passwordValidation?.hasNumber
+              "
+            >
+              {{ 'pages.register.validation.password_number' | translate }}
+            </li>
+            <li
+              [class.cleansia-register__password-validation--valid]="
+                passwordValidation?.hasMinLength
+              "
+            >
+              {{ 'pages.register.validation.password_min_length' | translate }}
+            </li>
+          </ul>
+        </div>
+        }
+      </div>
+      <div class="cleansia-register__password">
+        <cleansia-text-input
+          [dataType]="'password'"
+          [inputSize]="'full-width'"
+          [label]="'pages.register.confirm_password' | translate"
+          [showErrors]="false"
+          [floatVariant]="'on'"
+          [autocomplete]="'new-password'"
+          formControlName="confirmPassword"
+        />
+        @if (isConfirmPasswordValid; as passwordValidation) {
+        <div class="cleansia-register__password-validation">
+          <ul>
+            <li
+              [class.cleansia-register__password-validation--valid]="
+                passwordValidation?.arePasswordsEqual
+              "
+            >
+              {{ 'pages.register.validation.passwords_match' | translate }}
+            </li>
+          </ul>
+        </div>
+        }
+      </div>
+      <div class="cleansia-register__terms">
+        <cleansia-checkbox
+          [title]="'pages.register.terms_agreement' | translate"
+          formControlName="terms"
+          [required]="true"
+          [showErrors]="false"
+        />
+        <span
+          [innerHtml]="'pages.register.terms_and_conditions' | translate"
+        ></span>
+      </div>
+      <div class="cleansia-register__user-actions">
+        <cleansia-button
+          [buttonType]="'submit'"
+          [style]="'raised-button'"
+          [title]="'global.actions.register' | translate"
+          (clickFn)="facade.register()"
+          [loading]="loading() ?? false"
+          [disabled]="facade.formGroup.invalid"
+        />
+        <div>
+          <span tabindex="-1">
+            {{ 'pages.register.have_account' | translate }}
+            <a [routerLink]="'/' + routes.LOGIN">
+              {{ 'global.actions.login' | translate }}
+            </a>
+          </span>
+        </div>
+      </div>
+    </form>
+  </div>
+</cleansia-dynamic-background>

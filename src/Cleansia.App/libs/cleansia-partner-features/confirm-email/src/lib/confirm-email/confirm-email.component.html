@@ -1,0 +1,51 @@
+<cleansia-dynamic-background>
+  <cleansia-language-switcher />
+  <div class="cleansia-email-confirm__page">
+    <div
+      class="cleansia-email-confirm__confirmation-card"
+      [formGroup]="facade.formGroup"
+    >
+      <div class="cleansia-email-confirm__brand-name-container">
+        <cleansia-brand-name />
+      </div>
+      <div class="cleansia-email-confirm__header">
+        <cleansia-title [title]="'pages.email_confirm.title' | translate" />
+      </div>
+      <p class="cleansia-email-confirm__message">
+        {{ 'pages.email_confirm.description' | translate }}
+      </p>
+      <div class="cleansia-email-confirm__form-control">
+        <cleansia-text-input
+          formControlName="code"
+          [dataType]="'text'"
+          [inputSize]="'x-large-width'"
+          [className]="'text-center'"
+        />
+      </div>
+      <div class="cleansia-email-confirm__actions">
+        <div>
+          @if (facade.isResendDisabled) {
+          {{ resendCodeTimeout }}
+          }
+          <cleansia-button
+            [title]="'pages.email_confirm.resend_code' | translate"
+            [style]="'raised-button'"
+            [icon]="'refresh'"
+            [loading]="facade.isResendDisabled"
+            (clickFn)="onResendCode()"
+          />
+        </div>
+        <cleansia-button
+          [buttonType]="'submit'"
+          [title]="'pages.email_confirm.verify_code' | translate"
+          [severity]="'primary'"
+          [style]="'raised-button'"
+          [icon]="'check_circle'"
+          [iconPosition]="'right'"
+          [loading]="loading() || false"
+          (clickFn)="onVerifyCode()"
+        />
+      </div>
+    </div>
+  </div>
+</cleansia-dynamic-background>

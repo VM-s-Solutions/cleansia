@@ -65,6 +65,8 @@
       "emergency_phone": "Telefon",
       "documents": "Nahrát požadované dokumenty",
       "upload_requirements": "Nahrajte: Fotografie, CV, Vzdělávací certifikáty, Výpis z trestního rejstříku (pokud je potřeba), Pracovní povolení (pro osoby mimo EU), Podepsaná smlouva/NDA",
+      "availability": "Týdenní dostupnost",
+      "availability_description": "Nastavte si své týdenní pracovní hodiny výběrem časových rozmezí pro každý den. To nám pomůže efektivně plánovat vaše úkoly.",
       "consent": "Souhlas",
       "consent_text": "Souhlasím se zpracováním svých osobních údajů v souladu s GDPR a českými pracovními zákony.",
       "submit": "Odeslat onboarding"
@@ -333,6 +335,22 @@
       "accepted": "Povolené",
       "max_size": "Max. velikost",
       "selected_files": "Vybrané soubory"
+    },
+    "availability": {
+      "days": {
+        "monday": "Pondělí",
+        "tuesday": "Úterý",
+        "wednesday": "Středa",
+        "thursday": "Čtvrtek",
+        "friday": "Pátek",
+        "saturday": "Sobota",
+        "sunday": "Neděle"
+      },
+      "current_ranges": "Aktuální časová rozmezí",
+      "no_availability": "Není nastavena dostupnost",
+      "add_time_range": "Přidat časové rozmezí",
+      "start_time": "Čas začátku",
+      "end_time": "Čas konce"
     }
   },
   "global": {
@@ -385,6 +403,7 @@
     },
     "actions": {
       "actions": "Akce",
+      "add": "Přidat",
       "add_to_cart": "Přidat do košíku",
       "remove_from_cart": "Odebrat z košíku",
       "remove_from_favorites": "Odebrat z oblíbených",

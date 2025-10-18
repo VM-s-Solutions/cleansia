@@ -1,5 +1,7 @@
 ﻿using Cleansia.Core.AppServices.Shared.DTOs.Enums;
 using Cleansia.Core.AppServices.Shared.DTOs.Files;
+using Cleansia.Core.Domain.Users;
+using static Cleansia.Core.AppServices.Features.Employees.UpdateEmployee;
 
 namespace Cleansia.Core.AppServices.Features.Employees.DTOs;
 
@@ -14,6 +16,7 @@ public record EmployeeItem(
     string? City,
     string? ZipCode,
     string? CountryId,
+    string? NationalityId,
     string? PassportId,
     string? TaxId,
     string? Iban,
@@ -21,4 +24,5 @@ public record EmployeeItem(
     string? EmergencyContactPhone,
     BlobFileDto? ProfilePhoto,
     Code Profile,
-    Code AuthenticationType);
+    Code AuthenticationType,
+    Dictionary<string, List<TimeRange>>? Availability);

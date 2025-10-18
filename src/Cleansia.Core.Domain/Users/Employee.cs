@@ -88,10 +88,8 @@ public class Employee : Auditable
 
     public Employee AddDocumentFileNames(IEnumerable<string> fileNames)
     {
-        foreach (var fileName in fileNames)
-        {
-            _documentFileNames.Add(fileName);
-        }
+        _documentFileNames = fileNames.ToList();
+
         return this;
     }
 }

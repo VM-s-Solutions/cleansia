@@ -2,9 +2,32 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
 import {
   BlobFileDto,
   CustomValidators,
+  EmployeeItem,
   UpdateEmployeeCommand,
 } from '@cleansia/services';
 import { FileTransformationUtils } from '@cleansia/utils';
+
+export interface TimeRange {
+  start: string; // HH:mm format
+  end: string; // HH:mm format
+}
+
+export interface DayAvailability {
+  day: string;
+  timeRanges: TimeRange[];
+}
+
+export const DAYS_OF_WEEK = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+] as const;
+
+export type DayOfWeek = (typeof DAYS_OF_WEEK)[number];
 
 export class ProfileFormFactory {
   static createEmployeeProfileForm(): FormGroup {
@@ -14,13 +37,11 @@ export class ProfileFormFactory {
         Validators.required,
         Validators.minLength(2),
         Validators.maxLength(100),
-        CustomValidators.alphabeticOnly(),
       ]),
       lastName: new FormControl(undefined, [
         Validators.required,
         Validators.minLength(2),
         Validators.maxLength(100),
-        CustomValidators.alphabeticOnly(),
       ]),
       dateOfBirth: new FormControl(null, [
         Validators.required,
@@ -35,7 +56,6 @@ export class ProfileFormFactory {
         Validators.required,
         Validators.minLength(2),
         Validators.maxLength(100),
-        CustomValidators.alphabeticOnly(),
       ]),
       zipCode: new FormControl(undefined, [
         Validators.required,
@@ -71,10 +91,7 @@ export class ProfileFormFactory {
         Validators.maxLength(34),
         CustomValidators.iban(),
       ]),
-      emergencyName: new FormControl(undefined, [
-        Validators.maxLength(100),
-        CustomValidators.alphabeticOnly(),
-      ]),
+      emergencyName: new FormControl(undefined, [Validators.maxLength(100)]),
       emergencyPhone: new FormControl(undefined, [
         CustomValidators.phoneNumber(),
       ]),
@@ -83,18 +100,26 @@ export class ProfileFormFactory {
         CustomValidators.fileSize(10),
         CustomValidators.fileCount(1, 10),
       ]),
+      availability: new FormControl<Record<string, TimeRange[]>>({}),
       consent: new FormControl(false, [Validators.requiredTrue]),
     });
   }
 
-  static mapEmployeeToFormData(employee: any): any {
+  static createTimeRangeFormGroup(timeRange?: TimeRange): FormGroup {
+    return new FormGroup({
+      start: new FormControl(timeRange?.start || '', [Validators.required]),
+      end: new FormControl(timeRange?.end || '', [Validators.required]),
+    });
+  }
+
+  static mapEmployeeToFormData(employee: EmployeeItem): any {
     return {
-      employeeId: employee.employeeId || undefined,
+      employeeId: employee.id || undefined,
       firstName: employee.firstName || undefined,
       lastName: employee.lastName || undefined,
       email: employee.email || undefined,
-      phone: employee.phoneNumber || employee.phone || undefined,
-      dateOfBirth: employee.birthDate || employee.dateOfBirth || null,
+      phone: employee.phoneNumber || employee.phoneNumber || undefined,
+      dateOfBirth: employee.birthDate || employee.birthDate || null,
       street: employee.street || undefined,
       city: employee.city || undefined,
       zipCode: employee.zipCode || undefined,
@@ -103,9 +128,9 @@ export class ProfileFormFactory {
       passportId: employee.passportId || undefined,
       taxId: employee.taxId || undefined,
       iban: employee.iban || undefined,
-      emergencyName: employee.emergencyName || undefined,
-      emergencyPhone: employee.emergencyPhone || undefined,
-      consent: employee.consent || false,
+      emergencyName: employee.emergencyContactName || undefined,
+      emergencyPhone: employee.emergencyContactPhone || undefined,
+      availability: (employee as any).availability || {},
     };
   }
 
@@ -139,9 +164,6 @@ export class ProfileFormFactory {
     };
   }
 
-  /**
-   * Creates an UpdateEmployeeCommand from form data and documents
-   */
   static createUpdateCommand(
     formData: any,
     documents: BlobFileDto[]
@@ -164,6 +186,7 @@ export class ProfileFormFactory {
       emergencyName: formData.emergencyName,
       emergencyPhone: formData.emergencyPhone,
       documents,
+      availability: formData.availability,
       consent: formData.consent,
     });
   }

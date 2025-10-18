@@ -16,88 +16,74 @@ namespace Cleansia.Core.AppServices.Features.EmployeePayroll;
 
 public class RegenerateInvoicePdf
 {
-    public record Command(string InvoiceId) : ICommand<Response>;
+    public record Command(string InvoiceId, string LanguageId) : ICommand<Response>;
 
     public record Response(string PdfBlobUrl);
 
     public class Validator : AbstractValidator<Command>
     {
-        private readonly IEmployeeInvoiceRepository _invoiceRepository;
         private readonly IEmployeeRepository _employeeRepository;
+        private readonly ILanguageRepository _languageRepository;
+        private readonly IEmployeeInvoiceRepository _invoiceRepository;
         private readonly IInvoiceTemplateRepository _templateRepository;
-        private readonly ICurrencyRepository _currencyRepository;
 
         public Validator(
-            IEmployeeInvoiceRepository invoiceRepository,
             IEmployeeRepository employeeRepository,
-            IInvoiceTemplateRepository templateRepository,
-            ICurrencyRepository currencyRepository)
+            ILanguageRepository languageRepository,
+            IEmployeeInvoiceRepository invoiceRepository,
+            IInvoiceTemplateRepository templateRepository)
         {
             _invoiceRepository = invoiceRepository;
             _employeeRepository = employeeRepository;
+            _languageRepository = languageRepository;
             _templateRepository = templateRepository;
-            _currencyRepository = currencyRepository;
 
             RuleFor(x => x.InvoiceId)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(_invoiceRepository.ExistsAsync)
+                .MustAsync(invoiceRepository.ExistsAsync)
                 .WithMessage(BusinessErrorMessage.InvoiceNotFound)
-                .MustAsync(HasValidEmployeeAsync)
-                .WithMessage(BusinessErrorMessage.EmployeeNotFound)
-                .MustAsync(HasValidPayPeriodAsync)
-                .WithMessage(BusinessErrorMessage.PayPeriodNotFound)
-                .MustAsync(HasValidCurrencyAsync)
-                .WithMessage(BusinessErrorMessage.InvalidCurrency)
                 .MustAsync(HasAvailableTemplateAsync)
                 .WithMessage(BusinessErrorMessage.TemplateNotFound);
+
+            RuleFor(x => x.LanguageId)
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty()
+                .WithMessage(BusinessErrorMessage.Required)
+                .MustAsync(languageRepository.ExistsAsync)
+                .WithMessage(BusinessErrorMessage.InvoiceNotFound);
         }
 
-        private async Task<bool> HasValidEmployeeAsync(string invoiceId, CancellationToken cancellationToken)
+        private async Task<bool> HasAvailableTemplateAsync(Command command, string invoiceId, CancellationToken cancellationToken)
         {
             var invoice = await _invoiceRepository.GetByIdAsync(invoiceId, cancellationToken);
-            if (invoice == null) return false;
-
-            return await _employeeRepository.ExistsAsync(invoice.EmployeeId, cancellationToken);
-        }
-
-        private async Task<bool> HasValidPayPeriodAsync(string invoiceId, CancellationToken cancellationToken)
-        {
-            var invoice = await _invoiceRepository
-                .GetQueryable()
-                .Include(i => i.PayPeriod)
-                .FirstOrDefaultAsync(i => i.Id == invoiceId, cancellationToken);
-
-            return invoice?.PayPeriod != null;
-        }
-
-        private async Task<bool> HasValidCurrencyAsync(string invoiceId, CancellationToken cancellationToken)
-        {
-            var invoice = await _invoiceRepository.GetByIdAsync(invoiceId, cancellationToken);
-            if (invoice == null) return false;
-
-            return await _currencyRepository.ExistsAsync(invoice.CurrencyId, cancellationToken);
-        }
-
-        private async Task<bool> HasAvailableTemplateAsync(string invoiceId, CancellationToken cancellationToken)
-        {
-            var invoice = await _invoiceRepository.GetByIdAsync(invoiceId, cancellationToken);
-            if (invoice == null) return false;
+            if (invoice == null)
+            {
+                return false;
+            }
 
             var employee = await _employeeRepository
                 .GetQueryable()
                 .Include(e => e.Address)
                 .FirstOrDefaultAsync(e => e.Id == invoice.EmployeeId, cancellationToken);
 
-            if (employee == null) return false;
+            if (employee == null)
+            {
+                return false;
+            }
 
             var countryId = employee.Address?.CountryId ?? "CZE";
-            var languageCode = "en";
+            var language = await _languageRepository.GetByIdAsync(command.LanguageId, cancellationToken);
+
+            if (language is null)
+            {
+                return false;
+            }
 
             var template = await _templateRepository.GetActiveByCountryAndLanguageAsync(
                 countryId,
-                languageCode,
+                language.Code,
                 cancellationToken);
 
             return template != null;
@@ -105,47 +91,35 @@ public class RegenerateInvoicePdf
     }
 
     public class Handler(
-        IEmployeeInvoiceRepository invoiceRepository,
-        IOrderEmployeePayRepository orderPayRepository,
-        ICountryInvoiceConfigRepository configRepository,
-        ICurrencyRepository currencyRepository,
-        IEmployeeRepository employeeRepository,
-        IInvoiceTemplateRepository templateRepository,
         IPdfService pdfService,
         ITemplateEngine templateEngine,
-        IBlobContainerClientFactory blobFactory)
+        ICurrencyRepository currencyRepository,
+        IEmployeeRepository employeeRepository,
+        ILanguageRepository languageRepository,
+        IBlobContainerClientFactory clientFactory,
+        IEmployeeInvoiceRepository employeeInvoiceRepository,
+        IInvoiceTemplateRepository invoiceTemplateRepository,
+        IOrderEmployeePayRepository orderEmployeePayRepository,
+        ICountryInvoiceConfigRepository countryInvoiceConfigRepository)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var invoice = await invoiceRepository
-                .GetQueryable()
-                .Include(i => i.PayPeriod)
-                .FirstAsync(i => i.Id == command.InvoiceId, cancellationToken);
+            var invoice = await employeeInvoiceRepository.GetByIdAsync(command.InvoiceId, cancellationToken);
 
-            var employee = await employeeRepository
-                .GetQueryable()
-                .Include(e => e.Address)
-                .Include(e => e.User)
-                .FirstAsync(e => e.Id == invoice.EmployeeId, cancellationToken);
-
+            var employee = await employeeRepository.GetByIdAsync(invoice.EmployeeId, cancellationToken);
             var currency = await currencyRepository.GetByIdAsync(invoice.CurrencyId, cancellationToken);
 
-            var orderPays = await orderPayRepository
-                .GetQueryable()
-                .Include(op => op.Order)
-                .Where(op => op.EmployeeInvoiceId == invoice.Id)
-                .ToListAsync(cancellationToken);
+            var orderPays = await orderEmployeePayRepository.GetByInvoiceId(invoice.Id).ToListAsync(cancellationToken);
 
             var countryId = employee.Address?.CountryId ?? "CZE";
-            // TODO: change hard coded language to the dynamic language system
-            var languageCode = "en";
+            var language = await languageRepository.GetByIdAsync(command.LanguageId, cancellationToken);
 
             var countryContext = await GetCountryInvoiceContextAsync(countryId, cancellationToken);
 
             var pdfData = invoice.CreatePdfData(employee, currency, orderPays, countryContext);
 
-            var templateHtml = await GetTemplateHtmlAsync(countryId, languageCode, cancellationToken);
+            var templateHtml = await GetTemplateHtmlAsync(countryId, language!.Code, cancellationToken);
 
             var mergedHtml = await templateEngine.CompileAsync(templateHtml, pdfData, cancellationToken);
 
@@ -159,14 +133,12 @@ public class RegenerateInvoicePdf
 
             invoice.SetPdfBlobUrl(blobUrl);
 
-            await invoiceRepository.CommitAsync(cancellationToken);
-
             return BusinessResult.Success(new Response(blobUrl));
         }
 
         private async Task<CountryInvoiceContext?> GetCountryInvoiceContextAsync(string countryId, CancellationToken cancellationToken)
         {
-            var config = await configRepository.GetByCountryIdAsync(countryId, cancellationToken);
+            var config = await countryInvoiceConfigRepository.GetByCountryIdAsync(countryId, cancellationToken);
             if (config == null)
             {
                 return null;
@@ -184,12 +156,12 @@ public class RegenerateInvoicePdf
 
         private async Task<string> GetTemplateHtmlAsync(string countryId, string languageCode, CancellationToken cancellationToken)
         {
-            var template = await templateRepository.GetActiveByCountryAndLanguageAsync(
+            var template = await invoiceTemplateRepository.GetActiveByCountryAndLanguageAsync(
                 countryId,
                 languageCode,
                 cancellationToken);
 
-            var templateBlobClient = blobFactory.GetBlobContainerClient(Constants.BlobContainers.InvoiceTemplates);
+            var templateBlobClient = clientFactory.GetBlobContainerClient(Constants.BlobContainers.InvoiceTemplates);
             var templateBlob = await templateBlobClient.DownloadAsync(template!.BlobUrl, cancellationToken);
             using var reader = new StreamReader(templateBlob.Content);
             return await reader.ReadToEndAsync(cancellationToken);
@@ -202,7 +174,7 @@ public class RegenerateInvoicePdf
             var invoiceFileName = invoice.InvoiceNumber;
 
             var blobName = $"{payPeriodDescription}/{employeeName}/{invoiceFileName}.pdf";
-            var blobClient = blobFactory.GetBlobContainerClient(Constants.BlobContainers.GeneratedInvoices);
+            var blobClient = clientFactory.GetBlobContainerClient(Constants.BlobContainers.GeneratedInvoices);
 
             using var pdfStream = new MemoryStream(pdfBytes);
             await blobClient.UploadAsync(blobName, pdfStream, cancellationToken: cancellationToken);

@@ -5329,6 +5329,7 @@ export interface IMarkInvoicePaidResponse {
 
 export class RegenerateInvoicePdfCommand implements IRegenerateInvoicePdfCommand {
     invoiceId!: string | undefined;
+    languageId!: string | undefined;
 
     constructor(data?: IRegenerateInvoicePdfCommand) {
         if (data) {
@@ -5342,6 +5343,7 @@ export class RegenerateInvoicePdfCommand implements IRegenerateInvoicePdfCommand
     init(Data?: any) {
         if (Data) {
             this.invoiceId = Data["invoiceId"];
+            this.languageId = Data["languageId"];
         }
     }
 
@@ -5355,16 +5357,18 @@ export class RegenerateInvoicePdfCommand implements IRegenerateInvoicePdfCommand
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["invoiceId"] = this.invoiceId;
+        data["languageId"] = this.languageId;
         return data;
     }
 }
 
 export interface IRegenerateInvoicePdfCommand {
     invoiceId: string | undefined;
+    languageId: string | undefined;
 }
 
 export class RegenerateInvoicePdfResponse implements IRegenerateInvoicePdfResponse {
-    pdfBlobName!: string | undefined;
+    pdfBlobUrl!: string | undefined;
 
     constructor(data?: IRegenerateInvoicePdfResponse) {
         if (data) {
@@ -5377,7 +5381,7 @@ export class RegenerateInvoicePdfResponse implements IRegenerateInvoicePdfRespon
 
     init(Data?: any) {
         if (Data) {
-            this.pdfBlobName = Data["pdfBlobName"];
+            this.pdfBlobUrl = Data["pdfBlobUrl"];
         }
     }
 
@@ -5390,13 +5394,13 @@ export class RegenerateInvoicePdfResponse implements IRegenerateInvoicePdfRespon
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["pdfBlobName"] = this.pdfBlobName;
+        data["pdfBlobUrl"] = this.pdfBlobUrl;
         return data;
     }
 }
 
 export interface IRegenerateInvoicePdfResponse {
-    pdfBlobName: string | undefined;
+    pdfBlobUrl: string | undefined;
 }
 
 export class CheckCurrentEmployeeQuery implements ICheckCurrentEmployeeQuery {
@@ -5440,6 +5444,7 @@ export class EmployeeItem implements IEmployeeItem {
     city!: string | undefined;
     zipCode!: string | undefined;
     countryId!: string | undefined;
+    nationalityId!: string | undefined;
     passportId!: string | undefined;
     taxId!: string | undefined;
     iban!: string | undefined;
@@ -5448,6 +5453,7 @@ export class EmployeeItem implements IEmployeeItem {
     profilePhoto!: BlobFileDto;
     profile!: Code;
     authenticationType!: Code;
+    availability!: { [key: string]: TimeRange[]; } | undefined;
 
     constructor(data?: IEmployeeItem) {
         if (data) {
@@ -5470,6 +5476,7 @@ export class EmployeeItem implements IEmployeeItem {
             this.city = Data["city"];
             this.zipCode = Data["zipCode"];
             this.countryId = Data["countryId"];
+            this.nationalityId = Data["nationalityId"];
             this.passportId = Data["passportId"];
             this.taxId = Data["taxId"];
             this.iban = Data["iban"];
@@ -5478,6 +5485,13 @@ export class EmployeeItem implements IEmployeeItem {
             this.profilePhoto = Data["profilePhoto"] ? BlobFileDto.fromJS(Data["profilePhoto"]) : undefined as any;
             this.profile = Data["profile"] ? Code.fromJS(Data["profile"]) : undefined as any;
             this.authenticationType = Data["authenticationType"] ? Code.fromJS(Data["authenticationType"]) : undefined as any;
+            if (Data["availability"]) {
+                this.availability = {} as any;
+                for (let key in Data["availability"]) {
+                    if (Data["availability"].hasOwnProperty(key))
+                        (this.availability as any)![key] = Data["availability"][key] ? Data["availability"][key].map((i: any) => TimeRange.fromJS(i)) : undefined as any;
+                }
+            }
         }
     }
 
@@ -5500,6 +5514,7 @@ export class EmployeeItem implements IEmployeeItem {
         data["city"] = this.city;
         data["zipCode"] = this.zipCode;
         data["countryId"] = this.countryId;
+        data["nationalityId"] = this.nationalityId;
         data["passportId"] = this.passportId;
         data["taxId"] = this.taxId;
         data["iban"] = this.iban;
@@ -5508,6 +5523,13 @@ export class EmployeeItem implements IEmployeeItem {
         data["profilePhoto"] = this.profilePhoto ? this.profilePhoto.toJSON() : undefined as any;
         data["profile"] = this.profile ? this.profile.toJSON() : undefined as any;
         data["authenticationType"] = this.authenticationType ? this.authenticationType.toJSON() : undefined as any;
+        if (this.availability) {
+            data["availability"] = {};
+            for (let key in this.availability) {
+                if (this.availability.hasOwnProperty(key))
+                    (data["availability"] as any)[key] = (this.availability as any)[key];
+            }
+        }
         return data;
     }
 }
@@ -5523,6 +5545,7 @@ export interface IEmployeeItem {
     city: string | undefined;
     zipCode: string | undefined;
     countryId: string | undefined;
+    nationalityId: string | undefined;
     passportId: string | undefined;
     taxId: string | undefined;
     iban: string | undefined;
@@ -5531,6 +5554,7 @@ export interface IEmployeeItem {
     profilePhoto: BlobFileDto;
     profile: Code;
     authenticationType: Code;
+    availability: { [key: string]: TimeRange[]; } | undefined;
 }
 
 export class RegistrationCompletionStatus implements IRegistrationCompletionStatus {
@@ -5622,6 +5646,7 @@ export class UpdateEmployeeCommand implements IUpdateEmployeeCommand {
     emergencyPhone!: string | undefined;
     consent!: boolean;
     documents!: BlobFileDto[] | undefined;
+    availability!: { [key: string]: UpdateEmployeeTimeRangeDto[]; } | undefined;
 
     constructor(data?: IUpdateEmployeeCommand) {
         if (data) {
@@ -5655,6 +5680,13 @@ export class UpdateEmployeeCommand implements IUpdateEmployeeCommand {
                 this.documents = [] as any;
                 for (let item of Data["documents"])
                     this.documents!.push(BlobFileDto.fromJS(item));
+            }
+            if (Data["availability"]) {
+                this.availability = {} as any;
+                for (let key in Data["availability"]) {
+                    if (Data["availability"].hasOwnProperty(key))
+                        (this.availability as any)![key] = Data["availability"][key] ? Data["availability"][key].map((i: any) => UpdateEmployeeTimeRangeDto.fromJS(i)) : undefined as any;
+                }
             }
         }
     }
@@ -5690,6 +5722,13 @@ export class UpdateEmployeeCommand implements IUpdateEmployeeCommand {
             for (let item of this.documents)
                 data["documents"].push(item ? item.toJSON() : undefined as any);
         }
+        if (this.availability) {
+            data["availability"] = {};
+            for (let key in this.availability) {
+                if (this.availability.hasOwnProperty(key))
+                    (data["availability"] as any)[key] = (this.availability as any)[key];
+            }
+        }
         return data;
     }
 }
@@ -5713,6 +5752,47 @@ export interface IUpdateEmployeeCommand {
     emergencyPhone: string | undefined;
     consent: boolean;
     documents: BlobFileDto[] | undefined;
+    availability: { [key: string]: UpdateEmployeeTimeRangeDto[]; } | undefined;
+}
+
+export class UpdateEmployeeTimeRangeDto implements IUpdateEmployeeTimeRangeDto {
+    start!: string | undefined;
+    end!: string | undefined;
+
+    constructor(data?: IUpdateEmployeeTimeRangeDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.start = Data["start"];
+            this.end = Data["end"];
+        }
+    }
+
+    static fromJS(data: any): UpdateEmployeeTimeRangeDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateEmployeeTimeRangeDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["start"] = this.start;
+        data["end"] = this.end;
+        return data;
+    }
+}
+
+export interface IUpdateEmployeeTimeRangeDto {
+    start: string | undefined;
+    end: string | undefined;
 }
 
 export class LanguageListItem implements ILanguageListItem {
@@ -8340,6 +8420,46 @@ export interface ITranslation {
 export enum SortDirection {
     Ascending = 0,
     Descending = 1,
+}
+
+export class TimeRange implements ITimeRange {
+    start!: string;
+    end!: string;
+
+    constructor(data?: ITimeRange) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.start = Data["start"];
+            this.end = Data["end"];
+        }
+    }
+
+    static fromJS(data: any): TimeRange {
+        data = typeof data === 'object' ? data : {};
+        let result = new TimeRange();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["start"] = this.start;
+        data["end"] = this.end;
+        return data;
+    }
+}
+
+export interface ITimeRange {
+    start: string;
+    end: string;
 }
 
 export class ProblemDetails implements IProblemDetails {

@@ -91,8 +91,7 @@ export class ProfileFacade extends UnsubscribeControlDirective {
     this.loadProfile();
   }
 
-  onDocumentUpload(event: any): void {
-    const files = event.target?.files || event.files;
+  onDocumentUpload(files: File[]): void {
     const normalizedFiles = FileTransformationUtils.normalizeFiles(files);
 
     if (!normalizedFiles.length) {
@@ -185,13 +184,7 @@ export class ProfileFacade extends UnsubscribeControlDirective {
           return this.client.employeeClient.updateEmployee(updateCommand);
         }),
         takeUntil(this.destroyed$),
-        finalize(() => this.profileSubmitLoading.set(false)),
-        catchError(() => {
-          this.snackbarService.showErrorTranslated(
-            'global.messages.profile.submission_error'
-          );
-          return of(null);
-        })
+        finalize(() => this.profileSubmitLoading.set(false))
       )
       .subscribe({
         next: (result) => {

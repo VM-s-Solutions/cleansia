@@ -64,9 +64,13 @@
       "emergency_phone": "Phone",
       "documents": "Upload Required Documents",
       "upload_requirements": "Upload: Photos, CV, Educational Certificates, Criminal Record Check (if required), Work Permit (for non-EU citizens), Signed Contract/NDA",
+      "availability": "Weekly Availability",
+      "availability_description": "Set your weekly working hours by selecting time ranges for each day. This helps us schedule your assignments effectively.",
       "consent": "Consent",
       "consent_text": "I agree to the processing of my personal data in accordance with GDPR and Czech labor laws.",
-      "submit": "Submit Onboarding"
+      "submit": "Submit Onboarding",
+      "first_name": "First Name",
+      "last_name": "Last Name"
     },
     "orders": {
       "title": "Order Management & Time Tracking",
@@ -292,6 +296,22 @@
       "accepted": "Accepted",
       "max_size": "Max size",
       "selected_files": "Selected Files"
+    },
+    "availability": {
+      "days": {
+        "monday": "Monday",
+        "tuesday": "Tuesday",
+        "wednesday": "Wednesday",
+        "thursday": "Thursday",
+        "friday": "Friday",
+        "saturday": "Saturday",
+        "sunday": "Sunday"
+      },
+      "current_ranges": "Current Ranges",
+      "no_availability": "No availability set",
+      "add_time_range": "Add Time Range",
+      "start_time": "Start Time",
+      "end_time": "End Time"
     }
   },
   "global": {
@@ -344,6 +364,7 @@
     },
     "actions": {
       "actions": "Actions",
+      "add": "Add",
       "add_to_cart": "Add to Cart",
       "remove_from_cart": "Remove from Cart",
       "remove_from_favorites": "Remove from Favorites",

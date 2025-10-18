@@ -1,105 +1,100 @@
-<div class="availability-module p-4">
-  <h2 class="text-xl font-bold mb-4">My Availability</h2>
-  <p class="mb-4 text-sm text-gray-600">
-    Select days and add time ranges when you're available. You can add multiple
-    ranges per day.
-  </p>
-
-  <p-accordion [multiple]="true" class="w-full">
-    @for (day of days; track day.key) {
-    <p-accordionTab
-      [header]="
-        day.label +
-        (availability()[day.key] && availability()[day.key].length > 0
-          ? ' (' + availability()[day.key].length + ')'
-          : '')
-      "
-    >
-      <div class="day-content">
-        @if ((availability()[day.key] || []).length > 0) {
-        <div class="ranges-list mb-4">
-          <h3 class="text-sm font-medium mb-2">Current Ranges:</h3>
-          @for (range of availability()[day.key]; track range; let i = $index) {
+<div class="availability-module">
+  <p-accordion [value]="['0']" [multiple]="true" class="w-full">
+    @for (day of days; track day.key; let i = $index) {
+    <p-accordionpanel [value]="i.toString()">
+      <p-accordionheader>
+        <span class="flex align-items-center gap-2 w-full">
+          <span class="font-bold white-space-nowrap">{{ day.label | translate }}</span>
+          @if (availability()[day.key] && availability()[day.key].length > 0) {
+          <p-chip [label]="availability()[day.key].length.toString()" />
+          }
+        </span>
+      </p-accordionheader>
+      <p-accordioncontent>
+        <div class="day-content">
+          @if ((availability()[day.key] || []).length > 0) {
+          <div class="ranges-list mb-4">
+            <h3 class="text-sm font-medium mb-2">{{ 'components.availability.current_ranges' | translate }}</h3>
+            @for (range of availability()[day.key]; track range; let i = $index)
+            {
             <p-chip
               [label]="range.start + ' - ' + range.end"
               class="mr-2 mb-2"
-              removable="true"
+              [removable]="true"
               (onRemove)="removeRange(day.key, i)"
             />
+            }
+          </div>
+          } @else {
+          <p class="text-gray-500 italic mb-4">
+            {{ 'components.availability.no_availability' | translate }}
+          </p>
           }
+          <p-button
+            [label]="'components.availability.add_time_range' | translate"
+            icon="pi pi-plus"
+            severity="secondary"
+            styleClass="w-full mb-4"
+            (onClick)="openAddDialog(day.key)"
+          />
         </div>
-        } @else {
-        <p class="text-gray-500 italic mb-4">
-          No availability set for {{ day.label.toLowerCase() }}.
-        </p>
-        }
-        <button
-          pButton
-          label="Add Time Range"
-          icon="pi pi-plus"
-          severity="secondary"
-          class="w-full mb-4"
-          (click)="openAddDialog(day.key)"
-        >
-          Add Time Range
-        </button>
-      </div>
-    </p-accordionTab>
+      </p-accordioncontent>
+    </p-accordionpanel>
     }
   </p-accordion>
 
   <p-dialog
-    header="Add Time Range"
-    [(visible)]="showDialog"
+    [header]="'components.availability.add_time_range' | translate"
+    [visible]="showDialog()"
+    (visibleChange)="showDialog.set($event)"
     [modal]="true"
     styleClass="cleansia-availability__dialog"
     (onHide)="resetDialog()"
   >
     <div class="dialog-content">
       <div class="field mb-3">
-        <label for="startTime">Start Time</label>
-        <p-calendar
-          id="startTime"
-          [(ngModel)]="newRange.start"
-          timeOnly="true"
+        <label for="startTime">{{ 'components.availability.start_time' | translate }}</label>
+        <p-datepicker
+          inputId="startTime"
+          [ngModel]="newRange().start"
+          (ngModelChange)="updateStartTime($event)"
+          [timeOnly]="true"
           [showIcon]="true"
-          hourFormat="24"
-          class="w-full"
+          [iconDisplay]="'input'"
+          [hourFormat]="'24'"
+          [inputStyle]="{ width: '100%' }"
+          [style]="{ width: '100%' }"
+          styleClass="w-full"
         />
       </div>
       <div class="field mb-3">
-        <label for="endTime">End Time</label>
-        <p-calendar
-          id="endTime"
-          [(ngModel)]="newRange.end"
-          timeOnly="true"
+        <label for="endTime">{{ 'components.availability.end_time' | translate }}</label>
+        <p-datepicker
+          inputId="endTime"
+          [ngModel]="newRange().end"
+          (ngModelChange)="updateEndTime($event)"
+          [timeOnly]="true"
           [showIcon]="true"
-          hourFormat="24"
-          class="w-full"
+          [iconDisplay]="'input'"
+          [hourFormat]="'24'"
+          [inputStyle]="{ width: '100%' }"
+          [style]="{ width: '100%' }"
+          styleClass="w-full"
         />
       </div>
       <div class="flex gap-2">
         <p-button
-          label="Add"
+          [label]="'global.actions.add' | translate"
           severity="primary"
           (onClick)="addRange()"
           [disabled]="!isValidRange()"
         />
         <p-button
-          label="Cancel"
+          [label]="'global.actions.cancel' | translate"
           severity="secondary"
-          (onClick)="showDialog = false"
+          (onClick)="showDialog.set(false)"
         />
       </div>
     </div>
   </p-dialog>
-
-  <div class="mt-6">
-    <p-button
-      label="Save Changes"
-      severity="success"
-      (onClick)="save()"
-      class="w-full"
-    />
-  </div>
 </div>

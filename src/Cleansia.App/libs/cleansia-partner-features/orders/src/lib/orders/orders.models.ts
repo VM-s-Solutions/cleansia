@@ -54,6 +54,13 @@ export function getAvailableOrdersTableDefinition(
         columnClass: 'width-12',
       },
       {
+        id: 'availableSpots',
+        headerName: translate.instant('pages.orders.available_spots'),
+        value: (row?: OrderListItem) =>
+          `${row?.availableSpots || 0} / ${row?.maxEmployees || 0}`,
+        columnClass: 'width-10',
+      },
+      {
         id: 'paymentStatus',
         headerName: translate.instant('pages.orders.payment_status'),
         template: statusTemplate,

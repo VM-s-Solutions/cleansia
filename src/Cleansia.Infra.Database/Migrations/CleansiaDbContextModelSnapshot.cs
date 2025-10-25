@@ -868,6 +868,9 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<int>("MaxEmployees")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Notes")
                         .HasColumnType("text");
 
@@ -875,6 +878,9 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("integer");
 
                     b.Property<int>("PaymentType")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RequiredEmployees")
                         .HasColumnType("integer");
 
                     b.Property<int>("Rooms")

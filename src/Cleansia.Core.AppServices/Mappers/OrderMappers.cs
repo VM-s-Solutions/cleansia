@@ -36,7 +36,12 @@ public static class OrderMappers
             CurrencyId: order.CurrencyId,
             Currency: order.Currency.MapToDto(),
             AssignedEmployees: order.AssignedEmployees.Select(e => e.Id),
-            SelectedServices: order.SelectedServices.Select(os => os.Service.MapToDto())
+            SelectedServices: order.SelectedServices.Select(os => os.Service.MapToDto()),
+            RequiredEmployees: order.RequiredEmployees,
+            MaxEmployees: order.MaxEmployees,
+            AvailableSpots: order.AvailableSpots,
+            AssignedEmployeesCount: order.AssignedEmployees.Count,
+            HasAvailableSpots: order.HasAvailableSpots
         );
     }
 

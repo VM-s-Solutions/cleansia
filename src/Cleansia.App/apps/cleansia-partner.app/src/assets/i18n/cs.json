@@ -71,6 +71,26 @@
       "consent_text": "Souhlasím se zpracováním svých osobních údajů v souladu s GDPR a českými pracovními zákony.",
       "submit": "Odeslat onboarding"
     },
+    "dashboard": {
+      "title": "Nástěnka",
+      "description": "Přehled objednávek, výdělků a nadcházejících úkolů",
+      "statistics": "Statistiky",
+      "refresh": "Obnovit",
+      "available_orders": "Dostupné objednávky",
+      "my_active_orders": "Moje aktivní objednávky",
+      "completed_this_month": "Dokončeno tento měsíc",
+      "pending_earnings": "Čekající výplata",
+      "vs_last_month": "oproti minulému měsíci",
+      "upcoming_orders": "Nadcházející objednávky",
+      "view_all": "Zobrazit vše",
+      "no_upcoming_orders": "Žádné naplánované nadcházející objednávky",
+      "quick_actions": "Rychlé akce",
+      "browse_orders": "Procházet dostupné objednávky",
+      "view_invoices": "Zobrazit faktury",
+      "edit_profile": "Upravit profil",
+      "analytics": "Analytika a výkon",
+      "retry": "Zkusit znovu"
+    },
     "orders": {
       "title": "Správa objednávek a časové záznamy",
       "description": "Spravujte své aktivní objednávky a zaznamenávejte odpracovaný čas.",
@@ -104,7 +124,8 @@
       "order_taken_success": "Objednávka úspěšně převzata!",
       "employee_not_found": "Informace o zaměstnanci nebyly nalezeny",
       "no_orders": "Žádné objednávky k zobrazení",
-      "no_logs": "Žádné časové záznamy k zobrazení"
+      "no_logs": "Žádné časové záznamy k zobrazení",
+      "available_spots": "Volná místa"
     },
     "order_details": {
       "title": "Podrobnosti objednávky",

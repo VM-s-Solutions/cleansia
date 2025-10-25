@@ -597,6 +597,8 @@ namespace Cleansia.Infra.Database.Migrations
                     EstimatedTime = table.Column<int>(type: "integer", nullable: false),
                     EmployeePayCalculated = table.Column<bool>(type: "boolean", nullable: false),
                     TravelDistance = table.Column<decimal>(type: "numeric", nullable: true),
+                    RequiredEmployees = table.Column<int>(type: "integer", nullable: false),
+                    MaxEmployees = table.Column<int>(type: "integer", nullable: false),
                     ConfirmationCode = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     StripeSessionId = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     Notes = table.Column<string>(type: "text", nullable: true),

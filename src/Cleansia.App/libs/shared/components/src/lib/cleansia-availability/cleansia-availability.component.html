@@ -3,8 +3,10 @@
     @for (day of days; track day.key; let i = $index) {
     <p-accordionpanel [value]="i.toString()">
       <p-accordionheader>
-        <span class="flex align-items-center gap-2 w-full">
-          <span class="font-bold white-space-nowrap">{{ day.label | translate }}</span>
+        <span class="availability-module__header">
+          <span class="font-bold white-space-nowrap">{{
+            day.label | translate
+          }}</span>
           @if (availability()[day.key] && availability()[day.key].length > 0) {
           <p-chip [label]="availability()[day.key].length.toString()" />
           }
@@ -14,7 +16,9 @@
         <div class="day-content">
           @if ((availability()[day.key] || []).length > 0) {
           <div class="ranges-list mb-4">
-            <h3 class="text-sm font-medium mb-2">{{ 'components.availability.current_ranges' | translate }}</h3>
+            <h3 class="text-sm font-medium mb-2">
+              {{ 'components.availability.current_ranges' | translate }}
+            </h3>
             @for (range of availability()[day.key]; track range; let i = $index)
             {
             <p-chip
@@ -53,7 +57,9 @@
   >
     <div class="dialog-content">
       <div class="field mb-3">
-        <label for="startTime">{{ 'components.availability.start_time' | translate }}</label>
+        <label for="startTime">{{
+          'components.availability.start_time' | translate
+        }}</label>
         <p-datepicker
           inputId="startTime"
           [ngModel]="newRange().start"
@@ -68,7 +74,9 @@
         />
       </div>
       <div class="field mb-3">
-        <label for="endTime">{{ 'components.availability.end_time' | translate }}</label>
+        <label for="endTime">{{
+          'components.availability.end_time' | translate
+        }}</label>
         <p-datepicker
           inputId="endTime"
           [ngModel]="newRange().end"

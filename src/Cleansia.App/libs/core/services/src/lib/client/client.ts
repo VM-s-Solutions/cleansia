@@ -728,6 +728,304 @@ export class CurrencyClient implements ICurrencyClient {
     }
 }
 
+export interface IDashboardClient {
+    /**
+     * @return OK
+     */
+    getStats(employeeId: string): Observable<DashboardStatsDto>;
+    /**
+     * @param id (optional) 
+     * @param isActive (optional) 
+     * @param customerName (optional) 
+     * @param customerEmail (optional) 
+     * @param customerPhone (optional) 
+     * @param displayOrderNumber (optional) 
+     * @param employeeId (optional) 
+     * @param cleaningDateFrom (optional) 
+     * @param cleaningDateTo (optional) 
+     * @param paymentStatuses (optional) 
+     * @param paymentTypes (optional) 
+     * @param minTotalPrice (optional) 
+     * @param maxTotalPrice (optional) 
+     * @param orderStatuses (optional) 
+     * @param hasAvailableSpots (optional) 
+     * @param isUnassigned (optional) 
+     * @param excludeEmployeeId (optional) 
+     * @param sort (optional) 
+     * @param offset (optional) 
+     * @param limit (optional) 
+     * @return OK
+     */
+    getUpcomingOrders(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<OrderListItemPagedData>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class DashboardClient implements IDashboardClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(APIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @return OK
+     */
+    getStats(employeeId: string): Observable<DashboardStatsDto> {
+        let url = this.baseUrl + "/api/Dashboard/GetStats?";
+        if (employeeId === undefined || employeeId === null)
+            throw new globalThis.Error("The parameter 'employeeId' must be defined and cannot be null.");
+        else
+            url += "EmployeeId=" + encodeURIComponent("" + employeeId) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetStats(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetStats(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<DashboardStatsDto>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<DashboardStatsDto>;
+        }));
+    }
+
+    protected processGetStats(response: HttpResponseBase): Observable<DashboardStatsDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = DashboardStatsDto.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param id (optional) 
+     * @param isActive (optional) 
+     * @param customerName (optional) 
+     * @param customerEmail (optional) 
+     * @param customerPhone (optional) 
+     * @param displayOrderNumber (optional) 
+     * @param employeeId (optional) 
+     * @param cleaningDateFrom (optional) 
+     * @param cleaningDateTo (optional) 
+     * @param paymentStatuses (optional) 
+     * @param paymentTypes (optional) 
+     * @param minTotalPrice (optional) 
+     * @param maxTotalPrice (optional) 
+     * @param orderStatuses (optional) 
+     * @param hasAvailableSpots (optional) 
+     * @param isUnassigned (optional) 
+     * @param excludeEmployeeId (optional) 
+     * @param sort (optional) 
+     * @param offset (optional) 
+     * @param limit (optional) 
+     * @return OK
+     */
+    getUpcomingOrders(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<OrderListItemPagedData> {
+        let url = this.baseUrl + "/api/Dashboard/GetUpcomingOrders?";
+        if (id === null)
+            throw new globalThis.Error("The parameter 'id' cannot be null.");
+        else if (id !== undefined)
+            url += "Filter.Id=" + encodeURIComponent("" + id) + "&";
+        if (isActive === null)
+            throw new globalThis.Error("The parameter 'isActive' cannot be null.");
+        else if (isActive !== undefined)
+            url += "Filter.IsActive=" + encodeURIComponent("" + isActive) + "&";
+        if (customerName === null)
+            throw new globalThis.Error("The parameter 'customerName' cannot be null.");
+        else if (customerName !== undefined)
+            url += "Filter.CustomerName=" + encodeURIComponent("" + customerName) + "&";
+        if (customerEmail === null)
+            throw new globalThis.Error("The parameter 'customerEmail' cannot be null.");
+        else if (customerEmail !== undefined)
+            url += "Filter.CustomerEmail=" + encodeURIComponent("" + customerEmail) + "&";
+        if (customerPhone === null)
+            throw new globalThis.Error("The parameter 'customerPhone' cannot be null.");
+        else if (customerPhone !== undefined)
+            url += "Filter.CustomerPhone=" + encodeURIComponent("" + customerPhone) + "&";
+        if (displayOrderNumber === null)
+            throw new globalThis.Error("The parameter 'displayOrderNumber' cannot be null.");
+        else if (displayOrderNumber !== undefined)
+            url += "Filter.DisplayOrderNumber=" + encodeURIComponent("" + displayOrderNumber) + "&";
+        if (employeeId === null)
+            throw new globalThis.Error("The parameter 'employeeId' cannot be null.");
+        else if (employeeId !== undefined)
+            url += "Filter.EmployeeId=" + encodeURIComponent("" + employeeId) + "&";
+        if (cleaningDateFrom === null)
+            throw new globalThis.Error("The parameter 'cleaningDateFrom' cannot be null.");
+        else if (cleaningDateFrom !== undefined)
+            url += "Filter.CleaningDateFrom=" + encodeURIComponent(cleaningDateFrom ? "" + cleaningDateFrom.toISOString() : "") + "&";
+        if (cleaningDateTo === null)
+            throw new globalThis.Error("The parameter 'cleaningDateTo' cannot be null.");
+        else if (cleaningDateTo !== undefined)
+            url += "Filter.CleaningDateTo=" + encodeURIComponent(cleaningDateTo ? "" + cleaningDateTo.toISOString() : "") + "&";
+        if (paymentStatuses === null)
+            throw new globalThis.Error("The parameter 'paymentStatuses' cannot be null.");
+        else if (paymentStatuses !== undefined)
+            paymentStatuses && paymentStatuses.forEach(item => { url += "Filter.PaymentStatuses=" + encodeURIComponent("" + item) + "&"; });
+        if (paymentTypes === null)
+            throw new globalThis.Error("The parameter 'paymentTypes' cannot be null.");
+        else if (paymentTypes !== undefined)
+            paymentTypes && paymentTypes.forEach(item => { url += "Filter.PaymentTypes=" + encodeURIComponent("" + item) + "&"; });
+        if (minTotalPrice === null)
+            throw new globalThis.Error("The parameter 'minTotalPrice' cannot be null.");
+        else if (minTotalPrice !== undefined)
+            url += "Filter.MinTotalPrice=" + encodeURIComponent("" + minTotalPrice) + "&";
+        if (maxTotalPrice === null)
+            throw new globalThis.Error("The parameter 'maxTotalPrice' cannot be null.");
+        else if (maxTotalPrice !== undefined)
+            url += "Filter.MaxTotalPrice=" + encodeURIComponent("" + maxTotalPrice) + "&";
+        if (orderStatuses === null)
+            throw new globalThis.Error("The parameter 'orderStatuses' cannot be null.");
+        else if (orderStatuses !== undefined)
+            orderStatuses && orderStatuses.forEach(item => { url += "Filter.OrderStatuses=" + encodeURIComponent("" + item) + "&"; });
+        if (hasAvailableSpots === null)
+            throw new globalThis.Error("The parameter 'hasAvailableSpots' cannot be null.");
+        else if (hasAvailableSpots !== undefined)
+            url += "Filter.HasAvailableSpots=" + encodeURIComponent("" + hasAvailableSpots) + "&";
+        if (isUnassigned === null)
+            throw new globalThis.Error("The parameter 'isUnassigned' cannot be null.");
+        else if (isUnassigned !== undefined)
+            url += "Filter.IsUnassigned=" + encodeURIComponent("" + isUnassigned) + "&";
+        if (excludeEmployeeId === null)
+            throw new globalThis.Error("The parameter 'excludeEmployeeId' cannot be null.");
+        else if (excludeEmployeeId !== undefined)
+            url += "Filter.ExcludeEmployeeId=" + encodeURIComponent("" + excludeEmployeeId) + "&";
+        if (sort === null)
+            throw new globalThis.Error("The parameter 'sort' cannot be null.");
+        else if (sort !== undefined)
+            sort && sort.forEach((item, index) => {
+                for (const attr in item)
+        			if (item.hasOwnProperty(attr)) {
+        				url += "Sort[" + index + "]." + attr + "=" + encodeURIComponent("" + (item as any)[attr]) + "&";
+        			}
+            });
+        if (offset === null)
+            throw new globalThis.Error("The parameter 'offset' cannot be null.");
+        else if (offset !== undefined)
+            url += "Offset=" + encodeURIComponent("" + offset) + "&";
+        if (limit === null)
+            throw new globalThis.Error("The parameter 'limit' cannot be null.");
+        else if (limit !== undefined)
+            url += "Limit=" + encodeURIComponent("" + limit) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetUpcomingOrders(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetUpcomingOrders(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<OrderListItemPagedData>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<OrderListItemPagedData>;
+        }));
+    }
+
+    protected processGetUpcomingOrders(response: HttpResponseBase): Observable<OrderListItemPagedData> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = OrderListItemPagedData.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
 export interface IEmployeeClient {
     /**
      * @param query (optional) 
@@ -1932,17 +2230,25 @@ export interface IOrderClient {
      * @param minTotalPrice (optional) 
      * @param maxTotalPrice (optional) 
      * @param orderStatuses (optional) 
+     * @param hasAvailableSpots (optional) 
+     * @param isUnassigned (optional) 
+     * @param excludeEmployeeId (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getPaged(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<OrderListItemPagedData>;
+    getPaged(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<OrderListItemPagedData>;
     /**
      * @param orderId (optional) 
      * @return OK
      */
     getById(orderId?: string | undefined): Observable<OrderItem>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    takeOrder(body?: TakeOrderCommand | undefined): Observable<TakeOrderResponse>;
 }
 
 @Injectable({
@@ -2036,12 +2342,15 @@ export class OrderClient implements IOrderClient {
      * @param minTotalPrice (optional) 
      * @param maxTotalPrice (optional) 
      * @param orderStatuses (optional) 
+     * @param hasAvailableSpots (optional) 
+     * @param isUnassigned (optional) 
+     * @param excludeEmployeeId (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getPaged(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<OrderListItemPagedData> {
+    getPaged(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<OrderListItemPagedData> {
         let url = this.baseUrl + "/api/Order/GetPaged?";
         if (id === null)
             throw new globalThis.Error("The parameter 'id' cannot be null.");
@@ -2099,6 +2408,18 @@ export class OrderClient implements IOrderClient {
             throw new globalThis.Error("The parameter 'orderStatuses' cannot be null.");
         else if (orderStatuses !== undefined)
             orderStatuses && orderStatuses.forEach(item => { url += "Filter.OrderStatuses=" + encodeURIComponent("" + item) + "&"; });
+        if (hasAvailableSpots === null)
+            throw new globalThis.Error("The parameter 'hasAvailableSpots' cannot be null.");
+        else if (hasAvailableSpots !== undefined)
+            url += "Filter.HasAvailableSpots=" + encodeURIComponent("" + hasAvailableSpots) + "&";
+        if (isUnassigned === null)
+            throw new globalThis.Error("The parameter 'isUnassigned' cannot be null.");
+        else if (isUnassigned !== undefined)
+            url += "Filter.IsUnassigned=" + encodeURIComponent("" + isUnassigned) + "&";
+        if (excludeEmployeeId === null)
+            throw new globalThis.Error("The parameter 'excludeEmployeeId' cannot be null.");
+        else if (excludeEmployeeId !== undefined)
+            url += "Filter.ExcludeEmployeeId=" + encodeURIComponent("" + excludeEmployeeId) + "&";
         if (sort === null)
             throw new globalThis.Error("The parameter 'sort' cannot be null.");
         else if (sort !== undefined)
@@ -2229,6 +2550,83 @@ export class OrderClient implements IOrderClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = OrderItem.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    takeOrder(body?: TakeOrderCommand | undefined): Observable<TakeOrderResponse> {
+        let url = this.baseUrl + "/api/Order/TakeOrder";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processTakeOrder(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processTakeOrder(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<TakeOrderResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<TakeOrderResponse>;
+        }));
+    }
+
+    protected processTakeOrder(response: HttpResponseBase): Observable<TakeOrderResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = TakeOrderResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -4579,6 +4977,62 @@ export interface ICurrencyListItem {
     exchangeRate: number;
 }
 
+export class DashboardStatsDto implements IDashboardStatsDto {
+    availableOrdersCount!: number;
+    myActiveOrdersCount!: number;
+    thisMonthCompletedOrders!: number;
+    lastMonthCompletedOrders!: number;
+    currentPeriodEarnings!: number;
+    latestInvoiceStatus!: string | undefined;
+
+    constructor(data?: IDashboardStatsDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.availableOrdersCount = Data["availableOrdersCount"];
+            this.myActiveOrdersCount = Data["myActiveOrdersCount"];
+            this.thisMonthCompletedOrders = Data["thisMonthCompletedOrders"];
+            this.lastMonthCompletedOrders = Data["lastMonthCompletedOrders"];
+            this.currentPeriodEarnings = Data["currentPeriodEarnings"];
+            this.latestInvoiceStatus = Data["latestInvoiceStatus"];
+        }
+    }
+
+    static fromJS(data: any): DashboardStatsDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new DashboardStatsDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["availableOrdersCount"] = this.availableOrdersCount;
+        data["myActiveOrdersCount"] = this.myActiveOrdersCount;
+        data["thisMonthCompletedOrders"] = this.thisMonthCompletedOrders;
+        data["lastMonthCompletedOrders"] = this.lastMonthCompletedOrders;
+        data["currentPeriodEarnings"] = this.currentPeriodEarnings;
+        data["latestInvoiceStatus"] = this.latestInvoiceStatus;
+        return data;
+    }
+}
+
+export interface IDashboardStatsDto {
+    availableOrdersCount: number;
+    myActiveOrdersCount: number;
+    thisMonthCompletedOrders: number;
+    lastMonthCompletedOrders: number;
+    currentPeriodEarnings: number;
+    latestInvoiceStatus: string | undefined;
+}
+
 export class ApproveInvoiceCommand implements IApproveInvoiceCommand {
     invoiceId!: string | undefined;
     adminNotes!: string | undefined;
@@ -6250,6 +6704,11 @@ export class OrderListItem implements IOrderListItem {
     currency!: CurrencyListItem;
     assignedEmployees!: string[] | undefined;
     selectedServices!: ServiceListItem[] | undefined;
+    requiredEmployees!: number;
+    maxEmployees!: number;
+    availableSpots!: number;
+    assignedEmployeesCount!: number;
+    hasAvailableSpots!: boolean;
 
     constructor(data?: IOrderListItem) {
         if (data) {
@@ -6302,6 +6761,11 @@ export class OrderListItem implements IOrderListItem {
                 for (let item of Data["selectedServices"])
                     this.selectedServices!.push(ServiceListItem.fromJS(item));
             }
+            this.requiredEmployees = Data["requiredEmployees"];
+            this.maxEmployees = Data["maxEmployees"];
+            this.availableSpots = Data["availableSpots"];
+            this.assignedEmployeesCount = Data["assignedEmployeesCount"];
+            this.hasAvailableSpots = Data["hasAvailableSpots"];
         }
     }
 
@@ -6354,6 +6818,11 @@ export class OrderListItem implements IOrderListItem {
             for (let item of this.selectedServices)
                 data["selectedServices"].push(item ? item.toJSON() : undefined as any);
         }
+        data["requiredEmployees"] = this.requiredEmployees;
+        data["maxEmployees"] = this.maxEmployees;
+        data["availableSpots"] = this.availableSpots;
+        data["assignedEmployeesCount"] = this.assignedEmployeesCount;
+        data["hasAvailableSpots"] = this.hasAvailableSpots;
         return data;
     }
 }
@@ -6381,6 +6850,11 @@ export interface IOrderListItem {
     currency: CurrencyListItem;
     assignedEmployees: string[] | undefined;
     selectedServices: ServiceListItem[] | undefined;
+    requiredEmployees: number;
+    maxEmployees: number;
+    availableSpots: number;
+    assignedEmployeesCount: number;
+    hasAvailableSpots: boolean;
 }
 
 export class OrderStatusTrackDto implements IOrderStatusTrackDto {
@@ -6421,6 +6895,86 @@ export class OrderStatusTrackDto implements IOrderStatusTrackDto {
 export interface IOrderStatusTrackDto {
     status: Code;
     createdOn: Date;
+}
+
+export class TakeOrderCommand implements ITakeOrderCommand {
+    orderId!: string | undefined;
+    employeeId!: string | undefined;
+
+    constructor(data?: ITakeOrderCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.employeeId = Data["employeeId"];
+        }
+    }
+
+    static fromJS(data: any): TakeOrderCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new TakeOrderCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        data["employeeId"] = this.employeeId;
+        return data;
+    }
+}
+
+export interface ITakeOrderCommand {
+    orderId: string | undefined;
+    employeeId: string | undefined;
+}
+
+export class TakeOrderResponse implements ITakeOrderResponse {
+    orderId!: string | undefined;
+    employeeId!: string | undefined;
+
+    constructor(data?: ITakeOrderResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.employeeId = Data["employeeId"];
+        }
+    }
+
+    static fromJS(data: any): TakeOrderResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new TakeOrderResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        data["employeeId"] = this.employeeId;
+        return data;
+    }
+}
+
+export interface ITakeOrderResponse {
+    orderId: string | undefined;
+    employeeId: string | undefined;
 }
 
 export class PackageDetails implements IPackageDetails {
@@ -8356,8 +8910,9 @@ export interface ISortDefinition {
 export enum OrderStatus {
     Pending = 1,
     Confirmed = 2,
-    Completed = 3,
-    Cancelled = 4,
+    InProgress = 3,
+    Completed = 4,
+    Cancelled = 5,
 }
 
 export enum PayPeriodStatus {

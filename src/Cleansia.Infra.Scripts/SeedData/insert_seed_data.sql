@@ -329,44 +329,44 @@ VALUES
   -- Customer Users
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    '$2a$11$LGWjlgYDdH1Zso.FvdZbkebhVtKj39L1HYN0GlbE3rRYcZw5I9RQ6', -- Password: Test123!
-   'Jan', 'Novák', 'jan.novak@email.cz', '+420123456789', '1985-03-15', 0, 0, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
+   'Jan', 'Novák', 'jan.novak@email.cz', '+420123456789', '1985-03-15', 2, 1, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    '$2a$11$LGWjlgYDdH1Zso.FvdZbkebhVtKj39L1HYN0GlbE3rRYcZw5I9RQ6', -- Password: Test123!
-   'Marie', 'Svobodová', 'marie.svobodova@email.cz', '+420234567890', '1990-07-22', 0, 0, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
+   'Marie', 'Svobodová', 'marie.svobodova@email.cz', '+420234567890', '1990-07-22', 2, 1, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    '$2a$11$LGWjlgYDdH1Zso.FvdZbkebhVtKj39L1HYN0GlbE3rRYcZw5I9RQ6', -- Password: Test123!
-   'Petr', 'Dvořák', 'petr.dvorak@email.cz', '+420345678901', '1988-11-05', 0, 0, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
+   'Petr', 'Dvořák', 'petr.dvorak@email.cz', '+420345678901', '1988-11-05', 2, 1, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    '$2a$11$LGWjlgYDdH1Zso.FvdZbkebhVtKj39L1HYN0GlbE3rRYcZw5I9RQ6', -- Password: Test123!
-   'Anna', 'Černá', 'anna.cerna@email.cz', '+420456789012', '1992-04-18', 0, 0, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
+   'Anna', 'Černá', 'anna.cerna@email.cz', '+420456789012', '1992-04-18', 2, 1, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    '$2a$11$LGWjlgYDdH1Zso.FvdZbkebhVtKj39L1HYN0GlbE3rRYcZw5I9RQ6', -- Password: Test123!
-   'Tomáš', 'Procházka', 'tomas.prochazka@email.cz', '+420567890123', '1987-09-12', 0, 0, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
+   'Tomáš', 'Procházka', 'tomas.prochazka@email.cz', '+420567890123', '1987-09-12', 2, 1, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
 
   -- Employee Users
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    '$2a$11$LGWjlgYDdH1Zso.FvdZbkebhVtKj39L1HYN0GlbE3rRYcZw5I9RQ6', -- Password: Test123!
-   'Kateřina', 'Novotná', 'katerina.novotna@cleansia.cz', '+420678901234', '1993-06-08', 1, 0, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
+   'Kateřina', 'Novotná', 'katerina.novotna@cleansia.cz', '+420678901234', '1993-06-08', 2, 1, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    '$2a$11$LGWjlgYDdH1Zso.FvdZbkebhVtKj39L1HYN0GlbE3rRYcZw5I9RQ6', -- Password: Test123!
-   'Michal', 'Krejčí', 'michal.krejci@cleansia.cz', '+420789012345', '1991-12-03', 1, 0, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
+   'Michal', 'Krejčí', 'michal.krejci@cleansia.cz', '+420789012345', '1991-12-03', 2, 1, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    '$2a$11$LGWjlgYDdH1Zso.FvdZbkebhVtKj39L1HYN0GlbE3rRYcZw5I9RQ6', -- Password: Test123!
-   'Zuzana', 'Horáková', 'zuzana.horakova@cleansia.cz', '+420890123456', '1989-02-14', 1, 0, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
+   'Zuzana', 'Horáková', 'zuzana.horakova@cleansia.cz', '+420890123456', '1989-02-14', 2, 1, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    '$2a$11$LGWjlgYDdH1Zso.FvdZbkebhVtKj39L1HYN0GlbE3rRYcZw5I9RQ6', -- Password: Test123!
-   'Pavel', 'Veselý', 'pavel.vesely@cleansia.cz', '+420901234567', '1986-08-27', 1, 0, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
+   'Pavel', 'Veselý', 'pavel.vesely@cleansia.cz', '+420901234567', '1986-08-27', 2, 1, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    '$2a$11$LGWjlgYDdH1Zso.FvdZbkebhVtKj39L1HYN0GlbE3rRYcZw5I9RQ6', -- Password: Test123!
-   'Lenka', 'Marková', 'lenka.markova@cleansia.cz', '+420012345678', '1994-05-19', 1, 0, true, generate_ulid()::TEXT, generate_ulid()::TEXT);
+   'Lenka', 'Marková', 'lenka.markova@cleansia.cz', '+420012345678', '1994-05-19', 2, 1, true, generate_ulid()::TEXT, generate_ulid()::TEXT);
 
 -- 9. CARTS (Create carts with UserId after users exist)
 INSERT INTO public."Carts" (
@@ -615,10 +615,11 @@ INSERT INTO public."Orders" (
   "PaymentStatus", "TotalPrice", "EstimatedTime",
   "ConfirmationCode", "StripeSessionId", "Notes",
   "SpecialInstructions", "AccessInstructions",
-  "CurrencyId", "UserId", "EmployeeId", "Extras"
+  "CurrencyId", "UserId", "EmployeeId", "Extras",
+  "RequiredEmployees", "MaxEmployees"
 )
 VALUES
-  -- Order 1: Jan Novák - Essential Clean
+  -- Order 1: Jan Novák - Essential Clean (180 min = 2 employees required, 3 max)
   (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Jan Novák', 'jan.novak@email.cz', '+420123456789',
    (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Wenceslas Square 1' LIMIT 1),
@@ -630,9 +631,10 @@ VALUES
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'jan.novak@email.cz' LIMIT 1),
    (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654321' LIMIT 1),
-   '{"eco_products": true, "pet_friendly": false, "extra_vacuum": true}'),
+   '{"eco_products": true, "pet_friendly": false, "extra_vacuum": true}',
+   2, 3),
 
-  -- Order 2: Marie Svobodová - Deep Clean Premium
+  -- Order 2: Marie Svobodová - Deep Clean Premium (240 min = 2 employees required, 3 max)
   (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Marie Svobodová', 'marie.svobodova@email.cz', '+420234567890',
    (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Národní třída 25' LIMIT 1),
@@ -644,9 +646,10 @@ VALUES
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'marie.svobodova@email.cz' LIMIT 1),
    (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654322' LIMIT 1),
-   '{"eco_products": false, "pet_friendly": true, "extra_vacuum": false}'),
+   '{"eco_products": false, "pet_friendly": true, "extra_vacuum": false}',
+   2, 3),
 
-  -- Order 3: Petr Dvořák - Moving Day Special
+  -- Order 3: Petr Dvořák - Moving Day Special (300 min = 3 employees required, 4 max)
   (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Petr Dvořák', 'petr.dvorak@email.cz', '+420345678901',
    (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Vinohrady 456' LIMIT 1),
@@ -658,9 +661,10 @@ VALUES
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'petr.dvorak@email.cz' LIMIT 1),
    (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654323' LIMIT 1),
-   '{"eco_products": true, "pet_friendly": false, "extra_vacuum": true}'),
+   '{"eco_products": true, "pet_friendly": false, "extra_vacuum": true}',
+   3, 4),
 
-  -- Order 4: Anna Černá - Kitchen & Bathroom Focus
+  -- Order 4: Anna Černá - Kitchen & Bathroom Focus (150 min = 2 employees required, 3 max)
   (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Anna Černá', 'anna.cerna@email.cz', '+420456789012',
    (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Karlínské náměstí 12' LIMIT 1),
@@ -672,9 +676,10 @@ VALUES
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'anna.cerna@email.cz' LIMIT 1),
    (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654324' LIMIT 1),
-   '{"eco_products": false, "pet_friendly": true, "extra_vacuum": false}'),
+   '{"eco_products": false, "pet_friendly": true, "extra_vacuum": false}',
+   2, 3),
 
-  -- Order 5: Tomáš Procházka - Eco-Green Package
+  -- Order 5: Tomáš Procházka - Eco-Green Package (210 min = 2 employees required, 3 max)
   (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Tomáš Procházka', 'tomas.prochazka@email.cz', '+420567890123',
    (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Smíchov 789' LIMIT 1),
@@ -686,9 +691,10 @@ VALUES
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'tomas.prochazka@email.cz' LIMIT 1),
    (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654325' LIMIT 1),
-   '{"eco_products": true, "pet_friendly": true, "extra_vacuum": true}'),
+   '{"eco_products": true, "pet_friendly": true, "extra_vacuum": true}',
+   2, 3),
 
-  -- Order 6: Complete Home Clean (No package, individual services)
+  -- Order 6: Complete Home Clean (No package, individual services) (165 min = 2 employees required, 3 max)
   (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Jan Novák', 'jan.novak@email.cz', '+420123456789',
    (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Wenceslas Square 1' LIMIT 1),
@@ -700,7 +706,8 @@ VALUES
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'jan.novak@email.cz' LIMIT 1),
    (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654321' LIMIT 1),
-   '{"eco_products": false, "pet_friendly": false, "extra_vacuum": false}');
+   '{"eco_products": false, "pet_friendly": false, "extra_vacuum": false}',
+   2, 3);
 
 -- Insert Order Services (Junction table for orders and individual services)
 INSERT INTO public."OrderServices" (

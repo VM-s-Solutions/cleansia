@@ -71,6 +71,14 @@ public class EmployeeInvoiceRepository(CleansiaDbContext context) : BaseReposito
             .AnyAsync(i => i.EmployeeId == employeeId && i.PayPeriodId == payPeriodId, cancellationToken);
     }
 
+    public Task<EmployeeInvoice?> GetLatestInvoiceAsync(string employeeId, CancellationToken cancellationToken)
+    {
+        return GetDbSet()
+            .Where(i => i.EmployeeId == employeeId)
+            .OrderByDescending(i => i.GeneratedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public override Task<EmployeeInvoice?> GetByIdAsync(string id, CancellationToken cancellationToken)
     {
         return GetDbSet()

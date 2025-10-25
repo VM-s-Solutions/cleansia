@@ -34,6 +34,9 @@ export class OrderEffects {
             req.filter?.minTotalPrice,
             req.filter?.maxTotalPrice,
             req.filter?.orderStatuses,
+            req.filter?.hasAvailableSpots,
+            req.filter?.isUnassigned,
+            req.filter?.excludeEmployeeId,
             req.sort,
             req.offset,
             req.limit

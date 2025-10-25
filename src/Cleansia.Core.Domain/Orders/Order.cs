@@ -50,6 +50,16 @@ public class Order : Auditable
 
     public decimal? TravelDistance { get; private set; }
 
+    public int RequiredEmployees { get; private set; } = 1;
+
+    public int MaxEmployees { get; private set; } = 1;
+
+    private const int StandardWorkUnitMinutes = 120;
+
+    public int AvailableSpots => MaxEmployees - _assignedEmployees.Count;
+    public bool HasAvailableSpots => AvailableSpots > 0;
+    public bool IsFullyAssigned => _assignedEmployees.Count >= RequiredEmployees;
+
     [MaxLength(50)]
     public string ConfirmationCode { get; private set; } = OrderExtensions.GenerateConfirmationCode();
 
@@ -160,6 +170,58 @@ public class Order : Auditable
         }
 
         TravelDistance = distance;
+        return this;
+    }
+
+    public Order AssignEmployee(string employeeId)
+    {
+        if (!HasAvailableSpots)
+        {
+            throw new InvalidOperationException("No available spots for this order");
+        }
+
+        if (string.IsNullOrEmpty(EmployeeId))
+        {
+            EmployeeId = employeeId;
+        }
+
+        return this;
+    }
+
+    public Order AddAssignedEmployee(OrderEmployee orderEmployee)
+    {
+        if (!HasAvailableSpots)
+        {
+            throw new InvalidOperationException("No available spots for this order");
+        }
+
+        _assignedEmployees.Add(orderEmployee);
+        return this;
+    }
+
+    public Order CalculateRequiredEmployees()
+    {
+        if (EstimatedTime <= 0)
+        {
+            RequiredEmployees = 1;
+            MaxEmployees = 1;
+            return this;
+        }
+
+        RequiredEmployees = (int)Math.Ceiling((double)EstimatedTime / StandardWorkUnitMinutes);
+        MaxEmployees = RequiredEmployees + 1;
+
+        return this;
+    }
+
+    public Order SetMaxEmployees(int maxEmployees)
+    {
+        if (maxEmployees < RequiredEmployees)
+        {
+            throw new ArgumentException("Max employees cannot be less than required employees", nameof(maxEmployees));
+        }
+
+        MaxEmployees = maxEmployees;
         return this;
     }
 }

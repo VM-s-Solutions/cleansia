@@ -7,6 +7,7 @@ import {
   OrderStatus,
   SnackbarService,
   SortDefinition,
+  TakeOrderCommand,
 } from '@cleansia/services';
 import * as OrderActions from '@cleansia/stores';
 import { selectOrderItems, selectOrderLoading } from '@cleansia/stores';
@@ -41,8 +42,6 @@ export class OrdersFacade extends UnsubscribeControlDirective {
     });
 
     this.loadCurrentEmployee();
-
-    this.loadAvailableOrders();
   }
 
   private loadCurrentEmployee(): void {
@@ -55,14 +54,19 @@ export class OrdersFacade extends UnsubscribeControlDirective {
       .subscribe((employee) => {
         if (employee?.id) {
           this.currentEmployeeId.set(employee.id);
+          this.loadAvailableOrders();
         }
       });
   }
 
   loadAvailableOrders(offset = 0, limit = 20): void {
+    const employeeId = this.currentEmployeeId();
+
     const filter = new OrderFilter({
       employeeId: undefined,
       orderStatuses: [OrderStatus.Pending, OrderStatus.Confirmed],
+      hasAvailableSpots: true,
+      excludeEmployeeId: employeeId || undefined,
     });
 
     this.store.dispatch(
@@ -87,7 +91,6 @@ export class OrdersFacade extends UnsubscribeControlDirective {
 
     const filter = new OrderFilter({
       employeeId: employeeId,
-      orderStatuses: [3], // Completed = 3
     });
 
     this.store.dispatch(
@@ -110,30 +113,29 @@ export class OrdersFacade extends UnsubscribeControlDirective {
       return;
     }
 
-    // TODO: Call backend API to assign employee to order
-    // For now, show success message and reload
-    this.snackbarService.showSuccessTranslated(
-      'pages.orders.order_taken_success'
-    );
-
-    // Reload available orders after taking one
-    this.loadAvailableOrders();
+    this.client.orderClient
+      .takeOrder(new TakeOrderCommand({ orderId, employeeId }))
+      .subscribe((response) => {
+        if (response) {
+          this.snackbarService.showSuccessTranslated(
+            'pages.orders.order_taken_success'
+          );
+          this.loadAvailableOrders();
+        }
+      });
   }
 
-  // Set active tab
   setActiveTab(tab: 'available' | 'my'): void {
     this.activeTab.set(tab);
   }
 
-  // Update sort and reload data
   updateSort(sort: SortDefinition[]): void {
     this.currentSort.set(sort);
-    // Reload data for the current active tab
     const tab = this.activeTab();
     if (tab === 'available') {
       this.loadAvailableOrders();
-    } else {
-      this.loadMyOrders();
+      return;
     }
+    this.loadMyOrders();
   }
 }

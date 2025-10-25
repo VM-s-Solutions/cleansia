@@ -162,6 +162,7 @@ public class CreateOrder
                                 selectedPackages.Sum(p => p.Package!.IncludedServices.Sum(s => s.Service!.EstimatedTime));
 
             order.UpdateEstimatedTime(estimatedTime);
+            order.CalculateRequiredEmployees();
             orderRepository.Add(order);
 
             string? stripeSessionId = null;

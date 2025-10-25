@@ -22,6 +22,7 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
                 .ThenInclude(op => op.Package)
                     .ThenInclude(p => p.IncludedServices)
                         .ThenInclude(s => s.Service)
+            .Include(o => o.AssignedEmployees)
             .AsSplitQuery()
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }

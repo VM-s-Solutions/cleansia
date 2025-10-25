@@ -72,6 +72,26 @@
       "first_name": "First Name",
       "last_name": "Last Name"
     },
+    "dashboard": {
+      "title": "Dashboard",
+      "description": "Your overview of orders, earnings, and upcoming assignments",
+      "statistics": "Statistics",
+      "refresh": "Refresh",
+      "available_orders": "Available Orders",
+      "my_active_orders": "My Active Orders",
+      "completed_this_month": "Completed This Month",
+      "pending_earnings": "Pending Earnings",
+      "vs_last_month": "vs last month",
+      "upcoming_orders": "Upcoming Orders",
+      "view_all": "View All",
+      "no_upcoming_orders": "No upcoming orders scheduled",
+      "quick_actions": "Quick Actions",
+      "browse_orders": "Browse Available Orders",
+      "view_invoices": "View Invoices",
+      "edit_profile": "Edit Profile",
+      "analytics": "Analytics & Performance",
+      "retry": "Retry"
+    },
     "orders": {
       "title": "Order Management & Time Tracking",
       "description": "Manage your active orders and track your working time.",
@@ -104,7 +124,8 @@
       "no_available_orders": "No available orders",
       "no_my_orders": "You haven't completed any orders yet",
       "order_taken_success": "Order taken successfully!",
-      "employee_not_found": "Employee information not found"
+      "employee_not_found": "Employee information not found",
+      "available_spots": "Available Spots"
     },
     "order_details": {
       "title": "Order Details",

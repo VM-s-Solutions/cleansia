@@ -1,0 +1,134 @@
+<div class="cleansia-dashboard">
+  <cleansia-language-switcher />
+  <div class="cleansia-dashboard__container">
+    <div class="cleansia-dashboard__header">
+      <cleansia-title [title]="'pages.dashboard.title' | translate" />
+      <p class="cleansia-dashboard__description">
+        {{ 'pages.dashboard.description' | translate }}
+      </p>
+    </div>
+
+    <!-- Statistics Section -->
+    <cleansia-section [title]="'pages.dashboard.statistics' | translate">
+      @if (facade.statsLoading()) {
+      <cleansia-loader />
+      } @else {
+      <div class="cleansia-dashboard__stats">
+        @for (card of facade.getStatCards(); track card.title) {
+        <div
+          class="stat-card"
+          [class.clickable]="card.route"
+          (click)="onCardClick(card)"
+        >
+          <div class="stat-card__icon" [style.background-color]="card.color">
+            <i [class]="card.icon"></i>
+          </div>
+          <div class="stat-card__content">
+            <div class="stat-card__title">{{ card.title | translate }}</div>
+            <div class="stat-card__value">{{ card.value }}</div>
+            @if (card.trend) {
+            <div
+              class="stat-card__trend"
+              [class]="getTrendClass(card.trend.direction)"
+            >
+              <i [class]="getTrendIcon(card.trend.direction)"></i>
+              <span>{{ card.trend.value }}%</span>
+              <span class="trend-text">
+                {{ 'pages.dashboard.vs_last_month' | translate }}
+              </span>
+            </div>
+            }
+          </div>
+        </div>
+        }
+      </div>
+      }
+    </cleansia-section>
+
+    <!-- Upcoming Orders Section -->
+    <cleansia-section [title]="'pages.dashboard.upcoming_orders' | translate">
+      @if (facade.upcomingOrdersLoading()) {
+      <cleansia-loader />
+      } @else if (facade.upcomingOrders().length === 0) {
+      <div class="empty-state">
+        <i class="pi pi-calendar"></i>
+        <p>{{ 'pages.dashboard.no_upcoming_orders' | translate }}</p>
+      </div>
+      } @else {
+      <div class="upcoming-orders">
+        @for (order of facade.upcomingOrders(); track order.id) {
+        <div
+          class="order-card"
+          (click)="facade.navigateTo('/orders/' + order.id)"
+        >
+          <div class="order-card__header">
+            <div class="order-card__number">{{ order.displayOrderNumber }}</div>
+            <div class="order-card__status">
+              <span
+                class="order-status-badge"
+                [class]="'status-' + order.orderStatus?.name?.toLowerCase()"
+              >
+                {{ order.orderStatus?.name }}
+              </span>
+            </div>
+          </div>
+          <div class="order-card__details">
+            <div class="detail-row">
+              <i class="pi pi-user"></i>
+              <span>{{ order.customerName }}</span>
+            </div>
+            <div class="detail-row">
+              <i class="pi pi-calendar"></i>
+              <span>{{
+                order.cleaningDateTime | date : 'dd.MM.yyyy HH:mm'
+              }}</span>
+            </div>
+            <div class="detail-row">
+              <i class="pi pi-map-marker"></i>
+              <span>{{ order.customerAddress }}</span>
+            </div>
+          </div>
+          <div class="order-card__footer">
+            <div class="order-card__price">
+              {{ order.totalPrice | number : '1.2-2' }} Kč
+            </div>
+            <i class="pi pi-chevron-right"></i>
+          </div>
+        </div>
+        }
+      </div>
+      <div class="cleansia-dashboard__view-all">
+        <cleansia-button
+          [buttonType]="'button'"
+          [title]="'pages.dashboard.view_all' | translate"
+          (clickFn)="facade.navigateTo('/orders')"
+        />
+      </div>
+      }
+    </cleansia-section>
+
+    <!-- Quick Actions Section -->
+    <cleansia-section [title]="'pages.dashboard.quick_actions' | translate">
+      <div class="quick-actions">
+        <cleansia-button
+          [buttonType]="'button'"
+          [style]="'raised-button'"
+          [title]="'pages.dashboard.browse_orders' | translate"
+          (clickFn)="facade.navigateTo('/orders')"
+        />
+        <cleansia-button
+          [buttonType]="'button'"
+          [style]="'raised-button'"
+          [title]="'pages.dashboard.view_invoices' | translate"
+          (clickFn)="facade.navigateTo('/invoices')"
+        />
+        <cleansia-button
+          [buttonType]="'button'"
+          [style]="'raised-button'"
+          [title]="'pages.dashboard.edit_profile' | translate"
+          (clickFn)="facade.navigateTo('/profile')"
+        />
+      </div>
+    </cleansia-section>
+  </div>
+</div>

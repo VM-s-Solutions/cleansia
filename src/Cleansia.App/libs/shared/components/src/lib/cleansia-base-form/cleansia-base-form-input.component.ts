@@ -51,9 +51,7 @@ export class CleansiaBaseFormInputComponent
 
   isRequired: Signal<boolean> = computed(() => {
     if (this.ngControl) {
-      const validator = this.ngControl.control?.validator?.(
-        {} as AbstractControl
-      );
+      const validator = this.ngControl.control?.validator?.({} as AbstractControl);
       return this.required() || (validator && validator['required']);
     }
     return this.required();
@@ -67,9 +65,7 @@ export class CleansiaBaseFormInputComponent
   };
 
   hasErrors(): boolean {
-    return (
-      !!this.formControl && this.formControl.invalid && this.formControl.touched
-    );
+    return !!this.formControl && this.formControl.invalid && this.formControl.touched;
   }
 
   ngOnInit(): void {

@@ -18,4 +18,7 @@ public record OrderFilter(
     IEnumerable<PaymentType>? PaymentTypes,
     decimal? MinTotalPrice,
     decimal? MaxTotalPrice,
-    IEnumerable<OrderStatus>? OrderStatuses);
+    IEnumerable<OrderStatus>? OrderStatuses,
+    bool? HasAvailableSpots,
+    bool? IsUnassigned,
+    string? ExcludeEmployeeId);

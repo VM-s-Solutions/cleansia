@@ -16,7 +16,9 @@
       "Bash(npm run:*)",
       "Bash(npx nx build:*)",
       "Bash(npx nx lint:*)",
-      "Bash(npx nx serve:*)"
+      "Bash(npx nx serve:*)",
+      "Read(//c/Users/cmisa/Desktop/Mike/Projects/cleansia/src/Cleansia.Web/**)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

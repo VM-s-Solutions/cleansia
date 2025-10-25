@@ -1,5 +1,11 @@
 .availability-module {
   max-width: 800px;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
 }
 
 .day-content {

@@ -18,6 +18,9 @@
       "@cleansia-partner/confirm-email": [
         "libs/cleansia-partner-features/confirm-email/src/index.ts"
       ],
+      "@cleansia-partner/dashboard": [
+        "libs/cleansia-partner-features/dashboard/src/index.ts"
+      ],
       "@cleansia-partner/invoices": [
         "libs/cleansia-partner-features/invoices/src/index.ts"
       ],

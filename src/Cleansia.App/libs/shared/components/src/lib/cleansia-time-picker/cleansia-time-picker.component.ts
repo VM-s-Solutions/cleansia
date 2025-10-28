@@ -1,13 +1,5 @@
 import { CommonModule } from '@angular/common';
-import {
-  Component,
-  computed,
-  effect,
-  forwardRef,
-  input,
-  output,
-  signal,
-} from '@angular/core';
+import { Component, computed, effect, forwardRef, input, output, signal } from '@angular/core';
 import {
   ControlValueAccessor,
   FormsModule,

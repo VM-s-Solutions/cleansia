@@ -20,6 +20,9 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
     public decimal? MinTotalPrice { get; set; }
     public decimal? MaxTotalPrice { get; set; }
     public IEnumerable<OrderStatus>? OrderStatuses { get; set; }
+    public bool? HasAvailableSpots { get; set; }
+    public bool? IsUnassigned { get; set; }
+    public string? ExcludeEmployeeId { get; set; }
 
     public Expression<Func<Order, bool>> SatisfiedBy()
     {
@@ -57,7 +60,7 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
 
         if (!string.IsNullOrEmpty(EmployeeId))
         {
-            specification &= new DirectSpecification<Order>(x => x.EmployeeId == EmployeeId);
+            specification &= new DirectSpecification<Order>(x => x.AssignedEmployees.Select(x => x.EmployeeId).Contains(EmployeeId));
         }
 
         if (CleaningDateFrom.HasValue)
@@ -95,6 +98,21 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
             specification &= new DirectSpecification<Order>(x => OrderStatuses.Contains(x.OrderStatusHistory.OrderByDescending(s => s.CreatedOn).First().Status));
         }
 
+        if (IsUnassigned.HasValue && IsUnassigned.Value)
+        {
+            specification &= new DirectSpecification<Order>(x => string.IsNullOrEmpty(x.EmployeeId) || x.AssignedEmployees.Count == 0);
+        }
+
+        if (HasAvailableSpots.HasValue && HasAvailableSpots.Value)
+        {
+            specification &= new DirectSpecification<Order>(x => x.AssignedEmployees.Count < x.MaxEmployees);
+        }
+
+        if (!string.IsNullOrEmpty(ExcludeEmployeeId))
+        {
+            specification &= new DirectSpecification<Order>(x => x.AssignedEmployees.All(ae => ae.EmployeeId != ExcludeEmployeeId));
+        }
+
         return specification.SatisfiedBy();
     }
 
@@ -102,7 +120,8 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
         string? customerEmail = null, string? customerPhone = null, string? displayOrderNumber = null,
         string? employeeId = null, DateTime? cleaningDateFrom = null,
         DateTime? cleaningDateTo = null, IEnumerable<PaymentStatus>? paymentStatuses = null, IEnumerable<PaymentType>? paymentTypes = null,
-        decimal? minTotalPrice = null, decimal? maxTotalPrice = null, IEnumerable<OrderStatus>? orderStatuses = null) =>
+        decimal? minTotalPrice = null, decimal? maxTotalPrice = null, IEnumerable<OrderStatus>? orderStatuses = null,
+        bool? hasAvailableSpots = null, bool? isUnassigned = null, string? excludeEmployeeId = null) =>
         new()
         {
             Id = id,
@@ -118,6 +137,9 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
             PaymentTypes = paymentTypes,
             MinTotalPrice = minTotalPrice,
             MaxTotalPrice = maxTotalPrice,
-            OrderStatuses = orderStatuses
+            OrderStatuses = orderStatuses,
+            HasAvailableSpots = hasAvailableSpots,
+            IsUnassigned = isUnassigned,
+            ExcludeEmployeeId = excludeEmployeeId
         };
 }

@@ -18,4 +18,12 @@ public interface IEmployeeInvoiceRepository : IRepository<EmployeeInvoice, strin
     Task<EmployeeInvoice?> GetByEmployeeAndPayPeriodAsync(string employeeId, string payPeriodId, CancellationToken cancellationToken);
 
     Task<bool> ExistsForPayPeriodAsync(string employeeId, string payPeriodId, CancellationToken cancellationToken);
+
+    Task<EmployeeInvoice?> GetLatestInvoiceAsync(string employeeId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Gets invoices for an employee within a date range.
+    /// Used for earnings analytics.
+    /// </summary>
+    IQueryable<EmployeeInvoice> GetInvoicesByDateRange(string employeeId, DateTime startDate, DateTime endDate);
 }

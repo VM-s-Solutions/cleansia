@@ -1,8 +1,5 @@
 import { Route } from '@angular/router';
-import {
-  CleansiaPartnerRoute,
-  authGuard,
-} from '@cleansia/services';
+import { CleansiaPartnerRoute, authGuard } from '@cleansia/services';
 
 export const appRoutes: Route[] = [
   {
@@ -22,12 +19,19 @@ export const appRoutes: Route[] = [
         (m) => m.confirmEmailRoutes
       ),
   },
-  // {
-  //   path: CleansiaPartnerRoute.DASHBOARD,
-  //   loadChildren: () =>
-  //     import('@cleansia-partner/dashboard').then((m) => m.dashboardRoutes),
-  //   canActivate: [authGuard],
-  // },
+  {
+    path: CleansiaPartnerRoute.FORGOT_PASSWORD,
+    loadChildren: () =>
+      import('@cleansia-partner/forgot-password').then(
+        (m) => m.forgotPasswordRoutes
+      ),
+  },
+  {
+    path: CleansiaPartnerRoute.DASHBOARD,
+    loadChildren: () =>
+      import('@cleansia-partner/dashboard').then((m) => m.dashboardRoutes),
+    canActivate: [authGuard],
+  },
   {
     path: CleansiaPartnerRoute.PROFILE,
     loadChildren: () =>
@@ -48,7 +52,7 @@ export const appRoutes: Route[] = [
   },
   {
     path: CleansiaPartnerRoute.HOME,
-    redirectTo: CleansiaPartnerRoute.PROFILE,
+    redirectTo: CleansiaPartnerRoute.ORDERS,
     pathMatch: 'full',
   },
   // {

@@ -10,17 +10,15 @@
         <p class="error-message">{{ error() }}</p>
         <div class="error-actions">
           <cleansia-button
-            [title]="'global.actions.retry' | translate"
-            (click)="retryLoadInvoice()"
-            type="primary"
-          >
-          </cleansia-button>
-          <cleansia-button
             [title]="'global.actions.back' | translate"
             (click)="navigateToInvoices()"
             type="secondary"
-          >
-          </cleansia-button>
+          />
+          <cleansia-button
+            [title]="'global.actions.retry' | translate"
+            (click)="retryLoadInvoice()"
+            type="primary"
+          />
         </div>
       </div>
     </cleansia-section>
@@ -47,29 +45,26 @@
           </div>
 
           <div class="invoice-actions">
+            <cleansia-button
+              [title]="'global.actions.back' | translate"
+              (click)="navigateToInvoices()"
+              type="secondary"
+              icon="pi pi-arrow-left"
+            />
             @if (invoiceDetail()!.pdfBlobName) {
             <cleansia-button
               [title]="'pages.invoices.download_pdf' | translate"
               (click)="downloadPdf()"
               type="primary"
               icon="pi pi-download"
-            >
-            </cleansia-button>
+            />
             }
             <cleansia-button
               [title]="'pages.invoice_detail.print' | translate"
               (click)="printInvoice()"
               type="secondary"
               icon="pi pi-print"
-            >
-            </cleansia-button>
-            <cleansia-button
-              [title]="'global.actions.back' | translate"
-              (click)="navigateToInvoices()"
-              type="secondary"
-              icon="pi pi-arrow-left"
-            >
-            </cleansia-button>
+            />
           </div>
         </div>
       </div>

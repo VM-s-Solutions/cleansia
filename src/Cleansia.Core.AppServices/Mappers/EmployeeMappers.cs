@@ -42,6 +42,7 @@ public static class EmployeeMappers
             City: employee.Address?.City,
             ZipCode: employee.Address?.ZipCode,
             CountryId: employee.Address?.CountryId,
+            NationalityId: employee.NationalityId,
             PassportId: employee.PassportId,
             TaxId: employee.ICO,
             Iban: employee.IBAN,
@@ -49,6 +50,7 @@ public static class EmployeeMappers
             EmergencyContactPhone: employee.EmergencyContactPhone,
             ProfilePhoto: employee.User.ProfilePhotoName?.MapToDto(),
             Profile: employee.User.Profile.MapToCode(),
-            AuthenticationType: employee.User.AuthenticationType.MapToCode());
+            AuthenticationType: employee.User.AuthenticationType.MapToCode(),
+            Availability: employee.Availability.ToDictionary());
     }
 }

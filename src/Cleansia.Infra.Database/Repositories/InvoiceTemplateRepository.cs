@@ -6,11 +6,11 @@ namespace Cleansia.Infra.Database.Repositories;
 
 public class InvoiceTemplateRepository(CleansiaDbContext context) : BaseRepository<InvoiceTemplate>(context), IInvoiceTemplateRepository
 {
-    public Task<InvoiceTemplate?> GetActiveByCountryAndLanguageAsync(string countryId, string languageId, CancellationToken cancellationToken)
+    public Task<InvoiceTemplate?> GetActiveByCountryAndLanguageAsync(string countryId, string languageCode, CancellationToken cancellationToken)
     {
         return GetDbSet()
             .Include(t => t.Language)
-            .Where(t => t.CountryId == countryId && t.Language.Code == languageId && t.IsActive)
+            .Where(t => t.CountryId == countryId && t.Language.Code == languageCode && t.IsActive)
             .OrderByDescending(t => t.Version)
             .FirstOrDefaultAsync(cancellationToken);
     }

@@ -27,4 +27,9 @@ public record OrderListItem(
     string CurrencyId,
     CurrencyListItem Currency,
     IEnumerable<string> AssignedEmployees,
-    IEnumerable<ServiceListItem> SelectedServices);
+    IEnumerable<ServiceListItem> SelectedServices,
+    int RequiredEmployees,
+    int MaxEmployees,
+    int AvailableSpots,
+    int AssignedEmployeesCount,
+    bool HasAvailableSpots);

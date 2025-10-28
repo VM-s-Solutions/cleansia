@@ -38,7 +38,11 @@ public class GetPagedOrders
                 request.Filter?.PaymentStatuses,
                 request.Filter?.PaymentTypes,
                 request.Filter?.MinTotalPrice,
-                request.Filter?.MaxTotalPrice);
+                request.Filter?.MaxTotalPrice,
+                request.Filter?.OrderStatuses,
+                request.Filter?.HasAvailableSpots,
+                request.Filter?.IsUnassigned,
+                request.Filter?.ExcludeEmployeeId);
 
             var filter = specification.SatisfiedBy();
 

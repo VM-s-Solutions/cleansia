@@ -1,0 +1,68 @@
+.cleansia-label {
+  display: inline-block;
+
+  &--xs {
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+
+  &--sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  &--base {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+
+  &--lg {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+  }
+
+  &--xl {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+
+  &--normal {
+    font-weight: 400;
+  }
+
+  &--medium {
+    font-weight: 500;
+  }
+
+  &--semibold {
+    font-weight: 600;
+  }
+
+  &--bold {
+    font-weight: 700;
+  }
+
+  &--primary {
+    color: var(--cleansia-text-primary, #1f2937);
+  }
+
+  &--secondary {
+    color: var(--cleansia-text-secondary, #6b7280);
+  }
+
+  &--success {
+    color: #10b981;
+  }
+
+  &--danger {
+    color: #ef4444;
+  }
+
+  &--warning {
+    color: #f59e0b;
+  }
+
+  &--muted {
+    color: #9ca3af;
+  }
+}

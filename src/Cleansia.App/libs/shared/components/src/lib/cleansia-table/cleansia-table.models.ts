@@ -38,6 +38,7 @@ export interface TableColumnAction<T = any> {
     title: string;
     position: 'above' | 'below' | 'left' | 'right';
   };
+  visible?: (row: T) => boolean;
   disabled?: (row: T) => boolean;
 }
 

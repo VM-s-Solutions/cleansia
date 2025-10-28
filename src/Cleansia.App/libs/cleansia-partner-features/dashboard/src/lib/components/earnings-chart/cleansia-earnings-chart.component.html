@@ -1,0 +1,68 @@
+<div class="cleansia-earnings-chart">
+  <div class="cleansia-earnings-chart__header">
+    <h3>{{ 'pages.dashboard.earnings_analytics.title' | translate }}</h3>
+    @if (loading()) {
+    <cleansia-loader />
+    }
+  </div>
+
+  @if (data() && !loading()) {
+  <div class="cleansia-earnings-chart__summary">
+    <div class="summary-item">
+      <cleansia-label 
+        [text]="'pages.dashboard.earnings_analytics.total' | translate" 
+        size="sm" 
+        color="secondary"
+      />
+      <cleansia-label 
+        [text]="(data()!.totalEarnings | number : '1.0-0') + ' Kč'" 
+        size="base" 
+        weight="semibold"
+      />
+    </div>
+    <div class="summary-item">
+      <cleansia-label 
+        [text]="'pages.dashboard.earnings_analytics.average' | translate" 
+        size="sm" 
+        color="secondary"
+      />
+      <cleansia-label 
+        [text]="(data()!.averageMonthlyEarnings | number : '1.0-0') + ' Kč'" 
+        size="base" 
+        weight="semibold"
+      />
+    </div>
+    <div class="summary-item">
+      <cleansia-label 
+        [text]="'pages.dashboard.earnings_analytics.growth' | translate" 
+        size="sm" 
+        color="secondary"
+      />
+      <cleansia-label 
+        [text]="(data()!.growthPercentage > 0 ? '+' : '') + (data()!.growthPercentage | number : '1.1-1') + '%'" 
+        size="base" 
+        weight="semibold"
+        [color]="data()!.growthPercentage > 0 ? 'success' : data()!.growthPercentage < 0 ? 'danger' : 'primary'"
+      />
+    </div>
+  </div>
+
+  <div class="cleansia-earnings-chart__wrapper">
+    <canvas
+      baseChart
+      [data]="lineChartData"
+      [options]="lineChartOptions"
+      [type]="lineChartType"
+    >
+    </canvas>
+  </div>
+  } @else if (!loading() && !data()) {
+  <div class="cleansia-earnings-chart__no-data">
+    <i class="pi pi-chart-line"></i>
+    <cleansia-label 
+      [text]="'pages.dashboard.earnings_analytics.no_data' | translate" 
+      color="muted"
+    />
+  </div>
+  }
+</div>

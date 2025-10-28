@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { OrderFilter } from '@cleansia/models';
 import {
   ApiException,
+  OrderItem,
   OrderListItem,
   OrderListItemPagedData,
   SortDefinition,
@@ -34,7 +35,7 @@ export const loadOrderDetail = createAction(
 );
 export const loadOrderDetailSuccess = createAction(
   '[Order] Load Detail Success',
-  props<{ order: OrderListItem }>()
+  props<{ order: OrderItem }>()
 );
 export const loadOrderDetailFailure = createAction(
   '[Order] Load Detail Failure',
@@ -42,3 +43,21 @@ export const loadOrderDetailFailure = createAction(
 );
 
 export const clearOrderState = createAction('[Order] Clear State');
+
+export const completeOrder = createAction(
+  '[Order] Complete Order',
+  props<{
+    orderId: string;
+    employeeId: string;
+    actualCompletionTimeMinutes: number;
+    completionNotes: string;
+  }>()
+);
+export const completeOrderSuccess = createAction(
+  '[Order] Complete Order Success',
+  props<{ orderId: string; orderStatus: string }>()
+);
+export const completeOrderFailure = createAction(
+  '[Order] Complete Order Failure',
+  props<{ error: ApiException }>()
+);

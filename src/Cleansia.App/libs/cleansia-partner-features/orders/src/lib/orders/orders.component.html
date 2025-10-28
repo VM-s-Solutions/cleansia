@@ -73,3 +73,12 @@
     {{ item.orderStatus?.name }}
   </span>
 </ng-template>
+
+<ng-template #spotsTemplate let-item>
+  <div class="spots-indicator">
+    <span class="spots-count">
+      {{ item.availableSpots || 0 }} / {{ item.maxEmployees || 0 }}
+    </span>
+    <span class="spots-label">{{ 'pages.orders.available_spots' | translate }}</span>
+  </div>
+</ng-template>

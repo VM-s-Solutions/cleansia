@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20251012100624_Initial")]
+    [Migration("20251028215321_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -801,11 +801,18 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<string>("AccessInstructions")
                         .HasColumnType("text");
 
+                    b.Property<int?>("ActualCompletionTime")
+                        .HasColumnType("integer");
+
                     b.Property<int>("Bathrooms")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("CleaningDateTime")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CompletionNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<string>("ConfirmationCode")
                         .IsRequired()
@@ -871,6 +878,9 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<int>("MaxEmployees")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Notes")
                         .HasColumnType("text");
 
@@ -878,6 +888,9 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("integer");
 
                     b.Property<int>("PaymentType")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RequiredEmployees")
                         .HasColumnType("integer");
 
                     b.Property<int>("Rooms")

@@ -1,0 +1,187 @@
+.cleansia-productivity-gauges {
+  background: white;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.75rem;
+
+    h3 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #1f2937;
+    }
+  }
+
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  &__bests {
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+
+    h4 {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: #1f2937;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding-bottom: 0.75rem;
+
+      i {
+        color: #f59e0b;
+        font-size: 1rem;
+      }
+    }
+  }
+
+  &__no-data {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: #9ca3af;
+    flex: 1;
+
+    i {
+      font-size: 2.5rem;
+    }
+  }
+}
+
+.gauge-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  h4 {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-align: center;
+    padding-bottom: 0.5rem;
+  }
+
+  &__wrapper {
+    width: 100%;
+    max-width: 160px;
+  }
+
+  &__svg {
+    width: 100%;
+    height: auto;
+  }
+
+  &__value {
+    font-size: 24px;
+    font-weight: 700;
+    fill: #1f2937;
+  }
+
+  &__label {
+    font-size: 11px;
+    fill: #6b7280;
+  }
+}
+
+.bests-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.best-item {
+  display: flex;
+  gap: 0.875rem;
+  padding: 0.875rem;
+  background: #f9fafb;
+  border-radius: 8px;
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  &__icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+
+    &--earning {
+      background: #fef3c7;
+      color: #f59e0b;
+    }
+
+    &--orders-day {
+      background: #dbeafe;
+      color: #0284c7;
+    }
+
+    &--orders-month {
+      background: #dcfce7;
+      color: #10b981;
+    }
+
+    &--efficiency {
+      background: #f3e8ff;
+      color: #8b5cf6;
+    }
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+
+  &__label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-weight: 500;
+  }
+
+  &__value {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #1f2937;
+  }
+
+  &__detail {
+    font-size: 0.75rem;
+    color: #9ca3af;
+  }
+}
+
+@media (max-width: 640px) {
+  .cleansia-productivity-gauges {
+    &__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .bests-grid {
+    grid-template-columns: 1fr;
+  }
+}

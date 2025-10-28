@@ -1,0 +1,120 @@
+<div class="complete-order-dialog">
+  <form [formGroup]="form" (ngSubmit)="onComplete()">
+    <div class="complete-order-dialog__header">
+      <h2 class="complete-order-dialog__title">
+        {{ 'pages.orders.complete_order.title' | translate }}
+      </h2>
+      <p class="complete-order-dialog__subtitle">
+        {{ 'pages.orders.complete_order.order_number' | translate }}: {{ data.orderNumber }}
+      </p>
+    </div>
+
+    <div class="complete-order-dialog__content">
+      <!-- Time Comparison -->
+      <div class="complete-order-dialog__time-comparison">
+        <div class="time-comparison-item">
+          <span class="time-comparison-item__label">
+            {{ 'pages.orders.complete_order.estimated_time' | translate }}
+          </span>
+          <span class="time-comparison-item__value">
+            {{ formatMinutes(estimatedTime) }}
+          </span>
+        </div>
+
+        <div class="time-comparison-item time-comparison-item--actual">
+          <span class="time-comparison-item__label">
+            {{ 'pages.orders.complete_order.actual_time' | translate }}
+          </span>
+          <span class="time-comparison-item__value">
+            {{ formatMinutes(actualTime) }}
+          </span>
+        </div>
+
+        <div
+          class="time-comparison-item"
+          [class.time-comparison-item--delayed]="isDelayed"
+          [class.time-comparison-item--on-time]="isOnTime">
+          <span class="time-comparison-item__label">
+            {{ isDelayed ? ('pages.orders.complete_order.delay' | translate) : ('pages.orders.complete_order.status' | translate) }}
+          </span>
+          <span class="time-comparison-item__value">
+            <ng-container *ngIf="isDelayed">
+              +{{ formatMinutes(delay) }} (+{{ delayPercentage }}%)
+            </ng-container>
+            <ng-container *ngIf="isOnTime">
+              {{ 'pages.orders.complete_order.on_time' | translate }} ✓
+            </ng-container>
+          </span>
+        </div>
+      </div>
+
+      <!-- Actual Time Input -->
+      <div class="complete-order-dialog__field">
+        <label for="actualTime" class="complete-order-dialog__label">
+          {{ 'pages.orders.complete_order.actual_time_input' | translate }} *
+        </label>
+        <p-inputNumber
+          id="actualTime"
+          formControlName="actualCompletionTimeMinutes"
+          [min]="1"
+          [showButtons]="true"
+          [step]="15"
+          [suffix]="' ' + ('pages.orders.complete_order.minutes' | translate)"
+          styleClass="w-full"
+        />
+        <small
+          class="complete-order-dialog__error"
+          *ngIf="form.controls.actualCompletionTimeMinutes.touched && form.controls.actualCompletionTimeMinutes.invalid">
+          {{ 'pages.orders.complete_order.actual_time_required' | translate }}
+        </small>
+      </div>
+
+      <!-- Completion Notes -->
+      <div class="complete-order-dialog__field">
+        <label for="notes" class="complete-order-dialog__label">
+          {{ 'pages.orders.complete_order.completion_notes' | translate }} *
+        </label>
+        <textarea
+          pInputTextarea
+          id="notes"
+          formControlName="completionNotes"
+          [rows]="4"
+          [placeholder]="'pages.orders.complete_order.completion_notes_placeholder' | translate"
+          class="w-full"
+        ></textarea>
+        <small class="complete-order-dialog__hint">
+          {{ 'pages.orders.complete_order.notes_hint' | translate }}
+        </small>
+        <small
+          class="complete-order-dialog__error"
+          *ngIf="form.controls.completionNotes.touched && form.controls.completionNotes.hasError('required')">
+          {{ 'pages.orders.complete_order.notes_required' | translate }}
+        </small>
+        <small
+          class="complete-order-dialog__error"
+          *ngIf="form.controls.completionNotes.touched && form.controls.completionNotes.hasError('maxlength')">
+          {{ 'pages.orders.complete_order.notes_too_long' | translate }}
+        </small>
+      </div>
+    </div>
+
+    <div class="complete-order-dialog__footer">
+      <button
+        pButton
+        type="button"
+        [label]="'pages.orders.complete_order.cancel_button' | translate"
+        class="p-button-text p-button-secondary"
+        (click)="onCancel()"
+        [disabled]="loading()"
+      ></button>
+      <button
+        pButton
+        type="submit"
+        [label]="'pages.orders.complete_order.complete_button' | translate"
+        icon="pi pi-check"
+        [disabled]="form.invalid || loading()"
+        [loading]="loading()"
+      ></button>
+    </div>
+  </form>
+</div>

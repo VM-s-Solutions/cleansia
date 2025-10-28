@@ -6,9 +6,9 @@ namespace Cleansia.Core.AppServices.Mappers;
 
 public static class OrderMappers
 {
-    private static OrderStatus GetCurrentOrderStatus(this Order order)
+    public static OrderStatus GetCurrentOrderStatus(this Order order)
     {
-        return order.OrderStatusHistory.OrderBy(x => x.CreatedOn).FirstOrDefault()!.Status;
+        return order.OrderStatusHistory.OrderByDescending(x => x.CreatedOn).FirstOrDefault()!.Status;
     }
     public static OrderListItem MapToDto(this Order order)
     {
@@ -36,7 +36,12 @@ public static class OrderMappers
             CurrencyId: order.CurrencyId,
             Currency: order.Currency.MapToDto(),
             AssignedEmployees: order.AssignedEmployees.Select(e => e.Id),
-            SelectedServices: order.SelectedServices.Select(os => os.Service.MapToDto())
+            SelectedServices: order.SelectedServices.Select(os => os.Service.MapToDto()),
+            RequiredEmployees: order.RequiredEmployees,
+            MaxEmployees: order.MaxEmployees,
+            AvailableSpots: order.AvailableSpots,
+            AssignedEmployeesCount: order.AssignedEmployees.Count,
+            HasAvailableSpots: order.HasAvailableSpots
         );
     }
 
@@ -57,6 +62,8 @@ public static class OrderMappers
             PaymentStatus: order.PaymentStatus.MapToCode(),
             TotalPrice: order.TotalPrice,
             EstimatedTime: order.EstimatedTime,
+            ActualCompletionTime: order.ActualCompletionTime,
+            CompletionNotes: order.CompletionNotes,
             OrderStatus: order.GetCurrentOrderStatus().MapToCode(),
             ConfirmationCode: order.ConfirmationCode,
             StripeSessionId: order.StripeSessionId,

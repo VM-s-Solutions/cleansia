@@ -42,6 +42,29 @@
       "verify_code": "Verify code",
       "code_cooldown": "Confirmation code has been sent. Please wait {{ cooldown }} seconds before requesting a new code."
     },
+    "forgot_password": {
+      "email": "Email",
+      "email_input": {
+        "forgot_password": "Forgot Password?",
+        "forgot_password_text": "Enter the email address associated with your account and we'll send you a link to reset your password.",
+        "send_email": "Send Email",
+        "dont_have_account": "Don't have an account?"
+      },
+      "password_change": {
+        "email_sent": "Email Sent",
+        "email_sent_text": "We sent an email to {{ email }} with a confirmation code. Please enter the code below to verify your identity.",
+        "didnt_receive_email": "If you didn't receive the email within a few minutes, check your spam folder or click the button below.",
+        "remember_password": "Remember your password?",
+        "resend_code": "Resend Code",
+        "change_password": "Change Password",
+        "code": "Verification Code",
+        "new_password": "New Password",
+        "confirm_new_password": "Confirm Password"
+      },
+      "email_invalid": "Email is invalid",
+      "password_invalid": "Password is invalid",
+      "password_changed": "Password successfully changed"
+    },
     "profile": {
       "title": "Employee Onboarding Profile",
       "description": "Please fill in all required information and upload the necessary documents to complete the onboarding process.",
@@ -64,9 +87,78 @@
       "emergency_phone": "Phone",
       "documents": "Upload Required Documents",
       "upload_requirements": "Upload: Photos, CV, Educational Certificates, Criminal Record Check (if required), Work Permit (for non-EU citizens), Signed Contract/NDA",
+      "availability": "Weekly Availability",
+      "availability_description": "Set your weekly working hours by selecting time ranges for each day. This helps us schedule your assignments effectively.",
       "consent": "Consent",
       "consent_text": "I agree to the processing of my personal data in accordance with GDPR and Czech labor laws.",
-      "submit": "Submit Onboarding"
+      "submit": "Submit Onboarding",
+      "first_name": "First Name",
+      "last_name": "Last Name"
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "description": "Your overview of orders, earnings, and upcoming assignments",
+      "statistics": "Statistics",
+      "refresh": "Refresh",
+      "available_orders": "Available Orders",
+      "my_active_orders": "My Active Orders",
+      "completed_this_month": "Completed This Month",
+      "pending_earnings": "Pending Earnings",
+      "vs_last_month": "vs last month",
+      "upcoming_orders": "Upcoming Orders",
+      "view_all": "View All",
+      "no_upcoming_orders": "No upcoming orders scheduled",
+      "quick_actions": "Quick Actions",
+      "browse_orders": "Browse Available Orders",
+      "view_invoices": "View Invoices",
+      "edit_profile": "Edit Profile",
+      "analytics": {
+        "earnings": {
+          "title": "Earnings Analytics",
+          "total": "Total Earnings",
+          "average": "Average Monthly",
+          "growth": "Growth",
+          "no_data": "No earnings data available"
+        },
+        "time": {
+          "title": "Time & Productivity Analytics",
+          "total_hours": "Total Hours",
+          "avg_per_order": "Avg per Order",
+          "efficiency": "Efficiency",
+          "orders": "Orders",
+          "by_service": "Time by Service Type",
+          "no_data": "No time tracking data available"
+        },
+        "orders": {
+          "title": "Order Analytics",
+          "total": "Total Orders",
+          "completion_rate": "Completion Rate",
+          "cancelled": "Cancelled",
+          "status_distribution": "Status Distribution",
+          "weekly_trends": "Weekly Trends",
+          "top_services": "Top Services",
+          "no_data": "No order data available"
+        },
+        "productivity": {
+          "title": "Productivity Metrics",
+          "orders_vs_target": "Orders vs Target",
+          "efficiency_score": "Efficiency Score",
+          "on_time": "On-Time Completion",
+          "personal_bests": "Personal Bests",
+          "highest_earning": "Highest Earning Month",
+          "most_orders_day": "Most Orders in a Day",
+          "most_orders_month": "Most Orders in a Month",
+          "best_efficiency": "Best Efficiency",
+          "no_data": "No productivity data available"
+        },
+        "date_range": {
+          "this_month": "This Month",
+          "last_3_months": "Last 3 Months",
+          "last_6_months": "Last 6 Months",
+          "this_year": "This Year"
+        }
+      },
+      "retry": "Retry"
     },
     "orders": {
       "title": "Order Management & Time Tracking",
@@ -100,7 +192,30 @@
       "no_available_orders": "No available orders",
       "no_my_orders": "You haven't completed any orders yet",
       "order_taken_success": "Order taken successfully!",
-      "employee_not_found": "Employee information not found"
+      "employee_not_found": "Employee information not found",
+      "available_spots": "Available Spots",
+      "complete_order": {
+        "title": "Complete Order",
+        "order_number": "Order Number",
+        "estimated_time": "Estimated Time",
+        "actual_time": "Actual Time",
+        "actual_time_input": "Actual Completion Time",
+        "delay": "Delay",
+        "status": "Status",
+        "on_time": "On Time",
+        "completion_notes": "Completion Notes",
+        "completion_notes_placeholder": "Explain why it took longer or shorter than estimated (e.g., extra stains, simpler than expected, equipment issues)",
+        "notes_hint": "Required: These notes help us understand time variances and improve estimates. They also justify employee payment adjustments.",
+        "optional": "optional",
+        "minutes": "min",
+        "complete_button": "Complete Order",
+        "cancel_button": "Cancel",
+        "success": "Order completed successfully!",
+        "error": "Failed to complete order. Please try again.",
+        "actual_time_required": "Actual completion time is required",
+        "notes_required": "Completion notes are required to explain the time variance",
+        "notes_too_long": "Completion notes must be less than 1000 characters"
+      }
     },
     "order_details": {
       "title": "Order Details",
@@ -292,6 +407,22 @@
       "accepted": "Accepted",
       "max_size": "Max size",
       "selected_files": "Selected Files"
+    },
+    "availability": {
+      "days": {
+        "monday": "Monday",
+        "tuesday": "Tuesday",
+        "wednesday": "Wednesday",
+        "thursday": "Thursday",
+        "friday": "Friday",
+        "saturday": "Saturday",
+        "sunday": "Sunday"
+      },
+      "current_ranges": "Current Ranges",
+      "no_availability": "No availability set",
+      "add_time_range": "Add Time Range",
+      "start_time": "Start Time",
+      "end_time": "End Time"
     }
   },
   "global": {
@@ -344,6 +475,7 @@
     },
     "actions": {
       "actions": "Actions",
+      "add": "Add",
       "add_to_cart": "Add to Cart",
       "remove_from_cart": "Remove from Cart",
       "remove_from_favorites": "Remove from Favorites",

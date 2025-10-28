@@ -45,4 +45,28 @@ public class OrderController(IMediator mediator) : ApiController(mediator)
         var result = await Mediator.Send(query, cancellationToken);
         return HandleResult<OrderItem>(result);
     }
+
+    [HttpPost("TakeOrder")]
+    [Permission(Policy.CanTakeOrder)]
+    [ProducesResponseType(typeof(TakeOrder.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> TakeOrder([FromBody] TakeOrder.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<TakeOrder.Response>(result);
+    }
+
+    [HttpPost("CompleteOrder")]
+    [Permission(Policy.CanCompleteOrder)]
+    [ProducesResponseType(typeof(CompleteOrder.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> CompleteOrder([FromBody] CompleteOrder.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<CompleteOrder.Response>(result);
+    }
 }

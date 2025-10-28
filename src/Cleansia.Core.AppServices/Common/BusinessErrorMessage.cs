@@ -18,6 +18,7 @@ public static class BusinessErrorMessage
     
     // Currency
     public const string InvalidCurrency = "currency.invalid";
+    public const string CurrencyNotFound = "currency.not_found";
     
     // Email
     public const string EmailNotSentError = "email.sending_failed";
@@ -29,8 +30,17 @@ public static class BusinessErrorMessage
     public const string InvalidSelectedPackage = "order.selected_package.invalid";
     public const string InvalidSelectedServices = "order.selected_services.invalid";
     public const string OrderNotFound = "order.not_found";
+    public const string OrderAlreadyAssigned = "order.already_assigned";
+    public const string NoAvailableSpots = "order.no_available_spots";
+    public const string EmployeeAlreadyAssignedToOrder = "order.employee_already_assigned";
+    public const string EmployeeNotAssignedToOrder = "order.employee_not_assigned";
+    public const string MaxEmployeesExceeded = "order.max_employees_exceeded";
     public const string TotalPriceMustBePositive = "order.total_price.positive";
     public const string TotalPriceNotMatch = "order.total_price.not_match";
+    public const string OrderNotInProgress = "order.not_in_progress";
+    public const string ActualTimeMustBePositive = "order.actual_time.positive";
+    public const string CompletionNotesRequired = "order.completion_notes.required";
+    public const string CompletionNotesTooLong = "order.completion_notes.too_long";
 
     // User
     public const string EmailConfirmed = "user.email_confirmed";

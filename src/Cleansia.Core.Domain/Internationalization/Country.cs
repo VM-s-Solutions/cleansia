@@ -17,7 +17,6 @@ public class Country : Auditable
     private IDictionary<string, Translation> _translations = new Dictionary<string, Translation>();
     public IReadOnlyDictionary<string, Translation> Translations => _translations.AsReadOnly();
 
-
     private ICollection<Employee> _employees = [];
     public IReadOnlyCollection<Employee> Employees => _employees.ToList().AsReadOnly();
 

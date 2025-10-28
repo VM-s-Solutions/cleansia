@@ -1,0 +1,184 @@
+.cleansia-order-distribution {
+  background: white;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.75rem;
+
+    h3 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #1f2937;
+    }
+  }
+
+
+  &__summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.75rem;
+    padding: 0.875rem;
+    background: #dbeafe;
+    border-radius: 8px;
+  }
+
+  &__charts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    flex: 1;
+  }
+
+  &__breakdown {
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+
+    h4 {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: #1f2937;
+      padding-bottom: 0.75rem;
+    }
+  }
+
+  &__no-data {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: #9ca3af;
+    flex: 1;
+
+    i {
+      font-size: 2.5rem;
+    }
+  }
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  &__label {
+    font-size: 0.8125rem;
+    color: #1e40af;
+  }
+
+  &__value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1f2937;
+
+    &--success {
+      color: #10b981;
+    }
+
+    &--danger {
+      color: #ef4444;
+    }
+  }
+}
+
+.chart-section {
+  display: flex;
+  flex-direction: column;
+
+  h4 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1f2937;
+    padding-bottom: 0.75rem;
+  }
+
+  &__wrapper {
+    position: relative;
+    height: 180px;
+    flex: 1;
+  }
+}
+
+.service-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.service-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.875rem;
+
+  &__info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  &__name {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: #1f2937;
+  }
+
+  &__bar {
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+
+    &-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #0284c7, #0ea5e9);
+      transition: width 0.3s ease;
+    }
+  }
+
+  &__stats {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+  }
+
+  &__count {
+    font-size: 0.8125rem;
+    color: #6b7280;
+  }
+
+  &__revenue {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #0284c7;
+  }
+}
+
+@media (max-width: 640px) {
+  .cleansia-order-distribution {
+    &__summary {
+      grid-template-columns: 1fr;
+    }
+
+    &__charts {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .chart-section {
+    &__wrapper {
+      height: 160px;
+    }
+  }
+}

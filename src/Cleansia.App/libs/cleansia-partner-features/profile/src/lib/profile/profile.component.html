@@ -75,23 +75,21 @@
             />
           </div>
         </div>
-        <div class="cleansia-profile__contact-row">
-          <div class="cleansia-profile__field">
-            <cleansia-telephone
-              [label]="'pages.profile.phone' | translate"
-              [floatVariant]="'on'"
-              formControlName="phone"
-              dataType="text"
-            />
-          </div>
-          <div class="cleansia-profile__field">
-            <cleansia-text-input
-              [label]="'pages.profile.email' | translate"
-              [floatVariant]="'on'"
-              formControlName="email"
-              dataType="email"
-            />
-          </div>
+        <div class="cleansia-profile__field">
+          <cleansia-telephone
+            [label]="'pages.profile.phone' | translate"
+            [floatVariant]="'on'"
+            formControlName="phone"
+            dataType="text"
+          />
+        </div>
+        <div class="cleansia-profile__field">
+          <cleansia-text-input
+            [label]="'pages.profile.email' | translate"
+            [floatVariant]="'on'"
+            formControlName="email"
+            dataType="email"
+          />
         </div>
         <div class="cleansia-profile__nationality-row">
           <div class="cleansia-profile__field">
@@ -157,6 +155,14 @@
       </div>
     </cleansia-section>
 
+    <!-- Availability Section -->
+    <cleansia-section [title]="'pages.profile.availability' | translate">
+      <p class="cleansia-profile__description">
+        {{ 'pages.profile.availability_description' | translate }}
+      </p>
+      <cleansia-availability formControlName="availability" />
+    </cleansia-section>
+
     <!-- Document Upload Section -->
     <cleansia-section [title]="'pages.profile.documents' | translate">
       <div class="cleansia-profile__upload">
@@ -164,6 +170,7 @@
           [multiple]="true"
           [accept]="'image/*,.pdf,.doc,.docx'"
           [maxFileSize]="10000000"
+          (filesChanged)="facade.onDocumentUpload($event)"
         />
         <p class="cleansia-profile__upload-info">
           {{ 'pages.profile.upload_requirements' | translate }}

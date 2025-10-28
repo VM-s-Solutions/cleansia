@@ -1,6 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import {
+  CleansiaAvailabilityComponent,
   CleansiaButtonComponent,
   CleansiaCalendarComponent,
   CleansiaCheckboxComponent,
@@ -37,6 +38,7 @@ import { ProfileFacade } from './profile.facade';
     CleansiaTelephoneComponent,
     CleansiaTextInputComponent,
     CleansiaLanguageSwitcherComponent,
+    CleansiaAvailabilityComponent,
   ],
   templateUrl: './profile.component.html',
   providers: [ProfileFacade],

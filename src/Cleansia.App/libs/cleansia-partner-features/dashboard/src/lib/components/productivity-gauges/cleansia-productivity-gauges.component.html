@@ -1,0 +1,254 @@
+<div class="cleansia-productivity-gauges">
+  <div class="cleansia-productivity-gauges__header">
+    <h3>{{ 'pages.dashboard.productivity_metrics.title' | translate }}</h3>
+    @if (loading()) {
+    <cleansia-loader />
+    }
+  </div>
+
+  @if (data() && !loading()) {
+  <div class="cleansia-productivity-gauges__grid">
+    <div class="gauge-card">
+      <h4>
+        {{
+          'pages.dashboard.productivity_metrics.orders_vs_target' | translate
+        }}
+      </h4>
+      <div class="gauge-card__wrapper">
+        <svg class="gauge-card__svg" viewBox="0 0 200 120">
+          <defs>
+            <linearGradient id="gauge1" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color: #10b981; stop-opacity: 1" />
+              <stop
+                offset="100%"
+                style="stop-color: #059669; stop-opacity: 1"
+              />
+            </linearGradient>
+          </defs>
+          <path
+            [attr.d]="getArcPath(100, 10)"
+            fill="none"
+            stroke="#e5e7eb"
+            stroke-width="10"
+            stroke-linecap="round"
+          />
+          <path
+            [attr.d]="getArcPath(data()!.completionPercentage, 10)"
+            fill="none"
+            stroke="url(#gauge1)"
+            stroke-width="10"
+            stroke-linecap="round"
+          />
+          <text x="100" y="75" text-anchor="middle" class="gauge-card__value">
+            {{ data()!.completionPercentage | number : '1.0-0' }}%
+          </text>
+          <text x="100" y="95" text-anchor="middle" class="gauge-card__label">
+            {{ data()!.ordersCompleted }} / {{ data()!.ordersTarget }}
+          </text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="gauge-card">
+      <h4>
+        {{
+          'pages.dashboard.productivity_metrics.efficiency_score' | translate
+        }}
+      </h4>
+      <div class="gauge-card__wrapper">
+        <svg class="gauge-card__svg" viewBox="0 0 200 120">
+          <defs>
+            <linearGradient id="gauge2" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color: #8b5cf6; stop-opacity: 1" />
+              <stop
+                offset="100%"
+                style="stop-color: #6d28d9; stop-opacity: 1"
+              />
+            </linearGradient>
+          </defs>
+          <path
+            [attr.d]="getArcPath(100, 10)"
+            fill="none"
+            stroke="#e5e7eb"
+            stroke-width="10"
+            stroke-linecap="round"
+          />
+          <path
+            [attr.d]="getArcPath(data()!.efficiencyScore, 10)"
+            fill="none"
+            stroke="url(#gauge2)"
+            stroke-width="10"
+            stroke-linecap="round"
+          />
+          <text x="100" y="75" text-anchor="middle" class="gauge-card__value">
+            {{ data()!.efficiencyScore | number : '1.0-0' }}%
+          </text>
+          <text x="100" y="95" text-anchor="middle" class="gauge-card__label">
+            Efficiency
+          </text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="gauge-card">
+      <h4>
+        {{
+          'pages.dashboard.productivity_metrics.on_time_completion' | translate
+        }}
+      </h4>
+      <div class="gauge-card__wrapper">
+        <svg class="gauge-card__svg" viewBox="0 0 200 120">
+          <defs>
+            <linearGradient id="gauge3" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color: #f59e0b; stop-opacity: 1" />
+              <stop
+                offset="100%"
+                style="stop-color: #d97706; stop-opacity: 1"
+              />
+            </linearGradient>
+          </defs>
+          <path
+            [attr.d]="getArcPath(100, 10)"
+            fill="none"
+            stroke="#e5e7eb"
+            stroke-width="10"
+            stroke-linecap="round"
+          />
+          <path
+            [attr.d]="getArcPath(data()!.onTimeCompletionRate, 10)"
+            fill="none"
+            stroke="url(#gauge3)"
+            stroke-width="10"
+            stroke-linecap="round"
+          />
+          <text x="100" y="75" text-anchor="middle" class="gauge-card__value">
+            {{ data()!.onTimeCompletionRate | number : '1.0-0' }}%
+          </text>
+          <text x="100" y="95" text-anchor="middle" class="gauge-card__label">
+            On-Time
+          </text>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  @if (data()!.personalBests) {
+  <div class="cleansia-productivity-gauges__bests">
+    <h4>
+      <i class="pi pi-trophy"></i>
+      {{ 'pages.dashboard.productivity_metrics.personal_bests' | translate }}
+    </h4>
+    <div class="bests-grid">
+      @if (data()!.personalBests.highestEarningMonth) {
+      <div class="best-item">
+        <div class="best-item__icon best-item__icon--earning">
+          <i class="pi pi-wallet"></i>
+        </div>
+        <div class="best-item__info">
+          <cleansia-label
+            [text]="
+              'pages.dashboard.productivity_metrics.highest_earning' | translate
+            "
+            size="xs"
+            weight="medium"
+            color="secondary"
+          />
+          <cleansia-label
+            [text]="
+              (data()!.personalBests.highestEarningMonth.amount
+                | number : '1.0-0') + ' Kč'
+            "
+            size="lg"
+            weight="bold"
+          />
+          <cleansia-label
+            [text]="data()!.personalBests.highestEarningMonth.monthName ?? ''"
+            size="xs"
+            color="muted"
+          />
+        </div>
+      </div>
+      }
+      <div class="best-item">
+        <div class="best-item__icon best-item__icon--orders-day">
+          <i class="pi pi-calendar"></i>
+        </div>
+        <div class="best-item__info">
+          <cleansia-label
+            [text]="
+              'pages.dashboard.productivity_metrics.most_orders_day' | translate
+            "
+            size="xs"
+            weight="medium"
+            color="secondary"
+          />
+          <cleansia-label
+            [text]="data()!.personalBests.mostOrdersInDay.toString()"
+            size="lg"
+            weight="bold"
+          />
+          @if (data()!.personalBests.mostOrdersDate) {
+          <cleansia-label
+            [text]="formattedMostOrdersDate"
+            size="xs"
+            color="muted"
+          />
+          }
+        </div>
+      </div>
+      <div class="best-item">
+        <div class="best-item__icon best-item__icon--orders-month">
+          <i class="pi pi-chart-line"></i>
+        </div>
+        <div class="best-item__info">
+          <cleansia-label
+            [text]="
+              'pages.dashboard.productivity_metrics.most_orders_month'
+                | translate
+            "
+            size="xs"
+            weight="medium"
+            color="secondary"
+          />
+          <cleansia-label
+            [text]="data()!.personalBests.mostOrdersInMonth.toString()"
+            size="lg"
+            weight="bold"
+          />
+        </div>
+      </div>
+      <div class="best-item">
+        <div class="best-item__icon best-item__icon--efficiency">
+          <i class="pi pi-star-fill"></i>
+        </div>
+        <div class="best-item__info">
+          <cleansia-label
+            [text]="
+              'pages.dashboard.productivity_metrics.best_efficiency' | translate
+            "
+            size="xs"
+            weight="medium"
+            color="secondary"
+          />
+          <cleansia-label
+            [text]="
+              (data()!.personalBests.bestEfficiencyScore | number : '1.1-1') +
+              '%'
+            "
+            size="lg"
+            weight="bold"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+  } } @else if (!loading() && !data()) {
+  <div class="cleansia-productivity-gauges__no-data">
+    <i class="pi pi-chart-pie"></i>
+    <cleansia-label
+      [text]="'pages.dashboard.productivity_metrics.no_data' | translate"
+      color="muted"
+    />
+  </div>
+  }
+</div>

@@ -693,67 +693,65 @@ cleansia-partner-order-details {
   }
 
   // Disabled form controls styling
-  ::ng-deep {
-    // Cleansia text input disabled state
-    cleansia-text-input[disabled='true'] {
-      .p-inputtext:disabled,
-      .p-inputtext[disabled] {
-        background-color: var(--cleansia-primary-50) !important;
-        color: var(--cleansia-text-secondary) !important;
-        border-color: var(--cleansia-primary-200) !important;
-        opacity: 1 !important;
-      }
-
-      .p-float-label label {
-        color: var(--cleansia-text-secondary) !important;
-      }
-    }
-
-    // Cleansia telephone disabled state
-    cleansia-telephone[disabled='true'] {
-      .p-inputtext:disabled,
-      .p-inputtext[disabled] {
-        background-color: var(--cleansia-primary-50) !important;
-        color: var(--cleansia-text-secondary) !important;
-        border-color: var(--cleansia-primary-200) !important;
-        opacity: 1 !important;
-      }
-
-      .p-float-label label {
-        color: var(--cleansia-text-secondary) !important;
-      }
-    }
-
-    // Cleansia select disabled state
-    cleansia-select[disabled='true'] {
-      .p-dropdown:disabled,
-      .p-dropdown[disabled] {
-        background-color: var(--cleansia-primary-50) !important;
-        color: var(--cleansia-text-secondary) !important;
-        border-color: var(--cleansia-primary-200) !important;
-        opacity: 1 !important;
-      }
-
-      .p-dropdown-label {
-        color: var(--cleansia-text-secondary) !important;
-      }
-
-      .p-float-label label {
-        color: var(--cleansia-text-secondary) !important;
-      }
-    }
-
-    // General disabled input styling
-    .p-component:disabled {
+  // Cleansia text input disabled state
+  cleansia-text-input[disabled='true'] {
+    .p-inputtext:disabled,
+    .p-inputtext[disabled] {
       background-color: var(--cleansia-primary-50) !important;
       color: var(--cleansia-text-secondary) !important;
       border-color: var(--cleansia-primary-200) !important;
+      opacity: 1 !important;
     }
 
-    // Float label styling for disabled fields
-    .p-float-label:has(.p-component:disabled) label {
+    .p-float-label label {
       color: var(--cleansia-text-secondary) !important;
     }
+  }
+
+  // Cleansia telephone disabled state
+  cleansia-telephone[disabled='true'] {
+    .p-inputtext:disabled,
+    .p-inputtext[disabled] {
+      background-color: var(--cleansia-primary-50) !important;
+      color: var(--cleansia-text-secondary) !important;
+      border-color: var(--cleansia-primary-200) !important;
+      opacity: 1 !important;
+    }
+
+    .p-float-label label {
+      color: var(--cleansia-text-secondary) !important;
+    }
+  }
+
+  // Cleansia select disabled state
+  cleansia-select[disabled='true'] {
+    .p-dropdown:disabled,
+    .p-dropdown[disabled] {
+      background-color: var(--cleansia-primary-50) !important;
+      color: var(--cleansia-text-secondary) !important;
+      border-color: var(--cleansia-primary-200) !important;
+      opacity: 1 !important;
+    }
+
+    .p-dropdown-label {
+      color: var(--cleansia-text-secondary) !important;
+    }
+
+    .p-float-label label {
+      color: var(--cleansia-text-secondary) !important;
+    }
+  }
+
+  // General disabled input styling
+  .p-component:disabled {
+    background-color: var(--cleansia-primary-50) !important;
+    color: var(--cleansia-text-secondary) !important;
+    border-color: var(--cleansia-primary-200) !important;
+  }
+
+  // Float label styling for disabled fields
+  .p-float-label:has(.p-component:disabled) label {
+    color: var(--cleansia-text-secondary) !important;
   }
 }
 

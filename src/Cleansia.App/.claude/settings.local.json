@@ -16,7 +16,20 @@
       "Bash(npm run:*)",
       "Bash(npx nx build:*)",
       "Bash(npx nx lint:*)",
-      "Bash(npx nx serve:*)"
+      "Bash(npx nx serve:*)",
+      "Read(//c/Users/cmisa/Desktop/Mike/Projects/cleansia/src/Cleansia.Web/**)",
+      "Bash(cat:*)",
+      "Read(//c/Users/cmisa/Desktop/Mike/Projects/cleansia/src/Cleansia.Core.AppServices/Features/Dashboard/**)",
+      "Read(//c/Users/cmisa/Desktop/Mike/Projects/cleansia/src/Cleansia.Core.AppServices/Features/Dashboard/DTOs/**)",
+      "Read(//c/Users/cmisa/Desktop/Mike/Projects/cleansia/src/Cleansia.Core.Domain/Orders/**)",
+      "Read(//c/Users/cmisa/Desktop/Mike/Projects/cleansia/src/Cleansia.Core.Domain/Enums/**)",
+      "Read(//c/Users/cmisa/Desktop/Mike/Projects/cleansia/src/Cleansia.Infra.Database/Repositories/**)",
+      "Read(//c/Users/cmisa/Desktop/Mike/Projects/cleansia/src/Cleansia.Core.Domain/**)",
+      "Read(//c/Users/cmisa/Desktop/Mike/Projects/cleansia/src/Cleansia.Core.AppServices/Features/Orders/DTOs/**)",
+      "Bash(npm install:*)",
+      "Bash(dotnet build:*)",
+      "Read(//c/Users/cmisa/Desktop/Mike/Projects/cleansia/src/**)",
+      "Read(//c/Users/cmisa/Desktop/Mike/Projects/stroytorg/src/Stroytorg.App/libs/stores/src/lib/stores/code/**)"
     ],
     "deny": [],
     "ask": []

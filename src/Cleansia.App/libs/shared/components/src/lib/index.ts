@@ -6,6 +6,7 @@ export * from './cleansia-calendar';
 export * from './cleansia-checkbox';
 export * from './cleansia-dynamic-background';
 export * from './cleansia-file';
+export * from './cleansia-label';
 export * from './cleansia-language-switcher';
 export * from './cleansia-loader';
 export * from './cleansia-menu';

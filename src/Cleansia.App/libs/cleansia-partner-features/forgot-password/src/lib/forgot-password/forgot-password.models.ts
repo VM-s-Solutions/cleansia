@@ -1,0 +1,20 @@
+export interface PasswordCheck {
+  hasLowerCase: boolean;
+  hasUpperCase: boolean;
+  hasNumber: boolean;
+  hasMinLength: boolean;
+  arePasswordsEqual?: boolean;
+}
+
+export function checkIfPasswordsValid(
+  password: string,
+  confirmPassword?: string
+): PasswordCheck {
+  return {
+    hasLowerCase: /[a-z]/.test(password),
+    hasUpperCase: /[A-Z]/.test(password),
+    hasNumber: /\d/.test(password),
+    hasMinLength: password.length >= 8,
+    arePasswordsEqual: confirmPassword ? password === confirmPassword : false,
+  };
+}

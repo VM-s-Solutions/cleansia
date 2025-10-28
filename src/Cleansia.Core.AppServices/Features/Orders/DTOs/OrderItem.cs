@@ -20,6 +20,8 @@ public record OrderItem(
     Code PaymentStatus,
     decimal TotalPrice,
     int EstimatedTime,
+    int? ActualCompletionTime,
+    string? CompletionNotes,
     Code OrderStatus,
     string ConfirmationCode,
     string? StripeSessionId,

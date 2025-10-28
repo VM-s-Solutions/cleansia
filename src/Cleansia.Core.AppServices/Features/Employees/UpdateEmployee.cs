@@ -95,6 +95,43 @@ public class UpdateEmployee
             RuleForEach(c => c.Documents)
                 .SetValidator(new FileValidator()!)
                 .When(command => command.Documents?.Any() == true);
+
+            RuleFor(c => c.Availability)
+                .Must(BeValidAvailability)
+                .WithMessage("Invalid availability format. Time ranges must be in HH:mm format and start time must be before end time.")
+                .When(c => c.Availability?.Any() == true);
+        }
+
+        private bool BeValidAvailability(Dictionary<string, List<TimeRangeDto>>? availability)
+        {
+            if (availability == null || !availability.Any())
+            {
+                return true;
+            }
+
+            var validDays = new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+
+            foreach (var (day, timeRanges) in availability)
+            {
+                if (!validDays.Contains(day))
+                    return false;
+
+                foreach (var timeRange in timeRanges)
+                {
+                    if (!TimeSpan.TryParse(timeRange.Start, out var start) ||
+                        !TimeSpan.TryParse(timeRange.End, out var end))
+                    {
+                        return false;
+                    }
+
+                    if (start >= end)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
         }
 
         private async Task<bool> AllowedToUpdateEmployee(Command command, CancellationToken cancellationToken)
@@ -124,7 +161,10 @@ public class UpdateEmployee
         string? EmergencyName,
         string? EmergencyPhone,
         bool Consent,
-        List<BlobFileDto>? Documents = null) : ICommand<Response>;
+        List<BlobFileDto>? Documents = null,
+        Dictionary<string, List<TimeRangeDto>>? Availability = null) : ICommand<Response>;
+
+    public record TimeRangeDto(string Start, string End);
 
     public record Response(string EmployeeId);
 
@@ -138,8 +178,9 @@ public class UpdateEmployee
 
             var address = CreateOrUpdateAddress(employee!, command);
             var uploadedFileNames = await UploadDocuments(employee!, command, cancellationToken);
+            var availability = ConvertAvailability(command.Availability);
 
-            UpdateEmployeeDetails(employee!, command, address, uploadedFileNames);
+            UpdateEmployeeDetails(employee!, command, address, uploadedFileNames, availability);
 
             return BusinessResult.Success(new Response(employee!.Id));
         }
@@ -187,7 +228,30 @@ public class UpdateEmployee
             return uploadedFileNames;
         }
 
-        private static void UpdateEmployeeDetails(Employee employee, Command command, Address address, List<string> uploadedFileNames)
+        private static Dictionary<string, List<TimeRange>> ConvertAvailability(Dictionary<string, List<TimeRangeDto>>? availabilityDto)
+        {
+            if (availabilityDto == null || !availabilityDto.Any())
+                return new Dictionary<string, List<TimeRange>>();
+
+            var availability = new Dictionary<string, List<TimeRange>>();
+
+            foreach (var (day, timeRanges) in availabilityDto)
+            {
+                var domainTimeRanges = timeRanges
+                    .Select(dto => new TimeRange
+                    {
+                        Start = TimeSpan.Parse(dto.Start),
+                        End = TimeSpan.Parse(dto.End)
+                    })
+                    .ToList();
+
+                availability[day] = domainTimeRanges;
+            }
+
+            return availability;
+        }
+
+        private static void UpdateEmployeeDetails(Employee employee, Command command, Address address, List<string> uploadedFileNames, Dictionary<string, List<TimeRange>> availability)
         {
             employee.User!.Update(
                 command.FirstName,
@@ -198,7 +262,7 @@ public class UpdateEmployee
             employee.UpdateEmployeeDetails(
                 command.TaxId ?? string.Empty,
                 address,
-                new Dictionary<string, List<TimeRange>>());
+                availability);
 
             if (uploadedFileNames.Any())
             {

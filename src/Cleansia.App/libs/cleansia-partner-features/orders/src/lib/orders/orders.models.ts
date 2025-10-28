@@ -1,6 +1,6 @@
 import { TemplateRef } from '@angular/core';
 import { TableDefinition } from '@cleansia/components';
-import { OrderListItem } from '@cleansia/services';
+import { OrderListItem, OrderStatus } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 
 export function getAvailableOrdersTableDefinition(
@@ -54,6 +54,13 @@ export function getAvailableOrdersTableDefinition(
         columnClass: 'width-12',
       },
       {
+        id: 'availableSpots',
+        headerName: translate.instant('pages.orders.available_spots'),
+        value: (row?: OrderListItem) =>
+          `${row?.availableSpots || 0} / ${row?.maxEmployees || 0}`,
+        columnClass: 'width-10',
+      },
+      {
         id: 'paymentStatus',
         headerName: translate.instant('pages.orders.payment_status'),
         template: statusTemplate,
@@ -97,6 +104,7 @@ export function getAvailableOrdersTableDefinition(
 export function getMyOrdersTableDefinition(
   defs: {
     onViewDetails: (row: OrderListItem) => void;
+    onCompleteOrder: (row: OrderListItem) => void;
   },
   translate: TranslateService,
   statusTemplate?: TemplateRef<OrderListItem>,
@@ -166,6 +174,17 @@ export function getMyOrdersTableDefinition(
         id: 'actions',
         headerName: translate.instant('pages.orders.actions'),
         columnActions: [
+          {
+            icon: 'pi pi-check-circle',
+            onClick: (row: OrderListItem) => defs.onCompleteOrder(row),
+            buttonPalette: 'p-button-success p-button-sm',
+            tooltip: {
+              title: translate.instant('pages.orders.complete_order.title'),
+              position: 'above',
+            },
+            visible: (row: OrderListItem) =>
+              row.orderStatus.value === OrderStatus.InProgress, // InProgress
+          },
           {
             icon: 'pi pi-eye',
             onClick: (row: OrderListItem) => defs.onViewDetails(row),

@@ -1,0 +1,33 @@
+<div class="cleansia-date-range-selector">
+  <div class="cleansia-date-range-selector__buttons">
+    <button
+      pButton
+      [class]="'p-button-sm' + (selectedPreset === 'thisMonth' ? ' p-button-primary' : ' p-button-outlined')"
+      [label]="'pages.dashboard.date_range.this_month' | translate"
+      (click)="selectPreset('thisMonth')"
+    ></button>
+    <button
+      pButton
+      [class]="'p-button-sm' + (selectedPreset === 'last3Months' ? ' p-button-primary' : ' p-button-outlined')"
+      [label]="'pages.dashboard.date_range.last_3_months' | translate"
+      (click)="selectPreset('last3Months')"
+    ></button>
+    <button
+      pButton
+      [class]="'p-button-sm' + (selectedPreset === 'last6Months' ? ' p-button-primary' : ' p-button-outlined')"
+      [label]="'pages.dashboard.date_range.last_6_months' | translate"
+      (click)="selectPreset('last6Months')"
+    ></button>
+    <button
+      pButton
+      [class]="'p-button-sm' + (selectedPreset === 'thisYear' ? ' p-button-primary' : ' p-button-outlined')"
+      [label]="'pages.dashboard.date_range.this_year' | translate"
+      (click)="selectPreset('thisYear')"
+    ></button>
+  </div>
+
+  <div class="cleansia-date-range-selector__display">
+    <i class="pi pi-calendar"></i>
+    <cleansia-label [text]="formatDate(startDate()) + ' - ' + formatDate(endDate())" size="sm" color="secondary" />
+  </div>
+</div>

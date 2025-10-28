@@ -730,9 +730,10 @@ export class CurrencyClient implements ICurrencyClient {
 
 export interface IDashboardClient {
     /**
+     * @param employeeId (optional) 
      * @return OK
      */
-    getStats(employeeId: string): Observable<DashboardStatsDto>;
+    getStats(employeeId?: string | undefined): Observable<DashboardStatsDto>;
     /**
      * @param id (optional) 
      * @param isActive (optional) 
@@ -757,6 +758,25 @@ export interface IDashboardClient {
      * @return OK
      */
     getUpcomingOrders(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<OrderListItemPagedData>;
+    /**
+     * @param employeeId (optional) 
+     * @param startDate (optional) 
+     * @param endDate (optional) 
+     * @return OK
+     */
+    getEarningsAnalytics(employeeId?: string | undefined, startDate?: Date | undefined, endDate?: Date | undefined): Observable<EarningsAnalyticsDto>;
+    /**
+     * @return OK
+     */
+    getTimeAnalytics(employeeId: string, startDate: Date, endDate: Date): Observable<TimeAnalyticsDto>;
+    /**
+     * @return OK
+     */
+    getOrderAnalytics(employeeId: string, startDate: Date, endDate: Date): Observable<OrderAnalyticsDto>;
+    /**
+     * @return OK
+     */
+    getProductivityMetrics(employeeId: string): Observable<ProductivityMetricsDto>;
 }
 
 @Injectable({
@@ -773,13 +793,14 @@ export class DashboardClient implements IDashboardClient {
     }
 
     /**
+     * @param employeeId (optional) 
      * @return OK
      */
-    getStats(employeeId: string): Observable<DashboardStatsDto> {
+    getStats(employeeId?: string | undefined): Observable<DashboardStatsDto> {
         let url = this.baseUrl + "/api/Dashboard/GetStats?";
-        if (employeeId === undefined || employeeId === null)
-            throw new globalThis.Error("The parameter 'employeeId' must be defined and cannot be null.");
-        else
+        if (employeeId === null)
+            throw new globalThis.Error("The parameter 'employeeId' cannot be null.");
+        else if (employeeId !== undefined)
             url += "EmployeeId=" + encodeURIComponent("" + employeeId) + "&";
         url = url.replace(/[?&]$/, "");
 
@@ -994,6 +1015,337 @@ export class DashboardClient implements IDashboardClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = OrderListItemPagedData.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param employeeId (optional) 
+     * @param startDate (optional) 
+     * @param endDate (optional) 
+     * @return OK
+     */
+    getEarningsAnalytics(employeeId?: string | undefined, startDate?: Date | undefined, endDate?: Date | undefined): Observable<EarningsAnalyticsDto> {
+        let url = this.baseUrl + "/api/Dashboard/GetEarningsAnalytics?";
+        if (employeeId === null)
+            throw new globalThis.Error("The parameter 'employeeId' cannot be null.");
+        else if (employeeId !== undefined)
+            url += "EmployeeId=" + encodeURIComponent("" + employeeId) + "&";
+        if (startDate === null)
+            throw new globalThis.Error("The parameter 'startDate' cannot be null.");
+        else if (startDate !== undefined)
+            url += "StartDate=" + encodeURIComponent(startDate ? "" + startDate.toISOString() : "") + "&";
+        if (endDate === null)
+            throw new globalThis.Error("The parameter 'endDate' cannot be null.");
+        else if (endDate !== undefined)
+            url += "EndDate=" + encodeURIComponent(endDate ? "" + endDate.toISOString() : "") + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetEarningsAnalytics(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetEarningsAnalytics(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<EarningsAnalyticsDto>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<EarningsAnalyticsDto>;
+        }));
+    }
+
+    protected processGetEarningsAnalytics(response: HttpResponseBase): Observable<EarningsAnalyticsDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = EarningsAnalyticsDto.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getTimeAnalytics(employeeId: string, startDate: Date, endDate: Date): Observable<TimeAnalyticsDto> {
+        let url = this.baseUrl + "/api/Dashboard/GetTimeAnalytics?";
+        if (employeeId === undefined || employeeId === null)
+            throw new globalThis.Error("The parameter 'employeeId' must be defined and cannot be null.");
+        else
+            url += "EmployeeId=" + encodeURIComponent("" + employeeId) + "&";
+        if (startDate === undefined || startDate === null)
+            throw new globalThis.Error("The parameter 'startDate' must be defined and cannot be null.");
+        else
+            url += "StartDate=" + encodeURIComponent(startDate ? "" + startDate.toISOString() : "") + "&";
+        if (endDate === undefined || endDate === null)
+            throw new globalThis.Error("The parameter 'endDate' must be defined and cannot be null.");
+        else
+            url += "EndDate=" + encodeURIComponent(endDate ? "" + endDate.toISOString() : "") + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetTimeAnalytics(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetTimeAnalytics(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<TimeAnalyticsDto>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<TimeAnalyticsDto>;
+        }));
+    }
+
+    protected processGetTimeAnalytics(response: HttpResponseBase): Observable<TimeAnalyticsDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = TimeAnalyticsDto.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getOrderAnalytics(employeeId: string, startDate: Date, endDate: Date): Observable<OrderAnalyticsDto> {
+        let url = this.baseUrl + "/api/Dashboard/GetOrderAnalytics?";
+        if (employeeId === undefined || employeeId === null)
+            throw new globalThis.Error("The parameter 'employeeId' must be defined and cannot be null.");
+        else
+            url += "EmployeeId=" + encodeURIComponent("" + employeeId) + "&";
+        if (startDate === undefined || startDate === null)
+            throw new globalThis.Error("The parameter 'startDate' must be defined and cannot be null.");
+        else
+            url += "StartDate=" + encodeURIComponent(startDate ? "" + startDate.toISOString() : "") + "&";
+        if (endDate === undefined || endDate === null)
+            throw new globalThis.Error("The parameter 'endDate' must be defined and cannot be null.");
+        else
+            url += "EndDate=" + encodeURIComponent(endDate ? "" + endDate.toISOString() : "") + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetOrderAnalytics(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetOrderAnalytics(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<OrderAnalyticsDto>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<OrderAnalyticsDto>;
+        }));
+    }
+
+    protected processGetOrderAnalytics(response: HttpResponseBase): Observable<OrderAnalyticsDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = OrderAnalyticsDto.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getProductivityMetrics(employeeId: string): Observable<ProductivityMetricsDto> {
+        let url = this.baseUrl + "/api/Dashboard/GetProductivityMetrics?";
+        if (employeeId === undefined || employeeId === null)
+            throw new globalThis.Error("The parameter 'employeeId' must be defined and cannot be null.");
+        else
+            url += "EmployeeId=" + encodeURIComponent("" + employeeId) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetProductivityMetrics(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetProductivityMetrics(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<ProductivityMetricsDto>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<ProductivityMetricsDto>;
+        }));
+    }
+
+    protected processGetProductivityMetrics(response: HttpResponseBase): Observable<ProductivityMetricsDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = ProductivityMetricsDto.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -2249,6 +2601,11 @@ export interface IOrderClient {
      * @return OK
      */
     takeOrder(body?: TakeOrderCommand | undefined): Observable<TakeOrderResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    completeOrder(body?: CompleteOrderCommand | undefined): Observable<CompleteOrderResponse>;
 }
 
 @Injectable({
@@ -2627,6 +2984,83 @@ export class OrderClient implements IOrderClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = TakeOrderResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    completeOrder(body?: CompleteOrderCommand | undefined): Observable<CompleteOrderResponse> {
+        let url = this.baseUrl + "/api/Order/CompleteOrder";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processCompleteOrder(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processCompleteOrder(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<CompleteOrderResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<CompleteOrderResponse>;
+        }));
+    }
+
+    protected processCompleteOrder(response: HttpResponseBase): Observable<CompleteOrderResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = CompleteOrderResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -4977,6 +5411,58 @@ export interface ICurrencyListItem {
     exchangeRate: number;
 }
 
+export class DailyTimeSpent implements IDailyTimeSpent {
+    date!: Date;
+    estimatedMinutes!: number;
+    actualMinutes!: number;
+    ordersCompleted!: number;
+    dayOfWeek!: string | undefined;
+
+    constructor(data?: IDailyTimeSpent) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.date = Data["date"] ? new Date(Data["date"].toString()) : undefined as any;
+            this.estimatedMinutes = Data["estimatedMinutes"];
+            this.actualMinutes = Data["actualMinutes"];
+            this.ordersCompleted = Data["ordersCompleted"];
+            this.dayOfWeek = Data["dayOfWeek"];
+        }
+    }
+
+    static fromJS(data: any): DailyTimeSpent {
+        data = typeof data === 'object' ? data : {};
+        let result = new DailyTimeSpent();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["date"] = this.date ? this.date.toISOString() : undefined as any;
+        data["estimatedMinutes"] = this.estimatedMinutes;
+        data["actualMinutes"] = this.actualMinutes;
+        data["ordersCompleted"] = this.ordersCompleted;
+        data["dayOfWeek"] = this.dayOfWeek;
+        return data;
+    }
+}
+
+export interface IDailyTimeSpent {
+    date: Date;
+    estimatedMinutes: number;
+    actualMinutes: number;
+    ordersCompleted: number;
+    dayOfWeek: string | undefined;
+}
+
 export class DashboardStatsDto implements IDashboardStatsDto {
     availableOrdersCount!: number;
     myActiveOrdersCount!: number;
@@ -5031,6 +5517,678 @@ export interface IDashboardStatsDto {
     lastMonthCompletedOrders: number;
     currentPeriodEarnings: number;
     latestInvoiceStatus: string | undefined;
+}
+
+export class EarningsAnalyticsDto implements IEarningsAnalyticsDto {
+    monthlyEarnings!: MonthlyEarning[] | undefined;
+    breakdown!: EarningsBreakdown;
+    totalEarnings!: number;
+    averageMonthlyEarnings!: number;
+    highestMonth!: MonthlyEarning;
+    lowestMonth!: MonthlyEarning;
+    growthPercentage!: number;
+
+    constructor(data?: IEarningsAnalyticsDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            if (Array.isArray(Data["monthlyEarnings"])) {
+                this.monthlyEarnings = [] as any;
+                for (let item of Data["monthlyEarnings"])
+                    this.monthlyEarnings!.push(MonthlyEarning.fromJS(item));
+            }
+            this.breakdown = Data["breakdown"] ? EarningsBreakdown.fromJS(Data["breakdown"]) : undefined as any;
+            this.totalEarnings = Data["totalEarnings"];
+            this.averageMonthlyEarnings = Data["averageMonthlyEarnings"];
+            this.highestMonth = Data["highestMonth"] ? MonthlyEarning.fromJS(Data["highestMonth"]) : undefined as any;
+            this.lowestMonth = Data["lowestMonth"] ? MonthlyEarning.fromJS(Data["lowestMonth"]) : undefined as any;
+            this.growthPercentage = Data["growthPercentage"];
+        }
+    }
+
+    static fromJS(data: any): EarningsAnalyticsDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new EarningsAnalyticsDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.monthlyEarnings)) {
+            data["monthlyEarnings"] = [];
+            for (let item of this.monthlyEarnings)
+                data["monthlyEarnings"].push(item ? item.toJSON() : undefined as any);
+        }
+        data["breakdown"] = this.breakdown ? this.breakdown.toJSON() : undefined as any;
+        data["totalEarnings"] = this.totalEarnings;
+        data["averageMonthlyEarnings"] = this.averageMonthlyEarnings;
+        data["highestMonth"] = this.highestMonth ? this.highestMonth.toJSON() : undefined as any;
+        data["lowestMonth"] = this.lowestMonth ? this.lowestMonth.toJSON() : undefined as any;
+        data["growthPercentage"] = this.growthPercentage;
+        return data;
+    }
+}
+
+export interface IEarningsAnalyticsDto {
+    monthlyEarnings: MonthlyEarning[] | undefined;
+    breakdown: EarningsBreakdown;
+    totalEarnings: number;
+    averageMonthlyEarnings: number;
+    highestMonth: MonthlyEarning;
+    lowestMonth: MonthlyEarning;
+    growthPercentage: number;
+}
+
+export class EarningsBreakdown implements IEarningsBreakdown {
+    subTotal!: number;
+    bonuses!: number;
+    deductions!: number;
+    totalAmount!: number;
+    byServiceType!: { [key: string]: number; } | undefined;
+
+    constructor(data?: IEarningsBreakdown) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.subTotal = Data["subTotal"];
+            this.bonuses = Data["bonuses"];
+            this.deductions = Data["deductions"];
+            this.totalAmount = Data["totalAmount"];
+            if (Data["byServiceType"]) {
+                this.byServiceType = {} as any;
+                for (let key in Data["byServiceType"]) {
+                    if (Data["byServiceType"].hasOwnProperty(key))
+                        (this.byServiceType as any)![key] = Data["byServiceType"][key];
+                }
+            }
+        }
+    }
+
+    static fromJS(data: any): EarningsBreakdown {
+        data = typeof data === 'object' ? data : {};
+        let result = new EarningsBreakdown();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["subTotal"] = this.subTotal;
+        data["bonuses"] = this.bonuses;
+        data["deductions"] = this.deductions;
+        data["totalAmount"] = this.totalAmount;
+        if (this.byServiceType) {
+            data["byServiceType"] = {};
+            for (let key in this.byServiceType) {
+                if (this.byServiceType.hasOwnProperty(key))
+                    (data["byServiceType"] as any)[key] = (this.byServiceType as any)[key];
+            }
+        }
+        return data;
+    }
+}
+
+export interface IEarningsBreakdown {
+    subTotal: number;
+    bonuses: number;
+    deductions: number;
+    totalAmount: number;
+    byServiceType: { [key: string]: number; } | undefined;
+}
+
+export class MonthlyEarning implements IMonthlyEarning {
+    year!: number;
+    month!: number;
+    amount!: number;
+    monthName!: string | undefined;
+
+    constructor(data?: IMonthlyEarning) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.year = Data["year"];
+            this.month = Data["month"];
+            this.amount = Data["amount"];
+            this.monthName = Data["monthName"];
+        }
+    }
+
+    static fromJS(data: any): MonthlyEarning {
+        data = typeof data === 'object' ? data : {};
+        let result = new MonthlyEarning();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["year"] = this.year;
+        data["month"] = this.month;
+        data["amount"] = this.amount;
+        data["monthName"] = this.monthName;
+        return data;
+    }
+}
+
+export interface IMonthlyEarning {
+    year: number;
+    month: number;
+    amount: number;
+    monthName: string | undefined;
+}
+
+export class OrderAnalyticsDto implements IOrderAnalyticsDto {
+    statusDistribution!: { [key: string]: number; } | undefined;
+    weeklyTrends!: WeeklyOrderCount[] | undefined;
+    serviceDistribution!: ServiceTypeCount[] | undefined;
+    totalOrders!: number;
+    completionRate!: number;
+    cancelledOrders!: number;
+
+    constructor(data?: IOrderAnalyticsDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            if (Data["statusDistribution"]) {
+                this.statusDistribution = {} as any;
+                for (let key in Data["statusDistribution"]) {
+                    if (Data["statusDistribution"].hasOwnProperty(key))
+                        (this.statusDistribution as any)![key] = Data["statusDistribution"][key];
+                }
+            }
+            if (Array.isArray(Data["weeklyTrends"])) {
+                this.weeklyTrends = [] as any;
+                for (let item of Data["weeklyTrends"])
+                    this.weeklyTrends!.push(WeeklyOrderCount.fromJS(item));
+            }
+            if (Array.isArray(Data["serviceDistribution"])) {
+                this.serviceDistribution = [] as any;
+                for (let item of Data["serviceDistribution"])
+                    this.serviceDistribution!.push(ServiceTypeCount.fromJS(item));
+            }
+            this.totalOrders = Data["totalOrders"];
+            this.completionRate = Data["completionRate"];
+            this.cancelledOrders = Data["cancelledOrders"];
+        }
+    }
+
+    static fromJS(data: any): OrderAnalyticsDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new OrderAnalyticsDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (this.statusDistribution) {
+            data["statusDistribution"] = {};
+            for (let key in this.statusDistribution) {
+                if (this.statusDistribution.hasOwnProperty(key))
+                    (data["statusDistribution"] as any)[key] = (this.statusDistribution as any)[key];
+            }
+        }
+        if (Array.isArray(this.weeklyTrends)) {
+            data["weeklyTrends"] = [];
+            for (let item of this.weeklyTrends)
+                data["weeklyTrends"].push(item ? item.toJSON() : undefined as any);
+        }
+        if (Array.isArray(this.serviceDistribution)) {
+            data["serviceDistribution"] = [];
+            for (let item of this.serviceDistribution)
+                data["serviceDistribution"].push(item ? item.toJSON() : undefined as any);
+        }
+        data["totalOrders"] = this.totalOrders;
+        data["completionRate"] = this.completionRate;
+        data["cancelledOrders"] = this.cancelledOrders;
+        return data;
+    }
+}
+
+export interface IOrderAnalyticsDto {
+    statusDistribution: { [key: string]: number; } | undefined;
+    weeklyTrends: WeeklyOrderCount[] | undefined;
+    serviceDistribution: ServiceTypeCount[] | undefined;
+    totalOrders: number;
+    completionRate: number;
+    cancelledOrders: number;
+}
+
+export class PersonalBests implements IPersonalBests {
+    highestEarningMonth!: MonthlyEarning;
+    mostOrdersInDay!: number;
+    mostOrdersDate!: Date | undefined;
+    mostOrdersInMonth!: number;
+    currentMonthYear!: number;
+    bestEfficiencyScore!: number;
+
+    constructor(data?: IPersonalBests) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.highestEarningMonth = Data["highestEarningMonth"] ? MonthlyEarning.fromJS(Data["highestEarningMonth"]) : undefined as any;
+            this.mostOrdersInDay = Data["mostOrdersInDay"];
+            this.mostOrdersDate = Data["mostOrdersDate"] ? new Date(Data["mostOrdersDate"].toString()) : undefined as any;
+            this.mostOrdersInMonth = Data["mostOrdersInMonth"];
+            this.currentMonthYear = Data["currentMonthYear"];
+            this.bestEfficiencyScore = Data["bestEfficiencyScore"];
+        }
+    }
+
+    static fromJS(data: any): PersonalBests {
+        data = typeof data === 'object' ? data : {};
+        let result = new PersonalBests();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["highestEarningMonth"] = this.highestEarningMonth ? this.highestEarningMonth.toJSON() : undefined as any;
+        data["mostOrdersInDay"] = this.mostOrdersInDay;
+        data["mostOrdersDate"] = this.mostOrdersDate ? this.mostOrdersDate.toISOString() : undefined as any;
+        data["mostOrdersInMonth"] = this.mostOrdersInMonth;
+        data["currentMonthYear"] = this.currentMonthYear;
+        data["bestEfficiencyScore"] = this.bestEfficiencyScore;
+        return data;
+    }
+}
+
+export interface IPersonalBests {
+    highestEarningMonth: MonthlyEarning;
+    mostOrdersInDay: number;
+    mostOrdersDate: Date | undefined;
+    mostOrdersInMonth: number;
+    currentMonthYear: number;
+    bestEfficiencyScore: number;
+}
+
+export class ProductivityMetricsDto implements IProductivityMetricsDto {
+    ordersCompleted!: number;
+    ordersTarget!: number;
+    completionPercentage!: number;
+    averageCompletionTimeMinutes!: number;
+    onTimeCompletionRate!: number;
+    efficiencyScore!: number;
+    personalBests!: PersonalBests;
+
+    constructor(data?: IProductivityMetricsDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.ordersCompleted = Data["ordersCompleted"];
+            this.ordersTarget = Data["ordersTarget"];
+            this.completionPercentage = Data["completionPercentage"];
+            this.averageCompletionTimeMinutes = Data["averageCompletionTimeMinutes"];
+            this.onTimeCompletionRate = Data["onTimeCompletionRate"];
+            this.efficiencyScore = Data["efficiencyScore"];
+            this.personalBests = Data["personalBests"] ? PersonalBests.fromJS(Data["personalBests"]) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): ProductivityMetricsDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new ProductivityMetricsDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["ordersCompleted"] = this.ordersCompleted;
+        data["ordersTarget"] = this.ordersTarget;
+        data["completionPercentage"] = this.completionPercentage;
+        data["averageCompletionTimeMinutes"] = this.averageCompletionTimeMinutes;
+        data["onTimeCompletionRate"] = this.onTimeCompletionRate;
+        data["efficiencyScore"] = this.efficiencyScore;
+        data["personalBests"] = this.personalBests ? this.personalBests.toJSON() : undefined as any;
+        return data;
+    }
+}
+
+export interface IProductivityMetricsDto {
+    ordersCompleted: number;
+    ordersTarget: number;
+    completionPercentage: number;
+    averageCompletionTimeMinutes: number;
+    onTimeCompletionRate: number;
+    efficiencyScore: number;
+    personalBests: PersonalBests;
+}
+
+export class ServiceTimeBreakdown implements IServiceTimeBreakdown {
+    serviceName!: string | undefined;
+    totalMinutes!: number;
+    orderCount!: number;
+    averageMinutesPerOrder!: number;
+
+    constructor(data?: IServiceTimeBreakdown) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.serviceName = Data["serviceName"];
+            this.totalMinutes = Data["totalMinutes"];
+            this.orderCount = Data["orderCount"];
+            this.averageMinutesPerOrder = Data["averageMinutesPerOrder"];
+        }
+    }
+
+    static fromJS(data: any): ServiceTimeBreakdown {
+        data = typeof data === 'object' ? data : {};
+        let result = new ServiceTimeBreakdown();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["serviceName"] = this.serviceName;
+        data["totalMinutes"] = this.totalMinutes;
+        data["orderCount"] = this.orderCount;
+        data["averageMinutesPerOrder"] = this.averageMinutesPerOrder;
+        return data;
+    }
+}
+
+export interface IServiceTimeBreakdown {
+    serviceName: string | undefined;
+    totalMinutes: number;
+    orderCount: number;
+    averageMinutesPerOrder: number;
+}
+
+export class ServiceTypeCount implements IServiceTypeCount {
+    serviceName!: string | undefined;
+    orderCount!: number;
+    averagePrice!: number;
+    totalRevenue!: number;
+
+    constructor(data?: IServiceTypeCount) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.serviceName = Data["serviceName"];
+            this.orderCount = Data["orderCount"];
+            this.averagePrice = Data["averagePrice"];
+            this.totalRevenue = Data["totalRevenue"];
+        }
+    }
+
+    static fromJS(data: any): ServiceTypeCount {
+        data = typeof data === 'object' ? data : {};
+        let result = new ServiceTypeCount();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["serviceName"] = this.serviceName;
+        data["orderCount"] = this.orderCount;
+        data["averagePrice"] = this.averagePrice;
+        data["totalRevenue"] = this.totalRevenue;
+        return data;
+    }
+}
+
+export interface IServiceTypeCount {
+    serviceName: string | undefined;
+    orderCount: number;
+    averagePrice: number;
+    totalRevenue: number;
+}
+
+export class TimeAnalyticsDto implements ITimeAnalyticsDto {
+    dailyBreakdown!: DailyTimeSpent[] | undefined;
+    weeklyBreakdown!: WeeklyTimeSpent[] | undefined;
+    byServiceType!: ServiceTimeBreakdown[] | undefined;
+    totalMinutesWorked!: number;
+    averageMinutesPerOrder!: number;
+    efficiencyRate!: number;
+    totalOrders!: number;
+
+    constructor(data?: ITimeAnalyticsDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            if (Array.isArray(Data["dailyBreakdown"])) {
+                this.dailyBreakdown = [] as any;
+                for (let item of Data["dailyBreakdown"])
+                    this.dailyBreakdown!.push(DailyTimeSpent.fromJS(item));
+            }
+            if (Array.isArray(Data["weeklyBreakdown"])) {
+                this.weeklyBreakdown = [] as any;
+                for (let item of Data["weeklyBreakdown"])
+                    this.weeklyBreakdown!.push(WeeklyTimeSpent.fromJS(item));
+            }
+            if (Array.isArray(Data["byServiceType"])) {
+                this.byServiceType = [] as any;
+                for (let item of Data["byServiceType"])
+                    this.byServiceType!.push(ServiceTimeBreakdown.fromJS(item));
+            }
+            this.totalMinutesWorked = Data["totalMinutesWorked"];
+            this.averageMinutesPerOrder = Data["averageMinutesPerOrder"];
+            this.efficiencyRate = Data["efficiencyRate"];
+            this.totalOrders = Data["totalOrders"];
+        }
+    }
+
+    static fromJS(data: any): TimeAnalyticsDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new TimeAnalyticsDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.dailyBreakdown)) {
+            data["dailyBreakdown"] = [];
+            for (let item of this.dailyBreakdown)
+                data["dailyBreakdown"].push(item ? item.toJSON() : undefined as any);
+        }
+        if (Array.isArray(this.weeklyBreakdown)) {
+            data["weeklyBreakdown"] = [];
+            for (let item of this.weeklyBreakdown)
+                data["weeklyBreakdown"].push(item ? item.toJSON() : undefined as any);
+        }
+        if (Array.isArray(this.byServiceType)) {
+            data["byServiceType"] = [];
+            for (let item of this.byServiceType)
+                data["byServiceType"].push(item ? item.toJSON() : undefined as any);
+        }
+        data["totalMinutesWorked"] = this.totalMinutesWorked;
+        data["averageMinutesPerOrder"] = this.averageMinutesPerOrder;
+        data["efficiencyRate"] = this.efficiencyRate;
+        data["totalOrders"] = this.totalOrders;
+        return data;
+    }
+}
+
+export interface ITimeAnalyticsDto {
+    dailyBreakdown: DailyTimeSpent[] | undefined;
+    weeklyBreakdown: WeeklyTimeSpent[] | undefined;
+    byServiceType: ServiceTimeBreakdown[] | undefined;
+    totalMinutesWorked: number;
+    averageMinutesPerOrder: number;
+    efficiencyRate: number;
+    totalOrders: number;
+}
+
+export class WeeklyOrderCount implements IWeeklyOrderCount {
+    year!: number;
+    weekNumber!: number;
+    weekStartDate!: Date;
+    orderCount!: number;
+    completedCount!: number;
+    totalRevenue!: number;
+
+    constructor(data?: IWeeklyOrderCount) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.year = Data["year"];
+            this.weekNumber = Data["weekNumber"];
+            this.weekStartDate = Data["weekStartDate"] ? new Date(Data["weekStartDate"].toString()) : undefined as any;
+            this.orderCount = Data["orderCount"];
+            this.completedCount = Data["completedCount"];
+            this.totalRevenue = Data["totalRevenue"];
+        }
+    }
+
+    static fromJS(data: any): WeeklyOrderCount {
+        data = typeof data === 'object' ? data : {};
+        let result = new WeeklyOrderCount();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["year"] = this.year;
+        data["weekNumber"] = this.weekNumber;
+        data["weekStartDate"] = this.weekStartDate ? this.weekStartDate.toISOString() : undefined as any;
+        data["orderCount"] = this.orderCount;
+        data["completedCount"] = this.completedCount;
+        data["totalRevenue"] = this.totalRevenue;
+        return data;
+    }
+}
+
+export interface IWeeklyOrderCount {
+    year: number;
+    weekNumber: number;
+    weekStartDate: Date;
+    orderCount: number;
+    completedCount: number;
+    totalRevenue: number;
+}
+
+export class WeeklyTimeSpent implements IWeeklyTimeSpent {
+    year!: number;
+    weekNumber!: number;
+    weekStartDate!: Date;
+    totalMinutes!: number;
+    ordersCompleted!: number;
+    averageMinutesPerOrder!: number;
+
+    constructor(data?: IWeeklyTimeSpent) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.year = Data["year"];
+            this.weekNumber = Data["weekNumber"];
+            this.weekStartDate = Data["weekStartDate"] ? new Date(Data["weekStartDate"].toString()) : undefined as any;
+            this.totalMinutes = Data["totalMinutes"];
+            this.ordersCompleted = Data["ordersCompleted"];
+            this.averageMinutesPerOrder = Data["averageMinutesPerOrder"];
+        }
+    }
+
+    static fromJS(data: any): WeeklyTimeSpent {
+        data = typeof data === 'object' ? data : {};
+        let result = new WeeklyTimeSpent();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["year"] = this.year;
+        data["weekNumber"] = this.weekNumber;
+        data["weekStartDate"] = this.weekStartDate ? this.weekStartDate.toISOString() : undefined as any;
+        data["totalMinutes"] = this.totalMinutes;
+        data["ordersCompleted"] = this.ordersCompleted;
+        data["averageMinutesPerOrder"] = this.averageMinutesPerOrder;
+        return data;
+    }
+}
+
+export interface IWeeklyTimeSpent {
+    year: number;
+    weekNumber: number;
+    weekStartDate: Date;
+    totalMinutes: number;
+    ordersCompleted: number;
+    averageMinutesPerOrder: number;
 }
 
 export class ApproveInvoiceCommand implements IApproveInvoiceCommand {
@@ -6293,6 +7451,98 @@ export interface ILanguageListItem {
     name: string | undefined;
 }
 
+export class CompleteOrderCommand implements ICompleteOrderCommand {
+    orderId!: string | undefined;
+    employeeId!: string | undefined;
+    actualCompletionTimeMinutes!: number;
+    completionNotes!: string | undefined;
+
+    constructor(data?: ICompleteOrderCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.employeeId = Data["employeeId"];
+            this.actualCompletionTimeMinutes = Data["actualCompletionTimeMinutes"];
+            this.completionNotes = Data["completionNotes"];
+        }
+    }
+
+    static fromJS(data: any): CompleteOrderCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new CompleteOrderCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        data["employeeId"] = this.employeeId;
+        data["actualCompletionTimeMinutes"] = this.actualCompletionTimeMinutes;
+        data["completionNotes"] = this.completionNotes;
+        return data;
+    }
+}
+
+export interface ICompleteOrderCommand {
+    orderId: string | undefined;
+    employeeId: string | undefined;
+    actualCompletionTimeMinutes: number;
+    completionNotes: string | undefined;
+}
+
+export class CompleteOrderResponse implements ICompleteOrderResponse {
+    orderId!: string | undefined;
+    newStatus!: OrderStatus;
+    actualCompletionTime!: number;
+
+    constructor(data?: ICompleteOrderResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.newStatus = Data["newStatus"];
+            this.actualCompletionTime = Data["actualCompletionTime"];
+        }
+    }
+
+    static fromJS(data: any): CompleteOrderResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new CompleteOrderResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        data["newStatus"] = this.newStatus;
+        data["actualCompletionTime"] = this.actualCompletionTime;
+        return data;
+    }
+}
+
+export interface ICompleteOrderResponse {
+    orderId: string | undefined;
+    newStatus: OrderStatus;
+    actualCompletionTime: number;
+}
+
 export class CreateOrderCommand implements ICreateOrderCommand {
     customerName!: string | undefined;
     customerEmail!: string | undefined;
@@ -6512,6 +7762,8 @@ export class OrderItem implements IOrderItem {
     paymentStatus!: Code;
     totalPrice!: number;
     estimatedTime!: number;
+    actualCompletionTime!: number | undefined;
+    completionNotes!: string | undefined;
     orderStatus!: Code;
     confirmationCode!: string | undefined;
     stripeSessionId!: string | undefined;
@@ -6559,6 +7811,8 @@ export class OrderItem implements IOrderItem {
             this.paymentStatus = Data["paymentStatus"] ? Code.fromJS(Data["paymentStatus"]) : undefined as any;
             this.totalPrice = Data["totalPrice"];
             this.estimatedTime = Data["estimatedTime"];
+            this.actualCompletionTime = Data["actualCompletionTime"];
+            this.completionNotes = Data["completionNotes"];
             this.orderStatus = Data["orderStatus"] ? Code.fromJS(Data["orderStatus"]) : undefined as any;
             this.confirmationCode = Data["confirmationCode"];
             this.stripeSessionId = Data["stripeSessionId"];
@@ -6618,6 +7872,8 @@ export class OrderItem implements IOrderItem {
         data["paymentStatus"] = this.paymentStatus ? this.paymentStatus.toJSON() : undefined as any;
         data["totalPrice"] = this.totalPrice;
         data["estimatedTime"] = this.estimatedTime;
+        data["actualCompletionTime"] = this.actualCompletionTime;
+        data["completionNotes"] = this.completionNotes;
         data["orderStatus"] = this.orderStatus ? this.orderStatus.toJSON() : undefined as any;
         data["confirmationCode"] = this.confirmationCode;
         data["stripeSessionId"] = this.stripeSessionId;
@@ -6664,6 +7920,8 @@ export interface IOrderItem {
     paymentStatus: Code;
     totalPrice: number;
     estimatedTime: number;
+    actualCompletionTime: number | undefined;
+    completionNotes: string | undefined;
     orderStatus: Code;
     confirmationCode: string | undefined;
     stripeSessionId: string | undefined;

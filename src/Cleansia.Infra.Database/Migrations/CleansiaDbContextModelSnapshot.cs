@@ -798,11 +798,18 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<string>("AccessInstructions")
                         .HasColumnType("text");
 
+                    b.Property<int?>("ActualCompletionTime")
+                        .HasColumnType("integer");
+
                     b.Property<int>("Bathrooms")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("CleaningDateTime")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CompletionNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<string>("ConfirmationCode")
                         .IsRequired()

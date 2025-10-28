@@ -67,6 +67,7 @@
         ></ng-container>
         } @else if (column.columnActions && column.columnActions.length > 0) {
         @for (action of column.columnActions; track action.icon) {
+        @if (!action.visible || action.visible(item)) {
         <button
           type="button"
           [class]="'p-button ' + (action.buttonPalette || 'p-button-outlined')"
@@ -76,6 +77,7 @@
         >
           <i [class]="action.icon"></i>
         </button>
+        }
         } } @else {
         {{ getTableDefinitionValue(item, column) }}
         }

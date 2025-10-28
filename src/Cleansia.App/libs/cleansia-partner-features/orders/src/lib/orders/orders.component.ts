@@ -26,6 +26,7 @@ import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 import { TabsModule } from 'primeng/tabs';
 import { ToastModule } from 'primeng/toast';
+import { DialogService } from 'primeng/dynamicdialog';
 import { OrdersFacade } from './orders.facade';
 import {
   getAvailableOrdersTableDefinition,
@@ -49,7 +50,7 @@ import {
     CleansiaLanguageSwitcherComponent,
   ],
   templateUrl: './orders.component.html',
-  providers: [OrdersFacade],
+  providers: [OrdersFacade, DialogService],
 })
 export class OrdersComponent implements AfterViewInit {
   private readonly router = inject(Router);
@@ -80,6 +81,7 @@ export class OrdersComponent implements AfterViewInit {
     this.myOrdersTableDefinition = getMyOrdersTableDefinition(
       {
         onViewDetails: this.viewOrderDetails.bind(this),
+        onCompleteOrder: this.completeOrder.bind(this),
       },
       this.translate,
       this.statusTemplate(),
@@ -134,6 +136,10 @@ export class OrdersComponent implements AfterViewInit {
 
   takeOrder(order: OrderListItem): void {
     this.facade.takeOrder(order.id!);
+  }
+
+  completeOrder(order: OrderListItem): void {
+    this.facade.openCompleteOrderDialog(order);
   }
 
   getStatusClass(order: OrderListItem): string {

@@ -46,6 +46,11 @@ public class Order : Auditable
     [Required]
     public int EstimatedTime { get; private set; }
 
+    public int? ActualCompletionTime { get; private set; }
+
+    [MaxLength(1000)]
+    public string? CompletionNotes { get; private set; }
+
     public bool EmployeePayCalculated { get; private set; } = false;
 
     public decimal? TravelDistance { get; private set; }
@@ -222,6 +227,28 @@ public class Order : Auditable
         }
 
         MaxEmployees = maxEmployees;
+        return this;
+    }
+
+    public Order CompleteOrder(int actualCompletionTime, string completionNotes)
+    {
+        if (actualCompletionTime <= 0)
+        {
+            throw new ArgumentException("Actual completion time must be greater than zero", nameof(actualCompletionTime));
+        }
+
+        if (string.IsNullOrWhiteSpace(completionNotes))
+        {
+            throw new ArgumentException("Completion notes are required to understand the reason for time variance", nameof(completionNotes));
+        }
+
+        if (completionNotes.Length > 1000)
+        {
+            throw new ArgumentException("Completion notes must not exceed 1000 characters", nameof(completionNotes));
+        }
+
+        ActualCompletionTime = actualCompletionTime;
+        CompletionNotes = completionNotes;
         return this;
     }
 }

@@ -1,0 +1,53 @@
+.cleansia-date-range-selector {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.875rem 1.25rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
+  gap: 1rem;
+  flex-wrap: wrap;
+
+  &__buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  &__display {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.875rem;
+    background: #f9fafb;
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    color: #6b7280;
+
+    i {
+      color: #8b5cf6;
+      font-size: 0.875rem;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .cleansia-date-range-selector {
+    flex-direction: column;
+    align-items: stretch;
+
+    &__buttons {
+      width: 100%;
+
+      button {
+        flex: 1;
+      }
+    }
+
+    &__display {
+      justify-content: center;
+    }
+  }
+}

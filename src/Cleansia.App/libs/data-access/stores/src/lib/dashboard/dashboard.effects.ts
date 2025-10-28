@@ -1,8 +1,10 @@
 import { inject, Injectable } from '@angular/core';
 import { Client } from '@cleansia/services';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { catchError, forkJoin, map, mergeMap, of } from 'rxjs';
+import { Store } from '@ngrx/store';
+import { catchError, forkJoin, map, mergeMap, of, withLatestFrom } from 'rxjs';
 import * as DashboardActions from './dashboard.actions';
+import * as DashboardSelectors from './dashboard.selectors';
 
 /**
  * NgRx Effects for dashboard data operations.
@@ -12,6 +14,7 @@ import * as DashboardActions from './dashboard.actions';
 export class DashboardEffects {
   private readonly client = inject(Client);
   private readonly actions$ = inject(Actions);
+  private readonly store = inject(Store);
 
   /**
    * Loads dashboard statistics using the dedicated endpoint.
@@ -68,4 +71,105 @@ export class DashboardEffects {
       )
     )
   );
+
+  /**
+   * Loads earnings analytics for the specified date range.
+   */
+  loadEarningsAnalytics$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(DashboardActions.loadEarningsAnalytics),
+      mergeMap(({ employeeId, startDate, endDate }) =>
+        this.client.dashboardClient.getEarningsAnalytics(employeeId, startDate, endDate).pipe(
+          map((data) => DashboardActions.loadEarningsAnalyticsSuccess({ data })),
+          catchError((error) => of(DashboardActions.loadEarningsAnalyticsFailure({ error })))
+        )
+      )
+    )
+  );
+
+  /**
+   * Loads time analytics for the specified date range.
+   */
+  loadTimeAnalytics$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(DashboardActions.loadTimeAnalytics),
+      mergeMap(({ employeeId, startDate, endDate }) =>
+        this.client.dashboardClient.getTimeAnalytics(employeeId, startDate, endDate).pipe(
+          map((data) => DashboardActions.loadTimeAnalyticsSuccess({ data })),
+          catchError((error) => of(DashboardActions.loadTimeAnalyticsFailure({ error })))
+        )
+      )
+    )
+  );
+
+  /**
+   * Loads order analytics for the specified date range.
+   */
+  loadOrderAnalytics$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(DashboardActions.loadOrderAnalytics),
+      mergeMap(({ employeeId, startDate, endDate }) =>
+        this.client.dashboardClient.getOrderAnalytics(employeeId, startDate, endDate).pipe(
+          map((data) => DashboardActions.loadOrderAnalyticsSuccess({ data })),
+          catchError((error) => of(DashboardActions.loadOrderAnalyticsFailure({ error })))
+        )
+      )
+    )
+  );
+
+  /**
+   * Loads productivity metrics for the employee.
+   */
+  loadProductivityMetrics$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(DashboardActions.loadProductivityMetrics),
+      mergeMap(({ employeeId }) =>
+        this.client.dashboardClient.getProductivityMetrics(employeeId).pipe(
+          map((data) => DashboardActions.loadProductivityMetricsSuccess({ data })),
+          catchError((error) => of(DashboardActions.loadProductivityMetricsFailure({ error })))
+        )
+      )
+    )
+  );
+
+  /**
+   * Refreshes all analytics when date range changes.
+   */
+  refreshAllAnalytics$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(DashboardActions.refreshAllAnalytics),
+      withLatestFrom(this.store.select(DashboardSelectors.selectSelectedDateRange)),
+      mergeMap(([{ employeeId }, dateRange]) => [
+        DashboardActions.loadEarningsAnalytics({
+          employeeId,
+          startDate: dateRange.startDate,
+          endDate: dateRange.endDate,
+        }),
+        DashboardActions.loadTimeAnalytics({
+          employeeId,
+          startDate: dateRange.startDate,
+          endDate: dateRange.endDate,
+        }),
+        DashboardActions.loadOrderAnalytics({
+          employeeId,
+          startDate: dateRange.startDate,
+          endDate: dateRange.endDate,
+        }),
+        DashboardActions.loadProductivityMetrics({ employeeId }),
+      ])
+    )
+  );
+
+  /**
+   * Automatically refresh analytics when date range changes.
+   */
+  dateRangeChanged$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(DashboardActions.setDateRange),
+      mergeMap(() => [
+        // We would need employeeId here - this will be triggered from facade
+        // For now, just return empty - facade will handle the refresh
+      ])
+    )
+  , { dispatch: false });
 }

@@ -20,6 +20,13 @@ export const appRoutes: Route[] = [
       ),
   },
   {
+    path: CleansiaPartnerRoute.FORGOT_PASSWORD,
+    loadChildren: () =>
+      import('@cleansia-partner/forgot-password').then(
+        (m) => m.forgotPasswordRoutes
+      ),
+  },
+  {
     path: CleansiaPartnerRoute.DASHBOARD,
     loadChildren: () =>
       import('@cleansia-partner/dashboard').then((m) => m.dashboardRoutes),

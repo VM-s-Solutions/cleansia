@@ -38,95 +38,93 @@
 }
 
 cleansia-time-picker {
-  ::ng-deep {
-    .cleansia-time-picker {
+  .cleansia-time-picker {
+    width: 100%;
+
+    .p-calendar {
       width: 100%;
 
-      .p-calendar {
+      .p-inputtext {
         width: 100%;
+        padding: 0.75rem;
+        border: 1px solid var(--cleansia-border-color, #d1d5db);
+        border-radius: 6px;
+        font-size: 1rem;
+        transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 
-        .p-inputtext {
-          width: 100%;
-          padding: 0.75rem;
-          border: 1px solid var(--cleansia-border-color, #d1d5db);
-          border-radius: 6px;
-          font-size: 1rem;
-          transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-
-          &:focus {
-            border-color: var(--cleansia-primary-500, #3b82f6);
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-            outline: none;
-          }
-
-          &:disabled {
-            background-color: var(--cleansia-surface-200, #f3f4f6);
-            color: var(--cleansia-text-disabled, #9ca3af);
-            cursor: not-allowed;
-          }
-
-          &::placeholder {
-            color: var(--cleansia-text-secondary, #6b7280);
-          }
+        &:focus {
+          border-color: var(--cleansia-primary-500, #3b82f6);
+          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+          outline: none;
         }
 
-        .p-calendar-button {
-          border: 1px solid var(--cleansia-border-color, #d1d5db);
-          border-left: none;
-          background: var(--cleansia-surface-50, #f9fafb);
-          color: var(--cleansia-text-primary, #374151);
+        &:disabled {
+          background-color: var(--cleansia-surface-200, #f3f4f6);
+          color: var(--cleansia-text-disabled, #9ca3af);
+          cursor: not-allowed;
+        }
 
-          &:hover {
-            background: var(--cleansia-surface-100, #f3f4f6);
-          }
-
-          &:focus {
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-          }
+        &::placeholder {
+          color: var(--cleansia-text-secondary, #6b7280);
         }
       }
 
-      .p-timepicker {
-        background: var(--cleansia-surface-0, #ffffff);
+      .p-calendar-button {
         border: 1px solid var(--cleansia-border-color, #d1d5db);
-        border-radius: 8px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        border-left: none;
+        background: var(--cleansia-surface-50, #f9fafb);
+        color: var(--cleansia-text-primary, #374151);
 
-        .p-hour-picker,
-        .p-minute-picker {
-          .p-link {
-            color: var(--cleansia-text-primary, #374151);
-
-            &:hover {
-              background: var(--cleansia-primary-50, #eff6ff);
-              color: var(--cleansia-primary-600, #2563eb);
-            }
-          }
-
-          span {
-            color: var(--cleansia-text-primary, #374151);
-            font-weight: 500;
-          }
+        &:hover {
+          background: var(--cleansia-surface-100, #f3f4f6);
         }
 
-        .p-separator {
-          color: var(--cleansia-text-secondary, #6b7280);
+        &:focus {
+          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
         }
       }
     }
 
-    .p-float-label {
-      width: 100%;
+    .p-timepicker {
+      background: var(--cleansia-surface-0, #ffffff);
+      border: 1px solid var(--cleansia-border-color, #d1d5db);
+      border-radius: 8px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 
-      label {
-        color: var(--cleansia-text-secondary, #6b7280);
-        font-size: 1rem;
-        transition: all 0.2s ease-in-out;
+      .p-hour-picker,
+      .p-minute-picker {
+        .p-link {
+          color: var(--cleansia-text-primary, #374151);
 
-        &.p-highlight {
-          color: var(--cleansia-primary-500, #3b82f6);
-          font-size: 0.75rem;
+          &:hover {
+            background: var(--cleansia-primary-50, #eff6ff);
+            color: var(--cleansia-primary-600, #2563eb);
+          }
         }
+
+        span {
+          color: var(--cleansia-text-primary, #374151);
+          font-weight: 500;
+        }
+      }
+
+      .p-separator {
+        color: var(--cleansia-text-secondary, #6b7280);
+      }
+    }
+  }
+
+  .p-float-label {
+    width: 100%;
+
+    label {
+      color: var(--cleansia-text-secondary, #6b7280);
+      font-size: 1rem;
+      transition: all 0.2s ease-in-out;
+
+      &.p-highlight {
+        color: var(--cleansia-primary-500, #3b82f6);
+        font-size: 0.75rem;
       }
     }
   }

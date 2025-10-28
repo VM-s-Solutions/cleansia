@@ -13,6 +13,7 @@ import {
 } from '@cleansia/services';
 import {
   checkEmployeeCurrent,
+  loadCodes,
   selectEmployeeConfirmation,
 } from '@cleansia/stores';
 import { Store } from '@ngrx/store';
@@ -60,6 +61,9 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    // Load codes on app initialization
+    this.store.dispatch(loadCodes());
+
     const currentUrl$ = this.router.events.pipe(
       filter((event) => event instanceof NavigationEnd),
       map((event) => (event as NavigationEnd).url),

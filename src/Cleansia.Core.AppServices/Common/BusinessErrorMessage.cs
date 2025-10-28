@@ -33,9 +33,14 @@ public static class BusinessErrorMessage
     public const string OrderAlreadyAssigned = "order.already_assigned";
     public const string NoAvailableSpots = "order.no_available_spots";
     public const string EmployeeAlreadyAssignedToOrder = "order.employee_already_assigned";
+    public const string EmployeeNotAssignedToOrder = "order.employee_not_assigned";
     public const string MaxEmployeesExceeded = "order.max_employees_exceeded";
     public const string TotalPriceMustBePositive = "order.total_price.positive";
     public const string TotalPriceNotMatch = "order.total_price.not_match";
+    public const string OrderNotInProgress = "order.not_in_progress";
+    public const string ActualTimeMustBePositive = "order.actual_time.positive";
+    public const string CompletionNotesRequired = "order.completion_notes.required";
+    public const string CompletionNotesTooLong = "order.completion_notes.too_long";
 
     // User
     public const string EmailConfirmed = "user.email_confirmed";

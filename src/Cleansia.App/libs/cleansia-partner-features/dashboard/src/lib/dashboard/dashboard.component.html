@@ -8,7 +8,6 @@
       </p>
     </div>
 
-    <!-- Statistics Section -->
     <cleansia-section [title]="'pages.dashboard.statistics' | translate">
       @if (facade.statsLoading()) {
       <cleansia-loader />
@@ -45,7 +44,36 @@
       }
     </cleansia-section>
 
-    <!-- Upcoming Orders Section -->
+    <cleansia-date-range-selector
+      [startDate]="facade.selectedDateRange().startDate"
+      [endDate]="facade.selectedDateRange().endDate"
+      (rangeChanged)="onDateRangeChanged($event)"
+    />
+
+    <cleansia-section [title]="'pages.dashboard.analytics' | translate">
+      <div class="analytics-grid">
+        <cleansia-earnings-chart
+          [data]="facade.earningsAnalytics()"
+          [loading]="facade.earningsLoading()"
+        />
+
+        <cleansia-time-analytics-chart
+          [data]="facade.timeAnalytics()"
+          [loading]="facade.timeLoading()"
+        />
+
+        <cleansia-order-distribution-chart
+          [data]="facade.orderAnalytics()"
+          [loading]="facade.orderLoading()"
+        />
+
+        <cleansia-productivity-gauges
+          [data]="facade.productivityMetrics()"
+          [loading]="facade.productivityLoading()"
+        />
+      </div>
+    </cleansia-section>
+
     <cleansia-section [title]="'pages.dashboard.upcoming_orders' | translate">
       @if (facade.upcomingOrdersLoading()) {
       <cleansia-loader />
@@ -66,9 +94,9 @@
             <div class="order-card__status">
               <span
                 class="order-status-badge"
-                [class]="'status-' + order.orderStatus?.name?.toLowerCase()"
+                [class]="'status-' + order.orderStatus.name?.toLowerCase()"
               >
-                {{ order.orderStatus?.name }}
+                {{ order.orderStatus.name }}
               </span>
             </div>
           </div>
@@ -107,7 +135,6 @@
       }
     </cleansia-section>
 
-    <!-- Quick Actions Section -->
     <cleansia-section [title]="'pages.dashboard.quick_actions' | translate">
       <div class="quick-actions">
         <cleansia-button

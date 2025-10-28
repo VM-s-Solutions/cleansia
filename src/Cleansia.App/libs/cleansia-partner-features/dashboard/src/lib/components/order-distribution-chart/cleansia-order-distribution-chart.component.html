@@ -1,0 +1,131 @@
+<div class="cleansia-order-distribution">
+  <div class="cleansia-order-distribution__header">
+    <h3>{{ 'pages.dashboard.order_analytics.title' | translate }}</h3>
+    @if (loading()) {
+    <cleansia-loader />
+    }
+  </div>
+
+  @if (data() && !loading()) {
+  <div class="cleansia-order-distribution__summary">
+    <div class="summary-item">
+      <cleansia-label
+        [text]="'pages.dashboard.order_analytics.total' | translate"
+        size="sm"
+        color="secondary"
+      />
+      <cleansia-label
+        [text]="data()!.totalOrders.toString()"
+        size="base"
+        weight="semibold"
+      />
+    </div>
+    <div class="summary-item">
+      <cleansia-label
+        [text]="'pages.dashboard.order_analytics.completion_rate' | translate"
+        size="sm"
+        color="secondary"
+      />
+      <cleansia-label
+        [text]="(data()!.completionRate | number : '1.1-1') + '%'"
+        size="base"
+        weight="semibold"
+        color="success"
+      />
+    </div>
+    <div class="summary-item">
+      <cleansia-label
+        [text]="'pages.dashboard.order_analytics.cancelled' | translate"
+        size="sm"
+        color="secondary"
+      />
+      <cleansia-label
+        [text]="data()!.cancelledOrders.toString()"
+        size="base"
+        weight="semibold"
+        color="danger"
+      />
+    </div>
+  </div>
+
+  <div class="cleansia-order-distribution__charts">
+    <div class="chart-section">
+      <h4>
+        {{ 'pages.dashboard.order_analytics.status_distribution' | translate }}
+      </h4>
+      <div class="chart-section__wrapper">
+        <canvas
+          baseChart
+          [data]="pieChartData"
+          [options]="pieChartOptions"
+          [type]="pieChartType"
+        >
+        </canvas>
+      </div>
+    </div>
+
+    <div class="chart-section">
+      <h4>{{ 'pages.dashboard.order_analytics.weekly_trends' | translate }}</h4>
+      <div class="chart-section__wrapper">
+        <canvas
+          baseChart
+          [data]="lineChartData"
+          [options]="lineChartOptions"
+          [type]="lineChartType"
+        >
+        </canvas>
+      </div>
+    </div>
+  </div>
+
+  @if (data()!.serviceDistribution && data()!.serviceDistribution?.length) {
+  <div class="cleansia-order-distribution__breakdown">
+    <h4>{{ 'pages.dashboard.order_analytics.top_services' | translate }}</h4>
+    <div class="service-list">
+      @for (service of data()!.serviceDistribution?.slice(0, 5); track
+      service.serviceName) {
+      <div class="service-item">
+        <div class="service-item__info">
+          <cleansia-label
+            [text]="service.serviceName ?? ''"
+            size="sm"
+            weight="medium"
+          />
+          <div class="service-item__bar">
+            <div
+              class="service-item__bar-fill"
+              [style.width.%]="(service.orderCount / data()!.totalOrders) * 100"
+            ></div>
+          </div>
+        </div>
+        <div class="service-item__stats">
+          <cleansia-label
+            [text]="
+              service.orderCount +
+              ' ' +
+              ('pages.dashboard.order_analytics.order_count' | translate)
+            "
+            size="sm"
+            color="secondary"
+          />
+          <cleansia-label
+            [text]="(service.totalRevenue | number : '1.0-0') + ' Kč'"
+            size="sm"
+            weight="semibold"
+            color="primary"
+          />
+        </div>
+      </div>
+      }
+    </div>
+  </div>
+  } } @else if (!loading() && !data()) {
+  <div class="cleansia-order-distribution__no-data">
+    <i class="pi pi-chart-bar"></i>
+    <cleansia-label
+      [text]="'pages.dashboard.order_analytics.no_data' | translate"
+      color="muted"
+    />
+  </div>
+  }
+</div>

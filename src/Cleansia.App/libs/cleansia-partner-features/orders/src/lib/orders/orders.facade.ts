@@ -11,14 +11,23 @@ import {
 } from '@cleansia/services';
 import * as OrderActions from '@cleansia/stores';
 import { selectOrderItems, selectOrderLoading } from '@cleansia/stores';
+import { Actions, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { catchError, of, takeUntil } from 'rxjs';
+import {
+  CompleteOrderDialogComponent,
+  CompleteOrderDialogData,
+  CompleteOrderDialogResult,
+} from '../components/complete-order-dialog';
 
 @Injectable()
 export class OrdersFacade extends UnsubscribeControlDirective {
   private readonly store = inject(Store);
   private readonly client = inject(Client);
   private readonly snackbarService = inject(SnackbarService);
+  private readonly dialogService = inject(DialogService);
+  private readonly actions$ = inject(Actions);
 
   readonly orders$ = this.store.select(selectOrderItems);
   readonly loading$ = this.store.select(selectOrderLoading('paged'));
@@ -42,6 +51,24 @@ export class OrdersFacade extends UnsubscribeControlDirective {
     });
 
     this.loadCurrentEmployee();
+    this.subscribeToCompleteOrderSuccess();
+  }
+
+  private subscribeToCompleteOrderSuccess(): void {
+    this.actions$
+      .pipe(
+        ofType(OrderActions.completeOrderSuccess),
+        takeUntil(this.destroyed$)
+      )
+      .subscribe(() => {
+        // Reload the current tab's orders after completing an order
+        const tab = this.activeTab();
+        if (tab === 'available') {
+          this.loadAvailableOrders();
+        } else {
+          this.loadMyOrders();
+        }
+      });
   }
 
   private loadCurrentEmployee(): void {
@@ -137,5 +164,50 @@ export class OrdersFacade extends UnsubscribeControlDirective {
       return;
     }
     this.loadMyOrders();
+  }
+
+  openCompleteOrderDialog(order: OrderListItem): void {
+    const employeeId = this.currentEmployeeId();
+
+    if (!employeeId) {
+      this.snackbarService.showErrorTranslated(
+        'pages.orders.employee_not_found'
+      );
+      return;
+    }
+
+    const dialogData: CompleteOrderDialogData = {
+      orderId: order.id!,
+      orderNumber: order.displayOrderNumber!,
+      estimatedTime: order.estimatedTime || 0,
+    };
+
+    const ref: DynamicDialogRef = this.dialogService.open(
+      CompleteOrderDialogComponent,
+      {
+        header: undefined,
+        data: dialogData,
+        width: '600px',
+        modal: true,
+        dismissableMask: false,
+      }
+    );
+
+    ref.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: CompleteOrderDialogResult) => {
+      if (result) {
+        this.store.dispatch(
+          OrderActions.completeOrder({
+            orderId: order.id!,
+            employeeId,
+            actualCompletionTimeMinutes: result.actualCompletionTimeMinutes,
+            completionNotes: result.completionNotes,
+          })
+        );
+      }
+    });
+  }
+
+  canCompleteOrder(order: OrderListItem): boolean {
+    return order.orderStatus?.value === OrderStatus.InProgress;
   }
 }

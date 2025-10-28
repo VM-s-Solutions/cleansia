@@ -21,6 +21,9 @@
       "@cleansia-partner/dashboard": [
         "libs/cleansia-partner-features/dashboard/src/index.ts"
       ],
+      "@cleansia-partner/forgot-password": [
+        "libs/cleansia-partner-features/forgot-password/src/index.ts"
+      ],
       "@cleansia-partner/invoices": [
         "libs/cleansia-partner-features/invoices/src/index.ts"
       ],

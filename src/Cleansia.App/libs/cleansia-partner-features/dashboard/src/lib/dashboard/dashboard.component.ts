@@ -10,6 +10,11 @@ import {
 import { TranslatePipe } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
+import { CleansiaDateRangeSelectorComponent } from '../components/date-range-selector/cleansia-date-range-selector.component';
+import { CleansiaEarningsChartComponent } from '../components/earnings-chart/cleansia-earnings-chart.component';
+import { CleansiaOrderDistributionChartComponent } from '../components/order-distribution-chart/cleansia-order-distribution-chart.component';
+import { CleansiaProductivityGaugesComponent } from '../components/productivity-gauges/cleansia-productivity-gauges.component';
+import { CleansiaTimeAnalyticsChartComponent } from '../components/time-analytics-chart/cleansia-time-analytics-chart.component';
 import { DashboardFacade } from './dashboard.facade';
 import { StatCard } from './dashboard.models';
 
@@ -27,6 +32,11 @@ import { StatCard } from './dashboard.models';
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     CleansiaLanguageSwitcherComponent,
+    CleansiaEarningsChartComponent,
+    CleansiaTimeAnalyticsChartComponent,
+    CleansiaOrderDistributionChartComponent,
+    CleansiaProductivityGaugesComponent,
+    CleansiaDateRangeSelectorComponent,
   ],
   templateUrl: './dashboard.component.html',
   providers: [DashboardFacade],
@@ -42,6 +52,10 @@ export class DashboardComponent {
 
   onRefresh(): void {
     this.facade.refresh();
+  }
+
+  onDateRangeChanged(range: { startDate: Date; endDate: Date }): void {
+    this.facade.onDateRangeChanged(range.startDate, range.endDate);
   }
 
   getTrendIcon(direction: 'up' | 'down' | 'neutral'): string {

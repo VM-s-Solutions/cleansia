@@ -1,0 +1,90 @@
+.cleansia-earnings-chart {
+  background: white;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.75rem;
+
+    h3 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #1f2937;
+    }
+  }
+
+
+  &__summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.75rem;
+    padding: 0.875rem;
+    background: #f9fafb;
+    border-radius: 8px;
+  }
+
+  &__wrapper {
+    position: relative;
+    height: 220px;
+    flex: 1;
+  }
+
+  &__no-data {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: #9ca3af;
+    flex: 1;
+
+    i {
+      font-size: 2.5rem;
+    }
+  }
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  &__label {
+    font-size: 0.8125rem;
+    color: #6b7280;
+  }
+
+  &__value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1f2937;
+
+    &--positive {
+      color: #10b981;
+    }
+
+    &--negative {
+      color: #ef4444;
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .cleansia-earnings-chart {
+    &__summary {
+      grid-template-columns: 1fr;
+    }
+
+    &__wrapper {
+      height: 200px;
+    }
+  }
+}

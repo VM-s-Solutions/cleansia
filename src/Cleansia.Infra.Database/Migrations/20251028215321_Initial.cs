@@ -595,6 +595,8 @@ namespace Cleansia.Infra.Database.Migrations
                     PaymentStatus = table.Column<int>(type: "integer", nullable: false),
                     TotalPrice = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     EstimatedTime = table.Column<int>(type: "integer", nullable: false),
+                    ActualCompletionTime = table.Column<int>(type: "integer", nullable: true),
+                    CompletionNotes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     EmployeePayCalculated = table.Column<bool>(type: "boolean", nullable: false),
                     TravelDistance = table.Column<decimal>(type: "numeric", nullable: true),
                     RequiredEmployees = table.Column<int>(type: "integer", nullable: false),

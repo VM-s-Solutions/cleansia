@@ -10,24 +10,33 @@ import {
 } from '@cleansia/services';
 import * as DashboardActions from '@cleansia/stores';
 import {
+  selectAnalyticsLoading,
   selectDashboardStats,
   selectDashboardStatsLoading,
+  selectEarningsAnalytics,
+  selectEarningsAnalyticsLoading,
+  selectOrderAnalytics,
+  selectOrderAnalyticsLoading,
+  selectProductivityMetrics,
+  selectProductivityMetricsLoading,
+  selectSelectedDateRange,
+  selectTimeAnalytics,
+  selectTimeAnalyticsLoading,
   selectUpcomingOrders,
   selectUpcomingOrdersLoading,
 } from '@cleansia/stores';
 import { Store } from '@ngrx/store';
-import { catchError, of, takeUntil } from 'rxjs';
+import { TranslateService } from '@ngx-translate/core';
+import { takeUntil } from 'rxjs';
 import { StatCard } from './dashboard.models';
 
-/**
- * Dashboard facade service that manages dashboard state and business logic.
- * Simplified to work with dedicated dashboard endpoints.
- */
 @Injectable()
 export class DashboardFacade extends UnsubscribeControlDirective {
   private readonly store = inject(Store);
   private readonly router = inject(Router);
   private readonly client = inject(Client);
+  private readonly translate = inject(TranslateService);
+  private currentEmployeeId: string | null = null;
 
   readonly stats = this.store.selectSignal(selectDashboardStats);
   readonly upcomingOrders = this.store.selectSignal(selectUpcomingOrders);
@@ -36,33 +45,45 @@ export class DashboardFacade extends UnsubscribeControlDirective {
     selectUpcomingOrdersLoading
   );
 
+  // Analytics signals
+  readonly earningsAnalytics = this.store.selectSignal(selectEarningsAnalytics);
+  readonly timeAnalytics = this.store.selectSignal(selectTimeAnalytics);
+  readonly orderAnalytics = this.store.selectSignal(selectOrderAnalytics);
+  readonly productivityMetrics = this.store.selectSignal(
+    selectProductivityMetrics
+  );
+  readonly selectedDateRange = this.store.selectSignal(selectSelectedDateRange);
+
+  // Loading signals
+  readonly earningsLoading = this.store.selectSignal(
+    selectEarningsAnalyticsLoading
+  );
+  readonly timeLoading = this.store.selectSignal(selectTimeAnalyticsLoading);
+  readonly orderLoading = this.store.selectSignal(selectOrderAnalyticsLoading);
+  readonly productivityLoading = this.store.selectSignal(
+    selectProductivityMetricsLoading
+  );
+  readonly analyticsLoading = this.store.selectSignal(selectAnalyticsLoading);
+
   constructor() {
     super();
     this.loadDashboard();
   }
 
-  /**
-   * Loads dashboard data for the current employee.
-   */
   private loadDashboard(): void {
     this.client.employeeClient
       .getCurrentEmployee()
-      .pipe(
-        takeUntil(this.destroyed$),
-        catchError(() => of(null))
-      )
+      .pipe(takeUntil(this.destroyed$))
       .subscribe((employee) => {
         if (employee?.id) {
+          this.currentEmployeeId = employee.id;
           this.loadDashboardData(employee.id);
+          this.loadAnalytics(employee.id);
         }
       });
   }
 
-  /**
-   * Dispatches actions to load dashboard statistics and upcoming orders.
-   */
   private loadDashboardData(employeeId: string): void {
-    // Load stats using dedicated endpoint
     this.store.dispatch(DashboardActions.loadDashboardStats({ employeeId }));
 
     // Load upcoming orders
@@ -91,9 +112,6 @@ export class DashboardFacade extends UnsubscribeControlDirective {
     );
   }
 
-  /**
-   * Gets stat cards for display.
-   */
   getStatCards(): StatCard[] {
     const stats = this.stats();
     if (!stats) {
@@ -129,7 +147,9 @@ export class DashboardFacade extends UnsubscribeControlDirective {
       },
       {
         title: 'pages.dashboard.pending_earnings',
-        value: `${stats.currentPeriodEarnings.toLocaleString('cs-CZ')} Kč`,
+        value: `${stats.currentPeriodEarnings.toLocaleString(
+          this.translate.currentLang || 'cs-CZ'
+        )} Kč`,
         icon: 'pi pi-wallet',
         color: '#8b5cf6',
         route: '/invoices',
@@ -137,9 +157,6 @@ export class DashboardFacade extends UnsubscribeControlDirective {
     ];
   }
 
-  /**
-   * Calculates trend percentage between current and previous values.
-   */
   private calculateTrend(
     current: number,
     previous: number
@@ -160,22 +177,37 @@ export class DashboardFacade extends UnsubscribeControlDirective {
     };
   }
 
-  /**
-   * Navigates to a route.
-   */
+  private loadAnalytics(employeeId: string): void {
+    this.store.dispatch(DashboardActions.refreshAllAnalytics({ employeeId }));
+  }
+
+  onDateRangeChanged(startDate: Date, endDate: Date): void {
+    this.store.dispatch(DashboardActions.setDateRange({ startDate, endDate }));
+
+    if (this.currentEmployeeId) {
+      this.store.dispatch(
+        DashboardActions.refreshAllAnalytics({
+          employeeId: this.currentEmployeeId,
+        })
+      );
+    }
+  }
+
+  refreshAnalytics(): void {
+    if (this.currentEmployeeId) {
+      this.store.dispatch(
+        DashboardActions.refreshAllAnalytics({
+          employeeId: this.currentEmployeeId,
+        })
+      );
+    }
+  }
+
   navigateTo(route: string): void {
     this.router.navigate([route]);
   }
 
-  /**
-   * Refreshes dashboard data.
-   */
   refresh(): void {
     this.loadDashboard();
-  }
-
-  override ngOnDestroy(): void {
-    this.store.dispatch(DashboardActions.clearDashboard());
-    super.ngOnDestroy();
   }
 }

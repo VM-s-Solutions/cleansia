@@ -17,6 +17,7 @@ public class Policy
     public const string CanCreateOrder = nameof(CanCreateOrder); // Anonymous
     public const string CanGetOrderStatus = nameof(CanGetOrderStatus); // Anonymous
     public const string CanTakeOrder = nameof(CanTakeOrder); // Employee
+    public const string CanCompleteOrder = nameof(CanCompleteOrder); // Employee
 
     // User
     public const string CanViewPagedUser = nameof(CanViewPagedUser); // Admin + Employee

@@ -90,17 +90,16 @@
           styleClass="w-full"
         />
       </div>
-      <div class="flex gap-2">
-        <p-button
-          [label]="'global.actions.add' | translate"
-          severity="primary"
-          (onClick)="addRange()"
-          [disabled]="!isValidRange()"
-        />
+      <div class="availability-module__actions">
         <p-button
           [label]="'global.actions.cancel' | translate"
           severity="secondary"
           (onClick)="showDialog.set(false)"
+        /><p-button
+          [label]="'global.actions.add' | translate"
+          severity="primary"
+          (onClick)="addRange()"
+          [disabled]="!isValidRange()"
         />
       </div>
     </div>

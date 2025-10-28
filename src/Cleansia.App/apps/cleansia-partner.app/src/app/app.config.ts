@@ -25,6 +25,7 @@ import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
 import { MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
+import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 import { environment } from '../environments/environment.prod';
 import { appRoutes } from './app.routes';
 
@@ -38,6 +39,7 @@ export const appConfig: ApplicationConfig = {
     providePrimeNG({
       theme: { preset: CleansiaPreset, options: { darkModeSelector: false } },
     }),
+    provideCharts(withDefaultRegisterables()),
     importProvidersFrom(
       TranslateModule.forRoot({
         loader: {

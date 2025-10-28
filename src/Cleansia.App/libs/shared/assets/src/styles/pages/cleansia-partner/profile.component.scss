@@ -154,21 +154,19 @@ cleansia-partner-profile {
     }
   }
 
-  ::ng-deep {
-    .p-calendar {
+  .p-calendar {
+    width: 100%;
+
+    .p-inputtext {
       width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--cleansia-border-color);
+      border-radius: 6px;
+      font-size: 1rem;
 
-      .p-inputtext {
-        width: 100%;
-        padding: 0.75rem;
-        border: 1px solid var(--cleansia-border-color);
-        border-radius: 6px;
-        font-size: 1rem;
-
-        &:focus {
-          border-color: var(--cleansia-primary-500);
-          box-shadow: 0 0 0 2px rgba(var(--cleansia-primary-rgb), 0.2);
-        }
+      &:focus {
+        border-color: var(--cleansia-primary-500);
+        box-shadow: 0 0 0 2px rgba(var(--cleansia-primary-rgb), 0.2);
       }
     }
   }

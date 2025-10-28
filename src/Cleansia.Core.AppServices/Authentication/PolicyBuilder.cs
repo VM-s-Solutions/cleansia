@@ -16,6 +16,8 @@ public static class PolicyBuilder
         [Policy.CanViewPagedUserOrder] = PhysicalPolicy.Authenticated,
         [Policy.CanViewOrderDetail] = PhysicalPolicy.Authenticated,
         [Policy.CanUpdateOrder] = PhysicalPolicy.EmployeeOrAdmin,
+        [Policy.CanTakeOrder] = PhysicalPolicy.EmployeeOrAdmin,
+        [Policy.CanCompleteOrder] = PhysicalPolicy.EmployeeOrAdmin,
         //[Policy.CanCreateOrder] = PhysicalPolicy.Anonymous,
         //[Policy.CanGetOrderStatus] = PhysicalPolicy.Anonymous,
 

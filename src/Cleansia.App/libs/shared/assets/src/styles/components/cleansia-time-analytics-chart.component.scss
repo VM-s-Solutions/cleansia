@@ -1,0 +1,163 @@
+.cleansia-time-analytics {
+  background: white;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.75rem;
+
+    h3 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #1f2937;
+    }
+  }
+
+
+  &__summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 0.75rem;
+    padding: 0.875rem;
+    background: #fef3c7;
+    border-radius: 8px;
+  }
+
+  &__wrapper {
+    position: relative;
+    height: 200px;
+    flex: 1;
+  }
+
+  &__breakdown {
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+
+    h4 {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: #1f2937;
+      padding-bottom: 0.75rem;
+    }
+  }
+
+  &__no-data {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: #9ca3af;
+    flex: 1;
+
+    i {
+      font-size: 2.5rem;
+    }
+  }
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  &__label {
+    font-size: 0.8125rem;
+    color: #92400e;
+  }
+
+  &__value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1f2937;
+
+    &--efficiency {
+      color: #f59e0b;
+    }
+  }
+}
+
+.service-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.service-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.625rem;
+  background: #f9fafb;
+  border-radius: 6px;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #f3f4f6;
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  &__name {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: #1f2937;
+  }
+
+  &__count {
+    font-size: 0.8125rem;
+    color: #6b7280;
+  }
+
+  &__time {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+
+    &-value {
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: #f59e0b;
+    }
+
+    &-avg {
+      font-size: 0.8125rem;
+      color: #6b7280;
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .cleansia-time-analytics {
+    &__summary {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    &__wrapper {
+      height: 180px;
+    }
+  }
+
+  .service-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+
+    &__time {
+      align-items: flex-start;
+    }
+  }
+}

@@ -1,0 +1,118 @@
+.complete-order-dialog {
+  &__header {
+    margin-bottom: 1.5rem;
+  }
+
+  &__title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0 0 0.5rem 0;
+  }
+
+  &__subtitle {
+    font-size: 0.875rem;
+    color: var(--text-color-secondary);
+    margin: 0;
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  &__time-comparison {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    padding: 1rem;
+    background-color: var(--surface-50);
+    border-radius: 8px;
+    border: 1px solid var(--surface-200);
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-color);
+  }
+
+  &__label-optional {
+    font-weight: 400;
+    color: var(--text-color-secondary);
+    font-size: 0.8rem;
+  }
+
+  &__hint {
+    font-size: 0.75rem;
+    color: var(--text-color-secondary);
+    margin-top: -0.25rem;
+  }
+
+  &__error {
+    color: var(--red-500);
+    font-size: 0.75rem;
+    margin-top: -0.25rem;
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--surface-200);
+  }
+}
+
+.time-comparison-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  &__label {
+    font-size: 0.75rem;
+    color: var(--text-color-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  &__value {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+
+  &--actual {
+    .time-comparison-item__value {
+      color: var(--primary-color);
+    }
+  }
+
+  &--delayed {
+    .time-comparison-item__value {
+      color: var(--orange-500);
+    }
+  }
+
+  &--on-time {
+    .time-comparison-item__value {
+      color: var(--green-500);
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .complete-order-dialog {
+    &__time-comparison {
+      grid-template-columns: 1fr;
+    }
+  }
+}

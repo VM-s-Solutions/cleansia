@@ -1,11 +1,11 @@
 import { Page } from '@cleansia/models';
-import { OrderListItem } from '@cleansia/services';
+import { OrderItem, OrderListItem } from '@cleansia/services';
 
 export const ORDER_FEATURE_KEY = 'order';
 
 export interface OrderState {
   page: Page<OrderListItem>;
-  orderDetail?: OrderListItem;
+  orderDetail?: OrderItem;
 
   loading: Record<string, boolean>;
   error: Record<string, string | null>;

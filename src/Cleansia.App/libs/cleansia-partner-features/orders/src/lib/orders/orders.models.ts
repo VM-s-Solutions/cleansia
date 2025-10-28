@@ -1,6 +1,6 @@
 import { TemplateRef } from '@angular/core';
 import { TableDefinition } from '@cleansia/components';
-import { OrderListItem } from '@cleansia/services';
+import { OrderListItem, OrderStatus } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 
 export function getAvailableOrdersTableDefinition(
@@ -104,6 +104,7 @@ export function getAvailableOrdersTableDefinition(
 export function getMyOrdersTableDefinition(
   defs: {
     onViewDetails: (row: OrderListItem) => void;
+    onCompleteOrder: (row: OrderListItem) => void;
   },
   translate: TranslateService,
   statusTemplate?: TemplateRef<OrderListItem>,
@@ -173,6 +174,17 @@ export function getMyOrdersTableDefinition(
         id: 'actions',
         headerName: translate.instant('pages.orders.actions'),
         columnActions: [
+          {
+            icon: 'pi pi-check-circle',
+            onClick: (row: OrderListItem) => defs.onCompleteOrder(row),
+            buttonPalette: 'p-button-success p-button-sm',
+            tooltip: {
+              title: translate.instant('pages.orders.complete_order.title'),
+              position: 'above',
+            },
+            visible: (row: OrderListItem) =>
+              row.orderStatus.value === OrderStatus.InProgress, // InProgress
+          },
           {
             icon: 'pi pi-eye',
             onClick: (row: OrderListItem) => defs.onViewDetails(row),

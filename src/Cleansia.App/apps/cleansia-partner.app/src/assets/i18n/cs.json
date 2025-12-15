@@ -268,6 +268,25 @@
       "special_instructions": "Speciální instrukce",
       "access_instructions": "Instrukce pro přístup",
       "order_history": "Historie objednávky",
+      "photos": "Fotografie objednávky",
+      "upload_before_photo": "Nahrát fotografii před úklidem",
+      "upload_after_photo": "Nahrát fotografii po úklidu",
+      "uploading_photo": "Nahrávání fotografie...",
+      "before_photos": "Fotografie před úklidem",
+      "after_photos": "Fotografie po úklidu",
+      "no_photos": "Zatím nebyly nahrány žádné fotografie",
+      "staged": "Připraveno",
+      "save_photos": "Uložit fotografie",
+      "cancel_staged": "Zrušit",
+      "photos_saved": "Fotografie byly úspěšně uloženy",
+      "staged_photo_count": "{{count}} připraveno",
+      "staged_photos_count": "{{count}} fotografií připraveno k uložení",
+      "delete_photo": "Smazat fotografii",
+      "delete_photo_confirm": "Opravdu chcete smazat tuto fotografii?",
+      "add_before_photos": "Přidat fotografie před úklidem",
+      "add_after_photos": "Přidat fotografie po úklidu",
+      "saving_photos": "Ukládání fotografií...",
+      "pending_upload": "Čeká na nahrání",
       "audit_information": "Auditní informace",
       "created_on": "Vytvořeno",
       "updated_on": "Aktualizováno"
@@ -465,7 +484,18 @@
         "failed_to_load_details": "Nepodařilo se načíst podrobnosti objednávky. Zkuste to prosím znovu.",
         "invoice_download_not_available": "Stažení faktury zatím není k dispozici.",
         "no_order_selected": "Žádná objednávka není vybrána.",
-        "print_failed": "Nepodařilo se vytisknout objednávku. Zkuste to prosím znovu."
+        "print_failed": "Nepodařilo se vytisknout objednávku. Zkuste to prosím znovu.",
+        "receipt_not_available": "Účtenka není k dispozici pro tuto objednávku.",
+        "receipt_downloaded": "Účtenka byla úspěšně stažena.",
+        "receipt_download_failed": "Nepodařilo se stáhnout účtenku. Zkuste to prosím znovu.",
+        "failed_to_load_photos": "Nepodařilo se načíst fotografie. Zkuste to prosím znovu.",
+        "photo_size_exceeded": "Velikost fotografie musí být menší než 10MB.",
+        "photo_invalid_type": "Jsou povoleny pouze obrázky JPEG, JPG, PNG a WEBP.",
+        "photo_uploaded": "Fotografie byla úspěšně nahrána.",
+        "photo_upload_failed": "Nepodařilo se nahrát fotografii. Zkuste to prosím znovu.",
+        "photo_read_failed": "Nepodařilo se přečíst soubor fotografie. Zkuste to prosím znovu.",
+        "photo_deleted": "Fotografie byla úspěšně smazána.",
+        "photo_delete_failed": "Nepodařilo se smazat fotografii. Zkuste to prosím znovu."
       },
       "invoices": {
         "invoice_generated": "Faktura byla vygenerována z časových záznamů.",
@@ -514,7 +544,15 @@
       "cancel": "Zrušit",
       "details": "Podrobnosti",
       "load_more": "Načíst další",
-      "retry": "Zkusit znovu"
+      "retry": "Zkusit znovu",
+      "confirm": "Potvrdit",
+      "delete": "Smazat"
+    },
+    "dialog": {
+      "confirm": "Potvrdit",
+      "delete": "Smazat",
+      "confirm_delete": "Opravdu chcete smazat tuto položku?",
+      "confirm_delete_item": "Opravdu chcete smazat {{item}}?"
     },
     "status": {
       "Pending": "Čekající",

@@ -170,6 +170,16 @@
       </cleansia-section>
       }
 
+      <!-- Order Photos Section -->
+      @if (currentEmployeeId() && orderDetails()?.id) {
+        <order-photos
+          [orderId]="orderDetails()!.id!"
+          [employeeId]="currentEmployeeId()!"
+          [canUpload]="true"
+          [canDelete]="true"
+        />
+      }
+
       <!-- Audit Information Section -->
       <cleansia-section
         [title]="'pages.order_details.audit_information' | translate"

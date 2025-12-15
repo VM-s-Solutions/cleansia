@@ -13,4 +13,6 @@ public interface IPayPeriodRepository : IRepository<PayPeriod, string>
     IQueryable<PayPeriod> GetPeriodsForYear(int year);
 
     Task<bool> HasOverlappingPeriodAsync(DateOnly startDate, DateOnly endDate, string? excludeId, CancellationToken cancellationToken);
+
+    Task<List<PayPeriod>> GetActivePeriodsEndingInDaysAsync(int daysFromNow, CancellationToken cancellationToken = default);
 }

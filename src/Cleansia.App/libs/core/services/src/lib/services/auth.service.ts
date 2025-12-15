@@ -19,6 +19,7 @@ import {
   JwtTokenResponse,
   LoginCommand,
   RegisterCommand,
+  RegisterEmployeeCommand,
   ResendConfirmationEmailCommand,
   Role,
 } from '../client';
@@ -76,7 +77,7 @@ export class AuthService {
     lastName: string
   ): Observable<boolean> {
     return this.client.authClient.registerEmployee(
-      new RegisterCommand({
+      new RegisterEmployeeCommand({
         email,
         password,
         firstName,

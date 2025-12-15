@@ -46,8 +46,7 @@ public class ResendConfirmationEmail
 
     public class Handler(
         IEmailService emailService,
-        IUserRepository userRepository,
-        IEmailTranslationRepository emailTranslationRepository) : ICommandHandler<Command, bool>
+        IUserRepository userRepository) : ICommandHandler<Command, bool>
     {
         public async Task<BusinessResult<bool>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -55,9 +54,7 @@ public class ResendConfirmationEmail
             var userName = $"{user!.FirstName} {user.LastName}";
             user.UpdateConfirmationCode();
 
-            var emailTranslation = await emailTranslationRepository.GetByLanguageCodeAndTypeAsync(command.Language, EmailType.ConfirmationEmail, cancellationToken);
-
-            await emailService.SendEmailConfirmationAsync(command.Email, userName, user!.ConfirmationCode, emailTranslation!, cancellationToken);
+            await emailService.SendEmailConfirmationAsync(command.Email, userName, user!.ConfirmationCode, command.Language, cancellationToken);
 
             return BusinessResult.Success(true);
         }

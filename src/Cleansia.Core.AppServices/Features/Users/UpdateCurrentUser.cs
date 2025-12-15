@@ -97,7 +97,8 @@ public class UpdateCurrentUser
         string LastName,
         string PhoneNumber,
         DateOnly? BirthDate,
-        BlobFileDto? Photo) : ICommand<Response>;
+        BlobFileDto? Photo,
+        string? LanguageCode) : ICommand<Response>;
 
     public record Response(string Id);
 
@@ -164,6 +165,11 @@ public class UpdateCurrentUser
             }
 
             user.Update(command.FirstName, command.LastName, command.PhoneNumber, command.BirthDate);
+
+            if (!string.IsNullOrWhiteSpace(command.LanguageCode))
+            {
+                user.UpdateLanguagePreference(command.LanguageCode);
+            }
         }
     }
 }

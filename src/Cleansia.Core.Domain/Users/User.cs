@@ -3,6 +3,7 @@ using Cleansia.Core.Domain.Orders;
 using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Infra.Common.Attributes;
+using Cleansia.Core.Domain.Internationalization;
 
 namespace Cleansia.Core.Domain.Users;
 
@@ -51,28 +52,32 @@ public class User : Auditable
 
     public bool IsEmailConfirmed { get; private set; }
 
-    public string CartId { get; private set; }
+    [MaxLength(5)]
+    public string? PreferredLanguageCode { get; private set; }
+
+    public Language? PreferredLanguage { get; private set; }
+
     public Cart? Cart { get; private set; }
 
-    public string EmployeeId { get; private set; }
     public Employee? Employee { get; private set; }
 
     private ICollection<Order> _orders = [];
     public virtual IReadOnlyCollection<Order> Orders => _orders.ToList().AsReadOnly();
 
-    public static User CreateWithPassword(string email, string password, string firstName, string lastName, UserProfile profile = UserProfile.Customer)
+    public static User CreateWithPassword(string email, string password, string firstName, string lastName, UserProfile profile = UserProfile.Customer, string? languageCode = null)
         => new()
         {
             Email = email,
             Password = password,
             FirstName = firstName,
             LastName = lastName,
+            PreferredLanguageCode = languageCode ?? "en",
             ConfirmationCode = new Random().Next(100000, 999999).ToString(),
             ConfirmationCodeExpiresAt = DateTime.UtcNow.AddMinutes(15),
             Profile = profile,
         };
 
-    public static User CreateWithGoogle(string email, string firstName, string lastName, string googleId)
+    public static User CreateWithGoogle(string email, string firstName, string lastName, string googleId, string? languageCode = null)
         => new()
         {
             Email = email,
@@ -80,6 +85,7 @@ public class User : Auditable
             LastName = lastName,
             AuthenticationType = AuthenticationType.Google,
             GoogleId = googleId,
+            PreferredLanguageCode = languageCode ?? "en",
             IsEmailConfirmed = true
         };
 
@@ -141,6 +147,12 @@ public class User : Auditable
         ConfirmationCode = new Random().Next(100000, 999999).ToString();
         ConfirmationCodeExpiresAt = DateTime.UtcNow.AddMinutes(15);
 
+        return this;
+    }
+
+    public User UpdateLanguagePreference(string? languageCode)
+    {
+        PreferredLanguageCode = languageCode;
         return this;
     }
 }

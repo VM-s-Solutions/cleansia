@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
@@ -91,7 +92,9 @@ public class CompleteOrder
     }
 
     public class Handler(
-        IOrderRepository orderRepository)
+        IOrderRepository orderRepository,
+        IReceiptService receiptService,
+        IEmailService emailService)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -99,6 +102,11 @@ public class CompleteOrder
             var order = await orderRepository
                 .GetQueryable()
                 .Include(o => o.OrderStatusHistory)
+                .Include(o => o.SelectedServices).ThenInclude(os => os.Service)
+                .Include(o => o.SelectedPackages).ThenInclude(op => op.Package)
+                .Include(o => o.CustomerAddress).ThenInclude(a => a!.Country)
+                .Include(o => o.Currency)
+                .Include(o => o.User).ThenInclude(u => u!.PreferredLanguage)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             if (order == null)
@@ -110,6 +118,42 @@ public class CompleteOrder
 
             var completedStatusTrack = OrderStatusTrack.Create(OrderStatus.Completed, order);
             order.AddOrderStatus(completedStatusTrack);
+
+            // Generate and send receipt
+            try
+            {
+                // Use user's preferred language or default to Czech for receipts
+                var languageCode = order.User?.PreferredLanguageCode ?? "cs";
+                var receipt = await receiptService.GenerateReceiptAsync(order, languageCode, cancellationToken);
+
+                // Send receipt email asynchronously (fire and forget)
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var pdfBytes = await receiptService.DownloadReceiptPdfAsync(receipt, cancellationToken);
+                        await emailService.SendOrderReceiptEmailAsync(
+                            order.CustomerEmail,
+                            order,
+                            pdfBytes,
+                            receipt.FileName,
+                            languageCode,
+                            cancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log the error but don't fail the order completion
+                        // TODO: Add proper logging
+                        Console.WriteLine($"Failed to send receipt email: {ex.Message}");
+                    }
+                }, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                // Log the error but don't fail the order completion
+                // TODO: Add proper logging
+                Console.WriteLine($"Failed to generate receipt: {ex.Message}");
+            }
 
             return BusinessResult.Success(new Response(
                 OrderId: order.Id,

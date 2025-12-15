@@ -1,5 +1,7 @@
 ﻿using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Receipts;
 using Cleansia.Infra.Database.Converters;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
@@ -42,5 +44,10 @@ public class OrderEntityConfiguration : AuditableEntityConfiguration<Order, stri
         builder.Property(o => o.StripeSessionId)
             .IsRequired()
             .HasMaxLength(100);
+
+        builder.HasOne(o => o.Receipt)
+            .WithOne(r => r.Order)
+            .HasForeignKey<OrderReceipt>(r => r.OrderId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

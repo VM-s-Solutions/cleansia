@@ -1,11 +1,14 @@
 using System.Security.Claims;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.Emails;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.InvoiceTemplates;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Packages;
+using Cleansia.Core.Domain.Receipts;
+using Cleansia.Core.Domain.ReceiptTemplates;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Services;
@@ -109,6 +112,10 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<EmployeeInvoice> EmployeeInvoices { get; set; }
     public virtual DbSet<InvoiceTemplate> InvoiceTemplates { get; set; }
     public virtual DbSet<CountryInvoiceConfig> CountryInvoiceConfigs { get; set; }
+    public virtual DbSet<EmailTemplateTranslation> EmailTemplateTranslations { get; set; }
+    public virtual DbSet<ReceiptTemplate> ReceiptTemplates { get; set; }
+    public virtual DbSet<OrderReceipt> OrderReceipts { get; set; }
+    public virtual DbSet<CompanyInfo> CompanyInfo { get; set; }
 
     // Views
 }

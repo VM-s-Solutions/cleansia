@@ -54,8 +54,7 @@ public class Register
     internal class Handler(
         IEmailService emailService,
         ICartRepository cartRepository,
-        IUserRepository userRepository,
-        IEmailTranslationRepository emailTranslationRepository)
+        IUserRepository userRepository)
         : ICommandHandler<Command, bool>
     {
         public async Task<BusinessResult<bool>> Handle(Command command, CancellationToken cancellationToken)
@@ -63,16 +62,14 @@ public class Register
             var userEntity = await userRepository.GetByEmailAsync(command.Email, cancellationToken);
             if (userEntity is null)
             {
-                userEntity = User.CreateWithPassword(command.Email, command.Password, command.FirstName, command.LastName);
+                userEntity = User.CreateWithPassword(command.Email, command.Password, command.FirstName, command.LastName, UserProfile.Customer, command.Language);
                 userRepository.Add(userEntity);
                 cartRepository.Add(Cart.CreateWithUser(userEntity));
             }
 
             var userName = $"{userEntity.FirstName} {userEntity.LastName}";
 
-            var emailTranslation = await emailTranslationRepository.GetByLanguageCodeAndTypeAsync(command.Language, EmailType.ConfirmationEmail, cancellationToken);
-
-            await emailService.SendEmailConfirmationAsync(userEntity.Email, userName, userEntity.ConfirmationCode!, emailTranslation!, cancellationToken);
+            await emailService.SendEmailConfirmationAsync(userEntity.Email, userName, userEntity.ConfirmationCode!, command.Language, cancellationToken);
 
             return BusinessResult.Success(true);
         }

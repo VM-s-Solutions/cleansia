@@ -25,7 +25,8 @@ public class RequestPasswordChange
     }
 
     public record Command(
-        string Email)
+        string Email,
+        string Language = Constants.Language.English)
         : ICommand;
 
     internal class Handler(
@@ -39,7 +40,9 @@ public class RequestPasswordChange
             user!.UpdateResetPasswordToken();
 
             await userRepository.CommitAsync(cancellationToken);
-            await emailService.SendResetPasswordEmailAsync(command.Email, $"{user.LastName} {user.FirstName}", user!.ResetPasswordCode!, cancellationToken);
+
+            var languageCode = user.PreferredLanguageCode ?? command.Language;
+            await emailService.SendResetPasswordEmailAsync(command.Email, $"{user.LastName} {user.FirstName}", user!.ResetPasswordCode!, languageCode, cancellationToken);
 
             return BusinessResult.Success();
         }

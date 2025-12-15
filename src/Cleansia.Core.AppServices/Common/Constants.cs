@@ -9,6 +9,9 @@ public class Constants
         public const string EmployeeDocuments = "employee-documents";
         public const string InvoiceTemplates = "invoice-templates";
         public const string GeneratedInvoices = "generated-invoices";
+        public const string ReceiptTemplates = "receipt-templates";
+        public const string GeneratedReceipts = "generated-receipts";
+        public const string OrderPhotos = "order-photos";
     }
 
     public class VirtualDirectories
@@ -24,6 +27,19 @@ public class Constants
     public class Currency
     {
         public const string CZK = nameof(CZK);
+    }
+
+    public class Language
+    {
+        public const string English = "en";
+        public const string Czech = "cs";
+    }
+
+    public class ReceiptNumberFormat
+    {
+        public const string Prefix = "RCP";
+        public const string Format = "D4";
+        public const string Pattern = "RCP-{0}-{1:D4}"; // RCP-YYYY-NNNN
     }
 
     public static readonly (byte[] Signature, string MimeType)[] ImageSignatures =

@@ -10,4 +10,9 @@ public class LanguageRepository(CleansiaDbContext context) : BaseRepository<Lang
     {
         return GetDbSet().AnyAsync(l => l.Code == code, cancellationToken);
     }
+
+    public Task<Language?> GetByCodeAsync(string code, CancellationToken cancellationToken)
+    {
+        return GetDbSet().FirstOrDefaultAsync(l => l.Code == code, cancellationToken);
+    }
 }

@@ -69,4 +69,70 @@ public class OrderController(IMediator mediator) : ApiController(mediator)
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<CompleteOrder.Response>(result);
     }
+
+    [HttpGet("DownloadReceipt")]
+    [Permission(Policy.CanViewOrderDetail)]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> DownloadReceipt([FromQuery] DownloadOrderReceipt.Query query, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(query, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return HandleResult<DownloadOrderReceipt.Response>(result);
+        }
+
+        return File(result.Value!.PdfBytes, result.Value.ContentType, result.Value.FileName);
+    }
+
+    [HttpPost("UploadPhoto")]
+    [Permission(Policy.CanUploadOrderPhoto)]
+    [ProducesResponseType(typeof(UploadOrderPhoto.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> UploadPhoto([FromBody] UploadOrderPhoto.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<UploadOrderPhoto.Response>(result);
+    }
+
+    [HttpPost("SavePhotos")]
+    [Permission(Policy.CanUploadOrderPhoto)]
+    [ProducesResponseType(typeof(SaveOrderPhotos.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> SavePhotos([FromBody] SaveOrderPhotos.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<SaveOrderPhotos.Response>(result);
+    }
+
+    [HttpGet("GetPhotos")]
+    [Permission(Policy.CanViewOrderPhotos)]
+    [ProducesResponseType(typeof(GetOrderPhotos.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetPhotos([FromQuery] GetOrderPhotos.Query query, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(query, cancellationToken);
+        return HandleResult<GetOrderPhotos.Response>(result);
+    }
+
+    [HttpDelete("DeletePhoto")]
+    [Permission(Policy.CanDeleteOrderPhoto)]
+    [ProducesResponseType(typeof(DeleteOrderPhoto.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> DeletePhoto([FromQuery] DeleteOrderPhoto.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<DeleteOrderPhoto.Response>(result);
+    }
 }

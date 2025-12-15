@@ -18,6 +18,9 @@ public static class PolicyBuilder
         [Policy.CanUpdateOrder] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanTakeOrder] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanCompleteOrder] = PhysicalPolicy.EmployeeOrAdmin,
+        [Policy.CanUploadOrderPhoto] = PhysicalPolicy.EmployeeOrAdmin,
+        [Policy.CanViewOrderPhotos] = PhysicalPolicy.Authenticated,
+        [Policy.CanDeleteOrderPhoto] = PhysicalPolicy.EmployeeOrAdmin,
         //[Policy.CanCreateOrder] = PhysicalPolicy.Anonymous,
         //[Policy.CanGetOrderStatus] = PhysicalPolicy.Anonymous,
 

@@ -11,6 +11,7 @@ export class OrderDetailsFacade {
   readonly orderDetails = signal<OrderItem | null>(null);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
+  readonly currentEmployeeId = signal<string | null>(null);
 
   loadOrderDetails(orderId: string): void {
     if (!orderId?.trim()) {
@@ -57,11 +58,45 @@ export class OrderDetailsFacade {
       return;
     }
 
-    // TODO: Implement actual invoice download
-    console.log('Download invoice for order:', order.id);
-    this.snackbarService.showSuccessTranslated(
-      'global.messages.orders.invoice_download_not_available'
-    );
+    if (!order.receiptNumber) {
+      this.snackbarService.showErrorTranslated(
+        'global.messages.orders.receipt_not_available'
+      );
+      return;
+    }
+
+    this.loading.set(true);
+
+    this.client.orderClient
+      .downloadReceipt(order.id)
+      .pipe(
+        tap((response) => {
+          // Create a blob URL and trigger download
+          const blob = response.data;
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download =
+            response.fileName || `receipt_${order.displayOrderNumber}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+
+          this.snackbarService.showSuccessTranslated(
+            'global.messages.orders.receipt_downloaded'
+          );
+        }),
+        catchError((error) => {
+          console.error('Error downloading receipt:', error);
+          this.snackbarService.showErrorTranslated(
+            'global.messages.orders.receipt_download_failed'
+          );
+          return of(null);
+        }),
+        finalize(() => this.loading.set(false))
+      )
+      .subscribe();
   }
 
   printOrder(): void {
@@ -73,6 +108,17 @@ export class OrderDetailsFacade {
         'global.messages.orders.print_failed'
       );
     }
+  }
+
+  loadCurrentEmployee(): void {
+    this.client.employeeClient
+      .getCurrentEmployee()
+      .pipe(catchError(() => of(null)))
+      .subscribe((employee) => {
+        if (employee?.id) {
+          this.currentEmployeeId.set(employee.id);
+        }
+      });
   }
 
   reset(): void {

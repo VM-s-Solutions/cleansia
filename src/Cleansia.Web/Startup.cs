@@ -1,4 +1,5 @@
-﻿using Cleansia.Web.Extensions;
+﻿using Cleansia.Web.Configuration;
+using Cleansia.Web.Extensions;
 
 namespace Cleansia.Web;
 
@@ -12,6 +13,9 @@ public class Startup(IConfiguration configuration, IWebHostEnvironment environme
         services.AddControllers();
         services.AddEndpointsApiExplorer();
         services.AddServices(Configuration, Environment);
+
+        // Add Hangfire for background jobs
+        services.AddHangfireServices(Configuration);
 
         services.AddCors(options =>
         {
@@ -64,6 +68,12 @@ public class Startup(IConfiguration configuration, IWebHostEnvironment environme
         app.UseCors("Cleansia");
         app.UseAuthentication();
         app.UseAuthorization();
+
+        // Add Hangfire Dashboard
+        app.UseHangfireConfiguration();
+
+        // Configure recurring jobs
+        HangfireConfiguration.ConfigureRecurringJobs();
 
         app.UseEndpoints(endpoints =>
         {

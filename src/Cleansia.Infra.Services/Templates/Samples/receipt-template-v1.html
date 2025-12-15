@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt {{ReceiptNumber}} - Cleansia</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-size: 11px;
+            line-height: 1.6;
+            color: #111827;
+            background: #f9fafb;
+            padding: 40px 20px;
+        }
+
+        .receipt-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .receipt-header {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            padding: 40px;
+            color: #ffffff;
+        }
+
+        .receipt-header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 30px;
+        }
+
+        .brand {
+            flex: 1;
+        }
+
+        .brand h1 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-tagline {
+            font-size: 12px;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+
+        .receipt-meta {
+            text-align: right;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 20px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .receipt-meta h2 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .receipt-meta-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 11px;
+            gap: 20px;
+        }
+
+        .receipt-meta-label {
+            font-weight: 500;
+            opacity: 0.9;
+        }
+
+        .receipt-meta-value {
+            font-weight: 600;
+        }
+
+        .receipt-body {
+            padding: 40px;
+        }
+
+        .info-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+            padding: 25px;
+            background: #f0f9ff;
+            border-radius: 8px;
+            border-left: 4px solid #0284c7;
+        }
+
+        .info-block h3 {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #6b7280;
+            margin-bottom: 12px;
+        }
+
+        .info-item {
+            margin-bottom: 8px;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .info-item strong {
+            display: block;
+            font-weight: 700;
+            color: #0284c7;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+
+        .info-item span {
+            color: #374151;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0284c7;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0f2fe;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 30px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .items-table thead {
+            background: #0284c7;
+            color: #ffffff;
+        }
+
+        .items-table th {
+            padding: 14px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .items-table th.align-right {
+            text-align: right;
+        }
+
+        .items-table tbody tr {
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .items-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .items-table tbody tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+
+        .items-table td {
+            padding: 12px;
+            font-size: 11px;
+            color: #374151;
+        }
+
+        .items-table td.align-right {
+            text-align: right;
+            font-weight: 600;
+            color: #0284c7;
+        }
+
+        .summary-section {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+
+        .summary-box {
+            width: 350px;
+            background: #f0f9ff;
+            border-radius: 8px;
+            padding: 25px;
+            border: 2px solid #0284c7;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            font-size: 12px;
+            border-bottom: 1px solid #bfdbfe;
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+            padding-top: 15px;
+            margin-top: 10px;
+            border-top: 2px solid #0284c7;
+        }
+
+        .summary-row.total {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0284c7;
+        }
+
+        .summary-label {
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .summary-value {
+            font-weight: 700;
+            color: #0284c7;
+        }
+
+        .footer {
+            background: #f9fafb;
+            padding: 30px 40px;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+        }
+
+        .footer-text {
+            font-size: 10px;
+            color: #6b7280;
+            line-height: 1.8;
+        }
+
+        .footer-text strong {
+            color: #0284c7;
+            font-weight: 600;
+        }
+
+        .payment-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .payment-status.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .payment-status.paid {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .payment-status.failed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt-container">
+        <div class="receipt-header">
+            <div class="receipt-header-content">
+                <div class="brand">
+                    <h1>{{Company.TradingName}}</h1>
+                    <p class="brand-tagline">{{Company.Tagline}}</p>
+                </div>
+                <div class="receipt-meta">
+                    <h2>Receipt</h2>
+                    <div class="receipt-meta-item">
+                        <span class="receipt-meta-label">Receipt #:</span>
+                        <span class="receipt-meta-value">{{ReceiptNumber}}</span>
+                    </div>
+                    <div class="receipt-meta-item">
+                        <span class="receipt-meta-label">Order #:</span>
+                        <span class="receipt-meta-value">{{OrderNumber}}</span>
+                    </div>
+                    <div class="receipt-meta-item">
+                        <span class="receipt-meta-label">Date:</span>
+                        <span class="receipt-meta-value">{{IssuedDate}}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="receipt-body">
+            <div class="info-section">
+                <div class="info-block">
+                    <h3>Customer Information</h3>
+                    <div class="info-item">
+                        <strong>{{CustomerName}}</strong>
+                        <span>{{CustomerEmail}}</span>
+                    </div>
+                    <div class="info-item">
+                        <span>{{CustomerPhone}}</span>
+                    </div>
+                    <div class="info-item">
+                        <span>{{CustomerAddress}}</span>
+                    </div>
+                </div>
+                <div class="info-block">
+                    <h3>Company Information</h3>
+                    <div class="info-item">
+                        <strong>{{Company.LegalName}}</strong>
+                        {{#if Company.VatNumber}}
+                        <span>IČO: {{Company.RegistrationNumber}} | DIČ: {{Company.VatNumber}}</span>
+                        {{else}}
+                        <span>IČO: {{Company.RegistrationNumber}}</span>
+                        {{/if}}
+                    </div>
+                    <div class="info-item">
+                        <span>{{Company.Address}}</span>
+                    </div>
+                    <div class="info-item">
+                        <span>{{Company.ContactInfo}}</span>
+                    </div>
+                    {{#if Company.BankAccountNumber}}
+                    <div class="info-item">
+                        <span>{{Company.BankName}}: {{Company.BankAccountNumber}}</span>
+                    </div>
+                    {{/if}}
+                    {{#if Company.Iban}}
+                    <div class="info-item">
+                        <span>IBAN: {{Company.Iban}}</span>
+                    </div>
+                    {{/if}}
+                </div>
+            </div>
+
+            <h2 class="section-title">Services & Packages</h2>
+
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th class="align-right">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each Services}}
+                    <tr>
+                        <td>{{Name}}</td>
+                        <td class="align-right">{{../Currency}}{{Price}}</td>
+                    </tr>
+                    {{/each}}
+                    {{#each Packages}}
+                    <tr>
+                        <td>{{Name}} (Package)</td>
+                        <td class="align-right">{{../Currency}}{{Price}}</td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+
+            <div class="summary-section">
+                <div class="summary-box">
+                    <div class="summary-row">
+                        <span class="summary-label">Subtotal:</span>
+                        <span class="summary-value">{{Currency}}{{Subtotal}}</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span class="summary-label">Total:</span>
+                        <span class="summary-value">{{Currency}}{{Total}}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px; text-align: center;">
+                <p style="font-size: 11px; color: #6b7280; margin-bottom: 10px;">Payment Status:</p>
+                <span class="payment-status {{#if (eq PaymentStatus 'Paid')}}paid{{else if (eq PaymentStatus 'Pending')}}pending{{else}}failed{{/if}}">
+                    {{PaymentStatus}}
+                </span>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p class="footer-text">
+                Thank you for choosing <strong>{{Company.TradingName}}</strong> for your cleaning needs!<br>
+                For questions or support, please contact us at <strong>{{Company.Email}}</strong>{{#if Company.Phone}} or call <strong>{{Company.Phone}}</strong>{{/if}}
+            </p>
+        </div>
+    </div>
+</body>
+</html>

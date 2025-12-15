@@ -103,6 +103,8 @@ export class UserEffects {
                 phoneNumber,
                 birthDate,
                 photo,
+                languageCode:
+                  this.translate.currentLang || this.translate.getDefaultLang(),
               })
             )
             .pipe(

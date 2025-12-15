@@ -80,7 +80,8 @@ public static class OrderMappers
             AssignedEmployeeName: order.Employee != null
                 ? $"{order.Employee.User?.FirstName} {order.Employee.User?.LastName}".Trim()
                 : null,
-            AssignedEmployeePhone: order.Employee?.User?.PhoneNumber
+            AssignedEmployeePhone: order.Employee?.User?.PhoneNumber,
+            ReceiptNumber: order.Receipt?.ReceiptNumber
         );
     }
 }

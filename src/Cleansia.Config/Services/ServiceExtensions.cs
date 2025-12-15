@@ -11,6 +11,7 @@ public static class ServiceExtensions
     {
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IEmailService, EmailService>();
+        services.AddScoped<IReceiptService, ReceiptService>();
         services.AddInfrastructureServices();
 
         return services;

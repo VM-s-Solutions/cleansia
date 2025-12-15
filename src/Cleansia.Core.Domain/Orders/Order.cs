@@ -4,6 +4,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Extensions;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Packages;
+using Cleansia.Core.Domain.Receipts;
 using Cleansia.Core.Domain.Users;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 
@@ -85,6 +86,8 @@ public class Order : Auditable
     public string? EmployeeId { get; private set; }
     public Employee? Employee { get; private set; }
 
+    public string? ReceiptId { get; private set; }
+    public OrderReceipt? Receipt { get; private set; }
 
     public IDictionary<string, bool> _extras = new Dictionary<string, bool>();
     public IReadOnlyDictionary<string, bool> Extras => _extras.AsReadOnly();
@@ -100,6 +103,9 @@ public class Order : Auditable
 
     private ICollection<OrderEmployee> _assignedEmployees = [];
     public IReadOnlyCollection<OrderEmployee> AssignedEmployees => _assignedEmployees.ToList().AsReadOnly();
+
+    private ICollection<OrderPhoto> _photos = [];
+    public IReadOnlyCollection<OrderPhoto> Photos => _photos.ToList().AsReadOnly();
 
     public static Order Create(string customerName, string customerEmail, string customerPhone,
         Address customerAddress, int rooms, int bathrooms,

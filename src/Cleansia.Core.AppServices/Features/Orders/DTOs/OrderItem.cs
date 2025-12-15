@@ -36,5 +36,6 @@ public record OrderItem(
     DateTimeOffset? UpdatedOn,
     string? AssignedEmployeeId,
     string? AssignedEmployeeName,
-    string? AssignedEmployeePhone
+    string? AssignedEmployeePhone,
+    string? ReceiptNumber
 );

@@ -30,7 +30,7 @@
           <cleansia-button
             [title]="'pages.email_confirm.resend_code' | translate"
             [style]="'raised-button'"
-            [icon]="'refresh'"
+            [icon]="'pi pi-refresh'"
             [loading]="facade.isResendDisabled"
             (clickFn)="onResendCode()"
           />
@@ -40,7 +40,7 @@
           [title]="'pages.email_confirm.verify_code' | translate"
           [severity]="'primary'"
           [style]="'raised-button'"
-          [icon]="'check_circle'"
+          [icon]="'pi pi-check-circle'"
           [iconPosition]="'right'"
           [loading]="loading() || false"
           (clickFn)="onVerifyCode()"

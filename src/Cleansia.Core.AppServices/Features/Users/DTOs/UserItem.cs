@@ -17,6 +17,8 @@ public record UserItem(
     DateOnly? BirthDate,
     IEnumerable<OrderListItem> Orders,
     BlobFileDto? ProfilePhoto,
+    string? PreferredLanguageCode,
+    string? PreferredLanguageName,
     string Id,
     bool IsActive)
     : BaseRecord<string>(Id, IsActive);

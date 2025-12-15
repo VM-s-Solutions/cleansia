@@ -11,6 +11,7 @@ public class UserRepository(CleansiaDbContext context)
     {
         return GetDbSet()
             .Include(user => user.Orders)
+            .Include(user => user.PreferredLanguage)
             .AsQueryable();
     }
 

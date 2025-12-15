@@ -49,22 +49,22 @@ public class UserEntityConfiguration : AuditableEntityConfiguration<User, string
         builder.Property(u => u.ConfirmationCode)
             .HasMaxLength(6);
 
+        builder.Property(u => u.PreferredLanguageCode)
+            .HasMaxLength(5)
+            .IsRequired(false);
+
         builder
-            .HasOne(u => u.Employee)
-            .WithOne(e => e.User)
-            .HasForeignKey<User>(u => u.EmployeeId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .HasOne(u => u.PreferredLanguage)
+            .WithMany()
+            .HasForeignKey(u => u.PreferredLanguageCode)
+            .HasPrincipalKey(l => l.Code)
+            .OnDelete(DeleteBehavior.SetNull)
+            .IsRequired(false);
 
         builder
             .HasMany(u => u.Orders)
             .WithOne(o => o.User)
             .HasForeignKey(o => o.UserId)
             .OnDelete(DeleteBehavior.Restrict);
-
-        builder
-            .HasOne(u => u.Cart)
-            .WithOne(c => c.User)
-            .HasForeignKey<User>(u => u.CartId)
-            .OnDelete(DeleteBehavior.Cascade);
     }
 }

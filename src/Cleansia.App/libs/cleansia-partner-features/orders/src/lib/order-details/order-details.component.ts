@@ -18,6 +18,7 @@ import { OrderExtrasComponent } from './components/order-extras.component';
 import { OrderHeaderComponent } from './components/order-header.component';
 import { OrderPackagesComponent } from './components/order-packages.component';
 import { OrderPaymentInfoComponent } from './components/order-payment-info.component';
+import { OrderPhotosComponent } from './components/order-photos.component';
 import { OrderServiceDetailsComponent } from './components/order-service-details.component';
 import { OrderStatusComponent } from './components/order-status.component';
 import { OrderDetailsFacade } from './order-details.facade';
@@ -43,6 +44,7 @@ import { OrderDetailsFacade } from './order-details.facade';
     OrderCustomerInfoComponent,
     OrderServiceDetailsComponent,
     OrderAdditionalServicesComponent,
+    OrderPhotosComponent,
     CleansiaLanguageSwitcherComponent,
   ],
   templateUrl: './order-details.component.html',
@@ -59,6 +61,7 @@ export class OrderDetailsComponent implements OnInit {
   protected readonly orderDetails = this.facade.orderDetails;
   protected readonly loading = this.facade.loading;
   protected readonly error = this.facade.error;
+  protected readonly currentEmployeeId = this.facade.currentEmployeeId;
 
   protected readonly statusOptions = computed(() => [
     {
@@ -132,6 +135,7 @@ export class OrderDetailsComponent implements OnInit {
     const orderId = this.route.snapshot.paramMap.get('orderId');
     if (orderId) {
       this.facade.loadOrderDetails(orderId);
+      this.facade.loadCurrentEmployee();
     } else {
       this.navigateToOrders();
     }

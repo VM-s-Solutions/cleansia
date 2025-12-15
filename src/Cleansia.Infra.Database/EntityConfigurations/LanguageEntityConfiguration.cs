@@ -15,6 +15,8 @@ public class LanguageEntityConfiguration : BaseEntityConfiguration<Language, str
             .IsRequired()
             .HasMaxLength(5);
 
+        builder.HasAlternateKey(l => l.Code);
+
         builder.Property(l => l.Name)
             .HasColumnType("citext")
             .IsRequired()

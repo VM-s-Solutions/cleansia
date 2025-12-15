@@ -252,6 +252,25 @@
       "special_instructions": "Special Instructions",
       "access_instructions": "Access Instructions",
       "order_history": "Order History",
+      "photos": "Order Photos",
+      "upload_before_photo": "Upload Before Photo",
+      "upload_after_photo": "Upload After Photo",
+      "uploading_photo": "Uploading photo...",
+      "before_photos": "Before Photos",
+      "after_photos": "After Photos",
+      "no_photos": "No photos uploaded yet",
+      "staged": "Staged",
+      "save_photos": "Save Photos",
+      "cancel_staged": "Cancel",
+      "photos_saved": "Photos saved successfully",
+      "staged_photo_count": "{{count}} staged",
+      "staged_photos_count": "{{count}} photos ready to save",
+      "delete_photo": "Delete Photo",
+      "delete_photo_confirm": "Are you sure you want to delete this photo?",
+      "add_before_photos": "Add Before Photos",
+      "add_after_photos": "Add After Photos",
+      "saving_photos": "Saving photos...",
+      "pending_upload": "Pending upload",
       "audit_information": "Audit Information",
       "created_on": "Created On",
       "updated_on": "Updated On"
@@ -449,7 +468,18 @@
         "failed_to_load_details": "Failed to load order details. Please try again.",
         "invoice_download_not_available": "Invoice download is not yet available.",
         "no_order_selected": "No order selected.",
-        "print_failed": "Failed to print order. Please try again."
+        "print_failed": "Failed to print order. Please try again.",
+        "receipt_not_available": "Receipt is not available for this order.",
+        "receipt_downloaded": "Receipt downloaded successfully.",
+        "receipt_download_failed": "Failed to download receipt. Please try again.",
+        "failed_to_load_photos": "Failed to load photos. Please try again.",
+        "photo_size_exceeded": "Photo size must be less than 10MB.",
+        "photo_invalid_type": "Only JPEG, JPG, PNG, and WEBP images are allowed.",
+        "photo_uploaded": "Photo uploaded successfully.",
+        "photo_upload_failed": "Failed to upload photo. Please try again.",
+        "photo_read_failed": "Failed to read photo file. Please try again.",
+        "photo_deleted": "Photo deleted successfully.",
+        "photo_delete_failed": "Failed to delete photo. Please try again."
       },
       "invoices": {
         "invoice_generated": "Invoice generated from time logs.",
@@ -498,7 +528,15 @@
       "cancel": "Cancel",
       "details": "Details",
       "load_more": "Load More",
-      "retry": "Retry"
+      "retry": "Retry",
+      "confirm": "Confirm",
+      "delete": "Delete"
+    },
+    "dialog": {
+      "confirm": "Confirm",
+      "delete": "Delete",
+      "confirm_delete": "Are you sure you want to delete this item?",
+      "confirm_delete_item": "Are you sure you want to delete {{item}}?"
     },
     "status": {
       "Pending": "Pending",

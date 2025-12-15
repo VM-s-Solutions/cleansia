@@ -317,56 +317,56 @@ VALUES
    3499.00,
    '{"en": {"Name": "Luxury Full Service", "Description": "Premium package with all services included"}, "cs": {"Name": "Luxusní kompletní služba", "Description": "Prémiový balíček se všemi zahrnutými službami"}, "ru": {"Name": "Роскошный полный сервис", "Description": "Премиум пакет со всеми включенными услугами"}}');
 
--- 8. USERS AND EMPLOYEES (Create users with placeholder CartId)
+-- 8. USERS AND EMPLOYEES
 INSERT INTO public."Users" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy",
   "DeactivatedOn", "Password", "FirstName", "LastName",
   "Email", "PhoneNumber", "BirthDate", "Profile",
-  "AuthenticationType", "IsEmailConfirmed", "CartId", "EmployeeId"
+  "AuthenticationType", "IsEmailConfirmed", "PreferredLanguageCode"
 )
 VALUES
-  -- Customer Users
+  -- Customer Users (Czech language by default)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    '$2a$11$LGWjlgYDdH1Zso.FvdZbkebhVtKj39L1HYN0GlbE3rRYcZw5I9RQ6', -- Password: Test123!
-   'Jan', 'Novák', 'jan.novak@email.cz', '+420123456789', '1985-03-15', 2, 1, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
+   'Jan', 'Novák', 'jan.novak@email.cz', '+420123456789', '1985-03-15', 2, 1, true, 'cs'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    '$2a$11$LGWjlgYDdH1Zso.FvdZbkebhVtKj39L1HYN0GlbE3rRYcZw5I9RQ6', -- Password: Test123!
-   'Marie', 'Svobodová', 'marie.svobodova@email.cz', '+420234567890', '1990-07-22', 2, 1, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
+   'Marie', 'Svobodová', 'marie.svobodova@email.cz', '+420234567890', '1990-07-22', 2, 1, true, 'cs'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    '$2a$11$LGWjlgYDdH1Zso.FvdZbkebhVtKj39L1HYN0GlbE3rRYcZw5I9RQ6', -- Password: Test123!
-   'Petr', 'Dvořák', 'petr.dvorak@email.cz', '+420345678901', '1988-11-05', 2, 1, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
+   'Petr', 'Dvořák', 'petr.dvorak@email.cz', '+420345678901', '1988-11-05', 2, 1, true, 'cs'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    '$2a$11$LGWjlgYDdH1Zso.FvdZbkebhVtKj39L1HYN0GlbE3rRYcZw5I9RQ6', -- Password: Test123!
-   'Anna', 'Černá', 'anna.cerna@email.cz', '+420456789012', '1992-04-18', 2, 1, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
+   'Anna', 'Černá', 'anna.cerna@email.cz', '+420456789012', '1992-04-18', 2, 1, true, 'cs'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    '$2a$11$LGWjlgYDdH1Zso.FvdZbkebhVtKj39L1HYN0GlbE3rRYcZw5I9RQ6', -- Password: Test123!
-   'Tomáš', 'Procházka', 'tomas.prochazka@email.cz', '+420567890123', '1987-09-12', 2, 1, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
+   'Tomáš', 'Procházka', 'tomas.prochazka@email.cz', '+420567890123', '1987-09-12', 2, 1, true, 'cs'),
 
-  -- Employee Users
+  -- Employee Users (Czech language for @cleansia.cz)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    '$2a$11$LGWjlgYDdH1Zso.FvdZbkebhVtKj39L1HYN0GlbE3rRYcZw5I9RQ6', -- Password: Test123!
-   'Kateřina', 'Novotná', 'katerina.novotna@cleansia.cz', '+420678901234', '1993-06-08', 2, 1, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
-
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   '$2a$11$LGWjlgYDdH1Zso.FvdZbkebhVtKj39L1HYN0GlbE3rRYcZw5I9RQ6', -- Password: Test123!
-   'Michal', 'Krejčí', 'michal.krejci@cleansia.cz', '+420789012345', '1991-12-03', 2, 1, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
+   'Kateřina', 'Novotná', 'katerina.novotna@cleansia.cz', '+420678901234', '1993-06-08', 2, 1, true, 'cs'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    '$2a$11$LGWjlgYDdH1Zso.FvdZbkebhVtKj39L1HYN0GlbE3rRYcZw5I9RQ6', -- Password: Test123!
-   'Zuzana', 'Horáková', 'zuzana.horakova@cleansia.cz', '+420890123456', '1989-02-14', 2, 1, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
+   'Michal', 'Krejčí', 'michal.krejci@cleansia.cz', '+420789012345', '1991-12-03', 2, 1, true, 'cs'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    '$2a$11$LGWjlgYDdH1Zso.FvdZbkebhVtKj39L1HYN0GlbE3rRYcZw5I9RQ6', -- Password: Test123!
-   'Pavel', 'Veselý', 'pavel.vesely@cleansia.cz', '+420901234567', '1986-08-27', 2, 1, true, generate_ulid()::TEXT, generate_ulid()::TEXT),
+   'Zuzana', 'Horáková', 'zuzana.horakova@cleansia.cz', '+420890123456', '1989-02-14', 2, 1, true, 'cs'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    '$2a$11$LGWjlgYDdH1Zso.FvdZbkebhVtKj39L1HYN0GlbE3rRYcZw5I9RQ6', -- Password: Test123!
-   'Lenka', 'Marková', 'lenka.markova@cleansia.cz', '+420012345678', '1994-05-19', 2, 1, true, generate_ulid()::TEXT, generate_ulid()::TEXT);
+   'Pavel', 'Veselý', 'pavel.vesely@cleansia.cz', '+420901234567', '1986-08-27', 2, 1, true, 'cs'),
+
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   '$2a$11$LGWjlgYDdH1Zso.FvdZbkebhVtKj39L1HYN0GlbE3rRYcZw5I9RQ6', -- Password: Test123!
+   'Lenka', 'Marková', 'lenka.markova@cleansia.cz', '+420012345678', '1994-05-19', 2, 1, true, 'cs');
 
 -- 9. CARTS (Create carts with UserId after users exist)
 INSERT INTO public."Carts" (
@@ -396,11 +396,6 @@ VALUES
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'pavel.vesely@cleansia.cz')),
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'lenka.markova@cleansia.cz'));
-
--- Update Users with CartId after carts are created
-UPDATE public."Users" SET "CartId" = (
-  SELECT "Id" FROM public."Carts" WHERE "UserId" = public."Users"."Id"
-);
 
 INSERT INTO public."Employees" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
@@ -455,11 +450,6 @@ VALUES
    '{"Monday":[{"Start":"09:30:00","End":"17:30:00"}],"Tuesday":[{"Start":"09:30:00","End":"17:30:00"}],"Wednesday":[{"Start":"09:30:00","End":"17:30:00"}],"Thursday":[{"Start":"09:30:00","End":"17:30:00"}],"Friday":[{"Start":"09:30:00","End":"17:30:00"}],"Sunday":[{"Start":"12:00:00","End":"16:00:00"}]}',
    '[]',
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'lenka.markova@cleansia.cz'));
-
--- Update Users with EmployeeId after employees are created
-UPDATE public."Users" SET "EmployeeId" = (
-  SELECT "Id" FROM public."Employees" WHERE "UserId" = public."Users"."Id"
-) WHERE "Profile" = 1;
 
 -- 10. ADDRESSES
 INSERT INTO public."Addresses" (
@@ -1175,6 +1165,271 @@ VALUES
    true, 0.21, false, 'PDF',
    '{"NIF": "required"}',
    'Factura emitida de acuerdo con la ley española. Condiciones de pago: 14 días desde la fecha de emisión.');
+
+-- ============================================================
+-- COMPANY INFO
+-- ============================================================
+INSERT INTO public."CompanyInfo" (
+    "Id", "LegalName", "TradingName", "Tagline",
+    "RegistrationNumber", "VatNumber",
+    "Street", "City", "ZipCode", "CountryId",
+    "Phone", "Email", "Website",
+    "BankName", "BankAccountNumber", "Iban", "Swift",
+    "IsActive", "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn"
+)
+VALUES (
+    generate_ulid()::TEXT,
+    'Cleansia s.r.o.',
+    'CLEANSIA',
+    'Professional Cleaning Services',
+    '12345678',  -- IČO (Registration Number) - REPLACE WITH ACTUAL
+    'CZ12345678',  -- DIČ (VAT Number) - REPLACE WITH ACTUAL
+    'Václavské náměstí 1',
+    'Prague',
+    '11000',
+    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1),
+    '+420 123 456 789',
+    'info@cleansia.cz',
+    'https://www.cleansia.cz',
+    'Česká spořitelna',
+    '123456789/0800',
+    'CZ65 0800 0000 1234 5678 9012',
+    'GIBACZPX',
+    true,
+    'system',
+    CURRENT_TIMESTAMP,
+    'system',
+    CURRENT_TIMESTAMP
+);
+
+-- ============================================================
+-- EMAIL TEMPLATE TRANSLATIONS
+-- ============================================================
+INSERT INTO public."EmailTemplateTranslations" (
+    "Id", "IsActive", "EmailType", "Key", "Value", "LanguageId",
+    "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn"
+)
+VALUES
+-- Password Reset - English
+(generate_ulid()::TEXT, true, 1, 'Subject', 'Reset Your Password', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 1, 'Greeting', 'Hello', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 1, 'IntroText', 'You requested to reset your password. Click the button below to proceed:', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 1, 'ButtonText', 'Reset Password', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 1, 'AlternativeText', 'Or use this verification code:', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 1, 'ExpiryNotice', 'This link will expire in 24 hours.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 1, 'IgnoreText', 'If you did not request this, please ignore this email.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 1, 'SupportText', 'Need help? Contact us at', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 1, 'SupportEmail', 'support@cleansia.com', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 1, 'Closing', 'Best regards,', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 1, 'TeamName', 'The Cleansia Team', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 1, 'FooterText', '© 2025 Cleansia. All rights reserved.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+
+-- Password Reset - Czech
+(generate_ulid()::TEXT, true, 1, 'Subject', 'Obnovení hesla', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 1, 'Greeting', 'Dobrý den', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 1, 'IntroText', 'Požádali jste o obnovení hesla. Klikněte na tlačítko níže pro pokračování:', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 1, 'ButtonText', 'Obnovit heslo', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 1, 'AlternativeText', 'Nebo použijte tento ověřovací kód:', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 1, 'ExpiryNotice', 'Platnost tohoto odkazu vyprší za 24 hodin.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 1, 'IgnoreText', 'Pokud jste o toto nepožádali, ignorujte prosím tento e-mail.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 1, 'SupportText', 'Potřebujete pomoc? Kontaktujte nás na', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 1, 'SupportEmail', 'support@cleansia.cz', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 1, 'Closing', 'S pozdravem,', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 1, 'TeamName', 'Tým Cleansia', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 1, 'FooterText', '© 2025 Cleansia. Všechna práva vyhrazena.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+
+-- Order Receipt - English
+(generate_ulid()::TEXT, true, 2, 'Subject', 'Your Order Receipt', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'Greeting', 'Dear', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'ThankYouText', 'Thank you for your order! We are pleased to confirm your booking.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'OrderDetailsTitle', 'Order Details', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'OrderNumberLabel', 'Order Number:', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'OrderDateLabel', 'Order Date:', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'TotalAmountLabel', 'Total Amount:', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'AttachmentText', 'Please find your detailed receipt attached to this email.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'TrackOrderText', 'You can track your order status at any time:', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'ButtonText', 'View Order Status', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'QuestionsText', 'If you have any questions about your order, please don''t hesitate to contact us.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'SupportText', 'Contact us at', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'SupportEmail', 'support@cleansia.com', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'Closing', 'Best regards,', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'TeamName', 'The Cleansia Team', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'FooterText', '© 2025 Cleansia. All rights reserved.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+
+-- Order Receipt - Czech
+(generate_ulid()::TEXT, true, 2, 'Subject', 'Potvrzení objednávky', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'Greeting', 'Vážený zákazníku', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'ThankYouText', 'Děkujeme za Vaši objednávku! S potěšením potvrzujeme Vaši rezervaci.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'OrderDetailsTitle', 'Detaily objednávky', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'OrderNumberLabel', 'Číslo objednávky:', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'OrderDateLabel', 'Datum objednávky:', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'TotalAmountLabel', 'Celková částka:', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'AttachmentText', 'Detailní účtenku naleznete v příloze tohoto e-mailu.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'TrackOrderText', 'Stav objednávky můžete kdykoliv sledovat:', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'ButtonText', 'Zobrazit stav objednávky', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'QuestionsText', 'Pokud máte jakékoliv dotazy ohledně Vaší objednávky, neváhejte nás kontaktovat.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'SupportText', 'Kontaktujte nás na', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'SupportEmail', 'support@cleansia.cz', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'Closing', 'S pozdravem,', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'TeamName', 'Tým Cleansia', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'FooterText', '© 2025 Cleansia. Všechna práva vyhrazena.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+
+-- Email Confirmation - English
+(generate_ulid()::TEXT, true, 3, 'Subject', 'Confirm Your Email Address', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 3, 'Greeting', 'Welcome', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 3, 'IntroText', 'Thank you for registering with Cleansia! To complete your registration, please verify your email address.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 3, 'InstructionsText', 'Use the verification code below to confirm your email:', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 3, 'CodeLabel', 'Verification Code:', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 3, 'ExpiryNotice', 'This code will expire in 24 hours.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 3, 'SecurityText', 'For security reasons, do not share this code with anyone.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 3, 'IgnoreText', 'If you did not create an account, please ignore this email.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 3, 'SupportText', 'Need help? Contact us at', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 3, 'SupportEmail', 'support@cleansia.com', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 3, 'Closing', 'Best regards,', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 3, 'TeamName', 'The Cleansia Team', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 3, 'FooterText', '© 2025 Cleansia. All rights reserved.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+
+-- Email Confirmation - Czech
+(generate_ulid()::TEXT, true, 3, 'Subject', 'Potvrďte Vaši e-mailovou adresu', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 3, 'Greeting', 'Vítejte', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 3, 'IntroText', 'Děkujeme za registraci v Cleansia! Pro dokončení registrace prosím ověřte Vaši e-mailovou adresu.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 3, 'InstructionsText', 'Použijte níže uvedený ověřovací kód pro potvrzení e-mailu:', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 3, 'CodeLabel', 'Ověřovací kód:', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 3, 'ExpiryNotice', 'Platnost tohoto kódu vyprší za 24 hodin.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 3, 'SecurityText', 'Z bezpečnostních důvodů tento kód s nikým nesdílejte.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 3, 'IgnoreText', 'Pokud jste účet nevytvářeli, ignorujte prosím tento e-mail.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 3, 'SupportText', 'Potřebujete pomoc? Kontaktujte nás na', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 3, 'SupportEmail', 'support@cleansia.cz', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 3, 'Closing', 'S pozdravem,', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 3, 'TeamName', 'Tým Cleansia', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 3, 'FooterText', '© 2025 Cleansia. Všechna práva vyhrazena.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+
+-- Pay Period Closed - English
+(generate_ulid()::TEXT, true, 4, 'Subject', 'Pay Period Closed', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'IntroText', 'We are writing to inform you that the pay period has been automatically closed by our system.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'StatusText', 'Period Closed', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'DetailsText', 'All work completed during this period has been recorded. Your invoice will be generated and processed according to our standard payroll schedule.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'PeriodDetailsTitle', 'Period Details', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'PeriodLabelText', 'Period', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'StartDateText', 'Start Date', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'EndDateText', 'End Date', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'ClosedAtText', 'Closed At', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'NextStepsTitle', 'What Happens Next?', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'NextStep1', 'Your invoice will be automatically generated within 24-48 hours', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'NextStep2', 'You will receive a separate email with your invoice details', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'NextStep3', 'Payment will be processed according to the agreed payment schedule', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'ClosingText', 'Thank you for your hard work during this period!', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'ContactText', 'If you have any questions or concerns about this period closure, please don''t hesitate to contact us.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'SupportText', 'Need help? Contact us at', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'SupportEmail', 'it@cleansia.cz', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'TeamSignature', 'Best regards', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'TeamName', 'The Cleansia Team', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'FooterText', '© 2024 Cleansia. All rights reserved.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+
+-- Pay Period Closed - Czech
+(generate_ulid()::TEXT, true, 4, 'Subject', 'Platební období uzavřeno', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'IntroText', 'Píšeme Vám, abychom Vás informovali, že platební období bylo automaticky uzavřeno naším systémem.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'StatusText', 'Období uzavřeno', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'DetailsText', 'Veškerá práce dokončená během tohoto období byla zaznamenána. Vaše faktura bude vygenerována a zpracována podle našeho standardního platebního harmonogramu.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'PeriodDetailsTitle', 'Detaily období', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'PeriodLabelText', 'Období', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'StartDateText', 'Datum začátku', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'EndDateText', 'Datum konce', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'ClosedAtText', 'Uzavřeno v', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'NextStepsTitle', 'Co se stane dál?', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'NextStep1', 'Vaše faktura bude automaticky vygenerována do 24-48 hodin', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'NextStep2', 'Obdržíte samostatný email s detaily vaší faktury', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'NextStep3', 'Platba bude zpracována podle dohodnutého platebního harmonogramu', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'ClosingText', 'Děkujeme za vaši tvrdou práci během tohoto období!', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'ContactText', 'Pokud máte jakékoliv otázky nebo obavy ohledně uzavření tohoto období, neváhejte nás kontaktovat.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'SupportText', 'Potřebujete pomoc? Kontaktujte nás na', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'SupportEmail', 'it@cleansia.cz', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'TeamSignature', 'S pozdravem', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'TeamName', 'Tým Cleansia', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'FooterText', '© 2024 Cleansia. Všechna práva vyhrazena.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+
+-- Period End Reminder - English
+(generate_ulid()::TEXT, true, 5, 'Subject', 'Pay Period Ending Soon', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'IntroText', 'This is a friendly reminder that the current pay period is ending soon. Please ensure all pending tasks are completed before the period closes.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'CountdownTitle', 'Time Remaining', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'DaysRemainingText', '{0} days remaining', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'PeriodDetailsTitle', 'Period Details', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'PeriodLabelText', 'Period', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'StartDateText', 'Start Date', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'EndDateText', 'End Date', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'ReminderText', 'Please make sure to complete all your pending orders and submit any outstanding documentation before the period closes.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'ActionItemsTitle', 'Action Items', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'ActionItem1', 'Complete all assigned orders', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'ActionItem2', 'Submit time tracking and work documentation', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'ActionItem3', 'Review your completed work for accuracy', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'ClosingText', 'Thank you for staying on top of your responsibilities!', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'ContactText', 'If you have any questions or need assistance, please don''t hesitate to reach out.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'SupportText', 'Need help? Contact us at', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'SupportEmail', 'it@cleansia.cz', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'TeamSignature', 'Best regards', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'TeamName', 'The Cleansia Team', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'FooterText', '© 2024 Cleansia. All rights reserved.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+
+-- Period End Reminder - Czech
+(generate_ulid()::TEXT, true, 5, 'Subject', 'Platební období brzy končí', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'IntroText', 'Toto je přátelská připomínka, že současné platební období brzy končí. Ujistěte se prosím, že všechny nevyřízené úkoly jsou dokončeny před uzavřením období.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'CountdownTitle', 'Zbývající čas', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'DaysRemainingText', 'Zbývá {0} dní', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'PeriodDetailsTitle', 'Detaily období', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'PeriodLabelText', 'Období', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'StartDateText', 'Datum začátku', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'EndDateText', 'Datum konce', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'ReminderText', 'Ujistěte se prosím, že dokončíte všechny vaše nevyřízené objednávky a odešlete veškerou nedokončenou dokumentaci před uzavřením období.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'ActionItemsTitle', 'Akční body', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'ActionItem1', 'Dokončete všechny přiřazené objednávky', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'ActionItem2', 'Odešlete sledování času a pracovní dokumentaci', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'ActionItem3', 'Zkontrolujte dokončenou práci z hlediska přesnosti', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'ClosingText', 'Děkujeme, že plníte své povinnosti včas!', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'ContactText', 'Pokud máte jakékoliv otázky nebo potřebujete pomoc, neváhejte se ozvat.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'SupportText', 'Potřebujete pomoc? Kontaktujte nás na', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'SupportEmail', 'it@cleansia.cz', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'TeamSignature', 'S pozdravem', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'TeamName', 'Tým Cleansia', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'FooterText', '© 2024 Cleansia. Všechna práva vyhrazena.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL);
+
+-- ============================================================
+-- RECEIPT TEMPLATES
+-- ============================================================
+INSERT INTO public."ReceiptTemplates" (
+    "Id", "TemplateName", "CountryId", "LanguageId", "Version",
+    "BlobUrl", "IsActive", "ActivatedAt", "Description",
+    "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn"
+)
+VALUES
+-- Czech Receipt Template
+(generate_ulid()::TEXT,
+ 'Standard Receipt Template v1',
+ (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1),
+ (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs' LIMIT 1),
+ 1,
+ 'receipt-templates/receipt-template-v1.html',
+ true,
+ CURRENT_TIMESTAMP,
+ 'Professional receipt template with company information, order details, and payment breakdown for Czech customers.',
+ 'system',
+ CURRENT_TIMESTAMP,
+ 'system',
+ CURRENT_TIMESTAMP),
+
+-- English Receipt Template
+(generate_ulid()::TEXT,
+ 'Standard Receipt Template v1 (English)',
+ (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1),
+ (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en' LIMIT 1),
+ 1,
+ 'receipt-templates/receipt-template-v1.html',
+ true,
+ CURRENT_TIMESTAMP,
+ 'Professional receipt template with company information, order details, and payment breakdown for English-speaking customers.',
+ 'system',
+ CURRENT_TIMESTAMP,
+ 'system',
+ CURRENT_TIMESTAMP);
 
 -- FIX EMPLOYEE ADDRESS CONNECTIONS
 -- Create proper residential addresses for employees and connect them

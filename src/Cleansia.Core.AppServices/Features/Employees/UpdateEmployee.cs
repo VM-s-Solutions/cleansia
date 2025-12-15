@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Extensions;
 using Cleansia.Core.AppServices.Shared.DTOs.Files;
 using Cleansia.Core.Blobs.Abstractions;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
@@ -175,8 +176,8 @@ public class UpdateEmployee
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var employee = await employeeRepository.GetByIdAsync(command.EmployeeId, cancellationToken);
-
             var address = CreateOrUpdateAddress(employee!, command);
+            
             var uploadedFileNames = await UploadDocuments(employee!, command, cancellationToken);
             var availability = ConvertAvailability(command.Availability);
 
@@ -261,8 +262,13 @@ public class UpdateEmployee
 
             employee.UpdateEmployeeDetails(
                 command.TaxId ?? string.Empty,
+                command.NationalityId,
+                command.PassportId,
+                command.Iban,
                 address,
-                availability);
+                availability,
+                command.EmergencyName,
+                command.EmergencyPhone);
 
             if (uploadedFileNames.Any())
             {

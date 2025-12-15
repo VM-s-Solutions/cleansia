@@ -21,17 +21,16 @@ public class QuestPdfService : IPdfService
         }
     }
 
-    public async Task<byte[]> GenerateInvoicePdfAsync(
-        InvoicePdfData invoiceData,
-        string templateHtml,
-        CountryInvoiceContext? countryContext,
-        CancellationToken cancellationToken)
+    public async Task<byte[]> GenerateInvoicePdfAsync(InvoicePdfData invoiceData, string templateHtml, CountryInvoiceContext? countryContext, CancellationToken cancellationToken)
     {
         var enrichedData = ApplyCountryLogic(invoiceData, countryContext);
-
         var mergedHtml = await _templateEngine.CompileAsync(templateHtml, enrichedData, cancellationToken);
-
         return await ConvertHtmlToPdfBytesAsync(mergedHtml, cancellationToken);
+    }
+
+    public async Task<byte[]> GenerateReceiptPdfAsync(string templateHtml, CancellationToken cancellationToken)
+    {
+        return await ConvertHtmlToPdfBytesAsync(templateHtml, cancellationToken);
     }
 
     private InvoicePdfData ApplyCountryLogic(InvoicePdfData data, CountryInvoiceContext? context)

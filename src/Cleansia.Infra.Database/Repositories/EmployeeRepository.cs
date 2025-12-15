@@ -22,6 +22,15 @@ public class EmployeeRepository(CleansiaDbContext context) : BaseRepository<Empl
             .AnyAsync(e => e.User != null && e.User.Email == email, cancellationToken);
     }
 
+    public Task<List<Employee>> GetAllActiveWithUserAsync(CancellationToken cancellationToken = default)
+    {
+        return GetDbSet()
+            .Include(e => e.User)
+                .ThenInclude(u => u.PreferredLanguage)
+            .Where(e => e.User != null && e.ContractStatus != Core.Domain.Enums.ContractStatus.Terminated)
+            .ToListAsync(cancellationToken);
+    }
+
     public override Task<Employee?> GetByIdAsync(string id, CancellationToken cancellationToken)
     {
         return GetDbSet()

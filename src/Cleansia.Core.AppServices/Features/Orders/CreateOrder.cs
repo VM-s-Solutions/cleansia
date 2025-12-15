@@ -1,6 +1,7 @@
 ﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Addresses.DTOs;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.SendGrid;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
@@ -105,7 +106,8 @@ public class CreateOrder
         DateTime CleaningDate,
         PaymentType PaymentType,
         string CurrencyId,
-        decimal TotalPrice) : ICommand<Response>;
+        decimal TotalPrice,
+        string Language = Constants.Language.English) : ICommand<Response>;
 
     public record Response(
         string Id,
@@ -119,7 +121,9 @@ public class CreateOrder
         IServiceRepository serviceRepository,
         IPackageRepository packageRepository,
         ISendGridClientFactory clientFactory,
-        IStripeClientFactory stripeClientFactory) : ICommandHandler<Command, Response>
+        IStripeClientFactory stripeClientFactory,
+        IEmailService emailService,
+        IReceiptService receiptService) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -177,10 +181,12 @@ public class CreateOrder
                     }
                 case PaymentType.Cash:
                     order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
-                    var result = await SendConfirmationEmailAsync(order, cancellationToken);
-                    if (!result)
+
+                    // Generate receipt and send email for cash payments
+                    var receiptResult = await GenerateAndSendReceiptAsync(order, command.Language, cancellationToken);
+                    if (!receiptResult)
                     {
-                        return BusinessResult.Failure<Response>(new Error(nameof(clientFactory.SendTemplateEmailAsync), BusinessErrorMessage.EmailNotSentError));
+                        return BusinessResult.Failure<Response>(new Error(nameof(emailService.SendOrderReceiptEmailAsync), BusinessErrorMessage.EmailNotSentError));
                     }
                     break;
                 default:
@@ -193,20 +199,22 @@ public class CreateOrder
                         StripeSessionId: stripeSessionId));
         }
 
-        private async Task<bool> SendConfirmationEmailAsync(Order order, CancellationToken cancellationToken)
+        private async Task<bool> GenerateAndSendReceiptAsync(Order order, string languageCode, CancellationToken cancellationToken)
         {
-            const int emailSendRetries = 3;
-            var sendGridClient = clientFactory.CreateClient();
-            for (var i = 0; i < emailSendRetries; i++)
+            try
             {
-                var result = await clientFactory.SendTemplateEmailAsync(sendGridClient, sendGridConfig.AddressFrom, order.CustomerEmail, sendGridConfig.OrderReceiptTemplateId, order, cancellationToken);
-                if (result.IsSuccess)
-                {
-                    return true;
-                }
-            }
+                var receipt = await receiptService.GenerateReceiptAsync(order, languageCode, cancellationToken);
+                var pdfBytes = await receiptService.DownloadReceiptPdfAsync(receipt, cancellationToken);
 
-            return false;
+                var messageId = await emailService.SendOrderReceiptEmailAsync(order.CustomerEmail, order, pdfBytes, receipt.FileName, languageCode, cancellationToken);
+                receipt.MarkEmailSent(messageId);
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
     }
 }

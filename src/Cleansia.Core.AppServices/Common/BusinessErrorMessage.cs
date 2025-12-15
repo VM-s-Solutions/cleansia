@@ -71,6 +71,10 @@ public static class BusinessErrorMessage
     public const string PdfGenerationFailed = "payroll.invoice.pdf_generation_failed";
     public const string TemplateNotFound = "payroll.invoice.template_not_found";
 
+    // Receipt
+    public const string ReceiptNotFound = "receipt.not_found";
+    public const string ReceiptGenerationFailed = "receipt.generation_failed";
+
     // Pay Period
     public const string InvalidDuration = "pay_period.invalid_duration";
     public const string OverlappingPeriod = "pay_period.overlapping_period";
@@ -104,9 +108,13 @@ public static class BusinessErrorMessage
 
     // Language
     public const string LanguageNotSupported = "language.not_supported";
+    public const string LanguageNotFound = "language.not_found";
 
     // Country
     public const string NotExistingCountryWithId = "country.not_existing_id";
+
+    // Company
+    public const string CompanyInfoNotFound = "company.not_found";
 
     // Validation
     public const string InvalidPassword = "validation.invalid_password";

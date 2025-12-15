@@ -18,6 +18,7 @@ import {
 } from '@cleansia/stores';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
 import {
   combineLatest,
@@ -33,6 +34,7 @@ import {
   imports: [
     NgClass,
     ToastModule,
+    ConfirmDialogModule,
     RouterModule,
     CleansiaSidebarMenuComponent,
     CleansiaRegistrationLockComponent,

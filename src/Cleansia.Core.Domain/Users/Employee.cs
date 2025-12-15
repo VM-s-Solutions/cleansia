@@ -54,10 +54,17 @@ public class Employee : Auditable
         UserId = user.Id
     };
 
-    public Employee UpdateEmployeeDetails(string ico, Address address, Dictionary<string, List<TimeRange>> availability, ContractStatus? contractStatus = null)
+    public Employee UpdateEmployeeDetails(string ico, string nationalityId, string passportId, string iban,
+        Address address, Dictionary<string, List<TimeRange>> availability, string? emergencyContactName,
+        string? emergencyContactPhone, ContractStatus? contractStatus = null)
     {
         ICO = ico;
+        NationalityId = nationalityId;
+        PassportId = passportId;
+        IBAN = iban;
         Address = address;
+        EmergencyContactName = emergencyContactName;
+        EmergencyContactPhone = emergencyContactPhone;
         _availability = availability;
         if (contractStatus is not null)
         {

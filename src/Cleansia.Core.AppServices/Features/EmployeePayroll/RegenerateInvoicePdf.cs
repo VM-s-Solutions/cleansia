@@ -96,6 +96,7 @@ public class RegenerateInvoicePdf
         ICurrencyRepository currencyRepository,
         IEmployeeRepository employeeRepository,
         ILanguageRepository languageRepository,
+        ICompanyInfoRepository companyInfoRepository,
         IBlobContainerClientFactory clientFactory,
         IEmployeeInvoiceRepository employeeInvoiceRepository,
         IInvoiceTemplateRepository invoiceTemplateRepository,
@@ -109,6 +110,12 @@ public class RegenerateInvoicePdf
 
             var employee = await employeeRepository.GetByIdAsync(invoice.EmployeeId, cancellationToken);
             var currency = await currencyRepository.GetByIdAsync(invoice.CurrencyId, cancellationToken);
+            var companyInfo = await companyInfoRepository.GetActiveCompanyInfoAsync(cancellationToken);
+
+            if (companyInfo == null)
+            {
+                return BusinessResult.Failure<Response>(new Error(nameof(companyInfoRepository.GetActiveCompanyInfoAsync), BusinessErrorMessage.CompanyInfoNotFound));
+            }
 
             var orderPays = await orderEmployeePayRepository.GetByInvoiceId(invoice.Id).ToListAsync(cancellationToken);
 
@@ -117,7 +124,7 @@ public class RegenerateInvoicePdf
 
             var countryContext = await GetCountryInvoiceContextAsync(countryId, cancellationToken);
 
-            var pdfData = invoice.CreatePdfData(employee, currency, orderPays, countryContext);
+            var pdfData = invoice.CreatePdfData(employee, currency, orderPays, countryContext, companyInfo);
 
             var templateHtml = await GetTemplateHtmlAsync(countryId, language!.Code, cancellationToken);
 

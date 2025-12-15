@@ -1,4 +1,5 @@
-﻿using Cleansia.Core.Domain.EmployeePayroll;
+﻿using Cleansia.Core.Domain.Company;
+using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Services.Pdf.Models;
@@ -25,7 +26,7 @@ public static class FileExtensions
     }
 
     public static InvoicePdfData CreatePdfData(this EmployeeInvoice invoice, Employee employee, Currency? currency,
-        List<OrderEmployeePay> orderPays, CountryInvoiceContext? countryContext)
+        List<OrderEmployeePay> orderPays, CountryInvoiceContext? countryContext, CompanyInfo companyInfo)
     {
         return new InvoicePdfData
         {
@@ -55,7 +56,27 @@ public static class FileExtensions
                 ExpensesPay = op.ExpensesPay,
                 TotalPay = op.TotalPay
             }).ToList(),
-            LegalDisclaimer = countryContext?.LegalDisclaimerTemplate
+            LegalDisclaimer = countryContext?.LegalDisclaimerTemplate,
+            Company = new CompanyInfoData
+            {
+                LegalName = companyInfo.LegalName,
+                TradingName = companyInfo.TradingName,
+                Tagline = companyInfo.Tagline,
+                RegistrationNumber = companyInfo.RegistrationNumber,
+                VatNumber = companyInfo.VatNumber,
+                Street = companyInfo.Street,
+                City = companyInfo.City,
+                ZipCode = companyInfo.ZipCode,
+                Address = companyInfo.GetFullAddress(),
+                Phone = companyInfo.Phone,
+                Email = companyInfo.Email,
+                Website = companyInfo.Website,
+                BankName = companyInfo.BankName,
+                BankAccountNumber = companyInfo.BankAccountNumber,
+                Iban = companyInfo.Iban,
+                Swift = companyInfo.Swift,
+                ContactInfo = companyInfo.GetFormattedContactInfo()
+            }
         };
     }
 }

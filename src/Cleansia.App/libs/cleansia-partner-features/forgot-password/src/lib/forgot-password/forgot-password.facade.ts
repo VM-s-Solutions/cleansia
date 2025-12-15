@@ -52,6 +52,8 @@ export class ForgotPasswordFacade extends UnsubscribeControlDirective {
       .requestPasswordChange(
         new RequestPasswordChangeCommand({
           email,
+          language:
+            this.translate.currentLang || this.translate.getDefaultLang(),
         })
       )
       .pipe(takeUntil(this.destroyed$))

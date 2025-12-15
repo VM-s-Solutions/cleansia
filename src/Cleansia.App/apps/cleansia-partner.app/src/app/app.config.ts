@@ -23,7 +23,7 @@ import { EffectsModule } from '@ngrx/effects';
 import { provideStore, StoreModule } from '@ngrx/store';
 import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
 import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 import { environment } from '../environments/environment.prod';
@@ -50,6 +50,7 @@ export const appConfig: ApplicationConfig = {
       })
     ),
     MessageService,
+    ConfirmationService,
     provideHttpClient(
       withFetch(),
       withJsonpSupport(),

@@ -117,7 +117,10 @@ public class RegenerateInvoicePdf
                 return BusinessResult.Failure<Response>(new Error(nameof(companyInfoRepository.GetActiveCompanyInfoAsync), BusinessErrorMessage.CompanyInfoNotFound));
             }
 
-            var orderPays = await orderEmployeePayRepository.GetByInvoiceId(invoice.Id).ToListAsync(cancellationToken);
+            var orderPays = await orderEmployeePayRepository
+                .GetByInvoiceId(invoice.Id)
+                .Include(op => op.Order)
+                .ToListAsync(cancellationToken);
 
             var countryId = employee.Address?.CountryId ?? "CZE";
             var language = await languageRepository.GetByIdAsync(command.LanguageId, cancellationToken);
@@ -139,6 +142,7 @@ public class RegenerateInvoicePdf
             var blobUrl = await UploadPdfAsync(invoice, employee, pdfBytes, cancellationToken);
 
             invoice.SetPdfBlobUrl(blobUrl);
+            invoice.ClearPdfGenerationError(); // Clear error on successful regeneration
 
             return BusinessResult.Success(new Response(blobUrl));
         }

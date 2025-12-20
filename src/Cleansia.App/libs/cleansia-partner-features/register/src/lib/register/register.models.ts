@@ -15,7 +15,8 @@ export function checkIfPasswordsValid(
     hasLowerCase: /[a-z]/.test(password),
     hasUpperCase: /[A-Z]/.test(password),
     hasNumber: /\d/.test(password),
-    hasMinLength: password.length >= 8,
+    hasMinLength: password.length >= 12,
+    hasSpecialCharacter: /[@$!%*?&#^()]/.test(password),
     arePasswordsEqual: confirmPassword ? password === confirmPassword : false,
   } as PasswordCheck;
 }

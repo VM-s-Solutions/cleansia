@@ -35,6 +35,14 @@ public static class PolicyBuilder
 
         // Employee
         [Policy.CanGetCurrentEmployee] = PhysicalPolicy.Authenticated,
+
+        // Dispute
+        [Policy.CanCreateDispute] = PhysicalPolicy.CustomerOnly,
+        [Policy.CanViewDispute] = PhysicalPolicy.CustomerOnly,
+        [Policy.CanViewDisputeList] = PhysicalPolicy.CustomerOnly,
+        [Policy.CanRespondToDispute] = PhysicalPolicy.AdminOnly,
+        [Policy.CanResolveDispute] = PhysicalPolicy.AdminOnly,
+        [Policy.CanUpdateDisputeStatus] = PhysicalPolicy.AdminOnly,
     };
 
     public static string ToPhysicalPolicy(this string permission) =>

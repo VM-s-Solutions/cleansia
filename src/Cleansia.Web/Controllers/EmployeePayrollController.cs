@@ -102,6 +102,18 @@ public class EmployeePayrollController(IMediator mediator) : ApiController(media
         return HandleResult<MarkInvoicePaid.Response>(result);
     }
 
+    [HttpPut("CancelInvoice")]
+    [Permission(Policy.CanCancelInvoice)]
+    [ProducesResponseType(typeof(CancelInvoice.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> CancelInvoice([FromBody] CancelInvoice.Command command)
+    {
+        var result = await Mediator.Send(command);
+        return HandleResult<CancelInvoice.Response>(result);
+    }
+
     [HttpPut("ClosePayPeriod")]
     [Permission(Policy.CanClosePayPeriod)]
     [ProducesResponseType(typeof(ClosePayPeriod.Response), StatusCodes.Status200OK)]

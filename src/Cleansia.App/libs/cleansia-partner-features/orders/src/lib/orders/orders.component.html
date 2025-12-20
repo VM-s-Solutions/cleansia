@@ -8,6 +8,101 @@
       </p>
     </div>
 
+    <!-- Filter Panel -->
+    <div class="filter-panel">
+      <form [formGroup]="searchForm" class="filter-form">
+          <div class="filter-grid">
+            <!-- Customer Name -->
+            <cleansia-text-input
+              [label]="'pages.orders.filters.customer_name' | translate"
+              formControlName="customerName"
+              [showErrors]="false"
+              floatVariant="on"
+            />
+
+            <!-- Customer Email -->
+            <cleansia-text-input
+              [label]="'pages.orders.filters.customer_email' | translate"
+              formControlName="customerEmail"
+              dataType="email"
+              [showErrors]="false"
+              floatVariant="on"
+            />
+
+            <!-- Order Number -->
+            <cleansia-text-input
+              [label]="'pages.orders.filters.order_number' | translate"
+              formControlName="displayOrderNumber"
+              [showErrors]="false"
+              floatVariant="on"
+            />
+
+            <!-- Order Status (Multiselect) -->
+            <div class="filter-field">
+              <p-multiselect
+                inputId="orderStatuses"
+                formControlName="orderStatuses"
+                [options]="orderStatusMultiOptions"
+                optionLabel="label"
+                optionValue="value"
+                [placeholder]="'pages.orders.filters.order_status' | translate"
+                [showClear]="true"
+                display="chip"
+                class="cleansia-multiselect"
+                appendTo="body"
+              />
+            </div>
+
+            <!-- Payment Status (Multiselect) -->
+            <div class="filter-field">
+              <p-multiselect
+                inputId="paymentStatuses"
+                formControlName="paymentStatuses"
+                [options]="paymentStatusMultiOptions"
+                optionLabel="label"
+                optionValue="value"
+                [placeholder]="'pages.orders.filters.payment_status' | translate"
+                [showClear]="true"
+                display="chip"
+                class="cleansia-multiselect"
+                appendTo="body"
+              />
+            </div>
+
+            <!-- Cleaning Date From -->
+            <cleansia-calendar
+              [label]="'pages.orders.filters.cleaning_date_from' | translate"
+              formControlName="cleaningDateFrom"
+              [showErrors]="false"
+              floatVariant="on"
+              dateFormat="dd.mm.yy"
+              appendTo="body"
+            />
+
+            <!-- Cleaning Date To -->
+            <cleansia-calendar
+              [label]="'pages.orders.filters.cleaning_date_to' | translate"
+              formControlName="cleaningDateTo"
+              [showErrors]="false"
+              floatVariant="on"
+              dateFormat="dd.mm.yy"
+              appendTo="body"
+            />
+          </div>
+
+          <!-- Filter Actions -->
+          <div class="filter-actions">
+            <p-button
+              [label]="'pages.orders.filters.reset' | translate"
+              icon="pi pi-times"
+              (onClick)="resetFilters()"
+              severity="secondary"
+              [outlined]="true"
+            />
+          </div>
+        </form>
+      </div>
+
     <!-- Tabs for Available and My Orders -->
     <p-tabs value="0" (valueChange)="onTabChange($event)">
       <!-- Available Orders Tab -->

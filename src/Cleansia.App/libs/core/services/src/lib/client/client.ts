@@ -1378,6 +1378,590 @@ export class DashboardClient implements IDashboardClient {
     }
 }
 
+export interface IDisputeClient {
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    create(body?: CreateDisputeCommand | undefined): Observable<string>;
+    /**
+     * @return OK
+     */
+    getById(disputeId: string): Observable<DisputeDetails>;
+    /**
+     * @param orderId (optional) 
+     * @param userId (optional) 
+     * @param customerName (optional) 
+     * @param customerEmail (optional) 
+     * @param statuses (optional) 
+     * @param reasons (optional) 
+     * @param createdFrom (optional) 
+     * @param createdTo (optional) 
+     * @param resolvedFrom (optional) 
+     * @param resolvedTo (optional) 
+     * @param minRefundAmount (optional) 
+     * @param maxRefundAmount (optional) 
+     * @param sort (optional) 
+     * @param offset (optional) 
+     * @param limit (optional) 
+     * @return OK
+     */
+    getPaged(orderId?: string | undefined, userId?: string | undefined, customerName?: string | undefined, customerEmail?: string | undefined, statuses?: number[] | undefined, reasons?: number[] | undefined, createdFrom?: Date | undefined, createdTo?: Date | undefined, resolvedFrom?: Date | undefined, resolvedTo?: Date | undefined, minRefundAmount?: number | undefined, maxRefundAmount?: number | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<DisputeListItemPagedData>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    addMessage(body?: AddDisputeMessageCommand | undefined): Observable<void>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    resolve(body?: ResolveDisputeCommand | undefined): Observable<void>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    updateStatus(body?: UpdateDisputeStatusCommand | undefined): Observable<void>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class DisputeClient implements IDisputeClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(APIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    create(body?: CreateDisputeCommand | undefined): Observable<string> {
+        let url = this.baseUrl + "/api/Dispute/Create";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processCreate(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processCreate(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<string>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<string>;
+        }));
+    }
+
+    protected processCreate(response: HttpResponseBase): Observable<string> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+                result200 = resultData200 !== undefined ? resultData200 : null as any;
+    
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getById(disputeId: string): Observable<DisputeDetails> {
+        let url = this.baseUrl + "/api/Dispute/GetById/{disputeId}";
+        if (disputeId === undefined || disputeId === null)
+            throw new globalThis.Error("The parameter 'disputeId' must be defined.");
+        url = url.replace("{disputeId}", encodeURIComponent("" + disputeId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetById(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetById(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<DisputeDetails>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<DisputeDetails>;
+        }));
+    }
+
+    protected processGetById(response: HttpResponseBase): Observable<DisputeDetails> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = DisputeDetails.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param orderId (optional) 
+     * @param userId (optional) 
+     * @param customerName (optional) 
+     * @param customerEmail (optional) 
+     * @param statuses (optional) 
+     * @param reasons (optional) 
+     * @param createdFrom (optional) 
+     * @param createdTo (optional) 
+     * @param resolvedFrom (optional) 
+     * @param resolvedTo (optional) 
+     * @param minRefundAmount (optional) 
+     * @param maxRefundAmount (optional) 
+     * @param sort (optional) 
+     * @param offset (optional) 
+     * @param limit (optional) 
+     * @return OK
+     */
+    getPaged(orderId?: string | undefined, userId?: string | undefined, customerName?: string | undefined, customerEmail?: string | undefined, statuses?: number[] | undefined, reasons?: number[] | undefined, createdFrom?: Date | undefined, createdTo?: Date | undefined, resolvedFrom?: Date | undefined, resolvedTo?: Date | undefined, minRefundAmount?: number | undefined, maxRefundAmount?: number | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<DisputeListItemPagedData> {
+        let url = this.baseUrl + "/api/Dispute/GetPaged?";
+        if (orderId === null)
+            throw new globalThis.Error("The parameter 'orderId' cannot be null.");
+        else if (orderId !== undefined)
+            url += "Filter.OrderId=" + encodeURIComponent("" + orderId) + "&";
+        if (userId === null)
+            throw new globalThis.Error("The parameter 'userId' cannot be null.");
+        else if (userId !== undefined)
+            url += "Filter.UserId=" + encodeURIComponent("" + userId) + "&";
+        if (customerName === null)
+            throw new globalThis.Error("The parameter 'customerName' cannot be null.");
+        else if (customerName !== undefined)
+            url += "Filter.CustomerName=" + encodeURIComponent("" + customerName) + "&";
+        if (customerEmail === null)
+            throw new globalThis.Error("The parameter 'customerEmail' cannot be null.");
+        else if (customerEmail !== undefined)
+            url += "Filter.CustomerEmail=" + encodeURIComponent("" + customerEmail) + "&";
+        if (statuses === null)
+            throw new globalThis.Error("The parameter 'statuses' cannot be null.");
+        else if (statuses !== undefined)
+            statuses && statuses.forEach(item => { url += "Filter.Statuses=" + encodeURIComponent("" + item) + "&"; });
+        if (reasons === null)
+            throw new globalThis.Error("The parameter 'reasons' cannot be null.");
+        else if (reasons !== undefined)
+            reasons && reasons.forEach(item => { url += "Filter.Reasons=" + encodeURIComponent("" + item) + "&"; });
+        if (createdFrom === null)
+            throw new globalThis.Error("The parameter 'createdFrom' cannot be null.");
+        else if (createdFrom !== undefined)
+            url += "Filter.CreatedFrom=" + encodeURIComponent(createdFrom ? "" + createdFrom.toISOString() : "") + "&";
+        if (createdTo === null)
+            throw new globalThis.Error("The parameter 'createdTo' cannot be null.");
+        else if (createdTo !== undefined)
+            url += "Filter.CreatedTo=" + encodeURIComponent(createdTo ? "" + createdTo.toISOString() : "") + "&";
+        if (resolvedFrom === null)
+            throw new globalThis.Error("The parameter 'resolvedFrom' cannot be null.");
+        else if (resolvedFrom !== undefined)
+            url += "Filter.ResolvedFrom=" + encodeURIComponent(resolvedFrom ? "" + resolvedFrom.toISOString() : "") + "&";
+        if (resolvedTo === null)
+            throw new globalThis.Error("The parameter 'resolvedTo' cannot be null.");
+        else if (resolvedTo !== undefined)
+            url += "Filter.ResolvedTo=" + encodeURIComponent(resolvedTo ? "" + resolvedTo.toISOString() : "") + "&";
+        if (minRefundAmount === null)
+            throw new globalThis.Error("The parameter 'minRefundAmount' cannot be null.");
+        else if (minRefundAmount !== undefined)
+            url += "Filter.MinRefundAmount=" + encodeURIComponent("" + minRefundAmount) + "&";
+        if (maxRefundAmount === null)
+            throw new globalThis.Error("The parameter 'maxRefundAmount' cannot be null.");
+        else if (maxRefundAmount !== undefined)
+            url += "Filter.MaxRefundAmount=" + encodeURIComponent("" + maxRefundAmount) + "&";
+        if (sort === null)
+            throw new globalThis.Error("The parameter 'sort' cannot be null.");
+        else if (sort !== undefined)
+            sort && sort.forEach((item, index) => {
+                for (const attr in item)
+        			if (item.hasOwnProperty(attr)) {
+        				url += "Sort[" + index + "]." + attr + "=" + encodeURIComponent("" + (item as any)[attr]) + "&";
+        			}
+            });
+        if (offset === null)
+            throw new globalThis.Error("The parameter 'offset' cannot be null.");
+        else if (offset !== undefined)
+            url += "Offset=" + encodeURIComponent("" + offset) + "&";
+        if (limit === null)
+            throw new globalThis.Error("The parameter 'limit' cannot be null.");
+        else if (limit !== undefined)
+            url += "Limit=" + encodeURIComponent("" + limit) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetPaged(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetPaged(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<DisputeListItemPagedData>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<DisputeListItemPagedData>;
+        }));
+    }
+
+    protected processGetPaged(response: HttpResponseBase): Observable<DisputeListItemPagedData> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = DisputeListItemPagedData.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    addMessage(body?: AddDisputeMessageCommand | undefined): Observable<void> {
+        let url = this.baseUrl + "/api/Dispute/AddMessage";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processAddMessage(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processAddMessage(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<void>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<void>;
+        }));
+    }
+
+    protected processAddMessage(response: HttpResponseBase): Observable<void> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return ObservableOf(null as any);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    resolve(body?: ResolveDisputeCommand | undefined): Observable<void> {
+        let url = this.baseUrl + "/api/Dispute/Resolve";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processResolve(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processResolve(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<void>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<void>;
+        }));
+    }
+
+    protected processResolve(response: HttpResponseBase): Observable<void> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return ObservableOf(null as any);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    updateStatus(body?: UpdateDisputeStatusCommand | undefined): Observable<void> {
+        let url = this.baseUrl + "/api/Dispute/UpdateStatus";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processUpdateStatus(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processUpdateStatus(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<void>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<void>;
+        }));
+    }
+
+    protected processUpdateStatus(response: HttpResponseBase): Observable<void> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return ObservableOf(null as any);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
 export interface IEmployeeClient {
     /**
      * @param query (optional) 
@@ -6611,6 +7195,490 @@ export interface IWeeklyTimeSpent {
     averageMinutesPerOrder: number;
 }
 
+export class AddDisputeMessageCommand implements IAddDisputeMessageCommand {
+    disputeId!: string | undefined;
+    message!: string | undefined;
+    isStaffMessage!: boolean;
+
+    constructor(data?: IAddDisputeMessageCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.disputeId = Data["disputeId"];
+            this.message = Data["message"];
+            this.isStaffMessage = Data["isStaffMessage"];
+        }
+    }
+
+    static fromJS(data: any): AddDisputeMessageCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new AddDisputeMessageCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["disputeId"] = this.disputeId;
+        data["message"] = this.message;
+        data["isStaffMessage"] = this.isStaffMessage;
+        return data;
+    }
+}
+
+export interface IAddDisputeMessageCommand {
+    disputeId: string | undefined;
+    message: string | undefined;
+    isStaffMessage: boolean;
+}
+
+export class CreateDisputeCommand implements ICreateDisputeCommand {
+    orderId!: string | undefined;
+    userId!: string | undefined;
+    reason!: DisputeReason;
+    description!: string | undefined;
+
+    constructor(data?: ICreateDisputeCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.userId = Data["userId"];
+            this.reason = Data["reason"];
+            this.description = Data["description"];
+        }
+    }
+
+    static fromJS(data: any): CreateDisputeCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreateDisputeCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        data["userId"] = this.userId;
+        data["reason"] = this.reason;
+        data["description"] = this.description;
+        return data;
+    }
+}
+
+export interface ICreateDisputeCommand {
+    orderId: string | undefined;
+    userId: string | undefined;
+    reason: DisputeReason;
+    description: string | undefined;
+}
+
+export class DisputeDetails implements IDisputeDetails {
+    id!: string | undefined;
+    orderId!: string | undefined;
+    displayOrderNumber!: string | undefined;
+    userId!: string | undefined;
+    customerName!: string | undefined;
+    customerEmail!: string | undefined;
+    reason!: Code;
+    description!: string | undefined;
+    status!: Code;
+    resolutionNotes!: string | undefined;
+    refundAmount!: number | undefined;
+    resolvedBy!: string | undefined;
+    resolvedOn!: Date | undefined;
+    stripeDisputeId!: string | undefined;
+    messages!: DisputeMessageDto[] | undefined;
+    evidence!: DisputeEvidenceDto[] | undefined;
+    createdOn!: Date;
+    createdBy!: string | undefined;
+    updatedOn!: Date | undefined;
+    updatedBy!: string | undefined;
+
+    constructor(data?: IDisputeDetails) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.orderId = Data["orderId"];
+            this.displayOrderNumber = Data["displayOrderNumber"];
+            this.userId = Data["userId"];
+            this.customerName = Data["customerName"];
+            this.customerEmail = Data["customerEmail"];
+            this.reason = Data["reason"] ? Code.fromJS(Data["reason"]) : undefined as any;
+            this.description = Data["description"];
+            this.status = Data["status"] ? Code.fromJS(Data["status"]) : undefined as any;
+            this.resolutionNotes = Data["resolutionNotes"];
+            this.refundAmount = Data["refundAmount"];
+            this.resolvedBy = Data["resolvedBy"];
+            this.resolvedOn = Data["resolvedOn"] ? new Date(Data["resolvedOn"].toString()) : undefined as any;
+            this.stripeDisputeId = Data["stripeDisputeId"];
+            if (Array.isArray(Data["messages"])) {
+                this.messages = [] as any;
+                for (let item of Data["messages"])
+                    this.messages!.push(DisputeMessageDto.fromJS(item));
+            }
+            if (Array.isArray(Data["evidence"])) {
+                this.evidence = [] as any;
+                for (let item of Data["evidence"])
+                    this.evidence!.push(DisputeEvidenceDto.fromJS(item));
+            }
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+            this.createdBy = Data["createdBy"];
+            this.updatedOn = Data["updatedOn"] ? new Date(Data["updatedOn"].toString()) : undefined as any;
+            this.updatedBy = Data["updatedBy"];
+        }
+    }
+
+    static fromJS(data: any): DisputeDetails {
+        data = typeof data === 'object' ? data : {};
+        let result = new DisputeDetails();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["orderId"] = this.orderId;
+        data["displayOrderNumber"] = this.displayOrderNumber;
+        data["userId"] = this.userId;
+        data["customerName"] = this.customerName;
+        data["customerEmail"] = this.customerEmail;
+        data["reason"] = this.reason ? this.reason.toJSON() : undefined as any;
+        data["description"] = this.description;
+        data["status"] = this.status ? this.status.toJSON() : undefined as any;
+        data["resolutionNotes"] = this.resolutionNotes;
+        data["refundAmount"] = this.refundAmount;
+        data["resolvedBy"] = this.resolvedBy;
+        data["resolvedOn"] = this.resolvedOn ? this.resolvedOn.toISOString() : undefined as any;
+        data["stripeDisputeId"] = this.stripeDisputeId;
+        if (Array.isArray(this.messages)) {
+            data["messages"] = [];
+            for (let item of this.messages)
+                data["messages"].push(item ? item.toJSON() : undefined as any);
+        }
+        if (Array.isArray(this.evidence)) {
+            data["evidence"] = [];
+            for (let item of this.evidence)
+                data["evidence"].push(item ? item.toJSON() : undefined as any);
+        }
+        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        data["createdBy"] = this.createdBy;
+        data["updatedOn"] = this.updatedOn ? this.updatedOn.toISOString() : undefined as any;
+        data["updatedBy"] = this.updatedBy;
+        return data;
+    }
+}
+
+export interface IDisputeDetails {
+    id: string | undefined;
+    orderId: string | undefined;
+    displayOrderNumber: string | undefined;
+    userId: string | undefined;
+    customerName: string | undefined;
+    customerEmail: string | undefined;
+    reason: Code;
+    description: string | undefined;
+    status: Code;
+    resolutionNotes: string | undefined;
+    refundAmount: number | undefined;
+    resolvedBy: string | undefined;
+    resolvedOn: Date | undefined;
+    stripeDisputeId: string | undefined;
+    messages: DisputeMessageDto[] | undefined;
+    evidence: DisputeEvidenceDto[] | undefined;
+    createdOn: Date;
+    createdBy: string | undefined;
+    updatedOn: Date | undefined;
+    updatedBy: string | undefined;
+}
+
+export class DisputeEvidenceDto implements IDisputeEvidenceDto {
+    id!: string | undefined;
+    fileName!: string | undefined;
+    filePath!: string | undefined;
+    uploadedBy!: string | undefined;
+    uploadedOn!: Date;
+
+    constructor(data?: IDisputeEvidenceDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.fileName = Data["fileName"];
+            this.filePath = Data["filePath"];
+            this.uploadedBy = Data["uploadedBy"];
+            this.uploadedOn = Data["uploadedOn"] ? new Date(Data["uploadedOn"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): DisputeEvidenceDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new DisputeEvidenceDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["fileName"] = this.fileName;
+        data["filePath"] = this.filePath;
+        data["uploadedBy"] = this.uploadedBy;
+        data["uploadedOn"] = this.uploadedOn ? this.uploadedOn.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IDisputeEvidenceDto {
+    id: string | undefined;
+    fileName: string | undefined;
+    filePath: string | undefined;
+    uploadedBy: string | undefined;
+    uploadedOn: Date;
+}
+
+export class DisputeListItem implements IDisputeListItem {
+    id!: string | undefined;
+    orderId!: string | undefined;
+    displayOrderNumber!: string | undefined;
+    customerName!: string | undefined;
+    customerEmail!: string | undefined;
+    reason!: Code;
+    status!: Code;
+    createdOn!: Date;
+    resolvedOn!: Date | undefined;
+    refundAmount!: number | undefined;
+
+    constructor(data?: IDisputeListItem) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.orderId = Data["orderId"];
+            this.displayOrderNumber = Data["displayOrderNumber"];
+            this.customerName = Data["customerName"];
+            this.customerEmail = Data["customerEmail"];
+            this.reason = Data["reason"] ? Code.fromJS(Data["reason"]) : undefined as any;
+            this.status = Data["status"] ? Code.fromJS(Data["status"]) : undefined as any;
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+            this.resolvedOn = Data["resolvedOn"] ? new Date(Data["resolvedOn"].toString()) : undefined as any;
+            this.refundAmount = Data["refundAmount"];
+        }
+    }
+
+    static fromJS(data: any): DisputeListItem {
+        data = typeof data === 'object' ? data : {};
+        let result = new DisputeListItem();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["orderId"] = this.orderId;
+        data["displayOrderNumber"] = this.displayOrderNumber;
+        data["customerName"] = this.customerName;
+        data["customerEmail"] = this.customerEmail;
+        data["reason"] = this.reason ? this.reason.toJSON() : undefined as any;
+        data["status"] = this.status ? this.status.toJSON() : undefined as any;
+        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        data["resolvedOn"] = this.resolvedOn ? this.resolvedOn.toISOString() : undefined as any;
+        data["refundAmount"] = this.refundAmount;
+        return data;
+    }
+}
+
+export interface IDisputeListItem {
+    id: string | undefined;
+    orderId: string | undefined;
+    displayOrderNumber: string | undefined;
+    customerName: string | undefined;
+    customerEmail: string | undefined;
+    reason: Code;
+    status: Code;
+    createdOn: Date;
+    resolvedOn: Date | undefined;
+    refundAmount: number | undefined;
+}
+
+export class DisputeMessageDto implements IDisputeMessageDto {
+    id!: string | undefined;
+    message!: string | undefined;
+    authorId!: string | undefined;
+    authorName!: string | undefined;
+    isStaffMessage!: boolean;
+    createdOn!: Date;
+
+    constructor(data?: IDisputeMessageDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.message = Data["message"];
+            this.authorId = Data["authorId"];
+            this.authorName = Data["authorName"];
+            this.isStaffMessage = Data["isStaffMessage"];
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): DisputeMessageDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new DisputeMessageDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["message"] = this.message;
+        data["authorId"] = this.authorId;
+        data["authorName"] = this.authorName;
+        data["isStaffMessage"] = this.isStaffMessage;
+        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IDisputeMessageDto {
+    id: string | undefined;
+    message: string | undefined;
+    authorId: string | undefined;
+    authorName: string | undefined;
+    isStaffMessage: boolean;
+    createdOn: Date;
+}
+
+export class ResolveDisputeCommand implements IResolveDisputeCommand {
+    disputeId!: string | undefined;
+    refundAmount!: number | undefined;
+    resolutionNotes!: string | undefined;
+
+    constructor(data?: IResolveDisputeCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.disputeId = Data["disputeId"];
+            this.refundAmount = Data["refundAmount"];
+            this.resolutionNotes = Data["resolutionNotes"];
+        }
+    }
+
+    static fromJS(data: any): ResolveDisputeCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new ResolveDisputeCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["disputeId"] = this.disputeId;
+        data["refundAmount"] = this.refundAmount;
+        data["resolutionNotes"] = this.resolutionNotes;
+        return data;
+    }
+}
+
+export interface IResolveDisputeCommand {
+    disputeId: string | undefined;
+    refundAmount: number | undefined;
+    resolutionNotes: string | undefined;
+}
+
+export class UpdateDisputeStatusCommand implements IUpdateDisputeStatusCommand {
+    disputeId!: string | undefined;
+    newStatus!: DisputeStatus;
+
+    constructor(data?: IUpdateDisputeStatusCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.disputeId = Data["disputeId"];
+            this.newStatus = Data["newStatus"];
+        }
+    }
+
+    static fromJS(data: any): UpdateDisputeStatusCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateDisputeStatusCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["disputeId"] = this.disputeId;
+        data["newStatus"] = this.newStatus;
+        return data;
+    }
+}
+
+export interface IUpdateDisputeStatusCommand {
+    disputeId: string | undefined;
+    newStatus: DisputeStatus;
+}
+
 export class ApproveInvoiceCommand implements IApproveInvoiceCommand {
     invoiceId!: string | undefined;
     adminNotes!: string | undefined;
@@ -10765,6 +11833,62 @@ export interface IJwtTokenResponse {
     isEmailConfirmed: boolean;
 }
 
+export class DisputeListItemPagedData implements IDisputeListItemPagedData {
+    pageNumber!: number;
+    pageSize!: number;
+    total!: number;
+    data!: DisputeListItem[] | undefined;
+
+    constructor(data?: IDisputeListItemPagedData) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.pageNumber = Data["pageNumber"];
+            this.pageSize = Data["pageSize"];
+            this.total = Data["total"];
+            if (Array.isArray(Data["data"])) {
+                this.data = [] as any;
+                for (let item of Data["data"])
+                    this.data!.push(DisputeListItem.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): DisputeListItemPagedData {
+        data = typeof data === 'object' ? data : {};
+        let result = new DisputeListItemPagedData();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["pageNumber"] = this.pageNumber;
+        data["pageSize"] = this.pageSize;
+        data["total"] = this.total;
+        if (Array.isArray(this.data)) {
+            data["data"] = [];
+            for (let item of this.data)
+                data["data"].push(item ? item.toJSON() : undefined as any);
+        }
+        return data;
+    }
+}
+
+export interface IDisputeListItemPagedData {
+    pageNumber: number;
+    pageSize: number;
+    total: number;
+    data: DisputeListItem[] | undefined;
+}
+
 export class EmployeeInvoiceDtoPagedData implements IEmployeeInvoiceDtoPagedData {
     pageNumber!: number;
     pageSize!: number;
@@ -11085,6 +12209,25 @@ export interface ISortDefinition {
     direction: SortDirection;
 }
 
+export enum DisputeReason {
+    QualityIssue = 1,
+    ServiceNotProvided = 2,
+    ServiceIncomplete = 3,
+    DamagedProperty = 4,
+    UnauthorizedCharge = 5,
+    IncorrectAmount = 6,
+    Other = 7,
+}
+
+export enum DisputeStatus {
+    Pending = 1,
+    UnderReview = 2,
+    WaitingForResponse = 3,
+    Resolved = 4,
+    Closed = 5,
+    Escalated = 6,
+}
+
 export enum OrderStatus {
     Pending = 1,
     Confirmed = 2,
@@ -11103,6 +12246,8 @@ export enum PaymentStatus {
     Pending = 1,
     Paid = 2,
     Failed = 3,
+    Refunded = 4,
+    Disputed = 5,
 }
 
 export enum PaymentType {

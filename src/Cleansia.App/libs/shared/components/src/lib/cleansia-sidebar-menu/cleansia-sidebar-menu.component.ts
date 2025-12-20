@@ -19,10 +19,10 @@ import {
 } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
-import { ButtonModule } from 'primeng/button';
 import { RippleModule } from 'primeng/ripple';
 import { StyleClassModule } from 'primeng/styleclass';
 import { CleansiaBrandNameComponent } from '../cleansia-brand-name';
+import { CleansiaButtonComponent } from '../cleansia-button';
 import { SidebarMenuItem } from './cleansia-sidebar-menu.models';
 
 @Component({
@@ -30,12 +30,12 @@ import { SidebarMenuItem } from './cleansia-sidebar-menu.models';
   standalone: true,
   imports: [
     NgClass,
-    ButtonModule,
     RouterModule,
     RippleModule,
     TranslateModule,
     StyleClassModule,
     CleansiaBrandNameComponent,
+    CleansiaButtonComponent,
   ],
   templateUrl: './cleansia-sidebar-menu.component.html',
   animations: [

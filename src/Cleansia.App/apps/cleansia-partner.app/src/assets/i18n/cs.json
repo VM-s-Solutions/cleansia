@@ -28,7 +28,8 @@
         "password_lowercase": "Heslo musí obsahovat alespoň jedno malé písmeno",
         "password_uppercase": "Heslo musí obsahovat alespoň jedno velké písmeno",
         "password_number": "Heslo musí obsahovat alespoň jedno číslo",
-        "password_min_length": "Heslo musí mít alespoň 6 znaků",
+        "password_min_length": "Heslo musí mít alespoň 12 znaků",
+        "password_special_character": "Heslo musí obsahovat alespoň jeden speciální znak (@$!%*?&#^())",
         "passwords_match": "Hesla musí být stejná"
       }
     },
@@ -231,6 +232,25 @@
         "actual_time_required": "Skutečný čas dokončení je povinný",
         "notes_required": "Poznámky k dokončení jsou povinné pro vysvětlení časového rozdílu",
         "notes_too_long": "Poznámky k dokončení musí být kratší než 1000 znaků"
+      },
+      "show_filters": "Zobrazit filtry",
+      "hide_filters": "Skrýt filtry",
+      "filters": {
+        "customer_name": "Jméno zákazníka",
+        "customer_name_placeholder": "Zadejte jméno zákazníka",
+        "customer_email": "Email zákazníka",
+        "customer_email_placeholder": "Zadejte email zákazníka",
+        "order_number": "Číslo objednávky",
+        "order_number_placeholder": "Zadejte číslo objednávky",
+        "order_status": "Stav objednávky",
+        "select_status": "Vyberte stav",
+        "payment_status": "Stav platby",
+        "select_payment_status": "Vyberte stav platby",
+        "cleaning_date_from": "Datum úklidu od",
+        "cleaning_date_to": "Datum úklidu do",
+        "select_date": "Vyberte datum",
+        "apply": "Použít filtry",
+        "reset": "Resetovat filtry"
       }
     },
     "order_details": {
@@ -425,6 +445,72 @@
       "total_deductions": "Celkové daňové slevy",
       "total_benefits_value": "Celková měsíční hodnota benefitů",
       "basic_deduction": "Základní daňová sleva"
+    },
+    "disputes": {
+      "title": "Správa sporů",
+      "description": "Zobrazit a spravovat platební spory a vrácené platby pro vaše objednávky.",
+      "table": {
+        "order_number": "Číslo objednávky",
+        "customer_name": "Jméno zákazníka",
+        "customer_email": "E-mail zákazníka",
+        "reason": "Důvod",
+        "status": "Stav",
+        "refund_amount": "Částka vrácení",
+        "created_on": "Datum vytvoření",
+        "resolved_on": "Datum vyřešení",
+        "view_details": "Zobrazit podrobnosti"
+      },
+      "filters": {
+        "order_id": "Číslo objednávky",
+        "customer_name": "Jméno zákazníka",
+        "customer_email": "E-mail zákazníka",
+        "status": "Stav sporu",
+        "reason": "Důvod sporu",
+        "created_from": "Vytvořeno od",
+        "created_to": "Vytvořeno do",
+        "reset": "Resetovat filtry"
+      },
+      "no_disputes": "Žádné spory k zobrazení"
+    },
+    "dispute_details": {
+      "title": "Detail Sporu",
+      "error_loading": "Chyba Při Načítání Sporu",
+      "confirm_status_update": "Opravdu chcete aktualizovat stav sporu?",
+      "confirm_resolve": "Opravdu chcete vyřešit tento spor? Tuto akci nelze vrátit zpět.",
+      "sections": {
+        "summary": "Shrnutí Sporu",
+        "customer_info": "Informace o Zákazníkovi",
+        "description": "Popis Sporu",
+        "resolution": "Poznámky k Vyřešení"
+      },
+      "fields": {
+        "order_number": "Číslo Objednávky",
+        "status": "Stav",
+        "reason": "Důvod",
+        "refund_amount": "Částka k Vrácení",
+        "created_on": "Vytvořeno",
+        "resolved_on": "Vyřešeno",
+        "customer_name": "Jméno Zákazníka",
+        "customer_email": "Email Zákazníka",
+        "new_status": "Nový Stav",
+        "resolution_notes": "Poznámky k Vyřešení"
+      },
+      "actions": {
+        "update_status": "Aktualizovat Stav",
+        "resolve": "Vyřešit Spor"
+      },
+      "placeholders": {
+        "resolution_notes": "Zadejte poznámky vysvětlující, jak byl spor vyřešen..."
+      },
+      "messages": {
+        "failed_to_load": "Nepodařilo se načíst detail sporu",
+        "no_dispute_selected": "Není vybrán žádný spor",
+        "status_updated": "Stav sporu byl úspěšně aktualizován",
+        "status_update_failed": "Nepodařilo se aktualizovat stav sporu",
+        "dispute_resolved": "Spor byl úspěšně vyřešen",
+        "resolve_failed": "Nepodařilo se vyřešit spor",
+        "resolution_notes_required": "Poznámky k vyřešení jsou povinné"
+      }
     }
   },
   "sidebar": {
@@ -433,7 +519,8 @@
     "orders": "Objednávky",
     "invoices": "Faktury",
     "payroll": "Mzdy",
-    "logout": "Odhlásit se"
+    "logout": "Odhlásit se",
+    "disputes": "Spory"
   },
   "components": {
     "file": {
@@ -702,6 +789,50 @@
     },
     "general": {
       "not_found": "Požadovaný zdroj nebyl nalezen"
+    }
+  },
+  "enums": {
+    "order_status": {
+      "pending": "Čeká",
+      "confirmed": "Potvrzeno",
+      "in_progress": "Probíhá",
+      "completed": "Dokončeno",
+      "cancelled": "Zrušeno"
+    },
+    "payment_status": {
+      "pending": "Čeká",
+      "paid": "Zaplaceno",
+      "failed": "Selhalo",
+      "refunded": "Vráceno"
+    },
+    "dispute_status": {
+      "pending": "Čeká na vyřízení",
+      "under_review": "V posouzení",
+      "waiting_for_response": "Čeká na odpověď",
+      "resolved": "Vyřešeno",
+      "closed": "Uzavřeno",
+      "escalated": "Eskalováno"
+    },
+    "dispute_reason": {
+      "quality_issue": "Problém s kvalitou",
+      "service_not_provided": "Služba nebyla poskytnuta",
+      "service_incomplete": "Neúplná služba",
+      "damaged_property": "Poškozený majetek",
+      "unauthorized_charge": "Neoprávněná platba",
+      "incorrect_amount": "Nesprávná částka",
+      "other": "Jiné"
+    }
+  },
+  "common": {
+    "actions": "Akce",
+    "confirmation": "Potvrzení",
+    "retry": "Zkusit Znovu",
+    "cancel": "Zrušit",
+    "update": "Aktualizovat",
+    "validation": {
+      "required": "Toto pole je povinné",
+      "min_length": "Minimální délka je {{min}} znaků",
+      "min_value": "Minimální hodnota je {{min}}"
     }
   }
 }

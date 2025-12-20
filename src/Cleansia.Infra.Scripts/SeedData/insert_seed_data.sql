@@ -1483,6 +1483,12 @@ WHERE "UserId" IN (
     SELECT "Id" FROM public."Users" WHERE "Email" LIKE '%@cleansia.cz'
 );
 
+-- ============================================================
+-- DISPUTES
+-- ============================================================
+-- Dispute seed data has been moved to insert_disputes.sql
+-- Run that script separately after this one to populate disputes
+
 -- Re-enable foreign key constraints
 SET session_replication_role = DEFAULT;
 

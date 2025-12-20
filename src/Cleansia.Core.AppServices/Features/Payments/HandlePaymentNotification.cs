@@ -65,24 +65,70 @@ public class HandlePaymentNotification
     {
         public async Task<BusinessResult<string>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var stripeEvent = EventUtility.ConstructEvent(command.JsonPayload, command.SignatureHeader, stripeConfig.WebhookSecret);
+            Event stripeEvent;
+            try
+            {
+                stripeEvent = EventUtility.ConstructEvent(command.JsonPayload, command.SignatureHeader, stripeConfig.WebhookSecret);
+            }
+            catch (StripeException ex)
+            {
+                logger.LogError(ex, "Invalid webhook signature");
+                return BusinessResult.Failure<string>(new Error(
+                    "InvalidSignature",
+                    "Invalid webhook signature"));
+            }
 
             if (stripeEvent.Type != Constants.StripeEventType.CompletedSession)
             {
+                logger.LogInformation("Received webhook event type {EventType}, ignoring", stripeEvent.Type);
                 return BusinessResult.Success(string.Empty);
             }
 
             var session = stripeEvent.Data.Object as Session;
-            var orderId = session!.Metadata["OrderId"]!;
+            var orderId = session?.Metadata?["OrderId"];
+
+            if (string.IsNullOrEmpty(orderId))
+            {
+                logger.LogError("Order ID not found in webhook metadata");
+                return BusinessResult.Failure<string>(new Error(
+                    "OrderIdMissing",
+                    "Order ID not found in webhook metadata"));
+            }
 
             var order = await orderRepository.GetByIdAsync(orderId, cancellationToken);
-            order!.UpdatePaymentStatus(PaymentStatus.Paid);
+            if (order == null)
+            {
+                logger.LogError("Order {OrderId} not found", orderId);
+                return BusinessResult.Failure<string>(new Error(
+                    nameof(orderId),
+                    BusinessErrorMessage.OrderNotFound));
+            }
+
+            // Idempotency check - don't process if already paid
+            if (order.PaymentStatus == PaymentStatus.Paid)
+            {
+                logger.LogInformation("Order {OrderId} already marked as paid, skipping webhook processing", orderId);
+                return BusinessResult.Success(orderId);
+            }
+
+            // Update payment status
+            order.UpdatePaymentStatus(PaymentStatus.Paid);
             order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
 
-            var result = await GenerateAndSendReceiptAsync(order, command.Language, cancellationToken);
-            return result
-                ? BusinessResult.Success(orderId)
-                : BusinessResult.Failure<string>(new Error(nameof(emailService.SendOrderReceiptEmailAsync), BusinessErrorMessage.EmailNotSentError));
+            // Try to generate and send receipt, but don't fail webhook if it fails
+            try
+            {
+                await GenerateAndSendReceiptAsync(order, command.Language, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to generate/send receipt for order {OrderId}, will retry later", orderId);
+                // Don't fail the webhook - order is already marked as paid
+                // Receipt can be regenerated later if needed
+            }
+
+            logger.LogInformation("Successfully processed payment webhook for order {OrderId}", orderId);
+            return BusinessResult.Success(orderId);
         }
 
         private async Task<bool> GenerateAndSendReceiptAsync(Order order, string languageCode, CancellationToken cancellationToken)

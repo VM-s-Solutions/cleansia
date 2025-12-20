@@ -43,6 +43,7 @@ public class Policy
     public const string CanGenerateInvoice = nameof(CanGenerateInvoice); // Admin
     public const string CanApproveInvoice = nameof(CanApproveInvoice); // Admin
     public const string CanMarkInvoicePaid = nameof(CanMarkInvoicePaid); // Admin
+    public const string CanCancelInvoice = nameof(CanCancelInvoice); // Admin
     public const string CanClosePayPeriod = nameof(CanClosePayPeriod); // Admin
 
     // Pay Period
@@ -59,4 +60,12 @@ public class Policy
     public const string CanCreatePayConfig = nameof(CanCreatePayConfig); // Admin
     public const string CanUpdatePayConfig = nameof(CanUpdatePayConfig); // Admin
     public const string CanDeletePayConfig = nameof(CanDeletePayConfig); // Admin
+
+    // Dispute
+    public const string CanCreateDispute = nameof(CanCreateDispute); // Authenticated (Customers can create disputes)
+    public const string CanViewDispute = nameof(CanViewDispute); // Authenticated (Users can view their own disputes)
+    public const string CanViewDisputeList = nameof(CanViewDisputeList); // Authenticated (Users can view their dispute list)
+    public const string CanRespondToDispute = nameof(CanRespondToDispute); // Admin (Only admins can respond/add messages)
+    public const string CanResolveDispute = nameof(CanResolveDispute); // Admin (Only admins can resolve disputes)
+    public const string CanUpdateDisputeStatus = nameof(CanUpdateDisputeStatus); // Admin (Only admins can update status)
 }

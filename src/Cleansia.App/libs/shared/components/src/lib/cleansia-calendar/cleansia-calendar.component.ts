@@ -33,6 +33,7 @@ export class CleansiaCalendarComponent extends CleansiaBaseFormInputComponent {
   dateFormat = input<string>('dd.mm.yy');
   minDate = input<Date | null>(null);
   maxDate = input<Date | null>(null);
+  appendTo = input<'body' | null>(null);
 
   valueChanges = output<any>();
 

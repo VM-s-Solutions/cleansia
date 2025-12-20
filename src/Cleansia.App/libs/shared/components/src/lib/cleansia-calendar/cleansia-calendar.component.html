@@ -7,21 +7,16 @@
     [showIcon]="showIcon()"
     [iconDisplay]="iconDisplay()"
     [dateFormat]="dateFormat()"
-    [placeholder]="placeholder()"
+    [placeholder]="placeholder() ? placeholder() : ' '"
     [minDate]="minDate()"
     [maxDate]="maxDate()"
+    [appendTo]="appendTo()"
     [class]="'cleansia-calendar ' + (hasErrors() ? 'ng-invalid ng-dirty' : '')"
   />
   <label [for]="id()">{{ label() }}</label>
 </p-floatlabel>
 } @else {
 <div class="cleansia-calendar-wrapper">
-  @if (label()) {
-  <label [for]="id()" class="cleansia-calendar-label">
-    {{ label() }}
-    @if (required()) { <span class="required-asterisk">*</span> }
-  </label>
-  }
   <p-datepicker
     [inputId]="id()"
     [(ngModel)]="innerValue"
@@ -32,8 +27,15 @@
     [placeholder]="placeholder()"
     [minDate]="minDate()"
     [maxDate]="maxDate()"
+    [appendTo]="appendTo()"
     [class]="'w-full ' + (hasErrors() ? 'ng-invalid ng-dirty' : '')"
   />
+  @if (label()) {
+  <label [for]="id()" class="cleansia-calendar-label">
+    {{ label() }}
+    @if (required()) { <span class="required-asterisk">*</span> }
+  </label>
+  }
 </div>
 } @if (showErrors() && formControl.invalid && (formControl.dirty ||
 formControl.touched)) {

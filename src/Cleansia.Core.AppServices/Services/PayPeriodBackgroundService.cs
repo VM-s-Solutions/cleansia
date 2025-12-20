@@ -316,21 +316,35 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
             return null;
         }
 
-        // Generate PDF
-        var pdfBytes = await GenerateInvoicePdfAsync(invoice, employee, currency, orderPays, language.Code, cancellationToken);
-
-        if (pdfBytes == null)
+        // Generate PDF with error handling
+        try
         {
-            _logger.LogError("Failed to generate PDF for invoice {InvoiceId}", invoice.Id);
+            var pdfBytes = await GenerateInvoicePdfAsync(invoice, employee, currency, orderPays, language.Code, cancellationToken);
+
+            if (pdfBytes == null || pdfBytes.Length == 0)
+            {
+                throw new InvalidOperationException("PDF generation returned empty result");
+            }
+
+            // Upload PDF to blob storage
+            var pdfBlobUrl = await UploadInvoicePdfAsync(invoice, employee, pdfBytes, cancellationToken);
+            invoice.SetPdfBlobUrl(pdfBlobUrl);
+            invoice.ClearPdfGenerationError(); // Clear any previous errors
+
+            var fileName = $"{invoice.InvoiceNumber}.pdf";
+            return (pdfBytes, fileName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to generate PDF for invoice {InvoiceId}", invoice.Id);
+
+            // Mark invoice with error but don't fail entire process
+            invoice.SetPdfGenerationError(ex.Message);
+
+            // Invoice will be created without PDF
+            // Admin can regenerate PDF later via RegenerateInvoicePdf endpoint
             return null;
         }
-
-        // Upload PDF to blob storage
-        var pdfBlobUrl = await UploadInvoicePdfAsync(invoice, employee, pdfBytes, cancellationToken);
-        invoice.SetPdfBlobUrl(pdfBlobUrl);
-
-        var fileName = $"{invoice.InvoiceNumber}.pdf";
-        return (pdfBytes, fileName);
     }
 
     private async Task<byte[]?> GenerateInvoicePdfAsync(

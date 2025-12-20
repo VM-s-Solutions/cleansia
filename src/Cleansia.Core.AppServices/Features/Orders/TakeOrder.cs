@@ -17,12 +17,14 @@ public class TakeOrder
     public class Validator : AbstractValidator<Command>
     {
         private readonly IOrderRepository _orderRepository;
+        private readonly IEmployeeRepository _employeeRepository;
 
         public Validator(
             IOrderRepository orderRepository,
             IEmployeeRepository employeeRepository)
         {
             _orderRepository = orderRepository;
+            _employeeRepository = employeeRepository;
 
             RuleFor(x => x.OrderId)
                 .Cascade(CascadeMode.Stop)
@@ -38,7 +40,11 @@ public class TakeOrder
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
                 .MustAsync(employeeRepository.ExistsAsync)
-                .WithMessage(BusinessErrorMessage.EmployeeNotFound);
+                .WithMessage(BusinessErrorMessage.EmployeeNotFound)
+                .MustAsync(HasCompletedProfileAsync)
+                .WithMessage(BusinessErrorMessage.EmployeeProfileIncomplete)
+                .MustAsync(HasUploadedDocumentsAsync)
+                .WithMessage(BusinessErrorMessage.EmployeeDocumentsMissing);
 
             RuleFor(x => x)
                 .MustAsync(NotAlreadyAssignedToEmployeeAsync)
@@ -65,6 +71,29 @@ public class TakeOrder
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             return order?.AssignedEmployees.All(oe => oe.EmployeeId != command.EmployeeId) ?? true;
+        }
+
+        private async Task<bool> HasCompletedProfileAsync(string employeeId, CancellationToken cancellationToken)
+        {
+            var employee = await _employeeRepository
+                .GetQueryable()
+                .Include(e => e.Address)
+                .FirstOrDefaultAsync(e => e.Id == employeeId, cancellationToken);
+
+            if (employee == null) return false;
+
+            return !string.IsNullOrWhiteSpace(employee.ICO) &&
+                   employee.Address is not null &&
+                   employee.Availability.Any();
+        }
+
+        private async Task<bool> HasUploadedDocumentsAsync(string employeeId, CancellationToken cancellationToken)
+        {
+            var employee = await _employeeRepository.GetByIdAsync(employeeId, cancellationToken);
+
+            if (employee == null) return false;
+
+            return employee.ContractStatus != Domain.Enums.ContractStatus.Pending;
         }
     }
 

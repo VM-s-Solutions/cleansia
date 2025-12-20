@@ -324,3 +324,55 @@ export class SupplierFilter extends BaseFilter implements ISupplierFilter {
     this.isActive = filter.isActive;
   }
 }
+
+export interface IDisputeFilter {
+  id?: string;
+  orderId?: string;
+  userId?: string;
+  customerName?: string;
+  customerEmail?: string;
+  statuses?: number[];
+  reasons?: number[];
+  createdFrom?: Date;
+  createdTo?: Date;
+  resolvedFrom?: Date;
+  resolvedTo?: Date;
+  minRefundAmount?: number;
+  maxRefundAmount?: number;
+  isActive?: boolean;
+}
+
+export class DisputeFilter extends BaseFilter implements IDisputeFilter {
+  id?: string;
+  orderId?: string;
+  userId?: string;
+  customerName?: string;
+  customerEmail?: string;
+  statuses?: number[];
+  reasons?: number[];
+  createdFrom?: Date;
+  createdTo?: Date;
+  resolvedFrom?: Date;
+  resolvedTo?: Date;
+  minRefundAmount?: number;
+  maxRefundAmount?: number;
+  isActive?: boolean;
+
+  constructor(filter: IDisputeFilter) {
+    super();
+    this.id = filter.id;
+    this.orderId = filter.orderId;
+    this.userId = filter.userId;
+    this.customerName = filter.customerName;
+    this.customerEmail = filter.customerEmail;
+    this.statuses = filter.statuses;
+    this.reasons = filter.reasons;
+    this.createdFrom = filter.createdFrom;
+    this.createdTo = filter.createdTo;
+    this.resolvedFrom = filter.resolvedFrom;
+    this.resolvedTo = filter.resolvedTo;
+    this.minRefundAmount = filter.minRefundAmount;
+    this.maxRefundAmount = filter.maxRefundAmount;
+    this.isActive = filter.isActive;
+  }
+}

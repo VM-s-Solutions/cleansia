@@ -10,13 +10,11 @@ import {
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 import {
   CleansiaCalendarComponent,
   CleansiaLanguageSwitcherComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
-  CleansiaSelectComponent,
   CleansiaTableComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
@@ -28,17 +26,17 @@ import {
   OrderListItem,
   OrderStatus,
   PaymentStatus,
-  PaymentType,
   SortDefinition,
   SortDirection,
 } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
+import { DialogService } from 'primeng/dynamicdialog';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { TableModule } from 'primeng/table';
 import { TabsModule } from 'primeng/tabs';
 import { ToastModule } from 'primeng/toast';
-import { DialogService } from 'primeng/dynamicdialog';
+import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 import { OrdersFacade } from './orders.facade';
 import {
   getAvailableOrdersTableDefinition,
@@ -61,7 +59,6 @@ import {
     CleansiaSectionComponent,
     CleansiaLanguageSwitcherComponent,
     CleansiaTextInputComponent,
-    CleansiaSelectComponent,
     CleansiaCalendarComponent,
     ReactiveFormsModule,
     MultiSelectModule,
@@ -99,18 +96,45 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
 
   // Filter options
   orderStatusOptions: ICleansiaSelectOption[] = [
-    { label: this.translate.instant('enums.order_status.pending'), value: OrderStatus.Pending },
-    { label: this.translate.instant('enums.order_status.confirmed'), value: OrderStatus.Confirmed },
-    { label: this.translate.instant('enums.order_status.in_progress'), value: OrderStatus.InProgress },
-    { label: this.translate.instant('enums.order_status.completed'), value: OrderStatus.Completed },
-    { label: this.translate.instant('enums.order_status.cancelled'), value: OrderStatus.Cancelled },
+    {
+      label: this.translate.instant('enums.order_status.pending'),
+      value: OrderStatus.Pending,
+    },
+    {
+      label: this.translate.instant('enums.order_status.confirmed'),
+      value: OrderStatus.Confirmed,
+    },
+    {
+      label: this.translate.instant('enums.order_status.in_progress'),
+      value: OrderStatus.InProgress,
+    },
+    {
+      label: this.translate.instant('enums.order_status.completed'),
+      value: OrderStatus.Completed,
+    },
+    {
+      label: this.translate.instant('enums.order_status.cancelled'),
+      value: OrderStatus.Cancelled,
+    },
   ];
 
   paymentStatusOptions: ICleansiaSelectOption[] = [
-    { label: this.translate.instant('enums.payment_status.pending'), value: PaymentStatus.Pending },
-    { label: this.translate.instant('enums.payment_status.paid'), value: PaymentStatus.Paid },
-    { label: this.translate.instant('enums.payment_status.failed'), value: PaymentStatus.Failed },
-    { label: this.translate.instant('enums.payment_status.refunded'), value: PaymentStatus.Refunded },
+    {
+      label: this.translate.instant('enums.payment_status.pending'),
+      value: PaymentStatus.Pending,
+    },
+    {
+      label: this.translate.instant('enums.payment_status.paid'),
+      value: PaymentStatus.Paid,
+    },
+    {
+      label: this.translate.instant('enums.payment_status.failed'),
+      value: PaymentStatus.Failed,
+    },
+    {
+      label: this.translate.instant('enums.payment_status.refunded'),
+      value: PaymentStatus.Refunded,
+    },
   ];
 
   // Multiselect options for PrimeNG
@@ -142,11 +166,7 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
 
     // Setup automatic filtering with debounce
     this.searchForm.valueChanges
-      .pipe(
-        debounceTime(500),
-        distinctUntilChanged(),
-        takeUntil(this.destroy$)
-      )
+      .pipe(debounceTime(500), distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe(() => {
         this.applyFilters();
       });
@@ -228,12 +248,14 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
       customerName: formValues.customerName || undefined,
       customerEmail: formValues.customerEmail || undefined,
       displayOrderNumber: formValues.displayOrderNumber || undefined,
-      orderStatuses: formValues.orderStatuses && formValues.orderStatuses.length > 0
-        ? formValues.orderStatuses
-        : undefined,
-      paymentStatuses: formValues.paymentStatuses && formValues.paymentStatuses.length > 0
-        ? formValues.paymentStatuses
-        : undefined,
+      orderStatuses:
+        formValues.orderStatuses && formValues.orderStatuses.length > 0
+          ? formValues.orderStatuses
+          : undefined,
+      paymentStatuses:
+        formValues.paymentStatuses && formValues.paymentStatuses.length > 0
+          ? formValues.paymentStatuses
+          : undefined,
       cleaningDateFrom: formValues.cleaningDateFrom || undefined,
       cleaningDateTo: formValues.cleaningDateTo || undefined,
     });

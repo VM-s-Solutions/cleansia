@@ -38,6 +38,7 @@ export class OrdersFacade extends UnsubscribeControlDirective {
   private currentEmployeeId = signal<string | null>(null);
   private currentSort = signal<SortDefinition[]>([]);
   private activeTab = signal<'available' | 'my'>('available');
+  private currentFilter = signal<OrderFilter | null>(null);
 
   constructor() {
     super();
@@ -88,12 +89,14 @@ export class OrdersFacade extends UnsubscribeControlDirective {
 
   loadAvailableOrders(offset = 0, limit = 20): void {
     const employeeId = this.currentEmployeeId();
+    const additionalFilters = this.currentFilter();
 
     const filter = new OrderFilter({
       employeeId: undefined,
-      orderStatuses: [OrderStatus.Pending, OrderStatus.Confirmed],
+      orderStatuses: additionalFilters?.orderStatuses || [OrderStatus.Pending, OrderStatus.Confirmed],
       hasAvailableSpots: true,
       excludeEmployeeId: employeeId || undefined,
+      ...additionalFilters,
     });
 
     this.store.dispatch(
@@ -116,8 +119,11 @@ export class OrdersFacade extends UnsubscribeControlDirective {
       return;
     }
 
+    const additionalFilters = this.currentFilter();
+
     const filter = new OrderFilter({
       employeeId: employeeId,
+      ...additionalFilters,
     });
 
     this.store.dispatch(
@@ -209,5 +215,25 @@ export class OrdersFacade extends UnsubscribeControlDirective {
 
   canCompleteOrder(order: OrderListItem): boolean {
     return order.orderStatus?.value === OrderStatus.InProgress;
+  }
+
+  applyFilters(filter: OrderFilter): void {
+    this.currentFilter.set(filter);
+    const tab = this.activeTab();
+    if (tab === 'available') {
+      this.loadAvailableOrders();
+    } else {
+      this.loadMyOrders();
+    }
+  }
+
+  resetFilters(): void {
+    this.currentFilter.set(null);
+    const tab = this.activeTab();
+    if (tab === 'available') {
+      this.loadAvailableOrders();
+    } else {
+      this.loadMyOrders();
+    }
   }
 }

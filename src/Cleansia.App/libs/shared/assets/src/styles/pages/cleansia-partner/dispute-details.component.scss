@@ -1,0 +1,409 @@
+.cleansia-dispute-details {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+  max-width: 100vw;
+  overflow-x: hidden;
+  position: relative;
+  min-height: 100vh;
+  background: var(--cleansia-background);
+
+  &__form-card {
+    background: var(--cleansia-white);
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px var(--cleansia-shadow),
+      0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    padding: 2rem;
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    flex-direction: column;
+    row-gap: 2rem;
+    margin: auto;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+
+    @media (max-width: 768px) {
+      padding: 1.5rem;
+    }
+  }
+
+  &__form-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  &__header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem 0 1rem 0;
+    border-bottom: 1px solid var(--cleansia-primary-100);
+
+    &-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+
+      .cleansia-button {
+        transition: all var(--default-transition) ease;
+
+        &:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 8px var(--cleansia-shadow);
+        }
+      }
+    }
+
+    &-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding: 1.5rem;
+      border-radius: 0.75rem;
+      background: var(--cleansia-white);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--cleansia-border-color);
+    }
+  }
+
+  &__dispute-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    z-index: 1;
+    position: relative;
+  }
+
+  &__order-number {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--cleansia-text-primary);
+    text-align: center;
+
+    span {
+      font-weight: 700;
+      color: var(--cleansia-primary-600);
+    }
+  }
+
+  &__error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    padding: 2rem;
+    text-align: center;
+
+    &-message {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #dc3545;
+      font-size: 1.1rem;
+
+      i {
+        font-size: 1.5rem;
+      }
+    }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    max-width: 100%;
+
+    @media (max-width: 968px) {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.25rem;
+    }
+
+    @media (max-width: 640px) {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+
+  &__field {
+    max-width: 100%;
+
+    &--full {
+      grid-column: 1 / -1;
+    }
+
+    .field-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--cleansia-text-secondary);
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+    }
+  }
+
+  &__value {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--cleansia-text-primary);
+    padding: 0.75rem;
+    background: var(--cleansia-primary-50);
+    border-radius: 8px;
+    border: 1px solid var(--cleansia-primary-200);
+    min-height: 2.5rem;
+    display: flex;
+    align-items: center;
+  }
+
+  &__description {
+    padding: 1.5rem;
+    background: var(--cleansia-white);
+    border-radius: 12px;
+    border-left: 4px solid var(--cleansia-primary-600);
+    border-top: 1px solid var(--cleansia-primary-200);
+    border-right: 1px solid var(--cleansia-primary-200);
+    border-bottom: 1px solid var(--cleansia-primary-200);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    line-height: 1.6;
+    color: var(--cleansia-text-primary);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    transition: all var(--default-transition) ease;
+
+    &:hover {
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      border-color: var(--cleansia-primary-300);
+    }
+  }
+
+  @media (max-width: 768px) {
+    &__form-card {
+      margin: 0.5rem;
+    }
+
+    &__header {
+      padding: 1rem 0;
+
+      &-info {
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        padding: 1.5rem;
+        text-align: center;
+      }
+
+      &-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: stretch;
+
+        .cleansia-button {
+          width: 100%;
+        }
+      }
+    }
+
+    &__order-number {
+      font-size: 1rem;
+
+      span {
+        font-size: 1.25rem;
+        padding: 0.75rem 1rem;
+        letter-spacing: 1.5px;
+      }
+    }
+
+    &__grid {
+      gap: 1rem;
+    }
+  }
+
+  @media print {
+    &__form-card {
+      box-shadow: none;
+      border-radius: 0;
+    }
+
+    &__header {
+      &-actions {
+        display: none;
+      }
+    }
+  }
+}
+
+cleansia-partner-dispute-details {
+  display: block;
+  background: var(--cleansia-background);
+  min-height: 100vh;
+
+  cleansia-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    background: var(--cleansia-white);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid var(--cleansia-primary-100);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all var(--default-transition) ease;
+
+    &:hover {
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      border-color: var(--cleansia-primary-200);
+    }
+
+    .cleansia-section__title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--cleansia-text-primary);
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid var(--cleansia-primary-200);
+    }
+  }
+
+  // Disabled form controls styling
+  cleansia-text-input[disabled='true'] {
+    .p-inputtext:disabled,
+    .p-inputtext[disabled] {
+      background-color: var(--cleansia-primary-50) !important;
+      color: var(--cleansia-text-secondary) !important;
+      border-color: var(--cleansia-primary-200) !important;
+      opacity: 1 !important;
+    }
+
+    .p-float-label label {
+      color: var(--cleansia-text-secondary) !important;
+    }
+  }
+
+  cleansia-select[disabled='true'] {
+    .p-dropdown:disabled,
+    .p-dropdown[disabled] {
+      background-color: var(--cleansia-primary-50) !important;
+      color: var(--cleansia-text-secondary) !important;
+      border-color: var(--cleansia-primary-200) !important;
+      opacity: 1 !important;
+    }
+
+    .p-dropdown-label {
+      color: var(--cleansia-text-secondary) !important;
+    }
+
+    .p-float-label label {
+      color: var(--cleansia-text-secondary) !important;
+    }
+  }
+
+  .p-component:disabled {
+    background-color: var(--cleansia-primary-50) !important;
+    color: var(--cleansia-text-secondary) !important;
+    border-color: var(--cleansia-primary-200) !important;
+  }
+
+  .p-float-label:has(.p-component:disabled) label {
+    color: var(--cleansia-text-secondary) !important;
+  }
+}
+
+// Status badges
+.dispute-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+
+  &.status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+  }
+
+  &.status-underreview {
+    background-color: #cfe2ff;
+    color: #084298;
+    border: 1px solid #b6d4fe;
+  }
+
+  &.status-waitingforresponse {
+    background-color: #e7e9fc;
+    color: #3730a3;
+    border: 1px solid #c7d2fe;
+  }
+
+  &.status-resolved {
+    background-color: #d1e7dd;
+    color: #0f5132;
+    border: 1px solid #badbcc;
+  }
+
+  &.status-closed {
+    background-color: #e2e3e5;
+    color: #41464b;
+    border: 1px solid #d3d6d8;
+  }
+
+  &.status-escalated {
+    background-color: #f8d7da;
+    color: #842029;
+    border: 1px solid #f5c2c7;
+  }
+}
+
+// Reason badges
+.dispute-reason-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &.reason-qualityissue {
+    background-color: #fff3cd;
+    color: #664d03;
+  }
+
+  &.reason-servicenotprovided {
+    background-color: #f8d7da;
+    color: #842029;
+  }
+
+  &.reason-serviceincomplete {
+    background-color: #cfe2ff;
+    color: #084298;
+  }
+
+  &.reason-damagedproperty {
+    background-color: #f8d7da;
+    color: #842029;
+  }
+
+  &.reason-unauthorizedcharge {
+    background-color: #f8d7da;
+    color: #842029;
+  }
+
+  &.reason-incorrectamount {
+    background-color: #fff3cd;
+    color: #664d03;
+  }
+
+  &.reason-other {
+    background-color: #e2e3e5;
+    color: #41464b;
+  }
+}

@@ -41,6 +41,8 @@ public static class BusinessErrorMessage
     public const string ActualTimeMustBePositive = "order.actual_time.positive";
     public const string CompletionNotesRequired = "order.completion_notes.required";
     public const string CompletionNotesTooLong = "order.completion_notes.too_long";
+    public const string PaymentGatewayUnavailable = "order.payment_gateway_unavailable";
+    public const string OrderCreationFailed = "order.creation_failed";
 
     // User
     public const string EmailConfirmed = "user.email_confirmed";
@@ -54,6 +56,8 @@ public static class BusinessErrorMessage
     public const string EmployeeNotFound = "employee.not_found";
     public const string NotExistingEmployeeWithEmail = "employee.not_existing_email";
     public const string NotAllowedToUpdateEmployee = "employee.not_allowed_to_update";
+    public const string EmployeeProfileIncomplete = "employee.profile_incomplete";
+    public const string EmployeeDocumentsMissing = "employee.documents_missing";
 
     // Payroll
     public const string PayPeriodNotFound = "payroll.pay_period.not_found";
@@ -70,6 +74,8 @@ public static class BusinessErrorMessage
     public const string EmployeeNotAssigned = "payroll.employee_not_assigned";
     public const string PdfGenerationFailed = "payroll.invoice.pdf_generation_failed";
     public const string TemplateNotFound = "payroll.invoice.template_not_found";
+    public const string CannotCancelPaidInvoice = "payroll.invoice.cannot_cancel_paid";
+    public const string InvoiceAlreadyCancelled = "payroll.invoice.already_cancelled";
 
     // Receipt
     public const string ReceiptNotFound = "receipt.not_found";
@@ -115,6 +121,13 @@ public static class BusinessErrorMessage
 
     // Company
     public const string CompanyInfoNotFound = "company.not_found";
+
+    // Dispute
+    public const string DisputeNotFound = "dispute.not_found";
+    public const string DisputeAlreadyExists = "dispute.already_exists";
+    public const string InvalidRefundAmount = "dispute.invalid_refund_amount";
+    public const string MaxLengthExceeded = "dispute.max_length_exceeded";
+    public const string UserNotFound = "user.not_found";
 
     // Validation
     public const string InvalidPassword = "validation.invalid_password";

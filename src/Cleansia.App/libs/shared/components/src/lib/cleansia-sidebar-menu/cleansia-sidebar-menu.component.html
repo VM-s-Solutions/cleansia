@@ -1,15 +1,19 @@
 @if (isRoot()) {
 <div class="sidebar-container">
-  @if (isMobile() && !isSidebarExpanded()) {
+  @if (isMobile() && isSidebarExpanded()) {
+  <div
+    class="sidebar-backdrop"
+    (click)="toggleSidebar()"
+    (keydown.enter)="toggleSidebar()"
+    tabindex="0"
+  ></div>
+  } @if (isMobile() && !isSidebarExpanded()) {
   <div class="sidebar-toggler">
-    <p-button
+    <cleansia-button
       icon="pi pi-bars"
-      [rounded]="true"
-      [text]="true"
       severity="primary"
-      size="small"
-      (onClick)="toggleSidebar()"
-      pRipple
+      size="xx-small-width"
+      (clickFn)="toggleSidebar()"
     />
   </div>
   }
@@ -24,14 +28,11 @@
     <header class="sidebar-header">
       <cleansia-brand-name [showName]="!effectiveCollapsed()" />
       @if (isMobile()) {
-      <p-button
+      <cleansia-button
         icon="pi pi-times"
-        [rounded]="true"
-        [text]="true"
         severity="secondary"
-        size="small"
-        (onClick)="toggleSidebar()"
-        pRipple
+        size="xx-small-width"
+        (clickFn)="toggleSidebar()"
       />
       }
     </header>
@@ -78,19 +79,17 @@
       </ul>
     </nav>
     <footer class="sidebar-footer">
-      <p-button
+      <cleansia-button
         [icon]="
           effectiveCollapsed()
             ? 'pi pi-angle-double-right'
             : 'pi pi-angle-double-left'
         "
         [rounded]="true"
-        [text]="true"
         severity="secondary"
-        size="small"
-        (onClick)="toggleCollapsed()"
-        pRipple
-        class="toggle-button"
+        size="small-width"
+        (clickFn)="toggleCollapsed()"
+        className="toggle-button"
       />
     </footer>
   </aside>

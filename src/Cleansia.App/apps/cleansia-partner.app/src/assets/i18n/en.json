@@ -28,7 +28,8 @@
         "password_lowercase": "Password must contain at least one lowercase letter",
         "password_uppercase": "Password must contain at least one uppercase letter",
         "password_number": "Password must contain at least one number",
-        "password_min_length": "Password must be at least 6 characters long",
+        "password_min_length": "Password must be at least 12 characters long",
+        "password_special_character": "Password must contain at least one special character (@$!%*?&#^())",
         "passwords_match": "Passwords must match"
       }
     },
@@ -215,6 +216,25 @@
         "actual_time_required": "Actual completion time is required",
         "notes_required": "Completion notes are required to explain the time variance",
         "notes_too_long": "Completion notes must be less than 1000 characters"
+      },
+      "show_filters": "Show Filters",
+      "hide_filters": "Hide Filters",
+      "filters": {
+        "customer_name": "Customer Name",
+        "customer_name_placeholder": "Enter customer name",
+        "customer_email": "Customer Email",
+        "customer_email_placeholder": "Enter customer email",
+        "order_number": "Order Number",
+        "order_number_placeholder": "Enter order number",
+        "order_status": "Order Status",
+        "select_status": "Select status",
+        "payment_status": "Payment Status",
+        "select_payment_status": "Select payment status",
+        "cleaning_date_from": "Cleaning Date From",
+        "cleaning_date_to": "Cleaning Date To",
+        "select_date": "Select date",
+        "apply": "Apply Filters",
+        "reset": "Reset Filters"
       }
     },
     "order_details": {
@@ -409,6 +429,72 @@
       "total_deductions": "Total Tax Deductions",
       "total_benefits_value": "Total Monthly Benefits Value",
       "basic_deduction": "Basic Tax Deduction"
+    },
+    "disputes": {
+      "title": "Dispute Management",
+      "description": "View and manage payment disputes and chargebacks for your orders.",
+      "table": {
+        "order_number": "Order Number",
+        "customer_name": "Customer Name",
+        "customer_email": "Customer Email",
+        "reason": "Reason",
+        "status": "Status",
+        "refund_amount": "Refund Amount",
+        "created_on": "Created Date",
+        "resolved_on": "Resolved Date",
+        "view_details": "View Details"
+      },
+      "filters": {
+        "order_id": "Order Number",
+        "customer_name": "Customer Name",
+        "customer_email": "Customer Email",
+        "status": "Dispute Status",
+        "reason": "Dispute Reason",
+        "created_from": "Created From",
+        "created_to": "Created To",
+        "reset": "Reset Filters"
+      },
+      "no_disputes": "No disputes to display"
+    },
+    "dispute_details": {
+      "title": "Dispute Details",
+      "error_loading": "Error Loading Dispute",
+      "confirm_status_update": "Are you sure you want to update the dispute status?",
+      "confirm_resolve": "Are you sure you want to resolve this dispute? This action cannot be undone.",
+      "sections": {
+        "summary": "Dispute Summary",
+        "customer_info": "Customer Information",
+        "description": "Dispute Description",
+        "resolution": "Resolution Notes"
+      },
+      "fields": {
+        "order_number": "Order Number",
+        "status": "Status",
+        "reason": "Reason",
+        "refund_amount": "Refund Amount",
+        "created_on": "Created On",
+        "resolved_on": "Resolved On",
+        "customer_name": "Customer Name",
+        "customer_email": "Customer Email",
+        "new_status": "New Status",
+        "resolution_notes": "Resolution Notes"
+      },
+      "actions": {
+        "update_status": "Update Status",
+        "resolve": "Resolve Dispute"
+      },
+      "placeholders": {
+        "resolution_notes": "Enter resolution notes explaining how the dispute was resolved..."
+      },
+      "messages": {
+        "failed_to_load": "Failed to load dispute details",
+        "no_dispute_selected": "No dispute selected",
+        "status_updated": "Dispute status updated successfully",
+        "status_update_failed": "Failed to update dispute status",
+        "dispute_resolved": "Dispute resolved successfully",
+        "resolve_failed": "Failed to resolve dispute",
+        "resolution_notes_required": "Resolution notes are required"
+      }
     }
   },
   "sidebar": {
@@ -417,7 +503,8 @@
     "orders": "Orders",
     "invoices": "Invoices",
     "payroll": "Payroll",
-    "logout": "Logout"
+    "logout": "Logout",
+    "disputes": "Disputes"
   },
   "components": {
     "file": {
@@ -686,6 +773,50 @@
     },
     "general": {
       "not_found": "Requested resource not found"
+    }
+  },
+  "enums": {
+    "order_status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "payment_status": {
+      "pending": "Pending",
+      "paid": "Paid",
+      "failed": "Failed",
+      "refunded": "Refunded"
+    },
+    "dispute_status": {
+      "pending": "Pending",
+      "under_review": "Under Review",
+      "waiting_for_response": "Waiting for Response",
+      "resolved": "Resolved",
+      "closed": "Closed",
+      "escalated": "Escalated"
+    },
+    "dispute_reason": {
+      "quality_issue": "Quality Issue",
+      "service_not_provided": "Service Not Provided",
+      "service_incomplete": "Service Incomplete",
+      "damaged_property": "Damaged Property",
+      "unauthorized_charge": "Unauthorized Charge",
+      "incorrect_amount": "Incorrect Amount",
+      "other": "Other"
+    }
+  },
+  "common": {
+    "actions": "Actions",
+    "confirmation": "Confirmation",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "update": "Update",
+    "validation": {
+      "required": "This field is required",
+      "min_length": "Minimum length is {{min}} characters",
+      "min_value": "Minimum value is {{min}}"
     }
   }
 }

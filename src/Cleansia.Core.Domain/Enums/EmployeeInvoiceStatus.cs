@@ -6,5 +6,6 @@ public enum EmployeeInvoiceStatus
     Approved = 1,
     Paid = 2,
     Disputed = 3,
-    Rejected = 4
+    Rejected = 4,
+    Cancelled = 5
 }

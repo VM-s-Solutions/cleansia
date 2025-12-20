@@ -44,6 +44,13 @@ public class EmployeeInvoice : Auditable
     [MaxLength(500)]
     public string? PdfBlobUrl { get; private set; }
 
+    public bool PdfGenerationFailed { get; private set; }
+
+    [MaxLength(1000)]
+    public string? PdfGenerationError { get; private set; }
+
+    public DateTime? PdfGenerationAttemptedAt { get; private set; }
+
     public string? TemplateId { get; private set; }
     public InvoiceTemplate? Template { get; private set; }
 
@@ -74,6 +81,15 @@ public class EmployeeInvoice : Auditable
 
     [MaxLength(500)]
     public string? BankTransferNote { get; private set; }
+
+    public bool IsCancelled { get; private set; }
+
+    [MaxLength(1000)]
+    public string? CancellationReason { get; private set; }
+
+    public DateTime? CancelledAt { get; private set; }
+
+    public string? CancelledBy { get; private set; }
 
     private ICollection<OrderEmployeePay> _orderPays = [];
     public IReadOnlyCollection<OrderEmployeePay> OrderPays => _orderPays.ToList().AsReadOnly();
@@ -133,6 +149,22 @@ public class EmployeeInvoice : Auditable
     public EmployeeInvoice SetPdfBlobUrl(string pdfBlobUrl)
     {
         PdfBlobUrl = pdfBlobUrl;
+        return this;
+    }
+
+    public EmployeeInvoice SetPdfGenerationError(string error)
+    {
+        PdfGenerationFailed = true;
+        PdfGenerationError = error;
+        PdfGenerationAttemptedAt = DateTime.UtcNow;
+        return this;
+    }
+
+    public EmployeeInvoice ClearPdfGenerationError()
+    {
+        PdfGenerationFailed = false;
+        PdfGenerationError = null;
+        PdfGenerationAttemptedAt = null;
         return this;
     }
 
@@ -251,5 +283,26 @@ public class EmployeeInvoice : Auditable
     public decimal CalculateAveragePay()
     {
         return TotalOrders > 0 ? SubTotal / TotalOrders : 0;
+    }
+
+    public EmployeeInvoice Cancel(string reason, string cancelledBy)
+    {
+        if (Status == EmployeeInvoiceStatus.Paid)
+        {
+            throw new InvalidOperationException("Cannot cancel a paid invoice");
+        }
+
+        if (IsCancelled)
+        {
+            throw new InvalidOperationException("Invoice is already cancelled");
+        }
+
+        IsCancelled = true;
+        CancellationReason = reason;
+        CancelledAt = DateTime.UtcNow;
+        CancelledBy = cancelledBy;
+        Status = EmployeeInvoiceStatus.Cancelled;
+
+        return this;
     }
 }

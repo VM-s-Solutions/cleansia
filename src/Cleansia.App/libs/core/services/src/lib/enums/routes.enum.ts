@@ -3,6 +3,7 @@ export enum CleansiaPartnerRoute {
   DASHBOARD = 'dashboard',
   PROFILE = 'profile',
   ORDERS = 'orders',
+  DISPUTES = 'disputes',
   INVOICES = 'invoices',
   LOGIN = 'login',
   REGISTER = 'register',

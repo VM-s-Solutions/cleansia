@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Company;
+using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Emails;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Internationalization;
@@ -116,6 +117,9 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<ReceiptTemplate> ReceiptTemplates { get; set; }
     public virtual DbSet<OrderReceipt> OrderReceipts { get; set; }
     public virtual DbSet<CompanyInfo> CompanyInfo { get; set; }
+    public virtual DbSet<Dispute> Disputes { get; set; }
+    public virtual DbSet<DisputeMessage> DisputeMessages { get; set; }
+    public virtual DbSet<DisputeEvidence> DisputeEvidence { get; set; }
 
     // Views
 }

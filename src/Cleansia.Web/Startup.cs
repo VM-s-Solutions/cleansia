@@ -1,5 +1,6 @@
 ﻿using Cleansia.Web.Configuration;
 using Cleansia.Web.Extensions;
+using Cleansia.Web.Middleware;
 
 namespace Cleansia.Web;
 
@@ -55,6 +56,9 @@ public class Startup(IConfiguration configuration, IWebHostEnvironment environme
                 c.RoutePrefix = string.Empty;
             });
         }
+
+        // Add request logging middleware
+        app.UseMiddleware<RequestLoggingMiddleware>();
 
         app.UseExceptionHandler(errorApp =>
         {

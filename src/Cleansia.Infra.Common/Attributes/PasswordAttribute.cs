@@ -6,16 +6,28 @@ namespace Cleansia.Infra.Common.Attributes;
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter)]
 public class PasswordAttribute : ValidationAttribute
 {
-    private const string PasswordRegex = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$";
+    // Requires: minimum 12 characters, at least one uppercase, one lowercase, one digit, one special character
+    private const string PasswordRegex = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()]).{12,}$";
 
-    public override bool IsValid(object? value)
+    protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
     {
         if (value is null || string.IsNullOrWhiteSpace(value.ToString()))
         {
-            return true;
+            return ValidationResult.Success;
         }
 
-        var password = value.ToString();
-        return Regex.IsMatch(password!, PasswordRegex);
+        var password = value.ToString()!;
+
+        if (!Regex.IsMatch(password, PasswordRegex))
+        {
+            return new ValidationResult(GetErrorMessage());
+        }
+
+        return ValidationResult.Success;
+    }
+
+    private string GetErrorMessage()
+    {
+        return "Password must be at least 12 characters and contain: one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&#^())";
     }
 }

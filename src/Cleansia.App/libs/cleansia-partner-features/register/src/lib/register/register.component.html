@@ -77,6 +77,13 @@
             >
               {{ 'pages.register.validation.password_min_length' | translate }}
             </li>
+            <li
+              [class.cleansia-register__password-validation--valid]="
+                passwordValidation?.hasSpecialCharacter
+              "
+            >
+              {{ 'pages.register.validation.password_special_character' | translate }}
+            </li>
           </ul>
         </div>
         }

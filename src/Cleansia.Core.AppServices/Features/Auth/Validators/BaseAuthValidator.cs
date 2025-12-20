@@ -54,7 +54,8 @@ public class BaseAuthValidator<TRequest> : AbstractValidator<TRequest>
     protected void AddPasswordRules(Expression<Func<TRequest, string>> passwordExpression)
     {
         var propertyName = GetPropertyName(passwordExpression);
-        const string passwordPattern = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$";
+        // Requires: minimum 12 characters, at least one uppercase, one lowercase, one digit, one special character
+        const string passwordPattern = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()]).{12,}$";
 
         RuleFor(passwordExpression)
             .Cascade(CascadeMode.Stop)

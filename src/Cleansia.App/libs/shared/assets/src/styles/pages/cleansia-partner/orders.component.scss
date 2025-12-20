@@ -28,11 +28,23 @@
   }
 
   &__table {
+    width: 100%;
+    overflow-x: auto;
+
     .p-datatable {
+      min-width: 100%;
+      table-layout: auto;
+
+      .p-datatable-table {
+        min-width: 800px;
+      }
+
       .p-datatable-thead > tr > th {
         background: var(--cleansia-primary-50);
         color: var(--cleansia-text-primary);
         font-weight: 500;
+        padding: 1rem;
+        white-space: nowrap;
       }
 
       .p-datatable-tbody > tr {
@@ -43,6 +55,7 @@
         td {
           padding: 1rem;
           border-bottom: 1px solid var(--cleansia-primary-200);
+          white-space: nowrap;
         }
       }
 
@@ -69,6 +82,139 @@
     display: flex;
     gap: 1rem;
     justify-content: flex-end;
+  }
+
+  .filter-panel {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(249, 250, 251, 0.95) 100%);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(209, 213, 219, 0.3);
+    box-shadow:
+      0 4px 6px -1px rgba(0, 0, 0, 0.05),
+      0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    backdrop-filter: blur(10px);
+    overflow: visible;
+
+    .filter-form {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+
+      @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .filter-field {
+      display: flex;
+      flex-direction: column;
+
+      .cleansia-multiselect {
+        width: 100%;
+
+        ::ng-deep {
+          .p-multiselect {
+            width: 100%;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+
+            &:hover {
+              border-color: var(--cleansia-primary-400);
+            }
+
+            &:focus,
+            &.p-focus {
+              border-color: var(--cleansia-primary-500);
+              box-shadow: 0 0 0 3px rgba(var(--cleansia-primary-rgb), 0.1);
+            }
+
+            .p-multiselect-label {
+              padding: 0.75rem 1rem;
+            }
+
+            .p-multiselect-chip {
+              background: var(--cleansia-primary-100);
+              color: var(--cleansia-primary-700);
+              border-radius: 6px;
+              padding: 0.25rem 0.5rem;
+              font-size: 0.875rem;
+              font-weight: 500;
+            }
+          }
+        }
+      }
+    }
+
+    cleansia-text-input,
+    cleansia-calendar {
+      ::ng-deep {
+        input,
+        .p-inputtext {
+          border: 1px solid #d1d5db;
+          border-radius: 8px;
+          padding: 0.75rem 1rem;
+          font-size: 0.9375rem;
+          transition: all 0.2s ease;
+          background: white;
+
+          &:hover {
+            border-color: var(--cleansia-primary-400);
+          }
+
+          &:focus {
+            border-color: var(--cleansia-primary-500);
+            box-shadow: 0 0 0 3px rgba(var(--cleansia-primary-rgb), 0.1);
+            outline: none;
+          }
+
+          &::placeholder {
+            color: #9ca3af;
+            font-size: 0.875rem;
+          }
+        }
+
+        .p-datepicker-trigger {
+          color: var(--cleansia-primary-600);
+        }
+      }
+    }
+
+    .filter-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: flex-end;
+      padding-top: 0.5rem;
+      border-top: 1px solid rgba(209, 213, 219, 0.2);
+
+      p-button {
+        transition: all 0.2s ease;
+
+        ::ng-deep .p-button {
+          padding: 0.625rem 1.5rem;
+          font-weight: 600;
+          border-radius: 8px;
+          letter-spacing: 0.01em;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+          &:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          }
+
+          &:active {
+            transform: translateY(0);
+          }
+        }
+      }
+    }
   }
 }
 

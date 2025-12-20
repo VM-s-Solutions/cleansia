@@ -7,6 +7,7 @@ import {
   CountryClient,
   CurrencyClient,
   DashboardClient,
+  DisputeClient,
   EmployeeClient,
   EmployeePayrollClient,
   IAuthClient,
@@ -14,6 +15,7 @@ import {
   ICountryClient,
   ICurrencyClient,
   IDashboardClient,
+  IDisputeClient,
   IEmployeeClient,
   IEmployeePayrollClient,
   ILanguageClient,
@@ -35,6 +37,7 @@ interface IClient {
   codeClient: ICodeClient;
   userClient: IUserClient;
   orderClient: IOrderClient;
+  disputeClient: IDisputeClient;
   countryClient: ICountryClient;
   currencyClient: ICurrencyClient;
   dashboardClient: IDashboardClient;
@@ -58,6 +61,7 @@ export class Client implements IClient {
   codeClient: ICodeClient = new CodeClient(this.httpClient, this.apiBaseUrl);
   userClient: IUserClient = new UserClient(this.httpClient, this.apiBaseUrl);
   orderClient: IOrderClient = new OrderClient(this.httpClient, this.apiBaseUrl);
+  disputeClient: IDisputeClient = new DisputeClient(this.httpClient, this.apiBaseUrl);
   countryClient: ICountryClient = new CountryClient(
     this.httpClient,
     this.apiBaseUrl

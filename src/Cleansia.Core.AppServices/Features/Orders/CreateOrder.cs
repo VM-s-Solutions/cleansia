@@ -167,7 +167,6 @@ public class CreateOrder
 
             order.UpdateEstimatedTime(estimatedTime);
             order.CalculateRequiredEmployees();
-            orderRepository.Add(order);
 
             string? stripeSessionId = null;
 
@@ -175,20 +174,42 @@ public class CreateOrder
             {
                 case PaymentType.Card:
                     {
-                        var stripeClient = stripeClientFactory.CreateClient();
-                        stripeSessionId = await stripeClient.CreateCheckoutSessionAsync(order, cancellationToken);
+                        try
+                        {
+                            var stripeClient = stripeClientFactory.CreateClient();
+                            stripeSessionId = await stripeClient.CreateCheckoutSessionAsync(order, cancellationToken);
+
+                            // Only add order to repository after successful Stripe session creation
+                            orderRepository.Add(order);
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log error (in production, use proper logging)
+                            Console.WriteLine($"Stripe checkout session creation failed: {ex.Message}");
+
+                            return BusinessResult.Failure<Response>(new Error(
+                                nameof(PaymentType.Card),
+                                BusinessErrorMessage.PaymentGatewayUnavailable));
+                        }
                         break;
                     }
                 case PaymentType.Cash:
-                    order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
-
-                    // Generate receipt and send email for cash payments
-                    var receiptResult = await GenerateAndSendReceiptAsync(order, command.Language, cancellationToken);
-                    if (!receiptResult)
                     {
-                        return BusinessResult.Failure<Response>(new Error(nameof(emailService.SendOrderReceiptEmailAsync), BusinessErrorMessage.EmailNotSentError));
+                        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
+
+                        // Generate receipt and send email for cash payments
+                        var receiptResult = await GenerateAndSendReceiptAsync(order, command.Language, cancellationToken);
+                        if (!receiptResult)
+                        {
+                            return BusinessResult.Failure<Response>(new Error(
+                                nameof(emailService.SendOrderReceiptEmailAsync),
+                                BusinessErrorMessage.EmailNotSentError));
+                        }
+
+                        // Add order to repository after successful receipt generation
+                        orderRepository.Add(order);
+                        break;
                     }
-                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(PaymentType));
             }

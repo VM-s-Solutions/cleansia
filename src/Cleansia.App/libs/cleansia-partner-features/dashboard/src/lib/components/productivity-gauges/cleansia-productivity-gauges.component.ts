@@ -4,7 +4,7 @@ import {
   CleansiaLabelComponent,
   CleansiaLoaderComponent,
 } from '@cleansia/components';
-import { ProductivityMetricsDto } from '@cleansia/services';
+import { ProductivityMetricsDto } from '@cleansia/partner-services';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({

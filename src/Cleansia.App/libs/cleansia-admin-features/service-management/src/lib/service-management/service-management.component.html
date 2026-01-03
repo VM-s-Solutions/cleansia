@@ -1,0 +1,57 @@
+<div class="cleansia-service-management">
+  <cleansia-language-switcher />
+  <div class="cleansia-service-management__container">
+    <div class="cleansia-service-management__header">
+      <cleansia-title [title]="'pages.service_management.title' | translate" />
+      <p class="cleansia-service-management__description">
+        {{ 'pages.service_management.description' | translate }}
+      </p>
+    </div>
+
+    <!-- Filter Panel -->
+    <div class="filter-panel">
+      <form [formGroup]="filterForm" class="filter-form">
+        <div class="filter-grid">
+          <!-- Search Filter -->
+          <div class="filter-field">
+            <cleansia-text-input
+              formControlName="searchTerm"
+              [placeholder]="'pages.service_management.filters.search' | translate"
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        <!-- Filter Actions -->
+        <div class="filter-actions">
+          <cleansia-button
+            [label]="'pages.service_management.filters.reset' | translate"
+            icon="pi pi-times"
+            (onClick)="resetFilters()"
+            severity="secondary"
+            [outlined]="true"
+          />
+        </div>
+      </form>
+    </div>
+
+    <!-- Service Table -->
+    <cleansia-section>
+      @if (facade.loading() && facade.services().length === 0) {
+        <cleansia-loader />
+      } @else {
+        <cleansia-table
+          [data]="facade.services()"
+          [tableDefinition]="serviceTableDefinition"
+          [paginator]="true"
+          [rows]="20"
+          [emptyMessage]="'pages.service_management.no_services'"
+          tableClass="cleansia-service-management__table"
+          [loading]="facade.loading()"
+          (sortChange)="onSortChange($event)"
+        >
+        </cleansia-table>
+      }
+    </cleansia-section>
+  </div>
+</div>

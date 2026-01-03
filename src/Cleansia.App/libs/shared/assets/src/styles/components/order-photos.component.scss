@@ -45,6 +45,9 @@
 
 .order-photos__section {
   margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .order-photos__section-title {
@@ -67,6 +70,7 @@
   overflow: hidden;
   background-color: var(--surface-card);
   transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .order-photos__item:hover {

@@ -38,7 +38,7 @@
               <span [class]="getStatusClass(invoiceDetail()!.status!)">
                 {{
                   'pages.invoices.status_' +
-                    invoiceDetail()!.status!.toLowerCase() | translate
+                    getStatusString(invoiceDetail()!.status!) | translate
                 }}
               </span>
             </div>

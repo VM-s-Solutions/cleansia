@@ -19,6 +19,18 @@ public class Employee : Auditable
 
     public ContractStatus ContractStatus { get; private set; } = ContractStatus.Pending;
 
+    [MaxLength(500)]
+    public string? RejectionReason { get; private set; }
+
+    [MaxLength(1000)]
+    public string? ApprovalNotes { get; private set; }
+
+    public string? ApprovedByUserId { get; private set; }
+    public DateTimeOffset? ApprovedAt { get; private set; }
+
+    public string? RejectedByUserId { get; private set; }
+    public DateTimeOffset? RejectedAt { get; private set; }
+
     public string? PassportId { get; private set; }
 
     public string? NationalityId { get; private set; }
@@ -44,9 +56,6 @@ public class Employee : Auditable
 
     private ICollection<OrderEmployee> _assignedOrders = [];
     public IReadOnlyCollection<OrderEmployee> AssignedOrders => _assignedOrders.ToList().AsReadOnly();
-
-    private ICollection<Order> _orders = [];
-    public virtual IReadOnlyCollection<Order> Orders => _orders.ToList().AsReadOnly();
 
     public static Employee CreateWithUser(User user) => new()
     {
@@ -85,6 +94,98 @@ public class Employee : Auditable
     {
         PreferredCurrencyCode = preferredCurrencyCode;
         return this;
+    }
+
+    public Employee UpdateContractStatus(ContractStatus contractStatus)
+    {
+        ContractStatus = contractStatus;
+        return this;
+    }
+
+    public Employee Approve(string approvedByUserId, string? notes = null)
+    {
+        ContractStatus = ContractStatus.Approved;
+        ApprovedByUserId = approvedByUserId;
+        ApprovedAt = DateTimeOffset.UtcNow;
+        ApprovalNotes = notes;
+
+        // Clear rejection data if previously rejected
+        RejectionReason = null;
+        RejectedByUserId = null;
+        RejectedAt = null;
+
+        return this;
+    }
+
+    public Employee Reject(string rejectedByUserId, string? reason = null)
+    {
+        ContractStatus = ContractStatus.Rejected;
+        RejectedByUserId = rejectedByUserId;
+        RejectedAt = DateTimeOffset.UtcNow;
+        RejectionReason = reason;
+
+        // Clear approval data if previously approved
+        ApprovalNotes = null;
+        ApprovedByUserId = null;
+        ApprovedAt = null;
+
+        return this;
+    }
+
+    public bool IsProfileComplete()
+    {
+        var hasBasicInfo = User?.FirstName != null &&
+                           User?.LastName != null &&
+                           User?.Email != null &&
+                           User?.PhoneNumber != null;
+
+        var hasPersonalInfo = User?.BirthDate != null;
+
+        var hasAddress = Address?.Street != null &&
+                        Address?.City != null &&
+                        Address?.ZipCode != null &&
+                        Address?.CountryId != null;
+
+        var hasEmployeeInfo = !string.IsNullOrEmpty(ICO) &&
+                             !string.IsNullOrEmpty(IBAN) &&
+                             !string.IsNullOrEmpty(PassportId) &&
+                             !string.IsNullOrEmpty(NationalityId);
+
+        var hasEmergencyContact = !string.IsNullOrEmpty(EmergencyContactName) &&
+                                 !string.IsNullOrEmpty(EmergencyContactPhone);
+
+        var hasDocuments = DocumentFileNames.Any();
+
+        var hasAvailability = Availability.Any();
+
+        return hasBasicInfo && hasPersonalInfo && hasAddress &&
+               hasEmployeeInfo && hasEmergencyContact && hasDocuments &&
+               hasAvailability;
+    }
+
+    public List<string> GetMissingProfileFields()
+    {
+        var missingFields = new List<string>();
+
+        if (string.IsNullOrEmpty(User?.FirstName)) missingFields.Add("First Name");
+        if (string.IsNullOrEmpty(User?.LastName)) missingFields.Add("Last Name");
+        if (string.IsNullOrEmpty(User?.Email)) missingFields.Add("Email");
+        if (string.IsNullOrEmpty(User?.PhoneNumber)) missingFields.Add("Phone Number");
+        if (User?.BirthDate == null) missingFields.Add("Birth Date");
+        if (string.IsNullOrEmpty(Address?.Street)) missingFields.Add("Street");
+        if (string.IsNullOrEmpty(Address?.City)) missingFields.Add("City");
+        if (string.IsNullOrEmpty(Address?.ZipCode)) missingFields.Add("Zip Code");
+        if (string.IsNullOrEmpty(Address?.CountryId)) missingFields.Add("Country");
+        if (string.IsNullOrEmpty(ICO)) missingFields.Add("Tax ID (ICO)");
+        if (string.IsNullOrEmpty(IBAN)) missingFields.Add("IBAN");
+        if (string.IsNullOrEmpty(PassportId)) missingFields.Add("Passport ID");
+        if (string.IsNullOrEmpty(NationalityId)) missingFields.Add("Nationality");
+        if (string.IsNullOrEmpty(EmergencyContactName)) missingFields.Add("Emergency Contact Name");
+        if (string.IsNullOrEmpty(EmergencyContactPhone)) missingFields.Add("Emergency Contact Phone");
+        if (!DocumentFileNames.Any()) missingFields.Add("Documents");
+        if (!Availability.Any()) missingFields.Add("Availability");
+
+        return missingFields;
     }
 
     public Employee AddDocumentFileName(string fileName)

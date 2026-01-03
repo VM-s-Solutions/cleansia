@@ -39,8 +39,6 @@ public class RequestPasswordChange
             var user = await userRepository.GetByEmailAsync(command.Email, cancellationToken);
             user!.UpdateResetPasswordToken();
 
-            await userRepository.CommitAsync(cancellationToken);
-
             var languageCode = user.PreferredLanguageCode ?? command.Language;
             await emailService.SendResetPasswordEmailAsync(command.Email, $"{user.LastName} {user.FirstName}", user!.ResetPasswordCode!, languageCode, cancellationToken);
 

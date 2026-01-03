@@ -100,4 +100,16 @@ public class EmployeeInvoiceRepository(CleansiaDbContext context) : BaseReposito
             .Include(i => i.OrderPays)
             .FirstOrDefaultAsync(i => i.Id == id, cancellationToken);
     }
+
+    public IQueryable<EmployeeInvoice> GetAllInvoicesByDateRange(DateTime startDate, DateTime endDate)
+    {
+        return GetDbSet()
+            .Include(i => i.Employee)
+                .ThenInclude(e => e.User)
+            .Include(i => i.PayPeriod)
+            .Include(i => i.Currency)
+            .Where(i => i.GeneratedAt >= startDate &&
+                       i.GeneratedAt <= endDate)
+            .OrderBy(i => i.GeneratedAt);
+    }
 }

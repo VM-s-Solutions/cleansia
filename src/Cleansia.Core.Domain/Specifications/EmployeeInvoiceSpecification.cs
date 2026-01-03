@@ -12,7 +12,7 @@ public class EmployeeInvoiceSpecification : BaseSpecification<string?>, ISpecifi
     public EmployeeInvoiceStatus? Status { get; set; }
     public string? InvoiceNumber { get; set; }
     public string? VariableSymbol { get; set; }
-    public int[]? Statuses { get; set; }
+    public EmployeeInvoiceStatus[]? Statuses { get; set; }
 
     public Expression<Func<EmployeeInvoice, bool>> SatisfiedBy()
     {
@@ -45,7 +45,7 @@ public class EmployeeInvoiceSpecification : BaseSpecification<string?>, ISpecifi
 
         if (Statuses is not null && Statuses.Any())
         {
-            specification &= new DirectSpecification<EmployeeInvoice>(x => Statuses.Contains((int)x.Status));
+            specification &= new DirectSpecification<EmployeeInvoice>(x => Statuses.Contains(x.Status));
         }
 
         if (!string.IsNullOrWhiteSpace(InvoiceNumber))
@@ -67,7 +67,7 @@ public class EmployeeInvoiceSpecification : BaseSpecification<string?>, ISpecifi
         string? employeeId = null,
         string? payPeriodId = null,
         EmployeeInvoiceStatus? status = null,
-        int[]? statuses = null,
+        EmployeeInvoiceStatus[]? statuses = null,
         string? invoiceNumber = null,
         string? variableSymbol = null) =>
         new()

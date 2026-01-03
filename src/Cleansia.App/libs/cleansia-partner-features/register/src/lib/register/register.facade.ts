@@ -2,18 +2,15 @@ import { inject, Injectable } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import {
-  AuthService,
-  CleansiaPartnerRoute,
-  SnackbarService,
-} from '@cleansia/services';
+import { PartnerAuthService } from '@cleansia/partner-services';
+import { CleansiaPartnerRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { takeUntil } from 'rxjs';
 
 @Injectable()
 export class RegisterFacade extends UnsubscribeControlDirective {
   private readonly router = inject(Router);
-  private readonly authService = inject(AuthService);
+  private readonly authService = inject(PartnerAuthService);
   private readonly translate = inject(TranslateService);
   private readonly snackbarService = inject(SnackbarService);
 

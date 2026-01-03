@@ -1,0 +1,14 @@
+<div class="app-layout" [attr.data-sidebar-collapsed]="sidebarCollapsed()">
+  @if (isLoggedIn) {
+  <cleansia-sidebar-menu
+    [menuItems]="sidebarMenuItems"
+    (collapsedChange)="onSidebarCollapsedChange($event)"
+  />
+  }
+  <main class="main-content" [ngClass]="{ 'main-content__margin': isLoggedIn }">
+    <router-outlet></router-outlet>
+  </main>
+
+  <p-toast></p-toast>
+  <p-confirmDialog></p-confirmDialog>
+</div>

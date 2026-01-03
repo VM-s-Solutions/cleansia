@@ -1,0 +1,55 @@
+<div class="reject-dialog">
+  <form [formGroup]="form" (ngSubmit)="onReject()">
+    <div class="reject-dialog__header">
+      <h2 class="reject-dialog__title">{{ data.title }}</h2>
+      <p class="reject-dialog__subtitle" *ngIf="data.subtitle">{{ data.subtitle }}</p>
+    </div>
+
+    <div class="reject-dialog__content">
+      <div class="reject-dialog__field">
+        <label for="reason" class="reject-dialog__label">
+          {{ data.reasonLabel || ('pages.employee_management.reject_dialog.reason_label' | translate) }} *
+        </label>
+        <cleansia-textarea
+          id="reason"
+          formControlName="reason"
+          [rows]="4"
+          [placeholder]="data.reasonPlaceholder || ('pages.employee_management.reject_dialog.reason_placeholder' | translate)"
+          className="w-full"
+        />
+        <small class="reject-dialog__hint">
+          {{ 'pages.employee_management.reject_dialog.reason_hint' | translate }}
+        </small>
+        <small
+          class="reject-dialog__error"
+          *ngIf="form.controls.reason.touched && form.controls.reason.hasError('required')">
+          {{ 'pages.employee_management.reject_dialog.reason_required' | translate }}
+        </small>
+        <small
+          class="reject-dialog__error"
+          *ngIf="form.controls.reason.touched && form.controls.reason.hasError('maxlength')">
+          {{ 'pages.employee_management.reject_dialog.reason_too_long' | translate }}
+        </small>
+      </div>
+    </div>
+
+    <div class="reject-dialog__footer">
+      <cleansia-button
+        buttonType="button"
+        [label]="'pages.employee_management.reject_dialog.cancel_button' | translate"
+        severity="secondary"
+        className="p-button-text p-button-secondary"
+        (onClick)="onCancel()"
+        [disabled]="loading()"
+      />
+      <cleansia-button
+        buttonType="submit"
+        [label]="'pages.employee_management.reject_dialog.reject_button' | translate"
+        icon="pi pi-times"
+        severity="danger"
+        [disabled]="form.invalid || loading()"
+        [loading]="loading()"
+      />
+    </div>
+  </form>
+</div>

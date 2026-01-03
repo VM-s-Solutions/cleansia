@@ -93,7 +93,23 @@
       "availability_description": "Nastavte si své týdenní pracovní hodiny výběrem časových rozmezí pro každý den. To nám pomůže efektivně plánovat vaše úkoly.",
       "consent": "Souhlas",
       "consent_text": "Souhlasím se zpracováním svých osobních údajů v souladu s GDPR a českými pracovními zákony.",
-      "submit": "Odeslat onboarding"
+      "submit": "Odeslat onboarding",
+      "document_type": "Typ dokumentu",
+      "select_files": "Vybrat soubory",
+      "staged_documents": "Připravené dokumenty (k nahrání)",
+      "save_documents": "Uložit všechny dokumenty",
+      "remove": "Odebrat",
+      "pending_documents": "Dokumenty čekající na schválení",
+      "approved_documents": "Schválené dokumenty",
+      "rejected_documents": "Zamítnuté dokumenty",
+      "document_type_label": "Typ",
+      "version": "Verze",
+      "file_size": "Velikost",
+      "uploaded_at": "Nahráno",
+      "view": "Zobrazit",
+      "download": "Stáhnout",
+      "delete": "Smazat",
+      "review_notes": "Poznámky ke kontrole"
     },
     "dashboard": {
       "title": "Nástěnka",
@@ -565,7 +581,20 @@
         "too_few_files": "Prosím nahrajte alespoň 1 soubor.",
         "too_many_files": "Příliš mnoho souborů. Maximální povolený počet je 10 souborů.",
         "files_required": "Nahrání dokumentů je povinné.",
-        "file_removed": "Soubor byl úspěšně odstraněn"
+        "file_removed": "Soubor byl úspěšně odstraněn",
+        "load_error": "Nepodařilo se načíst informace profilu. Zkuste to prosím znovu.",
+        "file_transformation_error": "Nepodařilo se zpracovat nahrané soubory. Zkuste to prosím znovu."
+      },
+      "documents": {
+        "load_error": "Nepodařilo se načíst dokumenty. Zkuste to prosím znovu.",
+        "stage_error": "Nepodařilo se připravit dokument {{fileName}}. Zkuste to prosím znovu.",
+        "no_documents_to_save": "Žádné dokumenty k uložení. Prosím vyberte nejprve soubory.",
+        "upload_success": "Dokumenty byly úspěšně nahrány!",
+        "upload_error": "Nepodařilo se nahrát dokumenty. Zkuste to prosím znovu.",
+        "delete_confirm": "Opravdu chcete smazat {{fileName}}?",
+        "delete_success": "Dokument byl úspěšně smazán!",
+        "download_error": "Nepodařilo se stáhnout dokument. Zkuste to prosím znovu.",
+        "delete_error": "Nepodařilo se smazat dokument. Zkuste to prosím znovu."
       },
       "orders": {
         "failed_to_load_details": "Nepodařilo se načíst podrobnosti objednávky. Zkuste to prosím znovu.",
@@ -648,6 +677,23 @@
     },
     "time": {
       "minutes": "minut"
+    },
+    "document_types": {
+      "1": "Občanský průkaz",
+      "2": "Pas",
+      "3": "Řidičský průkaz",
+      "4": "Pracovní povolení",
+      "5": "Smlouva",
+      "6": "Certifikát",
+      "7": "Bankovní výpis",
+      "8": "Daňový dokument",
+      "9": "Pojistný dokument",
+      "10": "Ostatní"
+    },
+    "document_status": {
+      "1": "Čeká na kontrolu",
+      "2": "Schváleno",
+      "3": "Zamítnuto"
     }
   },
   "registrationLock": {

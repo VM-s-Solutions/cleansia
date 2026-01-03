@@ -2,11 +2,11 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import {
-  CleansiaPartnerRoute,
   RegistrationCompletionResult,
   RegistrationCompletionService,
   RegistrationCompletionStatus,
-} from '@cleansia/services';
+} from '@cleansia/partner-services';
+import { CleansiaPartnerRoute } from '@cleansia/services';
 import { TranslateModule } from '@ngx-translate/core';
 import { Observable, of } from 'rxjs';
 
@@ -25,7 +25,8 @@ export class CleansiaRegistrationLockComponent implements OnInit {
     // TODO: Get actual employee status from store/service when available
     // For now, using null to indicate no employee data available
     const employeeStatus: RegistrationCompletionStatus | null = null;
-    const result = this.registrationService.checkRegistrationCompletion(employeeStatus);
+    const result =
+      this.registrationService.checkRegistrationCompletion(employeeStatus);
     this.registrationStatus$ = of(result);
   }
 

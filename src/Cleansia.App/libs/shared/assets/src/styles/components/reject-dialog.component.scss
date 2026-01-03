@@ -1,0 +1,62 @@
+.reject-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 400px;
+
+  &__header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-color);
+  }
+
+  &__subtitle {
+    font-size: 0.875rem;
+    color: var(--text-color-secondary);
+    margin: 0;
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-color);
+  }
+
+  &__hint {
+    font-size: 0.75rem;
+    color: var(--text-color-secondary);
+  }
+
+  &__error {
+    font-size: 0.75rem;
+    color: var(--red-500);
+    display: block;
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--surface-border);
+  }
+}

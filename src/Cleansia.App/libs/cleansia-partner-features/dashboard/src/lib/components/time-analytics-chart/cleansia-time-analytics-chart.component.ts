@@ -10,7 +10,7 @@ import {
   CleansiaLabelComponent,
   CleansiaLoaderComponent,
 } from '@cleansia/components';
-import { TimeAnalyticsDto } from '@cleansia/services';
+import { TimeAnalyticsDto } from '@cleansia/partner-services';
 import { TranslateModule } from '@ngx-translate/core';
 import { ChartConfiguration, ChartType } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';

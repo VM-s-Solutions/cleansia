@@ -26,6 +26,7 @@ export interface TableColumn<T = any> {
   value?: string | ((row?: T) => any);
   template?: TemplateRef<T>;
   sortable?: boolean;
+  sortField?: string;
   columnClass?: string;
   columnActions?: TableColumnAction<T>[];
 }

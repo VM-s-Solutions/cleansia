@@ -5,11 +5,13 @@ using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Extensions;
 using Cleansia.Core.AppServices.Shared.DTOs.Files;
 using Cleansia.Core.Blobs.Abstractions;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
+using DayOfWeek = Cleansia.Core.Domain.Enums.DayOfWeek;
 
 namespace Cleansia.Core.AppServices.Features.Employees;
 
@@ -110,7 +112,7 @@ public class UpdateEmployee
                 return true;
             }
 
-            var validDays = new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+            var validDays = Enum.GetNames(typeof(DayOfWeek));
 
             foreach (var (day, timeRanges) in availability)
             {

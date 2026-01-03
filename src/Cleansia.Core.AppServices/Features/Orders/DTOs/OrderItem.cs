@@ -34,8 +34,6 @@ public record OrderItem(
     IEnumerable<OrderStatusTrackDto> StatusHistory,
     DateTimeOffset CreatedOn,
     DateTimeOffset? UpdatedOn,
-    string? AssignedEmployeeId,
-    string? AssignedEmployeeName,
-    string? AssignedEmployeePhone,
+    IEnumerable<AssignedEmployeeDto> AssignedEmployees,
     string? ReceiptNumber
 );

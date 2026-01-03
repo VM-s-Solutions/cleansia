@@ -1,5 +1,6 @@
 import { Route } from '@angular/router';
-import { CleansiaPartnerRoute, authGuard } from '@cleansia/services';
+import { authGuard } from '@cleansia/partner-services';
+import { CleansiaPartnerRoute } from '@cleansia/services';
 
 export const appRoutes: Route[] = [
   {

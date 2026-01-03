@@ -1,10 +1,11 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { Client, OrderItem, SnackbarService } from '@cleansia/services';
+import { OrderItem, PartnerClient } from '@cleansia/partner-services';
+import { SnackbarService } from '@cleansia/services';
 import { catchError, finalize, of, tap } from 'rxjs';
 
 @Injectable()
 export class OrderDetailsFacade {
-  private readonly client = inject(Client);
+  private readonly partnerClient = inject(PartnerClient);
   private readonly snackbarService = inject(SnackbarService);
 
   // Signals for reactive state management
@@ -22,7 +23,7 @@ export class OrderDetailsFacade {
     this.loading.set(true);
     this.error.set(null);
 
-    this.client.orderClient
+    this.partnerClient.orderClient
       .getById(orderId)
       .pipe(
         tap((orderDetails) => {
@@ -67,7 +68,7 @@ export class OrderDetailsFacade {
 
     this.loading.set(true);
 
-    this.client.orderClient
+    this.partnerClient.orderClient
       .downloadReceipt(order.id)
       .pipe(
         tap((response) => {
@@ -111,7 +112,7 @@ export class OrderDetailsFacade {
   }
 
   loadCurrentEmployee(): void {
-    this.client.employeeClient
+    this.partnerClient.employeeClient
       .getCurrentEmployee()
       .pipe(catchError(() => of(null)))
       .subscribe((employee) => {

@@ -1,0 +1,91 @@
+{
+  "name": "cleansia-admin.app",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "prefix": "app",
+  "sourceRoot": "apps/cleansia-admin.app/src",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@angular-devkit/build-angular:application",
+      "outputs": ["{options.outputPath}"],
+      "dependsOn": [],
+      "options": {
+        "outputPath": "dist/apps/cleansia-admin.app",
+        "index": "apps/cleansia-admin.app/src/index.html",
+        "browser": "apps/cleansia-admin.app/src/main.ts",
+        "polyfills": ["zone.js"],
+        "tsConfig": "apps/cleansia-admin.app/tsconfig.app.json",
+        "inlineStyleLanguage": "scss",
+        "assets": ["apps/cleansia-admin.app/src/assets"],
+        "styles": [
+          "apps/cleansia-admin.app/src/styles.scss",
+          "libs/shared/assets/src/styles/cleansia-admin.scss"
+        ]
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "1mb",
+              "maximumError": "2mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "4kb",
+              "maximumError": "8kb"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@angular-devkit/build-angular:dev-server",
+      "configurations": {
+        "production": {
+          "buildTarget": "cleansia-admin.app:build:production"
+        },
+        "development": {
+          "buildTarget": "cleansia-admin.app:build:development"
+        }
+      },
+      "defaultConfiguration": "development"
+    },
+    "extract-i18n": {
+      "executor": "@angular-devkit/build-angular:extract-i18n",
+      "options": {
+        "buildTarget": "cleansia-admin.app:build"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "apps/cleansia-admin.app/jest.config.ts",
+        "tsConfig": "apps/cleansia-admin.app/tsconfig.spec.json"
+      }
+    },
+    "serve-static": {
+      "continuous": true,
+      "executor": "@nx/web:file-server",
+      "options": {
+        "buildTarget": "cleansia-admin.app:build",
+        "port": 4200,
+        "staticFilePath": "dist/apps/cleansia-admin.app/browser",
+        "spa": true
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+// Cleansia Admin Pages
+// Import all admin page styles here
+
+@use './employee-management.component.scss';
+@use './employee-detail.component.scss';
+@use './login.component.scss';
+@use './order-management.component.scss';
+@use './order-detail.component.scss';
+@use './admin-order-photos.component.scss';
+@use './admin-photo-gallery.component.scss';
+@use './pay-period-management.component.scss';
+@use './pay-period-detail.component.scss';
+@use './invoice-management.component.scss';
+@use './invoice-detail.component.scss';
+@use './reports.component.scss';
+@use './service-management.component.scss';

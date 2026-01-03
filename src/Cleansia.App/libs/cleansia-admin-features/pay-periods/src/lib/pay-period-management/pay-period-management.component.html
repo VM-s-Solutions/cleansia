@@ -1,0 +1,72 @@
+<div class="cleansia-pay-period-management">
+  <cleansia-language-switcher />
+  <div class="cleansia-pay-period-management__container">
+    <div class="cleansia-pay-period-management__header">
+      <cleansia-title [title]="'payPeriods.title' | translate" />
+      <p class="cleansia-pay-period-management__description">
+        {{ 'payPeriods.description' | translate }}
+      </p>
+    </div>
+
+    <!-- Filter Panel -->
+    <div class="filter-panel">
+      <form [formGroup]="filterForm" class="filter-form">
+        <div class="filter-grid">
+          <!-- Status Filter -->
+          <div class="filter-field">
+            <cleansia-select
+              formControlName="status"
+              [options]="facade.statusOptions"
+              [placeholder]="'payPeriods.list.filterByStatus' | translate"
+              [showClear]="true"
+              className="w-full"
+              appendTo="body"
+            />
+          </div>
+
+          <!-- Year Filter -->
+          <div class="filter-field">
+            <cleansia-select
+              formControlName="year"
+              [options]="yearOptions"
+              [placeholder]="'payPeriods.list.filterByYear' | translate"
+              [showClear]="true"
+              className="w-full"
+              appendTo="body"
+            />
+          </div>
+        </div>
+
+        <!-- Filter Actions -->
+        <div class="filter-actions">
+          <cleansia-button
+            [label]="'payPeriods.list.reset' | translate"
+            icon="pi pi-times"
+            (onClick)="resetFilters()"
+            severity="secondary"
+            [outlined]="true"
+          />
+        </div>
+      </form>
+    </div>
+
+    <!-- Pay Period Table -->
+    <cleansia-section>
+      @if (facade.loading() && facade.payPeriods().length === 0) {
+      <cleansia-loader />
+      } @else {
+      <cleansia-table
+        [data]="facade.payPeriods()"
+        [tableDefinition]="payPeriodTableDefinition"
+        [paginator]="true"
+        [rows]="20"
+        [emptyMessage]="'payPeriods.list.noRecords'"
+        tableClass="cleansia-pay-period-management__table"
+        [loading]="facade.loading()"
+        (sortChange)="onSortChange($event)"
+      >
+      </cleansia-table>
+      }
+    </cleansia-section>
+  </div>
+</div>

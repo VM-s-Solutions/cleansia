@@ -1,0 +1,129 @@
+<div class="cleansia-order-management">
+  <cleansia-language-switcher />
+  <div class="cleansia-order-management__container">
+    <div class="cleansia-order-management__header">
+      <cleansia-title [title]="'pages.order_management.title' | translate" />
+      <p class="cleansia-order-management__description">
+        {{ 'pages.order_management.description' | translate }}
+      </p>
+    </div>
+
+    <!-- Filter Panel -->
+    <div class="filter-panel">
+      <form [formGroup]="filterForm" class="filter-form">
+        <div class="filter-grid">
+          <!-- Search Filter -->
+          <div class="filter-field">
+            <cleansia-text-input
+              formControlName="searchTerm"
+              [placeholder]="'pages.order_management.filters.search' | translate"
+              className="w-full"
+            />
+          </div>
+
+          <!-- Order Status Filter -->
+          <div class="filter-field">
+            <cleansia-multiselect
+              inputId="orderStatus"
+              formControlName="orderStatus"
+              [options]="orderStatusMultiOptions"
+              optionLabel="label"
+              optionValue="value"
+              [placeholder]="'pages.order_management.filters.order_status' | translate"
+              [showClear]="true"
+              display="chip"
+              class="cleansia-multiselect"
+              appendTo="body"
+            />
+          </div>
+
+          <!-- Payment Status Filter -->
+          <div class="filter-field">
+            <cleansia-multiselect
+              inputId="paymentStatus"
+              formControlName="paymentStatus"
+              [options]="paymentStatusMultiOptions"
+              optionLabel="label"
+              optionValue="value"
+              [placeholder]="'pages.order_management.filters.payment_status' | translate"
+              [showClear]="true"
+              display="chip"
+              class="cleansia-multiselect"
+              appendTo="body"
+            />
+          </div>
+
+          <!-- Date From Filter -->
+          <div class="filter-field">
+            <p-datepicker
+              formControlName="cleaningDateFrom"
+              [placeholder]="'pages.order_management.filters.date_from' | translate"
+              dateFormat="dd.mm.yy"
+              [showIcon]="true"
+              appendTo="body"
+              styleClass="w-full"
+            />
+          </div>
+
+          <!-- Date To Filter -->
+          <div class="filter-field">
+            <p-datepicker
+              formControlName="cleaningDateTo"
+              [placeholder]="'pages.order_management.filters.date_to' | translate"
+              dateFormat="dd.mm.yy"
+              [showIcon]="true"
+              appendTo="body"
+              styleClass="w-full"
+            />
+          </div>
+        </div>
+
+        <!-- Filter Actions -->
+        <div class="filter-actions">
+          <cleansia-button
+            [label]="'pages.order_management.filters.reset' | translate"
+            icon="pi pi-times"
+            (onClick)="resetFilters()"
+            severity="secondary"
+            [outlined]="true"
+          />
+        </div>
+      </form>
+    </div>
+
+    <!-- Order Table -->
+    <cleansia-section>
+      @if (facade.loading() && facade.orders().length === 0) {
+        <cleansia-loader />
+      } @else {
+        <cleansia-table
+          [data]="facade.orders()"
+          [tableDefinition]="orderTableDefinition"
+          [paginator]="true"
+          [rows]="20"
+          [emptyMessage]="'pages.order_management.no_orders'"
+          tableClass="cleansia-order-management__table"
+          [loading]="facade.loading()"
+          (sortChange)="onSortChange($event)"
+        >
+        </cleansia-table>
+      }
+    </cleansia-section>
+  </div>
+</div>
+
+<ng-template #orderStatusTemplate let-item>
+  <div class="status-cell">
+    <span [class]="getOrderStatusClass(item)">
+      {{ item.orderStatus?.name }}
+    </span>
+  </div>
+</ng-template>
+
+<ng-template #paymentStatusTemplate let-item>
+  <div class="status-cell">
+    <span [class]="getPaymentStatusClass(item)">
+      {{ item.paymentStatus?.name }}
+    </span>
+  </div>
+</ng-template>

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.Disputes;
+using Cleansia.Core.Domain.Documents;
 using Cleansia.Core.Domain.Emails;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Internationalization;
@@ -92,6 +93,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<Country> Countries { get; set; }
     public virtual DbSet<Address> Addresses { get; set; }
     public virtual DbSet<Employee> Employees { get; set; }
+    public virtual DbSet<EmployeeDocument> EmployeeDocuments { get; set; }
     public virtual DbSet<User> Users { get; set; }
     public virtual DbSet<Cart> Carts { get; set; }
     public virtual DbSet<CartServiceItem> CartServiceItems { get; set; }

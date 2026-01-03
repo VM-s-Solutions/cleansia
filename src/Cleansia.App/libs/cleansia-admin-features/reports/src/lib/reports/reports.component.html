@@ -1,0 +1,381 @@
+<div class="cleansia-reports">
+  <cleansia-language-switcher />
+  <div class="cleansia-reports__container">
+    <div class="cleansia-reports__header">
+      <cleansia-title [title]="'pages.reports.title' | translate" />
+      <p class="cleansia-reports__description">
+        {{ 'pages.reports.description' | translate }}
+      </p>
+    </div>
+
+    <!-- Filter Panel -->
+    <div class="filter-panel">
+      <form [formGroup]="dateRangeForm" class="filter-form">
+        <div class="filter-grid">
+          <cleansia-calendar
+            [label]="'pages.reports.start_date' | translate"
+            [formControl]="$any(dateRangeForm.get('startDate'))"
+            [showErrors]="false"
+            floatVariant="on"
+            dateFormat="dd.mm.yy"
+            appendTo="body"
+          />
+          <cleansia-calendar
+            [label]="'pages.reports.end_date' | translate"
+            [formControl]="$any(dateRangeForm.get('endDate'))"
+            [showErrors]="false"
+            floatVariant="on"
+            dateFormat="dd.mm.yy"
+            appendTo="body"
+          />
+        </div>
+
+        <!-- Filter Actions -->
+        <div class="filter-actions">
+          <cleansia-button
+            [label]="'pages.reports.reset' | translate"
+            icon="pi pi-refresh"
+            (clicked)="refreshReport()"
+            severity="secondary"
+            [outlined]="true"
+          />
+        </div>
+      </form>
+    </div>
+
+    <!-- Report Tabs -->
+    <cleansia-section>
+      <p-tabs [value]="activeTab" (valueChange)="onTabChange($event)">
+        <p-tablist>
+          <p-tab value="revenue">{{
+            'pages.reports.revenue_report' | translate
+          }}</p-tab>
+          <p-tab value="payroll">{{
+            'pages.reports.payroll_report' | translate
+          }}</p-tab>
+        </p-tablist>
+        <p-tabpanels>
+          <!-- Revenue Report Tab -->
+          <p-tabpanel value="revenue">
+            @if (facade.loadingRevenue()) {
+            <cleansia-loader />
+            } @else if (facade.revenueReport()) {
+            <div class="report-content">
+              <!-- Summary Cards -->
+              <div class="report-summary">
+                <div class="summary-card summary-card--primary">
+                  <div class="summary-card__icon">
+                    <i class="pi pi-wallet"></i>
+                  </div>
+                  <div class="summary-card__content">
+                    <span class="summary-card__label">{{
+                      'pages.reports.total_revenue' | translate
+                    }}</span>
+                    <span class="summary-card__value">{{
+                      facade.formatCurrency(
+                        facade.revenueReport()?.totalRevenue
+                      )
+                    }}</span>
+                  </div>
+                </div>
+
+                <div class="summary-card">
+                  <div class="summary-card__icon">
+                    <i class="pi pi-chart-line"></i>
+                  </div>
+                  <div class="summary-card__content">
+                    <span class="summary-card__label">{{
+                      'pages.reports.avg_order_value' | translate
+                    }}</span>
+                    <span class="summary-card__value">{{
+                      facade.formatCurrency(
+                        facade.revenueReport()?.averageOrderValue
+                      )
+                    }}</span>
+                  </div>
+                </div>
+
+                <div class="summary-card">
+                  <div class="summary-card__icon">
+                    <i class="pi pi-shopping-cart"></i>
+                  </div>
+                  <div class="summary-card__content">
+                    <span class="summary-card__label">{{
+                      'pages.reports.total_orders' | translate
+                    }}</span>
+                    <span class="summary-card__value">{{
+                      facade.revenueReport()?.totalOrders || 0
+                    }}</span>
+                  </div>
+                </div>
+
+                <div class="summary-card summary-card--success">
+                  <div class="summary-card__icon">
+                    <i class="pi pi-check-circle"></i>
+                  </div>
+                  <div class="summary-card__content">
+                    <span class="summary-card__label">{{
+                      'pages.reports.completed_orders' | translate
+                    }}</span>
+                    <span class="summary-card__value">{{
+                      facade.revenueReport()?.completedOrders || 0
+                    }}</span>
+                  </div>
+                </div>
+
+                <div class="summary-card summary-card--danger">
+                  <div class="summary-card__icon">
+                    <i class="pi pi-times-circle"></i>
+                  </div>
+                  <div class="summary-card__content">
+                    <span class="summary-card__label">{{
+                      'pages.reports.cancelled_orders' | translate
+                    }}</span>
+                    <span class="summary-card__value">{{
+                      facade.revenueReport()?.cancelledOrders || 0
+                    }}</span>
+                  </div>
+                </div>
+
+                <div
+                  class="summary-card"
+                  [class.summary-card--success]="
+                    (facade.revenueReport()?.growthPercentage || 0) >= 0
+                  "
+                  [class.summary-card--danger]="
+                    (facade.revenueReport()?.growthPercentage || 0) < 0
+                  "
+                >
+                  <div class="summary-card__icon">
+                    <i
+                      class="pi"
+                      [class.pi-arrow-up]="
+                        (facade.revenueReport()?.growthPercentage || 0) >= 0
+                      "
+                      [class.pi-arrow-down]="
+                        (facade.revenueReport()?.growthPercentage || 0) < 0
+                      "
+                    ></i>
+                  </div>
+                  <div class="summary-card__content">
+                    <span class="summary-card__label">{{
+                      'pages.reports.growth' | translate
+                    }}</span>
+                    <span class="summary-card__value">{{
+                      facade.formatPercentage(
+                        facade.revenueReport()?.growthPercentage
+                      )
+                    }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Revenue by Service -->
+              @if (facade.revenueReport()?.revenueByService?.length) {
+              <div class="data-section">
+                <h3 class="data-section__title">
+                  {{ 'pages.reports.revenue_by_service' | translate }}
+                </h3>
+                <cleansia-table
+                  [data]="facade.revenueReport()?.revenueByService || []"
+                  [tableDefinition]="revenueByServiceTableDef"
+                  [paginator]="false"
+                  tableClass="cleansia-reports__table"
+                />
+              </div>
+              }
+
+              <!-- Revenue by Package -->
+              @if (facade.revenueReport()?.revenueByPackage?.length) {
+              <div class="data-section">
+                <h3 class="data-section__title">
+                  {{ 'pages.reports.revenue_by_package' | translate }}
+                </h3>
+                <cleansia-table
+                  [data]="facade.revenueReport()?.revenueByPackage || []"
+                  [tableDefinition]="revenueByPackageTableDef"
+                  [paginator]="false"
+                  tableClass="cleansia-reports__table"
+                />
+              </div>
+              }
+
+              <!-- Revenue by Payment Type -->
+              @if (facade.revenueReport()?.revenueByPaymentType?.length) {
+              <div class="data-section">
+                <h3 class="data-section__title">
+                  {{ 'pages.reports.revenue_by_payment_type' | translate }}
+                </h3>
+                <cleansia-table
+                  [data]="facade.revenueReport()?.revenueByPaymentType || []"
+                  [tableDefinition]="revenueByPaymentTypeTableDef"
+                  [paginator]="false"
+                  tableClass="cleansia-reports__table"
+                />
+              </div>
+              }
+            </div>
+            } @else {
+            <div class="report-empty">
+              <i class="pi pi-chart-bar"></i>
+              <p>{{ 'pages.reports.no_data' | translate }}</p>
+            </div>
+            }
+          </p-tabpanel>
+
+          <!-- Payroll Report Tab -->
+          <p-tabpanel value="payroll">
+            @if (facade.loadingPayroll()) {
+            <cleansia-loader />
+            } @else if (facade.payrollReport()) {
+            <div class="report-content">
+              <!-- Summary Cards -->
+              <div class="report-summary">
+                <div class="summary-card summary-card--primary">
+                  <div class="summary-card__icon">
+                    <i class="pi pi-money-bill"></i>
+                  </div>
+                  <div class="summary-card__content">
+                    <span class="summary-card__label">{{
+                      'pages.reports.total_payroll' | translate
+                    }}</span>
+                    <span class="summary-card__value">{{
+                      facade.formatCurrency(
+                        facade.payrollReport()?.totalPayroll
+                      )
+                    }}</span>
+                  </div>
+                </div>
+
+                <div class="summary-card">
+                  <div class="summary-card__icon">
+                    <i class="pi pi-user"></i>
+                  </div>
+                  <div class="summary-card__content">
+                    <span class="summary-card__label">{{
+                      'pages.reports.avg_pay_per_employee' | translate
+                    }}</span>
+                    <span class="summary-card__value">{{
+                      facade.formatCurrency(
+                        facade.payrollReport()?.averagePayPerEmployee
+                      )
+                    }}</span>
+                  </div>
+                </div>
+
+                <div class="summary-card">
+                  <div class="summary-card__icon">
+                    <i class="pi pi-file"></i>
+                  </div>
+                  <div class="summary-card__content">
+                    <span class="summary-card__label">{{
+                      'pages.reports.total_invoices' | translate
+                    }}</span>
+                    <span class="summary-card__value">{{
+                      facade.payrollReport()?.totalInvoices || 0
+                    }}</span>
+                  </div>
+                </div>
+
+                <div class="summary-card summary-card--warning">
+                  <div class="summary-card__icon">
+                    <i class="pi pi-clock"></i>
+                  </div>
+                  <div class="summary-card__content">
+                    <span class="summary-card__label">{{
+                      'pages.reports.pending_invoices' | translate
+                    }}</span>
+                    <span class="summary-card__value">{{
+                      facade.payrollReport()?.pendingInvoices || 0
+                    }}</span>
+                  </div>
+                </div>
+
+                <div class="summary-card summary-card--success">
+                  <div class="summary-card__icon">
+                    <i class="pi pi-check"></i>
+                  </div>
+                  <div class="summary-card__content">
+                    <span class="summary-card__label">{{
+                      'pages.reports.paid_invoices' | translate
+                    }}</span>
+                    <span class="summary-card__value">{{
+                      facade.payrollReport()?.paidInvoices || 0
+                    }}</span>
+                  </div>
+                </div>
+
+                <div class="summary-card summary-card--info">
+                  <div class="summary-card__icon">
+                    <i class="pi pi-plus"></i>
+                  </div>
+                  <div class="summary-card__content">
+                    <span class="summary-card__label">{{
+                      'pages.reports.total_bonuses' | translate
+                    }}</span>
+                    <span class="summary-card__value">{{
+                      facade.formatCurrency(
+                        facade.payrollReport()?.totalBonuses
+                      )
+                    }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Employee Summaries -->
+              @if (facade.payrollReport()?.employeeSummaries?.length) {
+              <div class="data-section">
+                <h3 class="data-section__title">
+                  {{ 'pages.reports.employee_summaries' | translate }}
+                </h3>
+                <cleansia-table
+                  [data]="facade.payrollReport()?.employeeSummaries || []"
+                  [tableDefinition]="employeeSummariesTableDef"
+                  [paginator]="false"
+                  tableClass="cleansia-reports__table"
+                />
+              </div>
+              }
+
+              <!-- Payroll by Status -->
+              @if (facade.payrollReport()?.payrollByStatus?.length) {
+              <div class="data-section">
+                <h3 class="data-section__title">
+                  {{ 'pages.reports.payroll_by_status' | translate }}
+                </h3>
+                <cleansia-table
+                  [data]="facade.payrollReport()?.payrollByStatus || []"
+                  [tableDefinition]="payrollByStatusTableDef"
+                  [paginator]="false"
+                  tableClass="cleansia-reports__table"
+                />
+              </div>
+              }
+
+              <!-- Monthly Payroll -->
+              @if (facade.payrollReport()?.monthlyPayroll?.length) {
+              <div class="data-section">
+                <h3 class="data-section__title">
+                  {{ 'pages.reports.monthly_payroll' | translate }}
+                </h3>
+                <cleansia-table
+                  [data]="facade.payrollReport()?.monthlyPayroll || []"
+                  [tableDefinition]="monthlyPayrollTableDef"
+                  [paginator]="false"
+                  tableClass="cleansia-reports__table"
+                />
+              </div>
+              }
+            </div>
+            } @else {
+            <div class="report-empty">
+              <i class="pi pi-chart-bar"></i>
+              <p>{{ 'pages.reports.no_data' | translate }}</p>
+            </div>
+            }
+          </p-tabpanel>
+        </p-tabpanels>
+      </p-tabs>
+    </cleansia-section>
+  </div>
+</div>

@@ -1,0 +1,102 @@
+<div class="cleansia-employee-management">
+  <cleansia-language-switcher />
+  <div class="cleansia-employee-management__container">
+    <div class="cleansia-employee-management__header">
+      <cleansia-title [title]="'pages.employee_management.title' | translate" />
+      <p class="cleansia-employee-management__description">
+        {{ 'pages.employee_management.description' | translate }}
+      </p>
+    </div>
+
+    <!-- Filter Panel -->
+    <div class="filter-panel">
+      <form [formGroup]="filterForm" class="filter-form">
+        <div class="filter-grid">
+          <!-- Search Filter -->
+          <div class="filter-field">
+            <cleansia-text-input
+              formControlName="searchTerm"
+              [placeholder]="'pages.employee_management.filters.search' | translate"
+              className="w-full"
+            />
+          </div>
+
+          <!-- Contract Status Filter -->
+          <div class="filter-field">
+            <cleansia-multiselect
+              inputId="contractStatus"
+              formControlName="contractStatus"
+              [options]="contractStatusMultiOptions"
+              optionLabel="label"
+              optionValue="value"
+              [placeholder]="
+                'pages.employee_management.filters.contract_status' | translate
+              "
+              [showClear]="true"
+              display="chip"
+              class="cleansia-multiselect"
+              appendTo="body"
+            />
+          </div>
+
+          <!-- Active Status Filter -->
+          <div class="filter-field">
+            <cleansia-select
+              formControlName="isActive"
+              [options]="activeStatusOptions"
+              optionLabel="label"
+              optionValue="value"
+              [placeholder]="'pages.employee_management.filters.active_status' | translate"
+              [showClear]="true"
+              class="w-full"
+              appendTo="body"
+            />
+          </div>
+        </div>
+
+        <!-- Filter Actions -->
+        <div class="filter-actions">
+          <cleansia-button
+            [label]="'pages.employee_management.filters.reset' | translate"
+            icon="pi pi-times"
+            (onClick)="resetFilters()"
+            severity="secondary"
+            [outlined]="true"
+          />
+        </div>
+      </form>
+    </div>
+
+    <!-- Employee Table -->
+    <cleansia-section>
+      @if (facade.loading() && facade.employees().length === 0) {
+      <cleansia-loader />
+      } @else {
+      <cleansia-table
+        [data]="facade.employees()"
+        [tableDefinition]="employeeTableDefinition"
+        [paginator]="true"
+        [rows]="20"
+        [emptyMessage]="'pages.employee_management.no_employees'"
+        tableClass="cleansia-employee-management__table"
+        [loading]="facade.loading()"
+        (sortChange)="onSortChange($event)"
+      >
+      </cleansia-table>
+      }
+    </cleansia-section>
+  </div>
+</div>
+
+<ng-template #contractStatusTemplate let-item>
+  <div class="status-cell">
+    <span [class]="getContractStatusClass(item)">
+      {{ item.contractStatus }}
+    </span>
+    @if (!item.isProfileComplete && item.contractStatus === ContractStatus[ContractStatus.Pending]) {
+      <i class="pi pi-exclamation-triangle incomplete-profile-icon"
+         pTooltip="Profile incomplete - cannot approve"
+         tooltipPosition="top"></i>
+    }
+  </div>
+</ng-template>

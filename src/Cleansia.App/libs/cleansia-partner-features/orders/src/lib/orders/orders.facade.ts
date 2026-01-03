@@ -2,15 +2,15 @@ import { Injectable, inject, signal } from '@angular/core';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { OrderFilter } from '@cleansia/models';
 import {
-  Client,
   OrderListItem,
   OrderStatus,
-  SnackbarService,
+  PartnerClient,
   SortDefinition,
   TakeOrderCommand,
-} from '@cleansia/services';
-import * as OrderActions from '@cleansia/stores';
-import { selectOrderItems, selectOrderLoading } from '@cleansia/stores';
+} from '@cleansia/partner-services';
+import * as OrderActions from '@cleansia/partner-stores';
+import { selectOrderItems, selectOrderLoading } from '@cleansia/partner-stores';
+import { SnackbarService } from '@cleansia/services';
 import { Actions, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -24,7 +24,7 @@ import {
 @Injectable()
 export class OrdersFacade extends UnsubscribeControlDirective {
   private readonly store = inject(Store);
-  private readonly client = inject(Client);
+  private readonly partnerClient = inject(PartnerClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly dialogService = inject(DialogService);
   private readonly actions$ = inject(Actions);
@@ -73,7 +73,7 @@ export class OrdersFacade extends UnsubscribeControlDirective {
   }
 
   private loadCurrentEmployee(): void {
-    this.client.employeeClient
+    this.partnerClient.employeeClient
       .getCurrentEmployee()
       .pipe(
         takeUntil(this.destroyed$),
@@ -93,7 +93,10 @@ export class OrdersFacade extends UnsubscribeControlDirective {
 
     const filter = new OrderFilter({
       employeeId: undefined,
-      orderStatuses: additionalFilters?.orderStatuses || [OrderStatus.Pending, OrderStatus.Confirmed],
+      orderStatuses: additionalFilters?.orderStatuses || [
+        OrderStatus.Pending,
+        OrderStatus.Confirmed,
+      ],
       hasAvailableSpots: true,
       excludeEmployeeId: employeeId || undefined,
       ...additionalFilters,
@@ -146,7 +149,7 @@ export class OrdersFacade extends UnsubscribeControlDirective {
       return;
     }
 
-    this.client.orderClient
+    this.partnerClient.orderClient
       .takeOrder(new TakeOrderCommand({ orderId, employeeId }))
       .subscribe((response) => {
         if (response) {
@@ -199,18 +202,20 @@ export class OrdersFacade extends UnsubscribeControlDirective {
       }
     );
 
-    ref.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: CompleteOrderDialogResult) => {
-      if (result) {
-        this.store.dispatch(
-          OrderActions.completeOrder({
-            orderId: order.id!,
-            employeeId,
-            actualCompletionTimeMinutes: result.actualCompletionTimeMinutes,
-            completionNotes: result.completionNotes,
-          })
-        );
-      }
-    });
+    ref.onClose
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((result: CompleteOrderDialogResult) => {
+        if (result) {
+          this.store.dispatch(
+            OrderActions.completeOrder({
+              orderId: order.id!,
+              employeeId,
+              actualCompletionTimeMinutes: result.actualCompletionTimeMinutes,
+              completionNotes: result.completionNotes,
+            })
+          );
+        }
+      });
   }
 
   canCompleteOrder(order: OrderListItem): boolean {

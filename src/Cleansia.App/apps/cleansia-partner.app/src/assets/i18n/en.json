@@ -94,7 +94,23 @@
       "consent_text": "I agree to the processing of my personal data in accordance with GDPR and Czech labor laws.",
       "submit": "Submit Onboarding",
       "first_name": "First Name",
-      "last_name": "Last Name"
+      "last_name": "Last Name",
+      "document_type": "Document Type",
+      "select_files": "Select Files",
+      "staged_documents": "Staged Documents (Ready to Upload)",
+      "save_documents": "Save All Documents",
+      "remove": "Remove",
+      "pending_documents": "Pending Documents",
+      "approved_documents": "Approved Documents",
+      "rejected_documents": "Rejected Documents",
+      "document_type_label": "Type",
+      "version": "Version",
+      "file_size": "Size",
+      "uploaded_at": "Uploaded",
+      "view": "View",
+      "download": "Download",
+      "delete": "Delete",
+      "review_notes": "Review Notes"
     },
     "dashboard": {
       "title": "Dashboard",
@@ -549,7 +565,20 @@
         "too_few_files": "Please upload at least 1 file.",
         "too_many_files": "Too many files. Maximum allowed is 10 files.",
         "files_required": "Document upload is required.",
-        "file_removed": "File removed successfully"
+        "file_removed": "File removed successfully",
+        "load_error": "Failed to load profile information. Please try again.",
+        "file_transformation_error": "Failed to process uploaded files. Please try again."
+      },
+      "documents": {
+        "load_error": "Failed to load documents. Please try again.",
+        "stage_error": "Failed to stage document {{fileName}}. Please try again.",
+        "no_documents_to_save": "No documents to save. Please select files first.",
+        "upload_success": "Documents uploaded successfully!",
+        "upload_error": "Failed to upload documents. Please try again.",
+        "delete_confirm": "Are you sure you want to delete {{fileName}}?",
+        "delete_success": "Document deleted successfully!",
+        "download_error": "Failed to download document. Please try again.",
+        "delete_error": "Failed to delete document. Please try again."
       },
       "orders": {
         "failed_to_load_details": "Failed to load order details. Please try again.",
@@ -632,6 +661,23 @@
     },
     "time": {
       "minutes": "minutes"
+    },
+    "document_types": {
+      "1": "Identity Card",
+      "2": "Passport",
+      "3": "Driver's License",
+      "4": "Work Permit",
+      "5": "Contract",
+      "6": "Certificate",
+      "7": "Bank Statement",
+      "8": "Tax Document",
+      "9": "Insurance Document",
+      "10": "Other"
+    },
+    "document_status": {
+      "1": "Pending Review",
+      "2": "Approved",
+      "3": "Rejected"
     }
   },
   "registrationLock": {

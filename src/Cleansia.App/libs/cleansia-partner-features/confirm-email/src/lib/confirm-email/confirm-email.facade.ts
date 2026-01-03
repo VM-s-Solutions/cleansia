@@ -1,15 +1,15 @@
 import { inject, Injectable } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AuthService, Client } from '@cleansia/services';
-import { loadUserCurrent } from '@cleansia/stores';
+import { PartnerAuthService, PartnerClient } from '@cleansia/partner-services';
+import { loadUserCurrent } from '@cleansia/partner-stores';
 import { Store } from '@ngrx/store';
 
 @Injectable()
 export class ConfirmEmailFacade {
-  private readonly client = inject(Client);
+  private readonly partnerClient = inject(PartnerClient);
   private readonly router = inject(Router);
-  private readonly authService = inject(AuthService);
+  private readonly authService = inject(PartnerAuthService);
   private readonly store = inject(Store);
 
   isResendDisabled = false;

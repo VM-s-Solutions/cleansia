@@ -16,7 +16,7 @@ import {
   CleansiaTitleComponent,
   TableDefinition,
 } from '@cleansia/components';
-import { SortDefinition, SortDirection } from '@cleansia/services';
+import { SortDefinition, SortDirection } from '@cleansia/partner-services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';

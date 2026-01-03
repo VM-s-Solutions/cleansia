@@ -5,7 +5,7 @@ namespace Cleansia.Core.Domain.Enums;
 [SwaggerEnumAsInt]
 public enum PayPeriodStatus
 {
-    Open = 0,
-    Closed = 1,
-    Paid = 2
+    Open = 1,
+    Closed = 2,
+    Paid = 3
 }

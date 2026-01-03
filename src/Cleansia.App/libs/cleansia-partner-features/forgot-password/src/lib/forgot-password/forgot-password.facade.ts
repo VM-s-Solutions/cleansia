@@ -4,17 +4,16 @@ import { Router } from '@angular/router';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   ChangePasswordCommand,
-  CleansiaPartnerRoute,
-  Client,
+  PartnerClient,
   RequestPasswordChangeCommand,
-  SnackbarService,
-} from '@cleansia/services';
+} from '@cleansia/partner-services';
+import { CleansiaPartnerRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { takeUntil } from 'rxjs';
 
 @Injectable()
 export class ForgotPasswordFacade extends UnsubscribeControlDirective {
-  private readonly client = inject(Client);
+  private readonly partnerClient = inject(PartnerClient);
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
   private readonly snackbarService = inject(SnackbarService);
@@ -48,7 +47,7 @@ export class ForgotPasswordFacade extends UnsubscribeControlDirective {
     const resendCodeCooldown = 30_000;
     this.isResendDisabled = true;
 
-    this.client.userClient
+    this.partnerClient.userClient
       .requestPasswordChange(
         new RequestPasswordChangeCommand({
           email,
@@ -80,7 +79,7 @@ export class ForgotPasswordFacade extends UnsubscribeControlDirective {
     const { code, password } = this.passwordFormGroup.value;
     const email = this.emailFormGroup.value.email;
 
-    this.client.userClient
+    this.partnerClient.userClient
       .changePassword(
         new ChangePasswordCommand({ email, code, newPassword: password })
       )

@@ -303,6 +303,102 @@ namespace Cleansia.Infra.Database.Migrations
                     b.ToTable("DisputeMessages", (string)null);
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.Documents.EmployeeDocument", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeactivatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("DeactivatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("DocumentType")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("EmployeeId")
+                        .IsRequired()
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<long>("FileSizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("PreviousVersionId")
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("ReviewNotes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReviewedByUserId")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DocumentType");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("PreviousVersionId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("EmployeeId", "DocumentType");
+
+                    b.ToTable("EmployeeDocuments");
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Emails.EmailTemplateTranslation", b =>
                 {
                     b.Property<string>("Id")
@@ -564,7 +660,7 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<int>("Status")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .HasDefaultValue(0);
+                        .HasDefaultValue(1);
 
                     b.Property<decimal>("SubTotal")
                         .HasPrecision(18, 2)
@@ -885,7 +981,7 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<int>("Status")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .HasDefaultValue(0);
+                        .HasDefaultValue(1);
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255)
@@ -1220,9 +1316,6 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<string>("EmployeeId")
-                        .HasColumnType("character varying(26)");
-
                     b.Property<bool>("EmployeePayCalculated")
                         .HasColumnType("boolean");
 
@@ -1287,8 +1380,6 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("CurrencyId");
 
                     b.HasIndex("CustomerAddressId");
-
-                    b.HasIndex("EmployeeId");
 
                     b.HasIndex("UserId");
 
@@ -1968,6 +2059,16 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<string>("AddressId")
                         .HasColumnType("character varying(26)");
 
+                    b.Property<string>("ApprovalNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTimeOffset?>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ApprovedByUserId")
+                        .HasColumnType("text");
+
                     b.Property<string>("Availability")
                         .IsRequired()
                         .HasColumnType("text");
@@ -2034,6 +2135,16 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<string>("PreferredCurrencyCode")
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)");
+
+                    b.Property<DateTimeOffset?>("RejectedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RejectedByUserId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255)
@@ -2195,6 +2306,24 @@ namespace Cleansia.Infra.Database.Migrations
                         .IsRequired();
 
                     b.Navigation("Dispute");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Documents.EmployeeDocument", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Users.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Cleansia.Core.Domain.Documents.EmployeeDocument", "PreviousVersion")
+                        .WithMany()
+                        .HasForeignKey("PreviousVersionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("PreviousVersion");
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Emails.EmailTemplateTranslation", b =>
@@ -2370,11 +2499,6 @@ namespace Cleansia.Infra.Database.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Cleansia.Core.Domain.Users.Employee", "Employee")
-                        .WithMany("Orders")
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("Cleansia.Core.Domain.Users.User", "User")
                         .WithMany("Orders")
                         .HasForeignKey("UserId")
@@ -2383,8 +2507,6 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("Currency");
 
                     b.Navigation("CustomerAddress");
-
-                    b.Navigation("Employee");
 
                     b.Navigation("User");
                 });
@@ -2689,8 +2811,6 @@ namespace Cleansia.Infra.Database.Migrations
             modelBuilder.Entity("Cleansia.Core.Domain.Users.Employee", b =>
                 {
                     b.Navigation("AssignedOrders");
-
-                    b.Navigation("Orders");
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Users.User", b =>

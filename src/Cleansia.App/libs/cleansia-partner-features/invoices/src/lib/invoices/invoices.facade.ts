@@ -1,11 +1,12 @@
 import { Injectable, OnDestroy, inject, signal } from '@angular/core';
 import {
-  Client,
   EmployeeInvoiceDto,
   EmployeeInvoiceDtoPagedData,
-  SnackbarService,
+  EmployeeInvoiceStatus,
+  PartnerClient,
   SortDefinition,
-} from '@cleansia/services';
+} from '@cleansia/partner-services';
+import { SnackbarService } from '@cleansia/services';
 import { Subject, catchError, of, takeUntil } from 'rxjs';
 
 export interface EmployeeInvoice {
@@ -22,7 +23,13 @@ export interface EmployeeInvoice {
   deductionAmount: number;
   totalAmount: number;
   currencyCode: string;
-  status: 'Pending' | 'Approved' | 'Paid' | 'Disputed' | 'Rejected';
+  status:
+    | 'Pending'
+    | 'Approved'
+    | 'Paid'
+    | 'Disputed'
+    | 'Rejected'
+    | 'Cancelled';
   pdfBlobName?: string;
   generatedAt: Date;
   approvedAt?: Date;
@@ -35,7 +42,7 @@ export interface EmployeeInvoice {
 @Injectable()
 export class InvoicesFacade implements OnDestroy {
   private readonly snackbarService = inject(SnackbarService);
-  private readonly client = inject(Client);
+  private readonly partnerClient = inject(PartnerClient);
   private readonly destroy$ = new Subject<void>();
 
   // Signals for reactive data
@@ -56,7 +63,7 @@ export class InvoicesFacade implements OnDestroy {
   }
 
   private loadCurrentEmployee(): void {
-    this.client.employeeClient
+    this.partnerClient.employeeClient
       .getCurrentEmployee()
       .pipe(
         takeUntil(this.destroy$),
@@ -85,12 +92,7 @@ export class InvoicesFacade implements OnDestroy {
       deductionAmount: dto.deductionAmount!,
       totalAmount: dto.totalAmount!,
       currencyCode: dto.currencyCode!,
-      status: dto.status! as
-        | 'Pending'
-        | 'Approved'
-        | 'Paid'
-        | 'Disputed'
-        | 'Rejected',
+      status: this.mapStatusToString(dto.status!),
       pdfBlobName: dto.pdfBlobName ?? undefined,
       generatedAt: new Date(dto.generatedAt!),
       approvedAt: dto.approvedAt ? new Date(dto.approvedAt) : undefined,
@@ -99,6 +101,27 @@ export class InvoicesFacade implements OnDestroy {
       adminNotes: dto.adminNotes ?? undefined,
       bankTransferNote: dto.bankTransferNote ?? undefined,
     };
+  }
+
+  private mapStatusToString(
+    status: EmployeeInvoiceStatus
+  ): 'Pending' | 'Approved' | 'Paid' | 'Disputed' | 'Rejected' | 'Cancelled' {
+    switch (status) {
+      case EmployeeInvoiceStatus.Pending:
+        return 'Pending';
+      case EmployeeInvoiceStatus.Approved:
+        return 'Approved';
+      case EmployeeInvoiceStatus.Paid:
+        return 'Paid';
+      case EmployeeInvoiceStatus.Disputed:
+        return 'Disputed';
+      case EmployeeInvoiceStatus.Rejected:
+        return 'Rejected';
+      case EmployeeInvoiceStatus.Cancelled:
+        return 'Cancelled';
+      default:
+        return 'Pending';
+    }
   }
 
   loadInvoices(offset = 0, limit = 20): void {
@@ -110,7 +133,7 @@ export class InvoicesFacade implements OnDestroy {
 
     this.loading.set(true);
 
-    this.client.employeePayrollClient
+    this.partnerClient.employeePayrollClient
       .getPagedInvoices(
         employeeId,
         undefined,
@@ -156,7 +179,7 @@ export class InvoicesFacade implements OnDestroy {
       return;
     }
 
-    this.client.employeePayrollClient
+    this.partnerClient.employeePayrollClient
       .downloadInvoice(invoice.id)
       .pipe(
         takeUntil(this.destroy$),

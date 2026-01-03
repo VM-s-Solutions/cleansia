@@ -3,8 +3,8 @@ Launch Azurite: "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7
 ```
 
 ```
-Add Migration: Add-Migration Initial -Context CleansiaDbContext -Project '03 Infrastructure\Cleansia.Infra.Database' -StartupProject '05 Web\Cleansia.Web'
-Update Database: Update-Database -Context CleansiaDbContext -Project '03 Infrastructure\Cleansia.Infra.Database' -StartupProject '05 Web\Cleansia.Web'
+Add Migration: Add-Migration Initial -Context CleansiaDbContext -Project '03 Infrastructure\Cleansia.Infra.Database' -StartupProject '05 Web\Cleansia.Web.Partner'
+Update Database: Update-Database -Context CleansiaDbContext -Project '03 Infrastructure\Cleansia.Infra.Database' -StartupProject '05 Web\Cleansia.Web.Partner'
 ```
 
 ```

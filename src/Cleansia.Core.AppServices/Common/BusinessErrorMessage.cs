@@ -58,6 +58,13 @@ public static class BusinessErrorMessage
     public const string NotAllowedToUpdateEmployee = "employee.not_allowed_to_update";
     public const string EmployeeProfileIncomplete = "employee.profile_incomplete";
     public const string EmployeeDocumentsMissing = "employee.documents_missing";
+    public const string EmployeeAlreadyApproved = "employee.already_approved";
+    public const string EmployeeAlreadyRejected = "employee.already_rejected";
+
+    // Employee Documents
+    public const string DocumentNotFound = "employee_document.not_found";
+    public const string Unauthorized = "employee_document.unauthorized";
+    public const string EmployeeDocumentNotOwned = "employee_document.not_owned";
 
     // Payroll
     public const string PayPeriodNotFound = "payroll.pay_period.not_found";

@@ -17,16 +17,23 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter } from '@angular/router';
 import { CleansiaPreset } from '@cleansia/assets';
-import { INTERCEPTORS_FN, JsonTranslationLoader } from '@cleansia/services';
-import { effects, reducers } from '@cleansia/stores';
+import {
+  APIBASEURL,
+  PARTNER_INTERCEPTORS_FN,
+} from '@cleansia/partner-services';
+import { partnerEffects, partnerReducers } from '@cleansia/partner-stores';
+import {
+  COMMON_INTERCEPTORS_FN,
+  JsonTranslationLoader,
+} from '@cleansia/services';
 import { EffectsModule } from '@ngrx/effects';
 import { provideStore, StoreModule } from '@ngrx/store';
 import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
+import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
-import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
-import { environment } from '../environments/environment.prod';
+import { environment } from '../environments/environment';
 import { appRoutes } from './app.routes';
 
 registerLocaleData(localeCs);
@@ -54,19 +61,20 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(
       withFetch(),
       withJsonpSupport(),
-      withInterceptors(INTERCEPTORS_FN)
+      withInterceptors([...COMMON_INTERCEPTORS_FN, ...PARTNER_INTERCEPTORS_FN])
     ),
     { provide: LOCALE_ID, useValue: 'cs' },
+    { provide: APIBASEURL, useValue: environment.apiBaseUrl },
     provideStore(),
     importProvidersFrom(
       BrowserAnimationsModule,
-      StoreModule.forRoot(reducers, {
+      StoreModule.forRoot(partnerReducers, {
         runtimeChecks: {
           strictStateImmutability: true,
           strictActionImmutability: true,
         },
       }),
-      EffectsModule.forRoot(effects),
+      EffectsModule.forRoot(partnerEffects),
       ...(!environment.isDevelopment
         ? []
         : [StoreDevtoolsModule.instrument({ maxAge: 25 })])

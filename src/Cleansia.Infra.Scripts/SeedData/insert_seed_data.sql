@@ -967,7 +967,7 @@ INSERT INTO public."EmployeeInvoices" (
   "SubTotal", "BonusAmount", "DeductionAmount", "TotalAmount",
   "CurrencyId", "Status", "PdfBlobUrl", "GeneratedAt",
   "ApprovedAt", "ApprovedBy", "PaidAt", "AdminNotes",
-  "VariableSymbol", "SpecificSymbol", "BankTransferNote"
+  "VariableSymbol", "SpecificSymbol", "BankTransferNote", "PdfGenerationFailed", "IsCancelled"
 )
 VALUES
   -- Invoice 1: Kateřina Novotná - January 2025 (Approved, not paid yet)
@@ -979,7 +979,7 @@ VALUES
    1, NULL, CURRENT_TIMESTAMP - INTERVAL '15 days',
    CURRENT_TIMESTAMP - INTERVAL '10 days', 'admin@cleansia.cz', NULL,
    'Excellent performance in January. Quality bonus awarded.',
-   '0321876543', NULL, NULL),
+   '0321876543', NULL, NULL, false, false),
 
   -- Invoice 2: Michal Krejčí - January 2025 (Approved, not paid yet)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '15 days', NULL, NULL, NULL, NULL,
@@ -990,7 +990,7 @@ VALUES
    1, NULL, CURRENT_TIMESTAMP - INTERVAL '15 days',
    CURRENT_TIMESTAMP - INTERVAL '10 days', 'admin@cleansia.cz', NULL,
    'Deep cleaning work completed to high standard.',
-   '0322987654', NULL, NULL),
+   '0322987654', NULL, NULL, false, false),
 
   -- Invoice 3: Zuzana Horáková - January 2025 (Paid)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '15 days', NULL, NULL, NULL, NULL,
@@ -1003,7 +1003,7 @@ VALUES
    CURRENT_TIMESTAMP - INTERVAL '10 days', 'admin@cleansia.cz',
    CURRENT_TIMESTAMP - INTERVAL '5 days',
    'Move-out cleaning excellent. Performance bonus granted. Paid via bank transfer.',
-   '0323098765', '2501', 'Payment for Invoice INV-202501-ZH001'),
+   '0323098765', '2501', 'Payment for Invoice INV-202501-ZH001', false, false),
 
   -- Invoice 4: Pavel Veselý - January 2025 (Approved, not paid yet)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '15 days', NULL, NULL, NULL, NULL,
@@ -1014,7 +1014,7 @@ VALUES
    1, NULL, CURRENT_TIMESTAMP - INTERVAL '15 days',
    CURRENT_TIMESTAMP - INTERVAL '10 days', 'admin@cleansia.cz', NULL,
    'Good work, but late arrival noted. Minor deduction applied.',
-   '0324109876', NULL, NULL),
+   '0324109876', NULL, NULL, false, false),
 
   -- Invoice 5: Lenka Marková - January 2025 (Approved, not paid yet)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '15 days', NULL, NULL, NULL, NULL,
@@ -1025,7 +1025,7 @@ VALUES
    1, NULL, CURRENT_TIMESTAMP - INTERVAL '15 days',
    CURRENT_TIMESTAMP - INTERVAL '10 days', 'admin@cleansia.cz', NULL,
    'Eco-friendly cleaning done professionally. Bonus for using green products.',
-   '0325210987', NULL, NULL),
+   '0325210987', NULL, NULL, false, false),
 
   -- Invoice 6: Kateřina Novotná - February 2025 (Pending approval)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '5 days', NULL, NULL, NULL, NULL,
@@ -1036,7 +1036,7 @@ VALUES
    0, NULL, CURRENT_TIMESTAMP - INTERVAL '5 days',
    NULL, NULL, NULL,
    'February work in progress. Awaiting approval.',
-   '0321987654', NULL, NULL),
+   '0321987654', NULL, NULL, false, false),
 
   -- Invoice 7: Kateřina Novotná - December 2024 (Paid - Historical)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '60 days', NULL, NULL, NULL, NULL,
@@ -1049,7 +1049,7 @@ VALUES
    CURRENT_TIMESTAMP - INTERVAL '58 days', 'admin@cleansia.cz',
    CURRENT_TIMESTAMP - INTERVAL '55 days',
    'Excellent month with 8 completed orders. Monthly bonus granted.',
-   '0321765432', '2412', 'Payment for Invoice INV-202412-KN001'),
+   '0321765432', '2412', 'Payment for Invoice INV-202412-KN001', false, false),
 
   -- Invoice 8: Michal Krejčí - December 2024 (Paid - Historical)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '60 days', NULL, NULL, NULL, NULL,
@@ -1062,7 +1062,7 @@ VALUES
    CURRENT_TIMESTAMP - INTERVAL '58 days', 'admin@cleansia.cz',
    CURRENT_TIMESTAMP - INTERVAL '55 days',
    'Good performance. One customer complaint resulted in minor deduction.',
-   '0322876543', '2412', 'Payment for Invoice INV-202412-MK001');
+   '0322876543', '2412', 'Payment for Invoice INV-202412-MK001', false, false);
 
 -- ============================================================
 -- INVOICE TEMPLATES
@@ -1463,6 +1463,7 @@ VALUES
     (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
      'Dejvice 89', 'Prague 6', '16000',
      (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1));
+
 
 -- Update Employee records to link them to their residential addresses
 UPDATE public."Employees" 

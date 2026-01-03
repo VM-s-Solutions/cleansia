@@ -11,7 +11,7 @@ import {
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
-import { selectLoading } from '@cleansia/stores';
+import { selectLoading } from '@cleansia/partner-stores';
 import { Store } from '@ngrx/store';
 import { TranslateModule } from '@ngx-translate/core';
 import { ConfirmEmailFacade } from './confirm-email.facade';

@@ -9,7 +9,10 @@ import {
   CleansiaTableComponent,
   TableDefinition,
 } from '@cleansia/components';
-import { OrderEmployeePayDto } from '@cleansia/services';
+import {
+  EmployeeInvoiceStatus,
+  OrderEmployeePayDto,
+} from '@cleansia/partner-services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { InvoiceDetailFacade } from './invoice-detail.facade';
 
@@ -70,9 +73,28 @@ export class InvoiceDetailComponent implements OnInit {
     this.facade.printInvoice();
   }
 
-  getStatusClass(status: string): string {
-    const statusLower = status.toLowerCase();
-    return `status-badge status-${statusLower}`;
+  getStatusClass(status: EmployeeInvoiceStatus): string {
+    const statusString = this.getStatusString(status);
+    return `status-badge status-${statusString}`;
+  }
+
+  getStatusString(status: EmployeeInvoiceStatus): string {
+    switch (status) {
+      case EmployeeInvoiceStatus.Pending:
+        return 'pending';
+      case EmployeeInvoiceStatus.Approved:
+        return 'approved';
+      case EmployeeInvoiceStatus.Paid:
+        return 'paid';
+      case EmployeeInvoiceStatus.Disputed:
+        return 'disputed';
+      case EmployeeInvoiceStatus.Rejected:
+        return 'rejected';
+      case EmployeeInvoiceStatus.Cancelled:
+        return 'cancelled';
+      default:
+        return 'pending';
+    }
   }
 
   private getOrderPaysTableDefinition(): TableDefinition<OrderEmployeePayDto> {

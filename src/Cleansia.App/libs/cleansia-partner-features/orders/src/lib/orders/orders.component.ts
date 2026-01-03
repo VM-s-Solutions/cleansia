@@ -28,7 +28,7 @@ import {
   PaymentStatus,
   SortDefinition,
   SortDirection,
-} from '@cleansia/services';
+} from '@cleansia/partner-services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';

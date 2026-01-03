@@ -9,6 +9,7 @@
   [rowsPerPageOptions]="rowsPerPageOptions()"
   [class]="tableClasses()"
   [globalFilterFields]="globalFilterFields()"
+  [customSort]="true"
   (onSort)="onSort($event)"
 >
   <!-- Header Template -->
@@ -18,12 +19,12 @@
       @if (tableDefinition()) { @for (column of tableDefinition()!.columns;
       track column.id) {
       <th
-        [pSortableColumn]="column.sortable ? column.id : undefined"
+        [pSortableColumn]="column.sortable ? (column.sortField || column.id) : undefined"
         [class]="column.columnClass"
       >
         {{ column.headerName }}
         @if (column.sortable) {
-        <p-sortIcon [field]="column.id"></p-sortIcon>
+        <p-sortIcon [field]="column.sortField || column.id"></p-sortIcon>
         }
       </th>
       } } @else { @for (column of columns(); track column.field) {

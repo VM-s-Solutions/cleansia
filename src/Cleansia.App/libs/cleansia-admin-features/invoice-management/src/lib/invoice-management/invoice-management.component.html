@@ -1,0 +1,72 @@
+<div class="cleansia-invoice-management">
+  <cleansia-language-switcher />
+  <div class="cleansia-invoice-management__container">
+    <div class="cleansia-invoice-management__header">
+      <cleansia-title [title]="'pages.invoice_management.title' | translate" />
+      <p class="cleansia-invoice-management__description">
+        {{ 'pages.invoice_management.description' | translate }}
+      </p>
+    </div>
+
+    <!-- Filter Panel -->
+    <div class="filter-panel">
+      <form [formGroup]="filterForm" class="filter-form">
+        <div class="filter-grid">
+          <!-- Status Filter -->
+          <div class="filter-field">
+            <cleansia-multiselect
+              inputId="status"
+              formControlName="status"
+              [options]="invoiceStatusMultiOptions"
+              optionLabel="label"
+              optionValue="value"
+              [placeholder]="'pages.invoice_management.filters.status' | translate"
+              [showClear]="true"
+              display="chip"
+              class="cleansia-multiselect"
+              appendTo="body"
+            />
+          </div>
+        </div>
+
+        <!-- Filter Actions -->
+        <div class="filter-actions">
+          <cleansia-button
+            [label]="'pages.invoice_management.filters.reset' | translate"
+            icon="pi pi-times"
+            (onClick)="resetFilters()"
+            severity="secondary"
+            [outlined]="true"
+          />
+        </div>
+      </form>
+    </div>
+
+    <!-- Invoice Table -->
+    <cleansia-section>
+      @if (facade.loading() && facade.invoices().length === 0) {
+        <cleansia-loader />
+      } @else {
+        <cleansia-table
+          [data]="facade.invoices()"
+          [tableDefinition]="invoiceTableDefinition"
+          [paginator]="true"
+          [rows]="20"
+          [emptyMessage]="'pages.invoice_management.no_invoices'"
+          tableClass="cleansia-invoice-management__table"
+          [loading]="facade.loading()"
+          (sortChange)="onSortChange($event)"
+        >
+        </cleansia-table>
+      }
+    </cleansia-section>
+  </div>
+</div>
+
+<ng-template #statusTemplate let-item>
+  <div class="status-cell">
+    <span [class]="getInvoiceStatusClass(item)">
+      {{ facade.getStatusLabel(item.status) }}
+    </span>
+  </div>
+</ng-template>

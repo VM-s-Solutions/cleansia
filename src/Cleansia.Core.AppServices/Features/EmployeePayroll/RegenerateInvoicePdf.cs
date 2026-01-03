@@ -16,7 +16,7 @@ namespace Cleansia.Core.AppServices.Features.EmployeePayroll;
 
 public class RegenerateInvoicePdf
 {
-    public record Command(string InvoiceId, string LanguageId) : ICommand<Response>;
+    public record Command(string InvoiceId, string LanguageCode) : ICommand<Response>;
 
     public record Response(string PdfBlobUrl);
 
@@ -47,11 +47,11 @@ public class RegenerateInvoicePdf
                 .MustAsync(HasAvailableTemplateAsync)
                 .WithMessage(BusinessErrorMessage.TemplateNotFound);
 
-            RuleFor(x => x.LanguageId)
+            RuleFor(x => x.LanguageCode)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(languageRepository.ExistsAsync)
+                .MustAsync(languageRepository.ExistsWithCodeAsync)
                 .WithMessage(BusinessErrorMessage.InvoiceNotFound);
         }
 
@@ -73,8 +73,8 @@ public class RegenerateInvoicePdf
                 return false;
             }
 
-            var countryId = employee.Address?.CountryId ?? "CZE";
-            var language = await _languageRepository.GetByIdAsync(command.LanguageId, cancellationToken);
+            var countryId = employee.Address?.CountryId ?? Constants.Language.Czech;
+            var language = await _languageRepository.GetByCodeAsync(command.LanguageCode, cancellationToken);
 
             if (language is null)
             {
@@ -122,8 +122,8 @@ public class RegenerateInvoicePdf
                 .Include(op => op.Order)
                 .ToListAsync(cancellationToken);
 
-            var countryId = employee.Address?.CountryId ?? "CZE";
-            var language = await languageRepository.GetByIdAsync(command.LanguageId, cancellationToken);
+            var countryId = employee.Address?.CountryId ?? Constants.Language.Czech;
+            var language = await languageRepository.GetByCodeAsync(command.LanguageCode, cancellationToken);
 
             var countryContext = await GetCountryInvoiceContextAsync(countryId, cancellationToken);
 

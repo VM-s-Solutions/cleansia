@@ -11,12 +11,6 @@ public class EmployeeEntityConfiguration : AuditableEntityConfiguration<Employee
     {
         base.Configure(builder);
 
-        builder
-            .HasMany(u => u.Orders)
-            .WithOne(o => o.Employee)
-            .HasForeignKey(o => o.EmployeeId)
-            .OnDelete(DeleteBehavior.Restrict);
-
         builder.Property(e => e.ICO)
             .HasMaxLength(50);
 

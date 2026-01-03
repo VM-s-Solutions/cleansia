@@ -55,7 +55,23 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
                     .ThenInclude(p => p.IncludedServices)
                         .ThenInclude(s => s.Service)
             .Include(o => o.AssignedEmployees)
+                .ThenInclude(ae => ae.Employee)
+                    .ThenInclude(e => e.User)
+            .Include(o => o.Receipt)
             .AsSplitQuery()
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    }
+
+    public IQueryable<Order> GetOrdersByDateRange(DateTime startDate, DateTime endDate)
+    {
+        return GetDbSet()
+            .Include(o => o.OrderStatusHistory)
+            .Include(o => o.SelectedServices)
+                .ThenInclude(s => s.Service)
+            .Include(o => o.SelectedPackages)
+                .ThenInclude(op => op.Package)
+            .Where(o => o.CleaningDateTime >= startDate &&
+                       o.CleaningDateTime <= endDate)
+            .AsSplitQuery();
     }
 }

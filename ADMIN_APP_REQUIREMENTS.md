@@ -1156,9 +1156,9 @@ libs/cleansia-admin-features/
 
 ---
 
-**Document Version**: 1.1
-**Last Updated**: 2025-12-20
-**Status**: Requirements finalized, ready for development
+**Document Version**: 1.2
+**Last Updated**: 2026-01-02
+**Status**: Phase 1 IN PROGRESS - Core features partially implemented
 
 ---
 
@@ -1333,3 +1333,277 @@ These features exist in the backend but need admin interface:
 **Updated Phase 2** (1-2 weeks):
 - All original Phase 2 features
 - **+ System Health Dashboard** (1 day)
+
+---
+
+## Implementation Progress (Updated 2026-01-03)
+
+### ✅ COMPLETED
+
+#### Infrastructure & Setup
+- [x] **Admin App Angular Application** - `apps/cleansia-admin.app/`
+- [x] **Admin API Backend** - `Cleansia.Web.Admin` project
+- [x] **Admin Client Service** - NSwag-generated `AdminClient` with all endpoints
+- [x] **Admin Authentication** - Separate JWT auth for admin users
+- [x] **Admin Guard** - Route protection for admin pages
+- [x] **Routing Configuration** - Lazy-loaded routes for all features
+- [x] **i18n Support** - Czech and English translations
+- [x] **Admin NgRx Stores** - `libs/data-access/admin-stores/`
+
+#### Authentication & Login
+- [x] **Admin Login Page** (`/login`)
+  - Email/password authentication
+  - JWT token storage
+  - Redirect to dashboard after login
+- [x] **Unauthorized Page** - Access denied handling
+
+#### 1. Employee Management (Complete)
+- [x] **Employee List Page** (`/employee-management`)
+  - Paginated table with all employees
+  - Filters: Status, Contract Status, Search
+  - Actions: View Details, Approve, Reject
+  - Status badges with color coding
+  - Sorting support
+- [x] **Employee Detail Page** (`/employee-management/:employeeId`)
+  - Personal information section
+  - Employment details section
+  - Documents section with approval/rejection
+  - Contract status display
+  - Day of week availability display
+  - Back navigation
+- [x] **Employee Approval/Rejection**
+  - Approve employee with single click
+  - Reject employee with reason dialog
+  - Backend: `ApproveEmployee`, `RejectEmployee` commands
+- [x] **Document Management**
+  - View employee documents
+  - Approve/Reject documents with dialog
+- [x] **Reject Dialog Component** - Reusable dialog for rejection reasons
+
+#### 2. Pay Period Management (Complete)
+- [x] **Pay Period List Page** (`/pay-periods`)
+  - Paginated table with all pay periods
+  - Filters: Status, Year
+  - Actions: View Details, Close Period
+  - Status badges (Open, Closed, Paid)
+  - Sorting support
+- [x] **Pay Period Detail Page** (`/pay-periods/:id`)
+  - Period summary information
+  - Status display with badges
+  - Date range display
+  - Total employees, orders, amount info
+  - Close period action
+- [x] **Close Period Workflow**
+  - Confirmation dialog
+  - Backend integration
+
+#### 3. Order Management (Complete)
+- [x] **Order List Page** (`/order-management`)
+  - Paginated table with all orders
+  - Multi-select filters: Order Status, Payment Status
+  - Search filter (name, email, phone)
+  - Date range filter (cleaning date)
+  - Custom status badge templates
+  - Sorting support
+- [x] **Order Detail Page** (`/order-management/:orderId`)
+  - Customer information section
+  - Service details section
+  - Payment information section
+  - Status history timeline with icons
+  - Back navigation
+
+#### 4. Invoice Management (Complete)
+- [x] **Invoice List Page** (`/invoice-management`)
+  - Paginated table with all invoices
+  - Filters: Status, Employee, Pay Period, Date Range
+  - Status badges (Pending, Approved, Paid, Disputed, Rejected, Cancelled)
+  - Actions: View Details
+- [x] **Invoice Detail Page** (`/invoice-management/:invoiceId`)
+  - Full invoice information display
+  - Status banner with colored badges
+  - Invoice summary section
+  - Financial summary (subtotal, bonus, deductions, total)
+  - Approval & payment info section
+  - Order pays breakdown table
+  - Admin notes display
+- [x] **Invoice Actions**
+  - ✅ Approve Invoice - Single click approval
+  - ✅ Mark as Paid - Mark approved invoices as paid
+  - ✅ Cancel Invoice - Cancel with reason dialog
+  - ✅ Download PDF - Download invoice document
+  - ✅ Regenerate PDF - Regenerate with current language
+- [x] **Invoice Status Workflow**
+  - Pending → Approve → Approved
+  - Approved → Mark Paid → Paid
+  - Pending/Approved → Cancel → Cancelled
+- [x] **Backend Integration**
+  - `ApproveInvoiceCommand`
+  - `MarkInvoicePaidCommand`
+  - `CancelInvoiceCommand` (with reason & cancelledBy)
+  - `RegenerateInvoicePdfCommand` (with languageCode)
+  - Invoice details endpoint
+
+#### Shared Components Used
+- [x] `CleansiaTableComponent` - Data tables with pagination & sorting
+- [x] `CleansiaButtonComponent` - Consistent button styling
+- [x] `CleansiaSectionComponent` - Content sections
+- [x] `CleansiaTitleComponent` - Page titles
+- [x] `CleansiaLoaderComponent` - Loading states
+- [x] `CleansiaLanguageSwitcherComponent` - Language toggle
+- [x] `CleansiaSelectComponent` - Dropdown selects
+- [x] `CleansiaMultiselectComponent` - Multi-select filters
+- [x] `CleansiaTextInputComponent` - Text input fields
+- [x] `RejectDialogComponent` - Rejection reason input
+
+### 🔜 NEXT PRIORITY (Immediate)
+
+#### Order Photo Gallery View
+- [x] Photo gallery in Order Detail page
+- [x] Before/After photo display
+- [x] Photo download functionality
+- [x] Photo zoom/lightbox view
+
+#### Reports
+- [ ] Revenue Reports (`/reports/revenue`)
+  - Total revenue by period
+  - Revenue by service type
+  - Revenue trends chart
+- [ ] Payroll Reports (`/reports/payroll`)
+  - Total payroll by period
+  - Payroll by employee
+  - Payroll trends chart
+
+#### Service & Package Catalog
+- [ ] Service Catalog (`/services`)
+  - List all cleaning services
+  - Create/Edit/Delete services
+  - Set pricing (base, per-room, per-bathroom)
+  - Activate/Deactivate services
+- [ ] Package Catalog (`/packages`)
+  - List all service packages
+  - Create/Edit/Delete packages
+  - Set included services
+  - Activate/Deactivate packages
+
+#### Admin User Management
+- [ ] Admin User List (`/settings/admin-users`)
+  - List all admin users
+  - Role assignment (Super Admin, Admin, Manager, Support)
+  - Active/Inactive status
+- [ ] Create/Edit Admin User
+  - Email, name, role
+  - Password reset
+  - Deactivate admin
+
+#### System Settings
+- [ ] Countries Management (`/settings/countries`)
+  - List supported countries
+  - Add/Edit/Remove countries
+- [ ] Currencies Management (`/settings/currencies`)
+  - List supported currencies
+  - Exchange rates configuration
+  - Set default currency
+- [ ] Languages Management (`/settings/languages`)
+  - List supported languages
+  - Set default language
+  - Enable/Disable languages
+
+### ⏸️ DEFERRED (Implement Later)
+
+#### Pay Configuration Management
+- [ ] Global Pay Configuration (`/settings/pay-config`)
+- [ ] Employee-Specific Overrides
+- [ ] Pay Rate History
+*Reason: Can be implemented later*
+
+#### Dispute Management
+- [ ] Dispute List (`/disputes`)
+- [ ] Dispute Details
+- [ ] Status Update Workflow
+- [ ] Resolution Tracking
+*Reason: Can be implemented later*
+
+#### Employee Bulk Actions
+- [ ] Activate selected employees
+- [ ] Deactivate selected employees
+- [ ] Export selected to CSV/Excel
+- [ ] Send email to selected
+*Reason: Nice to have, can be implemented later*
+
+### 📝 NOT LISTED (Missing from Original Requirements)
+
+#### Company Information Management
+- [ ] Company profile settings (`/settings/company`)
+  - Company name, address, ICO, DIC
+  - Bank account details (IBAN)
+  - Contact information
+  - Logo upload
+
+#### Template Management
+- [ ] Invoice Templates (`/settings/templates/invoices`)
+  - Upload/Edit invoice HTML templates
+  - Preview with sample data
+  - Multi-language support
+- [ ] Order Receipt Templates (`/settings/templates/receipts`)
+  - Upload/Edit receipt templates
+  - Preview functionality
+- [ ] Email Templates (`/settings/templates/emails`)
+  - Edit email templates (confirmation, password reset, etc.)
+  - Available variables documentation
+  - Send test emails
+
+#### Translation Management
+- [ ] Email Translations (`/settings/translations/emails`)
+  - Manage email text in CS/EN
+- [ ] Application Translations (`/settings/translations/app`)
+  - Manage UI text translations
+  - Add new translation keys
+
+#### Internationalization (i18n) Management
+- [ ] Language Configuration (`/settings/languages`)
+  - Add/Remove supported languages
+  - Set default language
+  - Enable/Disable languages
+
+### Phase 2 Features (Not Started)
+- [ ] Tax Reports
+- [ ] Profit/Loss Report
+- [ ] System Health Dashboard
+- [ ] Background Jobs Management (Hangfire UI)
+- [ ] Audit Log
+- [ ] Advanced Analytics
+
+---
+
+## Summary
+
+| Feature Area | Status | Completion |
+|--------------|--------|------------|
+| Infrastructure & Setup | ✅ Complete | 100% |
+| Employee Management | ✅ Complete | 100% |
+| Pay Period Management | ✅ Complete | 100% |
+| Order Management | ✅ Complete | 100% |
+| Invoice Management | ✅ Complete | 100% |
+| Order Photo Gallery | ✅ Complete | 100% |
+| Reports (Revenue, Payroll) | 🔜 Next Priority | 0% |
+| Service/Package Catalog | 🔜 Next Priority | 0% |
+| Admin User Management | 🔜 Next Priority | 0% |
+| System Settings | 🔜 Next Priority | 0% |
+| Pay Configuration | ⏸️ Deferred | 0% |
+| Dispute Management | ⏸️ Deferred | 0% |
+| Employee Bulk Actions | ⏸️ Deferred | 0% |
+| Company Information | 📝 Not Listed | 0% |
+| Template Management | 📝 Not Listed | 0% |
+| Translation Management | 📝 Not Listed | 0% |
+| **Phase 1 Overall** | **In Progress** | **~90%** |
+
+### Next Priority Tasks (Updated 2026-01-03)
+1. ✅ ~~Employee Management~~ - Complete
+2. ✅ ~~Pay Period Management~~ - Complete
+3. ✅ ~~Order Management~~ - Complete
+4. ✅ ~~Invoice Management~~ - Complete
+5. ✅ ~~Order Photo Gallery View~~ - Complete
+6. 🔜 **Reports (Revenue, Payroll)** - Next
+7. 🔜 **Service/Package Catalog** - Next
+8. 🔜 **Admin User Management** - Next
+9. 🔜 **System Settings (Countries, Currencies, Languages)** - Next

@@ -1,0 +1,13 @@
+{
+  "name": "admin-stores",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/data-access/admin-stores/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": ["scope:admin", "type:data-access"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

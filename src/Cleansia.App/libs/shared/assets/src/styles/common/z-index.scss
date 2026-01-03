@@ -1,0 +1,43 @@
+// Z-Index Management
+// Centralized z-index values for proper stacking order
+
+// Z-Index Scale
+// 1-9: In-page elements (tables, cards, etc.)
+// 10-99: Overlays within page context (dropdowns, tooltips)
+// 100-199: Fixed page elements (sticky headers)
+// 200-499: Modal overlays (dialogs, sidebars)
+// 500-899: PrimeNG overlays (dropdowns, calendars, multiselects)
+// 900-999: Toasts and notifications
+// 1000+: Loader (fullscreen blocking overlay)
+
+// PrimeNG Overlay z-index overrides
+// These overlays are appended to body and need to appear above table headers
+// but below the fullscreen loader
+.p-select-overlay,
+.p-multiselect-overlay,
+.p-dropdown-panel,
+.p-calendar-panel,
+.p-datepicker-panel,
+.p-autocomplete-panel,
+.p-overlaypanel {
+  z-index: 500 !important;
+}
+
+// PrimeNG Dialog z-index
+.p-dialog-mask {
+  z-index: 600 !important;
+}
+
+.p-dialog {
+  z-index: 601 !important;
+}
+
+// Toast notifications
+.p-toast {
+  z-index: 900 !important;
+}
+
+// Tooltip
+.p-tooltip {
+  z-index: 550 !important;
+}

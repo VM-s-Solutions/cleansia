@@ -11,6 +11,16 @@ export enum CleansiaPartnerRoute {
   CONFIRM_EMAIL = 'confirm-email',
 }
 
+export enum CleansiaAdminRoute {
+  HOME = '',
+  LOGIN = 'login',
+  UNAUTHORIZED = 'unauthorized',
+  EMPLOYEE_MANAGEMENT = 'employee-management',
+  PAY_PERIODS = 'pay-periods',
+  ORDER_MANAGEMENT = 'order-management',
+  INVOICE_MANAGEMENT = 'invoice-management',
+}
+
 export enum CommonRoute {
   HOME = '',
   NOT_FOUND = 'not-found',

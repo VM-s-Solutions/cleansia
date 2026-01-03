@@ -1,0 +1,393 @@
+<div class="cleansia-order-detail">
+  <cleansia-language-switcher />
+  <div class="cleansia-order-detail__container">
+    <!-- Header with Back Button -->
+    <div class="cleansia-order-detail__header">
+      <cleansia-button
+        [label]="'pages.order_detail.back_to_list' | translate"
+        icon="pi pi-arrow-left"
+        (onClick)="goBack()"
+        severity="secondary"
+        [outlined]="true"
+        class="cleansia-order-detail__back-button"
+      />
+      <cleansia-title [title]="'pages.order_detail.title' | translate" />
+    </div>
+
+    @if (facade.loading()) {
+    <cleansia-loader />
+    } @else if (facade.order()) {
+    <div class="cleansia-order-detail__content">
+      <!-- Order Status Banner -->
+      <div class="cleansia-order-detail__status-banner">
+        <div class="order-header-info">
+          <div class="order-number">
+            <span class="label"
+              >{{ 'pages.order_detail.order_number' | translate }}:</span
+            >
+            <span class="value">{{ facade.order()?.displayOrderNumber }}</span>
+          </div>
+          <div class="order-statuses">
+            <span
+              [class]="facade.getOrderStatusClass(facade.order()?.orderStatus)"
+            >
+              {{ facade.order()?.orderStatus?.name }}
+            </span>
+            <span
+              [class]="
+                facade.getPaymentStatusClass(facade.order()?.paymentStatus)
+              "
+            >
+              {{ facade.order()?.paymentStatus?.name }}
+            </span>
+          </div>
+        </div>
+        <div class="order-meta">
+          <span class="meta-item">
+            <i class="pi pi-calendar"></i>
+            {{ facade.formatDateTime(facade.order()?.createdOn) }}
+          </span>
+          @if (facade.order()?.confirmationCode) {
+          <span class="meta-item">
+            <i class="pi pi-key"></i>
+            {{ facade.order()?.confirmationCode }}
+          </span>
+          }
+        </div>
+      </div>
+
+      <!-- Customer Information -->
+      <cleansia-section
+        [title]="'pages.order_detail.customer_info' | translate"
+      >
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.order_detail.customer_name' | translate }}:</span
+            >
+            <span class="value">{{ facade.order()?.customerName || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.order_detail.customer_email' | translate }}:</span
+            >
+            <span class="value">{{
+              facade.order()?.customerEmail || '-'
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.order_detail.customer_phone' | translate }}:</span
+            >
+            <span class="value">{{
+              facade.order()?.customerPhone || '-'
+            }}</span>
+          </div>
+        </div>
+      </cleansia-section>
+
+      <!-- Address Information -->
+      <cleansia-section [title]="'pages.order_detail.address_info' | translate">
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.order_detail.street' | translate }}:</span
+            >
+            <span class="value">{{
+              facade.order()?.address?.street || '-'
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.order_detail.city' | translate }}:</span
+            >
+            <span class="value">{{
+              facade.order()?.address?.city || '-'
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.order_detail.zip_code' | translate }}:</span
+            >
+            <span class="value">{{
+              facade.order()?.address?.zipCode || '-'
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.order_detail.country' | translate }}:</span
+            >
+            <span class="value">{{
+              facade.order()?.address?.country || '-'
+            }}</span>
+          </div>
+        </div>
+      </cleansia-section>
+
+      <!-- Cleaning Details -->
+      <cleansia-section
+        [title]="'pages.order_detail.cleaning_details' | translate"
+      >
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.order_detail.cleaning_date' | translate }}:</span
+            >
+            <span class="value">{{
+              facade.formatDate(facade.order()?.cleaningDateTime)
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.order_detail.cleaning_time' | translate }}:</span
+            >
+            <span class="value">{{
+              facade.formatTime(facade.order()?.cleaningDateTime)
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.order_detail.rooms' | translate }}:</span
+            >
+            <span class="value">{{ facade.order()?.rooms || 0 }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.order_detail.bathrooms' | translate }}:</span
+            >
+            <span class="value">{{ facade.order()?.bathrooms || 0 }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.order_detail.estimated_time' | translate }}:</span
+            >
+            <span class="value">{{
+              facade.formatDuration(facade.order()?.estimatedTime)
+            }}</span>
+          </div>
+          @if (facade.order()?.actualCompletionTime) {
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.order_detail.actual_time' | translate }}:</span
+            >
+            <span class="value">{{
+              facade.formatDuration(facade.order()?.actualCompletionTime)
+            }}</span>
+          </div>
+          }
+        </div>
+      </cleansia-section>
+
+      <!-- Selected Packages -->
+      @if (facade.order()?.selectedPackages &&
+      facade.order()!.selectedPackages!.length > 0) {
+      <cleansia-section
+        [title]="'pages.order_detail.selected_packages' | translate"
+      >
+        <div class="packages-list">
+          @for (pkg of facade.order()!.selectedPackages; track pkg.id) {
+          <div class="package-item">
+            <div class="package-info">
+              <span class="package-name">{{ pkg.name }}</span>
+              @if (pkg.description) {
+              <span class="package-description">{{ pkg.description }}</span>
+              }
+            </div>
+            <span class="package-price">{{
+              facade.formatPrice(pkg.price)
+            }}</span>
+          </div>
+          }
+        </div>
+      </cleansia-section>
+      }
+
+      <!-- Selected Services -->
+      @if (facade.order()?.selectedServices &&
+      facade.order()!.selectedServices!.length > 0) {
+      <cleansia-section
+        [title]="'pages.order_detail.selected_services' | translate"
+      >
+        <div class="services-list">
+          @for (service of facade.order()!.selectedServices; track service.id) {
+          <div class="service-item">
+            <div class="service-info">
+              <span class="service-name">{{ service.name }}</span>
+              @if (service.description) {
+              <span class="service-description">{{ service.description }}</span>
+              }
+            </div>
+            <span class="service-time">{{
+              facade.formatDuration(service.estimatedTime)
+            }}</span>
+          </div>
+          }
+        </div>
+      </cleansia-section>
+      }
+
+      <!-- Extras -->
+      @if (facade.getActiveExtras().length > 0) {
+      <cleansia-section [title]="'pages.order_detail.extras' | translate">
+        <div class="extras-list">
+          @for (extra of facade.getActiveExtras(); track extra) {
+          <span class="extra-badge">
+            <i class="pi pi-check"></i>
+            {{ extra }}
+          </span>
+          }
+        </div>
+      </cleansia-section>
+      }
+
+      <!-- Payment Information -->
+      <cleansia-section [title]="'pages.order_detail.payment_info' | translate">
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.order_detail.payment_type' | translate }}:</span
+            >
+            <span class="value">{{
+              facade.order()?.paymentType?.name || '-'
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.order_detail.payment_status' | translate }}:</span
+            >
+            <span
+              [class]="
+                facade.getPaymentStatusClass(facade.order()?.paymentStatus)
+              "
+            >
+              {{ facade.order()?.paymentStatus?.name }}
+            </span>
+          </div>
+          <div class="info-item highlight">
+            <span class="label"
+              >{{ 'pages.order_detail.total_price' | translate }}:</span
+            >
+            <span class="value total-price">{{
+              facade.formatPrice(facade.order()?.totalPrice)
+            }}</span>
+          </div>
+          @if (facade.order()?.receiptNumber) {
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.order_detail.receipt_number' | translate }}:</span
+            >
+            <span class="value">{{ facade.order()?.receiptNumber }}</span>
+          </div>
+          }
+        </div>
+      </cleansia-section>
+
+      <!-- Assigned Employees -->
+      @if (facade.order()?.assignedEmployees?.length) {
+      <cleansia-section
+        [title]="'pages.order_detail.assigned_employees' | translate"
+      >
+        @for (employee of facade.order()?.assignedEmployees; track employee.id) {
+        <div class="info-grid employee-card">
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.order_detail.employee_name' | translate }}:</span
+            >
+            <span class="value">{{ employee.fullName || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.order_detail.employee_phone' | translate }}:</span
+            >
+            <span class="value">{{ employee.phoneNumber || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.order_detail.employee_email' | translate }}:</span
+            >
+            <span class="value">{{ employee.email || '-' }}</span>
+          </div>
+        </div>
+        }
+      </cleansia-section>
+      }
+
+      <!-- Instructions -->
+      @if (facade.order()?.specialInstructions ||
+      facade.order()?.accessInstructions || facade.order()?.notes) {
+      <cleansia-section [title]="'pages.order_detail.instructions' | translate">
+        <div class="instructions-content">
+          @if (facade.order()?.specialInstructions) {
+          <div class="instruction-item">
+            <span class="label"
+              >{{
+                'pages.order_detail.special_instructions' | translate
+              }}:</span
+            >
+            <p class="value">{{ facade.order()?.specialInstructions }}</p>
+          </div>
+          } @if (facade.order()?.accessInstructions) {
+          <div class="instruction-item">
+            <span class="label"
+              >{{ 'pages.order_detail.access_instructions' | translate }}:</span
+            >
+            <p class="value">{{ facade.order()?.accessInstructions }}</p>
+          </div>
+          } @if (facade.order()?.notes) {
+          <div class="instruction-item">
+            <span class="label"
+              >{{ 'pages.order_detail.notes' | translate }}:</span
+            >
+            <p class="value">{{ facade.order()?.notes }}</p>
+          </div>
+          }
+        </div>
+      </cleansia-section>
+      }
+
+      <!-- Completion Notes -->
+      @if (facade.order()?.completionNotes) {
+      <cleansia-section
+        [title]="'pages.order_detail.completion_notes' | translate"
+      >
+        <p class="completion-notes">{{ facade.order()?.completionNotes }}</p>
+      </cleansia-section>
+      }
+
+      <!-- Status History -->
+      @if (facade.order()?.statusHistory &&
+      facade.order()!.statusHistory!.length > 0) {
+      <cleansia-section
+        [title]="'pages.order_detail.status_history' | translate"
+      >
+        <div class="status-history-timeline">
+          @for (status of facade.order()!.statusHistory; track status.createdOn)
+          {
+          <div [class]="getStatusHistoryClass(status)">
+            <div class="status-icon">
+              <i [class]="getStatusHistoryIcon(status)"></i>
+            </div>
+            <div class="status-content">
+              <span class="status-name">{{ status.status.name }}</span>
+              <span class="status-date">{{
+                facade.formatDateTime(status.createdOn)
+              }}</span>
+            </div>
+          </div>
+          }
+        </div>
+      </cleansia-section>
+      }
+
+      <!-- Order Photos -->
+      @if (facade.order()?.id) {
+      <admin-order-photos [orderId]="facade.order()!.id!" />
+      }
+    </div>
+    } @else {
+    <div class="not-found">
+      <p>{{ 'pages.order_detail.not_found' | translate }}</p>
+    </div>
+    }
+  </div>
+</div>

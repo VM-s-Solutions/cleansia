@@ -35,6 +35,17 @@ public class Policy
     public const string CanGetCurrentEmployee = nameof(CanGetCurrentEmployee); // Authenticated (All roles)
     public const string CanCheckCurrentEmployee = nameof(CanCheckCurrentEmployee); // Authenticated (All roles)
     public const string CanUpdateCurrentEmployee = nameof(CanUpdateCurrentEmployee); // Authenticated (All roles)
+    public const string CanViewPagedEmployee = nameof(CanViewPagedEmployee); // Admin
+    public const string CanApproveEmployee = nameof(CanApproveEmployee); // Admin
+    public const string CanRejectEmployee = nameof(CanRejectEmployee); // Admin
+
+    // Employee Documents
+    public const string CanViewEmployeeDocuments = nameof(CanViewEmployeeDocuments); // Admin + Employee (own documents)
+    public const string CanUploadEmployeeDocument = nameof(CanUploadEmployeeDocument); // Admin + Employee (own documents)
+    public const string CanDownloadEmployeeDocument = nameof(CanDownloadEmployeeDocument); // Admin + Employee (own documents)
+    public const string CanApproveEmployeeDocument = nameof(CanApproveEmployeeDocument); // Admin
+    public const string CanRejectEmployeeDocument = nameof(CanRejectEmployeeDocument); // Admin
+    public const string CanDeleteEmployeeDocument = nameof(CanDeleteEmployeeDocument); // Admin + Employee (own documents)
 
     // Employee Payroll
     public const string CanViewPagedInvoices = nameof(CanViewPagedInvoices); // Admin
@@ -68,4 +79,20 @@ public class Policy
     public const string CanRespondToDispute = nameof(CanRespondToDispute); // Admin (Only admins can respond/add messages)
     public const string CanResolveDispute = nameof(CanResolveDispute); // Admin (Only admins can resolve disputes)
     public const string CanUpdateDisputeStatus = nameof(CanUpdateDisputeStatus); // Admin (Only admins can update status)
+
+    // Reports
+    public const string CanViewRevenueReport = nameof(CanViewRevenueReport); // Admin
+    public const string CanViewPayrollReport = nameof(CanViewPayrollReport); // Admin
+
+    // Services
+    public const string CanViewServices = nameof(CanViewServices); // Admin
+    public const string CanCreateService = nameof(CanCreateService); // Admin
+    public const string CanUpdateService = nameof(CanUpdateService); // Admin
+    public const string CanDeleteService = nameof(CanDeleteService); // Admin
+
+    // Packages
+    public const string CanViewPackages = nameof(CanViewPackages); // Admin
+    public const string CanCreatePackage = nameof(CanCreatePackage); // Admin
+    public const string CanUpdatePackage = nameof(CanUpdatePackage); // Admin
+    public const string CanDeletePackage = nameof(CanDeletePackage); // Admin
 }

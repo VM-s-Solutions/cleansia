@@ -7,5 +7,7 @@ public enum ContractStatus
 {
     Pending = 1,
     Active = 2,
-    Terminated = 3
+    Terminated = 3,
+    Approved = 4,
+    Rejected = 5
 }

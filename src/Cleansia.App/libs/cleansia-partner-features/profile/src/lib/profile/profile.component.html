@@ -10,173 +10,21 @@
         {{ 'pages.profile.description' | translate }}
       </p>
     </div>
+
     <!-- Personal Information Section -->
-    <cleansia-section [title]="'pages.profile.personal_info' | translate">
-      <div class="cleansia-profile__grid">
-        <div class="cleansia-profile__field">
-          <cleansia-text-input
-            [label]="'pages.profile.first_name' | translate"
-            [floatVariant]="'on'"
-            formControlName="firstName"
-            dataType="text"
-          />
-        </div>
-        <div class="cleansia-profile__field">
-          <cleansia-text-input
-            [label]="'pages.profile.last_name' | translate"
-            [floatVariant]="'on'"
-            formControlName="lastName"
-            dataType="text"
-          />
-        </div>
-        <div class="cleansia-profile__field">
-          <cleansia-calendar
-            [label]="'pages.profile.date_of_birth' | translate"
-            [floatVariant]="'on'"
-            formControlName="dateOfBirth"
-            [required]="true"
-            [showIcon]="true"
-            [iconDisplay]="'input'"
-            [dateFormat]="'dd.mm.yy'"
-          />
-        </div>
-        <div class="cleansia-profile__address-row">
-          <div class="cleansia-profile__field">
-            <cleansia-text-input
-              [label]="'pages.profile.street' | translate"
-              [floatVariant]="'on'"
-              formControlName="street"
-              dataType="text"
-            />
-          </div>
-          <div class="cleansia-profile__field">
-            <cleansia-text-input
-              [label]="'pages.profile.city' | translate"
-              [floatVariant]="'on'"
-              formControlName="city"
-              dataType="text"
-            />
-          </div>
-          <div class="cleansia-profile__field">
-            <cleansia-text-input
-              [label]="'pages.profile.zip_code' | translate"
-              [floatVariant]="'on'"
-              formControlName="zipCode"
-              dataType="text"
-            />
-          </div>
-          <div class="cleansia-profile__field">
-            <cleansia-select
-              [options]="facade.countries()"
-              [label]="'pages.profile.country' | translate"
-              [floatVariant]="'on'"
-              [filter]="true"
-              formControlName="countryId"
-            />
-          </div>
-        </div>
-        <div class="cleansia-profile__field">
-          <cleansia-telephone
-            [label]="'pages.profile.phone' | translate"
-            [floatVariant]="'on'"
-            formControlName="phone"
-            dataType="text"
-          />
-        </div>
-        <div class="cleansia-profile__field">
-          <cleansia-text-input
-            [label]="'pages.profile.email' | translate"
-            [floatVariant]="'on'"
-            formControlName="email"
-            dataType="email"
-          />
-        </div>
-        <div class="cleansia-profile__nationality-row">
-          <div class="cleansia-profile__field">
-            <cleansia-select
-              [options]="facade.countries()"
-              [label]="'pages.profile.nationality' | translate"
-              [floatVariant]="'on'"
-              [filter]="true"
-              formControlName="nationalityId"
-            />
-          </div>
-          <div class="cleansia-profile__field">
-            <cleansia-text-input
-              [label]="'pages.profile.national_id' | translate"
-              [floatVariant]="'on'"
-              formControlName="passportId"
-              dataType="text"
-            />
-          </div>
-          <div class="cleansia-profile__field">
-            <cleansia-text-input
-              [label]="'pages.profile.tax_id' | translate"
-              [floatVariant]="'on'"
-              formControlName="taxId"
-              dataType="text"
-            />
-          </div>
-        </div>
-      </div>
-    </cleansia-section>
+    <cleansia-profile-personal-info [facade]="facade" />
 
     <!-- Bank Details Section -->
-    <cleansia-section [title]="'pages.profile.bank_details' | translate">
-      <div class="cleansia-profile__field cleansia-profile__field--full">
-        <cleansia-text-input
-          [label]="'pages.profile.iban' | translate"
-          [floatVariant]="'on'"
-          formControlName="iban"
-          dataType="text"
-        />
-      </div>
-    </cleansia-section>
+    <cleansia-profile-bank-details [facade]="facade" />
 
     <!-- Emergency Contact Section -->
-    <cleansia-section [title]="'pages.profile.emergency_contact' | translate">
-      <div class="cleansia-profile__contact-row">
-        <div class="cleansia-profile__field">
-          <cleansia-text-input
-            [label]="'pages.profile.emergency_name' | translate"
-            [floatVariant]="'on'"
-            formControlName="emergencyName"
-            dataType="text"
-          />
-        </div>
-        <div class="cleansia-profile__field">
-          <cleansia-telephone
-            [label]="'pages.profile.emergency_phone' | translate"
-            [floatVariant]="'on'"
-            formControlName="emergencyPhone"
-            dataType="text"
-          />
-        </div>
-      </div>
-    </cleansia-section>
+    <cleansia-profile-emergency-contact [facade]="facade" />
+
+    <!-- Employee Documents Management Section -->
+    <cleansia-profile-documents [facade]="facade" />
 
     <!-- Availability Section -->
-    <cleansia-section [title]="'pages.profile.availability' | translate">
-      <p class="cleansia-profile__description">
-        {{ 'pages.profile.availability_description' | translate }}
-      </p>
-      <cleansia-availability formControlName="availability" />
-    </cleansia-section>
-
-    <!-- Document Upload Section -->
-    <cleansia-section [title]="'pages.profile.documents' | translate">
-      <div class="cleansia-profile__upload">
-        <cleansia-file
-          [multiple]="true"
-          [accept]="'image/*,.pdf,.doc,.docx'"
-          [maxFileSize]="10000000"
-          (filesChanged)="facade.onDocumentUpload($event)"
-        />
-        <p class="cleansia-profile__upload-info">
-          {{ 'pages.profile.upload_requirements' | translate }}
-        </p>
-      </div>
-    </cleansia-section>
+    <cleansia-profile-availability [facade]="facade" />
 
     <!-- Consent Section -->
     <div class="cleansia-profile__consent">

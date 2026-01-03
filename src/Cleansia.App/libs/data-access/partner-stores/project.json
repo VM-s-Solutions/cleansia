@@ -1,0 +1,13 @@
+{
+  "name": "partner-stores",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/data-access/partner-stores/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": ["scope:partner", "type:data-access"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

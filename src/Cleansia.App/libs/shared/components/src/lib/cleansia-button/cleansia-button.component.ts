@@ -15,18 +15,22 @@ export class CleansiaButtonComponent {
   style = input<'basic-button' | 'raised-button'>('basic-button');
   severity = input<ButtonSeverity>('info');
   title = input<string>('');
+  label = input<string>(''); // Alias for title to match PrimeNG API
   size = input<InputSize>('full-width');
   icon = input<string | undefined>(undefined);
   iconPosition = input<'left' | 'right'>('left');
   iconOutlined = input<boolean>(false);
   rounded = input<boolean>(false);
+  outlined = input<boolean>(false); // PrimeNG-compatible outlined property
   disabled = input<boolean>(false);
   loading = input<boolean>(false);
   className = input<string>('');
 
-  clickFn = output<MouseEvent>();
+  onClick = output<MouseEvent>(); // PrimeNG-compatible output name
+  clickFn = output<MouseEvent>(); // Legacy output name
 
   handleClick(event: MouseEvent): void {
     this.clickFn.emit(event);
+    this.onClick.emit(event);
   }
 }

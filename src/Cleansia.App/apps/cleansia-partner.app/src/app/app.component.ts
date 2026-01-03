@@ -7,15 +7,15 @@ import {
   SidebarMenuItem,
 } from '@cleansia/components';
 import {
-  AuthService,
-  CleansiaPartnerRoute,
+  PartnerAuthService,
   RegistrationCompletionService,
-} from '@cleansia/services';
+} from '@cleansia/partner-services';
 import {
   checkEmployeeCurrent,
   loadCodes,
   selectEmployeeConfirmation,
-} from '@cleansia/stores';
+} from '@cleansia/partner-stores';
+import { CleansiaPartnerRoute } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -46,7 +46,7 @@ import {
 export class AppComponent implements OnInit, OnDestroy {
   private readonly store = inject(Store);
   private readonly router = inject(Router);
-  private readonly authService = inject(AuthService);
+  private readonly authService = inject(PartnerAuthService);
   private readonly translate = inject(TranslateService);
   private readonly registrationService = inject(RegistrationCompletionService);
 

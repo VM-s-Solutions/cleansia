@@ -1,6 +1,6 @@
 import { TemplateRef } from '@angular/core';
 import { TableDefinition } from '@cleansia/components';
-import { OrderListItem, OrderStatus } from '@cleansia/services';
+import { OrderListItem, OrderStatus } from '@cleansia/partner-services';
 import { TranslateService } from '@ngx-translate/core';
 
 export function getAvailableOrdersTableDefinition(

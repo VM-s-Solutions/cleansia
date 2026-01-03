@@ -1,15 +1,30 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, input, effect, ViewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  input,
+  ViewChild,
+} from '@angular/core';
+import {
+  CleansiaLabelComponent,
+  CleansiaLoaderComponent,
+} from '@cleansia/components';
+import { EarningsAnalyticsDto } from '@cleansia/partner-services';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { CleansiaLoaderComponent, CleansiaLabelComponent } from '@cleansia/components';
-import { EarningsAnalyticsDto } from '@cleansia/services';
 import { ChartConfiguration, ChartType } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 
 @Component({
   selector: 'cleansia-earnings-chart',
   standalone: true,
-  imports: [CommonModule, BaseChartDirective, TranslateModule, CleansiaLoaderComponent, CleansiaLabelComponent],
+  imports: [
+    CommonModule,
+    BaseChartDirective,
+    TranslateModule,
+    CleansiaLoaderComponent,
+    CleansiaLabelComponent,
+  ],
   templateUrl: './cleansia-earnings-chart.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -41,7 +56,8 @@ export class CleansiaEarningsChartComponent {
             const label = context.dataset.label || '';
             const value = context.parsed.y;
             const locale = this.translate.currentLang || 'cs-CZ';
-            const formatted = value != null ? value.toLocaleString(locale) : '0';
+            const formatted =
+              value != null ? value.toLocaleString(locale) : '0';
             return `${label}: ${formatted} Kč`;
           },
         },

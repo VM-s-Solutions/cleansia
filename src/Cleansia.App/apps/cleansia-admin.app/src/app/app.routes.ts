@@ -59,6 +59,62 @@ export const appRoutes: Route[] = [
       ),
   },
   {
+    path: 'package-management',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/package-management').then(
+        (m) => m.packageManagementRoutes
+      ),
+  },
+  {
+    path: 'admin-user-management',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/admin-user-management').then(
+        (m) => m.adminUserManagementRoutes
+      ),
+  },
+  {
+    path: 'language-management',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/language-management').then(
+        (m) => m.languageManagementRoutes
+      ),
+  },
+  {
+    path: 'country-management',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/country-management').then(
+        (m) => m.countryManagementRoutes
+      ),
+  },
+  {
+    path: 'currency-management',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/currency-management').then(
+        (m) => m.currencyManagementRoutes
+      ),
+  },
+  {
+    path: 'company-info',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/company-management').then(
+        (m) => m.companyManagementRoutes
+      ),
+  },
+  {
+    path: 'template-management',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/template-management').then(
+        (m) => m.templateManagementRoutes
+      ),
+  },
+  {
     path: 'unauthorized',
     loadComponent: () =>
       import('./unauthorized/unauthorized.component').then(

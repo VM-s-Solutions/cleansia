@@ -14,7 +14,11 @@ public class GetCurrencyOverview
     {
         public async Task<IEnumerable<CurrencyListItem>> Handle(Request request, CancellationToken cancellationToken)
         {
-            return await currencyRepository.GetAll().Select(currency => currency.MapToDto()).ToListAsync(cancellationToken);
+            return await currencyRepository.GetAll()
+                .OrderByDescending(c => c.IsDefault)
+                .ThenBy(c => c.Name)
+                .Select(currency => currency.MapToDto())
+                .ToListAsync(cancellationToken);
         }
     }
 }

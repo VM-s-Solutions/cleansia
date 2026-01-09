@@ -19,7 +19,9 @@
       @if (tableDefinition()) { @for (column of tableDefinition()!.columns;
       track column.id) {
       <th
-        [pSortableColumn]="column.sortable ? (column.sortField || column.id) : undefined"
+        [pSortableColumn]="
+          column.sortable ? column.sortField || column.id : undefined
+        "
         [class]="column.columnClass"
       >
         {{ column.headerName }}
@@ -67,8 +69,8 @@
           [ngTemplateOutletContext]="{ $implicit: item, rowIndex: ri }"
         ></ng-container>
         } @else if (column.columnActions && column.columnActions.length > 0) {
-        @for (action of column.columnActions; track action.icon) {
-        @if (!action.visible || action.visible(item)) {
+        @for (action of column.columnActions; track action.icon) { @if
+        (!action.visible || action.visible(item)) {
         <button
           type="button"
           [class]="'p-button ' + (action.buttonPalette || 'p-button-outlined')"
@@ -78,8 +80,7 @@
         >
           <i [class]="action.icon"></i>
         </button>
-        }
-        } } @else {
+        } } } @else {
         {{ getTableDefinitionValue(item, column) }}
         }
       </td>
@@ -100,7 +101,7 @@
           [class]="
             'p-button p-button-sm ' + (action.class || 'p-button-outlined')
           "
-          [disabled]="action.disabled?.(item)"
+          [disabled]="action.disabled?.(item) ?? false"
           (click)="action.action(item)"
           [title]="action.label | translate"
         >

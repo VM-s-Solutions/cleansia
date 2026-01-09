@@ -23,6 +23,8 @@ import {
   TableDefinition,
 } from '@cleansia/components';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { ConfirmationService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 import { ServiceManagementFacade } from './service-management.facade';
 import { getServiceTableDefinition } from './service-management.models';
@@ -41,15 +43,17 @@ import { getServiceTableDefinition } from './service-management.models';
     CleansiaSectionComponent,
     CleansiaLanguageSwitcherComponent,
     ReactiveFormsModule,
+    ConfirmDialogModule,
   ],
   templateUrl: './service-management.component.html',
-  providers: [ServiceManagementFacade],
+  providers: [ServiceManagementFacade, ConfirmationService],
 })
 export class ServiceManagementComponent implements AfterViewInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   protected readonly facade = inject(ServiceManagementFacade);
   private readonly translate = inject(TranslateService);
+  private readonly confirmationService = inject(ConfirmationService);
 
   serviceTableDefinition!: TableDefinition<ServiceListItem>;
 
@@ -65,6 +69,8 @@ export class ServiceManagementComponent implements AfterViewInit, OnDestroy {
     this.serviceTableDefinition = getServiceTableDefinition(
       {
         onViewDetails: this.viewServiceDetails.bind(this),
+        onEdit: this.editService.bind(this),
+        onDelete: this.confirmDeleteService.bind(this),
       },
       this.translate,
       this.facade.formatCurrency.bind(this.facade)
@@ -85,8 +91,9 @@ export class ServiceManagementComponent implements AfterViewInit, OnDestroy {
   }
 
   viewServiceDetails(service: ServiceListItem): void {
-    // TODO: Navigate to service detail page when implemented
-    console.log('View service details:', service);
+    if (service.id) {
+      this.router.navigate(['/service-management', service.id, 'edit']);
+    }
   }
 
   applyFilters(): void {
@@ -124,5 +131,24 @@ export class ServiceManagementComponent implements AfterViewInit, OnDestroy {
       }),
     ];
     this.facade.onSortChange(sort);
+  }
+
+  createService(): void {
+    this.facade.navigateToCreateService();
+  }
+
+  editService(service: ServiceListItem): void {
+    this.facade.navigateToEditService(service);
+  }
+
+  confirmDeleteService(service: ServiceListItem): void {
+    this.confirmationService.confirm({
+      message: this.translate.instant('pages.service_management.delete_confirm'),
+      header: this.translate.instant('pages.service_management.delete_service'),
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => {
+        this.facade.deleteService(service);
+      },
+    });
   }
 }

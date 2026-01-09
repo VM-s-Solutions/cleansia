@@ -22,7 +22,7 @@ public class Service : Auditable
 
     public int EstimatedTime { get; private set; }
 
-    public IDictionary<string, Translation> _translations = new Dictionary<string, Translation>();
+    private IDictionary<string, Translation> _translations = new Dictionary<string, Translation>();
     public IReadOnlyDictionary<string, Translation> Translations => _translations.AsReadOnly();
 
     private ICollection<PackageService> _packages = [];
@@ -31,11 +31,40 @@ public class Service : Auditable
     private ICollection<OrderService> _includedInOrders = [];
     public IReadOnlyCollection<OrderService> IncludedInOrders => _includedInOrders.ToList().AsReadOnly();
 
-    public static Service Create(string name, string description, decimal basePrice, decimal perRoomPrice) => new()
+    public static Service Create(string name, string description, decimal basePrice, decimal perRoomPrice, int estimatedTime = 0) => new()
     {
         Name = name,
         Description = description,
         BasePrice = basePrice,
-        PerRoomPrice = perRoomPrice
+        PerRoomPrice = perRoomPrice,
+        EstimatedTime = estimatedTime
     };
+
+    public Service Update(string name, string description, decimal basePrice, decimal perRoomPrice, int estimatedTime)
+    {
+        Name = name;
+        Description = description;
+        BasePrice = basePrice;
+        PerRoomPrice = perRoomPrice;
+        EstimatedTime = estimatedTime;
+        return this;
+    }
+
+    public Service SetTranslation(string languageCode, string name, string description)
+    {
+        _translations[languageCode] = new Translation { Name = name, Description = description };
+        return this;
+    }
+
+    public Service RemoveTranslation(string languageCode)
+    {
+        _translations.Remove(languageCode);
+        return this;
+    }
+
+    public Service ClearTranslations()
+    {
+        _translations = new Dictionary<string, Translation>();
+        return this;
+    }
 }

@@ -1,0 +1,69 @@
+<div class="cleansia-admin-user-management">
+  <cleansia-language-switcher />
+  <div class="cleansia-admin-user-management__container">
+    <div class="cleansia-admin-user-management__header">
+      <div class="header-content">
+        <cleansia-title
+          [title]="'pages.admin_user_management.title' | translate"
+        />
+        <p class="cleansia-admin-user-management__description">
+          {{ 'pages.admin_user_management.description' | translate }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Filter Panel -->
+    <div class="filter-panel">
+      <form [formGroup]="filterForm" class="filter-form">
+        <div class="filter-grid">
+          <!-- Search Filter -->
+          <div class="filter-field">
+            <cleansia-text-input
+              formControlName="searchTerm"
+              [placeholder]="
+                'pages.admin_user_management.filters.search' | translate
+              "
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        <!-- Filter Actions -->
+        <div class="filter-actions">
+          <cleansia-button
+            [label]="'pages.admin_user_management.filters.reset' | translate"
+            icon="pi pi-times"
+            (onClick)="resetFilters()"
+            severity="secondary"
+            [outlined]="true"
+          /><cleansia-button
+            [label]="'pages.admin_user_management.create_user' | translate"
+            icon="pi pi-plus"
+            (onClick)="createUser()"
+          />
+        </div>
+      </form>
+    </div>
+
+    <!-- User Table -->
+    <cleansia-section>
+      @if (facade.loading() && facade.users().length === 0) {
+      <cleansia-loader />
+      } @else {
+      <cleansia-table
+        [data]="facade.users()"
+        [tableDefinition]="userTableDefinition"
+        [paginator]="true"
+        [rows]="20"
+        [emptyMessage]="'pages.admin_user_management.no_users'"
+        tableClass="cleansia-admin-user-management__table"
+        [loading]="facade.loading()"
+        (sortChange)="onSortChange($event)"
+      >
+      </cleansia-table>
+      }
+    </cleansia-section>
+  </div>
+</div>
+
+<p-confirmDialog />

@@ -25,9 +25,15 @@ public class GetPagedUsers
     {
         public async Task<PagedData<UserListItem>> Handle(Request request, CancellationToken cancellationToken)
         {
-            var specification = UserSpecification.Create(request.Filter?.Id, request.Filter?.IsActive,
-                request.Filter?.FirstName, request.Filter?.LastName, request.Filter?.PhoneNumber, request.Filter?.Email,
-                request.Filter?.UserProfiles, request.Filter?.AuthenticationTypes);
+            var specification = UserSpecification.Create(
+                id: request.Filter?.Id,
+                isActive: request.Filter?.IsActive,
+                firstName: request.Filter?.FirstName,
+                lastName: request.Filter?.LastName,
+                phoneNumber: request.Filter?.PhoneNumber,
+                email: request.Filter?.Email,
+                userProfiles: request.Filter?.UserProfiles,
+                authenticationTypes: request.Filter?.AuthenticationTypes);
 
             var filter = specification.SatisfiedBy();
 

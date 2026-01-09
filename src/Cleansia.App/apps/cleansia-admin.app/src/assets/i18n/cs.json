@@ -1,8 +1,18 @@
 {
   "global": {
+    "yes": "Ano",
+    "no": "Ne",
     "actions": {
       "login": "Přihlásit se",
-      "logout": "Odhlásit se"
+      "logout": "Odhlásit se",
+      "back": "Zpět",
+      "save": "Uložit",
+      "create": "Vytvořit",
+      "cancel": "Zrušit",
+      "edit": "Upravit",
+      "delete": "Smazat",
+      "add": "Přidat",
+      "ok": "OK"
     },
     "user": {
       "remember_me": "Zapamatovat si mě"
@@ -23,6 +33,13 @@
     "invoices": "Faktury",
     "reports": "Přehledy",
     "services": "Služby",
+    "packages": "Balíčky",
+    "adminUsers": "Administrátoři",
+    "languages": "Jazyky",
+    "countries": "Země",
+    "currencies": "Měny",
+    "companyInfo": "Údaje o společnosti",
+    "templates": "Šablony",
     "logout": "Odhlásit se"
   },
   "pages": {
@@ -391,13 +408,488 @@
       "is_active": "Aktivní",
       "actions": "Akce",
       "view_details": "Zobrazit detail",
+      "create_service": "Vytvořit službu",
+      "edit_service": "Upravit",
+      "delete_service": "Smazat službu",
+      "delete_confirm": "Opravdu chcete smazat tuto službu? Tuto akci nelze vrátit zpět.",
       "no_services": "Nebyly nalezeny žádné služby",
       "filters": {
         "search": "Hledat dle názvu nebo popisu",
         "reset": "Resetovat filtry"
       },
+      "columns": {
+        "name": "Název",
+        "description": "Popis",
+        "base_price": "Základní cena",
+        "per_room_price": "Cena za pokoj",
+        "actions": "Akce"
+      },
       "messages": {
-        "load_error": "Nepodařilo se načíst služby"
+        "load_error": "Nepodařilo se načíst služby",
+        "create_success": "Služba byla úspěšně vytvořena",
+        "create_error": "Nepodařilo se vytvořit službu",
+        "update_success": "Služba byla úspěšně aktualizována",
+        "update_error": "Nepodařilo se aktualizovat službu",
+        "delete_success": "Služba byla úspěšně smazána",
+        "delete_error": "Nepodařilo se smazat službu"
+      }
+    },
+    "service_edit": {
+      "create_title": "Vytvořit službu",
+      "edit_title": "Upravit službu",
+      "basic_info": "Základní informace",
+      "translations_cs": "Čeština (CS)",
+      "translations_en": "Angličtina (EN)",
+      "name": "Název",
+      "description": "Popis",
+      "base_price": "Základní cena (CZK)",
+      "per_room_price": "Cena za pokoj (CZK)",
+      "estimated_time": "Odhadovaný čas (minuty)"
+    },
+    "service_form": {
+      "create_title": "Vytvořit službu",
+      "edit_title": "Upravit službu",
+      "basic_info": "Základní informace",
+      "pricing": "Ceník",
+      "translations": "Překlady",
+      "name": "Název",
+      "description": "Popis",
+      "base_price": "Základní cena (CZK)",
+      "per_room_price": "Cena za pokoj (CZK)",
+      "estimated_time": "Odhadovaný čas (minuty)",
+      "messages": {
+        "load_error": "Nepodařilo se načíst službu",
+        "create_success": "Služba byla úspěšně vytvořena",
+        "create_error": "Nepodařilo se vytvořit službu",
+        "update_success": "Služba byla úspěšně aktualizována",
+        "update_error": "Nepodařilo se aktualizovat službu"
+      }
+    },
+    "package_management": {
+      "title": "Správa balíčků",
+      "description": "Prohlížejte a spravujte úklidové balíčky, jejich ceny a zahrnuté služby",
+      "create_package": "Vytvořit balíček",
+      "edit_package": "Upravit",
+      "delete_package": "Smazat balíček",
+      "delete_confirm": "Opravdu chcete smazat tento balíček? Tuto akci nelze vrátit zpět.",
+      "no_packages": "Nebyly nalezeny žádné balíčky",
+      "filters": {
+        "search": "Hledat dle názvu nebo popisu",
+        "reset": "Resetovat filtry"
+      },
+      "columns": {
+        "name": "Název",
+        "description": "Popis",
+        "price": "Cena",
+        "actions": "Akce"
+      },
+      "messages": {
+        "load_error": "Nepodařilo se načíst balíčky",
+        "create_success": "Balíček byl úspěšně vytvořen",
+        "create_error": "Nepodařilo se vytvořit balíček",
+        "update_success": "Balíček byl úspěšně aktualizován",
+        "update_error": "Nepodařilo se aktualizovat balíček",
+        "delete_success": "Balíček byl úspěšně smazán",
+        "delete_error": "Nepodařilo se smazat balíček"
+      }
+    },
+    "package_form": {
+      "create_title": "Vytvořit balíček",
+      "edit_title": "Upravit balíček",
+      "basic_info": "Základní informace",
+      "services": "Zahrnuté služby",
+      "translations": "Překlady",
+      "name": "Název",
+      "description": "Popis",
+      "price": "Cena (CZK)",
+      "included_services": "Zahrnuté služby",
+      "select_services": "Vyberte služby k zahrnutí",
+      "messages": {
+        "load_error": "Nepodařilo se načíst balíček",
+        "create_success": "Balíček byl úspěšně vytvořen",
+        "create_error": "Nepodařilo se vytvořit balíček",
+        "update_success": "Balíček byl úspěšně aktualizován",
+        "update_error": "Nepodařilo se aktualizovat balíček"
+      }
+    },
+    "admin_user_management": {
+      "title": "Správa administrátorů",
+      "description": "Spravujte účty administrátorů, vytvářejte nové administrátory a kontrolujte přístup",
+      "create_user": "Vytvořit administrátora",
+      "edit_user": "Upravit administrátora",
+      "deactivate_user": "Deaktivovat administrátora",
+      "activate_user": "Aktivovat administrátora",
+      "deactivate_confirm": "Opravdu chcete deaktivovat tohoto administrátora? Už nebude mít přístup do admin panelu.",
+      "activate_confirm": "Opravdu chcete aktivovat tohoto administrátora? Znovu získá přístup do admin panelu.",
+      "no_users": "Nebyli nalezeni žádní administrátoři",
+      "filters": {
+        "search": "Hledat dle jména nebo emailu",
+        "reset": "Resetovat filtry"
+      },
+      "columns": {
+        "name": "Jméno",
+        "email": "E-mail",
+        "phone": "Telefon",
+        "status": "Stav",
+        "created_at": "Vytvořeno",
+        "actions": "Akce"
+      },
+      "messages": {
+        "load_error": "Nepodařilo se načíst administrátory",
+        "deactivate_success": "Administrátor byl úspěšně deaktivován",
+        "deactivate_error": "Nepodařilo se deaktivovat administrátora",
+        "activate_success": "Administrátor byl úspěšně aktivován",
+        "activate_error": "Nepodařilo se aktivovat administrátora"
+      }
+    },
+    "admin_user_form": {
+      "create_title": "Vytvořit administrátora",
+      "edit_title": "Upravit administrátora",
+      "account_info": "Informace o účtu",
+      "personal_info": "Osobní údaje",
+      "email": "E-mail",
+      "password": "Heslo",
+      "first_name": "Jméno",
+      "last_name": "Příjmení",
+      "phone_number": "Telefonní číslo",
+      "messages": {
+        "load_error": "Nepodařilo se načíst administrátora",
+        "create_success": "Administrátor byl úspěšně vytvořen",
+        "create_error": "Nepodařilo se vytvořit administrátora",
+        "update_success": "Administrátor byl úspěšně aktualizován",
+        "update_error": "Nepodařilo se aktualizovat administrátora"
+      }
+    },
+    "language_management": {
+      "title": "Správa jazyků",
+      "description": "Spravujte systémové jazyky pro překlady obsahu",
+      "create_language": "Vytvořit jazyk",
+      "edit_language": "Upravit jazyk",
+      "delete_language": "Smazat jazyk",
+      "delete_confirm": "Opravdu chcete smazat tento jazyk? Toto může ovlivnit existující překlady.",
+      "no_languages": "Žádné jazyky nenalezeny",
+      "columns": {
+        "code": "Kód",
+        "name": "Název",
+        "actions": "Akce"
+      },
+      "messages": {
+        "load_error": "Nepodařilo se načíst jazyky",
+        "delete_success": "Jazyk byl úspěšně smazán",
+        "delete_error": "Nepodařilo se smazat jazyk"
+      }
+    },
+    "language_form": {
+      "create_title": "Vytvořit jazyk",
+      "edit_title": "Upravit jazyk",
+      "basic_info": "Základní informace",
+      "code": "Kód jazyka",
+      "code_placeholder": "např. en, cs, de",
+      "name": "Název jazyka",
+      "name_placeholder": "např. Angličtina, Čeština, Němčina",
+      "messages": {
+        "load_error": "Nepodařilo se načíst jazyk",
+        "create_success": "Jazyk byl úspěšně vytvořen",
+        "create_error": "Nepodařilo se vytvořit jazyk",
+        "update_success": "Jazyk byl úspěšně aktualizován",
+        "update_error": "Nepodařilo se aktualizovat jazyk"
+      }
+    },
+    "country_management": {
+      "title": "Správa zemí",
+      "description": "Spravujte země dostupné v systému",
+      "create_country": "Vytvořit zemi",
+      "edit_country": "Upravit zemi",
+      "delete_country": "Smazat zemi",
+      "delete_confirm": "Opravdu chcete smazat tuto zemi? Toto může ovlivnit existující data.",
+      "no_countries": "Žádné země nenalezeny",
+      "columns": {
+        "iso_code": "ISO kód",
+        "name": "Název",
+        "actions": "Akce"
+      },
+      "messages": {
+        "load_error": "Nepodařilo se načíst země",
+        "delete_success": "Země byla úspěšně smazána",
+        "delete_error": "Nepodařilo se smazat zemi"
+      }
+    },
+    "country_form": {
+      "create_title": "Vytvořit zemi",
+      "edit_title": "Upravit zemi",
+      "basic_info": "Základní informace",
+      "iso_code": "ISO kód",
+      "iso_code_placeholder": "např. CZ, US, DE",
+      "name": "Název země",
+      "name_placeholder": "např. Česká republika, Spojené státy, Německo",
+      "messages": {
+        "load_error": "Nepodařilo se načíst zemi",
+        "create_success": "Země byla úspěšně vytvořena",
+        "create_error": "Nepodařilo se vytvořit zemi",
+        "update_success": "Země byla úspěšně aktualizována",
+        "update_error": "Nepodařilo se aktualizovat zemi"
+      }
+    },
+    "currency_management": {
+      "title": "Správa měn",
+      "description": "Spravujte měny a směnné kurzy",
+      "create_currency": "Vytvořit měnu",
+      "edit_currency": "Upravit měnu",
+      "delete_currency": "Smazat měnu",
+      "delete_confirm": "Opravdu chcete smazat tuto měnu? Toto může ovlivnit existující data.",
+      "cannot_delete_default": "Nelze smazat výchozí měnu. Nejprve nastavte jinou měnu jako výchozí.",
+      "no_currencies": "Žádné měny nenalezeny",
+      "columns": {
+        "code": "Kód",
+        "symbol": "Symbol",
+        "name": "Název",
+        "exchange_rate": "Směnný kurz",
+        "is_default": "Výchozí",
+        "actions": "Akce"
+      },
+      "messages": {
+        "load_error": "Nepodařilo se načíst měny",
+        "delete_success": "Měna byla úspěšně smazána",
+        "delete_error": "Nepodařilo se smazat měnu"
+      }
+    },
+    "currency_form": {
+      "create_title": "Vytvořit měnu",
+      "edit_title": "Upravit měnu",
+      "basic_info": "Základní informace",
+      "code": "Kód měny",
+      "code_placeholder": "např. USD, EUR, CZK",
+      "symbol": "Symbol",
+      "symbol_placeholder": "např. $, €, Kč",
+      "name": "Název měny",
+      "name_placeholder": "např. Americký dolar, Euro, Česká koruna",
+      "exchange_rate": "Směnný kurz",
+      "exchange_rate_placeholder": "např. 1.0, 0.92, 24.50",
+      "messages": {
+        "load_error": "Nepodařilo se načíst měnu",
+        "create_success": "Měna byla úspěšně vytvořena",
+        "create_error": "Nepodařilo se vytvořit měnu",
+        "update_success": "Měna byla úspěšně aktualizována",
+        "update_error": "Nepodařilo se aktualizovat měnu"
+      }
+    },
+    "company_info": {
+      "title": "Údaje o společnosti",
+      "create_title": "Vytvořit společnost",
+      "edit_title": "Upravit společnost",
+      "description": "Správa údajů o společnosti použitých na fakturách a příjemkách",
+      "sections": {
+        "legal_info": "Právní informace",
+        "tax_info": "Daňové údaje",
+        "address": "Adresa",
+        "contact": "Kontaktní údaje",
+        "banking": "Bankovní údaje"
+      },
+      "legal_name": "Právní název",
+      "trading_name": "Obchodní název",
+      "tagline": "Slogan",
+      "registration_number": "IČO",
+      "vat_number": "DIČ",
+      "street": "Ulice",
+      "city": "Město",
+      "zip_code": "PSČ",
+      "country": "Země",
+      "phone": "Telefon",
+      "email": "E-mail",
+      "website": "Webová stránka",
+      "bank_name": "Název banky",
+      "bank_account_number": "Číslo účtu",
+      "iban": "IBAN",
+      "swift": "SWIFT/BIC",
+      "messages": {
+        "load_error": "Nepodařilo se načíst údaje o společnosti",
+        "save_success": "Údaje o společnosti byly úspěšně uloženy",
+        "save_error": "Nepodařilo se uložit údaje o společnosti",
+        "create_success": "Údaje o společnosti byly úspěšně vytvořeny"
+      }
+    },
+    "template_management": {
+      "title": "Správa šablon",
+      "description": "Správa šablon faktur, účtenek a e-mailů",
+      "tabs": {
+        "invoice_templates": "Šablony faktur",
+        "receipt_templates": "Šablony účtenek",
+        "email_templates": "Šablony e-mailů"
+      },
+      "invoice_templates": {
+        "title": "Šablony faktur"
+      },
+      "receipt_templates": {
+        "title": "Šablony účtenek"
+      },
+      "email_templates": {
+        "title": "Šablony e-mailů"
+      },
+      "create_template": "Vytvořit šablonu",
+      "edit_template": "Upravit šablonu",
+      "delete_template": "Smazat šablonu",
+      "activate_template": "Aktivovat šablonu",
+      "deactivate_template": "Deaktivovat šablonu",
+      "create_invoice_template": "Vytvořit šablonu faktury",
+      "edit_invoice_template": "Upravit šablonu faktury",
+      "create_receipt_template": "Vytvořit šablonu účtenky",
+      "edit_receipt_template": "Upravit šablonu účtenky",
+      "edit_email_template": "Upravit šablonu e-mailu",
+      "confirm_delete": "Opravdu chcete smazat tuto šablonu? Tuto akci nelze vrátit zpět.",
+      "confirm_activate": "Opravdu chcete aktivovat tuto šablonu? Tím se deaktivuje jakákoli jiná aktivní šablona pro stejnou zemi a jazyk.",
+      "confirm_deactivate": "Opravdu chcete deaktivovat tuto šablonu?",
+      "columns": {
+        "template_name": "Název šablony",
+        "country": "Země",
+        "language": "Jazyk",
+        "version": "Verze",
+        "status": "Stav",
+        "subject": "Předmět",
+        "template_key": "Klíč šablony",
+        "email_type": "Typ e-mailu",
+        "value": "Obsah",
+        "actions": "Akce",
+        "translation_count": "Počet překladů",
+        "languages": "Jazyky",
+        "last_modified": "Naposledy upraveno"
+      },
+      "fields": {
+        "template_name": "Název šablony",
+        "country": "Země",
+        "language": "Jazyk",
+        "template_file": "Soubor šablony",
+        "replace_file": "Nahradit soubor (volitelné)",
+        "description": "Popis",
+        "subject": "Předmět",
+        "body": "Obsah"
+      },
+      "current_file": {
+        "version": "Verze",
+        "download": "Stáhnout",
+        "open_new_tab": "Otevřít v nové záložce"
+      },
+      "placeholders": {
+        "template_name": "Zadejte název šablony",
+        "country": "Vyberte zemi",
+        "language": "Vyberte jazyk",
+        "blob_url": "Zadejte URL šablony",
+        "description": "Zadejte popis (volitelné)",
+        "subject": "Zadejte předmět e-mailu",
+        "body": "Zadejte obsah e-mailu",
+        "value": "Zadejte hodnotu překladu"
+      },
+      "hints": {
+        "html_supported": "HTML obsah je podporován"
+      },
+      "sections": {
+        "basic_info": "Základní informace",
+        "template_file": "Soubor šablony",
+        "template_info": "Informace o šabloně",
+        "content": "Obsah",
+        "available_variables": "Dostupné proměnné",
+        "translations": "Překlady"
+      },
+      "variables": {
+        "hint": "Klikněte na proměnnou pro zkopírování do schránky. Použijte tyto proměnné v obsahu šablony.",
+        "user_name": "Jméno uživatele",
+        "verification_code": "Ověřovací kód e-mailu",
+        "reset_password_link": "Odkaz na stránku pro resetování hesla",
+        "customer_name": "Jméno zákazníka",
+        "order_number": "Číslo objednávky",
+        "order_date": "Datum vytvoření objednávky",
+        "total_amount": "Celková částka objednávky s měnou",
+        "order_status_link": "Odkaz pro kontrolu stavu objednávky",
+        "employee_name": "Jméno zaměstnance",
+        "period_label": "Označení výplatního období (např. 2025-01)",
+        "start_date": "Datum začátku období",
+        "end_date": "Datum konce období",
+        "closed_at": "Datum a čas uzavření období",
+        "days_remaining": "Počet dní do konce období"
+      },
+      "preview": {
+        "title": "Náhled šablony",
+        "load": "Načíst náhled",
+        "open_new_tab": "Otevřít v nové záložce",
+        "error": "Nepodařilo se načíst náhled šablony",
+        "no_url": "Uložte šablonu pro zobrazení náhledu"
+      },
+      "no_templates": "Žádné šablony nenalezeny",
+      "translation_key_tooltip": "Klikněte pro zkopírování jako proměnnou šablony",
+      "view_translations": "Zobrazit překlady",
+      "back_to_email_types": "Zpět na typy e-mailů",
+      "no_translations_for_language": "Pro tento jazyk nejsou k dispozici žádné překlady",
+      "email_type_detail": {
+        "title": "Překlady {{emailType}}",
+        "translations_section": "Překlady",
+        "variables_section": "Dostupné proměnné"
+      },
+      "actions": {
+        "send_test_email": "Odeslat testovací e-mail",
+        "add_translation": "Přidat překlad"
+      },
+      "dialogs": {
+        "send_test_email": {
+          "title": "Odeslat testovací e-mail",
+          "description": "Odešlete testovací e-mail pomocí této šablony pro ověření obsahu a formátování.",
+          "recipient_email": "E-mail příjemce",
+          "recipient_placeholder": "Zadejte e-mailovou adresu",
+          "language_info": "E-mail bude odeslán v jazyce {{language}}"
+        },
+        "add_translation": {
+          "title": "Přidat překlad",
+          "description": "Přidejte nový klíč a hodnotu překladu pro tento typ e-mailu.",
+          "key": "Klíč",
+          "key_placeholder": "Zadejte unikátní název klíče (např. Subject, Greeting)",
+          "value": "Hodnota",
+          "value_placeholder": "Zadejte hodnotu překladu"
+        },
+        "delete_translation": {
+          "title": "Smazat překlad",
+          "message": "Opravdu chcete smazat překlad '{{key}}'? Tuto akci nelze vrátit zpět."
+        }
+      },
+      "messages": {
+        "load_error": "Nepodařilo se načíst šablony",
+        "save_error": "Nepodařilo se uložit šablonu",
+        "save_success": "Šablona byla úspěšně uložena",
+        "create_success": "Překlad byl úspěšně vytvořen",
+        "create_error": "Nepodařilo se vytvořit překlad",
+        "delete_error": "Nepodařilo se smazat překlad",
+        "delete_success": "Překlad byl úspěšně smazán",
+        "activate_error": "Nepodařilo se aktivovat šablonu",
+        "activate_success": "Šablona byla úspěšně aktivována",
+        "deactivate_error": "Nepodařilo se deaktivovat šablonu",
+        "deactivate_success": "Šablona byla úspěšně deaktivována",
+        "send_test_error": "Nepodařilo se odeslat testovací e-mail",
+        "send_test_success": "Testovací e-mail byl úspěšně odeslán na {{email}}",
+        "copied_to_clipboard": "Zkopírováno do schránky"
+      }
+    },
+    "company_management": {
+      "title": "Správa společností",
+      "description": "Správa údajů o společnosti pro různé země",
+      "create_company": "Vytvořit společnost",
+      "edit_company": "Upravit společnost",
+      "delete_company": "Smazat společnost",
+      "delete_confirm": "Opravdu chcete smazat tyto údaje o společnosti? Tuto akci nelze vrátit zpět.",
+      "no_companies": "Žádné údaje o společnosti nenalezeny",
+      "filters": {
+        "search": "Hledat podle názvu nebo města",
+        "reset": "Resetovat filtry"
+      },
+      "columns": {
+        "legal_name": "Právní název",
+        "trading_name": "Obchodní název",
+        "country": "Země",
+        "city": "Město",
+        "email": "E-mail",
+        "status": "Stav",
+        "actions": "Akce"
+      },
+      "messages": {
+        "load_error": "Nepodařilo se načíst údaje o společnosti",
+        "delete_success": "Údaje o společnosti byly úspěšně smazány",
+        "delete_error": "Nepodařilo se smazat údaje o společnosti"
       }
     },
     "reports": {
@@ -545,7 +1037,10 @@
       "not_found": "Informace o společnosti nenalezeny"
     },
     "country": {
-      "not_existing_id": "Země nenalezena"
+      "not_existing_id": "Země nenalezena",
+      "not_found": "Země nenalezena",
+      "iso_code_already_exists": "Země s tímto ISO kódem již existuje",
+      "in_use": "Zemi nelze smazat, protože je aktuálně používána zaměstnanci, šablonami nebo jinými entitami"
     },
     "currency": {
       "invalid": "Neplatná měna",
@@ -586,9 +1081,13 @@
     "general": {
       "not_found": "Zdroj nenalezen"
     },
+    "service": {
+      "not_found": "Služba nenalezena"
+    },
     "language": {
       "not_found": "Jazyk nenalezen",
-      "not_supported": "Jazyk není podporován"
+      "not_supported": "Jazyk není podporován",
+      "in_use": "Jazyk nelze smazat, protože je používán jinými entitami (uživatelé, šablony, účtenky atd.)"
     },
     "order": {
       "actual_time": {

@@ -95,4 +95,53 @@ public class Policy
     public const string CanCreatePackage = nameof(CanCreatePackage); // Admin
     public const string CanUpdatePackage = nameof(CanUpdatePackage); // Admin
     public const string CanDeletePackage = nameof(CanDeletePackage); // Admin
+
+    // Languages
+    public const string CanViewLanguages = nameof(CanViewLanguages); // Admin
+    public const string CanCreateLanguage = nameof(CanCreateLanguage); // Admin
+    public const string CanUpdateLanguage = nameof(CanUpdateLanguage); // Admin
+    public const string CanDeleteLanguage = nameof(CanDeleteLanguage); // Admin
+
+    // Countries
+    public const string CanViewCountries = nameof(CanViewCountries); // Admin
+    public const string CanCreateCountry = nameof(CanCreateCountry); // Admin
+    public const string CanUpdateCountry = nameof(CanUpdateCountry); // Admin
+    public const string CanDeleteCountry = nameof(CanDeleteCountry); // Admin
+
+    // Currencies
+    public const string CanViewCurrencies = nameof(CanViewCurrencies); // Admin
+    public const string CanCreateCurrency = nameof(CanCreateCurrency); // Admin
+    public const string CanUpdateCurrency = nameof(CanUpdateCurrency); // Admin
+    public const string CanDeleteCurrency = nameof(CanDeleteCurrency); // Admin
+
+    // Admin Users
+    public const string CanViewAdminUsers = nameof(CanViewAdminUsers); // SuperAdmin
+    public const string CanCreateAdminUser = nameof(CanCreateAdminUser); // SuperAdmin
+    public const string CanUpdateAdminUser = nameof(CanUpdateAdminUser); // SuperAdmin
+    public const string CanDeactivateAdminUser = nameof(CanDeactivateAdminUser); // SuperAdmin
+    public const string CanActivateAdminUser = nameof(CanActivateAdminUser); // SuperAdmin
+
+    // Company Info
+    public const string CanViewCompanyInfo = nameof(CanViewCompanyInfo); // Admin
+    public const string CanCreateCompanyInfo = nameof(CanCreateCompanyInfo); // Admin
+    public const string CanUpdateCompanyInfo = nameof(CanUpdateCompanyInfo); // Admin
+    public const string CanDeleteCompanyInfo = nameof(CanDeleteCompanyInfo); // Admin
+
+    // Invoice Templates
+    public const string CanViewInvoiceTemplates = nameof(CanViewInvoiceTemplates); // Admin
+    public const string CanCreateInvoiceTemplate = nameof(CanCreateInvoiceTemplate); // Admin
+    public const string CanUpdateInvoiceTemplate = nameof(CanUpdateInvoiceTemplate); // Admin
+    public const string CanDeleteInvoiceTemplate = nameof(CanDeleteInvoiceTemplate); // Admin
+    public const string CanActivateInvoiceTemplate = nameof(CanActivateInvoiceTemplate); // Admin
+
+    // Receipt Templates
+    public const string CanViewReceiptTemplates = nameof(CanViewReceiptTemplates); // Admin
+    public const string CanCreateReceiptTemplate = nameof(CanCreateReceiptTemplate); // Admin
+    public const string CanUpdateReceiptTemplate = nameof(CanUpdateReceiptTemplate); // Admin
+    public const string CanDeleteReceiptTemplate = nameof(CanDeleteReceiptTemplate); // Admin
+    public const string CanActivateReceiptTemplate = nameof(CanActivateReceiptTemplate); // Admin
+
+    // Email Templates
+    public const string CanViewEmailTemplates = nameof(CanViewEmailTemplates); // Admin
+    public const string CanUpdateEmailTemplate = nameof(CanUpdateEmailTemplate); // Admin
 }

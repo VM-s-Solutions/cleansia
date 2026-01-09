@@ -1,0 +1,69 @@
+<div class="cleansia-package-management">
+  <cleansia-language-switcher />
+  <div class="cleansia-package-management__container">
+    <div class="cleansia-package-management__header">
+      <div class="header-content">
+        <cleansia-title
+          [title]="'pages.package_management.title' | translate"
+        />
+        <p class="cleansia-package-management__description">
+          {{ 'pages.package_management.description' | translate }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Filter Panel -->
+    <div class="filter-panel">
+      <form [formGroup]="filterForm" class="filter-form">
+        <div class="filter-grid">
+          <!-- Search Filter -->
+          <div class="filter-field">
+            <cleansia-text-input
+              formControlName="searchTerm"
+              [placeholder]="
+                'pages.package_management.filters.search' | translate
+              "
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        <!-- Filter Actions -->
+        <div class="filter-actions">
+          <cleansia-button
+            [label]="'pages.package_management.filters.reset' | translate"
+            icon="pi pi-times"
+            (onClick)="resetFilters()"
+            severity="secondary"
+            [outlined]="true"
+          /><cleansia-button
+            [label]="'pages.package_management.create_package' | translate"
+            icon="pi pi-plus"
+            (onClick)="createPackage()"
+          />
+        </div>
+      </form>
+    </div>
+
+    <!-- Package Table -->
+    <cleansia-section>
+      @if (facade.loading() && facade.packages().length === 0) {
+      <cleansia-loader />
+      } @else {
+      <cleansia-table
+        [data]="facade.packages()"
+        [tableDefinition]="packageTableDefinition"
+        [paginator]="true"
+        [rows]="20"
+        [emptyMessage]="'pages.package_management.no_packages'"
+        tableClass="cleansia-package-management__table"
+        [loading]="facade.loading()"
+        (sortChange)="onSortChange($event)"
+      >
+      </cleansia-table>
+      }
+    </cleansia-section>
+  </div>
+</div>
+
+<p-confirmDialog />

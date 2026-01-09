@@ -107,6 +107,40 @@ public sealed class EmailService : IEmailService
             ct);
     }
 
+    public async Task<string> SendTestOrderReceiptEmailAsync(
+        string email,
+        string customerName,
+        string orderNumber,
+        string orderDate,
+        string totalAmount,
+        string languageCode = "en",
+        CancellationToken ct = default)
+    {
+        var translations = await emailTemplateTranslationRepository
+            .GetTranslationsByTypeAndLanguageAsync(EmailType.OrderReceipt, languageCode, ct);
+
+        var orderStatusLink = $"{sendGridConfig.ClientDomainUrl}{sendGridConfig.OrderStatusUrl}?orderId=test-order-id";
+
+        var mergeData = MergeTranslationsWithData(translations, new
+        {
+            CustomerName = customerName,
+            OrderNumber = orderNumber,
+            OrderDate = orderDate,
+            TotalAmount = totalAmount,
+            OrderStatusLink = orderStatusLink
+        });
+
+        var subject = "[TEST] " + translations.GetValueOrDefault("Subject", "Your Order Receipt");
+
+        return await SendTemplatedAsync(
+            email,
+            sendGridConfig.OrderReceiptTemplateId,
+            mergeData,
+            subject,
+            $"Test order receipt email to {email}",
+            ct);
+    }
+
     public async Task<string> SendEmailConfirmationAsync(
         string email,
         string userName,

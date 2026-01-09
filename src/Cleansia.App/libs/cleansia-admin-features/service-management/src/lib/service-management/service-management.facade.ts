@@ -1,6 +1,8 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import {
   AdminClient,
+  DeleteServiceResponse,
   GetPagedServicesRequest,
   ServiceFilter,
   ServiceListItem,
@@ -19,6 +21,7 @@ export class ServiceManagementFacade {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
+  private readonly router = inject(Router);
 
   private destroy$ = new Subject<void>();
 
@@ -99,6 +102,41 @@ export class ServiceManagementFacade {
       style: 'currency',
       currency: 'CZK',
     }).format(value);
+  }
+
+  navigateToCreateService(): void {
+    this.router.navigate(['/service-management', 'create']);
+  }
+
+  navigateToEditService(service: ServiceListItem): void {
+    if (service.id) {
+      this.router.navigate(['/service-management', service.id, 'edit']);
+    }
+  }
+
+  deleteService(service: ServiceListItem): void {
+    if (!service.id) return;
+
+    this.adminClient.apiClient
+      .adminServiceDelete(service.id)
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError((error) => {
+          this.snackbarService.showError(
+            this.translate.instant('pages.service_management.messages.delete_error')
+          );
+          console.error('Error deleting service:', error);
+          return of(null);
+        })
+      )
+      .subscribe((response: DeleteServiceResponse | null) => {
+        if (response) {
+          this.snackbarService.showSuccess(
+            this.translate.instant('pages.service_management.messages.delete_success')
+          );
+          this.loadServices();
+        }
+      });
   }
 
   ngOnDestroy(): void {

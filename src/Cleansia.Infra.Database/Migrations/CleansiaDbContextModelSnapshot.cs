@@ -45,7 +45,7 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.Property<string>("CountryId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("character varying(26)");
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
@@ -133,6 +133,9 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("RegistrationNumber")
                         .IsUnique()
                         .HasDatabaseName("IX_CompanyInfo_RegistrationNumber");
+
+                    b.HasIndex("CountryId", "IsActive")
+                        .HasDatabaseName("IX_CompanyInfo_CountryId_IsActive");
 
                     b.ToTable("CompanyInfo", (string)null);
                 });
@@ -2265,6 +2268,17 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("PreferredLanguageCode");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Company.CompanyInfo", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Internationalization.Country", "Country")
+                        .WithMany()
+                        .HasForeignKey("CountryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Country");
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Disputes.Dispute", b =>

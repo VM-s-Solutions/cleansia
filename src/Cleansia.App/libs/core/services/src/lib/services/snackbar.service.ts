@@ -45,7 +45,6 @@ export class SnackbarService {
     const summary = success
       ? this.translate.instant('global.messages.success')
       : this.translate.instant('global.messages.error');
-    console.log(summary);
     this.messageService.add({
       severity,
       summary,

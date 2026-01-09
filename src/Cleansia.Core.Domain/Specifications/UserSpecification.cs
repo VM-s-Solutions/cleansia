@@ -14,6 +14,8 @@ public class UserSpecification : BaseSpecification<string?>, ISpecification<User
 
     public string? Email { get; set; }
 
+    public string? SearchTerm { get; set; }
+
     public int[]? UserProfiles { get; set; }
 
     public int[]? AuthenticationTypes { get; set; }
@@ -52,6 +54,15 @@ public class UserSpecification : BaseSpecification<string?>, ISpecification<User
             specification &= new DirectSpecification<User>(x => x.Email.Contains(Email));
         }
 
+        if (!string.IsNullOrEmpty(SearchTerm))
+        {
+            var searchTerm = SearchTerm.ToLower();
+            specification &= new DirectSpecification<User>(x =>
+                x.FirstName.ToLower().Contains(searchTerm) ||
+                x.LastName.ToLower().Contains(searchTerm) ||
+                x.Email.ToLower().Contains(searchTerm));
+        }
+
         if (UserProfiles is not null && UserProfiles.Any())
         {
             specification &= new DirectSpecification<User>(x => UserProfiles.Contains((int)x.Profile));
@@ -66,8 +77,8 @@ public class UserSpecification : BaseSpecification<string?>, ISpecification<User
     }
 
     public static UserSpecification Create(string? id = null, bool? isActive = null, string? firstName = null,
-        string? lastName = null, string? phoneNumber = null, string? email = null, int[]? userProfiles = null,
-        int[]? authenticationTypes = null) =>
+        string? lastName = null, string? phoneNumber = null, string? email = null, string? searchTerm = null,
+        int[]? userProfiles = null, int[]? authenticationTypes = null) =>
         new()
         {
             Id = id,
@@ -76,6 +87,7 @@ public class UserSpecification : BaseSpecification<string?>, ISpecification<User
             LastName = lastName,
             PhoneNumber = phoneNumber,
             Email = email,
+            SearchTerm = searchTerm,
             UserProfiles = userProfiles,
             AuthenticationTypes = authenticationTypes
         };

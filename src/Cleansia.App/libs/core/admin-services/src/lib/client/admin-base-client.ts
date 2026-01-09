@@ -4,37 +4,67 @@ import {
   ADMINAPIBASEURL,
   AdminAuthClient,
   AdminCodeClient,
+  AdminCompanyClient,
+  AdminCountryClient,
+  AdminCurrencyClient,
+  AdminEmailTemplateClient,
   AdminEmployeeClient,
   AdminEmployeeDocumentClient,
   AdminInvoiceClient,
+  AdminInvoiceTemplateClient,
+  AdminLanguageClient,
   AdminOrderClient,
+  AdminPackageClient,
   AdminPayPeriodClient,
+  AdminReceiptTemplateClient,
   AdminReportClient,
   AdminServiceClient,
+  AdminUserClient,
   ApiClient,
   IAdminAuthClient,
   IAdminCodeClient,
+  IAdminCompanyClient,
+  IAdminCountryClient,
+  IAdminCurrencyClient,
+  IAdminEmailTemplateClient,
   IAdminEmployeeClient,
   IAdminEmployeeDocumentClient,
   IAdminInvoiceClient,
+  IAdminInvoiceTemplateClient,
+  IAdminLanguageClient,
   IAdminOrderClient,
+  IAdminPackageClient,
   IAdminPayPeriodClient,
+  IAdminReceiptTemplateClient,
   IAdminReportClient,
   IAdminServiceClient,
+  IAdminUserClient,
   IApiClient,
+  ITypesClient,
+  TypesClient,
 } from './admin-client';
 
 interface IAdminClient {
   adminAuthClient: IAdminAuthClient;
+  adminCompanyClient: IAdminCompanyClient;
   adminEmployeeClient: IAdminEmployeeClient;
   adminCodeClient: IAdminCodeClient;
+  adminCountryClient: IAdminCountryClient;
+  adminCurrencyClient: IAdminCurrencyClient;
+  adminEmailTemplateClient: IAdminEmailTemplateClient;
   adminEmployeeDocumentClient: IAdminEmployeeDocumentClient;
   adminInvoiceClient: IAdminInvoiceClient;
+  adminInvoiceTemplateClient: IAdminInvoiceTemplateClient;
+  adminLanguageClient: IAdminLanguageClient;
   adminOrderClient: IAdminOrderClient;
+  adminPackageClient: IAdminPackageClient;
   adminPayPeriodClient: IAdminPayPeriodClient;
+  adminReceiptTemplateClient: IAdminReceiptTemplateClient;
   adminReportClient: IAdminReportClient;
   adminServiceClient: IAdminServiceClient;
+  adminUserClient: IAdminUserClient;
   apiClient: IApiClient;
+  emailTemplateTypesClient: ITypesClient;
 }
 
 @Injectable({
@@ -46,6 +76,10 @@ export class AdminClient implements IAdminClient {
     inject(ADMINAPIBASEURL, { optional: true }) ?? 'http://localhost:5001';
 
   adminAuthClient: IAdminAuthClient = new AdminAuthClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  adminCompanyClient: IAdminCompanyClient = new AdminCompanyClient(
     this.httpClient,
     this.apiBaseUrl
   );
@@ -63,7 +97,23 @@ export class AdminClient implements IAdminClient {
     this.httpClient,
     this.apiBaseUrl
   );
+  adminCountryClient: IAdminCountryClient = new AdminCountryClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  adminLanguageClient: IAdminLanguageClient = new AdminLanguageClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  adminCurrencyClient: IAdminCurrencyClient = new AdminCurrencyClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
   adminOrderClient: IAdminOrderClient = new AdminOrderClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  adminPackageClient: IAdminPackageClient = new AdminPackageClient(
     this.httpClient,
     this.apiBaseUrl
   );
@@ -79,5 +129,19 @@ export class AdminClient implements IAdminClient {
     this.httpClient,
     this.apiBaseUrl
   );
+  adminUserClient: IAdminUserClient = new AdminUserClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  adminInvoiceTemplateClient: IAdminInvoiceTemplateClient =
+    new AdminInvoiceTemplateClient(this.httpClient, this.apiBaseUrl);
+  adminReceiptTemplateClient: IAdminReceiptTemplateClient =
+    new AdminReceiptTemplateClient(this.httpClient, this.apiBaseUrl);
+  adminEmailTemplateClient: IAdminEmailTemplateClient =
+    new AdminEmailTemplateClient(this.httpClient, this.apiBaseUrl);
   apiClient: IApiClient = new ApiClient(this.httpClient, this.apiBaseUrl);
+  emailTemplateTypesClient: ITypesClient = new TypesClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
 }

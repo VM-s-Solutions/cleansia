@@ -1,0 +1,45 @@
+<div class="cleansia-country-management">
+  <cleansia-language-switcher />
+  <div class="cleansia-country-management__container">
+    <div class="cleansia-country-management__header">
+      <div class="header-content">
+        <cleansia-title
+          [title]="'pages.country_management.title' | translate"
+        />
+        <p class="cleansia-country-management__description">
+          {{ 'pages.country_management.description' | translate }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="filter-panel">
+      <div class="filter-actions">
+        <cleansia-button
+          [label]="'pages.country_management.create_country' | translate"
+          icon="pi pi-plus"
+          (onClick)="createCountry()"
+        />
+      </div>
+    </div>
+
+    <!-- Country Table -->
+    <cleansia-section>
+      @if (facade.loading() && facade.countries().length === 0) {
+      <cleansia-loader />
+      } @else {
+      <cleansia-table
+        [data]="facade.countries()"
+        [tableDefinition]="countryTableDefinition"
+        [paginator]="false"
+        [emptyMessage]="'pages.country_management.no_countries'"
+        tableClass="cleansia-country-management__table"
+        [loading]="facade.loading()"
+      >
+      </cleansia-table>
+      }
+    </cleansia-section>
+  </div>
+</div>
+
+<p-confirmDialog />

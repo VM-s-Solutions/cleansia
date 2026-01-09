@@ -12,9 +12,9 @@ import { TableModule } from 'primeng/table';
 import {
   CleansiaTableAction,
   CleansiaTableColumn,
-  TableDefinition,
   TableColumn,
   TableColumnAction,
+  TableDefinition,
 } from './cleansia-table.models';
 
 @Component({
@@ -116,7 +116,6 @@ export class CleansiaTableComponent {
       order: event.order,
     });
   }
-
 
   private applyPipe(value: any, pipe?: string, pipeArgs?: any[]): any {
     if (!pipe || value == null) return value;

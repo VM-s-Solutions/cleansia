@@ -807,58 +807,124 @@ GET  /api/admin/pay-config/history
 
 #### 7.1 Service Catalog
 
-**URL**: `/services`
+**URL**: `/service-management`
 
-**List**:
-- Table of all cleaning services
-- Columns: Name, Description, Base Price, Per-Room Price, Per-Bathroom Price, Active, Actions
+**Service List Page**:
+- Paginated table of all cleaning services
+- Columns: Name, Description (truncated), Base Price, Per-Room Price, Actions
+- Search filter (name, description)
+- Sorting support
+- Actions: View Details, Edit, Delete
 
-**Actions**:
-- Create New Service
-- Edit Service
-- Deactivate Service
-- Delete Service (if no orders)
+**Service Detail Page** (`/service-management/:serviceId`):
+- Read-only view of service information
+- Sections: Basic Info, Pricing, Translations (dynamic), Metadata
+- Actions: Edit, Delete, Back to List
 
-**Create/Edit Form**:
-- Name (CS/EN)
-- Description (CS/EN)
-- Base Price
-- Per-Room Price
-- Per-Bathroom Price
-- Is Active (toggle)
+**Service Create Page** (`/service-management/create`):
+- Full-page form for creating new service
+- Sections: Basic Info, Pricing, Translations (dynamic tabs)
+- Actions: Save, Cancel
+
+**Service Edit Page** (`/service-management/:serviceId/edit`):
+- Full-page form for editing existing service
+- Pre-populated with existing data
+- Sections: Basic Info, Pricing, Translations (dynamic tabs)
+- Actions: Save, Cancel
+
+**Form Fields**:
+- Name (required, max 100 chars)
+- Description (optional, max 500 chars)
+- Base Price (required, min 0)
+- Per-Room Price (required, min 0)
+- Estimated Time (minutes, required, min 0)
+- Is Active (toggle, future enhancement)
+
+**Translations System** (Dynamic - supports any language from database):
+- Translations loaded from backend (not hardcoded CS/EN)
+- Dynamic tabs for each supported language
+- Each language has: Name, Description
+- Languages can be added/removed via System Settings
+- Backend stores translations as key-value pairs (languageCode -> {name, description})
 
 #### 7.2 Package Catalog
 
-**URL**: `/packages`
+**URL**: `/package-management`
 
-**List**:
-- Table of all service packages
-- Columns: Name, Description, Price, Included Services, Active, Actions
+**Package List Page**:
+- Paginated table of all service packages
+- Columns: Name, Description (truncated), Price, Included Services Count, Actions
+- Search filter
+- Sorting support
+- Actions: View Details, Edit, Delete
 
-**Actions**:
-- Create New Package
-- Edit Package
-- Deactivate Package
-- Delete Package (if no orders)
+**Package Detail Page** (`/package-management/:packageId`):
+- Read-only view of package information
+- Sections: Basic Info, Pricing, Included Services List, Translations (dynamic), Metadata
+- Actions: Edit, Delete, Back to List
 
-**Create/Edit Form**:
-- Name (CS/EN)
-- Description (CS/EN)
-- Price
-- Included Services (multi-select)
-- Is Active (toggle)
+**Package Create Page** (`/package-management/create`):
+- Full-page form for creating new package
+- Sections: Basic Info, Service Selection, Translations (dynamic tabs)
+- Actions: Save, Cancel
+
+**Package Edit Page** (`/package-management/:packageId/edit`):
+- Full-page form for editing existing package
+- Pre-populated with existing data
+- Sections: Basic Info, Service Selection, Translations (dynamic tabs)
+- Actions: Save, Cancel
+
+**Form Fields**:
+- Name (required, max 100 chars)
+- Description (optional, max 500 chars)
+- Price (required, min 0)
+- Included Services (multi-select from available services)
+- Is Active (toggle, future enhancement)
+
+**Translations System** (Dynamic - supports any language from database):
+- Same dynamic approach as Services
+- Languages loaded from System Settings
+- Extensible without code changes
+
+#### 7.3 Translation Architecture
+
+**Key Design Decisions**:
+1. **Dynamic Language Support**: Languages are NOT hardcoded (no CS/EN only)
+2. **Backend-Driven**: Available languages loaded from `/api/admin/languages` endpoint
+3. **Extensible**: Adding a new language requires only:
+   - Add language to database via System Settings
+   - Translations for services/packages can be added immediately
+4. **Fallback**: If translation missing, show default (main) name/description
+5. **Storage**: Translations stored as JSON object `{ [languageCode]: { name, description } }`
+
+**Backend Requirements**:
+- `GET /api/admin/languages` - Returns list of supported language codes
+- Service/Package DTOs include `translations` dictionary
+- Create/Update commands accept translations dictionary
+
+**Frontend Implementation**:
+- On edit/create page load, fetch supported languages
+- Generate translation tabs dynamically based on available languages
+- Submit all translations in single save operation
 
 **Backend API**:
 ```csharp
-GET    /api/admin/services
-POST   /api/admin/services
-PUT    /api/admin/services/{id}
-DELETE /api/admin/services/{id}
+// Services
+POST   /api/AdminService/get-paged    // List with pagination
+GET    /api/AdminService/{serviceId}  // Get details
+POST   /api/AdminService              // Create service
+PUT    /api/AdminService/{serviceId}  // Update service
+DELETE /api/AdminService/{serviceId}  // Delete service
 
-GET    /api/admin/packages
-POST   /api/admin/packages
-PUT    /api/admin/packages/{id}
-DELETE /api/admin/packages/{id}
+// Packages
+POST   /api/AdminPackage/get-paged    // List with pagination
+GET    /api/AdminPackage/{packageId}  // Get details
+POST   /api/AdminPackage              // Create package
+PUT    /api/AdminPackage/{packageId}  // Update package
+DELETE /api/AdminPackage/{packageId}  // Delete package
+
+// Languages (for dynamic translations)
+GET    /api/admin/languages           // Get supported languages
 ```
 
 ---
@@ -1156,9 +1222,9 @@ libs/cleansia-admin-features/
 
 ---
 
-**Document Version**: 1.2
-**Last Updated**: 2026-01-02
-**Status**: Phase 1 IN PROGRESS - Core features partially implemented
+**Document Version**: 1.6
+**Last Updated**: 2026-01-08
+**Status**: Phase 1 COMPLETE - All core features implemented. System Settings COMPLETE (Languages ✅, Countries ✅, Currencies ✅, Company Info ✅).
 
 ---
 
@@ -1463,50 +1529,112 @@ These features exist in the backend but need admin interface:
 - [x] Photo download functionality
 - [x] Photo zoom/lightbox view
 
-#### Reports
-- [ ] Revenue Reports (`/reports/revenue`)
-  - Total revenue by period
-  - Revenue by service type
-  - Revenue trends chart
-- [ ] Payroll Reports (`/reports/payroll`)
-  - Total payroll by period
-  - Payroll by employee
-  - Payroll trends chart
+#### Reports (Complete)
+- [x] Revenue Reports (`/reports`)
+  - Total revenue by period with summary cards
+  - Revenue by service type (breakdown table)
+  - Revenue by package (breakdown table)
+  - Revenue by payment type (breakdown table)
+  - Summary cards (total revenue, avg order value, total orders, completed, cancelled, growth)
+- [x] Payroll Reports (`/reports`)
+  - Total payroll by period with summary cards
+  - Employee summaries table
+  - Payroll by status breakdown
+  - Monthly payroll breakdown
+  - Summary cards (total payroll, avg pay per employee, invoices, bonuses)
+- [x] Date range filtering with auto-refresh
+- [x] Tab-based navigation between Revenue and Payroll reports
+- [x] Backend: AdminReportController with revenue/payroll endpoints
+- [x] Full translations (EN/CS)
+- [x] Responsive styling with summary cards and data tables
 
-#### Service & Package Catalog
-- [ ] Service Catalog (`/services`)
-  - List all cleaning services
-  - Create/Edit/Delete services
-  - Set pricing (base, per-room, per-bathroom)
-  - Activate/Deactivate services
-- [ ] Package Catalog (`/packages`)
-  - List all service packages
-  - Create/Edit/Delete packages
-  - Set included services
-  - Activate/Deactivate packages
+#### Service Catalog (Complete - Page-Based Editing with Dynamic Translations)
+- [x] **Service List Page** (`/service-management`)
+  - Paginated table with search and sorting
+  - Edit, Delete actions (row click navigates to edit)
+  - Stylized action buttons with gradients and hover effects
+- [x] **Service Create Page** (`/service-management/create`)
+  - Full-page form with dynamic translation tabs
+  - Languages loaded from backend via `GET /api/AdminLanguage`
+  - Required validation for translation names
+- [x] **Service Edit Page** (`/service-management/:serviceId/edit`)
+  - Full-page form pre-populated with existing data
+  - Dynamic translation tabs based on supported languages
+  - Back/Cancel navigation returns to service list
+- [x] **Backend Language Endpoint**
+  - `AdminLanguageController` in `Cleansia.Web.Admin`
+  - `CanViewLanguages` policy for admin access
+  - Returns list of supported languages from database
 
-#### Admin User Management
-- [ ] Admin User List (`/settings/admin-users`)
-  - List all admin users
-  - Role assignment (Super Admin, Admin, Manager, Support)
-  - Active/Inactive status
-- [ ] Create/Edit Admin User
-  - Email, name, role
-  - Password reset
-  - Deactivate admin
+#### Package Catalog (Complete - Page-Based Editing with Dynamic Translations)
+- [x] **Package List Page** (`/package-management`)
+  - Paginated table with search and sorting
+  - Edit, Delete actions with stylized gradient buttons
+  - Delete confirmation dialog
+- [x] **Package Create Page** (`/package-management/create`)
+  - Full-page form with service multi-select
+  - Dynamic translation tabs from backend API
+  - Required validation for translation names
+- [x] **Package Edit Page** (`/package-management/:packageId/edit`)
+  - Full-page form pre-populated with existing data
+  - Service selection preserved from existing package
+  - Dynamic translation tabs
+- [x] **Backend Fix** - Fixed `Package.cs` `ClearTranslations()` and `ClearServices()` read-only collection errors
 
-#### System Settings
-- [ ] Countries Management (`/settings/countries`)
-  - List supported countries
-  - Add/Edit/Remove countries
-- [ ] Currencies Management (`/settings/currencies`)
-  - List supported currencies
-  - Exchange rates configuration
-  - Set default currency
-- [ ] Languages Management (`/settings/languages`)
-  - List supported languages
-  - Set default language
-  - Enable/Disable languages
+**Translation System Architecture**:
+- Languages NOT hardcoded (no CS/EN only)
+- Backend endpoint: `GET /api/AdminLanguage` returns supported language codes
+- Frontend dynamically generates translation tabs
+- Extensible: add new language to DB, immediately available for translations
+
+#### Admin User Management (Complete - 2026-01-07)
+- [x] Admin User List (`/admin-user-management`)
+  - List all admin users with pagination
+  - Search filter (name, email)
+  - Sortable columns (Name, Email, CreatedOn)
+  - Active/Inactive status toggle
+- [x] Create Admin User (`/admin-user-management/create`)
+  - Email, password, first name, last name, phone
+  - Password hashing with salt
+- [x] Edit Admin User (`/admin-user-management/:userId/edit`)
+  - Update name, phone (email not editable)
+- [x] Activate/Deactivate Admin
+  - Confirmation dialogs
+  - Status badges in list
+
+#### System Settings - Language Management (Complete - 2026-01-07)
+- [x] **Languages Management** (`/language-management`)
+  - Language List Page with pagination and sorting
+  - Create Language Page (`/language-management/create`)
+  - Edit Language Page (`/language-management/:languageId/edit`)
+  - Delete language with confirmation dialog
+  - Backend CRUD: `CreateLanguage`, `UpdateLanguage`, `DeleteLanguage`, `GetLanguageById`
+  - Validation: Language code uniqueness check
+  - Full translations (EN/CS)
+
+#### System Settings - Country Management (Complete - 2026-01-07)
+- [x] **Countries Management** (`/country-management`)
+  - Country List Page with pagination and sorting
+  - Create Country Page (`/country-management/create`)
+  - Edit Country Page (`/country-management/:countryId/edit`)
+  - Delete country with confirmation dialog
+  - Backend CRUD: `CreateCountry`, `UpdateCountry`, `DeleteCountry`, `GetCountryById`, `GetCountryOverview`
+  - Validation: ISO code uniqueness check
+  - Delete validation: Country cannot be deleted if in use by employees, templates, invoices, etc.
+  - Full translations (EN/CS)
+
+#### System Settings - Currency Management (Complete - 2026-01-07)
+- [x] **Currencies Management** (`/currency-management`)
+  - Currency List Page with pagination and sorting
+  - Create Currency Page (`/currency-management/create`)
+  - Edit Currency Page (`/currency-management/:currencyId/edit`)
+  - Delete currency with confirmation dialog
+  - Backend CRUD: `CreateCurrency`, `UpdateCurrency`, `DeleteCurrency`, `GetCurrencyById`, `GetCurrencyOverview`
+  - Validation: Currency code uniqueness check
+  - Delete validation: Currency cannot be deleted if in use or is default currency
+  - Exchange rate field for currency conversion
+  - IsDefault indicator in list
+  - Full translations (EN/CS)
 
 ### ⏸️ DEFERRED (Implement Later)
 
@@ -1585,25 +1713,288 @@ These features exist in the backend but need admin interface:
 | Order Management | ✅ Complete | 100% |
 | Invoice Management | ✅ Complete | 100% |
 | Order Photo Gallery | ✅ Complete | 100% |
-| Reports (Revenue, Payroll) | 🔜 Next Priority | 0% |
-| Service/Package Catalog | 🔜 Next Priority | 0% |
-| Admin User Management | 🔜 Next Priority | 0% |
-| System Settings | 🔜 Next Priority | 0% |
+| Reports (Revenue, Payroll) | ✅ Complete | 100% |
+| Service Catalog | ✅ Complete | 100% |
+| Package Catalog | ✅ Complete | 100% |
+| Admin User Management | ✅ Complete | 100% |
+| Language Management | ✅ Complete | 100% |
+| Country Management | ✅ Complete | 100% |
+| Currency Management | ✅ Complete | 100% |
+| Company Info Management | ✅ Complete | 100% |
 | Pay Configuration | ⏸️ Deferred | 0% |
 | Dispute Management | ⏸️ Deferred | 0% |
 | Employee Bulk Actions | ⏸️ Deferred | 0% |
-| Company Information | 📝 Not Listed | 0% |
 | Template Management | 📝 Not Listed | 0% |
 | Translation Management | 📝 Not Listed | 0% |
-| **Phase 1 Overall** | **In Progress** | **~90%** |
+| **Phase 1 Overall** | **Complete** | **100%** |
 
-### Next Priority Tasks (Updated 2026-01-03)
+### Completed Tasks (Updated 2026-01-08)
 1. ✅ ~~Employee Management~~ - Complete
 2. ✅ ~~Pay Period Management~~ - Complete
 3. ✅ ~~Order Management~~ - Complete
 4. ✅ ~~Invoice Management~~ - Complete
 5. ✅ ~~Order Photo Gallery View~~ - Complete
-6. 🔜 **Reports (Revenue, Payroll)** - Next
-7. 🔜 **Service/Package Catalog** - Next
-8. 🔜 **Admin User Management** - Next
-9. 🔜 **System Settings (Countries, Currencies, Languages)** - Next
+6. ✅ ~~Service Catalog~~ - Complete (List, Create, Edit pages with dynamic translations)
+7. ✅ ~~Package Catalog~~ - Complete (List, Create, Edit pages with dynamic translations)
+8. ✅ ~~Reports (Revenue, Payroll)~~ - Complete (Revenue/Payroll tabs, date filtering, summary cards)
+9. ✅ ~~Admin User Management~~ - Complete (List, Create, Edit, Activate/Deactivate)
+10. ✅ ~~Language Management~~ - Complete (List, Create, Edit, Delete)
+11. ✅ ~~Country Management~~ - Complete (List, Create, Edit, Delete with in-use validation)
+12. ✅ ~~Currency Management~~ - Complete (List, Create, Edit, Delete with in-use validation)
+13. ✅ ~~Company Info Management~~ - Complete (Multi-country support, List, Create, Edit, Delete with last-active validation)
+
+### Next Priority Tasks
+- Pay Configuration Management (if needed)
+- Dispute Management (if needed)
+- Template Management (Invoice, Receipt, Email templates)
+
+### Service/Package Implementation Notes (2026-01-06)
+**Approach Change**: Using full-page editing instead of dialogs
+- Service List Page: ✅ Complete
+- Service Detail Page: ❌ Removed (not needed since Edit page exists)
+- Service Create Page: ✅ Complete (`/service-management/create`)
+- Service Edit Page: ✅ Complete (`/service-management/:serviceId/edit`)
+- Package List Page: ✅ Complete (`/package-management`)
+- Package Create Page: ✅ Complete (`/package-management/create`)
+- Package Edit Page: ✅ Complete (`/package-management/:packageId/edit`)
+
+**Translation System**: Dynamic language support
+- Languages loaded from backend via `GET /api/AdminLanguage` endpoint
+- Backend `AdminLanguageController` implemented in `Cleansia.Web.Admin`
+- Frontend dynamically generates translation tabs based on available languages
+- Translations stored as `{ [langCode]: { name, description } }`
+- Extensible without frontend code changes - just add language to DB
+
+**Backend Validation** (2026-01-06):
+- Translations required for ALL languages defined in the system
+- Each translation must have a name (required, max 100 chars)
+- Description is optional (max 500 chars)
+- Backend validates using `ILanguageRepository` to check all languages are provided
+- Fixed `ClearTranslations()` read-only collection error in `Service.cs`
+
+**Frontend Validation** (2026-01-06):
+- Translation name fields are required with `Validators.required`
+- Form won't submit until all translation names are filled
+- All translations sent to backend (no filtering of empty ones)
+
+**UI Improvements** (2026-01-06):
+- Replaced deprecated `p-tabView` with new `p-tabs` component (PrimeNG v18+)
+- Replaced deprecated `pInputTextarea` with `pTextarea` directive
+- Stylized table action buttons with gradient backgrounds, rounded corners, hover effects
+
+### Admin User Management Implementation Notes (2026-01-07)
+
+**Backend Implementation**:
+- `GetPagedAdminUsers.cs` - List admin users with pagination, filtering, sorting
+- `GetAdminUserById.cs` - Get admin user details with FluentValidation
+- `CreateAdminUser.cs` - Create new admin with password hashing (`HashAndSaltPassword()`)
+- `UpdateAdminUser.cs` - Update admin user info (name, phone)
+- `DeactivateAdminUser.cs` / `ActivateAdminUser.cs` - Toggle user status
+- `AdminUserController.cs` - REST API endpoints following existing patterns
+- `AdminUserMappers.cs` - DTO mappers using `CreatedOn` from Auditable
+- `UserSort.cs` - Added `CreatedOn` sorting support
+- `UserSpecification.cs` - Added `SearchTerm` filter for name/email search
+
+**Frontend Implementation**:
+- `admin-user-management` library in `libs/cleansia-admin-features/`
+- List page with search filter and sortable table columns
+- Create/Edit form with `cleansia-telephone` for phone number input
+- Activate/Deactivate actions with confirmation dialogs
+- SCSS styles matching existing admin pages
+- Full translations (EN/CS)
+- Sidebar menu item added
+
+**Key Features**:
+- Admin users filtered by `UserProfile.Administrator (100)`
+- Password required only on create (not editable on update)
+- Email not editable after creation
+- Phone number uses masked input component
+
+### Language Management Implementation Notes (2026-01-07)
+
+**Backend Implementation**:
+- `CreateLanguage.cs` - Create new language with code uniqueness validation
+- `UpdateLanguage.cs` - Update language name (code not editable)
+- `DeleteLanguage.cs` - Delete language with in-use validation
+- `GetLanguageById.cs` - Get language details
+- `LanguageDetailDto.cs` - DTO for language details
+- `LanguageMappers.cs` - Added `MapToDetailDto()` mapper
+- `AdminLanguageController.cs` - Extended with full CRUD endpoints
+- `Policy.cs` - Added `CanCreateLanguage`, `CanUpdateLanguage`, `CanDeleteLanguage`
+- `ILanguageRepository.cs` - Added `IsInUseAsync()` method
+- `LanguageRepository.cs` - Implemented `IsInUseAsync()` to check all referencing entities
+
+**Delete Language Validation** (2026-01-07):
+- Cannot delete a language if it's referenced by any of these entities:
+  - Users (via `PreferredLanguageCode`)
+  - EmailTranslations (via `LanguageId`)
+  - EmailTemplateTranslations (via `LanguageId`)
+  - InvoiceTemplates (via `LanguageId`)
+  - ReceiptTemplates (via `LanguageId`)
+  - OrderReceipts (via `LanguageId`)
+  - EmployeeInvoices (via `LanguageId`)
+- Error message: `language.in_use` with user-friendly translations (EN/CS)
+- Validation in both FluentValidation and Handler for safety
+
+**Frontend Implementation**:
+- `language-management` library in `libs/cleansia-admin-features/`
+- Language List Page with sortable table (Name, Code columns)
+- Create/Edit form with code and name fields
+- Code field disabled in edit mode (not changeable)
+- Delete confirmation dialog
+- Uses `AdminClient.adminLanguageClient` for API calls
+- Full translations (EN/CS)
+
+**Key Features**:
+- Language code unique validation (backend)
+- Code not editable after creation (frontend disabled)
+- Language deletion blocked if in use by any entity
+- Languages used by Service/Package translation system
+- Added `[text]` input property to `CleansiaButtonComponent` for text-style buttons
+
+---
+
+### Country Management Implementation Notes (2026-01-07)
+
+**Backend Implementation**:
+- `CreateCountry.cs` - Create new country with ISO code uniqueness validation
+- `UpdateCountry.cs` - Update country name (ISO code not editable)
+- `DeleteCountry.cs` - Delete with in-use validation
+- `GetCountryById.cs` - Get country details
+- `GetCountryOverview.cs` - List all countries
+- `AdminCountryController.cs` - REST API endpoints (get-overview, details, create, update, delete)
+- `CountryMappers.cs` - DTO mappers for list and detail DTOs
+- `ICountryRepository.cs` - Added `ExistsWithIsoCodeAsync`, `GetByIsoCodeAsync`, `IsInUseAsync`
+- `CountryRepository.cs` - Implemented repository methods
+- Policies: `CanViewCountries`, `CanCreateCountry`, `CanUpdateCountry`, `CanDeleteCountry`
+
+**Delete Country Validation**:
+- Cannot delete a country if it's referenced by any of these entities:
+  - Employees (via Address.CountryId)
+  - CompanyInfo (via CountryId)
+  - ReceiptTemplates (via CountryId)
+  - InvoiceTemplates (via CountryId)
+  - CountryInvoiceConfigs (via CountryId)
+  - EmployeeInvoices (via CountryId)
+- Error message: `country.in_use` with user-friendly translations (EN/CS)
+
+**Frontend Implementation**:
+- `country-management` library in `libs/cleansia-admin-features/`
+- Country List Page with sortable table (ISO Code, Name columns)
+- Create/Edit form with ISO code and name fields
+- ISO code field disabled in edit mode (not changeable)
+- Delete confirmation dialog
+- Uses `AdminClient.adminCountryClient` for API calls
+- SCSS styles following Language Management pattern
+- Full translations (EN/CS)
+- Sidebar menu item with `pi pi-map` icon
+
+**Key Features**:
+- ISO code unique validation (backend)
+- ISO code not editable after creation (frontend disabled)
+- Country deletion blocked if in use by any entity
+- Countries used by various entities (Employees, Templates, Invoices)
+
+---
+
+### Currency Management Implementation Notes (2026-01-07)
+
+**Backend Implementation**:
+- `CreateCurrency.cs` - Create new currency with code uniqueness validation
+- `UpdateCurrency.cs` - Update currency details (name, symbol, exchange rate) - code not editable
+- `DeleteCurrency.cs` - Delete with in-use validation and default currency protection
+- `GetCurrencyById.cs` - Get currency details
+- `GetCurrencyOverview.cs` - List all currencies (sorted by name)
+- `AdminCurrencyController.cs` - REST API endpoints (get-overview, details, create, update, delete)
+- `CurrencyMappers.cs` - DTO mappers including `IsDefault` field
+- `CurrencyDetailDto.cs` - DTO with IsDefault indicator
+- `ICurrencyRepository.cs` - Added `ExistsWithCodeAsync`, `IsInUseAsync`
+- `CurrencyRepository.cs` - Implemented repository methods
+- Policies: `CanViewCurrencies`, `CanCreateCurrency`, `CanUpdateCurrency`, `CanDeleteCurrency`
+
+**Delete Currency Validation**:
+- Cannot delete a currency if it's referenced by any of these entities:
+  - Orders (via CurrencyId)
+  - EmployeePayConfigs (via CurrencyId)
+  - EmployeeInvoices (via CurrencyId)
+- Cannot delete the default currency
+- Error messages: `currency.in_use`, `currency.cannot_delete_default` with translations (EN/CS)
+
+**Frontend Implementation**:
+- `currency-management` library in `libs/cleansia-admin-features/`
+- Currency List Page with sortable table (Code, Symbol, Name, Exchange Rate, Is Default columns)
+- Create/Edit form with code, symbol, name, and exchange rate fields
+- Code field disabled in edit mode (not changeable)
+- IsDefault column shows Yes/No badge
+- Delete button disabled for default currency
+- Delete confirmation dialog with cannot-delete-default handling
+- Uses `AdminClient.adminCurrencyClient` for API calls
+- SCSS styles following Country/Language Management pattern
+- Full translations (EN/CS)
+- Sidebar menu item with `pi pi-dollar` icon
+
+**Key Features**:
+- Currency code unique validation (backend)
+- Currency code not editable after creation (frontend disabled)
+- Currency deletion blocked if in use or is default
+- Exchange rate field for conversion calculations
+- IsDefault indicator in list view
+
+---
+
+### Company Info Management Implementation Notes (2026-01-08)
+
+**Feature Overview**:
+Converted CompanyInfo from a singleton pattern (one global record) to a multi-country CRUD pattern where each country can have exactly one CompanyInfo record. This enables business expansion across multiple countries with different legal entities, tax info, and banking details per country.
+
+**Backend Implementation**:
+- `CreateCompanyInfo.cs` - Create new company info with country uniqueness validation
+- `UpdateCompanyInfo.cs` - Update company info (requires `CompanyInfoId` parameter)
+- `DeleteCompanyInfo.cs` - Delete with last-active validation (cannot delete if only remaining active)
+- `GetCompanyInfoById.cs` - Get company info details with Country include
+- `GetPagedCompanyInfo.cs` - Paged list with search/filter
+- `CompanyInfoListItem.cs` - DTO for list view with country name
+- `CompanyInfoMappers.cs` - Added `MapToListItem()` mapper
+- `AdminCompanyController.cs` - REST API endpoints (get-paged, details, create, update, delete)
+- Policies: `CanCreateCompanyInfo`, `CanDeleteCompanyInfo`
+
+**Repository Extensions**:
+- `ICompanyInfoRepository.cs` - Added multi-country support methods:
+  - `GetActiveByCountryAsync(countryId)` - Get active company info for specific country
+  - `ExistsActiveForCountryAsync(countryId)` - Check if country already has active company info
+  - `ExistsActiveForCountryExcludingAsync(countryId, excludeId)` - Check excluding current record (for updates)
+  - `CountActiveAsync()` - Count total active company infos (for delete validation)
+- `CompanyInfoRepository.cs` - Implemented all new methods with proper EF Core queries
+
+**Entity Configuration** (Application-Level Uniqueness):
+- Removed database filtered unique index due to PostgreSQL syntax incompatibility
+- One-per-country uniqueness enforced at application level via validators
+- Composite index on `(CountryId, IsActive)` for query performance (not unique)
+
+**Delete Validation**:
+- Cannot delete a CompanyInfo if it's the last active one
+- System requires at least one active company info for invoice/receipt generation
+- Error message: `company.in_use` with translations (EN/CS)
+
+**Backward Compatibility**:
+- `GetActiveCompanyInfoAsync()` method kept for existing code
+- Invoice/Receipt services use fallback pattern:
+  1. Try `GetActiveByCountryAsync(countryId)` first
+  2. Fallback to `GetActiveCompanyInfoAsync()` if country-specific not found
+
+**Frontend Implementation**:
+- `company-info-list` - List page with paginated table, search, sorting
+- `company-info-form` - Create/Edit form with all company info fields
+- Routes: `/company-info`, `/company-info/create`, `/company-info/:companyInfoId/edit`
+- Country dropdown in form (enabled for create, shows country name in list)
+- Delete confirmation dialog with last-active validation message
+- Uses `AdminClient.adminCompanyClient` for API calls
+- Full translations (EN/CS)
+
+**Key Features**:
+- One company info per country (enforced at application level)
+- Full CRUD operations (List, Create, Edit, Delete)
+- Country selection with dropdown populated from backend
+- Cannot delete the last active company info
+- Country-based lookup with fallback for invoice/receipt generation
+- All existing invoice/receipt functionality continues to work

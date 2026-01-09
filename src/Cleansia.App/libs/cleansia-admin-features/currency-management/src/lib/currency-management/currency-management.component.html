@@ -1,0 +1,45 @@
+<div class="cleansia-currency-management">
+  <cleansia-language-switcher />
+  <div class="cleansia-currency-management__container">
+    <div class="cleansia-currency-management__header">
+      <div class="header-content">
+        <cleansia-title
+          [title]="'pages.currency_management.title' | translate"
+        />
+        <p class="cleansia-currency-management__description">
+          {{ 'pages.currency_management.description' | translate }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="filter-panel">
+      <div class="filter-actions">
+        <cleansia-button
+          [label]="'pages.currency_management.create_currency' | translate"
+          icon="pi pi-plus"
+          (onClick)="createCurrency()"
+        />
+      </div>
+    </div>
+
+    <!-- Currency Table -->
+    <cleansia-section>
+      @if (facade.loading() && facade.currencies().length === 0) {
+      <cleansia-loader />
+      } @else {
+      <cleansia-table
+        [data]="facade.currencies()"
+        [tableDefinition]="currencyTableDefinition"
+        [paginator]="false"
+        [emptyMessage]="'pages.currency_management.no_currencies'"
+        tableClass="cleansia-currency-management__table"
+        [loading]="facade.loading()"
+      >
+      </cleansia-table>
+      }
+    </cleansia-section>
+  </div>
+</div>
+
+<p-confirmDialog />

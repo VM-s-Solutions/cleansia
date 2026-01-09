@@ -1,0 +1,45 @@
+<div class="cleansia-language-management">
+  <cleansia-language-switcher />
+  <div class="cleansia-language-management__container">
+    <div class="cleansia-language-management__header">
+      <div class="header-content">
+        <cleansia-title
+          [title]="'pages.language_management.title' | translate"
+        />
+        <p class="cleansia-language-management__description">
+          {{ 'pages.language_management.description' | translate }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="filter-panel">
+      <div class="filter-actions">
+        <cleansia-button
+          [label]="'pages.language_management.create_language' | translate"
+          icon="pi pi-plus"
+          (onClick)="createLanguage()"
+        />
+      </div>
+    </div>
+
+    <!-- Language Table -->
+    <cleansia-section>
+      @if (facade.loading() && facade.languages().length === 0) {
+      <cleansia-loader />
+      } @else {
+      <cleansia-table
+        [data]="facade.languages()"
+        [tableDefinition]="languageTableDefinition"
+        [paginator]="false"
+        [emptyMessage]="'pages.language_management.no_languages'"
+        tableClass="cleansia-language-management__table"
+        [loading]="facade.loading()"
+      >
+      </cleansia-table>
+      }
+    </cleansia-section>
+  </div>
+</div>
+
+<p-confirmDialog />

@@ -1,0 +1,143 @@
+<div class="template-form-page">
+  <div class="page-header">
+    <cleansia-title [title]="pageTitle()">
+      <cleansia-language-switcher />
+    </cleansia-title>
+  </div>
+
+  <div class="page-content">
+    <div class="header-actions">
+      <cleansia-button
+        [label]="'global.actions.back' | translate"
+        icon="pi pi-arrow-left"
+        [outlined]="true"
+        (onClick)="onCancel()"
+      />
+    </div>
+
+    @if (facade.loading()) {
+    <cleansia-loader />
+    } @else {
+    <form
+      [formGroup]="form"
+      (ngSubmit)="onSubmit()"
+      class="template-form-container"
+    >
+      <cleansia-section
+        [title]="'pages.template_management.sections.template_info' | translate"
+      >
+        <div class="template-info-badges">
+          @if (templateKey) {
+          <span class="badge badge--key">{{ templateKey }}</span>
+          }
+          @if (languageCode) {
+          <span class="badge badge--language">{{ languageCode }}</span>
+          }
+          @if (emailTypeName) {
+          <span class="badge badge--type">{{ emailTypeName }}</span>
+          }
+        </div>
+      </cleansia-section>
+
+      @if (availableVariables().length > 0) {
+      <cleansia-section
+        [title]="'pages.template_management.sections.available_variables' | translate"
+      >
+        <p class="variables-hint">{{ 'pages.template_management.variables.hint' | translate }}</p>
+        <div class="variables-list">
+          @for (variable of availableVariables(); track variable.name) {
+          <div class="variable-item" (click)="copyVariable(variable.name)">
+            <code class="variable-name">{{ variable.name }}</code>
+            <span class="variable-description">{{ variable.descriptionKey | translate }}</span>
+            <i class="pi pi-copy variable-copy-icon" [title]="'global.actions.copy' | translate"></i>
+          </div>
+          }
+        </div>
+      </cleansia-section>
+      }
+
+      <cleansia-section
+        [title]="'pages.template_management.sections.content' | translate"
+      >
+        <div class="form-grid">
+          <div class="form-field full-width">
+            <cleansia-textarea
+              formControlName="value"
+              [label]="'pages.template_management.fields.body' | translate"
+              [placeholder]="'pages.template_management.placeholders.body' | translate"
+              [rows]="15"
+              [required]="true"
+            />
+            <small class="hint">{{
+              'pages.template_management.hints.html_supported' | translate
+            }}</small>
+          </div>
+        </div>
+      </cleansia-section>
+
+      <div class="form-actions">
+        <cleansia-button
+          [label]="'global.actions.cancel' | translate"
+          [outlined]="true"
+          (onClick)="onCancel()"
+        />
+        <cleansia-button
+          [label]="'pages.template_management.actions.send_test_email' | translate"
+          icon="pi pi-send"
+          [outlined]="true"
+          [disabled]="facade.sendingTestEmail()"
+          [loading]="facade.sendingTestEmail()"
+          (onClick)="openTestEmailDialog()"
+        />
+        <cleansia-button
+          [label]="'global.actions.save' | translate"
+          type="submit"
+          [disabled]="facade.saving()"
+          [loading]="facade.saving()"
+          (onClick)="onSubmit()"
+        />
+      </div>
+    </form>
+    }
+  </div>
+</div>
+
+<!-- Send Test Email Dialog -->
+<p-dialog
+  [header]="'pages.template_management.dialogs.send_test_email.title' | translate"
+  [(visible)]="showTestEmailDialog"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '450px' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <form [formGroup]="testEmailForm" (ngSubmit)="onSendTestEmail()">
+    <p class="dialog-description">
+      {{ 'pages.template_management.dialogs.send_test_email.description' | translate }}
+    </p>
+    <div class="form-field">
+      <cleansia-text-input
+        formControlName="recipientEmail"
+        [label]="'pages.template_management.dialogs.send_test_email.recipient_email' | translate"
+        [placeholder]="'pages.template_management.dialogs.send_test_email.recipient_placeholder' | translate"
+        [required]="true"
+        type="email"
+      />
+    </div>
+  </form>
+  <ng-template pTemplate="footer">
+    <cleansia-button
+      [label]="'global.actions.cancel' | translate"
+      [outlined]="true"
+      (onClick)="closeTestEmailDialog()"
+    />
+    <cleansia-button
+      [label]="'pages.template_management.actions.send_test_email' | translate"
+      icon="pi pi-send"
+      [disabled]="facade.sendingTestEmail() || testEmailForm.invalid"
+      [loading]="facade.sendingTestEmail()"
+      (onClick)="onSendTestEmail()"
+    />
+  </ng-template>
+</p-dialog>

@@ -5,6 +5,8 @@ import { TranslateService } from '@ngx-translate/core';
 export function getServiceTableDefinition(
   defs: {
     onViewDetails: (row: ServiceListItem) => void;
+    onEdit: (row: ServiceListItem) => void;
+    onDelete: (row: ServiceListItem) => void;
   },
   translate: TranslateService,
   formatCurrency: (value: number | undefined) => string
@@ -59,18 +61,27 @@ export function getServiceTableDefinition(
         ),
         columnActions: [
           {
-            icon: 'pi pi-eye',
-            onClick: (row: ServiceListItem) => defs.onViewDetails(row),
-            buttonPalette: 'p-button-info p-button-sm',
+            icon: 'pi pi-pencil',
+            onClick: (row: ServiceListItem) => defs.onEdit(row),
+            buttonPalette: 'p-button-warning p-button-sm',
+            tooltip: {
+              title: translate.instant('pages.service_management.edit_service'),
+              position: 'above',
+            },
+          },
+          {
+            icon: 'pi pi-trash',
+            onClick: (row: ServiceListItem) => defs.onDelete(row),
+            buttonPalette: 'p-button-danger p-button-sm',
             tooltip: {
               title: translate.instant(
-                'pages.service_management.view_details'
+                'pages.service_management.delete_service'
               ),
               position: 'above',
             },
           },
         ],
-        columnClass: 'width-10',
+        columnClass: 'width-15',
       },
     ],
   };

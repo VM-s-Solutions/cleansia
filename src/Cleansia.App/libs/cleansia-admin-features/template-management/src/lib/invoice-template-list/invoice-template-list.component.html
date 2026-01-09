@@ -1,0 +1,31 @@
+<div class="cleansia-template-list">
+  <div class="filter-panel">
+    <div class="filter-actions">
+      <cleansia-button
+        [label]="'pages.template_management.create_template' | translate"
+        icon="pi pi-plus"
+        (onClick)="facade.navigateToCreate()"
+      />
+    </div>
+  </div>
+
+  <cleansia-section>
+    @if (facade.loading() && facade.templates().length === 0) {
+    <cleansia-loader />
+    } @else {
+    <cleansia-table
+      [data]="facade.templates()"
+      [tableDefinition]="tableDefinition"
+      [paginator]="true"
+      [rows]="20"
+      [emptyMessage]="'pages.template_management.no_templates'"
+      tableClass="cleansia-template-list__table"
+      [loading]="facade.loading()"
+      (sortChange)="onSortChange($event)"
+    >
+    </cleansia-table>
+    }
+  </cleansia-section>
+</div>
+
+<p-confirmDialog />

@@ -19,7 +19,7 @@ import { CleansiaBaseFormInputComponent } from '../cleansia-base-form';
   ],
 })
 export class CleansiaTelephoneComponent extends CleansiaBaseFormInputComponent {
-  floatVariant = input<'on' | 'in' | 'over'>();
+  floatVariant = input<'on' | 'in' | 'over'>('on');
   id = input<string>('cleansia-tel-' + Math.random().toString(36).substring(2));
   mask = input<string>('+420 999 999 999');
 

@@ -27,7 +27,14 @@ public sealed class ReceiptService(
             throw new InvalidOperationException(BusinessErrorMessage.LanguageNotFound);
         }
 
-        var companyInfo = await companyInfoRepository.GetActiveCompanyInfoAsync(cancellationToken);
+        // Try to get company info by customer's country, fallback to any active
+        var countryId = order.CustomerAddress?.CountryId;
+        var companyInfo = countryId != null
+            ? await companyInfoRepository.GetActiveByCountryAsync(countryId, cancellationToken)
+            : null;
+
+        companyInfo ??= await companyInfoRepository.GetActiveCompanyInfoAsync(cancellationToken);
+
         if (companyInfo == null)
         {
             throw new InvalidOperationException(BusinessErrorMessage.CompanyInfoNotFound);

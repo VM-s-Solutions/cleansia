@@ -72,6 +72,55 @@ public static class PolicyBuilder
         [Policy.CanCreatePackage] = PhysicalPolicy.AdminOnly,
         [Policy.CanUpdatePackage] = PhysicalPolicy.AdminOnly,
         [Policy.CanDeletePackage] = PhysicalPolicy.AdminOnly,
+
+        // Languages
+        [Policy.CanViewLanguages] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCreateLanguage] = PhysicalPolicy.AdminOnly,
+        [Policy.CanUpdateLanguage] = PhysicalPolicy.AdminOnly,
+        [Policy.CanDeleteLanguage] = PhysicalPolicy.AdminOnly,
+
+        // Countries
+        [Policy.CanViewCountries] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCreateCountry] = PhysicalPolicy.AdminOnly,
+        [Policy.CanUpdateCountry] = PhysicalPolicy.AdminOnly,
+        [Policy.CanDeleteCountry] = PhysicalPolicy.AdminOnly,
+
+        // Currencies
+        [Policy.CanViewCurrencies] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCreateCurrency] = PhysicalPolicy.AdminOnly,
+        [Policy.CanUpdateCurrency] = PhysicalPolicy.AdminOnly,
+        [Policy.CanDeleteCurrency] = PhysicalPolicy.AdminOnly,
+
+        // Admin Users
+        [Policy.CanViewAdminUsers] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCreateAdminUser] = PhysicalPolicy.AdminOnly,
+        [Policy.CanUpdateAdminUser] = PhysicalPolicy.AdminOnly,
+        [Policy.CanDeactivateAdminUser] = PhysicalPolicy.AdminOnly,
+        [Policy.CanActivateAdminUser] = PhysicalPolicy.AdminOnly,
+
+        // Company Info
+        [Policy.CanViewCompanyInfo] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCreateCompanyInfo] = PhysicalPolicy.AdminOnly,
+        [Policy.CanUpdateCompanyInfo] = PhysicalPolicy.AdminOnly,
+        [Policy.CanDeleteCompanyInfo] = PhysicalPolicy.AdminOnly,
+
+        // Invoice Templates
+        [Policy.CanViewInvoiceTemplates] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCreateInvoiceTemplate] = PhysicalPolicy.AdminOnly,
+        [Policy.CanUpdateInvoiceTemplate] = PhysicalPolicy.AdminOnly,
+        [Policy.CanDeleteInvoiceTemplate] = PhysicalPolicy.AdminOnly,
+        [Policy.CanActivateInvoiceTemplate] = PhysicalPolicy.AdminOnly,
+
+        // Receipt Templates
+        [Policy.CanViewReceiptTemplates] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCreateReceiptTemplate] = PhysicalPolicy.AdminOnly,
+        [Policy.CanUpdateReceiptTemplate] = PhysicalPolicy.AdminOnly,
+        [Policy.CanDeleteReceiptTemplate] = PhysicalPolicy.AdminOnly,
+        [Policy.CanActivateReceiptTemplate] = PhysicalPolicy.AdminOnly,
+
+        // Email Templates
+        [Policy.CanViewEmailTemplates] = PhysicalPolicy.AdminOnly,
+        [Policy.CanUpdateEmailTemplate] = PhysicalPolicy.AdminOnly,
     };
 
     public static string ToPhysicalPolicy(this string permission) =>

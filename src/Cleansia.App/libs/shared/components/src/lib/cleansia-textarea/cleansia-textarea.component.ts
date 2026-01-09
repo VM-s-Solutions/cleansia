@@ -3,19 +3,13 @@ import { Component, forwardRef, input, output } from '@angular/core';
 import { FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { ErrorPipe } from '@cleansia/pipes';
 import { FloatLabelModule } from 'primeng/floatlabel';
-import { InputTextarea } from 'primeng/inputtextarea';
+import { Textarea } from 'primeng/textarea';
 import { CleansiaBaseFormInputComponent } from '../cleansia-base-form';
 
 @Component({
   selector: 'cleansia-textarea',
   standalone: true,
-  imports: [
-    CommonModule,
-    ErrorPipe,
-    InputTextarea,
-    FormsModule,
-    FloatLabelModule,
-  ],
+  imports: [CommonModule, ErrorPipe, Textarea, FormsModule, FloatLabelModule],
   templateUrl: './cleansia-textarea.component.html',
   providers: [
     {
@@ -30,7 +24,7 @@ export class CleansiaTextareaComponent extends CleansiaBaseFormInputComponent {
   rows = input<number>(3);
   cols = input<number | undefined>(undefined);
   autoResize = input<boolean>(false);
-  floatVariant = input<'over' | 'in' | 'on' | null>(null);
+  floatVariant = input<'over' | 'in' | 'on'>('on');
 
   valueChanges = output<any>();
 

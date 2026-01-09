@@ -71,7 +71,7 @@ public static class OrderMappers
             SpecialInstructions: order.SpecialInstructions,
             AccessInstructions: order.AccessInstructions,
             SelectedPackages: order.SelectedPackages.Select(op => op.Package.MapToDetails(order.Currency.Code)),
-            Currency: order.Currency.MapToDetails(),
+            Currency: order.Currency.MapToDetailDto(),
             SelectedServices: order.SelectedServices.Select(os => os.Service.MapToDetails(order.Currency.Code)),
             StatusHistory: order.OrderStatusHistory.Select(sh => sh.MapToDto()) ?? [],
             CreatedOn: order.CreatedOn,

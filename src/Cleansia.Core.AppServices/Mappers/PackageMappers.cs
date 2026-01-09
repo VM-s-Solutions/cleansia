@@ -26,4 +26,20 @@ public static class PackageMappers
             IncludedServices: package.IncludedServices.Select(s => s.Service.Name)
         );
     }
+
+    public static AdminPackageDetailDto MapToAdminDetail(this Domain.Packages.Package package)
+    {
+        return new AdminPackageDetailDto(
+            Id: package.Id,
+            Name: package.Name,
+            Description: package.Description,
+            Price: package.Price,
+            Translations: package.Translations.ToDictionary(),
+            IncludedServices: package.IncludedServices.Select(ps => new PackageServiceDto(
+                ps.Service!.Id,
+                ps.Service.Name,
+                ps.Service.Description)),
+            CreatedOn: package.CreatedOn,
+            UpdatedOn: package.UpdatedOn);
+    }
 }

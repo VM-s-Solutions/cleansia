@@ -82,6 +82,41 @@ export class AppComponent implements OnInit {
       route: '/service-management',
     },
     {
+      label: this.translate.instant('sidebar.packages'),
+      icon: 'pi pi-box',
+      route: '/package-management',
+    },
+    {
+      label: this.translate.instant('sidebar.adminUsers'),
+      icon: 'pi pi-user-plus',
+      route: '/admin-user-management',
+    },
+    {
+      label: this.translate.instant('sidebar.languages'),
+      icon: 'pi pi-globe',
+      route: '/language-management',
+    },
+    {
+      label: this.translate.instant('sidebar.countries'),
+      icon: 'pi pi-map',
+      route: '/country-management',
+    },
+    {
+      label: this.translate.instant('sidebar.currencies'),
+      icon: 'pi pi-dollar',
+      route: '/currency-management',
+    },
+    {
+      label: this.translate.instant('sidebar.companyInfo'),
+      icon: 'pi pi-building',
+      route: '/company-info',
+    },
+    {
+      label: this.translate.instant('sidebar.templates'),
+      icon: 'pi pi-file-edit',
+      route: '/template-management',
+    },
+    {
       label: this.translate.instant('sidebar.logout'),
       icon: 'pi pi-sign-out',
       onClickFn: () => {

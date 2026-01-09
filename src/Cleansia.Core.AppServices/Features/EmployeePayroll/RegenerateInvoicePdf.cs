@@ -110,7 +110,12 @@ public class RegenerateInvoicePdf
 
             var employee = await employeeRepository.GetByIdAsync(invoice.EmployeeId, cancellationToken);
             var currency = await currencyRepository.GetByIdAsync(invoice.CurrencyId, cancellationToken);
-            var companyInfo = await companyInfoRepository.GetActiveCompanyInfoAsync(cancellationToken);
+
+            var countryId = employee.Address?.CountryId ?? Constants.Language.Czech;
+
+            // Try to get company info by employee's country, fallback to any active
+            var companyInfo = await companyInfoRepository.GetActiveByCountryAsync(countryId, cancellationToken)
+                ?? await companyInfoRepository.GetActiveCompanyInfoAsync(cancellationToken);
 
             if (companyInfo == null)
             {
@@ -121,8 +126,6 @@ public class RegenerateInvoicePdf
                 .GetByInvoiceId(invoice.Id)
                 .Include(op => op.Order)
                 .ToListAsync(cancellationToken);
-
-            var countryId = employee.Address?.CountryId ?? Constants.Language.Czech;
             var language = await languageRepository.GetByCodeAsync(command.LanguageCode, cancellationToken);
 
             var countryContext = await GetCountryInvoiceContextAsync(countryId, cancellationToken);

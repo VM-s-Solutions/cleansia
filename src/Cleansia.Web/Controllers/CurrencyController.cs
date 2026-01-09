@@ -4,7 +4,7 @@ using Cleansia.Web.Abstractions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Cleansia.Web.Controllers;
+namespace Cleansia.Web.Partner.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]

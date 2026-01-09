@@ -2,10 +2,14 @@
   <cleansia-language-switcher />
   <div class="cleansia-service-management__container">
     <div class="cleansia-service-management__header">
-      <cleansia-title [title]="'pages.service_management.title' | translate" />
-      <p class="cleansia-service-management__description">
-        {{ 'pages.service_management.description' | translate }}
-      </p>
+      <div class="header-content">
+        <cleansia-title
+          [title]="'pages.service_management.title' | translate"
+        />
+        <p class="cleansia-service-management__description">
+          {{ 'pages.service_management.description' | translate }}
+        </p>
+      </div>
     </div>
 
     <!-- Filter Panel -->
@@ -16,7 +20,9 @@
           <div class="filter-field">
             <cleansia-text-input
               formControlName="searchTerm"
-              [placeholder]="'pages.service_management.filters.search' | translate"
+              [placeholder]="
+                'pages.service_management.filters.search' | translate
+              "
               className="w-full"
             />
           </div>
@@ -30,6 +36,10 @@
             (onClick)="resetFilters()"
             severity="secondary"
             [outlined]="true"
+          /><cleansia-button
+            [label]="'pages.service_management.create_service' | translate"
+            icon="pi pi-plus"
+            (onClick)="createService()"
           />
         </div>
       </form>
@@ -38,20 +48,22 @@
     <!-- Service Table -->
     <cleansia-section>
       @if (facade.loading() && facade.services().length === 0) {
-        <cleansia-loader />
+      <cleansia-loader />
       } @else {
-        <cleansia-table
-          [data]="facade.services()"
-          [tableDefinition]="serviceTableDefinition"
-          [paginator]="true"
-          [rows]="20"
-          [emptyMessage]="'pages.service_management.no_services'"
-          tableClass="cleansia-service-management__table"
-          [loading]="facade.loading()"
-          (sortChange)="onSortChange($event)"
-        >
-        </cleansia-table>
+      <cleansia-table
+        [data]="facade.services()"
+        [tableDefinition]="serviceTableDefinition"
+        [paginator]="true"
+        [rows]="20"
+        [emptyMessage]="'pages.service_management.no_services'"
+        tableClass="cleansia-service-management__table"
+        [loading]="facade.loading()"
+        (sortChange)="onSortChange($event)"
+      >
+      </cleansia-table>
       }
     </cleansia-section>
   </div>
 </div>
+
+<p-confirmDialog />

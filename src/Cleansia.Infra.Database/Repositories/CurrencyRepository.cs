@@ -17,4 +17,26 @@ public class CurrencyRepository(CleansiaDbContext context) : BaseRepository<Curr
     {
         return GetDbSet().FirstOrDefaultAsync(c => c.Code == code, cancellationToken);
     }
+
+    public Task<bool> ExistsWithCodeAsync(string code, CancellationToken cancellationToken)
+    {
+        return GetDbSet().AnyAsync(c => c.Code == code, cancellationToken);
+    }
+
+    public async Task<bool> IsInUseAsync(string currencyId, CancellationToken cancellationToken)
+    {
+        // Check if currency is used by Orders
+        if (await Context.Orders.AnyAsync(o => o.CurrencyId == currencyId, cancellationToken))
+            return true;
+
+        // Check if currency is used by EmployeePayConfigs
+        if (await Context.EmployeePayConfigs.AnyAsync(p => p.CurrencyId == currencyId, cancellationToken))
+            return true;
+
+        // Check if currency is used by EmployeeInvoices
+        if (await Context.EmployeeInvoices.AnyAsync(i => i.CurrencyId == currencyId, cancellationToken))
+            return true;
+
+        return false;
+    }
 }

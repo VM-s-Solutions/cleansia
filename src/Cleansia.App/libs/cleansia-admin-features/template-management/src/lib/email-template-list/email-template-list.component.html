@@ -1,0 +1,17 @@
+<div class="cleansia-template-list">
+  <cleansia-section>
+    @if (facade.loading() && facade.emailTypes().length === 0) {
+    <cleansia-loader />
+    } @else {
+    <cleansia-table
+      [data]="facade.emailTypes()"
+      [tableDefinition]="tableDefinition"
+      [paginator]="false"
+      [emptyMessage]="'pages.template_management.no_templates'"
+      tableClass="cleansia-template-list__table"
+      [loading]="facade.loading()"
+    >
+    </cleansia-table>
+    }
+  </cleansia-section>
+</div>

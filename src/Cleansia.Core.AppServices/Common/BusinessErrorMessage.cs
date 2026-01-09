@@ -19,6 +19,10 @@ public static class BusinessErrorMessage
     // Currency
     public const string InvalidCurrency = "currency.invalid";
     public const string CurrencyNotFound = "currency.not_found";
+    public const string CurrencyCodeAlreadyExists = "currency.code_already_exists";
+    public const string CurrencyInUse = "currency.in_use";
+    public const string CannotDeleteDefaultCurrency = "currency.cannot_delete_default";
+    public const string ExchangeRateMustBePositive = "currency.exchange_rate_must_be_positive";
     
     // Email
     public const string EmailNotSentError = "email.sending_failed";
@@ -122,12 +126,19 @@ public static class BusinessErrorMessage
     // Language
     public const string LanguageNotSupported = "language.not_supported";
     public const string LanguageNotFound = "language.not_found";
+    public const string LanguageCodeAlreadyExists = "language.code_already_exists";
+    public const string LanguageInUse = "language.in_use";
 
     // Country
     public const string NotExistingCountryWithId = "country.not_existing_id";
+    public const string CountryNotFound = "country.not_found";
+    public const string CountryIsoCodeAlreadyExists = "country.iso_code_already_exists";
+    public const string CountryInUse = "country.in_use";
 
     // Company
     public const string CompanyInfoNotFound = "company.not_found";
+    public const string CompanyInfoExistsForCountry = "company.exists_for_country";
+    public const string CompanyInfoInUse = "company.in_use";
 
     // Dispute
     public const string DisputeNotFound = "dispute.not_found";
@@ -135,6 +146,12 @@ public static class BusinessErrorMessage
     public const string InvalidRefundAmount = "dispute.invalid_refund_amount";
     public const string MaxLengthExceeded = "dispute.max_length_exceeded";
     public const string UserNotFound = "user.not_found";
+
+    // Admin User
+    public const string AdminUserNotFound = "admin_user.not_found";
+    public const string AdminUserEmailExists = "admin_user.email_exists";
+    public const string CannotDeactivateSelf = "admin_user.cannot_deactivate_self";
+    public const string CannotDeleteSelf = "admin_user.cannot_delete_self";
 
     // Validation
     public const string InvalidPassword = "validation.invalid_password";
@@ -147,6 +164,39 @@ public static class BusinessErrorMessage
     public const string InvalidIban = "validation.invalid_iban";
     public const string InvalidZipCode = "validation.invalid_zip_code";
 
+    // Service
+    public const string ServiceNotFound = "service.not_found";
+    public const string ServiceInUse = "service.in_use";
+    public const string TranslationsRequired = "service.translations_required";
+    public const string MissingTranslationForLanguage = "service.missing_translation_for_language";
+
+    // Package
+    public const string PackageNotFound = "package.not_found";
+    public const string PackageInUse = "package.in_use";
+
+    // Common Validation
+    public const string MustBePositive = "validation.must_be_positive";
+
     // General
     public const string NotFound = "general.not_found";
+
+    // Invoice Template
+    public const string InvoiceTemplateNotFound = "template.invoice.not_found";
+    public const string InvoiceTemplateInUse = "template.invoice.in_use";
+    public const string CannotDeleteActiveTemplate = "template.cannot_delete_active";
+
+    // Receipt Template
+    public const string ReceiptTemplateNotFound = "template.receipt.not_found";
+    public const string ReceiptTemplateInUse = "template.receipt.in_use";
+
+    // Email Template
+    public const string EmailTemplateNotFound = "template.email.not_found";
+    public const string EmailTemplateKeyExists = "template.email.key_exists";
+    public const string InvalidEmailType = "template.email.invalid_type";
+    public const string InvalidEmail = "email.invalid_email";
+
+    // Template File
+    public const string InvalidTemplateFileType = "template.invalid_file_type";
+    public const string TemplateFileSizeExceeded = "template.file_size_exceeded";
+    public const string TemplateFileRequired = "template.file_required";
 }

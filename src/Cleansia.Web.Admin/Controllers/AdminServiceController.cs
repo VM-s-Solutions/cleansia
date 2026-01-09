@@ -26,4 +26,68 @@ public class AdminServiceController(IMediator mediator) : ApiController(mediator
         var result = await Mediator.Send(request, cancellationToken);
         return Ok(result);
     }
+
+    [HttpGet("details/{serviceId}")]
+    [Permission(Policy.CanViewServices)]
+    [ProducesResponseType(typeof(AdminServiceDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetServiceById(
+        string serviceId,
+        CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new GetServiceById.Query(serviceId), cancellationToken);
+        return HandleResult<AdminServiceDetailDto>(result);
+    }
+
+    [HttpPost]
+    [Permission(Policy.CanCreateService)]
+    [ProducesResponseType(typeof(CreateService.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> CreateService(
+        [FromBody] CreateService.Command command,
+        CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<CreateService.Response>(result);
+    }
+
+    [HttpPut("{serviceId}")]
+    [Permission(Policy.CanUpdateService)]
+    [ProducesResponseType(typeof(UpdateService.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateService(
+        string serviceId,
+        [FromBody] UpdateService.Command command,
+        CancellationToken cancellationToken)
+    {
+        if (command.ServiceId != serviceId)
+        {
+            return BadRequest("Service ID in route does not match command");
+        }
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<UpdateService.Response>(result);
+    }
+
+    [HttpDelete("{serviceId}")]
+    [Permission(Policy.CanDeleteService)]
+    [ProducesResponseType(typeof(DeleteService.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteService(
+        string serviceId,
+        CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new DeleteService.Command(serviceId), cancellationToken);
+        return HandleResult<DeleteService.Response>(result);
+    }
 }

@@ -22,6 +22,7 @@ export class CleansiaButtonComponent {
   iconOutlined = input<boolean>(false);
   rounded = input<boolean>(false);
   outlined = input<boolean>(false); // PrimeNG-compatible outlined property
+  text = input<boolean>(false); // PrimeNG-compatible text property
   disabled = input<boolean>(false);
   loading = input<boolean>(false);
   className = input<string>('');

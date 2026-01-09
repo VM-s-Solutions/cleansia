@@ -1222,9 +1222,9 @@ libs/cleansia-admin-features/
 
 ---
 
-**Document Version**: 1.6
-**Last Updated**: 2026-01-08
-**Status**: Phase 1 COMPLETE - All core features implemented. System Settings COMPLETE (Languages ✅, Countries ✅, Currencies ✅, Company Info ✅).
+**Document Version**: 1.7
+**Last Updated**: 2026-01-10
+**Status**: Phase 1 COMPLETE - All core features implemented. System Settings COMPLETE (Languages ✅, Countries ✅, Currencies ✅, Company Info ✅). Template Management IN PROGRESS (Email Templates ✅).
 
 ---
 
@@ -1721,14 +1721,15 @@ These features exist in the backend but need admin interface:
 | Country Management | ✅ Complete | 100% |
 | Currency Management | ✅ Complete | 100% |
 | Company Info Management | ✅ Complete | 100% |
+| Template Management (Email) | ✅ Complete | 100% |
 | Pay Configuration | ⏸️ Deferred | 0% |
 | Dispute Management | ⏸️ Deferred | 0% |
 | Employee Bulk Actions | ⏸️ Deferred | 0% |
-| Template Management | 📝 Not Listed | 0% |
+| Template Management (Invoice/Receipt) | 🔄 In Progress | 50% |
 | Translation Management | 📝 Not Listed | 0% |
 | **Phase 1 Overall** | **Complete** | **100%** |
 
-### Completed Tasks (Updated 2026-01-08)
+### Completed Tasks (Updated 2026-01-10)
 1. ✅ ~~Employee Management~~ - Complete
 2. ✅ ~~Pay Period Management~~ - Complete
 3. ✅ ~~Order Management~~ - Complete
@@ -1742,11 +1743,13 @@ These features exist in the backend but need admin interface:
 11. ✅ ~~Country Management~~ - Complete (List, Create, Edit, Delete with in-use validation)
 12. ✅ ~~Currency Management~~ - Complete (List, Create, Edit, Delete with in-use validation)
 13. ✅ ~~Company Info Management~~ - Complete (Multi-country support, List, Create, Edit, Delete with last-active validation)
+14. ✅ ~~Email Template Management~~ - Complete (Email type list, Translation editing with add/delete, Test email functionality)
 
 ### Next Priority Tasks
+- Invoice Template Management (upload/edit HTML templates)
+- Receipt Template Management (upload/edit HTML templates)
 - Pay Configuration Management (if needed)
 - Dispute Management (if needed)
-- Template Management (Invoice, Receipt, Email templates)
 
 ### Service/Package Implementation Notes (2026-01-06)
 **Approach Change**: Using full-page editing instead of dialogs
@@ -1998,3 +2001,81 @@ Converted CompanyInfo from a singleton pattern (one global record) to a multi-co
 - Cannot delete the last active company info
 - Country-based lookup with fallback for invoice/receipt generation
 - All existing invoice/receipt functionality continues to work
+
+---
+
+### Email Template Management Implementation Notes (2026-01-10)
+
+**Feature Overview**:
+Email Template Management allows admins to manage email translation variables used in email templates. The UI displays a list of email types, and for each type shows all translations grouped by language with the ability to add, edit, and delete individual translation key-value pairs.
+
+**Backend Implementation**:
+- `GetEmailTypes.cs` - List all email types with translation counts per language
+- `GetEmailTypeDetail.cs` - Get all translations for a specific email type grouped by language
+- `UpdateEmailTemplate.cs` - Update a single translation value
+- `CreateEmailTemplateTranslation.cs` - Create a new translation key-value pair for an email type
+- `DeleteEmailTemplateTranslation.cs` - Delete a translation entry
+- `SendTestEmailByType.cs` - Send a test email using the specified email type
+- `AdminEmailTemplateController.cs` - REST API endpoints
+
+**DTOs**:
+- `EmailTypeDto` - Email type with display name, type enum, and language translation counts
+- `EmailTypeDetailDto` - Full detail with translations grouped by language
+- `EmailTranslationByLanguageDto` - Language with its key-value pairs
+- `EmailTemplateKeyValueDto` - Individual translation key, value, and ID
+
+**Frontend Implementation**:
+- `template-management` - Main page with tabs for Invoice, Receipt, and Email templates
+- `email-template-list` - List of all email types (EmailVerification, PasswordReset, OrderConfirmation, etc.)
+- `email-type-detail` - Detail page for editing translations of a specific email type
+
+**Email Type Detail Page Features**:
+- Tab-based language navigation (one tab per supported language)
+- Dynamic form generation for translation key-value pairs
+- Translation keys displayed as copyable chips with `{{key}}` format
+- Click to copy key as template variable
+- Individual save per translation value
+- Add Translation button per language tab
+- Delete Translation with confirmation dialog
+- Send Test Email functionality
+
+**Key UI Components**:
+- PrimeNG Tabs (`p-tabs`, `p-tablist`, `p-tabpanel`) for language switching
+- Translation rows: key chip (copyable) | input field | save button | delete button
+- Add Translation dialog with key/value input fields
+- Confirm dialog for delete operations
+- Test email dialog with recipient input
+
+**Backend Validation**:
+- `CreateEmailTemplateTranslation`:
+  - Valid email type (enum validation)
+  - Language must exist
+  - Key uniqueness per email type and language
+  - Key max 100 chars, Value max 5000 chars
+- `DeleteEmailTemplateTranslation`:
+  - Template must exist
+
+**Translations**:
+- Full EN/CS translations for all UI elements
+- Dialog titles, descriptions, placeholders
+- Success/error messages for create, update, delete operations
+
+**Styling**:
+- `.translation-panel-header` - Header with Add Translation button
+- `.translation-form-grid` - Vertical layout for translation rows
+- `.translation-row` - Grid layout: key | input | actions
+- `.translation-key` - Copyable chip with hover effects and copy icon
+- `.translation-actions` - Save and Delete buttons side by side
+
+**Files Created/Modified**:
+- Backend:
+  - `src/Cleansia.Core.AppServices/Features/EmailTemplates/CreateEmailTemplateTranslation.cs` (NEW)
+  - `src/Cleansia.Core.AppServices/Features/EmailTemplates/DeleteEmailTemplateTranslation.cs` (NEW)
+  - `src/Cleansia.Web.Admin/Controllers/AdminEmailTemplateController.cs` (MODIFIED)
+- Frontend:
+  - `libs/cleansia-admin-features/template-management/src/lib/email-type-detail/email-type-detail.component.ts` (MODIFIED)
+  - `libs/cleansia-admin-features/template-management/src/lib/email-type-detail/email-type-detail.component.html` (MODIFIED)
+  - `libs/cleansia-admin-features/template-management/src/lib/email-type-detail/email-type-detail.facade.ts` (MODIFIED)
+  - `libs/shared/assets/src/styles/pages/cleansia-admin/email-type-detail.component.scss` (MODIFIED)
+  - `apps/cleansia-admin.app/src/assets/i18n/en.json` (MODIFIED)
+  - `apps/cleansia-admin.app/src/assets/i18n/cs.json` (MODIFIED)

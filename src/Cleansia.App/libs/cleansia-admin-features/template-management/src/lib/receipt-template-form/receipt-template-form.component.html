@@ -1,18 +1,15 @@
-<div class="template-form-page">
-  <div class="page-header">
-    <cleansia-title [title]="pageTitle()">
-      <cleansia-language-switcher />
-    </cleansia-title>
-  </div>
-
-  <div class="page-content">
-    <div class="header-actions">
+<div class="cleansia-receipt-template-form">
+  <cleansia-language-switcher />
+  <div class="cleansia-receipt-template-form__container page-wrapper">
+    <!-- Header with Back Button -->
+    <div class="cleansia-receipt-template-form__header">
       <cleansia-button
         [label]="'global.actions.back' | translate"
         icon="pi pi-arrow-left"
-        [outlined]="true"
         (onClick)="onCancel()"
+        [outlined]="true"
       />
+      <cleansia-title [title]="pageTitle()" />
     </div>
 
     @if (facade.loading()) {
@@ -21,7 +18,7 @@
     <form
       [formGroup]="form"
       (ngSubmit)="onSave()"
-      class="template-form-container"
+      class="cleansia-receipt-template-form__content"
     >
       <cleansia-section
         [title]="'pages.template_management.sections.basic_info' | translate"

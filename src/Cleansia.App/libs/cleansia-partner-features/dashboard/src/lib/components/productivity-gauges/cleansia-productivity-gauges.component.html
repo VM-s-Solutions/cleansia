@@ -84,7 +84,7 @@
             {{ data()!.efficiencyScore | number : '1.0-0' }}%
           </text>
           <text x="100" y="95" text-anchor="middle" class="gauge-card__label">
-            Efficiency
+            {{ 'pages.dashboard.productivity_metrics.efficiency_label' | translate }}
           </text>
         </svg>
       </div>
@@ -125,7 +125,7 @@
             {{ data()!.onTimeCompletionRate | number : '1.0-0' }}%
           </text>
           <text x="100" y="95" text-anchor="middle" class="gauge-card__label">
-            On-Time
+            {{ 'pages.dashboard.productivity_metrics.on_time_label' | translate }}
           </text>
         </svg>
       </div>

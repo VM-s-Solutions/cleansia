@@ -6,7 +6,7 @@ import {
   CountryDetailDto,
   UpdateCountryCommand,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -35,12 +35,8 @@ export class CountryFormFacade {
       .details(countryId)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.country_form.messages.load_error')
-          );
-          console.error('Error loading country:', error);
-          this.router.navigate(['/country-management']);
+        catchError(() => {
+          this.router.navigate([CleansiaAdminRoute.COUNTRY_MANAGEMENT]);
           return of(null);
         }),
         finalize(() => this.loading.set(false))
@@ -60,17 +56,11 @@ export class CountryFormFacade {
       name: data.name,
     });
 
-    this.adminClient.apiClient
-      .adminCountryPost(command)
+    this.adminClient.adminCountryClient
+      .create(command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.country_form.messages.create_error')
-          );
-          console.error('Error creating country:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
       .subscribe((response) => {
@@ -78,7 +68,7 @@ export class CountryFormFacade {
           this.snackbarService.showSuccess(
             this.translate.instant('pages.country_form.messages.create_success')
           );
-          this.router.navigate(['/country-management']);
+          this.router.navigate([CleansiaAdminRoute.COUNTRY_MANAGEMENT]);
         }
       });
   }
@@ -91,17 +81,11 @@ export class CountryFormFacade {
       name: data.name,
     });
 
-    this.adminClient.apiClient
-      .adminCountryPut(countryId, command)
+    this.adminClient.adminCountryClient
+      .update(countryId, command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.country_form.messages.update_error')
-          );
-          console.error('Error updating country:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
       .subscribe((response) => {
@@ -109,13 +93,13 @@ export class CountryFormFacade {
           this.snackbarService.showSuccess(
             this.translate.instant('pages.country_form.messages.update_success')
           );
-          this.router.navigate(['/country-management']);
+          this.router.navigate([CleansiaAdminRoute.COUNTRY_MANAGEMENT]);
         }
       });
   }
 
   navigateBack(): void {
-    this.router.navigate(['/country-management']);
+    this.router.navigate([CleansiaAdminRoute.COUNTRY_MANAGEMENT]);
   }
 
   ngOnDestroy(): void {

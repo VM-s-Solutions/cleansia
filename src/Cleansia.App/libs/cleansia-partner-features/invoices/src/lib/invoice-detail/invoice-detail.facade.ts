@@ -36,15 +36,11 @@ export class InvoiceDetailFacade {
           }
         }),
         catchError((error) => {
-          console.error('Error loading invoice details:', error);
           const errorMessage =
             error?.status === 404
               ? 'Invoice not found'
               : 'Failed to load invoice details';
           this.error.set(errorMessage);
-          this.snackbarService.showErrorTranslated(
-            'global.messages.invoices.failed_to_load_details'
-          );
           return of(null);
         }),
         finalize(() => this.loading.set(false))
@@ -72,13 +68,7 @@ export class InvoiceDetailFacade {
     this.partnerClient.employeePayrollClient
       .downloadInvoice(invoice.id!)
       .pipe(
-        catchError((error) => {
-          console.error('Failed to download invoice:', error);
-          this.snackbarService.showErrorTranslated(
-            'pages.invoices.download_failed'
-          );
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((fileResponse) => {
         if (fileResponse) {

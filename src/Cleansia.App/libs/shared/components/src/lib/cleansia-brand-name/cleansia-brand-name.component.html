@@ -1,4 +1,10 @@
-<div class="cleansia-brand-name">
+<div
+  class="cleansia-brand-name"
+  [ngClass]="{
+    'cleansia-brand-name__wrapped': wrapped(),
+    'cleansia-brand-name--hide-name': !showName()
+  }"
+>
   <a [routerLink]="'/' + defaultRoute()">
     <picture>
       <source srcset="assets/logos/Logo.webp" type="image/webp" />
@@ -10,8 +16,6 @@
         decoding="async"
       />
     </picture>
-    @if(showName()) {
     <h2>Cleansia</h2>
-    }
   </a>
 </div>

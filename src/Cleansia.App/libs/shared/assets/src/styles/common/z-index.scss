@@ -18,9 +18,12 @@
 .p-dropdown-panel,
 .p-calendar-panel,
 .p-datepicker-panel,
-.p-autocomplete-panel,
-.p-overlaypanel {
-  z-index: 500 !important;
+.p-autocomplete-panel {
+  z-index: 1100 !important;
+}
+
+cleansia-calendar > .p-floatlabel > label {
+  z-index: 1200 !important;
 }
 
 // PrimeNG Dialog z-index

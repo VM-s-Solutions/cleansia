@@ -26,13 +26,7 @@ export class PayPeriodDetailFacade {
       .details(payPeriodId)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('payPeriods.messages.loadDetailError')
-          );
-          console.error('Error loading pay period details:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
@@ -52,13 +46,7 @@ export class PayPeriodDetailFacade {
       .close(command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('payPeriods.messages.closeError')
-          );
-          console.error('Error closing pay period:', error);
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {

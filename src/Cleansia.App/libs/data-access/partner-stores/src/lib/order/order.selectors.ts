@@ -9,6 +9,10 @@ export const selectOrderItems = createSelector(
   selectOrderPage,
   (page) => page?.data,
 );
+export const selectOrderTotal = createSelector(
+  selectOrderPage,
+  (page) => page?.total ?? 0,
+);
 export const selectOrderDetail = createSelector(
   selectOrderState,
   (s) => s.orderDetail,

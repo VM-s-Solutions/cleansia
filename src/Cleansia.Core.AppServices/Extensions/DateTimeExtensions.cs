@@ -27,7 +27,8 @@ public static class DateTimeExtensions
     /// </summary>
     public static (DateTime Start, DateTime End) GetPreviousMonthRange(this DateTime date)
     {
-        var previousMonthStart = DateTime.SpecifyKind(new DateTime(date.Year, date.Month - 1, 1), DateTimeKind.Utc);
+        var previousMonth = date.AddMonths(-1);
+        var previousMonthStart = DateTime.SpecifyKind(new DateTime(previousMonth.Year, previousMonth.Month, 1), DateTimeKind.Utc);
         var previousMonthEnd = previousMonthStart.GetMonthEnd();
         return (previousMonthStart, previousMonthEnd);
     }

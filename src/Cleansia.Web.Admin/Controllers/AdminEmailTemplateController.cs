@@ -58,14 +58,14 @@ public class AdminEmailTemplateController(IMediator mediator) : ApiController(me
         return HandleResult<SendTestEmailByType.Response>(result);
     }
 
-    [HttpPost("get-paged")]
+    [HttpGet("get-paged")]
     [Permission(Policy.CanViewEmailTemplates)]
     [ProducesResponseType(typeof(PagedData<EmailTemplateTranslationListItem>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetPagedEmailTemplates(
-        [FromBody] GetPagedEmailTemplates.Request request,
+        [FromQuery] GetPagedEmailTemplates.Request request,
         CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(request, cancellationToken);
@@ -87,7 +87,7 @@ public class AdminEmailTemplateController(IMediator mediator) : ApiController(me
         return HandleResult<EmailTemplateTranslationDetailDto>(result);
     }
 
-    [HttpPut("{emailTemplateId}")]
+    [HttpPut("update/{emailTemplateId}")]
     [Permission(Policy.CanUpdateEmailTemplate)]
     [ProducesResponseType(typeof(UpdateEmailTemplate.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -127,7 +127,7 @@ public class AdminEmailTemplateController(IMediator mediator) : ApiController(me
         return HandleResult<SendTestEmail.Response>(result);
     }
 
-    [HttpPost]
+    [HttpPost("create")]
     [Permission(Policy.CanUpdateEmailTemplate)]
     [ProducesResponseType(typeof(CreateEmailTemplateTranslation.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -141,7 +141,7 @@ public class AdminEmailTemplateController(IMediator mediator) : ApiController(me
         return HandleResult<CreateEmailTemplateTranslation.Response>(result);
     }
 
-    [HttpDelete("{emailTemplateId}")]
+    [HttpDelete("delete/{emailTemplateId}")]
     [Permission(Policy.CanUpdateEmailTemplate)]
     [ProducesResponseType(typeof(DeleteEmailTemplateTranslation.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]

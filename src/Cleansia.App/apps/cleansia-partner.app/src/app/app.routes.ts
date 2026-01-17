@@ -1,17 +1,19 @@
 import { Route } from '@angular/router';
-import { authGuard } from '@cleansia/partner-services';
-import { CleansiaPartnerRoute } from '@cleansia/services';
+import { authGuard, guestGuard } from '@cleansia/partner-services';
+import { CleansiaPartnerRoute, CommonRoute } from '@cleansia/services';
 
 export const appRoutes: Route[] = [
   {
     path: CleansiaPartnerRoute.LOGIN,
     loadChildren: () =>
       import('@cleansia-partner/login').then((m) => m.loginRoutes),
+    canActivate: [guestGuard],
   },
   {
     path: CleansiaPartnerRoute.REGISTER,
     loadChildren: () =>
       import('@cleansia-partner/register').then((m) => m.registerRoutes),
+    canActivate: [guestGuard],
   },
   {
     path: CleansiaPartnerRoute.CONFIRM_EMAIL,
@@ -19,6 +21,7 @@ export const appRoutes: Route[] = [
       import('@cleansia-partner/confirm-email').then(
         (m) => m.confirmEmailRoutes
       ),
+    canActivate: [guestGuard],
   },
   {
     path: CleansiaPartnerRoute.FORGOT_PASSWORD,
@@ -26,6 +29,7 @@ export const appRoutes: Route[] = [
       import('@cleansia-partner/forgot-password').then(
         (m) => m.forgotPasswordRoutes
       ),
+    canActivate: [guestGuard],
   },
   {
     path: CleansiaPartnerRoute.DASHBOARD,
@@ -56,8 +60,14 @@ export const appRoutes: Route[] = [
     redirectTo: CleansiaPartnerRoute.ORDERS,
     pathMatch: 'full',
   },
-  // {
-  //   path: '**',
-  //   redirectTo: CleansiaPartnerRoute.LOGIN,
-  // },
+  {
+    path: CommonRoute.NOT_FOUND,
+    loadComponent: () =>
+      import('@cleansia/components').then((m) => m.CleansiaNotFoundComponent),
+    data: { title: 'page_titles.partner.not_found' },
+  },
+  {
+    path: '**',
+    redirectTo: CommonRoute.NOT_FOUND,
+  },
 ];

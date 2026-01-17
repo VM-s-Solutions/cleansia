@@ -3,12 +3,14 @@ import {
   AfterViewInit,
   ChangeDetectorRef,
   Component,
+  computed,
   inject,
   OnDestroy,
+  signal,
   TemplateRef,
   viewChild,
 } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
   AdminEmployeeListItem,
@@ -18,16 +20,19 @@ import {
 } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
+  CleansiaCheckboxComponent,
   CleansiaLanguageSwitcherComponent,
   CleansiaLoaderComponent,
-  CleansiaMultiselectComponent,
+  CleansiaRadioComponent,
   CleansiaSectionComponent,
-  CleansiaSelectComponent,
   CleansiaTableComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
-  TableDefinition,
+  TableColumn,
+  TableAction,
+  PaginationState,
 } from '@cleansia/components';
+import { CleansiaAdminRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
@@ -42,8 +47,8 @@ import { getEmployeeTableDefinition } from './employee-management.models';
   imports: [
     CommonModule,
     CleansiaButtonComponent,
-    CleansiaMultiselectComponent,
-    CleansiaSelectComponent,
+    CleansiaCheckboxComponent,
+    CleansiaRadioComponent,
     CleansiaTextInputComponent,
     TranslatePipe,
     CleansiaTableComponent,
@@ -51,12 +56,12 @@ import { getEmployeeTableDefinition } from './employee-management.models';
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     CleansiaLanguageSwitcherComponent,
+    FormsModule,
     ReactiveFormsModule,
     ToastModule,
     TooltipModule,
   ],
   templateUrl: './employee-management.component.html',
-  styleUrl: './employee-management.component.scss',
   providers: [EmployeeManagementFacade, DialogService],
 })
 export class EmployeeManagementComponent implements AfterViewInit, OnDestroy {
@@ -70,7 +75,8 @@ export class EmployeeManagementComponent implements AfterViewInit, OnDestroy {
     'contractStatusTemplate'
   );
 
-  employeeTableDefinition!: TableDefinition<AdminEmployeeListItem>;
+  employeeColumns!: TableColumn<AdminEmployeeListItem>[];
+  employeeActions!: TableAction<AdminEmployeeListItem>[];
 
   // Expose ContractStatus enum to template
   readonly ContractStatus = ContractStatus;
@@ -86,20 +92,58 @@ export class EmployeeManagementComponent implements AfterViewInit, OnDestroy {
     isActive: [null as boolean | null],
   });
 
-  // Contract status options for multiselect
-  contractStatusMultiOptions = this.facade.contractStatusOptions;
+  // Contract status options for multiselect - will be rebuilt on language change
+  contractStatusMultiOptions: { label: string; value: ContractStatus }[] = [];
 
   // Active status options - will be populated with translations
   activeStatusOptions: Array<{ label: string; value: boolean }> = [];
 
-  ngAfterViewInit(): void {
-    // Initialize active status options with translations
-    this.activeStatusOptions = [
-      { label: this.translate.instant('global.status.active'), value: true },
-      { label: this.translate.instant('global.status.inactive'), value: false },
-    ];
+  // Filter drawer state
+  isFilterDrawerOpen = signal(false);
+  // Signal to trigger recalculation of filter chips when form changes
+  private filterFormVersion = signal(0);
+  activeFilterChips = computed(() => {
+    // Access the signal to create dependency
+    this.filterFormVersion();
+    return this.getActiveFilterChips();
+  });
+  hasActiveFilters = computed(() => this.activeFilterChips().length > 0);
+  activeFilterCount = computed(() => this.activeFilterChips().length);
 
-    this.employeeTableDefinition = getEmployeeTableDefinition(
+  ngAfterViewInit(): void {
+    this.rebuildTableDefinitions();
+    this.rebuildFilterOptions();
+    this.cd.detectChanges();
+
+    // Update filter chips immediately when form changes
+    this.filterForm.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.filterFormVersion.update(v => v + 1);
+      });
+
+    // Setup automatic filtering with debounce
+    this.filterForm.valueChanges
+      .pipe(debounceTime(500), distinctUntilChanged(), takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.applyFilters();
+      });
+
+    // Rebuild tables and filters when language changes
+    this.translate.onLangChange
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.rebuildTableDefinitions();
+        this.rebuildFilterOptions();
+        this.cd.detectChanges();
+      });
+
+    // Load employees on init
+    this.facade.loadEmployees();
+  }
+
+  private rebuildTableDefinitions(): void {
+    const tableDef = getEmployeeTableDefinition(
       {
         onApprove: this.approveEmployee.bind(this),
         onReject: this.rejectEmployee.bind(this),
@@ -109,17 +153,38 @@ export class EmployeeManagementComponent implements AfterViewInit, OnDestroy {
       this.contractStatusTemplate()
     );
 
-    this.cd.detectChanges();
+    this.employeeColumns = tableDef.columns;
+    this.employeeActions = tableDef.actions;
+  }
 
-    // Setup automatic filtering with debounce
-    this.filterForm.valueChanges
-      .pipe(debounceTime(500), distinctUntilChanged(), takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.applyFilters();
-      });
+  private rebuildFilterOptions(): void {
+    this.contractStatusMultiOptions = [
+      {
+        label: this.translate.instant('pages.employee_management.contract_status.pending'),
+        value: ContractStatus.Pending,
+      },
+      {
+        label: this.translate.instant('pages.employee_management.contract_status.active'),
+        value: ContractStatus.Active,
+      },
+      {
+        label: this.translate.instant('pages.employee_management.contract_status.approved'),
+        value: ContractStatus.Approved,
+      },
+      {
+        label: this.translate.instant('pages.employee_management.contract_status.rejected'),
+        value: ContractStatus.Rejected,
+      },
+      {
+        label: this.translate.instant('pages.employee_management.contract_status.terminated'),
+        value: ContractStatus.Terminated,
+      },
+    ];
 
-    // Load employees on init
-    this.facade.loadEmployees();
+    this.activeStatusOptions = [
+      { label: this.translate.instant('global.status.active'), value: true },
+      { label: this.translate.instant('global.status.inactive'), value: false },
+    ];
   }
 
   ngOnDestroy(): void {
@@ -136,13 +201,20 @@ export class EmployeeManagementComponent implements AfterViewInit, OnDestroy {
   }
 
   viewEmployeeDetails(employee: AdminEmployeeListItem): void {
-    this.router.navigate(['/employee-management', employee.id]);
+    this.router.navigate([CleansiaAdminRoute.EMPLOYEE_MANAGEMENT, employee.id]);
   }
 
   getContractStatusClass(employee: AdminEmployeeListItem): string {
     const statusName =
       employee.contractStatus?.toLowerCase().replace(/\s+/g, '-') || 'pending';
     return `contract-status-badge status-${statusName}`;
+  }
+
+  getContractStatusLabel(employee: AdminEmployeeListItem): string {
+    if (!employee.contractStatus) return '';
+    // contractStatus is a string like "Pending", "Active", "Approved", etc.
+    const statusKey = employee.contractStatus.toLowerCase();
+    return this.translate.instant(`pages.employee_management.contract_status.${statusKey}`);
   }
 
   applyFilters(): void {
@@ -189,5 +261,105 @@ export class EmployeeManagementComponent implements AfterViewInit, OnDestroy {
       }),
     ];
     this.facade.onSortChange(sort);
+  }
+
+  onPageChange(event: PaginationState): void {
+    const offset = event.first;
+    const limit = event.rows;
+    this.facade.onPageChange(offset, limit);
+  }
+
+  // Filter drawer methods
+  openFilterDrawer(): void {
+    this.isFilterDrawerOpen.set(true);
+  }
+
+  closeFilterDrawer(): void {
+    this.isFilterDrawerOpen.set(false);
+  }
+
+  getActiveFilterChips(): { key: string; label: string; value: string }[] {
+    const chips: { key: string; label: string; value: string }[] = [];
+    const values = this.filterForm.value;
+
+    if (values.searchTerm) {
+      chips.push({
+        key: 'searchTerm',
+        label: this.translate.instant('pages.employee_management.filters.search'),
+        value: values.searchTerm,
+      });
+    }
+
+    if (values.contractStatus && values.contractStatus.length > 0) {
+      const statusLabels = values.contractStatus
+        .map((s) => this.contractStatusMultiOptions.find((o) => o.value === s)?.label)
+        .filter(Boolean)
+        .join(', ');
+      chips.push({
+        key: 'contractStatus',
+        label: this.translate.instant('pages.employee_management.filters.contract_status'),
+        value: statusLabels,
+      });
+    }
+
+    if (values.isActive !== null && values.isActive !== undefined) {
+      const activeLabel = this.activeStatusOptions.find((o) => o.value === values.isActive)?.label;
+      if (activeLabel) {
+        chips.push({
+          key: 'isActive',
+          label: this.translate.instant('pages.employee_management.filters.active_status'),
+          value: activeLabel,
+        });
+      }
+    }
+
+    return chips;
+  }
+
+  removeFilterChip(key: string): void {
+    if (key === 'contractStatus') {
+      this.filterForm.patchValue({ contractStatus: [] });
+    } else if (key === 'isActive') {
+      this.filterForm.patchValue({ isActive: null });
+    } else {
+      this.filterForm.patchValue({ [key]: '' });
+    }
+    this.applyFilters();
+  }
+
+  clearAllFilters(): void {
+    this.resetFilters();
+  }
+
+  // Checkbox helper methods for contract status
+  isContractStatusChecked(status: ContractStatus): boolean {
+    return this.filterForm.value.contractStatus?.includes(status) ?? false;
+  }
+
+  toggleContractStatus(status: ContractStatus): void {
+    const isChecked = this.isContractStatusChecked(status);
+    this.onContractStatusChange(status, !isChecked);
+  }
+
+  onContractStatusChange(status: ContractStatus, checked: boolean): void {
+    const currentStatuses = [...(this.filterForm.value.contractStatus || [])];
+
+    if (checked) {
+      if (!currentStatuses.includes(status)) {
+        currentStatuses.push(status);
+      }
+    } else {
+      const index = currentStatuses.indexOf(status);
+      if (index > -1) {
+        currentStatuses.splice(index, 1);
+      }
+    }
+
+    this.filterForm.patchValue({ contractStatus: currentStatuses });
+  }
+
+  // Radio helper method for active status
+  onActiveStatusSelect(value: boolean | null): void {
+    this.filterForm.patchValue({ isActive: value });
   }
 }

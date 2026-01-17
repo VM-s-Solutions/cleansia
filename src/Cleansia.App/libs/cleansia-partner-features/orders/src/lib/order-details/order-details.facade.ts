@@ -1,12 +1,26 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { OrderItem, PartnerClient } from '@cleansia/partner-services';
+import {
+  OrderItem,
+  PartnerClient,
+  StartOrderCommand,
+} from '@cleansia/partner-services';
+import * as OrderActions from '@cleansia/partner-stores';
 import { SnackbarService } from '@cleansia/services';
+import { Store } from '@ngrx/store';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { catchError, finalize, of, tap } from 'rxjs';
+import {
+  CompleteOrderDialogComponent,
+  CompleteOrderDialogData,
+  CompleteOrderDialogResult,
+} from '../components/complete-order-dialog';
 
 @Injectable()
 export class OrderDetailsFacade {
   private readonly partnerClient = inject(PartnerClient);
   private readonly snackbarService = inject(SnackbarService);
+  private readonly dialogService = inject(DialogService);
+  private readonly store = inject(Store);
 
   // Signals for reactive state management
   readonly orderDetails = signal<OrderItem | null>(null);
@@ -34,15 +48,11 @@ export class OrderDetailsFacade {
           }
         }),
         catchError((error) => {
-          console.error('Error loading order details:', error);
           const errorMessage =
             error?.status === 404
               ? 'Order not found'
               : 'Failed to load order details';
           this.error.set(errorMessage);
-          this.snackbarService.showErrorTranslated(
-            'global.messages.orders.failed_to_load_details'
-          );
           return of(null);
         }),
         finalize(() => this.loading.set(false))
@@ -88,13 +98,7 @@ export class OrderDetailsFacade {
             'global.messages.orders.receipt_downloaded'
           );
         }),
-        catchError((error) => {
-          console.error('Error downloading receipt:', error);
-          this.snackbarService.showErrorTranslated(
-            'global.messages.orders.receipt_download_failed'
-          );
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
       .subscribe();
@@ -122,9 +126,79 @@ export class OrderDetailsFacade {
       });
   }
 
+  startOrder(orderId: string, employeeId: string): void {
+    if (!orderId || !employeeId) {
+      this.snackbarService.showErrorTranslated(
+        'global.messages.orders.invalid_request'
+      );
+      return;
+    }
+
+    this.loading.set(true);
+
+    this.partnerClient.orderClient
+      .startOrder(new StartOrderCommand({ orderId, employeeId }))
+      .pipe(
+        tap(() => {
+          this.snackbarService.showSuccessTranslated(
+            'global.messages.orders.order_started'
+          );
+          // Reload order details to reflect new status
+          this.loadOrderDetails(orderId);
+        }),
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
+      )
+      .subscribe();
+  }
+
   reset(): void {
     this.orderDetails.set(null);
     this.loading.set(false);
     this.error.set(null);
+  }
+
+  openCompleteOrderDialog(): void {
+    const order = this.orderDetails();
+    const employeeId = this.currentEmployeeId();
+
+    if (!order || !employeeId) {
+      this.snackbarService.showErrorTranslated(
+        'global.messages.orders.invalid_request'
+      );
+      return;
+    }
+
+    const dialogData: CompleteOrderDialogData = {
+      orderId: order.id!,
+      orderNumber: order.displayOrderNumber!,
+      estimatedTime: order.estimatedTime || 0,
+    };
+
+    const ref: DynamicDialogRef = this.dialogService.open(
+      CompleteOrderDialogComponent,
+      {
+        header: undefined,
+        data: dialogData,
+        width: '600px',
+        modal: true,
+        dismissableMask: false,
+      }
+    );
+
+    ref.onClose.subscribe((result: CompleteOrderDialogResult) => {
+      if (result) {
+        this.store.dispatch(
+          OrderActions.completeOrder({
+            orderId: order.id!,
+            employeeId,
+            actualCompletionTimeMinutes: result.actualCompletionTimeMinutes,
+            completionNotes: result.completionNotes,
+          })
+        );
+        // Reload order details after completing
+        setTimeout(() => this.loadOrderDetails(order.id!), 500);
+      }
+    });
   }
 }

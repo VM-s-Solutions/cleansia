@@ -1,5 +1,6 @@
+import { TemplateRef } from '@angular/core';
 import { InvoiceTemplateListItem } from '@cleansia/admin-services';
-import { TableDefinition } from '@cleansia/components';
+import { TableColumn, TableAction } from '@cleansia/components';
 import { TranslateService } from '@ngx-translate/core';
 
 export function getInvoiceTemplateTableDefinition(
@@ -9,88 +10,69 @@ export function getInvoiceTemplateTableDefinition(
     onDeactivate: (row: InvoiceTemplateListItem) => void;
     onDelete: (row: InvoiceTemplateListItem) => void;
   },
-  translate: TranslateService
-): TableDefinition<InvoiceTemplateListItem> {
+  translate: TranslateService,
+  statusTemplate?: TemplateRef<InvoiceTemplateListItem>
+): { columns: TableColumn<InvoiceTemplateListItem>[]; actions: TableAction<InvoiceTemplateListItem>[] } {
   return {
     columns: [
       {
         id: 'templateName',
-        headerName: translate.instant('pages.template_management.columns.template_name'),
-        value: 'templateName',
-        columnClass: 'width-20',
+        field: 'templateName',
+        header: translate.instant('pages.template_management.columns.template_name'),
+        width: '20%',
       },
       {
         id: 'countryName',
-        headerName: translate.instant('pages.template_management.columns.country'),
-        value: 'countryName',
-        columnClass: 'width-15',
+        field: 'countryName',
+        header: translate.instant('pages.template_management.columns.country'),
+        width: '15%',
       },
       {
         id: 'languageCode',
-        headerName: translate.instant('pages.template_management.columns.language'),
-        value: 'languageCode',
-        columnClass: 'width-10',
+        field: 'languageCode',
+        header: translate.instant('pages.template_management.columns.language'),
+        width: '10%',
       },
       {
         id: 'version',
-        headerName: translate.instant('pages.template_management.columns.version'),
-        value: 'version',
-        columnClass: 'width-10',
+        field: 'version',
+        header: translate.instant('pages.template_management.columns.version'),
+        width: '10%',
       },
       {
         id: 'isActive',
-        headerName: translate.instant('pages.template_management.columns.status'),
-        value: (row?: InvoiceTemplateListItem) =>
-          row?.isActive
-            ? translate.instant('global.status.active')
-            : translate.instant('global.status.inactive'),
-        columnClass: 'width-10',
+        field: 'isActive',
+        header: translate.instant('pages.template_management.columns.status'),
+        customTemplate: statusTemplate,
+        width: '10%',
+      },
+    ],
+    actions: [
+      {
+        icon: 'pi pi-pencil',
+        tooltip: translate.instant('pages.template_management.edit_template'),
+        color: 'warning',
+        onClick: (row: InvoiceTemplateListItem) => defs.onEdit(row),
       },
       {
-        id: 'actions',
-        headerName: translate.instant('pages.template_management.columns.actions'),
-        columnActions: [
-          {
-            icon: 'pi pi-pencil',
-            onClick: (row: InvoiceTemplateListItem) => defs.onEdit(row),
-            buttonPalette: 'p-button-warning p-button-sm',
-            tooltip: {
-              title: translate.instant('pages.template_management.edit_template'),
-              position: 'above',
-            },
-          },
-          {
-            icon: 'pi pi-check',
-            onClick: (row: InvoiceTemplateListItem) => defs.onActivate(row),
-            buttonPalette: 'p-button-success p-button-sm',
-            visible: (row: InvoiceTemplateListItem) => row.isActive !== true,
-            tooltip: {
-              title: translate.instant('pages.template_management.activate_template'),
-              position: 'above',
-            },
-          },
-          {
-            icon: 'pi pi-times',
-            onClick: (row: InvoiceTemplateListItem) => defs.onDeactivate(row),
-            buttonPalette: 'p-button-secondary p-button-sm',
-            visible: (row: InvoiceTemplateListItem) => row.isActive === true,
-            tooltip: {
-              title: translate.instant('pages.template_management.deactivate_template'),
-              position: 'above',
-            },
-          },
-          {
-            icon: 'pi pi-trash',
-            onClick: (row: InvoiceTemplateListItem) => defs.onDelete(row),
-            buttonPalette: 'p-button-danger p-button-sm',
-            visible: (row: InvoiceTemplateListItem) => row.isActive !== true,
-            tooltip: {
-              title: translate.instant('pages.template_management.delete_template'),
-              position: 'above',
-            },
-          },
-        ],
-        columnClass: 'width-15',
+        icon: 'pi pi-check',
+        tooltip: translate.instant('pages.template_management.activate_template'),
+        color: 'success',
+        onClick: (row: InvoiceTemplateListItem) => defs.onActivate(row),
+        visible: (row: InvoiceTemplateListItem) => !row.isActive,
+      },
+      {
+        icon: 'pi pi-times',
+        tooltip: translate.instant('pages.template_management.deactivate_template'),
+        onClick: (row: InvoiceTemplateListItem) => defs.onDeactivate(row),
+        visible: (row: InvoiceTemplateListItem) => row.isActive,
+      },
+      {
+        icon: 'pi pi-trash',
+        tooltip: translate.instant('pages.template_management.delete_template'),
+        color: 'danger',
+        onClick: (row: InvoiceTemplateListItem) => defs.onDelete(row),
+        visible: (row: InvoiceTemplateListItem) => !row.isActive,
       },
     ],
   };

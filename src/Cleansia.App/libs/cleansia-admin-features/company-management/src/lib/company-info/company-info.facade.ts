@@ -44,17 +44,11 @@ export class CompanyInfoFacade {
   loadCompanyInfo(): void {
     this.loading.set(true);
 
-    this.adminClient.apiClient
-      .adminCompanyGet()
+    this.adminClient.adminCompanyClient
+      .getCurrent()
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.company_info.messages.load_error')
-          );
-          console.error('Error loading company info:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
       .subscribe((companyInfo) => {
@@ -67,10 +61,7 @@ export class CompanyInfoFacade {
       .getOverview()
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          console.error('Error loading countries:', error);
-          return of([]);
-        })
+        catchError(() => of([]))
       )
       .subscribe((countries) => {
         this.countries.set(countries);
@@ -106,17 +97,11 @@ export class CompanyInfoFacade {
       swift: data.swift ?? undefined,
     });
 
-    this.adminClient.apiClient
-      .adminCompanyPut(currentCompanyInfo.id, command)
+    this.adminClient.adminCompanyClient
+      .update(currentCompanyInfo.id, command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.company_info.messages.save_error')
-          );
-          console.error('Error saving company info:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
       .subscribe((response) => {

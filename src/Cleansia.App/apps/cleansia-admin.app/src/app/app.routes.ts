@@ -1,5 +1,6 @@
 import { Route } from '@angular/router';
-import { adminGuard } from '@cleansia/admin-services';
+import { adminGuard, guestGuard } from '@cleansia/admin-services';
+import { CommonRoute } from '@cleansia/services';
 
 export const appRoutes: Route[] = [
   {
@@ -13,6 +14,7 @@ export const appRoutes: Route[] = [
       import('@cleansia/admin-features/admin-login').then(
         (m) => m.adminLoginRoutes
       ),
+    canActivate: [guestGuard],
   },
   {
     path: 'employee-management',
@@ -120,5 +122,15 @@ export const appRoutes: Route[] = [
       import('./unauthorized/unauthorized.component').then(
         (m) => m.UnauthorizedComponent
       ),
+  },
+  {
+    path: CommonRoute.NOT_FOUND,
+    loadComponent: () =>
+      import('@cleansia/components').then((m) => m.CleansiaNotFoundComponent),
+    data: { title: 'page_titles.admin.not_found' },
+  },
+  {
+    path: '**',
+    redirectTo: CommonRoute.NOT_FOUND,
   },
 ];

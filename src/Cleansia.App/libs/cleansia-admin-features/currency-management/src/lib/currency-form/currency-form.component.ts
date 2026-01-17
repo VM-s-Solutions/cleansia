@@ -23,6 +23,7 @@ import {
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
+import { CleansiaAdminRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { CurrencyFormData, CurrencyFormFacade } from './currency-form.facade';
 
@@ -85,7 +86,7 @@ export class CurrencyFormComponent implements OnInit, OnDestroy {
       if (currencyId) {
         this.facade.loadCurrency(currencyId);
       } else {
-        this.router.navigate(['/currency-management']);
+        this.router.navigate([CleansiaAdminRoute.CURRENCY_MANAGEMENT]);
       }
     }
   }

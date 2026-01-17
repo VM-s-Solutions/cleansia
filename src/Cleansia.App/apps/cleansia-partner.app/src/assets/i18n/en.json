@@ -1,5 +1,21 @@
 {
   "name": "Cleansia",
+  "page_titles": {
+    "partner": {
+      "default": "Partner Portal",
+      "login": "Login",
+      "register": "Register",
+      "confirm_email": "Confirm Email",
+      "forgot_password": "Forgot Password",
+      "dashboard": "Dashboard",
+      "profile": "Profile",
+      "orders": "Orders",
+      "order_details": "Order Details",
+      "invoices": "Invoices",
+      "invoice_details": "Invoice Details",
+      "not_found": "Page Not Found"
+    }
+  },
   "pages": {
     "login": {
       "email": "Email",
@@ -129,53 +145,60 @@
       "browse_orders": "Browse Available Orders",
       "view_invoices": "View Invoices",
       "edit_profile": "Edit Profile",
-      "analytics": {
-        "earnings": {
-          "title": "Earnings Analytics",
-          "total": "Total Earnings",
-          "average": "Average Monthly",
-          "growth": "Growth",
-          "no_data": "No earnings data available"
-        },
-        "time": {
-          "title": "Time & Productivity Analytics",
-          "total_hours": "Total Hours",
-          "avg_per_order": "Avg per Order",
-          "efficiency": "Efficiency",
-          "orders": "Orders",
-          "by_service": "Time by Service Type",
-          "no_data": "No time tracking data available"
-        },
-        "orders": {
-          "title": "Order Analytics",
-          "total": "Total Orders",
-          "completion_rate": "Completion Rate",
-          "cancelled": "Cancelled",
-          "status_distribution": "Status Distribution",
-          "weekly_trends": "Weekly Trends",
-          "top_services": "Top Services",
-          "no_data": "No order data available"
-        },
-        "productivity": {
-          "title": "Productivity Metrics",
-          "orders_vs_target": "Orders vs Target",
-          "efficiency_score": "Efficiency Score",
-          "on_time": "On-Time Completion",
-          "personal_bests": "Personal Bests",
-          "highest_earning": "Highest Earning Month",
-          "most_orders_day": "Most Orders in a Day",
-          "most_orders_month": "Most Orders in a Month",
-          "best_efficiency": "Best Efficiency",
-          "no_data": "No productivity data available"
-        },
-        "date_range": {
-          "this_month": "This Month",
-          "last_3_months": "Last 3 Months",
-          "last_6_months": "Last 6 Months",
-          "this_year": "This Year"
-        }
+      "analytics": "Analytics & Performance",
+      "retry": "Retry",
+      "earnings_analytics": {
+        "title": "Earnings Analytics",
+        "total": "Total Earnings",
+        "average": "Average Monthly",
+        "growth": "Growth",
+        "chart_label": "Monthly Earnings",
+        "no_data": "No earnings data available"
       },
-      "retry": "Retry"
+      "time_analytics": {
+        "title": "Time & Productivity Analytics",
+        "total_hours": "Total Hours",
+        "avg_per_order": "Avg per Order",
+        "efficiency": "Efficiency",
+        "orders": "Orders",
+        "by_service": "Time by Service Type",
+        "week": "Week {{number}}",
+        "chart_label": "Time Worked",
+        "no_data": "No time tracking data available"
+      },
+      "order_analytics": {
+        "title": "Order Analytics",
+        "total": "Total Orders",
+        "completion_rate": "Completion Rate",
+        "cancelled": "Cancelled",
+        "status_distribution": "Status Distribution",
+        "weekly_trends": "Weekly Trends",
+        "top_services": "Top Services",
+        "order_count": "orders",
+        "week": "Week {{number}}",
+        "chart_label": "Orders",
+        "no_data": "No order data available"
+      },
+      "productivity_metrics": {
+        "title": "Productivity Metrics",
+        "orders_vs_target": "Orders vs Target",
+        "efficiency_score": "Efficiency Score",
+        "efficiency_label": "Efficiency",
+        "on_time_completion": "On-Time Completion",
+        "on_time_label": "On-Time",
+        "personal_bests": "Personal Bests",
+        "highest_earning": "Highest Earning Month",
+        "most_orders_day": "Most Orders in a Day",
+        "most_orders_month": "Most Orders in a Month",
+        "best_efficiency": "Best Efficiency",
+        "no_data": "No productivity data available"
+      },
+      "date_range": {
+        "this_month": "This Month",
+        "last_3_months": "Last 3 Months",
+        "last_6_months": "Last 6 Months",
+        "this_year": "This Year"
+      }
     },
     "orders": {
       "title": "Order Management & Time Tracking",
@@ -236,6 +259,11 @@
       "show_filters": "Show Filters",
       "hide_filters": "Hide Filters",
       "filters": {
+        "title": "Filters",
+        "tooltip": "Click to filter orders",
+        "active_count": "{{count}} active filters",
+        "search_criteria": "Search Criteria",
+        "date_range": "Date Range",
         "customer_name": "Customer Name",
         "customer_name_placeholder": "Enter customer name",
         "customer_email": "Customer Email",
@@ -250,7 +278,10 @@
         "cleaning_date_to": "Cleaning Date To",
         "select_date": "Select date",
         "apply": "Apply Filters",
-        "reset": "Reset Filters"
+        "reset": "Reset Filters",
+        "filter_active": "active",
+        "filters_active": "active",
+        "clear_all": "Clear all"
       }
     },
     "order_details": {
@@ -288,6 +319,8 @@
       "special_instructions": "Special Instructions",
       "access_instructions": "Access Instructions",
       "order_history": "Order History",
+      "actions": "Actions",
+      "start_order": "Start Order",
       "photos": "Order Photos",
       "upload_before_photo": "Upload Before Photo",
       "upload_after_photo": "Upload After Photo",
@@ -326,10 +359,28 @@
       "status_paid": "Paid",
       "status_disputed": "Disputed",
       "status_rejected": "Rejected",
+      "status_cancelled": "Cancelled",
       "view_details": "View Details",
       "download_pdf": "Download PDF",
       "pdf_not_available": "PDF is not yet available for this invoice",
-      "no_invoices": "No invoices to display"
+      "download_failed": "Failed to download invoice",
+      "no_invoices": "No invoices to display",
+      "filters": {
+        "title": "Filters",
+        "tooltip": "Click to filter invoices",
+        "active_count": "{{count}} active filters",
+        "search_criteria": "Search Criteria",
+        "invoice_number": "Invoice Number",
+        "date_range": "Date Range",
+        "date_from": "Date From",
+        "date_to": "Date To",
+        "amount_range": "Amount Range",
+        "min_amount": "Minimum Amount",
+        "max_amount": "Maximum Amount",
+        "invoice_status": "Invoice Status",
+        "reset": "Reset Filters",
+        "clear_all": "Clear all"
+      }
     },
     "invoice_detail": {
       "invoice_details": "Invoice Details",
@@ -523,6 +574,10 @@
     "disputes": "Disputes"
   },
   "components": {
+    "not_found": {
+      "title": "Page Not Found",
+      "description": "The page you are looking for might have been removed, had its name changed, or is temporarily unavailable."
+    },
     "file": {
       "click_to_select": "Click to select files",
       "or_drag_drop": "or drag and drop",
@@ -552,6 +607,12 @@
     "loading": "Loading...",
     "refresh": "Refresh",
     "common": "Common",
+    "close": "Close",
+    "rows_per_page": "Rows per page",
+    "of": "of",
+    "page": "Page {{page}}",
+    "previous_page": "Previous page",
+    "next_page": "Next page",
     "messages": {
       "success": "Success",
       "error": "Error",
@@ -584,6 +645,9 @@
         "failed_to_load_details": "Failed to load order details. Please try again.",
         "invoice_download_not_available": "Invoice download is not yet available.",
         "no_order_selected": "No order selected.",
+        "invalid_request": "Invalid request. Missing required information.",
+        "order_started": "Order started successfully.",
+        "failed_to_start": "Failed to start order. Please try again.",
         "print_failed": "Failed to print order. Please try again.",
         "receipt_not_available": "Receipt is not available for this order.",
         "receipt_downloaded": "Receipt downloaded successfully.",
@@ -747,11 +811,17 @@
       "user_not_authenticated": "User not authenticated"
     },
     "currency": {
-      "invalid": "Invalid currency"
+      "invalid": "Invalid currency",
+      "not_found": "Currency not found",
+      "code_already_exists": "A currency with this code already exists",
+      "in_use": "Cannot delete currency because it is currently in use",
+      "cannot_delete_default": "Cannot delete the default currency",
+      "exchange_rate_must_be_positive": "Exchange rate must be a positive number"
     },
     "email": {
       "sending_failed": "Email sending failed",
-      "invalid_format": "Invalid email format"
+      "invalid_format": "Invalid email format",
+      "invalid_email": "Invalid email address"
     },
     "order": {
       "cleaning_date": {
@@ -768,7 +838,27 @@
       "total_price": {
         "positive": "Total price must be positive",
         "not_match": "Total price does not match"
-      }
+      },
+      "not_found": "Order not found",
+      "already_assigned": "Order is already assigned",
+      "no_available_spots": "No available spots for this order",
+      "employee_already_assigned": "Employee is already assigned to this order",
+      "employee_not_assigned": "Employee is not assigned to this order",
+      "max_employees_exceeded": "Maximum number of employees exceeded",
+      "not_in_progress": "Order is not in progress",
+      "not_confirmed": "Order must be in confirmed status to start",
+      "actual_time": {
+        "positive": "Actual time must be positive"
+      },
+      "completion_notes": {
+        "required": "Completion notes are required",
+        "too_long": "Completion notes are too long"
+      },
+      "after_photos": {
+        "required": "After photos are required to complete the order"
+      },
+      "payment_gateway_unavailable": "Payment gateway is unavailable",
+      "creation_failed": "Failed to create order"
     },
     "user": {
       "email_confirmed": "Email is already confirmed",
@@ -776,14 +866,71 @@
       "not_existing_email": "User with this email does not exist",
       "not_existing_id": "User with this ID does not exist",
       "not_allowed_to_update": "You are not allowed to update this user",
-      "existing_phone_number": "Phone number already exists"
+      "existing_phone_number": "Phone number already exists",
+      "not_found": "User not found"
     },
     "employee": {
+      "not_found": "Employee not found",
       "not_existing_email": "Employee with this email does not exist",
       "not_allowed_to_update": "You are not allowed to update this employee",
       "data_not_available": "Employee data not available",
       "profile_incomplete": "Complete profile information",
-      "documents_missing": "Upload required documents"
+      "documents_missing": "Upload required documents",
+      "already_approved": "Employee has already been approved",
+      "already_rejected": "Employee has already been rejected"
+    },
+    "employee_document": {
+      "not_found": "Document not found",
+      "unauthorized": "You are not authorized to access this document",
+      "not_owned": "You can only access your own documents"
+    },
+    "payroll": {
+      "pay_period": {
+        "not_found": "Pay period not found",
+        "not_open": "Pay period is not open"
+      },
+      "invoice": {
+        "not_found": "Invoice not found",
+        "invalid_status": "Invalid invoice status",
+        "already_exists": "Invoice already exists",
+        "pdf_generation_failed": "Failed to generate PDF",
+        "template_not_found": "Invoice template not found",
+        "cannot_cancel_paid": "Cannot cancel a paid invoice",
+        "already_cancelled": "Invoice has already been cancelled"
+      },
+      "unpaid_invoices_exist": "Unpaid invoices exist",
+      "pay": {
+        "already_calculated": "Pay has already been calculated"
+      },
+      "no_unpaid_order_pays": "No unpaid order pays found",
+      "no_active_period": "No active pay period found",
+      "no_pay_configuration": "No pay configuration found",
+      "no_currency": "No currency found",
+      "employee_not_assigned": "Employee not assigned to this order"
+    },
+    "receipt": {
+      "not_found": "Receipt not found",
+      "generation_failed": "Failed to generate receipt"
+    },
+    "pay_period": {
+      "invalid_duration": "Invalid pay period duration",
+      "overlapping_period": "Pay period overlaps with an existing period",
+      "has_order_pays": "Cannot delete pay period that has associated order pays",
+      "not_closed": "Pay period is not closed"
+    },
+    "pay_config": {
+      "service_or_package_required": "Either service or package is required",
+      "cannot_have_both": "Cannot have both service and package",
+      "already_exists": "Pay configuration already exists",
+      "not_found": "Pay configuration not found",
+      "has_order_pays": "Cannot delete pay configuration that has associated order pays",
+      "base_pay_negative": "Base pay cannot be negative",
+      "extra_per_room_negative": "Extra per room cannot be negative",
+      "extra_per_bathroom_negative": "Extra per bathroom cannot be negative",
+      "distance_rate_negative": "Distance rate cannot be negative",
+      "minimum_pay_negative": "Minimum pay cannot be negative",
+      "maximum_pay_negative": "Maximum pay cannot be negative",
+      "maximum_less_than_minimum": "Maximum pay cannot be less than minimum pay"
     },
     "file": {
       "content_type_doesnt_match": "File type does not match content",
@@ -797,10 +944,33 @@
       "invalid_length": "Invalid length for address field"
     },
     "language": {
-      "not_supported": "Language is not supported"
+      "not_supported": "Language is not supported",
+      "not_found": "Language not found",
+      "code_already_exists": "A language with this code already exists",
+      "in_use": "Cannot delete language because it is currently in use"
     },
     "country": {
-      "not_existing_id": "Country with this ID does not exist"
+      "not_existing_id": "Country with this ID does not exist",
+      "not_found": "Country not found",
+      "iso_code_already_exists": "A country with this ISO code already exists",
+      "in_use": "Cannot delete country because it is currently in use"
+    },
+    "company": {
+      "not_found": "Company information not found",
+      "exists_for_country": "Company information already exists for this country",
+      "in_use": "Cannot delete company because it is currently in use"
+    },
+    "dispute": {
+      "not_found": "Dispute not found",
+      "already_exists": "Dispute already exists for this order",
+      "invalid_refund_amount": "Invalid refund amount",
+      "max_length_exceeded": "Maximum length exceeded"
+    },
+    "admin_user": {
+      "not_found": "Admin user not found",
+      "email_exists": "An admin user with this email already exists",
+      "cannot_deactivate_self": "You cannot deactivate your own account",
+      "cannot_delete_self": "You cannot delete your own account"
     },
     "validation": {
       "invalid_password": "Invalid password",
@@ -812,13 +982,43 @@
       "invalid_tax_id": "Invalid tax ID format",
       "invalid_iban": "Invalid IBAN format",
       "invalid_zip_code": "Invalid zip code format",
+      "must_be_positive": "Value must be positive",
       "file": {
         "max_size": "File \"{{fileName}}\" exceeds maximum size of {{maxSize}}MB",
         "invalid_type": "File \"{{fileName}}\" type is not allowed. Accepted: {{acceptedTypes}}"
       }
     },
+    "service": {
+      "not_found": "Service not found",
+      "in_use": "Cannot delete service because it is currently in use",
+      "translations_required": "Translations are required for all supported languages",
+      "missing_translation_for_language": "Missing translation for required language"
+    },
+    "package": {
+      "not_found": "Package not found",
+      "in_use": "Cannot delete package because it is currently in use"
+    },
     "general": {
       "not_found": "Requested resource not found"
+    },
+    "template": {
+      "cannot_delete_active": "Cannot delete an active template",
+      "invalid_file_type": "Invalid template file type",
+      "file_size_exceeded": "Template file size exceeded",
+      "file_required": "Template file is required",
+      "invoice": {
+        "not_found": "Invoice template not found",
+        "in_use": "Cannot delete invoice template because it is currently in use"
+      },
+      "receipt": {
+        "not_found": "Receipt template not found",
+        "in_use": "Cannot delete receipt template because it is currently in use"
+      },
+      "email": {
+        "not_found": "Email template not found",
+        "key_exists": "A translation with this key already exists",
+        "invalid_type": "Invalid email template type"
+      }
     }
   },
   "enums": {
@@ -864,5 +1064,65 @@
       "min_length": "Minimum length is {{min}} characters",
       "min_value": "Minimum value is {{min}}"
     }
+  },
+  "help": {
+    "orders": {
+      "title": "How Orders Work",
+      "step1_title": "Browse Available",
+      "step1_desc": "Find orders in your area that match your availability and skills.",
+      "step2_title": "Take Order",
+      "step2_desc": "Claim an order to add it to your assignments. The customer is notified.",
+      "step3_title": "Complete Work",
+      "step3_desc": "Perform the cleaning, take before/after photos, and mark as complete.",
+      "step4_title": "Get Paid",
+      "step4_desc": "Your earnings are added to your next invoice for the pay period.",
+      "status_title": "Order Status Explained",
+      "status": {
+        "pending_desc": "Order has been created but payment is not yet confirmed. Waiting for customer payment.",
+        "confirmed_desc": "Payment received and order is confirmed. Available for employees to take.",
+        "in_progress_desc": "An employee has started working on this order. Cleaning is underway.",
+        "completed_desc": "Work is finished, photos uploaded. Ready for payment processing.",
+        "cancelled_desc": "Order was cancelled. No payment or work required."
+      },
+      "payment_title": "Payment Status Guide",
+      "payment_status_title": "Payment Status Explained",
+      "payment": {
+        "pending_desc": "Customer has not completed payment yet. Order cannot be confirmed until paid.",
+        "paid_desc": "Customer has paid successfully. Order can proceed to be taken by employees.",
+        "failed_desc": "Payment attempt failed. Customer needs to retry payment.",
+        "refunded_desc": "Payment was refunded to customer. Order may have been cancelled or disputed."
+      }
+    },
+    "invoices": {
+      "title": "How Invoices Work",
+      "step1_title": "Work Period",
+      "step1_desc": "Complete orders during a pay period. Your earnings accumulate automatically.",
+      "step2_title": "Invoice Generated",
+      "step2_desc": "At period end, an invoice is created with all your completed orders.",
+      "step3_title": "Admin Review",
+      "step3_desc": "Admin reviews and approves your invoice. You'll see status updates here.",
+      "step4_title": "Payment",
+      "step4_desc": "Once approved, payment is processed to your registered bank account.",
+      "status_title": "Invoice Status Explained",
+      "status": {
+        "pending_desc": "Invoice has been generated and is waiting for admin review.",
+        "approved_desc": "Admin has approved your invoice. Payment will be processed soon.",
+        "paid_desc": "Payment has been sent to your bank account. Check your bank statement.",
+        "disputed_desc": "There's an issue with the invoice. Admin will contact you for clarification.",
+        "rejected_desc": "Invoice was rejected. Check notes from admin for required corrections.",
+        "cancelled_desc": "Invoice was cancelled and will not be paid."
+      }
+    },
+    "dismiss": "Got it, don't show again",
+    "show_help": "Show Help",
+    "hide_help": "Hide Help"
+  },
+  "cookies": {
+    "title": "We Value Your Privacy",
+    "description": "We use cookies to enhance your browsing experience, provide personalized content, and analyze our traffic. By clicking \"Accept\", you consent to our use of cookies.",
+    "accept": "Accept All",
+    "decline": "Decline",
+    "learn_more": "Learn more",
+    "banner_title": "Cookie consent banner"
   }
 }

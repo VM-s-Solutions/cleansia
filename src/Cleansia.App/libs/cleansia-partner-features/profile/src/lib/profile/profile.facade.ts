@@ -141,9 +141,6 @@ export class ProfileFacade extends UnsubscribeControlDirective {
       }),
       catchError(() => {
         this.profileLoading.set(false);
-        this.snackbarService.showError(
-          this.translate.instant('global.messages.profile.load_error')
-        );
         this.profileData$ = null;
         return of(null);
       }),
@@ -288,11 +285,7 @@ export class ProfileFacade extends UnsubscribeControlDirective {
           loading: false,
         }));
       }
-    } catch (error) {
-      console.error('Failed to load documents', error);
-      this.snackbarService.showError(
-        this.translate.instant('global.messages.documents.load_error')
-      );
+    } catch {
       this.documentsState.update((s) => ({ ...s, loading: false }));
     }
   }
@@ -413,11 +406,7 @@ export class ProfileFacade extends UnsubscribeControlDirective {
         saving: false,
       }));
       await this.loadEmployeeDocuments();
-    } catch (error) {
-      console.error('Failed to save documents', error);
-      this.snackbarService.showError(
-        this.translate.instant('global.messages.documents.upload_error')
-      );
+    } catch {
       this.documentsState.update((s) => ({ ...s, saving: false }));
     }
   }
@@ -455,11 +444,7 @@ export class ProfileFacade extends UnsubscribeControlDirective {
         documents: s.documents.filter((d) => d.documentId !== documentId),
         deleting: false,
       }));
-    } catch (error) {
-      console.error('Failed to delete document', error);
-      this.snackbarService.showError(
-        this.translate.instant('global.messages.documents.delete_error')
-      );
+    } catch {
       this.documentsState.update((s) => ({ ...s, deleting: false }));
     }
   }
@@ -468,13 +453,7 @@ export class ProfileFacade extends UnsubscribeControlDirective {
     this.partnerClient.employeeClient
       .downloadMyDocument(documentId)
       .pipe(
-        catchError((error) => {
-          console.error('Failed to download document', error);
-          this.snackbarService.showError(
-            this.translate.instant('global.messages.documents.download_error')
-          );
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response && response.data) {

@@ -13,14 +13,14 @@ namespace Cleansia.Web.Admin.Controllers;
 [ApiController]
 public class AdminPackageController(IMediator mediator) : ApiController(mediator)
 {
-    [HttpPost("get-paged")]
+    [HttpGet("get-paged")]
     [Permission(Policy.CanViewPackages)]
     [ProducesResponseType(typeof(PagedData<PackageListItem>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetPagedPackages(
-        [FromBody] GetPagedPackages.Request request,
+        [FromQuery] GetPagedPackages.Request request,
         CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(request, cancellationToken);
@@ -42,7 +42,7 @@ public class AdminPackageController(IMediator mediator) : ApiController(mediator
         return HandleResult<AdminPackageDetailDto>(result);
     }
 
-    [HttpPost]
+    [HttpPost("create")]
     [Permission(Policy.CanCreatePackage)]
     [ProducesResponseType(typeof(CreatePackage.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -56,7 +56,7 @@ public class AdminPackageController(IMediator mediator) : ApiController(mediator
         return HandleResult<CreatePackage.Response>(result);
     }
 
-    [HttpPut("{packageId}")]
+    [HttpPut("update/{packageId}")]
     [Permission(Policy.CanUpdatePackage)]
     [ProducesResponseType(typeof(UpdatePackage.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -76,7 +76,7 @@ public class AdminPackageController(IMediator mediator) : ApiController(mediator
         return HandleResult<UpdatePackage.Response>(result);
     }
 
-    [HttpDelete("{packageId}")]
+    [HttpDelete("delete/{packageId}")]
     [Permission(Policy.CanDeletePackage)]
     [ProducesResponseType(typeof(DeletePackage.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]

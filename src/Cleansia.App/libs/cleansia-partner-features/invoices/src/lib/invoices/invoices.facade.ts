@@ -48,9 +48,19 @@ export class InvoicesFacade implements OnDestroy {
   // Signals for reactive data
   invoices = signal<EmployeeInvoice[]>([]);
   loading = signal<boolean>(false);
+  totalRecords = signal<number>(0);
 
   private currentEmployeeId = signal<string | null>(null);
   private currentSort = signal<SortDefinition[]>([]);
+  private currentFilter = signal<{
+    invoiceNumber?: string;
+    minAmount?: number;
+    maxAmount?: number;
+    dateFrom?: Date;
+    dateTo?: Date;
+    payPeriodId?: string;
+    statuses?: EmployeeInvoiceStatus[];
+  } | null>(null);
 
   constructor() {
     // Get current employee ID
@@ -133,22 +143,25 @@ export class InvoicesFacade implements OnDestroy {
 
     this.loading.set(true);
 
+    const filter = this.currentFilter();
+
     this.partnerClient.employeePayrollClient
       .getPagedInvoices(
         employeeId,
-        undefined,
-        undefined,
+        filter?.payPeriodId,
+        filter?.statuses,
+        filter?.invoiceNumber,
+        filter?.minAmount,
+        filter?.maxAmount,
+        filter?.dateFrom,
+        filter?.dateTo,
         this.currentSort(),
         offset,
         limit
       )
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          console.error('Failed to load invoices:', error);
-          this.snackbarService.showError(
-            'Failed to load invoices. Please try again.'
-          );
+        catchError(() => {
           this.loading.set(false);
           return of(null);
         })
@@ -159,8 +172,10 @@ export class InvoicesFacade implements OnDestroy {
             this.mapDtoToInvoice(dto)
           );
           this.invoices.set(invoices);
+          this.totalRecords.set(pagedData.total ?? 0);
         } else {
           this.invoices.set([]);
+          this.totalRecords.set(0);
         }
         this.loading.set(false);
       });
@@ -168,7 +183,28 @@ export class InvoicesFacade implements OnDestroy {
 
   updateSort(sort: SortDefinition[]): void {
     this.currentSort.set(sort);
-    this.loadInvoices();
+    // Reset to first page when sorting changes
+    this.loadInvoices(0, 10);
+  }
+
+  applyFilters(filter: {
+    invoiceNumber?: string;
+    minAmount?: number;
+    maxAmount?: number;
+    dateFrom?: Date;
+    dateTo?: Date;
+    payPeriodId?: string;
+    statuses?: EmployeeInvoiceStatus[];
+  }): void {
+    this.currentFilter.set(filter);
+    // Reset to first page when filters change
+    this.loadInvoices(0, 10);
+  }
+
+  resetFilters(): void {
+    this.currentFilter.set(null);
+    // Reset to first page when filters are cleared
+    this.loadInvoices(0, 10);
   }
 
   downloadInvoice(invoice: EmployeeInvoice): void {
@@ -183,13 +219,7 @@ export class InvoicesFacade implements OnDestroy {
       .downloadInvoice(invoice.id)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          console.error('Failed to download invoice:', error);
-          this.snackbarService.showErrorTranslated(
-            'pages.invoices.download_failed'
-          );
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((fileResponse) => {
         if (fileResponse) {

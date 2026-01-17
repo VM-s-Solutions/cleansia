@@ -1,0 +1,16 @@
+// ===== PAGE WRAPPER WITH GLASSMORPHISM =====
+.page-wrapper {
+  /* Glass morphism effect */
+  position: relative;
+  background: var(--cleansia-white);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  padding: 2rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+}

@@ -35,6 +35,11 @@ export class ReportsFacade {
     endDate: new Date(),
   });
 
+  readonly defaultDateRange: DateRangeFilter = {
+    startDate: this.getDefaultStartDate(),
+    endDate: new Date(),
+  };
+
   readonly isLoading = computed(
     () => this.loadingRevenue() || this.loadingPayroll()
   );
@@ -53,13 +58,7 @@ export class ReportsFacade {
       .revenue(startDate, endDate)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.reports.messages.revenue_load_error')
-          );
-          console.error('Error loading revenue report:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.loadingRevenue.set(false))
       )
       .subscribe((response) => {
@@ -77,13 +76,7 @@ export class ReportsFacade {
       .payroll(startDate, endDate)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.reports.messages.payroll_load_error')
-          );
-          console.error('Error loading payroll report:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.loadingPayroll.set(false))
       )
       .subscribe((response) => {
@@ -120,6 +113,12 @@ export class ReportsFacade {
     } else {
       this.loadPayrollReport();
     }
+  }
+
+  resetToDefaultDateRange(): void {
+    const defaultStart = this.getDefaultStartDate();
+    const defaultEnd = new Date();
+    this.setDateRange(defaultStart, defaultEnd);
   }
 
   formatCurrency(value: number | undefined): string {

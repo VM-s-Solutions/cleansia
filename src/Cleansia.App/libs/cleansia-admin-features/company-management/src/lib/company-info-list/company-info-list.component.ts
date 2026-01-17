@@ -1,9 +1,14 @@
 import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
+  ChangeDetectorRef,
   Component,
+  computed,
   inject,
   OnDestroy,
+  signal,
+  TemplateRef,
+  viewChild,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -20,7 +25,9 @@ import {
   CleansiaTableComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
-  TableDefinition,
+  TableColumn,
+  TableAction,
+  PaginationState,
 } from '@cleansia/components';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
@@ -49,13 +56,17 @@ import { getCompanyInfoTableDefinition } from './company-info-list.models';
   providers: [CompanyInfoListFacade, ConfirmationService],
 })
 export class CompanyInfoListComponent implements AfterViewInit, OnDestroy {
+  private readonly cd = inject(ChangeDetectorRef);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   protected readonly facade = inject(CompanyInfoListFacade);
   private readonly translate = inject(TranslateService);
   private readonly confirmationService = inject(ConfirmationService);
 
-  companyInfoTableDefinition!: TableDefinition<CompanyInfoListItem>;
+  statusTemplate = viewChild<TemplateRef<any>>('statusTemplate');
+
+  companyColumns!: TableColumn<CompanyInfoListItem>[];
+  companyActions!: TableAction<CompanyInfoListItem>[];
 
   private lastSortField: string | null = null;
   private lastSortOrder: number | null = null;
@@ -65,14 +76,24 @@ export class CompanyInfoListComponent implements AfterViewInit, OnDestroy {
     searchTerm: [''],
   });
 
+  // Filter drawer state
+  isFilterDrawerOpen = signal(false);
+  private filterFormVersion = signal(0);
+  activeFilterChips = computed(() => {
+    this.filterFormVersion();
+    return this.getActiveFilterChips();
+  });
+  hasActiveFilters = computed(() => this.activeFilterChips().length > 0);
+  activeFilterCount = computed(() => this.activeFilterChips().length);
+
   ngAfterViewInit(): void {
-    this.companyInfoTableDefinition = getCompanyInfoTableDefinition(
-      {
-        onEdit: this.editCompanyInfo.bind(this),
-        onDelete: this.confirmDeleteCompanyInfo.bind(this),
-      },
-      this.translate
-    );
+    this.rebuildTableDefinitions();
+
+    this.filterForm.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.filterFormVersion.update(v => v + 1);
+      });
 
     this.filterForm.valueChanges
       .pipe(debounceTime(500), distinctUntilChanged(), takeUntil(this.destroy$))
@@ -80,7 +101,40 @@ export class CompanyInfoListComponent implements AfterViewInit, OnDestroy {
         this.applyFilters();
       });
 
+    // Rebuild tables when language changes
+    this.translate.onLangChange
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.rebuildTableDefinitions();
+      });
+
     this.facade.loadCompanyInfos();
+  }
+
+  private rebuildTableDefinitions(): void {
+    const tableDef = getCompanyInfoTableDefinition(
+      {
+        onEdit: this.editCompanyInfo.bind(this),
+        onDelete: this.confirmDeleteCompanyInfo.bind(this),
+      },
+      this.translate,
+      this.statusTemplate()
+    );
+    this.companyColumns = tableDef.columns;
+    this.companyActions = tableDef.actions;
+    this.cd.detectChanges();
+  }
+
+  getActiveStatusLabel(company: CompanyInfoListItem): string {
+    return company.isActive
+      ? this.translate.instant('global.status.active')
+      : this.translate.instant('global.status.inactive');
+  }
+
+  getActiveStatusClass(company: CompanyInfoListItem): string {
+    return company.isActive
+      ? 'active-status-badge status-active'
+      : 'active-status-badge status-inactive';
   }
 
   ngOnDestroy(): void {
@@ -125,6 +179,12 @@ export class CompanyInfoListComponent implements AfterViewInit, OnDestroy {
     this.facade.onSortChange(sort);
   }
 
+  onPageChange(event: PaginationState): void {
+    const offset = event.first;
+    const limit = event.rows;
+    this.facade.onPageChange(offset, limit);
+  }
+
   createCompanyInfo(): void {
     this.facade.navigateToCreate();
   }
@@ -142,5 +202,38 @@ export class CompanyInfoListComponent implements AfterViewInit, OnDestroy {
         this.facade.deleteCompanyInfo(companyInfo);
       },
     });
+  }
+
+  // Filter drawer methods
+  openFilterDrawer(): void {
+    this.isFilterDrawerOpen.set(true);
+  }
+
+  closeFilterDrawer(): void {
+    this.isFilterDrawerOpen.set(false);
+  }
+
+  getActiveFilterChips(): { key: string; label: string; value: string }[] {
+    const chips: { key: string; label: string; value: string }[] = [];
+    const values = this.filterForm.value;
+
+    if (values.searchTerm) {
+      chips.push({
+        key: 'searchTerm',
+        label: this.translate.instant('pages.company_management.filters.search'),
+        value: values.searchTerm,
+      });
+    }
+
+    return chips;
+  }
+
+  removeFilterChip(key: string): void {
+    this.filterForm.patchValue({ [key]: '' });
+    this.applyFilters();
+  }
+
+  clearAllFilters(): void {
+    this.resetFilters();
   }
 }

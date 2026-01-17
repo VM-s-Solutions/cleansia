@@ -11,7 +11,7 @@ import {
   CleansiaLoaderComponent,
 } from '@cleansia/components';
 import { TimeAnalyticsDto } from '@cleansia/partner-services';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ChartConfiguration, ChartType } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 
@@ -70,7 +70,7 @@ export class CleansiaTimeAnalyticsChartComponent {
     },
   };
 
-  constructor() {
+  constructor(private translate: TranslateService) {
     effect(() => {
       const currentData = this.data();
       if (currentData) {
@@ -88,7 +88,7 @@ export class CleansiaTimeAnalyticsChartComponent {
     }
 
     const labels = currentData.weeklyBreakdown.map(
-      (w) => `Week ${w.weekNumber}`
+      (w) => this.translate.instant('pages.dashboard.time_analytics.week', { number: w.weekNumber })
     );
     const timeData = currentData.weeklyBreakdown.map((w) => w.totalMinutes);
 
@@ -97,7 +97,7 @@ export class CleansiaTimeAnalyticsChartComponent {
       datasets: [
         {
           data: timeData,
-          label: 'Time Worked',
+          label: this.translate.instant('pages.dashboard.time_analytics.chart_label'),
           backgroundColor: 'rgba(245, 158, 11, 0.6)',
           borderColor: '#f59e0b',
           borderWidth: 2,

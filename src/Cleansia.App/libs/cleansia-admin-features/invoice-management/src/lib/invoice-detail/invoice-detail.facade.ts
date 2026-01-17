@@ -38,13 +38,7 @@ export class InvoiceDetailFacade {
       .details(invoiceId)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.invoice_detail.messages.load_error')
-          );
-          console.error('Error loading invoice details:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
@@ -69,15 +63,7 @@ export class InvoiceDetailFacade {
       .approve(command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.invoice_detail.messages.approve_error'
-            )
-          );
-          console.error('Error approving invoice:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.actionLoading.set(false))
       )
       .subscribe((response) => {
@@ -108,15 +94,7 @@ export class InvoiceDetailFacade {
       .markPaid(command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.invoice_detail.messages.mark_paid_error'
-            )
-          );
-          console.error('Error marking invoice as paid:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.actionLoading.set(false))
       )
       .subscribe((response) => {
@@ -177,13 +155,7 @@ export class InvoiceDetailFacade {
       .cancel(command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.invoice_detail.messages.cancel_error')
-          );
-          console.error('Error cancelling invoice:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.actionLoading.set(false))
       )
       .subscribe((response) => {
@@ -206,15 +178,7 @@ export class InvoiceDetailFacade {
       .download(inv.id)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.invoice_detail.messages.download_error'
-            )
-          );
-          console.error('Error downloading invoice:', error);
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response && response.data) {
@@ -245,15 +209,7 @@ export class InvoiceDetailFacade {
       .regeneratePdf(command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.invoice_detail.messages.regenerate_error'
-            )
-          );
-          console.error('Error regenerating invoice PDF:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.actionLoading.set(false))
       )
       .subscribe((response) => {

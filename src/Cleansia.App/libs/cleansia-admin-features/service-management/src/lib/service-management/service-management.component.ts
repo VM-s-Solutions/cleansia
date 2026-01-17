@@ -2,11 +2,14 @@ import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
   Component,
+  computed,
   inject,
   OnDestroy,
+  signal,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { CleansiaAdminRoute } from '@cleansia/services';
 import {
   ServiceListItem,
   SortDefinition,
@@ -20,7 +23,9 @@ import {
   CleansiaTableComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
-  TableDefinition,
+  TableColumn,
+  TableAction,
+  PaginationState,
 } from '@cleansia/components';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
@@ -55,7 +60,8 @@ export class ServiceManagementComponent implements AfterViewInit, OnDestroy {
   private readonly translate = inject(TranslateService);
   private readonly confirmationService = inject(ConfirmationService);
 
-  serviceTableDefinition!: TableDefinition<ServiceListItem>;
+  serviceColumns!: TableColumn<ServiceListItem>[];
+  serviceActions!: TableAction<ServiceListItem>[];
 
   private lastSortField: string | null = null;
   private lastSortOrder: number | null = null;
@@ -65,16 +71,24 @@ export class ServiceManagementComponent implements AfterViewInit, OnDestroy {
     searchTerm: [''],
   });
 
+  // Filter drawer state
+  isFilterDrawerOpen = signal(false);
+  private filterFormVersion = signal(0);
+  activeFilterChips = computed(() => {
+    this.filterFormVersion();
+    return this.getActiveFilterChips();
+  });
+  hasActiveFilters = computed(() => this.activeFilterChips().length > 0);
+  activeFilterCount = computed(() => this.activeFilterChips().length);
+
   ngAfterViewInit(): void {
-    this.serviceTableDefinition = getServiceTableDefinition(
-      {
-        onViewDetails: this.viewServiceDetails.bind(this),
-        onEdit: this.editService.bind(this),
-        onDelete: this.confirmDeleteService.bind(this),
-      },
-      this.translate,
-      this.facade.formatCurrency.bind(this.facade)
-    );
+    this.rebuildTableDefinitions();
+
+    this.filterForm.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.filterFormVersion.update(v => v + 1);
+      });
 
     this.filterForm.valueChanges
       .pipe(debounceTime(500), distinctUntilChanged(), takeUntil(this.destroy$))
@@ -82,7 +96,28 @@ export class ServiceManagementComponent implements AfterViewInit, OnDestroy {
         this.applyFilters();
       });
 
+    // Rebuild tables when language changes
+    this.translate.onLangChange
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.rebuildTableDefinitions();
+      });
+
     this.facade.loadServices();
+  }
+
+  private rebuildTableDefinitions(): void {
+    const tableDefinition = getServiceTableDefinition(
+      {
+        onEdit: this.editService.bind(this),
+        onDelete: this.confirmDeleteService.bind(this),
+      },
+      this.translate,
+      this.facade.formatCurrency.bind(this.facade)
+    );
+
+    this.serviceColumns = tableDefinition.columns;
+    this.serviceActions = tableDefinition.actions;
   }
 
   ngOnDestroy(): void {
@@ -92,7 +127,7 @@ export class ServiceManagementComponent implements AfterViewInit, OnDestroy {
 
   viewServiceDetails(service: ServiceListItem): void {
     if (service.id) {
-      this.router.navigate(['/service-management', service.id, 'edit']);
+      this.router.navigate([CleansiaAdminRoute.SERVICE_MANAGEMENT, service.id, 'edit']);
     }
   }
 
@@ -133,6 +168,12 @@ export class ServiceManagementComponent implements AfterViewInit, OnDestroy {
     this.facade.onSortChange(sort);
   }
 
+  onPageChange(event: PaginationState): void {
+    const offset = event.first;
+    const limit = event.rows;
+    this.facade.onPageChange(offset, limit);
+  }
+
   createService(): void {
     this.facade.navigateToCreateService();
   }
@@ -150,5 +191,38 @@ export class ServiceManagementComponent implements AfterViewInit, OnDestroy {
         this.facade.deleteService(service);
       },
     });
+  }
+
+  // Filter drawer methods
+  openFilterDrawer(): void {
+    this.isFilterDrawerOpen.set(true);
+  }
+
+  closeFilterDrawer(): void {
+    this.isFilterDrawerOpen.set(false);
+  }
+
+  getActiveFilterChips(): { key: string; label: string; value: string }[] {
+    const chips: { key: string; label: string; value: string }[] = [];
+    const values = this.filterForm.value;
+
+    if (values.searchTerm) {
+      chips.push({
+        key: 'searchTerm',
+        label: this.translate.instant('pages.service_management.filters.search'),
+        value: values.searchTerm,
+      });
+    }
+
+    return chips;
+  }
+
+  removeFilterChip(key: string): void {
+    this.filterForm.patchValue({ [key]: '' });
+    this.applyFilters();
+  }
+
+  clearAllFilters(): void {
+    this.resetFilters();
   }
 }

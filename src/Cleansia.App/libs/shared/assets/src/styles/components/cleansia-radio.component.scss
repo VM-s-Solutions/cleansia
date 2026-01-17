@@ -1,0 +1,26 @@
+.cleansia-radio-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cleansia-radio-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  label {
+    font-size: 0.9375rem;
+    color: #374151;
+    font-weight: 500;
+    line-height: 1.4;
+    cursor: pointer;
+    user-select: none;
+    margin: 0;
+
+    &.required::after {
+      content: ' *';
+      color: #ef4444;
+    }
+  }
+}

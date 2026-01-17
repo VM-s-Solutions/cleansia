@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, inject, OnDestroy } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectorRef,
+  Component,
+  inject,
+  OnDestroy,
+  TemplateRef,
+  viewChild,
+} from '@angular/core';
 import { CurrencyListItem } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
@@ -8,14 +16,18 @@ import {
   CleansiaSectionComponent,
   CleansiaTableComponent,
   CleansiaTitleComponent,
-  TableDefinition,
+  TableColumn,
+  TableAction,
 } from '@cleansia/components';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { Subject } from 'rxjs';
+import { Subject, takeUntil } from 'rxjs';
 import { CurrencyManagementFacade } from './currency-management.facade';
-import { getCurrencyTableDefinition } from './currency-management.models';
+import {
+  getCurrencyFlagCode,
+  getCurrencyTableDefinition,
+} from './currency-management.models';
 
 @Component({
   selector: 'cleansia-admin-currency-management',
@@ -35,24 +47,47 @@ import { getCurrencyTableDefinition } from './currency-management.models';
   providers: [CurrencyManagementFacade, ConfirmationService],
 })
 export class CurrencyManagementComponent implements AfterViewInit, OnDestroy {
+  private readonly cd = inject(ChangeDetectorRef);
   protected readonly facade = inject(CurrencyManagementFacade);
   private readonly translate = inject(TranslateService);
   private readonly confirmationService = inject(ConfirmationService);
 
-  currencyTableDefinition!: TableDefinition<CurrencyListItem>;
+  flagTemplate = viewChild<TemplateRef<any>>('flagTemplate');
+
+  currencyColumns!: TableColumn<CurrencyListItem>[];
+  currencyActions!: TableAction<CurrencyListItem>[];
+
+  // Expose helper function to template
+  getCurrencyFlagCode = getCurrencyFlagCode;
 
   private destroy$ = new Subject<void>();
 
   ngAfterViewInit(): void {
-    this.currencyTableDefinition = getCurrencyTableDefinition(
+    this.rebuildTableDefinitions();
+    this.cd.detectChanges();
+
+    // Rebuild tables when language changes
+    this.translate.onLangChange
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.rebuildTableDefinitions();
+        this.cd.detectChanges();
+      });
+
+    this.facade.loadCurrencies();
+  }
+
+  private rebuildTableDefinitions(): void {
+    const tableDef = getCurrencyTableDefinition(
       {
         onEdit: this.editCurrency.bind(this),
         onDelete: this.confirmDeleteCurrency.bind(this),
       },
-      this.translate
+      this.translate,
+      this.flagTemplate()
     );
-
-    this.facade.loadCurrencies();
+    this.currencyColumns = tableDef.columns;
+    this.currencyActions = tableDef.actions;
   }
 
   ngOnDestroy(): void {

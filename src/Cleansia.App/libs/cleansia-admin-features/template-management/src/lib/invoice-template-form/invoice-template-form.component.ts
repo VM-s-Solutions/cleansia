@@ -23,6 +23,7 @@ import {
   CleansiaTitleComponent,
   ICleansiaSelectOption,
 } from '@cleansia/components';
+import { CleansiaAdminRoute } from '@cleansia/services';
 import { FileTransformationUtils } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { InvoiceTemplateFormFacade, InvoiceTemplateFormData } from './invoice-template-form.facade';
@@ -129,7 +130,7 @@ export class InvoiceTemplateFormComponent implements OnInit, OnDestroy {
         this.templateIdSignal.set(templateId);
         this.facade.loadTemplate(templateId);
       } else {
-        this.router.navigate(['/template-management', 'invoice-templates']);
+        this.router.navigate([CleansiaAdminRoute.TEMPLATE_MANAGEMENT, 'invoice-templates']);
       }
     }
   }

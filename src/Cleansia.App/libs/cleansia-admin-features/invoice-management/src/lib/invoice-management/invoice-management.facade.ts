@@ -2,9 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import {
   AdminClient,
   EmployeeInvoiceDto,
-  EmployeeInvoiceFilter,
   EmployeeInvoiceStatus,
-  GetPagedInvoicesRequest,
   SortDefinition,
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
@@ -27,6 +25,7 @@ export class InvoiceManagementFacade {
 
   readonly invoices = signal<EmployeeInvoiceDto[]>([]);
   readonly loading = signal<boolean>(false);
+  readonly initialLoading = signal<boolean>(true);
   readonly totalRecords = signal<number>(0);
 
   private currentFilter = signal<InvoiceFilterParams | null>(null);
@@ -77,43 +76,32 @@ export class InvoiceManagementFacade {
     this.loading.set(true);
     const filterParams = this.currentFilter();
 
-    const invoiceFilter = new EmployeeInvoiceFilter();
-    if (filterParams?.statuses && filterParams.statuses.length > 0) {
-      invoiceFilter.statuses = filterParams.statuses;
-    }
-    if (filterParams?.employeeId) {
-      invoiceFilter.employeeId = filterParams.employeeId;
-    }
-    if (filterParams?.payPeriodId) {
-      invoiceFilter.payPeriodId = filterParams.payPeriodId;
-    }
-
-    const request = new GetPagedInvoicesRequest({
-      offset: this.currentOffset(),
-      limit: this.currentLimit(),
-      filter: invoiceFilter,
-      sort: this.currentSort(),
-    });
-
     this.adminClient.adminInvoiceClient
-      .getPaged(request)
+      .getPaged(
+        filterParams?.employeeId,
+        filterParams?.payPeriodId,
+        filterParams?.statuses,
+        undefined, // invoiceNumber
+        undefined, // minAmount
+        undefined, // maxAmount
+        undefined, // dateFrom
+        undefined, // dateTo
+        this.currentSort(),
+        this.currentOffset(),
+        this.currentLimit()
+      )
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.invoice_management.messages.load_error'
-            )
-          );
-          console.error('Error loading invoices:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {
           this.invoices.set(response.data || []);
           this.totalRecords.set(response.total || 0);
+        }
+        if (this.initialLoading()) {
+          this.initialLoading.set(false);
         }
       });
   }
@@ -148,15 +136,7 @@ export class InvoiceManagementFacade {
       .download(invoice.id)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.invoice_management.messages.download_error'
-            )
-          );
-          console.error('Error downloading invoice:', error);
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response && response.data) {

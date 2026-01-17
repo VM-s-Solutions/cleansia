@@ -1,61 +1,56 @@
+import { TemplateRef } from '@angular/core';
 import { EmailType, EmailTypeListItemDto } from '@cleansia/admin-services';
-import { TableDefinition } from '@cleansia/components';
+import { TableColumn, TableAction } from '@cleansia/components';
 import { TranslateService } from '@ngx-translate/core';
 
 export function getEmailTypeTableDefinition(
   defs: {
     onViewDetail: (row: EmailTypeListItemDto) => void;
   },
-  translate: TranslateService
-): TableDefinition<EmailTypeListItemDto> {
+  translate: TranslateService,
+  languagesTemplate?: TemplateRef<EmailTypeListItemDto>
+): { columns: TableColumn<EmailTypeListItemDto>[]; actions: TableAction<EmailTypeListItemDto>[] } {
   return {
     columns: [
       {
         id: 'displayName',
-        headerName: translate.instant('pages.template_management.columns.email_type'),
-        value: 'displayName',
-        columnClass: 'width-25',
+        field: 'displayName',
+        header: translate.instant('pages.template_management.columns.email_type'),
+        width: '25%',
       },
       {
         id: 'translationCount',
-        headerName: translate.instant('pages.template_management.columns.translation_count'),
-        value: (row?: EmailTypeListItemDto) => {
+        field: 'translationCount',
+        header: translate.instant('pages.template_management.columns.translation_count'),
+        getValue: (row: EmailTypeListItemDto) => {
           return row?.translationCount?.toString() ?? '0';
         },
-        columnClass: 'width-15',
+        width: '15%',
       },
       {
         id: 'availableLanguages',
-        headerName: translate.instant('pages.template_management.columns.languages'),
-        value: (row?: EmailTypeListItemDto) => {
-          return row?.availableLanguages?.join(', ') ?? '';
-        },
-        columnClass: 'width-25',
+        field: 'availableLanguages',
+        header: translate.instant('pages.template_management.columns.languages'),
+        customTemplate: languagesTemplate,
+        width: '25%',
       },
       {
         id: 'lastModified',
-        headerName: translate.instant('pages.template_management.columns.last_modified'),
-        value: (row?: EmailTypeListItemDto) => {
+        field: 'lastModified',
+        header: translate.instant('pages.template_management.columns.last_modified'),
+        getValue: (row: EmailTypeListItemDto) => {
           if (!row?.lastModified) return '-';
           return new Date(row.lastModified.toString()).toLocaleDateString();
         },
-        columnClass: 'width-15',
+        width: '15%',
       },
+    ],
+    actions: [
       {
-        id: 'actions',
-        headerName: translate.instant('pages.template_management.columns.actions'),
-        columnActions: [
-          {
-            icon: 'pi pi-eye',
-            onClick: (row: EmailTypeListItemDto) => defs.onViewDetail(row),
-            buttonPalette: 'p-button-info p-button-sm',
-            tooltip: {
-              title: translate.instant('pages.template_management.view_translations'),
-              position: 'above',
-            },
-          },
-        ],
-        columnClass: 'width-10',
+        icon: 'pi pi-eye',
+        tooltip: translate.instant('pages.template_management.view_translations'),
+        color: 'info',
+        onClick: (row: EmailTypeListItemDto) => defs.onViewDetail(row),
       },
     ],
   };

@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AdminClient, CountryListItem } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -16,6 +16,7 @@ export class CountryManagementFacade {
 
   readonly countries = signal<CountryListItem[]>([]);
   readonly loading = signal<boolean>(false);
+  readonly initialLoading = signal<boolean>(true);
 
   loadCountries(): void {
     this.loading.set(true);
@@ -24,48 +25,35 @@ export class CountryManagementFacade {
       .getOverview()
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.country_management.messages.load_error'
-            )
-          );
-          console.error('Error loading countries:', error);
-          return of([]);
-        }),
+        catchError(() => of([])),
         finalize(() => this.loading.set(false))
       )
       .subscribe((countries) => {
         this.countries.set(countries);
+        if (this.initialLoading()) {
+          this.initialLoading.set(false);
+        }
       });
   }
 
   navigateToCreateCountry(): void {
-    this.router.navigate(['/country-management', 'create']);
+    this.router.navigate([CleansiaAdminRoute.COUNTRY_MANAGEMENT, 'create']);
   }
 
   navigateToEditCountry(country: CountryListItem): void {
     if (country.id) {
-      this.router.navigate(['/country-management', country.id, 'edit']);
+      this.router.navigate([CleansiaAdminRoute.COUNTRY_MANAGEMENT, country.id, 'edit']);
     }
   }
 
   deleteCountry(country: CountryListItem): void {
     if (!country.id) return;
 
-    this.adminClient.apiClient
-      .adminCountryDelete(country.id)
+    this.adminClient.adminCountryClient
+      .delete(country.id)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.country_management.messages.delete_error'
-            )
-          );
-          console.error('Error deleting country:', error);
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {

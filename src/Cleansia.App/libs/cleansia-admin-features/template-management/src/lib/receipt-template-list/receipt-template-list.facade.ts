@@ -2,13 +2,11 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   AdminClient,
-  GetPagedReceiptTemplatesRequest,
-  ReceiptTemplateFilter,
   ReceiptTemplateListItem,
   SortDefinition,
   SortDirection,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -38,38 +36,19 @@ export class ReceiptTemplateListFacade {
     this.loading.set(true);
     const filterParams = this.currentFilter();
 
-    const filter = new ReceiptTemplateFilter();
-    if (filterParams?.searchTerm) {
-      filter.searchTerm = filterParams.searchTerm;
-    }
-    if (filterParams?.countryId) {
-      filter.countryId = filterParams.countryId;
-    }
-    if (filterParams?.languageId) {
-      filter.languageId = filterParams.languageId;
-    }
-    if (filterParams?.isActive !== undefined) {
-      filter.isActive = filterParams.isActive;
-    }
-
-    const request = new GetPagedReceiptTemplatesRequest({
-      offset: 0,
-      limit: 1000,
-      filter: filter,
-      sort: this.currentSort(),
-    });
-
     this.adminClient.adminReceiptTemplateClient
-      .getPaged(request)
+      .getPaged(
+        filterParams?.searchTerm,
+        filterParams?.countryId,
+        filterParams?.languageId,
+        filterParams?.isActive,
+        this.currentSort(),
+        0, // offset
+        1000 // limit
+      )
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.template_management.messages.load_error')
-          );
-          console.error('Error loading receipt templates:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
@@ -99,12 +78,12 @@ export class ReceiptTemplateListFacade {
   }
 
   navigateToCreate(): void {
-    this.router.navigate(['/template-management', 'receipt-templates', 'create']);
+    this.router.navigate([CleansiaAdminRoute.TEMPLATE_MANAGEMENT, 'receipt-templates', 'create']);
   }
 
   navigateToEdit(template: ReceiptTemplateListItem): void {
     if (template.id) {
-      this.router.navigate(['/template-management', 'receipt-templates', template.id, 'edit']);
+      this.router.navigate([CleansiaAdminRoute.TEMPLATE_MANAGEMENT, 'receipt-templates', template.id, 'edit']);
     }
   }
 
@@ -115,13 +94,7 @@ export class ReceiptTemplateListFacade {
       .activate(template.id)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.template_management.messages.activate_error')
-          );
-          console.error('Error activating template:', error);
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {
@@ -140,13 +113,7 @@ export class ReceiptTemplateListFacade {
       .deactivate(template.id)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.template_management.messages.deactivate_error')
-          );
-          console.error('Error deactivating template:', error);
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {
@@ -161,17 +128,11 @@ export class ReceiptTemplateListFacade {
   deleteTemplate(template: ReceiptTemplateListItem): void {
     if (!template.id) return;
 
-    this.adminClient.apiClient
-      .adminReceiptTemplateDelete(template.id)
+    this.adminClient.adminReceiptTemplateClient
+      .delete(template.id)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.template_management.messages.delete_error')
-          );
-          console.error('Error deleting template:', error);
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {

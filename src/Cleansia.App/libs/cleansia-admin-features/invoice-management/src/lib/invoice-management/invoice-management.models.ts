@@ -3,116 +3,101 @@ import {
   EmployeeInvoiceDto,
   EmployeeInvoiceStatus,
 } from '@cleansia/admin-services';
-import { TableDefinition } from '@cleansia/components';
+import { TableColumn, TableAction } from '@cleansia/components';
 import { TranslateService } from '@ngx-translate/core';
 
-export function getInvoiceTableDefinition(
+export function getInvoiceTableColumns(
+  translate: TranslateService,
+  statusTemplate?: TemplateRef<EmployeeInvoiceDto>
+): TableColumn<EmployeeInvoiceDto>[] {
+  return [
+    {
+      id: 'invoiceNumber',
+      field: 'invoiceNumber',
+      header: 'pages.invoice_management.invoice_number',
+      sortable: true,
+      width: '12%',
+    },
+    {
+      id: 'employeeName',
+      field: 'employeeName',
+      header: 'pages.invoice_management.employee_name',
+      sortable: true,
+      width: '15%',
+    },
+    {
+      id: 'payPeriodLabel',
+      field: 'payPeriodLabel',
+      header: 'pages.invoice_management.pay_period',
+      sortable: true,
+      width: '12%',
+    },
+    {
+      id: 'totalOrders',
+      field: 'totalOrders',
+      header: 'pages.invoice_management.total_orders',
+      sortable: true,
+      width: '8%',
+    },
+    {
+      id: 'totalAmount',
+      field: 'totalAmount',
+      header: 'pages.invoice_management.total_amount',
+      sortable: true,
+      width: '12%',
+      getValue: (row: EmployeeInvoiceDto) => {
+        const currency = row.currencyCode || 'CZK';
+        return `${row.totalAmount?.toFixed(2)} ${currency}`;
+      },
+    },
+    {
+      id: 'status',
+      field: 'status',
+      header: 'pages.invoice_management.status',
+      sortable: true,
+      width: '10%',
+      customTemplate: statusTemplate,
+    },
+    {
+      id: 'generatedAt',
+      field: 'generatedAt',
+      header: 'pages.invoice_management.generated_at',
+      sortable: true,
+      width: '10%',
+      getValue: (row: EmployeeInvoiceDto) => {
+        if (!row.generatedAt) return '';
+        const date =
+          row.generatedAt instanceof Date
+            ? row.generatedAt
+            : new Date(row.generatedAt);
+        return date.toLocaleDateString('cs-CZ');
+      },
+    },
+  ];
+}
+
+export function getInvoiceTableActions(
   defs: {
     onViewDetails: (row: EmployeeInvoiceDto) => void;
     onDownload: (row: EmployeeInvoiceDto) => void;
   },
-  translate: TranslateService,
-  statusTemplate?: TemplateRef<EmployeeInvoiceDto>
-): TableDefinition<EmployeeInvoiceDto> {
-  return {
-    columns: [
-      {
-        id: 'invoiceNumber',
-        headerName: translate.instant(
-          'pages.invoice_management.invoice_number'
-        ),
-        value: 'invoiceNumber',
-        sortable: true,
-        sortField: 'invoiceNumber',
-        columnClass: 'width-12',
-      },
-      {
-        id: 'employeeName',
-        headerName: translate.instant('pages.invoice_management.employee_name'),
-        value: 'employeeName',
-        sortable: true,
-        sortField: 'employeeName',
-        columnClass: 'width-15',
-      },
-      {
-        id: 'payPeriodLabel',
-        headerName: translate.instant('pages.invoice_management.pay_period'),
-        value: 'payPeriodLabel',
-        sortable: true,
-        sortField: 'payPeriodLabel',
-        columnClass: 'width-12',
-      },
-      {
-        id: 'totalOrders',
-        headerName: translate.instant('pages.invoice_management.total_orders'),
-        value: 'totalOrders',
-        sortable: true,
-        sortField: 'totalOrders',
-        columnClass: 'width-8',
-      },
-      {
-        id: 'totalAmount',
-        headerName: translate.instant('pages.invoice_management.total_amount'),
-        value: (row?: EmployeeInvoiceDto) => {
-          if (!row) return '';
-          const currency = row.currencyCode || 'CZK';
-          return `${row.totalAmount?.toFixed(2)} ${currency}`;
-        },
-        sortable: true,
-        sortField: 'totalAmount',
-        columnClass: 'width-12',
-      },
-      {
-        id: 'status',
-        headerName: translate.instant('pages.invoice_management.status'),
-        template: statusTemplate,
-        sortable: true,
-        sortField: 'status',
-        columnClass: 'width-10',
-      },
-      {
-        id: 'generatedAt',
-        headerName: translate.instant('pages.invoice_management.generated_at'),
-        value: (row?: EmployeeInvoiceDto) => {
-          if (!row?.generatedAt) return '';
-          const date =
-            row.generatedAt instanceof Date
-              ? row.generatedAt
-              : new Date(row.generatedAt);
-          return date.toLocaleDateString('cs-CZ');
-        },
-        sortable: true,
-        sortField: 'generatedAt',
-        columnClass: 'width-10',
-      },
-      {
-        id: 'actions',
-        headerName: translate.instant('pages.invoice_management.actions'),
-        columnActions: [
-          {
-            icon: 'pi pi-eye',
-            onClick: (row: EmployeeInvoiceDto) => defs.onViewDetails(row),
-            buttonPalette: 'p-button-info p-button-sm',
-            tooltip: {
-              title: translate.instant('pages.invoice_management.view_details'),
-              position: 'above',
-            },
-          },
-          {
-            icon: 'pi pi-download',
-            onClick: (row: EmployeeInvoiceDto) => defs.onDownload(row),
-            buttonPalette: 'p-button-secondary p-button-sm',
-            tooltip: {
-              title: translate.instant('pages.invoice_management.download'),
-              position: 'above',
-            },
-            visible: (row: EmployeeInvoiceDto) => !!row.pdfBlobName,
-          },
-        ],
-        columnClass: 'width-10',
-      },
-    ],
-  };
+  translate: TranslateService
+): TableAction<EmployeeInvoiceDto>[] {
+  return [
+    {
+      icon: 'pi pi-eye',
+      onClick: (row: EmployeeInvoiceDto) => defs.onViewDetails(row),
+      color: 'info',
+      tooltip: translate.instant('pages.invoice_management.view_details'),
+    },
+    {
+      icon: 'pi pi-download',
+      onClick: (row: EmployeeInvoiceDto) => defs.onDownload(row),
+      color: 'primary',
+      tooltip: translate.instant('pages.invoice_management.download'),
+      visible: (row: EmployeeInvoiceDto) => !!row.pdfBlobName,
+    },
+  ];
 }
 
 export function getInvoiceStatusClass(

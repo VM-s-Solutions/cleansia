@@ -25,7 +25,8 @@ public class GetEmailTypes
 
         public async Task<BusinessResult<List<EmailTypeListItemDto>>> Handle(Query query, CancellationToken cancellationToken)
         {
-            var allTemplates = await repository.GetAll().ToListAsync(cancellationToken);
+            var allTemplates = await repository.GetAll()
+                .Include(e => e.Language).ToListAsync(cancellationToken);
 
             var groupedByType = allTemplates
                 .GroupBy(t => t.EmailType)

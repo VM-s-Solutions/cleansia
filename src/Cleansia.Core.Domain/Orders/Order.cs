@@ -219,6 +219,11 @@ public class Order : Auditable
         return this;
     }
 
+    public Order StartOrder()
+    {
+        return this;
+    }
+
     public Order CompleteOrder(int actualCompletionTime, string completionNotes)
     {
         if (actualCompletionTime <= 0)

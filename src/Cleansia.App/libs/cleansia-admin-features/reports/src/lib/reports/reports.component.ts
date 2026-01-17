@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import {
@@ -10,7 +10,7 @@ import {
   CleansiaSectionComponent,
   CleansiaTableComponent,
   CleansiaTitleComponent,
-  TableDefinition,
+  TableColumn,
 } from '@cleansia/components';
 import { TranslateService } from '@ngx-translate/core';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -47,6 +47,7 @@ import { ReportsFacade, ReportType } from './reports.facade';
 })
 export class ReportsComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
+  private readonly cd = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
   private readonly translate = inject(TranslateService);
   protected readonly facade = inject(ReportsFacade);
@@ -56,152 +57,185 @@ export class ReportsComponent implements OnInit {
     endDate: [this.facade.dateRange().endDate],
   });
 
+  // Filter drawer state
+  isFilterDrawerOpen = signal(false);
+  activeFilterChips = computed(() => this.getActiveFilterChips());
+  hasActiveFilters = computed(() => {
+    // Check if current dates differ from default dates
+    const values = this.dateRangeForm.value;
+    const defaultRange = this.facade.defaultDateRange;
+    if (!values.startDate || !values.endDate) return false;
+
+    const startDiffers = values.startDate.toDateString() !== defaultRange.startDate.toDateString();
+    const endDiffers = values.endDate.toDateString() !== defaultRange.endDate.toDateString();
+    return startDiffers || endDiffers;
+  });
+  activeFilterCount = computed(() => this.hasActiveFilters() ? 1 : 0);
+
   // Revenue Tables
-  revenueByServiceTableDef: TableDefinition = {
-    columns: [
-      {
-        id: 'serviceName',
-        headerName: this.translate.instant('pages.reports.service_name'),
-        value: 'serviceName',
-      },
-      {
-        id: 'orderCount',
-        headerName: this.translate.instant('pages.reports.order_count'),
-        value: 'orderCount',
-      },
-      {
-        id: 'totalRevenue',
-        headerName: this.translate.instant('pages.reports.total_revenue'),
-        value: (row) => this.facade.formatCurrency(row?.totalRevenue),
-      },
-    ],
-  };
-
-  revenueByPackageTableDef: TableDefinition = {
-    columns: [
-      {
-        id: 'packageName',
-        headerName: this.translate.instant('pages.reports.package_name'),
-        value: 'packageName',
-      },
-      {
-        id: 'orderCount',
-        headerName: this.translate.instant('pages.reports.order_count'),
-        value: 'orderCount',
-      },
-      {
-        id: 'totalRevenue',
-        headerName: this.translate.instant('pages.reports.total_revenue'),
-        value: (row) => this.facade.formatCurrency(row?.totalRevenue),
-      },
-    ],
-  };
-
-  revenueByPaymentTypeTableDef: TableDefinition = {
-    columns: [
-      {
-        id: 'paymentTypeName',
-        headerName: this.translate.instant('pages.reports.payment_type'),
-        value: 'paymentTypeName',
-      },
-      {
-        id: 'orderCount',
-        headerName: this.translate.instant('pages.reports.order_count'),
-        value: 'orderCount',
-      },
-      {
-        id: 'totalRevenue',
-        headerName: this.translate.instant('pages.reports.total_revenue'),
-        value: (row) => this.facade.formatCurrency(row?.totalRevenue),
-      },
-    ],
-  };
+  revenueByServiceColumns: TableColumn[] = [];
+  revenueByPackageColumns: TableColumn[] = [];
+  revenueByPaymentTypeColumns: TableColumn[] = [];
 
   // Payroll Tables
-  employeeSummariesTableDef: TableDefinition = {
-    columns: [
+  employeeSummariesColumns: TableColumn[] = [];
+  payrollByStatusColumns: TableColumn[] = [];
+  monthlyPayrollColumns: TableColumn[] = [];
+
+  ngOnInit(): void {
+    this.rebuildTableDefinitions();
+    this.facade.loadRevenueReport();
+    this.setupAutoFilter();
+
+    // Rebuild tables when language changes
+    this.translate.onLangChange
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.rebuildTableDefinitions();
+        this.cd.detectChanges();
+      });
+  }
+
+  private rebuildTableDefinitions(): void {
+    // Revenue Tables
+    this.revenueByServiceColumns = [
+      {
+        id: 'serviceName',
+        field: 'serviceName',
+        header: this.translate.instant('pages.reports.service_name'),
+      },
+      {
+        id: 'orderCount',
+        field: 'orderCount',
+        header: this.translate.instant('pages.reports.order_count'),
+      },
+      {
+        id: 'totalRevenue',
+        field: 'totalRevenue',
+        header: this.translate.instant('pages.reports.total_revenue'),
+        getValue: (row: any) => this.facade.formatCurrency(row?.totalRevenue),
+      },
+    ];
+
+    this.revenueByPackageColumns = [
+      {
+        id: 'packageName',
+        field: 'packageName',
+        header: this.translate.instant('pages.reports.package_name'),
+      },
+      {
+        id: 'orderCount',
+        field: 'orderCount',
+        header: this.translate.instant('pages.reports.order_count'),
+      },
+      {
+        id: 'totalRevenue',
+        field: 'totalRevenue',
+        header: this.translate.instant('pages.reports.total_revenue'),
+        getValue: (row: any) => this.facade.formatCurrency(row?.totalRevenue),
+      },
+    ];
+
+    this.revenueByPaymentTypeColumns = [
+      {
+        id: 'paymentTypeName',
+        field: 'paymentTypeName',
+        header: this.translate.instant('pages.reports.payment_type'),
+      },
+      {
+        id: 'orderCount',
+        field: 'orderCount',
+        header: this.translate.instant('pages.reports.order_count'),
+      },
+      {
+        id: 'totalRevenue',
+        field: 'totalRevenue',
+        header: this.translate.instant('pages.reports.total_revenue'),
+        getValue: (row: any) => this.facade.formatCurrency(row?.totalRevenue),
+      },
+    ];
+
+    // Payroll Tables
+    this.employeeSummariesColumns = [
       {
         id: 'employeeName',
-        headerName: this.translate.instant('pages.reports.employee_name'),
-        value: 'employeeName',
+        field: 'employeeName',
+        header: this.translate.instant('pages.reports.employee_name'),
       },
       {
         id: 'totalOrders',
-        headerName: this.translate.instant('pages.reports.total_orders'),
-        value: 'totalOrders',
+        field: 'totalOrders',
+        header: this.translate.instant('pages.reports.total_orders'),
       },
       {
         id: 'invoiceCount',
-        headerName: this.translate.instant('pages.reports.invoice_count'),
-        value: 'invoiceCount',
+        field: 'invoiceCount',
+        header: this.translate.instant('pages.reports.invoice_count'),
       },
       {
         id: 'subTotal',
-        headerName: this.translate.instant('pages.reports.subtotal'),
-        value: (row) => this.facade.formatCurrency(row?.subTotal),
+        field: 'subTotal',
+        header: this.translate.instant('pages.reports.subtotal'),
+        getValue: (row: any) => this.facade.formatCurrency(row?.subTotal),
       },
       {
         id: 'bonusAmount',
-        headerName: this.translate.instant('pages.reports.bonus'),
-        value: (row) => this.facade.formatCurrency(row?.bonusAmount),
+        field: 'bonusAmount',
+        header: this.translate.instant('pages.reports.bonus'),
+        getValue: (row: any) => this.facade.formatCurrency(row?.bonusAmount),
       },
       {
         id: 'deductionAmount',
-        headerName: this.translate.instant('pages.reports.deductions'),
-        value: (row) => this.facade.formatCurrency(row?.deductionAmount),
+        field: 'deductionAmount',
+        header: this.translate.instant('pages.reports.deductions'),
+        getValue: (row: any) => this.facade.formatCurrency(row?.deductionAmount),
       },
       {
         id: 'totalAmount',
-        headerName: this.translate.instant('pages.reports.total_amount'),
-        value: (row) => this.facade.formatCurrency(row?.totalAmount),
-        columnClass: 'total-cell',
+        field: 'totalAmount',
+        header: this.translate.instant('pages.reports.total_amount'),
+        getValue: (row: any) => this.facade.formatCurrency(row?.totalAmount),
       },
-    ],
-  };
+    ];
 
-  payrollByStatusTableDef: TableDefinition = {
-    columns: [
+    this.payrollByStatusColumns = [
       {
         id: 'statusName',
-        headerName: this.translate.instant('pages.reports.status'),
-        value: 'statusName',
+        field: 'statusName',
+        header: this.translate.instant('pages.reports.status'),
       },
       {
         id: 'invoiceCount',
-        headerName: this.translate.instant('pages.reports.invoice_count'),
-        value: 'invoiceCount',
+        field: 'invoiceCount',
+        header: this.translate.instant('pages.reports.invoice_count'),
       },
       {
         id: 'totalAmount',
-        headerName: this.translate.instant('pages.reports.total_amount'),
-        value: (row) => this.facade.formatCurrency(row?.totalAmount),
+        field: 'totalAmount',
+        header: this.translate.instant('pages.reports.total_amount'),
+        getValue: (row: any) => this.facade.formatCurrency(row?.totalAmount),
       },
-    ],
-  };
+    ];
 
-  monthlyPayrollTableDef: TableDefinition = {
-    columns: [
+    this.monthlyPayrollColumns = [
       {
         id: 'month',
-        headerName: this.translate.instant('pages.reports.month'),
-        value: (row) => `${row?.monthName} ${row?.year}`,
+        field: 'monthName',
+        header: this.translate.instant('pages.reports.month'),
+        getValue: (row: any) => `${row?.monthName} ${row?.year}`,
       },
       {
         id: 'invoiceCount',
-        headerName: this.translate.instant('pages.reports.invoice_count'),
-        value: 'invoiceCount',
+        field: 'invoiceCount',
+        header: this.translate.instant('pages.reports.invoice_count'),
       },
       {
         id: 'totalAmount',
-        headerName: this.translate.instant('pages.reports.total_amount'),
-        value: (row) => this.facade.formatCurrency(row?.totalAmount),
+        field: 'totalAmount',
+        header: this.translate.instant('pages.reports.total_amount'),
+        getValue: (row: any) => this.facade.formatCurrency(row?.totalAmount),
       },
-    ],
-  };
-
-  ngOnInit(): void {
-    this.facade.loadRevenueReport();
-    this.setupAutoFilter();
+    ];
   }
 
   private setupAutoFilter(): void {
@@ -232,5 +266,67 @@ export class ReportsComponent implements OnInit {
 
   refreshReport(): void {
     this.facade.refreshCurrentReport();
+  }
+
+  // Filter drawer methods
+  openFilterDrawer(): void {
+    this.isFilterDrawerOpen.set(true);
+  }
+
+  closeFilterDrawer(): void {
+    this.isFilterDrawerOpen.set(false);
+  }
+
+  getActiveFilterChips(): { key: string; label: string; value: string }[] {
+    const chips: { key: string; label: string; value: string }[] = [];
+    const values = this.dateRangeForm.value;
+    const defaultRange = this.facade.defaultDateRange;
+
+    if (!values.startDate || !values.endDate) return chips;
+
+    const startDiffers = values.startDate.toDateString() !== defaultRange.startDate.toDateString();
+    const endDiffers = values.endDate.toDateString() !== defaultRange.endDate.toDateString();
+
+    // Only show a single "Date Range" chip if either date differs from default
+    if (startDiffers || endDiffers) {
+      chips.push({
+        key: 'dateRange',
+        label: this.translate.instant('pages.reports.filters.date_range'),
+        value: `${this.formatDate(values.startDate)} - ${this.formatDate(values.endDate)}`,
+      });
+    }
+
+    return chips;
+  }
+
+  private formatDate(date: Date): string {
+    return date.toLocaleDateString('cs-CZ', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+  }
+
+  removeFilterChip(key: string): void {
+    // For reports, removing the date range chip resets to defaults
+    if (key === 'dateRange') {
+      this.resetFilters();
+    }
+  }
+
+  clearAllFilters(): void {
+    this.resetFilters();
+  }
+
+  resetFilters(): void {
+    const defaultRange = this.facade.defaultDateRange;
+    // Create fresh dates to avoid reference issues
+    const defaultStart = new Date(defaultRange.startDate);
+    const defaultEnd = new Date(defaultRange.endDate);
+    this.dateRangeForm.patchValue({
+      startDate: defaultStart,
+      endDate: defaultEnd,
+    });
+    this.facade.resetToDefaultDateRange();
   }
 }

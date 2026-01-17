@@ -6,14 +6,12 @@ import {
   CreatePackageCommand,
   CreatePackageResponse,
   CreateServiceTranslationInput,
-  GetPagedServicesRequest,
   LanguageListItem,
-  ServiceFilter,
   ServiceListItem,
   UpdatePackageCommand,
   UpdatePackageResponse,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -52,20 +50,14 @@ export class PackageFormFacade {
       .details(packageId)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.package_form.messages.load_error')
-          );
-          console.error('Error loading package:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {
           this.pkg.set(response);
         } else {
-          this.router.navigate(['/package-management']);
+          this.router.navigate([CleansiaAdminRoute.PACKAGE_MANAGEMENT]);
         }
       });
   }
@@ -75,10 +67,7 @@ export class PackageFormFacade {
       .getOverview()
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          console.error('Error loading languages:', error);
-          return of([] as LanguageListItem[]);
-        })
+        catchError(() => of([] as LanguageListItem[]))
       )
       .subscribe((languages: LanguageListItem[]) => {
         this.languages.set(
@@ -94,21 +83,16 @@ export class PackageFormFacade {
   }
 
   loadAvailableServices(): void {
-    const request = new GetPagedServicesRequest({
-      offset: 0,
-      limit: 1000, // Load all services for selection
-      filter: new ServiceFilter(),
-      sort: undefined,
-    });
-
     this.adminClient.adminServiceClient
-      .getPaged(request)
+      .getPaged(
+        undefined, // searchTerm
+        undefined, // sort
+        0, // offset
+        1000 // limit - Load all services for selection
+      )
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          console.error('Error loading services:', error);
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response?.data) {
@@ -138,17 +122,11 @@ export class PackageFormFacade {
       translations,
     });
 
-    this.adminClient.apiClient
-      .adminPackagePost(command)
+    this.adminClient.adminPackageClient
+      .create(command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.package_form.messages.create_error')
-          );
-          console.error('Error creating package:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
       .subscribe((response: CreatePackageResponse | null) => {
@@ -156,7 +134,7 @@ export class PackageFormFacade {
           this.snackbarService.showSuccess(
             this.translate.instant('pages.package_form.messages.create_success')
           );
-          this.router.navigate(['/package-management']);
+          this.router.navigate([CleansiaAdminRoute.PACKAGE_MANAGEMENT]);
         }
       });
   }
@@ -183,17 +161,11 @@ export class PackageFormFacade {
       translations,
     });
 
-    this.adminClient.apiClient
-      .adminPackagePut(packageId, command)
+    this.adminClient.adminPackageClient
+      .update(packageId, command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.package_form.messages.update_error')
-          );
-          console.error('Error updating package:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
       .subscribe((response: UpdatePackageResponse | null) => {
@@ -201,13 +173,13 @@ export class PackageFormFacade {
           this.snackbarService.showSuccess(
             this.translate.instant('pages.package_form.messages.update_success')
           );
-          this.router.navigate(['/package-management']);
+          this.router.navigate([CleansiaAdminRoute.PACKAGE_MANAGEMENT]);
         }
       });
   }
 
   navigateBack(): void {
-    this.router.navigate(['/package-management']);
+    this.router.navigate([CleansiaAdminRoute.PACKAGE_MANAGEMENT]);
   }
 
   ngOnDestroy(): void {

@@ -41,13 +41,7 @@ export class EmployeeDetailFacade {
       .details(employeeId)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.employee_detail.messages.load_error')
-          );
-          console.error('Error loading employee details:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
@@ -85,10 +79,7 @@ export class EmployeeDetailFacade {
       .getPaged(request)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          console.error('Error loading employee documents:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.documentsLoading.set(false))
       )
       .subscribe((response) => {
@@ -103,15 +94,7 @@ export class EmployeeDetailFacade {
       .approve(documentId)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.employee_detail.messages.document_approve_error'
-            )
-          );
-          console.error('Error approving document:', error);
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {
@@ -139,15 +122,7 @@ export class EmployeeDetailFacade {
       .reject(documentId, command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.employee_detail.messages.document_reject_error'
-            )
-          );
-          console.error('Error rejecting document:', error);
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {
@@ -235,15 +210,7 @@ export class EmployeeDetailFacade {
       .download(documentId)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.employee_detail.messages.document_download_error'
-            )
-          );
-          console.error('Error downloading document:', error);
-          return of(null);
-        })
+        catchError(() => of(null))
       );
   }
 

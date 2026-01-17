@@ -1,5 +1,6 @@
+import { TemplateRef } from '@angular/core';
 import { CompanyInfoListItem } from '@cleansia/admin-services';
-import { TableDefinition } from '@cleansia/components';
+import { TableColumn, TableAction } from '@cleansia/components';
 import { TranslateService } from '@ngx-translate/core';
 
 export function getCompanyInfoTableDefinition(
@@ -7,93 +8,65 @@ export function getCompanyInfoTableDefinition(
     onEdit: (row: CompanyInfoListItem) => void;
     onDelete: (row: CompanyInfoListItem) => void;
   },
-  translate: TranslateService
-): TableDefinition<CompanyInfoListItem> {
+  translate: TranslateService,
+  statusTemplate?: TemplateRef<CompanyInfoListItem>
+): { columns: TableColumn<CompanyInfoListItem>[]; actions: TableAction<CompanyInfoListItem>[] } {
   return {
     columns: [
       {
         id: 'legalName',
-        headerName: translate.instant(
-          'pages.company_management.columns.legal_name'
-        ),
-        value: 'legalName',
+        field: 'legalName',
+        header: translate.instant('pages.company_management.columns.legal_name'),
         sortable: true,
-        sortField: 'LegalName',
-        columnClass: 'width-20',
+        width: '20%',
       },
       {
         id: 'tradingName',
-        headerName: translate.instant(
-          'pages.company_management.columns.trading_name'
-        ),
-        value: 'tradingName',
+        field: 'tradingName',
+        header: translate.instant('pages.company_management.columns.trading_name'),
         sortable: true,
-        sortField: 'TradingName',
-        columnClass: 'width-15',
+        width: '15%',
       },
       {
         id: 'countryName',
-        headerName: translate.instant(
-          'pages.company_management.columns.country'
-        ),
-        value: 'countryName',
+        field: 'countryName',
+        header: translate.instant('pages.company_management.columns.country'),
         sortable: true,
-        sortField: 'CountryId',
-        columnClass: 'width-15',
+        width: '15%',
       },
       {
         id: 'city',
-        headerName: translate.instant('pages.company_management.columns.city'),
-        value: 'city',
+        field: 'city',
+        header: translate.instant('pages.company_management.columns.city'),
         sortable: true,
-        sortField: 'City',
-        columnClass: 'width-15',
+        width: '15%',
       },
       {
         id: 'email',
-        headerName: translate.instant('pages.company_management.columns.email'),
-        value: 'email',
-        columnClass: 'width-15',
+        field: 'email',
+        header: translate.instant('pages.company_management.columns.email'),
+        width: '15%',
       },
       {
         id: 'isActive',
-        headerName: translate.instant(
-          'pages.company_management.columns.status'
-        ),
-        value: (row?: CompanyInfoListItem) =>
-          row?.isActive
-            ? translate.instant('global.status.active')
-            : translate.instant('global.status.inactive'),
-        columnClass: 'width-10',
+        field: 'isActive',
+        header: translate.instant('pages.company_management.columns.status'),
+        customTemplate: statusTemplate,
+        width: '10%',
+      },
+    ],
+    actions: [
+      {
+        icon: 'pi pi-pencil',
+        tooltip: translate.instant('pages.company_management.edit_company'),
+        color: 'warning',
+        onClick: (row: CompanyInfoListItem) => defs.onEdit(row),
       },
       {
-        id: 'actions',
-        headerName: translate.instant(
-          'pages.company_management.columns.actions'
-        ),
-        columnActions: [
-          {
-            icon: 'pi pi-pencil',
-            onClick: (row: CompanyInfoListItem) => defs.onEdit(row),
-            buttonPalette: 'p-button-warning p-button-sm',
-            tooltip: {
-              title: translate.instant('pages.company_management.edit_company'),
-              position: 'above',
-            },
-          },
-          {
-            icon: 'pi pi-trash',
-            onClick: (row: CompanyInfoListItem) => defs.onDelete(row),
-            buttonPalette: 'p-button-danger p-button-sm',
-            tooltip: {
-              title: translate.instant(
-                'pages.company_management.delete_company'
-              ),
-              position: 'above',
-            },
-          },
-        ],
-        columnClass: 'width-10',
+        icon: 'pi pi-trash',
+        tooltip: translate.instant('pages.company_management.delete_company'),
+        color: 'danger',
+        onClick: (row: CompanyInfoListItem) => defs.onDelete(row),
       },
     ],
   };

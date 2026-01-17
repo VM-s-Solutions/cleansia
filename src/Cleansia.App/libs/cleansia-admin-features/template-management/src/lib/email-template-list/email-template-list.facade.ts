@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AdminClient, EmailType, EmailTypeListItemDto } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -24,13 +24,7 @@ export class EmailTemplateListFacade {
       .types()
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.template_management.messages.load_error')
-          );
-          console.error('Error loading email types:', error);
-          return of([]);
-        }),
+        catchError(() => of([])),
         finalize(() => this.loading.set(false))
       )
       .subscribe((types) => {
@@ -39,7 +33,7 @@ export class EmailTemplateListFacade {
   }
 
   navigateToDetail(emailType: EmailType): void {
-    this.router.navigate(['/template-management', 'email-templates', emailType, 'translations']);
+    this.router.navigate([CleansiaAdminRoute.TEMPLATE_MANAGEMENT, 'email-templates', emailType, 'translations']);
   }
 
   ngOnDestroy(): void {

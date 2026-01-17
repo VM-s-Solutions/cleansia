@@ -13,14 +13,14 @@ namespace Cleansia.Web.Admin.Controllers;
 [ApiController]
 public class AdminReceiptTemplateController(IMediator mediator) : ApiController(mediator)
 {
-    [HttpPost("get-paged")]
+    [HttpGet("get-paged")]
     [Permission(Policy.CanViewReceiptTemplates)]
     [ProducesResponseType(typeof(PagedData<ReceiptTemplateListItem>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetPagedReceiptTemplates(
-        [FromBody] GetPagedReceiptTemplates.Request request,
+        [FromQuery] GetPagedReceiptTemplates.Request request,
         CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(request, cancellationToken);
@@ -42,7 +42,7 @@ public class AdminReceiptTemplateController(IMediator mediator) : ApiController(
         return HandleResult<ReceiptTemplateDetailDto>(result);
     }
 
-    [HttpPost]
+    [HttpPost("create")]
     [Permission(Policy.CanCreateReceiptTemplate)]
     [ProducesResponseType(typeof(CreateReceiptTemplate.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -56,7 +56,7 @@ public class AdminReceiptTemplateController(IMediator mediator) : ApiController(
         return HandleResult<CreateReceiptTemplate.Response>(result);
     }
 
-    [HttpPut("{receiptTemplateId}")]
+    [HttpPut("update/{receiptTemplateId}")]
     [Permission(Policy.CanUpdateReceiptTemplate)]
     [ProducesResponseType(typeof(UpdateReceiptTemplate.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -76,7 +76,7 @@ public class AdminReceiptTemplateController(IMediator mediator) : ApiController(
         return HandleResult<UpdateReceiptTemplate.Response>(result);
     }
 
-    [HttpDelete("{receiptTemplateId}")]
+    [HttpDelete("delete/{receiptTemplateId}")]
     [Permission(Policy.CanDeleteReceiptTemplate)]
     [ProducesResponseType(typeof(DeleteReceiptTemplate.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]

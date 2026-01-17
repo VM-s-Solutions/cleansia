@@ -45,10 +45,7 @@ import { CompanyInfoFormData, CompanyInfoFacade } from './company-info.facade';
 })
 export class CompanyInfoComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
-  private readonly translate = inject(TranslateService);
   protected readonly facade = inject(CompanyInfoFacade);
-
-  readonly pageTitle = this.translate.instant('pages.company_info.title');
 
   readonly form = this.fb.nonNullable.group({
     legalName: ['', [Validators.required, Validators.maxLength(200)]],

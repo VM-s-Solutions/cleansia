@@ -3,6 +3,14 @@ import { EmployeeManagementComponent } from './employee-management/employee-mana
 import { EmployeeDetailComponent } from './employee-detail/employee-detail.component';
 
 export const employeeManagementRoutes: Route[] = [
-  { path: '', component: EmployeeManagementComponent },
-  { path: ':employeeId', component: EmployeeDetailComponent },
+  {
+    path: '',
+    component: EmployeeManagementComponent,
+    data: { title: 'page_titles.admin.employees' },
+  },
+  {
+    path: ':employeeId',
+    component: EmployeeDetailComponent,
+    data: { title: 'page_titles.admin.employee_details' },
+  },
 ];

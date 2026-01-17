@@ -10,7 +10,7 @@ import {
   UpdateServiceCommand,
   UpdateServiceResponse,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -49,20 +49,14 @@ export class ServiceFormFacade {
       .details(serviceId)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.service_form.messages.load_error')
-          );
-          console.error('Error loading service:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {
           this.service.set(response);
         } else {
-          this.router.navigate(['/service-management']);
+          this.router.navigate([CleansiaAdminRoute.SERVICE_MANAGEMENT]);
         }
       });
   }
@@ -72,10 +66,7 @@ export class ServiceFormFacade {
       .getOverview()
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          console.error('Error loading languages:', error);
-          return of([] as LanguageListItem[]);
-        })
+        catchError(() => of([] as LanguageListItem[]))
       )
       .subscribe((languages: LanguageListItem[]) => {
         this.languages.set(
@@ -112,17 +103,11 @@ export class ServiceFormFacade {
       translations,
     });
 
-    this.adminClient.apiClient
-      .adminServicePost(command)
+    this.adminClient.adminServiceClient
+      .create(command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.service_form.messages.create_error')
-          );
-          console.error('Error creating service:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
       .subscribe((response: CreateServiceResponse | null) => {
@@ -130,7 +115,7 @@ export class ServiceFormFacade {
           this.snackbarService.showSuccess(
             this.translate.instant('pages.service_form.messages.create_success')
           );
-          this.router.navigate(['/service-management']);
+          this.router.navigate([CleansiaAdminRoute.SERVICE_MANAGEMENT]);
         }
       });
   }
@@ -158,17 +143,11 @@ export class ServiceFormFacade {
       translations,
     });
 
-    this.adminClient.apiClient
-      .adminServicePut(serviceId, command)
+    this.adminClient.adminServiceClient
+      .update(serviceId, command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.service_form.messages.update_error')
-          );
-          console.error('Error updating service:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
       .subscribe((response: UpdateServiceResponse | null) => {
@@ -176,13 +155,13 @@ export class ServiceFormFacade {
           this.snackbarService.showSuccess(
             this.translate.instant('pages.service_form.messages.update_success')
           );
-          this.router.navigate(['/service-management']);
+          this.router.navigate([CleansiaAdminRoute.SERVICE_MANAGEMENT]);
         }
       });
   }
 
   navigateBack(): void {
-    this.router.navigate(['/service-management']);
+    this.router.navigate([CleansiaAdminRoute.SERVICE_MANAGEMENT]);
   }
 
   ngOnDestroy(): void {

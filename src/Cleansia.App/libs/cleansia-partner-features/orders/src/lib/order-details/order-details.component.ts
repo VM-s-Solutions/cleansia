@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { CleansiaPartnerRoute } from '@cleansia/services';
 import {
   CleansiaButtonComponent,
   CleansiaLanguageSwitcherComponent,
@@ -12,6 +13,7 @@ import {
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { TranslatePipe } from '@ngx-translate/core';
+import { DialogService } from 'primeng/dynamicdialog';
 import { OrderAdditionalServicesComponent } from './components/order-additional-services.component';
 import { OrderCustomerInfoComponent } from './components/order-customer-info.component';
 import { OrderExtrasComponent } from './components/order-extras.component';
@@ -48,7 +50,7 @@ import { OrderDetailsFacade } from './order-details.facade';
     CleansiaLanguageSwitcherComponent,
   ],
   templateUrl: './order-details.component.html',
-  providers: [OrderDetailsFacade],
+  providers: [OrderDetailsFacade, DialogService],
 })
 export class OrderDetailsComponent implements OnInit {
   protected readonly facade = inject(OrderDetailsFacade);
@@ -122,6 +124,36 @@ export class OrderDetailsComponent implements OnInit {
     );
   });
 
+  protected readonly canStartOrder = computed(() => {
+    const order = this.orderDetails();
+    const employeeId = this.currentEmployeeId();
+
+    if (!order || !employeeId) return false;
+
+    // OrderStatus.Confirmed = 2
+    const isConfirmed = order.orderStatus.value === 2;
+    const isAssigned = order.assignedEmployees?.some(
+      (e) => e.employeeId === employeeId
+    );
+
+    return isConfirmed && isAssigned;
+  });
+
+  protected readonly canCompleteOrder = computed(() => {
+    const order = this.orderDetails();
+    const employeeId = this.currentEmployeeId();
+
+    if (!order || !employeeId) return false;
+
+    // OrderStatus.InProgress = 3
+    const isInProgress = order.orderStatus.value === 3;
+    const isAssigned = order.assignedEmployees?.some(
+      (e) => e.employeeId === employeeId
+    );
+
+    return isInProgress && isAssigned;
+  });
+
   constructor() {
     effect(() => {
       const orderDetails = this.orderDetails();
@@ -142,7 +174,7 @@ export class OrderDetailsComponent implements OnInit {
   }
 
   protected navigateToOrders(): void {
-    this.router.navigate(['/orders']);
+    this.router.navigate([CleansiaPartnerRoute.ORDERS]);
   }
 
   protected formatCurrency(amount: number, currencySymbol: string): string {
@@ -177,6 +209,19 @@ export class OrderDetailsComponent implements OnInit {
 
   protected downloadInvoice(): void {
     this.facade.downloadInvoice();
+  }
+
+  protected startOrder(): void {
+    const orderId = this.orderDetails()?.id;
+    const employeeId = this.currentEmployeeId();
+
+    if (orderId && employeeId) {
+      this.facade.startOrder(orderId, employeeId);
+    }
+  }
+
+  protected completeOrder(): void {
+    this.facade.openCompleteOrderDialog();
   }
 
   private createFormGroup(): FormGroup {

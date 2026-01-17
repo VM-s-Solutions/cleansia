@@ -13,13 +13,13 @@ namespace Cleansia.Web.Admin.Controllers;
 [ApiController]
 public class AdminCompanyController(IMediator mediator) : ApiController(mediator)
 {
-    [HttpPost("get-paged")]
+    [HttpGet("get-paged")]
     [Permission(Policy.CanViewCompanyInfo)]
     [ProducesResponseType(typeof(PagedData<CompanyInfoListItem>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetPagedCompanyInfo(
-        [FromBody] GetPagedCompanyInfo.Request request,
+        [FromQuery] GetPagedCompanyInfo.Request request,
         CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(request, cancellationToken);
@@ -40,7 +40,7 @@ public class AdminCompanyController(IMediator mediator) : ApiController(mediator
         return HandleResult<CompanyInfoDetailDto>(result);
     }
 
-    [HttpPost]
+    [HttpPost("create")]
     [Permission(Policy.CanCreateCompanyInfo)]
     [ProducesResponseType(typeof(CreateCompanyInfo.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -54,7 +54,7 @@ public class AdminCompanyController(IMediator mediator) : ApiController(mediator
         return HandleResult<CreateCompanyInfo.Response>(result);
     }
 
-    [HttpPut("{companyInfoId}")]
+    [HttpPut("update/{companyInfoId}")]
     [Permission(Policy.CanUpdateCompanyInfo)]
     [ProducesResponseType(typeof(UpdateCompanyInfo.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -74,7 +74,7 @@ public class AdminCompanyController(IMediator mediator) : ApiController(mediator
         return HandleResult<UpdateCompanyInfo.Response>(result);
     }
 
-    [HttpDelete("{companyInfoId}")]
+    [HttpDelete("delete/{companyInfoId}")]
     [Permission(Policy.CanDeleteCompanyInfo)]
     [ProducesResponseType(typeof(DeleteCompanyInfo.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -89,7 +89,7 @@ public class AdminCompanyController(IMediator mediator) : ApiController(mediator
     }
 
     // Legacy endpoint for backward compatibility
-    [HttpGet]
+    [HttpGet("get-current")]
     [Permission(Policy.CanViewCompanyInfo)]
     [ProducesResponseType(typeof(CompanyInfoDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

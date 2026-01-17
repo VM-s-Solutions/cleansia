@@ -27,13 +27,16 @@ public class CompleteOrder
     {
         private readonly IOrderRepository _orderRepository;
         private readonly IEmployeeRepository _employeeRepository;
+        private readonly IOrderPhotoRepository _orderPhotoRepository;
 
         public Validator(
             IOrderRepository orderRepository,
-            IEmployeeRepository employeeRepository)
+            IEmployeeRepository employeeRepository,
+            IOrderPhotoRepository orderPhotoRepository)
         {
             _orderRepository = orderRepository;
             _employeeRepository = employeeRepository;
+            _orderPhotoRepository = orderPhotoRepository;
 
             RuleFor(x => x.OrderId)
                 .Cascade(CascadeMode.Stop)
@@ -42,7 +45,9 @@ public class CompleteOrder
                 .MustAsync(_orderRepository.ExistsAsync)
                 .WithMessage(BusinessErrorMessage.OrderNotFound)
                 .MustAsync(OrderIsInProgressAsync)
-                .WithMessage(BusinessErrorMessage.OrderNotInProgress);
+                .WithMessage(BusinessErrorMessage.OrderNotInProgress)
+                .MustAsync(HasAfterPhotosAsync)
+                .WithMessage(BusinessErrorMessage.AfterPhotosRequired);
 
             RuleFor(x => x.EmployeeId)
                 .Cascade(CascadeMode.Stop)
@@ -117,6 +122,14 @@ public class CompleteOrder
             if (employee == null) return false;
 
             return employee.ContractStatus != Domain.Enums.ContractStatus.Pending;
+        }
+
+        private async Task<bool> HasAfterPhotosAsync(string orderId, CancellationToken cancellationToken)
+        {
+            var photoCount = await _orderPhotoRepository
+                .GetPhotoCountByOrderIdAndTypeAsync(orderId, Domain.Enums.PhotoType.After, cancellationToken);
+
+            return photoCount > 0;
         }
     }
 

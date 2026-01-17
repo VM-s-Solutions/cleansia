@@ -1,18 +1,15 @@
-<div class="package-form-page">
-  <div class="page-header">
-    <cleansia-title [title]="pageTitle()">
-      <cleansia-language-switcher />
-    </cleansia-title>
-  </div>
-
-  <div class="page-content">
-    <div class="header-actions">
+<div class="cleansia-package-form">
+  <div class="cleansia-package-form__container page-wrapper">
+    <cleansia-language-switcher />
+    <!-- Header with Back Button -->
+    <div class="cleansia-package-form__header">
       <cleansia-button
         [label]="'global.actions.back' | translate"
         icon="pi pi-arrow-left"
-        [outlined]="true"
         (onClick)="onCancel()"
+        [outlined]="true"
       />
+      <cleansia-title [title]="pageTitle()" />
     </div>
 
     @if (facade.loading()) {
@@ -21,7 +18,7 @@
     <form
       [formGroup]="form"
       (ngSubmit)="onSave()"
-      class="package-form-container"
+      class="cleansia-package-form__content"
     >
       <cleansia-section [title]="'pages.package_form.basic_info' | translate">
         <div class="form-grid">
@@ -64,9 +61,7 @@
               (ngModelChange)="onServiceSelectionChange($event)"
               [ngModelOptions]="{ standalone: true }"
               optionLabel="name"
-              [placeholder]="
-                'pages.package_form.select_services' | translate
-              "
+              [placeholder]="'pages.package_form.select_services' | translate"
               [showClear]="true"
               [filter]="true"
               filterBy="name"

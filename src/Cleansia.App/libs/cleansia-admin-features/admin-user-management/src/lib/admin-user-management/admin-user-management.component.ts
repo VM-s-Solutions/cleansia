@@ -1,9 +1,14 @@
 import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
+  ChangeDetectorRef,
   Component,
+  computed,
   inject,
   OnDestroy,
+  signal,
+  TemplateRef,
+  viewChild,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -20,7 +25,9 @@ import {
   CleansiaTableComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
-  TableDefinition,
+  TableColumn,
+  TableAction,
+  PaginationState,
 } from '@cleansia/components';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
@@ -49,13 +56,17 @@ import { getAdminUserTableDefinition } from './admin-user-management.models';
   providers: [AdminUserManagementFacade, ConfirmationService],
 })
 export class AdminUserManagementComponent implements AfterViewInit, OnDestroy {
+  private readonly cd = inject(ChangeDetectorRef);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   protected readonly facade = inject(AdminUserManagementFacade);
   private readonly translate = inject(TranslateService);
   private readonly confirmationService = inject(ConfirmationService);
 
-  userTableDefinition!: TableDefinition<AdminUserListItem>;
+  statusTemplate = viewChild<TemplateRef<any>>('statusTemplate');
+
+  userColumns!: TableColumn<AdminUserListItem>[];
+  userActions!: TableAction<AdminUserListItem>[];
 
   private lastSortField: string | null = null;
   private lastSortOrder: number | null = null;
@@ -65,14 +76,24 @@ export class AdminUserManagementComponent implements AfterViewInit, OnDestroy {
     searchTerm: [''],
   });
 
+  // Filter drawer state
+  isFilterDrawerOpen = signal(false);
+  private filterFormVersion = signal(0);
+  activeFilterChips = computed(() => {
+    this.filterFormVersion();
+    return this.getActiveFilterChips();
+  });
+  hasActiveFilters = computed(() => this.activeFilterChips().length > 0);
+  activeFilterCount = computed(() => this.activeFilterChips().length);
+
   ngAfterViewInit(): void {
-    this.userTableDefinition = getAdminUserTableDefinition(
-      {
-        onEdit: this.editUser.bind(this),
-        onToggleStatus: this.confirmToggleStatus.bind(this),
-      },
-      this.translate
-    );
+    this.rebuildTableDefinitions();
+
+    this.filterForm.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.filterFormVersion.update(v => v + 1);
+      });
 
     this.filterForm.valueChanges
       .pipe(debounceTime(500), distinctUntilChanged(), takeUntil(this.destroy$))
@@ -80,7 +101,40 @@ export class AdminUserManagementComponent implements AfterViewInit, OnDestroy {
         this.applyFilters();
       });
 
+    // Rebuild tables when language changes
+    this.translate.onLangChange
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.rebuildTableDefinitions();
+      });
+
     this.facade.loadUsers();
+  }
+
+  private rebuildTableDefinitions(): void {
+    const tableDef = getAdminUserTableDefinition(
+      {
+        onEdit: this.editUser.bind(this),
+        onToggleStatus: this.confirmToggleStatus.bind(this),
+      },
+      this.translate,
+      this.statusTemplate()
+    );
+    this.userColumns = tableDef.columns;
+    this.userActions = tableDef.actions;
+    this.cd.detectChanges();
+  }
+
+  getActiveStatusLabel(user: AdminUserListItem): string {
+    return user.isActive
+      ? this.translate.instant('global.status.active')
+      : this.translate.instant('global.status.inactive');
+  }
+
+  getActiveStatusClass(user: AdminUserListItem): string {
+    return user.isActive
+      ? 'active-status-badge status-active'
+      : 'active-status-badge status-inactive';
   }
 
   ngOnDestroy(): void {
@@ -125,6 +179,12 @@ export class AdminUserManagementComponent implements AfterViewInit, OnDestroy {
     this.facade.onSortChange(sort);
   }
 
+  onPageChange(event: PaginationState): void {
+    const offset = event.first;
+    const limit = event.rows;
+    this.facade.onPageChange(offset, limit);
+  }
+
   createUser(): void {
     this.facade.navigateToCreateUser();
   }
@@ -149,5 +209,38 @@ export class AdminUserManagementComponent implements AfterViewInit, OnDestroy {
         this.facade.toggleUserStatus(user);
       },
     });
+  }
+
+  // Filter drawer methods
+  openFilterDrawer(): void {
+    this.isFilterDrawerOpen.set(true);
+  }
+
+  closeFilterDrawer(): void {
+    this.isFilterDrawerOpen.set(false);
+  }
+
+  getActiveFilterChips(): { key: string; label: string; value: string }[] {
+    const chips: { key: string; label: string; value: string }[] = [];
+    const values = this.filterForm.value;
+
+    if (values.searchTerm) {
+      chips.push({
+        key: 'searchTerm',
+        label: this.translate.instant('pages.admin_user_management.filters.search'),
+        value: values.searchTerm,
+      });
+    }
+
+    return chips;
+  }
+
+  removeFilterChip(key: string): void {
+    this.filterForm.patchValue({ [key]: '' });
+    this.applyFilters();
+  }
+
+  clearAllFilters(): void {
+    this.resetFilters();
   }
 }

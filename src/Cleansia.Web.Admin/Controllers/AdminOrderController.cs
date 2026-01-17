@@ -13,13 +13,13 @@ namespace Cleansia.Web.Admin.Controllers;
 [ApiController]
 public class AdminOrderController(IMediator mediator) : ApiController(mediator)
 {
-    [HttpPost("get-paged")]
+    [HttpGet("get-paged")]
     [Permission(Policy.CanViewPagedOrder)]
     [ProducesResponseType(typeof(PagedData<OrderListItem>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> GetPagedOrders([FromBody] GetPagedOrders.Request request, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetPagedOrders([FromQuery] GetPagedOrders.Request request, CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(request, cancellationToken);
         return Ok(result);

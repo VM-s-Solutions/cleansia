@@ -13,6 +13,10 @@ public class EmployeeInvoiceSpecification : BaseSpecification<string?>, ISpecifi
     public string? InvoiceNumber { get; set; }
     public string? VariableSymbol { get; set; }
     public EmployeeInvoiceStatus[]? Statuses { get; set; }
+    public decimal? MinAmount { get; set; }
+    public decimal? MaxAmount { get; set; }
+    public DateTime? DateFrom { get; set; }
+    public DateTime? DateTo { get; set; }
 
     public Expression<Func<EmployeeInvoice, bool>> SatisfiedBy()
     {
@@ -50,12 +54,34 @@ public class EmployeeInvoiceSpecification : BaseSpecification<string?>, ISpecifi
 
         if (!string.IsNullOrWhiteSpace(InvoiceNumber))
         {
-            specification &= new DirectSpecification<EmployeeInvoice>(x => x.InvoiceNumber == InvoiceNumber);
+            specification &= new DirectSpecification<EmployeeInvoice>(x => x.InvoiceNumber.Contains(InvoiceNumber));
         }
 
         if (!string.IsNullOrWhiteSpace(VariableSymbol))
         {
             specification &= new DirectSpecification<EmployeeInvoice>(x => x.VariableSymbol == VariableSymbol);
+        }
+
+        if (MinAmount.HasValue)
+        {
+            specification &= new DirectSpecification<EmployeeInvoice>(x => x.TotalAmount >= MinAmount.Value);
+        }
+
+        if (MaxAmount.HasValue)
+        {
+            specification &= new DirectSpecification<EmployeeInvoice>(x => x.TotalAmount <= MaxAmount.Value);
+        }
+
+        if (DateFrom.HasValue)
+        {
+            specification &= new DirectSpecification<EmployeeInvoice>(x => x.GeneratedAt >= DateFrom.Value);
+        }
+
+        if (DateTo.HasValue)
+        {
+            // Include the entire day by going to end of day
+            var dateTo = DateTo.Value.Date.AddDays(1).AddTicks(-1);
+            specification &= new DirectSpecification<EmployeeInvoice>(x => x.GeneratedAt <= dateTo);
         }
 
         return specification.SatisfiedBy();
@@ -69,7 +95,11 @@ public class EmployeeInvoiceSpecification : BaseSpecification<string?>, ISpecifi
         EmployeeInvoiceStatus? status = null,
         EmployeeInvoiceStatus[]? statuses = null,
         string? invoiceNumber = null,
-        string? variableSymbol = null) =>
+        string? variableSymbol = null,
+        decimal? minAmount = null,
+        decimal? maxAmount = null,
+        DateTime? dateFrom = null,
+        DateTime? dateTo = null) =>
         new()
         {
             Id = id,
@@ -79,6 +109,10 @@ public class EmployeeInvoiceSpecification : BaseSpecification<string?>, ISpecifi
             Status = status,
             Statuses = statuses,
             InvoiceNumber = invoiceNumber,
-            VariableSymbol = variableSymbol
+            VariableSymbol = variableSymbol,
+            MinAmount = minAmount,
+            MaxAmount = maxAmount,
+            DateFrom = dateFrom,
+            DateTo = dateTo
         };
 }

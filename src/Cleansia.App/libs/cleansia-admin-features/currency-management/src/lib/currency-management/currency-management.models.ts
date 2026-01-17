@@ -1,74 +1,124 @@
+import { TemplateRef } from '@angular/core';
 import { CurrencyListItem } from '@cleansia/admin-services';
-import { TableDefinition } from '@cleansia/components';
+import { TableColumn, TableAction } from '@cleansia/components';
 import { TranslateService } from '@ngx-translate/core';
+
+// Map currency codes to country codes for flag display
+export const CURRENCY_TO_COUNTRY_MAP: Record<string, string> = {
+  czk: 'cz',
+  eur: 'eu',
+  usd: 'us',
+  gbp: 'gb',
+  chf: 'ch',
+  pln: 'pl',
+  sek: 'se',
+  nok: 'no',
+  dkk: 'dk',
+  huf: 'hu',
+  ron: 'ro',
+  bgn: 'bg',
+  hrk: 'hr',
+  rub: 'ru',
+  uah: 'ua',
+  jpy: 'jp',
+  cny: 'cn',
+  krw: 'kr',
+  inr: 'in',
+  brl: 'br',
+  mxn: 'mx',
+  cad: 'ca',
+  aud: 'au',
+  nzd: 'nz',
+  sgd: 'sg',
+  hkd: 'hk',
+  thb: 'th',
+  myr: 'my',
+  idr: 'id',
+  php: 'ph',
+  vnd: 'vn',
+  try: 'tr',
+  zar: 'za',
+  aed: 'ae',
+  sar: 'sa',
+  ils: 'il',
+  egp: 'eg',
+};
+
+export function getCurrencyFlagCode(currencyCode: string | undefined): string {
+  if (!currencyCode) return '';
+  const lowerCode = currencyCode.toLowerCase();
+  return CURRENCY_TO_COUNTRY_MAP[lowerCode] || '';
+}
 
 export function getCurrencyTableDefinition(
   defs: {
     onEdit: (row: CurrencyListItem) => void;
     onDelete: (row: CurrencyListItem) => void;
   },
-  translate: TranslateService
-): TableDefinition<CurrencyListItem> {
+  translate: TranslateService,
+  flagTemplate?: TemplateRef<CurrencyListItem>
+): { columns: TableColumn<CurrencyListItem>[]; actions: TableAction<CurrencyListItem>[] } {
   return {
     columns: [
       {
+        id: 'flag',
+        field: 'code',
+        header: '',
+        sortable: false,
+        width: '60px',
+        customTemplate: flagTemplate,
+      },
+      {
         id: 'code',
-        headerName: translate.instant('pages.currency_management.columns.code'),
-        value: 'code',
-        columnClass: 'width-15',
+        field: 'code',
+        header: translate.instant('pages.currency_management.columns.code'),
+        sortable: true,
+        width: '12%',
       },
       {
         id: 'symbol',
-        headerName: translate.instant('pages.currency_management.columns.symbol'),
-        value: 'symbol',
-        columnClass: 'width-10',
+        field: 'symbol',
+        header: translate.instant('pages.currency_management.columns.symbol'),
+        width: '10%',
       },
       {
         id: 'name',
-        headerName: translate.instant('pages.currency_management.columns.name'),
-        value: 'name',
-        columnClass: 'width-30',
+        field: 'name',
+        header: translate.instant('pages.currency_management.columns.name'),
+        sortable: true,
+        width: '30%',
       },
       {
         id: 'exchangeRate',
-        headerName: translate.instant('pages.currency_management.columns.exchange_rate'),
-        value: 'exchangeRate',
-        columnClass: 'width-15',
+        field: 'exchangeRate',
+        header: translate.instant('pages.currency_management.columns.exchange_rate'),
+        sortable: true,
+        width: '15%',
       },
       {
         id: 'isDefault',
-        headerName: translate.instant('pages.currency_management.columns.is_default'),
-        value: (row?: CurrencyListItem) =>
-          row && (row as any).isDefault
+        field: 'isDefault',
+        header: translate.instant('pages.currency_management.columns.is_default'),
+        getValue: (row: CurrencyListItem) =>
+          (row as any).isDefault
             ? translate.instant('global.yes')
             : translate.instant('global.no'),
-        columnClass: 'width-10',
+        width: '10%',
+      },
+    ],
+    actions: [
+      {
+        icon: 'pi pi-pencil',
+        tooltip: translate.instant('pages.currency_management.edit_currency'),
+        color: 'warning',
+        onClick: (row: CurrencyListItem) => defs.onEdit(row),
       },
       {
-        id: 'actions',
-        headerName: translate.instant('pages.currency_management.columns.actions'),
-        columnActions: [
-          {
-            icon: 'pi pi-pencil',
-            onClick: (row: CurrencyListItem) => defs.onEdit(row),
-            buttonPalette: 'p-button-warning p-button-sm',
-            tooltip: {
-              title: translate.instant('pages.currency_management.edit_currency'),
-              position: 'above',
-            },
-          },
-          {
-            icon: 'pi pi-trash',
-            onClick: (row: CurrencyListItem) => defs.onDelete(row),
-            buttonPalette: 'p-button-danger p-button-sm',
-            disabled: (row: CurrencyListItem) => (row as any).isDefault,
-            tooltip: {
-              title: translate.instant('pages.currency_management.delete_currency'),
-              position: 'above',
-            },
-          },
-        ],
-        columnClass: 'width-20',
+        icon: 'pi pi-trash',
+        tooltip: translate.instant('pages.currency_management.delete_currency'),
+        color: 'danger',
+        onClick: (row: CurrencyListItem) => defs.onDelete(row),
+        visible: (row: CurrencyListItem) => !(row as any).isDefault,
       },
     ],
   };

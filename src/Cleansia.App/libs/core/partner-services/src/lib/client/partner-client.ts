@@ -2865,12 +2865,17 @@ export interface IEmployeePayrollClient {
      * @param employeeId (optional) 
      * @param payPeriodId (optional) 
      * @param statuses (optional) 
+     * @param invoiceNumber (optional) 
+     * @param minAmount (optional) 
+     * @param maxAmount (optional) 
+     * @param dateFrom (optional) 
+     * @param dateTo (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getPagedInvoices(employeeId?: string | undefined, payPeriodId?: string | undefined, statuses?: EmployeeInvoiceStatus[] | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<EmployeeInvoiceDtoPagedData>;
+    getPagedInvoices(employeeId?: string | undefined, payPeriodId?: string | undefined, statuses?: EmployeeInvoiceStatus[] | undefined, invoiceNumber?: string | undefined, minAmount?: number | undefined, maxAmount?: number | undefined, dateFrom?: Date | undefined, dateTo?: Date | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<EmployeeInvoiceDtoPagedData>;
     /**
      * @return OK
      */
@@ -2939,12 +2944,17 @@ export class EmployeePayrollClient implements IEmployeePayrollClient {
      * @param employeeId (optional) 
      * @param payPeriodId (optional) 
      * @param statuses (optional) 
+     * @param invoiceNumber (optional) 
+     * @param minAmount (optional) 
+     * @param maxAmount (optional) 
+     * @param dateFrom (optional) 
+     * @param dateTo (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getPagedInvoices(employeeId?: string | undefined, payPeriodId?: string | undefined, statuses?: EmployeeInvoiceStatus[] | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<EmployeeInvoiceDtoPagedData> {
+    getPagedInvoices(employeeId?: string | undefined, payPeriodId?: string | undefined, statuses?: EmployeeInvoiceStatus[] | undefined, invoiceNumber?: string | undefined, minAmount?: number | undefined, maxAmount?: number | undefined, dateFrom?: Date | undefined, dateTo?: Date | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<EmployeeInvoiceDtoPagedData> {
         let url = this.baseUrl + "/api/EmployeePayroll/GetPagedInvoices?";
         if (employeeId === null)
             throw new globalThis.Error("The parameter 'employeeId' cannot be null.");
@@ -2958,6 +2968,26 @@ export class EmployeePayrollClient implements IEmployeePayrollClient {
             throw new globalThis.Error("The parameter 'statuses' cannot be null.");
         else if (statuses !== undefined)
             statuses && statuses.forEach(item => { url += "Filter.Statuses=" + encodeURIComponent("" + item) + "&"; });
+        if (invoiceNumber === null)
+            throw new globalThis.Error("The parameter 'invoiceNumber' cannot be null.");
+        else if (invoiceNumber !== undefined)
+            url += "Filter.InvoiceNumber=" + encodeURIComponent("" + invoiceNumber) + "&";
+        if (minAmount === null)
+            throw new globalThis.Error("The parameter 'minAmount' cannot be null.");
+        else if (minAmount !== undefined)
+            url += "Filter.MinAmount=" + encodeURIComponent("" + minAmount) + "&";
+        if (maxAmount === null)
+            throw new globalThis.Error("The parameter 'maxAmount' cannot be null.");
+        else if (maxAmount !== undefined)
+            url += "Filter.MaxAmount=" + encodeURIComponent("" + maxAmount) + "&";
+        if (dateFrom === null)
+            throw new globalThis.Error("The parameter 'dateFrom' cannot be null.");
+        else if (dateFrom !== undefined)
+            url += "Filter.DateFrom=" + encodeURIComponent(dateFrom ? "" + dateFrom.toISOString() : "") + "&";
+        if (dateTo === null)
+            throw new globalThis.Error("The parameter 'dateTo' cannot be null.");
+        else if (dateTo !== undefined)
+            url += "Filter.DateTo=" + encodeURIComponent(dateTo ? "" + dateTo.toISOString() : "") + "&";
         if (sort === null)
             throw new globalThis.Error("The parameter 'sort' cannot be null.");
         else if (sort !== undefined)
@@ -3948,6 +3978,11 @@ export interface IOrderClient {
      * @param body (optional) 
      * @return OK
      */
+    startOrder(body?: StartOrderCommand | undefined): Observable<StartOrderResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
     completeOrder(body?: CompleteOrderCommand | undefined): Observable<CompleteOrderResponse>;
     /**
      * @param orderId (optional) 
@@ -4353,6 +4388,83 @@ export class OrderClient implements IOrderClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = TakeOrderResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    startOrder(body?: StartOrderCommand | undefined): Observable<StartOrderResponse> {
+        let url = this.baseUrl + "/api/Order/StartOrder";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processStartOrder(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processStartOrder(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<StartOrderResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<StartOrderResponse>;
+        }));
+    }
+
+    protected processStartOrder(response: HttpResponseBase): Observable<StartOrderResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = StartOrderResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -7098,8 +7210,8 @@ export interface IResendConfirmationEmailCommand {
 
 export class CountryListItem implements ICountryListItem {
     id!: string | undefined;
-    name!: string | undefined;
     isoCode!: string | undefined;
+    name!: string | undefined;
     translations!: { [key: string]: Translation; } | undefined;
 
     constructor(data?: ICountryListItem) {
@@ -7114,8 +7226,8 @@ export class CountryListItem implements ICountryListItem {
     init(Data?: any) {
         if (Data) {
             this.id = Data["id"];
-            this.name = Data["name"];
             this.isoCode = Data["isoCode"];
+            this.name = Data["name"];
             if (Data["translations"]) {
                 this.translations = {} as any;
                 for (let key in Data["translations"]) {
@@ -7136,8 +7248,8 @@ export class CountryListItem implements ICountryListItem {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["id"] = this.id;
-        data["name"] = this.name;
         data["isoCode"] = this.isoCode;
+        data["name"] = this.name;
         if (this.translations) {
             data["translations"] = {};
             for (let key in this.translations) {
@@ -7151,18 +7263,20 @@ export class CountryListItem implements ICountryListItem {
 
 export interface ICountryListItem {
     id: string | undefined;
-    name: string | undefined;
     isoCode: string | undefined;
+    name: string | undefined;
     translations: { [key: string]: Translation; } | undefined;
 }
 
-export class CurrencyDetails implements ICurrencyDetails {
+export class CurrencyDetailDto implements ICurrencyDetailDto {
     id!: string | undefined;
     code!: string | undefined;
     name!: string | undefined;
     symbol!: string | undefined;
+    exchangeRate!: number;
+    isDefault!: boolean;
 
-    constructor(data?: ICurrencyDetails) {
+    constructor(data?: ICurrencyDetailDto) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -7177,12 +7291,14 @@ export class CurrencyDetails implements ICurrencyDetails {
             this.code = Data["code"];
             this.name = Data["name"];
             this.symbol = Data["symbol"];
+            this.exchangeRate = Data["exchangeRate"];
+            this.isDefault = Data["isDefault"];
         }
     }
 
-    static fromJS(data: any): CurrencyDetails {
+    static fromJS(data: any): CurrencyDetailDto {
         data = typeof data === 'object' ? data : {};
-        let result = new CurrencyDetails();
+        let result = new CurrencyDetailDto();
         result.init(data);
         return result;
     }
@@ -7193,15 +7309,19 @@ export class CurrencyDetails implements ICurrencyDetails {
         data["code"] = this.code;
         data["name"] = this.name;
         data["symbol"] = this.symbol;
+        data["exchangeRate"] = this.exchangeRate;
+        data["isDefault"] = this.isDefault;
         return data;
     }
 }
 
-export interface ICurrencyDetails {
+export interface ICurrencyDetailDto {
     id: string | undefined;
     code: string | undefined;
     name: string | undefined;
     symbol: string | undefined;
+    exchangeRate: number;
+    isDefault: boolean;
 }
 
 export class CurrencyListItem implements ICurrencyListItem {
@@ -7210,6 +7330,7 @@ export class CurrencyListItem implements ICurrencyListItem {
     symbol!: string | undefined;
     name!: string | undefined;
     exchangeRate!: number;
+    isDefault!: boolean;
 
     constructor(data?: ICurrencyListItem) {
         if (data) {
@@ -7227,6 +7348,7 @@ export class CurrencyListItem implements ICurrencyListItem {
             this.symbol = Data["symbol"];
             this.name = Data["name"];
             this.exchangeRate = Data["exchangeRate"];
+            this.isDefault = Data["isDefault"];
         }
     }
 
@@ -7244,6 +7366,7 @@ export class CurrencyListItem implements ICurrencyListItem {
         data["symbol"] = this.symbol;
         data["name"] = this.name;
         data["exchangeRate"] = this.exchangeRate;
+        data["isDefault"] = this.isDefault;
         return data;
     }
 }
@@ -7254,6 +7377,7 @@ export interface ICurrencyListItem {
     symbol: string | undefined;
     name: string | undefined;
     exchangeRate: number;
+    isDefault: boolean;
 }
 
 export class DailyTimeSpent implements IDailyTimeSpent {
@@ -10718,6 +10842,58 @@ export interface ICreateOrderResponse {
     stripeSessionId: string | undefined;
 }
 
+export class AssignedEmployeeDto implements IAssignedEmployeeDto {
+    id!: string | undefined;
+    employeeId!: string | undefined;
+    fullName!: string | undefined;
+    phoneNumber!: string | undefined;
+    email!: string | undefined;
+
+    constructor(data?: IAssignedEmployeeDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.employeeId = Data["employeeId"];
+            this.fullName = Data["fullName"];
+            this.phoneNumber = Data["phoneNumber"];
+            this.email = Data["email"];
+        }
+    }
+
+    static fromJS(data: any): AssignedEmployeeDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new AssignedEmployeeDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["employeeId"] = this.employeeId;
+        data["fullName"] = this.fullName;
+        data["phoneNumber"] = this.phoneNumber;
+        data["email"] = this.email;
+        return data;
+    }
+}
+
+export interface IAssignedEmployeeDto {
+    id: string | undefined;
+    employeeId: string | undefined;
+    fullName: string | undefined;
+    phoneNumber: string | undefined;
+    email: string | undefined;
+}
+
 export class OrderAddress implements IOrderAddress {
     street!: string | undefined;
     city!: string | undefined;
@@ -10790,14 +10966,12 @@ export class OrderItem implements IOrderItem {
     specialInstructions!: string | undefined;
     accessInstructions!: string | undefined;
     selectedPackages!: PackageDetails[] | undefined;
-    currency!: CurrencyDetails;
+    currency!: CurrencyDetailDto;
     selectedServices!: ServiceDetails[] | undefined;
     statusHistory!: OrderStatusTrackDto[] | undefined;
     createdOn!: Date;
     updatedOn!: Date | undefined;
-    assignedEmployeeId!: string | undefined;
-    assignedEmployeeName!: string | undefined;
-    assignedEmployeePhone!: string | undefined;
+    assignedEmployees!: AssignedEmployeeDto[] | undefined;
     receiptNumber!: string | undefined;
 
     constructor(data?: IOrderItem) {
@@ -10844,7 +11018,7 @@ export class OrderItem implements IOrderItem {
                 for (let item of Data["selectedPackages"])
                     this.selectedPackages!.push(PackageDetails.fromJS(item));
             }
-            this.currency = Data["currency"] ? CurrencyDetails.fromJS(Data["currency"]) : undefined as any;
+            this.currency = Data["currency"] ? CurrencyDetailDto.fromJS(Data["currency"]) : undefined as any;
             if (Array.isArray(Data["selectedServices"])) {
                 this.selectedServices = [] as any;
                 for (let item of Data["selectedServices"])
@@ -10857,9 +11031,11 @@ export class OrderItem implements IOrderItem {
             }
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
             this.updatedOn = Data["updatedOn"] ? new Date(Data["updatedOn"].toString()) : undefined as any;
-            this.assignedEmployeeId = Data["assignedEmployeeId"];
-            this.assignedEmployeeName = Data["assignedEmployeeName"];
-            this.assignedEmployeePhone = Data["assignedEmployeePhone"];
+            if (Array.isArray(Data["assignedEmployees"])) {
+                this.assignedEmployees = [] as any;
+                for (let item of Data["assignedEmployees"])
+                    this.assignedEmployees!.push(AssignedEmployeeDto.fromJS(item));
+            }
             this.receiptNumber = Data["receiptNumber"];
         }
     }
@@ -10919,9 +11095,11 @@ export class OrderItem implements IOrderItem {
         }
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
         data["updatedOn"] = this.updatedOn ? this.updatedOn.toISOString() : undefined as any;
-        data["assignedEmployeeId"] = this.assignedEmployeeId;
-        data["assignedEmployeeName"] = this.assignedEmployeeName;
-        data["assignedEmployeePhone"] = this.assignedEmployeePhone;
+        if (Array.isArray(this.assignedEmployees)) {
+            data["assignedEmployees"] = [];
+            for (let item of this.assignedEmployees)
+                data["assignedEmployees"].push(item ? item.toJSON() : undefined as any);
+        }
         data["receiptNumber"] = this.receiptNumber;
         return data;
     }
@@ -10951,14 +11129,12 @@ export interface IOrderItem {
     specialInstructions: string | undefined;
     accessInstructions: string | undefined;
     selectedPackages: PackageDetails[] | undefined;
-    currency: CurrencyDetails;
+    currency: CurrencyDetailDto;
     selectedServices: ServiceDetails[] | undefined;
     statusHistory: OrderStatusTrackDto[] | undefined;
     createdOn: Date;
     updatedOn: Date | undefined;
-    assignedEmployeeId: string | undefined;
-    assignedEmployeeName: string | undefined;
-    assignedEmployeePhone: string | undefined;
+    assignedEmployees: AssignedEmployeeDto[] | undefined;
     receiptNumber: string | undefined;
 }
 
@@ -11536,6 +11712,86 @@ export interface ISaveOrderPhotosSavedPhoto {
     blobUrl: string | undefined;
     photoType: PhotoType;
     capturedAt: Date;
+}
+
+export class StartOrderCommand implements IStartOrderCommand {
+    orderId!: string | undefined;
+    employeeId!: string | undefined;
+
+    constructor(data?: IStartOrderCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.employeeId = Data["employeeId"];
+        }
+    }
+
+    static fromJS(data: any): StartOrderCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new StartOrderCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        data["employeeId"] = this.employeeId;
+        return data;
+    }
+}
+
+export interface IStartOrderCommand {
+    orderId: string | undefined;
+    employeeId: string | undefined;
+}
+
+export class StartOrderResponse implements IStartOrderResponse {
+    orderId!: string | undefined;
+    newStatus!: OrderStatus;
+
+    constructor(data?: IStartOrderResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.newStatus = Data["newStatus"];
+        }
+    }
+
+    static fromJS(data: any): StartOrderResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new StartOrderResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        data["newStatus"] = this.newStatus;
+        return data;
+    }
+}
+
+export interface IStartOrderResponse {
+    orderId: string | undefined;
+    newStatus: OrderStatus;
 }
 
 export class TakeOrderCommand implements ITakeOrderCommand {

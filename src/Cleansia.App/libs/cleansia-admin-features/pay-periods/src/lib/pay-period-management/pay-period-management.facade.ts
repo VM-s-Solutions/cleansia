@@ -2,9 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import {
   AdminClient,
   ClosePayPeriodCommand,
-  GetPagedPayPeriodsRequest,
   PayPeriodDto,
-  PayPeriodFilter,
   PayPeriodStatus,
   SortDefinition,
 } from '@cleansia/admin-services';
@@ -23,6 +21,7 @@ export class PayPeriodManagementFacade {
 
   readonly payPeriods = signal<PayPeriodDto[]>([]);
   readonly loading = signal<boolean>(false);
+  readonly initialLoading = signal<boolean>(true);
   readonly totalRecords = signal<number>(0);
 
   private currentFilter = signal<PayPeriodFilterParams | null>(null);
@@ -49,38 +48,26 @@ export class PayPeriodManagementFacade {
     this.loading.set(true);
     const filterParams = this.currentFilter();
 
-    const payPeriodFilter = new PayPeriodFilter();
-    if (filterParams?.status !== undefined) {
-      payPeriodFilter.status = filterParams.status;
-    }
-    if (filterParams?.year !== undefined) {
-      payPeriodFilter.year = filterParams.year;
-    }
-
-    const request = new GetPagedPayPeriodsRequest({
-      offset: this.currentOffset(),
-      limit: this.currentLimit(),
-      filter: payPeriodFilter,
-      sort: this.currentSort(),
-    });
-
     this.adminClient.adminPayPeriodClient
-      .getPaged(request)
+      .getPaged(
+        filterParams?.status,
+        filterParams?.year,
+        this.currentSort(),
+        this.currentOffset(),
+        this.currentLimit()
+      )
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('payPeriods.messages.loadError')
-          );
-          console.error('Error loading pay periods:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {
           this.payPeriods.set(response.data || []);
           this.totalRecords.set(response.total || 0);
+        }
+        if (this.initialLoading()) {
+          this.initialLoading.set(false);
         }
       });
   }
@@ -118,13 +105,7 @@ export class PayPeriodManagementFacade {
       .close(command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('payPeriods.messages.closeError')
-          );
-          console.error('Error closing pay period:', error);
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {

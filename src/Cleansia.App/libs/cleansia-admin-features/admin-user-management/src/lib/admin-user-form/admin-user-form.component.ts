@@ -24,6 +24,7 @@ import {
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
+import { CleansiaAdminRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AdminUserFormData, AdminUserFormFacade } from './admin-user-form.facade';
 
@@ -95,7 +96,7 @@ export class AdminUserFormComponent implements OnInit, OnDestroy {
       if (userId) {
         this.facade.loadUser(userId);
       } else {
-        this.router.navigate(['/admin-user-management']);
+        this.router.navigate([CleansiaAdminRoute.ADMIN_USER_MANAGEMENT]);
       }
     }
   }

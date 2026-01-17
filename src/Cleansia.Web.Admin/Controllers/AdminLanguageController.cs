@@ -38,7 +38,7 @@ public class AdminLanguageController(IMediator mediator) : ApiController(mediato
         return HandleResult<LanguageDetailDto>(result);
     }
 
-    [HttpPost]
+    [HttpPost("create")]
     [Permission(Policy.CanCreateLanguage)]
     [ProducesResponseType(typeof(CreateLanguage.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -52,7 +52,7 @@ public class AdminLanguageController(IMediator mediator) : ApiController(mediato
         return HandleResult<CreateLanguage.Response>(result);
     }
 
-    [HttpPut("{languageId}")]
+    [HttpPut("update/{languageId}")]
     [Permission(Policy.CanUpdateLanguage)]
     [ProducesResponseType(typeof(UpdateLanguage.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -72,7 +72,7 @@ public class AdminLanguageController(IMediator mediator) : ApiController(mediato
         return HandleResult<UpdateLanguage.Response>(result);
     }
 
-    [HttpDelete("{languageId}")]
+    [HttpDelete("delete/{languageId}")]
     [Permission(Policy.CanDeleteLanguage)]
     [ProducesResponseType(typeof(DeleteLanguage.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]

@@ -2,13 +2,11 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   AdminClient,
-  CompanyInfoFilter,
   CompanyInfoListItem,
   DeleteCompanyInfoResponse,
-  GetPagedCompanyInfoRequest,
   SortDefinition,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -28,6 +26,7 @@ export class CompanyInfoListFacade {
 
   readonly companyInfos = signal<CompanyInfoListItem[]>([]);
   readonly loading = signal<boolean>(false);
+  readonly initialLoading = signal<boolean>(true);
   readonly totalRecords = signal<number>(0);
 
   private currentFilter = signal<CompanyInfoFilterParams | null>(null);
@@ -39,40 +38,26 @@ export class CompanyInfoListFacade {
     this.loading.set(true);
     const filterParams = this.currentFilter();
 
-    const companyInfoFilter = new CompanyInfoFilter();
-    if (filterParams?.searchTerm) {
-      companyInfoFilter.searchTerm = filterParams.searchTerm;
-    }
-    if (filterParams?.countryId) {
-      companyInfoFilter.countryId = filterParams.countryId;
-    }
-
-    const request = new GetPagedCompanyInfoRequest({
-      offset: this.currentOffset(),
-      limit: this.currentLimit(),
-      filter: companyInfoFilter,
-      sort: this.currentSort(),
-    });
-
     this.adminClient.adminCompanyClient
-      .getPaged(request)
+      .getPaged(
+        filterParams?.searchTerm,
+        filterParams?.countryId,
+        this.currentSort(),
+        this.currentOffset(),
+        this.currentLimit()
+      )
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.company_management.messages.load_error'
-            )
-          );
-          console.error('Error loading company infos:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {
           this.companyInfos.set(response.data || []);
           this.totalRecords.set(response.total || 0);
+        }
+        if (this.initialLoading()) {
+          this.initialLoading.set(false);
         }
       });
   }
@@ -101,29 +86,23 @@ export class CompanyInfoListFacade {
   }
 
   navigateToCreate(): void {
-    this.router.navigate(['/company-info', 'create']);
+    this.router.navigate([CleansiaAdminRoute.COMPANY_INFO, 'create']);
   }
 
   navigateToEdit(companyInfo: CompanyInfoListItem): void {
     if (companyInfo.id) {
-      this.router.navigate(['/company-info', companyInfo.id, 'edit']);
+      this.router.navigate([CleansiaAdminRoute.COMPANY_INFO, companyInfo.id, 'edit']);
     }
   }
 
   deleteCompanyInfo(companyInfo: CompanyInfoListItem): void {
     if (!companyInfo.id) return;
 
-    this.adminClient.apiClient
-      .adminCompanyDelete(companyInfo.id)
+    this.adminClient.adminCompanyClient
+      .delete(companyInfo.id)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.company_management.messages.delete_error')
-          );
-          console.error('Error deleting company info:', error);
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response: DeleteCompanyInfoResponse | null) => {
         if (response) {

@@ -27,7 +27,6 @@ export interface RejectDialogResult {
     CleansiaTextareaComponent,
   ],
   templateUrl: './reject-dialog.component.html',
-  styleUrl: './reject-dialog.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RejectDialogComponent {

@@ -18,6 +18,7 @@ import {
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ServiceListItem } from '@cleansia/admin-services';
+import { CleansiaAdminRoute } from '@cleansia/services';
 import {
   CleansiaButtonComponent,
   CleansiaLanguageSwitcherComponent,
@@ -112,7 +113,7 @@ export class PackageFormComponent implements OnInit, OnDestroy {
       if (packageId) {
         this.facade.loadPackage(packageId);
       } else {
-        this.router.navigate(['/package-management']);
+        this.router.navigate([CleansiaAdminRoute.PACKAGE_MANAGEMENT]);
       }
     }
   }

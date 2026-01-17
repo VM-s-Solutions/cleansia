@@ -3,6 +3,14 @@ import { OrderManagementComponent } from './order-management/order-management.co
 import { OrderDetailComponent } from './order-detail/order-detail.component';
 
 export const orderManagementRoutes: Route[] = [
-  { path: '', component: OrderManagementComponent },
-  { path: ':orderId', component: OrderDetailComponent },
+  {
+    path: '',
+    component: OrderManagementComponent,
+    data: { title: 'page_titles.admin.orders' },
+  },
+  {
+    path: ':orderId',
+    component: OrderDetailComponent,
+    data: { title: 'page_titles.admin.order_details' },
+  },
 ];

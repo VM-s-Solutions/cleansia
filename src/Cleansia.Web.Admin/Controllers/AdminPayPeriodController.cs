@@ -13,13 +13,13 @@ namespace Cleansia.Web.Admin.Controllers;
 [ApiController]
 public class AdminPayPeriodController(IMediator mediator) : ApiController(mediator)
 {
-    [HttpPost("get-paged")]
+    [HttpGet("get-paged")]
     [Permission(Policy.CanViewPayPeriods)]
     [ProducesResponseType(typeof(PagedData<PayPeriodDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> GetPagedPayPeriods([FromBody] GetPagedPayPeriods.Request request, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetPagedPayPeriods([FromQuery] GetPagedPayPeriods.Request request, CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(request, cancellationToken);
         return Ok(result);
@@ -62,7 +62,7 @@ public class AdminPayPeriodController(IMediator mediator) : ApiController(mediat
         return HandleResult<UpdatePayPeriod.Response>(result);
     }
 
-    [HttpDelete("{payPeriodId}")]
+    [HttpDelete("delete/{payPeriodId}")]
     [Permission(Policy.CanDeletePayPeriod)]
     [ProducesResponseType(typeof(DeletePayPeriod.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]

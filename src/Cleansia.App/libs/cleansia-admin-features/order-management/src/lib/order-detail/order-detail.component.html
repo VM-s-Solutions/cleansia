@@ -1,15 +1,13 @@
 <div class="cleansia-order-detail">
-  <cleansia-language-switcher />
-  <div class="cleansia-order-detail__container">
+  <div class="cleansia-order-detail__container page-wrapper">
+    <cleansia-language-switcher />
     <!-- Header with Back Button -->
     <div class="cleansia-order-detail__header">
       <cleansia-button
         [label]="'pages.order_detail.back_to_list' | translate"
         icon="pi pi-arrow-left"
         (onClick)="goBack()"
-        severity="secondary"
         [outlined]="true"
-        class="cleansia-order-detail__back-button"
       />
       <cleansia-title [title]="'pages.order_detail.title' | translate" />
     </div>
@@ -287,7 +285,8 @@
       <cleansia-section
         [title]="'pages.order_detail.assigned_employees' | translate"
       >
-        @for (employee of facade.order()?.assignedEmployees; track employee.id) {
+        @for (employee of facade.order()?.assignedEmployees; track employee.id)
+        {
         <div class="info-grid employee-card">
           <div class="info-item">
             <span class="label"

@@ -1,24 +1,21 @@
-<div class="email-type-detail-page">
-  <div class="page-header">
-    <cleansia-title [title]="pageTitle()">
-      <cleansia-language-switcher />
-    </cleansia-title>
-  </div>
-
-  <div class="page-content">
-    <div class="header-actions">
+<div class="cleansia-email-type-detail">
+  <cleansia-language-switcher />
+  <div class="cleansia-email-type-detail__container page-wrapper">
+    <!-- Header with Back Button -->
+    <div class="cleansia-email-type-detail__header">
       <cleansia-button
         [label]="'global.actions.back' | translate"
         icon="pi pi-arrow-left"
-        [outlined]="true"
         (onClick)="onCancel()"
+        [outlined]="true"
       />
+      <cleansia-title [title]="pageTitle()" />
     </div>
 
     @if (facade.loading()) {
     <cleansia-loader />
     } @else {
-    <div class="email-type-form-container">
+    <div class="cleansia-email-type-detail__content">
       <!-- Translations Section with Tabs -->
       @if (languages().length > 0) {
       <cleansia-section
@@ -150,7 +147,7 @@
   [resizable]="false"
 >
   <form
-    class="email-type-detail-page__form"
+    class="cleansia-email-type-detail__form"
     [formGroup]="testEmailForm"
     (ngSubmit)="onSendTestEmail()"
   >
@@ -201,7 +198,7 @@
   [resizable]="false"
 >
   <form
-    class="email-type-detail-page__form"
+    class="cleansia-email-type-detail__form"
     [formGroup]="addTranslationForm"
     (ngSubmit)="onAddTranslation()"
   >

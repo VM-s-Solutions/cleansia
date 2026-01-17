@@ -61,7 +61,6 @@ import { EmailTypeDetailFacade } from './email-type-detail.facade';
     CleansiaTitleComponent,
   ],
   templateUrl: './email-type-detail.component.html',
-  styleUrl: './email-type-detail.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [EmailTypeDetailFacade, ConfirmationService],
 })

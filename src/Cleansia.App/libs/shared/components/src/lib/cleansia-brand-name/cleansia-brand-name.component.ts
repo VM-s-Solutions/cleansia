@@ -1,3 +1,4 @@
+import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -5,10 +6,11 @@ import { RouterLink } from '@angular/router';
   selector: 'cleansia-brand-name',
   templateUrl: './cleansia-brand-name.component.html',
   standalone: true,
-  imports: [RouterLink],
+  imports: [NgClass, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaBrandNameComponent {
   defaultRoute = input<string>('');
   showName = input<boolean>(true);
+  wrapped = input<boolean>(false);
 }

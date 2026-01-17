@@ -3,12 +3,10 @@ import { Router } from '@angular/router';
 import {
   AdminClient,
   DeleteServiceResponse,
-  GetPagedServicesRequest,
-  ServiceFilter,
   ServiceListItem,
   SortDefinition,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -27,6 +25,7 @@ export class ServiceManagementFacade {
 
   readonly services = signal<ServiceListItem[]>([]);
   readonly loading = signal<boolean>(false);
+  readonly initialLoading = signal<boolean>(true);
   readonly totalRecords = signal<number>(0);
 
   private currentFilter = signal<ServiceFilterParams | null>(null);
@@ -38,37 +37,25 @@ export class ServiceManagementFacade {
     this.loading.set(true);
     const filterParams = this.currentFilter();
 
-    const serviceFilter = new ServiceFilter();
-    if (filterParams?.searchTerm) {
-      serviceFilter.searchTerm = filterParams.searchTerm;
-    }
-
-    const request = new GetPagedServicesRequest({
-      offset: this.currentOffset(),
-      limit: this.currentLimit(),
-      filter: serviceFilter,
-      sort: this.currentSort(),
-    });
-
     this.adminClient.adminServiceClient
-      .getPaged(request)
+      .getPaged(
+        filterParams?.searchTerm,
+        this.currentSort(),
+        this.currentOffset(),
+        this.currentLimit()
+      )
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.service_management.messages.load_error'
-            )
-          );
-          console.error('Error loading services:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {
           this.services.set(response.data || []);
           this.totalRecords.set(response.total || 0);
+        }
+        if (this.initialLoading()) {
+          this.initialLoading.set(false);
         }
       });
   }
@@ -105,29 +92,23 @@ export class ServiceManagementFacade {
   }
 
   navigateToCreateService(): void {
-    this.router.navigate(['/service-management', 'create']);
+    this.router.navigate([CleansiaAdminRoute.SERVICE_MANAGEMENT, 'create']);
   }
 
   navigateToEditService(service: ServiceListItem): void {
     if (service.id) {
-      this.router.navigate(['/service-management', service.id, 'edit']);
+      this.router.navigate([CleansiaAdminRoute.SERVICE_MANAGEMENT, service.id, 'edit']);
     }
   }
 
   deleteService(service: ServiceListItem): void {
     if (!service.id) return;
 
-    this.adminClient.apiClient
-      .adminServiceDelete(service.id)
+    this.adminClient.adminServiceClient
+      .delete(service.id)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.service_management.messages.delete_error')
-          );
-          console.error('Error deleting service:', error);
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response: DeleteServiceResponse | null) => {
         if (response) {

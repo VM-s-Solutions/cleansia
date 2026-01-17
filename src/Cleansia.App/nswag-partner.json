@@ -36,7 +36,7 @@
       "generateConstructorInterface": true,
       "importRequiredTypes": true,
       "baseUrlTokenName": "API_BASE_URL",
-      "output": "libs/core/services/src/lib/client/partner-client.ts",
+      "output": "libs/core/partner-services/src/lib/client/partner-client.ts",
       "newLineBehavior": "Auto",
       "typeMappers": {
         "DateOnly": "string",

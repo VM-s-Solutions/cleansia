@@ -23,6 +23,7 @@ import {
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
+import { CleansiaAdminRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { CountryFormData, CountryFormFacade } from './country-form.facade';
 
@@ -83,7 +84,7 @@ export class CountryFormComponent implements OnInit, OnDestroy {
       if (countryId) {
         this.facade.loadCountry(countryId);
       } else {
-        this.router.navigate(['/country-management']);
+        this.router.navigate([CleansiaAdminRoute.COUNTRY_MANAGEMENT]);
       }
     }
   }

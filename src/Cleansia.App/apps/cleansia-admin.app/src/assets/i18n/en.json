@@ -1,7 +1,68 @@
 {
+  "page_titles": {
+    "admin": {
+      "default": "Admin Portal",
+      "login": "Login",
+      "employees": "Employees",
+      "employee_details": "Employee Details",
+      "pay_periods": "Pay Periods",
+      "pay_period_details": "Pay Period Details",
+      "orders": "Orders",
+      "order_details": "Order Details",
+      "invoices": "Invoices",
+      "invoice_details": "Invoice Details",
+      "reports": "Reports",
+      "services": "Services",
+      "service_create": "Create Service",
+      "service_edit": "Edit Service",
+      "packages": "Packages",
+      "package_create": "Create Package",
+      "package_edit": "Edit Package",
+      "admin_users": "Admin Users",
+      "admin_user_create": "Create Admin User",
+      "admin_user_edit": "Edit Admin User",
+      "languages": "Languages",
+      "language_create": "Create Language",
+      "language_edit": "Edit Language",
+      "countries": "Countries",
+      "country_create": "Create Country",
+      "country_edit": "Edit Country",
+      "currencies": "Currencies",
+      "currency_create": "Create Currency",
+      "currency_edit": "Edit Currency",
+      "company_info": "Company Info",
+      "company_info_create": "Create Company Info",
+      "company_info_edit": "Edit Company Info",
+      "templates": "Templates",
+      "invoice_templates": "Invoice Templates",
+      "invoice_template_create": "Create Invoice Template",
+      "invoice_template_edit": "Edit Invoice Template",
+      "receipt_templates": "Receipt Templates",
+      "receipt_template_create": "Create Receipt Template",
+      "receipt_template_edit": "Edit Receipt Template",
+      "email_templates": "Email Templates",
+      "email_template_translations": "Email Template Translations",
+      "not_found": "Page Not Found"
+    }
+  },
+  "components": {
+    "not_found": {
+      "title": "Page Not Found",
+      "description": "The page you are looking for might have been removed, had its name changed, or is temporarily unavailable."
+    }
+  },
   "global": {
     "yes": "Yes",
     "no": "No",
+    "all": "All",
+    "no_data": "No data to display",
+    "loading": "Loading...",
+    "refresh": "Refresh",
+    "rows_per_page": "Rows per page",
+    "of": "of",
+    "page": "Page {{page}}",
+    "previous_page": "Previous page",
+    "next_page": "Next page",
     "actions": {
       "login": "Login",
       "logout": "Logout",
@@ -12,7 +73,13 @@
       "edit": "Edit",
       "delete": "Delete",
       "add": "Add",
-      "ok": "OK"
+      "ok": "OK",
+      "copy": "Copy",
+      "close": "Close",
+      "previous": "Previous",
+      "next": "Next",
+      "go_back": "Go Back",
+      "go_home": "Go Home"
     },
     "user": {
       "remember_me": "Remember me"
@@ -24,6 +91,13 @@
     "messages": {
       "success": "Success",
       "error": "Error"
+    },
+    "languages": {
+      "en": "English",
+      "cs": "Czech",
+      "de": "German",
+      "sk": "Slovak",
+      "pl": "Polish"
     }
   },
   "sidebar": {
@@ -65,10 +139,13 @@
       "view_details": "View Details",
       "no_employees": "No employees to display",
       "filters": {
-        "search": "Search by name, email or phone",
+        "title": "Filters",
+        "search": "Search",
+        "search_placeholder": "Search by name, email or phone",
         "contract_status": "Contract Status",
         "active_status": "Active Status",
-        "reset": "Reset Filters"
+        "reset": "Reset Filters",
+        "clear_all": "Clear All"
       },
       "reject_dialog": {
         "title": "Reject Employee",
@@ -94,7 +171,8 @@
         "approved": "Approved",
         "rejected": "Rejected",
         "terminated": "Terminated"
-      }
+      },
+      "profile_incomplete_tooltip": "Profile incomplete - cannot approve"
     },
     "employee_detail": {
       "title": "Employee Details",
@@ -217,12 +295,16 @@
       "view_details": "View Details",
       "no_orders": "No orders found",
       "filters": {
-        "search": "Search by customer name or order #",
+        "title": "Filters",
+        "search": "Search",
+        "search_placeholder": "Search by customer name or order #",
         "order_status": "Order Status",
         "payment_status": "Payment Status",
+        "date_range": "Date Range",
         "date_from": "Date From",
         "date_to": "Date To",
-        "reset": "Reset Filters"
+        "reset": "Reset Filters",
+        "clear_all": "Clear All"
       },
       "order_status": {
         "pending": "Pending",
@@ -310,8 +392,12 @@
       "download": "Download PDF",
       "no_invoices": "No invoices found",
       "filters": {
+        "title": "Filters",
+        "search": "Search",
+        "search_placeholder": "Search by invoice number or employee",
         "status": "Invoice Status",
-        "reset": "Reset Filters"
+        "reset": "Reset Filters",
+        "clear_all": "Clear All"
       },
       "invoice_status": {
         "pending": "Pending",
@@ -344,8 +430,11 @@
       "delete_confirm": "Are you sure you want to delete this service? This action cannot be undone.",
       "no_services": "No services found",
       "filters": {
-        "search": "Search by name or description",
-        "reset": "Reset Filters"
+        "title": "Filters",
+        "search": "Search",
+        "search_placeholder": "Search by name or description",
+        "reset": "Reset Filters",
+        "clear_all": "Clear All"
       },
       "columns": {
         "name": "Name",
@@ -404,8 +493,11 @@
       "delete_confirm": "Are you sure you want to delete this package? This action cannot be undone.",
       "no_packages": "No packages found",
       "filters": {
-        "search": "Search by name or description",
-        "reset": "Reset Filters"
+        "title": "Filters",
+        "search": "Search",
+        "search_placeholder": "Search by name or description",
+        "reset": "Reset Filters",
+        "clear_all": "Clear All"
       },
       "columns": {
         "name": "Name",
@@ -453,8 +545,11 @@
       "activate_confirm": "Are you sure you want to activate this administrator? They will regain access to the admin panel.",
       "no_users": "No admin users found",
       "filters": {
-        "search": "Search by name or email",
-        "reset": "Reset Filters"
+        "title": "Filters",
+        "search": "Search",
+        "search_placeholder": "Search by name or email",
+        "reset": "Reset Filters",
+        "clear_all": "Clear All"
       },
       "columns": {
         "name": "Name",
@@ -498,6 +593,13 @@
       "delete_language": "Delete Language",
       "delete_confirm": "Are you sure you want to delete this language? This may affect existing translations.",
       "no_languages": "No languages found",
+      "filters": {
+        "title": "Filters",
+        "search": "Search",
+        "search_placeholder": "Search by code or name",
+        "reset": "Reset Filters",
+        "clear_all": "Clear All"
+      },
       "columns": {
         "code": "Code",
         "name": "Name",
@@ -642,9 +744,9 @@
       "title": "Template Management",
       "description": "Manage invoice, receipt, and email templates",
       "tabs": {
-        "invoice_templates": "Invoice Templates",
-        "receipt_templates": "Receipt Templates",
-        "email_templates": "Email Templates"
+        "invoice": "Invoice Templates",
+        "receipt": "Receipt Templates",
+        "email": "Email Templates"
       },
       "invoice_templates": {
         "title": "Invoice Templates"
@@ -804,8 +906,11 @@
       "delete_confirm": "Are you sure you want to delete this company information? This action cannot be undone.",
       "no_companies": "No company information found",
       "filters": {
-        "search": "Search by name or city",
-        "reset": "Reset Filters"
+        "title": "Filters",
+        "search": "Search",
+        "search_placeholder": "Search by name or city",
+        "reset": "Reset Filters",
+        "clear_all": "Clear All"
       },
       "columns": {
         "legal_name": "Legal Name",
@@ -830,6 +935,12 @@
       "end_date": "End Date",
       "apply_filter": "Apply Filter",
       "reset": "Reset Filters",
+      "filters": {
+        "title": "Filters",
+        "date_range": "Date Range",
+        "reset": "Reset Filters",
+        "clear_all": "Clear All"
+      },
       "revenue_report": "Revenue Report",
       "payroll_report": "Payroll Report",
       "no_data": "No data available for the selected period",
@@ -950,6 +1061,13 @@
     "title": "Pay Period Management",
     "description": "Manage pay periods, close periods, and track employee payments",
     "confirmClose": "Are you sure you want to close this pay period? This action cannot be undone.",
+    "filters": {
+      "title": "Filters",
+      "status": "Status",
+      "year": "Year",
+      "reset": "Reset Filters",
+      "clear_all": "Clear All"
+    },
     "list": {
       "title": "Pay Periods",
       "createButton": "Create Pay Period",
@@ -1031,10 +1149,14 @@
     "common": {
       "invalid_enum_value": "Invalid value provided",
       "max_length": "Maximum length exceeded",
-      "required": "This field is required"
+      "required": "This field is required",
+      "unauthorized": "You are not authorized to perform this action",
+      "error_occurred": "An error occurred. Please try again."
     },
     "company": {
-      "not_found": "Company information not found"
+      "not_found": "Company information not found",
+      "exists_for_country": "Company information already exists for this country",
+      "in_use": "Cannot delete company because it is currently in use"
     },
     "country": {
       "not_existing_id": "Country not found",
@@ -1044,7 +1166,11 @@
     },
     "currency": {
       "invalid": "Invalid currency",
-      "not_found": "Currency not found"
+      "not_found": "Currency not found",
+      "code_already_exists": "A currency with this code already exists",
+      "in_use": "Cannot delete currency because it is currently in use",
+      "cannot_delete_default": "Cannot delete the default currency",
+      "exchange_rate_must_be_positive": "Exchange rate must be a positive number"
     },
     "dispute": {
       "already_exists": "Dispute already exists for this order",
@@ -1054,6 +1180,7 @@
     },
     "email": {
       "invalid_format": "Invalid email format",
+      "invalid_email": "Invalid email address",
       "sending_failed": "Failed to send email"
     },
     "employee": {
@@ -1082,14 +1209,22 @@
       "not_found": "Resource not found"
     },
     "service": {
-      "not_found": "Service not found"
+      "not_found": "Service not found",
+      "in_use": "Cannot delete service because it is currently in use",
+      "translations_required": "Translations are required for all supported languages",
+      "missing_translation_for_language": "Missing translation for required language"
     },
     "language": {
       "not_found": "Language not found",
       "not_supported": "Language not supported",
+      "code_already_exists": "A language with this code already exists",
       "in_use": "Cannot delete language because it is currently in use by other entities (users, templates, receipts, etc.)"
     },
     "order": {
+      "not_confirmed": "Order is not confirmed",
+      "after_photos": {
+        "required": "After photos are required to complete the order"
+      },
       "actual_time": {
         "positive": "Actual time must be positive"
       },
@@ -1120,6 +1255,10 @@
         "not_match": "Total price doesn't match",
         "positive": "Total price must be positive"
       }
+    },
+    "package": {
+      "not_found": "Package not found",
+      "in_use": "Cannot delete package because it is currently in use"
     },
     "pay_config": {
       "already_exists": "Pay configuration already exists",
@@ -1178,7 +1317,33 @@
       "not_existing_id": "User not found",
       "not_found": "User not found"
     },
+    "admin_user": {
+      "not_found": "Admin user not found",
+      "email_exists": "An admin user with this email already exists",
+      "cannot_deactivate_self": "You cannot deactivate your own account",
+      "cannot_delete_self": "You cannot delete your own account"
+    },
+    "template": {
+      "cannot_delete_active": "Cannot delete an active template",
+      "invalid_file_type": "Invalid template file type",
+      "file_size_exceeded": "Template file size exceeded",
+      "file_required": "Template file is required",
+      "invoice": {
+        "not_found": "Invoice template not found",
+        "in_use": "Cannot delete invoice template because it is currently in use"
+      },
+      "receipt": {
+        "not_found": "Receipt template not found",
+        "in_use": "Cannot delete receipt template because it is currently in use"
+      },
+      "email": {
+        "not_found": "Email template not found",
+        "key_exists": "A translation with this key already exists",
+        "invalid_type": "Invalid email template type"
+      }
+    },
     "validation": {
+      "must_be_positive": "Value must be positive",
       "date_must_be_in_past": "Date must be in the past",
       "invalid_age": "Invalid age",
       "invalid_date": "Invalid date",
@@ -1192,5 +1357,269 @@
     "address": {
       "invalid_length": "Invalid address length"
     }
+  },
+  "validation": {
+    "common": {
+      "not_all_fields_filled": "Not all fields are properly filled",
+      "required": "This field is required",
+      "email": "Field must contain a valid email address",
+      "min_length": "Field must contain at least {{ minLength }} characters",
+      "max_length": "Field can contain a maximum of {{ maxLength }} characters",
+      "pattern": "Field does not match the required pattern",
+      "phone_number": "Invalid phone number format",
+      "iban": "Invalid IBAN format",
+      "zip_code": "Invalid zip code format",
+      "confirm_password": "Passwords do not match"
+    },
+    "auth": {
+      "email_not_confirmed": "Email address is not confirmed",
+      "admin_access_required": "Admin access is required to access this panel"
+    },
+    "file": {
+      "required": "Files are required",
+      "invalid_type": "Invalid file type. Please select a valid document file.",
+      "size_too_large": "File size too large. Maximum allowed size is {{ maxSize }}MB.",
+      "too_few_files": "Too few files selected. Minimum required: {{ min }}",
+      "too_many_files": "Too many files selected. Maximum allowed: {{ max }}",
+      "generic_error": "File validation error occurred"
+    },
+    "password": {
+      "uppercase": "at least one uppercase letter",
+      "lowercase": "at least one lowercase letter",
+      "number": "at least one number",
+      "special_char": "at least one special character",
+      "min_length": "minimum 8 characters",
+      "requirements": "Password must contain: {{ requirements }}"
+    }
+  },
+  "api": {
+    "auth": {
+      "google_type_error": "Google authentication type error",
+      "internal_type_error": "Internal authentication type error",
+      "invalid_confirmation_code": "Invalid confirmation code",
+      "invalid_google_token": "Invalid Google token",
+      "invalid_password_format": "Invalid password format. Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number.",
+      "invalid_reset_token": "Invalid or expired password reset token",
+      "same_reset_password": "New password must be different from the current password"
+    },
+    "common": {
+      "invalid_enum_value": "Invalid value provided",
+      "max_length": "Maximum length exceeded",
+      "required": "This field is required",
+      "unauthorized": "You are not authorized to perform this action",
+      "error_occurred": "An error occurred. Please try again."
+    },
+    "currency": {
+      "invalid": "Invalid currency",
+      "not_found": "Currency not found",
+      "code_already_exists": "A currency with this code already exists",
+      "in_use": "Cannot delete currency because it is currently in use",
+      "cannot_delete_default": "Cannot delete the default currency",
+      "exchange_rate_must_be_positive": "Exchange rate must be a positive number"
+    },
+    "email": {
+      "sending_failed": "Failed to send email",
+      "invalid_format": "Invalid email format",
+      "invalid_email": "Invalid email address"
+    },
+    "order": {
+      "cleaning_date": {
+        "future": "Cleaning date must be in the future"
+      },
+      "empty": "Order is empty",
+      "selected_package": {
+        "invalid": "Selected package is invalid"
+      },
+      "selected_services": {
+        "invalid": "Selected services are invalid"
+      },
+      "total_price": {
+        "positive": "Total price must be positive",
+        "not_match": "Total price doesn't match"
+      },
+      "not_found": "Order not found",
+      "already_assigned": "Order is already assigned",
+      "no_available_spots": "No available spots for this order",
+      "employee_already_assigned": "Employee is already assigned to this order",
+      "employee_not_assigned": "Employee is not assigned to this order",
+      "max_employees_exceeded": "Maximum number of employees exceeded",
+      "not_in_progress": "Order is not in progress",
+      "not_confirmed": "Order is not confirmed",
+      "actual_time": {
+        "positive": "Actual time must be positive"
+      },
+      "completion_notes": {
+        "required": "Completion notes are required",
+        "too_long": "Completion notes are too long"
+      },
+      "after_photos": {
+        "required": "After photos are required to complete the order"
+      },
+      "payment_gateway_unavailable": "Payment gateway is unavailable",
+      "creation_failed": "Failed to create order"
+    },
+    "user": {
+      "email_confirmed": "Email is already confirmed",
+      "existing_email": "Email already exists",
+      "not_existing_email": "No user found with this email",
+      "not_existing_id": "User not found",
+      "not_allowed_to_update": "You are not allowed to update this user",
+      "existing_phone_number": "Phone number already exists",
+      "not_found": "User not found"
+    },
+    "employee": {
+      "not_found": "Employee not found",
+      "not_existing_email": "No employee found with this email",
+      "not_allowed_to_update": "You are not allowed to update this employee",
+      "profile_incomplete": "Employee profile is incomplete",
+      "documents_missing": "Required documents are missing",
+      "already_approved": "Employee has already been approved",
+      "already_rejected": "Employee has already been rejected"
+    },
+    "employee_document": {
+      "not_found": "Document not found",
+      "unauthorized": "You are not authorized to access this document",
+      "not_owned": "You can only access your own documents"
+    },
+    "payroll": {
+      "pay_period": {
+        "not_found": "Pay period not found",
+        "not_open": "Pay period is not open"
+      },
+      "invoice": {
+        "not_found": "Invoice not found",
+        "invalid_status": "Invalid invoice status",
+        "already_exists": "Invoice already exists",
+        "pdf_generation_failed": "Failed to generate PDF",
+        "template_not_found": "Invoice template not found",
+        "cannot_cancel_paid": "Cannot cancel a paid invoice",
+        "already_cancelled": "Invoice has already been cancelled"
+      },
+      "unpaid_invoices_exist": "Unpaid invoices exist",
+      "pay": {
+        "already_calculated": "Pay has already been calculated"
+      },
+      "no_unpaid_order_pays": "No unpaid order pays found",
+      "no_active_period": "No active pay period found",
+      "no_pay_configuration": "No pay configuration found",
+      "no_currency": "No currency found",
+      "employee_not_assigned": "Employee not assigned to this order"
+    },
+    "receipt": {
+      "not_found": "Receipt not found",
+      "generation_failed": "Failed to generate receipt"
+    },
+    "pay_period": {
+      "invalid_duration": "Invalid pay period duration",
+      "overlapping_period": "Pay period overlaps with an existing period",
+      "has_order_pays": "Cannot delete pay period that has associated order pays",
+      "not_closed": "Pay period is not closed"
+    },
+    "pay_config": {
+      "service_or_package_required": "Either service or package is required",
+      "cannot_have_both": "Cannot have both service and package",
+      "already_exists": "Pay configuration already exists",
+      "not_found": "Pay configuration not found",
+      "has_order_pays": "Cannot delete pay configuration that has associated order pays",
+      "base_pay_negative": "Base pay cannot be negative",
+      "extra_per_room_negative": "Extra per room cannot be negative",
+      "extra_per_bathroom_negative": "Extra per bathroom cannot be negative",
+      "distance_rate_negative": "Distance rate cannot be negative",
+      "minimum_pay_negative": "Minimum pay cannot be negative",
+      "maximum_pay_negative": "Maximum pay cannot be negative",
+      "maximum_less_than_minimum": "Maximum pay cannot be less than minimum pay"
+    },
+    "file": {
+      "content_type_doesnt_match": "File content type doesn't match",
+      "invalid_file_type": "Invalid file type",
+      "size_exceeded": "File size exceeded maximum allowed size",
+      "count_exceeded": "Too many files uploaded",
+      "count_too_few": "Not enough files uploaded",
+      "required": "File is required"
+    },
+    "address": {
+      "invalid_length": "Invalid address length"
+    },
+    "language": {
+      "not_supported": "Language not supported",
+      "not_found": "Language not found",
+      "code_already_exists": "A language with this code already exists",
+      "in_use": "Cannot delete language because it is currently in use"
+    },
+    "country": {
+      "not_existing_id": "Country not found",
+      "not_found": "Country not found",
+      "iso_code_already_exists": "A country with this ISO code already exists",
+      "in_use": "Cannot delete country because it is currently in use"
+    },
+    "company": {
+      "not_found": "Company information not found",
+      "exists_for_country": "Company information already exists for this country",
+      "in_use": "Cannot delete company because it is currently in use"
+    },
+    "dispute": {
+      "not_found": "Dispute not found",
+      "already_exists": "Dispute already exists for this order",
+      "invalid_refund_amount": "Invalid refund amount",
+      "max_length_exceeded": "Maximum length exceeded"
+    },
+    "admin_user": {
+      "not_found": "Admin user not found",
+      "email_exists": "An admin user with this email already exists",
+      "cannot_deactivate_self": "You cannot deactivate your own account",
+      "cannot_delete_self": "You cannot delete your own account"
+    },
+    "validation": {
+      "invalid_password": "Invalid password",
+      "invalid_date": "Invalid date",
+      "date_must_be_in_past": "Date must be in the past",
+      "invalid_age": "Invalid age",
+      "invalid_phone_number": "Invalid phone number format",
+      "invalid_national_id": "Invalid national ID format",
+      "invalid_tax_id": "Invalid tax ID format",
+      "invalid_iban": "Invalid IBAN format",
+      "invalid_zip_code": "Invalid zip code format",
+      "must_be_positive": "Value must be positive"
+    },
+    "service": {
+      "not_found": "Service not found",
+      "in_use": "Cannot delete service because it is currently in use",
+      "translations_required": "Translations are required for all supported languages",
+      "missing_translation_for_language": "Missing translation for required language"
+    },
+    "package": {
+      "not_found": "Package not found",
+      "in_use": "Cannot delete package because it is currently in use"
+    },
+    "general": {
+      "not_found": "Resource not found"
+    },
+    "template": {
+      "cannot_delete_active": "Cannot delete an active template",
+      "invalid_file_type": "Invalid template file type",
+      "file_size_exceeded": "Template file size exceeded",
+      "file_required": "Template file is required",
+      "invoice": {
+        "not_found": "Invoice template not found",
+        "in_use": "Cannot delete invoice template because it is currently in use"
+      },
+      "receipt": {
+        "not_found": "Receipt template not found",
+        "in_use": "Cannot delete receipt template because it is currently in use"
+      },
+      "email": {
+        "not_found": "Email template not found",
+        "key_exists": "A translation with this key already exists",
+        "invalid_type": "Invalid email template type"
+      }
+    }
+  },
+  "cookies": {
+    "title": "We Value Your Privacy",
+    "description": "We use cookies to enhance your browsing experience, provide personalized content, and analyze our traffic. By clicking \"Accept\", you consent to our use of cookies.",
+    "accept": "Accept All",
+    "decline": "Decline",
+    "learn_more": "Learn more",
+    "banner_title": "Cookie consent banner"
   }
 }

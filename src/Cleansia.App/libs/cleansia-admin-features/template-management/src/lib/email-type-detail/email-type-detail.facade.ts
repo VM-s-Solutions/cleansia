@@ -9,7 +9,7 @@ import {
   SendTestEmailByTypeCommand,
   UpdateEmailTemplateCommand,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -46,15 +46,7 @@ export class EmailTypeDetailFacade {
       .typeDetails(emailType)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.template_management.messages.load_error'
-            )
-          );
-          console.error('Error loading email type detail:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
       .subscribe((detail) => {
@@ -84,25 +76,17 @@ export class EmailTypeDetailFacade {
       value: value,
     });
 
-    this.adminClient.apiClient
-      .adminEmailTemplatePut(templateId, command)
+    this.adminClient.adminEmailTemplateClient
+      .update(templateId, command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.template_management.messages.save_error'
-            )
-          );
-          console.error('Error updating email template:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => {
           this.saving.set(false);
           onComplete?.();
         })
       )
-      .subscribe((response) => {
+      .subscribe((response: unknown) => {
         if (response) {
           this.snackbarService.showSuccess(
             this.translate.instant(
@@ -130,15 +114,7 @@ export class EmailTypeDetailFacade {
       .sendTest(emailType, command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.template_management.messages.send_test_error'
-            )
-          );
-          console.error('Error sending test email:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.sendingTestEmail.set(false))
       )
       .subscribe((response) => {
@@ -171,25 +147,17 @@ export class EmailTypeDetailFacade {
       value: value,
     });
 
-    this.adminClient.apiClient
-      .adminEmailTemplatePost(command)
+    this.adminClient.adminEmailTemplateClient
+      .create(command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.template_management.messages.create_error'
-            )
-          );
-          console.error('Error creating email template translation:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => {
           this.creating.set(false);
           onComplete?.();
         })
       )
-      .subscribe((response) => {
+      .subscribe((response: unknown) => {
         if (response) {
           this.snackbarService.showSuccess(
             this.translate.instant(
@@ -209,25 +177,17 @@ export class EmailTypeDetailFacade {
   ): void {
     this.deleting.set(true);
 
-    this.adminClient.apiClient
-      .adminEmailTemplateDelete(emailTemplateId)
+    this.adminClient.adminEmailTemplateClient
+      .delete(emailTemplateId)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.template_management.messages.delete_error'
-            )
-          );
-          console.error('Error deleting email template translation:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => {
           this.deleting.set(false);
           onComplete?.();
         })
       )
-      .subscribe((response) => {
+      .subscribe((response: unknown) => {
         if (response) {
           this.snackbarService.showSuccess(
             this.translate.instant(
@@ -241,7 +201,7 @@ export class EmailTypeDetailFacade {
   }
 
   navigateBack(): void {
-    this.router.navigate(['/template-management'], {
+    this.router.navigate([CleansiaAdminRoute.TEMPLATE_MANAGEMENT], {
       fragment: 'email-templates',
     });
   }

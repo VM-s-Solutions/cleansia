@@ -23,6 +23,7 @@ import {
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
+import { CleansiaAdminRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { LanguageFormData, LanguageFormFacade } from './language-form.facade';
 
@@ -83,7 +84,7 @@ export class LanguageFormComponent implements OnInit, OnDestroy {
       if (languageId) {
         this.facade.loadLanguage(languageId);
       } else {
-        this.router.navigate(['/language-management']);
+        this.router.navigate([CleansiaAdminRoute.LANGUAGE_MANAGEMENT]);
       }
     }
   }

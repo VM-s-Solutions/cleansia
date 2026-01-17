@@ -1,6 +1,6 @@
 <div class="cleansia-reports">
-  <cleansia-language-switcher />
-  <div class="cleansia-reports__container">
+  <div class="cleansia-reports__container page-wrapper">
+    <cleansia-language-switcher />
     <div class="cleansia-reports__header">
       <cleansia-title [title]="'pages.reports.title' | translate" />
       <p class="cleansia-reports__description">
@@ -8,39 +8,38 @@
       </p>
     </div>
 
-    <!-- Filter Panel -->
-    <div class="filter-panel">
-      <form [formGroup]="dateRangeForm" class="filter-form">
-        <div class="filter-grid">
-          <cleansia-calendar
-            [label]="'pages.reports.start_date' | translate"
-            [formControl]="$any(dateRangeForm.get('startDate'))"
-            [showErrors]="false"
-            floatVariant="on"
-            dateFormat="dd.mm.yy"
-            appendTo="body"
-          />
-          <cleansia-calendar
-            [label]="'pages.reports.end_date' | translate"
-            [formControl]="$any(dateRangeForm.get('endDate'))"
-            [showErrors]="false"
-            floatVariant="on"
-            dateFormat="dd.mm.yy"
-            appendTo="body"
-          />
+    <!-- Filter Header - Chips left, Button right -->
+    <div class="filter-header">
+      <div class="filter-chips-inline">
+        @for (chip of activeFilterChips(); track chip.key) {
+        <div class="filter-chip">
+          <span class="filter-chip-label">{{ chip.label }}:</span>
+          <span class="filter-chip-value">{{ chip.value }}</span>
+          <button
+            class="filter-chip-remove"
+            (click)="removeFilterChip(chip.key)"
+          >
+            <i class="pi pi-times"></i>
+          </button>
         </div>
-
-        <!-- Filter Actions -->
-        <div class="filter-actions">
-          <cleansia-button
-            [label]="'pages.reports.reset' | translate"
-            icon="pi pi-refresh"
-            (clicked)="refreshReport()"
-            severity="secondary"
-            [outlined]="true"
-          />
-        </div>
-      </form>
+        } @if (hasActiveFilters()) {
+        <button class="filter-clear-all-btn" (click)="clearAllFilters()">
+          {{ 'pages.reports.filters.clear_all' | translate }}
+        </button>
+        }
+      </div>
+      <div class="filter-actions">
+        <cleansia-button
+          [label]="'pages.reports.filters.title' | translate"
+          icon="pi pi-filter"
+          [severity]="hasActiveFilters() ? 'primary' : 'secondary'"
+          [outlined]="!hasActiveFilters()"
+          (onClick)="openFilterDrawer()"
+        />
+        @if (hasActiveFilters()) {
+        <span class="filter-count-badge">{{ activeFilterCount() }}</span>
+        }
+      </div>
     </div>
 
     <!-- Report Tabs -->
@@ -178,8 +177,8 @@
                 </h3>
                 <cleansia-table
                   [data]="facade.revenueReport()?.revenueByService || []"
-                  [tableDefinition]="revenueByServiceTableDef"
-                  [paginator]="false"
+                  [columns]="revenueByServiceColumns"
+                  [config]="{ paginator: false }"
                   tableClass="cleansia-reports__table"
                 />
               </div>
@@ -193,8 +192,8 @@
                 </h3>
                 <cleansia-table
                   [data]="facade.revenueReport()?.revenueByPackage || []"
-                  [tableDefinition]="revenueByPackageTableDef"
-                  [paginator]="false"
+                  [columns]="revenueByPackageColumns"
+                  [config]="{ paginator: false }"
                   tableClass="cleansia-reports__table"
                 />
               </div>
@@ -208,8 +207,8 @@
                 </h3>
                 <cleansia-table
                   [data]="facade.revenueReport()?.revenueByPaymentType || []"
-                  [tableDefinition]="revenueByPaymentTypeTableDef"
-                  [paginator]="false"
+                  [columns]="revenueByPaymentTypeColumns"
+                  [config]="{ paginator: false }"
                   tableClass="cleansia-reports__table"
                 />
               </div>
@@ -330,8 +329,8 @@
                 </h3>
                 <cleansia-table
                   [data]="facade.payrollReport()?.employeeSummaries || []"
-                  [tableDefinition]="employeeSummariesTableDef"
-                  [paginator]="false"
+                  [columns]="employeeSummariesColumns"
+                  [config]="{ paginator: false }"
                   tableClass="cleansia-reports__table"
                 />
               </div>
@@ -345,9 +344,8 @@
                 </h3>
                 <cleansia-table
                   [data]="facade.payrollReport()?.payrollByStatus || []"
-                  [tableDefinition]="payrollByStatusTableDef"
-                  [paginator]="false"
-                  tableClass="cleansia-reports__table"
+                  [columns]="payrollByStatusColumns"
+                  [config]="{ paginator: false }"
                 />
               </div>
               }
@@ -360,9 +358,8 @@
                 </h3>
                 <cleansia-table
                   [data]="facade.payrollReport()?.monthlyPayroll || []"
-                  [tableDefinition]="monthlyPayrollTableDef"
-                  [paginator]="false"
-                  tableClass="cleansia-reports__table"
+                  [columns]="monthlyPayrollColumns"
+                  [config]="{ paginator: false }"
                 />
               </div>
               }
@@ -377,5 +374,66 @@
         </p-tabpanels>
       </p-tabs>
     </cleansia-section>
+  </div>
+</div>
+
+<!-- Filter Drawer Backdrop -->
+@if (isFilterDrawerOpen()) {
+<div class="filter-drawer-backdrop" (click)="closeFilterDrawer()"></div>
+}
+
+<!-- Filter Drawer -->
+<div class="filter-drawer" [class.open]="isFilterDrawerOpen()">
+  <div class="filter-drawer-header">
+    <div class="filter-drawer-title">
+      <i class="pi pi-filter"></i>
+      <span>{{ 'pages.reports.filters.title' | translate }}</span>
+    </div>
+    <button class="filter-drawer-close" (click)="closeFilterDrawer()">
+      <i class="pi pi-times"></i>
+    </button>
+  </div>
+
+  <div class="filter-drawer-content">
+    <form [formGroup]="dateRangeForm" class="filter-form">
+      <!-- Date Range Section -->
+      <div class="filter-section">
+        <h3 class="filter-section-title">
+          {{ 'pages.reports.filters.date_range' | translate }}
+        </h3>
+        <div class="filter-date-range">
+          <div class="filter-date-field">
+            <label>{{ 'pages.reports.start_date' | translate }}</label>
+            <cleansia-calendar
+              [formControl]="$any(dateRangeForm.get('startDate'))"
+              [showErrors]="false"
+              floatVariant="on"
+              dateFormat="dd.mm.yy"
+              appendTo="body"
+            />
+          </div>
+          <div class="filter-date-field">
+            <label>{{ 'pages.reports.end_date' | translate }}</label>
+            <cleansia-calendar
+              [formControl]="$any(dateRangeForm.get('endDate'))"
+              [showErrors]="false"
+              floatVariant="on"
+              dateFormat="dd.mm.yy"
+              appendTo="body"
+            />
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="filter-drawer-footer">
+    <cleansia-button
+      [label]="'pages.reports.filters.reset' | translate"
+      icon="pi pi-refresh"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="resetFilters()"
+    />
   </div>
 </div>

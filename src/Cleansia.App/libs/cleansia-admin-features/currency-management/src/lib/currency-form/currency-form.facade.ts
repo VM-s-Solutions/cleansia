@@ -6,7 +6,7 @@ import {
   CurrencyDetailDto,
   UpdateCurrencyCommand,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -37,12 +37,8 @@ export class CurrencyFormFacade {
       .details(currencyId)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.currency_form.messages.load_error')
-          );
-          console.error('Error loading currency:', error);
-          this.router.navigate(['/currency-management']);
+        catchError(() => {
+          this.router.navigate([CleansiaAdminRoute.CURRENCY_MANAGEMENT]);
           return of(null);
         }),
         finalize(() => this.loading.set(false))
@@ -64,17 +60,11 @@ export class CurrencyFormFacade {
       exchangeRate: data.exchangeRate,
     });
 
-    this.adminClient.apiClient
-      .adminCurrencyPost(command)
+    this.adminClient.adminCurrencyClient
+      .create(command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.currency_form.messages.create_error')
-          );
-          console.error('Error creating currency:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
       .subscribe((response) => {
@@ -82,7 +72,7 @@ export class CurrencyFormFacade {
           this.snackbarService.showSuccess(
             this.translate.instant('pages.currency_form.messages.create_success')
           );
-          this.router.navigate(['/currency-management']);
+          this.router.navigate([CleansiaAdminRoute.CURRENCY_MANAGEMENT]);
         }
       });
   }
@@ -98,17 +88,11 @@ export class CurrencyFormFacade {
       exchangeRate: data.exchangeRate,
     });
 
-    this.adminClient.apiClient
-      .adminCurrencyPut(currencyId, command)
+    this.adminClient.adminCurrencyClient
+      .update(currencyId, command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.currency_form.messages.update_error')
-          );
-          console.error('Error updating currency:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
       .subscribe((response) => {
@@ -116,13 +100,13 @@ export class CurrencyFormFacade {
           this.snackbarService.showSuccess(
             this.translate.instant('pages.currency_form.messages.update_success')
           );
-          this.router.navigate(['/currency-management']);
+          this.router.navigate([CleansiaAdminRoute.CURRENCY_MANAGEMENT]);
         }
       });
   }
 
   navigateBack(): void {
-    this.router.navigate(['/currency-management']);
+    this.router.navigate([CleansiaAdminRoute.CURRENCY_MANAGEMENT]);
   }
 
   ngOnDestroy(): void {

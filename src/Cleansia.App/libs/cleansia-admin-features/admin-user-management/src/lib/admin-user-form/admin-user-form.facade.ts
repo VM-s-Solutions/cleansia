@@ -8,7 +8,7 @@ import {
   UpdateAdminUserCommand,
   UpdateAdminUserResponse,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -40,20 +40,14 @@ export class AdminUserFormFacade {
       .details(userId)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.admin_user_form.messages.load_error')
-          );
-          console.error('Error loading admin user:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {
           this.user.set(response);
         } else {
-          this.router.navigate(['/admin-user-management']);
+          this.router.navigate([CleansiaAdminRoute.ADMIN_USER_MANAGEMENT]);
         }
       });
   }
@@ -69,19 +63,11 @@ export class AdminUserFormFacade {
       phoneNumber: data.phoneNumber || undefined,
     });
 
-    this.adminClient.apiClient
-      .adminUserPost(command)
+    this.adminClient.adminUserClient
+      .create(command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.admin_user_form.messages.create_error'
-            )
-          );
-          console.error('Error creating admin user:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
       .subscribe((response: CreateAdminUserResponse | null) => {
@@ -91,7 +77,7 @@ export class AdminUserFormFacade {
               'pages.admin_user_form.messages.create_success'
             )
           );
-          this.router.navigate(['/admin-user-management']);
+          this.router.navigate([CleansiaAdminRoute.ADMIN_USER_MANAGEMENT]);
         }
       });
   }
@@ -106,19 +92,11 @@ export class AdminUserFormFacade {
       phoneNumber: data.phoneNumber || undefined,
     });
 
-    this.adminClient.apiClient
-      .adminUserPut(userId, command)
+    this.adminClient.adminUserClient
+      .update(userId, command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.admin_user_form.messages.update_error'
-            )
-          );
-          console.error('Error updating admin user:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
       .subscribe((response: UpdateAdminUserResponse | null) => {
@@ -128,13 +106,13 @@ export class AdminUserFormFacade {
               'pages.admin_user_form.messages.update_success'
             )
           );
-          this.router.navigate(['/admin-user-management']);
+          this.router.navigate([CleansiaAdminRoute.ADMIN_USER_MANAGEMENT]);
         }
       });
   }
 
   navigateBack(): void {
-    this.router.navigate(['/admin-user-management']);
+    this.router.navigate([CleansiaAdminRoute.ADMIN_USER_MANAGEMENT]);
   }
 
   ngOnDestroy(): void {

@@ -54,10 +54,7 @@ export class LoginFacade extends UnsubscribeControlDirective {
   private createFormGroup(): FormGroup {
     const formGroup = new FormGroup({
       email: new FormControl('', [Validators.required, Validators.email]),
-      password: new FormControl('', [
-        Validators.required,
-        Validators.minLength(6),
-      ]),
+      password: new FormControl('', [Validators.required]),
       rememberMe: new FormControl(false),
     });
     return formGroup;

@@ -10,6 +10,7 @@ import {
   CleansiaSectionComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
+import { CleansiaAdminRoute } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslatePipe } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -30,7 +31,6 @@ import { EmployeeDetailFacade } from './employee-detail.facade';
     ToastModule,
   ],
   templateUrl: './employee-detail.component.html',
-  styleUrl: './employee-detail.component.scss',
   providers: [EmployeeDetailFacade, DialogService],
 })
 export class EmployeeDetailComponent implements OnInit, OnDestroy {
@@ -46,7 +46,7 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
     if (employeeId) {
       this.facade.loadEmployeeDetail(employeeId);
     } else {
-      this.router.navigate(['/employee-management']);
+      this.router.navigate([CleansiaAdminRoute.EMPLOYEE_MANAGEMENT]);
     }
 
     this.store.select(selectDayOfWeekCodes).subscribe((codes: Code[]) => {
@@ -59,7 +59,7 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
   }
 
   goBack(): void {
-    this.router.navigate(['/employee-management']);
+    this.router.navigate([CleansiaAdminRoute.EMPLOYEE_MANAGEMENT]);
   }
 
   getContractStatusClass(status: string): string {

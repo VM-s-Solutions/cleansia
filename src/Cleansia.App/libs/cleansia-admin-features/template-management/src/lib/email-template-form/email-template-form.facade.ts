@@ -6,7 +6,7 @@ import {
   SendTestEmailCommand,
   UpdateEmailTemplateCommand,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -35,13 +35,7 @@ export class EmailTemplateFormFacade {
       .details(templateId)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.template_management.messages.load_error')
-          );
-          console.error('Error loading email template:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
       .subscribe((template) => {
@@ -57,17 +51,11 @@ export class EmailTemplateFormFacade {
       value: data.value,
     });
 
-    this.adminClient.apiClient
-      .adminEmailTemplate(templateId, command)
+    this.adminClient.adminEmailTemplateClient
+      .update(templateId, command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.template_management.messages.save_error')
-          );
-          console.error('Error updating email template:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
       .subscribe((response) => {
@@ -75,7 +63,7 @@ export class EmailTemplateFormFacade {
           this.snackbarService.showSuccess(
             this.translate.instant('pages.template_management.messages.save_success')
           );
-          this.router.navigate(['/template-management', 'email-templates']);
+          this.router.navigate([CleansiaAdminRoute.TEMPLATE_MANAGEMENT, 'email-templates']);
         }
       });
   }
@@ -92,13 +80,7 @@ export class EmailTemplateFormFacade {
       .sendTest(templateId, command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.template_management.messages.send_test_error')
-          );
-          console.error('Error sending test email:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.sendingTestEmail.set(false))
       )
       .subscribe((response) => {
@@ -113,7 +95,7 @@ export class EmailTemplateFormFacade {
   }
 
   navigateBack(): void {
-    this.router.navigate(['/template-management', 'email-templates']);
+    this.router.navigate([CleansiaAdminRoute.TEMPLATE_MANAGEMENT, 'email-templates']);
   }
 
   ngOnDestroy(): void {

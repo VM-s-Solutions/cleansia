@@ -8,7 +8,7 @@ import {
   LanguageListItem,
   UpdateInvoiceTemplateCommand,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -45,13 +45,7 @@ export class InvoiceTemplateFormFacade {
       .download(templateId)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.template_management.messages.download_error')
-          );
-          console.error('Error downloading template:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.downloading.set(false))
       )
       .subscribe((response) => {
@@ -72,13 +66,7 @@ export class InvoiceTemplateFormFacade {
       .download(templateId)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.template_management.messages.download_error')
-          );
-          console.error('Error opening template:', error);
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response?.data) {
@@ -96,13 +84,7 @@ export class InvoiceTemplateFormFacade {
       .details(templateId)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.template_management.messages.load_error')
-          );
-          console.error('Error loading template:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
       .subscribe((template) => {
@@ -115,10 +97,7 @@ export class InvoiceTemplateFormFacade {
       .getOverview()
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          console.error('Error loading countries:', error);
-          return of([]);
-        })
+        catchError(() => of([]))
       )
       .subscribe((countries) => {
         this.countries.set(countries);
@@ -130,10 +109,7 @@ export class InvoiceTemplateFormFacade {
       .getOverview()
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          console.error('Error loading languages:', error);
-          return of([]);
-        })
+        catchError(() => of([]))
       )
       .subscribe((languages) => {
         this.languages.set(languages);
@@ -153,17 +129,11 @@ export class InvoiceTemplateFormFacade {
       fileData: data.fileData ?? undefined,
     });
 
-    this.adminClient.apiClient
-      .adminInvoiceTemplatePost(command)
+    this.adminClient.adminInvoiceTemplateClient
+      .create(command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.template_management.messages.save_error')
-          );
-          console.error('Error creating template:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
       .subscribe((response) => {
@@ -171,7 +141,7 @@ export class InvoiceTemplateFormFacade {
           this.snackbarService.showSuccess(
             this.translate.instant('pages.template_management.messages.create_success')
           );
-          this.router.navigate(['/template-management', 'invoice-templates']);
+          this.router.navigate([CleansiaAdminRoute.TEMPLATE_MANAGEMENT, 'invoice-templates']);
         }
       });
   }
@@ -188,17 +158,11 @@ export class InvoiceTemplateFormFacade {
       fileData: data.fileData ?? undefined,
     });
 
-    this.adminClient.apiClient
-      .adminInvoiceTemplatePut(templateId, command)
+    this.adminClient.adminInvoiceTemplateClient
+      .update(templateId, command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.template_management.messages.save_error')
-          );
-          console.error('Error updating template:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
       .subscribe((response) => {
@@ -206,13 +170,13 @@ export class InvoiceTemplateFormFacade {
           this.snackbarService.showSuccess(
             this.translate.instant('pages.template_management.messages.save_success')
           );
-          this.router.navigate(['/template-management', 'invoice-templates']);
+          this.router.navigate([CleansiaAdminRoute.TEMPLATE_MANAGEMENT, 'invoice-templates']);
         }
       });
   }
 
   navigateBack(): void {
-    this.router.navigate(['/template-management', 'invoice-templates']);
+    this.router.navigate([CleansiaAdminRoute.TEMPLATE_MANAGEMENT, 'invoice-templates']);
   }
 
   ngOnDestroy(): void {

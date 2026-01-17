@@ -1,15 +1,13 @@
 <div class="cleansia-employee-detail">
   <cleansia-language-switcher />
-  <div class="cleansia-employee-detail__container">
+  <div class="cleansia-employee-detail__container page-wrapper">
     <!-- Header with Back Button -->
     <div class="cleansia-employee-detail__header">
       <cleansia-button
         [label]="'pages.employee_detail.back_to_list' | translate"
         icon="pi pi-arrow-left"
         (onClick)="goBack()"
-        severity="secondary"
         [outlined]="true"
-        class="cleansia-employee-detail__back-button"
       />
       <cleansia-title [title]="'pages.employee_detail.title' | translate" />
     </div>

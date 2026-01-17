@@ -38,7 +38,7 @@ public class AdminCurrencyController(IMediator mediator) : ApiController(mediato
         return HandleResult<CurrencyDetailDto>(result);
     }
 
-    [HttpPost]
+    [HttpPost("create")]
     [Permission(Policy.CanCreateCurrency)]
     [ProducesResponseType(typeof(CreateCurrency.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -52,7 +52,7 @@ public class AdminCurrencyController(IMediator mediator) : ApiController(mediato
         return HandleResult<CreateCurrency.Response>(result);
     }
 
-    [HttpPut("{currencyId}")]
+    [HttpPut("update/{currencyId}")]
     [Permission(Policy.CanUpdateCurrency)]
     [ProducesResponseType(typeof(UpdateCurrency.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -72,7 +72,7 @@ public class AdminCurrencyController(IMediator mediator) : ApiController(mediato
         return HandleResult<UpdateCurrency.Response>(result);
     }
 
-    [HttpDelete("{currencyId}")]
+    [HttpDelete("delete/{currencyId}")]
     [Permission(Policy.CanDeleteCurrency)]
     [ProducesResponseType(typeof(DeleteCurrency.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]

@@ -1,18 +1,15 @@
-<div class="currency-form-page">
-  <div class="page-header">
-    <cleansia-title [title]="pageTitle()">
-      <cleansia-language-switcher />
-    </cleansia-title>
-  </div>
-
-  <div class="page-content">
-    <div class="header-actions">
+<div class="cleansia-currency-form">
+  <div class="cleansia-currency-form__container page-wrapper">
+    <cleansia-language-switcher />
+    <!-- Header with Back Button -->
+    <div class="cleansia-currency-form__header">
       <cleansia-button
         [label]="'global.actions.back' | translate"
         icon="pi pi-arrow-left"
-        [outlined]="true"
         (onClick)="onCancel()"
+        [outlined]="true"
       />
+      <cleansia-title [title]="pageTitle()" />
     </div>
 
     @if (facade.loading()) {
@@ -21,7 +18,7 @@
     <form
       [formGroup]="form"
       (ngSubmit)="onSave()"
-      class="currency-form-container"
+      class="cleansia-currency-form__content"
     >
       <cleansia-section [title]="'pages.currency_form.basic_info' | translate">
         <div class="form-grid">

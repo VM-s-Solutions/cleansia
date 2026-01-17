@@ -11,7 +11,7 @@ import {
   CleansiaLoaderComponent,
 } from '@cleansia/components';
 import { OrderAnalyticsDto } from '@cleansia/partner-services';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ChartConfiguration, ChartType } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 
@@ -60,7 +60,8 @@ export class CleansiaOrderDistributionChartComponent {
           label: (context) => {
             const label = context.label || '';
             const value = context.parsed;
-            return `${label}: ${value} orders`;
+            const ordersText = this.translate.instant('pages.dashboard.order_analytics.order_count');
+            return `${label}: ${value} ${ordersText}`;
           },
         },
       },
@@ -85,7 +86,7 @@ export class CleansiaOrderDistributionChartComponent {
     },
   };
 
-  constructor() {
+  constructor(private translate: TranslateService) {
     effect(() => {
       const currentData = this.data();
       if (currentData) {
@@ -125,7 +126,7 @@ export class CleansiaOrderDistributionChartComponent {
 
     if (currentData.weeklyTrends && currentData.weeklyTrends.length > 0) {
       const labels = currentData.weeklyTrends.map(
-        (w) => `Week ${w.weekNumber}`
+        (w) => this.translate.instant('pages.dashboard.order_analytics.week', { number: w.weekNumber })
       );
       const orderCounts = currentData.weeklyTrends.map((w) => w.orderCount);
 
@@ -134,7 +135,7 @@ export class CleansiaOrderDistributionChartComponent {
         datasets: [
           {
             data: orderCounts,
-            label: 'Orders',
+            label: this.translate.instant('pages.dashboard.order_analytics.chart_label'),
             borderColor: '#0284c7',
             backgroundColor: 'rgba(2, 132, 199, 0.1)',
             fill: true,

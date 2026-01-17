@@ -1,7 +1,234 @@
+// ===== CLEANSIA BUTTON COMPONENT =====
+// Modern, rich button design with glass morphism and smooth animations
+
 .cleansia-button {
   min-width: 100%;
+  display: inline-flex;
 
   button {
     width: inherit;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+
+    // Enhanced shadows for depth
+    &:not(.p-button-text):not(.p-button-outlined) {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+
+      &:hover:not(:disabled) {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.1);
+        transform: translateY(-1px);
+      }
+
+      &:active:not(:disabled) {
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+        transform: translateY(0);
+      }
+    }
+
+    // Ripple effect overlay
+    &::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    &:active:not(:disabled)::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    // Outlined buttons with hover fill effect
+    &.p-button-outlined {
+      background: transparent;
+      position: relative;
+
+      &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: currentColor;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        border-radius: inherit;
+        z-index: -1;
+      }
+
+      &:hover:not(:disabled)::after {
+        opacity: 0.08;
+      }
+
+      &:active:not(:disabled)::after {
+        opacity: 0.15;
+      }
+    }
+
+    // Text buttons with subtle background on hover
+    &.p-button-text {
+      &:hover:not(:disabled) {
+        background: rgba(var(--cleansia-primary-rgb), 0.08);
+      }
+
+      &:active:not(:disabled) {
+        background: rgba(var(--cleansia-primary-rgb), 0.15);
+      }
+    }
+
+    // Disabled state
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    // Loading state
+    &.p-button-loading {
+      position: relative;
+
+      .p-button-icon {
+        animation: spin 1s linear infinite;
+      }
+    }
+  }
+
+  // ===== SIZE VARIANTS =====
+  &--small {
+    button {
+      font-size: 0.8125rem;
+      padding: 0.5rem 1rem;
+      min-height: 2rem;
+
+      .p-button-icon {
+        font-size: 0.875rem;
+      }
+
+      &.p-button-icon-only {
+        width: 2rem;
+        height: 2rem;
+        padding: 0.375rem;
+      }
+    }
+  }
+
+  &--medium {
+    button {
+      font-size: 0.9375rem;
+      padding: 0.75rem 1.5rem;
+      min-height: 2.75rem;
+
+      .p-button-icon {
+        font-size: 1rem;
+      }
+
+      &.p-button-icon-only {
+        width: 2.75rem;
+        height: 2.75rem;
+        padding: 0.625rem;
+      }
+    }
+  }
+
+  &--large {
+    button {
+      font-size: 1rem;
+      padding: 1rem 2rem;
+      min-height: 3.5rem;
+
+      .p-button-icon {
+        font-size: 1.125rem;
+      }
+
+      &.p-button-icon-only {
+        width: 3.5rem;
+        height: 3.5rem;
+        padding: 0.875rem;
+      }
+    }
+  }
+
+  // ===== ICON-ONLY BUTTONS =====
+  &--icon-only {
+    min-width: auto;
+
+    button {
+      aspect-ratio: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+
+      // Enhanced shadow for icon-only buttons
+      &:not(.p-button-text):not(.p-button-outlined) {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
+
+        &:hover:not(:disabled) {
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2),
+            0 2px 6px rgba(0, 0, 0, 0.12);
+          transform: translateY(-2px) scale(1.05);
+        }
+
+        &:active:not(:disabled) {
+          transform: translateY(0) scale(0.95);
+        }
+      }
+    }
+  }
+}
+
+// ===== ANIMATIONS =====
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ===== RESPONSIVE =====
+@media (max-width: 768px) {
+  .cleansia-button {
+    &--small button {
+      font-size: 0.75rem;
+      padding: 0.4375rem 0.875rem;
+
+      &.p-button-icon-only {
+        width: 1.875rem;
+        height: 1.875rem;
+      }
+    }
+
+    &--medium button {
+      font-size: 0.875rem;
+      padding: 0.625rem 1.25rem;
+
+      &.p-button-icon-only {
+        width: 2.5rem;
+        height: 2.5rem;
+      }
+    }
+
+    &--large button {
+      font-size: 0.9375rem;
+      padding: 0.875rem 1.75rem;
+
+      &.p-button-icon-only {
+        width: 3rem;
+        height: 3rem;
+      }
+    }
   }
 }

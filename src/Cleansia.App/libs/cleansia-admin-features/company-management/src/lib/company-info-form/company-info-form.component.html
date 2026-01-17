@@ -1,18 +1,24 @@
-<div class="company-info-page">
-  <div class="page-header">
-    <cleansia-title [title]="pageTitle()">
-      <cleansia-language-switcher />
-    </cleansia-title>
-  </div>
+<div class="cleansia-company-info-form">
+  <div class="cleansia-company-info-form__container page-wrapper">
+    <cleansia-language-switcher />
+    <!-- Header with Back Button -->
+    <div class="cleansia-company-info-form__header">
+      <cleansia-button
+        [label]="'global.actions.back' | translate"
+        icon="pi pi-arrow-left"
+        (onClick)="onCancel()"
+        [outlined]="true"
+      />
+      <cleansia-title [title]="pageTitle()" />
+    </div>
 
-  <div class="page-content">
     @if (facade.loading()) {
     <cleansia-loader />
     } @else {
     <form
       [formGroup]="form"
       (ngSubmit)="onSave()"
-      class="company-info-container"
+      class="cleansia-company-info-form__content"
     >
       <!-- Legal Information Section -->
       <cleansia-section
@@ -175,7 +181,6 @@
       <div class="form-actions">
         <cleansia-button
           [label]="'global.actions.cancel' | translate"
-          severity="secondary"
           [outlined]="true"
           (onClick)="onCancel()"
         />

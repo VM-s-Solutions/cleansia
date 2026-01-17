@@ -1,8 +1,9 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
+import { CleansiaAdminRoute } from '@cleansia/services';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { TabsModule } from 'primeng/tabs';
-import { filter } from 'rxjs';
+import { filter, Subject, takeUntil } from 'rxjs';
 import {
   CleansiaLanguageSwitcherComponent,
   CleansiaTitleComponent,
@@ -25,40 +26,60 @@ interface TemplateTab {
     CleansiaTitleComponent,
   ],
   templateUrl: './template-management.component.html',
-  styleUrl: './template-management.component.scss',
 })
-export class TemplateManagementComponent implements OnInit {
+export class TemplateManagementComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
+  private destroy$ = new Subject<void>();
 
-  tabs: TemplateTab[] = [
-    {
-      label: this.translate.instant('pages.template_management.tabs.invoice'),
-      route: 'invoice-templates',
-      icon: 'pi pi-file',
-    },
-    {
-      label: this.translate.instant('pages.template_management.tabs.receipt'),
-      route: 'receipt-templates',
-      icon: 'pi pi-receipt',
-    },
-    {
-      label: this.translate.instant('pages.template_management.tabs.email'),
-      route: 'email-templates',
-      icon: 'pi pi-envelope',
-    },
-  ];
+  tabs: TemplateTab[] = [];
 
   activeTabIndex = signal(0);
 
   ngOnInit(): void {
+    this.rebuildTabs();
     this.updateActiveTab();
 
     this.router.events
-      .pipe(filter((event) => event instanceof NavigationEnd))
+      .pipe(
+        filter((event) => event instanceof NavigationEnd),
+        takeUntil(this.destroy$)
+      )
       .subscribe(() => {
         this.updateActiveTab();
       });
+
+    // Rebuild tabs when language changes
+    this.translate.onLangChange
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.rebuildTabs();
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private rebuildTabs(): void {
+    this.tabs = [
+      {
+        label: this.translate.instant('pages.template_management.tabs.invoice'),
+        route: 'invoice-templates',
+        icon: 'pi pi-file',
+      },
+      {
+        label: this.translate.instant('pages.template_management.tabs.receipt'),
+        route: 'receipt-templates',
+        icon: 'pi pi-receipt',
+      },
+      {
+        label: this.translate.instant('pages.template_management.tabs.email'),
+        route: 'email-templates',
+        icon: 'pi pi-envelope',
+      },
+    ];
   }
 
   private updateActiveTab(): void {
@@ -74,7 +95,7 @@ export class TemplateManagementComponent implements OnInit {
     this.activeTabIndex.set(numIndex);
     const tab = this.tabs[numIndex];
     if (tab) {
-      this.router.navigate(['/template-management', tab.route]);
+      this.router.navigate([CleansiaAdminRoute.TEMPLATE_MANAGEMENT, tab.route]);
     }
   }
 }

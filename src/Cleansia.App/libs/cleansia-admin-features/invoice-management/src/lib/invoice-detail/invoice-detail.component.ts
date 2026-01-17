@@ -12,8 +12,10 @@ import {
   CleansiaSectionComponent,
   CleansiaTableComponent,
   CleansiaTitleComponent,
-  TableDefinition,
+  TableColumn,
+  TableAction,
 } from '@cleansia/components';
+import { CleansiaAdminRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
@@ -36,7 +38,6 @@ import { getOrderPaysTableDefinition } from './invoice-detail.models';
     ToastModule,
   ],
   templateUrl: './invoice-detail.component.html',
-  styleUrl: './invoice-detail.component.scss',
   providers: [InvoiceDetailFacade, DialogService],
 })
 export class InvoiceDetailComponent implements OnInit, OnDestroy {
@@ -47,17 +48,20 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
   readonly EmployeeInvoiceStatus = EmployeeInvoiceStatus;
 
-  orderPaysTableDefinition!: TableDefinition<OrderEmployeePayDto>;
+  columns!: TableColumn<OrderEmployeePayDto>[];
+  actions!: TableAction<OrderEmployeePayDto>[];
 
   ngOnInit(): void {
     const invoiceId = this.route.snapshot.paramMap.get('invoiceId');
     if (invoiceId) {
       this.facade.loadInvoiceDetail(invoiceId);
     } else {
-      this.router.navigate(['/invoice-management']);
+      this.router.navigate([CleansiaAdminRoute.INVOICE_MANAGEMENT]);
     }
 
-    this.orderPaysTableDefinition = getOrderPaysTableDefinition(this.translate);
+    const tableDef = getOrderPaysTableDefinition(this.translate);
+    this.columns = tableDef.columns;
+    this.actions = tableDef.actions;
   }
 
   ngOnDestroy(): void {
@@ -65,7 +69,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   }
 
   goBack(): void {
-    this.router.navigate(['/invoice-management']);
+    this.router.navigate([CleansiaAdminRoute.INVOICE_MANAGEMENT]);
   }
 
   getInvoiceStatusClass(status: EmployeeInvoiceStatus | undefined): string {

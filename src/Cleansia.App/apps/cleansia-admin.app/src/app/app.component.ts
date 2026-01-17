@@ -4,9 +4,11 @@ import { RouterModule } from '@angular/router';
 import { AdminAuthService } from '@cleansia/admin-services';
 import { loadAdminCodes } from '@cleansia/admin-stores';
 import {
+  CleansiaCookieConsentComponent,
   CleansiaSidebarMenuComponent,
   SidebarMenuItem,
 } from '@cleansia/components';
+import { PageTitleService } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -19,6 +21,7 @@ import { ToastModule } from 'primeng/toast';
     ConfirmDialogModule,
     RouterModule,
     CleansiaSidebarMenuComponent,
+    CleansiaCookieConsentComponent,
   ],
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -28,6 +31,7 @@ export class AppComponent implements OnInit {
   private readonly store = inject(Store);
   private readonly translate = inject(TranslateService);
   private readonly authService = inject(AdminAuthService);
+  private readonly pageTitleService = inject(PageTitleService);
 
   sidebarCollapsed = signal(false);
 
@@ -38,6 +42,13 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Initialize page title service
+    this.pageTitleService.initialize({
+      baseTitle: 'Cleansia Admin',
+      defaultTitleKey: 'page_titles.admin.default',
+      faviconPath: 'assets/logos/Logo.ico',
+    });
+
     // Load codes on app initialization
     this.store.dispatch(loadAdminCodes());
   }

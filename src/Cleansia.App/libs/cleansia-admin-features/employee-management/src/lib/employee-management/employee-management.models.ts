@@ -3,7 +3,7 @@ import {
   AdminEmployeeListItem,
   ContractStatus,
 } from '@cleansia/admin-services';
-import { TableDefinition } from '@cleansia/components';
+import { TableColumn, TableAction } from '@cleansia/components';
 import { TranslateService } from '@ngx-translate/core';
 
 export function getEmployeeTableDefinition(
@@ -14,64 +14,69 @@ export function getEmployeeTableDefinition(
   },
   translate: TranslateService,
   contractStatusTemplate?: TemplateRef<AdminEmployeeListItem>
-): TableDefinition<AdminEmployeeListItem> {
+): { columns: TableColumn<AdminEmployeeListItem>[]; actions: TableAction<AdminEmployeeListItem>[] } {
   return {
     columns: [
       {
         id: 'name',
-        headerName: translate.instant('pages.employee_management.name'),
-        value: (row?: AdminEmployeeListItem) =>
-          row ? `${row.firstName || ''} ${row.lastName || ''}`.trim() : '',
+        field: 'firstName',
+        header: translate.instant('pages.employee_management.name'),
+        getValue: (row: AdminEmployeeListItem) =>
+          `${row.firstName || ''} ${row.lastName || ''}`.trim(),
         sortable: true,
-        sortField: 'firstName',
-        columnClass: 'width-15',
+        width: '15%',
       },
       {
         id: 'email',
-        headerName: translate.instant('pages.employee_management.email'),
-        value: 'email',
+        field: 'email',
+        header: translate.instant('pages.employee_management.email'),
         sortable: true,
-        columnClass: 'width-15',
+        width: '15%',
       },
       {
         id: 'phoneNumber',
-        headerName: translate.instant('pages.employee_management.phone'),
-        value: (row?: AdminEmployeeListItem) => row?.phoneNumber || '-',
-        columnClass: 'width-12',
+        field: 'phoneNumber',
+        header: translate.instant('pages.employee_management.phone'),
+        getValue: (row: AdminEmployeeListItem) => row.phoneNumber || '-',
+        width: '12%',
       },
       {
         id: 'nationalityName',
-        headerName: translate.instant('pages.employee_management.nationality'),
-        value: (row?: AdminEmployeeListItem) => row?.nationalityName || '-',
-        columnClass: 'width-12',
+        field: 'nationalityName',
+        header: translate.instant('pages.employee_management.nationality'),
+        getValue: (row: AdminEmployeeListItem) => row.nationalityName || '-',
+        width: '12%',
       },
       {
         id: 'contractStatus',
-        headerName: translate.instant('pages.employee_management.status'),
-        template: contractStatusTemplate,
+        field: 'contractStatus',
+        header: translate.instant('pages.employee_management.status'),
+        customTemplate: contractStatusTemplate,
         sortable: true,
-        sortField: 'contractStatus',
-        columnClass: 'width-12',
+        width: '12%',
       },
       {
         id: 'averageRating',
-        headerName: translate.instant('pages.employee_management.rating'),
-        value: (row?: AdminEmployeeListItem) =>
-          row?.averageRating?.toFixed(1) || '0.0',
-        columnClass: 'width-8',
+        field: 'averageRating',
+        header: translate.instant('pages.employee_management.rating'),
+        getValue: (row: AdminEmployeeListItem) =>
+          row.averageRating?.toFixed(1) || '0.0',
+        width: '8%',
       },
       {
         id: 'complaintsCount',
-        headerName: translate.instant('pages.employee_management.complaints'),
-        value: (row?: AdminEmployeeListItem) =>
-          row?.complaintsCount?.toString() || '0',
-        columnClass: 'width-8',
+        field: 'complaintsCount',
+        header: translate.instant('pages.employee_management.complaints'),
+        getValue: (row: AdminEmployeeListItem) =>
+          row.complaintsCount?.toString() || '0',
+        width: '8%',
       },
       {
         id: 'createdAt',
-        headerName: translate.instant('pages.employee_management.created_at'),
-        value: (row?: AdminEmployeeListItem) => {
-          if (!row?.createdAt) return '';
+        field: 'createdAt',
+        header: translate.instant('pages.employee_management.created_at'),
+        getValue: (row: AdminEmployeeListItem) => {
+          if (!row.createdAt) return '';
           const date =
             row.createdAt instanceof Date
               ? row.createdAt
@@ -79,50 +84,33 @@ export function getEmployeeTableDefinition(
           return date.toLocaleDateString('cs-CZ');
         },
         sortable: true,
-        sortField: 'createdAt',
-        columnClass: 'width-12',
+        width: '12%',
+      },
+    ],
+    actions: [
+      {
+        icon: 'pi pi-eye',
+        tooltip: translate.instant('pages.employee_management.view_details'),
+        color: 'info',
+        onClick: (row: AdminEmployeeListItem) => defs.onViewDetails(row),
       },
       {
-        id: 'actions',
-        headerName: translate.instant('pages.employee_management.actions'),
-        columnActions: [
-          {
-            icon: 'pi pi-eye',
-            onClick: (row: AdminEmployeeListItem) => defs.onViewDetails(row),
-            buttonPalette: 'p-button-info p-button-sm',
-            tooltip: {
-              title: translate.instant(
-                'pages.employee_management.view_details'
-              ),
-              position: 'above',
-            },
-          },
-          {
-            icon: 'pi pi-check',
-            onClick: (row: AdminEmployeeListItem) => defs.onApprove(row),
-            buttonPalette: 'p-button-success p-button-sm',
-            tooltip: {
-              title: translate.instant('pages.employee_management.approve'),
-              position: 'above',
-            },
-            visible: (row: AdminEmployeeListItem) =>
-              row.contractStatus === ContractStatus[ContractStatus.Pending] &&
-              row.isProfileComplete,
-          },
-          {
-            icon: 'pi pi-times',
-            onClick: (row: AdminEmployeeListItem) => defs.onReject(row),
-            buttonPalette: 'p-button-danger p-button-sm',
-            tooltip: {
-              title: translate.instant('pages.employee_management.reject'),
-              position: 'above',
-            },
-            visible: (row: AdminEmployeeListItem) =>
-              row.contractStatus === ContractStatus[ContractStatus.Pending] &&
-              row.isProfileComplete,
-          },
-        ],
-        columnClass: 'width-15',
+        icon: 'pi pi-check',
+        tooltip: translate.instant('pages.employee_management.approve'),
+        color: 'success',
+        onClick: (row: AdminEmployeeListItem) => defs.onApprove(row),
+        visible: (row: AdminEmployeeListItem) =>
+          row.contractStatus === ContractStatus[ContractStatus.Pending] &&
+          row.isProfileComplete,
+      },
+      {
+        icon: 'pi pi-times',
+        tooltip: translate.instant('pages.employee_management.reject'),
+        color: 'danger',
+        onClick: (row: AdminEmployeeListItem) => defs.onReject(row),
+        visible: (row: AdminEmployeeListItem) =>
+          row.contractStatus === ContractStatus[ContractStatus.Pending] &&
+          row.isProfileComplete,
       },
     ],
   };

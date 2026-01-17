@@ -1,6 +1,5 @@
 import { TemplateRef } from '@angular/core';
-import { TableDefinition } from '@cleansia/components';
-import { TranslateService } from '@ngx-translate/core';
+import { TableColumn, TableAction } from '@cleansia/components';
 import { EmployeeInvoice } from './invoices.facade';
 
 export interface InvoicesActions {
@@ -10,28 +9,27 @@ export interface InvoicesActions {
 
 export function getInvoicesTableDefinition(
   actions: InvoicesActions,
-  translate: TranslateService,
   statusTemplate?: TemplateRef<any>
-): TableDefinition<EmployeeInvoice> {
+): { columns: TableColumn<EmployeeInvoice>[]; actions: TableAction<EmployeeInvoice>[] } {
   return {
     columns: [
       {
         id: 'invoiceNumber',
-        headerName: translate.instant('pages.invoices.invoice_number'),
-        value: 'invoiceNumber',
+        field: 'invoiceNumber',
+        header: 'pages.invoices.invoice_number',
         sortable: true,
-        columnClass: 'font-semibold',
       },
       {
         id: 'payPeriodLabel',
-        headerName: translate.instant('pages.invoices.pay_period'),
-        value: 'payPeriodLabel',
+        field: 'payPeriodLabel',
+        header: 'pages.invoices.pay_period',
         sortable: true,
       },
       {
         id: 'generatedAt',
-        headerName: translate.instant('pages.invoices.generated_date'),
-        value: (invoice?: EmployeeInvoice) =>
+        field: 'generatedAt',
+        header: 'pages.invoices.generated_date',
+        getValue: (invoice?: EmployeeInvoice) =>
           invoice
             ? new Date(invoice.generatedAt).toLocaleDateString('cs-CZ')
             : '',
@@ -39,14 +37,15 @@ export function getInvoicesTableDefinition(
       },
       {
         id: 'totalOrders',
-        headerName: translate.instant('pages.invoices.total_orders'),
-        value: 'totalOrders',
+        field: 'totalOrders',
+        header: 'pages.invoices.total_orders',
         sortable: true,
       },
       {
         id: 'totalAmount',
-        headerName: translate.instant('pages.invoices.total_amount'),
-        value: (invoice?: EmployeeInvoice) =>
+        field: 'totalAmount',
+        header: 'pages.invoices.total_amount',
+        getValue: (invoice?: EmployeeInvoice) =>
           invoice
             ? new Intl.NumberFormat('cs-CZ', {
                 style: 'currency',
@@ -54,38 +53,27 @@ export function getInvoicesTableDefinition(
               }).format(invoice.totalAmount)
             : '',
         sortable: true,
+        align: 'right',
       },
       {
         id: 'status',
-        headerName: translate.instant('pages.invoices.status'),
-        template: statusTemplate,
+        field: 'status',
+        header: 'pages.invoices.status',
+        customTemplate: statusTemplate,
         sortable: true,
       },
+    ],
+    actions: [
       {
-        id: 'actions',
-        headerName: translate.instant('global.actions.actions'),
-        columnClass: 'text-right',
-        columnActions: [
-          {
-            icon: 'pi pi-eye',
-            tooltip: {
-              title: translate.instant('pages.invoices.view_details'),
-              position: 'left',
-            },
-            buttonPalette: 'p-button-text p-button-sm',
-            onClick: actions.onViewDetails,
-          },
-          {
-            icon: 'pi pi-download',
-            tooltip: {
-              title: translate.instant('pages.invoices.download_pdf'),
-              position: 'left',
-            },
-            buttonPalette: 'p-button-text p-button-sm',
-            onClick: actions.onDownload,
-            disabled: (invoice: EmployeeInvoice) => !invoice.pdfBlobName,
-          },
-        ],
+        icon: 'pi pi-eye',
+        tooltip: 'pages.invoices.view_details',
+        onClick: actions.onViewDetails,
+      },
+      {
+        icon: 'pi pi-download',
+        tooltip: 'pages.invoices.download_pdf',
+        onClick: actions.onDownload,
+        disabled: (invoice: EmployeeInvoice) => !invoice.pdfBlobName,
       },
     ],
   };

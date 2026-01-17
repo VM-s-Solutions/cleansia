@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, inject, OnDestroy } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectorRef,
+  Component,
+  inject,
+  OnDestroy,
+  TemplateRef,
+  viewChild,
+} from '@angular/core';
 import { CountryListItem } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
@@ -8,14 +16,18 @@ import {
   CleansiaSectionComponent,
   CleansiaTableComponent,
   CleansiaTitleComponent,
-  TableDefinition,
+  TableColumn,
+  TableAction,
 } from '@cleansia/components';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { Subject } from 'rxjs';
+import { Subject, takeUntil } from 'rxjs';
 import { CountryManagementFacade } from './country-management.facade';
-import { getCountryTableDefinition } from './country-management.models';
+import {
+  getCountryFlagCode,
+  getCountryTableDefinition,
+} from './country-management.models';
 
 @Component({
   selector: 'cleansia-admin-country-management',
@@ -35,24 +47,47 @@ import { getCountryTableDefinition } from './country-management.models';
   providers: [CountryManagementFacade, ConfirmationService],
 })
 export class CountryManagementComponent implements AfterViewInit, OnDestroy {
+  private readonly cd = inject(ChangeDetectorRef);
   protected readonly facade = inject(CountryManagementFacade);
   private readonly translate = inject(TranslateService);
   private readonly confirmationService = inject(ConfirmationService);
 
-  countryTableDefinition!: TableDefinition<CountryListItem>;
+  flagTemplate = viewChild<TemplateRef<any>>('flagTemplate');
+
+  countryColumns!: TableColumn<CountryListItem>[];
+  countryActions!: TableAction<CountryListItem>[];
+
+  // Expose helper function to template
+  getCountryFlagCode = getCountryFlagCode;
 
   private destroy$ = new Subject<void>();
 
   ngAfterViewInit(): void {
-    this.countryTableDefinition = getCountryTableDefinition(
+    this.rebuildTableDefinitions();
+    this.cd.detectChanges();
+
+    // Rebuild tables when language changes
+    this.translate.onLangChange
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.rebuildTableDefinitions();
+        this.cd.detectChanges();
+      });
+
+    this.facade.loadCountries();
+  }
+
+  private rebuildTableDefinitions(): void {
+    const tableDef = getCountryTableDefinition(
       {
         onEdit: this.editCountry.bind(this),
         onDelete: this.confirmDeleteCountry.bind(this),
       },
-      this.translate
+      this.translate,
+      this.flagTemplate()
     );
-
-    this.facade.loadCountries();
+    this.countryColumns = tableDef.columns;
+    this.countryActions = tableDef.actions;
   }
 
   ngOnDestroy(): void {

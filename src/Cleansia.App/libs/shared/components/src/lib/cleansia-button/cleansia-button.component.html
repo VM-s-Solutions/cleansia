@@ -1,5 +1,13 @@
 <p-button
-  [class]="size() + ' cleansia-button ' + className()"
+  [class]="
+    size() +
+    ' cleansia-button ' +
+    'cleansia-button--' +
+    buttonSize() +
+    (isIconOnly() ? ' cleansia-button--icon-only' : '') +
+    ' ' +
+    className()
+  "
   [label]="label() || title()"
   [icon]="icon()"
   [iconPos]="iconPosition()"
@@ -8,8 +16,10 @@
   [severity]="severity()"
   [raised]="style() === 'raised-button'"
   [outlined]="outlined()"
-  [rounded]="rounded()"
+  [rounded]="rounded() || isIconOnly()"
   [text]="text()"
   [type]="buttonType()"
+  [pTooltip]="tooltip()"
+  [tooltipPosition]="tooltipPosition()"
   (onClick)="handleClick($event)"
 />

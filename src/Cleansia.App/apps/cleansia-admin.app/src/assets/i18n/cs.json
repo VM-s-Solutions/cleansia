@@ -1,7 +1,68 @@
 {
+  "page_titles": {
+    "admin": {
+      "default": "Administrátorský portál",
+      "login": "Přihlášení",
+      "employees": "Zaměstnanci",
+      "employee_details": "Detail zaměstnance",
+      "pay_periods": "Platební období",
+      "pay_period_details": "Detail platebního období",
+      "orders": "Objednávky",
+      "order_details": "Detail objednávky",
+      "invoices": "Faktury",
+      "invoice_details": "Detail faktury",
+      "reports": "Přehledy",
+      "services": "Služby",
+      "service_create": "Vytvořit službu",
+      "service_edit": "Upravit službu",
+      "packages": "Balíčky",
+      "package_create": "Vytvořit balíček",
+      "package_edit": "Upravit balíček",
+      "admin_users": "Administrátoři",
+      "admin_user_create": "Vytvořit administrátora",
+      "admin_user_edit": "Upravit administrátora",
+      "languages": "Jazyky",
+      "language_create": "Vytvořit jazyk",
+      "language_edit": "Upravit jazyk",
+      "countries": "Země",
+      "country_create": "Vytvořit zemi",
+      "country_edit": "Upravit zemi",
+      "currencies": "Měny",
+      "currency_create": "Vytvořit měnu",
+      "currency_edit": "Upravit měnu",
+      "company_info": "Informace o společnosti",
+      "company_info_create": "Vytvořit informace o společnosti",
+      "company_info_edit": "Upravit informace o společnosti",
+      "templates": "Šablony",
+      "invoice_templates": "Šablony faktur",
+      "invoice_template_create": "Vytvořit šablonu faktury",
+      "invoice_template_edit": "Upravit šablonu faktury",
+      "receipt_templates": "Šablony účtenek",
+      "receipt_template_create": "Vytvořit šablonu účtenky",
+      "receipt_template_edit": "Upravit šablonu účtenky",
+      "email_templates": "E-mailové šablony",
+      "email_template_translations": "Překlady e-mailové šablony",
+      "not_found": "Stránka nenalezena"
+    }
+  },
+  "components": {
+    "not_found": {
+      "title": "Stránka nenalezena",
+      "description": "Stránka, kterou hledáte, byla pravděpodobně odstraněna, přejmenována nebo je dočasně nedostupná."
+    }
+  },
   "global": {
     "yes": "Ano",
     "no": "Ne",
+    "all": "Vše",
+    "no_data": "Žádná data k zobrazení",
+    "loading": "Načítání...",
+    "refresh": "Obnovit",
+    "rows_per_page": "Řádků na stránku",
+    "of": "z",
+    "page": "Stránka {{page}}",
+    "previous_page": "Předchozí stránka",
+    "next_page": "Další stránka",
     "actions": {
       "login": "Přihlásit se",
       "logout": "Odhlásit se",
@@ -12,7 +73,13 @@
       "edit": "Upravit",
       "delete": "Smazat",
       "add": "Přidat",
-      "ok": "OK"
+      "ok": "OK",
+      "copy": "Kopírovat",
+      "close": "Zavřít",
+      "previous": "Předchozí",
+      "next": "Další",
+      "go_back": "Zpět",
+      "go_home": "Domů"
     },
     "user": {
       "remember_me": "Zapamatovat si mě"
@@ -24,6 +91,13 @@
     "messages": {
       "success": "Úspěch",
       "error": "Chyba"
+    },
+    "languages": {
+      "en": "Angličtina",
+      "cs": "Čeština",
+      "de": "Němčina",
+      "sk": "Slovenština",
+      "pl": "Polština"
     }
   },
   "sidebar": {
@@ -65,10 +139,13 @@
       "view_details": "Zobrazit detail",
       "no_employees": "Žádní zaměstnanci k zobrazení",
       "filters": {
-        "search": "Vyhledat dle jména, emailu nebo telefonu",
+        "title": "Filtry",
+        "search": "Vyhledávání",
+        "search_placeholder": "Vyhledat dle jména, emailu nebo telefonu",
         "contract_status": "Stav smlouvy",
         "active_status": "Stav aktivity",
-        "reset": "Resetovat filtry"
+        "reset": "Resetovat filtry",
+        "clear_all": "Vymazat vše"
       },
       "reject_dialog": {
         "title": "Zamítnout zaměstnance",
@@ -94,7 +171,8 @@
         "approved": "Schváleno",
         "rejected": "Zamítnuto",
         "terminated": "Ukončeno"
-      }
+      },
+      "profile_incomplete_tooltip": "Profil nekompletní - nelze schválit"
     },
     "employee_detail": {
       "title": "Detail zaměstnance",
@@ -217,12 +295,16 @@
       "view_details": "Zobrazit detail",
       "no_orders": "Žádné objednávky nenalezeny",
       "filters": {
-        "search": "Hledat dle jména zákazníka nebo č. objednávky",
+        "title": "Filtry",
+        "search": "Vyhledávání",
+        "search_placeholder": "Hledat dle jména zákazníka nebo č. objednávky",
         "order_status": "Stav objednávky",
         "payment_status": "Stav platby",
+        "date_range": "Časové období",
         "date_from": "Datum od",
         "date_to": "Datum do",
-        "reset": "Resetovat filtry"
+        "reset": "Resetovat filtry",
+        "clear_all": "Vymazat vše"
       },
       "order_status": {
         "pending": "Čekající",
@@ -310,8 +392,12 @@
       "download": "Stáhnout PDF",
       "no_invoices": "Nebyly nalezeny žádné faktury",
       "filters": {
+        "title": "Filtry",
+        "search": "Vyhledávání",
+        "search_placeholder": "Hledat dle čísla faktury nebo zaměstnance",
         "status": "Stav faktury",
-        "reset": "Resetovat filtry"
+        "reset": "Resetovat filtry",
+        "clear_all": "Vymazat vše"
       },
       "invoice_status": {
         "pending": "Čekající",
@@ -414,8 +500,11 @@
       "delete_confirm": "Opravdu chcete smazat tuto službu? Tuto akci nelze vrátit zpět.",
       "no_services": "Nebyly nalezeny žádné služby",
       "filters": {
-        "search": "Hledat dle názvu nebo popisu",
-        "reset": "Resetovat filtry"
+        "title": "Filtry",
+        "search": "Vyhledávání",
+        "search_placeholder": "Hledat dle názvu nebo popisu",
+        "reset": "Resetovat filtry",
+        "clear_all": "Vymazat vše"
       },
       "columns": {
         "name": "Název",
@@ -474,8 +563,11 @@
       "delete_confirm": "Opravdu chcete smazat tento balíček? Tuto akci nelze vrátit zpět.",
       "no_packages": "Nebyly nalezeny žádné balíčky",
       "filters": {
-        "search": "Hledat dle názvu nebo popisu",
-        "reset": "Resetovat filtry"
+        "title": "Filtry",
+        "search": "Vyhledávání",
+        "search_placeholder": "Hledat dle názvu nebo popisu",
+        "reset": "Resetovat filtry",
+        "clear_all": "Vymazat vše"
       },
       "columns": {
         "name": "Název",
@@ -523,8 +615,11 @@
       "activate_confirm": "Opravdu chcete aktivovat tohoto administrátora? Znovu získá přístup do admin panelu.",
       "no_users": "Nebyli nalezeni žádní administrátoři",
       "filters": {
-        "search": "Hledat dle jména nebo emailu",
-        "reset": "Resetovat filtry"
+        "title": "Filtry",
+        "search": "Vyhledávání",
+        "search_placeholder": "Hledat dle jména nebo emailu",
+        "reset": "Resetovat filtry",
+        "clear_all": "Vymazat vše"
       },
       "columns": {
         "name": "Jméno",
@@ -568,6 +663,13 @@
       "delete_language": "Smazat jazyk",
       "delete_confirm": "Opravdu chcete smazat tento jazyk? Toto může ovlivnit existující překlady.",
       "no_languages": "Žádné jazyky nenalezeny",
+      "filters": {
+        "title": "Filtry",
+        "search": "Vyhledávání",
+        "search_placeholder": "Hledat dle kódu nebo názvu",
+        "reset": "Resetovat filtry",
+        "clear_all": "Vymazat vše"
+      },
       "columns": {
         "code": "Kód",
         "name": "Název",
@@ -712,9 +814,9 @@
       "title": "Správa šablon",
       "description": "Správa šablon faktur, účtenek a e-mailů",
       "tabs": {
-        "invoice_templates": "Šablony faktur",
-        "receipt_templates": "Šablony účtenek",
-        "email_templates": "Šablony e-mailů"
+        "invoice": "Šablony faktur",
+        "receipt": "Šablony účtenek",
+        "email": "Šablony e-mailů"
       },
       "invoice_templates": {
         "title": "Šablony faktur"
@@ -874,8 +976,11 @@
       "delete_confirm": "Opravdu chcete smazat tyto údaje o společnosti? Tuto akci nelze vrátit zpět.",
       "no_companies": "Žádné údaje o společnosti nenalezeny",
       "filters": {
-        "search": "Hledat podle názvu nebo města",
-        "reset": "Resetovat filtry"
+        "title": "Filtry",
+        "search": "Vyhledávání",
+        "search_placeholder": "Hledat podle názvu nebo města",
+        "reset": "Resetovat filtry",
+        "clear_all": "Vymazat vše"
       },
       "columns": {
         "legal_name": "Právní název",
@@ -900,6 +1005,12 @@
       "end_date": "Datum do",
       "apply_filter": "Použít filtr",
       "reset": "Resetovat filtry",
+      "filters": {
+        "title": "Filtry",
+        "date_range": "Časové období",
+        "reset": "Resetovat filtry",
+        "clear_all": "Vymazat vše"
+      },
       "revenue_report": "Přehled tržeb",
       "payroll_report": "Přehled mezd",
       "no_data": "Pro vybrané období nejsou k dispozici žádná data",
@@ -950,6 +1061,13 @@
     "title": "Správa platebních období",
     "description": "Spravujte platební období, uzavírejte období a sledujte platby zaměstnanců",
     "confirmClose": "Opravdu chcete uzavřít toto platební období? Tuto akci nelze vrátit zpět.",
+    "filters": {
+      "title": "Filtry",
+      "status": "Stav",
+      "year": "Rok",
+      "reset": "Resetovat filtry",
+      "clear_all": "Vymazat vše"
+    },
     "list": {
       "title": "Platební období",
       "createButton": "Vytvořit platební období",
@@ -1031,10 +1149,14 @@
     "common": {
       "invalid_enum_value": "Neplatná hodnota",
       "max_length": "Překročena maximální délka",
-      "required": "Toto pole je povinné"
+      "required": "Toto pole je povinné",
+      "unauthorized": "Nemáte oprávnění provést tuto akci",
+      "error_occurred": "Došlo k chybě. Zkuste to prosím znovu."
     },
     "company": {
-      "not_found": "Informace o společnosti nenalezeny"
+      "not_found": "Informace o společnosti nenalezeny",
+      "exists_for_country": "Informace o společnosti pro tuto zemi již existují",
+      "in_use": "Společnost nelze smazat, protože je aktuálně používána"
     },
     "country": {
       "not_existing_id": "Země nenalezena",
@@ -1044,7 +1166,11 @@
     },
     "currency": {
       "invalid": "Neplatná měna",
-      "not_found": "Měna nenalezena"
+      "not_found": "Měna nenalezena",
+      "code_already_exists": "Měna s tímto kódem již existuje",
+      "in_use": "Měnu nelze smazat, protože je aktuálně používána",
+      "cannot_delete_default": "Výchozí měnu nelze smazat",
+      "exchange_rate_must_be_positive": "Směnný kurz musí být kladné číslo"
     },
     "dispute": {
       "already_exists": "Spor pro tuto objednávku již existuje",
@@ -1054,6 +1180,7 @@
     },
     "email": {
       "invalid_format": "Neplatný formát e-mailu",
+      "invalid_email": "Neplatná e-mailová adresa",
       "sending_failed": "Nepodařilo se odeslat e-mail"
     },
     "employee": {
@@ -1082,14 +1209,22 @@
       "not_found": "Zdroj nenalezen"
     },
     "service": {
-      "not_found": "Služba nenalezena"
+      "not_found": "Služba nenalezena",
+      "in_use": "Službu nelze smazat, protože je aktuálně používána",
+      "translations_required": "Překlady jsou vyžadovány pro všechny podporované jazyky",
+      "missing_translation_for_language": "Chybí překlad pro požadovaný jazyk"
     },
     "language": {
       "not_found": "Jazyk nenalezen",
       "not_supported": "Jazyk není podporován",
+      "code_already_exists": "Jazyk s tímto kódem již existuje",
       "in_use": "Jazyk nelze smazat, protože je používán jinými entitami (uživatelé, šablony, účtenky atd.)"
     },
     "order": {
+      "not_confirmed": "Objednávka není potvrzena",
+      "after_photos": {
+        "required": "Pro dokončení objednávky jsou vyžadovány fotografie po úklidu"
+      },
       "actual_time": {
         "positive": "Skutečný čas musí být kladný"
       },
@@ -1120,6 +1255,10 @@
         "not_match": "Celková cena neodpovídá",
         "positive": "Celková cena musí být kladná"
       }
+    },
+    "package": {
+      "not_found": "Balíček nenalezen",
+      "in_use": "Balíček nelze smazat, protože je aktuálně používán"
     },
     "pay_config": {
       "already_exists": "Konfigurace platby již existuje",
@@ -1178,7 +1317,33 @@
       "not_existing_id": "Uživatel nenalezen",
       "not_found": "Uživatel nenalezen"
     },
+    "admin_user": {
+      "not_found": "Administrátor nenalezen",
+      "email_exists": "Administrátor s tímto e-mailem již existuje",
+      "cannot_deactivate_self": "Nemůžete deaktivovat svůj vlastní účet",
+      "cannot_delete_self": "Nemůžete smazat svůj vlastní účet"
+    },
+    "template": {
+      "cannot_delete_active": "Nelze smazat aktivní šablonu",
+      "invalid_file_type": "Neplatný typ souboru šablony",
+      "file_size_exceeded": "Velikost souboru šablony překročena",
+      "file_required": "Soubor šablony je povinný",
+      "invoice": {
+        "not_found": "Šablona faktury nenalezena",
+        "in_use": "Šablonu faktury nelze smazat, protože je aktuálně používána"
+      },
+      "receipt": {
+        "not_found": "Šablona účtenky nenalezena",
+        "in_use": "Šablonu účtenky nelze smazat, protože je aktuálně používána"
+      },
+      "email": {
+        "not_found": "E-mailová šablona nenalezena",
+        "key_exists": "Překlad s tímto klíčem již existuje",
+        "invalid_type": "Neplatný typ e-mailové šablony"
+      }
+    },
     "validation": {
+      "must_be_positive": "Hodnota musí být kladná",
       "date_must_be_in_past": "Datum musí být v minulosti",
       "invalid_age": "Neplatný věk",
       "invalid_date": "Neplatné datum",
@@ -1192,5 +1357,269 @@
     "address": {
       "invalid_length": "Neplatná délka adresy"
     }
+  },
+  "validation": {
+    "common": {
+      "not_all_fields_filled": "Všechna pole nejsou správně vyplněna",
+      "required": "Toto pole je povinné",
+      "email": "Pole musí obsahovat platnou e-mailovou adresu",
+      "min_length": "Pole musí obsahovat alespoň {{ minLength }} znaků",
+      "max_length": "Pole může obsahovat maximálně {{ maxLength }} znaků",
+      "pattern": "Pole neodpovídá požadovanému vzoru",
+      "phone_number": "Neplatný formát telefonního čísla",
+      "iban": "Neplatný formát IBAN",
+      "zip_code": "Neplatný formát PSČ",
+      "confirm_password": "Hesla se neshodují"
+    },
+    "auth": {
+      "email_not_confirmed": "E-mailová adresa není potvrzena",
+      "admin_access_required": "Pro přístup k tomuto panelu je vyžadován administrátorský přístup"
+    },
+    "file": {
+      "required": "Soubory jsou povinné",
+      "invalid_type": "Neplatný typ souboru. Vyberte platný dokument.",
+      "size_too_large": "Soubor je příliš velký. Maximální povolená velikost je {{ maxSize }}MB.",
+      "too_few_files": "Vybráno příliš málo souborů. Minimum: {{ min }}",
+      "too_many_files": "Vybráno příliš mnoho souborů. Maximum: {{ max }}",
+      "generic_error": "Došlo k chybě při validaci souboru"
+    },
+    "password": {
+      "uppercase": "alespoň jedno velké písmeno",
+      "lowercase": "alespoň jedno malé písmeno",
+      "number": "alespoň jedno číslo",
+      "special_char": "alespoň jeden speciální znak",
+      "min_length": "minimálně 8 znaků",
+      "requirements": "Heslo musí obsahovat: {{ requirements }}"
+    }
+  },
+  "api": {
+    "auth": {
+      "google_type_error": "Chyba typu Google autentizace",
+      "internal_type_error": "Chyba typu interní autentizace",
+      "invalid_confirmation_code": "Neplatný potvrzovací kód",
+      "invalid_google_token": "Neplatný Google token",
+      "invalid_password_format": "Neplatný formát hesla. Heslo musí mít alespoň 8 znaků a obsahovat alespoň jedno velké písmeno, jedno malé písmeno a jedno číslo.",
+      "invalid_reset_token": "Neplatný nebo vypršelý token pro obnovení hesla",
+      "same_reset_password": "Nové heslo musí být odlišné od současného hesla"
+    },
+    "common": {
+      "invalid_enum_value": "Neplatná hodnota",
+      "max_length": "Překročena maximální délka",
+      "required": "Toto pole je povinné",
+      "unauthorized": "Nemáte oprávnění provést tuto akci",
+      "error_occurred": "Došlo k chybě. Zkuste to prosím znovu."
+    },
+    "currency": {
+      "invalid": "Neplatná měna",
+      "not_found": "Měna nenalezena",
+      "code_already_exists": "Měna s tímto kódem již existuje",
+      "in_use": "Měnu nelze smazat, protože je aktuálně používána",
+      "cannot_delete_default": "Výchozí měnu nelze smazat",
+      "exchange_rate_must_be_positive": "Směnný kurz musí být kladné číslo"
+    },
+    "email": {
+      "sending_failed": "Nepodařilo se odeslat e-mail",
+      "invalid_format": "Neplatný formát e-mailu",
+      "invalid_email": "Neplatná e-mailová adresa"
+    },
+    "order": {
+      "cleaning_date": {
+        "future": "Datum úklidu musí být v budoucnosti"
+      },
+      "empty": "Objednávka je prázdná",
+      "selected_package": {
+        "invalid": "Vybraný balíček je neplatný"
+      },
+      "selected_services": {
+        "invalid": "Vybrané služby jsou neplatné"
+      },
+      "total_price": {
+        "positive": "Celková cena musí být kladná",
+        "not_match": "Celková cena neodpovídá"
+      },
+      "not_found": "Objednávka nenalezena",
+      "already_assigned": "Objednávka je již přiřazena",
+      "no_available_spots": "Pro tuto objednávku nejsou k dispozici žádná volná místa",
+      "employee_already_assigned": "Zaměstnanec je již přiřazen k této objednávce",
+      "employee_not_assigned": "Zaměstnanec není přiřazen k této objednávce",
+      "max_employees_exceeded": "Překročen maximální počet zaměstnanců",
+      "not_in_progress": "Objednávka není v průběhu",
+      "not_confirmed": "Objednávka není potvrzena",
+      "actual_time": {
+        "positive": "Skutečný čas musí být kladný"
+      },
+      "completion_notes": {
+        "required": "Poznámky k dokončení jsou povinné",
+        "too_long": "Poznámky k dokončení jsou příliš dlouhé"
+      },
+      "after_photos": {
+        "required": "Pro dokončení objednávky jsou vyžadovány fotografie po úklidu"
+      },
+      "payment_gateway_unavailable": "Platební brána není k dispozici",
+      "creation_failed": "Nepodařilo se vytvořit objednávku"
+    },
+    "user": {
+      "email_confirmed": "E-mail je již potvrzen",
+      "existing_email": "E-mail již existuje",
+      "not_existing_email": "Uživatel s tímto e-mailem nebyl nalezen",
+      "not_existing_id": "Uživatel nenalezen",
+      "not_allowed_to_update": "Nemáte oprávnění upravit tohoto uživatele",
+      "existing_phone_number": "Telefonní číslo již existuje",
+      "not_found": "Uživatel nenalezen"
+    },
+    "employee": {
+      "not_found": "Zaměstnanec nenalezen",
+      "not_existing_email": "Zaměstnanec s tímto e-mailem nebyl nalezen",
+      "not_allowed_to_update": "Nemáte oprávnění upravit tohoto zaměstnance",
+      "profile_incomplete": "Profil zaměstnance je nekompletní",
+      "documents_missing": "Chybí požadované dokumenty",
+      "already_approved": "Zaměstnanec již byl schválen",
+      "already_rejected": "Zaměstnanec již byl zamítnut"
+    },
+    "employee_document": {
+      "not_found": "Dokument nenalezen",
+      "unauthorized": "Nemáte oprávnění k přístupu k tomuto dokumentu",
+      "not_owned": "Můžete přistupovat pouze ke svým vlastním dokumentům"
+    },
+    "payroll": {
+      "pay_period": {
+        "not_found": "Platební období nenalezeno",
+        "not_open": "Platební období není otevřené"
+      },
+      "invoice": {
+        "not_found": "Faktura nenalezena",
+        "invalid_status": "Neplatný stav faktury",
+        "already_exists": "Faktura již existuje",
+        "pdf_generation_failed": "Nepodařilo se vygenerovat PDF",
+        "template_not_found": "Šablona faktury nenalezena",
+        "cannot_cancel_paid": "Nelze zrušit zaplacenou fakturu",
+        "already_cancelled": "Faktura již byla zrušena"
+      },
+      "unpaid_invoices_exist": "Existují nezaplacené faktury",
+      "pay": {
+        "already_calculated": "Mzda již byla vypočtena"
+      },
+      "no_unpaid_order_pays": "Nenalezeny žádné nezaplacené platby objednávek",
+      "no_active_period": "Nenalezeno žádné aktivní platební období",
+      "no_pay_configuration": "Konfigurace platby nenalezena",
+      "no_currency": "Měna nenalezena",
+      "employee_not_assigned": "Zaměstnanec není přiřazen k této objednávce"
+    },
+    "receipt": {
+      "not_found": "Potvrzení nenalezeno",
+      "generation_failed": "Nepodařilo se vygenerovat potvrzení"
+    },
+    "pay_period": {
+      "invalid_duration": "Neplatná délka platebního období",
+      "overlapping_period": "Platební období se překrývá s existujícím obdobím",
+      "has_order_pays": "Nelze smazat platební období, které má přiřazené platby objednávek",
+      "not_closed": "Platební období není uzavřeno"
+    },
+    "pay_config": {
+      "service_or_package_required": "Je vyžadována buď služba nebo balíček",
+      "cannot_have_both": "Nelze mít současně službu i balíček",
+      "already_exists": "Konfigurace platby již existuje",
+      "not_found": "Konfigurace platby nenalezena",
+      "has_order_pays": "Nelze smazat konfiguraci platby, která má přiřazené platby objednávek",
+      "base_pay_negative": "Základní mzda nemůže být záporná",
+      "extra_per_room_negative": "Příplatek za místnost nemůže být záporný",
+      "extra_per_bathroom_negative": "Příplatek za koupelnu nemůže být záporný",
+      "distance_rate_negative": "Sazba za vzdálenost nemůže být záporná",
+      "minimum_pay_negative": "Minimální mzda nemůže být záporná",
+      "maximum_pay_negative": "Maximální mzda nemůže být záporná",
+      "maximum_less_than_minimum": "Maximální mzda nemůže být nižší než minimální mzda"
+    },
+    "file": {
+      "content_type_doesnt_match": "Typ obsahu souboru neodpovídá",
+      "invalid_file_type": "Neplatný typ souboru",
+      "size_exceeded": "Velikost souboru překročila maximální povolenou velikost",
+      "count_exceeded": "Nahráno příliš mnoho souborů",
+      "count_too_few": "Nahráno příliš málo souborů",
+      "required": "Soubor je povinný"
+    },
+    "address": {
+      "invalid_length": "Neplatná délka adresy"
+    },
+    "language": {
+      "not_supported": "Jazyk není podporován",
+      "not_found": "Jazyk nenalezen",
+      "code_already_exists": "Jazyk s tímto kódem již existuje",
+      "in_use": "Jazyk nelze smazat, protože je používán jinými entitami"
+    },
+    "country": {
+      "not_existing_id": "Země nenalezena",
+      "not_found": "Země nenalezena",
+      "iso_code_already_exists": "Země s tímto ISO kódem již existuje",
+      "in_use": "Zemi nelze smazat, protože je aktuálně používána"
+    },
+    "company": {
+      "not_found": "Informace o společnosti nenalezeny",
+      "exists_for_country": "Informace o společnosti pro tuto zemi již existují",
+      "in_use": "Společnost nelze smazat, protože je aktuálně používána"
+    },
+    "dispute": {
+      "not_found": "Spor nenalezen",
+      "already_exists": "Spor pro tuto objednávku již existuje",
+      "invalid_refund_amount": "Neplatná částka vrácení peněz",
+      "max_length_exceeded": "Překročena maximální délka"
+    },
+    "admin_user": {
+      "not_found": "Administrátor nenalezen",
+      "email_exists": "Administrátor s tímto e-mailem již existuje",
+      "cannot_deactivate_self": "Nemůžete deaktivovat svůj vlastní účet",
+      "cannot_delete_self": "Nemůžete smazat svůj vlastní účet"
+    },
+    "validation": {
+      "invalid_password": "Neplatné heslo",
+      "invalid_date": "Neplatné datum",
+      "date_must_be_in_past": "Datum musí být v minulosti",
+      "invalid_age": "Neplatný věk",
+      "invalid_phone_number": "Neplatný formát telefonního čísla",
+      "invalid_national_id": "Neplatný formát čísla občanského průkazu",
+      "invalid_tax_id": "Neplatný formát DIČ",
+      "invalid_iban": "Neplatný formát IBAN",
+      "invalid_zip_code": "Neplatný formát PSČ",
+      "must_be_positive": "Hodnota musí být kladná"
+    },
+    "service": {
+      "not_found": "Služba nenalezena",
+      "in_use": "Službu nelze smazat, protože je aktuálně používána",
+      "translations_required": "Překlady jsou vyžadovány pro všechny podporované jazyky",
+      "missing_translation_for_language": "Chybí překlad pro požadovaný jazyk"
+    },
+    "package": {
+      "not_found": "Balíček nenalezen",
+      "in_use": "Balíček nelze smazat, protože je aktuálně používán"
+    },
+    "general": {
+      "not_found": "Zdroj nenalezen"
+    },
+    "template": {
+      "cannot_delete_active": "Nelze smazat aktivní šablonu",
+      "invalid_file_type": "Neplatný typ souboru šablony",
+      "file_size_exceeded": "Velikost souboru šablony překročena",
+      "file_required": "Soubor šablony je povinný",
+      "invoice": {
+        "not_found": "Šablona faktury nenalezena",
+        "in_use": "Šablonu faktury nelze smazat, protože je aktuálně používána"
+      },
+      "receipt": {
+        "not_found": "Šablona účtenky nenalezena",
+        "in_use": "Šablonu účtenky nelze smazat, protože je aktuálně používána"
+      },
+      "email": {
+        "not_found": "E-mailová šablona nenalezena",
+        "key_exists": "Překlad s tímto klíčem již existuje",
+        "invalid_type": "Neplatný typ e-mailové šablony"
+      }
+    }
+  },
+  "cookies": {
+    "title": "Vaše soukromí je pro nás důležité",
+    "description": "Používáme cookies pro zlepšení vašeho prohlížení, poskytování personalizovaného obsahu a analýzu návštěvnosti. Kliknutím na \"Přijmout\" souhlasíte s používáním cookies.",
+    "accept": "Přijmout vše",
+    "decline": "Odmítnout",
+    "learn_more": "Více informací",
+    "banner_title": "Banner souhlasu s cookies"
   }
 }

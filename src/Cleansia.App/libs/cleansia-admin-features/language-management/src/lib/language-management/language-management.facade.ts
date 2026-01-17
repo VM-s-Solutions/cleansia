@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AdminClient, LanguageListItem } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -16,6 +16,7 @@ export class LanguageManagementFacade {
 
   readonly languages = signal<LanguageListItem[]>([]);
   readonly loading = signal<boolean>(false);
+  readonly initialLoading = signal<boolean>(true);
 
   loadLanguages(): void {
     this.loading.set(true);
@@ -24,48 +25,35 @@ export class LanguageManagementFacade {
       .getOverview()
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.language_management.messages.load_error'
-            )
-          );
-          console.error('Error loading languages:', error);
-          return of([]);
-        }),
+        catchError(() => of([])),
         finalize(() => this.loading.set(false))
       )
       .subscribe((languages) => {
         this.languages.set(languages);
+        if (this.initialLoading()) {
+          this.initialLoading.set(false);
+        }
       });
   }
 
   navigateToCreateLanguage(): void {
-    this.router.navigate(['/language-management', 'create']);
+    this.router.navigate([CleansiaAdminRoute.LANGUAGE_MANAGEMENT, 'create']);
   }
 
   navigateToEditLanguage(language: LanguageListItem): void {
     if (language.id) {
-      this.router.navigate(['/language-management', language.id, 'edit']);
+      this.router.navigate([CleansiaAdminRoute.LANGUAGE_MANAGEMENT, language.id, 'edit']);
     }
   }
 
   deleteLanguage(language: LanguageListItem): void {
     if (!language.id) return;
 
-    this.adminClient.apiClient
-      .adminLanguageDelete(language.id)
+    this.adminClient.adminLanguageClient
+      .delete(language.id)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.language_management.messages.delete_error'
-            )
-          );
-          console.error('Error deleting language:', error);
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {

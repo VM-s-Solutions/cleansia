@@ -7,5 +7,10 @@ namespace Cleansia.Core.AppServices.Features.EmployeePayroll.Filters;
 public record EmployeeInvoiceFilter(
     string? EmployeeId,
     string? PayPeriodId,
-    EmployeeInvoiceStatus[]? Statuses
+    EmployeeInvoiceStatus[]? Statuses,
+    string? InvoiceNumber = null,
+    decimal? MinAmount = null,
+    decimal? MaxAmount = null,
+    DateTime? DateFrom = null,
+    DateTime? DateTo = null
 );

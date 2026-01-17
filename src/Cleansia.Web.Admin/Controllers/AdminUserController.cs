@@ -14,14 +14,14 @@ namespace Cleansia.Web.Admin.Controllers;
 [ApiController]
 public class AdminUserController(IMediator mediator) : ApiController(mediator)
 {
-    [HttpPost("get-paged")]
+    [HttpGet("get-paged")]
     [Permission(Policy.CanViewAdminUsers)]
     [ProducesResponseType(typeof(PagedData<AdminUserListItem>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetPagedAdminUsers(
-        [FromBody] GetPagedAdminUsers.Request request,
+        [FromQuery] GetPagedAdminUsers.Request request,
         CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(request, cancellationToken);
@@ -43,7 +43,7 @@ public class AdminUserController(IMediator mediator) : ApiController(mediator)
         return HandleResult<AdminUserDetailDto>(result);
     }
 
-    [HttpPost]
+    [HttpPost("create")]
     [Permission(Policy.CanCreateAdminUser)]
     [ProducesResponseType(typeof(CreateAdminUser.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -57,7 +57,7 @@ public class AdminUserController(IMediator mediator) : ApiController(mediator)
         return HandleResult<CreateAdminUser.Response>(result);
     }
 
-    [HttpPut("{userId}")]
+    [HttpPut("update/{userId}")]
     [Permission(Policy.CanUpdateAdminUser)]
     [ProducesResponseType(typeof(UpdateAdminUser.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]

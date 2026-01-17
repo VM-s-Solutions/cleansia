@@ -1,15 +1,13 @@
 <div class="cleansia-pay-period-detail">
-  <cleansia-language-switcher />
-  <div class="cleansia-pay-period-detail__container">
+  <div class="cleansia-pay-period-detail__container page-wrapper">
+    <cleansia-language-switcher />
     <!-- Header with Back Button -->
     <div class="cleansia-pay-period-detail__header">
       <cleansia-button
         [label]="'payPeriods.detail.backToList' | translate"
         icon="pi pi-arrow-left"
         (onClick)="goBack()"
-        severity="secondary"
         [outlined]="true"
-        className="cleansia-pay-period-detail__back-button"
       />
       <cleansia-title [title]="'payPeriods.detail.title' | translate" />
     </div>
@@ -93,7 +91,8 @@
       </cleansia-section>
 
       <!-- Closure Information (if closed) -->
-      @if (facade.payPeriod()?.status !== PayPeriodStatus[PayPeriodStatus.Open]) {
+      @if (facade.payPeriod()?.status !== PayPeriodStatus[PayPeriodStatus.Open])
+      {
       <cleansia-section [title]="'payPeriods.detail.closureInfo' | translate">
         <div class="detail-grid">
           <div class="detail-item">
@@ -123,7 +122,8 @@
       }
 
       <!-- Actions -->
-      @if (facade.payPeriod()?.status === PayPeriodStatus[PayPeriodStatus.Open]) {
+      @if (facade.payPeriod()?.status === PayPeriodStatus[PayPeriodStatus.Open])
+      {
       <div class="cleansia-pay-period-detail__actions">
         <cleansia-button
           [label]="'payPeriods.detail.closePeriod' | translate"

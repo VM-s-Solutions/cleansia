@@ -13,13 +13,13 @@ namespace Cleansia.Web.Admin.Controllers;
 [ApiController]
 public class AdminEmployeeController(IMediator mediator) : ApiController(mediator)
 {
-    [HttpPost("get-paged")]
+    [HttpGet("get-paged")]
     [Permission(Policy.CanViewPagedEmployee)]
     [ProducesResponseType(typeof(PagedData<AdminEmployeeListItem>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> GetPagedEmployees([FromBody] GetPagedEmployees.Request request, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetPagedEmployees([FromQuery] GetPagedEmployees.Request request, CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(request, cancellationToken);
         return Ok(result);

@@ -16,6 +16,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { CleansiaAdminRoute } from '@cleansia/services';
 import {
   CleansiaButtonComponent,
   CleansiaLanguageSwitcherComponent,
@@ -105,7 +106,7 @@ export class ServiceFormComponent implements OnInit, OnDestroy {
       if (serviceId) {
         this.facade.loadService(serviceId);
       } else {
-        this.router.navigate(['/service-management']);
+        this.router.navigate([CleansiaAdminRoute.SERVICE_MANAGEMENT]);
       }
     }
   }

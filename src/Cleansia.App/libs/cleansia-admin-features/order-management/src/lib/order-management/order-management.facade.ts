@@ -1,8 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import {
   AdminClient,
-  GetPagedOrdersRequest,
-  OrderFilter,
   OrderListItem,
   OrderStatus,
   PaymentStatus,
@@ -32,6 +30,7 @@ export class OrderManagementFacade {
 
   readonly orders = signal<OrderListItem[]>([]);
   readonly loading = signal<boolean>(false);
+  readonly initialLoading = signal<boolean>(true);
   readonly totalRecords = signal<number>(0);
 
   private currentFilter = signal<OrderFilterParams | null>(null);
@@ -109,57 +108,45 @@ export class OrderManagementFacade {
     this.loading.set(true);
     const filterParams = this.currentFilter();
 
-    const orderFilter = new OrderFilter();
-    if (filterParams?.orderStatuses && filterParams.orderStatuses.length > 0) {
-      orderFilter.orderStatuses = filterParams.orderStatuses;
-    }
-    if (
-      filterParams?.paymentStatuses &&
-      filterParams.paymentStatuses.length > 0
-    ) {
-      orderFilter.paymentStatuses = filterParams.paymentStatuses;
-    }
-    if (filterParams?.searchTerm) {
-      orderFilter.customerName = filterParams.searchTerm;
-      orderFilter.displayOrderNumber = filterParams.searchTerm;
-    }
-    if (filterParams?.cleaningDateFrom) {
-      orderFilter.cleaningDateFrom = filterParams.cleaningDateFrom;
-    }
-    if (filterParams?.cleaningDateTo) {
-      orderFilter.cleaningDateTo = filterParams.cleaningDateTo;
-    }
-    if (filterParams?.hasAvailableSpots !== undefined) {
-      orderFilter.hasAvailableSpots = filterParams.hasAvailableSpots;
-    }
-    if (filterParams?.isUnassigned !== undefined) {
-      orderFilter.isUnassigned = filterParams.isUnassigned;
-    }
-
-    const request = new GetPagedOrdersRequest({
-      offset: this.currentOffset(),
-      limit: this.currentLimit(),
-      filter: orderFilter,
-      sort: this.currentSort(),
-    });
-
+    // Parameters order: id, isActive, customerName, customerEmail, customerPhone,
+    // displayOrderNumber, employeeId, cleaningDateFrom, cleaningDateTo,
+    // paymentStatuses, paymentTypes, minTotalPrice, maxTotalPrice, orderStatuses,
+    // hasAvailableSpots, isUnassigned, excludeEmployeeId, sort, offset, limit
     this.adminClient.adminOrderClient
-      .getPaged(request)
+      .getPaged(
+        undefined, // id
+        undefined, // isActive
+        filterParams?.searchTerm, // customerName
+        undefined, // customerEmail
+        undefined, // customerPhone
+        filterParams?.searchTerm, // displayOrderNumber
+        undefined, // employeeId
+        filterParams?.cleaningDateFrom, // cleaningDateFrom
+        filterParams?.cleaningDateTo, // cleaningDateTo
+        filterParams?.paymentStatuses, // paymentStatuses
+        undefined, // paymentTypes
+        undefined, // minTotalPrice
+        undefined, // maxTotalPrice
+        filterParams?.orderStatuses, // orderStatuses
+        filterParams?.hasAvailableSpots, // hasAvailableSpots
+        filterParams?.isUnassigned, // isUnassigned
+        undefined, // excludeEmployeeId
+        this.currentSort(),
+        this.currentOffset(),
+        this.currentLimit()
+      )
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.order_management.messages.load_error')
-          );
-          console.error('Error loading orders:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {
           this.orders.set(response.data || []);
           this.totalRecords.set(response.total || 0);
+        }
+        if (this.initialLoading()) {
+          this.initialLoading.set(false);
         }
       });
   }

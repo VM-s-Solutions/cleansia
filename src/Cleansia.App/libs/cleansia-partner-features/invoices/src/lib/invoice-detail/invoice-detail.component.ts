@@ -7,12 +7,13 @@ import {
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTableComponent,
-  TableDefinition,
+  TableColumn,
 } from '@cleansia/components';
 import {
   EmployeeInvoiceStatus,
   OrderEmployeePayDto,
 } from '@cleansia/partner-services';
+import { CleansiaPartnerRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { InvoiceDetailFacade } from './invoice-detail.facade';
 
@@ -41,8 +42,8 @@ export class InvoiceDetailComponent implements OnInit {
   protected readonly loading = this.facade.loading;
   protected readonly error = this.facade.error;
 
-  protected readonly orderPaysTableDefinition = computed(() =>
-    this.getOrderPaysTableDefinition()
+  protected readonly orderPaysColumns = computed(() =>
+    this.getOrderPaysColumns()
   );
 
   ngOnInit(): void {
@@ -55,7 +56,7 @@ export class InvoiceDetailComponent implements OnInit {
   }
 
   navigateToInvoices(): void {
-    this.router.navigate(['/invoices']);
+    this.router.navigate([CleansiaPartnerRoute.INVOICES]);
   }
 
   retryLoadInvoice(): void {
@@ -97,95 +98,80 @@ export class InvoiceDetailComponent implements OnInit {
     }
   }
 
-  private getOrderPaysTableDefinition(): TableDefinition<OrderEmployeePayDto> {
-    return {
-      columns: [
-        {
-          id: 'orderNumber',
-          headerName: this.translate.instant(
-            'pages.invoice_detail.order_number'
-          ),
-          value: 'orderNumber',
-          sortable: false,
-          columnClass: 'font-semibold',
-        },
-        {
-          id: 'basePay',
-          headerName: this.translate.instant('pages.invoice_detail.base_pay'),
-          value: (pay?: OrderEmployeePayDto) =>
-            pay
-              ? `${pay.basePay?.toFixed(2)} ${
-                  this.invoiceDetail()?.currencyCode
-                }`
-              : '',
-          sortable: false,
-          columnClass: 'text-right',
-        },
-        {
-          id: 'extrasPay',
-          headerName: this.translate.instant('pages.invoice_detail.extras_pay'),
-          value: (pay?: OrderEmployeePayDto) =>
-            pay
-              ? `${pay.extrasPay?.toFixed(2)} ${
-                  this.invoiceDetail()?.currencyCode
-                }`
-              : '',
-          sortable: false,
-          columnClass: 'text-right',
-        },
-        {
-          id: 'expensesPay',
-          headerName: this.translate.instant(
-            'pages.invoice_detail.expenses_pay'
-          ),
-          value: (pay?: OrderEmployeePayDto) =>
-            pay
-              ? `${pay.expensesPay?.toFixed(2)} ${
-                  this.invoiceDetail()?.currencyCode
-                }`
-              : '',
-          sortable: false,
-          columnClass: 'text-right',
-        },
-        {
-          id: 'bonusPay',
-          headerName: this.translate.instant('pages.invoice_detail.bonus_pay'),
-          value: (pay?: OrderEmployeePayDto) =>
-            pay
-              ? `${pay.bonusPay?.toFixed(2)} ${
-                  this.invoiceDetail()?.currencyCode
-                }`
-              : '',
-          sortable: false,
-          columnClass: 'text-right',
-        },
-        {
-          id: 'deductionPay',
-          headerName: this.translate.instant(
-            'pages.invoice_detail.deduction_pay'
-          ),
-          value: (pay?: OrderEmployeePayDto) =>
-            pay
-              ? `${pay.deductionPay?.toFixed(2)} ${
-                  this.invoiceDetail()?.currencyCode
-                }`
-              : '',
-          sortable: false,
-          columnClass: 'text-right text-red-600',
-        },
-        {
-          id: 'totalPay',
-          headerName: this.translate.instant('pages.invoice_detail.total_pay'),
-          value: (pay?: OrderEmployeePayDto) =>
-            pay
-              ? `${pay.totalPay?.toFixed(2)} ${
-                  this.invoiceDetail()?.currencyCode
-                }`
-              : '',
-          sortable: false,
-          columnClass: 'text-right font-bold',
-        },
-      ],
-    };
+  private getOrderPaysColumns(): TableColumn<OrderEmployeePayDto>[] {
+    return [
+      {
+        id: 'orderNumber',
+        field: 'orderNumber',
+        header: this.translate.instant('pages.invoice_detail.order_number'),
+        sortable: false,
+      },
+      {
+        id: 'basePay',
+        field: 'basePay',
+        header: this.translate.instant('pages.invoice_detail.base_pay'),
+        sortable: false,
+        align: 'right',
+        getValue: (pay?: OrderEmployeePayDto) =>
+          pay
+            ? `${pay.basePay?.toFixed(2)} ${this.invoiceDetail()?.currencyCode}`
+            : '',
+      },
+      {
+        id: 'extrasPay',
+        field: 'extrasPay',
+        header: this.translate.instant('pages.invoice_detail.extras_pay'),
+        sortable: false,
+        align: 'right',
+        getValue: (pay?: OrderEmployeePayDto) =>
+          pay
+            ? `${pay.extrasPay?.toFixed(2)} ${this.invoiceDetail()?.currencyCode}`
+            : '',
+      },
+      {
+        id: 'expensesPay',
+        field: 'expensesPay',
+        header: this.translate.instant('pages.invoice_detail.expenses_pay'),
+        sortable: false,
+        align: 'right',
+        getValue: (pay?: OrderEmployeePayDto) =>
+          pay
+            ? `${pay.expensesPay?.toFixed(2)} ${this.invoiceDetail()?.currencyCode}`
+            : '',
+      },
+      {
+        id: 'bonusPay',
+        field: 'bonusPay',
+        header: this.translate.instant('pages.invoice_detail.bonus_pay'),
+        sortable: false,
+        align: 'right',
+        getValue: (pay?: OrderEmployeePayDto) =>
+          pay
+            ? `${pay.bonusPay?.toFixed(2)} ${this.invoiceDetail()?.currencyCode}`
+            : '',
+      },
+      {
+        id: 'deductionPay',
+        field: 'deductionPay',
+        header: this.translate.instant('pages.invoice_detail.deduction_pay'),
+        sortable: false,
+        align: 'right',
+        getValue: (pay?: OrderEmployeePayDto) =>
+          pay
+            ? `${pay.deductionPay?.toFixed(2)} ${this.invoiceDetail()?.currencyCode}`
+            : '',
+      },
+      {
+        id: 'totalPay',
+        field: 'totalPay',
+        header: this.translate.instant('pages.invoice_detail.total_pay'),
+        sortable: false,
+        align: 'right',
+        getValue: (pay?: OrderEmployeePayDto) =>
+          pay
+            ? `${pay.totalPay?.toFixed(2)} ${this.invoiceDetail()?.currencyCode}`
+            : '',
+      },
+    ];
   }
 }

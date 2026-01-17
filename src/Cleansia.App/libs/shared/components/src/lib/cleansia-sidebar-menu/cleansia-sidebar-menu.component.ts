@@ -1,15 +1,8 @@
 import {
-  animate,
-  state,
-  style,
-  transition,
-  trigger,
-} from '@angular/animations';
-import { NgClass } from '@angular/common';
-import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   ElementRef,
   HostListener,
   inject,
@@ -17,146 +10,73 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { Router, RouterModule } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { RippleModule } from 'primeng/ripple';
-import { StyleClassModule } from 'primeng/styleclass';
+import { TooltipModule } from 'primeng/tooltip';
 import { CleansiaBrandNameComponent } from '../cleansia-brand-name';
 import { CleansiaButtonComponent } from '../cleansia-button';
 import { SidebarMenuItem } from './cleansia-sidebar-menu.models';
+import { filter } from 'rxjs';
 
 @Component({
   selector: 'cleansia-sidebar-menu',
   standalone: true,
   imports: [
-    NgClass,
+    CommonModule,
     RouterModule,
-    RippleModule,
     TranslateModule,
-    StyleClassModule,
+    RippleModule,
+    TooltipModule,
     CleansiaBrandNameComponent,
     CleansiaButtonComponent,
   ],
   templateUrl: './cleansia-sidebar-menu.component.html',
-  animations: [
-    trigger('sidebarWidth', [
-      state(
-        'expanded',
-        style({
-          width: '16rem',
-          boxShadow: '2px 0 10px var(--cleansia-black-100)',
-        })
-      ),
-      state(
-        'collapsed',
-        style({
-          boxShadow: '1px 0 5px var(--cleansia-black-100)',
-        })
-      ),
-      transition('expanded <=> collapsed', [animate('0.05s ease-in-out')]),
-    ]),
-    trigger('menuItemContent', [
-      state(
-        'expanded',
-        style({
-          gap: '1rem',
-        })
-      ),
-      state(
-        'collapsed',
-        style({
-          gap: '0',
-        })
-      ),
-      transition('expanded <=> collapsed', [animate('0.05s ease-in-out')]),
-    ]),
-    trigger('menuItemLabel', [
-      state(
-        'expanded',
-        style({
-          opacity: 1,
-        })
-      ),
-      state(
-        'collapsed',
-        style({
-          width: '0',
-          opacity: 0,
-          flex: 0,
-        })
-      ),
-      transition('expanded <=> collapsed', [animate('0.05s ease-in-out')]),
-    ]),
-    trigger('subMenu', [
-      state(
-        'void',
-        style({
-          height: '0',
-          opacity: 0,
-          overflow: 'hidden',
-        })
-      ),
-      state(
-        '*',
-        style({
-          height: '*',
-          opacity: 1,
-          overflow: 'visible',
-        })
-      ),
-      transition('void <=> *', [animate('0.05s ease-in-out')]),
-    ]),
-    trigger('toggleIcon', [
-      state(
-        'expanded',
-        style({
-          transform: 'rotate(180deg)',
-        })
-      ),
-      state(
-        'collapsed',
-        style({
-          transform: 'rotate(0deg)',
-        })
-      ),
-      transition('expanded <=> collapsed', [animate('0.05s ease-in-out')]),
-    ]),
-  ],
+  styleUrls: ['../../../../assets/src/styles/components/cleansia-sidebar-menu.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaSidebarMenuComponent {
   private readonly router = inject(Router);
   private readonly el = inject(ElementRef);
 
+  // Inputs
   menuItems = input<SidebarMenuItem[]>([]);
-  defaultLogoRoute = input<string>('');
-  logoText = input<string>('Cleansia');
   isRoot = input(true);
   collapsed = input(false);
 
+  // Outputs
   collapsedChange = output<boolean>();
-
   menuItemSelected = output<string>();
 
+  // Signals
   private isMobileSignal = signal(false);
   isSidebarExpanded = signal(false);
   private localCollapsed = signal(false);
+  currentRoute = signal<string>('');
 
+  // Computed
   effectiveCollapsed = computed(() =>
     this.isRoot() ? this.localCollapsed() : this.collapsed()
   );
 
+  isMobile = computed(() => this.isMobileSignal());
+
   constructor() {
     this.updateMobileStatus();
+    this.currentRoute.set(this.router.url);
+
+    // Subscribe to route changes
+    this.router.events
+      .pipe(filter((event) => event instanceof NavigationEnd))
+      .subscribe(() => {
+        this.currentRoute.set(this.router.url);
+      });
   }
 
   @HostListener('window:resize')
   onResize() {
     this.updateMobileStatus();
-  }
-
-  get isMobile() {
-    return this.isMobileSignal.asReadonly();
   }
 
   private updateMobileStatus() {
@@ -171,27 +91,39 @@ export class CleansiaSidebarMenuComponent {
     }
   }
 
-  onMenuItemClick(item: SidebarMenuItem): void {
+  toggleSidebar(): void {
+    this.isSidebarExpanded.update((v) => !v);
+  }
+
+  onMenuItemClick(item: SidebarMenuItem, event: Event): void {
+    event.stopPropagation();
+
     if (item.route) {
       this.router.navigate([item.route]);
       this.menuItemSelected.emit(item.route);
     }
+
     if (item.onClickFn) {
       item.onClickFn();
     }
+
     if (this.isRoot() && this.isMobile()) {
       this.isSidebarExpanded.set(false);
     }
-    this.toggleSubMenu(item);
-  }
 
-  private toggleSubMenu(item: SidebarMenuItem): void {
+    // Toggle submenu
     if (item.children?.length) {
       item.expanded = !(item.expanded ?? false);
     }
   }
 
-  toggleSidebar(): void {
-    this.isSidebarExpanded.update((v) => !v);
+  isActiveRoute(itemRoute: string | undefined): boolean {
+    if (!itemRoute) return false;
+    const currentUrl = this.currentRoute();
+    return currentUrl === itemRoute || currentUrl.startsWith(itemRoute + '/');
+  }
+
+  getTooltipText(item: SidebarMenuItem): string {
+    return this.effectiveCollapsed() ? item.label : '';
   }
 }

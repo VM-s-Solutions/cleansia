@@ -1,6 +1,6 @@
 <div class="cleansia-employee-management">
-  <cleansia-language-switcher />
-  <div class="cleansia-employee-management__container">
+  <div class="cleansia-employee-management__container page-wrapper">
+    <cleansia-language-switcher />
     <div class="cleansia-employee-management__header">
       <cleansia-title [title]="'pages.employee_management.title' | translate" />
       <p class="cleansia-employee-management__description">
@@ -8,78 +8,58 @@
       </p>
     </div>
 
-    <!-- Filter Panel -->
-    <div class="filter-panel">
-      <form [formGroup]="filterForm" class="filter-form">
-        <div class="filter-grid">
-          <!-- Search Filter -->
-          <div class="filter-field">
-            <cleansia-text-input
-              formControlName="searchTerm"
-              [placeholder]="'pages.employee_management.filters.search' | translate"
-              className="w-full"
-            />
-          </div>
-
-          <!-- Contract Status Filter -->
-          <div class="filter-field">
-            <cleansia-multiselect
-              inputId="contractStatus"
-              formControlName="contractStatus"
-              [options]="contractStatusMultiOptions"
-              optionLabel="label"
-              optionValue="value"
-              [placeholder]="
-                'pages.employee_management.filters.contract_status' | translate
-              "
-              [showClear]="true"
-              display="chip"
-              class="cleansia-multiselect"
-              appendTo="body"
-            />
-          </div>
-
-          <!-- Active Status Filter -->
-          <div class="filter-field">
-            <cleansia-select
-              formControlName="isActive"
-              [options]="activeStatusOptions"
-              optionLabel="label"
-              optionValue="value"
-              [placeholder]="'pages.employee_management.filters.active_status' | translate"
-              [showClear]="true"
-              class="w-full"
-              appendTo="body"
-            />
-          </div>
+    <!-- Filter Header - Chips left, Button right -->
+    <div class="filter-header">
+      <div class="filter-chips-inline">
+        @for (chip of activeFilterChips(); track chip.key) {
+        <div class="filter-chip">
+          <span class="filter-chip-label">{{ chip.label }}:</span>
+          <span class="filter-chip-value">{{ chip.value }}</span>
+          <button
+            class="filter-chip-remove"
+            (click)="removeFilterChip(chip.key)"
+          >
+            <i class="pi pi-times"></i>
+          </button>
         </div>
-
-        <!-- Filter Actions -->
-        <div class="filter-actions">
-          <cleansia-button
-            [label]="'pages.employee_management.filters.reset' | translate"
-            icon="pi pi-times"
-            (onClick)="resetFilters()"
-            severity="secondary"
-            [outlined]="true"
-          />
-        </div>
-      </form>
+        } @if (hasActiveFilters()) {
+        <button class="filter-clear-all-btn" (click)="clearAllFilters()">
+          {{ 'pages.employee_management.filters.clear_all' | translate }}
+        </button>
+        }
+      </div>
+      <div class="filter-actions">
+        <cleansia-button
+          [label]="'pages.employee_management.filters.title' | translate"
+          icon="pi pi-filter"
+          [severity]="hasActiveFilters() ? 'primary' : 'secondary'"
+          [outlined]="!hasActiveFilters()"
+          (onClick)="openFilterDrawer()"
+        />
+        @if (hasActiveFilters()) {
+        <span class="filter-count-badge">{{ activeFilterCount() }}</span>
+        }
+      </div>
     </div>
 
     <!-- Employee Table -->
     <cleansia-section>
-      @if (facade.loading() && facade.employees().length === 0) {
+      @if (facade.initialLoading()) {
       <cleansia-loader />
       } @else {
       <cleansia-table
         [data]="facade.employees()"
-        [tableDefinition]="employeeTableDefinition"
-        [paginator]="true"
-        [rows]="20"
-        [emptyMessage]="'pages.employee_management.no_employees'"
-        tableClass="cleansia-employee-management__table"
+        [columns]="employeeColumns"
+        [actions]="employeeActions"
+        [config]="{
+          paginator: true,
+          rows: 20,
+          lazy: true,
+          totalRecords: facade.totalRecords(),
+          emptyMessage: 'pages.employee_management.no_employees'
+        }"
         [loading]="facade.loading()"
+        (pageChange)="onPageChange($event)"
         (sortChange)="onSortChange($event)"
       >
       </cleansia-table>
@@ -88,15 +68,126 @@
   </div>
 </div>
 
+<!-- Filter Drawer Backdrop -->
+@if (isFilterDrawerOpen()) {
+<div class="filter-drawer-backdrop" (click)="closeFilterDrawer()"></div>
+}
+
+<!-- Filter Drawer -->
+<div class="filter-drawer" [class.open]="isFilterDrawerOpen()">
+  <div class="filter-drawer-header">
+    <div class="filter-drawer-title">
+      <i class="pi pi-filter"></i>
+      <span>{{ 'pages.employee_management.filters.title' | translate }}</span>
+    </div>
+    <button class="filter-drawer-close" (click)="closeFilterDrawer()">
+      <i class="pi pi-times"></i>
+    </button>
+  </div>
+
+  <div class="filter-drawer-content">
+    <form [formGroup]="filterForm" class="filter-form">
+      <!-- Search Section -->
+      <div class="filter-section">
+        <h3 class="filter-section-title">
+          {{ 'pages.employee_management.filters.search' | translate }}
+        </h3>
+        <cleansia-text-input
+          formControlName="searchTerm"
+          [placeholder]="
+            'pages.employee_management.filters.search_placeholder' | translate
+          "
+          className="w-full"
+        />
+      </div>
+
+      <!-- Contract Status Section -->
+      <div class="filter-section">
+        <h3 class="filter-section-title">
+          {{ 'pages.employee_management.filters.contract_status' | translate }}
+        </h3>
+        <div class="filter-checkbox-group">
+          @for (option of contractStatusMultiOptions; track option.value) {
+          <div
+            class="filter-checkbox-item"
+            [class.checked]="isContractStatusChecked(option.value)"
+            (click)="toggleContractStatus(option.value)"
+          >
+            <cleansia-checkbox
+              [label]="option.label"
+              [ngModel]="isContractStatusChecked(option.value)"
+              [ngModelOptions]="{ standalone: true }"
+              (valueChanges)="onContractStatusChange(option.value, $event)"
+            />
+          </div>
+          }
+        </div>
+      </div>
+
+      <!-- Active Status Section -->
+      <div class="filter-section">
+        <h3 class="filter-section-title">
+          {{ 'pages.employee_management.filters.active_status' | translate }}
+        </h3>
+        <div class="filter-checkbox-group">
+          <div
+            class="filter-checkbox-item"
+            [class.checked]="filterForm.value.isActive === null"
+            (click)="onActiveStatusSelect(null)"
+          >
+            <cleansia-radio
+              [label]="'global.all' | translate"
+              name="activeStatus"
+              [value]="null"
+              [ngModel]="filterForm.value.isActive"
+              [ngModelOptions]="{ standalone: true }"
+              (valueChanges)="onActiveStatusSelect($event)"
+            />
+          </div>
+          @for (option of activeStatusOptions; track option.value) {
+          <div
+            class="filter-checkbox-item"
+            [class.checked]="filterForm.value.isActive === option.value"
+            (click)="onActiveStatusSelect(option.value)"
+          >
+            <cleansia-radio
+              [label]="option.label"
+              name="activeStatus"
+              [value]="option.value"
+              [ngModel]="filterForm.value.isActive"
+              [ngModelOptions]="{ standalone: true }"
+              (valueChanges)="onActiveStatusSelect($event)"
+            />
+          </div>
+          }
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="filter-drawer-footer">
+    <cleansia-button
+      [label]="'pages.employee_management.filters.reset' | translate"
+      icon="pi pi-times"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="resetFilters()"
+    />
+  </div>
+</div>
+
 <ng-template #contractStatusTemplate let-item>
   <div class="status-cell">
     <span [class]="getContractStatusClass(item)">
-      {{ item.contractStatus }}
+      {{ getContractStatusLabel(item) }}
     </span>
-    @if (!item.isProfileComplete && item.contractStatus === ContractStatus[ContractStatus.Pending]) {
-      <i class="pi pi-exclamation-triangle incomplete-profile-icon"
-         pTooltip="Profile incomplete - cannot approve"
-         tooltipPosition="top"></i>
+    @if (!item.isProfileComplete && item.contractStatus ===
+    ContractStatus[ContractStatus.Pending]) {
+    <i
+      class="pi pi-exclamation-triangle incomplete-profile-icon"
+      [pTooltip]="'pages.employee_management.profile_incomplete_tooltip' | translate"
+      tooltipPosition="top"
+    ></i>
     }
   </div>
 </ng-template>

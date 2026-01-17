@@ -7,7 +7,7 @@ import {
   CreateCompanyInfoCommand,
   UpdateCompanyInfoCommand,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -51,13 +51,7 @@ export class CompanyInfoFormFacade {
       .details(companyInfoId)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.company_info.messages.load_error')
-          );
-          console.error('Error loading company info:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
       .subscribe((companyInfo) => {
@@ -70,10 +64,7 @@ export class CompanyInfoFormFacade {
       .getOverview()
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          console.error('Error loading countries:', error);
-          return of([]);
-        })
+        catchError(() => of([]))
       )
       .subscribe((countries) => {
         this.countries.set(countries);
@@ -102,17 +93,11 @@ export class CompanyInfoFormFacade {
       swift: data.swift ?? undefined,
     });
 
-    this.adminClient.apiClient
-      .adminCompanyPost(command)
+    this.adminClient.adminCompanyClient
+      .create(command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.company_info.messages.save_error')
-          );
-          console.error('Error creating company info:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
       .subscribe((response) => {
@@ -120,7 +105,7 @@ export class CompanyInfoFormFacade {
           this.snackbarService.showSuccess(
             this.translate.instant('pages.company_info.messages.create_success')
           );
-          this.router.navigate(['/company-info']);
+          this.router.navigate([CleansiaAdminRoute.COMPANY_INFO]);
         }
       });
   }
@@ -148,17 +133,11 @@ export class CompanyInfoFormFacade {
       swift: data.swift ?? undefined,
     });
 
-    this.adminClient.apiClient
-      .adminCompanyPut(companyInfoId, command)
+    this.adminClient.adminCompanyClient
+      .update(companyInfoId, command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.company_info.messages.save_error')
-          );
-          console.error('Error updating company info:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
       .subscribe((response) => {
@@ -166,13 +145,13 @@ export class CompanyInfoFormFacade {
           this.snackbarService.showSuccess(
             this.translate.instant('pages.company_info.messages.save_success')
           );
-          this.router.navigate(['/company-info']);
+          this.router.navigate([CleansiaAdminRoute.COMPANY_INFO]);
         }
       });
   }
 
   navigateBack(): void {
-    this.router.navigate(['/company-info']);
+    this.router.navigate([CleansiaAdminRoute.COMPANY_INFO]);
   }
 
   ngOnDestroy(): void {

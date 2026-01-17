@@ -98,7 +98,7 @@ export class CleansiaEarningsChartComponent {
       datasets: [
         {
           data: earnings,
-          label: 'Monthly Earnings',
+          label: this.translate.instant('pages.dashboard.earnings_analytics.chart_label'),
           borderColor: '#8b5cf6',
           backgroundColor: 'rgba(139, 92, 246, 0.1)',
           fill: true,

@@ -28,13 +28,7 @@ export class OrderDetailFacade {
       .details(orderId)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.order_detail.messages.load_error')
-          );
-          console.error('Error loading order details:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {

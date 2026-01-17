@@ -1,7 +1,6 @@
 <div class="cleansia-invoice-detail">
-  <cleansia-language-switcher />
-
-  <div class="cleansia-invoice-detail__container">
+  <div class="cleansia-invoice-detail__container page-wrapper">
+    <cleansia-language-switcher />
     @if (loading() && !invoiceDetail()) {
     <cleansia-loader />
     } @else if (error()) {
@@ -170,7 +169,7 @@
       {
       <cleansia-table
         [data]="invoiceDetail()!.orderPays!"
-        [tableDefinition]="orderPaysTableDefinition()"
+        [columns]="orderPaysColumns()"
         [loading]="loading()"
       >
       </cleansia-table>

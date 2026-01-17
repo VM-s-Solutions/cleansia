@@ -6,7 +6,7 @@ import {
   LanguageDetailDto,
   UpdateLanguageCommand,
 } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -35,12 +35,8 @@ export class LanguageFormFacade {
       .details(languageId)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.language_form.messages.load_error')
-          );
-          console.error('Error loading language:', error);
-          this.router.navigate(['/language-management']);
+        catchError(() => {
+          this.router.navigate([CleansiaAdminRoute.LANGUAGE_MANAGEMENT]);
           return of(null);
         }),
         finalize(() => this.loading.set(false))
@@ -60,17 +56,11 @@ export class LanguageFormFacade {
       name: data.name,
     });
 
-    this.adminClient.apiClient
-      .adminLanguagePost(command)
+    this.adminClient.adminLanguageClient
+      .create(command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.language_form.messages.create_error')
-          );
-          console.error('Error creating language:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
       .subscribe((response) => {
@@ -78,7 +68,7 @@ export class LanguageFormFacade {
           this.snackbarService.showSuccess(
             this.translate.instant('pages.language_form.messages.create_success')
           );
-          this.router.navigate(['/language-management']);
+          this.router.navigate([CleansiaAdminRoute.LANGUAGE_MANAGEMENT]);
         }
       });
   }
@@ -91,17 +81,11 @@ export class LanguageFormFacade {
       name: data.name,
     });
 
-    this.adminClient.apiClient
-      .adminLanguagePut(languageId, command)
+    this.adminClient.adminLanguageClient
+      .update(languageId, command)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant('pages.language_form.messages.update_error')
-          );
-          console.error('Error updating language:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
       .subscribe((response) => {
@@ -109,13 +93,13 @@ export class LanguageFormFacade {
           this.snackbarService.showSuccess(
             this.translate.instant('pages.language_form.messages.update_success')
           );
-          this.router.navigate(['/language-management']);
+          this.router.navigate([CleansiaAdminRoute.LANGUAGE_MANAGEMENT]);
         }
       });
   }
 
   navigateBack(): void {
-    this.router.navigate(['/language-management']);
+    this.router.navigate([CleansiaAdminRoute.LANGUAGE_MANAGEMENT]);
   }
 
   ngOnDestroy(): void {

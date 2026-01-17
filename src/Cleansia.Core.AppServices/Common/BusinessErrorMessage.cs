@@ -42,9 +42,11 @@ public static class BusinessErrorMessage
     public const string TotalPriceMustBePositive = "order.total_price.positive";
     public const string TotalPriceNotMatch = "order.total_price.not_match";
     public const string OrderNotInProgress = "order.not_in_progress";
+    public const string OrderNotConfirmed = "order.not_confirmed";
     public const string ActualTimeMustBePositive = "order.actual_time.positive";
     public const string CompletionNotesRequired = "order.completion_notes.required";
     public const string CompletionNotesTooLong = "order.completion_notes.too_long";
+    public const string AfterPhotosRequired = "order.after_photos.required";
     public const string PaymentGatewayUnavailable = "order.payment_gateway_unavailable";
     public const string OrderCreationFailed = "order.creation_failed";
 

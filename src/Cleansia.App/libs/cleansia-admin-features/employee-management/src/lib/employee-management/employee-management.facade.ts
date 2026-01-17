@@ -3,8 +3,6 @@ import {
   AdminClient,
   AdminEmployeeListItem,
   ContractStatus,
-  EmployeeFilter,
-  GetPagedEmployeesRequest,
   RejectEmployeeRequest,
   SortDefinition,
 } from '@cleansia/admin-services';
@@ -35,6 +33,7 @@ export class EmployeeManagementFacade {
 
   readonly employees = signal<AdminEmployeeListItem[]>([]);
   readonly loading = signal<boolean>(false);
+  readonly initialLoading = signal<boolean>(true);
   readonly totalRecords = signal<number>(0);
 
   private currentFilter = signal<EmployeeFilterParams | null>(null);
@@ -79,46 +78,29 @@ export class EmployeeManagementFacade {
     this.loading.set(true);
     const filterParams = this.currentFilter();
 
-    const employeeFilter = new EmployeeFilter();
-    if (
-      filterParams?.contractStatuses &&
-      filterParams.contractStatuses.length > 0
-    ) {
-      employeeFilter.contractStatuses = filterParams.contractStatuses;
-    }
-    if (filterParams?.searchTerm) {
-      employeeFilter.searchTerm = filterParams.searchTerm;
-    }
-    if (filterParams?.isActive !== undefined) {
-      employeeFilter.isActive = filterParams.isActive;
-    }
-
-    const request = new GetPagedEmployeesRequest({
-      offset: this.currentOffset(),
-      limit: this.currentLimit(),
-      filter: employeeFilter,
-      sort: this.currentSort(),
-    });
-
     this.adminClient.adminEmployeeClient
-      .getPaged(request)
+      .getPaged(
+        undefined, // id
+        filterParams?.isActive,
+        filterParams?.contractStatuses,
+        filterParams?.searchTerm,
+        this.currentSort(),
+        this.currentOffset(),
+        this.currentLimit()
+      )
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.employee_management.messages.load_error'
-            )
-          );
-          console.error('Error loading employees:', error);
-          return of(null);
-        }),
+        catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {
           this.employees.set(response.data || []);
           this.totalRecords.set(response.total || 0);
+        }
+        // After first load, set initialLoading to false
+        if (this.initialLoading()) {
+          this.initialLoading.set(false);
         }
       });
   }
@@ -151,15 +133,7 @@ export class EmployeeManagementFacade {
       .approve(employeeId, undefined)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.employee_management.messages.approve_error'
-            )
-          );
-          console.error('Error approving employee:', error);
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {
@@ -179,15 +153,7 @@ export class EmployeeManagementFacade {
       .reject(employeeId, request)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.employee_management.messages.reject_error'
-            )
-          );
-          console.error('Error rejecting employee:', error);
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response) {

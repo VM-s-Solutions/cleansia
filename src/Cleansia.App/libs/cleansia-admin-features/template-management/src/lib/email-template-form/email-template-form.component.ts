@@ -39,7 +39,6 @@ interface TemplateVariable {
   ],
   providers: [EmailTemplateFormFacade],
   templateUrl: './email-template-form.component.html',
-  styleUrl: './email-template-form.component.scss',
 })
 export class EmailTemplateFormComponent implements OnInit, OnDestroy {
   readonly facade = inject(EmailTemplateFormFacade);

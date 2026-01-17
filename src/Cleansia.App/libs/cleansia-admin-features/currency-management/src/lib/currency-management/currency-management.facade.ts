@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AdminClient, CurrencyListItem } from '@cleansia/admin-services';
-import { SnackbarService } from '@cleansia/services';
+import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -16,6 +16,7 @@ export class CurrencyManagementFacade {
 
   readonly currencies = signal<CurrencyListItem[]>([]);
   readonly loading = signal<boolean>(false);
+  readonly initialLoading = signal<boolean>(true);
 
   loadCurrencies(): void {
     this.loading.set(true);
@@ -24,48 +25,35 @@ export class CurrencyManagementFacade {
       .getOverview()
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.currency_management.messages.load_error'
-            )
-          );
-          console.error('Error loading currencies:', error);
-          return of([]);
-        }),
+        catchError(() => of([])),
         finalize(() => this.loading.set(false))
       )
       .subscribe((currencies) => {
         this.currencies.set(currencies);
+        if (this.initialLoading()) {
+          this.initialLoading.set(false);
+        }
       });
   }
 
   navigateToCreateCurrency(): void {
-    this.router.navigate(['/currency-management', 'create']);
+    this.router.navigate([CleansiaAdminRoute.CURRENCY_MANAGEMENT, 'create']);
   }
 
   navigateToEditCurrency(currency: CurrencyListItem): void {
     if (currency.id) {
-      this.router.navigate(['/currency-management', currency.id, 'edit']);
+      this.router.navigate([CleansiaAdminRoute.CURRENCY_MANAGEMENT, currency.id, 'edit']);
     }
   }
 
   deleteCurrency(currency: CurrencyListItem): void {
     if (!currency.id) return;
 
-    this.adminClient.apiClient
-      .adminCurrencyDelete(currency.id)
+    this.adminClient.adminCurrencyClient
+      .delete(currency.id)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          this.snackbarService.showError(
-            this.translate.instant(
-              'pages.currency_management.messages.delete_error'
-            )
-          );
-          console.error('Error deleting currency:', error);
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((response: unknown) => {
         if (response) {

@@ -13,14 +13,14 @@ namespace Cleansia.Web.Admin.Controllers;
 [ApiController]
 public class AdminServiceController(IMediator mediator) : ApiController(mediator)
 {
-    [HttpPost("get-paged")]
+    [HttpGet("get-paged")]
     [Permission(Policy.CanViewServices)]
     [ProducesResponseType(typeof(PagedData<ServiceListItem>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetPagedServices(
-        [FromBody] GetPagedServices.Request request,
+        [FromQuery] GetPagedServices.Request request,
         CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(request, cancellationToken);
@@ -42,7 +42,7 @@ public class AdminServiceController(IMediator mediator) : ApiController(mediator
         return HandleResult<AdminServiceDetailDto>(result);
     }
 
-    [HttpPost]
+    [HttpPost("create")]
     [Permission(Policy.CanCreateService)]
     [ProducesResponseType(typeof(CreateService.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -56,7 +56,7 @@ public class AdminServiceController(IMediator mediator) : ApiController(mediator
         return HandleResult<CreateService.Response>(result);
     }
 
-    [HttpPut("{serviceId}")]
+    [HttpPut("update/{serviceId}")]
     [Permission(Policy.CanUpdateService)]
     [ProducesResponseType(typeof(UpdateService.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -76,7 +76,7 @@ public class AdminServiceController(IMediator mediator) : ApiController(mediator
         return HandleResult<UpdateService.Response>(result);
     }
 
-    [HttpDelete("{serviceId}")]
+    [HttpDelete("delete/{serviceId}")]
     [Permission(Policy.CanDeleteService)]
     [ProducesResponseType(typeof(DeleteService.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]

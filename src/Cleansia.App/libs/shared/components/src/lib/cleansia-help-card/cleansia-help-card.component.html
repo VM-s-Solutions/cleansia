@@ -1,0 +1,97 @@
+<!-- Restore Button (shown when dismissed, if showRestoreButton is true) -->
+@if (isDismissed() && showRestoreButton()) {
+<button
+  type="button"
+  class="cleansia-help-card__restore-btn"
+  (click)="restore()"
+>
+  <i class="pi pi-question-circle"></i>
+  <span>{{ 'help.show_help' | translate }}</span>
+</button>
+} @else if (!isDismissed()) {
+<!-- Help Card -->
+<div class="cleansia-help-card" [class.collapsed]="isCollapsed()">
+  <!-- Header -->
+  <div class="cleansia-help-card__header">
+    <div class="cleansia-help-card__title" (click)="toggleCollapse()">
+      <i class="pi pi-info-circle"></i>
+      <span>{{ titleKey() | translate }}</span>
+      @if (collapsible()) {
+      <i
+        class="cleansia-help-card__collapse-icon pi pi-chevron-down"
+      ></i>
+      }
+    </div>
+    @if (showDismiss()) {
+    <button
+      type="button"
+      class="cleansia-help-card__dismiss"
+      (click)="dismiss()"
+      [attr.aria-label]="'help.dismiss' | translate"
+      [title]="'help.dismiss' | translate"
+    >
+      <i class="pi pi-times"></i>
+    </button>
+    }
+  </div>
+
+  <!-- Content Wrapper for Animation - Always in DOM -->
+  <div class="cleansia-help-card__content-wrapper">
+    <div class="cleansia-help-card__content">
+      <!-- Steps -->
+      @if (steps().length > 0) {
+      <div class="cleansia-help-card__steps">
+        @for (step of steps(); track $index; let last = $last) {
+        <div class="cleansia-help-card__step">
+          <div class="cleansia-help-card__step-icon">
+            <i [class]="step.icon"></i>
+          </div>
+          <div class="cleansia-help-card__step-text">
+            <span class="cleansia-help-card__step-title">{{
+              step.titleKey | translate
+            }}</span>
+            <span class="cleansia-help-card__step-description">{{
+              step.descriptionKey | translate
+            }}</span>
+          </div>
+        </div>
+        @if (!last) {
+        <div class="cleansia-help-card__step-arrow">
+          <i class="pi pi-arrow-right"></i>
+        </div>
+        } }
+      </div>
+      }
+
+      <!-- Status Flow Section (if provided) -->
+      @if (hasStatusFlow()) {
+      <div
+        class="cleansia-help-card__status-flow"
+        [class.no-steps]="steps().length === 0"
+      >
+        @if (statusFlowTitleKey()) {
+        <h4 class="cleansia-help-card__status-title">
+          {{ statusFlowTitleKey() | translate }}
+        </h4>
+        }
+        <div class="cleansia-help-card__status-list">
+          @for (status of statusFlow(); track $index) {
+          <div class="cleansia-help-card__status-item">
+            <span
+              class="cleansia-help-card__status-badge"
+              [class]="status.colorClass"
+            >
+              {{ status.statusKey | translate }}
+            </span>
+            <span class="cleansia-help-card__status-desc">
+              {{ status.descriptionKey | translate }}
+            </span>
+          </div>
+          }
+        </div>
+      </div>
+      }
+    </div>
+  </div>
+</div>
+}

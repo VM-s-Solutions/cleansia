@@ -13,14 +13,14 @@ namespace Cleansia.Web.Admin.Controllers;
 [ApiController]
 public class AdminInvoiceTemplateController(IMediator mediator) : ApiController(mediator)
 {
-    [HttpPost("get-paged")]
+    [HttpGet("get-paged")]
     [Permission(Policy.CanViewInvoiceTemplates)]
     [ProducesResponseType(typeof(PagedData<InvoiceTemplateListItem>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetPagedInvoiceTemplates(
-        [FromBody] GetPagedInvoiceTemplates.Request request,
+        [FromQuery] GetPagedInvoiceTemplates.Request request,
         CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(request, cancellationToken);
@@ -42,7 +42,7 @@ public class AdminInvoiceTemplateController(IMediator mediator) : ApiController(
         return HandleResult<InvoiceTemplateDetailDto>(result);
     }
 
-    [HttpPost]
+    [HttpPost("create")]
     [Permission(Policy.CanCreateInvoiceTemplate)]
     [ProducesResponseType(typeof(CreateInvoiceTemplate.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -56,7 +56,7 @@ public class AdminInvoiceTemplateController(IMediator mediator) : ApiController(
         return HandleResult<CreateInvoiceTemplate.Response>(result);
     }
 
-    [HttpPut("{invoiceTemplateId}")]
+    [HttpPut("update/{invoiceTemplateId}")]
     [Permission(Policy.CanUpdateInvoiceTemplate)]
     [ProducesResponseType(typeof(UpdateInvoiceTemplate.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -76,7 +76,7 @@ public class AdminInvoiceTemplateController(IMediator mediator) : ApiController(
         return HandleResult<UpdateInvoiceTemplate.Response>(result);
     }
 
-    [HttpDelete("{invoiceTemplateId}")]
+    [HttpDelete("delete/{invoiceTemplateId}")]
     [Permission(Policy.CanDeleteInvoiceTemplate)]
     [ProducesResponseType(typeof(DeleteInvoiceTemplate.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]

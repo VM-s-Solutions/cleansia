@@ -9,6 +9,7 @@ import {
   CleansiaSectionComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
+import { CleansiaAdminRoute } from '@cleansia/services';
 import { TranslatePipe } from '@ngx-translate/core';
 import { AdminOrderPhotosComponent } from './components';
 import { OrderDetailFacade } from './order-detail.facade';
@@ -27,7 +28,6 @@ import { OrderDetailFacade } from './order-detail.facade';
     AdminOrderPhotosComponent,
   ],
   templateUrl: './order-detail.component.html',
-  styleUrl: './order-detail.component.scss',
   providers: [OrderDetailFacade],
 })
 export class OrderDetailComponent implements OnInit {
@@ -43,7 +43,7 @@ export class OrderDetailComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/order-management']);
+    this.router.navigate([CleansiaAdminRoute.ORDER_MANAGEMENT]);
   }
 
   getStatusHistoryIcon(status: OrderStatusTrackDto): string {

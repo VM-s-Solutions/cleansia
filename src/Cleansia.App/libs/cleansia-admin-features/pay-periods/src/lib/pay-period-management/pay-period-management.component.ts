@@ -3,13 +3,18 @@ import {
   AfterViewInit,
   ChangeDetectorRef,
   Component,
+  computed,
   inject,
   OnDestroy,
+  signal,
+  TemplateRef,
+  viewChild,
 } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
   PayPeriodDto,
+  PayPeriodStatus,
   SortDefinition,
   SortDirection,
 } from '@cleansia/admin-services';
@@ -17,18 +22,24 @@ import {
   CleansiaButtonComponent,
   CleansiaLanguageSwitcherComponent,
   CleansiaLoaderComponent,
+  CleansiaRadioComponent,
   CleansiaSectionComponent,
-  CleansiaSelectComponent,
   CleansiaTableComponent,
   CleansiaTitleComponent,
-  TableDefinition,
+  TableColumn,
+  TableAction,
+  PaginationState,
 } from '@cleansia/components';
+import { CleansiaAdminRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 import { PayPeriodManagementFacade } from './pay-period-management.facade';
-import { getPayPeriodTableDefinition } from './pay-period-management.models';
+import {
+  getPayPeriodTableColumns,
+  getPayPeriodTableActions,
+} from './pay-period-management.models';
 
 @Component({
   selector: 'cleansia-admin-pay-period-management',
@@ -36,13 +47,14 @@ import { getPayPeriodTableDefinition } from './pay-period-management.models';
   imports: [
     CommonModule,
     CleansiaButtonComponent,
-    CleansiaSelectComponent,
+    CleansiaRadioComponent,
     TranslatePipe,
     CleansiaTableComponent,
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     CleansiaLanguageSwitcherComponent,
+    FormsModule,
     ReactiveFormsModule,
     ToastModule,
   ],
@@ -56,7 +68,13 @@ export class PayPeriodManagementComponent implements AfterViewInit, OnDestroy {
   protected readonly facade = inject(PayPeriodManagementFacade);
   private readonly translate = inject(TranslateService);
 
-  payPeriodTableDefinition!: TableDefinition<PayPeriodDto>;
+  statusTemplate = viewChild<TemplateRef<any>>('statusTemplate');
+
+  payPeriodTableColumns!: TableColumn<PayPeriodDto>[];
+  payPeriodTableActions!: TableAction<PayPeriodDto>[];
+
+  // Expose PayPeriodStatus enum to template
+  readonly PayPeriodStatus = PayPeriodStatus;
 
   private lastSortField: string | null = null;
   private lastSortOrder: number | null = null;
@@ -74,16 +92,31 @@ export class PayPeriodManagementComponent implements AfterViewInit, OnDestroy {
     return { label: year.toString(), value: year };
   });
 
-  ngAfterViewInit(): void {
-    this.payPeriodTableDefinition = getPayPeriodTableDefinition(
-      {
-        onViewDetails: this.viewPayPeriodDetails.bind(this),
-        onClose: this.closePayPeriod.bind(this),
-      },
-      this.translate
-    );
+  // Status options - will be rebuilt on language change
+  statusOptions: { label: string; value: PayPeriodStatus }[] = [];
 
+  // Filter drawer state
+  isFilterDrawerOpen = signal(false);
+  // Signal to trigger recalculation of filter chips when form changes
+  private filterFormVersion = signal(0);
+  activeFilterChips = computed(() => {
+    this.filterFormVersion();
+    return this.getActiveFilterChips();
+  });
+  hasActiveFilters = computed(() => this.activeFilterChips().length > 0);
+  activeFilterCount = computed(() => this.activeFilterChips().length);
+
+  ngAfterViewInit(): void {
+    this.rebuildTableDefinitions();
+    this.rebuildFilterOptions();
     this.cd.detectChanges();
+
+    // Update filter chips immediately when form changes
+    this.filterForm.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.filterFormVersion.update(v => v + 1);
+      });
 
     // Setup automatic filtering with debounce
     this.filterForm.valueChanges
@@ -92,8 +125,49 @@ export class PayPeriodManagementComponent implements AfterViewInit, OnDestroy {
         this.applyFilters();
       });
 
+    // Rebuild tables and filter options when language changes
+    this.translate.onLangChange
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.rebuildTableDefinitions();
+        this.rebuildFilterOptions();
+        this.cd.detectChanges();
+      });
+
     // Load pay periods on init
     this.facade.loadPayPeriods();
+  }
+
+  private rebuildTableDefinitions(): void {
+    this.payPeriodTableColumns = getPayPeriodTableColumns(
+      this.translate,
+      this.statusTemplate()
+    );
+
+    this.payPeriodTableActions = getPayPeriodTableActions(
+      {
+        onViewDetails: this.viewPayPeriodDetails.bind(this),
+        onClose: this.closePayPeriod.bind(this),
+      },
+      this.translate
+    );
+  }
+
+  private rebuildFilterOptions(): void {
+    this.statusOptions = [
+      {
+        label: this.translate.instant('payPeriods.status.open'),
+        value: PayPeriodStatus.Open,
+      },
+      {
+        label: this.translate.instant('payPeriods.status.closed'),
+        value: PayPeriodStatus.Closed,
+      },
+      {
+        label: this.translate.instant('payPeriods.status.paid'),
+        value: PayPeriodStatus.Paid,
+      },
+    ];
   }
 
   ngOnDestroy(): void {
@@ -102,7 +176,7 @@ export class PayPeriodManagementComponent implements AfterViewInit, OnDestroy {
   }
 
   viewPayPeriodDetails(payPeriod: PayPeriodDto): void {
-    this.router.navigate(['/pay-periods', payPeriod.id]);
+    this.router.navigate([CleansiaAdminRoute.PAY_PERIODS, payPeriod.id]);
   }
 
   closePayPeriod(payPeriod: PayPeriodDto): void {
@@ -151,5 +225,76 @@ export class PayPeriodManagementComponent implements AfterViewInit, OnDestroy {
       }),
     ];
     this.facade.onSortChange(sort);
+  }
+
+  onPageChange(event: PaginationState): void {
+    const offset = event.first;
+    const limit = event.rows;
+    this.facade.onPageChange(offset, limit);
+  }
+
+  // Filter drawer methods
+  openFilterDrawer(): void {
+    this.isFilterDrawerOpen.set(true);
+  }
+
+  closeFilterDrawer(): void {
+    this.isFilterDrawerOpen.set(false);
+  }
+
+  getActiveFilterChips(): { key: string; label: string; value: string }[] {
+    const chips: { key: string; label: string; value: string }[] = [];
+    const values = this.filterForm.value;
+
+    if (values.status !== null && values.status !== undefined) {
+      const statusOption = this.statusOptions.find(
+        (opt) => opt.value === values.status
+      );
+      chips.push({
+        key: 'status',
+        label: this.translate.instant('payPeriods.filters.status'),
+        value: statusOption?.label || values.status.toString(),
+      });
+    }
+
+    if (values.year !== null && values.year !== undefined) {
+      chips.push({
+        key: 'year',
+        label: this.translate.instant('payPeriods.filters.year'),
+        value: values.year.toString(),
+      });
+    }
+
+    return chips;
+  }
+
+  removeFilterChip(key: string): void {
+    this.filterForm.patchValue({ [key]: null });
+    this.applyFilters();
+  }
+
+  clearAllFilters(): void {
+    this.resetFilters();
+  }
+
+  // Radio helper methods
+  onStatusSelect(value: number | null): void {
+    this.filterForm.patchValue({ status: value });
+  }
+
+  onYearSelect(value: number | null): void {
+    this.filterForm.patchValue({ year: value });
+  }
+
+  getPayPeriodStatusLabel(payPeriod: PayPeriodDto): string {
+    if (!payPeriod.status) return '';
+    const statusKey = payPeriod.status.toLowerCase();
+    return this.translate.instant(`payPeriods.status.${statusKey}`);
+  }
+
+  getPayPeriodStatusClass(payPeriod: PayPeriodDto): string {
+    if (!payPeriod.status) return 'pay-period-status-badge status-open';
+    const statusKey = payPeriod.status.toLowerCase();
+    return `pay-period-status-badge status-${statusKey}`;
   }
 }

@@ -38,7 +38,7 @@ public class AdminCountryController(IMediator mediator) : ApiController(mediator
         return HandleResult<CountryDetailDto>(result);
     }
 
-    [HttpPost]
+    [HttpPost("create")]
     [Permission(Policy.CanCreateCountry)]
     [ProducesResponseType(typeof(CreateCountry.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -52,7 +52,7 @@ public class AdminCountryController(IMediator mediator) : ApiController(mediator
         return HandleResult<CreateCountry.Response>(result);
     }
 
-    [HttpPut("{countryId}")]
+    [HttpPut("update/{countryId}")]
     [Permission(Policy.CanUpdateCountry)]
     [ProducesResponseType(typeof(UpdateCountry.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -72,7 +72,7 @@ public class AdminCountryController(IMediator mediator) : ApiController(mediator
         return HandleResult<UpdateCountry.Response>(result);
     }
 
-    [HttpDelete("{countryId}")]
+    [HttpDelete("delete/{countryId}")]
     [Permission(Policy.CanDeleteCountry)]
     [ProducesResponseType(typeof(DeleteCountry.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]

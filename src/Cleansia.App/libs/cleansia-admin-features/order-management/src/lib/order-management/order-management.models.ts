@@ -4,7 +4,7 @@ import {
   OrderStatus,
   PaymentStatus,
 } from '@cleansia/admin-services';
-import { TableDefinition } from '@cleansia/components';
+import { TableColumn, TableAction } from '@cleansia/components';
 import { TranslateService } from '@ngx-translate/core';
 
 export function getOrderTableDefinition(
@@ -14,35 +14,36 @@ export function getOrderTableDefinition(
   translate: TranslateService,
   orderStatusTemplate?: TemplateRef<OrderListItem>,
   paymentStatusTemplate?: TemplateRef<OrderListItem>
-): TableDefinition<OrderListItem> {
+): { columns: TableColumn<OrderListItem>[]; actions: TableAction<OrderListItem>[] } {
   return {
     columns: [
       {
         id: 'displayOrderNumber',
-        headerName: translate.instant('pages.order_management.order_number'),
-        value: 'displayOrderNumber',
+        field: 'displayOrderNumber',
+        header: translate.instant('pages.order_management.order_number'),
         sortable: true,
-        sortField: 'displayOrderNumber',
-        columnClass: 'width-12',
+        width: '12%',
       },
       {
         id: 'customerName',
-        headerName: translate.instant('pages.order_management.customer_name'),
-        value: 'customerName',
+        field: 'customerName',
+        header: translate.instant('pages.order_management.customer_name'),
         sortable: true,
-        sortField: 'customerName',
-        columnClass: 'width-15',
+        width: '15%',
       },
       {
         id: 'customerEmail',
-        headerName: translate.instant('pages.order_management.customer_email'),
-        value: 'customerEmail',
-        columnClass: 'width-15',
+        field: 'customerEmail',
+        header: translate.instant('pages.order_management.customer_email'),
+        width: '15%',
       },
       {
         id: 'cleaningDateTime',
-        headerName: translate.instant('pages.order_management.cleaning_date'),
-        value: (row?: OrderListItem) => {
+        field: 'cleaningDateTime',
+        header: translate.instant('pages.order_management.cleaning_date'),
+        sortable: true,
+        width: '12%',
+        getValue: (row: OrderListItem) => {
           if (!row?.cleaningDateTime) return '';
           const date =
             row.cleaningDateTime instanceof Date
@@ -57,68 +58,59 @@ export function getOrderTableDefinition(
             })
           );
         },
-        sortable: true,
-        sortField: 'cleaningDateTime',
-        columnClass: 'width-12',
       },
       {
         id: 'totalPrice',
-        headerName: translate.instant('pages.order_management.total_price'),
-        value: (row?: OrderListItem) => {
+        field: 'totalPrice',
+        header: translate.instant('pages.order_management.total_price'),
+        sortable: true,
+        width: '10%',
+        getValue: (row: OrderListItem) => {
           if (!row) return '';
           const symbol = row.currency?.symbol || 'CZK';
           return `${row.totalPrice?.toFixed(2)} ${symbol}`;
         },
-        sortable: true,
-        sortField: 'totalPrice',
-        columnClass: 'width-10',
       },
       {
         id: 'orderStatus',
-        headerName: translate.instant(
+        field: 'orderStatus',
+        header: translate.instant(
           'pages.order_management.order_status_label'
         ),
-        template: orderStatusTemplate,
         sortable: true,
-        sortField: 'orderStatus',
-        columnClass: 'width-10',
+        width: '10%',
+        customTemplate: orderStatusTemplate,
       },
       {
         id: 'paymentStatus',
-        headerName: translate.instant(
+        field: 'paymentStatus',
+        header: translate.instant(
           'pages.order_management.payment_status_label'
         ),
-        template: paymentStatusTemplate,
-        columnClass: 'width-10',
+        width: '10%',
+        customTemplate: paymentStatusTemplate,
       },
       {
         id: 'assignedEmployees',
-        headerName: translate.instant(
+        field: 'assignedEmployees',
+        header: translate.instant(
           'pages.order_management.assigned_employees'
         ),
-        value: (row?: OrderListItem) => {
+        width: '8%',
+        getValue: (row: OrderListItem) => {
           if (!row) return '';
           return `${row.assignedEmployeesCount || 0}/${
             row.requiredEmployees || 0
           }`;
         },
-        columnClass: 'width-8',
       },
+    ],
+    actions: [
       {
-        id: 'actions',
-        headerName: translate.instant('pages.order_management.actions'),
-        columnActions: [
-          {
-            icon: 'pi pi-eye',
-            onClick: (row: OrderListItem) => defs.onViewDetails(row),
-            buttonPalette: 'p-button-info p-button-sm',
-            tooltip: {
-              title: translate.instant('pages.order_management.view_details'),
-              position: 'above',
-            },
-          },
-        ],
-        columnClass: 'width-8',
+        icon: 'pi pi-eye',
+        tooltip: translate.instant('pages.order_management.view_details'),
+        color: 'info',
+        onClick: (row: OrderListItem) => defs.onViewDetails(row),
       },
     ],
   };

@@ -9,6 +9,7 @@ import {
   CleansiaSectionComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
+import { CleansiaAdminRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
@@ -43,7 +44,7 @@ export class PayPeriodDetailComponent implements OnInit, OnDestroy {
     if (payPeriodId) {
       this.facade.loadPayPeriodDetail(payPeriodId);
     } else {
-      this.router.navigate(['/pay-periods']);
+      this.router.navigate([CleansiaAdminRoute.PAY_PERIODS]);
     }
   }
 
@@ -52,7 +53,7 @@ export class PayPeriodDetailComponent implements OnInit, OnDestroy {
   }
 
   goBack(): void {
-    this.router.navigate(['/pay-periods']);
+    this.router.navigate([CleansiaAdminRoute.PAY_PERIODS]);
   }
 
   onClosePayPeriod(): void {

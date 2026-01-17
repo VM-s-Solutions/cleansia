@@ -13,13 +13,13 @@ namespace Cleansia.Web.Admin.Controllers;
 [ApiController]
 public class AdminInvoiceController(IMediator mediator) : ApiController(mediator)
 {
-    [HttpPost("get-paged")]
+    [HttpGet("get-paged")]
     [Permission(Policy.CanViewPagedInvoices)]
     [ProducesResponseType(typeof(PagedData<EmployeeInvoiceDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> GetPagedInvoices([FromBody] GetPagedInvoices.Request request, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetPagedInvoices([FromQuery] GetPagedInvoices.Request request, CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(request, cancellationToken);
         return Ok(result);
@@ -47,9 +47,9 @@ public class AdminInvoiceController(IMediator mediator) : ApiController(mediator
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> ApproveInvoice([FromBody] ApproveInvoice.Command command)
+    public async Task<IActionResult> ApproveInvoice([FromBody] ApproveInvoice.Command command, CancellationToken cancellationToken)
     {
-        var result = await Mediator.Send(command);
+        var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<ApproveInvoice.Response>(result);
     }
 
@@ -59,9 +59,9 @@ public class AdminInvoiceController(IMediator mediator) : ApiController(mediator
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> MarkInvoicePaid([FromBody] MarkInvoicePaid.Command command)
+    public async Task<IActionResult> MarkInvoicePaid([FromBody] MarkInvoicePaid.Command command, CancellationToken cancellationToken)
     {
-        var result = await Mediator.Send(command);
+        var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<MarkInvoicePaid.Response>(result);
     }
 
@@ -71,9 +71,9 @@ public class AdminInvoiceController(IMediator mediator) : ApiController(mediator
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> CancelInvoice([FromBody] CancelInvoice.Command command)
+    public async Task<IActionResult> CancelInvoice([FromBody] CancelInvoice.Command command, CancellationToken cancellationToken)
     {
-        var result = await Mediator.Send(command);
+        var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<CancelInvoice.Response>(result);
     }
 
@@ -83,9 +83,9 @@ public class AdminInvoiceController(IMediator mediator) : ApiController(mediator
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> RegenerateInvoicePdf([FromBody] RegenerateInvoicePdf.Command command)
+    public async Task<IActionResult> RegenerateInvoicePdf([FromBody] RegenerateInvoicePdf.Command command, CancellationToken cancellationToken)
     {
-        var result = await Mediator.Send(command);
+        var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<RegenerateInvoicePdf.Response>(result);
     }
 

@@ -2,8 +2,12 @@
 <cleansia-loader />
 }
 <div class="cleansia-profile">
-  <cleansia-language-switcher />
-  <form class="cleansia-profile__form-card" [formGroup]="facade.formGroup">
+  <form
+    class="cleansia-profile__form-card page-wrapper"
+    [formGroup]="facade.formGroup"
+  >
+    <cleansia-language-switcher />
+
     <div class="cleansia-profile__header">
       <cleansia-title [title]="'pages.profile.title' | translate" />
       <p class="cleansia-profile__description">

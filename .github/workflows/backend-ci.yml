@@ -23,7 +23,7 @@ jobs:
         working-directory: ./src
 
       - name: Build Partner API
-        run: dotnet build Cleansia.Web/Cleansia.Web.csproj --configuration Release --no-restore
+        run: dotnet build Cleansia.Web/Cleansia.Web.Partner.csproj --configuration Release --no-restore
         working-directory: ./src
 
       - name: Build Admin API

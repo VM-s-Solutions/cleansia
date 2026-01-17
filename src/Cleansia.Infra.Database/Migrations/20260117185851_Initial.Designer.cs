@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260102205635_ChangeEnumValue")]
-    partial class ChangeEnumValue
+    [Migration("20260117185851_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -48,7 +48,7 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.Property<string>("CountryId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("character varying(26)");
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
@@ -136,6 +136,9 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("RegistrationNumber")
                         .IsUnique()
                         .HasDatabaseName("IX_CompanyInfo_RegistrationNumber");
+
+                    b.HasIndex("CountryId", "IsActive")
+                        .HasDatabaseName("IX_CompanyInfo_CountryId_IsActive");
 
                     b.ToTable("CompanyInfo", (string)null);
                 });
@@ -1319,9 +1322,6 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<string>("EmployeeId")
-                        .HasColumnType("character varying(26)");
-
                     b.Property<bool>("EmployeePayCalculated")
                         .HasColumnType("boolean");
 
@@ -1386,8 +1386,6 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("CurrencyId");
 
                     b.HasIndex("CustomerAddressId");
-
-                    b.HasIndex("EmployeeId");
 
                     b.HasIndex("UserId");
 
@@ -2275,6 +2273,17 @@ namespace Cleansia.Infra.Database.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.Company.CompanyInfo", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Internationalization.Country", "Country")
+                        .WithMany()
+                        .HasForeignKey("CountryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Country");
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Disputes.Dispute", b =>
                 {
                     b.HasOne("Cleansia.Core.Domain.Orders.Order", "Order")
@@ -2507,11 +2516,6 @@ namespace Cleansia.Infra.Database.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Cleansia.Core.Domain.Users.Employee", "Employee")
-                        .WithMany("Orders")
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("Cleansia.Core.Domain.Users.User", "User")
                         .WithMany("Orders")
                         .HasForeignKey("UserId")
@@ -2520,8 +2524,6 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("Currency");
 
                     b.Navigation("CustomerAddress");
-
-                    b.Navigation("Employee");
 
                     b.Navigation("User");
                 });
@@ -2826,8 +2828,6 @@ namespace Cleansia.Infra.Database.Migrations
             modelBuilder.Entity("Cleansia.Core.Domain.Users.Employee", b =>
                 {
                     b.Navigation("AssignedOrders");
-
-                    b.Navigation("Orders");
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Users.User", b =>

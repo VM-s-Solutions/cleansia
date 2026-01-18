@@ -1,12 +1,14 @@
 import { Injectable, inject, signal } from '@angular/core';
 import {
   AdminClient,
+  ContractStatus,
   DocumentStatus,
   DocumentType,
   EmployeeDocumentFilter,
   EmployeeDocumentItem,
   GetEmployeeDocumentsRequest,
   RejectDocumentCommand,
+  RejectEmployeeRequest,
   SortDefinition,
   SortDirection,
 } from '@cleansia/admin-services';
@@ -166,6 +168,88 @@ export class EmployeeDetailFacade {
         this.rejectDocument(employeeDocument.id, result.reason);
       }
     });
+  }
+
+  approveEmployee(): void {
+    const employeeId = this.employee()?.id;
+    if (!employeeId) return;
+
+    this.adminClient.adminEmployeeClient
+      .approve(employeeId, undefined)
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError(() => of(null))
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.snackbarService.showSuccess(
+            this.translate.instant(
+              'pages.employee_detail.messages.employee_approve_success'
+            )
+          );
+          this.loadEmployeeDetail(employeeId);
+        }
+      });
+  }
+
+  rejectEmployee(reason: string): void {
+    const employeeId = this.employee()?.id;
+    if (!employeeId) return;
+
+    const request = new RejectEmployeeRequest({ reason });
+    this.adminClient.adminEmployeeClient
+      .reject(employeeId, request)
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError(() => of(null))
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.snackbarService.showSuccess(
+            this.translate.instant(
+              'pages.employee_detail.messages.employee_reject_success'
+            )
+          );
+          this.loadEmployeeDetail(employeeId);
+        }
+      });
+  }
+
+  openRejectEmployeeDialog(): void {
+    const employee = this.employee();
+    if (!employee?.id) return;
+
+    const dialogData: RejectDialogData = {
+      title: this.translate.instant(
+        'pages.employee_detail.reject_employee_dialog.title'
+      ),
+      subtitle: this.translate.instant(
+        'pages.employee_detail.reject_employee_dialog.subtitle'
+      ),
+    };
+
+    const dialogRef = this.dialogService.open(RejectDialogComponent, {
+      data: dialogData,
+      header: this.translate.instant(
+        'pages.employee_detail.reject_employee_dialog.title'
+      ),
+      width: '500px',
+      modal: true,
+    });
+
+    dialogRef.onClose.subscribe((result: RejectDialogResult | undefined) => {
+      if (result?.reason) {
+        this.rejectEmployee(result.reason);
+      }
+    });
+  }
+
+  canApproveOrReject(): boolean {
+    const employee = this.employee();
+    return (
+      employee?.isProfileComplete === true &&
+      employee?.contractStatus === ContractStatus[ContractStatus.Pending]
+    );
   }
 
   downloadDocument(employeeDocument: EmployeeDocumentItem): void {

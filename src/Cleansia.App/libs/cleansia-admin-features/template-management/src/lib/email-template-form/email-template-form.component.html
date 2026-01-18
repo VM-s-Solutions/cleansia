@@ -1,11 +1,11 @@
 <div class="template-form-page">
-  <div class="page-header">
-    <cleansia-title [title]="pageTitle()">
-      <cleansia-language-switcher />
-    </cleansia-title>
-  </div>
+  <div class="template-form-page__container page-wrapper">
+    <cleansia-language-switcher />
+    <div class="page-header">
+      <cleansia-title [title]="pageTitle()" />
+    </div>
 
-  <div class="page-content">
+    <div class="page-content">
     <div class="header-actions">
       <cleansia-button
         [label]="'global.actions.back' | translate"
@@ -99,6 +99,7 @@
       </div>
     </form>
     }
+    </div>
   </div>
 </div>
 

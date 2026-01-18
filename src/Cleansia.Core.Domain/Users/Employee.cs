@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Documents;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
@@ -51,8 +52,8 @@ public class Employee : Auditable
     private IDictionary<string, List<TimeRange>> _availability = new Dictionary<string, List<TimeRange>>();
     public IReadOnlyDictionary<string, List<TimeRange>> Availability => _availability.ToDictionary().AsReadOnly();
 
-    private ICollection<string> _documentFileNames = [];
-    public virtual IReadOnlyCollection<string> DocumentFileNames => _documentFileNames.ToList().AsReadOnly();
+    private ICollection<EmployeeDocument> _documents = [];
+    public IReadOnlyCollection<EmployeeDocument> Documents => _documents.ToList().AsReadOnly();
 
     private ICollection<OrderEmployee> _assignedOrders = [];
     public IReadOnlyCollection<OrderEmployee> AssignedOrders => _assignedOrders.ToList().AsReadOnly();
@@ -154,7 +155,7 @@ public class Employee : Auditable
         var hasEmergencyContact = !string.IsNullOrEmpty(EmergencyContactName) &&
                                  !string.IsNullOrEmpty(EmergencyContactPhone);
 
-        var hasDocuments = DocumentFileNames.Any();
+        var hasDocuments = Documents.Any(d => d.IsActive);
 
         var hasAvailability = Availability.Any();
 
@@ -182,22 +183,9 @@ public class Employee : Auditable
         if (string.IsNullOrEmpty(NationalityId)) missingFields.Add("Nationality");
         if (string.IsNullOrEmpty(EmergencyContactName)) missingFields.Add("Emergency Contact Name");
         if (string.IsNullOrEmpty(EmergencyContactPhone)) missingFields.Add("Emergency Contact Phone");
-        if (!DocumentFileNames.Any()) missingFields.Add("Documents");
+        if (!Documents.Any(d => d.IsActive)) missingFields.Add("Documents");
         if (!Availability.Any()) missingFields.Add("Availability");
 
         return missingFields;
-    }
-
-    public Employee AddDocumentFileName(string fileName)
-    {
-        _documentFileNames.Add(fileName);
-        return this;
-    }
-
-    public Employee AddDocumentFileNames(IEnumerable<string> fileNames)
-    {
-        _documentFileNames = fileNames.ToList();
-
-        return this;
     }
 }

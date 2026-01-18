@@ -8,7 +8,7 @@ import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
-import { takeUntil } from 'rxjs';
+import { catchError, of, takeUntil } from 'rxjs';
 
 @Injectable()
 export class AdminLoginFacade extends UnsubscribeControlDirective {
@@ -32,9 +32,19 @@ export class AdminLoginFacade extends UnsubscribeControlDirective {
     const rememberMe = this.formGroup.get('rememberMe')?.value;
     this.authService
       .login(email, password, rememberMe)
-      .pipe(takeUntil(this.destroyed$))
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError((error) => {
+          this.handleLoginError(error);
+          return of(null);
+        })
+      )
       .subscribe({
-        next: (authResult: JwtTokenResponse) => {
+        next: (authResult: JwtTokenResponse | null) => {
+          if (!authResult) {
+            return; // Error already handled in catchError
+          }
+
           if (!authResult.isEmailConfirmed) {
             this.snackbarService.showError(
               this.translate.instant('validation.auth.email_not_confirmed')
@@ -42,21 +52,61 @@ export class AdminLoginFacade extends UnsubscribeControlDirective {
             return;
           }
 
-          // Check if user has admin/editor role
-          this.authService.setSession(authResult);
-          this.store.dispatch(loadUserCurrent());
-
-          if (!this.authService.isAdminOrEditor()) {
-            this.snackbarService.showError(
-              this.translate.instant('validation.auth.admin_access_required')
-            );
-            this.authService.logout();
+          // Check if user has admin access
+          if (!authResult.hasAdminAccess) {
+            this.router.navigate(['/unauthorized']);
             return;
           }
 
+          // Set session and navigate to admin
+          this.authService.setSession(authResult);
+          this.store.dispatch(loadUserCurrent());
           this.router.navigate([CleansiaAdminRoute.EMPLOYEE_MANAGEMENT]);
         },
       });
+  }
+
+  private handleLoginError(error: unknown): void {
+    const errorMessage = this.extractErrorMessage(error);
+
+    // Show the translated error or a generic message
+    const translatedMessage = this.translate.instant(errorMessage);
+    if (translatedMessage !== errorMessage) {
+      this.snackbarService.showError(translatedMessage);
+    } else {
+      this.snackbarService.showApiError(error, 'validation.auth.login_failed');
+    }
+  }
+
+  private extractErrorMessage(error: unknown): string {
+    const apiError = error as {
+      result?: { detail?: string; title?: string };
+      response?: string;
+      message?: string;
+    };
+
+    // Try to get error from result
+    if (apiError.result?.detail) {
+      return apiError.result.detail;
+    }
+    if (apiError.result?.title) {
+      return apiError.result.title;
+    }
+
+    // Try to parse response string
+    if (apiError.response) {
+      try {
+        const parsed = JSON.parse(apiError.response) as {
+          detail?: string;
+          title?: string;
+        };
+        return parsed.detail || parsed.title || '';
+      } catch {
+        return apiError.response;
+      }
+    }
+
+    return apiError.message || '';
   }
 
   private createFormGroup(): FormGroup {

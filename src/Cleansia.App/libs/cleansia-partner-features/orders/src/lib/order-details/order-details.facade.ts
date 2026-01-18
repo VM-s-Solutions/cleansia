@@ -6,9 +6,10 @@ import {
 } from '@cleansia/partner-services';
 import * as OrderActions from '@cleansia/partner-stores';
 import { SnackbarService } from '@cleansia/services';
+import { Actions, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { catchError, finalize, of, tap } from 'rxjs';
+import { catchError, finalize, of, take, tap } from 'rxjs';
 import {
   CompleteOrderDialogComponent,
   CompleteOrderDialogData,
@@ -21,6 +22,7 @@ export class OrderDetailsFacade {
   private readonly snackbarService = inject(SnackbarService);
   private readonly dialogService = inject(DialogService);
   private readonly store = inject(Store);
+  private readonly actions$ = inject(Actions);
 
   // Signals for reactive state management
   readonly orderDetails = signal<OrderItem | null>(null);
@@ -188,6 +190,23 @@ export class OrderDetailsFacade {
 
     ref.onClose.subscribe((result: CompleteOrderDialogResult) => {
       if (result) {
+        // Subscribe to action result to reload only on success
+        this.actions$
+          .pipe(
+            ofType(
+              OrderActions.completeOrderSuccess,
+              OrderActions.completeOrderFailure
+            ),
+            take(1)
+          )
+          .subscribe((action) => {
+            if (action.type === OrderActions.completeOrderSuccess.type) {
+              // Only reload order details on success
+              this.loadOrderDetails(order.id!);
+            }
+            // On failure, do not reload - the error message is already shown by the effect
+          });
+
         this.store.dispatch(
           OrderActions.completeOrder({
             orderId: order.id!,
@@ -196,8 +215,6 @@ export class OrderDetailsFacade {
             completionNotes: result.completionNotes,
           })
         );
-        // Reload order details after completing
-        setTimeout(() => this.loadOrderDetails(order.id!), 500);
       }
     });
   }

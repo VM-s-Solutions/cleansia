@@ -51,10 +51,5 @@ public class EmployeeEntityConfiguration : AuditableEntityConfiguration<Employee
             .HasConversion(new JsonValueConverter<IReadOnlyDictionary<string, List<TimeRange>>>())
             .Metadata
             .SetValueComparer(new JsonValueComparer<IReadOnlyDictionary<string, List<TimeRange>>>());
-
-        builder.Property(s => s.DocumentFileNames)
-            .HasConversion(new JsonValueConverter<IReadOnlyCollection<string>>())
-            .Metadata
-            .SetValueComparer(new JsonValueComparer<IReadOnlyCollection<string>>());
     }
 }

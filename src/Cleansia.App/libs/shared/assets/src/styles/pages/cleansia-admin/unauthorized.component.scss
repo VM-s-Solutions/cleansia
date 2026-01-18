@@ -1,0 +1,133 @@
+%cleansia-unauthorized__icon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 5rem;
+  -webkit-text-stroke: 1px var(--cleansia-primary-700);
+  text-shadow: 3px 3px var(--cleansia-primary-900);
+  color: var(--cleansia-primary-200);
+  z-index: -1;
+  opacity: 0.7;
+}
+
+@keyframes lockAnimation {
+  0% {
+    translate: 30dvw -10rem;
+    rotate: 0deg;
+  }
+  100% {
+    translate: 85dvw 40rem;
+    rotate: 360deg;
+  }
+}
+
+@keyframes shieldAnimation {
+  0% {
+    translate: -5dvw 40rem;
+    rotate: 0deg;
+  }
+  100% {
+    translate: 50dvw -10rem;
+    rotate: -360deg;
+  }
+}
+
+@keyframes userAnimation {
+  0% {
+    translate: 60dvw 40rem;
+    rotate: 0deg;
+  }
+  100% {
+    translate: 20dvw -10rem;
+    rotate: -360deg;
+  }
+}
+
+@keyframes banAnimation {
+  0% {
+    translate: 75dvw -10rem;
+    rotate: 0deg;
+  }
+  100% {
+    translate: 45dvw 40rem;
+    rotate: 360deg;
+  }
+}
+
+.cleansia-unauthorized {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem;
+  height: 100vh;
+  overflow: hidden;
+
+  &__icons {
+    &__lock {
+      @extend %cleansia-unauthorized__icon;
+      animation: lockAnimation 19s linear infinite;
+    }
+
+    &__shield {
+      @extend %cleansia-unauthorized__icon;
+      animation: shieldAnimation 20s linear infinite;
+    }
+
+    &__user {
+      @extend %cleansia-unauthorized__icon;
+      animation: userAnimation 18s linear infinite;
+    }
+
+    &__ban {
+      @extend %cleansia-unauthorized__icon;
+      animation: banAnimation 16s linear infinite;
+    }
+  }
+
+  &__container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    row-gap: 0.5rem;
+    padding: 2rem 4dvw;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 16px;
+    box-shadow: 0 4px 30px var(--cleansia-black-100);
+    backdrop-filter: blur(3.3px);
+    border: 1px solid var(--cleansia-white);
+    z-index: 1;
+  }
+
+  &__code {
+    font-size: 9rem;
+    font-weight: 800;
+    color: var(--cleansia-primary);
+    text-shadow: 2px 2px var(--cleansia-primary-900);
+    line-height: 1;
+    margin: 0;
+  }
+
+  &__title {
+    font-size: 2rem;
+    font-weight: 200;
+    text-transform: uppercase;
+    text-align: center;
+    color: var(--cleansia-primary-900);
+    margin: 0;
+  }
+
+  &__msg {
+    font-size: 0.95rem;
+    max-width: 30rem;
+    text-align: center;
+    color: var(--cleansia-gray);
+    margin: 0;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 1rem;
+    padding-top: 2rem;
+  }
+}

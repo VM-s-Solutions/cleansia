@@ -220,6 +220,7 @@
       "description": "Spravujte své aktivní objednávky a zaznamenávejte odpracovaný čas.",
       "active_orders": "Aktivní objednávky",
       "order_number": "Číslo objednávky",
+      "view_details": "Zobrazit detail",
       "customer_name": "Jméno zákazníka",
       "customer_email": "Email zákazníka",
       "customer_phone": "Telefon zákazníka",
@@ -337,6 +338,7 @@
       "order_history": "Historie objednávky",
       "actions": "Akce",
       "start_order": "Zahájit objednávku",
+      "complete_order": "Dokončit objednávku",
       "photos": "Fotografie objednávky",
       "upload_before_photo": "Nahrát fotografii před úklidem",
       "upload_after_photo": "Nahrát fotografii po úklidu",
@@ -403,6 +405,7 @@
       "summary": "Souhrn faktury",
       "employee_name": "Jméno zaměstnance",
       "variable_symbol": "Variabilní symbol",
+      "total_orders": "Celkem objednávek",
       "generated_date": "Datum vygenerování",
       "approved_date": "Datum schválení",
       "paid_date": "Datum zaplacení",
@@ -1050,6 +1053,10 @@
       "paid": "Zaplaceno",
       "failed": "Selhalo",
       "refunded": "Vráceno"
+    },
+    "payment_type": {
+      "cash": "Hotovost",
+      "card": "Karta"
     },
     "dispute_status": {
       "pending": "Čeká na vyřízení",

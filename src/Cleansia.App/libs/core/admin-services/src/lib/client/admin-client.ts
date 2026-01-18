@@ -19,7 +19,7 @@ export interface IAdminAuthClient {
      * @param body (optional) 
      * @return OK
      */
-    login(body?: LoginCommand | undefined): Observable<JwtTokenResponse>;
+    login(body?: AdminLoginCommand | undefined): Observable<JwtTokenResponse>;
 }
 
 @Injectable({
@@ -39,7 +39,7 @@ export class AdminAuthClient implements IAdminAuthClient {
      * @param body (optional) 
      * @return OK
      */
-    login(body?: LoginCommand | undefined): Observable<JwtTokenResponse> {
+    login(body?: AdminLoginCommand | undefined): Observable<JwtTokenResponse> {
         let url = this.baseUrl + "/api/AdminAuth/Login";
         url = url.replace(/[?&]$/, "");
 
@@ -5994,6 +5994,10 @@ export interface IAdminPayPeriodClient {
      */
     update(body?: UpdatePayPeriodCommand | undefined): Observable<UpdatePayPeriodResponse>;
     /**
+     * @return OK
+     */
+    delete(payPeriodId: string): Observable<DeletePayPeriodResponse>;
+    /**
      * @param body (optional) 
      * @return OK
      */
@@ -6350,6 +6354,81 @@ export class AdminPayPeriodClient implements IAdminPayPeriodClient {
     }
 
     /**
+     * @return OK
+     */
+    delete(payPeriodId: string): Observable<DeletePayPeriodResponse> {
+        let url = this.baseUrl + "/api/AdminPayPeriod/delete/{payPeriodId}";
+        if (payPeriodId === undefined || payPeriodId === null)
+            throw new globalThis.Error("The parameter 'payPeriodId' must be defined.");
+        url = url.replace("{payPeriodId}", encodeURIComponent("" + payPeriodId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("delete", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processDelete(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processDelete(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<DeletePayPeriodResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<DeletePayPeriodResponse>;
+        }));
+    }
+
+    protected processDelete(response: HttpResponseBase): Observable<DeletePayPeriodResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = DeletePayPeriodResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
      * @param body (optional) 
      * @return OK
      */
@@ -6472,102 +6551,6 @@ export class AdminPayPeriodClient implements IAdminPayPeriodClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = ClosePayPeriodResponse.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result400: any = null;
-            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, ResponseText, Headers, result400);
-            }));
-        } else if (status === 401) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result401: any = null;
-            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, ResponseText, Headers, result401);
-            }));
-        } else if (status === 403) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result403: any = null;
-            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-}
-
-export interface IApiClient {
-    /**
-     * @return OK
-     */
-    adminPayPeriod(payPeriodId: string): Observable<DeletePayPeriodResponse>;
-}
-
-@Injectable({
-    providedIn: 'root'
-})
-export class ApiClient implements IApiClient {
-    private http: HttpClient;
-    private baseUrl: string;
-    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
-
-    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(ADMINAPIBASEURL) baseUrl?: string) {
-        this.http = http;
-        this.baseUrl = baseUrl ?? "";
-    }
-
-    /**
-     * @return OK
-     */
-    adminPayPeriod(payPeriodId: string): Observable<DeletePayPeriodResponse> {
-        let url = this.baseUrl + "/api/AdminPayPeriod/{payPeriodId}";
-        if (payPeriodId === undefined || payPeriodId === null)
-            throw new globalThis.Error("The parameter 'payPeriodId' must be defined.");
-        url = url.replace("{payPeriodId}", encodeURIComponent("" + payPeriodId));
-        url = url.replace(/[?&]$/, "");
-
-        let options : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("delete", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processAdminPayPeriod(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processAdminPayPeriod(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<DeletePayPeriodResponse>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<DeletePayPeriodResponse>;
-        }));
-    }
-
-    protected processAdminPayPeriod(response: HttpResponseBase): Observable<DeletePayPeriodResponse> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = DeletePayPeriodResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -8965,12 +8948,12 @@ export interface IUpdateAdminUserResponse {
     id: string | undefined;
 }
 
-export class LoginCommand implements ILoginCommand {
+export class AdminLoginCommand implements IAdminLoginCommand {
     email!: string | undefined;
     password!: string | undefined;
     rememberMe!: boolean;
 
-    constructor(data?: ILoginCommand) {
+    constructor(data?: IAdminLoginCommand) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -8987,9 +8970,9 @@ export class LoginCommand implements ILoginCommand {
         }
     }
 
-    static fromJS(data: any): LoginCommand {
+    static fromJS(data: any): AdminLoginCommand {
         data = typeof data === 'object' ? data : {};
-        let result = new LoginCommand();
+        let result = new AdminLoginCommand();
         result.init(data);
         return result;
     }
@@ -9003,7 +8986,7 @@ export class LoginCommand implements ILoginCommand {
     }
 }
 
-export interface ILoginCommand {
+export interface IAdminLoginCommand {
     email: string | undefined;
     password: string | undefined;
     rememberMe: boolean;
@@ -11987,7 +11970,6 @@ export class AdminEmployeeDetail implements IAdminEmployeeDetail {
     contractStatus!: string | undefined;
     averageRating!: number;
     complaintsCount!: number;
-    documentFileNames!: string[] | undefined;
     availability!: { [key: string]: TimeRange[]; } | undefined;
     createdAt!: Date;
     isProfileComplete!: boolean;
@@ -12031,11 +12013,6 @@ export class AdminEmployeeDetail implements IAdminEmployeeDetail {
             this.contractStatus = Data["contractStatus"];
             this.averageRating = Data["averageRating"];
             this.complaintsCount = Data["complaintsCount"];
-            if (Array.isArray(Data["documentFileNames"])) {
-                this.documentFileNames = [] as any;
-                for (let item of Data["documentFileNames"])
-                    this.documentFileNames!.push(item);
-            }
             if (Data["availability"]) {
                 this.availability = {} as any;
                 for (let key in Data["availability"]) {
@@ -12089,11 +12066,6 @@ export class AdminEmployeeDetail implements IAdminEmployeeDetail {
         data["contractStatus"] = this.contractStatus;
         data["averageRating"] = this.averageRating;
         data["complaintsCount"] = this.complaintsCount;
-        if (Array.isArray(this.documentFileNames)) {
-            data["documentFileNames"] = [];
-            for (let item of this.documentFileNames)
-                data["documentFileNames"].push(item);
-        }
         if (this.availability) {
             data["availability"] = {};
             for (let key in this.availability) {
@@ -12140,7 +12112,6 @@ export interface IAdminEmployeeDetail {
     contractStatus: string | undefined;
     averageRating: number;
     complaintsCount: number;
-    documentFileNames: string[] | undefined;
     availability: { [key: string]: TimeRange[]; } | undefined;
     createdAt: Date;
     isProfileComplete: boolean;
@@ -12230,8 +12201,8 @@ export interface IAdminEmployeeListItem {
 }
 
 export class TimeRange implements ITimeRange {
-    start!: string;
-    end!: string;
+    start!: string | undefined;
+    end!: string | undefined;
 
     constructor(data?: ITimeRange) {
         if (data) {
@@ -12265,8 +12236,8 @@ export class TimeRange implements ITimeRange {
 }
 
 export interface ITimeRange {
-    start: string;
-    end: string;
+    start: string | undefined;
+    end: string | undefined;
 }
 
 export class RejectEmployeeRequest implements IRejectEmployeeRequest {
@@ -16284,6 +16255,7 @@ export interface ICode {
 export class JwtTokenResponse implements IJwtTokenResponse {
     token!: string | undefined;
     isEmailConfirmed!: boolean;
+    hasAdminAccess!: boolean;
 
     constructor(data?: IJwtTokenResponse) {
         if (data) {
@@ -16298,6 +16270,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
         if (Data) {
             this.token = Data["token"];
             this.isEmailConfirmed = Data["isEmailConfirmed"];
+            this.hasAdminAccess = Data["hasAdminAccess"];
         }
     }
 
@@ -16312,6 +16285,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
         data = typeof data === 'object' ? data : {};
         data["token"] = this.token;
         data["isEmailConfirmed"] = this.isEmailConfirmed;
+        data["hasAdminAccess"] = this.hasAdminAccess;
         return data;
     }
 }
@@ -16319,6 +16293,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
 export interface IJwtTokenResponse {
     token: string | undefined;
     isEmailConfirmed: boolean;
+    hasAdminAccess: boolean;
 }
 
 export class AdminUserListItemPagedData implements IAdminUserListItemPagedData {

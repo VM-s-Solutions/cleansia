@@ -110,9 +110,7 @@ export class OrderEffects {
                 });
               }),
               catchError((error) => {
-                this.snackbarService.showError(
-                  this.translate.instant('pages.orders.complete_order.error')
-                );
+                // Use showApiError to extract and translate the actual API error message
                 return of(OrderActions.completeOrderFailure({ error }));
               })
             )

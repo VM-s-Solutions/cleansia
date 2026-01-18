@@ -34,6 +34,10 @@ public class Register
                 .WithErrorCode(nameof(Command.Email));
 
             RuleFor(user => user.Language)
+                .Cascade(CascadeMode.Stop)
+                .NotNull()
+                .WithMessage(BusinessErrorMessage.Required)
+                .WithErrorCode(nameof(Command.Language))
                 .SetValidator(new LanguageValidator(languageRepository));
         }
 

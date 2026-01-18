@@ -50,7 +50,6 @@ public record AdminEmployeeDetail(
     string ContractStatus,
     decimal AverageRating,
     int ComplaintsCount,
-    List<string> DocumentFileNames,
     Dictionary<string, List<TimeRange>>? Availability,
     DateTimeOffset CreatedAt,
     bool IsProfileComplete,
@@ -63,4 +62,4 @@ public record AdminEmployeeDetail(
     List<string> MissingFields
 );
 
-public record TimeRange(TimeOnly Start, TimeOnly End);
+public record TimeRange(string Start, string End);

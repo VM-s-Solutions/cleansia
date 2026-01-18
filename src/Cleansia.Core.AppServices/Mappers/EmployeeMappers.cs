@@ -55,8 +55,8 @@ public static class EmployeeMappers
             Availability: employee.Availability?.ToDictionary(
                 kvp => kvp.Key,
                 kvp => kvp.Value.Select(tr => new DtoTimeRange(
-                    TimeOnly.FromTimeSpan(tr.Start),
-                    TimeOnly.FromTimeSpan(tr.End)
+                    tr.Start.ToString(@"hh\:mm"),
+                    tr.End.ToString(@"hh\:mm")
                 )).ToList()
             ));
     }
@@ -102,12 +102,11 @@ public static class EmployeeMappers
             ContractStatus: employee.ContractStatus.ToString(),
             AverageRating: employee.AverageRating,
             ComplaintsCount: employee.ComplaintsCount,
-            DocumentFileNames: employee.DocumentFileNames.ToList(),
             Availability: employee.Availability?.ToDictionary(
                 kvp => kvp.Key,
                 kvp => kvp.Value.Select(tr => new DtoTimeRange(
-                    TimeOnly.FromTimeSpan(tr.Start),
-                    TimeOnly.FromTimeSpan(tr.End)
+                    tr.Start.ToString(@"hh\:mm"),
+                    tr.End.ToString(@"hh\:mm")
                 )).ToList()
             ),
             CreatedAt: employee.User.CreatedOn,
@@ -144,7 +143,7 @@ public static class EmployeeMappers
         var hasEmergencyContact = !string.IsNullOrEmpty(employee.EmergencyContactName) &&
                                  !string.IsNullOrEmpty(employee.EmergencyContactPhone);
 
-        var hasDocuments = employee.DocumentFileNames.Any();
+        var hasDocuments = employee.Documents.Any(d => d.IsActive);
 
         var hasAvailability = employee.Availability?.Any() == true;
 

@@ -43,7 +43,7 @@ public class EmployeeDocumentEntityConfiguration : AuditableEntityConfiguration<
 
         builder
             .HasOne(d => d.Employee)
-            .WithMany()
+            .WithMany(e => e.Documents)
             .HasForeignKey(d => d.EmployeeId)
             .OnDelete(DeleteBehavior.Restrict);
 

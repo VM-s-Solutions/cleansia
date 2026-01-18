@@ -38,6 +38,7 @@ public class GetPagedEmployees
                 .Include(e => e.User)
                 .Include(e => e.Nationality)
                 .Include(e => e.Address)
+                .Include(e => e.Documents)
                 .AsNoTracking()
                 .Select(employee => employee.MapToAdminDto())
                 .ToListAsync(cancellationToken);

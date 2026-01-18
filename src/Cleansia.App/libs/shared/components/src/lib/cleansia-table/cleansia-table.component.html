@@ -81,7 +81,7 @@
                 type="button"
                 class="action-btn"
                 [class.action-btn--disabled]="isActionDisabled(action, row)"
-                [pTooltip]="action.tooltip"
+                [pTooltip]="action.tooltip ? (action.tooltip | translate) : ''"
                 tooltipPosition="top"
                 [disabled]="isActionDisabled(action, row)"
                 (click)="onActionClick(action, row, $event)"

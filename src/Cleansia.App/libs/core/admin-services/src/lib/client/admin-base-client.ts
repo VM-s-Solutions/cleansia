@@ -20,7 +20,6 @@ import {
   AdminReportClient,
   AdminServiceClient,
   AdminUserClient,
-  ApiClient,
   IAdminAuthClient,
   IAdminCodeClient,
   IAdminCompanyClient,
@@ -39,7 +38,6 @@ import {
   IAdminReportClient,
   IAdminServiceClient,
   IAdminUserClient,
-  IApiClient,
   ITypesClient,
   TypesClient,
 } from './admin-client';
@@ -63,7 +61,6 @@ interface IAdminClient {
   adminReportClient: IAdminReportClient;
   adminServiceClient: IAdminServiceClient;
   adminUserClient: IAdminUserClient;
-  apiClient: IApiClient;
   emailTemplateTypesClient: ITypesClient;
 }
 
@@ -139,7 +136,6 @@ export class AdminClient implements IAdminClient {
     new AdminReceiptTemplateClient(this.httpClient, this.apiBaseUrl);
   adminEmailTemplateClient: IAdminEmailTemplateClient =
     new AdminEmailTemplateClient(this.httpClient, this.apiBaseUrl);
-  apiClient: IApiClient = new ApiClient(this.httpClient, this.apiBaseUrl);
   emailTemplateTypesClient: ITypesClient = new TypesClient(
     this.httpClient,
     this.apiBaseUrl

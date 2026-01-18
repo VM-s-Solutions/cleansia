@@ -79,7 +79,8 @@
       "previous": "Previous",
       "next": "Next",
       "go_back": "Go Back",
-      "go_home": "Go Home"
+      "go_home": "Go Home",
+      "go_to_login": "Go to Login"
     },
     "user": {
       "remember_me": "Remember me"
@@ -117,6 +118,10 @@
     "logout": "Logout"
   },
   "pages": {
+    "unauthorized": {
+      "title": "Access Denied",
+      "message": "You don't have permission to access this area. Administrator privileges are required."
+    },
     "login": {
       "email": "Email",
       "password": "Password",
@@ -235,10 +240,23 @@
       "review_notes": "Review Notes",
       "document_description": "Description",
       "actions": {
+        "approve_employee": "Approve Employee",
+        "reject_employee": "Reject Employee",
         "approve_document": "Approve",
         "reject_document": "Reject",
         "download_document": "Download",
         "preview_document": "Preview"
+      },
+      "reject_employee_dialog": {
+        "title": "Reject Employee",
+        "subtitle": "Please provide a reason for rejecting this employee",
+        "reason_label": "Rejection Reason",
+        "reason_placeholder": "Enter detailed reason for rejection...",
+        "reason_hint": "Maximum 500 characters",
+        "reason_required": "Rejection reason is required",
+        "reason_too_long": "Rejection reason is too long (max 500 characters)",
+        "cancel_button": "Cancel",
+        "reject_button": "Reject Employee"
       },
       "reject_document_dialog": {
         "title": "Reject Document",
@@ -253,6 +271,10 @@
       },
       "messages": {
         "load_error": "Failed to load employee details",
+        "employee_approve_success": "Employee approved successfully",
+        "employee_approve_error": "Failed to approve employee",
+        "employee_reject_success": "Employee rejected successfully",
+        "employee_reject_error": "Failed to reject employee",
         "document_approve_success": "Document approved successfully",
         "document_approve_error": "Failed to approve document",
         "document_reject_success": "Document rejected successfully",
@@ -1373,7 +1395,8 @@
     },
     "auth": {
       "email_not_confirmed": "Email address is not confirmed",
-      "admin_access_required": "Admin access is required to access this panel"
+      "admin_access_required": "Admin access is required to access this panel",
+      "login_failed": "Login failed. Please check your credentials and try again."
     },
     "file": {
       "required": "Files are required",
@@ -1400,7 +1423,8 @@
       "invalid_google_token": "Invalid Google token",
       "invalid_password_format": "Invalid password format. Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number.",
       "invalid_reset_token": "Invalid or expired password reset token",
-      "same_reset_password": "New password must be different from the current password"
+      "same_reset_password": "New password must be different from the current password",
+      "insufficient_privileges": "You do not have permission to access the admin panel. Only administrators and employees can log in."
     },
     "common": {
       "invalid_enum_value": "Invalid value provided",

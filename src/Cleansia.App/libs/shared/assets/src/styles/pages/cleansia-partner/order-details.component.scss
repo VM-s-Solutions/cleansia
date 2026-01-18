@@ -159,6 +159,170 @@
     }
   }
 
+  // Status Banner
+  &__status-banner {
+    background: linear-gradient(
+      135deg,
+      var(--cleansia-primary-50) 0%,
+      var(--cleansia-primary-100) 100%
+    );
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1rem;
+
+    .order-header-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+
+      .order-number {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        .label {
+          font-weight: 500;
+          color: var(--cleansia-text-secondary);
+        }
+
+        .value {
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: var(--cleansia-text-primary);
+        }
+      }
+
+      .order-statuses {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+    }
+
+    .order-meta {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+
+      .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--cleansia-text-secondary);
+        font-size: 0.9rem;
+
+        i {
+          font-size: 1rem;
+        }
+      }
+    }
+
+    @media (max-width: 768px) {
+      padding: 1rem;
+
+      .order-header-info {
+        flex-direction: column;
+        align-items: flex-start;
+
+        .order-number .value {
+          font-size: 1.25rem;
+        }
+      }
+
+      .order-meta {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+    }
+  }
+
+  // Order Status badge styles
+  .order-status-badge,
+  .payment-status-badge {
+    width: fit-content;
+    display: inline-block;
+    padding: 0.375rem 0.875rem;
+    border-radius: 16px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.75px;
+    text-align: center;
+    line-height: 1;
+    white-space: nowrap;
+    min-width: 80px;
+  }
+
+  .order-status-badge {
+    &.status-pending {
+      background-color: rgba(245, 158, 11, 0.15);
+      color: #b45309;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    &.status-confirmed {
+      background-color: rgba(59, 130, 246, 0.15);
+      color: #1e3a8a;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    &.status-inprogress,
+    &.status-in-progress {
+      background-color: rgba(139, 92, 246, 0.15);
+      color: #5b21b6;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+    }
+
+    &.status-completed {
+      background-color: rgba(34, 197, 94, 0.15);
+      color: #14532d;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    &.status-cancelled {
+      background-color: rgba(239, 68, 68, 0.15);
+      color: #991b1b;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+  }
+
+  .payment-status-badge {
+    &.status-pending {
+      background-color: rgba(245, 158, 11, 0.15);
+      color: #b45309;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    &.status-paid {
+      background-color: rgba(34, 197, 94, 0.15);
+      color: #14532d;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    &.status-failed {
+      background-color: rgba(239, 68, 68, 0.15);
+      color: #991b1b;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    &.status-refunded {
+      background-color: rgba(107, 114, 128, 0.15);
+      color: #374151;
+      border: 1px solid rgba(107, 114, 128, 0.3);
+    }
+
+    &.status-disputed {
+      background-color: rgba(220, 38, 38, 0.15);
+      color: #7f1d1d;
+      border: 1px solid rgba(220, 38, 38, 0.3);
+    }
+  }
+
   &__error {
     display: flex;
     flex-direction: column;
@@ -494,89 +658,119 @@
     }
   }
 
-  // History section
-  &__history {
+  // Status History Timeline
+  .status-history-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
     position: relative;
     padding-left: 2rem;
 
     &::before {
       content: '';
       position: absolute;
-      left: 12px;
-      top: 20px;
-      bottom: 20px;
+      left: 15px;
+      top: 0;
+      bottom: 0;
       width: 2px;
-      background: linear-gradient(
-        to bottom,
-        var(--cleansia-primary-300),
-        var(--cleansia-primary-500)
-      );
+      background: var(--cleansia-primary-200);
     }
   }
 
-  .history-item {
+  .status-history-item {
     display: flex;
-    align-items: flex-start;
-    padding-bottom: 1.5rem;
+    gap: 1rem;
     position: relative;
+    padding: 1rem 0;
 
     &:last-child {
       padding-bottom: 0;
     }
 
-    .history-marker {
+    .status-icon {
       position: absolute;
       left: -2rem;
-      top: 0.5rem;
-      width: 16px;
-      height: 16px;
-      background: var(--cleansia-white);
-      border: 3px solid var(--cleansia-primary-500);
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
-      z-index: 1;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .history-content {
-      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       background: var(--cleansia-white);
-      padding: 1.5rem;
-      border-radius: 12px;
-      border: 1px solid var(--cleansia-primary-200);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-      transition: all var(--default-transition) ease;
+      border: 2px solid var(--cleansia-primary-300);
+      z-index: 1;
 
-      &:hover {
-        transform: translateX(4px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        border-color: var(--cleansia-primary-300);
+      i {
+        font-size: 0.875rem;
+        color: var(--cleansia-primary-600);
       }
     }
 
-    .history-status {
+    .status-content {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: 0.75rem;
+      flex-direction: column;
+      gap: 0.25rem;
+      flex: 1;
+      padding-left: 0.5rem;
 
-      .history-status-name {
+      .status-name {
         font-weight: 600;
         color: var(--cleansia-text-primary);
-        font-size: 1.1rem;
       }
 
-      .history-date {
+      .status-date {
+        font-size: 0.85rem;
         color: var(--cleansia-text-secondary);
+      }
+
+      .status-notes {
+        margin: 0.5rem 0 0;
         font-size: 0.875rem;
-        font-weight: 500;
+        color: var(--cleansia-text-secondary);
+        background: var(--cleansia-primary-50);
+        padding: 0.5rem 0.75rem;
+        border-radius: 4px;
       }
     }
 
-    .history-notes {
-      color: var(--cleansia-text-secondary);
-      font-size: 0.9rem;
-      line-height: 1.5;
-      font-style: italic;
+    // Status-specific colors
+    &.status-pending .status-icon {
+      border-color: #f59e0b;
+      i {
+        color: #f59e0b;
+      }
+    }
+
+    &.status-confirmed .status-icon {
+      border-color: #3b82f6;
+      i {
+        color: #3b82f6;
+      }
+    }
+
+    &.status-inprogress,
+    &.status-in-progress {
+      .status-icon {
+        border-color: #8b5cf6;
+        i {
+          color: #8b5cf6;
+        }
+      }
+    }
+
+    &.status-completed .status-icon {
+      border-color: #22c55e;
+      background: rgba(34, 197, 94, 0.1);
+      i {
+        color: #22c55e;
+      }
+    }
+
+    &.status-cancelled .status-icon {
+      border-color: #ef4444;
+      i {
+        color: #ef4444;
+      }
     }
   }
 

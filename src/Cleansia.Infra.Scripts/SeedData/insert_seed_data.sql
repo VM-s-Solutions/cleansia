@@ -403,7 +403,7 @@ INSERT INTO public."Employees" (
   "DeactivatedOn", "ICO", "IBAN", "AverageRating",
   "ComplaintsCount", "ContractStatus", "PassportId",
   "NationalityId", "EmergencyContactName", "EmergencyContactPhone",
-  "Availability", "DocumentFileNames", "UserId"
+  "Availability", "UserId"
 )
 VALUES
   -- Employee 1: Kateřina Novotná
@@ -412,7 +412,6 @@ VALUES
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE'),
    'Jana Novotná', '+420777888999',
    '{"Monday":[{"Start":"09:00:00","End":"17:00:00"}],"Tuesday":[{"Start":"09:00:00","End":"17:00:00"}],"Wednesday":[{"Start":"09:00:00","End":"17:00:00"}],"Thursday":[{"Start":"09:00:00","End":"17:00:00"}],"Friday":[{"Start":"09:00:00","End":"17:00:00"}]}',
-   '[]',
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'katerina.novotna@cleansia.cz')),
 
   -- Employee 2: Michal Krejčí
@@ -421,7 +420,6 @@ VALUES
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE'),
    'Eva Krejčí', '+420777888998',
    '{"Monday":[{"Start":"08:00:00","End":"16:00:00"}],"Tuesday":[{"Start":"08:00:00","End":"16:00:00"}],"Wednesday":[{"Start":"08:00:00","End":"16:00:00"}],"Thursday":[{"Start":"08:00:00","End":"16:00:00"}],"Friday":[{"Start":"08:00:00","End":"16:00:00"}],"Saturday":[{"Start":"10:00:00","End":"14:00:00"}]}',
-   '[]',
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'michal.krejci@cleansia.cz')),
 
   -- Employee 3: Zuzana Horáková
@@ -430,7 +428,6 @@ VALUES
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE'),
    'Martin Horák', '+420777888997',
    '{"Monday":[{"Start":"10:00:00","End":"18:00:00"}],"Tuesday":[{"Start":"10:00:00","End":"18:00:00"}],"Wednesday":[{"Start":"10:00:00","End":"18:00:00"}],"Thursday":[{"Start":"10:00:00","End":"18:00:00"}],"Friday":[{"Start":"10:00:00","End":"18:00:00"}]}',
-   '[]',
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'zuzana.horakova@cleansia.cz')),
 
   -- Employee 4: Pavel Veselý
@@ -439,7 +436,6 @@ VALUES
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE'),
    'Petra Veselá', '+420777888996',
    '{"Monday":[{"Start":"07:00:00","End":"15:00:00"}],"Tuesday":[{"Start":"07:00:00","End":"15:00:00"}],"Wednesday":[{"Start":"07:00:00","End":"15:00:00"}],"Thursday":[{"Start":"07:00:00","End":"15:00:00"}],"Friday":[{"Start":"07:00:00","End":"15:00:00"}],"Saturday":[{"Start":"09:00:00","End":"13:00:00"}]}',
-   '[]',
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'pavel.vesely@cleansia.cz')),
 
   -- Employee 5: Lenka Marková
@@ -448,7 +444,6 @@ VALUES
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE'),
    'Tomáš Marek', '+420777888995',
    '{"Monday":[{"Start":"09:30:00","End":"17:30:00"}],"Tuesday":[{"Start":"09:30:00","End":"17:30:00"}],"Wednesday":[{"Start":"09:30:00","End":"17:30:00"}],"Thursday":[{"Start":"09:30:00","End":"17:30:00"}],"Friday":[{"Start":"09:30:00","End":"17:30:00"}],"Sunday":[{"Start":"12:00:00","End":"16:00:00"}]}',
-   '[]',
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'lenka.markova@cleansia.cz'));
 
 -- 10. ADDRESSES
@@ -605,11 +600,11 @@ INSERT INTO public."Orders" (
   "PaymentStatus", "TotalPrice", "EstimatedTime",
   "ConfirmationCode", "StripeSessionId", "Notes",
   "SpecialInstructions", "AccessInstructions",
-  "CurrencyId", "UserId", "EmployeeId", "Extras",
+  "CurrencyId", "UserId", "Extras",
   "RequiredEmployees", "MaxEmployees"
 )
 VALUES
-  -- Order 1: Jan Novák - Essential Clean (180 min = 2 employees required, 3 max)
+  -- Order 1: Jan Novák - Essential Clean (180 min = 1 employee required, 1 max)
   (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Jan Novák', 'jan.novak@email.cz', '+420123456789',
    (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Wenceslas Square 1' LIMIT 1),
@@ -620,26 +615,24 @@ VALUES
    'Key under the mat, ring bell twice',
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'jan.novak@email.cz' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654321' LIMIT 1),
    '{"eco_products": true, "pet_friendly": false, "extra_vacuum": true}',
-   2, 3),
+   1, 1),
 
-  -- Order 2: Marie Svobodová - Deep Clean Premium (240 min = 2 employees required, 3 max)
+  -- Order 2: Marie Svobodová - Deep Clean Premium (240 min = 1 employee required, 1 max)
   (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Marie Svobodová', 'marie.svobodova@email.cz', '+420234567890',
    (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Národní třída 25' LIMIT 1),
-   'CLS-2025-0002', 4, 3, '2025-01-16 09:00:00', 0, 0, 2199.00, 240,
+   'CLS-2025-0002', 4, 3, '2025-01-16 09:00:00', 2, 1, 2199.00, 240,
    'DEF456ABC', 'cs_test_stripe_session_2',
    'Deep cleaning after renovation work',
    'There was recent painting work, please be extra careful with dust removal',
    'Security code: 1234, apartment 3B',
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'marie.svobodova@email.cz' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654322' LIMIT 1),
    '{"eco_products": false, "pet_friendly": true, "extra_vacuum": false}',
-   2, 3),
+   1, 1),
 
-  -- Order 3: Petr Dvořák - Moving Day Special (300 min = 3 employees required, 4 max)
+  -- Order 3: Petr Dvořák - Moving Day Special (300 min = 1 employee required, 1 max)
   (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Petr Dvořák', 'petr.dvorak@email.cz', '+420345678901',
    (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Vinohrady 456' LIMIT 1),
@@ -650,26 +643,24 @@ VALUES
    'Landlord will be present for inspection',
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'petr.dvorak@email.cz' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654323' LIMIT 1),
    '{"eco_products": true, "pet_friendly": false, "extra_vacuum": true}',
-   3, 4),
+   1, 1),
 
-  -- Order 4: Anna Černá - Kitchen & Bathroom Focus (150 min = 2 employees required, 3 max)
+  -- Order 4: Anna Černá - Kitchen & Bathroom Focus (150 min = 1 employee required, 1 max)
   (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Anna Černá', 'anna.cerna@email.cz', '+420456789012',
    (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Karlínské náměstí 12' LIMIT 1),
-   'CLS-2025-0004', 3, 2, '2025-01-18 11:00:00', 0, 0, 1399.00, 150,
+   'CLS-2025-0004', 3, 2, '2025-01-18 11:00:00', 1, 2, 1399.00, 150,
    'JKL012GHI', 'cs_test_stripe_session_4',
    'Focus on kitchen and bathrooms only, other rooms are fine',
    'Kitchen has stubborn grease stains from cooking',
    'Use main entrance, elevator to 4th floor',
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'anna.cerna@email.cz' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654324' LIMIT 1),
    '{"eco_products": false, "pet_friendly": true, "extra_vacuum": false}',
-   2, 3),
+   1, 1),
 
-  -- Order 5: Tomáš Procházka - Eco-Green Package (210 min = 2 employees required, 3 max)
+  -- Order 5: Tomáš Procházka - Eco-Green Package (210 min = 1 employee required, 1 max)
   (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Tomáš Procházka', 'tomas.prochazka@email.cz', '+420567890123',
    (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Smíchov 789' LIMIT 1),
@@ -680,24 +671,22 @@ VALUES
    'Doorbell broken, please call when arriving',
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'tomas.prochazka@email.cz' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654325' LIMIT 1),
    '{"eco_products": true, "pet_friendly": true, "extra_vacuum": true}',
-   2, 3),
+   1, 1),
 
-  -- Order 6: Complete Home Clean (No package, individual services) (165 min = 2 employees required, 3 max)
+  -- Order 6: Complete Home Clean (No package, individual services) (165 min = 1 employee required, 1 max)
   (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Jan Novák', 'jan.novak@email.cz', '+420123456789',
    (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Wenceslas Square 1' LIMIT 1),
-   'CLS-2025-0006', 3, 2, '2025-01-20 13:00:00', 0, 0, 1150.00, 165,
+   'CLS-2025-0006', 3, 2, '2025-01-20 13:00:00', 2, 2, 1150.00, 165,
    'PQR678MNO', 'cs_test_stripe_session_6',
    'Follow-up cleaning with individual services',
    'Focus on areas missed in previous cleaning',
    'Same access as before',
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'jan.novak@email.cz' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654321' LIMIT 1),
    '{"eco_products": false, "pet_friendly": false, "extra_vacuum": false}',
-   2, 3);
+   1, 1);
 
 -- Insert Order Services (Junction table for orders and individual services)
 INSERT INTO public."OrderServices" (
@@ -791,13 +780,13 @@ VALUES
 
   -- February 2025 (Open - Current)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '30 days', NULL, NULL, NULL, NULL,
-   '2025-02-01 00:00:00', '2025-02-28 23:59:59', 0,
+   '2025-02-01 00:00:00', '2025-02-28 23:59:59', 1,
    NULL, NULL, NULL,
    'February 2025 period - Currently active'),
 
   -- March 2025 (Open - Future)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   '2025-03-01 00:00:00', '2025-03-31 23:59:59', 0,
+   '2025-03-01 00:00:00', '2025-03-31 23:59:59', 1,
    NULL, NULL, NULL,
    'March 2025 period - Upcoming'),
 

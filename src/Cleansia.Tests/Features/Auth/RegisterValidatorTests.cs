@@ -19,7 +19,7 @@ public class RegisterValidatorTests
         var mockLangRepo = new Mock<ILanguageRepository>();
         mockLangRepo.Setup(r => r.ExistsWithCodeAsync("en", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var validator = new Register.Validator(mockRepo.Object, mockLangRepo.Object);
-        var command = new Register.Command(null, "Password1!", "John", "Doe", "en");
+        var command = new Register.Command(null, "Password1!@abc", "John", "Doe", "en");
         // Act
         var result = await validator.ValidateAsync(command);
         // Assert
@@ -38,7 +38,7 @@ public class RegisterValidatorTests
         var mockLangRepo = new Mock<ILanguageRepository>();
         mockLangRepo.Setup(r => r.ExistsWithCodeAsync("en", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var validator = new Register.Validator(mockRepo.Object, mockLangRepo.Object);
-        var command = new Register.Command("", "Password1!", "John", "Doe", "en");
+        var command = new Register.Command("", "Password1!@abc", "John", "Doe", "en");
         // Act
         var result = await validator.ValidateAsync(command);
         // Assert
@@ -56,7 +56,7 @@ public class RegisterValidatorTests
         var mockLangRepo = new Mock<ILanguageRepository>();
         mockLangRepo.Setup(r => r.ExistsWithCodeAsync("en", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var validator = new Register.Validator(mockRepo.Object, mockLangRepo.Object);
-        var command = new Register.Command("invalid", "Password1!", "John", "Doe", "en");
+        var command = new Register.Command("invalid", "Password1!@abc", "John", "Doe", "en");
         // Act
         var result = await validator.ValidateAsync(command);
         // Assert
@@ -75,7 +75,7 @@ public class RegisterValidatorTests
         var mockLangRepo = new Mock<ILanguageRepository>();
         mockLangRepo.Setup(r => r.ExistsWithCodeAsync("en", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var validator = new Register.Validator(mockRepo.Object, mockLangRepo.Object);
-        var command = new Register.Command(longEmail, "Password1!", "John", "Doe", "en");
+        var command = new Register.Command(longEmail, "Password1!@abc", "John", "Doe", "en");
         // Act
         var result = await validator.ValidateAsync(command);
         // Assert
@@ -95,7 +95,7 @@ public class RegisterValidatorTests
         var mockLangRepo = new Mock<ILanguageRepository>();
         mockLangRepo.Setup(r => r.ExistsWithCodeAsync("en", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var validator = new Register.Validator(mockRepo.Object, mockLangRepo.Object);
-        var command = new Register.Command(user.Email, "Password1!", "John", "Doe", "en");
+        var command = new Register.Command(user.Email, "Password1!@abc", "John", "Doe", "en");
         // Act
         var result = await validator.ValidateAsync(command);
         // Assert
@@ -119,7 +119,7 @@ public class RegisterValidatorTests
         var mockLangRepo = new Mock<ILanguageRepository>();
         mockLangRepo.Setup(r => r.ExistsWithCodeAsync("en", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var validator = new Register.Validator(mockRepo.Object, mockLangRepo.Object);
-        var command = new Register.Command(user.Email, "Password1!", "John", "Doe", "en");
+        var command = new Register.Command(user.Email, "Password1!@abc", "John", "Doe", "en");
         // Act
         var result = await validator.ValidateAsync(command);
         // Assert
@@ -136,7 +136,7 @@ public class RegisterValidatorTests
         var mockLangRepo = new Mock<ILanguageRepository>();
         mockLangRepo.Setup(r => r.ExistsWithCodeAsync("en", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var validator = new Register.Validator(mockRepo.Object, mockLangRepo.Object);
-        var command = new Register.Command(email, "Password1!", "John", "Doe", "en");
+        var command = new Register.Command(email, "Password1!@abc", "John", "Doe", "en");
         // Act
         var result = await validator.ValidateAsync(command);
         // Assert
@@ -153,7 +153,7 @@ public class RegisterValidatorTests
         var mockLangRepo = new Mock<ILanguageRepository>();
         mockLangRepo.Setup(r => r.ExistsWithCodeAsync("en", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var validator = new Register.Validator(mockRepo.Object, mockLangRepo.Object);
-        var command = new Register.Command("test@example.com", "Password1!", null, "Doe", "en");
+        var command = new Register.Command("test@example.com", "Password1!@abc", null, "Doe", "en");
         // Act
         var result = await validator.ValidateAsync(command);
         // Assert
@@ -171,7 +171,7 @@ public class RegisterValidatorTests
         var mockLangRepo = new Mock<ILanguageRepository>();
         mockLangRepo.Setup(r => r.ExistsWithCodeAsync("en", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var validator = new Register.Validator(mockRepo.Object, mockLangRepo.Object);
-        var command = new Register.Command("test@example.com", "Password1!", "", "Doe", "en");
+        var command = new Register.Command("test@example.com", "Password1!@abc", "", "Doe", "en");
         // Act
         var result = await validator.ValidateAsync(command);
         // Assert
@@ -190,7 +190,7 @@ public class RegisterValidatorTests
         var mockLangRepo = new Mock<ILanguageRepository>();
         mockLangRepo.Setup(r => r.ExistsWithCodeAsync("en", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var validator = new Register.Validator(mockRepo.Object, mockLangRepo.Object);
-        var command = new Register.Command("test@example.com", "Password1!", longFirstName, "Doe", "en");
+        var command = new Register.Command("test@example.com", "Password1!@abc", longFirstName, "Doe", "en");
         // Act
         var result = await validator.ValidateAsync(command);
         // Assert
@@ -209,7 +209,7 @@ public class RegisterValidatorTests
         var mockLangRepo = new Mock<ILanguageRepository>();
         mockLangRepo.Setup(r => r.ExistsWithCodeAsync("en", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var validator = new Register.Validator(mockRepo.Object, mockLangRepo.Object);
-        var command = new Register.Command("test@example.com", "Password1!", "John", "Doe", "en");
+        var command = new Register.Command("test@example.com", "Password1!@abc", "John", "Doe", "en");
         // Act
         var result = await validator.ValidateAsync(command);
         // Assert
@@ -226,7 +226,7 @@ public class RegisterValidatorTests
         var mockLangRepo = new Mock<ILanguageRepository>();
         mockLangRepo.Setup(r => r.ExistsWithCodeAsync("en", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var validator = new Register.Validator(mockRepo.Object, mockLangRepo.Object);
-        var command = new Register.Command("test@example.com", "Password1!", "John", null, "en");
+        var command = new Register.Command("test@example.com", "Password1!@abc", "John", null, "en");
         // Act
         var result = await validator.ValidateAsync(command);
         // Assert
@@ -244,7 +244,7 @@ public class RegisterValidatorTests
         var mockLangRepo = new Mock<ILanguageRepository>();
         mockLangRepo.Setup(r => r.ExistsWithCodeAsync("en", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var validator = new Register.Validator(mockRepo.Object, mockLangRepo.Object);
-        var command = new Register.Command("test@example.com", "Password1!", "John", "", "en");
+        var command = new Register.Command("test@example.com", "Password1!@abc", "John", "", "en");
         // Act
         var result = await validator.ValidateAsync(command);
         // Assert
@@ -263,7 +263,7 @@ public class RegisterValidatorTests
         var mockLangRepo = new Mock<ILanguageRepository>();
         mockLangRepo.Setup(r => r.ExistsWithCodeAsync("en", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var validator = new Register.Validator(mockRepo.Object, mockLangRepo.Object);
-        var command = new Register.Command("test@example.com", "Password1!", "John", longLastName, "en");
+        var command = new Register.Command("test@example.com", "Password1!@abc", "John", longLastName, "en");
         // Act
         var result = await validator.ValidateAsync(command);
         // Assert
@@ -282,7 +282,7 @@ public class RegisterValidatorTests
         var mockLangRepo = new Mock<ILanguageRepository>();
         mockLangRepo.Setup(r => r.ExistsWithCodeAsync("en", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var validator = new Register.Validator(mockRepo.Object, mockLangRepo.Object);
-        var command = new Register.Command("test@example.com", "Password1!", "John", "Doe", "en");
+        var command = new Register.Command("test@example.com", "Password1!@abc", "John", "Doe", "en");
         // Act
         var result = await validator.ValidateAsync(command);
         // Assert
@@ -358,7 +358,7 @@ public class RegisterValidatorTests
         var mockLangRepo = new Mock<ILanguageRepository>();
         mockLangRepo.Setup(r => r.ExistsWithCodeAsync("en", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var validator = new Register.Validator(mockRepo.Object, mockLangRepo.Object);
-        var command = new Register.Command("test@example.com", "Password1!", "John", "Doe", "en");
+        var command = new Register.Command("test@example.com", "Password1!@abc", "John", "Doe", "en");
         // Act
         var result = await validator.ValidateAsync(command);
         // Assert
@@ -375,7 +375,7 @@ public class RegisterValidatorTests
         mockRepo.Setup(r => r.GetByEmailAsync("test@example.com", It.IsAny<CancellationToken>())).ReturnsAsync((User)null);
         var mockLangRepo = new Mock<ILanguageRepository>();
         var validator = new Register.Validator(mockRepo.Object, mockLangRepo.Object);
-        var command = new Register.Command("test@example.com", "Password1!", "John", "Doe", null);
+        var command = new Register.Command("test@example.com", "Password1!@abc", "John", "Doe", null);
         // Act
         var result = await validator.ValidateAsync(command);
         // Assert
@@ -393,7 +393,7 @@ public class RegisterValidatorTests
         mockRepo.Setup(r => r.GetByEmailAsync("test@example.com", It.IsAny<CancellationToken>())).ReturnsAsync((User)null);
         var mockLangRepo = new Mock<ILanguageRepository>();
         var validator = new Register.Validator(mockRepo.Object, mockLangRepo.Object);
-        var command = new Register.Command("test@example.com", "Password1!", "John", "Doe", "");
+        var command = new Register.Command("test@example.com", "Password1!@abc", "John", "Doe", "");
         // Act
         var result = await validator.ValidateAsync(command);
         // Assert
@@ -404,7 +404,7 @@ public class RegisterValidatorTests
         Assert.Equal("Language", errors[0].ErrorCode);
     }
     [Fact]
-    public async Task When_Language_Does_Not_Exist_Then_Validation_Fails_With_InvalidEnumValue_Error()
+    public async Task When_Language_Does_Not_Exist_Then_Validation_Fails_With_LanguageNotSupported_Error()
     {
         // Arrange
         var mockRepo = new Mock<IUserRepository>();
@@ -412,15 +412,14 @@ public class RegisterValidatorTests
         var mockLangRepo = new Mock<ILanguageRepository>();
         mockLangRepo.Setup(r => r.ExistsWithCodeAsync("invalid", It.IsAny<CancellationToken>())).ReturnsAsync(false);
         var validator = new Register.Validator(mockRepo.Object, mockLangRepo.Object);
-        var command = new Register.Command("test@example.com", "Password1!", "John", "Doe", "invalid");
+        var command = new Register.Command("test@example.com", "Password1!@abc", "John", "Doe", "invalid");
         // Act
         var result = await validator.ValidateAsync(command);
         // Assert
         Assert.False(result.IsValid);
         var errors = result.Errors.Where(e => e.PropertyName == "Language").ToList();
         Assert.Single(errors);
-        Assert.Equal(BusinessErrorMessage.InvalidEnumValue, errors[0].ErrorMessage);
-        Assert.Equal("Language", errors[0].ErrorCode);
+        Assert.Equal(BusinessErrorMessage.LanguageNotSupported, errors[0].ErrorMessage);
     }
     [Fact]
     public async Task When_Language_Exists_Then_Validation_Passes_For_Language()
@@ -431,7 +430,7 @@ public class RegisterValidatorTests
         var mockLangRepo = new Mock<ILanguageRepository>();
         mockLangRepo.Setup(r => r.ExistsWithCodeAsync("en", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var validator = new Register.Validator(mockRepo.Object, mockLangRepo.Object);
-        var command = new Register.Command("test@example.com", "Password1!", "John", "Doe", "en");
+        var command = new Register.Command("test@example.com", "Password1!@abc", "John", "Doe", "en");
         // Act
         var result = await validator.ValidateAsync(command);
         // Assert

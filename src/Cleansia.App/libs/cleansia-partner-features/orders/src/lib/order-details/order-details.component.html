@@ -37,9 +37,16 @@
     <!-- Order details content -->
     @if (orderDetails() && !loading()) {
     <form [formGroup]="formGroup" class="cleansia-order-details__form-content">
-      <!-- Order Header with order number and action buttons -->
+      <!-- Order Header with status banner, order number and action buttons -->
       <order-header
         [orderNumber]="orderDetails()!.displayOrderNumber!"
+        [hasInvoice]="hasInvoice()"
+        [orderStatus]="orderDetails()!.orderStatus"
+        [paymentStatus]="orderDetails()!.paymentStatus"
+        [orderStatusLabel]="orderStatusLabel()"
+        [paymentStatusLabel]="paymentStatusLabel()"
+        [createdOn]="formattedCreatedOn()"
+        [confirmationCode]="orderDetails()!.confirmationCode || ''"
         (onPrint)="printOrder()"
         (onDownloadInvoice)="downloadInvoice()"
       />
@@ -193,16 +200,15 @@
       <cleansia-section
         [title]="'pages.order_details.order_history' | translate"
       >
-        <div class="cleansia-order-details__history">
-          @for (historyItem of orderDetails()!.statusHistory; track $index) {
-          <div class="history-item">
-            <div class="history-marker"></div>
-            <div class="history-content">
-              <div class="history-status">
-                <span class="history-status-name">{{
-                  historyItem.status.name
-                }}</span>
-              </div>
+        <div class="status-history-timeline">
+          @for (historyItem of orderDetails()!.statusHistory; track historyItem.createdOn) {
+          <div [class]="getStatusHistoryClass(historyItem)">
+            <div class="status-icon">
+              <i [class]="getStatusHistoryIcon(historyItem)"></i>
+            </div>
+            <div class="status-content">
+              <span class="status-name">{{ getTranslatedStatusName(historyItem) }}</span>
+              <span class="status-date">{{ formatDateTime(historyItem.createdOn) }}</span>
             </div>
           </div>
           }
@@ -210,13 +216,13 @@
       </cleansia-section>
       }
 
-      <!-- Order Photos Section -->
-      @if (currentEmployeeId() && orderDetails()?.id) {
+      <!-- Order Photos Section - Only visible when employee is assigned and order is in progress or completed -->
+      @if (canManagePhotos()) {
       <order-photos
         [orderId]="orderDetails()!.id!"
         [employeeId]="currentEmployeeId()!"
-        [canUpload]="true"
-        [canDelete]="true"
+        [canUpload]="canUploadPhotos()"
+        [canDelete]="canUploadPhotos()"
       />
       }
 

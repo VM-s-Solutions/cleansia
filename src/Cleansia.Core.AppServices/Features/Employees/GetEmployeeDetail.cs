@@ -38,6 +38,7 @@ public class GetEmployeeDetail
                 .Include(e => e.Nationality)
                 .Include(e => e.Address)
                 .ThenInclude(a => a!.Country)
+                .Include(e => e.Documents)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(e => e.Id == query.EmployeeId, cancellationToken);
 

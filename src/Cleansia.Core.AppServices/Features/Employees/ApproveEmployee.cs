@@ -36,6 +36,7 @@ public class ApproveEmployee
                         .GetQueryable()
                         .Include(e => e.User)
                         .Include(e => e.Address)
+                        .Include(e => e.Documents)
                         .FirstOrDefaultAsync(e => e.Id == employeeId, cancellationToken);
 
                     return employee?.IsProfileComplete() ?? false;

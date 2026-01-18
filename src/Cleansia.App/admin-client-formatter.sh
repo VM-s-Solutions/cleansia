@@ -16,3 +16,4 @@ sed -i.bak -E '
 # Remove backup files created by sed
 rm -f "${file}.bak"
 echo "Renaming completed successfully."
+# dos2unix admin-client-formatter.sh

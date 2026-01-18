@@ -1,6 +1,6 @@
 <div class="cleansia-employee-detail">
-  <cleansia-language-switcher />
   <div class="cleansia-employee-detail__container page-wrapper">
+    <cleansia-language-switcher />
     <!-- Header with Back Button -->
     <div class="cleansia-employee-detail__header">
       <cleansia-button
@@ -89,6 +89,23 @@
               }}</span>
             </div>
           </div>
+          @if (facade.canApproveOrReject()) {
+          <div class="contract-actions-row">
+            <cleansia-button
+              [label]="'pages.employee_detail.actions.approve_employee' | translate"
+              icon="pi pi-check"
+              severity="success"
+              (onClick)="facade.approveEmployee()"
+            />
+            <cleansia-button
+              [label]="'pages.employee_detail.actions.reject_employee' | translate"
+              icon="pi pi-times"
+              severity="danger"
+              [outlined]="true"
+              (onClick)="facade.openRejectEmployeeDialog()"
+            />
+          </div>
+          }
         </div>
       </cleansia-section>
 
@@ -351,24 +368,48 @@
 
               <div class="document-card__details">
                 <div class="detail-item">
-                  <span class="label">{{ 'pages.employee_detail.document_type' | translate }}:</span>
-                  <span class="value">{{ facade.getDocumentTypeLabel(doc.documentType) }}</span>
+                  <span class="label"
+                    >{{
+                      'pages.employee_detail.document_type' | translate
+                    }}:</span
+                  >
+                  <span class="value">{{
+                    facade.getDocumentTypeLabel(doc.documentType)
+                  }}</span>
                 </div>
                 <div class="detail-item">
-                  <span class="label">{{ 'pages.employee_detail.document_version' | translate }}:</span>
+                  <span class="label"
+                    >{{
+                      'pages.employee_detail.document_version' | translate
+                    }}:</span
+                  >
                   <span class="value">v{{ doc.version }}</span>
                 </div>
                 <div class="detail-item">
-                  <span class="label">{{ 'pages.employee_detail.file_size' | translate }}:</span>
-                  <span class="value">{{ facade.formatFileSize(doc.fileSizeBytes) }}</span>
+                  <span class="label"
+                    >{{ 'pages.employee_detail.file_size' | translate }}:</span
+                  >
+                  <span class="value">{{
+                    facade.formatFileSize(doc.fileSizeBytes)
+                  }}</span>
                 </div>
                 <div class="detail-item">
-                  <span class="label">{{ 'pages.employee_detail.uploaded_at' | translate }}:</span>
-                  <span class="value">{{ facade.formatDateTime(doc.createdOn) }}</span>
+                  <span class="label"
+                    >{{
+                      'pages.employee_detail.uploaded_at' | translate
+                    }}:</span
+                  >
+                  <span class="value">{{
+                    facade.formatDateTime(doc.createdOn)
+                  }}</span>
                 </div>
                 @if (doc.description) {
                 <div class="detail-item full-width">
-                  <span class="label">{{ 'pages.employee_detail.document_description' | translate }}:</span>
+                  <span class="label"
+                    >{{
+                      'pages.employee_detail.document_description' | translate
+                    }}:</span
+                  >
                   <span class="value">{{ doc.description }}</span>
                 </div>
                 }
@@ -377,7 +418,10 @@
               <div class="document-card__actions">
                 <div class="document-card__action-row">
                   <cleansia-button
-                    label="{{ 'pages.employee_detail.actions.preview_document' | translate }}"
+                    label="{{
+                      'pages.employee_detail.actions.preview_document'
+                        | translate
+                    }}"
                     icon="pi pi-eye"
                     severity="info"
                     size="small-width"
@@ -385,7 +429,10 @@
                     (onClick)="facade.previewDocument(doc)"
                   />
                   <cleansia-button
-                    label="{{ 'pages.employee_detail.actions.download_document' | translate }}"
+                    label="{{
+                      'pages.employee_detail.actions.download_document'
+                        | translate
+                    }}"
                     icon="pi pi-download"
                     severity="secondary"
                     size="small-width"
@@ -395,14 +442,20 @@
                 </div>
                 <div class="document-card__action-row">
                   <cleansia-button
-                    label="{{ 'pages.employee_detail.actions.approve_document' | translate }}"
+                    label="{{
+                      'pages.employee_detail.actions.approve_document'
+                        | translate
+                    }}"
                     icon="pi pi-check"
                     severity="success"
                     size="small-width"
                     (onClick)="facade.approveDocument(doc.id!)"
                   />
                   <cleansia-button
-                    label="{{ 'pages.employee_detail.actions.reject_document' | translate }}"
+                    label="{{
+                      'pages.employee_detail.actions.reject_document'
+                        | translate
+                    }}"
                     icon="pi pi-times"
                     severity="danger"
                     size="small-width"
@@ -440,27 +493,50 @@
 
               <div class="document-card__details">
                 <div class="detail-item">
-                  <span class="label">{{ 'pages.employee_detail.document_type' | translate }}:</span>
-                  <span class="value">{{ facade.getDocumentTypeLabel(doc.documentType) }}</span>
+                  <span class="label"
+                    >{{
+                      'pages.employee_detail.document_type' | translate
+                    }}:</span
+                  >
+                  <span class="value">{{
+                    facade.getDocumentTypeLabel(doc.documentType)
+                  }}</span>
                 </div>
                 <div class="detail-item">
-                  <span class="label">{{ 'pages.employee_detail.document_version' | translate }}:</span>
+                  <span class="label"
+                    >{{
+                      'pages.employee_detail.document_version' | translate
+                    }}:</span
+                  >
                   <span class="value">v{{ doc.version }}</span>
                 </div>
                 <div class="detail-item">
-                  <span class="label">{{ 'pages.employee_detail.file_size' | translate }}:</span>
-                  <span class="value">{{ facade.formatFileSize(doc.fileSizeBytes) }}</span>
+                  <span class="label"
+                    >{{ 'pages.employee_detail.file_size' | translate }}:</span
+                  >
+                  <span class="value">{{
+                    facade.formatFileSize(doc.fileSizeBytes)
+                  }}</span>
                 </div>
                 <div class="detail-item">
-                  <span class="label">{{ 'pages.employee_detail.reviewed_at' | translate }}:</span>
-                  <span class="value">{{ facade.formatDateTime(doc.reviewedAt) }}</span>
+                  <span class="label"
+                    >{{
+                      'pages.employee_detail.reviewed_at' | translate
+                    }}:</span
+                  >
+                  <span class="value">{{
+                    facade.formatDateTime(doc.reviewedAt)
+                  }}</span>
                 </div>
               </div>
 
               <div class="document-card__actions">
                 <div class="document-card__action-row">
                   <cleansia-button
-                    label="{{ 'pages.employee_detail.actions.preview_document' | translate }}"
+                    label="{{
+                      'pages.employee_detail.actions.preview_document'
+                        | translate
+                    }}"
                     icon="pi pi-eye"
                     severity="info"
                     size="small-width"
@@ -468,7 +544,10 @@
                     (onClick)="facade.previewDocument(doc)"
                   />
                   <cleansia-button
-                    label="{{ 'pages.employee_detail.actions.download_document' | translate }}"
+                    label="{{
+                      'pages.employee_detail.actions.download_document'
+                        | translate
+                    }}"
                     icon="pi pi-download"
                     severity="secondary"
                     size="small-width"
@@ -506,25 +585,51 @@
 
               <div class="document-card__details">
                 <div class="detail-item">
-                  <span class="label">{{ 'pages.employee_detail.document_type' | translate }}:</span>
-                  <span class="value">{{ facade.getDocumentTypeLabel(doc.documentType) }}</span>
+                  <span class="label"
+                    >{{
+                      'pages.employee_detail.document_type' | translate
+                    }}:</span
+                  >
+                  <span class="value">{{
+                    facade.getDocumentTypeLabel(doc.documentType)
+                  }}</span>
                 </div>
                 <div class="detail-item">
-                  <span class="label">{{ 'pages.employee_detail.document_version' | translate }}:</span>
+                  <span class="label"
+                    >{{
+                      'pages.employee_detail.document_version' | translate
+                    }}:</span
+                  >
                   <span class="value">v{{ doc.version }}</span>
                 </div>
                 <div class="detail-item">
-                  <span class="label">{{ 'pages.employee_detail.file_size' | translate }}:</span>
-                  <span class="value">{{ facade.formatFileSize(doc.fileSizeBytes) }}</span>
+                  <span class="label"
+                    >{{ 'pages.employee_detail.file_size' | translate }}:</span
+                  >
+                  <span class="value">{{
+                    facade.formatFileSize(doc.fileSizeBytes)
+                  }}</span>
                 </div>
                 <div class="detail-item">
-                  <span class="label">{{ 'pages.employee_detail.reviewed_at' | translate }}:</span>
-                  <span class="value">{{ facade.formatDateTime(doc.reviewedAt) }}</span>
+                  <span class="label"
+                    >{{
+                      'pages.employee_detail.reviewed_at' | translate
+                    }}:</span
+                  >
+                  <span class="value">{{
+                    facade.formatDateTime(doc.reviewedAt)
+                  }}</span>
                 </div>
                 @if (doc.reviewNotes) {
                 <div class="detail-item full-width">
-                  <span class="label">{{ 'pages.employee_detail.review_notes' | translate }}:</span>
-                  <span class="value rejection-reason">{{ doc.reviewNotes }}</span>
+                  <span class="label"
+                    >{{
+                      'pages.employee_detail.review_notes' | translate
+                    }}:</span
+                  >
+                  <span class="value rejection-reason">{{
+                    doc.reviewNotes
+                  }}</span>
                 </div>
                 }
               </div>
@@ -532,7 +637,10 @@
               <div class="document-card__actions">
                 <div class="document-card__action-row">
                   <cleansia-button
-                    label="{{ 'pages.employee_detail.actions.preview_document' | translate }}"
+                    label="{{
+                      'pages.employee_detail.actions.preview_document'
+                        | translate
+                    }}"
                     icon="pi pi-eye"
                     severity="info"
                     size="small-width"
@@ -540,7 +648,10 @@
                     (onClick)="facade.previewDocument(doc)"
                   />
                   <cleansia-button
-                    label="{{ 'pages.employee_detail.actions.download_document' | translate }}"
+                    label="{{
+                      'pages.employee_detail.actions.download_document'
+                        | translate
+                    }}"
                     icon="pi pi-download"
                     severity="secondary"
                     size="small-width"
@@ -550,7 +661,10 @@
                 </div>
                 <div class="document-card__action-row">
                   <cleansia-button
-                    label="{{ 'pages.employee_detail.actions.approve_document' | translate }}"
+                    label="{{
+                      'pages.employee_detail.actions.approve_document'
+                        | translate
+                    }}"
                     icon="pi pi-check"
                     severity="success"
                     size="small-width"
@@ -563,9 +677,7 @@
             }
           </div>
         </div>
-        }
-
-        } @else {
+        } } @else {
         <p class="no-data">
           {{ 'pages.employee_detail.no_documents' | translate }}
         </p>

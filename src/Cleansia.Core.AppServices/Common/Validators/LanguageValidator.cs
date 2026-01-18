@@ -11,7 +11,9 @@ public class LanguageValidator : AbstractValidator<string>
             .Cascade(CascadeMode.Stop)
             .NotEmpty()
             .WithMessage(BusinessErrorMessage.Required)
+            .WithErrorCode("Language")
             .MustAsync(languageRepository.ExistsWithCodeAsync)
-            .WithMessage(BusinessErrorMessage.LanguageNotSupported);
+            .WithMessage(BusinessErrorMessage.LanguageNotSupported)
+            .WithErrorCode("Language");
     }
 }

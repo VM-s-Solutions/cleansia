@@ -1,11 +1,11 @@
 <div class="company-info-page">
-  <div class="page-header">
-    <cleansia-title [title]="'pages.company_info.title' | translate">
-      <cleansia-language-switcher />
-    </cleansia-title>
-  </div>
+  <div class="company-info-page__container page-wrapper">
+    <cleansia-language-switcher />
+    <div class="page-header">
+      <cleansia-title [title]="'pages.company_info.title' | translate" />
+    </div>
 
-  <div class="page-content">
+    <div class="page-content">
     @if (facade.loading()) {
     <cleansia-loader />
     } @else {
@@ -182,5 +182,6 @@
       </div>
     </form>
     }
+    </div>
   </div>
 </div>

@@ -15,19 +15,19 @@ public class ResendConfirmationEmailValidatorTests
         // Arrange
         var mockUserRepo = new Mock<IUserRepository>();
         var mockLangRepo = new Mock<ILanguageRepository>();
+        mockLangRepo.Setup(r => r.ExistsWithCodeAsync("cs", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var validator = new ResendConfirmationEmail.Validator(mockUserRepo.Object, mockLangRepo.Object);
-        var command = new ResendConfirmationEmail.Command(null, "CZ");
+        var command = new ResendConfirmationEmail.Command(null, "cs");
 
         // Act
         var result = await validator.ValidateAsync(command);
 
         // Assert
         Assert.False(result.IsValid);
-        Assert.Single(result.Errors);
-        var error = result.Errors[0];
-        Assert.Equal("Email", error.PropertyName);
-        Assert.Equal(BusinessErrorMessage.Required, error.ErrorMessage);
-        Assert.Equal("Email", error.ErrorCode);
+        var emailErrors = result.Errors.Where(e => e.PropertyName == "Email").ToList();
+        Assert.Single(emailErrors);
+        Assert.Equal(BusinessErrorMessage.Required, emailErrors[0].ErrorMessage);
+        Assert.Equal("Email", emailErrors[0].ErrorCode);
     }
 
     [Fact]
@@ -36,19 +36,19 @@ public class ResendConfirmationEmailValidatorTests
         // Arrange
         var mockUserRepo = new Mock<IUserRepository>();
         var mockLangRepo = new Mock<ILanguageRepository>();
+        mockLangRepo.Setup(r => r.ExistsWithCodeAsync("cs", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var validator = new ResendConfirmationEmail.Validator(mockUserRepo.Object, mockLangRepo.Object);
-        var command = new ResendConfirmationEmail.Command("", "CZ");
+        var command = new ResendConfirmationEmail.Command("", "cs");
 
         // Act
         var result = await validator.ValidateAsync(command);
 
         // Assert
         Assert.False(result.IsValid);
-        Assert.Single(result.Errors);
-        var error = result.Errors[0];
-        Assert.Equal("Email", error.PropertyName);
-        Assert.Equal(BusinessErrorMessage.Required, error.ErrorMessage);
-        Assert.Equal("Email", error.ErrorCode);
+        var emailErrors = result.Errors.Where(e => e.PropertyName == "Email").ToList();
+        Assert.Single(emailErrors);
+        Assert.Equal(BusinessErrorMessage.Required, emailErrors[0].ErrorMessage);
+        Assert.Equal("Email", emailErrors[0].ErrorCode);
     }
 
     [Fact]
@@ -59,19 +59,19 @@ public class ResendConfirmationEmailValidatorTests
         var mockUserRepo = new Mock<IUserRepository>();
         var mockLangRepo = new Mock<ILanguageRepository>();
         mockUserRepo.Setup(r => r.ExistsWithEmailAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        mockLangRepo.Setup(r => r.ExistsWithCodeAsync("cs", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var validator = new ResendConfirmationEmail.Validator(mockUserRepo.Object, mockLangRepo.Object);
-        var command = new ResendConfirmationEmail.Command(email, "CZ");
+        var command = new ResendConfirmationEmail.Command(email, "cs");
 
         // Act
         var result = await validator.ValidateAsync(command);
 
         // Assert
         Assert.False(result.IsValid);
-        Assert.Single(result.Errors);
-        var error = result.Errors[0];
-        Assert.Equal("Email", error.PropertyName);
-        Assert.Equal(BusinessErrorMessage.NotExistingUserWithEmail, error.ErrorMessage);
-        Assert.Equal("Email", error.ErrorCode);
+        var emailErrors = result.Errors.Where(e => e.PropertyName == "Email").ToList();
+        Assert.Single(emailErrors);
+        Assert.Equal(BusinessErrorMessage.NotExistingUserWithEmail, emailErrors[0].ErrorMessage);
+        Assert.Equal("Email", emailErrors[0].ErrorCode);
     }
 
     [Fact]
@@ -83,19 +83,19 @@ public class ResendConfirmationEmailValidatorTests
         var mockLangRepo = new Mock<ILanguageRepository>();
         mockUserRepo.Setup(r => r.ExistsWithEmailAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         mockUserRepo.Setup(r => r.GetByEmailAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync(UserMockFactory.Generate());
+        mockLangRepo.Setup(r => r.ExistsWithCodeAsync("cs", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var validator = new ResendConfirmationEmail.Validator(mockUserRepo.Object, mockLangRepo.Object);
-        var command = new ResendConfirmationEmail.Command(email, "CZ");
+        var command = new ResendConfirmationEmail.Command(email, "cs");
 
         // Act
         var result = await validator.ValidateAsync(command);
 
         // Assert
         Assert.False(result.IsValid);
-        Assert.Single(result.Errors);
-        var error = result.Errors[0];
-        Assert.Equal("Email", error.PropertyName);
-        Assert.Equal(BusinessErrorMessage.EmailConfirmed, error.ErrorMessage);
-        Assert.Equal("Email", error.ErrorCode);
+        var emailErrors = result.Errors.Where(e => e.PropertyName == "Email").ToList();
+        Assert.Single(emailErrors);
+        Assert.Equal(BusinessErrorMessage.EmailConfirmed, emailErrors[0].ErrorMessage);
+        Assert.Equal("Email", emailErrors[0].ErrorCode);
     }
 
     [Fact]
@@ -111,8 +111,9 @@ public class ResendConfirmationEmailValidatorTests
             TestUtilities.Constants.TestUserSession.TestUserPassword,
             TestUtilities.Constants.TestUserSession.TestFirstName,
             TestUtilities.Constants.TestUserSession.TestLastName));
+        mockLangRepo.Setup(r => r.ExistsWithCodeAsync("cs", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var validator = new ResendConfirmationEmail.Validator(mockUserRepo.Object, mockLangRepo.Object);
-        var command = new ResendConfirmationEmail.Command(email, "CZ");
+        var command = new ResendConfirmationEmail.Command(email, "cs");
 
         // Act
         var result = await validator.ValidateAsync(command);

@@ -321,6 +321,7 @@
       "order_history": "Order History",
       "actions": "Actions",
       "start_order": "Start Order",
+      "complete_order": "Complete Order",
       "photos": "Order Photos",
       "upload_before_photo": "Upload Before Photo",
       "upload_after_photo": "Upload After Photo",
@@ -387,6 +388,7 @@
       "summary": "Invoice Summary",
       "employee_name": "Employee Name",
       "variable_symbol": "Variable Symbol",
+      "total_orders": "Total Orders",
       "generated_date": "Generated Date",
       "approved_date": "Approved Date",
       "paid_date": "Paid Date",
@@ -1034,6 +1036,10 @@
       "paid": "Paid",
       "failed": "Failed",
       "refunded": "Refunded"
+    },
+    "payment_type": {
+      "cash": "Cash",
+      "card": "Card"
     },
     "dispute_status": {
       "pending": "Pending",

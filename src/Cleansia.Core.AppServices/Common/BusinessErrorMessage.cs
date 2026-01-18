@@ -10,6 +10,7 @@ public static class BusinessErrorMessage
     public const string InvalidPasswordFormat = "auth.invalid_password_format";
     public const string NotValidResetPasswordToken = "auth.invalid_reset_token";
     public const string SameResetPassword = "auth.same_reset_password";
+    public const string InsufficientPrivileges = "auth.insufficient_privileges";
     
     // Common
     public const string InvalidEnumValue = "common.invalid_enum_value";

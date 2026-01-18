@@ -13,7 +13,7 @@ import {
 import { jwtDecode } from 'jwt-decode';
 import { BehaviorSubject, Observable, map, of } from 'rxjs';
 import { AdminClient } from '../client/admin-base-client';
-import { JwtTokenResponse, LoginCommand } from '../client/admin-client';
+import { AdminLoginCommand, JwtTokenResponse } from '../client/admin-client';
 
 @Injectable({
   providedIn: 'root',
@@ -38,7 +38,7 @@ export class AdminAuthService {
     rememberMe = false
   ): Observable<JwtTokenResponse> {
     return this.adminClient.adminAuthClient.login(
-      new LoginCommand({ email, password, rememberMe })
+      new AdminLoginCommand({ email, password, rememberMe })
     );
   }
 

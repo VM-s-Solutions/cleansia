@@ -79,7 +79,8 @@
       "previous": "Předchozí",
       "next": "Další",
       "go_back": "Zpět",
-      "go_home": "Domů"
+      "go_home": "Domů",
+      "go_to_login": "Přejít na přihlášení"
     },
     "user": {
       "remember_me": "Zapamatovat si mě"
@@ -117,6 +118,10 @@
     "logout": "Odhlásit se"
   },
   "pages": {
+    "unauthorized": {
+      "title": "Přístup odepřen",
+      "message": "Nemáte oprávnění pro přístup do této oblasti. Jsou vyžadována administrátorská oprávnění."
+    },
     "login": {
       "email": "E-mail",
       "password": "Heslo",
@@ -235,10 +240,23 @@
       "review_notes": "Poznámky kontroly",
       "document_description": "Popis",
       "actions": {
+        "approve_employee": "Schválit zaměstnance",
+        "reject_employee": "Zamítnout zaměstnance",
         "approve_document": "Schválit",
         "reject_document": "Zamítnout",
         "download_document": "Stáhnout",
         "preview_document": "Náhled"
+      },
+      "reject_employee_dialog": {
+        "title": "Zamítnout zaměstnance",
+        "subtitle": "Prosím uveďte důvod zamítnutí tohoto zaměstnance",
+        "reason_label": "Důvod zamítnutí",
+        "reason_placeholder": "Zadejte podrobný důvod zamítnutí...",
+        "reason_hint": "Maximálně 500 znaků",
+        "reason_required": "Důvod zamítnutí je povinný",
+        "reason_too_long": "Důvod zamítnutí je příliš dlouhý (max 500 znaků)",
+        "cancel_button": "Zrušit",
+        "reject_button": "Zamítnout zaměstnance"
       },
       "reject_document_dialog": {
         "title": "Zamítnout dokument",
@@ -253,6 +271,10 @@
       },
       "messages": {
         "load_error": "Nepodařilo se načíst detail zaměstnance",
+        "employee_approve_success": "Zaměstnanec byl úspěšně schválen",
+        "employee_approve_error": "Nepodařilo se schválit zaměstnance",
+        "employee_reject_success": "Zaměstnanec byl úspěšně zamítnut",
+        "employee_reject_error": "Nepodařilo se zamítnout zaměstnance",
         "document_approve_success": "Dokument byl úspěšně schválen",
         "document_approve_error": "Nepodařilo se schválit dokument",
         "document_reject_success": "Dokument byl úspěšně zamítnut",
@@ -1373,7 +1395,8 @@
     },
     "auth": {
       "email_not_confirmed": "E-mailová adresa není potvrzena",
-      "admin_access_required": "Pro přístup k tomuto panelu je vyžadován administrátorský přístup"
+      "admin_access_required": "Pro přístup k tomuto panelu je vyžadován administrátorský přístup",
+      "login_failed": "Přihlášení se nezdařilo. Zkontrolujte prosím své přihlašovací údaje a zkuste to znovu."
     },
     "file": {
       "required": "Soubory jsou povinné",
@@ -1400,7 +1423,8 @@
       "invalid_google_token": "Neplatný Google token",
       "invalid_password_format": "Neplatný formát hesla. Heslo musí mít alespoň 8 znaků a obsahovat alespoň jedno velké písmeno, jedno malé písmeno a jedno číslo.",
       "invalid_reset_token": "Neplatný nebo vypršelý token pro obnovení hesla",
-      "same_reset_password": "Nové heslo musí být odlišné od současného hesla"
+      "same_reset_password": "Nové heslo musí být odlišné od současného hesla",
+      "insufficient_privileges": "Nemáte oprávnění přistupovat k administrátorskému panelu. Přihlásit se mohou pouze administrátoři a zaměstnanci."
     },
     "common": {
       "invalid_enum_value": "Neplatná hodnota",

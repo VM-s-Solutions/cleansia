@@ -1,0 +1,54 @@
+@if (isVisible()) {
+<div
+  class="cleansia-cookie-consent"
+  [class.cleansia-cookie-consent--top]="position() === 'top'"
+  [class.cleansia-cookie-consent--bottom]="position() === 'bottom'"
+  role="dialog"
+  aria-modal="false"
+  [attr.aria-label]="'cookies.banner_title' | translate"
+>
+  <div class="cleansia-cookie-consent__container">
+    <div class="cleansia-cookie-consent__content">
+      <div class="cleansia-cookie-consent__icon">
+        <i class="pi pi-shield"></i>
+      </div>
+      <div class="cleansia-cookie-consent__text">
+        <h3 class="cleansia-cookie-consent__title">
+          {{ 'cookies.title' | translate }}
+        </h3>
+        <p class="cleansia-cookie-consent__description">
+          {{ 'cookies.description' | translate }}
+          @if (policyUrl()) {
+          <a
+            [href]="policyUrl()"
+            class="cleansia-cookie-consent__link"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {{ 'cookies.learn_more' | translate }}
+          </a>
+          }
+        </p>
+      </div>
+    </div>
+    <div class="cleansia-cookie-consent__actions">
+      @if (showDeclineButton()) {
+      <button
+        type="button"
+        class="cleansia-cookie-consent__btn cleansia-cookie-consent__btn--decline"
+        (click)="declineCookies()"
+      >
+        {{ 'cookies.decline' | translate }}
+      </button>
+      }
+      <button
+        type="button"
+        class="cleansia-cookie-consent__btn cleansia-cookie-consent__btn--accept"
+        (click)="acceptCookies()"
+      >
+        {{ 'cookies.accept' | translate }}
+      </button>
+    </div>
+  </div>
+</div>
+}

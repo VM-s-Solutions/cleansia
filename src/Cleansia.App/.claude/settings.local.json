@@ -29,7 +29,8 @@
       "Bash(npm install:*)",
       "Bash(dotnet build:*)",
       "Read(//c/Users/cmisa/Desktop/Mike/Projects/cleansia/src/**)",
-      "Read(//c/Users/cmisa/Desktop/Mike/Projects/stroytorg/src/Stroytorg.App/libs/stores/src/lib/stores/code/**)"
+      "Read(//c/Users/cmisa/Desktop/Mike/Projects/stroytorg/src/Stroytorg.App/libs/stores/src/lib/stores/code/**)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []

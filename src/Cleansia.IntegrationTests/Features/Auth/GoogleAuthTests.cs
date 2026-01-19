@@ -1,5 +1,6 @@
 ﻿using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.TestUtilities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,12 @@ public class GoogleAuthTests(PostgresContainerFixture fixture) : BaseIntegration
     public async Task ShouldCreateNewUserAndReturnTokenForValidGoogleAuth()
     {
         await TestMethod(
+            arrange: async context =>
+            {
+                // Seed required language before creating user (FK constraint)
+                context.Languages.Add(Language.Create("en", "English"));
+                await context.SaveChangesAsync();
+            },
             act: async provider =>
             {
                 var mediator = provider.GetRequiredService<IMediator>();

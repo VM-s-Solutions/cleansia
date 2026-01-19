@@ -1,0 +1,32 @@
+<div class="cleansia-not-found">
+  <cleansia-dynamic-background />
+  <i class="fa-solid fa-broom cleansia-not-found__icons__broom"></i>
+  <i class="fa-solid fa-spray-can cleansia-not-found__icons__spray"></i>
+  <i class="fa-solid fa-soap cleansia-not-found__icons__soap"></i>
+  <i class="fa-solid fa-droplet cleansia-not-found__icons__droplet"></i>
+  <div class="cleansia-not-found__container">
+    <h1 class="cleansia-not-found__code">{{ code() }}</h1>
+    <h2 class="cleansia-not-found__title">
+      {{ title() ?? ('components.not_found.title' | translate) }}
+    </h2>
+    <p class="cleansia-not-found__msg">
+      {{ message() ?? ('components.not_found.description' | translate) }}
+    </p>
+    @if (showBackButtons()) {
+    <div class="cleansia-not-found__actions">
+      <cleansia-button
+        [label]="
+          isHistoryAvailable
+            ? ('global.actions.go_back' | translate)
+            : ('global.actions.go_home' | translate)
+        "
+        severity="primary"
+        icon="pi pi-arrow-left"
+        (onClick)="goBack()"
+      />
+    </div>
+    } @if (customButtonTemplate()) {
+    <ng-container *ngTemplateOutlet="customButtonTemplate()!" />
+    }
+  </div>
+</div>

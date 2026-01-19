@@ -29,13 +29,11 @@ public record OrderItem(
     string? SpecialInstructions,
     string? AccessInstructions,
     IEnumerable<PackageDetails> SelectedPackages,
-    CurrencyDetails Currency,
+    CurrencyDetailDto Currency,
     IEnumerable<ServiceDetails> SelectedServices,
     IEnumerable<OrderStatusTrackDto> StatusHistory,
     DateTimeOffset CreatedOn,
     DateTimeOffset? UpdatedOn,
-    string? AssignedEmployeeId,
-    string? AssignedEmployeeName,
-    string? AssignedEmployeePhone,
+    IEnumerable<AssignedEmployeeDto> AssignedEmployees,
     string? ReceiptNumber
 );

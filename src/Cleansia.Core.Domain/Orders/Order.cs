@@ -83,9 +83,6 @@ public class Order : Auditable
     public string? UserId { get; private set; }
     public User? User { get; private set; }
 
-    public string? EmployeeId { get; private set; }
-    public Employee? Employee { get; private set; }
-
     public string? ReceiptId { get; private set; }
     public OrderReceipt? Receipt { get; private set; }
 
@@ -184,20 +181,6 @@ public class Order : Auditable
         return this;
     }
 
-    public Order AssignEmployee(string employeeId)
-    {
-        if (!HasAvailableSpots)
-        {
-            throw new InvalidOperationException("No available spots for this order");
-        }
-
-        if (string.IsNullOrEmpty(EmployeeId))
-        {
-            EmployeeId = employeeId;
-        }
-
-        return this;
-    }
 
     public Order AddAssignedEmployee(OrderEmployee orderEmployee)
     {
@@ -233,6 +216,11 @@ public class Order : Auditable
         }
 
         MaxEmployees = maxEmployees;
+        return this;
+    }
+
+    public Order StartOrder()
+    {
         return this;
     }
 

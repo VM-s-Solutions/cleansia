@@ -1,47 +1,51 @@
 import { TemplateRef } from '@angular/core';
-import { TableDefinition } from '@cleansia/components';
-import { OrderListItem, OrderStatus } from '@cleansia/services';
-import { TranslateService } from '@ngx-translate/core';
+import { TableAction, TableColumn } from '@cleansia/components';
+import { OrderListItem, OrderStatus } from '@cleansia/partner-services';
 
 export function getAvailableOrdersTableDefinition(
   defs: {
     onViewDetails: (row: OrderListItem) => void;
     onTakeOrder: (row: OrderListItem) => void;
   },
-  translate: TranslateService,
   statusTemplate?: TemplateRef<OrderListItem>,
   orderStatusTemplate?: TemplateRef<OrderListItem>
-): TableDefinition<OrderListItem> {
+): {
+  columns: TableColumn<OrderListItem>[];
+  actions: TableAction<OrderListItem>[];
+} {
   return {
     columns: [
       {
         id: 'displayOrderNumber',
-        headerName: translate.instant('pages.orders.order_number'),
-        value: 'displayOrderNumber',
+        field: 'displayOrderNumber',
+        header: 'pages.orders.order_number',
         sortable: true,
-        columnClass: 'width-12',
+        width: '12%',
       },
       {
         id: 'cleaningDateTime',
-        headerName: translate.instant('pages.orders.cleaning_date'),
-        value: (row?: OrderListItem) =>
+        field: 'cleaningDateTime',
+        header: 'pages.orders.cleaning_date',
+        getValue: (row?: OrderListItem) =>
           row?.cleaningDateTime
             ? new Date(row.cleaningDateTime).toLocaleDateString('cs-CZ')
             : '',
         sortable: true,
-        columnClass: 'width-12',
+        width: '12%',
       },
       {
         id: 'address',
-        headerName: translate.instant('pages.orders.address'),
-        value: (row?: OrderListItem) =>
+        field: 'customerAddress',
+        header: 'pages.orders.address',
+        getValue: (row?: OrderListItem) =>
           `${row?.customerAddress || ''}`.trim().replace(/^,\s*/, ''),
-        columnClass: 'width-20',
+        width: '20%',
       },
       {
         id: 'totalPrice',
-        headerName: translate.instant('pages.orders.total_price'),
-        value: (row?: OrderListItem) =>
+        field: 'totalPrice',
+        header: 'pages.orders.total_price',
+        getValue: (row?: OrderListItem) =>
           row?.totalPrice
             ? Number(row.totalPrice).toLocaleString('cs-CZ', {
                 style: 'currency',
@@ -51,51 +55,43 @@ export function getAvailableOrdersTableDefinition(
               })
             : '',
         sortable: true,
-        columnClass: 'width-12',
+        width: '12%',
+        align: 'right',
       },
       {
         id: 'availableSpots',
-        headerName: translate.instant('pages.orders.available_spots'),
-        value: (row?: OrderListItem) =>
+        field: 'availableSpots',
+        header: 'pages.orders.available_spots',
+        getValue: (row?: OrderListItem) =>
           `${row?.availableSpots || 0} / ${row?.maxEmployees || 0}`,
-        columnClass: 'width-10',
+        width: '10%',
       },
       {
         id: 'paymentStatus',
-        headerName: translate.instant('pages.orders.payment_status'),
-        template: statusTemplate,
-        columnClass: 'width-12',
+        field: 'paymentStatus',
+        header: 'pages.orders.payment_status',
+        customTemplate: statusTemplate,
+        width: '12%',
       },
       {
         id: 'orderStatus',
-        headerName: translate.instant('pages.orders.order_status'),
-        template: orderStatusTemplate,
-        columnClass: 'width-12',
+        field: 'orderStatus',
+        header: 'pages.orders.order_status',
+        customTemplate: orderStatusTemplate,
+        width: '12%',
+      },
+    ],
+    actions: [
+      {
+        icon: 'pi pi-check',
+        tooltip: 'pages.orders.take_order',
+        color: 'success',
+        onClick: (row: OrderListItem) => defs.onTakeOrder(row),
       },
       {
-        id: 'actions',
-        headerName: translate.instant('pages.orders.actions'),
-        columnActions: [
-          {
-            icon: 'pi pi-check',
-            onClick: (row: OrderListItem) => defs.onTakeOrder(row),
-            buttonPalette: 'p-button-success p-button-sm',
-            tooltip: {
-              title: translate.instant('pages.orders.take_order'),
-              position: 'above',
-            },
-          },
-          {
-            icon: 'pi pi-eye',
-            onClick: (row: OrderListItem) => defs.onViewDetails(row),
-            buttonPalette: 'p-button-outlined p-button-sm',
-            tooltip: {
-              title: translate.instant('pages.orders.view_details'),
-              position: 'above',
-            },
-          },
-        ],
-        columnClass: 'width-15',
+        icon: 'pi pi-eye',
+        tooltip: 'pages.orders.view_details',
+        onClick: (row: OrderListItem) => defs.onViewDetails(row),
       },
     ],
   };
@@ -106,53 +102,58 @@ export function getMyOrdersTableDefinition(
     onViewDetails: (row: OrderListItem) => void;
     onCompleteOrder: (row: OrderListItem) => void;
   },
-  translate: TranslateService,
   statusTemplate?: TemplateRef<OrderListItem>,
   orderStatusTemplate?: TemplateRef<OrderListItem>
-): TableDefinition<OrderListItem> {
+): {
+  columns: TableColumn<OrderListItem>[];
+  actions: TableAction<OrderListItem>[];
+} {
   return {
     columns: [
       {
         id: 'displayOrderNumber',
-        headerName: translate.instant('pages.orders.order_number'),
-        value: 'displayOrderNumber',
+        field: 'displayOrderNumber',
+        header: 'pages.orders.order_number',
         sortable: true,
-        columnClass: 'width-12',
+        width: '12%',
       },
       {
         id: 'customerName',
-        headerName: translate.instant('pages.orders.customer_name'),
-        value: 'customerName',
+        field: 'customerName',
+        header: 'pages.orders.customer_name',
         sortable: true,
-        columnClass: 'width-15',
+        width: '15%',
       },
       {
         id: 'customerPhone',
-        headerName: translate.instant('pages.orders.customer_phone'),
-        value: 'customerPhone',
-        columnClass: 'width-12',
+        field: 'customerPhone',
+        header: 'pages.orders.customer_phone',
+        width: '12%',
       },
       {
         id: 'cleaningDateTime',
-        headerName: translate.instant('pages.orders.cleaning_date'),
-        value: (row?: OrderListItem) =>
+        field: 'cleaningDateTime',
+        header: 'pages.orders.cleaning_date',
+        getValue: (row?: OrderListItem) =>
           row?.cleaningDateTime
             ? new Date(row.cleaningDateTime).toLocaleDateString('cs-CZ')
             : '',
         sortable: true,
-        columnClass: 'width-12',
+        width: '12%',
       },
       {
         id: 'address',
-        headerName: translate.instant('pages.orders.address'),
-        value: (row?: OrderListItem) =>
+        field: 'customerAddress',
+        header: 'pages.orders.address',
+        getValue: (row?: OrderListItem) =>
           `${row?.customerAddress || ''}`.trim().replace(/^,\s*/, ''),
-        columnClass: 'width-18',
+        width: '18%',
       },
       {
         id: 'totalPrice',
-        headerName: translate.instant('pages.orders.total_price'),
-        value: (row?: OrderListItem) =>
+        field: 'totalPrice',
+        header: 'pages.orders.total_price',
+        getValue: (row?: OrderListItem) =>
           row?.totalPrice
             ? Number(row.totalPrice).toLocaleString('cs-CZ', {
                 style: 'currency',
@@ -162,40 +163,30 @@ export function getMyOrdersTableDefinition(
               })
             : '',
         sortable: true,
-        columnClass: 'width-12',
+        width: '12%',
+        align: 'right',
       },
       {
         id: 'orderStatus',
-        headerName: translate.instant('pages.orders.order_status'),
-        template: orderStatusTemplate,
-        columnClass: 'width-12',
+        field: 'orderStatus',
+        header: 'pages.orders.order_status',
+        customTemplate: orderStatusTemplate,
+        width: '12%',
+      },
+    ],
+    actions: [
+      {
+        icon: 'pi pi-check-circle',
+        tooltip: 'pages.orders.complete_order.title',
+        color: 'success',
+        onClick: (row: OrderListItem) => defs.onCompleteOrder(row),
+        visible: (row: OrderListItem) =>
+          row.orderStatus.value === OrderStatus.InProgress,
       },
       {
-        id: 'actions',
-        headerName: translate.instant('pages.orders.actions'),
-        columnActions: [
-          {
-            icon: 'pi pi-check-circle',
-            onClick: (row: OrderListItem) => defs.onCompleteOrder(row),
-            buttonPalette: 'p-button-success p-button-sm',
-            tooltip: {
-              title: translate.instant('pages.orders.complete_order.title'),
-              position: 'above',
-            },
-            visible: (row: OrderListItem) =>
-              row.orderStatus.value === OrderStatus.InProgress, // InProgress
-          },
-          {
-            icon: 'pi pi-eye',
-            onClick: (row: OrderListItem) => defs.onViewDetails(row),
-            buttonPalette: 'p-button-outlined p-button-sm',
-            tooltip: {
-              title: translate.instant('pages.orders.view_details'),
-              position: 'above',
-            },
-          },
-        ],
-        columnClass: 'width-12',
+        icon: 'pi pi-eye',
+        tooltip: 'pages.orders.view_details',
+        onClick: (row: OrderListItem) => defs.onViewDetails(row),
       },
     ],
   };

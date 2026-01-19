@@ -17,4 +17,10 @@ public class Language : BaseEntity
         Code = code,
         Name = name
     };
+
+    public Language UpdateName(string name)
+    {
+        Name = name;
+        return this;
+    }
 }

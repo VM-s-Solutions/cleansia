@@ -1,0 +1,99 @@
+<div class="cleansia-admin-user-form">
+  <div class="cleansia-admin-user-form__container page-wrapper">
+    <cleansia-language-switcher />
+    <!-- Header with Back Button -->
+    <div class="cleansia-admin-user-form__header">
+      <cleansia-button
+        [label]="'global.actions.back' | translate"
+        icon="pi pi-arrow-left"
+        (onClick)="onCancel()"
+        [outlined]="true"
+      />
+      <cleansia-title [title]="pageTitle()" />
+    </div>
+
+    @if (facade.loading()) {
+    <cleansia-loader />
+    } @else {
+    <form
+      [formGroup]="form"
+      (ngSubmit)="onSave()"
+      class="cleansia-admin-user-form__content"
+    >
+      <cleansia-section
+        [title]="'pages.admin_user_form.account_info' | translate"
+      >
+        <div class="form-grid">
+          <div class="form-field">
+            <cleansia-text-input
+              [label]="'pages.admin_user_form.email' | translate"
+              formControlName="email"
+              [required]="true"
+              [disabled]="isEditMode()"
+            />
+          </div>
+
+          @if (!isEditMode()) {
+          <div class="form-field">
+            <cleansia-text-input
+              [label]="'pages.admin_user_form.password' | translate"
+              formControlName="password"
+              dataType="password"
+              [required]="true"
+            />
+          </div>
+          }
+        </div>
+      </cleansia-section>
+
+      <cleansia-section
+        [title]="'pages.admin_user_form.personal_info' | translate"
+      >
+        <div class="form-grid">
+          <div class="form-field">
+            <cleansia-text-input
+              [label]="'pages.admin_user_form.first_name' | translate"
+              formControlName="firstName"
+              [required]="true"
+            />
+          </div>
+
+          <div class="form-field">
+            <cleansia-text-input
+              [label]="'pages.admin_user_form.last_name' | translate"
+              formControlName="lastName"
+              [required]="true"
+            />
+          </div>
+
+          <div class="form-field">
+            <cleansia-telephone
+              [label]="'pages.admin_user_form.phone_number' | translate"
+              formControlName="phoneNumber"
+            />
+          </div>
+        </div>
+      </cleansia-section>
+
+      <div class="form-actions">
+        <cleansia-button
+          [label]="'global.actions.cancel' | translate"
+          [outlined]="true"
+          (onClick)="onCancel()"
+        />
+        <cleansia-button
+          [label]="
+            isEditMode()
+              ? ('global.actions.save' | translate)
+              : ('global.actions.create' | translate)
+          "
+          type="submit"
+          [disabled]="facade.saving()"
+          [loading]="facade.saving()"
+          (onClick)="onSave()"
+        />
+      </div>
+    </form>
+    }
+  </div>
+</div>

@@ -1,0 +1,282 @@
+<div class="cleansia-invoice-detail">
+  <div class="cleansia-invoice-detail__container page-wrapper">
+    <cleansia-language-switcher />
+    <!-- Header with Back Button -->
+    <div class="cleansia-invoice-detail__header">
+      <cleansia-button
+        [label]="'pages.invoice_detail.back_to_list' | translate"
+        icon="pi pi-arrow-left"
+        (onClick)="goBack()"
+        [outlined]="true"
+      />
+      <cleansia-title [title]="'pages.invoice_detail.title' | translate" />
+    </div>
+
+    @if (facade.loading()) {
+    <cleansia-loader />
+    } @else if (facade.invoice()) {
+    <div class="cleansia-invoice-detail__content">
+      <!-- Invoice Status Banner -->
+      <div class="cleansia-invoice-detail__status-section">
+        <cleansia-section>
+          <div class="status-row">
+            <div class="status-info">
+              <span class="label"
+                >{{ 'pages.invoice_detail.status' | translate }}:</span
+              >
+              <span [class]="getInvoiceStatusClass(facade.invoice()!.status)">
+                {{ facade.getStatusLabel(facade.invoice()!.status) }}
+              </span>
+            </div>
+            <div class="invoice-number-info">
+              <span class="label"
+                >{{ 'pages.invoice_detail.invoice_number' | translate }}:</span
+              >
+              <span class="value">{{
+                facade.invoice()!.invoiceNumber || '-'
+              }}</span>
+            </div>
+          </div>
+        </cleansia-section>
+      </div>
+
+      <!-- Action Buttons -->
+      <cleansia-section
+        [title]="'pages.invoice_detail.actions_section' | translate"
+      >
+        <div class="cleansia-invoice-detail__actions">
+          @if (facade.canApprove()) {
+          <cleansia-button
+            [label]="'pages.invoice_detail.actions.approve' | translate"
+            icon="pi pi-check"
+            severity="success"
+            (onClick)="onApprove()"
+            [loading]="facade.actionLoading()"
+          />
+          } @if (facade.canMarkPaid()) {
+          <cleansia-button
+            [label]="'pages.invoice_detail.actions.mark_paid' | translate"
+            icon="pi pi-money-bill"
+            severity="success"
+            (onClick)="onMarkPaid()"
+            [loading]="facade.actionLoading()"
+          />
+          } @if (facade.canCancel()) {
+          <cleansia-button
+            [label]="'pages.invoice_detail.actions.cancel' | translate"
+            icon="pi pi-times"
+            severity="danger"
+            [outlined]="true"
+            (onClick)="onCancel()"
+            [loading]="facade.actionLoading()"
+          />
+          } @if (facade.canDownload()) {
+          <cleansia-button
+            [label]="'pages.invoice_detail.actions.download' | translate"
+            icon="pi pi-download"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="onDownload()"
+          />
+          }
+          <cleansia-button
+            [label]="'pages.invoice_detail.actions.regenerate_pdf' | translate"
+            icon="pi pi-refresh"
+            severity="info"
+            [outlined]="true"
+            (onClick)="onRegeneratePdf()"
+            [loading]="facade.actionLoading()"
+          />
+        </div>
+      </cleansia-section>
+
+      <!-- Invoice Summary -->
+      <cleansia-section
+        [title]="'pages.invoice_detail.invoice_summary' | translate"
+      >
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.invoice_detail.employee_name' | translate }}:</span
+            >
+            <span class="value">{{
+              facade.invoice()!.employeeName || '-'
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.invoice_detail.pay_period' | translate }}:</span
+            >
+            <span class="value">{{
+              facade.invoice()!.payPeriodLabel || '-'
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.invoice_detail.variable_symbol' | translate }}:</span
+            >
+            <span class="value">{{
+              facade.invoice()!.variableSymbol || '-'
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.invoice_detail.specific_symbol' | translate }}:</span
+            >
+            <span class="value">{{
+              facade.invoice()!.specificSymbol || '-'
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.invoice_detail.total_orders' | translate }}:</span
+            >
+            <span class="value">{{ facade.invoice()!.totalOrders || 0 }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.invoice_detail.generated_at' | translate }}:</span
+            >
+            <span class="value">{{
+              facade.formatDateTime(facade.invoice()!.generatedAt)
+            }}</span>
+          </div>
+        </div>
+      </cleansia-section>
+
+      <!-- Financial Summary -->
+      <cleansia-section
+        [title]="'pages.invoice_detail.financial_summary' | translate"
+      >
+        <div class="financial-grid">
+          <div class="financial-item">
+            <span class="label"
+              >{{ 'pages.invoice_detail.sub_total' | translate }}:</span
+            >
+            <span class="value">{{
+              facade.formatCurrency(
+                facade.invoice()!.subTotal,
+                facade.invoice()!.currencyCode
+              )
+            }}</span>
+          </div>
+          <div class="financial-item bonus">
+            <span class="label"
+              >{{ 'pages.invoice_detail.bonus_amount' | translate }}:</span
+            >
+            <span class="value"
+              >+
+              {{
+                facade.formatCurrency(
+                  facade.invoice()!.bonusAmount,
+                  facade.invoice()!.currencyCode
+                )
+              }}</span
+            >
+          </div>
+          <div class="financial-item deduction">
+            <span class="label"
+              >{{ 'pages.invoice_detail.deduction_amount' | translate }}:</span
+            >
+            <span class="value"
+              >-
+              {{
+                facade.formatCurrency(
+                  facade.invoice()!.deductionAmount,
+                  facade.invoice()!.currencyCode
+                )
+              }}</span
+            >
+          </div>
+          <div class="financial-item total">
+            <span class="label"
+              >{{ 'pages.invoice_detail.total_amount' | translate }}:</span
+            >
+            <span class="value">{{
+              facade.formatCurrency(
+                facade.invoice()!.totalAmount,
+                facade.invoice()!.currencyCode
+              )
+            }}</span>
+          </div>
+        </div>
+      </cleansia-section>
+
+      <!-- Approval & Payment Info -->
+      @if (facade.invoice()!.approvedAt || facade.invoice()!.paidAt) {
+      <cleansia-section
+        [title]="'pages.invoice_detail.approval_payment_info' | translate"
+      >
+        <div class="info-grid">
+          @if (facade.invoice()!.approvedAt) {
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.invoice_detail.approved_at' | translate }}:</span
+            >
+            <span class="value">{{
+              facade.formatDateTime(facade.invoice()!.approvedAt)
+            }}</span>
+          </div>
+          } @if (facade.invoice()!.approvedBy) {
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.invoice_detail.approved_by' | translate }}:</span
+            >
+            <span class="value">{{ facade.invoice()!.approvedBy }}</span>
+          </div>
+          } @if (facade.invoice()!.paidAt) {
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.invoice_detail.paid_at' | translate }}:</span
+            >
+            <span class="value">{{
+              facade.formatDateTime(facade.invoice()!.paidAt)
+            }}</span>
+          </div>
+          } @if (facade.invoice()!.bankTransferNote) {
+          <div class="info-item full-width">
+            <span class="label"
+              >{{
+                'pages.invoice_detail.bank_transfer_note' | translate
+              }}:</span
+            >
+            <span class="value">{{ facade.invoice()!.bankTransferNote }}</span>
+          </div>
+          }
+        </div>
+      </cleansia-section>
+      }
+
+      <!-- Admin Notes -->
+      @if (facade.invoice()!.adminNotes) {
+      <cleansia-section
+        [title]="'pages.invoice_detail.admin_notes' | translate"
+      >
+        <div class="admin-notes">
+          {{ facade.invoice()!.adminNotes }}
+        </div>
+      </cleansia-section>
+      }
+
+      <!-- Order Pays Table -->
+      <cleansia-section
+        [title]="'pages.invoice_detail.order_pays_section' | translate"
+      >
+        @if (facade.invoice()!.orderPays && facade.invoice()!.orderPays!.length
+        > 0) {
+        <cleansia-table
+          [data]="facade.invoice()!.orderPays!"
+          [columns]="columns"
+          [actions]="actions"
+          [config]="{ paginator: false }"
+        />
+        } @else {
+        <p class="no-data">
+          {{ 'pages.invoice_detail.no_order_pays' | translate }}
+        </p>
+        }
+      </cleansia-section>
+    </div>
+    }
+  </div>
+</div>

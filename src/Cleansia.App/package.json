@@ -5,16 +5,21 @@
   "scripts": {
     "start:cleansia": "nx serve cleansia.app --configuration=development",
     "start:cleansia-partner": "nx serve cleansia-partner.app --configuration=development",
+    "start:cleansia-admin": "nx serve cleansia-admin.app --configuration=development",
     "build": "nx build cleansia.app --configuration=development",
     "build:prod": "nx build cleansia.app --configuration=production",
+    "build:cleansia-partner": "nx build cleansia-partner.app --configuration=production",
+    "build:cleansia-admin": "nx build cleansia-admin.app --configuration=production",
     "test": "nx e2e cleansia.app-e2e",
     "lint": "nx lint",
     "e2e": "nx e2e",
-    "generate-client": "npx nswag run nswag.json && bash client-formatter.sh"
+    "generate-partner-client": "npx nswag run nswag-partner.json && bash partner-client-formatter.sh",
+    "generate-admin-client": "npx nswag run nswag-admin.json && bash admin-client-formatter.sh"
   },
   "private": true,
   "dependencies": {
     "@angular/animations": "^19.2.14",
+    "@angular/cdk": "~19.2.0",
     "@angular/common": "~19.2.0",
     "@angular/compiler": "~19.2.0",
     "@angular/core": "~19.2.0",
@@ -55,7 +60,7 @@
     "@nx/jest": "^21.2.4",
     "@nx/js": "21.4.1",
     "@nx/playwright": "21.2.4",
-    "@nx/web": "21.3.1",
+    "@nx/web": "21.4.1",
     "@nx/workspace": "21.2.4",
     "@playwright/test": "^1.36.0",
     "@schematics/angular": "~19.2.0",
@@ -83,7 +88,11 @@
     "ts-jest": "^29.1.0",
     "ts-node": "10.9.1",
     "tslib": "^2.3.0",
-    "typescript": "~5.8.2",
-    "typescript-eslint": "^8.29.0"
+    "typescript": "~5.7.2",
+    "typescript-eslint": "^8.29.0",
+    "verdaccio": "^6.0.5"
+  },
+  "nx": {
+    "includedScripts": []
   }
 }

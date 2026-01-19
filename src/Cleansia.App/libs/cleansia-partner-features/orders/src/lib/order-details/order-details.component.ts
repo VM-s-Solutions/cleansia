@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, OnInit } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { CleansiaPartnerRoute } from '@cleansia/services';
 import {
   CleansiaButtonComponent,
   CleansiaLanguageSwitcherComponent,
@@ -11,7 +13,9 @@ import {
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { DialogService } from 'primeng/dynamicdialog';
+import { map, startWith } from 'rxjs';
 import { OrderAdditionalServicesComponent } from './components/order-additional-services.component';
 import { OrderCustomerInfoComponent } from './components/order-customer-info.component';
 import { OrderExtrasComponent } from './components/order-extras.component';
@@ -48,13 +52,14 @@ import { OrderDetailsFacade } from './order-details.facade';
     CleansiaLanguageSwitcherComponent,
   ],
   templateUrl: './order-details.component.html',
-  providers: [OrderDetailsFacade],
+  providers: [OrderDetailsFacade, DialogService],
 })
 export class OrderDetailsComponent implements OnInit {
   protected readonly facade = inject(OrderDetailsFacade);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
+  private readonly translateService = inject(TranslateService);
 
   protected formGroup: FormGroup = this.createFormGroup();
 
@@ -63,40 +68,93 @@ export class OrderDetailsComponent implements OnInit {
   protected readonly error = this.facade.error;
   protected readonly currentEmployeeId = this.facade.currentEmployeeId;
 
-  protected readonly statusOptions = computed(() => [
-    {
-      label: this.orderDetails()?.orderStatus.name || '',
-      value: this.orderDetails()?.orderStatus.name || '',
-    },
-  ]);
-  protected readonly paymentStatusOptions = computed(() => [
-    {
-      label: this.orderDetails()?.paymentStatus.name || '',
-      value: this.orderDetails()?.paymentStatus.name || '',
-    },
-  ]);
+  // Track language changes to make translations reactive
+  private readonly currentLang = toSignal(
+    this.translateService.onLangChange.pipe(
+      map((event) => event.lang),
+      startWith(this.translateService.currentLang)
+    )
+  );
 
-  protected readonly paymentTypeOptions = computed(() => [
-    {
-      label: this.orderDetails()?.paymentType.name || '',
-      value: this.orderDetails()?.paymentType.name || '',
-    },
-  ]);
+  protected readonly statusOptions = computed(() => {
+    // Access currentLang to trigger recomputation on language change
+    this.currentLang();
+    const status = this.orderDetails()?.orderStatus;
+    if (!status?.name) return [];
+    const translationKey = `enums.order_status.${this.toSnakeCase(status.name)}`;
+    const translatedLabel = this.translateService.instant(translationKey);
+    return [
+      {
+        label: translatedLabel !== translationKey ? translatedLabel : status.name,
+        value: status.name,
+      },
+    ];
+  });
 
-  protected readonly currencyOptions = computed(() => [
-    {
-      label: this.orderDetails()?.currency
-        ? `${this.orderDetails()?.currency.name} (${
-            this.orderDetails()?.currency.code
-          })`
-        : '',
-      value: this.orderDetails()?.currency
-        ? `${this.orderDetails()?.currency.name} (${
-            this.orderDetails()?.currency.code
-          })`
-        : '',
-    },
-  ]);
+  protected readonly paymentStatusOptions = computed(() => {
+    // Access currentLang to trigger recomputation on language change
+    this.currentLang();
+    const status = this.orderDetails()?.paymentStatus;
+    if (!status?.name) return [];
+    const translationKey = `enums.payment_status.${this.toSnakeCase(status.name)}`;
+    const translatedLabel = this.translateService.instant(translationKey);
+    return [
+      {
+        label: translatedLabel !== translationKey ? translatedLabel : status.name,
+        value: status.name,
+      },
+    ];
+  });
+
+  protected readonly paymentTypeOptions = computed(() => {
+    // Access currentLang to trigger recomputation on language change
+    this.currentLang();
+    const paymentType = this.orderDetails()?.paymentType;
+    if (!paymentType?.name) return [];
+    const translationKey = `enums.payment_type.${this.toSnakeCase(paymentType.name)}`;
+    const translatedLabel = this.translateService.instant(translationKey);
+    return [
+      {
+        label: translatedLabel !== translationKey ? translatedLabel : paymentType.name,
+        value: paymentType.name,
+      },
+    ];
+  });
+
+  // Translated status labels for the status banner
+  protected readonly orderStatusLabel = computed(() => {
+    this.currentLang();
+    const status = this.orderDetails()?.orderStatus;
+    if (!status?.name) return '';
+    const translationKey = `enums.order_status.${this.toSnakeCase(status.name)}`;
+    const translatedLabel = this.translateService.instant(translationKey);
+    return translatedLabel !== translationKey ? translatedLabel : status.name;
+  });
+
+  protected readonly paymentStatusLabel = computed(() => {
+    this.currentLang();
+    const status = this.orderDetails()?.paymentStatus;
+    if (!status?.name) return '';
+    const translationKey = `enums.payment_status.${this.toSnakeCase(status.name)}`;
+    const translatedLabel = this.translateService.instant(translationKey);
+    return translatedLabel !== translationKey ? translatedLabel : status.name;
+  });
+
+  protected readonly formattedCreatedOn = computed(() => {
+    const createdOn = this.orderDetails()?.createdOn;
+    return this.formatDateTime(createdOn);
+  });
+
+  protected readonly currencyOptions = computed(() => {
+    const currency = this.orderDetails()?.currency;
+    if (!currency) return [];
+    return [
+      {
+        label: `${currency.name} (${currency.code})`,
+        value: `${currency.name} (${currency.code})`,
+      },
+    ];
+  });
 
   protected readonly hasExtras = computed(() => {
     const extras = this.orderDetails()?.extras;
@@ -122,6 +180,74 @@ export class OrderDetailsComponent implements OnInit {
     );
   });
 
+  protected readonly canStartOrder = computed(() => {
+    const order = this.orderDetails();
+    const employeeId = this.currentEmployeeId();
+
+    if (!order || !employeeId) return false;
+
+    // OrderStatus.Confirmed = 2
+    const isConfirmed = order.orderStatus.value === 2;
+    const isAssigned = order.assignedEmployees?.some(
+      (e) => e.employeeId === employeeId
+    );
+
+    return isConfirmed && isAssigned;
+  });
+
+  protected readonly canCompleteOrder = computed(() => {
+    const order = this.orderDetails();
+    const employeeId = this.currentEmployeeId();
+
+    if (!order || !employeeId) return false;
+
+    // OrderStatus.InProgress = 3
+    const isInProgress = order.orderStatus.value === 3;
+    const isAssigned = order.assignedEmployees?.some(
+      (e) => e.employeeId === employeeId
+    );
+
+    return isInProgress && isAssigned;
+  });
+
+  protected readonly hasInvoice = computed(() => {
+    const order = this.orderDetails();
+    return !!order?.receiptNumber;
+  });
+
+  protected readonly canManagePhotos = computed(() => {
+    const order = this.orderDetails();
+    const employeeId = this.currentEmployeeId();
+
+    if (!order || !employeeId) return false;
+
+    // OrderStatus.InProgress = 3, OrderStatus.Completed = 4
+    // Can view photos when InProgress or Completed
+    const isInProgressOrCompleted =
+      order.orderStatus.value === 3 || order.orderStatus.value === 4;
+    const isAssigned = order.assignedEmployees?.some(
+      (e) => e.employeeId === employeeId
+    );
+
+    return isInProgressOrCompleted && isAssigned;
+  });
+
+  protected readonly canUploadPhotos = computed((): boolean => {
+    const order = this.orderDetails();
+    const employeeId = this.currentEmployeeId();
+
+    if (!order || !employeeId) return false;
+
+    // OrderStatus.InProgress = 3
+    // Can only upload photos when order is InProgress (not when Completed)
+    const isInProgress = order.orderStatus.value === 3;
+    const isAssigned = order.assignedEmployees?.some(
+      (e) => e.employeeId === employeeId
+    ) ?? false;
+
+    return isInProgress && isAssigned;
+  });
+
   constructor() {
     effect(() => {
       const orderDetails = this.orderDetails();
@@ -142,7 +268,7 @@ export class OrderDetailsComponent implements OnInit {
   }
 
   protected navigateToOrders(): void {
-    this.router.navigate(['/orders']);
+    this.router.navigate([CleansiaPartnerRoute.ORDERS]);
   }
 
   protected formatCurrency(amount: number, currencySymbol: string): string {
@@ -177,6 +303,19 @@ export class OrderDetailsComponent implements OnInit {
 
   protected downloadInvoice(): void {
     this.facade.downloadInvoice();
+  }
+
+  protected startOrder(): void {
+    const orderId = this.orderDetails()?.id;
+    const employeeId = this.currentEmployeeId();
+
+    if (orderId && employeeId) {
+      this.facade.startOrder(orderId, employeeId);
+    }
+  }
+
+  protected completeOrder(): void {
+    this.facade.openCompleteOrderDialog();
   }
 
   private createFormGroup(): FormGroup {
@@ -258,5 +397,79 @@ export class OrderDetailsComponent implements OnInit {
   private getMinutesTranslation(): string {
     // This would typically use TranslateService, but for now return a static string
     return 'minutes';
+  }
+
+  private toSnakeCase(str: string): string {
+    // Handle common status names that may come with different casing from the API
+    const knownMappings: Record<string, string> = {
+      pending: 'pending',
+      confirmed: 'confirmed',
+      inprogress: 'in_progress',
+      in_progress: 'in_progress',
+      completed: 'completed',
+      cancelled: 'cancelled',
+      paid: 'paid',
+      failed: 'failed',
+      refunded: 'refunded',
+      cash: 'cash',
+      card: 'card',
+    };
+
+    // Normalize the string: lowercase and remove all spaces
+    const normalizedStr = str.toLowerCase().replace(/\s+/g, '');
+    if (knownMappings[normalizedStr]) {
+      return knownMappings[normalizedStr];
+    }
+
+    // Fallback to standard snake_case conversion (handles PascalCase like "InProgress")
+    return str
+      .replace(/([A-Z])/g, '_$1')
+      .toLowerCase()
+      .replace(/^_/, '')
+      .replace(/\s+/g, '_');
+  }
+
+  // Status History helper methods
+  protected getStatusHistoryClass(historyItem: { status: { value: number } }): string {
+    if (!historyItem.status) return 'status-history-item status-pending';
+    switch (historyItem.status.value) {
+      case 1: // Pending
+        return 'status-history-item status-pending';
+      case 2: // Confirmed
+        return 'status-history-item status-confirmed';
+      case 3: // InProgress
+        return 'status-history-item status-inprogress';
+      case 4: // Completed
+        return 'status-history-item status-completed';
+      case 5: // Cancelled
+        return 'status-history-item status-cancelled';
+      default:
+        return 'status-history-item status-pending';
+    }
+  }
+
+  protected getStatusHistoryIcon(historyItem: { status: { value: number } }): string {
+    if (!historyItem.status) return 'pi pi-circle';
+    switch (historyItem.status.value) {
+      case 1: // Pending
+        return 'pi pi-clock';
+      case 2: // Confirmed
+        return 'pi pi-check';
+      case 3: // InProgress
+        return 'pi pi-spinner';
+      case 4: // Completed
+        return 'pi pi-check-circle';
+      case 5: // Cancelled
+        return 'pi pi-times-circle';
+      default:
+        return 'pi pi-circle';
+    }
+  }
+
+  protected getTranslatedStatusName(historyItem: { status: { name?: string } }): string {
+    if (!historyItem.status?.name) return '';
+    const translationKey = `enums.order_status.${this.toSnakeCase(historyItem.status.name)}`;
+    const translatedLabel = this.translateService.instant(translationKey);
+    return translatedLabel !== translationKey ? translatedLabel : historyItem.status.name;
   }
 }

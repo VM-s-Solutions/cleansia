@@ -13,7 +13,7 @@ import {
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { CleansiaPartnerRoute } from '@cleansia/services';
-import { selectLoading } from '@cleansia/stores';
+import { selectLoading } from '@cleansia/partner-stores';
 import { Store } from '@ngrx/store';
 import { TranslatePipe } from '@ngx-translate/core';
 import { FloatLabelModule } from 'primeng/floatlabel';

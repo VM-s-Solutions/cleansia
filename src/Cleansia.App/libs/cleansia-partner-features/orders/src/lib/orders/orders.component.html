@@ -1,26 +1,144 @@
 <div class="cleansia-orders">
-  <cleansia-language-switcher />
-  <div class="cleansia-orders__container">
+  <div class="cleansia-orders__container page-wrapper">
+    <cleansia-language-switcher />
     <div class="cleansia-orders__header">
-      <cleansia-title [title]="'pages.orders.title' | translate" />
-      <p class="cleansia-orders__description">
-        {{ 'pages.orders.description' | translate }}
-      </p>
+      <div class="header-content">
+        <div class="header-text">
+          <cleansia-title [title]="'pages.orders.title' | translate" />
+          <p class="cleansia-orders__description">
+            {{ 'pages.orders.description' | translate }}
+          </p>
+        </div>
+        <!-- Help Button in Header (shows when help is dismissed) -->
+        @if (isOrdersHelpDismissed() || isPaymentHelpDismissed()) {
+        <button
+          type="button"
+          class="help-restore-icon-btn"
+          (click)="restoreAllHelp()"
+          [title]="'help.show_help' | translate"
+        >
+          <i class="pi pi-question-circle"></i>
+        </button>
+        }
+      </div>
     </div>
 
-    <!-- Filter Panel -->
-    <div class="filter-panel">
+    <!-- Help Card - How Orders Work -->
+    <cleansia-help-card
+      #ordersHelpCard
+      [titleKey]="'help.orders.title'"
+      [steps]="ordersHelpSteps"
+      [storageKey]="'cleansia-orders-help-dismissed'"
+      [collapsible]="true"
+      [initiallyCollapsed]="false"
+      [showDismiss]="true"
+      [showRestoreButton]="false"
+      [statusFlow]="orderStatusFlow"
+      [statusFlowTitleKey]="'help.orders.status_title'"
+      (dismissedChange)="onHelpDismissedChange()"
+    />
+
+    <!-- Help Card - Payment Status Explanation -->
+    <cleansia-help-card
+      #paymentHelpCard
+      [titleKey]="'help.orders.payment_title'"
+      [steps]="[]"
+      [storageKey]="'cleansia-orders-payment-help-dismissed'"
+      [collapsible]="true"
+      [initiallyCollapsed]="true"
+      [showDismiss]="true"
+      [showRestoreButton]="false"
+      [statusFlow]="paymentStatusFlow"
+      [statusFlowTitleKey]="'help.orders.payment_status_title'"
+      (dismissedChange)="onHelpDismissedChange()"
+    />
+
+    <!-- Filter Header - Chips left, Button right -->
+    <div class="filter-header">
+      <div class="filter-chips-inline">
+        @for (chip of activeFilterChips(); track chip.key) {
+        <div class="filter-chip">
+          <span class="filter-chip-label">{{ chip.label }}:</span>
+          <span class="filter-chip-value">{{ chip.value }}</span>
+          <button
+            class="filter-chip-remove"
+            (click)="removeFilterChip(chip.key)"
+          >
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+        } @if (hasActiveFilters()) {
+        <button class="filter-clear-all-btn" (click)="clearAllFilters()">
+          {{ 'pages.orders.filters.clear_all' | translate }}
+        </button>
+        }
+      </div>
+      <div class="header-actions">
+        <div class="filter-actions">
+          <cleansia-button
+            [label]="'pages.orders.filters.title' | translate"
+            icon="pi pi-filter"
+            [severity]="hasActiveFilters() ? 'primary' : 'secondary'"
+            [outlined]="!hasActiveFilters()"
+            (onClick)="openFilterDrawer()"
+          />
+          @if (hasActiveFilters()) {
+          <span class="filter-count-badge">{{ activeFilterCount() }}</span>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter Drawer Backdrop -->
+    @if (isFilterDrawerOpen()) {
+    <div
+      class="filter-drawer-backdrop"
+      role="button"
+      tabindex="0"
+      (click)="closeFilterDrawer()"
+      (keydown.escape)="closeFilterDrawer()"
+      [attr.aria-label]="'global.close' | translate"
+    ></div>
+    }
+
+    <!-- Filter Drawer -->
+    <div
+      class="filter-drawer"
+      [class.open]="isFilterDrawerOpen()"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="'pages.orders.filters.title' | translate"
+    >
+      <!-- Drawer Header -->
+      <div class="filter-drawer-header">
+        <div class="filter-drawer-title">
+          <i class="pi pi-filter"></i>
+          <span>{{ 'pages.orders.filters.title' | translate }}</span>
+        </div>
+        <button
+          type="button"
+          class="filter-drawer-close"
+          (click)="closeFilterDrawer()"
+          [attr.aria-label]="'global.close' | translate"
+        >
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+
+      <!-- Drawer Body -->
       <form [formGroup]="searchForm" class="filter-form">
-          <div class="filter-grid">
-            <!-- Customer Name -->
+        <!-- Search Section -->
+        <div class="filter-section">
+          <h3 class="filter-section-title">
+            {{ 'pages.orders.filters.search_criteria' | translate }}
+          </h3>
+          <div class="filter-fields">
             <cleansia-text-input
               [label]="'pages.orders.filters.customer_name' | translate"
               formControlName="customerName"
               [showErrors]="false"
               floatVariant="on"
             />
-
-            <!-- Customer Email -->
             <cleansia-text-input
               [label]="'pages.orders.filters.customer_email' | translate"
               formControlName="customerEmail"
@@ -28,48 +146,57 @@
               [showErrors]="false"
               floatVariant="on"
             />
-
-            <!-- Order Number -->
             <cleansia-text-input
               [label]="'pages.orders.filters.order_number' | translate"
               formControlName="displayOrderNumber"
               [showErrors]="false"
               floatVariant="on"
             />
+          </div>
+        </div>
 
-            <!-- Order Status (Multiselect) -->
-            <div class="filter-field">
-              <p-multiselect
-                inputId="orderStatuses"
-                formControlName="orderStatuses"
-                [options]="orderStatusMultiOptions"
-                optionLabel="label"
-                optionValue="value"
-                [placeholder]="'pages.orders.filters.order_status' | translate"
-                [showClear]="true"
-                display="chip"
-                class="cleansia-multiselect"
-                appendTo="body"
-              />
-            </div>
+        <!-- Order Status Section -->
+        <div class="filter-section">
+          <h3 class="filter-section-title">
+            {{ 'pages.orders.filters.order_status' | translate }}
+          </h3>
+          <div class="filter-checkbox-group">
+            @for (status of orderStatusOptions; track $index) {
+            <cleansia-checkbox
+              [id]="'order-status-' + status.value"
+              [label]="status.label"
+              [formControlName]="'orderStatus_' + status.value"
+              (valueChanges)="onOrderStatusChange($event, status.value)"
+              [showErrors]="false"
+            />
+            }
+          </div>
+        </div>
 
-            <!-- Payment Status (Multiselect) -->
-            <div class="filter-field">
-              <p-multiselect
-                inputId="paymentStatuses"
-                formControlName="paymentStatuses"
-                [options]="paymentStatusMultiOptions"
-                optionLabel="label"
-                optionValue="value"
-                [placeholder]="'pages.orders.filters.payment_status' | translate"
-                [showClear]="true"
-                display="chip"
-                class="cleansia-multiselect"
-                appendTo="body"
-              />
-            </div>
+        <!-- Payment Status Section -->
+        <div class="filter-section">
+          <h3 class="filter-section-title">
+            {{ 'pages.orders.filters.payment_status' | translate }}
+          </h3>
+          <div class="filter-checkbox-group">
+            @for (status of paymentStatusOptions; track $index) {
+            <cleansia-checkbox
+              [id]="'payment-status-' + status.value"
+              [label]="status.label"
+              [formControlName]="'paymentStatus_' + status.value"
+              (valueChanges)="onPaymentStatusChange($event, status.value)"
+              [showErrors]="false"
+            />
+            }
+          </div>
+        </div>
 
-            <!-- Cleaning Date From -->
+        <!-- Date Range Section -->
+        <div class="filter-section">
+          <h3 class="filter-section-title">
+            {{ 'pages.orders.filters.date_range' | translate }}
+          </h3>
+          <div class="filter-fields">
             <cleansia-calendar
               [label]="'pages.orders.filters.cleaning_date_from' | translate"
               formControlName="cleaningDateFrom"
@@ -78,8 +205,6 @@
               dateFormat="dd.mm.yy"
               appendTo="body"
             />
-
-            <!-- Cleaning Date To -->
             <cleansia-calendar
               [label]="'pages.orders.filters.cleaning_date_to' | translate"
               formControlName="cleaningDateTo"
@@ -89,19 +214,21 @@
               appendTo="body"
             />
           </div>
+        </div>
+      </form>
 
-          <!-- Filter Actions -->
-          <div class="filter-actions">
-            <p-button
-              [label]="'pages.orders.filters.reset' | translate"
-              icon="pi pi-times"
-              (onClick)="resetFilters()"
-              severity="secondary"
-              [outlined]="true"
-            />
-          </div>
-        </form>
+      <!-- Filter Actions -->
+      <div class="filter-actions">
+        <cleansia-button
+          [label]="'pages.orders.filters.reset' | translate"
+          [icon]="'pi pi-refresh'"
+          [buttonSize]="'medium'"
+          [severity]="'secondary'"
+          [outlined]="true"
+          (onClick)="resetFilters()"
+        />
       </div>
+    </div>
 
     <!-- Tabs for Available and My Orders -->
     <p-tabs value="0" (valueChange)="onTabChange($event)">
@@ -120,12 +247,17 @@
           } @else {
           <cleansia-table
             [data]="facade.availableOrders()"
-            [tableDefinition]="availableOrdersTableDefinition"
-            [paginator]="true"
-            [rows]="10"
-            [emptyMessage]="'pages.orders.no_available_orders'"
-            tableClass="cleansia-orders__table"
+            [columns]="availableOrdersColumns"
+            [actions]="availableOrdersActions"
+            [config]="{
+              paginator: true,
+              rows: 10,
+              lazy: true,
+              totalRecords: facade.totalRecords(),
+              emptyMessage: 'pages.orders.no_available_orders'
+            }"
             [loading]="(facade.loading$ | async) || false"
+            (pageChange)="onAvailableOrdersPageChange($event)"
             (sortChange)="onSortChange($event)"
           >
           </cleansia-table>
@@ -141,12 +273,17 @@
           } @else {
           <cleansia-table
             [data]="facade.myOrders()"
-            [tableDefinition]="myOrdersTableDefinition"
-            [paginator]="true"
-            [rows]="10"
-            [emptyMessage]="'pages.orders.no_my_orders'"
-            tableClass="cleansia-orders__table"
+            [columns]="myOrdersColumns"
+            [actions]="myOrdersActions"
+            [config]="{
+              paginator: true,
+              rows: 10,
+              lazy: true,
+              totalRecords: facade.totalRecords(),
+              emptyMessage: 'pages.orders.no_my_orders'
+            }"
             [loading]="(facade.loading$ | async) || false"
+            (pageChange)="onMyOrdersPageChange($event)"
             (sortChange)="onSortChange($event)"
           >
           </cleansia-table>
@@ -159,13 +296,13 @@
 
 <ng-template #statusTemplate let-item>
   <span [class]="getStatusClass(item)">
-    {{ item.paymentStatus?.name }}
+    {{ getTranslatedPaymentStatus(item.paymentStatus) }}
   </span>
 </ng-template>
 
 <ng-template #orderStatusTemplate let-item>
   <span [class]="getOrderStatusClass(item)">
-    {{ item.orderStatus?.name }}
+    {{ getTranslatedOrderStatus(item.orderStatus) }}
   </span>
 </ng-template>
 
@@ -174,6 +311,8 @@
     <span class="spots-count">
       {{ item.availableSpots || 0 }} / {{ item.maxEmployees || 0 }}
     </span>
-    <span class="spots-label">{{ 'pages.orders.available_spots' | translate }}</span>
+    <span class="spots-label">{{
+      'pages.orders.available_spots' | translate
+    }}</span>
   </div>
 </ng-template>

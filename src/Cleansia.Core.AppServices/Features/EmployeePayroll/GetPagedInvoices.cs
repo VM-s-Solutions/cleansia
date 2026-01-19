@@ -28,7 +28,12 @@ public class GetPagedInvoices
             var specification = EmployeeInvoiceSpecification.Create(
                 employeeId: request.Filter?.EmployeeId,
                 payPeriodId: request.Filter?.PayPeriodId,
-                statuses: request.Filter?.Statuses);
+                statuses: request.Filter?.Statuses,
+                invoiceNumber: request.Filter?.InvoiceNumber,
+                minAmount: request.Filter?.MinAmount,
+                maxAmount: request.Filter?.MaxAmount,
+                dateFrom: request.Filter?.DateFrom,
+                dateTo: request.Filter?.DateTo);
 
             var filter = specification.SatisfiedBy();
 

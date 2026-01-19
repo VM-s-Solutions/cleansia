@@ -1,10 +1,10 @@
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import {
   BlobFileDto,
-  CustomValidators,
   EmployeeItem,
   UpdateEmployeeCommand,
-} from '@cleansia/services';
+} from '@cleansia/partner-services';
+import { CustomValidators } from '@cleansia/services';
 import { FileTransformationUtils } from '@cleansia/utils';
 
 export interface TimeRange {

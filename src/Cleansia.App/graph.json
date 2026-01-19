@@ -1,0 +1,2714 @@
+{
+  "graph": {
+    "nodes": {
+      "employee-management": {
+        "name": "employee-management",
+        "type": "lib",
+        "data": {
+          "root": "libs/cleansia-admin-features/employee-management",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/cleansia-admin-features/employee-management/jest.config.ts",
+                "tsConfig": "libs/cleansia-admin-features/employee-management/tsconfig.spec.json",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "ci": true,
+                  "codeCoverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.preset.js"
+              ]
+            }
+          },
+          "name": "employee-management",
+          "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/cleansia-admin-features/employee-management/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [],
+          "implicitDependencies": []
+        }
+      },
+      "invoice-management": {
+        "name": "invoice-management",
+        "type": "lib",
+        "data": {
+          "root": "libs/cleansia-admin-features/invoice-management",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/cleansia-admin-features/invoice-management/jest.config.ts",
+                "tsConfig": "libs/cleansia-admin-features/invoice-management/tsconfig.spec.json",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "ci": true,
+                  "codeCoverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.preset.js"
+              ]
+            }
+          },
+          "name": "invoice-management",
+          "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/cleansia-admin-features/invoice-management/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [],
+          "implicitDependencies": []
+        }
+      },
+      "order-management": {
+        "name": "order-management",
+        "type": "lib",
+        "data": {
+          "root": "libs/cleansia-admin-features/order-management",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/cleansia-admin-features/order-management/jest.config.ts",
+                "tsConfig": "libs/cleansia-admin-features/order-management/tsconfig.spec.json",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "ci": true,
+                  "codeCoverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.preset.js"
+              ]
+            }
+          },
+          "name": "order-management",
+          "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/cleansia-admin-features/order-management/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [],
+          "implicitDependencies": []
+        }
+      },
+      "confirm-email": {
+        "name": "confirm-email",
+        "type": "lib",
+        "data": {
+          "root": "libs/cleansia-partner-features/confirm-email",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/cleansia-partner-features/confirm-email/jest.config.ts",
+                "tsConfig": "libs/cleansia-partner-features/confirm-email/tsconfig.spec.json",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "ci": true,
+                  "codeCoverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.preset.js"
+              ]
+            }
+          },
+          "name": "confirm-email",
+          "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/cleansia-partner-features/confirm-email/src",
+          "prefix": "cleansia-partner",
+          "projectType": "library",
+          "tags": [],
+          "implicitDependencies": []
+        }
+      },
+      "admin-login": {
+        "name": "admin-login",
+        "type": "lib",
+        "data": {
+          "root": "libs/cleansia-admin-features/admin-login",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/cleansia-admin-features/admin-login/jest.config.ts",
+                "tsConfig": "libs/cleansia-admin-features/admin-login/tsconfig.spec.json",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "ci": true,
+                  "codeCoverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.preset.js"
+              ]
+            }
+          },
+          "name": "admin-login",
+          "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/cleansia-admin-features/admin-login/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [],
+          "implicitDependencies": []
+        }
+      },
+      "pay-periods": {
+        "name": "pay-periods",
+        "type": "lib",
+        "data": {
+          "root": "libs/cleansia-admin-features/pay-periods",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/cleansia-admin-features/pay-periods/jest.config.ts",
+                "tsConfig": "libs/cleansia-admin-features/pay-periods/tsconfig.spec.json",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "ci": true,
+                  "codeCoverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.preset.js"
+              ]
+            }
+          },
+          "name": "pay-periods",
+          "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/cleansia-admin-features/pay-periods/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [],
+          "implicitDependencies": []
+        }
+      },
+      "invoices": {
+        "name": "invoices",
+        "type": "lib",
+        "data": {
+          "root": "libs/cleansia-partner-features/invoices",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/cleansia-partner-features/invoices/jest.config.ts",
+                "tsConfig": "libs/cleansia-partner-features/invoices/tsconfig.spec.json",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "ci": true,
+                  "codeCoverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.preset.js"
+              ]
+            }
+          },
+          "name": "invoices",
+          "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/cleansia-partner-features/invoices/src",
+          "prefix": "cleansia-partner",
+          "projectType": "library",
+          "tags": [],
+          "implicitDependencies": []
+        }
+      },
+      "register": {
+        "name": "register",
+        "type": "lib",
+        "data": {
+          "root": "libs/cleansia-partner-features/register",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/cleansia-partner-features/register/jest.config.ts",
+                "tsConfig": "libs/cleansia-partner-features/register/tsconfig.spec.json",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "ci": true,
+                  "codeCoverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.preset.js"
+              ]
+            }
+          },
+          "name": "register",
+          "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/cleansia-partner-features/register/src",
+          "prefix": "cleansia-partner",
+          "projectType": "library",
+          "tags": [],
+          "implicitDependencies": []
+        }
+      },
+      "profile": {
+        "name": "profile",
+        "type": "lib",
+        "data": {
+          "root": "libs/cleansia-partner-features/profile",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/cleansia-partner-features/profile/jest.config.ts",
+                "tsConfig": "libs/cleansia-partner-features/profile/tsconfig.spec.json",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "ci": true,
+                  "codeCoverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.preset.js"
+              ]
+            }
+          },
+          "name": "profile",
+          "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/cleansia-partner-features/profile/src",
+          "prefix": "cleansia-partner",
+          "projectType": "library",
+          "tags": [],
+          "implicitDependencies": []
+        }
+      },
+      "orders": {
+        "name": "orders",
+        "type": "lib",
+        "data": {
+          "root": "libs/cleansia-partner-features/orders",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/cleansia-partner-features/orders/jest.config.ts",
+                "tsConfig": "libs/cleansia-partner-features/orders/tsconfig.spec.json",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "ci": true,
+                  "codeCoverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.preset.js"
+              ]
+            }
+          },
+          "name": "orders",
+          "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/cleansia-partner-features/orders/src",
+          "prefix": "cleansia-partner",
+          "projectType": "library",
+          "tags": [],
+          "implicitDependencies": []
+        }
+      },
+      "login": {
+        "name": "login",
+        "type": "lib",
+        "data": {
+          "root": "libs/cleansia-partner-features/login",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/cleansia-partner-features/login/jest.config.ts",
+                "tsConfig": "libs/cleansia-partner-features/login/tsconfig.spec.json",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "ci": true,
+                  "codeCoverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.preset.js"
+              ]
+            }
+          },
+          "name": "login",
+          "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/cleansia-partner-features/login/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [],
+          "implicitDependencies": []
+        }
+      },
+      "partner-stores": {
+        "name": "partner-stores",
+        "type": "lib",
+        "data": {
+          "root": "libs/data-access/partner-stores",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "partner-stores",
+          "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/data-access/partner-stores/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:partner",
+            "type:data-access"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "admin-stores": {
+        "name": "admin-stores",
+        "type": "lib",
+        "data": {
+          "root": "libs/data-access/admin-stores",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            }
+          },
+          "name": "admin-stores",
+          "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/data-access/admin-stores/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:admin",
+            "type:data-access"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "cleansia-partner.app-e2e": {
+        "name": "cleansia-partner.app-e2e",
+        "type": "e2e",
+        "data": {
+          "root": "apps/cleansia-partner.app-e2e",
+          "metadata": {
+            "targetGroups": {
+              "E2E (CI)": [
+                "e2e-ci--src/example.spec.ts",
+                "e2e-ci"
+              ]
+            }
+          },
+          "targets": {
+            "e2e": {
+              "options": {
+                "cwd": "apps/cleansia-partner.app-e2e",
+                "command": "playwright test"
+              },
+              "metadata": {
+                "technologies": [
+                  "playwright"
+                ],
+                "description": "Runs Playwright Tests",
+                "help": {
+                  "command": "npx playwright test --help",
+                  "example": {
+                    "options": {
+                      "workers": 1
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                {
+                  "projects": [
+                    "cleansia-partner.app"
+                  ],
+                  "target": "serve"
+                }
+              ],
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "@playwright/test"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/.playwright/apps/cleansia-partner.app-e2e/test-output",
+                "{workspaceRoot}/dist/.playwright/apps/cleansia-partner.app-e2e/playwright-report"
+              ],
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "e2e-ci--src/example.spec.ts": {
+              "options": {
+                "cwd": "apps/cleansia-partner.app-e2e",
+                "env": {
+                  "PLAYWRIGHT_HTML_OUTPUT_DIR": "..\\..\\dist\\.playwright\\apps\\cleansia-partner.app-e2e\\playwright-report\\src-example-spec-ts",
+                  "PLAYWRIGHT_HTML_REPORT": "..\\..\\dist\\.playwright\\apps\\cleansia-partner.app-e2e\\playwright-report\\src-example-spec-ts"
+                },
+                "command": "playwright test src/example.spec.ts --output=..\\..\\dist\\.playwright\\apps\\cleansia-partner.app-e2e\\test-output\\src-example-spec-ts"
+              },
+              "metadata": {
+                "technologies": [
+                  "playwright"
+                ],
+                "description": "Runs Playwright Tests in src/example.spec.ts in CI",
+                "help": {
+                  "command": "npx playwright test --help",
+                  "example": {
+                    "options": {
+                      "workers": 1
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                {
+                  "projects": [
+                    "cleansia-partner.app"
+                  ],
+                  "target": "serve"
+                }
+              ],
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "@playwright/test"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/.playwright/apps/cleansia-partner.app-e2e/test-output/src-example-spec-ts",
+                "{workspaceRoot}/dist/.playwright/apps/cleansia-partner.app-e2e/playwright-report/src-example-spec-ts"
+              ],
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "e2e-ci": {
+              "executor": "nx:noop",
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "@playwright/test"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/.playwright/apps/cleansia-partner.app-e2e/test-output",
+                "{workspaceRoot}/dist/.playwright/apps/cleansia-partner.app-e2e/playwright-report"
+              ],
+              "dependsOn": [
+                {
+                  "target": "e2e-ci--src/example.spec.ts",
+                  "projects": "self",
+                  "params": "forward"
+                }
+              ],
+              "metadata": {
+                "technologies": [
+                  "playwright"
+                ],
+                "description": "Runs Playwright Tests in CI",
+                "nonAtomizedTarget": "e2e",
+                "help": {
+                  "command": "npx playwright test --help",
+                  "example": {
+                    "options": {
+                      "workers": 1
+                    }
+                  }
+                }
+              },
+              "configurations": {},
+              "options": {},
+              "parallelism": true
+            },
+            "lint": {
+              "cache": true,
+              "options": {
+                "cwd": "apps/cleansia-partner.app-e2e",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/apps/cleansia-partner.app-e2e/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "npx eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "name": "cleansia-partner.app-e2e",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "projectType": "application",
+          "sourceRoot": "apps/cleansia-partner.app-e2e/src",
+          "implicitDependencies": [
+            "cleansia-partner.app"
+          ],
+          "tags": []
+        }
+      },
+      "cleansia-admin.app-e2e": {
+        "name": "cleansia-admin.app-e2e",
+        "type": "e2e",
+        "data": {
+          "root": "apps/cleansia-admin.app-e2e",
+          "metadata": {
+            "targetGroups": {
+              "E2E (CI)": [
+                "e2e-ci--src/example.spec.ts",
+                "e2e-ci"
+              ]
+            }
+          },
+          "targets": {
+            "e2e": {
+              "options": {
+                "cwd": "apps/cleansia-admin.app-e2e",
+                "command": "playwright test"
+              },
+              "metadata": {
+                "technologies": [
+                  "playwright"
+                ],
+                "description": "Runs Playwright Tests",
+                "help": {
+                  "command": "npx playwright test --help",
+                  "example": {
+                    "options": {
+                      "workers": 1
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                {
+                  "projects": [
+                    "cleansia-admin.app"
+                  ],
+                  "target": "serve"
+                }
+              ],
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "@playwright/test"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/.playwright/apps/cleansia-admin.app-e2e/test-output",
+                "{workspaceRoot}/dist/.playwright/apps/cleansia-admin.app-e2e/playwright-report"
+              ],
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "e2e-ci--src/example.spec.ts": {
+              "options": {
+                "cwd": "apps/cleansia-admin.app-e2e",
+                "env": {
+                  "PLAYWRIGHT_HTML_OUTPUT_DIR": "..\\..\\dist\\.playwright\\apps\\cleansia-admin.app-e2e\\playwright-report\\src-example-spec-ts",
+                  "PLAYWRIGHT_HTML_REPORT": "..\\..\\dist\\.playwright\\apps\\cleansia-admin.app-e2e\\playwright-report\\src-example-spec-ts"
+                },
+                "command": "playwright test src/example.spec.ts --output=..\\..\\dist\\.playwright\\apps\\cleansia-admin.app-e2e\\test-output\\src-example-spec-ts"
+              },
+              "metadata": {
+                "technologies": [
+                  "playwright"
+                ],
+                "description": "Runs Playwright Tests in src/example.spec.ts in CI",
+                "help": {
+                  "command": "npx playwright test --help",
+                  "example": {
+                    "options": {
+                      "workers": 1
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                {
+                  "projects": [
+                    "cleansia-admin.app"
+                  ],
+                  "target": "serve"
+                }
+              ],
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "@playwright/test"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/.playwright/apps/cleansia-admin.app-e2e/test-output/src-example-spec-ts",
+                "{workspaceRoot}/dist/.playwright/apps/cleansia-admin.app-e2e/playwright-report/src-example-spec-ts"
+              ],
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "e2e-ci": {
+              "executor": "nx:noop",
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "@playwright/test"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/.playwright/apps/cleansia-admin.app-e2e/test-output",
+                "{workspaceRoot}/dist/.playwright/apps/cleansia-admin.app-e2e/playwright-report"
+              ],
+              "dependsOn": [
+                {
+                  "target": "e2e-ci--src/example.spec.ts",
+                  "projects": "self",
+                  "params": "forward"
+                }
+              ],
+              "metadata": {
+                "technologies": [
+                  "playwright"
+                ],
+                "description": "Runs Playwright Tests in CI",
+                "nonAtomizedTarget": "e2e",
+                "help": {
+                  "command": "npx playwright test --help",
+                  "example": {
+                    "options": {
+                      "workers": 1
+                    }
+                  }
+                }
+              },
+              "configurations": {},
+              "options": {},
+              "parallelism": true
+            },
+            "lint": {
+              "cache": true,
+              "options": {
+                "cwd": "apps/cleansia-admin.app-e2e",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/apps/cleansia-admin.app-e2e/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "npx eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "name": "cleansia-admin.app-e2e",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "projectType": "application",
+          "sourceRoot": "apps/cleansia-admin.app-e2e/src",
+          "implicitDependencies": [
+            "cleansia-admin.app"
+          ],
+          "tags": []
+        }
+      },
+      "cleansia-partner.app": {
+        "name": "cleansia-partner.app",
+        "type": "app",
+        "data": {
+          "root": "apps/cleansia-partner.app",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            },
+            "build": {
+              "executor": "@angular-devkit/build-angular:application",
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "options": {
+                "outputPath": "dist/apps/cleansia-partner.app",
+                "index": "apps/cleansia-partner.app/src/index.html",
+                "browser": "apps/cleansia-partner.app/src/main.ts",
+                "polyfills": [
+                  "zone.js"
+                ],
+                "tsConfig": "apps/cleansia-partner.app/tsconfig.app.json",
+                "inlineStyleLanguage": "scss",
+                "assets": [
+                  "apps/cleansia-partner.app/src/assets"
+                ],
+                "styles": [
+                  "apps/cleansia-partner.app/src/styles.scss",
+                  "libs/shared/assets/src/styles/cleansia-partner.scss"
+                ]
+              },
+              "configurations": {
+                "production": {
+                  "budgets": [
+                    {
+                      "type": "initial",
+                      "maximumWarning": "500kb",
+                      "maximumError": "1mb"
+                    },
+                    {
+                      "type": "anyComponentStyle",
+                      "maximumWarning": "4kb",
+                      "maximumError": "8kb"
+                    }
+                  ],
+                  "outputHashing": "all"
+                },
+                "development": {
+                  "optimization": false,
+                  "extractLicenses": false,
+                  "sourceMap": true
+                }
+              },
+              "defaultConfiguration": "production",
+              "parallelism": true,
+              "cache": true,
+              "dependsOn": [
+                "^build"
+              ],
+              "inputs": [
+                "production",
+                "^production"
+              ]
+            },
+            "serve": {
+              "continuous": true,
+              "executor": "@angular-devkit/build-angular:dev-server",
+              "configurations": {
+                "production": {
+                  "buildTarget": "cleansia-partner.app:build:production"
+                },
+                "development": {
+                  "buildTarget": "cleansia-partner.app:build:development"
+                }
+              },
+              "defaultConfiguration": "development",
+              "options": {},
+              "parallelism": true
+            },
+            "extract-i18n": {
+              "executor": "@angular-devkit/build-angular:extract-i18n",
+              "options": {
+                "buildTarget": "cleansia-partner.app:build"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "apps/cleansia-partner.app/jest.config.ts",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "ci": true,
+                  "codeCoverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.preset.js"
+              ]
+            },
+            "serve-static": {
+              "continuous": true,
+              "executor": "@nx/web:file-server",
+              "options": {
+                "buildTarget": "cleansia-partner.app:build",
+                "port": 4200,
+                "staticFilePath": "dist/apps/cleansia-partner.app/browser",
+                "spa": true
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "name": "cleansia-partner.app",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "projectType": "application",
+          "prefix": "app",
+          "sourceRoot": "apps/cleansia-partner.app/src",
+          "tags": [],
+          "implicitDependencies": []
+        }
+      },
+      "cleansia-admin.app": {
+        "name": "cleansia-admin.app",
+        "type": "app",
+        "data": {
+          "root": "apps/cleansia-admin.app",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            },
+            "build": {
+              "executor": "@angular-devkit/build-angular:application",
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "options": {
+                "outputPath": "dist/apps/cleansia-admin.app",
+                "index": "apps/cleansia-admin.app/src/index.html",
+                "browser": "apps/cleansia-admin.app/src/main.ts",
+                "polyfills": [
+                  "zone.js"
+                ],
+                "tsConfig": "apps/cleansia-admin.app/tsconfig.app.json",
+                "inlineStyleLanguage": "scss",
+                "assets": [
+                  "apps/cleansia-admin.app/src/assets"
+                ],
+                "styles": [
+                  "apps/cleansia-admin.app/src/styles.scss",
+                  "libs/shared/assets/src/styles/cleansia-admin.scss"
+                ]
+              },
+              "configurations": {
+                "production": {
+                  "budgets": [
+                    {
+                      "type": "initial",
+                      "maximumWarning": "500kb",
+                      "maximumError": "1mb"
+                    },
+                    {
+                      "type": "anyComponentStyle",
+                      "maximumWarning": "4kb",
+                      "maximumError": "8kb"
+                    }
+                  ],
+                  "outputHashing": "all"
+                },
+                "development": {
+                  "optimization": false,
+                  "extractLicenses": false,
+                  "sourceMap": true
+                }
+              },
+              "defaultConfiguration": "production",
+              "parallelism": true,
+              "cache": true,
+              "dependsOn": [
+                "^build"
+              ],
+              "inputs": [
+                "production",
+                "^production"
+              ]
+            },
+            "serve": {
+              "continuous": true,
+              "executor": "@angular-devkit/build-angular:dev-server",
+              "configurations": {
+                "production": {
+                  "buildTarget": "cleansia-admin.app:build:production"
+                },
+                "development": {
+                  "buildTarget": "cleansia-admin.app:build:development"
+                }
+              },
+              "defaultConfiguration": "development",
+              "options": {},
+              "parallelism": true
+            },
+            "extract-i18n": {
+              "executor": "@angular-devkit/build-angular:extract-i18n",
+              "options": {
+                "buildTarget": "cleansia-admin.app:build"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "apps/cleansia-admin.app/jest.config.ts",
+                "tsConfig": "apps/cleansia-admin.app/tsconfig.spec.json",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "ci": true,
+                  "codeCoverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.preset.js"
+              ]
+            },
+            "serve-static": {
+              "continuous": true,
+              "executor": "@nx/web:file-server",
+              "options": {
+                "buildTarget": "cleansia-admin.app:build",
+                "port": 4200,
+                "staticFilePath": "dist/apps/cleansia-admin.app/browser",
+                "spa": true
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "name": "cleansia-admin.app",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "projectType": "application",
+          "prefix": "app",
+          "sourceRoot": "apps/cleansia-admin.app/src",
+          "tags": [],
+          "implicitDependencies": []
+        }
+      },
+      "stores": {
+        "name": "stores",
+        "type": "lib",
+        "data": {
+          "root": "libs/data-access/stores",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/data-access/stores/jest.config.ts",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "ci": true,
+                  "codeCoverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.preset.js"
+              ]
+            }
+          },
+          "name": "stores",
+          "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/data-access/stores/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:shared type:util"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "components": {
+        "name": "components",
+        "type": "lib",
+        "data": {
+          "root": "libs/shared/components",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            },
+            "nx-release-publish": {
+              "executor": "@nx/js:release-publish",
+              "dependsOn": [
+                "^nx-release-publish"
+              ],
+              "options": {},
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "executor": "@nx/angular:ng-packagr-lite",
+              "outputs": [
+                "{workspaceRoot}/dist/{projectRoot}"
+              ],
+              "options": {
+                "project": "libs/shared/components/ng-package.json"
+              },
+              "configurations": {
+                "production": {
+                  "tsConfig": "libs/shared/components/tsconfig.lib.prod.json"
+                },
+                "development": {
+                  "tsConfig": "libs/shared/components/tsconfig.lib.json"
+                }
+              },
+              "defaultConfiguration": "production",
+              "parallelism": true,
+              "cache": true,
+              "dependsOn": [
+                "^build"
+              ],
+              "inputs": [
+                "production",
+                "^production"
+              ]
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/shared/components/jest.config.ts",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "ci": true,
+                  "codeCoverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.preset.js"
+              ]
+            }
+          },
+          "name": "components",
+          "tags": [
+            "npm:public",
+            "scope:shared type:ui"
+          ],
+          "metadata": {
+            "targetGroups": {},
+            "js": {
+              "packageName": "@cleansia.app/components",
+              "isInPackageManagerWorkspaces": false
+            }
+          },
+          "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/shared/components/src",
+          "prefix": "cleansia",
+          "projectType": "library",
+          "implicitDependencies": []
+        }
+      },
+      "directives": {
+        "name": "directives",
+        "type": "lib",
+        "data": {
+          "root": "libs/shared/directives",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/shared/directives/jest.config.ts",
+                "tsConfig": "libs/shared/directives/tsconfig.spec.json",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "ci": true,
+                  "codeCoverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.preset.js"
+              ]
+            }
+          },
+          "name": "directives",
+          "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/shared/directives/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [],
+          "implicitDependencies": []
+        }
+      },
+      "cleansia.app-e2e": {
+        "name": "cleansia.app-e2e",
+        "type": "e2e",
+        "data": {
+          "root": "apps/cleansia.app-e2e",
+          "metadata": {
+            "targetGroups": {
+              "E2E (CI)": [
+                "e2e-ci--src/example.spec.ts",
+                "e2e-ci"
+              ]
+            }
+          },
+          "targets": {
+            "e2e": {
+              "options": {
+                "cwd": "apps/cleansia.app-e2e",
+                "command": "playwright test"
+              },
+              "metadata": {
+                "technologies": [
+                  "playwright"
+                ],
+                "description": "Runs Playwright Tests",
+                "help": {
+                  "command": "npx playwright test --help",
+                  "example": {
+                    "options": {
+                      "workers": 1
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                {
+                  "projects": [
+                    "cleansia.app"
+                  ],
+                  "target": "serve"
+                }
+              ],
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "@playwright/test"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/.playwright/apps/cleansia.app-e2e/test-output",
+                "{workspaceRoot}/dist/.playwright/apps/cleansia.app-e2e/playwright-report"
+              ],
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "e2e-ci--src/example.spec.ts": {
+              "options": {
+                "cwd": "apps/cleansia.app-e2e",
+                "env": {
+                  "PLAYWRIGHT_HTML_OUTPUT_DIR": "..\\..\\dist\\.playwright\\apps\\cleansia.app-e2e\\playwright-report\\src-example-spec-ts",
+                  "PLAYWRIGHT_HTML_REPORT": "..\\..\\dist\\.playwright\\apps\\cleansia.app-e2e\\playwright-report\\src-example-spec-ts"
+                },
+                "command": "playwright test src/example.spec.ts --output=..\\..\\dist\\.playwright\\apps\\cleansia.app-e2e\\test-output\\src-example-spec-ts"
+              },
+              "metadata": {
+                "technologies": [
+                  "playwright"
+                ],
+                "description": "Runs Playwright Tests in src/example.spec.ts in CI",
+                "help": {
+                  "command": "npx playwright test --help",
+                  "example": {
+                    "options": {
+                      "workers": 1
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                {
+                  "projects": [
+                    "cleansia.app"
+                  ],
+                  "target": "serve"
+                }
+              ],
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "@playwright/test"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/.playwright/apps/cleansia.app-e2e/test-output/src-example-spec-ts",
+                "{workspaceRoot}/dist/.playwright/apps/cleansia.app-e2e/playwright-report/src-example-spec-ts"
+              ],
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            },
+            "e2e-ci": {
+              "executor": "nx:noop",
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                {
+                  "externalDependencies": [
+                    "@playwright/test"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{workspaceRoot}/dist/.playwright/apps/cleansia.app-e2e/test-output",
+                "{workspaceRoot}/dist/.playwright/apps/cleansia.app-e2e/playwright-report"
+              ],
+              "dependsOn": [
+                {
+                  "target": "e2e-ci--src/example.spec.ts",
+                  "projects": "self",
+                  "params": "forward"
+                }
+              ],
+              "metadata": {
+                "technologies": [
+                  "playwright"
+                ],
+                "description": "Runs Playwright Tests in CI",
+                "nonAtomizedTarget": "e2e",
+                "help": {
+                  "command": "npx playwright test --help",
+                  "example": {
+                    "options": {
+                      "workers": 1
+                    }
+                  }
+                }
+              },
+              "configurations": {},
+              "options": {},
+              "parallelism": true
+            },
+            "lint": {
+              "cache": true,
+              "options": {
+                "cwd": "apps/cleansia.app-e2e",
+                "command": "eslint ."
+              },
+              "inputs": [
+                "default",
+                "^default",
+                "{workspaceRoot}/eslint.base.config.mjs",
+                "{workspaceRoot}/apps/cleansia.app-e2e/eslint.config.mjs",
+                "{workspaceRoot}/tools/eslint-rules/**/*",
+                {
+                  "externalDependencies": [
+                    "eslint"
+                  ]
+                }
+              ],
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "metadata": {
+                "technologies": [
+                  "eslint"
+                ],
+                "description": "Runs ESLint on project",
+                "help": {
+                  "command": "npx eslint --help",
+                  "example": {
+                    "options": {
+                      "max-warnings": 0
+                    }
+                  }
+                }
+              },
+              "executor": "nx:run-commands",
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "name": "cleansia.app-e2e",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "projectType": "application",
+          "sourceRoot": "apps/cleansia.app-e2e/src",
+          "implicitDependencies": [
+            "cleansia.app"
+          ],
+          "tags": []
+        }
+      },
+      "assets": {
+        "name": "assets",
+        "type": "lib",
+        "data": {
+          "root": "libs/shared/assets",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/shared/assets/jest.config.ts",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "ci": true,
+                  "codeCoverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.preset.js"
+              ]
+            }
+          },
+          "name": "assets",
+          "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/shared/assets/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:shared type:ui"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "models": {
+        "name": "models",
+        "type": "lib",
+        "data": {
+          "root": "libs/shared/models",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/shared/models/jest.config.ts",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "ci": true,
+                  "codeCoverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.preset.js"
+              ]
+            }
+          },
+          "name": "models",
+          "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/shared/models/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:shared type:util"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "services": {
+        "name": "services",
+        "type": "lib",
+        "data": {
+          "root": "libs/core/services",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/core/services/jest.config.ts",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "ci": true,
+                  "codeCoverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.preset.js"
+              ]
+            }
+          },
+          "name": "services",
+          "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/core/services/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:shared type:util"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "cleansia.app": {
+        "name": "cleansia.app",
+        "type": "app",
+        "data": {
+          "root": "apps/cleansia.app",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            },
+            "build": {
+              "executor": "@angular/build:application",
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "options": {
+                "outputPath": "dist/apps/cleansia.app",
+                "index": "apps/cleansia.app/src/index.html",
+                "browser": "apps/cleansia.app/src/main.ts",
+                "polyfills": [
+                  "zone.js"
+                ],
+                "tsConfig": "apps/cleansia.app/tsconfig.app.json",
+                "inlineStyleLanguage": "scss",
+                "assets": [
+                  "apps/cleansia.app/src",
+                  {
+                    "glob": "**/*",
+                    "input": "apps/cleansia.app/public"
+                  }
+                ],
+                "styles": [
+                  "apps/cleansia.app/src/styles.scss",
+                  "libs/shared/assets/src/shared-styles.scss",
+                  "node_modules/primeicons/primeicons.css"
+                ]
+              },
+              "configurations": {
+                "production": {
+                  "optimization": true,
+                  "outputHashing": "all",
+                  "sourceMap": false,
+                  "namedChunks": false,
+                  "extractLicenses": true,
+                  "budgets": [
+                    {
+                      "type": "initial",
+                      "maximumWarning": "2mb",
+                      "maximumError": "5mb"
+                    }
+                  ]
+                },
+                "development": {
+                  "optimization": false,
+                  "sourceMap": true,
+                  "namedChunks": true,
+                  "extractLicenses": false
+                }
+              },
+              "defaultConfiguration": "production",
+              "parallelism": true,
+              "cache": true,
+              "dependsOn": [
+                "^build"
+              ],
+              "inputs": [
+                "production",
+                "^production"
+              ]
+            },
+            "serve": {
+              "continuous": true,
+              "executor": "@angular/build:dev-server",
+              "configurations": {
+                "production": {
+                  "buildTarget": "cleansia.app:build:production"
+                },
+                "development": {
+                  "buildTarget": "cleansia.app:build:development"
+                }
+              },
+              "defaultConfiguration": "development",
+              "options": {},
+              "parallelism": true
+            },
+            "extract-i18n": {
+              "executor": "@angular/build:extract-i18n",
+              "options": {
+                "buildTarget": "cleansia.app:build"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "apps/cleansia.app/jest.config.ts",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "ci": true,
+                  "codeCoverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.preset.js"
+              ]
+            },
+            "serve-static": {
+              "continuous": true,
+              "executor": "@nx/web:file-server",
+              "options": {
+                "buildTarget": "cleansia.app:build",
+                "port": 4200,
+                "staticFilePath": "dist/apps/cleansia.app/browser",
+                "spa": true
+              },
+              "configurations": {},
+              "parallelism": true
+            }
+          },
+          "name": "cleansia.app",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "projectType": "application",
+          "prefix": "app",
+          "sourceRoot": "apps/cleansia.app/src",
+          "tags": [],
+          "implicitDependencies": []
+        }
+      },
+      "pipes": {
+        "name": "pipes",
+        "type": "lib",
+        "data": {
+          "root": "libs/shared/pipes",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/shared/pipes/jest.config.ts",
+                "tsConfig": "libs/shared/pipes/tsconfig.spec.json",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "ci": true,
+                  "codeCoverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.preset.js"
+              ]
+            }
+          },
+          "name": "pipes",
+          "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/shared/pipes/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [],
+          "implicitDependencies": []
+        }
+      },
+      "types": {
+        "name": "types",
+        "type": "lib",
+        "data": {
+          "root": "libs/shared/types",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/shared/types/jest.config.ts",
+                "tsConfig": "libs/shared/types/tsconfig.spec.json",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "ci": true,
+                  "codeCoverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.preset.js"
+              ]
+            }
+          },
+          "name": "types",
+          "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/shared/types/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [],
+          "implicitDependencies": []
+        }
+      },
+      "utils": {
+        "name": "utils",
+        "type": "lib",
+        "data": {
+          "root": "libs/shared/utils",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/shared/utils/jest.config.ts",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "ci": true,
+                  "codeCoverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.preset.js"
+              ]
+            }
+          },
+          "name": "utils",
+          "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/shared/utils/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:shared type:utils"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "cleansia": {
+        "name": "cleansia",
+        "type": "lib",
+        "data": {
+          "root": "libs/cleansia",
+          "targets": {
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "options": {},
+              "configurations": {},
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/.eslintignore",
+                "{workspaceRoot}/eslint.config.mjs"
+              ]
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/cleansia/jest.config.ts",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "ci": true,
+                  "codeCoverage": true
+                }
+              },
+              "parallelism": true,
+              "cache": true,
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.preset.js"
+              ]
+            }
+          },
+          "name": "cleansia",
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/cleansia/src",
+          "prefix": "lib",
+          "projectType": "library",
+          "tags": [
+            "scope:cleansia"
+          ],
+          "implicitDependencies": []
+        }
+      },
+      "@cleansia.app/source": {
+        "name": "@cleansia.app/source",
+        "type": "lib",
+        "data": {
+          "root": ".",
+          "name": "@cleansia.app/source",
+          "includedScripts": [],
+          "tags": [
+            "npm:private"
+          ],
+          "metadata": {
+            "targetGroups": {},
+            "js": {
+              "packageName": "@cleansia.app/source",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "targets": {
+            "local-registry": {
+              "executor": "@nx/js:verdaccio",
+              "options": {
+                "port": 4873,
+                "config": ".verdaccio/config.yml",
+                "storage": "tmp/local-registry/storage"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "continuous": true
+            }
+          },
+          "$schema": "node_modules/nx/schemas/project-schema.json",
+          "implicitDependencies": []
+        }
+      }
+    },
+    "dependencies": {
+      "employee-management": [
+        {
+          "source": "employee-management",
+          "target": "components",
+          "type": "static"
+        },
+        {
+          "source": "employee-management",
+          "target": "admin-stores",
+          "type": "static"
+        },
+        {
+          "source": "employee-management",
+          "target": "services",
+          "type": "static"
+        }
+      ],
+      "invoice-management": [],
+      "order-management": [],
+      "confirm-email": [
+        {
+          "source": "confirm-email",
+          "target": "components",
+          "type": "static"
+        },
+        {
+          "source": "confirm-email",
+          "target": "partner-stores",
+          "type": "static"
+        },
+        {
+          "source": "confirm-email",
+          "target": "services",
+          "type": "static"
+        }
+      ],
+      "admin-login": [
+        {
+          "source": "admin-login",
+          "target": "components",
+          "type": "static"
+        },
+        {
+          "source": "admin-login",
+          "target": "admin-stores",
+          "type": "static"
+        },
+        {
+          "source": "admin-login",
+          "target": "directives",
+          "type": "static"
+        },
+        {
+          "source": "admin-login",
+          "target": "services",
+          "type": "static"
+        }
+      ],
+      "pay-periods": [
+        {
+          "source": "pay-periods",
+          "target": "components",
+          "type": "static"
+        },
+        {
+          "source": "pay-periods",
+          "target": "services",
+          "type": "static"
+        }
+      ],
+      "invoices": [
+        {
+          "source": "invoices",
+          "target": "components",
+          "type": "static"
+        },
+        {
+          "source": "invoices",
+          "target": "services",
+          "type": "static"
+        }
+      ],
+      "register": [
+        {
+          "source": "register",
+          "target": "components",
+          "type": "static"
+        },
+        {
+          "source": "register",
+          "target": "services",
+          "type": "static"
+        },
+        {
+          "source": "register",
+          "target": "partner-stores",
+          "type": "static"
+        },
+        {
+          "source": "register",
+          "target": "directives",
+          "type": "static"
+        }
+      ],
+      "profile": [
+        {
+          "source": "profile",
+          "target": "components",
+          "type": "static"
+        },
+        {
+          "source": "profile",
+          "target": "services",
+          "type": "static"
+        },
+        {
+          "source": "profile",
+          "target": "directives",
+          "type": "static"
+        },
+        {
+          "source": "profile",
+          "target": "utils",
+          "type": "static"
+        }
+      ],
+      "orders": [
+        {
+          "source": "orders",
+          "target": "components",
+          "type": "static"
+        },
+        {
+          "source": "orders",
+          "target": "services",
+          "type": "static"
+        },
+        {
+          "source": "orders",
+          "target": "models",
+          "type": "static"
+        },
+        {
+          "source": "orders",
+          "target": "directives",
+          "type": "static"
+        },
+        {
+          "source": "orders",
+          "target": "partner-stores",
+          "type": "static"
+        }
+      ],
+      "login": [
+        {
+          "source": "login",
+          "target": "components",
+          "type": "static"
+        },
+        {
+          "source": "login",
+          "target": "services",
+          "type": "static"
+        },
+        {
+          "source": "login",
+          "target": "directives",
+          "type": "static"
+        },
+        {
+          "source": "login",
+          "target": "partner-stores",
+          "type": "static"
+        }
+      ],
+      "partner-stores": [
+        {
+          "source": "partner-stores",
+          "target": "services",
+          "type": "static"
+        },
+        {
+          "source": "partner-stores",
+          "target": "models",
+          "type": "static"
+        }
+      ],
+      "admin-stores": [
+        {
+          "source": "admin-stores",
+          "target": "services",
+          "type": "static"
+        },
+        {
+          "source": "admin-stores",
+          "target": "models",
+          "type": "static"
+        }
+      ],
+      "cleansia-partner.app-e2e": [
+        {
+          "source": "cleansia-partner.app-e2e",
+          "target": "cleansia-partner.app",
+          "type": "implicit"
+        }
+      ],
+      "cleansia-admin.app-e2e": [
+        {
+          "source": "cleansia-admin.app-e2e",
+          "target": "cleansia-admin.app",
+          "type": "implicit"
+        }
+      ],
+      "cleansia-partner.app": [
+        {
+          "source": "cleansia-partner.app",
+          "target": "components",
+          "type": "static"
+        },
+        {
+          "source": "cleansia-partner.app",
+          "target": "services",
+          "type": "static"
+        },
+        {
+          "source": "cleansia-partner.app",
+          "target": "partner-stores",
+          "type": "static"
+        },
+        {
+          "source": "cleansia-partner.app",
+          "target": "assets",
+          "type": "static"
+        },
+        {
+          "source": "cleansia-partner.app",
+          "target": "login",
+          "type": "dynamic"
+        },
+        {
+          "source": "cleansia-partner.app",
+          "target": "register",
+          "type": "dynamic"
+        },
+        {
+          "source": "cleansia-partner.app",
+          "target": "confirm-email",
+          "type": "dynamic"
+        },
+        {
+          "source": "cleansia-partner.app",
+          "target": "profile",
+          "type": "dynamic"
+        },
+        {
+          "source": "cleansia-partner.app",
+          "target": "orders",
+          "type": "dynamic"
+        },
+        {
+          "source": "cleansia-partner.app",
+          "target": "invoices",
+          "type": "dynamic"
+        }
+      ],
+      "cleansia-admin.app": [
+        {
+          "source": "cleansia-admin.app",
+          "target": "components",
+          "type": "static"
+        },
+        {
+          "source": "cleansia-admin.app",
+          "target": "services",
+          "type": "static"
+        },
+        {
+          "source": "cleansia-admin.app",
+          "target": "admin-stores",
+          "type": "static"
+        },
+        {
+          "source": "cleansia-admin.app",
+          "target": "assets",
+          "type": "static"
+        },
+        {
+          "source": "cleansia-admin.app",
+          "target": "admin-login",
+          "type": "dynamic"
+        },
+        {
+          "source": "cleansia-admin.app",
+          "target": "employee-management",
+          "type": "dynamic"
+        },
+        {
+          "source": "cleansia-admin.app",
+          "target": "pay-periods",
+          "type": "dynamic"
+        },
+        {
+          "source": "cleansia-admin.app",
+          "target": "order-management",
+          "type": "dynamic"
+        },
+        {
+          "source": "cleansia-admin.app",
+          "target": "invoice-management",
+          "type": "dynamic"
+        }
+      ],
+      "stores": [],
+      "components": [
+        {
+          "source": "components",
+          "target": "pipes",
+          "type": "static"
+        },
+        {
+          "source": "components",
+          "target": "services",
+          "type": "static"
+        }
+      ],
+      "directives": [],
+      "cleansia.app-e2e": [
+        {
+          "source": "cleansia.app-e2e",
+          "target": "cleansia.app",
+          "type": "implicit"
+        }
+      ],
+      "assets": [],
+      "models": [
+        {
+          "source": "models",
+          "target": "types",
+          "type": "static"
+        }
+      ],
+      "services": [
+        {
+          "source": "services",
+          "target": "utils",
+          "type": "static"
+        },
+        {
+          "source": "services",
+          "target": "partner-stores",
+          "type": "static"
+        },
+        {
+          "source": "services",
+          "target": "models",
+          "type": "static"
+        },
+        {
+          "source": "services",
+          "target": "pipes",
+          "type": "static"
+        }
+      ],
+      "cleansia.app": [
+        {
+          "source": "cleansia.app",
+          "target": "assets",
+          "type": "static"
+        },
+        {
+          "source": "cleansia.app",
+          "target": "cleansia",
+          "type": "dynamic"
+        }
+      ],
+      "pipes": [],
+      "types": [],
+      "utils": [],
+      "cleansia": [
+        {
+          "source": "cleansia",
+          "target": "services",
+          "type": "static"
+        }
+      ],
+      "@cleansia.app/source": [
+        {
+          "source": "@cleansia.app/source",
+          "target": "components",
+          "type": "static"
+        },
+        {
+          "source": "@cleansia.app/source",
+          "target": "services",
+          "type": "static"
+        },
+        {
+          "source": "@cleansia.app/source",
+          "target": "directives",
+          "type": "static"
+        },
+        {
+          "source": "@cleansia.app/source",
+          "target": "models",
+          "type": "static"
+        },
+        {
+          "source": "@cleansia.app/source",
+          "target": "partner-stores",
+          "type": "static"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,65 @@
+<div class="cleansia-country-form">
+  <div class="cleansia-country-form__container page-wrapper">
+    <cleansia-language-switcher />
+    <!-- Header with Back Button -->
+    <div class="cleansia-country-form__header">
+      <cleansia-button
+        [label]="'global.actions.back' | translate"
+        icon="pi pi-arrow-left"
+        (onClick)="onCancel()"
+        [outlined]="true"
+      />
+      <cleansia-title [title]="pageTitle()" />
+    </div>
+
+    @if (facade.loading()) {
+    <cleansia-loader />
+    } @else {
+    <form
+      [formGroup]="form"
+      (ngSubmit)="onSave()"
+      class="cleansia-country-form__content"
+    >
+      <cleansia-section [title]="'pages.country_form.basic_info' | translate">
+        <div class="form-grid">
+          <div class="form-field">
+            <cleansia-text-input
+              [label]="'pages.country_form.iso_code' | translate"
+              formControlName="isoCode"
+              [required]="true"
+              [disabled]="isEditMode()"
+            />
+          </div>
+
+          <div class="form-field">
+            <cleansia-text-input
+              [label]="'pages.country_form.name' | translate"
+              formControlName="name"
+              [required]="true"
+            />
+          </div>
+        </div>
+      </cleansia-section>
+
+      <div class="form-actions">
+        <cleansia-button
+          [label]="'global.actions.cancel' | translate"
+          [outlined]="true"
+          (onClick)="onCancel()"
+        />
+        <cleansia-button
+          [label]="
+            isEditMode()
+              ? ('global.actions.save' | translate)
+              : ('global.actions.create' | translate)
+          "
+          type="submit"
+          [disabled]="facade.saving()"
+          [loading]="facade.saving()"
+          (onClick)="onSave()"
+        />
+      </div>
+    </form>
+    }
+  </div>
+</div>

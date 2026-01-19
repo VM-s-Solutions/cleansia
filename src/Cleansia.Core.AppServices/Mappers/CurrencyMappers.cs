@@ -12,16 +12,18 @@ public static class CurrencyMappers
             Code: currency.Code,
             Symbol: currency.Symbol,
             Name: currency.Name,
-            ExchangeRate: currency.ExchangeRate);
+            ExchangeRate: currency.ExchangeRate,
+            IsDefault: currency.IsDefault);
     }
 
-    public static CurrencyDetails MapToDetails(this Currency currency)
+    public static CurrencyDetailDto MapToDetailDto(this Currency currency)
     {
-        return new CurrencyDetails(
+        return new CurrencyDetailDto(
             Id: currency.Id,
             Code: currency.Code,
             Name: currency.Name,
-            Symbol: currency.Symbol
-        );
+            Symbol: currency.Symbol,
+            ExchangeRate: currency.ExchangeRate,
+            IsDefault: currency.IsDefault);
     }
 }

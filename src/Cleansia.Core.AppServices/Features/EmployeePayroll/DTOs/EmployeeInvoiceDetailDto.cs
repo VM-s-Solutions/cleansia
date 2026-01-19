@@ -1,3 +1,5 @@
+using Cleansia.Core.Domain.Enums;
+
 namespace Cleansia.Core.AppServices.Features.EmployeePayroll.DTOs;
 
 public record EmployeeInvoiceDetailDto(
@@ -15,7 +17,7 @@ public record EmployeeInvoiceDetailDto(
     decimal DeductionAmount,
     decimal TotalAmount,
     string CurrencyCode,
-    string Status,
+    EmployeeInvoiceStatus Status,
     string? PdfBlobName,
     DateTime GeneratedAt,
     DateTime? ApprovedAt,

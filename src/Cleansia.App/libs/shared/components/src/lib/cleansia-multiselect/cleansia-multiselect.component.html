@@ -1,0 +1,67 @@
+@if (floatVariant(); as variant) {
+<p-floatlabel [variant]="variant">
+  <p-multiselect
+    [inputId]="id()"
+    [options]="options()"
+    [ngModel]="innerValue"
+    (ngModelChange)="handleChange({ value: $event })"
+    (onBlur)="onTouch()"
+    [disabled]="disabled()"
+    [placeholder]="placeholder()"
+    [showClear]="showClear()"
+    [filter]="filter()"
+    [filterBy]="filterBy()"
+    [display]="display()"
+    [maxSelectedLabels]="maxSelectedLabels()"
+    [appendTo]="appendTo()"
+    optionLabel="label"
+    optionValue="value"
+    [class]="
+      inputSize() +
+      ' ' +
+      (className() ?? '') +
+      (hasErrors() ? ' ng-invalid ng-dirty' : '')
+    "
+  />
+  @if (label()) {
+  <label [for]="id()" [class.required]="isRequired() && showRequired()">{{
+    label()
+  }}</label>
+  }
+</p-floatlabel>
+} @else {
+<p-multiselect
+  [inputId]="id()"
+  [options]="options()"
+  [ngModel]="innerValue"
+  (ngModelChange)="handleChange({ value: $event })"
+  (onBlur)="onTouch()"
+  [disabled]="disabled()"
+  [placeholder]="placeholder()"
+  [showClear]="showClear()"
+  [filter]="filter()"
+  [filterBy]="filterBy()"
+  [display]="display()"
+  [maxSelectedLabels]="maxSelectedLabels()"
+  [appendTo]="appendTo()"
+  optionLabel="label"
+  optionValue="value"
+  [class]="
+    inputSize() +
+    ' ' +
+    (className() ?? '') +
+    (hasErrors() ? ' ng-invalid ng-dirty' : '')
+  "
+/>
+@if (label()) {
+<label [for]="id()" [class.required]="isRequired() && showRequired()">{{
+  label()
+}}</label>
+} } @if (showErrors() && formControl.invalid && (formControl.dirty ||
+formControl.touched)) {
+<ul class="cleansia-error-message-container">
+  @for (error of formControl.errors | error; track $index) {
+  <li>{{ error }}</li>
+  }
+</ul>
+}

@@ -83,4 +83,16 @@ public class PayPeriodController(IMediator mediator) : ApiController(mediator)
         var result = await Mediator.Send(command);
         return HandleResult<OpenPayPeriod.Response>(result);
     }
+
+    [HttpPut("ClosePayPeriod")]
+    [Permission(Policy.CanClosePayPeriod)]
+    [ProducesResponseType(typeof(ClosePayPeriod.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ClosePayPeriod([FromBody] ClosePayPeriod.Command command)
+    {
+        var result = await Mediator.Send(command);
+        return HandleResult<ClosePayPeriod.Response>(result);
+    }
 }

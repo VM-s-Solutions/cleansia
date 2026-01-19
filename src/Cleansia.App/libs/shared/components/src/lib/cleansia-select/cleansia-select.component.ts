@@ -33,6 +33,7 @@ export class CleansiaSelectComponent extends CleansiaBaseFormInputComponent {
   showClear = input(true);
   filter = input(false);
   filterBy = input<string>('label');
+  appendTo = input<'body' | null>(null);
 
   valueChanges = output<any>();
 

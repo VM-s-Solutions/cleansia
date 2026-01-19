@@ -78,4 +78,10 @@ public class InvoiceTemplate : Auditable
         Description = description;
         return this;
     }
+
+    public InvoiceTemplate UpdateTemplateName(string templateName)
+    {
+        TemplateName = templateName;
+        return this;
+    }
 }

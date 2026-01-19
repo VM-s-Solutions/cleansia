@@ -25,4 +25,18 @@ public static class ServiceMappers
             EstimatedTime: service.EstimatedTime,
             CurrencyCode: currencyCode);
     }
+
+    public static AdminServiceDetailDto MapToAdminDetail(this Service service)
+    {
+        return new AdminServiceDetailDto(
+            Id: service.Id,
+            Name: service.Name,
+            Description: service.Description,
+            BasePrice: service.BasePrice,
+            PerRoomPrice: service.PerRoomPrice,
+            EstimatedTime: service.EstimatedTime,
+            Translations: service.Translations.ToDictionary(),
+            CreatedOn: service.CreatedOn,
+            UpdatedOn: service.UpdatedOn);
+    }
 }

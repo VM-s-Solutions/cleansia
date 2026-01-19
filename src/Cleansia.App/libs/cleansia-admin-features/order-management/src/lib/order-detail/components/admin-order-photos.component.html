@@ -1,0 +1,104 @@
+<cleansia-section [title]="'pages.order_detail.photos' | translate">
+  @if (loading()) {
+  <cleansia-loader />
+  } @else {
+  <!-- Photo Counts -->
+  @if (photosData()) {
+  <div class="order-photos__counts">
+    <div class="order-photos__count">
+      <span class="order-photos__count-label">{{
+        'pages.order_detail.before_photos' | translate
+      }}:</span>
+      <span class="order-photos__count-value">{{ beforePhotos().length }}</span>
+    </div>
+    <div class="order-photos__count">
+      <span class="order-photos__count-label">{{
+        'pages.order_detail.after_photos' | translate
+      }}:</span>
+      <span class="order-photos__count-value">{{ afterPhotos().length }}</span>
+    </div>
+  </div>
+  }
+
+  <!-- Photo Gallery -->
+  <div class="order-photos__gallery">
+    <!-- Before Photos -->
+    @if (beforePhotos().length > 0) {
+    <div class="order-photos__section">
+      <h4 class="order-photos__section-title">
+        {{ 'pages.order_detail.before_photos' | translate }}
+      </h4>
+      <div class="order-photos__grid">
+        @for (photo of beforePhotos(); track photo.id) {
+        <div class="order-photos__item" (click)="openGallery($index)">
+          <img
+            [src]="photo.blobUrl"
+            [alt]="photo.originalFileName || photo.fileName"
+            class="order-photos__image"
+          />
+          <div class="order-photos__item-info">
+            <span class="order-photos__item-name">{{
+              photo.originalFileName || photo.fileName
+            }}</span>
+            <span class="order-photos__item-date">{{
+              formatDate(photo.capturedAt)
+            }}</span>
+            @if (photo.capturedByEmployeeName) {
+            <span class="order-photos__item-employee">{{
+              photo.capturedByEmployeeName
+            }}</span>
+            }
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+    }
+
+    <!-- After Photos -->
+    @if (afterPhotos().length > 0) {
+    <div class="order-photos__section">
+      <h4 class="order-photos__section-title">
+        {{ 'pages.order_detail.after_photos' | translate }}
+      </h4>
+      <div class="order-photos__grid">
+        @for (photo of afterPhotos(); track photo.id) {
+        <div
+          class="order-photos__item"
+          (click)="openGallery(beforePhotos().length + $index)"
+        >
+          <img
+            [src]="photo.blobUrl"
+            [alt]="photo.originalFileName || photo.fileName"
+            class="order-photos__image"
+          />
+          <div class="order-photos__item-info">
+            <span class="order-photos__item-name">{{
+              photo.originalFileName || photo.fileName
+            }}</span>
+            <span class="order-photos__item-date">{{
+              formatDate(photo.capturedAt)
+            }}</span>
+            @if (photo.capturedByEmployeeName) {
+            <span class="order-photos__item-employee">{{
+              photo.capturedByEmployeeName
+            }}</span>
+            }
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+    } @if (beforePhotos().length === 0 && afterPhotos().length === 0 &&
+    !loading()) {
+    <div class="order-photos__empty">
+      <i class="pi pi-images"></i>
+      <p>{{ 'pages.order_detail.no_photos' | translate }}</p>
+    </div>
+    }
+  </div>
+  }
+</cleansia-section>
+
+<!-- Photo Gallery Modal -->
+<admin-photo-gallery #gallery [photos]="galleryPhotos()" />

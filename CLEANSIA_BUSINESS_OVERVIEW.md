@@ -1,7 +1,7 @@
 # Cleansia - Business Overview & Application Flow
 
-**Last Updated**: 2025-12-20
-**Version**: 1.1.0
+**Last Updated**: 2026-01-17
+**Version**: 2.0.0
 **For**: Non-Technical Stakeholders
 
 ---
@@ -57,15 +57,18 @@ Cleaning staff can:
 - View their earnings
 - See their invoices and payment history
 
-### 3. **Business Administrators** (Future - Admin App)
-Company managers and owners will be able to:
+### 3. **Business Administrators** (✅ Complete - Admin App)
+Company managers and owners can now:
 - Monitor all orders and employees
-- Approve employee registrations
+- Approve or reject employee registrations
 - Review and approve invoices
 - Process employee payments
-- Handle customer complaints
-- View detailed business reports
-- Manage services and pricing
+- Manage pay periods (open, close, view details)
+- Generate detailed business reports
+- Manage services, packages, and pricing
+- Configure languages, currencies, and countries
+- Manage company information
+- Configure email, invoice, and receipt templates
 
 ---
 
@@ -154,12 +157,11 @@ Company managers and owners will be able to:
 3. Employee clicks "Take Order" to accept it
 4. Order status changes to "In Progress"
 
-**What Will Happen (Future with Admin App):**
-- Admin can assign specific employees to orders
-- System can suggest best employees based on:
-  - Location (who lives closest)
-  - Availability
-  - Performance history
+**What Admins Can Do Now (Admin App ✅):**
+- View all orders with advanced filtering
+- Monitor order status and progress
+- View order details including photos and status history
+- Track payment status and employee assignments
 
 ### Step 4: Completing the Job
 
@@ -202,10 +204,11 @@ Cleansia operates on **bi-weekly pay periods** (every 2 weeks):
   - Generates a professional invoice PDF
   - Emails the invoice to the employee
 
-**Week 3 (Admin Action - Future):**
-- Admin reviews all invoices
+**Week 3 (Admin Action ✅):**
+- Admin reviews all invoices in Admin App
 - Approves them (or makes adjustments if needed)
 - Marks invoices as "Paid" when money is transferred
+- Can cancel invoices with reason tracking
 - Employee receives payment notification
 
 **Special Features:**
@@ -643,26 +646,47 @@ Currently: **Czech** and **English**
 
 ## System Status & Reliability
 
-### Current Status: 100% Complete (Partner App) ✅
+### Current Status: 100% Complete (Partner App + Admin App) ✅
 
-**What's Working Now:**
+**Partner App - What's Working:**
 - ✅ Employee registration and login
-- ✅ Order creation and management
-- ✅ Payment processing (Stripe + Cash)
+- ✅ Order viewing and acceptance
 - ✅ Photo upload and management
-- ✅ Automated payroll calculations
-- ✅ Invoice generation
-- ✅ Email notifications
-- ✅ Dashboard analytics
+- ✅ Order completion workflow
+- ✅ Invoice viewing and download
+- ✅ Dashboard analytics (earnings, productivity, time tracking)
 - ✅ Mobile responsive interface
+- ✅ Profile management
+
+**Admin App - What's Working:**
+- ✅ Admin user authentication
+- ✅ Employee management (view, approve, reject)
+- ✅ Order management (view, filter, details)
+- ✅ Invoice management (view, approve, mark paid, cancel)
+- ✅ Pay period management (view, close, generate invoices)
+- ✅ Service management (CRUD operations)
+- ✅ Package management (CRUD operations)
+- ✅ Language management (CRUD operations)
+- ✅ Country management (CRUD operations)
+- ✅ Currency management (CRUD operations)
+- ✅ Company info management
+- ✅ Admin user management
+- ✅ Template management (email, invoice, receipt templates)
+- ✅ Reports with date filtering
+- ✅ Mobile responsive interface with filter drawers
+
+**Backend Infrastructure:**
+- ✅ Payment processing (Stripe + Cash)
+- ✅ Automated payroll calculations
+- ✅ PDF generation (invoices, receipts)
+- ✅ Email notifications (SendGrid)
+- ✅ Background jobs (Hangfire)
 - ✅ Health monitoring
-- ✅ Request logging (for troubleshooting)
+- ✅ Request logging
 
 **What's Coming Next:**
 - ⏳ Customer-facing app (for customers to book services)
-- ⏳ Admin app (for business owners to manage everything)
-- ⏳ Dispute resolution interface
-- ⏳ Advanced reporting
+- ⏳ Dispute resolution UI (backend ready)
 - ⏳ Employee performance tracking
 
 ### Reliability Features
@@ -858,10 +882,10 @@ Tips can be added as bonuses during invoice review. Admin adds the amount before
 Order stays in "In Progress" status. Admin can see all incomplete orders and follow up. Employee still sees it in their app.
 
 ### "Can we customize the services we offer?"
-Yes. Admin app (future) will allow managing services, packages, and pricing.
+Yes! The Admin app allows full management of services, packages, and pricing. You can create, edit, and delete services anytime.
 
 ### "What reports can we generate?"
-Currently: Dashboard with key metrics. Future admin app will have extensive reports (revenue by service, employee performance, customer trends, etc.).
+The Admin app provides comprehensive reports with date filtering. Both Partner and Admin apps have dashboard analytics showing earnings, order distribution, time tracking, and productivity metrics.
 
 ### "Is customer data secure?"
 Yes. All data encrypted, secure cloud storage, HTTPS everywhere, compliant with data protection regulations.
@@ -893,25 +917,28 @@ Yes. All data encrypted, secure cloud storage, HTTPS everywhere, compliant with 
 
 ### Phase 1: Partner App (✅ Complete)
 You can start using this NOW for:
-- Employee management
-- Order tracking
-- Payment processing
-- Automated payroll
+- Employee self-service portal
+- Order viewing and acceptance
+- Photo documentation
+- Earnings tracking and invoices
 
-### Phase 2: Customer App (⏳ Coming)
+### Phase 2: Admin App (✅ Complete)
+Complete business control is NOW available:
+- Employee approval and management
+- Order and invoice oversight
+- Pay period management
+- Service and package configuration
+- Template customization
+- Comprehensive reports
+- System configuration (languages, currencies, countries)
+
+### Phase 3: Customer App (⏳ Coming)
 When ready, customers can:
 - Book online 24/7
 - Pay instantly
 - Track their orders
 - Rate services
-
-### Phase 3: Admin App (⏳ Coming)
-Complete business control:
-- Employee approval
-- Financial reports
-- Service management
-- Dispute resolution
-- Full analytics
+- Raise disputes
 
 ---
 
@@ -931,6 +958,6 @@ Documentation: See CLEANSIA_PROJECT_DOCUMENTATION.md for technical details
 
 ---
 
-**Version**: 1.1.0
-**Last Updated**: 2025-12-20
-**Status**: Partner App Complete & Ready for Use ✅
+**Version**: 2.0.0
+**Last Updated**: 2026-01-17
+**Status**: Partner App & Admin App Complete & Ready for Use ✅

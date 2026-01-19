@@ -1,10 +1,14 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { Client, EmployeeInvoiceDetailDto, SnackbarService } from '@cleansia/services';
+import {
+  EmployeeInvoiceDetailDto,
+  PartnerClient,
+} from '@cleansia/partner-services';
+import { SnackbarService } from '@cleansia/services';
 import { catchError, finalize, of, tap } from 'rxjs';
 
 @Injectable()
 export class InvoiceDetailFacade {
-  private readonly client = inject(Client);
+  private readonly partnerClient = inject(PartnerClient);
   private readonly snackbarService = inject(SnackbarService);
 
   // Signals for reactive state management
@@ -21,7 +25,7 @@ export class InvoiceDetailFacade {
     this.loading.set(true);
     this.error.set(null);
 
-    this.client.employeePayrollClient
+    this.partnerClient.employeePayrollClient
       .getInvoiceById(invoiceId)
       .pipe(
         tap((invoiceDetail) => {
@@ -32,15 +36,11 @@ export class InvoiceDetailFacade {
           }
         }),
         catchError((error) => {
-          console.error('Error loading invoice details:', error);
           const errorMessage =
             error?.status === 404
               ? 'Invoice not found'
               : 'Failed to load invoice details';
           this.error.set(errorMessage);
-          this.snackbarService.showErrorTranslated(
-            'global.messages.invoices.failed_to_load_details'
-          );
           return of(null);
         }),
         finalize(() => this.loading.set(false))
@@ -65,14 +65,10 @@ export class InvoiceDetailFacade {
     }
 
     // Download PDF from server
-    this.client.employeePayrollClient
+    this.partnerClient.employeePayrollClient
       .downloadInvoice(invoice.id!)
       .pipe(
-        catchError((error) => {
-          console.error('Failed to download invoice:', error);
-          this.snackbarService.showErrorTranslated('pages.invoices.download_failed');
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((fileResponse) => {
         if (fileResponse) {
@@ -81,11 +77,14 @@ export class InvoiceDetailFacade {
           const url = window.URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
-          link.download = fileResponse.fileName || `invoice-${invoice.invoiceNumber}.pdf`;
+          link.download =
+            fileResponse.fileName || `invoice-${invoice.invoiceNumber}.pdf`;
           link.click();
           window.URL.revokeObjectURL(url);
 
-          this.snackbarService.showSuccessTranslated('global.messages.invoices.invoice_downloaded');
+          this.snackbarService.showSuccessTranslated(
+            'global.messages.invoices.invoice_downloaded'
+          );
         }
       });
   }

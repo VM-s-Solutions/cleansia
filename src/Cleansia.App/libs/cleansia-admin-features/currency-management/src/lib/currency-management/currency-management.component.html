@@ -1,0 +1,56 @@
+<div class="cleansia-currency-management">
+  <div class="cleansia-currency-management__container page-wrapper">
+    <cleansia-language-switcher />
+    <div class="cleansia-currency-management__header">
+      <div class="header-content">
+        <cleansia-title
+          [title]="'pages.currency_management.title' | translate"
+        />
+        <p class="cleansia-currency-management__description">
+          {{ 'pages.currency_management.description' | translate }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Filter Header -->
+    <div class="filter-header">
+      <div class="filter-chips-inline"></div>
+      <div class="header-actions">
+        <cleansia-button
+          [label]="'pages.currency_management.create_currency' | translate"
+          icon="pi pi-plus"
+          (onClick)="createCurrency()"
+        />
+      </div>
+    </div>
+
+    <!-- Currency Table -->
+    <cleansia-section>
+      @if (facade.initialLoading()) {
+      <cleansia-loader />
+      } @else {
+      <cleansia-table
+        [data]="facade.currencies()"
+        [columns]="currencyColumns"
+        [actions]="currencyActions"
+        [config]="{
+          paginator: false,
+          emptyMessage: 'pages.currency_management.no_currencies'
+        }"
+        [loading]="facade.loading()"
+      >
+      </cleansia-table>
+      }
+    </cleansia-section>
+  </div>
+</div>
+
+<p-confirmDialog />
+
+<ng-template #flagTemplate let-item>
+  @if (getCurrencyFlagCode(item.code)) {
+  <span
+    [ngClass]="['fi', 'fi-' + getCurrencyFlagCode(item.code), 'flag-icon']"
+  ></span>
+  }
+</ng-template>

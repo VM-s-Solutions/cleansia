@@ -1,0 +1,67 @@
+// Shared Status Badge Styles
+// These styles are reused across multiple admin components for consistent status display
+
+.status-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+// Base badge styling - applies to all status badges
+%status-badge-base {
+  display: inline-block;
+  padding: 0.375rem 0.875rem;
+  border-radius: 16px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.75px;
+  text-align: center;
+  line-height: 1;
+  white-space: nowrap;
+  min-width: 80px;
+  transition: all 0.2s ease-in-out;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// Active/Inactive Status Badge - for isActive boolean fields
+.active-status-badge {
+  @extend %status-badge-base;
+
+  &.status-active {
+    background-color: rgba(34, 197, 94, 0.15);
+    color: #14532d;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    box-shadow: 0 1px 2px rgba(34, 197, 94, 0.1);
+  }
+
+  &.status-inactive {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: #991b1b;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    box-shadow: 0 1px 2px rgba(239, 68, 68, 0.1);
+  }
+}
+
+// Default Badge - for isDefault boolean fields (e.g., currencies)
+.default-status-badge {
+  @extend %status-badge-base;
+
+  &.status-default {
+    background-color: rgba(59, 130, 246, 0.15);
+    color: #1e3a8a;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    box-shadow: 0 1px 2px rgba(59, 130, 246, 0.1);
+  }
+
+  &.status-not-default {
+    background-color: rgba(107, 114, 128, 0.15);
+    color: #374151;
+    border: 1px solid rgba(107, 114, 128, 0.3);
+    box-shadow: 0 1px 2px rgba(107, 114, 128, 0.1);
+  }
+}

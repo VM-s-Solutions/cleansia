@@ -1,0 +1,131 @@
+<div class="cleansia-package-form">
+  <div class="cleansia-package-form__container page-wrapper">
+    <cleansia-language-switcher />
+    <!-- Header with Back Button -->
+    <div class="cleansia-package-form__header">
+      <cleansia-button
+        [label]="'global.actions.back' | translate"
+        icon="pi pi-arrow-left"
+        (onClick)="onCancel()"
+        [outlined]="true"
+      />
+      <cleansia-title [title]="pageTitle()" />
+    </div>
+
+    @if (facade.loading()) {
+    <cleansia-loader />
+    } @else {
+    <form
+      [formGroup]="form"
+      (ngSubmit)="onSave()"
+      class="cleansia-package-form__content"
+    >
+      <cleansia-section [title]="'pages.package_form.basic_info' | translate">
+        <div class="form-grid">
+          <div class="form-field">
+            <cleansia-text-input
+              [label]="'pages.package_form.name' | translate"
+              formControlName="name"
+              [required]="true"
+            />
+          </div>
+
+          <div class="form-field">
+            <cleansia-text-input
+              [label]="'pages.package_form.price' | translate"
+              formControlName="price"
+              dataType="number"
+              [required]="true"
+            />
+          </div>
+
+          <div class="form-field full-width">
+            <cleansia-textarea
+              [label]="'pages.package_form.description' | translate"
+              formControlName="description"
+              [rows]="3"
+            />
+          </div>
+        </div>
+      </cleansia-section>
+
+      <cleansia-section [title]="'pages.package_form.services' | translate">
+        <div class="form-grid">
+          <div class="form-field full-width">
+            <label class="form-label">{{
+              'pages.package_form.included_services' | translate
+            }}</label>
+            <p-multiSelect
+              [options]="facade.availableServices()"
+              [ngModel]="selectedServices()"
+              (ngModelChange)="onServiceSelectionChange($event)"
+              [ngModelOptions]="{ standalone: true }"
+              optionLabel="name"
+              [placeholder]="'pages.package_form.select_services' | translate"
+              [showClear]="true"
+              [filter]="true"
+              filterBy="name"
+              display="chip"
+              styleClass="w-full"
+            />
+          </div>
+        </div>
+      </cleansia-section>
+
+      <cleansia-section [title]="'pages.package_form.translations' | translate">
+        <p-tabs [value]="facade.languages()[0]?.code || ''">
+          <p-tablist>
+            @for (lang of facade.languages(); track lang.code) {
+            <p-tab [value]="lang.code">{{ lang.name }}</p-tab>
+            }
+          </p-tablist>
+          <p-tabpanels>
+            @for (lang of facade.languages(); track lang.code) {
+            <p-tabpanel [value]="lang.code">
+              <div formGroupName="translations">
+                <div class="translation-form-grid" [formGroupName]="lang.code">
+                  <div class="form-field">
+                    <cleansia-text-input
+                      [label]="'pages.package_form.name' | translate"
+                      formControlName="name"
+                      [required]="true"
+                    />
+                  </div>
+
+                  <div class="form-field">
+                    <cleansia-textarea
+                      [label]="'pages.package_form.description' | translate"
+                      formControlName="description"
+                      [rows]="3"
+                    />
+                  </div>
+                </div>
+              </div>
+            </p-tabpanel>
+            }
+          </p-tabpanels>
+        </p-tabs>
+      </cleansia-section>
+
+      <div class="form-actions">
+        <cleansia-button
+          [label]="'global.actions.cancel' | translate"
+          [outlined]="true"
+          (onClick)="onCancel()"
+        />
+        <cleansia-button
+          [label]="
+            isEditMode()
+              ? ('global.actions.save' | translate)
+              : ('global.actions.create' | translate)
+          "
+          type="submit"
+          [disabled]="facade.saving()"
+          [loading]="facade.saving()"
+          (onClick)="onSave()"
+        />
+      </div>
+    </form>
+    }
+  </div>
+</div>

@@ -1,0 +1,143 @@
+<div class="cleansia-pay-period-detail">
+  <div class="cleansia-pay-period-detail__container page-wrapper">
+    <cleansia-language-switcher />
+    <!-- Header with Back Button -->
+    <div class="cleansia-pay-period-detail__header">
+      <cleansia-button
+        [label]="'payPeriods.detail.backToList' | translate"
+        icon="pi pi-arrow-left"
+        (onClick)="goBack()"
+        [outlined]="true"
+      />
+      <cleansia-title [title]="'payPeriods.detail.title' | translate" />
+    </div>
+
+    @if (facade.loading()) {
+    <cleansia-loader />
+    } @else if (facade.payPeriod()) {
+    <div class="cleansia-pay-period-detail__content">
+      <!-- Status Banner -->
+      <div
+        class="cleansia-pay-period-detail__status-banner"
+        [ngClass]="
+          'status-' + (facade.payPeriod()?.status?.toLowerCase() || 'unknown')
+        "
+      >
+        <i
+          [class]="
+            facade.payPeriod()?.status === PayPeriodStatus[PayPeriodStatus.Open]
+              ? 'pi pi-lock-open'
+              : 'pi pi-lock'
+          "
+        ></i>
+        <span>
+          {{
+            'payPeriods.status.' +
+              (facade.payPeriod()?.status?.toLowerCase() || 'unknown')
+              | translate
+          }}
+        </span>
+      </div>
+
+      <!-- Period Overview -->
+      <cleansia-section [title]="'payPeriods.detail.overview' | translate">
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="label"
+              >{{ 'payPeriods.detail.periodLabel' | translate }}:</span
+            >
+            <span class="value">{{
+              facade.payPeriod()?.periodLabel || '-'
+            }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label"
+              >{{ 'payPeriods.detail.status' | translate }}:</span
+            >
+            <span [class]="getStatusClass(facade.payPeriod()?.status)">
+              {{
+                'payPeriods.status.' +
+                  (facade.payPeriod()?.status?.toLowerCase() || 'unknown')
+                  | translate
+              }}
+            </span>
+          </div>
+          <div class="detail-item">
+            <span class="label"
+              >{{ 'payPeriods.detail.startDate' | translate }}:</span
+            >
+            <span class="value">{{
+              formatDate(facade.payPeriod()?.startDate)
+            }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label"
+              >{{ 'payPeriods.detail.endDate' | translate }}:</span
+            >
+            <span class="value">{{
+              formatDate(facade.payPeriod()?.endDate)
+            }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label"
+              >{{ 'payPeriods.detail.duration' | translate }}:</span
+            >
+            <span class="value"
+              >{{ facade.payPeriod()?.durationDays || '0' }}
+              {{ 'payPeriods.detail.days' | translate }}</span
+            >
+          </div>
+        </div>
+      </cleansia-section>
+
+      <!-- Closure Information (if closed) -->
+      @if (facade.payPeriod()?.status !== PayPeriodStatus[PayPeriodStatus.Open])
+      {
+      <cleansia-section [title]="'payPeriods.detail.closureInfo' | translate">
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="label"
+              >{{ 'payPeriods.detail.closedAt' | translate }}:</span
+            >
+            <span class="value">{{
+              formatDateTime(facade.payPeriod()?.closedAt)
+            }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label"
+              >{{ 'payPeriods.detail.closedBy' | translate }}:</span
+            >
+            <span class="value">{{ facade.payPeriod()?.closedBy || '-' }}</span>
+          </div>
+          @if (facade.payPeriod()?.notes) {
+          <div class="detail-item full-width">
+            <span class="label"
+              >{{ 'payPeriods.detail.notes' | translate }}:</span
+            >
+            <span class="value">{{ facade.payPeriod()?.notes }}</span>
+          </div>
+          }
+        </div>
+      </cleansia-section>
+      }
+
+      <!-- Actions -->
+      @if (facade.payPeriod()?.status === PayPeriodStatus[PayPeriodStatus.Open])
+      {
+      <div class="cleansia-pay-period-detail__actions">
+        <cleansia-button
+          [label]="'payPeriods.detail.closePeriod' | translate"
+          icon="pi pi-lock"
+          (onClick)="onClosePayPeriod()"
+          severity="warn"
+        />
+      </div>
+      }
+    </div>
+    } @else {
+    <cleansia-section>
+      <p class="no-data">{{ 'payPeriods.detail.notFound' | translate }}</p>
+    </cleansia-section>
+    }
+  </div>
+</div>

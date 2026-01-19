@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "Cleansia.Web": {
+    "Cleansia.Web.Partner": {
       "commandName": "Project",
       "launchUrl": "",
       "environmentVariables": {

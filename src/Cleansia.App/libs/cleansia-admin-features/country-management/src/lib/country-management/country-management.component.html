@@ -1,0 +1,54 @@
+<div class="cleansia-country-management">
+  <div class="cleansia-country-management__container page-wrapper">
+    <cleansia-language-switcher />
+    <div class="cleansia-country-management__header">
+      <div class="header-content">
+        <cleansia-title
+          [title]="'pages.country_management.title' | translate"
+        />
+        <p class="cleansia-country-management__description">
+          {{ 'pages.country_management.description' | translate }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Filter Header -->
+    <div class="filter-header">
+      <div class="filter-chips-inline"></div>
+      <div class="header-actions">
+        <cleansia-button
+          [label]="'pages.country_management.create_country' | translate"
+          icon="pi pi-plus"
+          (onClick)="createCountry()"
+        />
+      </div>
+    </div>
+
+    <!-- Country Table -->
+    <cleansia-section>
+      @if (facade.initialLoading()) {
+      <cleansia-loader />
+      } @else {
+      <cleansia-table
+        [data]="facade.countries()"
+        [columns]="countryColumns"
+        [actions]="countryActions"
+        [config]="{
+          paginator: false,
+          emptyMessage: 'pages.country_management.no_countries'
+        }"
+        [loading]="facade.loading()"
+      >
+      </cleansia-table>
+      }
+    </cleansia-section>
+  </div>
+</div>
+
+<p-confirmDialog />
+
+<ng-template #flagTemplate let-item>
+  <span
+    [ngClass]="['fi', 'fi-' + getCountryFlagCode(item.isoCode), 'flag-icon']"
+  ></span>
+</ng-template>

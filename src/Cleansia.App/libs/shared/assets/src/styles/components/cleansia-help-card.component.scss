@@ -1,0 +1,378 @@
+// Cleansia Help Card Component Styles
+// A collapsible help card for displaying workflow steps
+
+// Restore Button (shown when dismissed)
+.cleansia-help-card__restore-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  background: rgba(var(--cleansia-primary-rgb), 0.08);
+  border: 1px solid var(--cleansia-primary-200);
+  border-radius: 8px;
+  color: var(--cleansia-primary-600);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(var(--cleansia-primary-rgb), 0.15);
+    border-color: var(--cleansia-primary-300);
+    color: var(--cleansia-primary-700);
+  }
+
+  i {
+    font-size: 1rem;
+  }
+}
+
+.cleansia-help-card {
+  background: linear-gradient(
+    135deg,
+    rgba(var(--cleansia-primary-rgb), 0.05) 0%,
+    rgba(var(--cleansia-primary-rgb), 0.02) 100%
+  );
+  border: 1px solid var(--cleansia-primary-200);
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+
+  // Header
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    background: rgba(var(--cleansia-primary-rgb), 0.08);
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.3s ease;
+  }
+
+  &:not(.collapsed) &__header {
+    border-bottom-color: var(--cleansia-primary-200);
+  }
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--cleansia-primary-700);
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: var(--cleansia-primary-800);
+    }
+
+    > i:first-child {
+      font-size: 1.25rem;
+      color: var(--cleansia-primary-600);
+    }
+  }
+
+  &__collapse-icon {
+    font-size: 0.875rem;
+    margin-left: auto;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  &:not(.collapsed) &__collapse-icon {
+    transform: rotate(180deg);
+  }
+
+  &__dismiss {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--cleansia-primary-500);
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: rgba(var(--cleansia-primary-rgb), 0.1);
+      color: var(--cleansia-primary-700);
+    }
+
+    i {
+      font-size: 1rem;
+    }
+  }
+
+  // Content Wrapper - uses max-height for smooth animation
+  &__content-wrapper {
+    max-height: 1000px; // Large enough to fit content
+    opacity: 1;
+    overflow: hidden;
+    transition:
+      max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  &.collapsed &__content-wrapper {
+    max-height: 0;
+    opacity: 0;
+    transition:
+      max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  // Content
+  &__content {
+    padding: 1.5rem;
+  }
+
+  // Steps Container
+  &__steps {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: center;
+    }
+  }
+
+  // Individual Step
+  &__step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 1rem;
+    background: white;
+    border-radius: 10px;
+    border: 1px solid var(--cleansia-primary-100);
+    min-width: 140px;
+    max-width: 180px;
+    flex: 1;
+    transition: all 0.2s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      border-color: var(--cleansia-primary-300);
+    }
+
+    @media (max-width: 768px) {
+      flex-direction: row;
+      text-align: left;
+      max-width: 100%;
+      width: 100%;
+      min-width: unset;
+      gap: 1rem;
+    }
+  }
+
+  &__step-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(
+      135deg,
+      var(--cleansia-primary-100) 0%,
+      var(--cleansia-primary-50) 100%
+    );
+    border-radius: 12px;
+    margin-bottom: 0.75rem;
+    flex-shrink: 0;
+
+    i {
+      font-size: 1.5rem;
+      color: var(--cleansia-primary-600);
+    }
+
+    @media (max-width: 768px) {
+      margin-bottom: 0;
+      width: 40px;
+      height: 40px;
+
+      i {
+        font-size: 1.25rem;
+      }
+    }
+  }
+
+  &__step-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    @media (max-width: 768px) {
+      align-items: flex-start;
+    }
+  }
+
+  &__step-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--cleansia-text-primary);
+    line-height: 1.3;
+  }
+
+  &__step-description {
+    font-size: 0.75rem;
+    color: var(--cleansia-text-secondary);
+    line-height: 1.4;
+  }
+
+  // Arrow between steps
+  &__step-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.5rem;
+
+    i {
+      font-size: 1rem;
+      color: var(--cleansia-primary-400);
+    }
+
+    @media (max-width: 768px) {
+      transform: rotate(90deg);
+      padding: 0.25rem 0;
+    }
+  }
+
+  // Status Flow Section
+  &__status-flow {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--cleansia-primary-100);
+
+    &.no-steps {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: none;
+    }
+  }
+
+  &__status-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--cleansia-text-primary);
+    margin: 0 0 1rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 3px;
+      height: 16px;
+      background: var(--cleansia-primary-500);
+      border-radius: 2px;
+    }
+  }
+
+  &__status-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  &__status-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid var(--cleansia-primary-50);
+
+    @media (max-width: 576px) {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+  }
+
+  &__status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+
+    // Status color variants
+    &.status-pending {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    &.status-confirmed {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    &.status-in-progress {
+      background: #e0e7ff;
+      color: #3730a3;
+    }
+
+    &.status-completed {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    &.status-cancelled {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    &.status-paid {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    &.status-failed {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    &.status-refunded {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    &.status-approved {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    &.status-disputed {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    &.status-rejected {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+  }
+
+  &__status-desc {
+    font-size: 0.8rem;
+    color: var(--cleansia-text-secondary);
+    line-height: 1.5;
+    flex: 1;
+  }
+}

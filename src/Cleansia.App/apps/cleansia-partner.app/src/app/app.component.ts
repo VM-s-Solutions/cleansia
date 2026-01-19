@@ -2,20 +2,21 @@ import { NgClass } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import {
+  CleansiaCookieConsentComponent,
   CleansiaRegistrationLockComponent,
   CleansiaSidebarMenuComponent,
   SidebarMenuItem,
 } from '@cleansia/components';
 import {
-  AuthService,
-  CleansiaPartnerRoute,
+  PartnerAuthService,
   RegistrationCompletionService,
-} from '@cleansia/services';
+} from '@cleansia/partner-services';
 import {
   checkEmployeeCurrent,
   loadCodes,
   selectEmployeeConfirmation,
-} from '@cleansia/stores';
+} from '@cleansia/partner-stores';
+import { CleansiaPartnerRoute, PageTitleService } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -38,6 +39,7 @@ import {
     RouterModule,
     CleansiaSidebarMenuComponent,
     CleansiaRegistrationLockComponent,
+    CleansiaCookieConsentComponent,
   ],
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -46,9 +48,10 @@ import {
 export class AppComponent implements OnInit, OnDestroy {
   private readonly store = inject(Store);
   private readonly router = inject(Router);
-  private readonly authService = inject(AuthService);
+  private readonly authService = inject(PartnerAuthService);
   private readonly translate = inject(TranslateService);
   private readonly registrationService = inject(RegistrationCompletionService);
+  private readonly pageTitleService = inject(PageTitleService);
 
   private readonly destroy$ = new Subject<void>();
   private hasCheckedEmployee = false;
@@ -63,6 +66,13 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    // Initialize page title service
+    this.pageTitleService.initialize({
+      baseTitle: 'Cleansia Partner',
+      defaultTitleKey: 'page_titles.partner.default',
+      faviconPath: 'assets/logos/Logo.ico',
+    });
+
     // Load codes on app initialization
     this.store.dispatch(loadCodes());
 

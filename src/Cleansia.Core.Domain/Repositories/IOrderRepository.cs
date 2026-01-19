@@ -17,4 +17,10 @@ public interface IOrderRepository : IRepository<Order, string>
     /// Used for calculating earnings and time analytics.
     /// </summary>
     IQueryable<Order> GetCompletedOrdersByDateRange(string employeeId, DateTime startDate, DateTime endDate);
+
+    /// <summary>
+    /// Gets all orders within a date range.
+    /// Used for admin revenue reports.
+    /// </summary>
+    IQueryable<Order> GetOrdersByDateRange(DateTime startDate, DateTime endDate);
 }

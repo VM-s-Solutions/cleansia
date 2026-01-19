@@ -2,9 +2,8 @@
 <cleansia-loader />
 }
 <div class="cleansia-order-details">
-  <cleansia-language-switcher />
-
-  <div class="cleansia-order-details__form-card">
+  <div class="cleansia-order-details__form-card page-wrapper">
+    <cleansia-language-switcher />
     <!-- Header with back button and title -->
     <div class="cleansia-order-details__header">
       <div class="cleansia-order-details__header-actions">
@@ -38,12 +37,47 @@
     <!-- Order details content -->
     @if (orderDetails() && !loading()) {
     <form [formGroup]="formGroup" class="cleansia-order-details__form-content">
-      <!-- Order Header with order number and action buttons -->
+      <!-- Order Header with status banner, order number and action buttons -->
       <order-header
         [orderNumber]="orderDetails()!.displayOrderNumber!"
+        [hasInvoice]="hasInvoice()"
+        [orderStatus]="orderDetails()!.orderStatus"
+        [paymentStatus]="orderDetails()!.paymentStatus"
+        [orderStatusLabel]="orderStatusLabel()"
+        [paymentStatusLabel]="paymentStatusLabel()"
+        [createdOn]="formattedCreatedOn()"
+        [confirmationCode]="orderDetails()!.confirmationCode || ''"
         (onPrint)="printOrder()"
         (onDownloadInvoice)="downloadInvoice()"
       />
+
+      <!-- Start Order Action - Prominently placed at top -->
+      @if (canStartOrder()) {
+      <div class="cleansia-order-details__primary-action">
+        <cleansia-button
+          [buttonType]="'button'"
+          [style]="'raised-button'"
+          [title]="'pages.order_details.start_order' | translate"
+          [icon]="'pi pi-play'"
+          (clickFn)="startOrder()"
+          [disabled]="loading()"
+        />
+      </div>
+      }
+
+      <!-- Complete Order Action - Prominently placed at top -->
+      @if (canCompleteOrder()) {
+      <div class="cleansia-order-details__primary-action cleansia-order-details__primary-action--complete">
+        <cleansia-button
+          [buttonType]="'button'"
+          [style]="'raised-button'"
+          [title]="'pages.order_details.complete_order' | translate"
+          [icon]="'pi pi-check-circle'"
+          (clickFn)="completeOrder()"
+          [disabled]="loading()"
+        />
+      </div>
+      }
 
       <!-- Order Status Section -->
       <order-status
@@ -59,18 +93,22 @@
       <order-service-details [formGroup]="formGroup" />
 
       <!-- Packages -->
-      @if (orderDetails()!.selectedPackages && orderDetails()!.selectedPackages!.length > 0) {
-        <order-packages [packages]="orderDetails()!.selectedPackages!" />
+      @if (orderDetails()!.selectedPackages &&
+      orderDetails()!.selectedPackages!.length > 0) {
+      <order-packages [packages]="orderDetails()!.selectedPackages!" />
       }
 
       <!-- Additional Services -->
-      @if (orderDetails()!.selectedServices && orderDetails()!.selectedServices!.length > 0) {
-        <order-additional-services [services]="orderDetails()!.selectedServices!" />
+      @if (orderDetails()!.selectedServices &&
+      orderDetails()!.selectedServices!.length > 0) {
+      <order-additional-services
+        [services]="orderDetails()!.selectedServices!"
+      />
       }
 
       <!-- Extras -->
       @if (hasExtras()) {
-        <order-extras [extrasEntries]="extrasEntries()" />
+      <order-extras [extrasEntries]="extrasEntries()" />
       }
 
       <!-- Payment Information Section -->
@@ -81,7 +119,8 @@
       />
 
       <!-- Employee Assignment Section -->
-      @if (orderDetails()!.assignedEmployeeId) {
+      @if (orderDetails()!.assignedEmployees &&
+      orderDetails()!.assignedEmployees!.length > 0) {
       <cleansia-section
         [title]="'pages.order_details.assigned_employee' | translate"
       >
@@ -95,7 +134,7 @@
               [disabled]="true"
             />
           </div>
-          @if (orderDetails()!.assignedEmployeePhone) {
+          @if (orderDetails()!.assignedEmployees![0].phoneNumber) {
           <div class="cleansia-order-details__field">
             <cleansia-telephone
               [label]="'pages.order_details.employee_phone' | translate"
@@ -116,7 +155,9 @@
       >
         <div class="cleansia-order-details__grid">
           @if (orderDetails()!.notes) {
-          <div class="cleansia-order-details__field cleansia-order-details__field--full">
+          <div
+            class="cleansia-order-details__field cleansia-order-details__field--full"
+          >
             <cleansia-text-input
               [label]="'pages.order_details.notes' | translate"
               [floatVariant]="'on'"
@@ -126,7 +167,9 @@
             />
           </div>
           } @if (orderDetails()!.specialInstructions) {
-          <div class="cleansia-order-details__field cleansia-order-details__field--full">
+          <div
+            class="cleansia-order-details__field cleansia-order-details__field--full"
+          >
             <cleansia-text-input
               [label]="'pages.order_details.special_instructions' | translate"
               [floatVariant]="'on'"
@@ -136,7 +179,9 @@
             />
           </div>
           } @if (orderDetails()!.accessInstructions) {
-          <div class="cleansia-order-details__field cleansia-order-details__field--full">
+          <div
+            class="cleansia-order-details__field cleansia-order-details__field--full"
+          >
             <cleansia-text-input
               [label]="'pages.order_details.access_instructions' | translate"
               [floatVariant]="'on'"
@@ -155,14 +200,15 @@
       <cleansia-section
         [title]="'pages.order_details.order_history' | translate"
       >
-        <div class="cleansia-order-details__history">
-          @for (historyItem of orderDetails()!.statusHistory; track $index) {
-          <div class="history-item">
-            <div class="history-marker"></div>
-            <div class="history-content">
-              <div class="history-status">
-                <span class="history-status-name">{{ historyItem.status.name }}</span>
-              </div>
+        <div class="status-history-timeline">
+          @for (historyItem of orderDetails()!.statusHistory; track historyItem.createdOn) {
+          <div [class]="getStatusHistoryClass(historyItem)">
+            <div class="status-icon">
+              <i [class]="getStatusHistoryIcon(historyItem)"></i>
+            </div>
+            <div class="status-content">
+              <span class="status-name">{{ getTranslatedStatusName(historyItem) }}</span>
+              <span class="status-date">{{ formatDateTime(historyItem.createdOn) }}</span>
             </div>
           </div>
           }
@@ -170,14 +216,14 @@
       </cleansia-section>
       }
 
-      <!-- Order Photos Section -->
-      @if (currentEmployeeId() && orderDetails()?.id) {
-        <order-photos
-          [orderId]="orderDetails()!.id!"
-          [employeeId]="currentEmployeeId()!"
-          [canUpload]="true"
-          [canDelete]="true"
-        />
+      <!-- Order Photos Section - Only visible when employee is assigned and order is in progress or completed -->
+      @if (canManagePhotos()) {
+      <order-photos
+        [orderId]="orderDetails()!.id!"
+        [employeeId]="currentEmployeeId()!"
+        [canUpload]="canUploadPhotos()"
+        [canDelete]="canUploadPhotos()"
+      />
       }
 
       <!-- Audit Information Section -->

@@ -39,3 +39,36 @@
     padding-left: 0;
   }
 }
+
+// Print styles - hide sidebar and remove margins
+@media print {
+  .app-layout {
+    overflow: visible;
+    display: block;
+  }
+
+  .main-content {
+    overflow: visible;
+
+    &__margin {
+      padding-left: 0 !important;
+      margin-left: 0 !important;
+    }
+  }
+
+  // Hide all sidebar-related elements
+  cleansia-sidebar-menu,
+  .sidebar-container,
+  .sidebar,
+  .sidebar-backdrop,
+  .sidebar-toggler {
+    display: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    visibility: hidden !important;
+    position: absolute !important;
+    left: -9999px !important;
+    opacity: 0 !important;
+  }
+}

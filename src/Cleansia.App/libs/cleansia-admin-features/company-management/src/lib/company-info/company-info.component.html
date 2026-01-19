@@ -1,0 +1,187 @@
+<div class="company-info-page">
+  <div class="company-info-page__container page-wrapper">
+    <cleansia-language-switcher />
+    <div class="page-header">
+      <cleansia-title [title]="'pages.company_info.title' | translate" />
+    </div>
+
+    <div class="page-content">
+    @if (facade.loading()) {
+    <cleansia-loader />
+    } @else {
+    <form
+      [formGroup]="form"
+      (ngSubmit)="onSave()"
+      class="company-info-container"
+    >
+      <!-- Legal Information Section -->
+      <cleansia-section
+        [title]="'pages.company_info.sections.legal_info' | translate"
+      >
+        <div class="form-grid">
+          <div class="form-field">
+            <cleansia-text-input
+              [label]="'pages.company_info.legal_name' | translate"
+              formControlName="legalName"
+              [required]="true"
+            />
+          </div>
+
+          <div class="form-field">
+            <cleansia-text-input
+              [label]="'pages.company_info.trading_name' | translate"
+              formControlName="tradingName"
+              [required]="true"
+            />
+          </div>
+
+          <div class="form-field full-width">
+            <cleansia-textarea
+              [label]="'pages.company_info.tagline' | translate"
+              formControlName="tagline"
+              [rows]="2"
+            />
+          </div>
+        </div>
+      </cleansia-section>
+
+      <!-- Tax Information Section -->
+      <cleansia-section
+        [title]="'pages.company_info.sections.tax_info' | translate"
+      >
+        <div class="form-grid">
+          <div class="form-field">
+            <cleansia-text-input
+              [label]="'pages.company_info.registration_number' | translate"
+              formControlName="registrationNumber"
+              [required]="true"
+            />
+          </div>
+
+          <div class="form-field">
+            <cleansia-text-input
+              [label]="'pages.company_info.vat_number' | translate"
+              formControlName="vatNumber"
+            />
+          </div>
+        </div>
+      </cleansia-section>
+
+      <!-- Address Section -->
+      <cleansia-section
+        [title]="'pages.company_info.sections.address' | translate"
+      >
+        <div class="form-grid">
+          <div class="form-field full-width">
+            <cleansia-text-input
+              [label]="'pages.company_info.street' | translate"
+              formControlName="street"
+              [required]="true"
+            />
+          </div>
+
+          <div class="form-field">
+            <cleansia-text-input
+              [label]="'pages.company_info.city' | translate"
+              formControlName="city"
+              [required]="true"
+            />
+          </div>
+
+          <div class="form-field">
+            <cleansia-text-input
+              [label]="'pages.company_info.zip_code' | translate"
+              formControlName="zipCode"
+              [required]="true"
+            />
+          </div>
+
+          <div class="form-field">
+            <cleansia-select
+              [label]="'pages.company_info.country' | translate"
+              formControlName="countryId"
+              [options]="countryOptions()"
+              [required]="true"
+              [filter]="true"
+            />
+          </div>
+        </div>
+      </cleansia-section>
+
+      <!-- Contact Information Section -->
+      <cleansia-section
+        [title]="'pages.company_info.sections.contact' | translate"
+      >
+        <div class="form-grid">
+          <div class="form-field">
+            <cleansia-text-input
+              [label]="'pages.company_info.phone' | translate"
+              formControlName="phone"
+            />
+          </div>
+
+          <div class="form-field">
+            <cleansia-text-input
+              [label]="'pages.company_info.email' | translate"
+              formControlName="email"
+            />
+          </div>
+
+          <div class="form-field">
+            <cleansia-text-input
+              [label]="'pages.company_info.website' | translate"
+              formControlName="website"
+            />
+          </div>
+        </div>
+      </cleansia-section>
+
+      <!-- Banking Information Section -->
+      <cleansia-section
+        [title]="'pages.company_info.sections.banking' | translate"
+      >
+        <div class="form-grid">
+          <div class="form-field">
+            <cleansia-text-input
+              [label]="'pages.company_info.bank_name' | translate"
+              formControlName="bankName"
+            />
+          </div>
+
+          <div class="form-field">
+            <cleansia-text-input
+              [label]="'pages.company_info.bank_account_number' | translate"
+              formControlName="bankAccountNumber"
+            />
+          </div>
+
+          <div class="form-field">
+            <cleansia-text-input
+              [label]="'pages.company_info.iban' | translate"
+              formControlName="iban"
+            />
+          </div>
+
+          <div class="form-field">
+            <cleansia-text-input
+              [label]="'pages.company_info.swift' | translate"
+              formControlName="swift"
+            />
+          </div>
+        </div>
+      </cleansia-section>
+
+      <div class="form-actions">
+        <cleansia-button
+          [label]="'global.actions.save' | translate"
+          type="submit"
+          [disabled]="facade.saving()"
+          [loading]="facade.saving()"
+          (onClick)="onSave()"
+        />
+      </div>
+    </form>
+    }
+    </div>
+  </div>
+</div>

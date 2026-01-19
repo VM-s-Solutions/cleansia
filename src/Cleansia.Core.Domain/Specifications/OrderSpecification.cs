@@ -100,7 +100,7 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
 
         if (IsUnassigned.HasValue && IsUnassigned.Value)
         {
-            specification &= new DirectSpecification<Order>(x => string.IsNullOrEmpty(x.EmployeeId) || x.AssignedEmployees.Count == 0);
+            specification &= new DirectSpecification<Order>(x => x.AssignedEmployees.Count == 0);
         }
 
         if (HasAvailableSpots.HasValue && HasAvailableSpots.Value)

@@ -11,19 +11,21 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up .NET Core
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.x.x
+          dotnet-version: 8.x
 
-      - name: List files in Core.Domain
-        run: ls -R ./src/Cleansia.Core.Domain
-
-      - name: Build
-        run: dotnet build --configuration Release
+      - name: Restore dependencies
+        run: dotnet restore Cleansia.Api.sln
         working-directory: ./src
+
+      - name: Build solution
+        run: dotnet build Cleansia.Api.sln --configuration Release --no-restore
+        working-directory: ./src
+
       - name: Run tests
-        run: dotnet test --configuration Release --no-build
+        run: dotnet test Cleansia.Api.sln --configuration Release --no-build --verbosity normal
         working-directory: ./src

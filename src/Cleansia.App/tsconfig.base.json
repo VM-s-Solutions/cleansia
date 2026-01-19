@@ -42,12 +42,63 @@
       "@cleansia.app/order-details": [
         "cleansia-partner-features/order-details/src/index.ts"
       ],
+      "@cleansia.app/pay-periods": [
+        "libs/cleansia-admin-features/pay-periods/src/index.ts"
+      ],
+      "@cleansia.app/template-management": [
+        "libs/cleansia-admin-features/template-management/src/index.ts"
+      ],
+      "@cleansia/admin-features/admin-login": [
+        "libs/cleansia-admin-features/admin-login/src/index.ts"
+      ],
+      "@cleansia/admin-features/admin-user-management": [
+        "libs/cleansia-admin-features/admin-user-management/src/index.ts"
+      ],
+      "@cleansia/admin-features/company-management": [
+        "libs/cleansia-admin-features/company-management/src/index.ts"
+      ],
+      "@cleansia/admin-features/country-management": [
+        "libs/cleansia-admin-features/country-management/src/index.ts"
+      ],
+      "@cleansia/admin-features/currency-management": [
+        "libs/cleansia-admin-features/currency-management/src/index.ts"
+      ],
+      "@cleansia/admin-features/employee-management": [
+        "libs/cleansia-admin-features/employee-management/src/index.ts"
+      ],
+      "@cleansia/admin-features/invoice-management": [
+        "libs/cleansia-admin-features/invoice-management/src/index.ts"
+      ],
+      "@cleansia/admin-features/language-management": [
+        "libs/cleansia-admin-features/language-management/src/index.ts"
+      ],
+      "@cleansia/admin-features/order-management": [
+        "libs/cleansia-admin-features/order-management/src/index.ts"
+      ],
+      "@cleansia/admin-features/package-management": [
+        "libs/cleansia-admin-features/package-management/src/index.ts"
+      ],
+      "@cleansia/admin-features/reports": [
+        "libs/cleansia-admin-features/reports/src/index.ts"
+      ],
+      "@cleansia/admin-features/service-management": [
+        "libs/cleansia-admin-features/service-management/src/index.ts"
+      ],
+      "@cleansia/admin-features/template-management": [
+        "libs/cleansia-admin-features/template-management/src/index.ts"
+      ],
+      "@cleansia/admin-services": ["libs/core/admin-services/src/index.ts"],
+      "@cleansia/admin-stores": ["libs/data-access/admin-stores/src/index.ts"],
       "@cleansia/assets": ["libs/shared/assets/src/index.ts"],
       "@cleansia/cleansia": ["libs/cleansia/src/index.ts"],
       "@cleansia/cleansia-services": ["libs/cleansia-services/src/index.ts"],
       "@cleansia/components": ["libs/shared/components/src/index.ts"],
       "@cleansia/directives": ["libs/shared/directives/src/index.ts"],
       "@cleansia/models": ["libs/shared/models/src/index.ts"],
+      "@cleansia/partner-services": ["libs/core/partner-services/src/index.ts"],
+      "@cleansia/partner-stores": [
+        "libs/data-access/partner-stores/src/index.ts"
+      ],
       "@cleansia/pipes": ["libs/shared/pipes/src/index.ts"],
       "@cleansia/services": ["libs/core/services/src/index.ts"],
       "@cleansia/stores": ["libs/data-access/stores/src/index.ts"],

@@ -12,4 +12,12 @@ public static class LanguageMappers
             language.Code,
             language.Name);
     }
+
+    public static LanguageDetailDto MapToDetailDto(this Language language)
+    {
+        return new LanguageDetailDto(
+            language.Id,
+            language.Code,
+            language.Name);
+    }
 }

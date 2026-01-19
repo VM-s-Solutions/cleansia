@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Internationalization;
 
 namespace Cleansia.Core.Domain.Company;
 
@@ -37,6 +38,8 @@ public class CompanyInfo : Auditable
 
     [Required]
     public string CountryId { get; private set; } = default!;
+
+    public Country? Country { get; private set; }
 
     [MaxLength(50)]
     public string? Phone { get; private set; }
@@ -119,6 +122,14 @@ public class CompanyInfo : Auditable
     {
         RegistrationNumber = registrationNumber;
         VatNumber = vatNumber;
+        return this;
+    }
+
+    public CompanyInfo UpdateLegalInfo(string legalName, string tradingName, string? tagline)
+    {
+        LegalName = legalName;
+        TradingName = tradingName;
+        Tagline = tagline;
         return this;
     }
 

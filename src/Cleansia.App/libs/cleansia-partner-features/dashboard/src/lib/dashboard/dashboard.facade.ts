@@ -3,12 +3,12 @@ import { Router } from '@angular/router';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { OrderFilter } from '@cleansia/models';
 import {
-  Client,
   OrderStatus,
+  PartnerClient,
   SortDefinition,
   SortDirection,
-} from '@cleansia/services';
-import * as DashboardActions from '@cleansia/stores';
+} from '@cleansia/partner-services';
+import * as DashboardActions from '@cleansia/partner-stores';
 import {
   selectAnalyticsLoading,
   selectDashboardStats,
@@ -24,7 +24,7 @@ import {
   selectTimeAnalyticsLoading,
   selectUpcomingOrders,
   selectUpcomingOrdersLoading,
-} from '@cleansia/stores';
+} from '@cleansia/partner-stores';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { takeUntil } from 'rxjs';
@@ -34,7 +34,7 @@ import { StatCard } from './dashboard.models';
 export class DashboardFacade extends UnsubscribeControlDirective {
   private readonly store = inject(Store);
   private readonly router = inject(Router);
-  private readonly client = inject(Client);
+  private readonly partnerClient = inject(PartnerClient);
   private readonly translate = inject(TranslateService);
   private currentEmployeeId: string | null = null;
 
@@ -71,7 +71,7 @@ export class DashboardFacade extends UnsubscribeControlDirective {
   }
 
   private loadDashboard(): void {
-    this.client.employeeClient
+    this.partnerClient.employeeClient
       .getCurrentEmployee()
       .pipe(takeUntil(this.destroyed$))
       .subscribe((employee) => {

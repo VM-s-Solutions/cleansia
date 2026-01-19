@@ -2,15 +2,15 @@ import { Injectable, inject, signal } from '@angular/core';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { OrderFilter } from '@cleansia/models';
 import {
-  Client,
   OrderListItem,
   OrderStatus,
-  SnackbarService,
+  PartnerClient,
   SortDefinition,
   TakeOrderCommand,
-} from '@cleansia/services';
-import * as OrderActions from '@cleansia/stores';
-import { selectOrderItems, selectOrderLoading } from '@cleansia/stores';
+} from '@cleansia/partner-services';
+import * as OrderActions from '@cleansia/partner-stores';
+import { selectOrderItems, selectOrderLoading, selectOrderTotal } from '@cleansia/partner-stores';
+import { SnackbarService } from '@cleansia/services';
 import { Actions, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -24,16 +24,18 @@ import {
 @Injectable()
 export class OrdersFacade extends UnsubscribeControlDirective {
   private readonly store = inject(Store);
-  private readonly client = inject(Client);
+  private readonly partnerClient = inject(PartnerClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly dialogService = inject(DialogService);
   private readonly actions$ = inject(Actions);
 
   readonly orders$ = this.store.select(selectOrderItems);
   readonly loading$ = this.store.select(selectOrderLoading('paged'));
+  readonly total$ = this.store.select(selectOrderTotal);
 
   availableOrders = signal<OrderListItem[]>([]);
   myOrders = signal<OrderListItem[]>([]);
+  totalRecords = signal<number>(0);
 
   private currentEmployeeId = signal<string | null>(null);
   private currentSort = signal<SortDefinition[]>([]);
@@ -49,6 +51,10 @@ export class OrdersFacade extends UnsubscribeControlDirective {
       } else {
         this.myOrders.set([...(orders || [])]);
       }
+    });
+
+    this.total$.pipe(takeUntil(this.destroyed$)).subscribe((total) => {
+      this.totalRecords.set(total);
     });
 
     this.loadCurrentEmployee();
@@ -73,7 +79,7 @@ export class OrdersFacade extends UnsubscribeControlDirective {
   }
 
   private loadCurrentEmployee(): void {
-    this.client.employeeClient
+    this.partnerClient.employeeClient
       .getCurrentEmployee()
       .pipe(
         takeUntil(this.destroyed$),
@@ -92,11 +98,14 @@ export class OrdersFacade extends UnsubscribeControlDirective {
     const additionalFilters = this.currentFilter();
 
     const filter = new OrderFilter({
+      ...additionalFilters,
       employeeId: undefined,
-      orderStatuses: additionalFilters?.orderStatuses || [OrderStatus.Pending, OrderStatus.Confirmed],
+      orderStatuses: additionalFilters?.orderStatuses || [
+        OrderStatus.Pending,
+        OrderStatus.Confirmed,
+      ],
       hasAvailableSpots: true,
       excludeEmployeeId: employeeId || undefined,
-      ...additionalFilters,
     });
 
     this.store.dispatch(
@@ -122,8 +131,8 @@ export class OrdersFacade extends UnsubscribeControlDirective {
     const additionalFilters = this.currentFilter();
 
     const filter = new OrderFilter({
-      employeeId: employeeId,
       ...additionalFilters,
+      employeeId: employeeId,
     });
 
     this.store.dispatch(
@@ -146,7 +155,7 @@ export class OrdersFacade extends UnsubscribeControlDirective {
       return;
     }
 
-    this.client.orderClient
+    this.partnerClient.orderClient
       .takeOrder(new TakeOrderCommand({ orderId, employeeId }))
       .subscribe((response) => {
         if (response) {
@@ -165,11 +174,12 @@ export class OrdersFacade extends UnsubscribeControlDirective {
   updateSort(sort: SortDefinition[]): void {
     this.currentSort.set(sort);
     const tab = this.activeTab();
+    // Reset to first page when sorting changes
     if (tab === 'available') {
-      this.loadAvailableOrders();
+      this.loadAvailableOrders(0, 10);
       return;
     }
-    this.loadMyOrders();
+    this.loadMyOrders(0, 10);
   }
 
   openCompleteOrderDialog(order: OrderListItem): void {
@@ -199,18 +209,20 @@ export class OrdersFacade extends UnsubscribeControlDirective {
       }
     );
 
-    ref.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: CompleteOrderDialogResult) => {
-      if (result) {
-        this.store.dispatch(
-          OrderActions.completeOrder({
-            orderId: order.id!,
-            employeeId,
-            actualCompletionTimeMinutes: result.actualCompletionTimeMinutes,
-            completionNotes: result.completionNotes,
-          })
-        );
-      }
-    });
+    ref.onClose
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((result: CompleteOrderDialogResult) => {
+        if (result) {
+          this.store.dispatch(
+            OrderActions.completeOrder({
+              orderId: order.id!,
+              employeeId,
+              actualCompletionTimeMinutes: result.actualCompletionTimeMinutes,
+              completionNotes: result.completionNotes,
+            })
+          );
+        }
+      });
   }
 
   canCompleteOrder(order: OrderListItem): boolean {
@@ -220,20 +232,22 @@ export class OrdersFacade extends UnsubscribeControlDirective {
   applyFilters(filter: OrderFilter): void {
     this.currentFilter.set(filter);
     const tab = this.activeTab();
+    // Reset to first page when filters change
     if (tab === 'available') {
-      this.loadAvailableOrders();
+      this.loadAvailableOrders(0, 10);
     } else {
-      this.loadMyOrders();
+      this.loadMyOrders(0, 10);
     }
   }
 
   resetFilters(): void {
     this.currentFilter.set(null);
     const tab = this.activeTab();
+    // Reset to first page when filters are cleared
     if (tab === 'available') {
-      this.loadAvailableOrders();
+      this.loadAvailableOrders(0, 10);
     } else {
-      this.loadMyOrders();
+      this.loadMyOrders(0, 10);
     }
   }
 }

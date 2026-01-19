@@ -25,4 +25,9 @@ public class Country : Auditable
         Name = name,
         IsoCode = isoCode
     };
+
+    public void UpdateName(string name)
+    {
+        Name = name;
+    }
 }

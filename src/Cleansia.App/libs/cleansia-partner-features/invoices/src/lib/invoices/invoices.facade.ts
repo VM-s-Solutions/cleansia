@@ -1,11 +1,12 @@
 import { Injectable, OnDestroy, inject, signal } from '@angular/core';
 import {
-  Client,
   EmployeeInvoiceDto,
   EmployeeInvoiceDtoPagedData,
-  SnackbarService,
+  EmployeeInvoiceStatus,
+  PartnerClient,
   SortDefinition,
-} from '@cleansia/services';
+} from '@cleansia/partner-services';
+import { SnackbarService } from '@cleansia/services';
 import { Subject, catchError, of, takeUntil } from 'rxjs';
 
 export interface EmployeeInvoice {
@@ -22,7 +23,13 @@ export interface EmployeeInvoice {
   deductionAmount: number;
   totalAmount: number;
   currencyCode: string;
-  status: 'Pending' | 'Approved' | 'Paid' | 'Disputed' | 'Rejected';
+  status:
+    | 'Pending'
+    | 'Approved'
+    | 'Paid'
+    | 'Disputed'
+    | 'Rejected'
+    | 'Cancelled';
   pdfBlobName?: string;
   generatedAt: Date;
   approvedAt?: Date;
@@ -35,15 +42,25 @@ export interface EmployeeInvoice {
 @Injectable()
 export class InvoicesFacade implements OnDestroy {
   private readonly snackbarService = inject(SnackbarService);
-  private readonly client = inject(Client);
+  private readonly partnerClient = inject(PartnerClient);
   private readonly destroy$ = new Subject<void>();
 
   // Signals for reactive data
   invoices = signal<EmployeeInvoice[]>([]);
   loading = signal<boolean>(false);
+  totalRecords = signal<number>(0);
 
   private currentEmployeeId = signal<string | null>(null);
   private currentSort = signal<SortDefinition[]>([]);
+  private currentFilter = signal<{
+    invoiceNumber?: string;
+    minAmount?: number;
+    maxAmount?: number;
+    dateFrom?: Date;
+    dateTo?: Date;
+    payPeriodId?: string;
+    statuses?: EmployeeInvoiceStatus[];
+  } | null>(null);
 
   constructor() {
     // Get current employee ID
@@ -56,7 +73,7 @@ export class InvoicesFacade implements OnDestroy {
   }
 
   private loadCurrentEmployee(): void {
-    this.client.employeeClient
+    this.partnerClient.employeeClient
       .getCurrentEmployee()
       .pipe(
         takeUntil(this.destroy$),
@@ -85,12 +102,7 @@ export class InvoicesFacade implements OnDestroy {
       deductionAmount: dto.deductionAmount!,
       totalAmount: dto.totalAmount!,
       currencyCode: dto.currencyCode!,
-      status: dto.status! as
-        | 'Pending'
-        | 'Approved'
-        | 'Paid'
-        | 'Disputed'
-        | 'Rejected',
+      status: this.mapStatusToString(dto.status!),
       pdfBlobName: dto.pdfBlobName ?? undefined,
       generatedAt: new Date(dto.generatedAt!),
       approvedAt: dto.approvedAt ? new Date(dto.approvedAt) : undefined,
@@ -99,6 +111,27 @@ export class InvoicesFacade implements OnDestroy {
       adminNotes: dto.adminNotes ?? undefined,
       bankTransferNote: dto.bankTransferNote ?? undefined,
     };
+  }
+
+  private mapStatusToString(
+    status: EmployeeInvoiceStatus
+  ): 'Pending' | 'Approved' | 'Paid' | 'Disputed' | 'Rejected' | 'Cancelled' {
+    switch (status) {
+      case EmployeeInvoiceStatus.Pending:
+        return 'Pending';
+      case EmployeeInvoiceStatus.Approved:
+        return 'Approved';
+      case EmployeeInvoiceStatus.Paid:
+        return 'Paid';
+      case EmployeeInvoiceStatus.Disputed:
+        return 'Disputed';
+      case EmployeeInvoiceStatus.Rejected:
+        return 'Rejected';
+      case EmployeeInvoiceStatus.Cancelled:
+        return 'Cancelled';
+      default:
+        return 'Pending';
+    }
   }
 
   loadInvoices(offset = 0, limit = 20): void {
@@ -110,22 +143,25 @@ export class InvoicesFacade implements OnDestroy {
 
     this.loading.set(true);
 
-    this.client.employeePayrollClient
+    const filter = this.currentFilter();
+
+    this.partnerClient.employeePayrollClient
       .getPagedInvoices(
         employeeId,
-        undefined,
-        undefined,
+        filter?.payPeriodId,
+        filter?.statuses,
+        filter?.invoiceNumber,
+        filter?.minAmount,
+        filter?.maxAmount,
+        filter?.dateFrom,
+        filter?.dateTo,
         this.currentSort(),
         offset,
         limit
       )
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          console.error('Failed to load invoices:', error);
-          this.snackbarService.showError(
-            'Failed to load invoices. Please try again.'
-          );
+        catchError(() => {
           this.loading.set(false);
           return of(null);
         })
@@ -136,8 +172,10 @@ export class InvoicesFacade implements OnDestroy {
             this.mapDtoToInvoice(dto)
           );
           this.invoices.set(invoices);
+          this.totalRecords.set(pagedData.total ?? 0);
         } else {
           this.invoices.set([]);
+          this.totalRecords.set(0);
         }
         this.loading.set(false);
       });
@@ -145,7 +183,28 @@ export class InvoicesFacade implements OnDestroy {
 
   updateSort(sort: SortDefinition[]): void {
     this.currentSort.set(sort);
-    this.loadInvoices();
+    // Reset to first page when sorting changes
+    this.loadInvoices(0, 10);
+  }
+
+  applyFilters(filter: {
+    invoiceNumber?: string;
+    minAmount?: number;
+    maxAmount?: number;
+    dateFrom?: Date;
+    dateTo?: Date;
+    payPeriodId?: string;
+    statuses?: EmployeeInvoiceStatus[];
+  }): void {
+    this.currentFilter.set(filter);
+    // Reset to first page when filters change
+    this.loadInvoices(0, 10);
+  }
+
+  resetFilters(): void {
+    this.currentFilter.set(null);
+    // Reset to first page when filters are cleared
+    this.loadInvoices(0, 10);
   }
 
   downloadInvoice(invoice: EmployeeInvoice): void {
@@ -156,17 +215,11 @@ export class InvoicesFacade implements OnDestroy {
       return;
     }
 
-    this.client.employeePayrollClient
+    this.partnerClient.employeePayrollClient
       .downloadInvoice(invoice.id)
       .pipe(
         takeUntil(this.destroy$),
-        catchError((error) => {
-          console.error('Failed to download invoice:', error);
-          this.snackbarService.showErrorTranslated(
-            'pages.invoices.download_failed'
-          );
-          return of(null);
-        })
+        catchError(() => of(null))
       )
       .subscribe((fileResponse) => {
         if (fileResponse) {

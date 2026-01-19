@@ -4,5 +4,6 @@ export interface SidebarMenuItem {
   route?: string;
   children?: SidebarMenuItem[];
   expanded?: boolean;
+  badge?: number | string;
   onClickFn?: () => void;
 }

@@ -8,8 +8,13 @@ public static class CountryMappers
     public static CountryListItem MapToDto(this Country country) =>
         new(
             country.Id,
-            country.Name,
             country.IsoCode,
-            country.Translations.ToDictionary(t => t.Key, t => t.Value)
-        );
+            country.Name,
+            Translations: country.Translations.ToDictionary());
+
+    public static CountryDetailDto MapToDetailDto(this Country country) =>
+        new(
+            country.Id,
+            country.IsoCode,
+            country.Name);
 }

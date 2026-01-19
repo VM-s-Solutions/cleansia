@@ -1,138 +1,168 @@
-<p-table
-  [value]="data()"
-  [paginator]="paginator()"
-  [rows]="rows()"
-  [responsiveLayout]="responsiveLayout()"
-  [loading]="loading()"
-  [sortField]="sortField()"
-  [sortOrder]="sortOrder() ?? 0"
-  [rowsPerPageOptions]="rowsPerPageOptions()"
-  [class]="tableClasses()"
-  [globalFilterFields]="globalFilterFields()"
-  (onSort)="onSort($event)"
->
-  <!-- Header Template -->
-  @if (showHeader()) {
-  <ng-template pTemplate="header">
-    <tr>
-      @if (tableDefinition()) { @for (column of tableDefinition()!.columns;
-      track column.id) {
-      <th
-        [pSortableColumn]="column.sortable ? column.id : undefined"
-        [class]="column.columnClass"
-      >
-        {{ column.headerName }}
-        @if (column.sortable) {
-        <p-sortIcon [field]="column.id"></p-sortIcon>
-        }
-      </th>
-      } } @else { @for (column of columns(); track column.field) {
-      <th
-        [pSortableColumn]="column.sortable ? column.field : undefined"
-        [class]="getColumnClasses(column)"
-      >
-        {{ column.header | translate }}
-        @if (column.sortable) {
-        <p-sortIcon [field]="column.field"></p-sortIcon>
-        }
-      </th>
-      } @if (actions().length > 0 || customActionTemplate()) {
-      <th class="actions-column">
-        {{ actionsHeader() | translate }}
-      </th>
-      } }
-    </tr>
-  </ng-template>
-  }
-
-  <!-- Body Template -->
-  <ng-template pTemplate="body" let-item let-ri="rowIndex">
-    @if (customBodyTemplate()) {
-    <ng-container
-      [ngTemplateOutlet]="customBodyTemplate()!"
-      [ngTemplateOutletContext]="{ $implicit: item, rowIndex: ri }"
-    ></ng-container>
-    } @else {
-    <tr
-      [class]="tableDefinition()?.onRowClick ? 'cursor-pointer' : ''"
-      (click)="onRowClick(item)"
-    >
-      @if (tableDefinition()) { @for (column of tableDefinition()!.columns;
-      track column.id) {
-      <td [class]="column.columnClass">
-        @if (column.template) {
-        <ng-container
-          [ngTemplateOutlet]="column.template"
-          [ngTemplateOutletContext]="{ $implicit: item, rowIndex: ri }"
-        ></ng-container>
-        } @else if (column.columnActions && column.columnActions.length > 0) {
-        @for (action of column.columnActions; track action.icon) {
-        @if (!action.visible || action.visible(item)) {
-        <button
-          type="button"
-          [class]="'p-button ' + (action.buttonPalette || 'p-button-outlined')"
-          [disabled]="action.disabled?.(item)"
-          (click)="onColumnAction(action, item); $event.stopPropagation()"
-          [title]="action.tooltip?.title"
-        >
-          <i [class]="action.icon"></i>
-        </button>
-        }
-        } } @else {
-        {{ getTableDefinitionValue(item, column) }}
-        }
-      </td>
-      } } @else { @for (column of columns(); track column.field) {
-      <td [class]="column.class">
-        {{ getFieldValue(item, column) }}
-      </td>
-      } @if (actions().length > 0 || customActionTemplate()) {
-      <td class="actions-column">
-        @if (customActionTemplate()) {
-        <ng-container
-          [ngTemplateOutlet]="customActionTemplate()!"
-          [ngTemplateOutletContext]="{ $implicit: item, rowIndex: ri }"
-        ></ng-container>
-        } @else { @for (action of visibleActions()(item); track action.label) {
-        <button
-          type="button"
-          [class]="
-            'p-button p-button-sm ' + (action.class || 'p-button-outlined')
-          "
-          [disabled]="action.disabled?.(item)"
-          (click)="action.action(item)"
-          [title]="action.label | translate"
-        >
-          @if (action.icon) {
-          <i [class]="action.icon"></i>
-          }
-          {{ action.label | translate }}
-        </button>
-        } }
-      </td>
-      } }
-    </tr>
-    }
-  </ng-template>
-
-  <!-- Empty Message Template -->
-  <ng-template pTemplate="emptymessage">
-    <tr>
-      <td [attr.colspan]="totalColumns()" class="text-center p-4">
-        {{ emptyMessage() | translate }}
-      </td>
-    </tr>
-  </ng-template>
-
-  <!-- Loading Template -->
+<div class="cleansia-table" [class.cleansia-table--loading]="loading()">
+  <!-- Loading Overlay -->
   @if (loading()) {
-  <ng-template pTemplate="loadingbody">
-    <tr>
-      <td [attr.colspan]="totalColumns()" class="text-center p-4">
-        <i class="pi pi-spinner pi-spin"></i>
-        {{ loadingMessage() | translate }}
-      </td>
-    </tr>
-  </ng-template>
+  <div class="table-loading-overlay">
+    <div class="table-loading-content">
+      <i class="pi pi-spinner pi-spin"></i>
+      <span>{{ 'global.loading' | translate }}</span>
+    </div>
+  </div>
   }
-</p-table>
+
+  <!-- Table Sections -->
+  @if (columns() && columns().length > 0) {
+  <!-- Table Wrapper with Overflow -->
+  <div class="table-wrapper">
+    <table class="table">
+      <!-- Header Section -->
+      <thead class="table__head">
+        <tr>
+          @for (column of columns(); track column.field) {
+          <th
+            [style.width]="column.width"
+            [class.sortable]="column.sortable"
+            [class.text-right]="column.align === 'right'"
+            [class.text-center]="column.align === 'center'"
+            (click)="onSort(column)"
+          >
+            {{ column.header | translate }}
+            @if (column.sortable) {
+            <i [class]="getSortIcon(column)" class="sort-icon"></i>
+            }
+          </th>
+          } @if (actions() && actions().length > 0) {
+          <th class="actions-column"></th>
+          }
+        </tr>
+      </thead>
+
+      <!-- Body Section -->
+      <tbody class="table__body">
+        @if (paginatedData().length === 0 && !loading()) {
+        <tr class="table__empty">
+          <td
+            [attr.colspan]="
+              columns().length + (actions() && actions().length > 0 ? 1 : 0)
+            "
+          >
+            {{ mergedConfig().emptyMessage || 'global.no_data' | translate }}
+          </td>
+        </tr>
+        } @for (row of paginatedData(); track trackByFn($index, row)) {
+        <tr
+          class="table__row"
+          [class.table__row--selected]="isRowSelected(row)"
+          [class.table__row--clickable]="mergedConfig().selectable"
+          (click)="onRowClick(row)"
+        >
+          @for (column of columns(); track column.field) {
+          <td
+            [style.width]="column.width"
+            [class.text-right]="column.align === 'right'"
+            [class.text-center]="column.align === 'center'"
+          >
+            @if (column.customTemplate) {
+            <ng-container
+              *ngTemplateOutlet="
+                column.customTemplate;
+                context: { $implicit: row }
+              "
+            ></ng-container>
+            } @else {
+            {{ getCellValue(row, column) }}
+            }
+          </td>
+          } @if (actions() && actions().length > 0) {
+          <td class="actions-column">
+            <div class="table__actions">
+              @for (action of actions(); track action.icon) { @if
+              (isActionVisible(action, row)) {
+              <button
+                type="button"
+                class="action-btn"
+                [class.action-btn--disabled]="isActionDisabled(action, row)"
+                [pTooltip]="action.tooltip ? (action.tooltip | translate) : ''"
+                tooltipPosition="top"
+                [disabled]="isActionDisabled(action, row)"
+                (click)="onActionClick(action, row, $event)"
+              >
+                <i [class]="action.icon"></i>
+              </button>
+              } }
+            </div>
+          </td>
+          }
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer Section (Pagination) -->
+  @if (mergedConfig().paginator) {
+  <div class="pagination">
+    <div class="pagination__info">
+      @if (mergedConfig().rowsPerPageOptions &&
+      mergedConfig().rowsPerPageOptions!.length > 0) {
+      <div class="pagination__rows-selector">
+        <label for="rows-per-page-select"
+          >{{ 'global.rows_per_page' | translate }}:</label
+        >
+        <p-select
+          inputId="rows-per-page-select"
+          [options]="rowsPerPageSelectOptions()"
+          [(ngModel)]="currentRowsPerPage"
+          (onChange)="onRowsPerPageChange($event.value)"
+          [showClear]="false"
+          optionLabel="label"
+          optionValue="value"
+          appendTo="body"
+          class="pagination-select"
+        />
+      </div>
+      }
+      <span
+        >{{ paginationState().first + 1 }} -
+        {{ paginationState().first + paginatedData().length }}
+        {{ 'global.of' | translate }} {{ totalRecords() }}</span
+      >
+    </div>
+
+    <div class="pagination__controls">
+      <button
+        type="button"
+        class="pagination__btn"
+        [disabled]="currentPageNumber() === 1"
+        (click)="onPreviousPage()"
+        title="{{ 'global.previous_page' | translate }}"
+      >
+        <i class="pi pi-chevron-left"></i>
+      </button>
+
+      @for (page of visiblePageNumbers(); track page) { @if (page === '...') {
+      <span class="pagination__ellipsis">...</span>
+      } @else {
+      <button
+        type="button"
+        class="pagination__btn"
+        [class.pagination__btn--active]="page === currentPageNumber()"
+        (click)="page !== '...' && onPageChange($any(page))"
+        [title]="'global.page' | translate : { page: page }"
+      >
+        {{ page }}
+      </button>
+      } }
+
+      <button
+        type="button"
+        class="pagination__btn"
+        [disabled]="currentPageNumber() === totalPages()"
+        (click)="onNextPage()"
+        title="{{ 'global.next_page' | translate }}"
+      >
+        <i class="pi pi-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+  } }
+</div>

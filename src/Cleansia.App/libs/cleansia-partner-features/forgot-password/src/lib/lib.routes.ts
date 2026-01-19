@@ -5,5 +5,6 @@ export const forgotPasswordRoutes: Route[] = [
   {
     path: '',
     component: ForgotPasswordComponent,
+    data: { title: 'page_titles.partner.forgot_password' },
   },
 ];

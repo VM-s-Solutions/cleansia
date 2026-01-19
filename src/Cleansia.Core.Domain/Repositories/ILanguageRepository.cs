@@ -6,4 +6,5 @@ public interface ILanguageRepository : IRepository<Language, string>
 {
     Task<bool> ExistsWithCodeAsync(string code, CancellationToken cancellationToken);
     Task<Language?> GetByCodeAsync(string code, CancellationToken cancellationToken);
+    Task<bool> IsInUseAsync(string languageId, CancellationToken cancellationToken);
 }

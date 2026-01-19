@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Extensions;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
@@ -357,14 +358,17 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
     {
         try
         {
-            var companyInfo = await _companyInfoRepository.GetActiveCompanyInfoAsync(cancellationToken);
+            var countryId = employee.Address?.CountryId ?? Constants.Language.Czech;
+
+            // Try to get company info by employee's country, fallback to any active
+            var companyInfo = await _companyInfoRepository.GetActiveByCountryAsync(countryId, cancellationToken)
+                ?? await _companyInfoRepository.GetActiveCompanyInfoAsync(cancellationToken);
+
             if (companyInfo == null)
             {
-                _logger.LogError("No active company info found");
+                _logger.LogError("No active company info found for country {CountryId}", countryId);
                 return null;
             }
-
-            var countryId = employee.Address?.CountryId ?? companyInfo.CountryId;
             var countryContext = await GetCountryInvoiceContextAsync(countryId, cancellationToken);
 
             var pdfData = invoice.CreatePdfData(employee, currency, orderPays, countryContext, companyInfo);

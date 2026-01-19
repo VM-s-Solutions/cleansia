@@ -28,7 +28,7 @@ import { CleansiaBaseFormInputComponent } from '../cleansia-base-form';
 export class CleansiaTextInputComponent extends CleansiaBaseFormInputComponent {
   id = input<string>(this.getDefaultLabelId());
   dataType = input<'text' | 'password' | 'email' | 'number'>('text');
-  floatVariant = input<'over' | 'in' | 'on' | null>(null);
+  floatVariant = input<'over' | 'in' | 'on'>('on');
 
   valueChanges = output<any>();
 

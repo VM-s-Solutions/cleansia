@@ -2,4 +2,5 @@
 
 public record JwtTokenResponse(
     string Token,
-    bool IsEmailConfirmed);
+    bool IsEmailConfirmed,
+    bool HasAdminAccess = true);

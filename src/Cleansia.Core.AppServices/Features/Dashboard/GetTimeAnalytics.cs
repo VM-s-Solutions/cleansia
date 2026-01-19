@@ -1,6 +1,7 @@
 #nullable enable
 using Cleansia.Core.AppServices.Features.Dashboard.DTOs;
 using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,10 @@ using System.Globalization;
 
 namespace Cleansia.Core.AppServices.Features.Dashboard;
 
+/// <summary>
+/// Gets time analytics for an employee within a specified date range.
+/// All metrics are calculated from real order data.
+/// </summary>
 public class GetTimeAnalytics
 {
     public class Query : IRequest<TimeAnalyticsDto>
@@ -48,9 +53,11 @@ public class GetTimeAnalytics
                 .OrderByDescending(s => s.TotalMinutes)
                 .ToList();
 
-            var totalMinutesWorked = orders.Sum(o => o.EstimatedTime);
             var totalOrders = orders.Count;
-            var averageMinutesPerOrder = CalculateAverageMinutesPerOrder(totalMinutesWorked, totalOrders);
+
+            // Calculate real metrics from actual completion times
+            var (totalMinutesWorked, averageMinutesPerOrder) = CalculateActualTimeMetrics(orders);
+            var efficiencyRate = CalculateEfficiencyRate(orders);
 
             return new TimeAnalyticsDto(
                 DailyBreakdown: dailyBreakdown,
@@ -58,14 +65,57 @@ public class GetTimeAnalytics
                 ByServiceType: serviceBreakdown,
                 TotalMinutesWorked: totalMinutesWorked,
                 AverageMinutesPerOrder: averageMinutesPerOrder,
-                EfficiencyRate: DashboardConstants.DefaultEfficiencyRate,
+                EfficiencyRate: efficiencyRate,
                 TotalOrders: totalOrders
             );
         }
 
-        private static int CalculateAverageMinutesPerOrder(int totalMinutes, int orderCount)
+        /// <summary>
+        /// Calculates total and average time metrics using actual completion times when available.
+        /// </summary>
+        private static (int TotalMinutes, int AverageMinutes) CalculateActualTimeMetrics(List<Order> orders)
         {
-            return orderCount > 0 ? totalMinutes / orderCount : 0;
+            if (orders.Count == 0)
+                return (0, 0);
+
+            var ordersWithActualTime = orders.Where(o => o.ActualCompletionTime.HasValue).ToList();
+
+            if (ordersWithActualTime.Count > 0)
+            {
+                var totalActualMinutes = ordersWithActualTime.Sum(o => o.ActualCompletionTime!.Value);
+                var averageActualMinutes = totalActualMinutes / ordersWithActualTime.Count;
+                return (totalActualMinutes, averageActualMinutes);
+            }
+
+            // Fall back to estimated times if no actual times recorded
+            var totalEstimatedMinutes = orders.Sum(o => o.EstimatedTime);
+            var averageEstimatedMinutes = totalEstimatedMinutes / orders.Count;
+            return (totalEstimatedMinutes, averageEstimatedMinutes);
+        }
+
+        /// <summary>
+        /// Calculates efficiency rate as the ratio of estimated time to actual time.
+        /// A rate of 100% means completing exactly on time.
+        /// A rate above 100% means completing faster than estimated.
+        /// A rate below 100% means taking longer than estimated.
+        /// </summary>
+        private static double CalculateEfficiencyRate(List<Order> orders)
+        {
+            var ordersWithActualTime = orders
+                .Where(o => o.ActualCompletionTime.HasValue && o.ActualCompletionTime.Value > 0)
+                .ToList();
+
+            if (ordersWithActualTime.Count == 0)
+                return 100.0; // Default to 100% if no actual times recorded
+
+            var totalEstimated = ordersWithActualTime.Sum(o => o.EstimatedTime);
+            var totalActual = ordersWithActualTime.Sum(o => o.ActualCompletionTime!.Value);
+
+            if (totalActual == 0)
+                return 100.0;
+
+            // Efficiency = (Estimated / Actual) * 100
+            return (double)totalEstimated / totalActual * 100;
         }
     }
 }

@@ -1,0 +1,11 @@
+// Cleansia Admin Portal Global Styles
+// Common styles, components, and admin pages are all imported here
+
+// 1. Common styles (variables, fonts, etc.)
+@use './common';
+
+// 2. Shared component styles
+@use './components/index.scss' as components;
+
+// 3. Admin portal page styles
+@use './pages/cleansia-admin/index.scss' as admin;

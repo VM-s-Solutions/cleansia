@@ -9,6 +9,8 @@ public interface IEmailService
 
     Task<string> SendOrderReceiptEmailAsync(string email, Order order, byte[]? pdfBytes = null, string fileName = "receipt.pdf", string languageCode = "en", CancellationToken ct = default);
 
+    Task<string> SendTestOrderReceiptEmailAsync(string email, string customerName, string orderNumber, string orderDate, string totalAmount, string languageCode = "en", CancellationToken ct = default);
+
     Task<string> SendEmailConfirmationAsync(string email, string userName, string verificationCode, string languageCode, CancellationToken ct = default);
 
     Task<string> SendPeriodClosedEmailAsync(string email, string employeeName, DateOnly startDate, DateOnly endDate, DateTime closedAt, string periodLabel, string languageCode = "en", byte[]? invoicePdfBytes = null, string? invoiceFileName = null, CancellationToken ct = default);

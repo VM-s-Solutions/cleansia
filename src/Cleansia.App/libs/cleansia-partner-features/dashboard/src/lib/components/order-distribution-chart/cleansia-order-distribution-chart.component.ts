@@ -1,15 +1,30 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, input, effect, ViewChild } from '@angular/core';
-import { TranslateModule } from '@ngx-translate/core';
-import { CleansiaLoaderComponent, CleansiaLabelComponent } from '@cleansia/components';
-import { OrderAnalyticsDto } from '@cleansia/services';
-import { BaseChartDirective } from 'ng2-charts';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  input,
+  ViewChild,
+} from '@angular/core';
+import {
+  CleansiaLabelComponent,
+  CleansiaLoaderComponent,
+} from '@cleansia/components';
+import { OrderAnalyticsDto } from '@cleansia/partner-services';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ChartConfiguration, ChartType } from 'chart.js';
+import { BaseChartDirective } from 'ng2-charts';
 
 @Component({
   selector: 'cleansia-order-distribution-chart',
   standalone: true,
-  imports: [CommonModule, BaseChartDirective, TranslateModule, CleansiaLoaderComponent, CleansiaLabelComponent],
+  imports: [
+    CommonModule,
+    BaseChartDirective,
+    TranslateModule,
+    CleansiaLoaderComponent,
+    CleansiaLabelComponent,
+  ],
   templateUrl: './cleansia-order-distribution-chart.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -24,12 +39,12 @@ export class CleansiaOrderDistributionChartComponent {
 
   pieChartData: ChartConfiguration['data'] = {
     datasets: [],
-    labels: []
+    labels: [],
   };
 
   lineChartData: ChartConfiguration['data'] = {
     datasets: [],
-    labels: []
+    labels: [],
   };
 
   pieChartOptions: ChartConfiguration['options'] = {
@@ -45,11 +60,12 @@ export class CleansiaOrderDistributionChartComponent {
           label: (context) => {
             const label = context.label || '';
             const value = context.parsed;
-            return `${label}: ${value} orders`;
-          }
-        }
-      }
-    }
+            const ordersText = this.translate.instant('pages.dashboard.order_analytics.order_count');
+            return `${label}: ${value} ${ordersText}`;
+          },
+        },
+      },
+    },
   };
 
   lineChartOptions: ChartConfiguration['options'] = {
@@ -58,19 +74,19 @@ export class CleansiaOrderDistributionChartComponent {
     plugins: {
       legend: {
         display: false,
-      }
+      },
     },
     scales: {
       y: {
         beginAtZero: true,
         ticks: {
-          precision: 0
-        }
-      }
-    }
+          precision: 0,
+        },
+      },
+    },
   };
 
-  constructor() {
+  constructor(private translate: TranslateService) {
     effect(() => {
       const currentData = this.data();
       if (currentData) {
@@ -84,16 +100,16 @@ export class CleansiaOrderDistributionChartComponent {
 
     if (currentData.statusDistribution) {
       const statusColors: Record<string, string> = {
-        'Pending': '#fbbf24',
-        'Confirmed': '#8b5cf6',
-        'InProgress': '#f59e0b',
-        'Completed': '#10b981',
-        'Cancelled': '#ef4444'
+        Pending: '#fbbf24',
+        Confirmed: '#8b5cf6',
+        InProgress: '#f59e0b',
+        Completed: '#10b981',
+        Cancelled: '#ef4444',
       };
 
       const labels = Object.keys(currentData.statusDistribution);
       const values = Object.values(currentData.statusDistribution);
-      const colors = labels.map(label => statusColors[label] || '#6b7280');
+      const colors = labels.map((label) => statusColors[label] || '#6b7280');
 
       this.pieChartData = {
         labels,
@@ -102,22 +118,24 @@ export class CleansiaOrderDistributionChartComponent {
             data: values,
             backgroundColor: colors,
             borderWidth: 2,
-            borderColor: '#fff'
-          }
-        ]
+            borderColor: '#fff',
+          },
+        ],
       };
     }
 
     if (currentData.weeklyTrends && currentData.weeklyTrends.length > 0) {
-      const labels = currentData.weeklyTrends.map(w => `Week ${w.weekNumber}`);
-      const orderCounts = currentData.weeklyTrends.map(w => w.orderCount);
+      const labels = currentData.weeklyTrends.map(
+        (w) => this.translate.instant('pages.dashboard.order_analytics.week', { number: w.weekNumber })
+      );
+      const orderCounts = currentData.weeklyTrends.map((w) => w.orderCount);
 
       this.lineChartData = {
         labels,
         datasets: [
           {
             data: orderCounts,
-            label: 'Orders',
+            label: this.translate.instant('pages.dashboard.order_analytics.chart_label'),
             borderColor: '#0284c7',
             backgroundColor: 'rgba(2, 132, 199, 0.1)',
             fill: true,
@@ -126,8 +144,8 @@ export class CleansiaOrderDistributionChartComponent {
             pointBackgroundColor: '#0284c7',
             pointBorderColor: '#fff',
             pointBorderWidth: 2,
-          }
-        ]
+          },
+        ],
       };
     }
 

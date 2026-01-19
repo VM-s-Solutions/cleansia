@@ -1,0 +1,128 @@
+<div class="cleansia-service-management">
+  <div class="cleansia-service-management__container page-wrapper">
+    <cleansia-language-switcher />
+    <div class="cleansia-service-management__header">
+      <div class="header-content">
+        <cleansia-title
+          [title]="'pages.service_management.title' | translate"
+        />
+        <p class="cleansia-service-management__description">
+          {{ 'pages.service_management.description' | translate }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Filter Header - Chips left, Buttons right -->
+    <div class="filter-header">
+      <div class="filter-chips-inline">
+        @for (chip of activeFilterChips(); track chip.key) {
+        <div class="filter-chip">
+          <span class="filter-chip-label">{{ chip.label }}:</span>
+          <span class="filter-chip-value">{{ chip.value }}</span>
+          <button
+            class="filter-chip-remove"
+            (click)="removeFilterChip(chip.key)"
+          >
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+        } @if (hasActiveFilters()) {
+        <button class="filter-clear-all-btn" (click)="clearAllFilters()">
+          {{ 'pages.service_management.filters.clear_all' | translate }}
+        </button>
+        }
+      </div>
+      <div class="header-actions">
+        <div class="filter-actions">
+          <cleansia-button
+            [label]="'pages.service_management.filters.title' | translate"
+            icon="pi pi-filter"
+            [severity]="hasActiveFilters() ? 'primary' : 'secondary'"
+            [outlined]="!hasActiveFilters()"
+            (onClick)="openFilterDrawer()"
+          />
+          @if (hasActiveFilters()) {
+          <span class="filter-count-badge">{{ activeFilterCount() }}</span>
+          }
+        </div>
+        <cleansia-button
+          [label]="'pages.service_management.create_service' | translate"
+          icon="pi pi-plus"
+          (onClick)="createService()"
+        />
+      </div>
+    </div>
+
+    <!-- Service Table -->
+    <cleansia-section>
+      @if (facade.initialLoading()) {
+      <cleansia-loader />
+      } @else {
+      <cleansia-table
+        [data]="facade.services()"
+        [columns]="serviceColumns"
+        [actions]="serviceActions"
+        [config]="{
+          paginator: true,
+          rows: 20,
+          lazy: true,
+          totalRecords: facade.totalRecords(),
+          emptyMessage: 'pages.service_management.no_services'
+        }"
+        [loading]="facade.loading()"
+        (pageChange)="onPageChange($event)"
+        (sortChange)="onSortChange($event)"
+      >
+      </cleansia-table>
+      }
+    </cleansia-section>
+  </div>
+</div>
+
+<!-- Filter Drawer Backdrop -->
+@if (isFilterDrawerOpen()) {
+<div class="filter-drawer-backdrop" (click)="closeFilterDrawer()"></div>
+}
+
+<!-- Filter Drawer -->
+<div class="filter-drawer" [class.open]="isFilterDrawerOpen()">
+  <div class="filter-drawer-header">
+    <div class="filter-drawer-title">
+      <i class="pi pi-filter"></i>
+      <span>{{ 'pages.service_management.filters.title' | translate }}</span>
+    </div>
+    <button class="filter-drawer-close" (click)="closeFilterDrawer()">
+      <i class="pi pi-times"></i>
+    </button>
+  </div>
+
+  <div class="filter-drawer-content">
+    <form [formGroup]="filterForm" class="filter-form">
+      <!-- Search Section -->
+      <div class="filter-section">
+        <h3 class="filter-section-title">
+          {{ 'pages.service_management.filters.search' | translate }}
+        </h3>
+        <cleansia-text-input
+          formControlName="searchTerm"
+          [placeholder]="
+            'pages.service_management.filters.search_placeholder' | translate
+          "
+          className="w-full"
+        />
+      </div>
+    </form>
+  </div>
+
+  <div class="filter-drawer-footer">
+    <cleansia-button
+      [label]="'pages.service_management.filters.reset' | translate"
+      icon="pi pi-times"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="resetFilters()"
+    />
+  </div>
+</div>
+
+<p-confirmDialog />

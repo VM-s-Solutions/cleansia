@@ -77,4 +77,10 @@ public class ReceiptTemplate : Auditable
         Description = description;
         return this;
     }
+
+    public ReceiptTemplate UpdateTemplateName(string templateName)
+    {
+        TemplateName = templateName;
+        return this;
+    }
 }

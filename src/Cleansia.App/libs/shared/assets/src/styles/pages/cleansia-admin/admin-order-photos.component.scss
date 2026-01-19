@@ -1,0 +1,131 @@
+.order-photos__counts {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--cleansia-primary-50);
+  border-radius: 8px;
+}
+
+.order-photos__count {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.order-photos__count-label {
+  font-weight: 500;
+  color: var(--cleansia-text-secondary);
+}
+
+.order-photos__count-value {
+  font-weight: 600;
+  color: var(--cleansia-text-primary);
+  font-size: 1.125rem;
+}
+
+.order-photos__gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.order-photos__section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--cleansia-text-primary);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--cleansia-primary-200);
+}
+
+.order-photos__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.order-photos__item {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--cleansia-white);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.order-photos__image {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  display: block;
+}
+
+.order-photos__item-info {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.order-photos__item-name {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--cleansia-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.order-photos__item-date {
+  font-size: 0.75rem;
+  color: var(--cleansia-text-secondary);
+}
+
+.order-photos__item-employee {
+  font-size: 0.75rem;
+  color: var(--cleansia-primary-600);
+  font-weight: 500;
+}
+
+.order-photos__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: var(--cleansia-text-secondary);
+  text-align: center;
+
+  i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+
+  p {
+    margin: 0;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .order-photos__counts {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .order-photos__grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+
+  .order-photos__image {
+    height: 120px;
+  }
+}

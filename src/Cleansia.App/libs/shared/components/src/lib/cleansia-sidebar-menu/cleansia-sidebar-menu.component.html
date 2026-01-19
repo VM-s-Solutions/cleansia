@@ -1,5 +1,6 @@
 @if (isRoot()) {
 <div class="sidebar-container">
+  <!-- Mobile backdrop -->
   @if (isMobile() && isSidebarExpanded()) {
   <div
     class="sidebar-backdrop"
@@ -7,7 +8,10 @@
     (keydown.enter)="toggleSidebar()"
     tabindex="0"
   ></div>
-  } @if (isMobile() && !isSidebarExpanded()) {
+  }
+
+  <!-- Mobile toggle button -->
+  @if (isMobile() && !isSidebarExpanded()) {
   <div class="sidebar-toggler">
     <cleansia-button
       icon="pi pi-bars"
@@ -17,16 +21,20 @@
     />
   </div>
   }
+
+  <!-- Main sidebar -->
   <aside
     class="sidebar"
-    [@sidebarWidth]="effectiveCollapsed() ? 'collapsed' : 'expanded'"
+    [class.sidebar--collapsed]="effectiveCollapsed()"
     [class.sidebar--mobile]="isMobile()"
     [class.sidebar--mobile-expanded]="isMobile() && isSidebarExpanded()"
-    [class.sidebar--collapsed]="effectiveCollapsed()"
-    pRipple
   >
+    <!-- Header with gradient background -->
     <header class="sidebar-header">
-      <cleansia-brand-name [showName]="!effectiveCollapsed()" />
+      <cleansia-brand-name
+        [showName]="!effectiveCollapsed()"
+        [wrapped]="true"
+      />
       @if (isMobile()) {
       <cleansia-button
         icon="pi pi-times"
@@ -36,37 +44,53 @@
       />
       }
     </header>
+
+    <!-- Navigation menu -->
     <nav class="sidebar-nav">
       <ul class="menu-list">
         @for (item of menuItems(); track $index) {
         <li
           class="menu-item"
-          (click)="onMenuItemClick(item)"
-          (keydown.enter)="onMenuItemClick(item)"
+          [class.menu-item--active]="isActiveRoute(item.route)"
+          (click)="onMenuItemClick(item, $event)"
+          (keydown.enter)="onMenuItemClick(item, $event)"
           tabindex="0"
           pRipple
+          [pTooltip]="getTooltipText(item) | translate"
+          tooltipPosition="right"
+          [showDelay]="500"
         >
-          <div
-            [@menuItemContent]="effectiveCollapsed() ? 'collapsed' : 'expanded'"
-            class="menu-item-content"
-            [ngClass]="{ 'menu-item-content--collapsed': effectiveCollapsed() }"
-          >
+          <div class="menu-item-content">
+            <!-- Icon with background wrapper -->
             @if (item.icon) {
-            <i [class]="item.icon"></i>
-            } @if (!effectiveCollapsed()) {<span
-              class="menu-item-label"
-              [@menuItemLabel]="effectiveCollapsed() ? 'collapsed' : 'expanded'"
-              >{{ item.label | translate }}</span
-            >
-            } @if (item.children?.length && !effectiveCollapsed()) {
+            <div class="menu-item-icon-wrapper">
+              <i [class]="item.icon"></i>
+            </div>
+            }
+
+            <!-- Label (hidden when collapsed) -->
+            @if (!effectiveCollapsed()) {
+            <span class="menu-item-label">{{ item.label | translate }}</span>
+            }
+
+            <!-- Badge (shown when not collapsed) -->
+            @if (item.badge && !effectiveCollapsed()) {
+            <span class="menu-item-badge">{{ item.badge }}</span>
+            }
+
+            <!-- Arrow for items with children -->
+            @if (item.children?.length && !effectiveCollapsed()) {
             <i
-              class="pi pi-chevron-down toggle-icon"
-              [@toggleIcon]="item.expanded ? 'expanded' : 'collapsed'"
+              class="pi pi-chevron-right menu-item-arrow"
+              [class.menu-item-arrow--expanded]="item.expanded"
             ></i>
             }
           </div>
-          @if (item.children?.length && item.expanded) {
-          <div class="sub-menu" [@subMenu]>
+
+          <!-- Submenu -->
+          @if (item.children?.length && item.expanded && !effectiveCollapsed())
+          {
+          <div class="sub-menu">
             <cleansia-sidebar-menu
               [menuItems]="item.children ?? []"
               [isRoot]="false"
@@ -78,54 +102,51 @@
         }
       </ul>
     </nav>
+
+    <!-- Footer with collapse toggle -->
+    @if (!isMobile()) {
     <footer class="sidebar-footer">
       <cleansia-button
-        [icon]="
-          effectiveCollapsed()
-            ? 'pi pi-angle-double-right'
-            : 'pi pi-angle-double-left'
-        "
-        [rounded]="true"
+        [icon]="effectiveCollapsed() ? 'pi pi-angle-right' : 'pi pi-angle-left'"
         severity="secondary"
-        size="small-width"
+        size="xx-small-width"
         (clickFn)="toggleCollapsed()"
-        className="toggle-button"
       />
     </footer>
+    }
   </aside>
 </div>
 } @else {
-<ul class="menu-list pl-3">
+<!-- Submenu rendering (non-root) -->
+<ul class="menu-list">
   @for (item of menuItems(); track $index) {
   <li
     class="menu-item"
-    (click)="onMenuItemClick(item)"
-    (keydown.enter)="onMenuItemClick(item)"
+    [class.menu-item--active]="isActiveRoute(item.route)"
+    (click)="onMenuItemClick(item, $event)"
+    (keydown.enter)="onMenuItemClick(item, $event)"
     tabindex="0"
     pRipple
   >
-    <div
-      [@menuItemContent]="effectiveCollapsed() ? 'collapsed' : 'expanded'"
-      class="menu-item-content"
-      [ngClass]="{ 'menu-item-content--collapsed': effectiveCollapsed() }"
-    >
+    <div class="menu-item-content">
       @if (item.icon) {
-      <i [class]="item.icon"></i>
+      <div class="menu-item-icon-wrapper">
+        <i [class]="item.icon"></i>
+      </div>
       } @if (!collapsed()) {
-      <span
-        class="menu-item-label"
-        [@menuItemLabel]="effectiveCollapsed() ? 'collapsed' : 'expanded'"
-        >{{ item.label | translate }}</span
-      >
+      <span class="menu-item-label">{{ item.label | translate }}</span>
+      } @if (item.badge && !collapsed()) {
+      <span class="menu-item-badge">{{ item.badge }}</span>
       } @if (item.children?.length && !collapsed()) {
       <i
-        class="pi pi-chevron-down toggle-icon"
-        [@toggleIcon]="item.expanded ? 'expanded' : 'collapsed'"
+        class="pi pi-chevron-right menu-item-arrow"
+        [class.menu-item-arrow--expanded]="item.expanded"
       ></i>
       }
     </div>
-    @if (item.children?.length && item.expanded) {
-    <div class="sub-menu" [@subMenu]>
+
+    @if (item.children?.length && item.expanded && !collapsed()) {
+    <div class="sub-menu">
       <cleansia-sidebar-menu
         [menuItems]="item.children ?? []"
         [isRoot]="false"

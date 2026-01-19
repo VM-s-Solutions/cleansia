@@ -71,17 +71,29 @@ public static class OrderMappers
             SpecialInstructions: order.SpecialInstructions,
             AccessInstructions: order.AccessInstructions,
             SelectedPackages: order.SelectedPackages.Select(op => op.Package.MapToDetails(order.Currency.Code)),
-            Currency: order.Currency.MapToDetails(),
+            Currency: order.Currency.MapToDetailDto(),
             SelectedServices: order.SelectedServices.Select(os => os.Service.MapToDetails(order.Currency.Code)),
             StatusHistory: order.OrderStatusHistory.Select(sh => sh.MapToDto()) ?? [],
             CreatedOn: order.CreatedOn,
             UpdatedOn: order.UpdatedOn,
-            AssignedEmployeeId: order.EmployeeId,
-            AssignedEmployeeName: order.Employee != null
-                ? $"{order.Employee.User?.FirstName} {order.Employee.User?.LastName}".Trim()
-                : null,
-            AssignedEmployeePhone: order.Employee?.User?.PhoneNumber,
+            AssignedEmployees: order.AssignedEmployees.Select(ae => ae.MapToAssignedEmployeeDto()),
             ReceiptNumber: order.Receipt?.ReceiptNumber
+        );
+    }
+
+    public static AssignedEmployeeDto MapToAssignedEmployeeDto(this OrderEmployee orderEmployee)
+    {
+        var employee = orderEmployee.Employee;
+        var user = employee?.User;
+
+        return new AssignedEmployeeDto(
+            Id: orderEmployee.Id,
+            EmployeeId: orderEmployee.EmployeeId,
+            FullName: user != null
+                ? $"{user.FirstName} {user.LastName}".Trim()
+                : string.Empty,
+            PhoneNumber: user?.PhoneNumber,
+            Email: user?.Email
         );
     }
 }

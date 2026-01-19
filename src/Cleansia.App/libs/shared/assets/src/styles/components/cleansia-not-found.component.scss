@@ -1,0 +1,133 @@
+@use '../common/variables' as variables;
+
+%cleansia-not-found__icon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 5rem;
+  -webkit-text-stroke: 1px variables.$cleansia-primary-700;
+  text-shadow: 3px 3px variables.$cleansia-primary-900;
+  color: variables.$cleansia-primary-200;
+  z-index: -1;
+  opacity: 0.7;
+}
+
+@keyframes broomAnimation {
+  0% {
+    translate: 30dvw -10rem;
+    rotate: 0deg;
+  }
+  100% {
+    translate: 85dvw 40rem;
+    rotate: 360deg;
+  }
+}
+
+@keyframes sprayAnimation {
+  0% {
+    translate: -5dvw 40rem;
+    rotate: 0deg;
+  }
+  100% {
+    translate: 50dvw -10rem;
+    rotate: -360deg;
+  }
+}
+
+@keyframes soapAnimation {
+  0% {
+    translate: 60dvw 40rem;
+    rotate: 0deg;
+  }
+  100% {
+    translate: 20dvw -10rem;
+    rotate: -360deg;
+  }
+}
+
+@keyframes dropletAnimation {
+  0% {
+    translate: 75dvw -10rem;
+    rotate: 0deg;
+  }
+  100% {
+    translate: 45dvw 40rem;
+    rotate: 360deg;
+  }
+}
+
+.cleansia-not-found {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem;
+  height: 100vh;
+  overflow: hidden;
+
+  &__icons {
+    &__broom {
+      @extend %cleansia-not-found__icon;
+      animation: broomAnimation 19s linear infinite;
+    }
+
+    &__spray {
+      @extend %cleansia-not-found__icon;
+      animation: sprayAnimation 20s linear infinite;
+    }
+
+    &__soap {
+      @extend %cleansia-not-found__icon;
+      animation: soapAnimation 18s linear infinite;
+    }
+
+    &__droplet {
+      @extend %cleansia-not-found__icon;
+      animation: dropletAnimation 16s linear infinite;
+    }
+  }
+
+  &__container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    row-gap: 0.5rem;
+    padding: 2rem 4dvw;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 16px;
+    box-shadow: 0 4px 30px variables.$cleansia-black-100;
+    backdrop-filter: blur(3.3px);
+    border: 1px solid variables.$cleansia-white;
+    z-index: 1;
+  }
+
+  &__code {
+    font-size: 9rem;
+    font-weight: 800;
+    color: variables.$cleansia-primary;
+    text-shadow: 2px 2px variables.$cleansia-primary-900;
+    line-height: 1;
+    margin: 0;
+  }
+
+  &__title {
+    font-size: 2rem;
+    font-weight: 200;
+    text-transform: uppercase;
+    text-align: center;
+    color: variables.$cleansia-primary-900;
+    margin: 0;
+  }
+
+  &__msg {
+    font-size: 0.95rem;
+    max-width: 30rem;
+    text-align: center;
+    color: variables.$cleansia-gray;
+    margin: 0;
+  }
+
+  &__actions {
+    padding-top: 2rem;
+  }
+}

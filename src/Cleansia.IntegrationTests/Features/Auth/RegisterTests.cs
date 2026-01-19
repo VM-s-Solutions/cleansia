@@ -1,6 +1,7 @@
 ﻿using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.TestUtilities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -20,8 +21,14 @@ public class RegisterTests(PostgresContainerFixture fixture) : BaseIntegrationTe
             setup: services =>
             {
                 services.Replace(ServiceDescriptor.Scoped<IEmailService>(_ => new Mock<IEmailService>().Object));
+                return Task.CompletedTask;
             },
-            arrange: _ => { },
+            arrange: async context =>
+            {
+                // Seed required language before creating user (FK constraint)
+                context.Languages.Add(Language.Create("cz", "Czech"));
+                await context.SaveChangesAsync();
+            },
             act: async provider =>
             {
                 var mediator = provider.GetRequiredService<IMediator>();
@@ -52,7 +59,8 @@ public class RegisterTests(PostgresContainerFixture fixture) : BaseIntegrationTe
 
                 var orders = await context.Orders.Where(o => o.UserId == user.Id).ToListAsync();
                 Assert.Empty(orders);
-            }
+            },
+            transactional: false
         );
     }
 }

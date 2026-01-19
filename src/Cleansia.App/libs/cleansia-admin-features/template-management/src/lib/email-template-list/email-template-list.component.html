@@ -1,0 +1,21 @@
+<div class="cleansia-template-list page-wrapper">
+  <cleansia-section>
+    @if (facade.loading() && facade.emailTypes().length === 0) {
+    <cleansia-loader />
+    } @else {
+    <cleansia-table
+      [data]="facade.emailTypes()"
+      [columns]="columns"
+      [actions]="actions"
+      [config]="{ paginator: false, emptyMessage: 'pages.template_management.no_templates' }"
+      [loading]="facade.loading()"
+    >
+    </cleansia-table>
+    }
+  </cleansia-section>
+</div>
+
+<!-- Languages Template -->
+<ng-template #languagesTemplate let-item>
+  {{ getTranslatedLanguages(item.availableLanguages) }}
+</ng-template>

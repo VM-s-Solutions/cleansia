@@ -26,4 +26,10 @@ public interface IEmployeeInvoiceRepository : IRepository<EmployeeInvoice, strin
     /// Used for earnings analytics.
     /// </summary>
     IQueryable<EmployeeInvoice> GetInvoicesByDateRange(string employeeId, DateTime startDate, DateTime endDate);
+
+    /// <summary>
+    /// Gets all invoices within a date range.
+    /// Used for admin payroll reports.
+    /// </summary>
+    IQueryable<EmployeeInvoice> GetAllInvoicesByDateRange(DateTime startDate, DateTime endDate);
 }

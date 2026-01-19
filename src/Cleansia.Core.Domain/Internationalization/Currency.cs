@@ -27,4 +27,17 @@ public class Currency : Auditable
         Name = name,
         ExchangeRate = exchangeRate
     };
+
+    public void Update(string code, string symbol, string name, decimal exchangeRate)
+    {
+        Code = code;
+        Symbol = symbol;
+        Name = name;
+        ExchangeRate = exchangeRate;
+    }
+
+    public void SetAsDefault(bool isDefault)
+    {
+        IsDefault = isDefault;
+    }
 }

@@ -5,11 +5,14 @@ using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Extensions;
 using Cleansia.Core.AppServices.Shared.DTOs.Files;
 using Cleansia.Core.Blobs.Abstractions;
+using Cleansia.Core.Domain.Documents;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
+using DayOfWeek = Cleansia.Core.Domain.Enums.DayOfWeek;
 
 namespace Cleansia.Core.AppServices.Features.Employees;
 
@@ -110,7 +113,7 @@ public class UpdateEmployee
                 return true;
             }
 
-            var validDays = new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+            var validDays = Enum.GetNames(typeof(DayOfWeek));
 
             foreach (var (day, timeRanges) in availability)
             {
@@ -171,17 +174,19 @@ public class UpdateEmployee
 
     internal class Handler(
         IEmployeeRepository employeeRepository,
+        IEmployeeDocumentRepository employeeDocumentRepository,
+        IUserSessionProvider userSessionProvider,
         IBlobContainerClientFactory clientFactory) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var employee = await employeeRepository.GetByIdAsync(command.EmployeeId, cancellationToken);
             var address = CreateOrUpdateAddress(employee!, command);
-            
-            var uploadedFileNames = await UploadDocuments(employee!, command, cancellationToken);
+
+            await UploadDocuments(employee!, command, cancellationToken);
             var availability = ConvertAvailability(command.Availability);
 
-            UpdateEmployeeDetails(employee!, command, address, uploadedFileNames, availability);
+            UpdateEmployeeDetails(employee!, command, address, availability);
 
             return BusinessResult.Success(new Response(employee!.Id));
         }
@@ -193,17 +198,16 @@ public class UpdateEmployee
                 : Address.Create(command.Street, command.City, command.ZipCode, command.CountryId);
         }
 
-        private async Task<List<string>> UploadDocuments(Employee employee, Command command, CancellationToken cancellationToken)
+        private async Task UploadDocuments(Employee employee, Command command, CancellationToken cancellationToken)
         {
-            var uploadedFileNames = new List<string>();
-
             if (command.Documents?.Any() != true)
             {
-                return uploadedFileNames;
+                return;
             }
 
             var client = clientFactory.GetBlobContainerClient(Constants.BlobContainers.EmployeeDocuments);
             var employeeDocumentsPath = string.Format(Constants.VirtualDirectories.EmployeeDocuments, employee.Id);
+            var currentUser = userSessionProvider.GetUserEmail() ?? "system";
 
             foreach (var document in command.Documents)
             {
@@ -213,20 +217,31 @@ public class UpdateEmployee
                 }
 
                 var uniqueFileName = $"{Guid.NewGuid()}_{document.FileName}";
-                var fullFileName = $"{employeeDocumentsPath}/{uniqueFileName}";
+                var fullFilePath = $"{employeeDocumentsPath}/{uniqueFileName}";
+                var contentType = document.ContentType ?? "application/octet-stream";
 
                 await using var stream = new MemoryStream(Convert.FromBase64String(document.Base64Content.ExtractBase64Data()));
+                var fileSizeBytes = stream.Length;
 
                 var metadata = MetadataExtensions.CreateDocumentMetadata(
                     document.FileName ?? "unknown",
-                    document.ContentType ?? "application/octet-stream",
+                    contentType,
                     employee.UserId);
 
-                await client.UploadAsync(fullFileName, stream, metadata, cancellationToken);
-                uploadedFileNames.Add(uniqueFileName);
-            }
+                await client.UploadAsync(fullFilePath, stream, metadata, cancellationToken);
 
-            return uploadedFileNames;
+                var employeeDocument = EmployeeDocument.Create(
+                    employee.Id,
+                    document.FileName ?? uniqueFileName,
+                    fullFilePath,
+                    contentType,
+                    fileSizeBytes,
+                    DocumentType.Other,
+                    null,
+                    currentUser);
+
+                employeeDocumentRepository.Add(employeeDocument);
+            }
         }
 
         private static Dictionary<string, List<TimeRange>> ConvertAvailability(Dictionary<string, List<TimeRangeDto>>? availabilityDto)
@@ -252,7 +267,7 @@ public class UpdateEmployee
             return availability;
         }
 
-        private static void UpdateEmployeeDetails(Employee employee, Command command, Address address, List<string> uploadedFileNames, Dictionary<string, List<TimeRange>> availability)
+        private static void UpdateEmployeeDetails(Employee employee, Command command, Address address, Dictionary<string, List<TimeRange>> availability)
         {
             employee.User!.Update(
                 command.FirstName,
@@ -269,11 +284,6 @@ public class UpdateEmployee
                 availability,
                 command.EmergencyName,
                 command.EmergencyPhone);
-
-            if (uploadedFileNames.Any())
-            {
-                employee.AddDocumentFileNames(uploadedFileNames);
-            }
         }
     }
 }

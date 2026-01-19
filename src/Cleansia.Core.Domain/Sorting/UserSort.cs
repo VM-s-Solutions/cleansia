@@ -39,6 +39,10 @@ public class UserSort(string propertyName, bool isAscending)
         {
             return x => x.AuthenticationType;
         }
+        if (string.Equals(propertyName, "CreatedOn", StringComparison.CurrentCultureIgnoreCase))
+        {
+            return x => x.CreatedOn;
+        }
         return DefaultSort;
     }
 }

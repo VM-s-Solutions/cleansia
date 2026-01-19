@@ -108,8 +108,6 @@ public class TakeOrder
 
             var employee = await employeeRepository.GetByIdAsync(command.EmployeeId, cancellationToken);
 
-            order.AssignEmployee(command.EmployeeId);
-
             var orderEmployee = OrderEmployee.Create(order, employee!);
             order.AddAssignedEmployee(orderEmployee);
 

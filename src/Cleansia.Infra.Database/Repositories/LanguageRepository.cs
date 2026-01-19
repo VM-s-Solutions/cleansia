@@ -15,4 +15,44 @@ public class LanguageRepository(CleansiaDbContext context) : BaseRepository<Lang
     {
         return GetDbSet().FirstOrDefaultAsync(l => l.Code == code, cancellationToken);
     }
+
+    public async Task<bool> IsInUseAsync(string languageId, CancellationToken cancellationToken)
+    {
+        var language = await GetDbSet()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(l => l.Id == languageId, cancellationToken);
+
+        if (language is null)
+            return false;
+
+        // Check if language is used by Users (via PreferredLanguageCode which references Language.Code)
+        if (await Context.Users.AnyAsync(u => u.PreferredLanguageCode == language.Code, cancellationToken))
+            return true;
+
+        // Check if language is used by EmailTranslations
+        if (await Context.EmailTranslations.AnyAsync(e => e.LanguageId == languageId, cancellationToken))
+            return true;
+
+        // Check if language is used by EmailTemplateTranslations
+        if (await Context.EmailTemplateTranslations.AnyAsync(e => e.LanguageId == languageId, cancellationToken))
+            return true;
+
+        // Check if language is used by InvoiceTemplates
+        if (await Context.InvoiceTemplates.AnyAsync(i => i.LanguageId == languageId, cancellationToken))
+            return true;
+
+        // Check if language is used by ReceiptTemplates
+        if (await Context.ReceiptTemplates.AnyAsync(r => r.LanguageId == languageId, cancellationToken))
+            return true;
+
+        // Check if language is used by OrderReceipts
+        if (await Context.OrderReceipts.AnyAsync(o => o.LanguageId == languageId, cancellationToken))
+            return true;
+
+        // Check if language is used by EmployeeInvoices
+        if (await Context.EmployeeInvoices.AnyAsync(e => e.LanguageId == languageId, cancellationToken))
+            return true;
+
+        return false;
+    }
 }

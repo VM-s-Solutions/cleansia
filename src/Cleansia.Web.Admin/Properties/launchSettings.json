@@ -1,0 +1,28 @@
+﻿{
+    "profiles": {
+        "Cleansia.Web.Admin": {
+            "commandName": "Project",
+            "launchUrl": "",
+            "environmentVariables": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            },
+            "dotnetRunMessages": true,
+            "applicationUrl": "http://localhost:5001"
+        },
+        "Docker": {
+            "commandName": "Docker",
+            "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/swagger",
+            "publishAllPorts": true,
+            "useSSL": true
+        }
+    },
+    "$schema": "https://json.schemastore.org/launchsettings.json",
+    "iisSettings": {
+        "windowsAuthentication": false,
+        "anonymousAuthentication": true,
+        "iisExpress": {
+            "applicationUrl": "http://localhost:6034",
+            "sslPort": 44385
+        }
+    }
+}

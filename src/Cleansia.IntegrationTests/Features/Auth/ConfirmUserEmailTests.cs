@@ -1,4 +1,5 @@
 ﻿using Cleansia.Core.AppServices.Features.Auth;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Users;
 using Cleansia.TestUtilities;
 using MediatR;
@@ -23,6 +24,10 @@ public class ConfirmUserEmailTests(PostgresContainerFixture fixture) : BaseInteg
         await TestMethod(
             arrange: async context =>
             {
+                // Seed required language before creating user (FK constraint)
+                context.Languages.Add(Language.Create("en", "English"));
+                await context.SaveChangesAsync();
+
                 context.Users.Add(user);
             },
             act: async provider =>

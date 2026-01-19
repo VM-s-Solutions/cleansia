@@ -1,5 +1,6 @@
 ﻿using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Users;
 using Cleansia.TestUtilities;
 using MediatR;
@@ -17,6 +18,10 @@ public class LoginTests(PostgresContainerFixture fixture) : BaseIntegrationTest(
         await TestMethod(
         arrange: async context =>
         {
+            // Seed required language before creating user (FK constraint)
+            context.Languages.Add(Language.Create("en", "English"));
+            await context.SaveChangesAsync();
+
             var user = User.CreateWithPassword(
                 email: Constants.TestUserSession.TestUserEmail,
                 password: Constants.TestUserSession.TestUserPassword,

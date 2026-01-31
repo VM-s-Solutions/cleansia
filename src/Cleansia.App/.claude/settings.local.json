@@ -30,9 +30,20 @@
       "Bash(dotnet build:*)",
       "Read(//c/Users/cmisa/Desktop/Mike/Projects/cleansia/src/**)",
       "Read(//c/Users/cmisa/Desktop/Mike/Projects/stroytorg/src/Stroytorg.App/libs/stores/src/lib/stores/code/**)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(flutter build:*)",
+      "Bash(dart analyze:*)",
+      "Bash(.gradlew.bat:*)",
+      "Bash(./gradlew.bat assembleDebug:*)",
+      "Bash(powershell -Command \"Get-ChildItem ''c:\\\\Users\\\\cmisa\\\\Desktop\\\\Mike\\\\Projects\\\\cleansia\\\\src\\\\cleansia_android\\\\app\\\\build\\\\generated\\\\openapi'' -Recurse -Directory | Select-Object FullName\")",
+      "Bash(./gradlew compileMockDebugKotlin:*)",
+      "Bash(powershell.exe -Command:*)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "additionalDirectories": [
+      "c:\\Users\\cmisa\\Desktop\\Mike\\Projects\\cleansia\\src\\cleansia_mobile\\lib\\features\\invoices"
+    ]
   }
 }

@@ -54,12 +54,59 @@ public static class ServiceExtensions
         services.AddSwaggerGen(c =>
         {
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "Cleansia.API", Version = "v1" });
-            c.CustomSchemaIds(type => type.FullName?.Replace("+", string.Empty));
+            c.CustomSchemaIds(type => GetSchemaId(type));
             c.SchemaFilter<EnumSchemaFilter>();
             c.CustomOperationIds(e => e.ActionDescriptor.DisplayName);
         });
 
         return services;
+    }
+
+    /// <summary>
+    /// Generates clean schema IDs for Swagger that are compatible with OpenAPI code generators.
+    /// Handles generic types and nested types properly.
+    /// </summary>
+    private static string GetSchemaId(Type type)
+    {
+        // Get the base name, handling nested types (e.g., RegisterEmployee+Command -> RegisterEmployee_Command)
+        var baseName = GetBaseTypeName(type);
+
+        // For non-generic types, return the base name
+        if (!type.IsGenericType)
+        {
+            return baseName;
+        }
+
+        // For generic types like PagedData<UserListItem>, create a clean name
+        var genericTypeName = baseName;
+
+        // Remove the backtick and number (e.g., "PagedData`1" -> "PagedData")
+        var backtickIndex = genericTypeName.IndexOf('`');
+        if (backtickIndex > 0)
+        {
+            genericTypeName = genericTypeName[..backtickIndex];
+        }
+
+        // Get the generic type arguments and create a clean name
+        var genericArgs = type.GetGenericArguments();
+        var argNames = string.Join("_", genericArgs.Select(GetSchemaId));
+
+        return $"{genericTypeName}Of{argNames}";
+    }
+
+    /// <summary>
+    /// Gets the base type name, including declaring type for nested types.
+    /// E.g., RegisterEmployee+Command becomes RegisterEmployee_Command
+    /// </summary>
+    private static string GetBaseTypeName(Type type)
+    {
+        if (type.DeclaringType == null)
+        {
+            return type.Name;
+        }
+
+        // For nested types, include the declaring type name
+        return $"{GetBaseTypeName(type.DeclaringType)}_{type.Name}";
     }
     public static IServiceCollection AddJwt(this IServiceCollection services, IConfiguration configuration)
     {

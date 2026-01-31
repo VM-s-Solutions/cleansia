@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Background circle -->
+    <path
+        android:fillColor="#0EA5E9"
+        android:pathData="M54,54m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0" />
+    <!-- C letter for Cleansia -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,34c-11.05,0 -20,8.95 -20,20s8.95,20 20,20c6.63,0 12.5,-3.23 16.12,-8.2l-6.37,-4.63c-2.21,3.03 -5.79,5 -9.75,5c-6.63,0 -12,-5.37 -12,-12s5.37,-12 12,-12c3.96,0 7.54,1.97 9.75,5l6.37,-4.63C66.5,37.23 60.63,34 54,34z" />
+</vector>

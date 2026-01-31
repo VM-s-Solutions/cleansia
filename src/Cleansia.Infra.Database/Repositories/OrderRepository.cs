@@ -58,6 +58,8 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
                 .ThenInclude(ae => ae.Employee)
                     .ThenInclude(e => e.User)
             .Include(o => o.Receipt)
+            .Include(o => o.CustomerAddress)
+                .ThenInclude(ca => ca.Country)
             .AsSplitQuery()
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }

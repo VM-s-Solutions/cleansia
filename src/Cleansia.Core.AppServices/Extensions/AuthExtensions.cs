@@ -17,6 +17,7 @@ public static class AuthExtensions
 
     public static IEnumerable<Claim> SetClaims(this User user)
     {
+        yield return new Claim(ClaimTypes.NameIdentifier, user.Id.ToString());
         yield return new Claim(ClaimTypes.Name, $"{user.FirstName} {user.LastName}");
         yield return new Claim(ClaimTypes.Email, user.Email);
         yield return new Claim(ClaimTypes.Role, user.Profile.ToString());

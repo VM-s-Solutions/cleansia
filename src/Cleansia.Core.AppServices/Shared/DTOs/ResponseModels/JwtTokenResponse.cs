@@ -3,4 +3,6 @@
 public record JwtTokenResponse(
     string Token,
     bool IsEmailConfirmed,
-    bool HasAdminAccess = true);
+    bool HasAdminAccess = true,
+    string? UserId = null,
+    string? Email = null);

@@ -20,6 +20,11 @@ enum class AnalyticsPeriod {
     THIS_WEEK, THIS_MONTH, LAST_MONTH, CUSTOM
 }
 
+data class DayOfWeekEarnings(
+    val dayIndex: Int, // 1=Monday .. 7=Sunday
+    val totalAmount: Double
+)
+
 data class AnalyticsUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
@@ -28,7 +33,9 @@ data class AnalyticsUiState(
     val startDate: String? = null,
     val endDate: String? = null,
     val averageDaily: Double = 0.0,
-    val bestDay: EarningsDataPoint? = null
+    val bestDay: EarningsDataPoint? = null,
+    val worstDay: EarningsDataPoint? = null,
+    val dayOfWeekEarnings: List<DayOfWeekEarnings> = emptyList()
 )
 
 @HiltViewModel
@@ -105,13 +112,29 @@ class AnalyticsViewModel @Inject constructor(
                         analytics.totalEarnings / dataPoints.size
                     } else 0.0
                     val bestDay = dataPoints.maxByOrNull { it.amount }
+                    val worstDay = dataPoints.filter { it.amount > 0 }.minByOrNull { it.amount }
+
+                    // Compute day-of-week aggregation
+                    val dayOfWeekMap = mutableMapOf<Int, Double>()
+                    for (dp in dataPoints) {
+                        try {
+                            val date = LocalDate.parse(dp.date, dateFormatter)
+                            val dow = date.dayOfWeek.value // 1=Mon..7=Sun
+                            dayOfWeekMap[dow] = (dayOfWeekMap[dow] ?: 0.0) + dp.amount
+                        } catch (_: Exception) { /* skip unparseable dates */ }
+                    }
+                    val dayOfWeekEarnings = (1..7).map { day ->
+                        DayOfWeekEarnings(dayIndex = day, totalAmount = dayOfWeekMap[day] ?: 0.0)
+                    }
 
                     _uiState.update {
                         it.copy(
                             isLoading = false,
                             analytics = analytics,
                             averageDaily = averageDaily,
-                            bestDay = bestDay
+                            bestDay = bestDay,
+                            worstDay = worstDay,
+                            dayOfWeekEarnings = dayOfWeekEarnings
                         )
                     }
                 }

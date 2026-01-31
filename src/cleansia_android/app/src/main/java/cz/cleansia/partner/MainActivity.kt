@@ -2,6 +2,7 @@ package cz.cleansia.partner
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.ViewTreeObserver
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -44,9 +45,14 @@ class MainActivity : AppCompatActivity() {
     private var pendingDeepLink: DeepLinkDestination? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        val splashScreen = installSplashScreen()
 
         super.onCreate(savedInstanceState)
+
+        // Keep the native splash (gradient background only) visible until Compose content is drawn.
+        // This prevents the brief flash of the app icon before the animated splash starts.
+        var isReady = false
+        splashScreen.setKeepOnScreenCondition { !isReady }
 
         enableEdgeToEdge()
 
@@ -79,6 +85,18 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
+        // Dismiss the native splash as soon as the first frame of Compose content is drawn
+        val content = findViewById<android.view.View>(android.R.id.content)
+        content.viewTreeObserver.addOnPreDrawListener(
+            object : ViewTreeObserver.OnPreDrawListener {
+                override fun onPreDraw(): Boolean {
+                    isReady = true
+                    content.viewTreeObserver.removeOnPreDrawListener(this)
+                    return true
+                }
+            }
+        )
     }
 
     private fun restoreSavedLocale() {

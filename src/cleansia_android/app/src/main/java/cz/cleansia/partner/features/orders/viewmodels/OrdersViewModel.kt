@@ -91,6 +91,31 @@ class OrdersViewModel @Inject constructor(
         loadOrders()
     }
 
+    /**
+     * Called from outside to select a specific tab programmatically
+     * (e.g. when navigating from dashboard stat cards).
+     */
+    fun selectTab(tab: OrderTab, statusFilter: OrderStatus? = null) {
+        _uiState.update { state ->
+            val newFilterState = if (statusFilter != null) {
+                state.filterState.copy(orderStatuses = setOf(statusFilter))
+            } else {
+                state.filterState
+            }
+            state.copy(
+                selectedTab = tab,
+                filterState = newFilterState,
+                pendingFilterState = newFilterState,
+                pendingScrollToTop = true
+            )
+        }
+
+        when (tab) {
+            OrderTab.AVAILABLE -> loadAvailableOrders(reset = true)
+            OrderTab.MY_ORDERS -> loadMyOrders(reset = true)
+        }
+    }
+
     fun dismissHelpCard() {
         viewModelScope.launch {
             preferencesManager.setOrdersHelpDismissed(true)

@@ -90,8 +90,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
+import kotlin.math.sqrt
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import cz.cleansia.partner.R
@@ -345,6 +349,20 @@ private fun TimerSection(
     val timerCenterYRelativeToButtons = timerCenterY - buttonsTopY
     val timerCenterYRelativeToButtonsPx = with(density) { timerCenterYRelativeToButtons.toPx() }
 
+    // Compute the circle intrusion into each button at the vertical center of the button,
+    // so content can be centered within the visible width at that height.
+    // Circle center is at y = timerCenterYRelativeToButtons (negative) relative to buttons top.
+    // At y = buttonHeight/2 (vertical center of button):
+    //   dy = buttonHeight/2 - timerCenterYRelativeToButtons
+    //   halfChord = sqrt(r² - dy²)
+    val buttonMidY = buttonHeight / 2
+    val dy = buttonMidY - timerCenterYRelativeToButtons // distance from circle center to button mid
+    val rVal = cutoutRadius.value
+    val dyVal = dy.value
+    val chordSquared = rVal * rVal - dyVal * dyVal
+    // How far from screen center the circle extends at the button's vertical midpoint
+    val circleHalfChordAtMid = if (chordSquared > 0) sqrt(chordSquared).dp else 0.dp
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -441,7 +459,9 @@ private fun TimerSection(
                     onClick = onReportIssue,
                     isWarning = true,
                     modifier = Modifier.weight(1f).fillMaxHeight(),
-                    alignment = Alignment.CenterStart
+                    side = ButtonSide.LEFT,
+                    circleHalfChordAtMid = circleHalfChordAtMid,
+                    gapBetweenButtons = 8.dp
                 )
 
                 TimerActionButton(
@@ -449,7 +469,9 @@ private fun TimerSection(
                     label = stringResource(R.string.add_note),
                     onClick = onAddNote,
                     modifier = Modifier.weight(1f).fillMaxHeight(),
-                    alignment = Alignment.CenterEnd
+                    side = ButtonSide.RIGHT,
+                    circleHalfChordAtMid = circleHalfChordAtMid,
+                    gapBetweenButtons = 8.dp
                 )
             }
         }
@@ -484,7 +506,9 @@ private fun TimerActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     isWarning: Boolean = false,
-    alignment: Alignment = Alignment.Center
+    side: ButtonSide = ButtonSide.LEFT,
+    circleHalfChordAtMid: Dp = 0.dp,
+    gapBetweenButtons: Dp = 8.dp
 ) {
     val backgroundColor = if (isWarning) {
         MaterialTheme.colorScheme.errorContainer
@@ -498,6 +522,28 @@ private fun TimerActionButton(
         MaterialTheme.colorScheme.onPrimaryContainer
     }
 
+    val density = LocalDensity.current
+
+    // How much the circle intrudes into this button at the content's vertical position.
+    // circleHalfChordAtMid = distance from screen center to circle edge at button mid-height.
+    // The button's inner edge is at gapBetweenButtons/2 from screen center.
+    // Intrusion = circleHalfChordAtMid - gapBetweenButtons/2
+    val intrusionIntoButton = (circleHalfChordAtMid - gapBetweenButtons / 2).coerceAtLeast(0.dp)
+
+    // To center content in the visible width:
+    // visibleWidth = buttonWidth - intrusion (the non-clipped portion)
+    // center of visible = visibleWidth / 2 (from outer edge)
+    // center of full button = buttonWidth / 2
+    // offset = (center of visible) - (center of full button) = -intrusion / 2
+    // LEFT button: shift left (toward outer edge); RIGHT button: shift right
+    val offsetXPx = with(density) {
+        val halfIntrusionPx = intrusionIntoButton.toPx() / 2f
+        when (side) {
+            ButtonSide.LEFT -> -halfIntrusionPx.roundToInt()
+            ButtonSide.RIGHT -> halfIntrusionPx.roundToInt()
+        }
+    }
+
     Box(
         modifier = modifier
             .shadow(
@@ -507,12 +553,14 @@ private fun TimerActionButton(
             .clip(RoundedCornerShape(12.dp))
             .background(backgroundColor)
             .clickable(onClick = onClick),
-        contentAlignment = alignment
+        contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+            modifier = Modifier
+                .offset { IntOffset(x = offsetXPx, y = 0) }
+                .padding(vertical = 8.dp)
         ) {
             Icon(
                 imageVector = icon,
@@ -526,11 +574,14 @@ private fun TimerActionButton(
                 fontWeight = FontWeight.Medium,
                 color = contentColor,
                 textAlign = TextAlign.Center,
-                maxLines = 1
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
 }
+
+private enum class ButtonSide { LEFT, RIGHT }
 
 // ============================================================
 // Customer Contact Card - Available for all pre-completion statuses

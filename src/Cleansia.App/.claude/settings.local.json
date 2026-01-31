@@ -43,7 +43,9 @@
     "deny": [],
     "ask": [],
     "additionalDirectories": [
-      "c:\\Users\\cmisa\\Desktop\\Mike\\Projects\\cleansia\\src\\cleansia_mobile\\lib\\features\\invoices"
+      "c:\\Users\\cmisa\\Desktop\\Mike\\Projects\\cleansia\\src\\cleansia_mobile\\lib\\features\\invoices",
+      "C:\\Users\\cmisa\\Desktop\\Mike\\Projects\\cleansia\\src\\cleansia_android\\app\\src\\main\\res\\values",
+      "C:\\Users\\cmisa\\Desktop\\Mike\\Projects\\cleansia\\src\\cleansia_android\\app\\src\\main\\java\\cz\\cleansia\\partner\\features\\dashboard\\viewmodels"
     ]
   }
 }

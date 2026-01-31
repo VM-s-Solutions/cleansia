@@ -86,6 +86,12 @@
     <string name="this_week">This Week</string>
     <string name="this_month">This Month</string>
     <string name="last_month">Last Month</string>
+    <string name="next_up">Next Up</string>
+    <string name="starts_in">Starts in %1$s</string>
+    <string name="today_at">Today at %1$s</string>
+    <string name="tomorrow_at">Tomorrow at %1$s</string>
+    <string name="completion_rate">Completion Rate</string>
+    <string name="completed_vs_total">%1$d of %2$d orders</string>
 
     <!-- Analytics -->
     <string name="analytics_title">Analytics</string>
@@ -94,6 +100,15 @@
     <string name="previous_period">Previous Period</string>
     <string name="daily_average">Daily Avg</string>
     <string name="best_day">Best Day</string>
+    <string name="worst_day">Lowest Day</string>
+    <string name="earnings_by_day">Earnings by Day</string>
+    <string name="day_mon">Mon</string>
+    <string name="day_tue">Tue</string>
+    <string name="day_wed">Wed</string>
+    <string name="day_thu">Thu</string>
+    <string name="day_fri">Fri</string>
+    <string name="day_sat">Sat</string>
+    <string name="day_sun">Sun</string>
 
     <!-- Orders -->
     <string name="orders">Orders</string>

@@ -1,6 +1,7 @@
 package cz.cleansia.partner.navigation
 
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -31,6 +32,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,7 +48,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import cz.cleansia.partner.R
 import cz.cleansia.partner.features.dashboard.screens.DashboardScreen
 import cz.cleansia.partner.features.invoices.screens.InvoicesScreen
+import cz.cleansia.partner.domain.models.orders.OrderStatus
 import cz.cleansia.partner.features.orders.screens.OrdersScreen
+import cz.cleansia.partner.features.orders.viewmodels.OrderTab
 import cz.cleansia.partner.features.search.GlobalSearchViewModel
 import cz.cleansia.partner.ui.components.FloatingNavItem
 import cz.cleansia.partner.ui.components.GlobalSearchOverlay
@@ -95,6 +99,10 @@ fun MainScreen(
     val searchState by searchViewModel.state.collectAsState()
     val pageScrollStates = remember { mutableStateMapOf(0 to false, 1 to false, 2 to false) }
     val isContentScrolled = pageScrollStates[pagerState.currentPage] ?: false
+
+    // State for passing tab/filter info to OrdersScreen when navigating from dashboard
+    var ordersInitialTab by remember { mutableStateOf<OrderTab?>(null) }
+    var ordersInitialStatusFilter by remember { mutableStateOf<OrderStatus?>(null) }
 
     // Derive page title from current pager position
     val pageTitles = bottomNavItems.map { it.titleResId }
@@ -208,6 +216,23 @@ fun MainScreen(
                 0 -> DashboardScreen(
                     onNavigateToOrderDetails = onNavigateToOrderDetails,
                     onNavigateToOrders = {
+                        ordersInitialTab = null
+                        ordersInitialStatusFilter = null
+                        coroutineScope.launch { pagerState.animateScrollToPage(1) }
+                    },
+                    onNavigateToAvailableOrders = {
+                        ordersInitialTab = OrderTab.AVAILABLE
+                        ordersInitialStatusFilter = null
+                        coroutineScope.launch { pagerState.animateScrollToPage(1) }
+                    },
+                    onNavigateToActiveOrders = {
+                        ordersInitialTab = OrderTab.MY_ORDERS
+                        ordersInitialStatusFilter = null
+                        coroutineScope.launch { pagerState.animateScrollToPage(1) }
+                    },
+                    onNavigateToCompletedOrders = {
+                        ordersInitialTab = OrderTab.MY_ORDERS
+                        ordersInitialStatusFilter = OrderStatus.COMPLETED
                         coroutineScope.launch { pagerState.animateScrollToPage(1) }
                     },
                     onNavigateToInvoices = {
@@ -218,7 +243,9 @@ fun MainScreen(
                 )
                 1 -> OrdersScreen(
                     onNavigateToOrderDetails = onNavigateToOrderDetails,
-                    onScrolled = { scrolled -> pageScrollStates[1] = scrolled }
+                    onScrolled = { scrolled -> pageScrollStates[1] = scrolled },
+                    initialTab = ordersInitialTab,
+                    initialStatusFilter = ordersInitialStatusFilter
                 )
                 2 -> InvoicesScreen(
                     onNavigateToInvoiceDetails = onNavigateToInvoiceDetails,

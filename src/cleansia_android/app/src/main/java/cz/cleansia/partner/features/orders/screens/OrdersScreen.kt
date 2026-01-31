@@ -81,11 +81,20 @@ import java.util.Locale
 fun OrdersScreen(
     onNavigateToOrderDetails: (String) -> Unit,
     onScrolled: (Boolean) -> Unit = {},
+    initialTab: OrderTab? = null,
+    initialStatusFilter: OrderStatus? = null,
     viewModel: OrdersViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val showHelpCard by viewModel.showHelpCard.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // Apply initial tab/filter when navigated from dashboard
+    LaunchedEffect(initialTab) {
+        initialTab?.let { tab ->
+            viewModel.selectTab(tab, initialStatusFilter)
+        }
+    }
 
     // Show error in snackbar
     LaunchedEffect(uiState.error) {

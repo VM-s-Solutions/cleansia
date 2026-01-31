@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -45,7 +46,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import cz.cleansia.partner.R
 import cz.cleansia.partner.features.dashboard.viewmodels.AnalyticsPeriod
+import cz.cleansia.partner.features.dashboard.viewmodels.AnalyticsUiState
 import cz.cleansia.partner.features.dashboard.viewmodels.AnalyticsViewModel
+import cz.cleansia.partner.features.dashboard.viewmodels.DayOfWeekEarnings
 import cz.cleansia.partner.ui.components.GlassBackButton
 import cz.cleansia.partner.ui.components.LoadingIndicator
 import cz.cleansia.partner.ui.components.SparklineChart
@@ -140,6 +143,16 @@ fun AnalyticsDetailScreen(
                     // Stats row
                     item {
                         StatsRow(uiState = uiState)
+                    }
+
+                    // Day-of-week breakdown
+                    if (uiState.dayOfWeekEarnings.any { it.totalAmount > 0 }) {
+                        item {
+                            DayOfWeekCard(
+                                dayOfWeekEarnings = uiState.dayOfWeekEarnings,
+                                currency = uiState.analytics?.currency ?: "CZK"
+                            )
+                        }
                     }
                 }
             }
@@ -338,36 +351,47 @@ private fun ComparisonCard(
 
 @Composable
 private fun StatsRow(
-    uiState: cz.cleansia.partner.features.dashboard.viewmodels.AnalyticsUiState
+    uiState: AnalyticsUiState
 ) {
     val analytics = uiState.analytics ?: return
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        // Total earnings
-        StatMiniCard(
-            label = stringResource(R.string.total),
-            value = formatCurrencyAnalytics(analytics.totalEarnings, analytics.currency),
-            modifier = Modifier.weight(1f)
-        )
-
-        // Average daily
-        StatMiniCard(
-            label = stringResource(R.string.daily_average),
-            value = formatCurrencyAnalytics(uiState.averageDaily, analytics.currency),
-            modifier = Modifier.weight(1f)
-        )
-
-        // Best day
-        StatMiniCard(
-            label = stringResource(R.string.best_day),
-            value = uiState.bestDay?.let {
-                formatCurrencyAnalytics(it.amount, analytics.currency)
-            } ?: "-",
-            modifier = Modifier.weight(1f)
-        )
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            StatMiniCard(
+                label = stringResource(R.string.total),
+                value = formatCurrencyAnalytics(analytics.totalEarnings, analytics.currency),
+                modifier = Modifier.weight(1f)
+            )
+            StatMiniCard(
+                label = stringResource(R.string.daily_average),
+                value = formatCurrencyAnalytics(uiState.averageDaily, analytics.currency),
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            StatMiniCard(
+                label = stringResource(R.string.best_day),
+                value = uiState.bestDay?.let {
+                    formatCurrencyAnalytics(it.amount, analytics.currency)
+                } ?: "-",
+                subtitle = uiState.bestDay?.let { DateTimeUtils.formatDate(it.date) },
+                modifier = Modifier.weight(1f)
+            )
+            StatMiniCard(
+                label = stringResource(R.string.worst_day),
+                value = uiState.worstDay?.let {
+                    formatCurrencyAnalytics(it.amount, analytics.currency)
+                } ?: "-",
+                subtitle = uiState.worstDay?.let { DateTimeUtils.formatDate(it.date) },
+                modifier = Modifier.weight(1f)
+            )
+        }
     }
 }
 
@@ -375,7 +399,8 @@ private fun StatsRow(
 private fun StatMiniCard(
     label: String,
     value: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    subtitle: String? = null
 ) {
     Card(
         modifier = modifier,
@@ -400,6 +425,16 @@ private fun StatMiniCard(
                 overflow = TextOverflow.Ellipsis,
                 fontSize = 13.sp
             )
+            if (subtitle != null) {
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center,
+                    fontSize = 10.sp,
+                    maxLines = 1
+                )
+            }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = label,
@@ -409,6 +444,93 @@ private fun StatMiniCard(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+        }
+    }
+}
+
+// ============================================================
+// Day-of-Week Earnings Breakdown
+// ============================================================
+
+@Composable
+private fun DayOfWeekCard(
+    dayOfWeekEarnings: List<DayOfWeekEarnings>,
+    currency: String
+) {
+    val dayLabels = listOf(
+        stringResource(R.string.day_mon),
+        stringResource(R.string.day_tue),
+        stringResource(R.string.day_wed),
+        stringResource(R.string.day_thu),
+        stringResource(R.string.day_fri),
+        stringResource(R.string.day_sat),
+        stringResource(R.string.day_sun)
+    )
+    val maxAmount = dayOfWeekEarnings.maxOfOrNull { it.totalAmount } ?: 1.0
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = stringResource(R.string.earnings_by_day),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            dayOfWeekEarnings.forEachIndexed { index, dayData ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = dayLabels.getOrElse(index) { "" },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.width(36.dp)
+                    )
+
+                    // Bar
+                    val fraction = if (maxAmount > 0) (dayData.totalAmount / maxAmount).toFloat() else 0f
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(20.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(fraction.coerceIn(0f, 1f))
+                                .height(20.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.7f + fraction * 0.3f))
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text(
+                        text = formatCurrencyAnalytics(dayData.totalAmount, currency),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.width(72.dp),
+                        textAlign = TextAlign.End,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
         }
     }
 }

@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -68,9 +67,6 @@ import cz.cleansia.partner.domain.models.dashboard.UpcomingOrder
 import cz.cleansia.partner.features.dashboard.viewmodels.DashboardUiState
 import cz.cleansia.partner.features.dashboard.viewmodels.DashboardViewModel
 import cz.cleansia.partner.features.dashboard.viewmodels.GreetingType
-import cz.cleansia.partner.ui.components.ChartLegendItem
-import cz.cleansia.partner.ui.components.DonutChart
-import cz.cleansia.partner.ui.components.DonutChartData
 import cz.cleansia.partner.ui.components.ErrorView
 import cz.cleansia.partner.ui.components.LoadingIndicator
 import cz.cleansia.partner.ui.components.OrderStatusBadge
@@ -78,6 +74,11 @@ import cz.cleansia.partner.ui.components.SparklineChart
 import cz.cleansia.partner.ui.theme.CleansiaColors
 import cz.cleansia.partner.core.utils.DateTimeUtils
 import java.text.NumberFormat
+import java.time.Duration
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 import java.util.Currency
 import java.util.Locale
 
@@ -86,6 +87,9 @@ import java.util.Locale
 fun DashboardScreen(
     onNavigateToOrderDetails: (String) -> Unit,
     onNavigateToOrders: () -> Unit = {},
+    onNavigateToAvailableOrders: () -> Unit = onNavigateToOrders,
+    onNavigateToActiveOrders: () -> Unit = onNavigateToOrders,
+    onNavigateToCompletedOrders: () -> Unit = onNavigateToOrders,
     onNavigateToInvoices: () -> Unit = {},
     onNavigateToAnalytics: () -> Unit = {},
     onScrolled: (Boolean) -> Unit = {},
@@ -150,6 +154,9 @@ fun DashboardScreen(
                         greetingText = greetingText,
                         onOrderClick = onNavigateToOrderDetails,
                         onNavigateToOrders = onNavigateToOrders,
+                        onNavigateToAvailableOrders = onNavigateToAvailableOrders,
+                        onNavigateToActiveOrders = onNavigateToActiveOrders,
+                        onNavigateToCompletedOrders = onNavigateToCompletedOrders,
                         onNavigateToInvoices = onNavigateToInvoices,
                         onNavigateToAnalytics = onNavigateToAnalytics,
                         onScrolled = onScrolled
@@ -166,6 +173,9 @@ private fun DashboardContent(
     greetingText: String,
     onOrderClick: (String) -> Unit,
     onNavigateToOrders: () -> Unit,
+    onNavigateToAvailableOrders: () -> Unit,
+    onNavigateToActiveOrders: () -> Unit,
+    onNavigateToCompletedOrders: () -> Unit,
     onNavigateToInvoices: () -> Unit,
     onNavigateToAnalytics: () -> Unit = {},
     onScrolled: (Boolean) -> Unit = {}
@@ -204,11 +214,34 @@ private fun DashboardContent(
                 completionTrend = uiState.stats?.completionTrend,
                 pendingEarnings = uiState.stats?.pendingEarnings ?: 0.0,
                 currency = uiState.stats?.currency ?: "CZK",
-                onAvailableOrdersClick = onNavigateToOrders,
-                onActiveOrdersClick = onNavigateToOrders,
-                onCompletedClick = onNavigateToOrders,
+                onAvailableOrdersClick = onNavigateToAvailableOrders,
+                onActiveOrdersClick = onNavigateToActiveOrders,
+                onCompletedClick = onNavigateToCompletedOrders,
                 onEarningsClick = onNavigateToInvoices
             )
+        }
+
+        // === Next Up - Featured upcoming order ===
+        if (uiState.upcomingOrders.isNotEmpty()) {
+            item {
+                NextUpCard(
+                    order = uiState.upcomingOrders.first(),
+                    onClick = { onOrderClick(uiState.upcomingOrders.first().id) }
+                )
+            }
+        }
+
+        // === Completion Rate ===
+        if (uiState.stats != null) {
+            val totalOrders = (uiState.stats.completedThisMonth + (uiState.stats.myActiveOrders))
+            if (totalOrders > 0) {
+                item {
+                    CompletionRateCard(
+                        completed = uiState.stats.completedThisMonth,
+                        total = totalOrders
+                    )
+                }
+            }
         }
 
         // === Earnings Overview ===
@@ -224,39 +257,33 @@ private fun DashboardContent(
             }
         }
 
-        // === Order Distribution Chart ===
-        uiState.stats?.let { stats ->
-            if (stats.availableOrders > 0 || stats.myActiveOrders > 0 || stats.completedThisMonth > 0) {
-                item {
-                    OrderDistributionCard(
-                        availableOrders = stats.availableOrders,
-                        activeOrders = stats.myActiveOrders,
-                        completedOrders = stats.completedThisMonth
-                    )
-                }
-            }
-        }
-
         // === Upcoming Orders ===
-        item {
-            SectionHeaderWithAction(
-                title = stringResource(R.string.upcoming_orders),
-                actionLabel = stringResource(R.string.view_all),
-                onActionClick = onNavigateToOrders
-            )
-        }
-
-        if (uiState.upcomingOrders.isEmpty()) {
+        if (uiState.upcomingOrders.size > 1) {
             item {
-                EmptyStateCard(
-                    message = stringResource(R.string.no_upcoming_orders)
+                SectionHeaderWithAction(
+                    title = stringResource(R.string.upcoming_orders),
+                    actionLabel = stringResource(R.string.view_all),
+                    onActionClick = onNavigateToOrders
                 )
             }
-        } else {
-            items(uiState.upcomingOrders.take(5), key = { it.id }) { order ->
+
+            items(uiState.upcomingOrders.drop(1).take(4), key = { it.id }) { order ->
                 UpcomingOrderCard(
                     order = order,
                     onClick = { onOrderClick(order.id) }
+                )
+            }
+        } else if (uiState.upcomingOrders.isEmpty()) {
+            item {
+                SectionHeaderWithAction(
+                    title = stringResource(R.string.upcoming_orders),
+                    actionLabel = stringResource(R.string.view_all),
+                    onActionClick = onNavigateToOrders
+                )
+            }
+            item {
+                EmptyStateCard(
+                    message = stringResource(R.string.no_upcoming_orders)
                 )
             }
         }
@@ -303,51 +330,7 @@ private fun GreetingHero(
                 style = MaterialTheme.typography.bodyMedium,
                 color = subtextColor
             )
-
-            // Quick summary chips
-            if (activeOrders > 0 || availableOrders > 0) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    if (activeOrders > 0) {
-                        SummaryChip(
-                            label = "$activeOrders ${stringResource(R.string.active).lowercase()}",
-                            backgroundColor = CleansiaColors.warningContainer,
-                            textColor = CleansiaColors.onWarningContainer
-                        )
-                    }
-                    if (availableOrders > 0) {
-                        SummaryChip(
-                            label = "$availableOrders ${stringResource(R.string.available).lowercase()}",
-                            backgroundColor = CleansiaColors.infoContainer,
-                            textColor = CleansiaColors.onInfoContainer
-                        )
-                    }
-                }
-            }
         }
-    }
-}
-
-@Composable
-private fun SummaryChip(
-    label: String,
-    backgroundColor: Color,
-    textColor: Color
-) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(backgroundColor)
-            .padding(horizontal = 12.dp, vertical = 6.dp)
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Medium,
-            color = textColor
-        )
     }
 }
 
@@ -376,7 +359,7 @@ private fun QuickStatsRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            StatCardClickable(
+            StatCard(
                 title = stringResource(R.string.available_orders),
                 value = availableOrders.toString(),
                 icon = Icons.AutoMirrored.Filled.ListAlt,
@@ -385,7 +368,7 @@ private fun QuickStatsRow(
                 onClick = onAvailableOrdersClick,
                 modifier = Modifier.weight(1f)
             )
-            StatCardClickable(
+            StatCard(
                 title = stringResource(R.string.my_active_orders),
                 value = activeOrders.toString(),
                 icon = Icons.Default.PlayArrow,
@@ -401,17 +384,17 @@ private fun QuickStatsRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            StatCardWithTrend(
+            StatCard(
                 title = stringResource(R.string.completed_this_month),
                 value = completedThisMonth.toString(),
                 icon = Icons.Default.CheckCircle,
                 iconBackgroundColor = CleansiaColors.successContainer,
                 iconColor = CleansiaColors.onSuccessContainer,
-                trend = completionTrend,
                 onClick = onCompletedClick,
+                trend = completionTrend,
                 modifier = Modifier.weight(1f)
             )
-            StatCardClickable(
+            StatCard(
                 title = stringResource(R.string.pending_earnings),
                 value = formatCurrency(pendingEarnings, currency),
                 icon = Icons.Default.AttachMoney,
@@ -425,89 +408,15 @@ private fun QuickStatsRow(
 }
 
 @Composable
-private fun StatCardClickable(
+private fun StatCard(
     title: String,
     value: String,
     icon: ImageVector,
     iconBackgroundColor: Color,
     iconColor: Color,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier
-            .height(120.dp)
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(iconBackgroundColor),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = iconColor,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                    modifier = Modifier.size(16.dp)
-                )
-            }
-
-            Column {
-                Text(
-                    text = value,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    fontSize = 18.sp
-                )
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun StatCardWithTrend(
-    title: String,
-    value: String,
-    icon: ImageVector,
-    iconBackgroundColor: Color,
-    iconColor: Color,
-    trend: cz.cleansia.partner.domain.models.dashboard.TrendData?,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    trend: cz.cleansia.partner.domain.models.dashboard.TrendData? = null
 ) {
     Card(
         modifier = modifier
@@ -544,9 +453,15 @@ private fun StatCardWithTrend(
                     )
                 }
 
-                // Trend indicator
-                trend?.let {
-                    TrendIndicator(trend = it)
+                if (trend != null) {
+                    TrendIndicator(trend = trend)
+                } else {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                        modifier = Modifier.size(16.dp)
+                    )
                 }
             }
 
@@ -692,86 +607,6 @@ private fun EarningsOverviewCard(
 }
 
 @Composable
-private fun OrderDistributionCard(
-    availableOrders: Int,
-    activeOrders: Int,
-    completedOrders: Int
-) {
-    val total = availableOrders + activeOrders + completedOrders
-    val chartData = listOf(
-        DonutChartData("Available", availableOrders.toFloat(), CleansiaColors.infoContainer),
-        DonutChartData("Active", activeOrders.toFloat(), CleansiaColors.warningContainer),
-        DonutChartData("Completed", completedOrders.toFloat(), CleansiaColors.successContainer)
-    )
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = stringResource(R.string.order_distribution),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Donut chart
-                DonutChart(
-                    data = chartData,
-                    modifier = Modifier.size(100.dp),
-                    strokeWidth = 16.dp,
-                    centerContent = {
-                        Text(
-                            text = total.toString(),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                )
-
-                // Legend
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    ChartLegendItem(
-                        color = CleansiaColors.infoContainer,
-                        label = stringResource(R.string.available),
-                        value = availableOrders.toString()
-                    )
-                    ChartLegendItem(
-                        color = CleansiaColors.warningContainer,
-                        label = stringResource(R.string.my_active_orders),
-                        value = activeOrders.toString()
-                    )
-                    ChartLegendItem(
-                        color = CleansiaColors.successContainer,
-                        label = stringResource(R.string.completed),
-                        value = completedOrders.toString()
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun EarningsItem(
     label: String,
     amount: Double,
@@ -798,6 +633,230 @@ private fun EarningsItem(
             textAlign = TextAlign.Center,
             maxLines = 1
         )
+    }
+}
+
+// ============================================================
+// Next Up - Featured Upcoming Order
+// ============================================================
+
+@Composable
+private fun NextUpCard(
+    order: UpcomingOrder,
+    onClick: () -> Unit
+) {
+    val isDarkTheme = LocalDarkTheme.current
+    val containerColor = if (isDarkTheme) Color(0xFF1A2740) else Color(0xFFEFF6FF)
+    val accentColor = if (isDarkTheme) Color(0xFF60A5FA) else Color(0xFF2563EB)
+
+    // Compute time label
+    val timeLabel = remember(order.scheduledDate, order.scheduledTime) {
+        computeTimeLabel(order.scheduledDate, order.scheduledTime)
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(accentColor.copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AccessTime,
+                            contentDescription = null,
+                            tint = accentColor,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.next_up),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = accentColor
+                        )
+                        if (timeLabel != null) {
+                            Text(
+                                text = timeLabel,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                Text(
+                    text = formatCurrency(order.totalAmount, order.currency),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = accentColor
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Order details
+            Text(
+                text = "#${order.orderNumber ?: order.id.take(8)}",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            order.customerName?.let { name ->
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            order.address?.let { address ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.LocationOn,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = address,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
+            order.servicesPreview?.let { services ->
+                Spacer(modifier = Modifier.height(6.dp))
+                ServiceChip(serviceName = services)
+            }
+        }
+    }
+}
+
+private fun computeTimeLabel(scheduledDate: String?, scheduledTime: String?): String? {
+    if (scheduledDate == null) return null
+    return try {
+        val date = LocalDate.parse(scheduledDate, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        val today = LocalDate.now()
+        val time = scheduledTime?.let {
+            try { LocalTime.parse(it) } catch (_: Exception) { null }
+        }
+
+        val timeStr = time?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: ""
+
+        when {
+            date.isEqual(today) && time != null -> {
+                val now = LocalDateTime.now()
+                val scheduled = LocalDateTime.of(date, time)
+                val diff = Duration.between(now, scheduled)
+                if (diff.isNegative) "Today at $timeStr"
+                else {
+                    val hours = diff.toHours()
+                    val minutes = diff.toMinutes() % 60
+                    when {
+                        hours > 0 -> "In ${hours}h ${minutes}min"
+                        minutes > 0 -> "In ${minutes}min"
+                        else -> "Now"
+                    }
+                }
+            }
+            date.isEqual(today) -> "Today"
+            date.isEqual(today.plusDays(1)) && timeStr.isNotEmpty() -> "Tomorrow at $timeStr"
+            date.isEqual(today.plusDays(1)) -> "Tomorrow"
+            else -> DateTimeUtils.formatDate(scheduledDate) + if (timeStr.isNotEmpty()) " • $timeStr" else ""
+        }
+    } catch (_: Exception) {
+        null
+    }
+}
+
+// ============================================================
+// Completion Rate Card
+// ============================================================
+
+@Composable
+private fun CompletionRateCard(
+    completed: Int,
+    total: Int
+) {
+    val fraction = if (total > 0) completed.toFloat() / total.toFloat() else 0f
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.completion_rate),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "${(fraction * 100).toInt()}%",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = CleansiaColors.success
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Progress bar
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(fraction.coerceIn(0f, 1f))
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(CleansiaColors.success)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = stringResource(R.string.completed_vs_total, completed, total),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 

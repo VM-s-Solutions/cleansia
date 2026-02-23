@@ -47,15 +47,20 @@ class AuthRepositoryImpl @Inject constructor(
         }
 
         if (result is ApiResult.Success && result.data.isEmailConfirmed) {
-            // First save the token so we can make authenticated requests
+            // Save token first so we can make authenticated requests
             tokenManager.saveAuthData(
                 token = result.data.token,
-                userId = "", // Will be updated after fetching employee
+                userId = result.data.actualUserId,
                 email = email,
                 isEmailConfirmed = result.data.isEmailConfirmed
             )
+            // Save user name from login response only if present
+            // (JWT response may not include firstName/lastName)
+            if (result.data.firstName != null || result.data.lastName != null) {
+                tokenManager.saveUserName(result.data.firstName, result.data.lastName)
+            }
 
-            // Fetch the current employee to get the employee ID
+            // Fetch the current employee to get the employee ID and name
             val employeeResult = safeApiCall(json) {
                 apiService.getCurrentEmployee()
             }
@@ -68,6 +73,8 @@ class AuthRepositoryImpl @Inject constructor(
                     email = employeeResult.data.email,
                     isEmailConfirmed = result.data.isEmailConfirmed
                 )
+                // Save user name from employee profile (reliable source)
+                tokenManager.saveUserName(employeeResult.data.firstName, employeeResult.data.lastName)
             }
         }
 
@@ -110,6 +117,7 @@ class AuthRepositoryImpl @Inject constructor(
                 email = result.data.email,
                 isEmailConfirmed = true
             )
+            tokenManager.saveUserName(result.data.firstName, result.data.lastName)
         }
 
         return result

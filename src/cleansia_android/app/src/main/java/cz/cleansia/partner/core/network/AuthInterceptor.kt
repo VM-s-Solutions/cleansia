@@ -35,7 +35,7 @@ class AuthInterceptor @Inject constructor(
 
         val token = tokenManager.getToken()
 
-        return if (token != null) {
+        val response = if (token != null) {
             val authenticatedRequest = originalRequest.newBuilder()
                 .header("Authorization", "Bearer $token")
                 .build()
@@ -43,5 +43,12 @@ class AuthInterceptor @Inject constructor(
         } else {
             chain.proceed(originalRequest)
         }
+
+        // Detect session expiration and trigger centralized handling
+        if (response.code == 401) {
+            tokenManager.onSessionExpired()
+        }
+
+        return response
     }
 }

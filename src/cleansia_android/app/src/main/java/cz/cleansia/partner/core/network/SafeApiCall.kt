@@ -3,6 +3,12 @@ package cz.cleansia.partner.core.network
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import retrofit2.Response
 import java.io.IOException
 import java.net.SocketTimeoutException
@@ -61,20 +67,62 @@ private fun <T> handleErrorResponse(statusCode: Int, errorBody: String?, json: J
         }
     }
 
+    // Parse errors from JsonElement, handling both Map<String, String> and Map<String, List<String>>
+    val validationErrors = errorResponse?.errors?.let { parseValidationErrors(it) }
+
+    // Extract the first validation error key for translation (mirrors Angular frontend pattern)
+    val firstErrorKey = extractFirstErrorKey(validationErrors)
+
     val error = when (statusCode) {
         401 -> ApiError.Unauthorized
-        404 -> ApiError.NotFound(errorResponse?.message ?: "Resource not found")
+        404 -> ApiError.NotFound(errorResponse?.effectiveMessage ?: "Resource not found")
         400 -> ApiError.BadRequest(
-            message = errorResponse?.message ?: "Bad request",
-            code = errorResponse?.code,
-            validationErrors = errorResponse?.errors
+            message = errorResponse?.effectiveMessage ?: "Bad request",
+            code = errorResponse?.code ?: errorResponse?.type,
+            validationErrors = validationErrors,
+            errorKey = firstErrorKey
         )
         in 500..599 -> ApiError.Server(
             statusCode = statusCode,
-            message = errorResponse?.message ?: "Server error. Please try again later."
+            message = errorResponse?.effectiveMessage ?: "Server error. Please try again later."
         )
-        else -> ApiError.Unknown(errorResponse?.message ?: "An unexpected error occurred")
+        else -> ApiError.Unknown(errorResponse?.effectiveMessage ?: "An unexpected error occurred")
     }
 
     return ApiResult.Error(error)
+}
+
+/**
+ * Parses validation errors from JsonElement, handling both formats:
+ * - ProblemDetails: Map<String, String> (joined error messages)
+ * - Custom format: Map<String, List<String>> (list of error messages)
+ */
+private fun parseValidationErrors(element: kotlinx.serialization.json.JsonElement): Map<String, List<String>>? {
+    return try {
+        val jsonObj = element.jsonObject
+        jsonObj.entries.associate { (key, value) ->
+            key to when (value) {
+                is JsonArray -> value.jsonArray.mapNotNull {
+                    (it as? JsonPrimitive)?.content
+                }
+                is JsonPrimitive -> listOf(value.content)
+                else -> emptyList()
+            }
+        }.ifEmpty { null }
+    } catch (e: Exception) {
+        null
+    }
+}
+
+/**
+ * Extracts the first validation error key from the parsed errors map.
+ * Mirrors the Angular frontend pattern:
+ *   const errorKey = getObjectValues(error.error.errors)[0]
+ *
+ * The backend sends translation keys as error values (e.g. "user.not_existing_email").
+ * This function returns the first such key for use with [ApiErrorTranslator].
+ */
+private fun extractFirstErrorKey(validationErrors: Map<String, List<String>>?): String? {
+    if (validationErrors.isNullOrEmpty()) return null
+    return validationErrors.values.firstOrNull()?.firstOrNull()
 }

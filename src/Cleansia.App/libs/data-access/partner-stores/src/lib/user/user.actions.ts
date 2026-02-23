@@ -5,7 +5,7 @@ import {
   BlobFileDto,
   SortDefinition,
   UserListItem,
-  UserListItemPagedData,
+  PagedDataOfUserListItem,
 } from '@cleansia/partner-services';
 
 import { createAction, props } from '@ngrx/store';
@@ -22,7 +22,7 @@ export const loadUserPaged = createAction(
 );
 export const loadUserPagedSuccess = createAction(
   '[User] Load Paged Success',
-  props<{ page: UserListItemPagedData }>()
+  props<{ page: PagedDataOfUserListItem }>()
 );
 export const loadUserPagedFailure = createAction(
   '[User] Load Paged Failure',

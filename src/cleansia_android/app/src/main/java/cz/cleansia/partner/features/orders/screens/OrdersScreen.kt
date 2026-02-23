@@ -1,15 +1,24 @@
 package cz.cleansia.partner.features.orders.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import cz.cleansia.partner.ui.components.clickableWithHaptic
+import cz.cleansia.partner.ui.components.clickableWithHapticNoRipple
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,12 +27,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -42,11 +53,19 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -58,9 +77,17 @@ import cz.cleansia.partner.domain.models.orders.Order
 import cz.cleansia.partner.domain.models.orders.OrderStatus
 import cz.cleansia.partner.domain.models.orders.PaymentStatus
 import cz.cleansia.partner.features.orders.components.OrdersFilterContent
+import cz.cleansia.partner.features.orders.components.ViewModeToggle
+import cz.cleansia.partner.features.orders.components.WeekStripView
 import cz.cleansia.partner.features.orders.viewmodels.OrderSortOption
 import cz.cleansia.partner.features.orders.viewmodels.OrderTab
+import cz.cleansia.partner.features.orders.viewmodels.OrdersViewMode
 import cz.cleansia.partner.features.orders.viewmodels.OrdersViewModel
+import cz.cleansia.partner.ui.components.CardWithLoadingOverlay
+import cz.cleansia.partner.ui.components.CleansiaSnackbarHost
+import cz.cleansia.partner.features.orders.components.UrgencyLevel
+import cz.cleansia.partner.features.orders.components.UrgencyChip
+import cz.cleansia.partner.features.orders.components.rememberOrderUrgency
 import cz.cleansia.partner.ui.components.ActiveFilterChipsBar
 import cz.cleansia.partner.ui.components.FilterButton
 import cz.cleansia.partner.ui.components.FilterChip
@@ -68,6 +95,8 @@ import cz.cleansia.partner.ui.components.FilterBottomSheet
 import cz.cleansia.partner.ui.components.HelpCard
 import cz.cleansia.partner.ui.components.HelpStep
 import cz.cleansia.partner.ui.components.LoadingIndicator
+import cz.cleansia.partner.ui.components.OfflineBanner
+import cz.cleansia.partner.features.orders.components.OrdersListSkeleton
 import cz.cleansia.partner.ui.components.OrderStatusBadge
 import cz.cleansia.partner.ui.components.PaymentStatusBadge
 import cz.cleansia.partner.ui.components.SortButton
@@ -83,6 +112,7 @@ fun OrdersScreen(
     onScrolled: (Boolean) -> Unit = {},
     initialTab: OrderTab? = null,
     initialStatusFilter: OrderStatus? = null,
+    listState: LazyListState = rememberLazyListState(),
     viewModel: OrdersViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -94,6 +124,28 @@ fun OrdersScreen(
         initialTab?.let { tab ->
             viewModel.selectTab(tab, initialStatusFilter)
         }
+    }
+
+    // Auto-refresh when returning to this screen (e.g., after completing an order).
+    // In Compose Navigation, when navigating to a detail screen, the parent's
+    // NavBackStackEntry lifecycle goes RESUMED → STARTED. When returning via
+    // popBackStack(), it goes back to RESUMED. We track this transition.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var hasNavigatedAway by remember { mutableStateOf(false) }
+    LaunchedEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_PAUSE -> hasNavigatedAway = true
+                Lifecycle.Event.ON_RESUME -> {
+                    if (hasNavigatedAway) {
+                        hasNavigatedAway = false
+                        viewModel.refresh()
+                    }
+                }
+                else -> {}
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
     }
 
     // Show error in snackbar
@@ -116,9 +168,7 @@ fun OrdersScreen(
     )
 
     Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-            snackbarHost = { SnackbarHost(snackbarHostState) }
-        ) { paddingValues ->
+        Scaffold { paddingValues ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -148,6 +198,10 @@ fun OrdersScreen(
                             onSortSelected = { viewModel.setSortOption(it) }
                         )
                     }
+                    ViewModeToggle(
+                        currentMode = uiState.viewMode,
+                        onModeChange = { viewModel.setViewMode(it) }
+                    )
                 }
 
                 // Tabs - Glass styled
@@ -174,31 +228,88 @@ fun OrdersScreen(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
 
+                // Offline banner
+                AnimatedVisibility(
+                    visible = uiState.isOffline && uiState.isShowingCachedData,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
+                ) {
+                    OfflineBanner(lastCachedAt = uiState.lastCachedAt)
+                }
+
+                // Week strip (when in week mode)
+                if (uiState.viewMode == OrdersViewMode.WEEK) {
+                    WeekStripView(
+                        weekStartDate = uiState.weekStartDate,
+                        selectedDate = uiState.selectedWeekDate,
+                        ordersPerDay = uiState.ordersCountByDay,
+                        onDateSelected = { viewModel.selectWeekDate(it) },
+                        onNavigateWeek = { viewModel.navigateWeek(it) },
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
+
+                // Syncing indicator
+                AnimatedVisibility(visible = uiState.isSyncing) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(12.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(R.string.syncing),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
                 // Content
                 when {
                     uiState.isLoading -> {
-                        LoadingIndicator(modifier = Modifier.fillMaxSize())
+                        OrdersListSkeleton(modifier = Modifier.fillMaxSize())
                     }
                     else -> {
-                        val orders = when (uiState.selectedTab) {
-                            OrderTab.AVAILABLE -> uiState.availableOrders
-                            OrderTab.MY_ORDERS -> uiState.myOrders
+                        val isWeekMode = uiState.viewMode == OrdersViewMode.WEEK
+                        val orders = if (isWeekMode) {
+                            uiState.filteredOrdersForSelectedDay
+                        } else {
+                            when (uiState.selectedTab) {
+                                OrderTab.AVAILABLE -> uiState.availableOrders
+                                OrderTab.MY_ORDERS -> uiState.myOrders
+                            }
                         }
 
-                        val hasMore = when (uiState.selectedTab) {
-                            OrderTab.AVAILABLE -> uiState.hasMoreAvailable
-                            OrderTab.MY_ORDERS -> uiState.hasMoreMyOrders
+                        val hasMore = if (isWeekMode) {
+                            false
+                        } else {
+                            when (uiState.selectedTab) {
+                                OrderTab.AVAILABLE -> uiState.hasMoreAvailable
+                                OrderTab.MY_ORDERS -> uiState.hasMoreMyOrders
+                            }
                         }
 
                         PullToRefreshBox(
-                            isRefreshing = uiState.isRefreshing,
-                            onRefresh = { viewModel.refresh() },
+                            isRefreshing = uiState.isRefreshing && !uiState.isOffline,
+                            onRefresh = { if (!uiState.isOffline) viewModel.refresh() },
                             modifier = Modifier.fillMaxSize()
                         ) {
                             if (orders.isEmpty()) {
-                                val emptyMessage = when (uiState.selectedTab) {
-                                    OrderTab.AVAILABLE -> stringResource(R.string.no_orders_available)
-                                    OrderTab.MY_ORDERS -> stringResource(R.string.no_active_orders)
+                                val emptyMessage = if (isWeekMode) {
+                                    stringResource(R.string.no_orders_for_day)
+                                } else {
+                                    when (uiState.selectedTab) {
+                                        OrderTab.AVAILABLE -> stringResource(R.string.no_orders_available)
+                                        OrderTab.MY_ORDERS -> stringResource(R.string.no_active_orders)
+                                    }
                                 }
                                 EmptyOrdersView(message = emptyMessage)
                             } else {
@@ -207,8 +318,13 @@ fun OrdersScreen(
                                     hasMore = hasMore,
                                     isLoadingMore = uiState.isLoadingMore,
                                     scrollToTop = uiState.scrollToTop,
+                                    selectedTab = uiState.selectedTab,
+                                    hasOrderInProgress = uiState.hasOrderInProgress,
+                                    listState = listState,
                                     onScrollToTopConsumed = { viewModel.consumeScrollToTop() },
                                     onOrderClick = onNavigateToOrderDetails,
+                                    onTakeOrder = { viewModel.takeOrder(it) },
+                                    onStartOrder = { viewModel.startOrder(it) },
                                     onLoadMore = { viewModel.loadMore() },
                                     onScrolled = onScrolled
                                 )
@@ -235,6 +351,8 @@ fun OrdersScreen(
                 onEndDateChange = { viewModel.setEndDate(it) }
             )
         }
+
+        CleansiaSnackbarHost(hostState = snackbarHostState)
     }
 }
 
@@ -291,12 +409,16 @@ private fun OrdersList(
     hasMore: Boolean,
     isLoadingMore: Boolean,
     scrollToTop: Boolean = false,
+    selectedTab: OrderTab = OrderTab.AVAILABLE,
+    hasOrderInProgress: Boolean = false,
+    listState: LazyListState = rememberLazyListState(),
     onScrollToTopConsumed: () -> Unit = {},
     onOrderClick: (String) -> Unit,
+    onTakeOrder: suspend (String) -> Boolean = { true },
+    onStartOrder: suspend (String) -> Boolean = { true },
     onLoadMore: () -> Unit,
     onScrolled: (Boolean) -> Unit = {}
 ) {
-    val listState = rememberLazyListState()
 
     // Report scroll state to parent
     val isScrolled by remember {
@@ -337,7 +459,11 @@ private fun OrdersList(
         items(orders, key = { it.id }) { order ->
             OrderCard(
                 order = order,
-                onClick = { onOrderClick(order.id) }
+                isEmployeeAssigned = selectedTab == OrderTab.MY_ORDERS,
+                hasOrderInProgress = hasOrderInProgress,
+                onClick = { onOrderClick(order.id) },
+                onTakeOrder = { onTakeOrder(order.id) },
+                onStartOrder = { onStartOrder(order.id) }
             )
         }
 
@@ -356,109 +482,225 @@ private fun OrdersList(
     }
 }
 
+private enum class QuickAction { TAKE, START }
+
 @Composable
 private fun OrderCard(
     order: Order,
-    onClick: () -> Unit
+    isEmployeeAssigned: Boolean = false,
+    hasOrderInProgress: Boolean = false,
+    onClick: () -> Unit,
+    onTakeOrder: suspend () -> Boolean = { true },
+    onStartOrder: suspend () -> Boolean = { true }
 ) {
+    val coroutineScope = rememberCoroutineScope()
+    var isActionLoading by remember { mutableStateOf(false) }
+
+    // Compute urgency for this order
+    val urgency = rememberOrderUrgency(order.cleaningDateTime, order.status)
+
+    // Determine what quick action to show based on status and assignment
+    val quickAction = when {
+        // Employee already assigned + PENDING = waiting for others, no action
+        order.status == OrderStatus.PENDING && isEmployeeAssigned -> null
+        // Not assigned + PENDING = can take the order
+        order.status == OrderStatus.PENDING -> QuickAction.TAKE
+        // CONFIRMED + assigned (My Orders tab only) = can start the order
+        order.status == OrderStatus.CONFIRMED && isEmployeeAssigned -> QuickAction.START
+        else -> null
+    }
+
+    // Start Order is disabled when another order is already in progress
+    val isStartDisabled = quickAction == QuickAction.START && hasOrderInProgress
+
+    // Whether to show urgency accent stripe
+    val showAccent = urgency.accentColor != null &&
+        urgency.level in listOf(UrgencyLevel.MEDIUM, UrgencyLevel.HIGH, UrgencyLevel.OVERDUE)
+
+    // Subtle tinted container for urgent orders
+    val cardContainerColor = if (showAccent) {
+        urgency.accentColor!!.copy(alpha = 0.04f)
+            .compositeOver(MaterialTheme.colorScheme.surface)
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() },
+            .clickableWithHaptic { onClick() },
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = cardContainerColor
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            // Header: Order number and price
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+        CardWithLoadingOverlay(isLoading = isActionLoading) {
+            Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+                // Left accent stripe
+                if (showAccent) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .width(4.dp)
+                            .background(urgency.accentColor!!)
+                    )
+                }
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(16.dp)
             ) {
-                Text(
-                    text = stringResource(R.string.order_id, order.orderNumber),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f)
-                )
+                // Header: Order number and price
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.order_id, order.orderNumber),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f)
+                    )
 
-                Text(
-                    text = formatCurrency(order.totalAmount, order.currencyCode),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    textAlign = TextAlign.End
-                )
-            }
+                    Text(
+                        text = formatCurrency(order.totalAmount, order.currencyCode),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        textAlign = TextAlign.End
+                    )
+                }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Status badges
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OrderStatusBadge(status = order.status)
-                PaymentStatusBadge(status = order.paymentStatusEnum)
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Address
-            Row(
-                verticalAlignment = Alignment.Top
-            ) {
-                Icon(
-                    imageVector = Icons.Default.LocationOn,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = order.address,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            // Scheduled date
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.AccessTime,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = DateTimeUtils.formatDateTimeCompact(order.scheduledDate),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            // Services
-            if (order.services.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = order.services.joinToString(", "),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+
+                // Status badges + urgency chip
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OrderStatusBadge(status = order.status)
+                    PaymentStatusBadge(status = order.paymentStatusEnum)
+                    UrgencyChip(urgency = urgency)
+                }
+
+                // Unified full-width action button (TAKE or START)
+                if (quickAction != null) {
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    val (actionLabel, actionIcon, onAction) = when (quickAction) {
+                        QuickAction.TAKE -> Triple(
+                            stringResource(R.string.take_order),
+                            Icons.Default.Check,
+                            onTakeOrder
+                        )
+                        QuickAction.START -> Triple(
+                            stringResource(R.string.start_order),
+                            Icons.Default.PlayArrow,
+                            onStartOrder
+                        )
+                    }
+                    val isButtonEnabled = !isActionLoading &&
+                        !(quickAction == QuickAction.START && isStartDisabled)
+                    val buttonBg = if (quickAction == QuickAction.START && isStartDisabled)
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                    else MaterialTheme.colorScheme.primary
+                    val buttonContentColor = if (quickAction == QuickAction.START && isStartDisabled)
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                    else MaterialTheme.colorScheme.onPrimary
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(buttonBg)
+                            .clickable(enabled = isButtonEnabled) {
+                                coroutineScope.launch {
+                                    isActionLoading = true
+                                    onAction()
+                                    isActionLoading = false
+                                }
+                            }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = actionIcon,
+                                contentDescription = actionLabel,
+                                tint = buttonContentColor,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                text = actionLabel,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                color = buttonContentColor
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Address row (always just address, no inline button)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.LocationOn,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = order.address,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Scheduled date
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AccessTime,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = DateTimeUtils.formatDateTimeCompact(order.scheduledDate),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                // Services
+                if (order.services.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = order.services.joinToString(", "),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
+            } // Row (accent stripe + content)
         }
     }
 }
@@ -530,10 +772,7 @@ private fun GlassTabRow(
                     .weight(1f)
                     .clip(RoundedCornerShape(12.dp))
                     .background(tabBgColor)
-                    .clickable(
-                        indication = null,
-                        interactionSource = remember { MutableInteractionSource() }
-                    ) { onTabSelected(tab) }
+                    .clickableWithHapticNoRipple { onTabSelected(tab) }
                     .padding(vertical = 10.dp),
                 contentAlignment = Alignment.Center
             ) {

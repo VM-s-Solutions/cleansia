@@ -16,21 +16,27 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,24 +49,29 @@ import cz.cleansia.partner.R
 import cz.cleansia.partner.domain.models.profile.DocumentStatus
 import cz.cleansia.partner.domain.models.profile.DocumentType
 import cz.cleansia.partner.domain.models.profile.EmployeeDocument
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.height
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.ui.graphics.vector.ImageVector
-import cz.cleansia.partner.ui.theme.CleansiaColors
+import cz.cleansia.partner.features.profile.components.documents.DocumentGroup
+import cz.cleansia.partner.features.profile.components.documents.SmallButton
+import cz.cleansia.partner.features.profile.components.documents.getDocumentTypeName
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DocumentManagementSection(
     documents: List<EmployeeDocument>,
     isUploading: Boolean,
     isDeleting: Boolean,
-    onUploadDocument: (ByteArray, String) -> Unit,
+    onUploadDocument: (ByteArray, String, DocumentType) -> Unit,
     onDeleteDocument: (String) -> Unit,
+    onDownloadDocument: ((String, String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     var documentToDelete by remember { mutableStateOf<EmployeeDocument?>(null) }
+    var selectedDocumentType by remember { mutableStateOf(DocumentType.OTHER) }
+    var showDocumentTypeDropdown by remember { mutableStateOf(false) }
+
+    // Use rememberUpdatedState so the file picker callback always reads the latest selected type
+    val currentDocumentType by rememberUpdatedState(selectedDocumentType)
+    val currentOnUpload by rememberUpdatedState(onUploadDocument)
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -69,7 +80,7 @@ fun DocumentManagementSection(
             context.contentResolver.openInputStream(it)?.use { inputStream ->
                 val bytes = inputStream.readBytes()
                 val fileName = it.lastPathSegment ?: "document.pdf"
-                onUploadDocument(bytes, fileName)
+                currentOnUpload(bytes, fileName, currentDocumentType)
             }
         }
     }
@@ -79,7 +90,7 @@ fun DocumentManagementSection(
         AlertDialog(
             onDismissRequest = { documentToDelete = null },
             title = { Text(stringResource(R.string.delete)) },
-            text = { Text("Are you sure you want to delete this document?") },
+            text = { Text(stringResource(R.string.delete_document_confirm, doc.fileName ?: "document")) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -103,7 +114,8 @@ fun DocumentManagementSection(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -112,34 +124,94 @@ fun DocumentManagementSection(
             // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)),
+                    contentAlignment = Alignment.Center
+                ) {
                     Icon(
                         imageVector = Icons.Default.Description,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(R.string.documents),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        modifier = Modifier.size(18.dp)
                     )
                 }
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = stringResource(R.string.documents),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f)
+                )
+            }
 
+            // Upload section: document type selector + upload button
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Document type dropdown
+                ExposedDropdownMenuBox(
+                    expanded = showDocumentTypeDropdown,
+                    onExpandedChange = { showDocumentTypeDropdown = it }
+                ) {
+                    TextField(
+                        value = getDocumentTypeName(selectedDocumentType),
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text(stringResource(R.string.document_type_label)) },
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = showDocumentTypeDropdown)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent,
+                            errorIndicatorColor = Color.Transparent
+                        )
+                    )
+                    ExposedDropdownMenu(
+                        expanded = showDocumentTypeDropdown,
+                        onDismissRequest = { showDocumentTypeDropdown = false }
+                    ) {
+                        DocumentType.entries.forEach { type ->
+                            DropdownMenuItem(
+                                text = { Text(getDocumentTypeName(type)) },
+                                onClick = {
+                                    selectedDocumentType = type
+                                    showDocumentTypeDropdown = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // Upload button
                 SmallButton(
-                    text = stringResource(R.string.upload_document),
+                    text = stringResource(R.string.select_files),
                     onClick = { filePickerLauncher.launch("*/*") },
                     icon = Icons.Default.Add,
                     isLoading = isUploading
                 )
+
+                Text(
+                    text = stringResource(R.string.upload_requirements),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
             }
 
-            // Documents list
+            // Documents grouped by status
             if (documents.isEmpty()) {
                 Text(
                     text = stringResource(R.string.no_documents),
@@ -147,148 +219,51 @@ fun DocumentManagementSection(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    documents.forEach { document ->
-                        DocumentItem(
-                            document = document,
-                            isDeleting = isDeleting,
-                            onDelete = { documentToDelete = document }
-                        )
-                    }
+                val pendingDocs = documents.filter { it.documentStatus == DocumentStatus.PENDING }
+                val approvedDocs = documents.filter { it.documentStatus == DocumentStatus.APPROVED }
+                val rejectedDocs = documents.filter { it.documentStatus == DocumentStatus.REJECTED }
+                val expiredDocs = documents.filter { it.documentStatus == DocumentStatus.EXPIRED }
+
+                if (pendingDocs.isNotEmpty()) {
+                    DocumentGroup(
+                        title = stringResource(R.string.pending_documents),
+                        documents = pendingDocs,
+                        isDeleting = isDeleting,
+                        onDelete = { documentToDelete = it },
+                        onDownload = onDownloadDocument
+                    )
                 }
-            }
-        }
-    }
-}
 
-@Composable
-private fun DocumentItem(
-    document: EmployeeDocument,
-    isDeleting: Boolean,
-    onDelete: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = getDocumentTypeName(document.documentType),
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            if (!document.fileName.isNullOrBlank()) {
-                Text(
-                    text = document.fileName!!,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                )
-            }
-            if (!document.reviewNotes.isNullOrBlank() && document.documentStatus == DocumentStatus.REJECTED) {
-                Text(
-                    text = "Note: ${document.reviewNotes}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
-        }
+                if (approvedDocs.isNotEmpty()) {
+                    DocumentGroup(
+                        title = stringResource(R.string.approved_documents),
+                        documents = approvedDocs,
+                        isDeleting = isDeleting,
+                        onDelete = { documentToDelete = it },
+                        onDownload = onDownloadDocument
+                    )
+                }
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            DocumentStatusBadge(status = document.documentStatus)
+                if (rejectedDocs.isNotEmpty()) {
+                    DocumentGroup(
+                        title = stringResource(R.string.rejected_documents),
+                        documents = rejectedDocs,
+                        isDeleting = isDeleting,
+                        onDelete = { documentToDelete = it },
+                        onDownload = onDownloadDocument
+                    )
+                }
 
-            if (isDeleting) {
-                CircularProgressIndicator(modifier = Modifier.size(20.dp))
-            } else {
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = stringResource(R.string.delete),
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(20.dp)
+                if (expiredDocs.isNotEmpty()) {
+                    DocumentGroup(
+                        title = stringResource(R.string.expired_documents),
+                        documents = expiredDocs,
+                        isDeleting = isDeleting,
+                        onDelete = { documentToDelete = it },
+                        onDownload = onDownloadDocument
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun DocumentStatusBadge(status: DocumentStatus) {
-    val (backgroundColor, textColor) = when (status) {
-        DocumentStatus.PENDING -> CleansiaColors.warningContainer to CleansiaColors.onWarningContainer
-        DocumentStatus.APPROVED -> CleansiaColors.successContainer to CleansiaColors.onSuccessContainer
-        DocumentStatus.REJECTED -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
-        DocumentStatus.EXPIRED -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
-    }
-
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(backgroundColor)
-            .padding(horizontal = 10.dp, vertical = 4.dp)
-    ) {
-        Text(
-            text = status.name.lowercase().replaceFirstChar { it.uppercase() },
-            style = MaterialTheme.typography.labelSmall,
-            color = textColor
-        )
-    }
-}
-
-@Composable
-private fun getDocumentTypeName(type: DocumentType): String {
-    return when (type) {
-        DocumentType.ID_CARD -> stringResource(R.string.doc_id_card)
-        DocumentType.PASSPORT -> stringResource(R.string.doc_passport)
-        DocumentType.DRIVING_LICENSE -> stringResource(R.string.doc_driving_license)
-        DocumentType.WORK_PERMIT -> stringResource(R.string.doc_work_permit)
-        DocumentType.RESIDENCE_PERMIT -> stringResource(R.string.doc_residence_permit)
-        DocumentType.TAX_DOCUMENT -> stringResource(R.string.doc_tax_document)
-        DocumentType.OTHER -> stringResource(R.string.doc_other)
-    }
-}
-
-@Composable
-private fun SmallButton(
-    text: String,
-    onClick: () -> Unit,
-    icon: ImageVector,
-    isLoading: Boolean = false
-) {
-    OutlinedButton(
-        onClick = onClick,
-        enabled = !isLoading,
-        modifier = Modifier.height(32.dp),
-        contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
-    ) {
-        if (isLoading) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(14.dp),
-                strokeWidth = 2.dp
-            )
-        } else {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelSmall
-            )
         }
     }
 }

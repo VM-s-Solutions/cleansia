@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import {
   AdminClient,
+  AdminUpdateEmployeeAvailabilityRequest,
   ContractStatus,
   DocumentStatus,
   DocumentType,
@@ -11,6 +12,7 @@ import {
   RejectEmployeeRequest,
   SortDefinition,
   SortDirection,
+  TimeRange,
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
@@ -35,6 +37,8 @@ export class EmployeeDetailFacade {
   readonly loading = signal<boolean>(false);
   readonly documents = signal<EmployeeDocumentItem[]>([]);
   readonly documentsLoading = signal<boolean>(false);
+  readonly editingAvailability = signal<boolean>(false);
+  readonly savingAvailability = signal<boolean>(false);
 
   loadEmployeeDetail(employeeId: string): void {
     this.loading.set(true);
@@ -242,6 +246,49 @@ export class EmployeeDetailFacade {
         this.rejectEmployee(result.reason);
       }
     });
+  }
+
+  startEditingAvailability(): void {
+    this.editingAvailability.set(true);
+  }
+
+  cancelEditingAvailability(): void {
+    this.editingAvailability.set(false);
+  }
+
+  saveAvailability(availability: { [key: string]: TimeRange[] } | undefined): void {
+    const employeeId = this.employee()?.id;
+    if (!employeeId) return;
+
+    this.savingAvailability.set(true);
+
+    const request = new AdminUpdateEmployeeAvailabilityRequest({ availability });
+
+    this.adminClient.adminEmployeeClient
+      .updateAvailability(employeeId, request)
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError(() => {
+          this.snackbarService.showError(
+            this.translate.instant(
+              'pages.employee_detail.messages.availability_save_error'
+            )
+          );
+          return of(null);
+        }),
+        finalize(() => this.savingAvailability.set(false))
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.snackbarService.showSuccess(
+            this.translate.instant(
+              'pages.employee_detail.messages.availability_save_success'
+            )
+          );
+          this.editingAvailability.set(false);
+          this.loadEmployeeDetail(employeeId);
+        }
+      });
   }
 
   canApproveOrReject(): boolean {

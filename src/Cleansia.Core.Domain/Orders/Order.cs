@@ -104,6 +104,12 @@ public class Order : Auditable
     private ICollection<OrderPhoto> _photos = [];
     public IReadOnlyCollection<OrderPhoto> Photos => _photos.ToList().AsReadOnly();
 
+    private ICollection<OrderNote> _notes = [];
+    public IReadOnlyCollection<OrderNote> OrderNotes => _notes.ToList().AsReadOnly();
+
+    private ICollection<OrderIssue> _issues = [];
+    public IReadOnlyCollection<OrderIssue> OrderIssues => _issues.ToList().AsReadOnly();
+
     public static Order Create(string customerName, string customerEmail, string customerPhone,
         Address customerAddress, int rooms, int bathrooms,
         Dictionary<string, bool> extras, DateTime cleaningDateTime, PaymentType paymentType,
@@ -224,19 +230,26 @@ public class Order : Auditable
         return this;
     }
 
-    public Order CompleteOrder(int actualCompletionTime, string completionNotes)
+    public Order AddNote(OrderNote note)
+    {
+        _notes.Add(note);
+        return this;
+    }
+
+    public Order AddIssue(OrderIssue issue)
+    {
+        _issues.Add(issue);
+        return this;
+    }
+
+    public Order CompleteOrder(int actualCompletionTime, string? completionNotes = null)
     {
         if (actualCompletionTime <= 0)
         {
             throw new ArgumentException("Actual completion time must be greater than zero", nameof(actualCompletionTime));
         }
 
-        if (string.IsNullOrWhiteSpace(completionNotes))
-        {
-            throw new ArgumentException("Completion notes are required to understand the reason for time variance", nameof(completionNotes));
-        }
-
-        if (completionNotes.Length > 1000)
+        if (completionNotes is { Length: > 1000 })
         {
             throw new ArgumentException("Completion notes must not exceed 1000 characters", nameof(completionNotes));
         }

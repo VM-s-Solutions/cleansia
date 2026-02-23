@@ -1,6 +1,7 @@
 package cz.cleansia.partner.features.invoices.screens
 
 import androidx.compose.foundation.clickable
+import cz.cleansia.partner.ui.components.clickableWithHaptic
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -44,6 +46,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import cz.cleansia.partner.R
+import cz.cleansia.partner.ui.components.CleansiaSnackbarHost
 import cz.cleansia.partner.domain.models.invoices.Invoice
 import cz.cleansia.partner.domain.models.invoices.InvoiceStatus
 import cz.cleansia.partner.features.invoices.components.InvoicesFilterContent
@@ -57,6 +60,7 @@ import cz.cleansia.partner.ui.components.FilterChip
 import cz.cleansia.partner.ui.components.FilterBottomSheet
 import cz.cleansia.partner.ui.components.InfoHelpCard
 import cz.cleansia.partner.ui.components.InvoiceStatusBadge
+import cz.cleansia.partner.features.invoices.components.InvoicesListSkeleton
 import cz.cleansia.partner.ui.components.LoadingIndicator
 import cz.cleansia.partner.ui.components.SortButton
 import cz.cleansia.partner.core.utils.DateTimeUtils
@@ -69,6 +73,7 @@ import java.util.Locale
 fun InvoicesScreen(
     onNavigateToInvoiceDetails: (String) -> Unit,
     onScrolled: (Boolean) -> Unit = {},
+    listState: LazyListState = rememberLazyListState(),
     viewModel: InvoicesViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -87,9 +92,7 @@ fun InvoicesScreen(
     val activeFilterChips = buildActiveFilterChips(uiState.filterState)
 
     Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-            snackbarHost = { SnackbarHost(snackbarHostState) }
-        ) { paddingValues ->
+        Scaffold { paddingValues ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -141,7 +144,7 @@ fun InvoicesScreen(
 
                 when {
                     uiState.isLoading -> {
-                        LoadingIndicator(modifier = Modifier.fillMaxSize())
+                        InvoicesListSkeleton(modifier = Modifier.fillMaxSize())
                     }
                     uiState.error != null && uiState.invoices.isEmpty() -> {
                         ErrorView(
@@ -167,7 +170,8 @@ fun InvoicesScreen(
                                     onScrollToTopConsumed = { viewModel.consumeScrollToTop() },
                                     onInvoiceClick = onNavigateToInvoiceDetails,
                                     onLoadMore = { viewModel.loadMore() },
-                                    onScrolled = onScrolled
+                                    onScrolled = onScrolled,
+                                    listState = listState
                                 )
                             }
                         }
@@ -191,6 +195,8 @@ fun InvoicesScreen(
                 onEndDateChange = { viewModel.setEndDate(it) }
             )
         }
+
+        CleansiaSnackbarHost(hostState = snackbarHostState)
     }
 }
 
@@ -275,9 +281,9 @@ private fun InvoicesList(
     onScrollToTopConsumed: () -> Unit = {},
     onInvoiceClick: (String) -> Unit,
     onLoadMore: () -> Unit,
-    onScrolled: (Boolean) -> Unit = {}
+    onScrolled: (Boolean) -> Unit = {},
+    listState: LazyListState = rememberLazyListState()
 ) {
-    val listState = rememberLazyListState()
 
     // Report scroll state to parent
     val isScrolled by remember {
@@ -345,7 +351,7 @@ private fun InvoiceCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() },
+            .clickableWithHaptic { onClick() },
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),

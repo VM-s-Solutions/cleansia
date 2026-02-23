@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.isSystemInDarkTheme
 import cz.cleansia.partner.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -48,6 +49,7 @@ fun AnimatedSplashScreen(
     onFinished: () -> Unit
 ) {
     val quicksandFamily = FontFamily(Font(R.font.quicksand_bold, FontWeight.Bold))
+    val isDark = isSystemInDarkTheme()
     val brandName = "CLEANSIA"
     var visibleCharCount by remember { mutableIntStateOf(0) }
     var fadeOut by remember { mutableStateOf(false) }
@@ -162,7 +164,10 @@ fun AnimatedSplashScreen(
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(
+                    colors = if (isDark) listOf(
+                        Color(0xFF1E293B),
+                        Color(0xFF0F172A)
+                    ) else listOf(
                         Color(0xFFF8FAFC),
                         Color(0xFFE0F2FE)
                     )
@@ -266,7 +271,7 @@ fun AnimatedSplashScreen(
                 fontFamily = quicksandFamily,
                 fontSize = 36.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF0C4A6E),
+                color = if (isDark) Color(0xFFE0F2FE) else Color(0xFF0C4A6E),
                 letterSpacing = 3.sp
             )
 

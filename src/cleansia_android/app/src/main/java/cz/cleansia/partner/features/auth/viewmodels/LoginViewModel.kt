@@ -2,7 +2,7 @@ package cz.cleansia.partner.features.auth.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cz.cleansia.partner.core.network.ApiError
+import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.core.network.ApiResult
 import cz.cleansia.partner.core.storage.PreferencesManager
 import cz.cleansia.partner.domain.repositories.AuthRepository
@@ -32,7 +32,8 @@ data class LoginUiState(
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager,
+    private val errorTranslator: ApiErrorTranslator
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -181,17 +182,10 @@ class LoginViewModel @Inject constructor(
                 }
 
                 is ApiResult.Error -> {
-                    val errorMessage = when (result.error) {
-                        is ApiError.Unauthorized -> "Invalid email or password"
-                        is ApiError.Network -> "Unable to connect. Please check your internet connection."
-                        is ApiError.BadRequest -> result.error.message
-                        else -> result.error.getUserMessage()
-                    }
-
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            error = errorMessage
+                            error = errorTranslator.translateError(result.error)
                         )
                     }
                 }

@@ -35,5 +35,7 @@ public record OrderItem(
     DateTimeOffset CreatedOn,
     DateTimeOffset? UpdatedOn,
     IEnumerable<AssignedEmployeeDto> AssignedEmployees,
-    string? ReceiptNumber
+    string? ReceiptNumber,
+    IEnumerable<OrderNoteDto> OrderNotes,
+    IEnumerable<OrderIssueDto> OrderIssues
 );

@@ -65,39 +65,84 @@ class GlobalSearchViewModel @Inject constructor(
     }
 
     private suspend fun performSearch(query: String) {
-        _state.update { it.copy(isSearching = true) }
+        _state.update { it.copy(isSearching = true, orderResults = emptyList()) }
 
-        val ordersDeferred = viewModelScope.launch {
-            when (val result = ordersRepository.getMyOrders(
-                page = 1,
-                statuses = emptyList(),
-                searchTerm = query,
-                sortBy = "cleaningDateTime",
-                sortDescending = true
-            )) {
-                is ApiResult.Success -> {
-                    _state.update { it.copy(orderResults = result.data.orders.take(3)) }
+        // Search my orders by customer name
+        val myOrdersJob = viewModelScope.launch {
+            try {
+                val result = ordersRepository.getMyOrders(
+                    page = 1,
+                    statuses = emptyList(),
+                    searchTerm = query,
+                    sortBy = "cleaningDateTime",
+                    sortDescending = true
+                )
+                if (result is ApiResult.Success) {
+                    _state.update { current ->
+                        val merged = mergeOrders(current.orderResults, result.data.orders)
+                        current.copy(orderResults = merged.take(5))
+                    }
                 }
-                is ApiResult.Error -> { /* silently fail for search */ }
-            }
+            } catch (_: Exception) { }
         }
 
-        val invoicesDeferred = viewModelScope.launch {
-            when (val result = invoicesRepository.getInvoices(
-                page = 1,
-                pageSize = 3,
-                filter = InvoiceFilter(searchTerm = query)
-            )) {
-                is ApiResult.Success -> {
-                    _state.update { it.copy(invoiceResults = result.data.items.take(3)) }
+        // Search available orders by customer name
+        val availableOrdersJob = viewModelScope.launch {
+            try {
+                val result = ordersRepository.getAvailableOrders(
+                    page = 1,
+                    searchTerm = query,
+                    sortBy = "cleaningDateTime",
+                    sortDescending = true
+                )
+                if (result is ApiResult.Success) {
+                    _state.update { current ->
+                        val merged = mergeOrders(current.orderResults, result.data.orders)
+                        current.copy(orderResults = merged.take(5))
+                    }
                 }
-                is ApiResult.Error -> { /* silently fail for search */ }
-            }
+            } catch (_: Exception) { }
         }
 
-        ordersDeferred.join()
-        invoicesDeferred.join()
+        // Search orders by order number (display number)
+        val orderNumberJob = viewModelScope.launch {
+            try {
+                val result = ordersRepository.searchOrdersByNumber(
+                    page = 1,
+                    orderNumber = query
+                )
+                if (result is ApiResult.Success) {
+                    _state.update { current ->
+                        val merged = mergeOrders(current.orderResults, result.data.orders)
+                        current.copy(orderResults = merged.take(5))
+                    }
+                }
+            } catch (_: Exception) { }
+        }
+
+        val invoicesJob = viewModelScope.launch {
+            try {
+                val result = invoicesRepository.getInvoices(
+                    page = 1,
+                    pageSize = 5,
+                    filter = InvoiceFilter(searchTerm = query)
+                )
+                if (result is ApiResult.Success) {
+                    _state.update { it.copy(invoiceResults = result.data.items.take(5)) }
+                }
+            } catch (_: Exception) { }
+        }
+
+        myOrdersJob.join()
+        availableOrdersJob.join()
+        orderNumberJob.join()
+        invoicesJob.join()
 
         _state.update { it.copy(isSearching = false) }
+    }
+
+    private fun mergeOrders(existing: List<Order>, newOrders: List<Order>): List<Order> {
+        val existingIds = existing.map { it.id }.toSet()
+        return existing + newOrders.filter { it.id !in existingIds }
     }
 }

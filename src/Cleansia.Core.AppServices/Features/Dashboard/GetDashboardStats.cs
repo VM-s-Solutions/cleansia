@@ -1,5 +1,6 @@
 #nullable enable
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Extensions;
 using Cleansia.Core.AppServices.Features.Dashboard.DTOs;
 using Cleansia.Core.Domain.Repositories;
@@ -10,27 +11,45 @@ namespace Cleansia.Core.AppServices.Features.Dashboard;
 
 public class GetDashboardStats
 {
-    public record Query(string EmployeeId) : IQuery<DashboardStatsDto>;
+    public record Query(string? EmployeeId = null) : IQuery<DashboardStatsDto>;
 
     internal class Handler(
         IOrderRepository orderRepository,
-        IEmployeeInvoiceRepository employeeInvoiceRepository)
+        IEmployeeInvoiceRepository employeeInvoiceRepository,
+        IEmployeeRepository employeeRepository,
+        IUserSessionProvider userSessionProvider)
         : IQueryHandler<Query, DashboardStatsDto>
     {
         public async Task<BusinessResult<DashboardStatsDto>> Handle(Query query, CancellationToken cancellationToken)
         {
+            var employeeId = query.EmployeeId;
+
+            // If employeeId is not provided, resolve from JWT session
+            if (string.IsNullOrWhiteSpace(employeeId))
+            {
+                var userEmail = userSessionProvider.GetUserEmail();
+                var employee = await employeeRepository.GetByUserEmailAsync(userEmail!, cancellationToken);
+                if (employee is null)
+                {
+                    return BusinessResult.Failure<DashboardStatsDto>(new Error(
+                        "Employee",
+                        BusinessErrorMessage.EmployeeNotFound));
+                }
+                employeeId = employee.Id;
+            }
+
             var today = DateTime.UtcNow;
             var (currentMonthStart, currentMonthEnd) = today.GetCurrentMonthRange();
             var (previousMonthStart, previousMonthEnd) = today.GetPreviousMonthRange();
 
-            var availableOrdersCount = await GetAvailableOrdersCountAsync(query.EmployeeId, cancellationToken);
-            var activeOrdersCount = await GetActiveOrdersCountAsync(query.EmployeeId, cancellationToken);
+            var availableOrdersCount = await GetAvailableOrdersCountAsync(employeeId, cancellationToken);
+            var activeOrdersCount = await GetActiveOrdersCountAsync(employeeId, cancellationToken);
             var thisMonthCompletedOrders = await GetCompletedOrdersCountAsync(
-                query.EmployeeId, currentMonthStart, currentMonthEnd, cancellationToken);
+                employeeId, currentMonthStart, currentMonthEnd, cancellationToken);
             var lastMonthCompletedOrders = await GetCompletedOrdersCountAsync(
-                query.EmployeeId, previousMonthStart, previousMonthEnd, cancellationToken);
+                employeeId, previousMonthStart, previousMonthEnd, cancellationToken);
             var latestInvoice = await employeeInvoiceRepository.GetLatestInvoiceAsync(
-                query.EmployeeId, cancellationToken);
+                employeeId, cancellationToken);
 
             return new DashboardStatsDto(
                 AvailableOrdersCount: availableOrdersCount,

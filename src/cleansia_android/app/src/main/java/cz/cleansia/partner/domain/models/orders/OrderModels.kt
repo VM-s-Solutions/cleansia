@@ -152,6 +152,42 @@ data class ServiceDetail(
     val estimatedTime: Int? = null
 )
 
+/**
+ * Assigned employee info from the API
+ */
+@Serializable
+data class AssignedEmployee(
+    val id: String? = null,
+    val employeeId: String? = null,
+    val fullName: String? = null,
+    val phoneNumber: String? = null,
+    val email: String? = null
+)
+
+/**
+ * Employee note attached to an order
+ */
+@Serializable
+data class OrderNoteDto(
+    val id: String? = null,
+    val employeeId: String? = null,
+    val content: String? = null,
+    val createdOn: String? = null
+)
+
+/**
+ * Employee-reported issue attached to an order
+ */
+@Serializable
+data class OrderIssueDto(
+    val id: String? = null,
+    val reportedByEmployeeId: String? = null,
+    val description: String? = null,
+    val isResolved: Boolean? = null,
+    val resolvedAt: String? = null,
+    val createdOn: String? = null
+)
+
 @Serializable
 data class OrderDetail(
     val id: String,
@@ -179,7 +215,11 @@ data class OrderDetail(
     val updatedOn: String? = null,
     val receiptNumber: String? = null,
     val startedAt: String? = null,      // ISO timestamp when order was started (for timer)
-    val completedAt: String? = null     // ISO timestamp when order was completed
+    val completedAt: String? = null,    // ISO timestamp when order was completed
+    val assignedEmployees: List<AssignedEmployee>? = null,
+    val requiredEmployees: Int? = null,
+    val orderNotes: List<OrderNoteDto>? = null,
+    val orderIssues: List<OrderIssueDto>? = null
 ) {
     // Helper properties for UI compatibility
     val orderNumber: String get() = displayOrderNumber ?: ""
@@ -194,6 +234,8 @@ data class OrderDetail(
     val currencyCode: String get() = currency?.code ?: "CZK"
     val fullAddress: String get() = address?.formatted ?: ""
     val services: List<String> get() = selectedServices?.mapNotNull { it.name } ?: emptyList()
+    val assignedCount: Int get() = assignedEmployees?.size ?: 0
+    val isFullyAssigned: Boolean get() = assignedCount >= (requiredEmployees ?: 1)
 }
 
 @Serializable
@@ -220,9 +262,9 @@ data class ServiceItem(
 /**
  * Photo type enum for before/after cleaning photos
  */
-enum class PhotoType(val apiValue: String) {
-    BEFORE("Before"),
-    AFTER("After");
+enum class PhotoType(val apiValue: String, val apiNumericValue: Int) {
+    BEFORE("Before", 1),
+    AFTER("After", 2);
 
     companion object {
         fun fromApiValue(value: String?): PhotoType =
@@ -295,4 +337,110 @@ data class CompleteOrderRequest(
     val employeeId: String,
     val actualCompletionTimeMinutes: Int,
     val completionNotes: String? = null
+)
+
+/**
+ * Request to upload a photo for an order (JSON with base64-encoded file data)
+ */
+@Serializable
+data class UploadOrderPhotoRequest(
+    val orderId: String,
+    val employeeId: String,
+    val photoType: Int,
+    val fileName: String,
+    val contentType: String,
+    val fileData: String, // base64-encoded
+    val notes: String? = null
+)
+
+/**
+ * Response from uploading a photo
+ */
+@Serializable
+data class UploadOrderPhotoResponse(
+    val photoId: String,
+    val blobUrl: String,
+    val photoType: Int,
+    val capturedAt: String
+)
+
+/**
+ * Request to add a note to an order
+ */
+@Serializable
+data class AddOrderNoteRequest(
+    val orderId: String,
+    val employeeId: String,
+    val content: String
+)
+
+/**
+ * Response from adding a note
+ */
+@Serializable
+data class AddOrderNoteResponse(
+    val noteId: String,
+    val content: String,
+    val createdAt: String
+)
+
+/**
+ * Request to report an issue on an order
+ */
+@Serializable
+data class ReportOrderIssueRequest(
+    val orderId: String,
+    val employeeId: String,
+    val description: String
+)
+
+/**
+ * Response from reporting an issue
+ */
+@Serializable
+data class ReportOrderIssueResponse(
+    val issueId: String,
+    val description: String,
+    val createdAt: String
+)
+
+/**
+ * Simple response from TakeOrder endpoint
+ */
+@Serializable
+data class TakeOrderResponse(
+    val orderId: String? = null,
+    val employeeId: String? = null
+)
+
+/**
+ * Simple response from StartOrder endpoint.
+ * Backend returns newStatus as an integer (e.g. 3 = InProgress).
+ */
+@Serializable
+data class StartOrderResponse(
+    val orderId: String? = null,
+    val newStatus: Int? = null
+)
+
+/**
+ * Simple response from CompleteOrder endpoint.
+ * Backend returns newStatus as an integer (e.g. 4 = Completed).
+ */
+@Serializable
+data class CompleteOrderResponse(
+    val orderId: String? = null,
+    val newStatus: Int? = null,
+    val actualCompletionTime: Int? = null
+)
+
+/**
+ * Helper extension to create an Order copy with a new status (for optimistic UI updates).
+ */
+fun Order.withStatus(newStatus: OrderStatus): Order = copy(
+    orderStatus = CodeValue(
+        type = "OrderStatus",
+        name = newStatus.apiName,
+        value = newStatus.apiValue
+    )
 )

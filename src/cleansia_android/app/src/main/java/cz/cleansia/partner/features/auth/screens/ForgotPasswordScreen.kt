@@ -35,10 +35,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import cz.cleansia.partner.R
 import cz.cleansia.partner.features.auth.viewmodels.ForgotPasswordViewModel
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.ui.graphics.Color
 import cz.cleansia.partner.ui.components.CleansiaButton
 import cz.cleansia.partner.ui.components.CleansiaButtonStyle
+import cz.cleansia.partner.ui.components.CleansiaSnackbarHost
 import cz.cleansia.partner.ui.components.CleansiaTextField
-import cz.cleansia.partner.ui.components.GlassBackButton
+import cz.cleansia.partner.ui.components.DynamicCleaningBackground
 
 @Composable
 fun ForgotPasswordScreen(
@@ -65,26 +68,28 @@ fun ForgotPasswordScreen(
         }
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues ->
+    val isDark = isSystemInDarkTheme()
+
+    Scaffold { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            DynamicCleaningBackground(
+                iconColor = if (isDark) Color(0xFF38BDF8) else Color(0xFF0EA5E9),
+                iconAlpha = if (isDark) 0.08f else 0.06f
+            )
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .statusBarsPadding()
-                    .padding(top = 56.dp)
+                    .padding(top = 24.dp)
                     .padding(horizontal = 24.dp)
-                    .imePadding()
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.height(32.dp))
-
                 // Lock icon
                 Icon(
                     imageVector = Icons.Outlined.Lock,
@@ -150,7 +155,7 @@ fun ForgotPasswordScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            GlassBackButton(onNavigateBack = onNavigateBack)
+            CleansiaSnackbarHost(hostState = snackbarHostState)
         }
     }
 }

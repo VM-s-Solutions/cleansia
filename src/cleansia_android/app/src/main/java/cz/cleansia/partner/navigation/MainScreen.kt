@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -55,6 +57,8 @@ import cz.cleansia.partner.features.search.GlobalSearchViewModel
 import cz.cleansia.partner.ui.components.FloatingNavItem
 import cz.cleansia.partner.ui.components.GlobalSearchOverlay
 import cz.cleansia.partner.ui.components.FloatingBottomNavigation
+import cz.cleansia.partner.ui.components.RegistrationLockScreen
+import cz.cleansia.partner.ui.components.ScrollToTopFab
 import kotlinx.coroutines.launch
 
 data class BottomNavItem(
@@ -92,13 +96,33 @@ fun MainScreen(
     onNavigateToInvoiceDetails: (String) -> Unit,
     onNavigateToAnalytics: () -> Unit = {},
     onNavigateToAccountHub: () -> Unit,
-    searchViewModel: GlobalSearchViewModel = hiltViewModel()
+    onNavigateToProfile: () -> Unit = {},
+    searchViewModel: GlobalSearchViewModel = hiltViewModel(),
+    registrationLockViewModel: RegistrationLockViewModel = hiltViewModel()
 ) {
     val pagerState = rememberPagerState(pageCount = { bottomNavItems.size })
     val coroutineScope = rememberCoroutineScope()
     val searchState by searchViewModel.state.collectAsState()
+    val registrationStatus by registrationLockViewModel.registrationStatus.collectAsState()
+    val isRegistrationLoading by registrationLockViewModel.isLoading.collectAsState()
     val pageScrollStates = remember { mutableStateMapOf(0 to false, 1 to false, 2 to false) }
     val isContentScrolled = pageScrollStates[pagerState.currentPage] ?: false
+
+    // Hoisted LazyListStates for scroll-to-top FAB
+    val dashboardListState = rememberLazyListState()
+    val ordersListState = rememberLazyListState()
+    val invoicesListState = rememberLazyListState()
+    val currentListState = when (pagerState.currentPage) {
+        0 -> dashboardListState
+        1 -> ordersListState
+        2 -> invoicesListState
+        else -> dashboardListState
+    }
+
+    // Registration lock state
+    val isRegistrationLocked = !isRegistrationLoading &&
+        registrationStatus != null &&
+        !registrationStatus!!.isComplete
 
     // State for passing tab/filter info to OrdersScreen when navigating from dashboard
     var ordersInitialTab by remember { mutableStateOf<OrderTab?>(null) }
@@ -210,47 +234,60 @@ fun MainScreen(
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.fillMaxSize(),
-            userScrollEnabled = true
+            userScrollEnabled = !isRegistrationLocked
         ) { page ->
-            when (page) {
-                0 -> DashboardScreen(
-                    onNavigateToOrderDetails = onNavigateToOrderDetails,
-                    onNavigateToOrders = {
-                        ordersInitialTab = null
-                        ordersInitialStatusFilter = null
-                        coroutineScope.launch { pagerState.animateScrollToPage(1) }
-                    },
-                    onNavigateToAvailableOrders = {
-                        ordersInitialTab = OrderTab.AVAILABLE
-                        ordersInitialStatusFilter = null
-                        coroutineScope.launch { pagerState.animateScrollToPage(1) }
-                    },
-                    onNavigateToActiveOrders = {
-                        ordersInitialTab = OrderTab.MY_ORDERS
-                        ordersInitialStatusFilter = null
-                        coroutineScope.launch { pagerState.animateScrollToPage(1) }
-                    },
-                    onNavigateToCompletedOrders = {
-                        ordersInitialTab = OrderTab.MY_ORDERS
-                        ordersInitialStatusFilter = OrderStatus.COMPLETED
-                        coroutineScope.launch { pagerState.animateScrollToPage(1) }
-                    },
-                    onNavigateToInvoices = {
-                        coroutineScope.launch { pagerState.animateScrollToPage(2) }
-                    },
-                    onNavigateToAnalytics = onNavigateToAnalytics,
-                    onScrolled = { scrolled -> pageScrollStates[0] = scrolled }
+            if (isRegistrationLocked) {
+                RegistrationLockScreen(
+                    status = registrationStatus!!,
+                    onGoToProfile = {
+                        registrationLockViewModel.refresh()
+                        onNavigateToProfile()
+                    }
                 )
-                1 -> OrdersScreen(
-                    onNavigateToOrderDetails = onNavigateToOrderDetails,
-                    onScrolled = { scrolled -> pageScrollStates[1] = scrolled },
-                    initialTab = ordersInitialTab,
-                    initialStatusFilter = ordersInitialStatusFilter
-                )
-                2 -> InvoicesScreen(
-                    onNavigateToInvoiceDetails = onNavigateToInvoiceDetails,
-                    onScrolled = { scrolled -> pageScrollStates[2] = scrolled }
-                )
+            } else {
+                when (page) {
+                    0 -> DashboardScreen(
+                        onNavigateToOrderDetails = onNavigateToOrderDetails,
+                        onNavigateToOrders = {
+                            ordersInitialTab = null
+                            ordersInitialStatusFilter = null
+                            coroutineScope.launch { pagerState.animateScrollToPage(1) }
+                        },
+                        onNavigateToAvailableOrders = {
+                            ordersInitialTab = OrderTab.AVAILABLE
+                            ordersInitialStatusFilter = null
+                            coroutineScope.launch { pagerState.animateScrollToPage(1) }
+                        },
+                        onNavigateToActiveOrders = {
+                            ordersInitialTab = OrderTab.MY_ORDERS
+                            ordersInitialStatusFilter = null
+                            coroutineScope.launch { pagerState.animateScrollToPage(1) }
+                        },
+                        onNavigateToCompletedOrders = {
+                            ordersInitialTab = OrderTab.MY_ORDERS
+                            ordersInitialStatusFilter = OrderStatus.COMPLETED
+                            coroutineScope.launch { pagerState.animateScrollToPage(1) }
+                        },
+                        onNavigateToInvoices = {
+                            coroutineScope.launch { pagerState.animateScrollToPage(2) }
+                        },
+                        onNavigateToAnalytics = onNavigateToAnalytics,
+                        onScrolled = { scrolled -> pageScrollStates[0] = scrolled },
+                        listState = dashboardListState
+                    )
+                    1 -> OrdersScreen(
+                        onNavigateToOrderDetails = onNavigateToOrderDetails,
+                        onScrolled = { scrolled -> pageScrollStates[1] = scrolled },
+                        initialTab = ordersInitialTab,
+                        initialStatusFilter = ordersInitialStatusFilter,
+                        listState = ordersListState
+                    )
+                    2 -> InvoicesScreen(
+                        onNavigateToInvoiceDetails = onNavigateToInvoiceDetails,
+                        onScrolled = { scrolled -> pageScrollStates[2] = scrolled },
+                        listState = invoicesListState
+                    )
+                }
             }
         }
 
@@ -272,6 +309,15 @@ fun MainScreen(
                 .fillMaxWidth()
         )
 
+        // Scroll-to-top FAB
+        ScrollToTopFab(
+            listState = currentListState,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 16.dp, bottom = 90.dp)
+                .navigationBarsPadding()
+        )
+
         // Global search overlay
         if (searchState.isActive) {
             GlobalSearchOverlay(
@@ -285,5 +331,6 @@ fun MainScreen(
                     .zIndex(2f)
             )
         }
+
     }
 }

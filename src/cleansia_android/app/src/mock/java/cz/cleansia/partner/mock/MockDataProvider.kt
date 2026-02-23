@@ -2,10 +2,19 @@ package cz.cleansia.partner.mock
 
 import cz.cleansia.partner.domain.models.auth.LoginResponse
 import cz.cleansia.partner.domain.models.auth.RegisterResponse
+import cz.cleansia.partner.domain.models.dashboard.CompletionTimeEfficiency
 import cz.cleansia.partner.domain.models.dashboard.DashboardStats
 import cz.cleansia.partner.domain.models.dashboard.EarningsAnalytics
 import cz.cleansia.partner.domain.models.dashboard.EarningsDataPoint
 import cz.cleansia.partner.domain.models.dashboard.EarningsSummary
+import cz.cleansia.partner.domain.models.dashboard.MonthlyEarning
+import cz.cleansia.partner.domain.models.dashboard.MonthlyEarningsTrend
+import cz.cleansia.partner.domain.models.dashboard.OrderStatusDistribution
+import cz.cleansia.partner.domain.models.dashboard.PerformanceScore
+import cz.cleansia.partner.domain.models.dashboard.ScheduleUtilization
+import cz.cleansia.partner.domain.models.dashboard.ServiceRevenue
+import cz.cleansia.partner.domain.models.dashboard.ServiceRevenueBreakdown
+import cz.cleansia.partner.domain.models.dashboard.ServiceTimeComparison
 import cz.cleansia.partner.domain.models.dashboard.UpcomingOrder
 import cz.cleansia.partner.domain.models.invoices.Invoice
 import cz.cleansia.partner.domain.models.invoices.InvoiceDetail
@@ -18,6 +27,7 @@ import cz.cleansia.partner.domain.models.orders.CurrencyDetail
 import cz.cleansia.partner.domain.models.orders.CurrencyInfo
 import cz.cleansia.partner.domain.models.orders.Order
 import cz.cleansia.partner.domain.models.orders.OrderAddressInfo
+import cz.cleansia.partner.domain.models.orders.AssignedEmployee
 import cz.cleansia.partner.domain.models.orders.OrderDetail
 import cz.cleansia.partner.domain.models.orders.OrderFilter
 import cz.cleansia.partner.domain.models.orders.OrderStatus
@@ -25,6 +35,8 @@ import cz.cleansia.partner.domain.models.orders.PagedOrderResponse
 import cz.cleansia.partner.domain.models.orders.PaymentStatus
 import cz.cleansia.partner.domain.models.orders.ServiceDetail
 import cz.cleansia.partner.domain.models.orders.ServiceInfo
+import cz.cleansia.partner.domain.models.profile.Country
+import cz.cleansia.partner.domain.models.profile.CountryTranslation
 import cz.cleansia.partner.domain.models.profile.EmployeeDocument
 import cz.cleansia.partner.domain.models.profile.EmployeeProfile
 import java.time.LocalDate
@@ -158,6 +170,73 @@ object MockDataProvider {
             )
         }
     }
+
+    // =========================================================================
+    // Analytics Extensions
+    // =========================================================================
+
+    fun orderStatusDistribution() = OrderStatusDistribution(
+        completed = 38,
+        inProgress = 6,
+        cancelled = 7,
+        pending = 5
+    )
+
+    fun performanceScore() = PerformanceScore(
+        overallScore = 0.87f,
+        customerRating = 4.7f,
+        onTimePercentage = 0.92f,
+        avgResponseMinutes = 14
+    )
+
+    fun monthlyEarningsTrend(): MonthlyEarningsTrend {
+        val monthNames = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+        val amounts = listOf(
+            18_200.0, 21_400.0, 19_800.0, 23_100.0, 22_500.0, 25_800.0,
+            24_200.0, 26_900.0, 23_700.0, 27_400.0, 25_100.0, 21_600.0
+        )
+        val months = monthNames.zip(amounts).map { (name, amount) ->
+            MonthlyEarning(month = name, amount = amount)
+        }
+        val total = amounts.sum()
+        val lastTwo = amounts.takeLast(2)
+        val change = if (lastTwo.size == 2 && lastTwo[0] > 0) {
+            ((lastTwo[1] - lastTwo[0]) / lastTwo[0] * 100).toFloat()
+        } else 0f
+        return MonthlyEarningsTrend(
+            months = months,
+            totalThisYear = total,
+            monthOverMonthChange = change
+        )
+    }
+
+    fun serviceRevenueBreakdown() = ServiceRevenueBreakdown(
+        services = listOf(
+            ServiceRevenue("Běžný úklid", 89_400.0, 198),
+            ServiceRevenue("Generální úklid", 62_400.0, 52),
+            ServiceRevenue("Mytí oken", 24_500.0, 70),
+            ServiceRevenue("Úklid kanceláří", 41_600.0, 52),
+            ServiceRevenue("Úklid po rekonstrukci", 32_500.0, 13),
+            ServiceRevenue("Žehlení", 8_750.0, 35)
+        )
+    )
+
+    fun scheduleUtilization() = ScheduleUtilization(
+        availableHours = 40f,
+        bookedHours = 32.5f,
+        utilizationRate = 0.81f
+    )
+
+    fun completionTimeEfficiency() = CompletionTimeEfficiency(
+        services = listOf(
+            ServiceTimeComparison("Běžný úklid", 120, 105),
+            ServiceTimeComparison("Generální úklid", 240, 255),
+            ServiceTimeComparison("Mytí oken", 90, 78),
+            ServiceTimeComparison("Úklid kanceláří", 180, 170),
+            ServiceTimeComparison("Úklid po rekonstrukci", 360, 390)
+        )
+    )
 
     // =========================================================================
     // Orders
@@ -333,7 +412,18 @@ object MockDataProvider {
             specialInstructions = "Kočka se bojí vysavače - prosím buďte opatrní.",
             accessInstructions = "Kód ke vchodu: 1234#, 3. patro vlevo",
             createdOn = LocalDateTime.now().minusDays(5).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-            updatedOn = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            updatedOn = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            assignedEmployees = if ((order.assignedEmployeesCount ?: 0) > 0) {
+                (0 until (order.assignedEmployeesCount ?: 0)).map { idx ->
+                    AssignedEmployee(
+                        id = "oe-$idx",
+                        employeeId = if (idx == 0) MOCK_EMPLOYEE_ID else "emp-other-$idx",
+                        fullName = if (idx == 0) "Jan Novák" else "Employee $idx",
+                        phoneNumber = "+420 600 000 00$idx"
+                    )
+                }
+            } else emptyList(),
+            requiredEmployees = order.requiredEmployees
         )
     }
 
@@ -464,6 +554,36 @@ object MockDataProvider {
     // Profile
     // =========================================================================
 
+    const val MOCK_CZ_COUNTRY_ID = "c0000000-0000-0000-0000-00000000001a"
+    const val MOCK_SK_COUNTRY_ID = "c0000000-0000-0000-0000-00000000002b"
+
+    fun countries() = listOf(
+        Country(id = MOCK_CZ_COUNTRY_ID, isoCode = "CZ", name = "Czech Republic", translations = mapOf(
+            "cs" to CountryTranslation(name = "Česká republika"),
+            "en" to CountryTranslation(name = "Czech Republic")
+        )),
+        Country(id = MOCK_SK_COUNTRY_ID, isoCode = "SK", name = "Slovakia", translations = mapOf(
+            "cs" to CountryTranslation(name = "Slovensko"),
+            "en" to CountryTranslation(name = "Slovakia")
+        )),
+        Country(id = "c0000000-0000-0000-0000-00000000003c", isoCode = "DE", name = "Germany", translations = mapOf(
+            "cs" to CountryTranslation(name = "Německo"),
+            "en" to CountryTranslation(name = "Germany")
+        )),
+        Country(id = "c0000000-0000-0000-0000-00000000004d", isoCode = "AT", name = "Austria", translations = mapOf(
+            "cs" to CountryTranslation(name = "Rakousko"),
+            "en" to CountryTranslation(name = "Austria")
+        )),
+        Country(id = "c0000000-0000-0000-0000-00000000005e", isoCode = "PL", name = "Poland", translations = mapOf(
+            "cs" to CountryTranslation(name = "Polsko"),
+            "en" to CountryTranslation(name = "Poland")
+        )),
+        Country(id = "c0000000-0000-0000-0000-00000000006f", isoCode = "UA", name = "Ukraine", translations = mapOf(
+            "cs" to CountryTranslation(name = "Ukrajina"),
+            "en" to CountryTranslation(name = "Ukraine")
+        ))
+    )
+
     fun employeeProfile() = EmployeeProfile(
         id = MOCK_EMPLOYEE_ID,
         userId = MOCK_USER_ID,
@@ -472,14 +592,13 @@ object MockDataProvider {
         lastName = MOCK_LAST_NAME,
         phoneNumber = "+420 608 123 456",
         dateOfBirth = "1990-03-15",
-        nationality = "Česká republika",
-        nationalId = "900315/1234",
+        nationalityId = MOCK_CZ_COUNTRY_ID,
+        passportId = "AB123456",
         taxId = "CZ9003151234",
         street = "Vinohradská 48",
         city = "Praha 2",
         zipCode = "120 00",
-        country = "Česká republika",
-        countryId = "cz",
+        countryId = MOCK_CZ_COUNTRY_ID,
         bankName = "Česká spořitelna",
         accountNumber = "1234567890/0800",
         iban = "CZ65 0800 0000 0012 3456 7890",
@@ -499,34 +618,29 @@ object MockDataProvider {
     fun employeeDocuments() = listOf(
         EmployeeDocument(
             id = "doc-1",
-            employeeId = MOCK_EMPLOYEE_ID,
-            type = "IdCard",
-            status = "Approved",
             fileName = "obcanka_predni.jpg",
             mimeType = "image/jpeg",
             fileSize = 245_000,
-            uploadedAt = "2024-01-15T10:05:00",
-            reviewedAt = "2024-01-16T09:00:00"
+            documentTypeValue = 1, // IdentityCard
+            statusValue = 2, // Approved
+            uploadedAt = "2024-01-15T10:05:00"
         ),
         EmployeeDocument(
             id = "doc-2",
-            employeeId = MOCK_EMPLOYEE_ID,
-            type = "TaxDocument",
-            status = "Approved",
             fileName = "zivnostensky_list.pdf",
             mimeType = "application/pdf",
             fileSize = 512_000,
-            uploadedAt = "2024-01-15T10:10:00",
-            reviewedAt = "2024-01-16T09:05:00"
+            documentTypeValue = 8, // TaxDocument
+            statusValue = 2, // Approved
+            uploadedAt = "2024-01-15T10:10:00"
         ),
         EmployeeDocument(
             id = "doc-3",
-            employeeId = MOCK_EMPLOYEE_ID,
-            type = "Other",
-            status = "Pending",
             fileName = "certifikat_hygiena.pdf",
             mimeType = "application/pdf",
             fileSize = 380_000,
+            documentTypeValue = 10, // Other
+            statusValue = 1, // Pending
             uploadedAt = "2024-06-15T14:00:00"
         )
     )

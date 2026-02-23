@@ -10,6 +10,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -30,6 +31,7 @@ class PreferencesManager @Inject constructor(
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val NOTIFICATION_ENABLED = booleanPreferencesKey("notification_enabled")
         val BIOMETRIC_ENABLED = booleanPreferencesKey("biometric_enabled")
+        val PROFILE_COMPLETED = booleanPreferencesKey("profile_completed")
         val ORDERS_HELP_DISMISSED = booleanPreferencesKey("orders_help_dismissed")
         val INVOICES_HELP_DISMISSED = booleanPreferencesKey("invoices_help_dismissed")
     }
@@ -48,11 +50,14 @@ class PreferencesManager @Inject constructor(
         preferences[PreferencesKeys.SAVED_EMAIL]
     }
 
+    private val systemDefaultLanguage: String
+        get() = if (Locale.getDefault().language == "cs") "cs" else "en"
+
     /**
      * Language preference flow
      */
     val language: Flow<String> = context.dataStore.data.map { preferences ->
-        preferences[PreferencesKeys.LANGUAGE] ?: "cs"
+        preferences[PreferencesKeys.LANGUAGE] ?: systemDefaultLanguage
     }
 
     /**
@@ -139,6 +144,22 @@ class PreferencesManager @Inject constructor(
     suspend fun setBiometricEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.BIOMETRIC_ENABLED] = enabled
+        }
+    }
+
+    /**
+     * Profile completed flow
+     */
+    val profileCompleted: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.PROFILE_COMPLETED] ?: false
+    }
+
+    /**
+     * Set profile completed
+     */
+    suspend fun setProfileCompleted(completed: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.PROFILE_COMPLETED] = completed
         }
     }
 

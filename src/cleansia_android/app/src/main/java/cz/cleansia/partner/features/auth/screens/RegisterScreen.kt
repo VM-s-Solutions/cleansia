@@ -11,14 +11,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -40,9 +37,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import cz.cleansia.partner.R
 import cz.cleansia.partner.features.auth.viewmodels.RegisterViewModel
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.ui.graphics.Color
 import cz.cleansia.partner.ui.components.CleansiaButton
+import cz.cleansia.partner.ui.components.CleansiaSnackbarHost
 import cz.cleansia.partner.ui.components.CleansiaTextField
-import cz.cleansia.partner.ui.components.GlassBackButton
+import cz.cleansia.partner.ui.components.DynamicCleaningBackground
 
 @Composable
 fun RegisterScreen(
@@ -71,25 +71,27 @@ fun RegisterScreen(
         }
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues ->
+    val isDark = isSystemInDarkTheme()
+
+    Scaffold { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            DynamicCleaningBackground(
+                iconColor = if (isDark) Color(0xFF38BDF8) else Color(0xFF0EA5E9),
+                iconAlpha = if (isDark) 0.08f else 0.06f
+            )
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .statusBarsPadding()
-                    .padding(top = 56.dp)
-                    .padding(horizontal = 24.dp)
-                    .imePadding()
+                    .padding(24.dp)
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(48.dp))
 
                 // Header
                 Text(
@@ -109,31 +111,33 @@ fun RegisterScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // First name field
-                CleansiaTextField(
-                    value = uiState.firstName,
-                    onValueChange = viewModel::onFirstNameChange,
-                    label = stringResource(R.string.first_name),
-                    leadingIcon = Icons.Default.Person,
-                    imeAction = ImeAction.Next,
-                    isError = uiState.firstNameError != null,
-                    errorMessage = uiState.firstNameError,
-                    enabled = !uiState.isLoading
-                )
+                // First name + Last name side by side
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    CleansiaTextField(
+                        value = uiState.firstName,
+                        onValueChange = viewModel::onFirstNameChange,
+                        label = stringResource(R.string.first_name),
+                        imeAction = ImeAction.Next,
+                        isError = uiState.firstNameError != null,
+                        errorMessage = uiState.firstNameError,
+                        enabled = !uiState.isLoading,
+                        modifier = Modifier.weight(1f)
+                    )
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Last name field
-                CleansiaTextField(
-                    value = uiState.lastName,
-                    onValueChange = viewModel::onLastNameChange,
-                    label = stringResource(R.string.last_name),
-                    leadingIcon = Icons.Default.Person,
-                    imeAction = ImeAction.Next,
-                    isError = uiState.lastNameError != null,
-                    errorMessage = uiState.lastNameError,
-                    enabled = !uiState.isLoading
-                )
+                    CleansiaTextField(
+                        value = uiState.lastName,
+                        onValueChange = viewModel::onLastNameChange,
+                        label = stringResource(R.string.last_name),
+                        imeAction = ImeAction.Next,
+                        isError = uiState.lastNameError != null,
+                        errorMessage = uiState.lastNameError,
+                        enabled = !uiState.isLoading,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -147,21 +151,6 @@ fun RegisterScreen(
                     imeAction = ImeAction.Next,
                     isError = uiState.emailError != null,
                     errorMessage = uiState.emailError,
-                    enabled = !uiState.isLoading
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Phone number field
-                CleansiaTextField(
-                    value = uiState.phoneNumber,
-                    onValueChange = viewModel::onPhoneNumberChange,
-                    label = stringResource(R.string.phone_number),
-                    leadingIcon = Icons.Default.Phone,
-                    keyboardType = KeyboardType.Phone,
-                    imeAction = ImeAction.Next,
-                    isError = uiState.phoneError != null,
-                    errorMessage = uiState.phoneError,
                     enabled = !uiState.isLoading
                 )
 
@@ -234,7 +223,7 @@ fun RegisterScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(32.dp))
 
                 // Register button
                 CleansiaButton(
@@ -244,7 +233,7 @@ fun RegisterScreen(
                     enabled = !uiState.isLoading
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.weight(1f))
 
                 // Login link
                 Row(
@@ -269,7 +258,7 @@ fun RegisterScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            GlassBackButton(onNavigateBack = onNavigateBack)
+            CleansiaSnackbarHost(hostState = snackbarHostState)
         }
     }
 }

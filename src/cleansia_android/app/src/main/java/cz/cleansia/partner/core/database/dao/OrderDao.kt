@@ -57,4 +57,15 @@ interface OrderDao {
      */
     @Query("DELETE FROM cached_orders WHERE cachedAt < :timestamp")
     suspend fun deleteOldOrders(timestamp: Long)
+
+    /**
+     * Get orders within a date range (for offline 48h window)
+     */
+    @Query("""
+        SELECT * FROM cached_orders
+        WHERE cleaningDateTime >= :fromDateTime
+        AND cleaningDateTime <= :toDateTime
+        ORDER BY cleaningDateTime ASC
+    """)
+    suspend fun getOrdersInDateRange(fromDateTime: String, toDateTime: String): List<CachedOrder>
 }

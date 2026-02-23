@@ -24,6 +24,9 @@ sealed interface NavRoute {
     @Serializable
     data object ForgotPassword : NavRoute
 
+    @Serializable
+    data object ProfileCompletion : NavRoute
+
     // Main routes
     @Serializable
     data object Main : NavRoute

@@ -170,4 +170,9 @@ object CleansiaColors {
         @Composable get() = if (LocalDarkTheme.current) InfoContainerDark else cz.cleansia.partner.ui.theme.InfoContainer
     val onInfoContainer: androidx.compose.ui.graphics.Color
         @Composable get() = if (LocalDarkTheme.current) OnInfoContainerDark else cz.cleansia.partner.ui.theme.OnInfoContainer
+
+    val purple: androidx.compose.ui.graphics.Color
+        @Composable get() = if (LocalDarkTheme.current) PurpleDark else Purple
+    val cyan: androidx.compose.ui.graphics.Color
+        @Composable get() = if (LocalDarkTheme.current) CyanDark else Cyan
 }

@@ -2,11 +2,19 @@ package cz.cleansia.partner.features.dashboard.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.core.network.ApiResult
+import cz.cleansia.partner.domain.models.dashboard.CompletionTimeEfficiency
 import cz.cleansia.partner.domain.models.dashboard.EarningsAnalytics
 import cz.cleansia.partner.domain.models.dashboard.EarningsDataPoint
+import cz.cleansia.partner.domain.models.dashboard.MonthlyEarningsTrend
+import cz.cleansia.partner.domain.models.dashboard.OrderStatusDistribution
+import cz.cleansia.partner.domain.models.dashboard.PerformanceScore
+import cz.cleansia.partner.domain.models.dashboard.ScheduleUtilization
+import cz.cleansia.partner.domain.models.dashboard.ServiceRevenueBreakdown
 import cz.cleansia.partner.domain.repositories.DashboardRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,12 +43,19 @@ data class AnalyticsUiState(
     val averageDaily: Double = 0.0,
     val bestDay: EarningsDataPoint? = null,
     val worstDay: EarningsDataPoint? = null,
-    val dayOfWeekEarnings: List<DayOfWeekEarnings> = emptyList()
+    val dayOfWeekEarnings: List<DayOfWeekEarnings> = emptyList(),
+    val orderStatusDistribution: OrderStatusDistribution? = null,
+    val performanceScore: PerformanceScore? = null,
+    val monthlyEarningsTrend: MonthlyEarningsTrend? = null,
+    val serviceRevenueBreakdown: ServiceRevenueBreakdown? = null,
+    val scheduleUtilization: ScheduleUtilization? = null,
+    val completionTimeEfficiency: CompletionTimeEfficiency? = null
 )
 
 @HiltViewModel
 class AnalyticsViewModel @Inject constructor(
-    private val dashboardRepository: DashboardRepository
+    private val dashboardRepository: DashboardRepository,
+    private val errorTranslator: ApiErrorTranslator
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AnalyticsUiState())
@@ -101,10 +116,22 @@ class AnalyticsViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
 
-            when (val result = dashboardRepository.getEarningsAnalytics(
-                startDate = _uiState.value.startDate,
-                endDate = _uiState.value.endDate
-            )) {
+            // Load all data concurrently
+            val earningsDeferred = async {
+                dashboardRepository.getEarningsAnalytics(
+                    startDate = _uiState.value.startDate,
+                    endDate = _uiState.value.endDate
+                )
+            }
+            val statusDeferred = async { dashboardRepository.getOrderStatusDistribution() }
+            val performanceDeferred = async { dashboardRepository.getPerformanceScore() }
+            val trendDeferred = async { dashboardRepository.getMonthlyEarningsTrend() }
+            val revenueDeferred = async { dashboardRepository.getServiceRevenueBreakdown() }
+            val utilizationDeferred = async { dashboardRepository.getScheduleUtilization() }
+            val efficiencyDeferred = async { dashboardRepository.getCompletionTimeEfficiency() }
+
+            // Process earnings analytics (existing)
+            when (val result = earningsDeferred.await()) {
                 is ApiResult.Success -> {
                     val analytics = result.data
                     val dataPoints = analytics.dataPoints
@@ -114,14 +141,13 @@ class AnalyticsViewModel @Inject constructor(
                     val bestDay = dataPoints.maxByOrNull { it.amount }
                     val worstDay = dataPoints.filter { it.amount > 0 }.minByOrNull { it.amount }
 
-                    // Compute day-of-week aggregation
                     val dayOfWeekMap = mutableMapOf<Int, Double>()
                     for (dp in dataPoints) {
                         try {
                             val date = LocalDate.parse(dp.date, dateFormatter)
-                            val dow = date.dayOfWeek.value // 1=Mon..7=Sun
+                            val dow = date.dayOfWeek.value
                             dayOfWeekMap[dow] = (dayOfWeekMap[dow] ?: 0.0) + dp.amount
-                        } catch (_: Exception) { /* skip unparseable dates */ }
+                        } catch (_: Exception) { }
                     }
                     val dayOfWeekEarnings = (1..7).map { day ->
                         DayOfWeekEarnings(dayIndex = day, totalAmount = dayOfWeekMap[day] ?: 0.0)
@@ -129,7 +155,6 @@ class AnalyticsViewModel @Inject constructor(
 
                     _uiState.update {
                         it.copy(
-                            isLoading = false,
                             analytics = analytics,
                             averageDaily = averageDaily,
                             bestDay = bestDay,
@@ -139,11 +164,37 @@ class AnalyticsViewModel @Inject constructor(
                     }
                 }
                 is ApiResult.Error -> {
-                    _uiState.update {
-                        it.copy(isLoading = false, error = result.error.message)
-                    }
+                    _uiState.update { it.copy(error = errorTranslator.translateError(result.error)) }
                 }
             }
+
+            // Process new analytics data
+            when (val result = statusDeferred.await()) {
+                is ApiResult.Success -> _uiState.update { it.copy(orderStatusDistribution = result.data) }
+                is ApiResult.Error -> { }
+            }
+            when (val result = performanceDeferred.await()) {
+                is ApiResult.Success -> _uiState.update { it.copy(performanceScore = result.data) }
+                is ApiResult.Error -> { }
+            }
+            when (val result = trendDeferred.await()) {
+                is ApiResult.Success -> _uiState.update { it.copy(monthlyEarningsTrend = result.data) }
+                is ApiResult.Error -> { }
+            }
+            when (val result = revenueDeferred.await()) {
+                is ApiResult.Success -> _uiState.update { it.copy(serviceRevenueBreakdown = result.data) }
+                is ApiResult.Error -> { }
+            }
+            when (val result = utilizationDeferred.await()) {
+                is ApiResult.Success -> _uiState.update { it.copy(scheduleUtilization = result.data) }
+                is ApiResult.Error -> { }
+            }
+            when (val result = efficiencyDeferred.await()) {
+                is ApiResult.Success -> _uiState.update { it.copy(completionTimeEfficiency = result.data) }
+                is ApiResult.Error -> { }
+            }
+
+            _uiState.update { it.copy(isLoading = false) }
         }
     }
 }

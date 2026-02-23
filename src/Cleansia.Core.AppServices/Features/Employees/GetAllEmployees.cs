@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Employees.DTOs;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -14,17 +15,17 @@ public class GetAllEmployees
         public Validator()
         {
             RuleFor(x => x.Page)
-                .GreaterThan(0).WithMessage("Page must be greater than 0");
+                .GreaterThan(0).WithMessage(BusinessErrorMessage.PageMustBePositive);
 
             RuleFor(x => x.PageSize)
-                .GreaterThan(0).WithMessage("PageSize must be greater than 0")
-                .LessThanOrEqualTo(100).WithMessage("PageSize cannot exceed 100");
+                .GreaterThan(0).WithMessage(BusinessErrorMessage.PageSizeMustBePositive)
+                .LessThanOrEqualTo(100).WithMessage(BusinessErrorMessage.PageSizeExceeded);
 
             When(x => !string.IsNullOrEmpty(x.ContractStatus), () =>
             {
                 RuleFor(x => x.ContractStatus)
                     .Must(value => Enum.TryParse<Core.Domain.Enums.ContractStatus>(value, out _))
-                    .WithMessage("Invalid contract status value");
+                    .WithMessage(BusinessErrorMessage.InvalidContractStatus);
             });
         }
     }

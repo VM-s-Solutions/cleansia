@@ -49,6 +49,46 @@
     "not_found": {
       "title": "Page Not Found",
       "description": "The page you are looking for might have been removed, had its name changed, or is temporarily unavailable."
+    },
+    "availability": {
+      "days": {
+        "monday": "Monday",
+        "tuesday": "Tuesday",
+        "wednesday": "Wednesday",
+        "thursday": "Thursday",
+        "friday": "Friday",
+        "saturday": "Saturday",
+        "sunday": "Sunday"
+      },
+      "current_ranges": "Current Ranges",
+      "no_availability": "No availability set",
+      "add_time_range": "Add Time Range",
+      "start_time": "Start Time",
+      "end_time": "End Time",
+      "quick_setup": "Quick Setup",
+      "weekly_schedule": "Weekly Schedule",
+      "mon_fri_9_5": "Mon-Fri 9-5",
+      "mon_sat_8_4": "Mon-Sat 8-4",
+      "custom": "Custom",
+      "legend_working": "Working",
+      "legend_custom": "Custom hours",
+      "legend_off": "Day off",
+      "no_days_selected": "Select working days to set up the schedule",
+      "working_day": "Working Day",
+      "day_off": "Day Off",
+      "custom_hours": "Custom Hours",
+      "exception_day_off": "Exception - Day Off",
+      "edit_hours": "Edit Hours",
+      "remove_exception": "Remove Exception",
+      "mark_exception": "Mark as Exception",
+      "set_custom_hours": "Set custom hours",
+      "mark_unavailable": "This day will be marked as unavailable.",
+      "add_time_slot": "Add Time Slot",
+      "schedule_setup": "Schedule Setup",
+      "schedule_setup_desc": "Select working days and set your hours.",
+      "working_hours": "Working Hours",
+      "working_days": "Working Days",
+      "apply": "Apply"
     }
   },
   "global": {
@@ -279,7 +319,9 @@
         "document_approve_error": "Failed to approve document",
         "document_reject_success": "Document rejected successfully",
         "document_reject_error": "Failed to reject document",
-        "document_download_error": "Failed to download document"
+        "document_download_error": "Failed to download document",
+        "availability_save_success": "Availability updated successfully",
+        "availability_save_error": "Failed to update availability"
       },
       "document_status": {
         "pending": "Pending",
@@ -1559,7 +1601,9 @@
       "size_exceeded": "File size exceeded maximum allowed size",
       "count_exceeded": "Too many files uploaded",
       "count_too_few": "Not enough files uploaded",
-      "required": "File is required"
+      "required": "File is required",
+      "size_exceeded_10mb": "File size must not exceed 10 MB",
+      "type_not_allowed": "File type is not allowed. Accepted: PDF, JPEG, PNG, DOC, DOCX"
     },
     "address": {
       "invalid_length": "Invalid address length"
@@ -1603,7 +1647,12 @@
       "invalid_tax_id": "Invalid tax ID format",
       "invalid_iban": "Invalid IBAN format",
       "invalid_zip_code": "Invalid zip code format",
-      "must_be_positive": "Value must be positive"
+      "must_be_positive": "Value must be positive",
+      "invalid_availability_format": "Invalid availability format. Days must be valid day names or dates (yyyy-MM-dd), and time ranges must have start before end.",
+      "page_must_be_positive": "Page must be greater than 0",
+      "page_size_must_be_positive": "Page size must be greater than 0",
+      "page_size_exceeded": "Page size cannot exceed 100",
+      "invalid_contract_status": "Invalid contract status value"
     },
     "service": {
       "not_found": "Service not found",
@@ -1617,6 +1666,13 @@
     },
     "general": {
       "not_found": "Resource not found"
+    },
+    "device": {
+      "invalid_platform": "Platform must be 'android' or 'ios'"
+    },
+    "payment": {
+      "json_payload_required": "JSON payload is required",
+      "stripe_signature_required": "Stripe signature header is required"
     },
     "template": {
       "cannot_delete_active": "Cannot delete an active template",

@@ -3,6 +3,7 @@ package cz.cleansia.partner.features.invoices.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.partner.R
+import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.core.network.ApiResult
 import cz.cleansia.partner.core.storage.PreferencesManager
 import cz.cleansia.partner.domain.models.invoices.Invoice
@@ -67,7 +68,8 @@ data class InvoicesUiState(
 @HiltViewModel
 class InvoicesViewModel @Inject constructor(
     private val invoicesRepository: InvoicesRepository,
-    private val preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager,
+    private val errorTranslator: ApiErrorTranslator
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(InvoicesUiState())
@@ -126,7 +128,7 @@ class InvoicesViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            error = result.error.getUserMessage(),
+                            error = errorTranslator.translateError(result.error),
                             pendingScrollToTop = false
                         )
                     }
@@ -162,7 +164,7 @@ class InvoicesViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isRefreshing = false,
-                            error = result.error.getUserMessage(),
+                            error = errorTranslator.translateError(result.error),
                             pendingScrollToTop = false
                         )
                     }
@@ -199,7 +201,7 @@ class InvoicesViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isLoadingMore = false,
-                            error = result.error.getUserMessage()
+                            error = errorTranslator.translateError(result.error)
                         )
                     }
                 }

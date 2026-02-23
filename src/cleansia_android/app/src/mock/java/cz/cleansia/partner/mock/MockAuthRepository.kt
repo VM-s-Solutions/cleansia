@@ -12,19 +12,8 @@ class MockAuthRepository(
     private val tokenManager: TokenManager
 ) : AuthRepository {
 
-    private var loggedIn = true
-    private var emailConfirmed = true
-
-    init {
-        // Pre-seed TokenManager so the app auto-navigates to Main
-        tokenManager.saveAuthData(
-            token = MockDataProvider.MOCK_TOKEN,
-            userId = MockDataProvider.MOCK_EMPLOYEE_ID,
-            email = MockDataProvider.MOCK_EMAIL,
-            isEmailConfirmed = true
-        )
-        tokenManager.saveUserName(MockDataProvider.MOCK_FIRST_NAME, MockDataProvider.MOCK_LAST_NAME)
-    }
+    private var loggedIn = false
+    private var emailConfirmed = false
 
     override suspend fun login(email: String, password: String): ApiResult<LoginResponse> {
         delay(500)
@@ -65,6 +54,7 @@ class MockAuthRepository(
             email = email,
             isEmailConfirmed = true
         )
+        tokenManager.saveUserName(MockDataProvider.MOCK_FIRST_NAME, MockDataProvider.MOCK_LAST_NAME)
         return ApiResult.Success(MockDataProvider.loginResponse())
     }
 

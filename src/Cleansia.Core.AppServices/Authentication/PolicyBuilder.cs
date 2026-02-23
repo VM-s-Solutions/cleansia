@@ -17,10 +17,13 @@ public static class PolicyBuilder
         [Policy.CanViewOrderDetail] = PhysicalPolicy.Authenticated,
         [Policy.CanUpdateOrder] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanTakeOrder] = PhysicalPolicy.EmployeeOrAdmin,
+        [Policy.CanStartOrder] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanCompleteOrder] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanUploadOrderPhoto] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanViewOrderPhotos] = PhysicalPolicy.Authenticated,
         [Policy.CanDeleteOrderPhoto] = PhysicalPolicy.EmployeeOrAdmin,
+        [Policy.CanAddOrderNote] = PhysicalPolicy.EmployeeOrAdmin,
+        [Policy.CanReportOrderIssue] = PhysicalPolicy.EmployeeOrAdmin,
         //[Policy.CanCreateOrder] = PhysicalPolicy.Anonymous,
         //[Policy.CanGetOrderStatus] = PhysicalPolicy.Anonymous,
 
@@ -40,6 +43,7 @@ public static class PolicyBuilder
         [Policy.CanViewPagedEmployee] = PhysicalPolicy.AdminOnly,
         [Policy.CanApproveEmployee] = PhysicalPolicy.AdminOnly,
         [Policy.CanRejectEmployee] = PhysicalPolicy.AdminOnly,
+        [Policy.CanAdminUpdateEmployee] = PhysicalPolicy.AdminOnly,
 
         // Employee Documents
         [Policy.CanViewEmployeeDocuments] = PhysicalPolicy.EmployeeOrAdmin,
@@ -121,6 +125,9 @@ public static class PolicyBuilder
         // Email Templates
         [Policy.CanViewEmailTemplates] = PhysicalPolicy.AdminOnly,
         [Policy.CanUpdateEmailTemplate] = PhysicalPolicy.AdminOnly,
+
+        // Device
+        [Policy.Authenticated] = PhysicalPolicy.Authenticated,
     };
 
     public static string ToPhysicalPolicy(this string permission) =>

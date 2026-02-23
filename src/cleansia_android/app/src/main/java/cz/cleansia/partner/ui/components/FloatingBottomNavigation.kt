@@ -1,5 +1,14 @@
 package cz.cleansia.partner.ui.components
 
+import android.view.HapticFeedbackConstants
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,13 +28,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -87,13 +99,25 @@ private fun FloatingNavItemView(
     item: FloatingNavItem,
     modifier: Modifier = Modifier
 ) {
+    val view = LocalView.current
+
     val selectedContentColor = MaterialTheme.colorScheme.primary
     val unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
     val indicatorColor = MaterialTheme.colorScheme.primary
 
     val itemShape = RoundedCornerShape(20.dp)
 
-    val contentColor = if (item.isSelected) selectedContentColor else unselectedContentColor
+    val contentColor by animateColorAsState(
+        targetValue = if (item.isSelected) selectedContentColor else unselectedContentColor,
+        animationSpec = tween(300),
+        label = "navColor"
+    )
+
+    val iconScale by animateFloatAsState(
+        targetValue = if (item.isSelected) 1.1f else 1.0f,
+        animationSpec = tween(200),
+        label = "iconScale"
+    )
 
     Box(
         modifier = modifier
@@ -103,7 +127,10 @@ private fun FloatingNavItemView(
                 role = Role.Tab,
                 indication = ripple(bounded = true),
                 interactionSource = remember { MutableInteractionSource() }
-            ) { item.onClick() }
+            ) {
+                view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                item.onClick()
+            }
             .padding(vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -115,7 +142,9 @@ private fun FloatingNavItemView(
                 imageVector = if (item.isSelected) item.selectedIcon else item.unselectedIcon,
                 contentDescription = stringResource(item.titleResId),
                 tint = contentColor,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier
+                    .size(20.dp)
+                    .scale(iconScale)
             )
             Text(
                 text = stringResource(item.titleResId),
@@ -125,10 +154,14 @@ private fun FloatingNavItemView(
                 fontSize = 12.sp,
                 modifier = Modifier.padding(top = 2.dp)
             )
-            if (item.isSelected) {
+            AnimatedVisibility(
+                visible = item.isSelected,
+                enter = scaleIn(tween(200)) + fadeIn(tween(200)),
+                exit = scaleOut(tween(150)) + fadeOut(tween(150))
+            ) {
                 Box(
                     modifier = Modifier
-                        .padding(top = 4.dp)
+                        .padding(top = 3.dp)
                         .size(4.dp)
                         .clip(CircleShape)
                         .background(indicatorColor)

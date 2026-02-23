@@ -1,0 +1,174 @@
+# Cleansia Orchestrator Agent Configuration
+# Routes tasks to specialized agents based on context
+
+name: orchestrator
+description: Central coordinator that analyzes requests and delegates to specialized agents
+model: claude-sonnet-4-20250514
+
+system_prompt_file: ../prompts/system/orchestrator.md
+
+# Agent routing rules
+routing:
+  # Backend tasks (.NET, C#, PostgreSQL)
+  backend:
+    patterns:
+      - "**/*.cs"
+      - "**/*.csproj"
+      - "**/Migrations/**"
+      - "**/Commands/**"
+      - "**/Queries/**"
+      - "**/Entities/**"
+      - "**/Dtos/**"
+    keywords:
+      - "backend"
+      - "api"
+      - "endpoint"
+      - "database"
+      - "migration"
+      - "entity"
+      - "command"
+      - "query"
+      - "handler"
+      - "validator"
+    delegate_to: backend-specialist
+
+  # Frontend tasks (Angular, TypeScript)
+  frontend:
+    patterns:
+      - "**/cleansia-web/**/*.ts"
+      - "**/cleansia-web/**/*.html"
+      - "**/cleansia-web/**/*.scss"
+      - "**/libs/**/*.ts"
+    keywords:
+      - "frontend"
+      - "angular"
+      - "component"
+      - "facade"
+      - "ngrx"
+      - "primeng"
+      - "web"
+      - "ui"
+    delegate_to: frontend-specialist
+
+  # Mobile tasks (Android Kotlin, iOS Swift)
+  mobile:
+    patterns:
+      - "**/cleansia_android/**/*.kt"
+      - "**/cleansia_android/**/*.xml"
+      - "**/cleansia_ios/**/*.swift"
+    keywords:
+      - "mobile"
+      - "android"
+      - "ios"
+      - "kotlin"
+      - "swift"
+      - "compose"
+      - "viewmodel"
+      - "screen"
+    delegate_to: mobile-specialist
+
+  # Code review tasks
+  review:
+    keywords:
+      - "review"
+      - "check"
+      - "validate"
+      - "standards"
+      - "lint"
+      - "quality"
+    delegate_to: code-review
+
+  # Code sync tasks
+  sync:
+    keywords:
+      - "sync"
+      - "synchronize"
+      - "update models"
+      - "generate"
+      - "api client"
+    delegate_to: code-sync
+
+  # Documentation tasks
+  docs:
+    keywords:
+      - "document"
+      - "readme"
+      - "docs"
+      - "api docs"
+      - "changelog"
+    delegate_to: docs
+
+# Tools available to orchestrator
+tools:
+  - name: delegate_task
+    description: Delegate a task to a specialized agent
+    parameters:
+      agent:
+        type: string
+        enum: [backend-specialist, frontend-specialist, mobile-specialist, code-review, code-sync, docs]
+        description: The agent to delegate to
+      task:
+        type: string
+        description: The task description for the agent
+      context:
+        type: object
+        description: Additional context (files, requirements, etc.)
+
+  - name: parallel_delegate
+    description: Run multiple agents in parallel for multi-platform tasks
+    parameters:
+      tasks:
+        type: array
+        items:
+          type: object
+          properties:
+            agent:
+              type: string
+            task:
+              type: string
+
+# Workflow definitions
+workflows:
+  new_feature:
+    description: Implement a new feature across the stack
+    steps:
+      - agent: backend-specialist
+        task: "Implement backend API endpoints and business logic"
+      - agent: code-sync
+        task: "Generate TypeScript and mobile API clients"
+        depends_on: [0]
+      - parallel:
+          - agent: frontend-specialist
+            task: "Implement Angular components and services"
+          - agent: mobile-specialist
+            task: "Implement Android and iOS screens"
+        depends_on: [1]
+      - agent: code-review
+        task: "Review all changes against coding standards"
+        depends_on: [2]
+      - agent: docs
+        task: "Update documentation"
+        depends_on: [3]
+
+  refactor:
+    description: Refactor code with consistency across platforms
+    steps:
+      - agent: code-review
+        task: "Analyze current implementation and identify issues"
+      - parallel:
+          - agent: backend-specialist
+            task: "Refactor backend code"
+          - agent: frontend-specialist
+            task: "Refactor frontend code"
+          - agent: mobile-specialist
+            task: "Refactor mobile code"
+        depends_on: [0]
+      - agent: code-review
+        task: "Verify refactoring meets standards"
+        depends_on: [1]
+
+  code_review:
+    description: Comprehensive code review
+    steps:
+      - agent: code-review
+        task: "Review changes against CODING_STANDARDS.md"

@@ -3,10 +3,14 @@ package cz.cleansia.partner.features.orders.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.partner.R
+import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.core.network.ApiResult
+import cz.cleansia.partner.core.network.NetworkMonitor
 import cz.cleansia.partner.core.storage.PreferencesManager
+import cz.cleansia.partner.core.utils.DateTimeUtils
 import cz.cleansia.partner.domain.models.orders.Order
 import cz.cleansia.partner.domain.models.orders.OrderStatus
+import cz.cleansia.partner.domain.models.orders.withStatus
 import cz.cleansia.partner.domain.repositories.OrdersRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,10 +21,16 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
+import java.time.LocalDate
 import javax.inject.Inject
 
 enum class OrderTab {
     AVAILABLE, MY_ORDERS
+}
+
+enum class OrdersViewMode {
+    LIST, WEEK
 }
 
 enum class OrderSortOption(val displayNameResId: Int, val sortBy: String, val descending: Boolean) {
@@ -28,28 +38,6 @@ enum class OrderSortOption(val displayNameResId: Int, val sortBy: String, val de
     DATE_DESC(R.string.sort_date_newest, "cleaningDateTime", true),
     PRICE_ASC(R.string.sort_price_low_high, "totalPrice", false),
     PRICE_DESC(R.string.sort_price_high_low, "totalPrice", true)
-}
-
-/**
- * Filter state for orders
- */
-data class OrderFilterState(
-    val searchTerm: String = "",
-    val orderStatuses: Set<OrderStatus> = emptySet(),
-    val paymentStatuses: Set<cz.cleansia.partner.domain.models.orders.PaymentStatus> = emptySet(),
-    val startDate: String? = null,
-    val endDate: String? = null
-) {
-    val activeFilterCount: Int
-        get() = listOfNotNull(
-            searchTerm.takeIf { it.isNotBlank() },
-            orderStatuses.takeIf { it.isNotEmpty() },
-            paymentStatuses.takeIf { it.isNotEmpty() },
-            startDate,
-            endDate
-        ).size
-
-    val hasActiveFilters: Boolean get() = activeFilterCount > 0
 }
 
 data class OrdersUiState(
@@ -70,17 +58,63 @@ data class OrdersUiState(
     val filterState: OrderFilterState = OrderFilterState(),
     val pendingFilterState: OrderFilterState = OrderFilterState(),
     val scrollToTop: Boolean = false,
-    val pendingScrollToTop: Boolean = false
-)
+    val pendingScrollToTop: Boolean = false,
+    // Week view
+    val viewMode: OrdersViewMode = OrdersViewMode.LIST,
+    val selectedWeekDate: LocalDate = LocalDate.now(),
+    val weekStartDate: LocalDate = LocalDate.now().with(DayOfWeek.MONDAY),
+    // Offline mode
+    val isOffline: Boolean = false,
+    val lastCachedAt: Long? = null,
+    val isShowingCachedData: Boolean = false,
+    // Optimistic UI
+    val isSyncing: Boolean = false
+) {
+    /** True when any of the employee's orders is currently IN_PROGRESS. */
+    val hasOrderInProgress: Boolean
+        get() = myOrders.any { it.status == OrderStatus.IN_PROGRESS }
+
+    /** Orders filtered by selected day (for week view). */
+    val filteredOrdersForSelectedDay: List<Order>
+        get() {
+            val orders = when (selectedTab) {
+                OrderTab.AVAILABLE -> availableOrders
+                OrderTab.MY_ORDERS -> myOrders
+            }
+            if (viewMode != OrdersViewMode.WEEK) return orders
+            return orders.filter { order ->
+                order.cleaningDateTime?.let { DateTimeUtils.parseToLocalDate(it) }?.isEqual(selectedWeekDate) == true
+            }
+        }
+
+    /** Order count per day for the week strip dot indicators. */
+    val ordersCountByDay: Map<LocalDate, Int>
+        get() {
+            val orders = when (selectedTab) {
+                OrderTab.AVAILABLE -> availableOrders
+                OrderTab.MY_ORDERS -> myOrders
+            }
+            return orders.mapNotNull { it.cleaningDateTime?.let { dt -> DateTimeUtils.parseToLocalDate(dt) } }
+                .groupingBy { it }
+                .eachCount()
+        }
+}
 
 @HiltViewModel
 class OrdersViewModel @Inject constructor(
     private val ordersRepository: OrdersRepository,
-    private val preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager,
+    private val networkMonitor: NetworkMonitor,
+    private val errorTranslator: ApiErrorTranslator
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(OrdersUiState())
     val uiState: StateFlow<OrdersUiState> = _uiState.asStateFlow()
+
+    private val filterManager = OrderFilterManager(
+        stateUpdater = { update -> _uiState.update(update) },
+        onRefresh = ::refresh
+    )
 
     // Help card visibility (inverted from dismissed state)
     val showHelpCard: StateFlow<Boolean> = preferencesManager.ordersHelpDismissed
@@ -88,7 +122,64 @@ class OrdersViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     init {
+        observeNetworkState()
         loadOrders()
+    }
+
+    // ==================== Network / Offline ====================
+
+    private fun observeNetworkState() {
+        viewModelScope.launch {
+            networkMonitor.isOnline.collect { isOnline ->
+                _uiState.update { it.copy(isOffline = !isOnline) }
+                if (!isOnline) {
+                    loadCachedOrders()
+                } else if (_uiState.value.isShowingCachedData) {
+                    _uiState.update { it.copy(isShowingCachedData = false) }
+                    refresh()
+                }
+            }
+        }
+    }
+
+    private fun loadCachedOrders() {
+        viewModelScope.launch {
+            val cachedOrders = ordersRepository.getNext48HoursCachedOrders()
+            val lastCached = ordersRepository.getLastCacheTimestamp()
+            _uiState.update { state ->
+                state.copy(
+                    availableOrders = cachedOrders,
+                    myOrders = cachedOrders,
+                    isShowingCachedData = true,
+                    lastCachedAt = lastCached,
+                    isLoading = false,
+                    isRefreshing = false
+                )
+            }
+        }
+    }
+
+    // ==================== Week View ====================
+
+    fun setViewMode(mode: OrdersViewMode) {
+        _uiState.update { it.copy(viewMode = mode) }
+    }
+
+    fun selectWeekDate(date: LocalDate) {
+        _uiState.update { it.copy(selectedWeekDate = date) }
+    }
+
+    fun navigateWeek(forward: Boolean) {
+        _uiState.update { state ->
+            val newStart = if (forward)
+                state.weekStartDate.plusWeeks(1)
+            else
+                state.weekStartDate.minusWeeks(1)
+            state.copy(
+                weekStartDate = newStart,
+                selectedWeekDate = newStart
+            )
+        }
     }
 
     /**
@@ -200,7 +291,7 @@ class OrdersViewModel @Inject constructor(
                 is ApiResult.Error -> {
                     _uiState.update {
                         it.copy(
-                            error = result.error.getUserMessage(),
+                            error = errorTranslator.translateError(result.error),
                             isLoadingMore = false,
                             isRefreshing = false,
                             isLoading = false,
@@ -248,13 +339,81 @@ class OrdersViewModel @Inject constructor(
                 is ApiResult.Error -> {
                     _uiState.update {
                         it.copy(
-                            error = result.error.getUserMessage(),
+                            error = errorTranslator.translateError(result.error),
                             isLoadingMore = false,
                             isRefreshing = false,
                             pendingScrollToTop = false
                         )
                     }
                 }
+            }
+        }
+    }
+
+    suspend fun takeOrder(orderId: String): Boolean {
+        val previousState = _uiState.value
+
+        // Optimistic: move order from available to myOrders with CONFIRMED status
+        _uiState.update { state ->
+            val order = state.availableOrders.find { it.id == orderId } ?: return@update state
+            val updatedOrder = order.withStatus(OrderStatus.CONFIRMED)
+            state.copy(
+                availableOrders = state.availableOrders.filter { it.id != orderId },
+                myOrders = state.myOrders + updatedOrder,
+                isSyncing = true
+            )
+        }
+
+        return when (val result = ordersRepository.takeOrder(orderId)) {
+            is ApiResult.Success -> {
+                _uiState.update { it.copy(isSyncing = false) }
+                refreshSilently()
+                true
+            }
+            is ApiResult.Error -> {
+                _uiState.value = previousState.copy(
+                    error = errorTranslator.translateError(result.error),
+                    isSyncing = false
+                )
+                false
+            }
+        }
+    }
+
+    suspend fun startOrder(orderId: String): Boolean {
+        val previousState = _uiState.value
+
+        // Optimistic: update status to IN_PROGRESS
+        _uiState.update { state ->
+            state.copy(
+                myOrders = state.myOrders.map { order ->
+                    if (order.id == orderId) order.withStatus(OrderStatus.IN_PROGRESS) else order
+                },
+                isSyncing = true
+            )
+        }
+
+        return when (val result = ordersRepository.startOrder(orderId)) {
+            is ApiResult.Success -> {
+                _uiState.update { it.copy(isSyncing = false) }
+                refreshSilently()
+                true
+            }
+            is ApiResult.Error -> {
+                _uiState.value = previousState.copy(
+                    error = errorTranslator.translateError(result.error),
+                    isSyncing = false
+                )
+                false
+            }
+        }
+    }
+
+    private fun refreshSilently() {
+        viewModelScope.launch {
+            when (_uiState.value.selectedTab) {
+                OrderTab.AVAILABLE -> loadAvailableOrders(reset = true)
+                OrderTab.MY_ORDERS -> loadMyOrders(reset = true)
             }
         }
     }
@@ -281,73 +440,14 @@ class OrdersViewModel @Inject constructor(
     }
 
     // Filter drawer methods
-    fun openFilterDrawer() {
-        _uiState.update { it.copy(isFilterDrawerOpen = true, pendingFilterState = it.filterState) }
-    }
-
-    fun closeFilterDrawer() {
-        _uiState.update { it.copy(isFilterDrawerOpen = false) }
-    }
-
-    fun updateSearchTerm(term: String) {
-        _uiState.update { it.copy(pendingFilterState = it.pendingFilterState.copy(searchTerm = term)) }
-    }
-
-    fun toggleOrderStatus(status: OrderStatus) {
-        _uiState.update { state ->
-            val currentStatuses = state.pendingFilterState.orderStatuses.toMutableSet()
-            if (currentStatuses.contains(status)) {
-                currentStatuses.remove(status)
-            } else {
-                currentStatuses.add(status)
-            }
-            state.copy(pendingFilterState = state.pendingFilterState.copy(orderStatuses = currentStatuses))
-        }
-    }
-
-    fun togglePaymentStatus(status: cz.cleansia.partner.domain.models.orders.PaymentStatus) {
-        _uiState.update { state ->
-            val currentStatuses = state.pendingFilterState.paymentStatuses.toMutableSet()
-            if (currentStatuses.contains(status)) {
-                currentStatuses.remove(status)
-            } else {
-                currentStatuses.add(status)
-            }
-            state.copy(pendingFilterState = state.pendingFilterState.copy(paymentStatuses = currentStatuses))
-        }
-    }
-
-    fun setStartDate(date: String?) {
-        _uiState.update { it.copy(pendingFilterState = it.pendingFilterState.copy(startDate = date)) }
-    }
-
-    fun setEndDate(date: String?) {
-        _uiState.update { it.copy(pendingFilterState = it.pendingFilterState.copy(endDate = date)) }
-    }
-
-    fun applyFilters() {
-        _uiState.update { it.copy(filterState = it.pendingFilterState, pendingScrollToTop = true) }
-        closeFilterDrawer()
-        refresh()
-    }
-
-    fun resetFilters() {
-        _uiState.update { it.copy(filterState = OrderFilterState(), pendingFilterState = OrderFilterState(), pendingScrollToTop = true) }
-        refresh()
-    }
-
-    fun removeFilter(filterKey: String) {
-        _uiState.update { state ->
-            val newFilterState = when (filterKey) {
-                "search" -> state.filterState.copy(searchTerm = "")
-                "orderStatus" -> state.filterState.copy(orderStatuses = emptySet())
-                "paymentStatus" -> state.filterState.copy(paymentStatuses = emptySet())
-                "startDate" -> state.filterState.copy(startDate = null)
-                "endDate" -> state.filterState.copy(endDate = null)
-                else -> state.filterState
-            }
-            state.copy(filterState = newFilterState, pendingFilterState = newFilterState, pendingScrollToTop = true)
-        }
-        refresh()
-    }
+    fun openFilterDrawer() = filterManager.openFilterDrawer()
+    fun closeFilterDrawer() = filterManager.closeFilterDrawer()
+    fun updateSearchTerm(term: String) = filterManager.updateSearchTerm(term)
+    fun toggleOrderStatus(status: OrderStatus) = filterManager.toggleOrderStatus(status)
+    fun togglePaymentStatus(status: cz.cleansia.partner.domain.models.orders.PaymentStatus) = filterManager.togglePaymentStatus(status)
+    fun setStartDate(date: String?) = filterManager.setStartDate(date)
+    fun setEndDate(date: String?) = filterManager.setEndDate(date)
+    fun applyFilters() = filterManager.applyFilters()
+    fun resetFilters() = filterManager.resetFilters()
+    fun removeFilter(filterKey: String) = filterManager.removeFilter(filterKey)
 }

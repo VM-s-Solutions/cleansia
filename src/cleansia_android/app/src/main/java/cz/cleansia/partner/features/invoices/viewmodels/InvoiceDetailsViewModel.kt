@@ -8,6 +8,7 @@ import android.provider.MediaStore
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.core.network.ApiResult
 import cz.cleansia.partner.domain.models.invoices.InvoiceDetail
 import cz.cleansia.partner.domain.repositories.InvoicesRepository
@@ -38,7 +39,8 @@ data class InvoiceDetailsUiState(
 class InvoiceDetailsViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val invoicesRepository: InvoicesRepository,
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val errorTranslator: ApiErrorTranslator
 ) : ViewModel() {
 
     private val invoiceId: String = savedStateHandle.get<String>("invoiceId") ?: ""
@@ -72,7 +74,7 @@ class InvoiceDetailsViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            error = result.error.getUserMessage()
+                            error = errorTranslator.translateError(result.error)
                         )
                     }
                 }
@@ -113,7 +115,7 @@ class InvoiceDetailsViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isDownloading = false,
-                            downloadError = result.error.getUserMessage()
+                            downloadError = errorTranslator.translateError(result.error)
                         )
                     }
                 }

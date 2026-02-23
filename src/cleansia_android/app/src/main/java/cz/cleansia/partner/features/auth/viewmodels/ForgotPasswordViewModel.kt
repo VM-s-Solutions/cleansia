@@ -3,6 +3,7 @@ package cz.cleansia.partner.features.auth.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.partner.core.network.ApiError
+import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.core.network.ApiResult
 import cz.cleansia.partner.domain.repositories.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,7 +24,8 @@ data class ForgotPasswordUiState(
 
 @HiltViewModel
 class ForgotPasswordViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val errorTranslator: ApiErrorTranslator
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ForgotPasswordUiState())
@@ -70,7 +72,7 @@ class ForgotPasswordViewModel @Inject constructor(
                     val errorMessage = when (result.error) {
                         is ApiError.Network -> "Unable to connect. Please check your internet connection."
                         is ApiError.NotFound -> "No account found with this email address."
-                        else -> result.error.getUserMessage()
+                        else -> errorTranslator.translateError(result.error)
                     }
 
                     _uiState.update {

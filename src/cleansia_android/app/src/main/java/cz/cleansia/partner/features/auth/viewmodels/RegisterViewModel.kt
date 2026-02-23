@@ -2,7 +2,7 @@ package cz.cleansia.partner.features.auth.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cz.cleansia.partner.core.network.ApiError
+import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.core.network.ApiResult
 import cz.cleansia.partner.domain.repositories.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,7 +17,6 @@ data class RegisterUiState(
     val firstName: String = "",
     val lastName: String = "",
     val email: String = "",
-    val phoneNumber: String = "",
     val password: String = "",
     val confirmPassword: String = "",
     val acceptTerms: Boolean = false,
@@ -26,7 +25,6 @@ data class RegisterUiState(
     val firstNameError: String? = null,
     val lastNameError: String? = null,
     val emailError: String? = null,
-    val phoneError: String? = null,
     val passwordError: String? = null,
     val confirmPasswordError: String? = null,
     val termsError: String? = null,
@@ -36,7 +34,8 @@ data class RegisterUiState(
 
 @HiltViewModel
 class RegisterViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val errorTranslator: ApiErrorTranslator
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RegisterUiState())
@@ -67,16 +66,6 @@ class RegisterViewModel @Inject constructor(
             it.copy(
                 email = email,
                 emailError = null,
-                error = null
-            )
-        }
-    }
-
-    fun onPhoneNumberChange(phoneNumber: String) {
-        _uiState.update {
-            it.copy(
-                phoneNumber = phoneNumber,
-                phoneError = null,
                 error = null
             )
         }
@@ -136,14 +125,6 @@ class RegisterViewModel @Inject constructor(
             hasError = true
         }
 
-        if (state.phoneNumber.isBlank()) {
-            _uiState.update { it.copy(phoneError = "Phone number is required") }
-            hasError = true
-        } else if (!isValidPhoneNumber(state.phoneNumber)) {
-            _uiState.update { it.copy(phoneError = "Please enter a valid phone number") }
-            hasError = true
-        }
-
         if (state.password.isBlank()) {
             _uiState.update { it.copy(passwordError = "Password is required") }
             hasError = true
@@ -178,7 +159,7 @@ class RegisterViewModel @Inject constructor(
                 password = state.password,
                 firstName = state.firstName,
                 lastName = state.lastName,
-                phoneNumber = state.phoneNumber
+                phoneNumber = ""
             )) {
                 is ApiResult.Success -> {
                     _uiState.update {
@@ -191,16 +172,10 @@ class RegisterViewModel @Inject constructor(
                 }
 
                 is ApiResult.Error -> {
-                    val errorMessage = when (result.error) {
-                        is ApiError.BadRequest -> result.error.message
-                        is ApiError.Network -> "Unable to connect. Please check your internet connection."
-                        else -> result.error.getUserMessage()
-                    }
-
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            error = errorMessage
+                            error = errorTranslator.translateError(result.error)
                         )
                     }
                 }
@@ -214,12 +189,6 @@ class RegisterViewModel @Inject constructor(
 
     private fun isValidEmail(email: String): Boolean {
         return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
-    }
-
-    private fun isValidPhoneNumber(phone: String): Boolean {
-        // Basic phone validation - allows +, digits, spaces, dashes
-        val phoneRegex = Regex("^[+]?[0-9\\s\\-]{9,15}$")
-        return phoneRegex.matches(phone.replace(" ", "").replace("-", ""))
     }
 
     private fun isValidPassword(password: String): Boolean {

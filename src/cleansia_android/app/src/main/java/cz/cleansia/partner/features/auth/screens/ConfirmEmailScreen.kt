@@ -40,6 +40,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import cz.cleansia.partner.R
 import cz.cleansia.partner.features.auth.viewmodels.ConfirmEmailViewModel
 import cz.cleansia.partner.ui.components.CleansiaButton
+import cz.cleansia.partner.ui.components.CleansiaSnackbarHost
 import cz.cleansia.partner.ui.components.CleansiaTextField
 import cz.cleansia.partner.ui.components.GlassBackButton
 
@@ -75,9 +76,7 @@ fun ConfirmEmailScreen(
         }
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues ->
+    Scaffold { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -190,6 +189,8 @@ fun ConfirmEmailScreen(
             }
 
             GlassBackButton(onNavigateBack = onNavigateBack)
+
+            CleansiaSnackbarHost(hostState = snackbarHostState)
         }
     }
 }

@@ -10,6 +10,9 @@ import cz.cleansia.partner.domain.models.auth.ResendConfirmationRequest
 import cz.cleansia.partner.domain.models.dashboard.DashboardStats
 import cz.cleansia.partner.domain.models.dashboard.EarningsAnalytics
 import cz.cleansia.partner.domain.models.dashboard.EarningsSummary
+import cz.cleansia.partner.domain.models.dashboard.OrderAnalyticsResponse
+import cz.cleansia.partner.domain.models.dashboard.ProductivityMetricsResponse
+import cz.cleansia.partner.domain.models.dashboard.TimeAnalyticsResponse
 import cz.cleansia.partner.domain.models.dashboard.UpcomingOrder
 import cz.cleansia.partner.domain.models.invoices.Invoice
 import cz.cleansia.partner.domain.models.invoices.InvoiceDetail
@@ -19,9 +22,24 @@ import cz.cleansia.partner.domain.models.orders.Order
 import cz.cleansia.partner.domain.models.orders.OrderDetail
 import cz.cleansia.partner.domain.models.orders.PagedOrderResponse
 import cz.cleansia.partner.domain.models.orders.StartOrderRequest
+import cz.cleansia.partner.domain.models.orders.StartOrderResponse
 import cz.cleansia.partner.domain.models.orders.TakeOrderRequest
+import cz.cleansia.partner.domain.models.orders.TakeOrderResponse
+import cz.cleansia.partner.domain.models.orders.CompleteOrderResponse
+import cz.cleansia.partner.domain.models.profile.Country
 import cz.cleansia.partner.domain.models.profile.EmployeeDocument
 import cz.cleansia.partner.domain.models.profile.EmployeeProfile
+import cz.cleansia.partner.domain.models.profile.GetMyDocumentsResponse
+import cz.cleansia.partner.domain.models.profile.SaveMyDocumentsRequest
+import cz.cleansia.partner.domain.models.profile.SaveMyDocumentsResponse
+import cz.cleansia.partner.domain.models.profile.RegistrationCompletionStatus
+import cz.cleansia.partner.domain.models.profile.UpdateAddressInfoRequest
+import cz.cleansia.partner.domain.models.profile.UpdateAvailabilityRequest
+import cz.cleansia.partner.domain.models.profile.UpdateBankDetailsRequest
+import cz.cleansia.partner.domain.models.profile.UpdateEmergencyContactRequest
+import cz.cleansia.partner.domain.models.profile.UpdateIdentificationInfoRequest
+import cz.cleansia.partner.domain.models.profile.UpdatePersonalInfoRequest
+import cz.cleansia.partner.domain.models.profile.UpdateSectionResponse
 import okhttp3.MultipartBody
 import okhttp3.ResponseBody
 import retrofit2.Response
@@ -82,6 +100,27 @@ interface ApiService {
         @Query("employeeId") employeeId: String? = null
     ): Response<EarningsSummary>
 
+    @GET("Dashboard/GetOrderAnalytics")
+    suspend fun getOrderAnalytics(
+        @Query("employeeId") employeeId: String? = null,
+        @Query("startDate") startDate: String? = null,
+        @Query("endDate") endDate: String? = null
+    ): Response<OrderAnalyticsResponse>
+
+    @GET("Dashboard/GetTimeAnalytics")
+    suspend fun getTimeAnalytics(
+        @Query("employeeId") employeeId: String? = null,
+        @Query("startDate") startDate: String? = null,
+        @Query("endDate") endDate: String? = null
+    ): Response<TimeAnalyticsResponse>
+
+    @GET("Dashboard/GetProductivityMetrics")
+    suspend fun getProductivityMetrics(
+        @Query("employeeId") employeeId: String? = null,
+        @Query("startDate") startDate: String? = null,
+        @Query("endDate") endDate: String? = null
+    ): Response<ProductivityMetricsResponse>
+
     // ===== Orders =====
 
     @GET("Order/GetPaged")
@@ -106,21 +145,28 @@ interface ApiService {
     suspend fun getOrderById(@Query("OrderId") orderId: String): Response<OrderDetail>
 
     @POST("Order/TakeOrder")
-    suspend fun takeOrder(@Body request: TakeOrderRequest): Response<OrderDetail>
+    suspend fun takeOrder(@Body request: TakeOrderRequest): Response<TakeOrderResponse>
 
     @POST("Order/StartOrder")
-    suspend fun startOrder(@Body request: StartOrderRequest): Response<OrderDetail>
+    suspend fun startOrder(@Body request: StartOrderRequest): Response<StartOrderResponse>
 
     @POST("Order/CompleteOrder")
-    suspend fun completeOrder(@Body request: CompleteOrderRequest): Response<OrderDetail>
+    suspend fun completeOrder(@Body request: CompleteOrderRequest): Response<CompleteOrderResponse>
 
-    @Multipart
     @POST("Order/UploadPhoto")
     suspend fun uploadOrderPhoto(
-        @Query("orderId") orderId: String,
-        @Part photo: MultipartBody.Part,
-        @Part type: MultipartBody.Part
-    ): Response<Unit>
+        @Body request: cz.cleansia.partner.domain.models.orders.UploadOrderPhotoRequest
+    ): Response<cz.cleansia.partner.domain.models.orders.UploadOrderPhotoResponse>
+
+    @POST("Order/AddNote")
+    suspend fun addOrderNote(
+        @Body request: cz.cleansia.partner.domain.models.orders.AddOrderNoteRequest
+    ): Response<cz.cleansia.partner.domain.models.orders.AddOrderNoteResponse>
+
+    @POST("Order/ReportIssue")
+    suspend fun reportOrderIssue(
+        @Body request: cz.cleansia.partner.domain.models.orders.ReportOrderIssueRequest
+    ): Response<cz.cleansia.partner.domain.models.orders.ReportOrderIssueResponse>
 
     // ===== Invoices =====
 
@@ -142,7 +188,15 @@ interface ApiService {
     @GET("EmployeePayroll/DownloadInvoice/{id}")
     suspend fun downloadInvoicePdf(@Path("id") invoiceId: String): Response<ResponseBody>
 
+    // ===== Countries =====
+
+    @GET("Country/GetOverview")
+    suspend fun getCountries(): Response<List<Country>>
+
     // ===== Profile =====
+
+    @GET("Employee/CheckCurrentEmployee")
+    suspend fun checkCurrentEmployee(): Response<RegistrationCompletionStatus>
 
     @GET("Employee/GetCurrentEmployee")
     suspend fun getCurrentEmployee(): Response<EmployeeProfile>
@@ -150,18 +204,43 @@ interface ApiService {
     @PUT("Employee/UpdateEmployee")
     suspend fun updateEmployee(@Body profile: EmployeeProfile): Response<EmployeeProfile>
 
-    @GET("Employee/GetMyDocuments")
-    suspend fun getMyDocuments(): Response<List<EmployeeDocument>>
+    // Per-section profile updates
 
-    @Multipart
+    @PUT("Employee/UpdatePersonalInfo")
+    suspend fun updatePersonalInfo(@Body request: UpdatePersonalInfoRequest): Response<UpdateSectionResponse>
+
+    @PUT("Employee/UpdateIdentificationInfo")
+    suspend fun updateIdentificationInfo(@Body request: UpdateIdentificationInfoRequest): Response<UpdateSectionResponse>
+
+    @PUT("Employee/UpdateAddressInfo")
+    suspend fun updateAddressInfo(@Body request: UpdateAddressInfoRequest): Response<UpdateSectionResponse>
+
+    @PUT("Employee/UpdateBankDetails")
+    suspend fun updateBankDetails(@Body request: UpdateBankDetailsRequest): Response<UpdateSectionResponse>
+
+    @PUT("Employee/UpdateEmergencyContact")
+    suspend fun updateEmergencyContact(@Body request: UpdateEmergencyContactRequest): Response<UpdateSectionResponse>
+
+    @PUT("Employee/UpdateAvailability")
+    suspend fun updateAvailability(@Body request: UpdateAvailabilityRequest): Response<UpdateSectionResponse>
+
+    @GET("Employee/GetMyDocuments")
+    suspend fun getMyDocuments(): Response<GetMyDocumentsResponse>
+
     @POST("Employee/SaveMyDocuments")
     suspend fun saveDocuments(
-        @Part documents: List<MultipartBody.Part>
-    ): Response<List<EmployeeDocument>>
+        @Body request: SaveMyDocumentsRequest
+    ): Response<SaveMyDocumentsResponse>
 
     @DELETE("Employee/DeleteMyDocument")
     suspend fun deleteDocument(@Query("documentId") documentId: String): Response<Unit>
 
     @GET("Employee/DownloadMyDocument")
     suspend fun downloadDocument(@Query("documentId") documentId: String): Response<ResponseBody>
+
+    @Multipart
+    @POST("Employee/UploadProfilePhoto")
+    suspend fun uploadProfilePhoto(
+        @Part photo: MultipartBody.Part
+    ): Response<EmployeeProfile>
 }

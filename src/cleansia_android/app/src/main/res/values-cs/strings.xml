@@ -204,6 +204,7 @@
     <string name="documents">Dokumenty</string>
     <string name="availability">Dostupnost</string>
     <string name="edit_profile">Upravit profil</string>
+    <string name="missing_fields">Chybí:</string>
     <string name="date_of_birth">Datum narození</string>
     <string name="nationality">Státní příslušnost</string>
     <string name="national_id">Číslo OP</string>
@@ -222,6 +223,7 @@
 
     <!-- Emergency Contact -->
     <string name="emergency_contact">Nouzový kontakt</string>
+    <string name="emergency_contact_desc">Osoba, kterou můžeme kontaktovat v případě nouze</string>
     <string name="contact_name">Jméno kontaktu</string>
     <string name="relationship">Vztah</string>
     <string name="contact_phone">Telefonní číslo</string>
@@ -266,9 +268,24 @@
     <string name="doc_passport">Cestovní pas</string>
     <string name="doc_driving_license">Řidičský průkaz</string>
     <string name="doc_work_permit">Pracovní povolení</string>
-    <string name="doc_residence_permit">Povolení k pobytu</string>
+    <string name="doc_contract">Smlouva</string>
+    <string name="doc_certificate">Certifikát</string>
+    <string name="doc_bank_statement">Bankovní výpis</string>
     <string name="doc_tax_document">Daňový doklad</string>
+    <string name="doc_insurance_document">Pojistný doklad</string>
     <string name="doc_other">Jiné</string>
+
+    <!-- Document Management -->
+    <string name="document_type_label">Typ dokumentu</string>
+    <string name="select_files">Vybrat soubory</string>
+    <string name="upload_requirements">PDF, DOC, DOCX, JPG, JPEG, PNG — max 10 MB</string>
+    <string name="delete_document_confirm">Opravdu chcete smazat \"%1$s\"?</string>
+    <string name="download">Stáhnout</string>
+    <string name="pending_documents">Čekající</string>
+    <string name="approved_documents">Schválené</string>
+    <string name="rejected_documents">Zamítnuté</string>
+    <string name="expired_documents">Prošlé</string>
+    <string name="review_notes">Poznámky k hodnocení</string>
 
     <!-- Help Cards -->
     <string name="orders_help_title">Jak fungují objednávky</string>
@@ -293,6 +310,26 @@
     <string name="error_last_name_required">Příjmení je povinné</string>
     <string name="error_terms_required">Musíte souhlasit s obchodními podmínkami</string>
 
+    <!-- Profile Validation -->
+    <string name="validation_required">Toto pole je povinné</string>
+    <string name="validation_max_50">Maximálně 50 znaků</string>
+    <string name="validation_max_20">Maximálně 20 znaků</string>
+    <string name="validation_max_100">Maximálně 100 znaků</string>
+    <string name="validation_date_past">Datum musí být v minulosti</string>
+    <string name="validation_min_age_18">Musíte mít alespoň 18 let</string>
+    <string name="validation_max_age_120">Neplatné datum narození</string>
+    <string name="validation_invalid_date">Neplatný formát data</string>
+    <string name="validation_invalid_phone">Neplatný formát telefonního čísla</string>
+    <string name="validation_invalid_email">Neplatný formát emailu</string>
+    <string name="validation_length_5_20">Musí mít 5 až 20 znaků</string>
+    <string name="validation_alphanumeric">Povolena jsou pouze písmena a číslice</string>
+    <string name="validation_length_5_255">Musí mít 5 až 255 znaků</string>
+    <string name="validation_length_2_100">Musí mít 2 až 100 znaků</string>
+    <string name="validation_length_3_20">Musí mít 3 až 20 znaků</string>
+    <string name="validation_invalid_zip">Neplatný formát PSČ</string>
+    <string name="validation_length_15_34">Musí mít 15 až 34 znaků</string>
+    <string name="validation_invalid_iban">Neplatný formát IBAN</string>
+
     <!-- Onboarding -->
     <string name="onboarding_welcome_title">Vítejte v Cleansia Partner</string>
     <string name="onboarding_welcome_desc">Vaše partnerská aplikace pro správu úklidových zakázek a výdělků</string>
@@ -305,6 +342,27 @@
     <string name="onboarding_get_started">Začít</string>
     <string name="onboarding_next">Další</string>
     <string name="onboarding_skip">Přeskočit</string>
+    <!-- Onboarding highlights -->
+    <string name="onboarding_highlight_orders">Správa zakázek</string>
+    <string name="onboarding_highlight_earnings">Sledování výdělků</string>
+    <string name="onboarding_highlight_schedule">Nastavení rozvrhu</string>
+    <string name="onboarding_highlight_realtime">Aktualizace v reálném čase</string>
+    <string name="onboarding_highlight_location">Zobrazení na mapě</string>
+    <string name="onboarding_highlight_tracking">Sledování postupu</string>
+    <string name="onboarding_highlight_invoices">Faktury</string>
+    <string name="onboarding_highlight_analytics">Analytika</string>
+    <string name="onboarding_highlight_reports">Výkazy</string>
+    <string name="onboarding_highlight_availability">Dostupnost</string>
+    <string name="onboarding_highlight_documents">Dokumenty</string>
+    <string name="onboarding_highlight_ratings">Hodnocení</string>
+
+    <!-- Registration Lock -->
+    <string name="registration_lock_title">Vyžadováno dokončení profilu</string>
+    <string name="registration_lock_description">Pro přístup k této sekci musíte dokončit nastavení profilu a nahrát požadované dokumenty.</string>
+    <string name="registration_lock_missing_requirements">Chybějící požadavky:</string>
+    <string name="registration_lock_profile_completion">Dokončit informace v profilu</string>
+    <string name="registration_lock_document_upload">Nahrát požadované dokumenty</string>
+    <string name="registration_lock_complete_profile">Dokončit profil</string>
 
     <!-- API Errors -->
     <string name="error_network">Nelze se připojit k serveru. Zkontrolujte prosím internetové připojení.</string>
@@ -313,6 +371,10 @@
     <string name="error_not_found">Požadovaný zdroj nebyl nalezen.</string>
     <string name="error_server">Chyba serveru. Zkuste to prosím později.</string>
     <string name="error_unknown">Došlo k neočekávané chybě.</string>
+
+    <!-- Session Expiration -->
+    <string name="session_expired_title">Platnost relace vypršela</string>
+    <string name="session_expired_message">Vaše relace vypršela. Pro pokračování se prosím přihlaste znovu.</string>
 
     <!-- Timer -->
     <string name="timer_minute">minuta</string>
@@ -342,6 +404,10 @@
     <string name="add_note">Poznámka</string>
     <string name="call">Volat</string>
     <string name="message">Zpráva</string>
+    <string name="employee_notes_issues">Poznámky a problémy</string>
+    <string name="no_notes_or_issues">Zatím žádné poznámky ani problémy</string>
+    <string name="issue_resolved">Vyřešeno</string>
+    <string name="issue_open">Otevřeno</string>
 
     <!-- Account Hub -->
     <string name="account">Účet</string>
@@ -380,4 +446,123 @@
     <string name="photos_required_warning">Pro dokončení objednávky jsou vyžadovány fotografie před a po úklidu</string>
     <string name="photos_before_required">Přidejte prosím alespoň jednu fotografii před úklidem</string>
     <string name="photos_after_required">Přidejte prosím alespoň jednu fotografii po úklidu</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_timer">Časovač objednávky</string>
+    <string name="notification_channel_timer_desc">Průběžné oznámení zobrazující průběh časovače objednávky</string>
+    <string name="notification_channel_alerts">Upozornění na objednávky</string>
+    <string name="notification_channel_alerts_desc">Důležitá upozornění na časové limity objednávek</string>
+    <string name="notification_order_timer">Objednávka #%1$s</string>
+    <string name="notification_time_remaining">Zbývá %1$d min</string>
+    <string name="notification_overtime">%1$d min přes odhadovaný čas</string>
+    <string name="notification_caution_title">Čas se krátí</string>
+    <string name="notification_caution_message">Objednávka #%1$s má zbývajících asi %2$d min</string>
+    <string name="notification_urgent_title">Téměř bez času!</string>
+    <string name="notification_urgent_message">Objednávce #%1$s zbývá jen %2$d min</string>
+    <string name="notification_overtime_title">Čas překročen</string>
+    <string name="notification_overtime_message">Objednávka #%1$s překročila odhadovaný čas</string>
+    <string name="notification_caution_subtitle">Zbývá %1$d min — pospěšte si</string>
+    <string name="notification_urgent_subtitle">Zbývá jen %1$d min!</string>
+    <string name="notification_elapsed">%1$d min uplynulo</string>
+    <string name="notification_elapsed_detailed">%1$d:%2$02d uplynulo</string>
+    <string name="notification_estimated">Odhad %1$d min</string>
+    <string name="notification_in_progress">Probíhá</string>
+    <string name="notification_overtime_elapsed">+%1$d min přes čas</string>
+
+    <!-- Urgency -->
+    <string name="urgency_overdue">Po termínu</string>
+    <string name="urgency_in_minutes">Za %1$d min</string>
+    <string name="urgency_in_hours_minutes">Za %1$dh %2$dm</string>
+    <string name="urgency_in_hours">Za %1$dh</string>
+
+    <!-- API Error Translations (backend error keys → localized messages) -->
+    <!-- Auth -->
+    <string name="api_error_auth_google_type_error">Chyba typu ověření Google</string>
+    <string name="api_error_auth_internal_type_error">Chyba typu interního ověření</string>
+    <string name="api_error_auth_invalid_confirmation_code">Neplatný potvrzovací kód</string>
+    <string name="api_error_auth_invalid_google_token">Neplatný Google token</string>
+    <string name="api_error_auth_invalid_password_format">Neplatný formát hesla</string>
+    <string name="api_error_auth_invalid_reset_token">Neplatný token pro obnovení hesla</string>
+    <string name="api_error_auth_same_reset_password">Nové heslo se shoduje se starým heslem</string>
+    <string name="api_error_auth_insufficient_privileges">Nemáte oprávnění provést tuto akci</string>
+    <!-- Common -->
+    <string name="api_error_common_invalid_enum_value">Neplatná hodnota</string>
+    <string name="api_error_common_max_length">Překročena maximální délka</string>
+    <string name="api_error_common_required">Toto pole je povinné</string>
+    <!-- Email -->
+    <string name="api_error_email_sending_failed">Nepodařilo se odeslat e-mail. Zkuste to prosím znovu.</string>
+    <string name="api_error_email_invalid_format">Neplatný formát e-mailu</string>
+    <string name="api_error_email_invalid_email">Neplatná e-mailová adresa</string>
+    <!-- Order -->
+    <string name="api_error_order_cleaning_date_future">Datum úklidu musí být v budoucnosti</string>
+    <string name="api_error_order_empty">Objednávka nemůže být prázdná</string>
+    <string name="api_error_order_not_found">Objednávka nenalezena</string>
+    <string name="api_error_order_already_assigned">Tato objednávka je již přiřazena</string>
+    <string name="api_error_order_no_available_spots">Žádná volná místa pro tuto objednávku</string>
+    <string name="api_error_order_employee_already_assigned">K této objednávce jste již přiřazeni</string>
+    <string name="api_error_order_employee_not_assigned">K této objednávce nejste přiřazeni</string>
+    <string name="api_error_order_max_employees_exceeded">Překročen maximální počet zaměstnanců</string>
+    <string name="api_error_order_not_in_progress">Objednávka neprobíhá</string>
+    <string name="api_error_order_not_confirmed">Objednávka není potvrzena</string>
+    <string name="api_error_order_employee_already_has_order_in_progress">Již máte rozpracovanou objednávku</string>
+    <string name="api_error_order_note_content_required">Obsah poznámky je povinný</string>
+    <string name="api_error_order_issue_description_required">Popis problému je povinný</string>
+    <!-- User -->
+    <string name="api_error_user_email_confirmed">E-mail je již potvrzen</string>
+    <string name="api_error_user_existing_email">Uživatel s tímto e-mailem již existuje</string>
+    <string name="api_error_user_not_existing_email">Uživatel s tímto e-mailem neexistuje</string>
+    <string name="api_error_user_not_existing_id">Uživatel nenalezen</string>
+    <string name="api_error_user_not_allowed_to_update">Nemáte oprávnění upravit tohoto uživatele</string>
+    <string name="api_error_user_existing_phone_number">Uživatel s tímto telefonním číslem již existuje</string>
+    <string name="api_error_user_not_found">Uživatel nenalezen</string>
+    <!-- Employee -->
+    <string name="api_error_employee_not_found">Zaměstnanec nenalezen</string>
+    <string name="api_error_employee_not_existing_email">Zaměstnanec s tímto e-mailem neexistuje</string>
+    <string name="api_error_employee_not_allowed_to_update">Nemáte oprávnění upravit tohoto zaměstnance</string>
+    <string name="api_error_employee_profile_incomplete">Profil zaměstnance je neúplný</string>
+    <string name="api_error_employee_documents_missing">Chybí požadované dokumenty</string>
+    <!-- Employee Documents -->
+    <string name="api_error_employee_document_not_found">Dokument nenalezen</string>
+    <string name="api_error_employee_document_unauthorized">Nemáte oprávnění přistupovat k tomuto dokumentu</string>
+    <string name="api_error_employee_document_not_owned">Tento dokument vám nepatří</string>
+    <!-- Validation -->
+    <string name="api_error_validation_invalid_password">Neplatné heslo</string>
+    <string name="api_error_validation_invalid_date">Neplatné datum</string>
+    <string name="api_error_validation_date_must_be_in_past">Datum musí být v minulosti</string>
+    <string name="api_error_validation_invalid_age">Neplatný věk</string>
+    <string name="api_error_validation_invalid_phone_number">Neplatný formát telefonního čísla</string>
+    <string name="api_error_validation_invalid_national_id">Neplatný formát čísla občanského průkazu</string>
+    <string name="api_error_validation_invalid_tax_id">Neplatný formát DIČ</string>
+    <string name="api_error_validation_invalid_iban">Neplatný formát IBAN</string>
+    <string name="api_error_validation_invalid_zip_code">Neplatný formát PSČ</string>
+    <string name="api_error_validation_must_be_positive">Hodnota musí být kladná</string>
+    <string name="api_error_validation_invalid_availability_format">Neplatný formát dostupnosti</string>
+    <string name="api_error_validation_page_must_be_positive">Stránka musí být větší než 0</string>
+    <string name="api_error_validation_page_size_must_be_positive">Velikost stránky musí být větší než 0</string>
+    <string name="api_error_validation_page_size_exceeded">Velikost stránky nesmí překročit 100</string>
+    <string name="api_error_validation_invalid_contract_status">Neplatný stav smlouvy</string>
+    <!-- File -->
+    <string name="api_error_file_content_type_doesnt_match">Typ souboru neodpovídá obsahu</string>
+    <string name="api_error_file_invalid_file_type">Neplatný typ souboru</string>
+    <string name="api_error_file_size_exceeded">Velikost souboru překračuje maximální povolený limit</string>
+    <string name="api_error_file_size_exceeded_10mb">Velikost souboru nesmí překročit 10 MB</string>
+    <string name="api_error_file_type_not_allowed">Typ souboru není povolen</string>
+    <string name="api_error_file_required">Nahrání souboru je povinné</string>
+    <!-- General -->
+    <string name="api_error_general_not_found">Požadovaný zdroj nebyl nalezen</string>
+    <!-- Device -->
+    <string name="api_error_device_invalid_platform">Neplatná platforma</string>
+    <!-- Country -->
+    <string name="api_error_country_not_existing_id">Země nenalezena</string>
+    <!-- Address -->
+    <string name="api_error_address_invalid_length">Neplatná délka adresy</string>
+
+    <!-- Tier 3 -->
+    <string name="scroll_to_top">Posunout nahoru</string>
+    <string name="view_mode_list">Zobrazení seznamu</string>
+    <string name="view_mode_week">Týdenní zobrazení</string>
+    <string name="no_orders_for_day">Tento den nemáte žádné zakázky</string>
+    <string name="offline_mode">Jste offline</string>
+    <string name="last_updated_ago">Naposledy aktualizováno %1$s</string>
+    <string name="syncing">Synchronizace…</string>
 </resources>

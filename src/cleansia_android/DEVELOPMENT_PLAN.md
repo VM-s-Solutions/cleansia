@@ -528,7 +528,7 @@ This document outlines the comprehensive development plan for the Cleansia Partn
 ## File Structure Reference
 
 ```
-cleansia_android/
+Cleansia.Android/
 ├── app/src/main/java/cz/cleansia/partner/
 │   ├── core/
 │   │   ├── network/         # API service, interceptors

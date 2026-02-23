@@ -92,10 +92,10 @@
       "street": "Ulice a číslo popisné",
       "city": "Město",
       "zip_code": "PSČ",
-      "country": "Země",
+      "country": "Země bydliště",
       "phone": "Telefonní číslo",
       "email": "E-mail",
-      "nationality": "Národnost",
+      "nationality": "Státní příslušnost",
       "national_id": "Číslo občanského průkazu / Pasu",
       "tax_id": "DIČ",
       "bank_details": "Bankovní údaje pro výplatu",
@@ -612,13 +612,44 @@
         "thursday": "Čtvrtek",
         "friday": "Pátek",
         "saturday": "Sobota",
-        "sunday": "Neděle"
+        "sunday": "Neděle",
+        "monday_short": "Po",
+        "tuesday_short": "Út",
+        "wednesday_short": "St",
+        "thursday_short": "Čt",
+        "friday_short": "Pá",
+        "saturday_short": "So",
+        "sunday_short": "Ne"
       },
       "current_ranges": "Aktuální časová rozmezí",
       "no_availability": "Není nastavena dostupnost",
       "add_time_range": "Přidat časové rozmezí",
       "start_time": "Čas začátku",
-      "end_time": "Čas konce"
+      "end_time": "Čas konce",
+      "quick_setup": "Rychlé nastavení",
+      "weekly_schedule": "Týdenní rozvrh",
+      "mon_fri_9_5": "Po-Pá 9-17",
+      "mon_sat_8_4": "Po-So 8-16",
+      "custom": "Vlastní",
+      "legend_working": "Pracovní",
+      "legend_custom": "Vlastní hodiny",
+      "legend_off": "Volno",
+      "no_days_selected": "Vyberte pracovní dny pro nastavení rozvrhu",
+      "working_day": "Pracovní den",
+      "day_off": "Volný den",
+      "custom_hours": "Vlastní hodiny",
+      "exception_day_off": "Výjimka - Volno",
+      "edit_hours": "Upravit hodiny",
+      "remove_exception": "Odebrat výjimku",
+      "mark_exception": "Označit jako výjimku",
+      "set_custom_hours": "Nastavit vlastní hodiny",
+      "mark_unavailable": "Tento den bude označen jako nedostupný.",
+      "add_time_slot": "Přidat časový slot",
+      "schedule_setup": "Nastavení rozvrhu",
+      "schedule_setup_desc": "Vyberte pracovní dny a nastavte své hodiny.",
+      "working_hours": "Pracovní hodiny",
+      "working_days": "Pracovní dny",
+      "apply": "Použít"
     }
   },
   "global": {
@@ -957,7 +988,9 @@
       "size_exceeded": "Velikost souboru překračuje maximální povolený limit.",
       "count_exceeded": "Příliš mnoho souborů. Překročen maximální povolený počet.",
       "count_too_few": "Nedostatek souborů. Nesplněn minimální požadovaný počet.",
-      "required": "Nahrání souboru je povinné."
+      "required": "Nahrání souboru je povinné.",
+      "size_exceeded_10mb": "Velikost souboru nesmí překročit 10 MB",
+      "type_not_allowed": "Typ souboru není povolen. Povolené: PDF, JPEG, PNG, DOC, DOCX"
     },
     "address": {
       "invalid_length": "Neplatná délka pole adresy"
@@ -1002,6 +1035,11 @@
       "invalid_iban": "Neplatný formát IBAN",
       "invalid_zip_code": "Neplatný formát PSČ",
       "must_be_positive": "Hodnota musí být kladná",
+      "invalid_availability_format": "Neplatný formát dostupnosti. Dny musí být platné názvy dnů nebo data (yyyy-MM-dd) a časové rozsahy musí mít začátek před koncem.",
+      "page_must_be_positive": "Stránka musí být větší než 0",
+      "page_size_must_be_positive": "Velikost stránky musí být větší než 0",
+      "page_size_exceeded": "Velikost stránky nesmí překročit 100",
+      "invalid_contract_status": "Neplatná hodnota stavu smlouvy",
       "file": {
         "max_size": "Soubor \"{{fileName}}\" překračuje maximální velikost {{maxSize}}MB",
         "invalid_type": "Soubor \"{{fileName}}\" má nepovolený typ. Povolené: {{acceptedTypes}}"
@@ -1019,6 +1057,13 @@
     },
     "general": {
       "not_found": "Požadovaný zdroj nebyl nalezen"
+    },
+    "device": {
+      "invalid_platform": "Platforma musí být 'android' nebo 'ios'"
+    },
+    "payment": {
+      "json_payload_required": "JSON obsah je povinný",
+      "stripe_signature_required": "Hlavička podpisu Stripe je povinná"
     },
     "template": {
       "cannot_delete_active": "Nelze smazat aktivní šablonu",

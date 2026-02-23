@@ -31,7 +31,7 @@ android {
             isMinifyEnabled = false
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
-            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:5000/api\"")
+            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:5002/api\"")
             manifestPlaceholders["APP_NAME"] = "Cleansia Dev"
         }
         create("staging") {
@@ -107,7 +107,7 @@ android {
 // =============================================================================
 
 // Configuration for the API spec location
-val openApiSpecUrl = "http://localhost:5000/swagger/v1/swagger.json"
+val openApiSpecUrl = "http://localhost:5002/swagger/v1/swagger.json"
 val openApiSpecFilePath = "$projectDir/api-spec/swagger.json"
 
 // Task to download the OpenAPI spec from the running backend

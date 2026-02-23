@@ -3,7 +3,6 @@ package cz.cleansia.partner.features.profile.components
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -79,66 +78,33 @@ fun TermsConsentSection(
             // Status indicator
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = if (termsAccepted) Icons.Default.CheckCircle else Icons.Default.Warning,
-                        contentDescription = null,
-                        tint = if (termsAccepted) CleansiaColors.success else CleansiaColors.warning,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = if (termsAccepted) {
-                                stringResource(R.string.terms_accepted)
-                            } else {
-                                stringResource(R.string.terms_not_accepted)
-                            },
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        if (termsAccepted && !termsAcceptedAt.isNullOrBlank()) {
-                            Text(
-                                text = stringResource(R.string.terms_accepted_on, termsAcceptedAt),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-
-                // Status badge
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(
-                            if (termsAccepted) {
-                                CleansiaColors.successContainer
-                            } else {
-                                CleansiaColors.warningContainer
-                            }
-                        )
-                        .padding(horizontal = 12.dp, vertical = 4.dp)
-                ) {
+                Icon(
+                    imageVector = if (termsAccepted) Icons.Default.CheckCircle else Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = if (termsAccepted) CleansiaColors.success else CleansiaColors.warning,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
                     Text(
                         text = if (termsAccepted) {
-                            stringResource(R.string.status_confirmed)
+                            stringResource(R.string.terms_accepted)
                         } else {
-                            stringResource(R.string.status_pending)
+                            stringResource(R.string.terms_not_accepted)
                         },
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (termsAccepted) {
-                            CleansiaColors.onSuccessContainer
-                        } else {
-                            CleansiaColors.onWarningContainer
-                        }
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
+                    if (termsAccepted && !termsAcceptedAt.isNullOrBlank()) {
+                        Text(
+                            text = stringResource(R.string.terms_accepted_on, termsAcceptedAt),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 

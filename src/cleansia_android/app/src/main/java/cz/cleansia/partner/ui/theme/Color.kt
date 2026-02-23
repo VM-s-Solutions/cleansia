@@ -99,6 +99,14 @@ val InfoDark = Color(0xFF60A5FA)               // Lighter blue for dark theme
 val InfoContainerDark = Color(0xFF1E40AF)      // Visible blue container for dark surfaces
 val OnInfoContainerDark = Color(0xFFBFDBFE)    // Light text on dark blue container
 
+// Purple accent
+val Purple = Color(0xFF8B5CF6)
+val PurpleDark = Color(0xFFA78BFA)             // Softer purple for dark theme
+
+// Cyan accent
+val Cyan = Color(0xFF06B6D4)
+val CyanDark = Color(0xFF22D3EE)              // Softer cyan for dark theme
+
 // Timer colors - for cleaning countdown timer
 object TimerColors {
     val Plenty = Color(0xFF16A34A)      // Darker Green - >70% time remaining

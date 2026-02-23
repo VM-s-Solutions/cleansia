@@ -48,11 +48,11 @@ public class UploadEmployeeDocument
             RuleFor(x => x.FileSizeBytes)
                 .GreaterThan(0).WithMessage(BusinessErrorMessage.Required)
                 .LessThanOrEqualTo(10 * 1024 * 1024) // 10 MB
-                .WithMessage("File size must not exceed 10 MB");
+                .WithMessage(BusinessErrorMessage.FileSizeExceeded10MB);
 
             RuleFor(x => x.ContentType)
                 .Must(contentType => IsAllowedContentType(contentType))
-                .WithMessage("File type not allowed. Allowed types: PDF, Images (JPEG, PNG), Word documents");
+                .WithMessage(BusinessErrorMessage.FileTypeNotAllowed);
 
             When(x => !string.IsNullOrEmpty(x.Description), () =>
             {
@@ -118,6 +118,7 @@ public class UploadEmployeeDocument
                     filePath: request.FilePath,
                     contentType: request.ContentType,
                     fileSizeBytes: request.FileSizeBytes,
+                    documentType: request.DocumentType,
                     description: request.Description,
                     createdBy: user.Id
                 );

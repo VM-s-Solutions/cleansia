@@ -1,109 +1,440 @@
 <div class="availability-module">
-  <p-accordion [value]="['0']" [multiple]="true" class="w-full">
-    @for (day of days; track day.key; let i = $index) {
-    <p-accordionpanel [value]="i.toString()">
-      <p-accordionheader>
-        <span class="availability-module__header">
-          <span class="font-bold white-space-nowrap">{{
-            day.label | translate
-          }}</span>
-          @if (availability()[day.key] && availability()[day.key].length > 0) {
-          <p-chip [label]="availability()[day.key].length.toString()" />
+  <!-- Quick Setup Presets -->
+  <div class="presets-section">
+    <h4 class="section-label">{{ 'components.availability.quick_setup' | translate }}</h4>
+    <div class="presets-row">
+      <cleansia-button
+        [label]="'components.availability.mon_fri_9_5' | translate"
+        [outlined]="true"
+        [buttonSize]="'small'"
+        (onClick)="openPresetDialog('monFri')"
+      />
+      <cleansia-button
+        [label]="'components.availability.mon_sat_8_4' | translate"
+        [outlined]="true"
+        [buttonSize]="'small'"
+        (onClick)="openPresetDialog('monSat')"
+      />
+      <cleansia-button
+        [label]="'components.availability.custom' | translate"
+        icon="pi pi-cog"
+        [outlined]="true"
+        [buttonSize]="'small'"
+        (onClick)="openPresetDialog('custom')"
+      />
+    </div>
+  </div>
+
+  <!-- Two-column main area -->
+  <div class="availability-columns">
+    <!-- Left: Day toggles + Calendar -->
+    <div class="availability-left">
+      <!-- Day Toggles -->
+      <div class="schedule-section">
+        <h4 class="section-label">{{ 'components.availability.weekly_schedule' | translate }}</h4>
+        <div class="day-toggles">
+          @for (day of days; track day.key) {
+          <button
+            class="day-toggle"
+            [class.active]="activeDayKeys().has(day.key)"
+            (click)="toggleDay(day.key)"
+          >
+            {{ day.shortKey | translate }}
+          </button>
           }
-        </span>
-      </p-accordionheader>
-      <p-accordioncontent>
-        <div class="day-content">
-          @if ((availability()[day.key] || []).length > 0) {
-          <div class="ranges-list mb-4">
-            <h3 class="text-sm font-medium mb-2">
-              {{ 'components.availability.current_ranges' | translate }}
-            </h3>
-            @for (range of availability()[day.key]; track range; let i = $index)
-            {
-            <p-chip
-              [label]="range.start + ' - ' + range.end"
-              class="mr-2 mb-2"
-              [removable]="true"
-              (onRemove)="removeRange(day.key, i)"
-            />
+        </div>
+      </div>
+
+      <!-- Calendar Card -->
+      <div class="calendar-card">
+        <div class="calendar-header">
+          <button class="nav-btn" (click)="previousMonth()">
+            <i class="pi pi-chevron-left"></i>
+          </button>
+          <span class="month-label">{{ monthLabel() }}</span>
+          <button class="nav-btn" (click)="nextMonth()">
+            <i class="pi pi-chevron-right"></i>
+          </button>
+        </div>
+
+        <div class="calendar-body">
+          <div class="calendar-weekdays">
+            @for (header of dayHeaders; track header) {
+            <span class="weekday-label">{{ header }}</span>
             }
           </div>
-          } @else {
-          <p class="text-gray-500 italic mb-4">
-            {{ 'components.availability.no_availability' | translate }}
-          </p>
-          }
-          <p-button
-            [label]="'components.availability.add_time_range' | translate"
-            icon="pi pi-plus"
-            severity="secondary"
-            styleClass="w-full mb-4"
-            (onClick)="openAddDialog(day.key)"
-          />
-        </div>
-      </p-accordioncontent>
-    </p-accordionpanel>
-    }
-  </p-accordion>
 
+          <div class="calendar-grid">
+            @for (row of calendarRows(); track $index) {
+            <div class="calendar-row">
+              @for (day of row; track $index) {
+              @if (day.isCurrentMonth) {
+              <button
+                class="calendar-cell"
+                [class.selected]="day.isSelected"
+                [class.today]="day.isToday"
+                (click)="selectDate(day)"
+              >
+                <span class="day-number">{{ day.dayNumber }}</span>
+                @if (day.dotClass) {
+                <span class="status-dot" [ngClass]="day.dotClass"></span>
+                }
+              </button>
+              } @else {
+              <div class="calendar-cell empty"></div>
+              }
+              }
+            </div>
+            }
+          </div>
+        </div>
+
+        <div class="calendar-legend">
+          <span class="legend-item">
+            <span class="legend-dot dot-working"></span>
+            {{ 'components.availability.legend_working' | translate }}
+          </span>
+          <span class="legend-item">
+            <span class="legend-dot dot-custom"></span>
+            {{ 'components.availability.legend_custom' | translate }}
+          </span>
+          <span class="legend-item">
+            <span class="legend-dot dot-off"></span>
+            {{ 'components.availability.legend_off' | translate }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Schedule rows + Day detail -->
+    <div class="availability-right">
+      <!-- Per-day time rows -->
+      @if (activeDays().length > 0) {
+      <div class="active-days-list">
+        @for (activeDay of activeDays(); track activeDay.key) {
+        <div class="day-time-row">
+          <span class="day-label">{{ activeDay.label | translate }}</span>
+          <div class="time-chips">
+            @for (range of activeDay.ranges; track $index) {
+            <button class="time-chip" (click)="openEditTimeDialog(activeDay.key)">
+              <i class="pi pi-clock"></i>
+              {{ range.start }} &ndash; {{ range.end }}
+            </button>
+            }
+          </div>
+        </div>
+        }
+      </div>
+      } @else {
+      <div class="empty-schedule">
+        <i class="pi pi-calendar"></i>
+        <span>{{ 'components.availability.no_days_selected' | translate }}</span>
+      </div>
+      }
+
+      <!-- Day Detail Panel -->
+      <div class="day-detail-panel">
+        <div class="detail-header">
+          <span class="detail-date">{{ selectedDayInfo().dayName }}, {{ selectedDayInfo().dateFormatted }}</span>
+          <span class="status-badge" [ngClass]="statusBadgeClass()">
+            {{ statusLabel() | translate }}
+          </span>
+        </div>
+
+        @if (selectedDayInfo().isWorkingDay && selectedDayInfo().timeSlots.length > 0) {
+        <div class="detail-time-slots">
+          @for (slot of selectedDayInfo().timeSlots; track $index) {
+          <div class="detail-time-range">
+            <i class="pi pi-clock"></i>
+            <span>{{ slot.start }} - {{ slot.end }}</span>
+          </div>
+          }
+        </div>
+        }
+
+        <div class="detail-actions">
+          @if (selectedDayInfo().isWorkingDay) {
+          <cleansia-button
+            [label]="'components.availability.edit_hours' | translate"
+            icon="pi pi-pencil"
+            [text]="true"
+            [buttonSize]="'small'"
+            (onClick)="openEditHoursDialog()"
+          />
+          }
+
+          @if (selectedDayInfo().isOverride) {
+          <cleansia-button
+            [label]="'components.availability.remove_exception' | translate"
+            icon="pi pi-trash"
+            [text]="true"
+            [buttonSize]="'small'"
+            severity="danger"
+            (onClick)="removeException()"
+          />
+          } @else {
+          <cleansia-button
+            [label]="'components.availability.mark_exception' | translate"
+            icon="pi pi-calendar-times"
+            [text]="true"
+            [buttonSize]="'small'"
+            severity="secondary"
+            (onClick)="openExceptionDialog()"
+          />
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Time Slots Dialog -->
+  @if (showTimeDialog()) {
   <p-dialog
-    [header]="'components.availability.add_time_range' | translate"
-    [visible]="showDialog()"
-    (visibleChange)="showDialog.set($event)"
+    [header]="'components.availability.edit_hours' | translate"
+    [visible]="true"
+    (visibleChange)="showTimeDialog.set($event)"
     [modal]="true"
-    styleClass="cleansia-availability__dialog"
-    (onHide)="resetDialog()"
+    styleClass="availability-dialog"
+    [style]="{ width: '28rem' }"
   >
     <div class="dialog-content">
-      <div class="field mb-3">
-        <label for="startTime">{{
-          'components.availability.start_time' | translate
-        }}</label>
-        <p-datepicker
-          inputId="startTime"
-          [ngModel]="newRange().start"
-          (ngModelChange)="updateStartTime($event)"
-          [timeOnly]="true"
-          [showIcon]="true"
-          [iconDisplay]="'input'"
-          [hourFormat]="'24'"
-          [inputStyle]="{ width: '100%' }"
-          [style]="{ width: '100%' }"
-          styleClass="w-full"
-          appendTo="body"
+      @for (slot of editingSlots(); track $index; let i = $index) {
+      <div class="slot-row">
+        <div class="field">
+          <label>{{ 'components.availability.start_time' | translate }}</label>
+          <p-datepicker
+            [ngModel]="slot.start"
+            (onSelect)="updateEditingSlotTime(i, true, $event)"
+            [timeOnly]="true"
+            [hourFormat]="'24'"
+            [style]="{ width: '100%' }"
+            styleClass="w-full"
+            appendTo="body"
+          />
+        </div>
+        <span class="slot-separator">&ndash;</span>
+        <div class="field">
+          <label>{{ 'components.availability.end_time' | translate }}</label>
+          <p-datepicker
+            [ngModel]="slot.end"
+            (onSelect)="updateEditingSlotTime(i, false, $event)"
+            [timeOnly]="true"
+            [hourFormat]="'24'"
+            [style]="{ width: '100%' }"
+            styleClass="w-full"
+            appendTo="body"
+          />
+        </div>
+        @if (editingSlots().length > 1) {
+        <cleansia-button
+          icon="pi pi-times"
+          [text]="true"
+          severity="danger"
+          [buttonSize]="'small'"
+          [tooltip]="'global.actions.remove' | translate"
+          (onClick)="removeEditingSlot(i)"
         />
+        }
       </div>
-      <div class="field mb-3">
-        <label for="endTime">{{
-          'components.availability.end_time' | translate
-        }}</label>
-        <p-datepicker
-          inputId="endTime"
-          [ngModel]="newRange().end"
-          (ngModelChange)="updateEndTime($event)"
-          [timeOnly]="true"
-          [showIcon]="true"
-          [iconDisplay]="'input'"
-          [hourFormat]="'24'"
-          [inputStyle]="{ width: '100%' }"
-          [style]="{ width: '100%' }"
-          styleClass="w-full"
-          appendTo="body"
-        />
-      </div>
-      <div class="availability-module__actions">
-        <p-button
+      }
+
+      <cleansia-button
+        [label]="'components.availability.add_time_slot' | translate"
+        icon="pi pi-plus"
+        [text]="true"
+        [buttonSize]="'small'"
+        (onClick)="addEditingSlot()"
+      />
+
+      <div class="dialog-footer">
+        <cleansia-button
           [label]="'global.actions.cancel' | translate"
           severity="secondary"
-          (onClick)="showDialog.set(false)"
-        /><p-button
-          [label]="'global.actions.add' | translate"
+          [outlined]="true"
+          [buttonSize]="'small'"
+          (onClick)="showTimeDialog.set(false)"
+        />
+        <cleansia-button
+          [label]="'global.actions.save' | translate"
           severity="primary"
-          (onClick)="addRange()"
-          [disabled]="!isValidRange()"
+          [buttonSize]="'small'"
+          (onClick)="saveEditingSlots()"
         />
       </div>
     </div>
   </p-dialog>
+  }
+
+  <!-- Mark Exception Dialog -->
+  @if (showExceptionDialog()) {
+  <p-dialog
+    [header]="'components.availability.mark_exception' | translate"
+    [visible]="true"
+    (visibleChange)="showExceptionDialog.set($event)"
+    [modal]="true"
+    styleClass="availability-dialog"
+    [style]="{ width: '28rem' }"
+  >
+    <div class="dialog-content">
+      <p class="exception-date">{{ selectedDayInfo().dayName }}, {{ selectedDayInfo().dateFormatted }}</p>
+
+      <div class="switch-row">
+        <span>{{ 'components.availability.set_custom_hours' | translate }}</span>
+        <p-inputSwitch
+          [ngModel]="exceptionCustomHours()"
+          (ngModelChange)="exceptionCustomHours.set($event)"
+        />
+      </div>
+
+      @if (!exceptionCustomHours()) {
+      <p class="mark-unavailable-text">
+        {{ 'components.availability.mark_unavailable' | translate }}
+      </p>
+      }
+
+      @if (exceptionCustomHours()) {
+      <div class="exception-slots">
+        @for (slot of exceptionSlots(); track $index; let i = $index) {
+        <div class="slot-row">
+          <div class="field">
+            <label>{{ 'components.availability.start_time' | translate }}</label>
+            <p-datepicker
+              [ngModel]="slot.start"
+              (onSelect)="updateExceptionSlotTime(i, true, $event)"
+              [timeOnly]="true"
+              [hourFormat]="'24'"
+              [style]="{ width: '100%' }"
+              styleClass="w-full"
+              appendTo="body"
+            />
+          </div>
+          <span class="slot-separator">&ndash;</span>
+          <div class="field">
+            <label>{{ 'components.availability.end_time' | translate }}</label>
+            <p-datepicker
+              [ngModel]="slot.end"
+              (onSelect)="updateExceptionSlotTime(i, false, $event)"
+              [timeOnly]="true"
+              [hourFormat]="'24'"
+              [style]="{ width: '100%' }"
+              styleClass="w-full"
+              appendTo="body"
+            />
+          </div>
+          @if (exceptionSlots().length > 1) {
+          <cleansia-button
+            icon="pi pi-times"
+            [text]="true"
+            severity="danger"
+            [buttonSize]="'small'"
+            [tooltip]="'global.actions.remove' | translate"
+            (onClick)="removeExceptionSlot(i)"
+          />
+          }
+        </div>
+        }
+
+        <cleansia-button
+          [label]="'components.availability.add_time_slot' | translate"
+          icon="pi pi-plus"
+          [text]="true"
+          [buttonSize]="'small'"
+          (onClick)="addExceptionSlot()"
+        />
+      </div>
+      }
+
+      <div class="dialog-footer">
+        <cleansia-button
+          [label]="'global.actions.cancel' | translate"
+          severity="secondary"
+          [outlined]="true"
+          [buttonSize]="'small'"
+          (onClick)="showExceptionDialog.set(false)"
+        />
+        <cleansia-button
+          [label]="'global.actions.save' | translate"
+          severity="primary"
+          [buttonSize]="'small'"
+          (onClick)="saveException()"
+        />
+      </div>
+    </div>
+  </p-dialog>
+  }
+
+  <!-- Preset Setup Dialog -->
+  @if (showPresetDialog()) {
+  <p-dialog
+    [header]="'components.availability.schedule_setup' | translate"
+    [visible]="true"
+    (visibleChange)="showPresetDialog.set($event)"
+    [modal]="true"
+    styleClass="availability-dialog"
+    [style]="{ width: '28rem' }"
+  >
+    <div class="dialog-content">
+      <p class="dialog-description">
+        {{ 'components.availability.schedule_setup_desc' | translate }}
+      </p>
+
+      <h4 class="section-label">{{ 'components.availability.working_hours' | translate }}</h4>
+      <div class="preset-time-row">
+        <div class="field">
+          <p-datepicker
+            [ngModel]="presetStartDate()"
+            (onSelect)="updatePresetStartDate($event)"
+            [timeOnly]="true"
+            [hourFormat]="'24'"
+            [style]="{ width: '100%' }"
+            styleClass="w-full"
+            appendTo="body"
+          />
+        </div>
+        <span class="slot-separator">&ndash;</span>
+        <div class="field">
+          <p-datepicker
+            [ngModel]="presetEndDate()"
+            (onSelect)="updatePresetEndDate($event)"
+            [timeOnly]="true"
+            [hourFormat]="'24'"
+            [style]="{ width: '100%' }"
+            styleClass="w-full"
+            appendTo="body"
+          />
+        </div>
+      </div>
+
+      <h4 class="section-label">{{ 'components.availability.working_days' | translate }}</h4>
+      <div class="day-toggles">
+        @for (day of days; track day.key) {
+        <button
+          class="day-toggle"
+          [class.active]="isPresetDayActive(day.key)"
+          (click)="togglePresetDay(day.key)"
+        >
+          {{ day.shortKey | translate }}
+        </button>
+        }
+      </div>
+
+      <div class="dialog-footer">
+        <cleansia-button
+          [label]="'global.actions.cancel' | translate"
+          severity="secondary"
+          [outlined]="true"
+          [buttonSize]="'small'"
+          (onClick)="showPresetDialog.set(false)"
+        />
+        <cleansia-button
+          [label]="'components.availability.apply' | translate"
+          severity="primary"
+          [buttonSize]="'small'"
+          [disabled]="presetDays().size === 0"
+          (onClick)="applyPreset()"
+        />
+      </div>
+    </div>
+  </p-dialog>
+  }
 </div>

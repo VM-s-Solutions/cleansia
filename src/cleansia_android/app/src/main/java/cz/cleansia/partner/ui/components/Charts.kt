@@ -56,7 +56,8 @@ fun HorizontalBarChart(
     data: List<BarChartData>,
     modifier: Modifier = Modifier,
     barHeight: Dp = 24.dp,
-    barSpacing: Dp = 12.dp
+    barSpacing: Dp = 12.dp,
+    valueFormatter: ((Float) -> String)? = null
 ) {
     val maxValue = data.maxOfOrNull { it.value } ?: 1f
 
@@ -88,7 +89,7 @@ fun HorizontalBarChart(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = String.format("%.0f", item.value),
+                        text = valueFormatter?.invoke(item.value) ?: String.format("%.0f", item.value),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface

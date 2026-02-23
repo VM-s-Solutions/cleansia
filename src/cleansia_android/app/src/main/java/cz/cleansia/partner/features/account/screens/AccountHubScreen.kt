@@ -21,13 +21,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Help
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.AlertDialog
@@ -39,6 +35,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,8 +52,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import cz.cleansia.partner.R
+import cz.cleansia.partner.domain.models.orders.Order
+import cz.cleansia.partner.features.account.viewmodels.AccountHubViewModel
 import cz.cleansia.partner.features.profile.viewmodels.ProfileViewModel
 import cz.cleansia.partner.ui.components.GlassBackButton
+import cz.cleansia.partner.ui.components.OrderStatusBadge
 import cz.cleansia.partner.ui.theme.CleansiaColors
 
 @Composable
@@ -64,11 +64,13 @@ fun AccountHubScreen(
     onNavigateBack: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToSettings: () -> Unit,
-    onNavigateToOrders: () -> Unit,
+    onNavigateToOrderDetails: (String) -> Unit = {},
     onLogout: () -> Unit,
-    viewModel: ProfileViewModel = hiltViewModel()
+    viewModel: ProfileViewModel = hiltViewModel(),
+    accountHubViewModel: AccountHubViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val accountHubState by accountHubViewModel.uiState.collectAsState()
     var showLogoutDialog by remember { mutableStateOf(false) }
     var hasNavigatedBack by remember { mutableStateOf(false) }
 
@@ -107,8 +109,10 @@ fun AccountHubScreen(
 
     // Handle logout success from ViewModel
     val logoutSuccess = uiState.logoutSuccess
-    if (logoutSuccess) {
-        onLogout()
+    LaunchedEffect(logoutSuccess) {
+        if (logoutSuccess) {
+            onLogout()
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -130,46 +134,9 @@ fun AccountHubScreen(
                     "$first$last".ifEmpty { "?" }
                 } ?: "?",
                 isVerified = uiState.profile?.isVerified == true,
-                isActive = uiState.profile?.isActive != false
+                isActive = uiState.profile?.isActive != false,
+                onClick = onNavigateToProfile
             )
-
-            // ── Quick Access Section ──
-            SectionLabel(text = stringResource(R.string.quick_access))
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column {
-                    AccountMenuItem(
-                        icon = Icons.Filled.Description,
-                        title = stringResource(R.string.recent_orders),
-                        subtitle = stringResource(R.string.orders),
-                        onClick = onNavigateToOrders
-                    )
-                    MenuDivider()
-                    AccountMenuItem(
-                        icon = Icons.Filled.AttachMoney,
-                        title = stringResource(R.string.earnings_overview),
-                        subtitle = stringResource(R.string.invoices),
-                        onClick = { /* Future: navigate to earnings */ }
-                    )
-                    MenuDivider()
-                    AccountMenuItem(
-                        icon = Icons.Filled.Schedule,
-                        title = stringResource(R.string.upcoming_orders),
-                        subtitle = stringResource(R.string.availability),
-                        onClick = { /* Future: navigate to schedule */ }
-                    )
-                    MenuDivider()
-                    AccountMenuItem(
-                        icon = Icons.AutoMirrored.Filled.Help,
-                        title = stringResource(R.string.help_support),
-                        onClick = { /* Future: navigate to help */ }
-                    )
-                }
-            }
 
             // ── Account Section ──
             SectionLabel(text = stringResource(R.string.account))
@@ -193,6 +160,29 @@ fun AccountHubScreen(
                         subtitle = stringResource(R.string.language) + ", " + stringResource(R.string.theme),
                         onClick = onNavigateToSettings
                     )
+                }
+            }
+
+            // ── Recent Orders Section ──
+            if (accountHubState.recentOrders.isNotEmpty()) {
+                SectionLabel(text = stringResource(R.string.recent_orders))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column {
+                        accountHubState.recentOrders.forEachIndexed { index, order ->
+                            RecentOrderItem(
+                                order = order,
+                                onClick = { onNavigateToOrderDetails(order.id) }
+                            )
+                            if (index < accountHubState.recentOrders.lastIndex) {
+                                MenuDivider()
+                            }
+                        }
+                    }
                 }
             }
 
@@ -251,7 +241,8 @@ private fun ProfileHeaderSection(
     email: String,
     initials: String,
     isVerified: Boolean,
-    isActive: Boolean
+    isActive: Boolean,
+    onClick: () -> Unit
 ) {
     val isDarkTheme = LocalDarkTheme.current
     val gradientColors = if (isDarkTheme) {
@@ -265,6 +256,7 @@ private fun ProfileHeaderSection(
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(Brush.linearGradient(colors = gradientColors))
+            .clickable(onClick = onClick)
             .padding(24.dp)
     ) {
         Row(
@@ -329,6 +321,14 @@ private fun ProfileHeaderSection(
                     }
                 }
             }
+
+            // Chevron hint for clickability
+            Icon(
+                imageVector = Icons.Filled.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }
@@ -398,6 +398,39 @@ private fun AccountMenuItem(
             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
             modifier = Modifier.size(20.dp)
         )
+    }
+}
+
+// ── Recent Order Item ──
+
+@Composable
+private fun RecentOrderItem(
+    order: Order,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "#${order.orderNumber}",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            if (!order.customerName.isNullOrBlank()) {
+                Text(
+                    text = order.customerName ?: "",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        OrderStatusBadge(status = order.status)
     }
 }
 

@@ -3,6 +3,7 @@ package cz.cleansia.partner.mock
 import cz.cleansia.partner.core.network.ApiResult
 import cz.cleansia.partner.domain.models.orders.CodeValue
 import cz.cleansia.partner.domain.models.orders.Order
+import cz.cleansia.partner.domain.models.orders.AssignedEmployee
 import cz.cleansia.partner.domain.models.orders.OrderDetail
 import cz.cleansia.partner.domain.models.orders.OrderFilter
 import cz.cleansia.partner.domain.models.orders.OrderStatus
@@ -13,6 +14,7 @@ import cz.cleansia.partner.domain.repositories.OrdersResult
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import java.time.Instant
 
 class MockOrdersRepository : OrdersRepository {
 
@@ -65,45 +67,50 @@ class MockOrdersRepository : OrdersRepository {
         return ApiResult.Success(OrdersResult(orders = orders, hasMore = hasMore))
     }
 
+    override suspend fun searchOrdersByNumber(
+        page: Int,
+        orderNumber: String
+    ): ApiResult<OrdersResult> {
+        delay(500)
+        return ApiResult.Success(OrdersResult(orders = emptyList(), hasMore = false))
+    }
+
     override suspend fun getOrderById(orderId: String): ApiResult<OrderDetail> {
         delay(300)
         return ApiResult.Success(MockDataProvider.getOrderDetail(orderId))
     }
 
-    override suspend fun takeOrder(orderId: String): ApiResult<OrderDetail> {
+    override suspend fun takeOrder(orderId: String): ApiResult<Unit> {
         delay(600)
-        val detail = MockDataProvider.getOrderDetail(orderId)
-        return ApiResult.Success(
-            detail.copy(orderStatus = CodeValue("OrderStatus", "Confirmed", OrderStatus.CONFIRMED.apiValue))
-        )
+        return ApiResult.Success(Unit)
     }
 
-    override suspend fun startOrder(orderId: String): ApiResult<OrderDetail> {
+    override suspend fun startOrder(orderId: String): ApiResult<Unit> {
         delay(600)
-        val detail = MockDataProvider.getOrderDetail(orderId)
-        return ApiResult.Success(
-            detail.copy(orderStatus = CodeValue("OrderStatus", "InProgress", OrderStatus.IN_PROGRESS.apiValue))
-        )
+        return ApiResult.Success(Unit)
     }
 
     override suspend fun completeOrder(
         orderId: String,
         actualCompletionTimeMinutes: Int,
         completionNotes: String?
-    ): ApiResult<OrderDetail> {
+    ): ApiResult<Unit> {
         delay(800)
-        val detail = MockDataProvider.getOrderDetail(orderId)
-        return ApiResult.Success(
-            detail.copy(
-                orderStatus = CodeValue("OrderStatus", "Completed", OrderStatus.COMPLETED.apiValue),
-                actualCompletionTime = actualCompletionTimeMinutes,
-                completionNotes = completionNotes
-            )
-        )
+        return ApiResult.Success(Unit)
     }
 
     override suspend fun uploadPhoto(orderId: String, photoData: ByteArray, fileName: String, photoType: String): ApiResult<Unit> {
         delay(1000)
+        return ApiResult.Success(Unit)
+    }
+
+    override suspend fun addNote(orderId: String, content: String): ApiResult<Unit> {
+        delay(500)
+        return ApiResult.Success(Unit)
+    }
+
+    override suspend fun reportIssue(orderId: String, description: String): ApiResult<Unit> {
+        delay(500)
         return ApiResult.Success(Unit)
     }
 
@@ -112,4 +119,10 @@ class MockOrdersRepository : OrdersRepository {
     override suspend fun getCachedOrderById(orderId: String): Order? = null
 
     override suspend fun clearCache() { /* no-op */ }
+
+    override suspend fun getNext48HoursCachedOrders(): List<Order> =
+        MockDataProvider.getAvailableOrders(page = 1, pageSize = 5).first
+
+    override suspend fun getLastCacheTimestamp(): Long? =
+        System.currentTimeMillis() - 300_000L
 }

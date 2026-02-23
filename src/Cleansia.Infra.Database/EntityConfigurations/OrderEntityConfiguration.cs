@@ -45,6 +45,15 @@ public class OrderEntityConfiguration : AuditableEntityConfiguration<Order, stri
             .IsRequired()
             .HasMaxLength(100);
 
+        // EF Core must write to the private backing fields because the public
+        // OrderNotes / OrderIssues properties return ReadOnlyCollections.
+        builder.Navigation(o => o.OrderNotes)
+            .HasField("_notes")
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder.Navigation(o => o.OrderIssues)
+            .HasField("_issues")
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
         builder.HasOne(o => o.Receipt)
             .WithOne(r => r.Order)
             .HasForeignKey<OrderReceipt>(r => r.OrderId)

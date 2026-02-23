@@ -1,9 +1,6 @@
 package cz.cleansia.partner.features.profile.components
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,27 +11,21 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.EventBusy
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
-import androidx.compose.material3.TimePickerState
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,16 +34,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import cz.cleansia.partner.R
+import cz.cleansia.partner.domain.models.profile.DateOverride
 import cz.cleansia.partner.domain.models.profile.DayAvailability
 import cz.cleansia.partner.domain.models.profile.TimeSlot
-import cz.cleansia.partner.ui.theme.CleansiaColors
+import cz.cleansia.partner.features.profile.components.availability.AddDateOverrideDialog
+import cz.cleansia.partner.features.profile.components.availability.DateOverrideCard
+import cz.cleansia.partner.features.profile.components.availability.parseHour
+import cz.cleansia.partner.features.profile.components.availability.parseMinute
+import cz.cleansia.partner.ui.components.TimeChip
+import cz.cleansia.partner.ui.components.TimePickerDialog
 import java.util.Calendar
 
 /**
@@ -69,158 +63,6 @@ enum class DayOfWeek(val displayName: String, val shortName: String, val calenda
 
     companion object {
         fun fromCalendarDay(day: Int): DayOfWeek = entries.find { it.calendarDay == day } ?: MONDAY
-    }
-}
-
-/**
- * Availability section for viewing weekly schedule
- */
-@Composable
-fun AvailabilityViewSection(
-    availability: List<DayAvailability>,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            // Header
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Schedule,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = stringResource(R.string.availability),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Week days overview
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                DayOfWeek.entries.forEach { day ->
-                    val dayAvailability = availability.find { it.dayOfWeek == day.calendarDay }
-                    DayIndicator(
-                        day = day,
-                        isAvailable = dayAvailability?.isAvailable == true
-                    )
-                }
-            }
-
-            // Show detailed schedule if any day has times
-            val hasSlots = availability.any { it.isAvailable && it.effectiveTimeSlots().isNotEmpty() }
-            if (hasSlots) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    availability
-                        .filter { it.isAvailable }
-                        .forEach { dayAvail ->
-                            val day = DayOfWeek.entries.find { it.calendarDay == dayAvail.dayOfWeek }
-                            if (day != null) {
-                                val slots = dayAvail.effectiveTimeSlots()
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                                        .padding(12.dp),
-                                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Text(
-                                        text = day.displayName,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Medium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    slots.forEach { slot ->
-                                        Text(
-                                            text = "${slot.startTime} - ${slot.endTime}",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                }
-            }
-
-            // Empty state
-            if (availability.isEmpty() || availability.none { it.isAvailable }) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = stringResource(R.string.no_availability_set),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun DayIndicator(
-    day: DayOfWeek,
-    isAvailable: Boolean
-) {
-    val backgroundColor by animateColorAsState(
-        targetValue = if (isAvailable) CleansiaColors.successContainer else MaterialTheme.colorScheme.surfaceVariant,
-        label = "dayBgColor"
-    )
-    val textColor by animateColorAsState(
-        targetValue = if (isAvailable) CleansiaColors.onSuccessContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-        label = "dayTextColor"
-    )
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(backgroundColor),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = day.shortName.take(1),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = textColor
-            )
-        }
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = day.shortName,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
     }
 }
 
@@ -482,101 +324,96 @@ private fun DayAvailabilityRow(
     }
 }
 
+/**
+ * Edit section for managing date-specific schedule exceptions
+ */
 @Composable
-private fun TimeChip(
-    time: String,
-    onClick: () -> Unit
+fun DateOverridesEditSection(
+    dateOverrides: List<DateOverride>,
+    onAddOverride: (DateOverride) -> Unit,
+    onRemoveOverride: (String) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(4.dp))
-            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                shape = RoundedCornerShape(4.dp)
-            )
-            .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        contentAlignment = Alignment.Center
+    var showAddDialog by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        Column(
+            modifier = Modifier.padding(16.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.AccessTime,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(14.dp)
-            )
-            Text(
-                text = time,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun TimePickerDialog(
-    initialHour: Int,
-    initialMinute: Int,
-    onDismiss: () -> Unit,
-    onConfirm: (hour: Int, minute: Int) -> Unit
-) {
-    val timePickerState = rememberTimePickerState(
-        initialHour = initialHour,
-        initialMinute = initialMinute
-    )
-
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = stringResource(R.string.select_time),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                TimePicker(state = timePickerState)
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.EventBusy,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.date_overrides),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                IconButton(
+                    onClick = { showAddDialog = true },
+                    modifier = Modifier.size(32.dp)
                 ) {
-                    TextButton(onClick = onDismiss) {
-                        Text(stringResource(R.string.cancel))
-                    }
-                    TextButton(
-                        onClick = {
-                            onConfirm(timePickerState.hour, timePickerState.minute)
-                        }
-                    ) {
-                        Text(stringResource(R.string.confirm))
-                    }
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = stringResource(R.string.add_date_override),
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            if (dateOverrides.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.no_date_overrides),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                dateOverrides.forEach { override ->
+                    DateOverrideCard(
+                        override = override,
+                        onRemove = { onRemoveOverride(override.date) }
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
             }
         }
     }
-}
 
-private fun parseHour(time: String?): Int {
-    return time?.split(":")?.getOrNull(0)?.toIntOrNull() ?: 9
-}
-
-private fun parseMinute(time: String?): Int {
-    return time?.split(":")?.getOrNull(1)?.toIntOrNull() ?: 0
+    if (showAddDialog) {
+        AddDateOverrideDialog(
+            existingDates = dateOverrides.map { it.date }.toSet(),
+            onDismiss = { showAddDialog = false },
+            onConfirm = { override ->
+                onAddOverride(override)
+                showAddDialog = false
+            }
+        )
+    }
 }

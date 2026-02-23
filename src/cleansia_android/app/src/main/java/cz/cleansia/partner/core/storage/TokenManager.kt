@@ -4,9 +4,14 @@ import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -46,6 +51,34 @@ class TokenManager @Inject constructor(
      */
     val isLoggedIn: Flow<Boolean> = _isLoggedIn.asStateFlow()
 
+    private val _userFullName = MutableStateFlow(readUserFullName())
+
+    /**
+     * Flow that emits the current user's full name (updates reactively when name changes)
+     */
+    val userFullName: Flow<String> = _userFullName.asStateFlow()
+
+    private val _userInitials = MutableStateFlow(readUserInitials())
+
+    /**
+     * Flow that emits the current user's initials (updates reactively when name changes)
+     */
+    val userInitials: Flow<String> = _userInitials.asStateFlow()
+
+    private val _sessionExpiredEvent = MutableSharedFlow<Unit>(
+        replay = 0,
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+
+    /**
+     * One-shot event emitted when session expires (401 detected).
+     * Collect this to show a session expired dialog.
+     */
+    val sessionExpiredEvent: SharedFlow<Unit> = _sessionExpiredEvent.asSharedFlow()
+
+    private val sessionExpiredHandled = AtomicBoolean(false)
+
     /**
      * Save authentication data after successful login
      */
@@ -63,6 +96,7 @@ class TokenManager @Inject constructor(
             apply()
         }
         _isLoggedIn.value = true
+        sessionExpiredHandled.set(false)
     }
 
     /**
@@ -87,7 +121,7 @@ class TokenManager @Inject constructor(
     /**
      * Get the stored user ID
      */
-    fun getUserId(): String? = encryptedPrefs.getString(KEY_USER_ID, null)
+    fun getUserId(): String? = encryptedPrefs.getString(KEY_USER_ID, null)?.takeIf { it.isNotBlank() }
 
     /**
      * Get the stored user email
@@ -103,12 +137,16 @@ class TokenManager @Inject constructor(
             putString(KEY_USER_LAST_NAME, lastName)
             apply()
         }
+        _userFullName.value = readUserFullName()
+        _userInitials.value = readUserInitials()
     }
 
     /**
      * Get user initials for avatar display
      */
-    fun getUserInitials(): String {
+    fun getUserInitials(): String = readUserInitials()
+
+    private fun readUserInitials(): String {
         val first = encryptedPrefs.getString(KEY_USER_FIRST_NAME, null)?.firstOrNull()?.uppercase() ?: ""
         val last = encryptedPrefs.getString(KEY_USER_LAST_NAME, null)?.firstOrNull()?.uppercase() ?: ""
         return if (first.isEmpty() && last.isEmpty()) "?" else "$first$last"
@@ -117,7 +155,9 @@ class TokenManager @Inject constructor(
     /**
      * Get user full name
      */
-    fun getUserFullName(): String {
+    fun getUserFullName(): String = readUserFullName()
+
+    private fun readUserFullName(): String {
         val first = encryptedPrefs.getString(KEY_USER_FIRST_NAME, null) ?: ""
         val last = encryptedPrefs.getString(KEY_USER_LAST_NAME, null) ?: ""
         return "$first $last".trim().ifEmpty { encryptedPrefs.getString(KEY_USER_EMAIL, null) ?: "" }
@@ -139,5 +179,19 @@ class TokenManager @Inject constructor(
     fun clearAuthData() {
         encryptedPrefs.edit().clear().apply()
         _isLoggedIn.value = false
+        _userFullName.value = ""
+        _userInitials.value = "?"
+    }
+
+    /**
+     * Handle session expiration (401 from API).
+     * Clears auth data and emits a one-shot event for UI notification.
+     * Thread-safe: uses AtomicBoolean to prevent duplicate handling from parallel 401 responses.
+     */
+    fun onSessionExpired() {
+        if (sessionExpiredHandled.compareAndSet(false, true)) {
+            clearAuthData()
+            _sessionExpiredEvent.tryEmit(Unit)
+        }
     }
 }

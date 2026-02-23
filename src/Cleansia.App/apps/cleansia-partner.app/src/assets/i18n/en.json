@@ -91,10 +91,10 @@
       "street": "Street Address",
       "city": "City",
       "zip_code": "Zip Code",
-      "country": "Country",
+      "country": "Country of Residence",
       "phone": "Phone Number",
       "email": "Email",
-      "nationality": "Nationality",
+      "nationality": "Citizenship / Nationality",
       "national_id": "National ID / Passport Number",
       "tax_id": "Tax ID",
       "bank_details": "Bank Details for Payroll",
@@ -595,13 +595,44 @@
         "thursday": "Thursday",
         "friday": "Friday",
         "saturday": "Saturday",
-        "sunday": "Sunday"
+        "sunday": "Sunday",
+        "monday_short": "Mo",
+        "tuesday_short": "Tu",
+        "wednesday_short": "We",
+        "thursday_short": "Th",
+        "friday_short": "Fr",
+        "saturday_short": "Sa",
+        "sunday_short": "Su"
       },
       "current_ranges": "Current Ranges",
       "no_availability": "No availability set",
       "add_time_range": "Add Time Range",
       "start_time": "Start Time",
-      "end_time": "End Time"
+      "end_time": "End Time",
+      "quick_setup": "Quick Setup",
+      "weekly_schedule": "Weekly Schedule",
+      "mon_fri_9_5": "Mon-Fri 9-5",
+      "mon_sat_8_4": "Mon-Sat 8-4",
+      "custom": "Custom",
+      "legend_working": "Working",
+      "legend_custom": "Custom hours",
+      "legend_off": "Day off",
+      "no_days_selected": "Select working days to set up your schedule",
+      "working_day": "Working Day",
+      "day_off": "Day Off",
+      "custom_hours": "Custom Hours",
+      "exception_day_off": "Exception - Day Off",
+      "edit_hours": "Edit Hours",
+      "remove_exception": "Remove Exception",
+      "mark_exception": "Mark as Exception",
+      "set_custom_hours": "Set custom hours",
+      "mark_unavailable": "This day will be marked as unavailable.",
+      "add_time_slot": "Add Time Slot",
+      "schedule_setup": "Schedule Setup",
+      "schedule_setup_desc": "Select working days and set your hours.",
+      "working_hours": "Working Hours",
+      "working_days": "Working Days",
+      "apply": "Apply"
     }
   },
   "global": {
@@ -940,7 +971,9 @@
       "size_exceeded": "File size exceeds the maximum allowed limit.",
       "count_exceeded": "Too many files. Maximum allowed number exceeded.",
       "count_too_few": "Not enough files. Minimum required number not met.",
-      "required": "File upload is required."
+      "required": "File upload is required.",
+      "size_exceeded_10mb": "File size must not exceed 10 MB",
+      "type_not_allowed": "File type is not allowed. Accepted: PDF, JPEG, PNG, DOC, DOCX"
     },
     "address": {
       "invalid_length": "Invalid length for address field"
@@ -985,6 +1018,11 @@
       "invalid_iban": "Invalid IBAN format",
       "invalid_zip_code": "Invalid zip code format",
       "must_be_positive": "Value must be positive",
+      "invalid_availability_format": "Invalid availability format. Days must be valid day names or dates (yyyy-MM-dd), and time ranges must have start before end.",
+      "page_must_be_positive": "Page must be greater than 0",
+      "page_size_must_be_positive": "Page size must be greater than 0",
+      "page_size_exceeded": "Page size cannot exceed 100",
+      "invalid_contract_status": "Invalid contract status value",
       "file": {
         "max_size": "File \"{{fileName}}\" exceeds maximum size of {{maxSize}}MB",
         "invalid_type": "File \"{{fileName}}\" type is not allowed. Accepted: {{acceptedTypes}}"
@@ -1002,6 +1040,13 @@
     },
     "general": {
       "not_found": "Requested resource not found"
+    },
+    "device": {
+      "invalid_platform": "Platform must be 'android' or 'ios'"
+    },
+    "payment": {
+      "json_payload_required": "JSON payload is required",
+      "stripe_signature_required": "Stripe signature header is required"
     },
     "template": {
       "cannot_delete_active": "Cannot delete an active template",

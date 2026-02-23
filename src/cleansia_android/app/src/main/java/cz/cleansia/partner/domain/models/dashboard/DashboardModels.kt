@@ -81,3 +81,154 @@ data class UpcomingOrder(
     val status: String = "Created",
     val servicesPreview: String? = null
 )
+
+// Analytics extension models
+
+data class OrderStatusDistribution(
+    val completed: Int,
+    val inProgress: Int,
+    val cancelled: Int,
+    val pending: Int
+)
+
+data class PerformanceScore(
+    val overallScore: Float,
+    val customerRating: Float,
+    val onTimePercentage: Float,
+    val avgResponseMinutes: Int
+)
+
+data class MonthlyEarningsTrend(
+    val months: List<MonthlyEarning>,
+    val totalThisYear: Double,
+    val monthOverMonthChange: Float
+)
+
+data class MonthlyEarning(
+    val month: String,
+    val amount: Double
+)
+
+data class ServiceRevenueBreakdown(
+    val services: List<ServiceRevenue>
+)
+
+data class ServiceRevenue(
+    val serviceName: String,
+    val revenue: Double,
+    val orderCount: Int
+)
+
+data class ScheduleUtilization(
+    val availableHours: Float,
+    val bookedHours: Float,
+    val utilizationRate: Float
+)
+
+data class CompletionTimeEfficiency(
+    val services: List<ServiceTimeComparison>
+)
+
+data class ServiceTimeComparison(
+    val serviceName: String,
+    val estimatedMinutes: Int,
+    val actualMinutes: Int
+)
+
+// ── Backend API response DTOs ──
+// These match the .NET backend JSON shapes and are mapped to domain models in the repository.
+
+@Serializable
+data class OrderAnalyticsResponse(
+    val statusDistribution: Map<String, Int> = emptyMap(),
+    val weeklyTrends: List<WeeklyTrendItem> = emptyList(),
+    val serviceDistribution: List<ServiceDistributionItem> = emptyList(),
+    val totalOrders: Int = 0,
+    val completionRate: Double = 0.0,
+    val cancelledOrders: Int = 0
+)
+
+@Serializable
+data class WeeklyTrendItem(
+    val year: Int = 0,
+    val weekNumber: Int = 0,
+    val weekStartDate: String? = null,
+    val orderCount: Int = 0,
+    val completedCount: Int = 0,
+    val totalRevenue: Double = 0.0
+)
+
+@Serializable
+data class ServiceDistributionItem(
+    val serviceName: String = "",
+    val orderCount: Int = 0,
+    val averagePrice: Double = 0.0,
+    val totalRevenue: Double = 0.0
+)
+
+@Serializable
+data class TimeAnalyticsResponse(
+    val dailyBreakdown: List<DailyTimeBreakdown> = emptyList(),
+    val weeklyBreakdown: List<WeeklyTimeBreakdown> = emptyList(),
+    val byServiceType: List<ServiceTimeBreakdown> = emptyList(),
+    val totalMinutesWorked: Int = 0,
+    val averageMinutesPerOrder: Int = 0,
+    val efficiencyRate: Double = 0.0,
+    val totalOrders: Int = 0
+)
+
+@Serializable
+data class DailyTimeBreakdown(
+    val date: String? = null,
+    val estimatedMinutes: Int = 0,
+    val actualMinutes: Int = 0,
+    val ordersCompleted: Int = 0,
+    val dayOfWeek: String? = null
+)
+
+@Serializable
+data class WeeklyTimeBreakdown(
+    val year: Int = 0,
+    val weekNumber: Int = 0,
+    val weekStartDate: String? = null,
+    val totalMinutes: Int = 0,
+    val ordersCompleted: Int = 0,
+    val averageMinutesPerOrder: Int = 0
+)
+
+@Serializable
+data class ServiceTimeBreakdown(
+    val serviceName: String = "",
+    val totalMinutes: Int = 0,
+    val orderCount: Int = 0,
+    val averageMinutesPerOrder: Int = 0
+)
+
+@Serializable
+data class ProductivityMetricsResponse(
+    val ordersCompleted: Int = 0,
+    val ordersTarget: Int = 0,
+    val completionPercentage: Double = 0.0,
+    val averageCompletionTimeMinutes: Double = 0.0,
+    val onTimeCompletionRate: Double = 0.0,
+    val efficiencyScore: Double = 0.0,
+    val personalBests: PersonalBests? = null
+)
+
+@Serializable
+data class PersonalBests(
+    val highestEarningMonth: BackendMonthlyEarning? = null,
+    val mostOrdersInDay: Int = 0,
+    val mostOrdersDate: String? = null,
+    val mostOrdersInMonth: Int = 0,
+    val currentMonthYear: Int = 0,
+    val bestEfficiencyScore: Double = 0.0
+)
+
+@Serializable
+data class BackendMonthlyEarning(
+    val year: Int = 0,
+    val month: Int = 0,
+    val amount: Double = 0.0,
+    val monthName: String? = null
+)

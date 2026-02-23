@@ -9,6 +9,8 @@ import cz.cleansia.partner.core.network.NetworkMonitor
 import cz.cleansia.partner.core.network.safeApiCall
 import cz.cleansia.partner.core.storage.TokenManager
 import cz.cleansia.partner.domain.models.orders.CompleteOrderRequest
+import cz.cleansia.partner.domain.models.orders.PhotoType
+import cz.cleansia.partner.domain.models.orders.UploadOrderPhotoRequest
 import cz.cleansia.partner.domain.models.orders.Order
 import cz.cleansia.partner.domain.models.orders.OrderDetail
 import cz.cleansia.partner.domain.models.orders.OrderFilter
@@ -19,9 +21,8 @@ import cz.cleansia.partner.domain.models.orders.TakeOrderRequest
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
-import okhttp3.RequestBody.Companion.toRequestBody
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -60,20 +61,29 @@ interface OrdersRepository {
         sortDescending: Boolean? = null,
         paymentStatuses: List<cz.cleansia.partner.domain.models.orders.PaymentStatus> = emptyList()
     ): ApiResult<OrdersResult>
+    suspend fun searchOrdersByNumber(
+        page: Int = 1,
+        orderNumber: String
+    ): ApiResult<OrdersResult>
+
     suspend fun getOrderById(orderId: String): ApiResult<OrderDetail>
-    suspend fun takeOrder(orderId: String): ApiResult<OrderDetail>
-    suspend fun startOrder(orderId: String): ApiResult<OrderDetail>
+    suspend fun takeOrder(orderId: String): ApiResult<Unit>
+    suspend fun startOrder(orderId: String): ApiResult<Unit>
     suspend fun completeOrder(
         orderId: String,
         actualCompletionTimeMinutes: Int,
         completionNotes: String?
-    ): ApiResult<OrderDetail>
+    ): ApiResult<Unit>
     suspend fun uploadPhoto(orderId: String, photoData: ByteArray, fileName: String, photoType: String = "Before"): ApiResult<Unit>
+    suspend fun addNote(orderId: String, content: String): ApiResult<Unit>
+    suspend fun reportIssue(orderId: String, description: String): ApiResult<Unit>
 
     // Offline support methods
     fun getCachedOrders(): Flow<List<Order>>
     suspend fun getCachedOrderById(orderId: String): Order?
     suspend fun clearCache()
+    suspend fun getNext48HoursCachedOrders(): List<Order>
+    suspend fun getLastCacheTimestamp(): Long?
 }
 
 @Singleton
@@ -164,12 +174,15 @@ class OrdersRepositoryImpl @Inject constructor(
                 sortDirection = sortDescending?.let { if (it) 1 else 0 }
             )
         }) {
-            is ApiResult.Success -> ApiResult.Success(
-                OrdersResult(
-                    orders = result.data.items,
-                    hasMore = result.data.hasNextPage
+            is ApiResult.Success -> {
+                cacheOrders(result.data.items)
+                ApiResult.Success(
+                    OrdersResult(
+                        orders = result.data.items,
+                        hasMore = result.data.hasNextPage
+                    )
                 )
-            )
+            }
             is ApiResult.Error -> ApiResult.Error(result.error)
         }
     }
@@ -207,6 +220,42 @@ class OrdersRepositoryImpl @Inject constructor(
                 sortDirection = sortDescending?.let { if (it) 1 else 0 }
             )
         }) {
+            is ApiResult.Success -> {
+                cacheOrders(result.data.items)
+                ApiResult.Success(
+                    OrdersResult(
+                        orders = result.data.items,
+                        hasMore = result.data.hasNextPage
+                    )
+                )
+            }
+            is ApiResult.Error -> ApiResult.Error(result.error)
+        }
+    }
+
+    override suspend fun searchOrdersByNumber(
+        page: Int,
+        orderNumber: String
+    ): ApiResult<OrdersResult> {
+        val pageSize = Constants.Pagination.DEFAULT_PAGE_SIZE
+        val offset = (page - 1) * pageSize
+
+        return when (val result = safeApiCall(json) {
+            apiService.getOrders(
+                offset = offset,
+                limit = pageSize,
+                orderStatuses = null,
+                paymentStatuses = null,
+                employeeId = null,
+                hasAvailableSpots = null,
+                excludeEmployeeId = null,
+                customerName = null,
+                customerEmail = null,
+                displayOrderNumber = orderNumber,
+                cleaningDateFrom = null,
+                cleaningDateTo = null
+            )
+        }) {
             is ApiResult.Success -> ApiResult.Success(
                 OrdersResult(
                     orders = result.data.items,
@@ -223,23 +272,33 @@ class OrdersRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun takeOrder(orderId: String): ApiResult<OrderDetail> {
+    override suspend fun takeOrder(orderId: String): ApiResult<Unit> {
         val employeeId = tokenManager.getUserId()
         if (employeeId.isNullOrBlank()) {
             return ApiResult.Error(cz.cleansia.partner.core.network.ApiError.Unknown("Employee ID not found"))
         }
         return safeApiCall(json) {
             apiService.takeOrder(TakeOrderRequest(orderId, employeeId))
+        }.let { result ->
+            when (result) {
+                is ApiResult.Success -> ApiResult.Success(Unit)
+                is ApiResult.Error -> result
+            }
         }
     }
 
-    override suspend fun startOrder(orderId: String): ApiResult<OrderDetail> {
+    override suspend fun startOrder(orderId: String): ApiResult<Unit> {
         val employeeId = tokenManager.getUserId()
         if (employeeId.isNullOrBlank()) {
             return ApiResult.Error(cz.cleansia.partner.core.network.ApiError.Unknown("Employee ID not found"))
         }
         return safeApiCall(json) {
             apiService.startOrder(StartOrderRequest(orderId, employeeId))
+        }.let { result ->
+            when (result) {
+                is ApiResult.Success -> ApiResult.Success(Unit)
+                is ApiResult.Error -> result
+            }
         }
     }
 
@@ -247,7 +306,7 @@ class OrdersRepositoryImpl @Inject constructor(
         orderId: String,
         actualCompletionTimeMinutes: Int,
         completionNotes: String?
-    ): ApiResult<OrderDetail> {
+    ): ApiResult<Unit> {
         val employeeId = tokenManager.getUserId()
         if (employeeId.isNullOrBlank()) {
             return ApiResult.Error(cz.cleansia.partner.core.network.ApiError.Unknown("Employee ID not found"))
@@ -261,6 +320,11 @@ class OrdersRepositoryImpl @Inject constructor(
                     completionNotes = completionNotes
                 )
             )
+        }.let { result ->
+            when (result) {
+                is ApiResult.Success -> ApiResult.Success(Unit)
+                is ApiResult.Error -> result
+            }
         }
     }
 
@@ -270,12 +334,81 @@ class OrdersRepositoryImpl @Inject constructor(
         fileName: String,
         photoType: String
     ): ApiResult<Unit> {
-        val requestBody = photoData.toRequestBody("image/*".toMediaTypeOrNull())
-        val photoPart = MultipartBody.Part.createFormData("photo", fileName, requestBody)
-        val typePart = MultipartBody.Part.createFormData("type", photoType)
+        val employeeId = tokenManager.getUserId()
+        if (employeeId.isNullOrBlank()) {
+            return ApiResult.Error(cz.cleansia.partner.core.network.ApiError.Unknown("Employee ID not found"))
+        }
+
+        val base64Content = android.util.Base64.encodeToString(photoData, android.util.Base64.NO_WRAP)
+        val photoTypeEnum = PhotoType.fromApiValue(photoType)
+        val extension = fileName.substringAfterLast('.', "jpg").lowercase()
+        val contentType = when (extension) {
+            "png" -> "image/png"
+            "webp" -> "image/webp"
+            else -> "image/jpeg"
+        }
+
+        val request = UploadOrderPhotoRequest(
+            orderId = orderId,
+            employeeId = employeeId,
+            photoType = photoTypeEnum.apiNumericValue,
+            fileName = fileName,
+            contentType = contentType,
+            fileData = base64Content
+        )
 
         return safeApiCall(json) {
-            apiService.uploadOrderPhoto(orderId, photoPart, typePart)
+            apiService.uploadOrderPhoto(request)
+        }.let { result ->
+            // Map the typed response to Unit for the existing interface
+            when (result) {
+                is ApiResult.Success -> ApiResult.Success(Unit)
+                is ApiResult.Error -> result
+            }
+        }
+    }
+
+    override suspend fun addNote(orderId: String, content: String): ApiResult<Unit> {
+        val employeeId = tokenManager.getUserId()
+        if (employeeId.isNullOrBlank()) {
+            return ApiResult.Error(cz.cleansia.partner.core.network.ApiError.Unknown("Employee ID not found"))
+        }
+
+        return safeApiCall(json) {
+            apiService.addOrderNote(
+                cz.cleansia.partner.domain.models.orders.AddOrderNoteRequest(
+                    orderId = orderId,
+                    employeeId = employeeId,
+                    content = content
+                )
+            )
+        }.let { result ->
+            when (result) {
+                is ApiResult.Success -> ApiResult.Success(Unit)
+                is ApiResult.Error -> result
+            }
+        }
+    }
+
+    override suspend fun reportIssue(orderId: String, description: String): ApiResult<Unit> {
+        val employeeId = tokenManager.getUserId()
+        if (employeeId.isNullOrBlank()) {
+            return ApiResult.Error(cz.cleansia.partner.core.network.ApiError.Unknown("Employee ID not found"))
+        }
+
+        return safeApiCall(json) {
+            apiService.reportOrderIssue(
+                cz.cleansia.partner.domain.models.orders.ReportOrderIssueRequest(
+                    orderId = orderId,
+                    employeeId = employeeId,
+                    description = description
+                )
+            )
+        }.let { result ->
+            when (result) {
+                is ApiResult.Success -> ApiResult.Success(Unit)
+                is ApiResult.Error -> result
+            }
         }
     }
 
@@ -293,5 +426,22 @@ class OrdersRepositoryImpl @Inject constructor(
 
     override suspend fun clearCache() {
         orderDao.deleteAllOrders()
+    }
+
+    override suspend fun getNext48HoursCachedOrders(): List<Order> {
+        return try {
+            val now = LocalDateTime.now()
+            val in48Hours = now.plusHours(48)
+            val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+            val fromStr = now.format(formatter)
+            val toStr = in48Hours.format(formatter)
+            orderDao.getOrdersInDateRange(fromStr, toStr).map { it.toDomainModel() }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    override suspend fun getLastCacheTimestamp(): Long? {
+        return orderDao.getLastCacheTime()
     }
 }

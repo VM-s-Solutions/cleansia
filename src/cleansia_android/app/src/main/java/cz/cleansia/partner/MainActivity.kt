@@ -8,17 +8,26 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -161,22 +170,27 @@ fun CleansiaApp(
 
     val isLoggedIn by tokenManager.isLoggedIn.collectAsState(initial = tokenManager.hasToken())
     val onboardingCompleted by preferencesManager.onboardingCompleted.collectAsState(initial = true)
+    val profileCompleted by preferencesManager.profileCompleted.collectAsState(initial = true)
 
     // Track if we've already consumed the deep link
     var consumedDeepLink by remember { mutableStateOf(false) }
 
     val startDestination: NavRoute = when {
-        // Show onboarding for first-time users who are not logged in
-        !onboardingCompleted && !isLoggedIn -> NavRoute.Onboarding
+        // First launch — show onboarding before auth
+        !onboardingCompleted -> NavRoute.Onboarding
         // User is logged in
         isLoggedIn -> {
             if (tokenManager.isEmailConfirmed()) {
-                NavRoute.Main
+                if (!profileCompleted) {
+                    NavRoute.ProfileCompletion
+                } else {
+                    NavRoute.Main
+                }
             } else {
                 tokenManager.getUserEmail()?.let { NavRoute.ConfirmEmail(it) } ?: NavRoute.Login
             }
         }
-        // User is not logged in but has completed onboarding
+        // User is not logged in — show login
         else -> NavRoute.Login
     }
 
@@ -188,11 +202,45 @@ fun CleansiaApp(
         null
     }
 
-    val userInitials = remember { tokenManager.getUserInitials() }
+    val userInitials by tokenManager.userInitials.collectAsState(initial = tokenManager.getUserInitials())
+    val focusManager = LocalFocusManager.current
 
-    AppNavHost(
-        startDestination = startDestination,
-        userInitials = userInitials,
-        deepLinkRoute = deepLinkRoute
-    )
+    // Session expired dialog
+    var showSessionExpiredDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        tokenManager.sessionExpiredEvent.collect {
+            showSessionExpiredDialog = true
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                detectTapGestures(onTap = {
+                    focusManager.clearFocus()
+                })
+            }
+    ) {
+        AppNavHost(
+            startDestination = startDestination,
+            userInitials = userInitials,
+            deepLinkRoute = deepLinkRoute,
+            profileCompleted = profileCompleted
+        )
+    }
+
+    if (showSessionExpiredDialog) {
+        AlertDialog(
+            onDismissRequest = { showSessionExpiredDialog = false },
+            title = { Text(stringResource(R.string.session_expired_title)) },
+            text = { Text(stringResource(R.string.session_expired_message)) },
+            confirmButton = {
+                TextButton(onClick = { showSessionExpiredDialog = false }) {
+                    Text(stringResource(R.string.ok))
+                }
+            }
+        )
+    }
 }

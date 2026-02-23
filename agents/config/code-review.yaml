@@ -1,0 +1,160 @@
+# Cleansia Code Review Agent Configuration
+# Validates code against CODING_STANDARDS.md
+
+name: code-review
+description: Reviews code against Cleansia coding standards and best practices
+model: claude-sonnet-4-20250514
+
+system_prompt_file: ../prompts/system/code-review.md
+
+# Files to review
+file_patterns:
+  - "**/*.cs"
+  - "**/*.ts"
+  - "**/*.html"
+  - "**/*.kt"
+  - "**/*.swift"
+
+# Knowledge base - critical for this agent
+knowledge_base:
+  - path: CODING_STANDARDS.md
+    required: true
+    description: Primary source of truth for all code standards
+
+# Capabilities
+capabilities:
+  - review_pull_requests
+  - review_files
+  - suggest_improvements
+  - check_standards_compliance
+  - identify_security_issues
+  - check_performance_patterns
+
+# Review categories
+review_categories:
+  architecture:
+    description: "Check architectural patterns and layer separation"
+    rules:
+      - "Clean Architecture layer boundaries"
+      - "CQRS pattern compliance"
+      - "Repository pattern usage"
+
+  naming:
+    description: "Naming conventions"
+    rules:
+      - "File naming matches class naming"
+      - "Method names describe intent"
+      - "Variables are self-documenting"
+
+  backend:
+    description: "Backend-specific rules"
+    rules:
+      - "Nested classes for Command/Query structure"
+      - "Happy path only in handlers"
+      - "No CommitAsync in handlers"
+      - "DTOs are records not classes"
+      - "Extension methods for mapping"
+      - "Validation in validators only"
+
+  frontend:
+    description: "Frontend-specific rules"
+    rules:
+      - "No enum values in templates"
+      - "All text uses translation keys"
+      - "Facade pattern for state access"
+      - "OnPush change detection"
+      - "Standalone components"
+
+  mobile:
+    description: "Mobile-specific rules"
+    rules:
+      - "StateFlow for UI state"
+      - "Hilt for dependency injection"
+      - "Navigation via events not direct calls"
+      - "String resources for all text"
+
+  security:
+    description: "Security considerations"
+    rules:
+      - "No hardcoded secrets"
+      - "Input validation"
+      - "SQL injection prevention"
+      - "XSS prevention"
+
+  performance:
+    description: "Performance patterns"
+    rules:
+      - "Async/await usage"
+      - "Proper disposal of resources"
+      - "Efficient queries"
+
+# Output format
+output_format:
+  structure:
+    - summary: "Overall assessment"
+    - issues: "List of issues found"
+    - suggestions: "Improvement suggestions"
+    - score: "Compliance score (0-100)"
+
+  issue_template:
+    file: "File path"
+    line: "Line number"
+    severity: "critical | major | minor | info"
+    category: "Review category"
+    rule: "Rule violated"
+    description: "What's wrong"
+    suggestion: "How to fix"
+
+# Severity levels
+severity_levels:
+  critical:
+    description: "Must fix before merge"
+    examples:
+      - "Security vulnerability"
+      - "CommitAsync in handler"
+      - "Validation in handler instead of validator"
+
+  major:
+    description: "Should fix before merge"
+    examples:
+      - "Wrong pattern usage"
+      - "Missing translations"
+      - "Class instead of record for DTO"
+
+  minor:
+    description: "Nice to fix"
+    examples:
+      - "Naming convention violation"
+      - "Missing preview function"
+
+  info:
+    description: "Suggestion for improvement"
+    examples:
+      - "Could use more descriptive name"
+      - "Consider extracting to shared component"
+
+# Tools
+tools:
+  - name: review_file
+    description: Review a specific file
+    parameters:
+      file_path:
+        type: string
+        description: Path to the file to review
+
+  - name: review_pr
+    description: Review all changes in a pull request
+    parameters:
+      pr_number:
+        type: integer
+        description: PR number to review
+
+  - name: review_diff
+    description: Review git diff
+    parameters:
+      base:
+        type: string
+        description: Base branch or commit
+      head:
+        type: string
+        description: Head branch or commit

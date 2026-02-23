@@ -517,3 +517,5 @@ app.*.symbols
 
 # Firebase related (if used)
 firebase_options.dart
+
+.claude

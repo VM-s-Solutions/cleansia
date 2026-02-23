@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.partner.core.network.ApiError
+import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.core.network.ApiResult
 import cz.cleansia.partner.domain.repositories.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,7 +29,8 @@ data class ConfirmEmailUiState(
 @HiltViewModel
 class ConfirmEmailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val errorTranslator: ApiErrorTranslator
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ConfirmEmailUiState())
@@ -83,7 +85,7 @@ class ConfirmEmailViewModel @Inject constructor(
                     val errorMessage = when (result.error) {
                         is ApiError.BadRequest -> "Invalid verification code. Please try again."
                         is ApiError.Network -> "Unable to connect. Please check your internet connection."
-                        else -> result.error.getUserMessage()
+                        else -> errorTranslator.translateError(result.error)
                     }
 
                     _uiState.update {
@@ -121,7 +123,7 @@ class ConfirmEmailViewModel @Inject constructor(
                 is ApiResult.Error -> {
                     val errorMessage = when (result.error) {
                         is ApiError.Network -> "Unable to connect. Please check your internet connection."
-                        else -> result.error.getUserMessage()
+                        else -> errorTranslator.translateError(result.error)
                     }
 
                     _uiState.update {

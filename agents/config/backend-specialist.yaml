@@ -1,0 +1,106 @@
+# Cleansia Backend Specialist Agent Configuration
+# Handles .NET, C#, EF Core, CQRS, PostgreSQL tasks
+
+name: backend-specialist
+description: Expert in .NET 8, Clean Architecture, CQRS pattern, and PostgreSQL
+model: claude-sonnet-4-20250514
+
+system_prompt_file: ../prompts/system/backend-specialist.md
+
+# File patterns this agent works with
+file_patterns:
+  - "src/Cleansia.App/**/*.cs"
+  - "src/Cleansia.App/**/*.csproj"
+  - "src/Cleansia.Domain/**/*.cs"
+  - "src/Cleansia.Infrastructure/**/*.cs"
+  - "src/Cleansia.Api/**/*.cs"
+
+# Knowledge base references
+knowledge_base:
+  - path: CODING_STANDARDS.md
+    sections:
+      - "Backend Coding Standards"
+      - "CQRS Handler Structure"
+      - "Entity Patterns"
+      - "DTO Patterns"
+  - path: CLEANSIA_PROJECT_DOCUMENTATION.md
+    sections:
+      - "Backend Architecture"
+      - "API Endpoints"
+      - "Database Schema"
+
+# Capabilities
+capabilities:
+  - create_commands
+  - create_queries
+  - create_entities
+  - create_migrations
+  - create_validators
+  - create_dtos
+  - create_mappers
+  - modify_existing_code
+  - fix_bugs
+  - refactor
+
+# Code generation templates
+templates:
+  command:
+    location: "src/Cleansia.App/Features/{Domain}/Commands/{CommandName}"
+    structure:
+      - "{CommandName}Command.cs"
+      - "{CommandName}CommandHandler.cs"
+      - "{CommandName}CommandValidator.cs"
+
+  query:
+    location: "src/Cleansia.App/Features/{Domain}/Queries/{QueryName}"
+    structure:
+      - "{QueryName}Query.cs"
+      - "{QueryName}QueryHandler.cs"
+
+  entity:
+    location: "src/Cleansia.Domain/Entities"
+    structure:
+      - "{EntityName}.cs"
+
+  dto:
+    location: "src/Cleansia.App/Features/{Domain}/Dtos"
+    structure:
+      - "{DtoName}Dto.cs"
+
+# Validation rules to enforce
+validation_rules:
+  - rule: "Use nested Validator, Handler, Response classes in Commands/Queries"
+    applies_to: ["Commands", "Queries"]
+
+  - rule: "Handlers contain only happy path logic"
+    applies_to: ["Handlers"]
+
+  - rule: "Never call CommitAsync in handlers - UoW handles this"
+    applies_to: ["Handlers"]
+
+  - rule: "DTOs are records, not classes"
+    applies_to: ["Dtos"]
+
+  - rule: "Use extension methods for mapping (ToDto, ToEntity)"
+    applies_to: ["Mappers"]
+
+  - rule: "Validation logic in Validators only, not in handlers"
+    applies_to: ["Validators", "Handlers"]
+
+# Tools specific to backend work
+tools:
+  - name: create_migration
+    description: Create a new EF Core migration
+    command: "dotnet ef migrations add {name} --project src/Cleansia.Infrastructure"
+
+  - name: update_database
+    description: Apply pending migrations
+    command: "dotnet ef database update --project src/Cleansia.Infrastructure"
+
+  - name: build
+    description: Build the backend solution
+    command: "dotnet build src/Cleansia.App"
+
+  - name: test
+    description: Run backend tests
+    command: "dotnet test src/Cleansia.Tests"

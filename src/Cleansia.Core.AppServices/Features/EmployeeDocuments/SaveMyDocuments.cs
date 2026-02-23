@@ -154,6 +154,7 @@ public class SaveMyDocuments
                         filePath: fullBlobPath,
                         contentType: contentType,
                         fileSizeBytes: stream.Length,
+                        documentType: doc.DocumentType,
                         description: doc.Description,
                         createdBy: user.Id
                     );

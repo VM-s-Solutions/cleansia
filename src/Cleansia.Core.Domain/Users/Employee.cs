@@ -84,6 +84,39 @@ public class Employee : Auditable
         return this;
     }
 
+    public Employee UpdateIdentification(string nationalityId, string passportId, string? taxId)
+    {
+        NationalityId = nationalityId;
+        PassportId = passportId;
+        ICO = taxId ?? string.Empty;
+        return this;
+    }
+
+    public Employee UpdateAddress(Address address)
+    {
+        Address = address;
+        return this;
+    }
+
+    public Employee UpdateBankDetails(string iban)
+    {
+        IBAN = iban;
+        return this;
+    }
+
+    public Employee UpdateEmergencyContact(string? emergencyName, string? emergencyPhone)
+    {
+        EmergencyContactName = emergencyName;
+        EmergencyContactPhone = emergencyPhone;
+        return this;
+    }
+
+    public Employee UpdateAvailability(Dictionary<string, List<TimeRange>> availability)
+    {
+        _availability = availability;
+        return this;
+    }
+
     public Employee UpdateRating(decimal newRating, int newComplaints)
     {
         AverageRating = newRating;

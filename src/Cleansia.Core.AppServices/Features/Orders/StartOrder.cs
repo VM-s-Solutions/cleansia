@@ -50,6 +50,24 @@ public class StartOrder
             RuleFor(x => x)
                 .MustAsync(EmployeeIsAssignedToOrderAsync)
                 .WithMessage(BusinessErrorMessage.EmployeeNotAssignedToOrder);
+
+            RuleFor(x => x.EmployeeId)
+                .MustAsync(EmployeeHasNoOrderInProgressAsync)
+                .WithMessage(BusinessErrorMessage.EmployeeAlreadyHasOrderInProgress);
+        }
+
+        private async Task<bool> EmployeeHasNoOrderInProgressAsync(string employeeId, CancellationToken cancellationToken)
+        {
+            var hasInProgressOrder = await _orderRepository
+                .GetQueryable()
+                .Include(o => o.OrderStatusHistory)
+                .Include(o => o.AssignedEmployees)
+                .Where(o => o.AssignedEmployees.Any(ae => ae.EmployeeId == employeeId))
+                .AnyAsync(o => o.OrderStatusHistory
+                    .OrderByDescending(h => h.CreatedOn)
+                    .FirstOrDefault()!.Status == OrderStatus.InProgress, cancellationToken);
+
+            return !hasInProgressOrder;
         }
 
         private async Task<bool> OrderIsConfirmedAsync(string orderId, CancellationToken cancellationToken)

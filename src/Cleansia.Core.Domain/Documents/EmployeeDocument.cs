@@ -75,6 +75,7 @@ public class EmployeeDocument : Auditable
         string filePath,
         string contentType,
         long fileSizeBytes,
+        DocumentType documentType,
         string? description,
         string createdBy)
     {
@@ -88,7 +89,7 @@ public class EmployeeDocument : Auditable
             FilePath = filePath,
             ContentType = contentType,
             FileSizeBytes = fileSizeBytes,
-            DocumentType = previousVersion.DocumentType,
+            DocumentType = documentType,
             Description = description ?? previousVersion.Description,
             Version = previousVersion.Version + 1,
             PreviousVersionId = previousVersion.Id,

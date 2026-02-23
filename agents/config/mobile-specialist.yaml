@@ -1,0 +1,120 @@
+# Cleansia Mobile Specialist Agent Configuration
+# Handles Android (Kotlin/Compose) and iOS (Swift) tasks
+
+name: mobile-specialist
+description: Expert in Android (Kotlin, Jetpack Compose, Hilt) and iOS (Swift, SwiftUI)
+model: claude-sonnet-4-20250514
+
+system_prompt_file: ../prompts/system/mobile-specialist.md
+
+# File patterns this agent works with
+file_patterns:
+  # Android
+  - "src/cleansia_android/**/*.kt"
+  - "src/cleansia_android/**/*.xml"
+  - "src/cleansia_android/**/build.gradle*"
+  # iOS (future)
+  - "src/cleansia_ios/**/*.swift"
+  - "src/cleansia_ios/**/*.storyboard"
+  - "src/cleansia_ios/**/*.xib"
+
+# Knowledge base references
+knowledge_base:
+  - path: CODING_STANDARDS.md
+    sections:
+      - "Mobile Coding Standards"
+      - "Android Patterns"
+      - "iOS Patterns"
+  - path: CLEANSIA_PROJECT_DOCUMENTATION.md
+    sections:
+      - "Mobile Architecture"
+      - "API Endpoints"
+
+# Capabilities
+capabilities:
+  - create_screens
+  - create_viewmodels
+  - create_repositories
+  - create_components
+  - create_navigation
+  - create_services
+  - modify_existing_code
+  - fix_bugs
+  - refactor
+
+# Android project structure
+android_structure:
+  package: cz.cleansia.partner
+  paths:
+    screens: features/{feature}/screens
+    viewmodels: features/{feature}/viewmodels
+    components: ui/components
+    navigation: navigation
+    domain:
+      models: domain/models
+      repositories: domain/repositories
+    data:
+      api: data/api
+      repositories: data/repositories
+    core:
+      storage: core/storage
+      notifications: core/notifications
+
+# Build variants
+build_variants:
+  - name: mockDebug
+    description: Uses mock data for development
+    command: "gradlew.bat assembleMockDebug"
+  - name: prodDebug
+    description: Uses real API for testing
+    command: "gradlew.bat assembleProdDebug"
+  - name: prodRelease
+    description: Production release build
+    command: "gradlew.bat assembleProdRelease"
+
+# Code patterns to follow
+patterns:
+  viewmodel:
+    - Use HiltViewModel annotation
+    - Inject repositories via constructor
+    - Expose UI state as StateFlow
+    - Use sealed class for UI events
+    - Handle loading/error states
+
+  screen:
+    - Accept ViewModel as parameter with hiltViewModel()
+    - Use collectAsStateWithLifecycle for state
+    - Compose preview functions
+    - Navigation callbacks as parameters
+
+  repository:
+    - Interface in domain layer
+    - Implementation in data layer
+    - Hilt module for binding
+
+# Tools specific to mobile work
+tools:
+  - name: build_mock
+    description: Build mock debug variant
+    command: "gradlew.bat assembleMockDebug"
+    working_dir: "src/cleansia_android"
+
+  - name: build_prod
+    description: Build production debug variant
+    command: "gradlew.bat assembleProdDebug"
+    working_dir: "src/cleansia_android"
+
+  - name: install
+    description: Install app on connected device
+    command: "gradlew.bat installMockDebug"
+    working_dir: "src/cleansia_android"
+
+  - name: test
+    description: Run unit tests
+    command: "gradlew.bat test"
+    working_dir: "src/cleansia_android"
+
+  - name: lint
+    description: Run Android lint
+    command: "gradlew.bat lint"
+    working_dir: "src/cleansia_android"

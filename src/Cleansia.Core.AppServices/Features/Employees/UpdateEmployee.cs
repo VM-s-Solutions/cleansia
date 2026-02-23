@@ -102,7 +102,7 @@ public class UpdateEmployee
 
             RuleFor(c => c.Availability)
                 .Must(BeValidAvailability)
-                .WithMessage("Invalid availability format. Time ranges must be in HH:mm format and start time must be before end time.")
+                .WithMessage(BusinessErrorMessage.InvalidAvailabilityFormat)
                 .When(c => c.Availability?.Any() == true);
         }
 
@@ -115,9 +115,10 @@ public class UpdateEmployee
 
             var validDays = Enum.GetNames(typeof(DayOfWeek));
 
-            foreach (var (day, timeRanges) in availability)
+            foreach (var (key, timeRanges) in availability)
             {
-                if (!validDays.Contains(day))
+                // Key must be either a valid day name or a valid date (yyyy-MM-dd)
+                if (!validDays.Contains(key) && !DateOnly.TryParseExact(key, "yyyy-MM-dd", out _))
                     return false;
 
                 foreach (var timeRange in timeRanges)

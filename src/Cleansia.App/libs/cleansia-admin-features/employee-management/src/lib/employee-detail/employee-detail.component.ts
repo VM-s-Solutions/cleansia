@@ -1,9 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Code, EmployeeDocumentItem } from '@cleansia/admin-services';
+import { Code, EmployeeDocumentItem, TimeRange } from '@cleansia/admin-services';
 import { selectDayOfWeekCodes } from '@cleansia/admin-stores';
 import {
+  CleansiaAvailabilityComponent,
   CleansiaButtonComponent,
   CleansiaLanguageSwitcherComponent,
   CleansiaLoaderComponent,
@@ -22,7 +24,9 @@ import { EmployeeDetailFacade } from './employee-detail.facade';
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     CleansiaButtonComponent,
+    CleansiaAvailabilityComponent,
     TranslatePipe,
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
@@ -40,6 +44,7 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
   private readonly store = inject(Store);
 
   readonly daysOfWeek = signal<Code[]>([]);
+  availabilityValue: { [key: string]: TimeRange[] } = {};
 
   ngOnInit(): void {
     const employeeId = this.route.snapshot.paramMap.get('employeeId');
@@ -86,5 +91,21 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
 
   onRejectDocument(document: EmployeeDocumentItem): void {
     this.facade.openRejectDocumentDialog(document);
+  }
+
+  onEditAvailability(): void {
+    const employee = this.facade.employee();
+    this.availabilityValue = employee?.availability
+      ? { ...employee.availability }
+      : {};
+    this.facade.startEditingAvailability();
+  }
+
+  onSaveAvailability(): void {
+    this.facade.saveAvailability(this.availabilityValue);
+  }
+
+  onCancelEditAvailability(): void {
+    this.facade.cancelEditingAvailability();
   }
 }

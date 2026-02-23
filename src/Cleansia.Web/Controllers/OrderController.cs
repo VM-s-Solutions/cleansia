@@ -147,4 +147,28 @@ public class OrderController(IMediator mediator) : ApiController(mediator)
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<DeleteOrderPhoto.Response>(result);
     }
+
+    [HttpPost("AddNote")]
+    [Permission(Policy.CanAddOrderNote)]
+    [ProducesResponseType(typeof(AddOrderNote.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> AddNote([FromBody] AddOrderNote.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<AddOrderNote.Response>(result);
+    }
+
+    [HttpPost("ReportIssue")]
+    [Permission(Policy.CanReportOrderIssue)]
+    [ProducesResponseType(typeof(ReportOrderIssue.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ReportIssue([FromBody] ReportOrderIssue.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<ReportOrderIssue.Response>(result);
+    }
 }

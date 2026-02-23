@@ -28,10 +28,10 @@ public class HandlePaymentNotification
             _orderRepository = orderRepository;
 
             RuleFor(x => x.JsonPayload)
-                .NotEmpty().WithMessage("JSON payload is required.");
+                .NotEmpty().WithMessage(BusinessErrorMessage.JsonPayloadRequired);
 
             RuleFor(x => x.SignatureHeader)
-                .NotEmpty().WithMessage("Stripe signature header is required.");
+                .NotEmpty().WithMessage(BusinessErrorMessage.StripeSignatureRequired);
 
             RuleFor(x => x)
                 .MustAsync(OrderExistsAsync)

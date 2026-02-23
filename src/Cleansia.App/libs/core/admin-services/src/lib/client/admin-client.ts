@@ -2475,6 +2475,11 @@ export interface IAdminEmployeeClient {
      * @return OK
      */
     details(employeeId: string): Observable<AdminEmployeeDetail>;
+    /**
+     * @param body (optional)
+     * @return OK
+     */
+    updateAvailability(employeeId: string, body?: AdminUpdateEmployeeAvailabilityRequest | undefined): Observable<AdminUpdateEmployeeAvailabilityResponse>;
 }
 
 @Injectable({
@@ -2828,6 +2833,72 @@ export class AdminEmployeeClient implements IAdminEmployeeClient {
             let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result403 = ProblemDetails.fromJS(resultData403);
             return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional)
+     * @return OK
+     */
+    updateAvailability(employeeId: string, body?: AdminUpdateEmployeeAvailabilityRequest | undefined): Observable<AdminUpdateEmployeeAvailabilityResponse> {
+        let url = this.baseUrl + "/api/AdminEmployee/{employeeId}/update-availability";
+        if (employeeId === undefined || employeeId === null)
+            throw new globalThis.Error("The parameter 'employeeId' must be defined.");
+        url = url.replace("{employeeId}", encodeURIComponent("" + employeeId));
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("put", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processUpdateAvailability(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processUpdateAvailability(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<AdminUpdateEmployeeAvailabilityResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<AdminUpdateEmployeeAvailabilityResponse>;
+        }));
+    }
+
+    protected processUpdateAvailability(response: HttpResponseBase): Observable<AdminUpdateEmployeeAvailabilityResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = AdminUpdateEmployeeAvailabilityResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -12122,6 +12193,90 @@ export interface IAdminEmployeeDetail {
     rejectedByUserId: string | undefined;
     rejectedAt: Date | undefined;
     missingFields: string[] | undefined;
+}
+
+export class AdminUpdateEmployeeAvailabilityRequest implements IAdminUpdateEmployeeAvailabilityRequest {
+    availability!: { [key: string]: TimeRange[]; } | undefined;
+
+    constructor(data?: IAdminUpdateEmployeeAvailabilityRequest) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            if (Data["availability"]) {
+                this.availability = {} as any;
+                for (let key in Data["availability"]) {
+                    if (Data["availability"].hasOwnProperty(key))
+                        (this.availability as any)![key] = Data["availability"][key] ? Data["availability"][key].map((i: any) => TimeRange.fromJS(i)) : [];
+                }
+            }
+        }
+    }
+
+    static fromJS(data: any): AdminUpdateEmployeeAvailabilityRequest {
+        data = typeof data === 'object' ? data : {};
+        let result = new AdminUpdateEmployeeAvailabilityRequest();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (this.availability) {
+            data["availability"] = {};
+            for (let key in this.availability) {
+                if (this.availability.hasOwnProperty(key))
+                    (data["availability"] as any)[key] = this.availability[key] ? this.availability[key].map((i: any) => i.toJSON()) : [];
+            }
+        }
+        return data;
+    }
+}
+
+export interface IAdminUpdateEmployeeAvailabilityRequest {
+    availability: { [key: string]: TimeRange[]; } | undefined;
+}
+
+export class AdminUpdateEmployeeAvailabilityResponse implements IAdminUpdateEmployeeAvailabilityResponse {
+    employeeId!: string | undefined;
+
+    constructor(data?: IAdminUpdateEmployeeAvailabilityResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.employeeId = Data["employeeId"];
+        }
+    }
+
+    static fromJS(data: any): AdminUpdateEmployeeAvailabilityResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new AdminUpdateEmployeeAvailabilityResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["employeeId"] = this.employeeId;
+        return data;
+    }
+}
+
+export interface IAdminUpdateEmployeeAvailabilityResponse {
+    employeeId: string | undefined;
 }
 
 export class AdminEmployeeListItem implements IAdminEmployeeListItem {

@@ -1,5 +1,6 @@
 #nullable enable
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Dashboard.DTOs;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.Domain.Repositories;
@@ -12,18 +13,36 @@ namespace Cleansia.Core.AppServices.Features.Dashboard;
 public class GetEarningsAnalytics
 {
     public record Query(
-        string EmployeeId,
+        string? EmployeeId,
         DateTime StartDate,
         DateTime EndDate) : IQuery<EarningsAnalyticsDto>;
 
     internal class Handler(
-        IEmployeeInvoiceRepository employeeInvoiceRepository)
+        IEmployeeInvoiceRepository employeeInvoiceRepository,
+        IEmployeeRepository employeeRepository,
+        IUserSessionProvider userSessionProvider)
         : IRequestHandler<Query, BusinessResult<EarningsAnalyticsDto>>
     {
         public async Task<BusinessResult<EarningsAnalyticsDto>> Handle(Query request, CancellationToken cancellationToken)
         {
+            var employeeId = request.EmployeeId;
+
+            // If employeeId is not provided, resolve from JWT session
+            if (string.IsNullOrWhiteSpace(employeeId))
+            {
+                var userEmail = userSessionProvider.GetUserEmail();
+                var employee = await employeeRepository.GetByUserEmailAsync(userEmail!, cancellationToken);
+                if (employee is null)
+                {
+                    return BusinessResult.Failure<EarningsAnalyticsDto>(new Error(
+                        "Employee",
+                        BusinessErrorMessage.EmployeeNotFound));
+                }
+                employeeId = employee.Id;
+            }
+
             var invoices = await employeeInvoiceRepository
-                .GetInvoicesByDateRange(request.EmployeeId, request.StartDate, request.EndDate)
+                .GetInvoicesByDateRange(employeeId, request.StartDate, request.EndDate)
                 .ToListAsync(cancellationToken);
 
             var monthlyEarnings = invoices

@@ -22,6 +22,8 @@ public class Policy
     public const string CanUploadOrderPhoto = nameof(CanUploadOrderPhoto); // Employee
     public const string CanViewOrderPhotos = nameof(CanViewOrderPhotos); // Authenticated (All roles)
     public const string CanDeleteOrderPhoto = nameof(CanDeleteOrderPhoto); // Employee
+    public const string CanAddOrderNote = nameof(CanAddOrderNote); // Employee
+    public const string CanReportOrderIssue = nameof(CanReportOrderIssue); // Employee
 
     // User
     public const string CanViewPagedUser = nameof(CanViewPagedUser); // Admin + Employee
@@ -39,6 +41,7 @@ public class Policy
     public const string CanViewPagedEmployee = nameof(CanViewPagedEmployee); // Admin
     public const string CanApproveEmployee = nameof(CanApproveEmployee); // Admin
     public const string CanRejectEmployee = nameof(CanRejectEmployee); // Admin
+    public const string CanAdminUpdateEmployee = nameof(CanAdminUpdateEmployee); // Admin
 
     // Employee Documents
     public const string CanViewEmployeeDocuments = nameof(CanViewEmployeeDocuments); // Admin + Employee (own documents)
@@ -145,4 +148,7 @@ public class Policy
     // Email Templates
     public const string CanViewEmailTemplates = nameof(CanViewEmailTemplates); // Admin
     public const string CanUpdateEmailTemplate = nameof(CanUpdateEmailTemplate); // Admin
+
+    // Device
+    public const string Authenticated = nameof(Authenticated); // Authenticated (All roles)
 }

@@ -16,7 +16,7 @@ public class CompleteOrder
         string OrderId,
         string EmployeeId,
         int ActualCompletionTimeMinutes,
-        string CompletionNotes) : ICommand<Response>;
+        string? CompletionNotes = null) : ICommand<Response>;
 
     public record Response(
         string OrderId,
@@ -68,11 +68,12 @@ public class CompleteOrder
                 .MustAsync(EmployeeIsAssignedToOrderAsync)
                 .WithMessage(BusinessErrorMessage.EmployeeNotAssignedToOrder);
 
-            RuleFor(x => x.CompletionNotes)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.CompletionNotesRequired)
-                .MaximumLength(1000)
-                .WithMessage(BusinessErrorMessage.CompletionNotesTooLong);
+            When(x => !string.IsNullOrEmpty(x.CompletionNotes), () =>
+            {
+                RuleFor(x => x.CompletionNotes)
+                    .MaximumLength(1000)
+                    .WithMessage(BusinessErrorMessage.CompletionNotesTooLong);
+            });
         }
 
         private async Task<bool> OrderIsInProgressAsync(string orderId, CancellationToken cancellationToken)
@@ -148,6 +149,7 @@ public class CompleteOrder
                 .Include(o => o.SelectedPackages).ThenInclude(op => op.Package)
                 .Include(o => o.CustomerAddress).ThenInclude(a => a!.Country)
                 .Include(o => o.Currency)
+                .Include(o => o.Receipt)
                 .Include(o => o.User).ThenInclude(u => u!.PreferredLanguage)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
@@ -161,7 +163,16 @@ public class CompleteOrder
             var completedStatusTrack = OrderStatusTrack.Create(OrderStatus.Completed, order);
             order.AddOrderStatus(completedStatusTrack);
 
-            // Generate and send receipt
+            // Generate and send receipt (skip if one already exists for this order)
+            if (order.Receipt != null)
+            {
+                return BusinessResult.Success(new Response(
+                    OrderId: order.Id,
+                    NewStatus: OrderStatus.Completed,
+                    ActualCompletionTime: command.ActualCompletionTimeMinutes
+                ));
+            }
+
             try
             {
                 // Use user's preferred language or default to Czech for receipts

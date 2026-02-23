@@ -1,7 +1,7 @@
 import { Injectable, OnDestroy, inject, signal } from '@angular/core';
 import {
   EmployeeInvoiceDto,
-  EmployeeInvoiceDtoPagedData,
+  PagedDataOfEmployeeInvoiceDto,
   EmployeeInvoiceStatus,
   PartnerClient,
   SortDefinition,
@@ -166,7 +166,7 @@ export class InvoicesFacade implements OnDestroy {
           return of(null);
         })
       )
-      .subscribe((pagedData: EmployeeInvoiceDtoPagedData | null) => {
+      .subscribe((pagedData: PagedDataOfEmployeeInvoiceDto | null) => {
         if (pagedData && pagedData.data) {
           const invoices = pagedData.data.map((dto: EmployeeInvoiceDto) =>
             this.mapDtoToInvoice(dto)

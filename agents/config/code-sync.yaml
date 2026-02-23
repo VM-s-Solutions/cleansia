@@ -1,0 +1,134 @@
+# Cleansia Code Sync Agent Configuration
+# Synchronizes API clients and models across platforms
+
+name: code-sync
+description: Synchronizes API contracts, DTOs, and models between backend and frontend/mobile clients
+model: claude-sonnet-4-20250514
+
+system_prompt_file: ../prompts/system/code-sync.md
+
+# Sync mappings
+sync_mappings:
+  # Backend DTOs -> Frontend TypeScript
+  backend_to_frontend:
+    source:
+      path: "src/Cleansia.App/Features/**/Dtos/*.cs"
+      language: csharp
+    target:
+      path: "src/cleansia-web/libs/data-access/src/lib/models"
+      language: typescript
+    mappings:
+      - csharp_record: typescript_interface
+      - Guid: string
+      - DateTime: Date
+      - DateTimeOffset: string
+      - decimal: number
+      - int: number
+      - bool: boolean
+      - "List<T>": "T[]"
+      - "IEnumerable<T>": "T[]"
+
+  # Backend DTOs -> Android Kotlin
+  backend_to_android:
+    source:
+      path: "src/Cleansia.App/Features/**/Dtos/*.cs"
+      language: csharp
+    target:
+      path: "src/cleansia_android/app/src/main/java/cz/cleansia/partner/domain/models"
+      language: kotlin
+    mappings:
+      - csharp_record: kotlin_data_class
+      - Guid: String
+      - DateTime: Instant
+      - DateTimeOffset: Instant
+      - decimal: Double
+      - int: Int
+      - bool: Boolean
+      - "List<T>": "List<T>"
+
+  # Backend API -> Frontend API Service
+  backend_api_to_frontend:
+    source:
+      path: "src/Cleansia.Api/Controllers/*.cs"
+      language: csharp
+    target:
+      path: "src/cleansia-web/libs/data-access/src/lib/services"
+      language: typescript
+    patterns:
+      - "[HttpGet]": "get<T>(url): Observable<T>"
+      - "[HttpPost]": "post<T>(url, body): Observable<T>"
+      - "[HttpPut]": "put<T>(url, body): Observable<T>"
+      - "[HttpDelete]": "delete(url): Observable<void>"
+
+  # Backend API -> Android Retrofit
+  backend_api_to_android:
+    source:
+      path: "src/Cleansia.Api/Controllers/*.cs"
+      language: csharp
+    target:
+      path: "src/cleansia_android/app/src/main/java/cz/cleansia/partner/data/api"
+      language: kotlin
+    patterns:
+      - "[HttpGet]": "@GET suspend fun"
+      - "[HttpPost]": "@POST suspend fun"
+      - "[HttpPut]": "@PUT suspend fun"
+      - "[HttpDelete]": "@DELETE suspend fun"
+
+# Sync triggers
+triggers:
+  - on: "file_change"
+    patterns:
+      - "src/Cleansia.App/Features/**/Dtos/*.cs"
+      - "src/Cleansia.Api/Controllers/*.cs"
+    action: "sync_all_clients"
+
+# Capabilities
+capabilities:
+  - generate_typescript_models
+  - generate_kotlin_models
+  - generate_api_clients
+  - update_existing_models
+  - detect_breaking_changes
+  - generate_migration_notes
+
+# Tools
+tools:
+  - name: sync_models
+    description: Sync DTO models to all platforms
+    parameters:
+      source_file:
+        type: string
+        description: Path to source DTO file
+      platforms:
+        type: array
+        items:
+          type: string
+          enum: [frontend, android, ios]
+        description: Target platforms
+
+  - name: sync_api
+    description: Sync API endpoint to client services
+    parameters:
+      controller:
+        type: string
+        description: Controller name
+      platforms:
+        type: array
+        items:
+          type: string
+          enum: [frontend, android, ios]
+
+  - name: detect_drift
+    description: Detect differences between backend and clients
+    parameters:
+      platform:
+        type: string
+        enum: [frontend, android, ios]
+
+  - name: generate_changelog
+    description: Generate changelog for API changes
+    parameters:
+      from_commit:
+        type: string
+      to_commit:
+        type: string

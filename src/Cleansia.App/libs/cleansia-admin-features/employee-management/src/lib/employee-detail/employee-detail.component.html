@@ -252,10 +252,36 @@
       </cleansia-section>
 
       <!-- Availability -->
-      @if (facade.employee().availability) {
       <cleansia-section
         [title]="'pages.employee_detail.availability' | translate"
       >
+        @if (facade.editingAvailability()) {
+        <!-- Edit mode -->
+        <cleansia-availability [(ngModel)]="availabilityValue" />
+        <div class="availability-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+          <cleansia-button
+            [label]="'common.save' | translate"
+            [loading]="facade.savingAvailability()"
+            (onClick)="onSaveAvailability()"
+          />
+          <cleansia-button
+            [label]="'common.cancel' | translate"
+            severity="secondary"
+            [disabled]="facade.savingAvailability()"
+            (onClick)="onCancelEditAvailability()"
+          />
+        </div>
+        } @else {
+        <!-- View mode -->
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
+          <cleansia-button
+            [label]="'common.edit' | translate"
+            severity="secondary"
+            icon="pi pi-pencil"
+            (onClick)="onEditAvailability()"
+          />
+        </div>
+        @if (facade.employee().availability) {
         <div class="availability-grid">
           @for (day of daysOfWeek(); track day.value) {
           <div class="availability-day">
@@ -278,16 +304,13 @@
           </div>
           }
         </div>
-      </cleansia-section>
-      } @else {
-      <cleansia-section
-        [title]="'pages.employee_detail.availability' | translate"
-      >
+        } @else {
         <p class="no-data">
           {{ 'pages.employee_detail.no_availability' | translate }}
         </p>
+        }
+        }
       </cleansia-section>
-      }
 
       <!-- Approval/Rejection History -->
       @if (facade.employee().approvedAt || facade.employee().rejectedAt) { @if

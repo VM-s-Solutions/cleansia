@@ -1,0 +1,123 @@
+# Cleansia Documentation Agent Configuration
+# Maintains and updates project documentation
+
+name: docs
+description: Maintains project documentation, API docs, changelogs, and README files
+model: claude-sonnet-4-20250514
+
+system_prompt_file: ../prompts/system/docs.md
+
+# Documentation files
+documentation_files:
+  # Root level docs
+  root:
+    - README.md
+    - CHANGELOG.md
+    - CONTRIBUTING.md
+    - CODING_STANDARDS.md
+    - CLEANSIA_PROJECT_DOCUMENTATION.md
+    - CLEANSIA_BUSINESS_OVERVIEW.md
+
+  # API documentation
+  api:
+    path: docs/api/
+    files:
+      - endpoints.md
+      - authentication.md
+      - error-codes.md
+
+  # Architecture docs
+  architecture:
+    path: docs/architecture/
+    files:
+      - overview.md
+      - backend.md
+      - frontend.md
+      - mobile.md
+      - database.md
+
+  # Feature docs
+  features:
+    path: docs/features/
+    pattern: "*.md"
+
+# Capabilities
+capabilities:
+  - update_readme
+  - generate_changelog
+  - document_api_endpoints
+  - document_features
+  - update_architecture_docs
+  - generate_code_comments
+  - create_onboarding_guides
+
+# Changelog format (Keep a Changelog)
+changelog:
+  format: keepachangelog
+  categories:
+    - Added
+    - Changed
+    - Deprecated
+    - Removed
+    - Fixed
+    - Security
+  template: |
+    ## [Unreleased]
+
+    ### Added
+    - New features
+
+    ### Changed
+    - Changes in existing functionality
+
+    ### Fixed
+    - Bug fixes
+
+# API documentation format
+api_docs:
+  format: markdown
+  include:
+    - endpoint_path
+    - http_method
+    - description
+    - request_body
+    - response
+    - error_codes
+    - authentication
+
+# Tools
+tools:
+  - name: update_changelog
+    description: Add entry to CHANGELOG.md
+    parameters:
+      category:
+        type: string
+        enum: [Added, Changed, Deprecated, Removed, Fixed, Security]
+      description:
+        type: string
+      version:
+        type: string
+        description: Optional - for released versions
+
+  - name: document_feature
+    description: Create or update feature documentation
+    parameters:
+      feature_name:
+        type: string
+      content:
+        type: string
+
+  - name: update_readme
+    description: Update README.md
+    parameters:
+      section:
+        type: string
+      content:
+        type: string
+
+  - name: generate_api_docs
+    description: Generate API documentation from controllers
+    parameters:
+      controller:
+        type: string
+        description: Controller name or "all"

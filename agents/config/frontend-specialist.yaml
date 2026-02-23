@@ -1,0 +1,143 @@
+# Cleansia Frontend Specialist Agent Configuration
+# Handles Angular, TypeScript, NgRx, PrimeNG tasks
+
+name: frontend-specialist
+description: Expert in Angular 17+, Nx monorepo, NgRx state management, and PrimeNG
+model: claude-sonnet-4-20250514
+
+system_prompt_file: ../prompts/system/frontend-specialist.md
+
+# File patterns this agent works with
+file_patterns:
+  - "src/cleansia-web/**/*.ts"
+  - "src/cleansia-web/**/*.html"
+  - "src/cleansia-web/**/*.scss"
+  - "src/cleansia-web/**/*.json"
+  - "libs/**/*.ts"
+  - "libs/**/*.html"
+  - "libs/**/*.scss"
+
+# Knowledge base references
+knowledge_base:
+  - path: CODING_STANDARDS.md
+    sections:
+      - "Frontend Coding Standards"
+      - "Angular Patterns"
+      - "NgRx Usage"
+      - "Component Structure"
+  - path: CLEANSIA_PROJECT_DOCUMENTATION.md
+    sections:
+      - "Frontend Architecture"
+      - "Nx Monorepo Structure"
+
+# Capabilities
+capabilities:
+  - create_components
+  - create_services
+  - create_facades
+  - create_ngrx_state
+  - create_guards
+  - create_interceptors
+  - modify_existing_code
+  - fix_bugs
+  - refactor
+  - styling
+
+# Nx Monorepo structure
+nx_structure:
+  apps:
+    - name: cleansia-web
+      path: src/cleansia-web
+      description: Main Angular application
+    - name: admin-panel
+      path: src/admin-panel
+      description: Admin dashboard application
+
+  libs:
+    - name: shared-ui
+      path: libs/shared/ui
+      description: Shared UI components
+    - name: shared-utils
+      path: libs/shared/utils
+      description: Utility functions
+    - name: data-access
+      path: libs/data-access
+      description: API services and state management
+    - name: feature-auth
+      path: libs/feature/auth
+      description: Authentication feature
+    - name: feature-orders
+      path: libs/feature/orders
+      description: Orders management feature
+
+# Code generation templates
+templates:
+  component:
+    structure:
+      - "{component-name}.component.ts"
+      - "{component-name}.component.html"
+      - "{component-name}.component.scss"
+      - "{component-name}.component.spec.ts"
+
+  service:
+    structure:
+      - "{service-name}.service.ts"
+      - "{service-name}.service.spec.ts"
+
+  facade:
+    structure:
+      - "{feature}.facade.ts"
+      - "{feature}.facade.spec.ts"
+
+  ngrx:
+    structure:
+      - "{feature}.actions.ts"
+      - "{feature}.reducer.ts"
+      - "{feature}.effects.ts"
+      - "{feature}.selectors.ts"
+
+# Validation rules
+validation_rules:
+  - rule: "Never use enum values directly in templates - use enum reference"
+    applies_to: ["*.html"]
+
+  - rule: "All text must use translation keys, never hardcoded strings"
+    applies_to: ["*.html", "*.ts"]
+
+  - rule: "Use Facade pattern for component-store communication"
+    applies_to: ["*.component.ts"]
+
+  - rule: "Shared components go in libs/shared/ui"
+    applies_to: ["components"]
+
+  - rule: "Use OnPush change detection"
+    applies_to: ["*.component.ts"]
+
+  - rule: "Use standalone components"
+    applies_to: ["*.component.ts"]
+
+# Tools specific to frontend work
+tools:
+  - name: generate_component
+    description: Generate a new Angular component using Nx
+    command: "npx nx g @nx/angular:component {name} --project={project}"
+
+  - name: generate_service
+    description: Generate a new Angular service
+    command: "npx nx g @nx/angular:service {name} --project={project}"
+
+  - name: generate_lib
+    description: Generate a new Nx library
+    command: "npx nx g @nx/angular:lib {name}"
+
+  - name: build
+    description: Build the frontend application
+    command: "npx nx build cleansia-web"
+
+  - name: test
+    description: Run frontend tests
+    command: "npx nx test cleansia-web"
+
+  - name: lint
+    description: Run linting
+    command: "npx nx lint cleansia-web"

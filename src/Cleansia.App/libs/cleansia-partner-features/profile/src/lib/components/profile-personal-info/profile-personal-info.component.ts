@@ -4,7 +4,6 @@ import {
   CleansiaCalendarComponent,
   CleansiaSectionComponent,
   CleansiaSelectComponent,
-  CleansiaTelephoneComponent,
   CleansiaTextInputComponent,
 } from '@cleansia/components';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -21,7 +20,6 @@ import { ProfileFacade } from '../../profile/profile.facade';
     CleansiaSectionComponent,
     CleansiaTextInputComponent,
     CleansiaCalendarComponent,
-    CleansiaTelephoneComponent,
     CleansiaSelectComponent,
   ],
   template: `
@@ -90,11 +88,12 @@ import { ProfileFacade } from '../../profile/profile.facade';
           </div>
         </div>
         <div class="cleansia-profile__field">
-          <cleansia-telephone
+          <cleansia-text-input
             [label]="'pages.profile.phone' | translate"
             [floatVariant]="'on'"
             formControlName="phone"
             dataType="text"
+            placeholder="+420 123 456 789"
           />
         </div>
         <div class="cleansia-profile__field">

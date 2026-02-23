@@ -63,4 +63,17 @@ public class AdminEmployeeController(IMediator mediator) : ApiController(mediato
         var result = await Mediator.Send(query, cancellationToken);
         return HandleResult<AdminEmployeeDetail>(result);
     }
+
+    [HttpPut("{employeeId}/update-availability")]
+    [Permission(Policy.CanAdminUpdateEmployee)]
+    [ProducesResponseType(typeof(AdminUpdateEmployeeAvailability.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> UpdateEmployeeAvailability(string employeeId, [FromBody] AdminUpdateEmployeeAvailability.Request request, CancellationToken cancellationToken)
+    {
+        var command = new AdminUpdateEmployeeAvailability.Command(employeeId, request.Availability);
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<AdminUpdateEmployeeAvailability.Response>(result);
+    }
 }

@@ -2,7 +2,7 @@ import { OrderFilter } from '@cleansia/models';
 import {
   ApiException,
   OrderItem,
-  OrderListItemPagedData,
+  PagedDataOfOrderListItem,
   SortDefinition,
 } from '@cleansia/partner-services';
 
@@ -20,7 +20,7 @@ export const loadOrderPaged = createAction(
 );
 export const loadOrderPagedSuccess = createAction(
   '[Order] Load Paged Success',
-  props<{ page: OrderListItemPagedData }>()
+  props<{ page: PagedDataOfOrderListItem }>()
 );
 export const loadOrderPagedFailure = createAction(
   '[Order] Load Paged Failure',

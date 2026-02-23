@@ -44,10 +44,13 @@ public static class BusinessErrorMessage
     public const string TotalPriceNotMatch = "order.total_price.not_match";
     public const string OrderNotInProgress = "order.not_in_progress";
     public const string OrderNotConfirmed = "order.not_confirmed";
+    public const string EmployeeAlreadyHasOrderInProgress = "order.employee_already_has_order_in_progress";
     public const string ActualTimeMustBePositive = "order.actual_time.positive";
     public const string CompletionNotesRequired = "order.completion_notes.required";
     public const string CompletionNotesTooLong = "order.completion_notes.too_long";
     public const string AfterPhotosRequired = "order.after_photos.required";
+    public const string OrderNoteContentRequired = "order.note.content_required";
+    public const string OrderIssueDescriptionRequired = "order.issue.description_required";
     public const string PaymentGatewayUnavailable = "order.payment_gateway_unavailable";
     public const string OrderCreationFailed = "order.creation_failed";
 
@@ -202,4 +205,24 @@ public static class BusinessErrorMessage
     public const string InvalidTemplateFileType = "template.invalid_file_type";
     public const string TemplateFileSizeExceeded = "template.file_size_exceeded";
     public const string TemplateFileRequired = "template.file_required";
+
+    // Availability
+    public const string InvalidAvailabilityFormat = "validation.invalid_availability_format";
+
+    // Device
+    public const string InvalidPlatform = "device.invalid_platform";
+
+    // Pagination
+    public const string PageMustBePositive = "validation.page_must_be_positive";
+    public const string PageSizeMustBePositive = "validation.page_size_must_be_positive";
+    public const string PageSizeExceeded = "validation.page_size_exceeded";
+    public const string InvalidContractStatus = "validation.invalid_contract_status";
+
+    // Document Upload
+    public const string FileSizeExceeded10MB = "file.size_exceeded_10mb";
+    public const string FileTypeNotAllowed = "file.type_not_allowed";
+
+    // Payment
+    public const string JsonPayloadRequired = "payment.json_payload_required";
+    public const string StripeSignatureRequired = "payment.stripe_signature_required";
 }

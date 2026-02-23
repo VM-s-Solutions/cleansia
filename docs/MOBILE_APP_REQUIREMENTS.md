@@ -1,18 +1,337 @@
 # Cleansia Partner Mobile App - Requirements & Implementation Guide
 
 ## Table of Contents
-1. [Executive Summary](#executive-summary)
-2. [Technology Comparison](#technology-comparison)
-3. [Recommended Stack: Flutter](#recommended-stack-flutter)
-4. [Development Environment Setup](#development-environment-setup)
-5. [Project Structure](#project-structure)
-6. [Feature Requirements](#feature-requirements)
-7. [API Integration](#api-integration)
-8. [State Management](#state-management)
-9. [UI/UX Guidelines](#uiux-guidelines)
-10. [Testing Strategy](#testing-strategy)
-11. [Deployment](#deployment)
-12. [Estimated Timeline](#estimated-timeline)
+1. [Implementation Status](#implementation-status)
+2. [Executive Summary](#executive-summary)
+3. [Key Questions Answered](#key-questions-answered)
+4. [Technology Comparison](#technology-comparison)
+5. [Recommended Stack: Flutter](#recommended-stack-flutter)
+6. [Development Environment Setup](#development-environment-setup)
+7. [Project Structure](#project-structure)
+8. [Feature Requirements](#feature-requirements)
+9. [API Integration](#api-integration)
+10. [State Management](#state-management)
+11. [UI/UX Guidelines](#uiux-guidelines)
+12. [Testing Strategy](#testing-strategy)
+13. [Deployment](#deployment)
+14. [Estimated Timeline](#estimated-timeline)
+
+---
+
+## Implementation Status
+
+> **Last Updated:** January 2025
+
+### Overall Progress: Phase 1-7 Complete (~90%)
+
+| Phase | Status | Details |
+|-------|--------|---------|
+| **Phase 1: Setup** | ✅ Complete | Project created, architecture set up, CI configured |
+| **Phase 2: Auth** | ✅ Complete | Login, Register, Email Confirmation, Forgot Password UI |
+| **Phase 3: Dashboard** | ✅ Complete | Stats cards, charts, analytics, pull-to-refresh |
+| **Phase 4: Orders** | ✅ Complete | Orders list, tabs, filters, details, take/start/complete flows |
+| **Phase 5: Invoices** | ✅ Complete | Invoices list, details, PDF download, filter, status timeline |
+| **Phase 6: Profile** | ✅ Complete | Personal info, bank details, documents with upload/download |
+| **Phase 7: Polish** | ✅ Complete | Error handling widgets, loading skeletons, settings tab, logout |
+| **Phase 8: Deployment** | ⏳ Not Started | |
+
+### What's Been Implemented
+
+#### ✅ Project Setup & Architecture
+- [x] Flutter project created with `very_good_cli` (best practices scaffolding)
+- [x] Clean Architecture + BLoC pattern implemented
+- [x] Folder structure: `lib/core/`, `lib/features/`, `lib/shared/`
+- [x] Multi-environment support (development, staging, production)
+- [x] Root `.gitignore` updated for Flutter/Dart files
+- [x] CI workflow created (`.github/workflows/mobile-ci.yml`)
+
+#### ✅ Core Infrastructure
+- [x] **API Client** (`lib/core/api/api_client.dart`)
+  - Dio-based HTTP client with interceptors
+  - Auth interceptor (adds Bearer token)
+  - Error interceptor (handles API exceptions)
+  - Logging interceptor (debug mode)
+  - Environment-based base URL configuration
+- [x] **Secure Storage** (`lib/core/services/secure_storage_service.dart`)
+  - JWT token storage
+  - User email storage
+  - Login state checking
+- [x] **API Constants** (`lib/core/constants/api_constants.dart`)
+  - All API endpoints defined
+  - Environment URLs configured
+- [x] **API Result Pattern** (`lib/core/api/api_result.dart`)
+  - Sealed class for Success/Failure handling
+
+#### ✅ Authentication Feature
+- [x] **AuthBloc** (`lib/features/auth/bloc/`)
+  - Events: Login, Register, ConfirmEmail, ForgotPassword, Logout, etc.
+  - States: initial, unauthenticated, authenticated, emailConfirmationRequired
+  - Full event handling with error management
+- [x] **AuthRepository** (`lib/core/services/auth_repository.dart`)
+  - Login with token storage
+  - Register employee
+  - Confirm email
+  - Resend confirmation
+  - Forgot password
+  - Reset password
+- [x] **Auth UI Pages**:
+  - Login page with email/password, remember me, navigation
+  - Register page with password strength indicator
+  - Email confirmation page with 6-digit code input
+  - Forgot password page with email submission
+
+#### ✅ Navigation & Routing
+- [x] **GoRouter** configuration (`lib/core/routing/`)
+  - Declarative routing with auth-based redirects
+  - Route guards (authenticated vs unauthenticated)
+  - Email confirmation redirect handling
+  - Shell route for main app with bottom navigation
+
+#### ✅ Shared Components
+- [x] **MainShell** with bottom navigation (4 tabs: Dashboard, Orders, Invoices, Profile)
+- [x] **AuthTextField** reusable form component
+- [x] Placeholder pages for Orders, Invoices, Profile tabs
+
+#### ✅ API Client Generation
+- [x] OpenAPI Generator configured (`dart-dio` generator)
+- [x] Generated 18 API classes from backend Swagger spec
+- [x] Generated models with JSON serialization
+- [x] Path dependency configured in `pubspec.yaml`
+- [x] Build runner generates `.g.dart` files
+
+#### ✅ Dashboard Feature
+- [x] **DashboardBloc** (`lib/features/dashboard/bloc/`)
+  - Events: LoadRequested, RefreshRequested, DateRangeChanged
+  - State: stats, earnings, orders, time analytics, productivity metrics
+  - Full data loading with error handling
+- [x] **Dashboard Models** (`lib/core/models/dashboard/`)
+  - DashboardStats, EarningsAnalytics, OrderAnalytics
+  - TimeAnalytics, ProductivityMetrics
+  - All fromDto converters for API integration
+- [x] **DashboardRepository** (`lib/core/services/dashboard_repository.dart`)
+  - getStats, getEarningsAnalytics, getOrderAnalytics
+  - getTimeAnalytics, getProductivityMetrics
+- [x] **Dashboard UI**:
+  - Dashboard page with stats cards (4 cards in 2x2 grid)
+  - Earnings chart with fl_chart
+  - Pull-to-refresh functionality
+  - Loading states with shimmer effects
+
+#### ✅ Orders Feature
+- [x] **OrdersBloc** (`lib/features/orders/bloc/`)
+  - Events: LoadRequested, RefreshRequested, LoadMoreRequested, TabChanged, FilterChanged
+  - Events: TakeRequested, StartRequested, CompleteRequested, ErrorCleared, SuccessCleared
+  - State: orders list, filter, pagination, loading states, error/success messages
+- [x] **Order Models** (`lib/core/models/orders/`)
+  - Order, OrderStatus enum, PaymentStatus enum
+  - ServiceItem, PackageItem with fromDto converters
+  - OrderFilter with toQueryParams() for API
+  - PagedOrders for pagination support
+- [x] **OrdersRepository** (`lib/core/services/orders_repository.dart`)
+  - getOrders, getAvailableOrders, getMyOrders
+  - getOrderById, takeOrder, startOrder, completeOrder
+  - uploadOrderPhoto with multipart form data
+- [x] **Orders UI**:
+  - Orders list page with TabBar (Available/My Orders)
+  - OrderCard widget with status badges and action buttons
+  - OrderCardSkeleton for loading states
+  - Filter bottom sheet with search, date range
+  - Order details page with all sections
+  - Take/Start/Complete confirmation dialogs
+  - url_launcher integration (phone, email, maps)
+
+#### ✅ Invoices Feature
+- [x] **InvoicesBloc** (`lib/features/invoices/bloc/`)
+  - Events: LoadRequested, RefreshRequested, LoadMoreRequested, FilterChanged
+  - Events: DownloadRequested, ErrorCleared, SuccessCleared
+  - State: invoices list, filter, pagination, loading states, error/success messages
+- [x] **Invoice Models** (`lib/core/models/invoices/`)
+  - Invoice, InvoiceDetail with fromDto converters
+  - InvoiceStatus enum with fromValue(int) for API integer status
+  - OrderPay for order payment line items
+  - InvoiceFilter with toQueryParams() for API
+  - PagedInvoices for pagination support
+- [x] **InvoicesRepository** (`lib/core/services/invoices_repository.dart`)
+  - getInvoices with filter and pagination
+  - getInvoiceById for invoice details
+  - getInvoicePdfUrl for PDF download URL
+  - downloadInvoicePdf for raw PDF bytes
+- [x] **Invoices UI**:
+  - Invoices list page with filter bottom sheet
+  - InvoiceCard widget with status badges and download button
+  - InvoiceCardSkeleton for loading states
+  - Filter sheet with search, date range
+  - Invoice details page with all sections:
+    - Status card with amount
+    - Invoice information section
+    - Financial summary (subtotal, bonus, deductions, total)
+    - Status timeline (generated, approved, paid)
+    - Order payments list
+    - Admin notes and bank transfer notes
+  - PDF download via url_launcher
+
+#### ✅ Profile Feature
+- [x] **ProfileBloc** (`lib/features/profile/bloc/`)
+  - Events: LoadRequested, RefreshRequested, PersonalInfoUpdated, BankDetailsUpdated
+  - Events: EmergencyContactUpdated, DocumentsLoadRequested, DocumentUploadRequested
+  - Events: DocumentDeleteRequested, ErrorCleared, SuccessCleared
+  - State: profile, documents list, loading states, saving states, error/success messages
+- [x] **Profile Models** (`lib/core/models/profile/`)
+  - EmployeeProfile with personal info, address, emergency contact, availability
+  - DocumentType enum (10 document types with isRequired flag)
+  - DocumentStatus enum (Pending, Approved, Rejected)
+  - EmployeeDocument with status, file info, review notes
+  - UpdateProfileRequest for API updates
+  - TimeRange for availability scheduling
+- [x] **ProfileRepository** (`lib/core/services/profile_repository.dart`)
+  - getCurrentProfile for employee data
+  - updateProfile for saving changes
+  - getMyDocuments for document list
+  - uploadDocument with multipart form data
+  - deleteDocument for removing documents
+  - downloadDocument for raw bytes
+- [x] **Profile UI**:
+  - Profile page with TabBar (Personal, Bank, Documents, Settings)
+  - Personal Information tab:
+    - Profile header with avatar and email
+    - Personal details form (name, phone, birth date)
+    - Address form (street, city, zip code)
+    - Emergency contact card with edit dialog
+    - Save changes button with validation
+  - Bank Details tab:
+    - Info card about payment requirements
+    - IBAN input with validation
+    - Tax ID (optional) input
+    - Bank status indicator card
+    - Save changes button
+  - Documents tab:
+    - Status summary card (complete/incomplete/action required)
+    - Required documents section with status indicators
+    - Optional documents section
+    - Document type cards with expand/collapse:
+      - Upload button with camera/gallery picker
+      - Download button for existing documents
+      - Delete confirmation dialog
+      - Rejection reason display for rejected documents
+    - Upload new document bottom sheet
+  - Settings tab:
+    - Language selection dialog (English, Deutsch, Slovenčina)
+    - Theme selection dialog (System, Light, Dark)
+    - Notifications settings placeholder
+    - App version info
+    - Terms of Service and Privacy Policy links
+    - Change password placeholder
+    - Logout with confirmation dialog
+
+#### ✅ Phase 7: Polish Features
+- [x] **Shared Widgets** (`lib/shared/widgets/`)
+  - ErrorView widget for error states (network, server, generic)
+  - EmptyState widget for empty lists (no orders, invoices, documents, search results)
+  - LoadingSkeleton widget with shimmer animation
+  - ListItemSkeleton, CardSkeleton, FormFieldSkeleton, ProfileInfoSkeleton
+  - Barrel export file (widgets.dart)
+- [x] **Settings Integration**
+  - Settings tab added to Profile page
+  - Logout functionality with confirmation
+  - Language/theme dialogs (ready for implementation)
+  - App info and legal links
+
+#### ✅ Dependencies Added
+```yaml
+# Navigation
+go_router: ^14.0.0
+
+# API & Networking
+dio: ^5.4.0
+json_annotation: ^4.9.0
+
+# State Management
+flutter_bloc: ^8.1.6
+bloc: ^8.1.4
+equatable: ^2.0.5
+
+# Local Storage
+shared_preferences: ^2.2.0
+flutter_secure_storage: ^9.0.0
+
+# UI Components
+cached_network_image: ^3.3.0
+shimmer: ^3.0.0
+fl_chart: ^0.68.0
+
+# Utilities
+connectivity_plus: ^6.0.0
+permission_handler: ^11.0.0
+image_picker: ^1.0.0
+url_launcher: ^6.2.0
+```
+
+### What's Left To Do
+
+#### ⏳ Phase 8: Deployment (Next)
+- [ ] Android keystore generation
+- [ ] Android signing configuration
+- [ ] iOS provisioning profiles
+- [ ] App icons (replace placeholders with Cleansia branding)
+- [ ] Splash screen
+- [ ] Play Store listing preparation
+- [ ] App Store listing preparation
+- [ ] Beta testing via TestFlight/Firebase App Distribution
+
+### Project Location
+
+```
+src/cleansia_mobile/
+├── lib/
+│   ├── app/                      # App widget & initialization
+│   ├── core/
+│   │   ├── api/                  # API client, interceptors, result pattern
+│   │   ├── constants/            # API endpoints, app constants
+│   │   ├── models/               # Auth, Dashboard, Orders, Invoices, Profile models
+│   │   ├── routing/              # GoRouter configuration
+│   │   └── services/             # Repositories (Auth, Dashboard, Orders, Invoices, Profile)
+│   ├── features/
+│   │   ├── auth/                 # Login, Register, Confirm, ForgotPassword
+│   │   ├── dashboard/            # Dashboard stats, charts, analytics
+│   │   ├── orders/               # Orders list, details, take/start/complete
+│   │   ├── invoices/             # Invoices list, details, PDF download
+│   │   └── profile/              # Profile tabs, personal info, bank, documents
+│   ├── shared/
+│   │   └── widgets/              # MainShell, reusable components
+│   └── l10n/                     # Localization
+├── android/                      # Android platform files
+├── ios/                          # iOS platform files
+├── pubspec.yaml                  # Dependencies
+└── README.md
+```
+
+### How to Run
+
+```bash
+# Navigate to mobile project
+cd src/cleansia_mobile
+
+# Get dependencies
+flutter pub get
+
+# Generate API client (requires backend running)
+curl -s http://localhost:5000/swagger/v1/swagger.json -o swagger.json
+npx @openapitools/openapi-generator-cli generate \
+  -i swagger.json \
+  -g dart-dio \
+  -o lib/core/api/generated \
+  --skip-validate-spec
+
+# Run build_runner for generated code
+cd lib/core/api/generated && dart run build_runner build --delete-conflicting-outputs
+cd ../../../..
+
+# Run on Android emulator
+flutter run
+
+# Run on Chrome (web)
+flutter run -d chrome
+```
 
 ---
 
@@ -24,6 +343,244 @@ This document outlines the requirements for building a mobile version of the Cle
 - Track earnings and view invoices
 - Manage their profile and documents
 - View real-time dashboard analytics
+
+---
+
+## Key Questions Answered
+
+### Q1: Is there something similar to Nx for mobile development?
+
+**Short Answer:** Flutter doesn't have an Nx equivalent, but there are established architecture patterns and CLI tools.
+
+#### Architecture Standards
+
+| Pattern | Description | Comparison to Web |
+|---------|-------------|-------------------|
+| **Clean Architecture + BLoC** | Most popular, separates UI/business logic/data | Similar to Nx + NgRx structure |
+| **Riverpod** | Modern alternative to BLoC, less boilerplate | Simpler state management |
+| **GetX** | All-in-one solution | Not recommended for large apps |
+
+#### Recommended: Clean Architecture + BLoC
+
+This is the **industry standard** for Flutter apps and mirrors your Angular/Nx structure:
+
+| Nx (Angular) | Flutter Equivalent |
+|--------------|-------------------|
+| `apps/` | Single app (Flutter handles multi-platform) |
+| `libs/feature-*` | `lib/features/` |
+| `libs/shared/` | `lib/shared/` |
+| `libs/core/` | `lib/core/` |
+| NgRx Store | BLoC (flutter_bloc) |
+| Services | Repositories |
+| NSwag clients | Generated API clients (openapi-generator) |
+
+#### CLI Tools for Consistency
+
+| Tool | Purpose | Nx Equivalent |
+|------|---------|---------------|
+| **very_good_cli** | Project scaffolding with best practices | `nx generate` |
+| **mason** | Code generation templates | Nx generators |
+| **flutter_lints** / **very_good_analysis** | Strict linting rules | ESLint config |
+| **build_runner** | Code generation (JSON, API clients) | NSwag, build tools |
+
+**Setup Very Good CLI:**
+```bash
+# Install globally
+dart pub global activate very_good_cli
+
+# Create project with best practices (100+ lint rules, test coverage)
+very_good create flutter_app cleansia_mobile --org com.cleansia
+
+# Generate feature module
+very_good create flutter_package orders --org com.cleansia
+```
+
+**Setup Mason for Templates:**
+```bash
+# Install mason
+dart pub global activate mason_cli
+
+# Use community bricks (templates)
+mason add bloc                    # BLoC feature template
+mason add feature_brick           # Clean architecture feature
+mason make bloc --name orders     # Generate orders BLoC
+```
+
+---
+
+### Q2: Do I need a separate API project for mobile?
+
+**Short Answer:** No, your existing `Cleansia.Api` is sufficient.
+
+#### Why You Don't Need a Separate API
+
+| Concern | Solution |
+|---------|----------|
+| **Same business logic** | Mobile uses exact same endpoints |
+| **Authentication** | JWT tokens work identically |
+| **Data models** | Same DTOs for both platforms |
+| **Performance** | API already optimized |
+
+#### Mobile-Specific Features (If Needed Later)
+
+If you need mobile-specific functionality in the future, add to existing API:
+
+```csharp
+// Example: Push notification device registration
+[HttpPost("devices/register")]
+public async Task<IActionResult> RegisterDevice(RegisterDeviceCommand command)
+{
+    // command: { DeviceToken, Platform (iOS/Android), UserId }
+}
+
+// Example: Image optimization endpoint (return smaller images for mobile)
+[HttpGet("orders/{orderId}/photos")]
+public async Task<IActionResult> GetPhotos(
+    [FromRoute] Guid orderId,
+    [FromQuery] int? maxWidth = null)  // Mobile passes maxWidth=800
+```
+
+#### Current API Endpoints Already Support Mobile
+
+Your existing endpoints are **mobile-ready**:
+- `POST /api/Auth/Login` - Returns JWT token
+- `GET /api/Orders/GetPaged` - Pagination works on mobile
+- `POST /api/Orders/CompleteOrder` - Multipart upload for photos
+- `GET /api/EmployeePayroll/DownloadInvoice/{id}` - PDF download
+
+**No changes needed to start mobile development.**
+
+---
+
+### Q3: Is there something similar to NSwag for mobile?
+
+**Short Answer:** Yes! Use `openapi-generator` to auto-generate Dart API clients from your Swagger spec.
+
+#### API Client Generation Options
+
+| Tool | Description | Recommendation |
+|------|-------------|----------------|
+| **openapi-generator** | Generates Dart client from OpenAPI/Swagger | **Recommended** |
+| **swagger_parser** | Dart-native generator | Good alternative |
+| **chopper + chopper_generator** | Retrofit-like with annotations | Manual setup |
+| **dio + retrofit** | Annotation-based generation | More control |
+
+#### Recommended: openapi-generator (Like NSwag)
+
+**Step 1: Install**
+```bash
+# Using npm (like NSwag)
+npm install -g @openapitools/openapi-generator-cli
+
+# Or using Homebrew (macOS)
+brew install openapi-generator
+```
+
+**Step 2: Generate Dart Client**
+```bash
+# From your Swagger JSON (run backend first)
+openapi-generator-cli generate \
+  -i http://localhost:5000/swagger/v1/swagger.json \
+  -g dart-dio \
+  -o lib/core/api/generated \
+  --additional-properties=pubName=cleansia_api,pubAuthor=Cleansia
+
+# Or from saved swagger.json file
+openapi-generator-cli generate \
+  -i ./swagger.json \
+  -g dart-dio \
+  -o lib/core/api/generated
+```
+
+**Step 3: What Gets Generated**
+
+```
+lib/core/api/generated/
+├── lib/
+│   ├── api.dart                    # Main API entry point
+│   ├── api/                        # API classes
+│   │   ├── auth_api.dart           # POST /api/Auth/*
+│   │   ├── orders_api.dart         # GET/POST /api/Orders/*
+│   │   ├── employee_payroll_api.dart
+│   │   └── dashboard_api.dart
+│   ├── model/                      # Generated DTOs
+│   │   ├── login_command.dart
+│   │   ├── jwt_token_response.dart
+│   │   ├── order_dto.dart
+│   │   ├── paged_result_order_dto.dart
+│   │   └── ... (all your DTOs)
+│   └── serializers.dart            # JSON serialization
+├── pubspec.yaml                    # Package dependencies
+└── README.md
+```
+
+**Step 4: Usage in Flutter**
+
+```dart
+// Import generated client
+import 'package:cleansia_api/api.dart';
+
+// Configure with base URL and auth
+final apiClient = ApiClient(basePath: 'https://api.cleansia.cz');
+apiClient.addDefaultHeader('Authorization', 'Bearer $token');
+
+// Use type-safe API calls
+final authApi = AuthApi(apiClient);
+final response = await authApi.login(LoginCommand(
+  email: 'user@example.com',
+  password: 'password123',
+));
+
+final ordersApi = OrdersApi(apiClient);
+final orders = await ordersApi.getPagedOrders(
+  pageNumber: 1,
+  pageSize: 20,
+  status: 'Confirmed',
+);
+```
+
+#### Automation Script (Like NSwag in CI)
+
+Create `scripts/generate-api.sh`:
+```bash
+#!/bin/bash
+# Generate API client from backend Swagger
+
+# Ensure backend is running or use saved swagger.json
+SWAGGER_URL="${1:-http://localhost:5000/swagger/v1/swagger.json}"
+
+echo "Generating API client from: $SWAGGER_URL"
+
+openapi-generator-cli generate \
+  -i "$SWAGGER_URL" \
+  -g dart-dio \
+  -o lib/core/api/generated \
+  --additional-properties=pubName=cleansia_api \
+  --skip-validate-spec
+
+echo "Running build_runner for additional codegen..."
+dart run build_runner build --delete-conflicting-outputs
+
+echo "API client generated successfully!"
+```
+
+Add to `pubspec.yaml`:
+```yaml
+dependencies:
+  # Use generated package as local dependency
+  cleansia_api:
+    path: lib/core/api/generated
+```
+
+#### Comparison: NSwag vs openapi-generator
+
+| NSwag (C#/.NET) | openapi-generator (Flutter) |
+|-----------------|----------------------------|
+| `nswag.json` config | CLI arguments or config file |
+| Generates TypeScript client | Generates Dart client |
+| HttpClient wrapper | Dio HTTP client |
+| Models with interfaces | Dart classes with JSON serialization |
+| `npm run nswag` | `./scripts/generate-api.sh` |
 
 ---
 

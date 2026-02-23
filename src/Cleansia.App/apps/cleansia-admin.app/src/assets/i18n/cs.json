@@ -49,6 +49,46 @@
     "not_found": {
       "title": "Stránka nenalezena",
       "description": "Stránka, kterou hledáte, byla pravděpodobně odstraněna, přejmenována nebo je dočasně nedostupná."
+    },
+    "availability": {
+      "days": {
+        "monday": "Pondělí",
+        "tuesday": "Úterý",
+        "wednesday": "Středa",
+        "thursday": "Čtvrtek",
+        "friday": "Pátek",
+        "saturday": "Sobota",
+        "sunday": "Neděle"
+      },
+      "current_ranges": "Aktuální časová rozmezí",
+      "no_availability": "Není nastavena dostupnost",
+      "add_time_range": "Přidat časové rozmezí",
+      "start_time": "Čas začátku",
+      "end_time": "Čas konce",
+      "quick_setup": "Rychlé nastavení",
+      "weekly_schedule": "Týdenní rozvrh",
+      "mon_fri_9_5": "Po-Pá 9-17",
+      "mon_sat_8_4": "Po-So 8-16",
+      "custom": "Vlastní",
+      "legend_working": "Pracovní",
+      "legend_custom": "Vlastní hodiny",
+      "legend_off": "Volno",
+      "no_days_selected": "Vyberte pracovní dny pro nastavení rozvrhu",
+      "working_day": "Pracovní den",
+      "day_off": "Volný den",
+      "custom_hours": "Vlastní hodiny",
+      "exception_day_off": "Výjimka - Volno",
+      "edit_hours": "Upravit hodiny",
+      "remove_exception": "Odebrat výjimku",
+      "mark_exception": "Označit jako výjimku",
+      "set_custom_hours": "Nastavit vlastní hodiny",
+      "mark_unavailable": "Tento den bude označen jako nedostupný.",
+      "add_time_slot": "Přidat časový slot",
+      "schedule_setup": "Nastavení rozvrhu",
+      "schedule_setup_desc": "Vyberte pracovní dny a nastavte své hodiny.",
+      "working_hours": "Pracovní hodiny",
+      "working_days": "Pracovní dny",
+      "apply": "Použít"
     }
   },
   "global": {
@@ -279,7 +319,9 @@
         "document_approve_error": "Nepodařilo se schválit dokument",
         "document_reject_success": "Dokument byl úspěšně zamítnut",
         "document_reject_error": "Nepodařilo se zamítnout dokument",
-        "document_download_error": "Nepodařilo se stáhnout dokument"
+        "document_download_error": "Nepodařilo se stáhnout dokument",
+        "availability_save_success": "Dostupnost byla úspěšně aktualizována",
+        "availability_save_error": "Nepodařilo se aktualizovat dostupnost"
       },
       "document_status": {
         "pending": "Čekající",
@@ -1559,7 +1601,9 @@
       "size_exceeded": "Velikost souboru překročila maximální povolenou velikost",
       "count_exceeded": "Nahráno příliš mnoho souborů",
       "count_too_few": "Nahráno příliš málo souborů",
-      "required": "Soubor je povinný"
+      "required": "Soubor je povinný",
+      "size_exceeded_10mb": "Velikost souboru nesmí překročit 10 MB",
+      "type_not_allowed": "Typ souboru není povolen. Povolené: PDF, JPEG, PNG, DOC, DOCX"
     },
     "address": {
       "invalid_length": "Neplatná délka adresy"
@@ -1603,7 +1647,12 @@
       "invalid_tax_id": "Neplatný formát DIČ",
       "invalid_iban": "Neplatný formát IBAN",
       "invalid_zip_code": "Neplatný formát PSČ",
-      "must_be_positive": "Hodnota musí být kladná"
+      "must_be_positive": "Hodnota musí být kladná",
+      "invalid_availability_format": "Neplatný formát dostupnosti. Dny musí být platné názvy dnů nebo data (yyyy-MM-dd) a časové rozsahy musí mít začátek před koncem.",
+      "page_must_be_positive": "Stránka musí být větší než 0",
+      "page_size_must_be_positive": "Velikost stránky musí být větší než 0",
+      "page_size_exceeded": "Velikost stránky nesmí překročit 100",
+      "invalid_contract_status": "Neplatná hodnota stavu smlouvy"
     },
     "service": {
       "not_found": "Služba nenalezena",
@@ -1617,6 +1666,13 @@
     },
     "general": {
       "not_found": "Zdroj nenalezen"
+    },
+    "device": {
+      "invalid_platform": "Platforma musí být 'android' nebo 'ios'"
+    },
+    "payment": {
+      "json_payload_required": "JSON obsah je povinný",
+      "stripe_signature_required": "Hlavička podpisu Stripe je povinná"
     },
     "template": {
       "cannot_delete_active": "Nelze smazat aktivní šablonu",

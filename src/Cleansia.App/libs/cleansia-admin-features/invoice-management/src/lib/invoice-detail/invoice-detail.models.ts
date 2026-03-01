@@ -93,7 +93,7 @@ export function getOrderPaysTableDefinition(
             row.createdOn instanceof Date
               ? row.createdOn
               : new Date(row.createdOn);
-          return date.toLocaleDateString('cs-CZ');
+          return date.toLocaleDateString('en-GB');
         },
         width: '10%',
       },

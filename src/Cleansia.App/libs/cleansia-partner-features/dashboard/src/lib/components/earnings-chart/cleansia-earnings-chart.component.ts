@@ -8,12 +8,12 @@ import {
 } from '@angular/core';
 import {
   CleansiaLabelComponent,
-  CleansiaLoaderComponent,
 } from '@cleansia/components';
 import { EarningsAnalyticsDto } from '@cleansia/partner-services';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ChartConfiguration, ChartType } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
+import { Skeleton } from 'primeng/skeleton';
 
 @Component({
   selector: 'cleansia-earnings-chart',
@@ -22,7 +22,7 @@ import { BaseChartDirective } from 'ng2-charts';
     CommonModule,
     BaseChartDirective,
     TranslateModule,
-    CleansiaLoaderComponent,
+    Skeleton,
     CleansiaLabelComponent,
   ],
   templateUrl: './cleansia-earnings-chart.component.html',
@@ -55,7 +55,7 @@ export class CleansiaEarningsChartComponent {
           label: (context) => {
             const label = context.dataset.label || '';
             const value = context.parsed.y;
-            const locale = this.translate.currentLang || 'cs-CZ';
+            const locale = this.translate.currentLang || 'en-GB';
             const formatted =
               value != null ? value.toLocaleString(locale) : '0';
             return `${label}: ${formatted} Kč`;
@@ -68,7 +68,7 @@ export class CleansiaEarningsChartComponent {
         beginAtZero: true,
         ticks: {
           callback: (value) => {
-            const locale = this.translate.currentLang || 'cs-CZ';
+            const locale = this.translate.currentLang || 'en-GB';
             return `${value.toLocaleString(locale)} Kč`;
           },
         },

@@ -64,7 +64,8 @@ public class UpdateAddressInfo
         string Street,
         string City,
         string ZipCode,
-        string CountryId) : ICommand<Response>;
+        string CountryId,
+        string? State = null) : ICommand<Response>;
 
     public record Response(string EmployeeId);
 
@@ -76,8 +77,8 @@ public class UpdateAddressInfo
             var employee = await employeeRepository.GetByIdAsync(command.EmployeeId, cancellationToken);
 
             var address = employee!.Address is not null
-                ? employee.Address.Update(command.Street, command.City, command.ZipCode, command.CountryId)
-                : Address.Create(command.Street, command.City, command.ZipCode, command.CountryId);
+                ? employee.Address.Update(command.Street, command.City, command.ZipCode, command.CountryId, command.State)
+                : Address.Create(command.Street, command.City, command.ZipCode, command.CountryId, command.State);
 
             employee.UpdateAddress(address);
 

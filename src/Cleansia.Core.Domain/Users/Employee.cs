@@ -7,10 +7,10 @@ using Cleansia.Core.Domain.Orders;
 
 namespace Cleansia.Core.Domain.Users;
 
-public class Employee : Auditable
+public class Employee : Auditable, ITenantEntity
 {
     [MaxLength(50)]
-    public string? ICO { get; private set; }
+    public string? TaxId { get; private set; }
 
     public string? IBAN { get; private set; }
 
@@ -64,11 +64,11 @@ public class Employee : Auditable
         UserId = user.Id
     };
 
-    public Employee UpdateEmployeeDetails(string ico, string nationalityId, string passportId, string iban,
+    public Employee UpdateEmployeeDetails(string taxId, string nationalityId, string passportId, string iban,
         Address address, Dictionary<string, List<TimeRange>> availability, string? emergencyContactName,
         string? emergencyContactPhone, ContractStatus? contractStatus = null)
     {
-        ICO = ico;
+        TaxId = taxId;
         NationalityId = nationalityId;
         PassportId = passportId;
         IBAN = iban;
@@ -88,7 +88,7 @@ public class Employee : Auditable
     {
         NationalityId = nationalityId;
         PassportId = passportId;
-        ICO = taxId ?? string.Empty;
+        TaxId = taxId ?? string.Empty;
         return this;
     }
 
@@ -166,6 +166,16 @@ public class Employee : Auditable
         return this;
     }
 
+    public Employee Anonymize()
+    {
+        TaxId = "[DELETED]";
+        IBAN = "[DELETED]";
+        PassportId = "[DELETED]";
+        EmergencyContactName = null;
+        EmergencyContactPhone = null;
+        return this;
+    }
+
     public bool IsProfileComplete()
     {
         var hasBasicInfo = User?.FirstName != null &&
@@ -180,8 +190,7 @@ public class Employee : Auditable
                         Address?.ZipCode != null &&
                         Address?.CountryId != null;
 
-        var hasEmployeeInfo = !string.IsNullOrEmpty(ICO) &&
-                             !string.IsNullOrEmpty(IBAN) &&
+        var hasEmployeeInfo = !string.IsNullOrEmpty(IBAN) &&
                              !string.IsNullOrEmpty(PassportId) &&
                              !string.IsNullOrEmpty(NationalityId);
 
@@ -210,7 +219,7 @@ public class Employee : Auditable
         if (string.IsNullOrEmpty(Address?.City)) missingFields.Add("City");
         if (string.IsNullOrEmpty(Address?.ZipCode)) missingFields.Add("Zip Code");
         if (string.IsNullOrEmpty(Address?.CountryId)) missingFields.Add("Country");
-        if (string.IsNullOrEmpty(ICO)) missingFields.Add("Tax ID (ICO)");
+        if (string.IsNullOrEmpty(TaxId)) missingFields.Add("Tax ID");
         if (string.IsNullOrEmpty(IBAN)) missingFields.Add("IBAN");
         if (string.IsNullOrEmpty(PassportId)) missingFields.Add("Passport ID");
         if (string.IsNullOrEmpty(NationalityId)) missingFields.Add("Nationality");

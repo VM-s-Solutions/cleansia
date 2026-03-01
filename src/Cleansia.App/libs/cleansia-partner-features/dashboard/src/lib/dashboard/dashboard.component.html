@@ -1,7 +1,5 @@
 <div class="cleansia-dashboard">
   <div class="cleansia-dashboard__container page-wrapper">
-    <cleansia-language-switcher />
-
     <div class="cleansia-dashboard__header">
       <cleansia-title [title]="'pages.dashboard.title' | translate" />
       <p class="cleansia-dashboard__description">
@@ -9,9 +7,34 @@
       </p>
     </div>
 
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <button type="button" class="quick-action-card" (click)="facade.navigateTo('/orders')">
+        <div class="quick-action-card__icon quick-action-card__icon--orders">
+          <i class="pi pi-shopping-cart"></i>
+        </div>
+        <span class="quick-action-card__label">{{ 'pages.dashboard.browse_orders' | translate }}</span>
+        <i class="pi pi-chevron-right quick-action-card__arrow"></i>
+      </button>
+      <button type="button" class="quick-action-card" (click)="facade.navigateTo('/invoices')">
+        <div class="quick-action-card__icon quick-action-card__icon--invoices">
+          <i class="pi pi-file"></i>
+        </div>
+        <span class="quick-action-card__label">{{ 'pages.dashboard.view_invoices' | translate }}</span>
+        <i class="pi pi-chevron-right quick-action-card__arrow"></i>
+      </button>
+      <button type="button" class="quick-action-card" (click)="facade.navigateTo('/profile')">
+        <div class="quick-action-card__icon quick-action-card__icon--profile">
+          <i class="pi pi-user"></i>
+        </div>
+        <span class="quick-action-card__label">{{ 'pages.dashboard.edit_profile' | translate }}</span>
+        <i class="pi pi-chevron-right quick-action-card__arrow"></i>
+      </button>
+    </div>
+
     <cleansia-section [title]="'pages.dashboard.statistics' | translate">
       @if (facade.statsLoading()) {
-      <cleansia-loader />
+      <cleansia-dashboard-skeleton />
       } @else {
       <div class="cleansia-dashboard__stats">
         @for (card of facade.getStatCards(); track card.title) {
@@ -77,7 +100,21 @@
 
     <cleansia-section [title]="'pages.dashboard.upcoming_orders' | translate">
       @if (facade.upcomingOrdersLoading()) {
-      <cleansia-loader />
+      <div class="upcoming-orders">
+        @for (i of [1, 2, 3]; track i) {
+        <div class="order-card order-card--skeleton">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+            <p-skeleton width="120px" height="1.25rem" />
+            <p-skeleton width="80px" height="1.5rem" borderRadius="12px" />
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <p-skeleton width="60%" height="1rem" />
+            <p-skeleton width="50%" height="1rem" />
+            <p-skeleton width="70%" height="1rem" />
+          </div>
+        </div>
+        }
+      </div>
       } @else if (facade.upcomingOrders().length === 0) {
       <div class="empty-state">
         <i class="pi pi-calendar"></i>
@@ -136,27 +173,5 @@
       }
     </cleansia-section>
 
-    <cleansia-section [title]="'pages.dashboard.quick_actions' | translate">
-      <div class="quick-actions">
-        <cleansia-button
-          [buttonType]="'button'"
-          [style]="'raised-button'"
-          [title]="'pages.dashboard.browse_orders' | translate"
-          (clickFn)="facade.navigateTo('/orders')"
-        />
-        <cleansia-button
-          [buttonType]="'button'"
-          [style]="'raised-button'"
-          [title]="'pages.dashboard.view_invoices' | translate"
-          (clickFn)="facade.navigateTo('/invoices')"
-        />
-        <cleansia-button
-          [buttonType]="'button'"
-          [style]="'raised-button'"
-          [title]="'pages.dashboard.edit_profile' | translate"
-          (clickFn)="facade.navigateTo('/profile')"
-        />
-      </div>
-    </cleansia-section>
   </div>
 </div>

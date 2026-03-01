@@ -46,7 +46,7 @@ export function getInvoiceTableColumns(
       sortable: true,
       width: '12%',
       getValue: (row: EmployeeInvoiceDto) => {
-        const currency = row.currencyCode || 'CZK';
+        const currency = row.currencyCode || 'EUR';
         return `${row.totalAmount?.toFixed(2)} ${currency}`;
       },
     },
@@ -70,7 +70,7 @@ export function getInvoiceTableColumns(
           row.generatedAt instanceof Date
             ? row.generatedAt
             : new Date(row.generatedAt);
-        return date.toLocaleDateString('cs-CZ');
+        return date.toLocaleDateString('en-GB');
       },
     },
   ];

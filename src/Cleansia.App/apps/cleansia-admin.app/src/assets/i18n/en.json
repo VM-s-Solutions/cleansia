@@ -122,6 +122,10 @@
       "go_home": "Go Home",
       "go_to_login": "Go to Login"
     },
+    "dialog": {
+      "confirm": "Confirm",
+      "confirm_logout": "Are you sure you want to log out?"
+    },
     "user": {
       "remember_me": "Remember me"
     },

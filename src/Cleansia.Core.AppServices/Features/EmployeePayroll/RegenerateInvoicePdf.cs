@@ -73,7 +73,7 @@ public class RegenerateInvoicePdf
                 return false;
             }
 
-            var countryId = employee.Address?.CountryId ?? Constants.Language.Czech;
+            var countryId = employee.Address?.CountryId;
             var language = await _languageRepository.GetByCodeAsync(command.LanguageCode, cancellationToken);
 
             if (language is null)
@@ -101,7 +101,8 @@ public class RegenerateInvoicePdf
         IEmployeeInvoiceRepository employeeInvoiceRepository,
         IInvoiceTemplateRepository invoiceTemplateRepository,
         IOrderEmployeePayRepository orderEmployeePayRepository,
-        ICountryInvoiceConfigRepository countryInvoiceConfigRepository)
+        ICountryInvoiceConfigRepository countryInvoiceConfigRepository,
+        ICountryConfigurationRepository countryConfigurationRepository)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -111,11 +112,13 @@ public class RegenerateInvoicePdf
             var employee = await employeeRepository.GetByIdAsync(invoice.EmployeeId, cancellationToken);
             var currency = await currencyRepository.GetByIdAsync(invoice.CurrencyId, cancellationToken);
 
-            var countryId = employee.Address?.CountryId ?? Constants.Language.Czech;
+            var countryId = employee.Address?.CountryId;
 
             // Try to get company info by employee's country, fallback to any active
-            var companyInfo = await companyInfoRepository.GetActiveByCountryAsync(countryId, cancellationToken)
-                ?? await companyInfoRepository.GetActiveCompanyInfoAsync(cancellationToken);
+            var companyInfo = countryId != null
+                ? await companyInfoRepository.GetActiveByCountryAsync(countryId, cancellationToken)
+                : null;
+            companyInfo ??= await companyInfoRepository.GetActiveCompanyInfoAsync(cancellationToken);
 
             if (companyInfo == null)
             {
@@ -130,7 +133,16 @@ public class RegenerateInvoicePdf
 
             var countryContext = await GetCountryInvoiceContextAsync(countryId, cancellationToken);
 
-            var pdfData = invoice.CreatePdfData(employee, currency, orderPays, countryContext, companyInfo);
+            // Get date format from country configuration
+            var dateFormat = "dd.MM.yyyy";
+            if (!string.IsNullOrEmpty(countryId))
+            {
+                var countryConfig = await countryConfigurationRepository.GetByCountryIdAsync(countryId, cancellationToken);
+                if (!string.IsNullOrEmpty(countryConfig?.DateFormat))
+                    dateFormat = countryConfig.DateFormat;
+            }
+
+            var pdfData = invoice.CreatePdfData(employee, currency, orderPays, countryContext, companyInfo, dateFormat);
 
             var templateHtml = await GetTemplateHtmlAsync(countryId, language!.Code, cancellationToken);
 
@@ -150,8 +162,10 @@ public class RegenerateInvoicePdf
             return BusinessResult.Success(new Response(blobUrl));
         }
 
-        private async Task<CountryInvoiceContext?> GetCountryInvoiceContextAsync(string countryId, CancellationToken cancellationToken)
+        private async Task<CountryInvoiceContext?> GetCountryInvoiceContextAsync(string? countryId, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrEmpty(countryId)) return null;
+
             var config = await countryInvoiceConfigRepository.GetByCountryIdAsync(countryId, cancellationToken);
             if (config == null)
             {
@@ -168,7 +182,7 @@ public class RegenerateInvoicePdf
             };
         }
 
-        private async Task<string> GetTemplateHtmlAsync(string countryId, string languageCode, CancellationToken cancellationToken)
+        private async Task<string> GetTemplateHtmlAsync(string? countryId, string languageCode, CancellationToken cancellationToken)
         {
             var template = await invoiceTemplateRepository.GetActiveByCountryAndLanguageAsync(
                 countryId,

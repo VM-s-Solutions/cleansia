@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.DataRetention;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Hangfire;
@@ -36,6 +37,7 @@ public static class HangfireConfiguration
         // Register background services
         services.AddScoped<IPayPeriodBackgroundService, PayPeriodBackgroundService>();
         services.AddScoped<IPeriodReminderBackgroundService, PeriodReminderBackgroundService>();
+        services.AddScoped<IDataRetentionBackgroundService, DataRetentionBackgroundService>();
 
         return services;
     }
@@ -70,6 +72,16 @@ public static class HangfireConfiguration
             "send-period-end-reminders",
             service => service.SendPeriodEndRemindersAsync(CancellationToken.None),
             Cron.Daily(9), // 9 AM UTC
+            new RecurringJobOptions
+            {
+                TimeZone = TimeZoneInfo.Utc
+            });
+
+        // Data retention cleanup - runs weekly Sunday at 3 AM UTC
+        RecurringJob.AddOrUpdate<IDataRetentionBackgroundService>(
+            "data-retention-cleanup",
+            service => service.RunAllRetentionTasksAsync(CancellationToken.None),
+            "0 3 * * 0", // Sunday 3:00 AM UTC
             new RecurringJobOptions
             {
                 TimeZone = TimeZoneInfo.Utc

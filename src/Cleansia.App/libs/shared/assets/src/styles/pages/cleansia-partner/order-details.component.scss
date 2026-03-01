@@ -1,6 +1,7 @@
 .cleansia-order-details {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
   padding: 1rem;
   max-width: 100vw;
   overflow-x: hidden;
@@ -8,16 +9,67 @@
   min-height: 100vh;
   background: var(--cleansia-background);
 
+  @media (max-width: 768px) {
+    padding: 0.5rem;
+  }
+
+  // Breadcrumb bar sits outside the card
+  &__breadcrumb-bar {
+    width: 100%;
+    max-width: 1200px;
+    margin-bottom: 0.75rem;
+
+    // Hide the per-page language switcher (toolbar provides it on mobile)
+    cleansia-language-switcher {
+      @media (max-width: 768px) {
+        display: none;
+      }
+    }
+  }
+
+  &__breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  &__breadcrumb-link {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--cleansia-primary-600);
+    cursor: pointer;
+    text-decoration: none;
+    transition: color 0.15s ease;
+
+    &:hover {
+      color: var(--cleansia-primary-700);
+      text-decoration: underline;
+    }
+  }
+
+  &__breadcrumb-sep {
+    font-size: 0.625rem;
+    color: var(--cleansia-text-secondary);
+  }
+
+  &__breadcrumb-current {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--cleansia-text-primary);
+  }
+
   &__form-card {
     width: 100%;
     max-width: 1200px;
     display: flex;
     flex-direction: column;
     row-gap: 2rem;
-    margin: auto;
+    padding: 1.5rem;
 
     @media (max-width: 768px) {
-      padding: 1.5rem;
+      padding: 0.75rem;
+      row-gap: 1rem;
     }
   }
 
@@ -25,6 +77,10 @@
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+
+    @media (max-width: 768px) {
+      gap: 0.75rem;
+    }
   }
 
   // Primary action button prominently at top
@@ -101,41 +157,35 @@
     }
   }
 
-  &__header {
-    display: flex;
-    flex-direction: column;
+  &__back-btn {
+    display: inline-flex;
     align-items: center;
-    padding: 1rem 0 1rem 0;
-    border-bottom: 1px solid var(--cleansia-primary-100);
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: var(--cleansia-white, #ffffff);
+    color: #374151;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
 
-    &-actions {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      width: 100%;
-
-      .cleansia-button {
-        transition: all var(--default-transition) ease;
-
-        &:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 8px var(--cleansia-shadow);
-        }
-      }
+    &:hover {
+      background: #f3f4f6;
+      border-color: #9ca3af;
+      color: #111827;
     }
 
-    &-info {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 1rem;
-      padding: 1.5rem;
-      border-radius: 0.75rem;
-      background: var(--cleansia-white);
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-      border: 1px solid var(--cleansia-border-color);
+    &:active {
+      transform: scale(0.97);
     }
+  }
+
+  &__header {
+    display: none; // Removed — using breadcrumb bar instead
   }
 
   &__order-badge {
@@ -161,82 +211,119 @@
 
   // Status Banner
   &__status-banner {
-    background: linear-gradient(
-      135deg,
-      var(--cleansia-primary-50) 0%,
-      var(--cleansia-primary-100) 100%
-    );
+    background: var(--cleansia-white, #ffffff);
     border-radius: 12px;
-    padding: 1.5rem;
+    padding: 1.25rem;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    margin-bottom: 1rem;
+    gap: 0.875rem;
+    border: 1px solid var(--cleansia-primary-100);
 
-    .order-header-info {
+    .order-header-top {
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
       flex-wrap: wrap;
-      gap: 1rem;
+    }
 
-      .order-number {
+    .order-header-number {
+      font-size: 1.375rem;
+      font-weight: 700;
+      color: var(--cleansia-primary-700);
+      letter-spacing: -0.01em;
+    }
+
+    .order-header-badges {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .order-header-meta {
+      display: flex;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+      padding-top: 0.25rem;
+      border-top: 1px solid var(--cleansia-primary-100);
+
+      &__item {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.375rem;
+        color: var(--cleansia-text-secondary);
+        font-size: 0.8125rem;
+        font-weight: 500;
 
-        .label {
-          font-weight: 500;
-          color: var(--cleansia-text-secondary);
+        i {
+          font-size: 0.875rem;
+          color: var(--cleansia-primary-400);
         }
-
-        .value {
-          font-size: 1.5rem;
-          font-weight: 700;
-          color: var(--cleansia-text-primary);
-        }
-      }
-
-      .order-statuses {
-        display: flex;
-        gap: 0.75rem;
-        flex-wrap: wrap;
       }
     }
 
-    .order-meta {
+    .order-header-actions {
       display: flex;
-      gap: 1.5rem;
+      gap: 0.5rem;
       flex-wrap: wrap;
+    }
 
-      .meta-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: var(--cleansia-text-secondary);
-        font-size: 0.9rem;
+    .order-header-action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.5rem 0.875rem;
+      border: 1px solid var(--cleansia-primary-300, #93c5fd);
+      border-radius: 8px;
+      background: var(--cleansia-white, #ffffff);
+      color: var(--cleansia-primary-600, #2563eb);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 
-        i {
-          font-size: 1rem;
-        }
+      i {
+        font-size: 0.875rem;
+      }
+
+      &:hover {
+        background: var(--cleansia-primary-50, #eff6ff);
+        border-color: var(--cleansia-primary-400);
+        color: var(--cleansia-primary-700);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+      }
+
+      &:active {
+        transform: scale(0.97);
       }
     }
 
     @media (max-width: 768px) {
       padding: 1rem;
 
-      .order-header-info {
+      .order-header-top {
         flex-direction: column;
         align-items: flex-start;
-
-        .order-number .value {
-          font-size: 1.25rem;
-        }
+        gap: 0.5rem;
       }
 
-      .order-meta {
+      .order-header-number {
+        font-size: 1.125rem;
+      }
+
+      .order-header-meta {
         flex-direction: column;
-        gap: 0.75rem;
+        gap: 0.375rem;
+      }
+
+      .order-header-actions {
+        width: 100%;
+
+        .order-header-action-btn {
+          flex: 1;
+          justify-content: center;
+        }
       }
     }
   }
@@ -347,18 +434,18 @@
 
   &__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 1.5rem;
     max-width: 100%;
 
     @media (max-width: 968px) {
       grid-template-columns: repeat(2, 1fr);
-      gap: 1.25rem;
+      gap: 1rem;
     }
 
-    @media (max-width: 640px) {
+    @media (max-width: 480px) {
       grid-template-columns: 1fr;
-      gap: 1rem;
+      gap: 0.75rem;
     }
   }
 
@@ -779,28 +866,6 @@
       margin: 0.5rem;
     }
 
-    &__header {
-      padding: 1rem 0;
-
-      &-info {
-        flex-direction: column;
-        align-items: center;
-        gap: 1.5rem;
-        padding: 1.5rem;
-        text-align: center;
-      }
-
-      &-actions {
-        flex-direction: column;
-        gap: 0.75rem;
-        align-items: stretch;
-
-        .cleansia-button {
-          width: 100%;
-        }
-      }
-    }
-
     &__order-number {
       font-size: 1rem;
 
@@ -939,9 +1004,10 @@ cleansia-partner-order-details {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     transition: all var(--default-transition) ease;
 
-    &:hover {
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      border-color: var(--cleansia-primary-200);
+    @media (max-width: 768px) {
+      padding: 1rem;
+      gap: 1rem;
+      border-radius: 8px;
     }
 
     .cleansia-section__title {
@@ -950,6 +1016,11 @@ cleansia-partner-order-details {
       color: var(--cleansia-text-primary);
       padding-bottom: 0.75rem;
       border-bottom: 2px solid var(--cleansia-primary-200);
+
+      @media (max-width: 768px) {
+        font-size: 1.1rem;
+        padding-bottom: 0.5rem;
+      }
     }
   }
 

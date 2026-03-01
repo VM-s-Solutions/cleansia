@@ -52,7 +52,7 @@
         <tr
           class="table__row"
           [class.table__row--selected]="isRowSelected(row)"
-          [class.table__row--clickable]="mergedConfig().selectable"
+          [class.table__row--clickable]="mergedConfig().selectable || clickableRows()"
           (click)="onRowClick(row)"
         >
           @for (column of columns(); track column.field) {

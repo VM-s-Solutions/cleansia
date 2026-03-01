@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectorRef,
@@ -17,8 +16,6 @@ import {
   CleansiaCalendarComponent,
   CleansiaCheckboxComponent,
   CleansiaHelpCardComponent,
-  CleansiaLanguageSwitcherComponent,
-  CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTableComponent,
   CleansiaTextInputComponent,
@@ -32,9 +29,6 @@ import {
 import { EmployeeInvoiceStatus, SortDefinition, SortDirection } from '@cleansia/partner-services';
 import { CleansiaPartnerRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { ButtonModule } from 'primeng/button';
-import { TableModule } from 'primeng/table';
-import { ToastModule } from 'primeng/toast';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { EmployeeInvoice, InvoicesFacade } from './invoices.facade';
 import { getInvoicesTableDefinition } from './invoices.models';
@@ -49,17 +43,11 @@ interface FilterChip {
   selector: 'cleansia-partner-invoices',
   standalone: true,
   imports: [
-    TableModule,
-    ToastModule,
-    CommonModule,
-    ButtonModule,
     TranslatePipe,
     ReactiveFormsModule,
     CleansiaTableComponent,
     CleansiaTitleComponent,
-    CleansiaLoaderComponent,
     CleansiaSectionComponent,
-    CleansiaLanguageSwitcherComponent,
     CleansiaButtonComponent,
     CleansiaCheckboxComponent,
     CleansiaTextInputComponent,
@@ -226,7 +214,6 @@ export class InvoicesComponent implements AfterViewInit, OnDestroy {
   private rebuildTableDefinitions(): void {
     const def = getInvoicesTableDefinition(
       {
-        onViewDetails: this.viewInvoiceDetails.bind(this),
         onDownload: this.downloadInvoice.bind(this),
       },
       this.statusTemplate()
@@ -387,19 +374,16 @@ export class InvoicesComponent implements AfterViewInit, OnDestroy {
       });
     }
 
-    // Status chips
+    // Status chips (combined, matching orders pattern)
     if (formValue.statuses && formValue.statuses.length > 0) {
-      formValue.statuses.forEach((statusValue: number) => {
-        const statusOption = this.invoiceStatusOptions.find(
-          (opt) => opt.value === statusValue
-        );
-        if (statusOption) {
-          chips.push({
-            key: `status_${statusValue}`,
-            label: this.translate.instant('pages.invoices.filters.invoice_status'),
-            value: statusOption.label,
-          });
-        }
+      const statusNames = formValue.statuses
+        .map((id: number) => this.invoiceStatusOptions.find((o) => o.value === id)?.label)
+        .filter(Boolean)
+        .join(', ');
+      chips.push({
+        key: 'statuses',
+        label: this.translate.instant('pages.invoices.filters.invoice_status'),
+        value: statusNames,
       });
     }
 
@@ -407,23 +391,15 @@ export class InvoicesComponent implements AfterViewInit, OnDestroy {
   }
 
   removeFilterChip(chipKey: string): void {
-    if (chipKey.startsWith('status_')) {
-      const statusValue = parseInt(chipKey.replace('status_', ''), 10);
-      const currentStatuses = this.searchForm.get('statuses')?.value || [];
-      this.searchForm.patchValue({
-        statuses: currentStatuses.filter((s: number) => s !== statusValue),
-        [`status_${statusValue}`]: false,
+    if (chipKey === 'statuses') {
+      // Reset all status checkboxes and the statuses array
+      const resetValues: Record<string, any> = { statuses: [] };
+      this.invoiceStatusOptions.forEach((opt) => {
+        resetValues[`status_${opt.value}`] = false;
       });
-    } else if (chipKey === 'invoiceNumber') {
-      this.searchForm.patchValue({ invoiceNumber: '' });
-    } else if (chipKey === 'dateFrom') {
-      this.searchForm.patchValue({ dateFrom: null });
-    } else if (chipKey === 'dateTo') {
-      this.searchForm.patchValue({ dateTo: null });
-    } else if (chipKey === 'minAmount') {
-      this.searchForm.patchValue({ minAmount: null });
-    } else if (chipKey === 'maxAmount') {
-      this.searchForm.patchValue({ maxAmount: null });
+      this.searchForm.patchValue(resetValues);
+    } else {
+      this.searchForm.patchValue({ [chipKey]: null });
     }
   }
 

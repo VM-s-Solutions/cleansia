@@ -1,0 +1,70 @@
+// Shared "Not Found" / Error empty state component
+.not-found-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 2rem;
+  min-height: 280px;
+  background: var(--cleansia-white, #ffffff);
+  border-radius: 12px;
+  border: 1px solid var(--cleansia-primary-100, #e0f2fe);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  &__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    background: var(--cleansia-primary-50, #f0f9ff);
+    margin-bottom: 1.25rem;
+
+    i {
+      font-size: 1.75rem;
+      color: var(--cleansia-primary-400, #38bdf8);
+    }
+  }
+
+  &__title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--cleansia-text-primary, #111827);
+    margin: 0 0 0.5rem;
+  }
+
+  &__message {
+    font-size: 0.9375rem;
+    color: var(--cleansia-text-secondary, #6b7280);
+    margin: 0 0 1.5rem;
+    max-width: 400px;
+    line-height: 1.5;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  @media (max-width: 640px) {
+    padding: 2rem 1rem;
+    min-height: 200px;
+
+    &__icon {
+      width: 3rem;
+      height: 3rem;
+
+      i {
+        font-size: 1.25rem;
+      }
+    }
+
+    &__title {
+      font-size: 1.125rem;
+    }
+  }
+}

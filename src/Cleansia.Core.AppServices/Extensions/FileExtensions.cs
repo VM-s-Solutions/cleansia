@@ -26,27 +26,29 @@ public static class FileExtensions
     }
 
     public static InvoicePdfData CreatePdfData(this EmployeeInvoice invoice, Employee employee, Currency? currency,
-        List<OrderEmployeePay> orderPays, CountryInvoiceContext? countryContext, CompanyInfo companyInfo)
+        List<OrderEmployeePay> orderPays, CountryInvoiceContext? countryContext, CompanyInfo companyInfo,
+        string dateFormat = "dd.MM.yyyy")
     {
         return new InvoicePdfData
         {
             InvoiceNumber = invoice.InvoiceNumber,
             VariableSymbol = invoice.VariableSymbol,
+            PaymentReference = invoice.PaymentReference ?? invoice.VariableSymbol,
             GeneratedAt = invoice.GeneratedAt,
             EmployeeName = $"{employee.User?.FirstName} {employee.User?.LastName}",
             EmployeeAddress = employee.Address != null
                 ? $"{employee.Address.Street}, {employee.Address.City}, {employee.Address.ZipCode}"
                 : "N/A",
             EmployeeEmail = employee.User?.Email ?? "N/A",
-            PayPeriodStart = invoice.PayPeriod!.StartDate.ToString("dd.MM.yyyy"),
-            PayPeriodEnd = invoice.PayPeriod.EndDate.ToString("dd.MM.yyyy"),
+            PayPeriodStart = invoice.PayPeriod!.StartDate.ToString(dateFormat),
+            PayPeriodEnd = invoice.PayPeriod.EndDate.ToString(dateFormat),
             SubTotal = invoice.SubTotal,
             BonusAmount = invoice.BonusAmount,
             DeductionAmount = invoice.DeductionAmount,
             VatAmount = 0,
             TotalAmount = invoice.TotalAmount,
-            CurrencyCode = currency?.Code ?? "CZK",
-            CurrencySymbol = currency?.Symbol ?? "Kč",
+            CurrencyCode = currency?.Code ?? "EUR",
+            CurrencySymbol = currency?.Symbol ?? "€",
             Orders = orderPays.Select(op => new OrderLineItem
             {
                 OrderNumber = op.Order?.DisplayOrderNumber ?? "N/A",

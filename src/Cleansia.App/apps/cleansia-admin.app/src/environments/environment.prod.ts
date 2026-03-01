@@ -9,4 +9,5 @@ export const environment = {
   betaGateEnabled: false,
   betaGateUrl: '',
   isDevelopment: false,
+  sentryDsn: '',
 };

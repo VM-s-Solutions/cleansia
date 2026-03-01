@@ -47,7 +47,7 @@ export class CleansiaDateRangeSelectorComponent {
   }
 
   formatDate(date: Date): string {
-    const locale = this.translate.currentLang || 'cs-CZ';
+    const locale = this.translate.currentLang || 'en-GB';
     return date.toLocaleDateString(locale, {
       year: 'numeric',
       month: 'short',

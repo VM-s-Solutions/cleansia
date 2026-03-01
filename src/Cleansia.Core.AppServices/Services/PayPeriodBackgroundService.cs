@@ -30,6 +30,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
     private readonly ILanguageRepository _languageRepository;
     private readonly IInvoiceTemplateRepository _invoiceTemplateRepository;
     private readonly ICountryInvoiceConfigRepository _countryInvoiceConfigRepository;
+    private readonly ICountryConfigurationRepository _countryConfigurationRepository;
     private readonly IPdfService _pdfService;
     private readonly ITemplateEngine _templateEngine;
     private readonly IBlobContainerClientFactory _blobContainerClientFactory;
@@ -47,6 +48,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         ILanguageRepository languageRepository,
         IInvoiceTemplateRepository invoiceTemplateRepository,
         ICountryInvoiceConfigRepository countryInvoiceConfigRepository,
+        ICountryConfigurationRepository countryConfigurationRepository,
         IPdfService pdfService,
         ITemplateEngine templateEngine,
         IBlobContainerClientFactory blobContainerClientFactory)
@@ -63,6 +65,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         _languageRepository = languageRepository;
         _invoiceTemplateRepository = invoiceTemplateRepository;
         _countryInvoiceConfigRepository = countryInvoiceConfigRepository;
+        _countryConfigurationRepository = countryConfigurationRepository;
         _pdfService = pdfService;
         _templateEngine = templateEngine;
         _blobContainerClientFactory = blobContainerClientFactory;
@@ -358,11 +361,13 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
     {
         try
         {
-            var countryId = employee.Address?.CountryId ?? Constants.Language.Czech;
+            var countryId = employee.Address?.CountryId;
 
             // Try to get company info by employee's country, fallback to any active
-            var companyInfo = await _companyInfoRepository.GetActiveByCountryAsync(countryId, cancellationToken)
-                ?? await _companyInfoRepository.GetActiveCompanyInfoAsync(cancellationToken);
+            var companyInfo = countryId != null
+                ? await _companyInfoRepository.GetActiveByCountryAsync(countryId, cancellationToken)
+                : null;
+            companyInfo ??= await _companyInfoRepository.GetActiveCompanyInfoAsync(cancellationToken);
 
             if (companyInfo == null)
             {
@@ -371,7 +376,16 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
             }
             var countryContext = await GetCountryInvoiceContextAsync(countryId, cancellationToken);
 
-            var pdfData = invoice.CreatePdfData(employee, currency, orderPays, countryContext, companyInfo);
+            // Get date format from country configuration
+            var dateFormat = "dd.MM.yyyy";
+            if (!string.IsNullOrEmpty(countryId))
+            {
+                var countryConfig = await _countryConfigurationRepository.GetByCountryIdAsync(countryId, cancellationToken);
+                if (!string.IsNullOrEmpty(countryConfig?.DateFormat))
+                    dateFormat = countryConfig.DateFormat;
+            }
+
+            var pdfData = invoice.CreatePdfData(employee, currency, orderPays, countryContext, companyInfo, dateFormat);
 
             var templateHtml = await GetTemplateHtmlAsync(countryId, languageCode, cancellationToken);
             if (templateHtml == null)
@@ -397,8 +411,10 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         }
     }
 
-    private async Task<CountryInvoiceContext?> GetCountryInvoiceContextAsync(string countryId, CancellationToken cancellationToken)
+    private async Task<CountryInvoiceContext?> GetCountryInvoiceContextAsync(string? countryId, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrEmpty(countryId)) return null;
+
         var config = await _countryInvoiceConfigRepository.GetByCountryIdAsync(countryId, cancellationToken);
         if (config == null)
         {
@@ -415,7 +431,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         };
     }
 
-    private async Task<string?> GetTemplateHtmlAsync(string countryId, string languageCode, CancellationToken cancellationToken)
+    private async Task<string?> GetTemplateHtmlAsync(string? countryId, string languageCode, CancellationToken cancellationToken)
     {
         try
         {

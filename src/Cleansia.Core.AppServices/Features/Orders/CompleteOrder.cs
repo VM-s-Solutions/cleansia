@@ -111,8 +111,7 @@ public class CompleteOrder
 
             if (employee == null) return false;
 
-            return !string.IsNullOrWhiteSpace(employee.ICO) &&
-                   employee.Address is not null &&
+            return employee.Address is not null &&
                    employee.Availability.Any();
         }
 
@@ -175,8 +174,7 @@ public class CompleteOrder
 
             try
             {
-                // Use user's preferred language or default to Czech for receipts
-                var languageCode = order.User?.PreferredLanguageCode ?? "cs";
+                var languageCode = order.User?.PreferredLanguageCode ?? "en";
                 var receipt = await receiptService.GenerateReceiptAsync(order, languageCode, cancellationToken);
 
                 // Send receipt email asynchronously (fire and forget)

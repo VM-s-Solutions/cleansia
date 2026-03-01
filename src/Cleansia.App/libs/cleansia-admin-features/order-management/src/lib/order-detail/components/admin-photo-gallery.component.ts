@@ -116,6 +116,6 @@ export class AdminPhotoGalleryComponent {
   formatDate(date: Date | undefined): string {
     if (!date) return '';
     const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleString('cs-CZ');
+    return dateObj.toLocaleString('en-GB');
   }
 }

@@ -8,18 +8,19 @@ public class ReceiptTemplateRepository(CleansiaDbContext context)
     : BaseRepository<ReceiptTemplate>(context), IReceiptTemplateRepository
 {
     public async Task<ReceiptTemplate?> GetActiveByCountryAndLanguageAsync(
-        string countryId,
+        string? countryId,
         string languageCode,
         CancellationToken cancellationToken)
     {
-        return await GetDbSet()
+        var query = GetDbSet()
             .Include(t => t.Country)
             .Include(t => t.Language)
-            .FirstOrDefaultAsync(
-                t => t.CountryId == countryId
-                     && t.Language!.Code == languageCode
-                     && t.IsActive,
-                cancellationToken);
+            .Where(t => t.Language!.Code == languageCode && t.IsActive);
+
+        if (!string.IsNullOrEmpty(countryId))
+            query = query.Where(t => t.CountryId == countryId);
+
+        return await query.FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<int> GetNextVersionAsync(

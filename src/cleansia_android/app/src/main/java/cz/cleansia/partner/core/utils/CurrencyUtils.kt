@@ -6,7 +6,7 @@ import java.util.Locale
 
 object CurrencyUtils {
 
-    fun formatCurrency(amount: Double, currency: String = "CZK"): String {
+    fun formatCurrency(amount: Double, currency: String = "EUR"): String {
         return try {
             val format = NumberFormat.getCurrencyInstance(Locale.getDefault())
             format.currency = Currency.getInstance(currency)
@@ -16,7 +16,7 @@ object CurrencyUtils {
         }
     }
 
-    fun formatCurrencyCompact(amount: Double, currency: String = "CZK"): String {
+    fun formatCurrencyCompact(amount: Double, currency: String = "EUR"): String {
         return try {
             val format = NumberFormat.getCurrencyInstance(Locale.getDefault())
             format.currency = Currency.getInstance(currency)

@@ -1,15 +1,18 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   EmployeeInvoiceDetailDto,
   PartnerClient,
 } from '@cleansia/partner-services';
 import { SnackbarService } from '@cleansia/services';
-import { catchError, finalize, of, tap } from 'rxjs';
+import { TranslateService } from '@ngx-translate/core';
+import { catchError, finalize, of, tap, takeUntil } from 'rxjs';
 
 @Injectable()
-export class InvoiceDetailFacade {
+export class InvoiceDetailFacade extends UnsubscribeControlDirective {
   private readonly partnerClient = inject(PartnerClient);
   private readonly snackbarService = inject(SnackbarService);
+  private readonly translateService = inject(TranslateService);
 
   // Signals for reactive state management
   readonly invoiceDetail = signal<EmployeeInvoiceDetailDto | null>(null);
@@ -18,7 +21,7 @@ export class InvoiceDetailFacade {
 
   loadInvoiceDetail(invoiceId: string): void {
     if (!invoiceId?.trim()) {
-      this.error.set('Invalid invoice ID');
+      this.error.set(this.translateService.instant('pages.invoice_detail.not_found_message'));
       return;
     }
 
@@ -28,18 +31,18 @@ export class InvoiceDetailFacade {
     this.partnerClient.employeePayrollClient
       .getInvoiceById(invoiceId)
       .pipe(
+        takeUntil(this.destroyed$),
         tap((invoiceDetail) => {
           if (invoiceDetail) {
             this.invoiceDetail.set(invoiceDetail);
           } else {
-            this.error.set('Invoice not found');
+            this.error.set(this.translateService.instant('pages.invoice_detail.not_found_message'));
           }
         }),
         catchError((error) => {
-          const errorMessage =
-            error?.status === 404
-              ? 'Invoice not found'
-              : 'Failed to load invoice details';
+          const errorMessage = error?.status === 404
+            ? this.translateService.instant('pages.invoice_detail.not_found_message')
+            : this.translateService.instant('pages.invoice_detail.load_failed');
           this.error.set(errorMessage);
           return of(null);
         }),
@@ -64,29 +67,32 @@ export class InvoiceDetailFacade {
       return;
     }
 
-    // Download PDF from server
+    this.loading.set(true);
+
     this.partnerClient.employeePayrollClient
       .downloadInvoice(invoice.id!)
       .pipe(
-        catchError(() => of(null))
-      )
-      .subscribe((fileResponse) => {
-        if (fileResponse) {
-          // Create a blob from the file data and trigger download
+        takeUntil(this.destroyed$),
+        tap((fileResponse) => {
           const blob = fileResponse.data;
           const url = window.URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
           link.download =
             fileResponse.fileName || `invoice-${invoice.invoiceNumber}.pdf`;
+          document.body.appendChild(link);
           link.click();
+          document.body.removeChild(link);
           window.URL.revokeObjectURL(url);
 
           this.snackbarService.showSuccessTranslated(
             'global.messages.invoices.invoice_downloaded'
           );
-        }
-      });
+        }),
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
+      )
+      .subscribe();
   }
 
   printInvoice(): void {

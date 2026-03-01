@@ -29,7 +29,7 @@ export function getPayPeriodTableColumns(
       getValue: (row: PayPeriodDto) => {
         if (!row.startDate) return '';
         const date = new Date(row.startDate);
-        return date.toLocaleDateString('cs-CZ');
+        return date.toLocaleDateString('en-GB');
       },
     },
     {
@@ -41,7 +41,7 @@ export function getPayPeriodTableColumns(
       getValue: (row: PayPeriodDto) => {
         if (!row.endDate) return '';
         const date = new Date(row.endDate);
-        return date.toLocaleDateString('cs-CZ');
+        return date.toLocaleDateString('en-GB');
       },
     },
     {
@@ -73,7 +73,7 @@ export function getPayPeriodTableColumns(
           row.closedAt instanceof Date
             ? row.closedAt
             : new Date(row.closedAt);
-        return date.toLocaleDateString('cs-CZ');
+        return date.toLocaleDateString('en-GB');
       },
     },
     {

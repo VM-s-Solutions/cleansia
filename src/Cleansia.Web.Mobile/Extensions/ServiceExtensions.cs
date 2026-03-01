@@ -1,6 +1,8 @@
 using System.Security.Claims;
+using Asp.Versioning;
+using Asp.Versioning.ApiExplorer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using System.Text;
 using Cleansia.Config;
 using Cleansia.Core.AppServices.Common;
@@ -22,6 +24,7 @@ public static class ServiceExtensions
             .AddHttpContextAccessor()
             .AddCoreBindings(configuration, env)
             .AddMiddlewares()
+            .AddApiVersioningServices()
             .AddSwagger()
             .AddJwt(configuration)
             .AddUserAuthorization();
@@ -45,6 +48,24 @@ public static class ServiceExtensions
     {
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();
+
+        return services;
+    }
+
+    private static IServiceCollection AddApiVersioningServices(this IServiceCollection services)
+    {
+        services.AddApiVersioning(options =>
+        {
+            options.DefaultApiVersion = new ApiVersion(1, 0);
+            options.AssumeDefaultVersionWhenUnspecified = true;
+            options.ReportApiVersions = true;
+            options.ApiVersionReader = new UrlSegmentApiVersionReader();
+        })
+        .AddApiExplorer(options =>
+        {
+            options.GroupNameFormat = "'v'VVV";
+            options.SubstituteApiVersionInUrl = true;
+        });
 
         return services;
     }

@@ -2,14 +2,14 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import {
   CleansiaButtonComponent,
-  CleansiaLanguageSwitcherComponent,
-  CleansiaLoaderComponent,
+  CleansiaDashboardSkeletonComponent,
   CleansiaSectionComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { TranslatePipe } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
+import { Skeleton } from 'primeng/skeleton';
 import { CleansiaDateRangeSelectorComponent } from '../components/date-range-selector/cleansia-date-range-selector.component';
 import { CleansiaEarningsChartComponent } from '../components/earnings-chart/cleansia-earnings-chart.component';
 import { CleansiaOrderDistributionChartComponent } from '../components/order-distribution-chart/cleansia-order-distribution-chart.component';
@@ -29,9 +29,9 @@ import { StatCard } from './dashboard.models';
     TranslatePipe,
     CleansiaTitleComponent,
     CleansiaButtonComponent,
-    CleansiaLoaderComponent,
+    CleansiaDashboardSkeletonComponent,
     CleansiaSectionComponent,
-    CleansiaLanguageSwitcherComponent,
+    Skeleton,
     CleansiaEarningsChartComponent,
     CleansiaTimeAnalyticsChartComponent,
     CleansiaOrderDistributionChartComponent,

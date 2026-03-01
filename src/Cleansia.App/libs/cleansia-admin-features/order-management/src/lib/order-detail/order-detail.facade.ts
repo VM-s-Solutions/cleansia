@@ -41,19 +41,19 @@ export class OrderDetailFacade {
   formatDate(date: string | Date | null | undefined): string {
     if (!date) return '-';
     const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleDateString('cs-CZ');
+    return dateObj.toLocaleDateString('en-GB');
   }
 
   formatDateTime(date: string | Date | null | undefined): string {
     if (!date) return '-';
     const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleString('cs-CZ');
+    return dateObj.toLocaleString('en-GB');
   }
 
   formatTime(date: string | Date | null | undefined): string {
     if (!date) return '-';
     const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleTimeString('cs-CZ', {
+    return dateObj.toLocaleTimeString('en-GB', {
       hour: '2-digit',
       minute: '2-digit',
     });
@@ -61,7 +61,7 @@ export class OrderDetailFacade {
 
   formatPrice(price: number | null | undefined): string {
     if (price === null || price === undefined) return '-';
-    const currency = this.order()?.currency?.symbol || 'CZK';
+    const currency = this.order()?.currency?.symbol || 'EUR';
     return `${price.toFixed(2)} ${currency}`;
   }
 

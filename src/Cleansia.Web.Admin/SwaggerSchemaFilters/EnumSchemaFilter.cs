@@ -1,16 +1,21 @@
-﻿using System.Reflection;
+using System.Reflection;
+using System.Text.Json.Nodes;
 using Cleansia.Infra.Common.Attributes;
-using Microsoft.OpenApi.Any;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Cleansia.Web.Admin.SwaggerSchemaFilters;
 
 public class EnumSchemaFilter : ISchemaFilter
 {
-    public void Apply(OpenApiSchema schema, SchemaFilterContext context)
+    public void Apply(IOpenApiSchema schema, SchemaFilterContext context)
     {
         if (!context.Type.IsEnum)
+        {
+            return;
+        }
+
+        if (schema is not OpenApiSchema openApiSchema)
         {
             return;
         }
@@ -18,8 +23,9 @@ public class EnumSchemaFilter : ISchemaFilter
         // Check if this enum should be serialized as integers
         var useIntegerValues = context.Type.GetCustomAttribute<SwaggerEnumAsIntAttribute>() != null;
 
-        schema.Enum.Clear();
-        var enumNames = new OpenApiArray();
+        openApiSchema.Enum ??= [];
+        openApiSchema.Enum.Clear();
+        var enumNames = new JsonArray();
 
         // Loop through enum values
         foreach (var enumValue in Enum.GetValues(context.Type))
@@ -27,32 +33,33 @@ public class EnumSchemaFilter : ISchemaFilter
             if (useIntegerValues)
             {
                 // Add the numeric value to the schema enum
-                schema.Enum.Add(new OpenApiInteger((int)enumValue));
+                openApiSchema.Enum.Add((JsonNode)(int)enumValue);
             }
             else
             {
                 // Add the string name to the schema enum (more compatible with code generators)
-                schema.Enum.Add(new OpenApiString(enumValue.ToString()));
+                openApiSchema.Enum.Add((JsonNode)enumValue.ToString()!);
             }
 
             // Add the enum name to x-enumNames
-            enumNames.Add(new OpenApiString(enumValue.ToString()));
+            enumNames.Add((JsonNode)enumValue.ToString()!);
         }
 
         // Set x-enumNames to contain names of the enum values
-        schema.Extensions["x-enumNames"] = enumNames;
+        openApiSchema.Extensions ??= new Dictionary<string, IOpenApiExtension>();
+        openApiSchema.Extensions["x-enumNames"] = new JsonNodeExtension(enumNames);
 
         if (useIntegerValues)
         {
             // Set type to integer for numeric enums
-            schema.Type = "integer";
-            schema.Format = "int32";
+            openApiSchema.Type = JsonSchemaType.Integer;
+            openApiSchema.Format = "int32";
         }
         else
         {
             // Set type to string for named enums
-            schema.Type = "string";
-            schema.Format = null;
+            openApiSchema.Type = JsonSchemaType.String;
+            openApiSchema.Format = null;
         }
     }
 }

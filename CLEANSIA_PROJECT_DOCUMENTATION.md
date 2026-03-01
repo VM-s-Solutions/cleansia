@@ -31,12 +31,17 @@
 - **Receipt & Invoice Generation**: Automated PDF generation with country-specific templates
 - **Email Notifications**: SendGrid integration for transactional emails with multi-language support
 - **Background Jobs**: Hangfire for scheduled tasks (period closure, reminders)
-- **Multi-language Support**: Czech and English localization
+- **Multi-language Support**: Czech, English, and Polish localization
 - **Analytics Dashboard**: Earnings, productivity, and time tracking metrics
 - **Health Monitoring**: Comprehensive health checks for database, blob storage, and external services
 - **Request Logging**: Structured logging middleware for all HTTP requests
 - **Mobile Responsive**: Full mobile support with responsive sidebar and touch-friendly UI
 - **Dispute Management**: Order dispute tracking and resolution (backend complete)
+- **GDPR Compliance**: Data export, account deletion with PII anonymization, consent tracking
+- **Feature Flags**: Global, country, and tenant-scoped feature flag system
+- **Data Retention**: Automated cleanup of expired data (weekly background job)
+- **Multi-Tenancy**: Shared database with TenantId filter, backward compatible
+- **Error Monitoring**: Sentry integration for backend and frontend
 
 ---
 
@@ -46,13 +51,15 @@
 
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| .NET | 8.0 | Application framework |
-| C# | 12.0 | Programming language |
-| Entity Framework Core | 8.0 | ORM for database access |
+| .NET | 10.0 | Application framework |
+| C# | 13.0 | Programming language |
+| Entity Framework Core | 10.0 | ORM for database access |
+| .NET Aspire | 13.1.1 | Service orchestration |
 | PostgreSQL | Latest | Primary database |
 | MediatR | Latest | CQRS pattern implementation |
 | FluentValidation | Latest | Input validation |
 | Hangfire | Latest | Background job processing |
+| Sentry | 6.1.0 | Error monitoring |
 | SendGrid | Latest | Email delivery |
 | Stripe | Latest | Payment processing |
 | Puppeteer Sharp | Latest | PDF generation |
@@ -63,19 +70,29 @@
 
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| Angular | 17+ | Frontend framework |
+| Angular | 19.2 | Frontend framework |
 | TypeScript | 5.x | Programming language |
 | Nx | Latest | Monorepo tooling |
 | NgRx | Latest | State management |
 | RxJS | Latest | Reactive programming |
 | PrimeNG | Latest | UI component library |
-| @ngx-translate | Latest | Internationalization |
+| @ngx-translate | Latest | Internationalization (cs/en/pl) |
+| @sentry/angular | Latest | Error monitoring |
+
+### Mobile
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Kotlin | Latest | Programming language |
+| Jetpack Compose | Latest | UI framework |
+| Android | Latest | Mobile platform |
 
 ### DevOps
 
 | Technology | Purpose |
 |------------|---------|
 | Docker | Containerization |
+| .NET Aspire AppHost | Local service orchestration |
 | Azurite | Local blob storage emulation |
 | Git | Version control |
 
@@ -86,63 +103,82 @@
 ### Backend Architecture (Clean Architecture)
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    Cleansia.Web                         │
-│              (API Controllers, Startup)                 │
-└────────────────────┬────────────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────────────┐
-│             Cleansia.Core.AppServices                   │
-│        (Features, Services, Validation)                 │
-└────────────────────┬────────────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────────────┐
-│              Cleansia.Core.Domain                       │
-│         (Entities, Value Objects, Enums)                │
-└─────────────────────────────────────────────────────────┘
-                     ▲
-                     │
-┌────────────────────┴────────────────────────────────────┐
-│            Cleansia.Infra.Database                      │
-│         (DbContext, Repositories, Migrations)           │
-└─────────────────────────────────────────────────────────┘
+00 Orchestration
+├── Cleansia.AppHost               # Aspire 13.1.1 — PostgreSQL + 3 API services
+└── Cleansia.ServiceDefaults       # OpenTelemetry, health checks, Sentry, resilience
 
-┌─────────────────────────────────────────────────────────┐
-│           Cleansia.Infra.Services                       │
-│        (PDF, Email, Blob Storage, Templates)            │
-└─────────────────────────────────────────────────────────┘
+05 Web (Presentation)
+├── Cleansia.Web.Partner           # Partner API (18 controllers, port 5000)
+├── Cleansia.Web.Admin             # Admin API (20 controllers, port 5001)
+└── Cleansia.Web.Mobile            # Mobile API (10 controllers, port 5002)
+
+04 Core (Business Logic)
+├── Cleansia.Core.AppServices      # CQRS handlers, features, DTOs, FluentValidation
+├── Cleansia.Core.Domain           # Entities, domain logic, repository interfaces
+├── Cleansia.Core.Blobs.Abstractions
+└── Cleansia.Core.Clients.Abstractions
+
+03 Infrastructure
+├── Cleansia.Infra.Database        # EF Core 10, PostgreSQL, repositories
+├── Cleansia.Infra.Services        # PDF, Email, Blob
+├── Cleansia.Infra.Common          # Shared utilities, BusinessResult
+├── Cleansia.Infra.Clients         # SendGrid, Stripe
+└── Cleansia.Infra.Azure.Storage.Blobs
+
+02 Configuration
+└── Cleansia.Config                # DI registration, shared base controllers, Startup base
+
+99 Test
+├── Cleansia.Tests                 # Unit tests (56 tests)
+├── Cleansia.IntegrationTests      # PostgreSQL container integration tests
+└── Cleansia.TestUtilities
 ```
+
+All 3 web projects inherit from shared `CleansiaApiController` (with `[Authorize]` and `HandleResult<T>()`) and `CleansiaStartupBase` in `Cleansia.Config`.
 
 ### Frontend Architecture (Nx Monorepo)
 
 ```
 apps/
-└── cleansia-partner.app/           # Partner application
+├── cleansia-partner.app/           # Partner application (cs/en/pl)
+└── cleansia-admin.app/             # Admin application (cs/en/pl)
 
 libs/
-├── cleansia-partner-features/      # Feature modules
+├── cleansia-partner-features/      # Partner feature modules
 │   ├── login/
 │   ├── register/
 │   ├── confirm-email/
 │   ├── forgot-password/
 │   ├── dashboard/
-│   ├── orders/
-│   └── invoices/
+│   ├── orders/                     # List + detail pages
+│   ├── invoices/                   # List + detail pages
+│   └── profile/
+├── cleansia-admin-features/        # Admin feature modules
+│   ├── employee-management/
+│   ├── order-management/
+│   ├── invoice-management/
+│   ├── pay-period-management/
+│   ├── service-management/
+│   ├── package-management/
+│   └── reports/
 ├── core/                           # Core services
 │   └── services/
-│       ├── client/                 # HTTP clients
+│       ├── client/                 # HTTP clients (partner-client, admin-client)
 │       ├── auth/                   # Authentication
 │       └── dialog/                 # Dialog service
 ├── shared/                         # Shared components
 │   ├── components/
-│   │   ├── cleansia-button/       # Custom button component
-│   │   ├── cleansia-sidebar-menu/ # Responsive sidebar
-│   │   ├── cleansia-brand-name/   # Branding
+│   │   ├── cleansia-button/        # Custom button component
+│   │   ├── cleansia-sidebar-menu/  # Responsive sidebar
+│   │   ├── cleansia-table/         # Data table with row click support
+│   │   ├── cleansia-skeleton/      # 4 skeleton loader components
+│   │   ├── cleansia-telephone/     # Phone input with country codes
 │   │   └── ...
 │   ├── pipes/
 │   ├── directives/
+│   ├── utils/                      # Shared utilities (date, string transformation)
 │   └── assets/
-│       └── styles/                 # Global styles
+│       └── styles/                 # Global styles (per page SCSS)
 └── data-access/                    # State management
     └── stores/                     # NgRx stores
 ```
@@ -1320,9 +1356,9 @@ Get system health status.
 | `/dashboard` | DashboardComponent | Yes | Analytics dashboard |
 | `/profile` | ProfileComponent | Yes | Employee profile |
 | `/orders` | OrdersComponent | Yes | Order list |
-| `/orders/:id` | OrderDetailsComponent | Yes | Order details |
+| `/orders/:orderId` | OrderDetailsComponent | Yes | Order details |
 | `/invoices` | InvoicesComponent | Yes | Invoice list |
-| `/invoices/:id` | InvoiceDetailComponent | Yes | Invoice details |
+| `/invoices/:invoiceId` | InvoiceDetailComponent | Yes | Invoice details |
 
 ### State Management (NgRx)
 
@@ -2105,6 +2141,139 @@ For issues or questions:
 
 ## Changelog
 
+### Version 2.1.0 (2026-03-01) - Architecture Consistency & Code Quality
+
+#### Architecture
+
+**Backend Consolidation**:
+- Created shared `CleansiaApiController` base class in `Cleansia.Config` — all 3 web projects inherit from single base
+- Added `[Authorize]` attribute to base controller with `[AllowAnonymous]` on auth endpoints
+- Created `CleansiaStartupBase` in `Cleansia.Config` — all 3 Startup.cs files inherit and override only CORS policy + Swagger title
+- Standardized all CQRS query handlers to use `IQuery<T>`/`IQueryHandler` pattern with `BusinessResult<T>` wrapper
+
+**CQRS Handler Consistency**:
+- Converted `GetInvoiceById` from `IRequest<EmployeeInvoiceDetailDto?>` to `IQuery<EmployeeInvoiceDetailDto>` with `BusinessResult<T>`
+- Converted `DownloadInvoice` from `IRequest<Response?>` to `IQuery<Response>` with `BusinessResult<T>` and added FluentValidation `Validator`
+- All 3 `EmployeePayrollController` variants now use `HandleResult<T>()` consistently
+- Fixed Mobile API bug: `GetInvoiceById` returned `Ok(null)` instead of proper error for not-found invoices
+
+#### Frontend Improvements
+
+**Orders & Invoices Page Unification**:
+- Both list pages follow identical patterns: reactive filter forms with 500ms debounce, filter chips, help cards, status flow explanations
+- Both detail pages use consistent breadcrumb navigation, shadow-box section styling, skeleton loading, and translated error states
+- Extracted shared `toSnakeCase()`/`toKebabCase()` utilities to `libs/shared/utils/src/string-transformation.utils.ts`
+
+**Skeleton Loader Components**:
+- Created 4 reusable skeleton components in `@cleansia/components`:
+  - `CleansiaDashboardSkeletonComponent` — stat card placeholders
+  - `CleansiaTableSkeletonComponent` — table with filter bar and row placeholders
+  - `CleansiaFormSkeletonComponent` — form section with field placeholders
+  - `CleansiaDetailSkeletonComponent` — breadcrumb, header card, info sections
+- Migrated all pages from `<cleansia-loader>` to appropriate skeleton components
+
+**Facade Subscription Cleanup**:
+- All partner app facades now extend `UnsubscribeControlDirective` with `takeUntil(this.destroyed$)` for proper RxJS subscription cleanup
+- Standardized `InvoicesFacade` from manual `destroy$` Subject to `UnsubscribeControlDirective`
+
+**UI Enhancements**:
+- Table rows clickable for row-level navigation to detail pages (`rowClick` output, cursor pointer)
+- Invoice detail sections styled with shadow-box cards matching order detail page
+- Language switcher border in sidebar footer matches panel border styling (`#e5e7eb`)
+- Removed hover shadow effects on section containers
+
+**Translation Fixes**:
+- Added missing `pages.invoice_detail.title` key to all 3 language files
+- Added `not_found_message` and `load_failed` keys for both order and invoice detail pages
+- Replaced hardcoded English error strings in `OrderDetailsFacade` and `InvoiceDetailFacade` with `translateService.instant()` calls
+- Fixed `retryLoadOrder` to use route params instead of stale signal value
+- Fixed `removeFilterChip` to reset individual checkbox controls when clearing status filters
+
+#### Bug Fixes
+
+- Fixed `retryLoadOrder()` — was using `orderDetails()?.id` (null after failed load), now reads from route params
+- Fixed orders `removeFilterChip` — status chip removal now resets individual checkbox form controls
+- Fixed Mobile API `GetInvoiceById` — returned HTTP 200 with null body for not-found invoices
+- Fixed date formatting inconsistency — unified to `dd.MM.yyyy HH:mm` format across order and invoice detail pages
+- Removed unused imports (`CommonModule`, `MultiSelectModule`, `TableModule`, `ToastModule`, `ButtonModule`) and dead code (`toggleFilterDrawer()`, orphaned templates)
+
+---
+
+### Version 2.0.0 (2026-02-28) - Architecture Redesign
+
+#### Major Changes
+
+**.NET 10 Migration**:
+- Updated all 17 projects from .NET 8 to .NET 10 (SDK 10.0.103)
+- Updated all NuGet packages to .NET 10-compatible versions
+- All 56 unit tests pass
+
+**.NET Aspire Adoption**:
+- Added `Cleansia.AppHost` for service orchestration (PostgreSQL + 3 API services with pinned ports)
+- Added `Cleansia.ServiceDefaults` with OpenTelemetry, health checks, Sentry error monitoring, HTTP resilience
+- All 3 web projects reference `ServiceDefaults` for shared observability
+
+**Multi-Tenancy**:
+- Added `TenantId` column to all `Auditable` entities (26 tenant-scoped, 6 global)
+- EF Core global query filters auto-scope all queries to current tenant
+- `ITenantProvider` resolves tenant from JWT `tenant_id` claim
+- Backward compatible: null TenantId = no filtering (single-tenant mode)
+
+**Configuration & Feature Flags**:
+- `CountryConfiguration` entity — currency, language, VAT, tax ID format, payment gateway per country
+- `TenantConfiguration` entity — key-value pairs per tenant
+- `FeatureFlag` entity — global/country/tenant scoped feature flags with CRUD API
+- `IAppConfigurationProvider` with 3-level lookup: tenant → country → global
+
+**GDPR Compliance**:
+- Data export endpoints (self-service + admin) — full PII export as JSON
+- Account deletion with PII anonymization and blob cleanup
+- Consent tracking system (Grant/Withdraw/View) with `UserConsent` entity
+- GDPR audit log via `GdprRequest` entity
+- 14 API endpoints across 3 APIs
+
+**Data Retention**:
+- Weekly Hangfire job with 6 cleanup tasks (expired codes, stale devices, old GDPR requests, order PII, withdrawn consents, superseded documents)
+- Feature flag controlled (`DataRetentionJobEnabled`)
+- Configurable retention periods via `TenantConfiguration`
+
+**Country Expansion**:
+- Renamed `Employee.ICO` → `Employee.TaxId` (generic tax identifier)
+- Made `VariableSymbol` nullable, added `PaymentReference` field
+- Replaced hardcoded CZK/cs fallbacks with EUR/en
+- Country-aware date formatting in templates
+- Added `Address.State` field
+
+**Error Monitoring**:
+- Sentry integration for all 3 backend APIs and both Angular apps
+- OpenTelemetry integration via ServiceDefaults
+
+**Security**:
+- Moved secrets from `appsettings.json` to User Secrets
+- CORS restricted to configurable origins (via `CorsOrigins` array)
+- Rate limiting on auth endpoints (10 req/min fixed window)
+- API versioning with URL segment `/api/v1/...`
+
+**Polish Language Support**:
+- Added `pl.json` translation files for Partner and Admin Angular apps
+- Added Polish strings for Android app
+- Language switcher updated with Polish flag and code
+- All 3 apps support Czech, English, and Polish
+
+**Android Refactoring**:
+- Decomposed 6 large Kotlin files (1000-2000 lines each) across 9 phases
+- No files over 500 lines remain
+
+#### New Database Tables
+
+- `country_configurations` — Country-specific settings
+- `tenant_configurations` — Tenant-specific key-value config
+- `feature_flags` — Feature flag management
+- `user_consents` — GDPR consent tracking
+- `gdpr_requests` — GDPR operation audit log
+
+---
+
 ### Version 1.1.0 (2025-12-20) - Partner App Complete
 
 #### New Features
@@ -2245,9 +2414,9 @@ For issues or questions:
 - Email system (SendGrid)
 - Background jobs (Hangfire)
 - Analytics dashboard
-- Multi-language support (Czech/English)
+- Multi-language support (Czech/English/Polish)
 
 ---
 
-**Last Updated**: 2025-12-20
-**Version**: 1.1.0
+**Last Updated**: 2026-03-01
+**Version**: 2.1.0

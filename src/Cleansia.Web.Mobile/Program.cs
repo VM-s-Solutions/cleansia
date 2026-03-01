@@ -1,3 +1,5 @@
+using Cleansia.ServiceDefaults;
+
 namespace Cleansia.Web.Mobile;
 
 public class Program
@@ -11,6 +13,7 @@ public class Program
         Host.CreateDefaultBuilder(args)
             .ConfigureWebHostDefaults(webBuilder =>
             {
+                webBuilder.UseSentryMonitoring();
                 webBuilder.UseStartup<Startup>();
             });
 }

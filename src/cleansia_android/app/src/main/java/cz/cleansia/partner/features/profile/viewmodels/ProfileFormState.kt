@@ -23,6 +23,7 @@ data class ProfileEditFormState(
     val street: String = "",
     val city: String = "",
     val zipCode: String = "",
+    val state: String = "",
     val countryId: String = "",
     // Bank
     val iban: String = "",
@@ -45,6 +46,7 @@ data class ProfileEditFormState(
                     street = it.street ?: "",
                     city = it.city ?: "",
                     zipCode = it.zipCode ?: "",
+                    state = it.state ?: "",
                     countryId = it.countryId ?: "",
                     iban = it.iban ?: "",
                     emergencyContactName = it.emergencyContactName ?: "",

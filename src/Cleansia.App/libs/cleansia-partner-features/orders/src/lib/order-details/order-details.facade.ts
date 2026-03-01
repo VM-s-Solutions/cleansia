@@ -1,4 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   OrderItem,
   PartnerClient,
@@ -6,10 +7,11 @@ import {
 } from '@cleansia/partner-services';
 import * as OrderActions from '@cleansia/partner-stores';
 import { SnackbarService } from '@cleansia/services';
+import { TranslateService } from '@ngx-translate/core';
 import { Actions, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { catchError, finalize, of, take, tap } from 'rxjs';
+import { catchError, finalize, of, take, takeUntil, tap } from 'rxjs';
 import {
   CompleteOrderDialogComponent,
   CompleteOrderDialogData,
@@ -17,9 +19,10 @@ import {
 } from '../components/complete-order-dialog';
 
 @Injectable()
-export class OrderDetailsFacade {
+export class OrderDetailsFacade extends UnsubscribeControlDirective {
   private readonly partnerClient = inject(PartnerClient);
   private readonly snackbarService = inject(SnackbarService);
+  private readonly translateService = inject(TranslateService);
   private readonly dialogService = inject(DialogService);
   private readonly store = inject(Store);
   private readonly actions$ = inject(Actions);
@@ -32,7 +35,7 @@ export class OrderDetailsFacade {
 
   loadOrderDetails(orderId: string): void {
     if (!orderId?.trim()) {
-      this.error.set('Invalid order ID');
+      this.error.set(this.translateService.instant('pages.order_details.not_found_message'));
       return;
     }
 
@@ -42,18 +45,18 @@ export class OrderDetailsFacade {
     this.partnerClient.orderClient
       .getById(orderId)
       .pipe(
+        takeUntil(this.destroyed$),
         tap((orderDetails) => {
           if (orderDetails) {
             this.orderDetails.set(orderDetails);
           } else {
-            this.error.set('Order not found');
+            this.error.set(this.translateService.instant('pages.order_details.not_found_message'));
           }
         }),
         catchError((error) => {
-          const errorMessage =
-            error?.status === 404
-              ? 'Order not found'
-              : 'Failed to load order details';
+          const errorMessage = error?.status === 404
+            ? this.translateService.instant('pages.order_details.not_found_message')
+            : this.translateService.instant('pages.order_details.load_failed');
           this.error.set(errorMessage);
           return of(null);
         }),
@@ -83,6 +86,7 @@ export class OrderDetailsFacade {
     this.partnerClient.orderClient
       .downloadReceipt(order.id)
       .pipe(
+        takeUntil(this.destroyed$),
         tap((response) => {
           // Create a blob URL and trigger download
           const blob = response.data;
@@ -120,7 +124,10 @@ export class OrderDetailsFacade {
   loadCurrentEmployee(): void {
     this.partnerClient.employeeClient
       .getCurrentEmployee()
-      .pipe(catchError(() => of(null)))
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of(null))
+      )
       .subscribe((employee) => {
         if (employee?.id) {
           this.currentEmployeeId.set(employee.id);
@@ -141,6 +148,7 @@ export class OrderDetailsFacade {
     this.partnerClient.orderClient
       .startOrder(new StartOrderCommand({ orderId, employeeId }))
       .pipe(
+        takeUntil(this.destroyed$),
         tap(() => {
           this.snackbarService.showSuccessTranslated(
             'global.messages.orders.order_started'
@@ -188,7 +196,7 @@ export class OrderDetailsFacade {
       }
     );
 
-    ref.onClose.subscribe((result: CompleteOrderDialogResult) => {
+    ref.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: CompleteOrderDialogResult) => {
       if (result) {
         // Subscribe to action result to reload only on success
         this.actions$
@@ -197,7 +205,8 @@ export class OrderDetailsFacade {
               OrderActions.completeOrderSuccess,
               OrderActions.completeOrderFailure
             ),
-            take(1)
+            take(1),
+            takeUntil(this.destroyed$)
           )
           .subscribe((action) => {
             if (action.type === OrderActions.completeOrderSuccess.type) {

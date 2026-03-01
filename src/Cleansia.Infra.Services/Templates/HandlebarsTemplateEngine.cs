@@ -44,7 +44,8 @@ public class HandlebarsTemplateEngine : ITemplateEngine
 
             if (parameters[0] is DateTime date)
             {
-                writer.WriteSafeString(date.ToString("dd.MM.yyyy"));
+                var format = parameters.Length > 1 ? parameters[1]?.ToString() ?? "dd.MM.yyyy" : "dd.MM.yyyy";
+                writer.WriteSafeString(date.ToString(format));
             }
             else
             {
@@ -62,7 +63,8 @@ public class HandlebarsTemplateEngine : ITemplateEngine
 
             if (parameters[0] is DateTime dateTime)
             {
-                writer.WriteSafeString(dateTime.ToString("dd.MM.yyyy HH:mm"));
+                var format = parameters.Length > 1 ? parameters[1]?.ToString() ?? "dd.MM.yyyy HH:mm" : "dd.MM.yyyy HH:mm";
+                writer.WriteSafeString(dateTime.ToString(format));
             }
             else
             {

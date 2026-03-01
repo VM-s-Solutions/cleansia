@@ -4,6 +4,7 @@ import {
   CleansiaCalendarComponent,
   CleansiaSectionComponent,
   CleansiaSelectComponent,
+  CleansiaTelephoneComponent,
   CleansiaTextInputComponent,
 } from '@cleansia/components';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -21,10 +22,11 @@ import { ProfileFacade } from '../../profile/profile.facade';
     CleansiaTextInputComponent,
     CleansiaCalendarComponent,
     CleansiaSelectComponent,
+    CleansiaTelephoneComponent,
   ],
   template: `
     <cleansia-section [title]="'pages.profile.personal_info' | translate">
-      <div class="cleansia-profile__grid" [formGroup]="facade.formGroup">
+      <div class="cleansia-profile__fields" [formGroup]="facade.formGroup">
         <div class="cleansia-profile__field">
           <cleansia-text-input
             [label]="'pages.profile.first_name' | translate"
@@ -52,48 +54,44 @@ import { ProfileFacade } from '../../profile/profile.facade';
             [dateFormat]="'dd.mm.yy'"
           />
         </div>
-        <div class="cleansia-profile__address-row">
-          <div class="cleansia-profile__field">
-            <cleansia-text-input
-              [label]="'pages.profile.street' | translate"
-              [floatVariant]="'on'"
-              formControlName="street"
-              dataType="text"
-            />
-          </div>
-          <div class="cleansia-profile__field">
-            <cleansia-text-input
-              [label]="'pages.profile.city' | translate"
-              [floatVariant]="'on'"
-              formControlName="city"
-              dataType="text"
-            />
-          </div>
-          <div class="cleansia-profile__field">
-            <cleansia-text-input
-              [label]="'pages.profile.zip_code' | translate"
-              [floatVariant]="'on'"
-              formControlName="zipCode"
-              dataType="text"
-            />
-          </div>
-          <div class="cleansia-profile__field">
-            <cleansia-select
-              [options]="facade.countries()"
-              [label]="'pages.profile.country' | translate"
-              [floatVariant]="'on'"
-              [filter]="true"
-              formControlName="countryId"
-            />
-          </div>
+        <div class="cleansia-profile__field cleansia-profile__field--span-3">
+          <cleansia-text-input
+            [label]="'pages.profile.street' | translate"
+            [floatVariant]="'on'"
+            formControlName="street"
+            dataType="text"
+          />
         </div>
         <div class="cleansia-profile__field">
           <cleansia-text-input
+            [label]="'pages.profile.city' | translate"
+            [floatVariant]="'on'"
+            formControlName="city"
+            dataType="text"
+          />
+        </div>
+        <div class="cleansia-profile__field">
+          <cleansia-text-input
+            [label]="'pages.profile.zip_code' | translate"
+            [floatVariant]="'on'"
+            formControlName="zipCode"
+            dataType="text"
+          />
+        </div>
+        <div class="cleansia-profile__field">
+          <cleansia-select
+            [options]="facade.countries()"
+            [label]="'pages.profile.country' | translate"
+            [floatVariant]="'on'"
+            [filter]="true"
+            formControlName="countryId"
+          />
+        </div>
+        <div class="cleansia-profile__field">
+          <cleansia-telephone
             [label]="'pages.profile.phone' | translate"
             [floatVariant]="'on'"
             formControlName="phone"
-            dataType="text"
-            placeholder="+420 123 456 789"
           />
         </div>
         <div class="cleansia-profile__field">
@@ -104,32 +102,30 @@ import { ProfileFacade } from '../../profile/profile.facade';
             dataType="email"
           />
         </div>
-        <div class="cleansia-profile__nationality-row">
-          <div class="cleansia-profile__field">
-            <cleansia-select
-              [options]="facade.countries()"
-              [label]="'pages.profile.nationality' | translate"
-              [floatVariant]="'on'"
-              [filter]="true"
-              formControlName="nationalityId"
-            />
-          </div>
-          <div class="cleansia-profile__field">
-            <cleansia-text-input
-              [label]="'pages.profile.national_id' | translate"
-              [floatVariant]="'on'"
-              formControlName="passportId"
-              dataType="text"
-            />
-          </div>
-          <div class="cleansia-profile__field">
-            <cleansia-text-input
-              [label]="'pages.profile.tax_id' | translate"
-              [floatVariant]="'on'"
-              formControlName="taxId"
-              dataType="text"
-            />
-          </div>
+        <div class="cleansia-profile__field">
+          <cleansia-select
+            [options]="facade.countries()"
+            [label]="'pages.profile.nationality' | translate"
+            [floatVariant]="'on'"
+            [filter]="true"
+            formControlName="nationalityId"
+          />
+        </div>
+        <div class="cleansia-profile__field">
+          <cleansia-text-input
+            [label]="'pages.profile.national_id' | translate"
+            [floatVariant]="'on'"
+            formControlName="passportId"
+            dataType="text"
+          />
+        </div>
+        <div class="cleansia-profile__field">
+          <cleansia-text-input
+            [label]="'pages.profile.tax_id' | translate"
+            [floatVariant]="'on'"
+            formControlName="taxId"
+            dataType="text"
+          />
         </div>
       </div>
     </cleansia-section>

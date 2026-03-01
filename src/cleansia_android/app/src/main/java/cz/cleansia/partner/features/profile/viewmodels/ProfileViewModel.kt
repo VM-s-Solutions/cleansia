@@ -79,7 +79,7 @@ class ProfileViewModel @Inject constructor(
 
     // Settings state from DataStore
     val currentLanguage: StateFlow<String> = preferencesManager.language
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "cs")
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "en")
 
     val currentTheme: StateFlow<String> = preferencesManager.theme
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "system")
@@ -253,7 +253,8 @@ class ProfileViewModel @Inject constructor(
                         street = formState.street,
                         city = formState.city,
                         zipCode = formState.zipCode,
-                        countryId = formState.countryId
+                        countryId = formState.countryId,
+                        state = formState.state.ifBlank { null }
                     )
                 )
                 ProfileSection.BANK -> profileRepository.updateBankDetails(
@@ -291,6 +292,7 @@ class ProfileViewModel @Inject constructor(
                             street = formState.street.ifBlank { null },
                             city = formState.city.ifBlank { null },
                             zipCode = formState.zipCode.ifBlank { null },
+                            state = formState.state.ifBlank { null },
                             countryId = formState.countryId.ifBlank { null }
                         )
                         ProfileSection.BANK -> currentProfile.copy(
@@ -376,6 +378,10 @@ class ProfileViewModel @Inject constructor(
 
     fun updateZipCode(value: String) {
         _uiState.update { it.copy(editFormState = it.editFormState.copy(zipCode = value)) }
+    }
+
+    fun updateState(value: String) {
+        _uiState.update { it.copy(editFormState = it.editFormState.copy(state = value)) }
     }
 
     fun updateIban(value: String) {

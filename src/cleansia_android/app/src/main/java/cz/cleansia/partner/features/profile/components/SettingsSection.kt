@@ -39,7 +39,8 @@ import cz.cleansia.partner.R
 
 enum class AppLanguage(val code: String, val displayName: String, val nativeName: String) {
     ENGLISH("en", "English", "English"),
-    CZECH("cs", "Czech", "Čeština")
+    CZECH("cs", "Czech", "Čeština"),
+    POLISH("pl", "Polish", "Polski")
 }
 
 enum class AppTheme(val code: String, val displayName: String) {

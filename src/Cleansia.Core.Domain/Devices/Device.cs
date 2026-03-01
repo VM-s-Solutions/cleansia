@@ -3,7 +3,7 @@ using Cleansia.Core.Domain.Users;
 
 namespace Cleansia.Core.Domain.Devices;
 
-public class Device : Auditable
+public class Device : Auditable, ITenantEntity
 {
     public string UserId { get; private set; } = default!;
     public string Platform { get; private set; } = default!;

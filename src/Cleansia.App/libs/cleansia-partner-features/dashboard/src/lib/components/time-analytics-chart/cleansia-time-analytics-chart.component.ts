@@ -8,12 +8,12 @@ import {
 } from '@angular/core';
 import {
   CleansiaLabelComponent,
-  CleansiaLoaderComponent,
 } from '@cleansia/components';
 import { TimeAnalyticsDto } from '@cleansia/partner-services';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ChartConfiguration, ChartType } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
+import { Skeleton } from 'primeng/skeleton';
 
 @Component({
   selector: 'cleansia-time-analytics-chart',
@@ -22,7 +22,7 @@ import { BaseChartDirective } from 'ng2-charts';
     CommonModule,
     BaseChartDirective,
     TranslateModule,
-    CleansiaLoaderComponent,
+    Skeleton,
     CleansiaLabelComponent,
   ],
   templateUrl: './cleansia-time-analytics-chart.component.html',

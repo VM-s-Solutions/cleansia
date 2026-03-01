@@ -1,17 +1,15 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CleansiaPartnerRoute } from '@cleansia/services';
+import { toSnakeCase } from '@cleansia/utils';
 import {
   CleansiaButtonComponent,
-  CleansiaLanguageSwitcherComponent,
-  CleansiaLoaderComponent,
+  CleansiaDetailSkeletonComponent,
   CleansiaSectionComponent,
   CleansiaTelephoneComponent,
   CleansiaTextInputComponent,
-  CleansiaTitleComponent,
 } from '@cleansia/components';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -31,16 +29,14 @@ import { OrderDetailsFacade } from './order-details.facade';
   selector: 'cleansia-partner-order-details',
   standalone: true,
   imports: [
-    CommonModule,
     TranslatePipe,
     ReactiveFormsModule,
     OrderExtrasComponent,
     OrderHeaderComponent,
     OrderStatusComponent,
     OrderPackagesComponent,
-    CleansiaTitleComponent,
     CleansiaButtonComponent,
-    CleansiaLoaderComponent,
+    CleansiaDetailSkeletonComponent,
     CleansiaSectionComponent,
     OrderPaymentInfoComponent,
     CleansiaTextInputComponent,
@@ -49,7 +45,6 @@ import { OrderDetailsFacade } from './order-details.facade';
     OrderServiceDetailsComponent,
     OrderAdditionalServicesComponent,
     OrderPhotosComponent,
-    CleansiaLanguageSwitcherComponent,
   ],
   templateUrl: './order-details.component.html',
   providers: [OrderDetailsFacade, DialogService],
@@ -81,7 +76,7 @@ export class OrderDetailsComponent implements OnInit {
     this.currentLang();
     const status = this.orderDetails()?.orderStatus;
     if (!status?.name) return [];
-    const translationKey = `enums.order_status.${this.toSnakeCase(status.name)}`;
+    const translationKey = `enums.order_status.${toSnakeCase(status.name)}`;
     const translatedLabel = this.translateService.instant(translationKey);
     return [
       {
@@ -96,7 +91,7 @@ export class OrderDetailsComponent implements OnInit {
     this.currentLang();
     const status = this.orderDetails()?.paymentStatus;
     if (!status?.name) return [];
-    const translationKey = `enums.payment_status.${this.toSnakeCase(status.name)}`;
+    const translationKey = `enums.payment_status.${toSnakeCase(status.name)}`;
     const translatedLabel = this.translateService.instant(translationKey);
     return [
       {
@@ -111,7 +106,7 @@ export class OrderDetailsComponent implements OnInit {
     this.currentLang();
     const paymentType = this.orderDetails()?.paymentType;
     if (!paymentType?.name) return [];
-    const translationKey = `enums.payment_type.${this.toSnakeCase(paymentType.name)}`;
+    const translationKey = `enums.payment_type.${toSnakeCase(paymentType.name)}`;
     const translatedLabel = this.translateService.instant(translationKey);
     return [
       {
@@ -126,7 +121,7 @@ export class OrderDetailsComponent implements OnInit {
     this.currentLang();
     const status = this.orderDetails()?.orderStatus;
     if (!status?.name) return '';
-    const translationKey = `enums.order_status.${this.toSnakeCase(status.name)}`;
+    const translationKey = `enums.order_status.${toSnakeCase(status.name)}`;
     const translatedLabel = this.translateService.instant(translationKey);
     return translatedLabel !== translationKey ? translatedLabel : status.name;
   });
@@ -135,7 +130,7 @@ export class OrderDetailsComponent implements OnInit {
     this.currentLang();
     const status = this.orderDetails()?.paymentStatus;
     if (!status?.name) return '';
-    const translationKey = `enums.payment_status.${this.toSnakeCase(status.name)}`;
+    const translationKey = `enums.payment_status.${toSnakeCase(status.name)}`;
     const translatedLabel = this.translateService.instant(translationKey);
     return translatedLabel !== translationKey ? translatedLabel : status.name;
   });
@@ -272,7 +267,7 @@ export class OrderDetailsComponent implements OnInit {
   }
 
   protected formatCurrency(amount: number, currencySymbol: string): string {
-    return `${amount.toLocaleString('cs-CZ', {
+    return `${amount.toLocaleString('en-GB', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })} ${currencySymbol}`;
@@ -281,13 +276,21 @@ export class OrderDetailsComponent implements OnInit {
   protected formatDate(date: string | Date | undefined): string {
     if (!date) return '';
     const dateObj = typeof date === 'string' ? new Date(date) : date;
-    return dateObj.toLocaleDateString('cs-CZ');
+    const day = dateObj.getDate().toString().padStart(2, '0');
+    const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+    const year = dateObj.getFullYear();
+    return `${day}.${month}.${year}`;
   }
 
   protected formatDateTime(date: string | Date | undefined): string {
     if (!date) return '';
     const dateObj = typeof date === 'string' ? new Date(date) : date;
-    return dateObj.toLocaleString('cs-CZ');
+    const day = dateObj.getDate().toString().padStart(2, '0');
+    const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+    const year = dateObj.getFullYear();
+    const hours = dateObj.getHours().toString().padStart(2, '0');
+    const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+    return `${day}.${month}.${year} ${hours}:${minutes}`;
   }
 
   protected printOrder(): void {
@@ -295,7 +298,7 @@ export class OrderDetailsComponent implements OnInit {
   }
 
   protected retryLoadOrder(): void {
-    const orderId = this.orderDetails()?.id;
+    const orderId = this.route.snapshot.paramMap.get('orderId');
     if (orderId) {
       this.facade.loadOrderDetails(orderId);
     }
@@ -399,36 +402,6 @@ export class OrderDetailsComponent implements OnInit {
     return 'minutes';
   }
 
-  private toSnakeCase(str: string): string {
-    // Handle common status names that may come with different casing from the API
-    const knownMappings: Record<string, string> = {
-      pending: 'pending',
-      confirmed: 'confirmed',
-      inprogress: 'in_progress',
-      in_progress: 'in_progress',
-      completed: 'completed',
-      cancelled: 'cancelled',
-      paid: 'paid',
-      failed: 'failed',
-      refunded: 'refunded',
-      cash: 'cash',
-      card: 'card',
-    };
-
-    // Normalize the string: lowercase and remove all spaces
-    const normalizedStr = str.toLowerCase().replace(/\s+/g, '');
-    if (knownMappings[normalizedStr]) {
-      return knownMappings[normalizedStr];
-    }
-
-    // Fallback to standard snake_case conversion (handles PascalCase like "InProgress")
-    return str
-      .replace(/([A-Z])/g, '_$1')
-      .toLowerCase()
-      .replace(/^_/, '')
-      .replace(/\s+/g, '_');
-  }
-
   // Status History helper methods
   protected getStatusHistoryClass(historyItem: { status: { value: number } }): string {
     if (!historyItem.status) return 'status-history-item status-pending';
@@ -468,7 +441,7 @@ export class OrderDetailsComponent implements OnInit {
 
   protected getTranslatedStatusName(historyItem: { status: { name?: string } }): string {
     if (!historyItem.status?.name) return '';
-    const translationKey = `enums.order_status.${this.toSnakeCase(historyItem.status.name)}`;
+    const translationKey = `enums.order_status.${toSnakeCase(historyItem.status.name)}`;
     const translatedLabel = this.translateService.instant(translationKey);
     return translatedLabel !== translationKey ? translatedLabel : historyItem.status.name;
   }

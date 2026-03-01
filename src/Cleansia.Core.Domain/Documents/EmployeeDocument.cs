@@ -5,7 +5,7 @@ using Cleansia.Core.Domain.Users;
 
 namespace Cleansia.Core.Domain.Documents;
 
-public class EmployeeDocument : Auditable
+public class EmployeeDocument : Auditable, ITenantEntity
 {
     [MaxLength(255)]
     public string FileName { get; private set; } = default!;

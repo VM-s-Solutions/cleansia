@@ -398,13 +398,13 @@ export class EmployeeDetailFacade {
   formatDate(date: string | Date | null | undefined): string {
     if (!date) return '-';
     const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleDateString('cs-CZ');
+    return dateObj.toLocaleDateString('en-GB');
   }
 
   formatDateTime(date: string | Date | null | undefined): string {
     if (!date) return '-';
     const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleString('cs-CZ');
+    return dateObj.toLocaleString('en-GB');
   }
 
   // Get status badge class

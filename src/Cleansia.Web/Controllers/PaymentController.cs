@@ -2,6 +2,7 @@
 using Cleansia.Core.AppServices.Features.Payments;
 using Cleansia.Web.Abstractions;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Cleansia.Web.Controllers;
@@ -20,6 +21,7 @@ public class PaymentController(IMediator mediator) : ApiController(mediator)
         return HandleResult<CreateOrder.Response>(result);
     }
 
+    [AllowAnonymous]
     [HttpPost("webhook")]
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]

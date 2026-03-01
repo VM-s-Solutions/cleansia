@@ -1,6 +1,5 @@
 <div class="cleansia-orders">
   <div class="cleansia-orders__container page-wrapper">
-    <cleansia-language-switcher />
     <div class="cleansia-orders__header">
       <div class="header-content">
         <div class="header-text">
@@ -202,16 +201,16 @@
               formControlName="cleaningDateFrom"
               [showErrors]="false"
               floatVariant="on"
-              dateFormat="dd.mm.yy"
-              appendTo="body"
+              [showIcon]="true"
+              iconDisplay="input"
             />
             <cleansia-calendar
               [label]="'pages.orders.filters.cleaning_date_to' | translate"
               formControlName="cleaningDateTo"
               [showErrors]="false"
               floatVariant="on"
-              dateFormat="dd.mm.yy"
-              appendTo="body"
+              [showIcon]="true"
+              iconDisplay="input"
             />
           </div>
         </div>
@@ -241,14 +240,11 @@
       </p-tablist>
       <p-tabpanel value="0">
         <cleansia-section>
-          @if ((facade.loading$ | async) && facade.availableOrders().length ===
-          0) {
-          <cleansia-loader />
-          } @else {
           <cleansia-table
             [data]="facade.availableOrders()"
             [columns]="availableOrdersColumns"
             [actions]="availableOrdersActions"
+            [clickableRows]="true"
             [config]="{
               paginator: true,
               rows: 10,
@@ -256,25 +252,23 @@
               totalRecords: facade.totalRecords(),
               emptyMessage: 'pages.orders.no_available_orders'
             }"
-            [loading]="(facade.loading$ | async) || false"
+            [loading]="facade.loading()"
             (pageChange)="onAvailableOrdersPageChange($event)"
             (sortChange)="onSortChange($event)"
+            (rowClick)="viewOrderDetails($event)"
           >
           </cleansia-table>
-          }
         </cleansia-section>
       </p-tabpanel>
 
       <!-- My Orders Tab -->
       <p-tabpanel value="1">
         <cleansia-section>
-          @if ((facade.loading$ | async) && facade.myOrders().length === 0) {
-          <cleansia-loader />
-          } @else {
           <cleansia-table
             [data]="facade.myOrders()"
             [columns]="myOrdersColumns"
             [actions]="myOrdersActions"
+            [clickableRows]="true"
             [config]="{
               paginator: true,
               rows: 10,
@@ -282,12 +276,12 @@
               totalRecords: facade.totalRecords(),
               emptyMessage: 'pages.orders.no_my_orders'
             }"
-            [loading]="(facade.loading$ | async) || false"
+            [loading]="facade.loading()"
             (pageChange)="onMyOrdersPageChange($event)"
             (sortChange)="onSortChange($event)"
+            (rowClick)="viewOrderDetails($event)"
           >
           </cleansia-table>
-          }
         </cleansia-section>
       </p-tabpanel>
     </p-tabs>
@@ -306,13 +300,3 @@
   </span>
 </ng-template>
 
-<ng-template #spotsTemplate let-item>
-  <div class="spots-indicator">
-    <span class="spots-count">
-      {{ item.availableSpots || 0 }} / {{ item.maxEmployees || 0 }}
-    </span>
-    <span class="spots-label">{{
-      'pages.orders.available_spots' | translate
-    }}</span>
-  </div>
-</ng-template>

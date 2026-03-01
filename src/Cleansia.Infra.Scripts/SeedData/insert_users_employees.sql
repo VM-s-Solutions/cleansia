@@ -53,7 +53,7 @@ VALUES
 INSERT INTO public."Employees" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy",
-  "DeactivatedOn", "ICO", "IBAN", "AverageRating",
+  "DeactivatedOn", "TaxId", "IBAN", "AverageRating",
   "ComplaintsCount", "ContractStatus", "PassportId",
   "NationalityId", "EmergencyContactName", "EmergencyContactPhone",
   "Availability", "DocumentFileNames", "UserId"

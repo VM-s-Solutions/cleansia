@@ -148,7 +148,7 @@ export class DashboardFacade extends UnsubscribeControlDirective {
       {
         title: 'pages.dashboard.pending_earnings',
         value: `${stats.currentPeriodEarnings.toLocaleString(
-          this.translate.currentLang || 'cs-CZ'
+          this.translate.currentLang || 'en-GB'
         )} Kč`,
         icon: 'pi pi-wallet',
         color: '#8b5cf6',

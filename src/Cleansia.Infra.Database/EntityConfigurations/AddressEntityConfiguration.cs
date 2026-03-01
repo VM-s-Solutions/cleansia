@@ -23,5 +23,8 @@ public class AddressEntityConfiguration : AuditableEntityConfiguration<Address, 
         builder.Property(a => a.ZipCode)
             .IsRequired()
             .HasMaxLength(20);
+
+        builder.Property(a => a.State)
+            .HasMaxLength(100);
     }
 }

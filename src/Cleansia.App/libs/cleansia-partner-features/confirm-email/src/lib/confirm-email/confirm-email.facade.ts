@@ -1,12 +1,14 @@
 import { inject, Injectable } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { PartnerAuthService, PartnerClient } from '@cleansia/partner-services';
 import { loadUserCurrent } from '@cleansia/partner-stores';
 import { Store } from '@ngrx/store';
+import { takeUntil } from 'rxjs';
 
 @Injectable()
-export class ConfirmEmailFacade {
+export class ConfirmEmailFacade extends UnsubscribeControlDirective {
   private readonly partnerClient = inject(PartnerClient);
   private readonly router = inject(Router);
   private readonly authService = inject(PartnerAuthService);
@@ -23,7 +25,9 @@ export class ConfirmEmailFacade {
     }
 
     const code = this.formGroup.value.code;
-    this.authService.confirmUserEmail(code).subscribe({
+    this.authService.confirmUserEmail(code).pipe(
+      takeUntil(this.destroyed$)
+    ).subscribe({
       next: () => {
         this.store.dispatch(loadUserCurrent());
       },
@@ -33,7 +37,9 @@ export class ConfirmEmailFacade {
   resendCode(email: string): void {
     this.isResendDisabled = true;
     const resendCodeCooldown = 30_000;
-    this.authService.resendEmailConfirmation(email).subscribe({
+    this.authService.resendEmailConfirmation(email).pipe(
+      takeUntil(this.destroyed$)
+    ).subscribe({
       next: () => {
         const interval = setInterval(() => this.resendCodeTimeout--, 1000);
         setTimeout(() => {

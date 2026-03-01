@@ -231,6 +231,7 @@ fun ProfileScreen(
                             onStreetChange = { viewModel.updateStreet(it) },
                             onCityChange = { viewModel.updateCity(it) },
                             onZipCodeChange = { viewModel.updateZipCode(it) },
+                            onStateChange = { viewModel.updateState(it) },
                             onSelectCountry = { viewModel.selectCountry(it) },
                             onIbanChange = { viewModel.updateIban(it) },
                             onEmergencyContactNameChange = { viewModel.updateEmergencyContactName(it) },
@@ -304,6 +305,7 @@ private fun ProfileContent(
     onStreetChange: (String) -> Unit,
     onCityChange: (String) -> Unit,
     onZipCodeChange: (String) -> Unit,
+    onStateChange: (String) -> Unit,
     onSelectCountry: (String) -> Unit,
     onIbanChange: (String) -> Unit,
     onEmergencyContactNameChange: (String) -> Unit,
@@ -628,6 +630,15 @@ private fun ProfileContent(
                             }
                         )
                     }
+                    TextField(
+                        value = editFormState.state,
+                        onValueChange = onStateChange,
+                        label = { Text(stringResource(R.string.state_region)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = profileTextFieldColors()
+                    )
                     CountryDropdown(
                         label = stringResource(R.string.country),
                         selectedCountryId = editFormState.countryId,
@@ -641,7 +652,7 @@ private fun ProfileContent(
                 } else {
                     MissingFieldsIndicator(profile.missingAddressFields)
                     val countryName = countries.find { it.id == profile.countryId }?.getLocalizedName(currentLanguage)
-                    val addressParts = listOfNotNull(profile.street, profile.city, profile.zipCode, countryName)
+                    val addressParts = listOfNotNull(profile.street, profile.city, profile.state, profile.zipCode, countryName)
                         .filter { it.isNotBlank() }
                     if (addressParts.isNotEmpty()) {
                         Text(

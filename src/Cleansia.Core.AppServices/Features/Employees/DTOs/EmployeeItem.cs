@@ -16,6 +16,7 @@ public record EmployeeItem(
     string? City,
     string? ZipCode,
     string? CountryId,
+    string? State,
     string? NationalityId,
     string? PassportId,
     string? TaxId,

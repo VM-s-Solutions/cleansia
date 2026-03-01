@@ -39,6 +39,7 @@ public record AdminEmployeeDetail(
     string? City,
     string? ZipCode,
     string? CountryId,
+    string? State,
     string? CountryName,
     string? NationalityId,
     string? NationalityName,

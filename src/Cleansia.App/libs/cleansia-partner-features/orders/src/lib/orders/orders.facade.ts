@@ -29,13 +29,14 @@ export class OrdersFacade extends UnsubscribeControlDirective {
   private readonly dialogService = inject(DialogService);
   private readonly actions$ = inject(Actions);
 
-  readonly orders$ = this.store.select(selectOrderItems);
-  readonly loading$ = this.store.select(selectOrderLoading('paged'));
-  readonly total$ = this.store.select(selectOrderTotal);
+  private readonly orders$ = this.store.select(selectOrderItems);
+  private readonly loading$ = this.store.select(selectOrderLoading('paged'));
+  private readonly total$ = this.store.select(selectOrderTotal);
 
   availableOrders = signal<OrderListItem[]>([]);
   myOrders = signal<OrderListItem[]>([]);
   totalRecords = signal<number>(0);
+  loading = signal<boolean>(false);
 
   private currentEmployeeId = signal<string | null>(null);
   private currentSort = signal<SortDefinition[]>([]);
@@ -55,6 +56,10 @@ export class OrdersFacade extends UnsubscribeControlDirective {
 
     this.total$.pipe(takeUntil(this.destroyed$)).subscribe((total) => {
       this.totalRecords.set(total);
+    });
+
+    this.loading$.pipe(takeUntil(this.destroyed$)).subscribe((loading) => {
+      this.loading.set(loading);
     });
 
     this.loadCurrentEmployee();

@@ -4,7 +4,7 @@ using Cleansia.Core.Domain.Internationalization;
 
 namespace Cleansia.Core.Domain.Company;
 
-public class CompanyInfo : Auditable
+public class CompanyInfo : Auditable, ITenantEntity
 {
     [Required]
     [MaxLength(200)]

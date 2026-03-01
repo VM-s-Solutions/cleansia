@@ -1,6 +1,8 @@
 ﻿using System.Security.Claims;
+using Asp.Versioning;
+using Asp.Versioning.ApiExplorer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using System.Text;
 using Cleansia.Config;
 using Cleansia.Core.AppServices.Common;
@@ -22,6 +24,7 @@ public static class ServiceExtensions
             .AddHttpContextAccessor()
             .AddCoreBindings(configuration, env)
             .AddMiddlewares()
+            .AddApiVersioningServices()
             .AddSwagger()
             .AddJwt(configuration)
             .AddUserAuthorization();
@@ -49,11 +52,29 @@ public static class ServiceExtensions
         return services;
     }
 
+    private static IServiceCollection AddApiVersioningServices(this IServiceCollection services)
+    {
+        services.AddApiVersioning(options =>
+        {
+            options.DefaultApiVersion = new ApiVersion(1, 0);
+            options.AssumeDefaultVersionWhenUnspecified = true;
+            options.ReportApiVersions = true;
+            options.ApiVersionReader = new UrlSegmentApiVersionReader();
+        })
+        .AddApiExplorer(options =>
+        {
+            options.GroupNameFormat = "'v'VVV";
+            options.SubstituteApiVersionInUrl = true;
+        });
+
+        return services;
+    }
+
     private static IServiceCollection AddSwagger(this IServiceCollection services)
     {
         services.AddSwaggerGen(c =>
         {
-            c.SwaggerDoc("v1", new OpenApiInfo { Title = "Cleansia.API", Version = "v1" });
+            c.SwaggerDoc("v1", new OpenApiInfo { Title = "Cleansia.Partner.API", Version = "v1" });
             c.CustomSchemaIds(type => GetSchemaId(type));
             c.SchemaFilter<EnumSchemaFilter>();
             c.CustomOperationIds(e => e.ActionDescriptor.DisplayName);

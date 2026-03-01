@@ -474,7 +474,7 @@ private fun EmptyInvoicesView() {
     }
 }
 
-private fun formatCurrency(amount: Double, currency: String = "CZK"): String {
+private fun formatCurrency(amount: Double, currency: String = "EUR"): String {
     return try {
         val format = NumberFormat.getCurrencyInstance(Locale.getDefault())
         format.currency = Currency.getInstance(currency)

@@ -122,6 +122,10 @@
       "go_home": "Domů",
       "go_to_login": "Přejít na přihlášení"
     },
+    "dialog": {
+      "confirm": "Potvrdit",
+      "confirm_logout": "Opravdu se chcete odhlásit?"
+    },
     "user": {
       "remember_me": "Zapamatovat si mě"
     },

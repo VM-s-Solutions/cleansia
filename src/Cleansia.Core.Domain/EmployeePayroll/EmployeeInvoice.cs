@@ -7,7 +7,7 @@ using Cleansia.Core.Domain.Users;
 
 namespace Cleansia.Core.Domain.EmployeePayroll;
 
-public class EmployeeInvoice : Auditable
+public class EmployeeInvoice : Auditable, ITenantEntity
 {
     [Required]
     public string EmployeeId { get; private set; }
@@ -72,12 +72,14 @@ public class EmployeeInvoice : Auditable
     [MaxLength(1000)]
     public string? AdminNotes { get; private set; }
 
-    [Required]
     [MaxLength(10)]
-    public string VariableSymbol { get; private set; }
+    public string? VariableSymbol { get; private set; }
 
     [MaxLength(10)]
     public string? SpecificSymbol { get; private set; }
+
+    [MaxLength(50)]
+    public string? PaymentReference { get; private set; }
 
     [MaxLength(500)]
     public string? BankTransferNote { get; private set; }
@@ -110,11 +112,13 @@ public class EmployeeInvoice : Auditable
             totalAmount = 0;
         }
 
+        var invoiceNumber = $"INV-{DateTime.UtcNow:yyyyMM}-{Guid.NewGuid().ToString("N")[..5].ToUpper()}";
+
         return new EmployeeInvoice
         {
             EmployeeId = employeeId,
             PayPeriodId = payPeriodId,
-            InvoiceNumber = $"INV-{DateTime.UtcNow:yyyyMM}-{Guid.NewGuid().ToString("N")[..5].ToUpper()}",
+            InvoiceNumber = invoiceNumber,
             TotalOrders = totalOrders,
             SubTotal = subTotal,
             BonusAmount = bonusAmount,
@@ -123,7 +127,7 @@ public class EmployeeInvoice : Auditable
             CurrencyId = currencyId,
             Status = EmployeeInvoiceStatus.Pending,
             GeneratedAt = DateTime.UtcNow,
-            VariableSymbol = GenerateVariableSymbol(employeeId, payPeriodId)
+            PaymentReference = invoiceNumber
         };
     }
 
@@ -168,9 +172,21 @@ public class EmployeeInvoice : Auditable
         return this;
     }
 
+    public EmployeeInvoice SetVariableSymbol(string? variableSymbol)
+    {
+        VariableSymbol = variableSymbol;
+        return this;
+    }
+
     public EmployeeInvoice SetSpecificSymbol(string? specificSymbol)
     {
         SpecificSymbol = specificSymbol;
+        return this;
+    }
+
+    public EmployeeInvoice SetPaymentReference(string reference)
+    {
+        PaymentReference = reference;
         return this;
     }
 

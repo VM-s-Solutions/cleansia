@@ -15,6 +15,7 @@ public sealed class ReceiptService(
     ITemplateEngine templateEngine,
     IOrderReceiptRepository receiptRepository,
     ILanguageRepository languageRepository,
+    IReceiptTemplateRepository receiptTemplateRepository,
     ICompanyInfoRepository companyInfoRepository,
     IBlobContainerClientFactory blobClientFactory)
     : IReceiptService
@@ -51,7 +52,7 @@ public sealed class ReceiptService(
         receiptRepository.Add(receipt);
 
         var receiptData = CreateReceiptData(order, receiptNumber, companyInfo);
-        var templateHtml = await GetReceiptTemplateHtmlAsync(cancellationToken);
+        var templateHtml = await GetReceiptTemplateHtmlAsync(countryId, languageCode, cancellationToken);
         var mergedHtml = await templateEngine.CompileAsync(templateHtml, receiptData, cancellationToken);
         var pdfBytes = await pdfService.GenerateReceiptPdfAsync(mergedHtml, cancellationToken);
 
@@ -87,7 +88,7 @@ public sealed class ReceiptService(
             Packages = order.SelectedPackages.Select(p => new { Name = p.Package?.Name ?? "Package", Price = p.Package?.Price ?? 0 }).ToList(),
             Subtotal = order.TotalPrice,
             Total = order.TotalPrice,
-            Currency = order.Currency?.Symbol ?? "$",
+            Currency = order.Currency?.Symbol ?? "€",
             PaymentStatus = order.PaymentStatus.ToString(),
             Company = new
             {
@@ -112,10 +113,16 @@ public sealed class ReceiptService(
         };
     }
 
-    private async Task<string> GetReceiptTemplateHtmlAsync(CancellationToken cancellationToken)
+    private async Task<string> GetReceiptTemplateHtmlAsync(string? countryId, string languageCode, CancellationToken cancellationToken)
     {
         var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.ReceiptTemplates);
-        var templateBlob = await blobClient.DownloadAsync("receipt-template-v1.html", cancellationToken);
+
+        // Look up template by country and language, fallback to default
+        var template = await receiptTemplateRepository.GetActiveByCountryAndLanguageAsync(
+            countryId, languageCode, cancellationToken);
+        var blobName = template?.BlobUrl ?? "receipt-template-v1.html";
+
+        var templateBlob = await blobClient.DownloadAsync(blobName, cancellationToken);
         using var reader = new StreamReader(templateBlob.Content);
         return await reader.ReadToEndAsync(cancellationToken);
     }

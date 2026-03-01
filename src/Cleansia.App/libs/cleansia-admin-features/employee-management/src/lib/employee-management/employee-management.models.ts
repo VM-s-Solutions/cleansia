@@ -81,7 +81,7 @@ export function getEmployeeTableDefinition(
             row.createdAt instanceof Date
               ? row.createdAt
               : new Date(row.createdAt);
-          return date.toLocaleDateString('cs-CZ');
+          return date.toLocaleDateString('en-GB');
         },
         sortable: true,
         width: '12%',

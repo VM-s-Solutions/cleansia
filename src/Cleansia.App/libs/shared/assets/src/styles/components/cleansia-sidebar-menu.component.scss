@@ -9,21 +9,48 @@
   top: 0;
   left: 0;
   height: 100vh;
-  z-index: 5;
   display: flex;
+  z-index: 100;
+
+  @media (max-width: 768px) {
+    // On mobile, the container must not cover the screen when sidebar is
+    // closed — otherwise it blocks clicks on the toolbar and page content.
+    // Width/height 0 + overflow hidden collapses it; the sidebar itself
+    // (position: fixed) breaks out when expanded. The backdrop also uses
+    // position: fixed so it is unaffected by container overflow.
+    width: 0;
+    height: 0;
+    overflow: visible;
+  }
 }
 
-// ===== MOBILE TOGGLE =====
-.sidebar-toggler {
-  position: fixed;
-  top: 1rem;
-  left: 1rem;
-  z-index: 1000;
-  animation: slideInLeft 0.3s ease-out;
+// ===== MOBILE CLOSE =====
+.sidebar-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--cleansia-text-secondary, #64748b);
+  font-size: 0.875rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
 
-  cleansia-button {
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1),
-      0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  &:hover {
+    background: var(--cleansia-primary-100, #f0f9ff);
+    color: var(--cleansia-primary-700);
+  }
+
+  &:active {
+    transform: scale(0.9);
   }
 }
 
@@ -188,7 +215,7 @@
 .sidebar-footer {
   position: relative;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
   padding: 0.75rem;
   min-height: 3.5rem;
@@ -205,6 +232,22 @@
     display: none;
   }
 
+  // Override language switcher absolute positioning inside footer
+  cleansia-language-switcher {
+    ::ng-deep .cleansia-language-switcher {
+      position: static;
+      z-index: auto;
+    }
+
+    ::ng-deep .p-select {
+      border-color: #e5e7eb;
+
+      &:hover {
+        border-color: var(--cleansia-primary-200);
+      }
+    }
+  }
+
   button {
     background: none;
 
@@ -215,6 +258,11 @@
       transform: none !important;
     }
   }
+}
+
+// When sidebar is collapsed, footer only has the toggle button
+.sidebar--collapsed .sidebar-footer {
+  justify-content: flex-end;
 }
 
 // ===== MENU LIST =====
@@ -487,9 +535,8 @@
 
 // ===== RESPONSIVE =====
 @media (max-width: 768px) {
-  .sidebar-toggler {
-    top: 0.75rem;
-    left: 0.75rem;
+  .sidebar-header {
+    justify-content: center;
   }
 
   .sidebar-nav {

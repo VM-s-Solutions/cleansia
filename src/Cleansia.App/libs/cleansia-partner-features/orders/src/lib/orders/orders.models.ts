@@ -4,7 +4,6 @@ import { OrderListItem, OrderStatus } from '@cleansia/partner-services';
 
 export function getAvailableOrdersTableDefinition(
   defs: {
-    onViewDetails: (row: OrderListItem) => void;
     onTakeOrder: (row: OrderListItem) => void;
   },
   statusTemplate?: TemplateRef<OrderListItem>,
@@ -28,7 +27,7 @@ export function getAvailableOrdersTableDefinition(
         header: 'pages.orders.cleaning_date',
         getValue: (row?: OrderListItem) =>
           row?.cleaningDateTime
-            ? new Date(row.cleaningDateTime).toLocaleDateString('cs-CZ')
+            ? new Date(row.cleaningDateTime).toLocaleDateString('en-GB')
             : '',
         sortable: true,
         width: '12%',
@@ -47,9 +46,9 @@ export function getAvailableOrdersTableDefinition(
         header: 'pages.orders.total_price',
         getValue: (row?: OrderListItem) =>
           row?.totalPrice
-            ? Number(row.totalPrice).toLocaleString('cs-CZ', {
+            ? Number(row.totalPrice).toLocaleString('en-GB', {
                 style: 'currency',
-                currency: 'CZK',
+                currency: 'EUR',
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })
@@ -88,18 +87,12 @@ export function getAvailableOrdersTableDefinition(
         color: 'success',
         onClick: (row: OrderListItem) => defs.onTakeOrder(row),
       },
-      {
-        icon: 'pi pi-eye',
-        tooltip: 'pages.orders.view_details',
-        onClick: (row: OrderListItem) => defs.onViewDetails(row),
-      },
     ],
   };
 }
 
 export function getMyOrdersTableDefinition(
   defs: {
-    onViewDetails: (row: OrderListItem) => void;
     onCompleteOrder: (row: OrderListItem) => void;
   },
   statusTemplate?: TemplateRef<OrderListItem>,
@@ -136,7 +129,7 @@ export function getMyOrdersTableDefinition(
         header: 'pages.orders.cleaning_date',
         getValue: (row?: OrderListItem) =>
           row?.cleaningDateTime
-            ? new Date(row.cleaningDateTime).toLocaleDateString('cs-CZ')
+            ? new Date(row.cleaningDateTime).toLocaleDateString('en-GB')
             : '',
         sortable: true,
         width: '12%',
@@ -155,9 +148,9 @@ export function getMyOrdersTableDefinition(
         header: 'pages.orders.total_price',
         getValue: (row?: OrderListItem) =>
           row?.totalPrice
-            ? Number(row.totalPrice).toLocaleString('cs-CZ', {
+            ? Number(row.totalPrice).toLocaleString('en-GB', {
                 style: 'currency',
-                currency: 'CZK',
+                currency: 'EUR',
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })
@@ -182,11 +175,6 @@ export function getMyOrdersTableDefinition(
         onClick: (row: OrderListItem) => defs.onCompleteOrder(row),
         visible: (row: OrderListItem) =>
           row.orderStatus.value === OrderStatus.InProgress,
-      },
-      {
-        icon: 'pi pi-eye',
-        tooltip: 'pages.orders.view_details',
-        onClick: (row: OrderListItem) => defs.onViewDetails(row),
       },
     ],
   };

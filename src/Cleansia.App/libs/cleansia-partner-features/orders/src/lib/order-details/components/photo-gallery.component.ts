@@ -261,6 +261,6 @@ export class PhotoGalleryComponent {
   formatDate(date: any): string {
     if (!date) return '';
     const dateObj = typeof date === 'string' ? new Date(date) : date;
-    return dateObj.toLocaleString('cs-CZ');
+    return dateObj.toLocaleString('en-GB');
   }
 }

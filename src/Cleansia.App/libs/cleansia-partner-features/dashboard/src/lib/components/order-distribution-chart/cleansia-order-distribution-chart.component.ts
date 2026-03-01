@@ -8,12 +8,12 @@ import {
 } from '@angular/core';
 import {
   CleansiaLabelComponent,
-  CleansiaLoaderComponent,
 } from '@cleansia/components';
 import { OrderAnalyticsDto } from '@cleansia/partner-services';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ChartConfiguration, ChartType } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
+import { Skeleton } from 'primeng/skeleton';
 
 @Component({
   selector: 'cleansia-order-distribution-chart',
@@ -22,7 +22,7 @@ import { BaseChartDirective } from 'ng2-charts';
     CommonModule,
     BaseChartDirective,
     TranslateModule,
-    CleansiaLoaderComponent,
+    Skeleton,
     CleansiaLabelComponent,
   ],
   templateUrl: './cleansia-order-distribution-chart.component.html',

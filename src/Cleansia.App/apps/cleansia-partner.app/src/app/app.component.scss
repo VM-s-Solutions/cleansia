@@ -4,17 +4,116 @@
   position: relative;
 }
 
+// ===== MOBILE TOP TOOLBAR =====
+.mobile-toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 3.25rem;
+  padding: 0 1rem;
+  background: #ffffff;
+  border-bottom: 1px solid var(--cleansia-primary-100, #e2e8f0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  line-height: 1;
+
+  &__menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 1px solid var(--cleansia-primary-200, #e2e8f0);
+    border-radius: 8px;
+    background: var(--cleansia-primary-50, #f8fafc);
+    color: var(--cleansia-primary-700, #334155);
+    font-size: 1.125rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+    padding: 0;
+
+    &:hover {
+      background: var(--cleansia-primary-100, #e0f2fe);
+      border-color: var(--cleansia-primary-300);
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+
+  &__brand {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--cleansia-primary-700, #1e40af);
+    letter-spacing: -0.01em;
+
+    img {
+      height: 1.75rem;
+      width: auto;
+      border-radius: 4px;
+    }
+  }
+
+  cleansia-language-switcher {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    height: 2.25rem;
+
+    ::ng-deep {
+      .cleansia-language-switcher {
+        // Override the default absolute positioning used on pages
+        position: static;
+        display: flex;
+        align-items: center;
+        height: 100%;
+
+        .p-select {
+          border: 1px solid var(--cleansia-primary-200, #e2e8f0);
+          background: var(--cleansia-primary-50, #f8fafc);
+          border-radius: 8px;
+          box-shadow: none;
+          min-width: auto;
+          height: 2.25rem;
+        }
+      }
+    }
+  }
+}
+
 .main-content {
   flex: 1;
   overflow-y: auto;
   background: var(--cleansia-primary-0);
   display: flex;
   flex-direction: column;
+  position: relative;
+  // No z-index here — filter drawers (z-index 1000/1001) and sidebar
+  // (z-index 998/999) inside this container must be able to overlay the
+  // toolbar (z-index 50). A z-index on this parent would create a stacking
+  // context that traps its children below the toolbar.
 
   &__margin {
     padding-left: var(--sidebar-width-expanded, 16rem);
     transition: padding-left 0.2s ease-in-out;
     flex: 1;
+  }
+
+  &__with-toolbar {
+    padding-top: 3.25rem;
   }
 
   @media (max-width: 768px) {
@@ -23,6 +122,7 @@
     }
   }
 }
+
 
 .app-layout[data-sidebar-collapsed='true'] .main-content__margin {
   padding-left: var(--sidebar-width-collapsed, 4rem);
@@ -61,7 +161,8 @@
   .sidebar-container,
   .sidebar,
   .sidebar-backdrop,
-  .sidebar-toggler {
+  .sidebar-toggler,
+  .mobile-toolbar {
     display: none !important;
     width: 0 !important;
     min-width: 0 !important;

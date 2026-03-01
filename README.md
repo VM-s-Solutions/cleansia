@@ -9,4 +9,7 @@ Update Database: Update-Database -Context CleansiaDbContext -Project '03 Infrast
 
 ```
 Login to Docker Postgres container: psql -h localhost -p 5432 -U postgres -d Cleansia
+
+
+Login to ASPIRE Docker Postgres container: psql -U postgres -d Cleansia => Enter the password from Aspire connection string
 ```

@@ -4,7 +4,7 @@ using Cleansia.Core.Domain.Internationalization;
 
 namespace Cleansia.Core.Domain.InvoiceTemplates;
 
-public class InvoiceTemplate : Auditable
+public class InvoiceTemplate : Auditable, ITenantEntity
 {
     [Required]
     [MaxLength(100)]

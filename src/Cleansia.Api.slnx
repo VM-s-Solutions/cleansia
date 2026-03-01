@@ -1,0 +1,41 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/01 Solution Items/">
+    <File Path="../README.md" />
+  </Folder>
+  <Folder Name="/02 Configuration/">
+    <Project Path="Cleansia.Config/Cleansia.Config.csproj" />
+  </Folder>
+  <Folder Name="/03 Infrastructure/">
+    <Project Path="Cleansia.Infra.Azure.Storage.Blobs/Cleansia.Infra.Azure.Storage.Blobs.csproj" />
+    <Project Path="Cleansia.Infra.Clients/Cleansia.Infra.Clients.csproj" />
+    <Project Path="Cleansia.Infra.Common/Cleansia.Infra.Common.csproj" />
+    <Project Path="Cleansia.Infra.Database/Cleansia.Infra.Database.csproj" />
+    <Project Path="Cleansia.Infra.Scripts/Cleansia.Infra.Scripts.csproj" />
+    <Project Path="Cleansia.Infra.Services/Cleansia.Infra.Services.csproj" />
+  </Folder>
+  <Folder Name="/04 Core/">
+    <Project Path="Cleansia.Core.AppServices/Cleansia.Core.AppServices.csproj" />
+    <Project Path="Cleansia.Core.Blobs.Abstractions/Cleansia.Core.Blobs.Abstractions.csproj" />
+    <Project Path="Cleansia.Core.Clients.Abstractions/Cleansia.Core.Clients.Abstractions.csproj" />
+    <Project Path="Cleansia.Core.Domain/Cleansia.Core.Domain.csproj" />
+  </Folder>
+  <Folder Name="/05 Web/">
+    <Project Path="Cleansia.Web.Admin/Cleansia.Web.Admin.csproj" />
+    <Project Path="Cleansia.Web.Mobile/Cleansia.Web.Mobile.csproj" />
+    <Project Path="Cleansia.Web/Cleansia.Web.Partner.csproj" />
+  </Folder>
+  <Folder Name="/99 Test/">
+    <Project Path="Cleansia.IntegrationTests/Cleansia.IntegrationTests.csproj" />
+    <Project Path="Cleansia.Tests/Cleansia.Tests.csproj" />
+    <Project Path="Cleansia.TestUtilities/Cleansia.TestUtilities.csproj" />
+  </Folder>
+  <Folder Name="/00 Aspire/">
+    <Project Path="Cleansia.AppHost/Cleansia.AppHost.csproj" />
+    <Project Path="Cleansia.ServiceDefaults/Cleansia.ServiceDefaults.csproj" />
+  </Folder>
+</Solution>

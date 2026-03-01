@@ -1,41 +1,52 @@
-@if(loading()){
-<cleansia-loader />
-}
 <div class="cleansia-order-details">
+  <!-- Breadcrumb navigation outside the card -->
+  <div class="cleansia-order-details__breadcrumb-bar page-wrapper">
+    <nav class="cleansia-order-details__breadcrumb">
+      <button
+        type="button"
+        class="cleansia-order-details__back-btn"
+        (click)="navigateToOrders()"
+      >
+        <i class="pi pi-arrow-left"></i>
+      </button>
+      <a class="cleansia-order-details__breadcrumb-link" (click)="navigateToOrders()">
+        {{ 'sidebar.orders' | translate }}
+      </a>
+      <i class="pi pi-chevron-right cleansia-order-details__breadcrumb-sep"></i>
+      <span class="cleansia-order-details__breadcrumb-current">
+        {{ orderDetails()?.displayOrderNumber || ('pages.order_details.title' | translate) }}
+      </span>
+    </nav>
+  </div>
+
   <div class="cleansia-order-details__form-card page-wrapper">
-    <cleansia-language-switcher />
-    <!-- Header with back button and title -->
-    <div class="cleansia-order-details__header">
-      <div class="cleansia-order-details__header-actions">
+    @if (loading() && !orderDetails()) {
+    <cleansia-detail-skeleton />
+    } @else if (error()) {
+    <div class="not-found-state">
+      <div class="not-found-state__icon">
+        <i class="pi pi-search"></i>
+      </div>
+      <h3 class="not-found-state__title">{{ 'pages.order_details.not_found_title' | translate }}</h3>
+      <p class="not-found-state__message">{{ error() }}</p>
+      <div class="not-found-state__actions">
         <cleansia-button
           [buttonType]="'button'"
-          [style]="'basic-button'"
           [title]="'global.actions.back' | translate"
           [icon]="'pi pi-arrow-left'"
+          [severity]="'secondary'"
+          [outlined]="true"
           (clickFn)="navigateToOrders()"
         />
+        <cleansia-button
+          [buttonType]="'button'"
+          [title]="'global.actions.retry' | translate"
+          [icon]="'pi pi-refresh'"
+          (clickFn)="retryLoadOrder()"
+        />
       </div>
-      <cleansia-title [title]="'pages.order_details.title' | translate" />
     </div>
-
-    <!-- Error state -->
-    @if (error()) {
-    <div class="cleansia-order-details__error">
-      <div class="cleansia-order-details__error-message">
-        <i class="pi pi-exclamation-triangle"></i>
-        <span>{{ error() }}</span>
-      </div>
-      <cleansia-button
-        [buttonType]="'button'"
-        [style]="'raised-button'"
-        [title]="'global.actions.retry' | translate"
-        (clickFn)="retryLoadOrder()"
-      />
-    </div>
-    }
-
-    <!-- Order details content -->
-    @if (orderDetails() && !loading()) {
+    } @else if (orderDetails()) {
     <form [formGroup]="formGroup" class="cleansia-order-details__form-content">
       <!-- Order Header with status banner, order number and action buttons -->
       <order-header

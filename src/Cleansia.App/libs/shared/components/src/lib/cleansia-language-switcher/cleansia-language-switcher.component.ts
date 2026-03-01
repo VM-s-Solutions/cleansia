@@ -19,10 +19,12 @@ export class CleansiaLanguageSwitcherComponent implements OnInit {
   private iconMap: { [key: string]: string } = {
     en: 'us',
     cs: 'cz',
+    pl: 'pl',
   };
 
   private shortMap: { [key: string]: string } = {
     cs: 'CZ',
+    pl: 'PL',
   };
 
   constructor(private translate: TranslateService) {

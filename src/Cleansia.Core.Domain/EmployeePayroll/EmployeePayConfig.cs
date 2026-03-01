@@ -6,7 +6,7 @@ using Cleansia.Core.Domain.Services;
 
 namespace Cleansia.Core.Domain.EmployeePayroll;
 
-public class EmployeePayConfig : Auditable
+public class EmployeePayConfig : Auditable, ITenantEntity
 {
     public string? ServiceId { get; private set; }
     public Service? Service { get; private set; }

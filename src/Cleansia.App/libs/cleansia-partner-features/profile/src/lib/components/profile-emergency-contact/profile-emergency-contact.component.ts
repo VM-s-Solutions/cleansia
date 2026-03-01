@@ -20,7 +20,7 @@ import { ProfileFacade } from '../../profile/profile.facade';
   ],
   template: `
     <cleansia-section [title]="'pages.profile.emergency_contact' | translate">
-      <div class="cleansia-profile__contact-row" [formGroup]="facade.formGroup">
+      <div class="cleansia-profile__fields" [formGroup]="facade.formGroup">
         <div class="cleansia-profile__field">
           <cleansia-text-input
             [label]="'pages.profile.emergency_name' | translate"
@@ -34,7 +34,6 @@ import { ProfileFacade } from '../../profile/profile.facade';
             [label]="'pages.profile.emergency_phone' | translate"
             [floatVariant]="'on'"
             formControlName="emergencyPhone"
-            dataType="text"
           />
         </div>
       </div>

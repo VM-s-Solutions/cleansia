@@ -202,7 +202,7 @@ export class InvoiceDetailFacade {
 
     const command = new RegenerateInvoicePdfCommand({
       invoiceId: inv.id,
-      languageCode: this.translate.currentLang || 'cs',
+      languageCode: this.translate.currentLang || 'en',
     });
 
     this.adminClient.adminInvoiceClient
@@ -259,13 +259,13 @@ export class InvoiceDetailFacade {
   formatDate(date: string | Date | null | undefined): string {
     if (!date) return '-';
     const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleDateString('cs-CZ');
+    return dateObj.toLocaleDateString('en-GB');
   }
 
   formatDateTime(date: string | Date | null | undefined): string {
     if (!date) return '-';
     const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleString('cs-CZ');
+    return dateObj.toLocaleString('en-GB');
   }
 
   formatCurrency(
@@ -273,7 +273,7 @@ export class InvoiceDetailFacade {
     currencyCode?: string
   ): string {
     if (amount === null || amount === undefined) return '-';
-    const currency = currencyCode || 'CZK';
+    const currency = currencyCode || 'EUR';
     return `${amount.toFixed(2)} ${currency}`;
   }
 

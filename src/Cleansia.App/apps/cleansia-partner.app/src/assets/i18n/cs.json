@@ -360,7 +360,10 @@
       "pending_upload": "Čeká na nahrání",
       "audit_information": "Auditní informace",
       "created_on": "Vytvořeno",
-      "updated_on": "Aktualizováno"
+      "updated_on": "Aktualizováno",
+      "not_found_title": "Objednávka nenalezena",
+      "not_found_message": "Objednávka, kterou hledáte, nebyla nalezena.",
+      "load_failed": "Nepodařilo se načíst detail objednávky"
     },
     "invoices": {
       "title": "Moje mzdové faktury",
@@ -401,6 +404,7 @@
       }
     },
     "invoice_detail": {
+      "title": "Detail faktury",
       "invoice_details": "Detail faktury",
       "summary": "Souhrn faktury",
       "employee_name": "Jméno zaměstnance",
@@ -425,7 +429,10 @@
       "notes": "Poznámky",
       "admin_notes": "Poznámky administrátora",
       "bank_transfer_note": "Poznámka k bankovnímu převodu",
-      "print": "Tisknout fakturu"
+      "print": "Tisknout fakturu",
+      "not_found_title": "Faktura nenalezena",
+      "not_found_message": "Faktura, kterou hledáte, nebyla nalezena.",
+      "load_failed": "Nepodařilo se načíst detail faktury"
     },
     "payslips": {
       "title": "Mzdy a výplatní pásky",
@@ -766,7 +773,8 @@
       "confirm": "Potvrdit",
       "delete": "Smazat",
       "confirm_delete": "Opravdu chcete smazat tuto položku?",
-      "confirm_delete_item": "Opravdu chcete smazat {{item}}?"
+      "confirm_delete_item": "Opravdu chcete smazat {{item}}?",
+      "confirm_logout": "Opravdu se chcete odhlásit?"
     },
     "status": {
       "Pending": "Čekající",

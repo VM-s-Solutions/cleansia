@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 
 namespace Cleansia.Core.Domain.Orders;
 
-public class Order : Auditable
+public class Order : Auditable, ITenantEntity
 {
     [MaxLength(100)]
     public string CustomerName { get; private set; }
@@ -256,6 +256,14 @@ public class Order : Auditable
 
         ActualCompletionTime = actualCompletionTime;
         CompletionNotes = completionNotes;
+        return this;
+    }
+
+    public Order AnonymizeCustomerData()
+    {
+        CustomerName = "[DELETED]";
+        CustomerEmail = "[DELETED]";
+        CustomerPhone = "[DELETED]";
         return this;
     }
 }

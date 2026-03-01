@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
   ChangeDetectorRef,
@@ -12,10 +11,9 @@ import {
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { toKebabCase, toSnakeCase } from '@cleansia/utils';
 import {
   CleansiaCalendarComponent,
-  CleansiaLanguageSwitcherComponent,
-  CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTableComponent,
   CleansiaTextInputComponent,
@@ -40,12 +38,8 @@ import {
 } from '@cleansia/partner-services';
 import { CleansiaPartnerRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
-import { MultiSelectModule } from 'primeng/multiselect';
-import { TableModule } from 'primeng/table';
 import { TabsModule } from 'primeng/tabs';
-import { ToastModule } from 'primeng/toast';
 import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 import { OrdersFacade } from './orders.facade';
 import {
@@ -63,24 +57,17 @@ interface FilterChip {
   selector: 'cleansia-partner-orders',
   standalone: true,
   imports: [
-    TableModule,
-    ToastModule,
-    CommonModule,
-    ButtonModule,
     TranslatePipe,
     TabsModule,
     CleansiaTableComponent,
     CleansiaTitleComponent,
-    CleansiaLoaderComponent,
     CleansiaSectionComponent,
-    CleansiaLanguageSwitcherComponent,
     CleansiaTextInputComponent,
     CleansiaCalendarComponent,
     CleansiaCheckboxComponent,
     CleansiaButtonComponent,
     CleansiaHelpCardComponent,
     ReactiveFormsModule,
-    MultiSelectModule,
   ],
   templateUrl: './orders.component.html',
   providers: [OrdersFacade, DialogService],
@@ -311,7 +298,6 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
   private rebuildTableDefinitions(): void {
     const availableDef = getAvailableOrdersTableDefinition(
       {
-        onViewDetails: this.viewOrderDetails.bind(this),
         onTakeOrder: this.takeOrder.bind(this),
       },
       this.statusTemplate(),
@@ -322,7 +308,6 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
 
     const myOrdersDef = getMyOrdersTableDefinition(
       {
-        onViewDetails: this.viewOrderDetails.bind(this),
         onCompleteOrder: this.completeOrder.bind(this),
       },
       this.statusTemplate(),
@@ -449,27 +434,24 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
   }
 
   getStatusClass(order: OrderListItem): string {
-    const statusName =
-      order.paymentStatus?.name?.toLowerCase().replace(/\s+/g, '-') ||
-      'pending';
+    const statusName = toKebabCase(order.paymentStatus?.name) || 'pending';
     return `status-badge status-${statusName}`;
   }
 
   getOrderStatusClass(order: OrderListItem): string {
-    const statusName =
-      order.orderStatus?.name?.toLowerCase().replace(/\s+/g, '-') || 'pending';
+    const statusName = toKebabCase(order.orderStatus?.name) || 'pending';
     return `order-status-badge status-${statusName}`;
   }
 
   getTranslatedPaymentStatus(paymentStatus: any): string {
     if (!paymentStatus?.name) return '';
-    const key = `enums.payment_status.${paymentStatus.name.toLowerCase().replace(/\s+/g, '_')}`;
+    const key = `enums.payment_status.${toSnakeCase(paymentStatus.name)}`;
     return this.translate.instant(key);
   }
 
   getTranslatedOrderStatus(orderStatus: any): string {
     if (!orderStatus?.name) return '';
-    const key = `enums.order_status.${orderStatus.name.toLowerCase().replace(/\s+/g, '_')}`;
+    const key = `enums.order_status.${toSnakeCase(orderStatus.name)}`;
     return this.translate.instant(key);
   }
 
@@ -498,10 +480,6 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
   resetFilters(): void {
     this.searchForm.reset();
     this.facade.resetFilters();
-  }
-
-  toggleFilterDrawer(): void {
-    this.isFilterDrawerOpen.update((v) => !v);
   }
 
   openFilterDrawer(): void {
@@ -591,8 +569,21 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
   }
 
   removeFilterChip(chipKey: string): void {
-    this.searchForm.patchValue({ [chipKey]: null });
-    // The form valueChanges subscription will trigger applyFilters automatically
+    if (chipKey === 'orderStatuses') {
+      const resetValues: Record<string, any> = { orderStatuses: [] };
+      this.orderStatusOptions.forEach((opt) => {
+        resetValues[`orderStatus_${opt.value}`] = false;
+      });
+      this.searchForm.patchValue(resetValues);
+    } else if (chipKey === 'paymentStatuses') {
+      const resetValues: Record<string, any> = { paymentStatuses: [] };
+      this.paymentStatusOptions.forEach((opt) => {
+        resetValues[`paymentStatus_${opt.value}`] = false;
+      });
+      this.searchForm.patchValue(resetValues);
+    } else {
+      this.searchForm.patchValue({ [chipKey]: null });
+    }
   }
 
   clearAllFilters(): void {

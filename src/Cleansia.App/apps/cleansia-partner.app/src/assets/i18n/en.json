@@ -343,7 +343,10 @@
       "pending_upload": "Pending upload",
       "audit_information": "Audit Information",
       "created_on": "Created On",
-      "updated_on": "Updated On"
+      "updated_on": "Updated On",
+      "not_found_title": "Order Not Found",
+      "not_found_message": "The order you are looking for could not be found.",
+      "load_failed": "Failed to load order details"
     },
     "invoices": {
       "title": "My Payroll Invoices",
@@ -384,6 +387,7 @@
       }
     },
     "invoice_detail": {
+      "title": "Invoice Details",
       "invoice_details": "Invoice Details",
       "summary": "Invoice Summary",
       "employee_name": "Employee Name",
@@ -408,7 +412,10 @@
       "notes": "Notes",
       "admin_notes": "Admin Notes",
       "bank_transfer_note": "Bank Transfer Note",
-      "print": "Print Invoice"
+      "print": "Print Invoice",
+      "not_found_title": "Invoice Not Found",
+      "not_found_message": "The invoice you are looking for could not be found.",
+      "load_failed": "Failed to load invoice details"
     },
     "payslips": {
       "title": "Payroll & Salary Management",
@@ -749,7 +756,8 @@
       "confirm": "Confirm",
       "delete": "Delete",
       "confirm_delete": "Are you sure you want to delete this item?",
-      "confirm_delete_item": "Are you sure you want to delete {{item}}?"
+      "confirm_delete_item": "Are you sure you want to delete {{item}}?",
+      "confirm_logout": "Are you sure you want to log out?"
     },
     "status": {
       "Pending": "Pending",

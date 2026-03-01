@@ -100,6 +100,7 @@ public abstract class BaseIntegrationTest : BaseTransactionalPostgresSqlTest<Cle
         async Task Setup(IServiceCollection services)
         {
             services.AddLogging(builder => { builder.AddConsole(); });
+            services.AddHttpContextAccessor();
             services.AddSingleton<IConfiguration>(_ => Configuration);
             services.AddCoreBindings(Configuration, new TestHostEnvironment());
 

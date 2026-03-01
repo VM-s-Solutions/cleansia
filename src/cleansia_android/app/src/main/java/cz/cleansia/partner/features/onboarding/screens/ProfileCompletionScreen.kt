@@ -157,12 +157,14 @@ fun ProfileCompletionScreen(
                             street = uiState.street,
                             city = uiState.city,
                             zipCode = uiState.zipCode,
+                            state = uiState.state,
                             countryId = uiState.countryId,
                             countries = uiState.countries,
                             languageCode = uiState.currentLanguage,
                             onStreetChange = viewModel::updateStreet,
                             onCityChange = viewModel::updateCity,
                             onZipCodeChange = viewModel::updateZipCode,
+                            onStateChange = viewModel::updateState,
                             onCountrySelected = viewModel::updateCountryId
                         )
                         CompletionStep.BANK -> BankStep(

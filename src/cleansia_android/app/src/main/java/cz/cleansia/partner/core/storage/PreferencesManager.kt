@@ -51,7 +51,14 @@ class PreferencesManager @Inject constructor(
     }
 
     private val systemDefaultLanguage: String
-        get() = if (Locale.getDefault().language == "cs") "cs" else "en"
+        get() {
+            val lang = Locale.getDefault().language
+            return when (lang) {
+                "cs" -> "cs"
+                "pl" -> "pl"
+                else -> "en"
+            }
+        }
 
     /**
      * Language preference flow

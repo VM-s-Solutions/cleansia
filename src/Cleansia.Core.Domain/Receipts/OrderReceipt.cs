@@ -5,7 +5,7 @@ using Cleansia.Core.Domain.Orders;
 
 namespace Cleansia.Core.Domain.Receipts;
 
-public class OrderReceipt : Auditable
+public class OrderReceipt : Auditable, ITenantEntity
 {
     [Required]
     [MaxLength(50)]

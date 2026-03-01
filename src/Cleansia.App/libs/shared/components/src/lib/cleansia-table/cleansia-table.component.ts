@@ -88,6 +88,7 @@ export class CleansiaTableComponent<T = any> {
   });
   selectedRow = input<T | null>(null);
   loading = input(false);
+  clickableRows = input(false);
 
   // Outputs
   rowClick = output<T>();

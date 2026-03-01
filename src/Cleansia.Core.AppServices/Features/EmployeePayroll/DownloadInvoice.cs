@@ -1,30 +1,45 @@
-#nullable enable
+using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Repositories;
-using MediatR;
+using Cleansia.Infra.Common.Validations;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.EmployeePayroll;
 
 public class DownloadInvoice
 {
-    public record Query(string InvoiceId) : IRequest<Response?>;
+    public class Validator : AbstractValidator<Query>
+    {
+        public Validator(IEmployeeInvoiceRepository employeeInvoiceRepository)
+        {
+            RuleFor(x => x.InvoiceId)
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty()
+                .WithMessage(BusinessErrorMessage.Required)
+                .MustAsync(employeeInvoiceRepository.ExistsAsync)
+                .WithMessage(BusinessErrorMessage.InvoiceNotFound);
+        }
+    }
+
+    public record Query(string InvoiceId) : IQuery<Response>;
 
     public record Response(byte[] PdfBytes, string FileName);
 
     internal class Handler(
         IEmployeeInvoiceRepository invoiceRepository,
         IBlobContainerClientFactory clientFactory)
-        : IRequestHandler<Query, Response?>
+        : IQueryHandler<Query, Response>
     {
-        public async Task<Response?> Handle(Query request, CancellationToken cancellationToken)
+        public async Task<BusinessResult<Response>> Handle(Query request, CancellationToken cancellationToken)
         {
             var invoice = await invoiceRepository.GetByIdAsync(request.InvoiceId, cancellationToken);
 
             if (invoice == null || string.IsNullOrEmpty(invoice.PdfBlobUrl))
             {
-                return null;
+                return BusinessResult.Failure<Response>(
+                    new Error(BusinessErrorMessage.InvoiceNotFound, "Invoice or PDF not found"));
             }
 
             var blobClient = clientFactory.GetBlobContainerClient(Constants.BlobContainers.GeneratedInvoices);
@@ -36,7 +51,7 @@ public class DownloadInvoice
 
             var fileName = $"Invoice_{invoice.InvoiceNumber}.pdf";
 
-            return new Response(pdfBytes, fileName);
+            return BusinessResult.Success(new Response(pdfBytes, fileName));
         }
     }
 }

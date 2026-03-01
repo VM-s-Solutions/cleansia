@@ -212,6 +212,18 @@ public static class BusinessErrorMessage
     // Device
     public const string InvalidPlatform = "device.invalid_platform";
 
+    // Feature Flag
+    public const string FeatureFlagNotFound = "feature_flag.not_found";
+    public const string FeatureFlagAlreadyExists = "feature_flag.already_exists";
+
+    // Tenant Configuration
+    public const string TenantConfigNotFound = "tenant_config.not_found";
+    public const string TenantConfigKeyAlreadyExists = "tenant_config.key_already_exists";
+
+    // Country Configuration
+    public const string CountryConfigNotFound = "country_config.not_found";
+    public const string CountryConfigAlreadyExists = "country_config.already_exists_for_country";
+
     // Pagination
     public const string PageMustBePositive = "validation.page_must_be_positive";
     public const string PageSizeMustBePositive = "validation.page_size_must_be_positive";
@@ -225,4 +237,11 @@ public static class BusinessErrorMessage
     // Payment
     public const string JsonPayloadRequired = "payment.json_payload_required";
     public const string StripeSignatureRequired = "payment.stripe_signature_required";
+
+    // GDPR
+    public const string GdprExportFailed = "gdpr.export_failed";
+    public const string GdprDeletionFailed = "gdpr.deletion_failed";
+    public const string GdprDeletionAlreadyPending = "gdpr.deletion_already_pending";
+    public const string ConsentNotFound = "gdpr.consent_not_found";
+    public const string ConsentAlreadyGranted = "gdpr.consent_already_granted";
 }

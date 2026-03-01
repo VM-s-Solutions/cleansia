@@ -53,7 +53,28 @@
       "Bash(sort:*)",
       "Read(//c/Users/cmisa/Desktop/Mike/Projects/cleansia/src/Cleansia.App/**)",
       "Bash(./gradlew assembleMockDebug:*)",
-      "Bash(./gradlew assembleProdDebug:*)"
+      "Bash(./gradlew assembleProdDebug:*)",
+      "Bash(dotnet --list-sdks:*)",
+      "Bash(winget search:*)",
+      "Bash(\"C:/Program Files/dotnet/dotnet.exe\" --list-sdks)",
+      "Bash(\"C:/Program Files/dotnet/dotnet.exe\" --version)",
+      "Bash(dotnet restore:*)",
+      "Bash(dotnet test:*)",
+      "Bash(dotnet ef migrations add:*)",
+      "Bash(dotnet add:*)",
+      "WebFetch(domain:www.nuget.org)",
+      "Bash(dir:*)",
+      "Bash(ls:*)",
+      "Bash(curl:*)",
+      "Bash(npx nswag:*)",
+      "Bash(bash partner-client-formatter.sh)",
+      "Bash(bash -x partner-client-formatter.sh)",
+      "Bash(xxd:*)",
+      "Bash(node -e:*)",
+      "Bash(test:*)",
+      "Bash(git -C \"c:/Users/cmisa/Desktop/Mike/Projects/cleansia\" diff -- \"src/Cleansia.Infra.Scripts/SeedData/insert_employee_payroll.sql\")",
+      "Bash(git -C \"c:/Users/cmisa/Desktop/Mike/Projects/cleansia\" diff -- \"src/Cleansia.Infra.Scripts/SeedData/insert_employee_invoices.sql\")",
+      "Bash(git -C \"c:/Users/cmisa/Desktop/Mike/Projects/cleansia\" diff -- \"src/Cleansia.Infra.Scripts/SeedData/insert_order_employee_pay.sql\")"
     ],
     "deny": [],
     "ask": [],
@@ -78,7 +99,9 @@
       "C:\\Users\\cmisa\\Desktop\\Mike\\Projects\\cleansia\\src\\Cleansia.Core.AppServices\\Features\\Devices",
       "C:\\Users\\cmisa\\Desktop\\Mike\\Projects\\cleansia\\src\\Cleansia.Core.AppServices\\Features\\EmployeeDocuments",
       "C:\\Users\\cmisa\\Desktop\\Mike\\Projects\\cleansia\\src\\Cleansia.Web.Mobile",
-      "C:\\Users\\cmisa\\Desktop\\Mike\\Projects\\cleansia\\src\\Cleansia.Web"
+      "C:\\Users\\cmisa\\Desktop\\Mike\\Projects\\cleansia\\src\\Cleansia.Web",
+      "C:\\Users\\cmisa\\Desktop\\Mike\\Projects\\cleansia\\src\\Cleansia.Web.Admin",
+      "C:\\Users\\cmisa\\Desktop\\Mike\\Projects\\cleansia"
     ]
   }
 }

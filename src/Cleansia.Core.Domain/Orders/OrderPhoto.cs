@@ -5,7 +5,7 @@ using Cleansia.Core.Domain.Users;
 
 namespace Cleansia.Core.Domain.Orders;
 
-public class OrderPhoto : Auditable
+public class OrderPhoto : Auditable, ITenantEntity
 {
     [Required]
     public string OrderId { get; private set; }

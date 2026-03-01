@@ -213,6 +213,7 @@
     <string name="street">Ulice</string>
     <string name="city">Město</string>
     <string name="zip_code">PSČ</string>
+    <string name="state_region">Kraj / Region</string>
     <string name="country">Země</string>
     <string name="bank_name">Název banky</string>
     <string name="account_number">Číslo účtu</string>
@@ -425,6 +426,7 @@
     <string name="status_timeline">Časová osa stavu</string>
     <string name="employee">Zaměstnanec</string>
     <string name="variable_symbol">Variabilní symbol</string>
+    <string name="payment_reference">Platební reference</string>
     <string name="total_orders">Celkem objednávek</string>
     <string name="pay_period">Výplatní období</string>
     <string name="paid_date">Datum zaplacení</string>

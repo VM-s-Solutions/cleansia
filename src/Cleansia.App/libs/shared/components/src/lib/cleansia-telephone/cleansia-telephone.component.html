@@ -1,46 +1,108 @@
 @if (floatVariant(); as variant) {
-<p-floatlabel [variant]="variant" class="cleansia-telephone">
-  <p-inputMask
-    [id]="id()"
-    [mask]="mask()"
-    [(ngModel)]="innerValue"
-    (ngModelChange)="handleChange($event)"
-    (onBlur)="onTouch()"
-    [disabled]="disabled()"
-    [readonly]="readonlyInput()"
-    [slotChar]="'_'"
-    [autocomplete]="autocomplete()"
-    [class]="className() ?? '' + (hasErrors() ? 'ng-invalid ng-dirty' : '')"
-  />
+<p-floatlabel [variant]="variant">
+  <div
+    class="cleansia-telephone"
+    [class.cleansia-telephone--focused]="isDropdownOpen"
+    [class.cleansia-telephone--invalid]="hasErrors()"
+  >
+    <button
+      type="button"
+      class="cleansia-telephone__trigger"
+      (click)="toggleDropdown($event)"
+      [disabled]="disabled()"
+      tabindex="-1"
+    >
+      <span class="fi fi-{{ selectedCountry.flag }} cleansia-telephone__flag"></span>
+      <span class="cleansia-telephone__code">{{ selectedCountry.code }}</span>
+      <i class="pi pi-chevron-down cleansia-telephone__chevron"></i>
+    </button>
+    <input
+      type="tel"
+      [id]="id()"
+      class="cleansia-telephone__input p-filled"
+      [value]="phoneNumber"
+      (input)="onPhoneInput($event)"
+      (blur)="onTouch()"
+      [disabled]="disabled()"
+      [readonly]="readonlyInput()"
+      autocomplete="tel"
+    />
+  </div>
   @if (label()) {
   <label [for]="id()" [class.required]="isRequired() && showRequired()">{{
     label()
   }}</label>
   }
 </p-floatlabel>
-} @else { @if (label()) {
+} @else {
+@if (label()) {
 <label [for]="id()" [class.required]="isRequired() && showRequired()">{{
   label()
 }}</label>
 }
-<p-inputMask
-  [id]="id()"
-  [mask]="mask()"
-  [(ngModel)]="innerValue"
-  (ngModelChange)="handleChange($event)"
-  (onBlur)="onTouch()"
-  [disabled]="disabled()"
-  [readonly]="readonlyInput()"
-  [placeholder]="getPlaceholder()"
-  [slotChar]="'_'"
-  [autocomplete]="autocomplete()"
-  [class]="className() ?? ''"
-  [ngClass]="{
-    'p-invalid':
-      formControl.invalid && (formControl.dirty || formControl.touched)
-  }"
-/>
-} @if (showErrors() && formControl.invalid && (formControl.dirty ||
+<div
+  class="cleansia-telephone"
+  [class.cleansia-telephone--focused]="isDropdownOpen"
+  [class.cleansia-telephone--invalid]="hasErrors()"
+>
+  <button
+    type="button"
+    class="cleansia-telephone__trigger"
+    (click)="toggleDropdown($event)"
+    [disabled]="disabled()"
+    tabindex="-1"
+  >
+    <span class="fi fi-{{ selectedCountry.flag }} cleansia-telephone__flag"></span>
+    <span class="cleansia-telephone__code">{{ selectedCountry.code }}</span>
+    <i class="pi pi-chevron-down cleansia-telephone__chevron"></i>
+  </button>
+  <input
+    type="tel"
+    [id]="id()"
+    class="cleansia-telephone__input"
+    [value]="phoneNumber"
+    (input)="onPhoneInput($event)"
+    (blur)="onTouch()"
+    [disabled]="disabled()"
+    [readonly]="readonlyInput()"
+    autocomplete="tel"
+  />
+</div>
+}
+
+@if (isDropdownOpen) {
+<div class="cleansia-telephone__dropdown">
+  <input
+    #searchInput
+    type="search"
+    class="cleansia-telephone__search"
+    placeholder="Search..."
+    [value]="searchTerm"
+    (input)="filterCountries($event)"
+  />
+  <ul class="cleansia-telephone__list">
+    @for (country of filteredCountries; track country.flag) {
+    <li
+      class="cleansia-telephone__item"
+      [class.cleansia-telephone__item--selected]="
+        selectedCountry.flag === country.flag
+      "
+      (click)="selectCountry(country); $event.stopPropagation()"
+    >
+      <span class="fi fi-{{ country.flag }} cleansia-telephone__flag"></span>
+      <span class="cleansia-telephone__item-name">{{ country.name }}</span>
+      <span class="cleansia-telephone__item-code">{{ country.code }}</span>
+    </li>
+    } @empty {
+    <li class="cleansia-telephone__item cleansia-telephone__item--empty">
+      No countries found
+    </li>
+    }
+  </ul>
+</div>
+}
+
+@if (showErrors() && formControl.invalid && (formControl.dirty ||
 formControl.touched)) {
 <ul class="cleansia-error-message-container">
   @for (error of formControl.errors | error; track $index) {

@@ -69,6 +69,7 @@ data class EmployeeProfile(
     val street: String? = null,
     val city: String? = null,
     val zipCode: String? = null,
+    val state: String? = null,
     val country: String? = null,
     val countryId: String? = null,
 
@@ -102,7 +103,7 @@ data class EmployeeProfile(
         get() = listOfNotNull(firstName, lastName).joinToString(" ").ifEmpty { email }
 
     val fullAddress: String
-        get() = listOfNotNull(street, city, zipCode, country)
+        get() = listOfNotNull(street, city, state, zipCode, country)
             .filter { it.isNotBlank() }
             .joinToString(", ")
 
@@ -310,7 +311,8 @@ data class UpdateAddressInfoRequest(
     val street: String,
     val city: String,
     val zipCode: String,
-    val countryId: String
+    val countryId: String,
+    val state: String? = null
 )
 
 @Serializable

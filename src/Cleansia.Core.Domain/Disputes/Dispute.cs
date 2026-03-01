@@ -6,7 +6,7 @@ using Cleansia.Core.Domain.Users;
 
 namespace Cleansia.Core.Domain.Disputes;
 
-public class Dispute : Auditable
+public class Dispute : Auditable, ITenantEntity
 {
     [Required]
     public string OrderId { get; private set; }

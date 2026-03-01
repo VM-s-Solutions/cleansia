@@ -1,6 +1,5 @@
 import { Component, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { CleansiaButtonComponent } from '@cleansia/components';
 import { TranslatePipe } from '@ngx-translate/core';
 
 interface StatusInfo {
@@ -11,16 +10,13 @@ interface StatusInfo {
 @Component({
   selector: 'order-header',
   standalone: true,
-  imports: [CommonModule, CleansiaButtonComponent, TranslatePipe],
+  imports: [CommonModule, TranslatePipe],
   template: `
-    <!-- Status Banner -->
     <div class="cleansia-order-details__status-banner">
-      <div class="order-header-info">
-        <div class="order-number">
-          <span class="label">{{ 'pages.order_details.order_number' | translate }}:</span>
-          <span class="value">{{ orderNumber() }}</span>
-        </div>
-        <div class="order-statuses">
+      <!-- Top row: order number + statuses -->
+      <div class="order-header-top">
+        <span class="order-header-number">{{ orderNumber() }}</span>
+        <div class="order-header-badges">
           <span [class]="getOrderStatusClass(orderStatus())">
             {{ orderStatusLabel() }}
           </span>
@@ -29,37 +25,30 @@ interface StatusInfo {
           </span>
         </div>
       </div>
-      <div class="order-meta">
-        <span class="meta-item">
+      <!-- Meta row -->
+      <div class="order-header-meta">
+        <span class="order-header-meta__item">
           <i class="pi pi-calendar"></i>
           {{ createdOn() }}
         </span>
         @if (confirmationCode()) {
-        <span class="meta-item">
+        <span class="order-header-meta__item">
           <i class="pi pi-key"></i>
           {{ confirmationCode() }}
         </span>
         }
       </div>
-    </div>
-
-    <div class="cleansia-order-details__header">
-      <div class="cleansia-order-details__header-actions">
-        <cleansia-button
-          [buttonType]="'button'"
-          [style]="'raised-button'"
-          [title]="'pages.order_details.print' | translate"
-          [icon]="'pi pi-print'"
-          (clickFn)="onPrint.emit()"
-        />
+      <!-- Actions row -->
+      <div class="order-header-actions">
+        <button type="button" class="order-header-action-btn" (click)="onPrint.emit()">
+          <i class="pi pi-print"></i>
+          <span>{{ 'pages.order_details.print' | translate }}</span>
+        </button>
         @if (hasInvoice()) {
-        <cleansia-button
-          [buttonType]="'button'"
-          [style]="'raised-button'"
-          [title]="'pages.order_details.download_invoice' | translate"
-          [icon]="'pi pi-download'"
-          (clickFn)="onDownloadInvoice.emit()"
-        />
+        <button type="button" class="order-header-action-btn" (click)="onDownloadInvoice.emit()">
+          <i class="pi pi-download"></i>
+          <span>{{ 'pages.order_details.download_invoice' | translate }}</span>
+        </button>
         }
       </div>
     </div>

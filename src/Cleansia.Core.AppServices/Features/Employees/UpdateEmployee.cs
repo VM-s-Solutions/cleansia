@@ -157,6 +157,7 @@ public class UpdateEmployee
         string City,
         string ZipCode,
         string CountryId,
+        string? State,
         string NationalityId,
         string Phone,
         string Email,
@@ -195,8 +196,8 @@ public class UpdateEmployee
         private static Address CreateOrUpdateAddress(Employee employee, Command command)
         {
             return employee.Address is not null
-                ? employee.Address.Update(command.Street, command.City, command.ZipCode, command.CountryId)
-                : Address.Create(command.Street, command.City, command.ZipCode, command.CountryId);
+                ? employee.Address.Update(command.Street, command.City, command.ZipCode, command.CountryId, command.State)
+                : Address.Create(command.Street, command.City, command.ZipCode, command.CountryId, command.State);
         }
 
         private async Task UploadDocuments(Employee employee, Command command, CancellationToken cancellationToken)

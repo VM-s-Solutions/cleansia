@@ -65,7 +65,7 @@ export class ProfileFormFactory {
       ]),
       countryId: new FormControl(undefined, [Validators.required]),
       nationalityId: new FormControl(undefined, [Validators.required]),
-      phone: new FormControl(undefined, [
+      phone: new FormControl('+420', [
         Validators.required,
         CustomValidators.phoneNumber(),
       ]),
@@ -118,7 +118,7 @@ export class ProfileFormFactory {
       firstName: employee.firstName || undefined,
       lastName: employee.lastName || undefined,
       email: employee.email || undefined,
-      phone: employee.phoneNumber || employee.phoneNumber || undefined,
+      phone: employee.phoneNumber || '+420',
       dateOfBirth: employee.birthDate || employee.birthDate || null,
       street: employee.street || undefined,
       city: employee.city || undefined,
@@ -179,6 +179,7 @@ export class ProfileFormFactory {
       city: formData.city,
       zipCode: formData.zipCode,
       countryId: formData.countryId,
+      state: formData.state,
       nationalityId: formData.nationalityId,
       passportId: formData.passportId,
       taxId: formData.taxId,

@@ -2,10 +2,10 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import {
   CleansiaLabelComponent,
-  CleansiaLoaderComponent,
 } from '@cleansia/components';
 import { ProductivityMetricsDto } from '@cleansia/partner-services';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { Skeleton } from 'primeng/skeleton';
 
 @Component({
   selector: 'cleansia-productivity-gauges',
@@ -13,7 +13,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
   imports: [
     CommonModule,
     TranslateModule,
-    CleansiaLoaderComponent,
+    Skeleton,
     CleansiaLabelComponent,
   ],
   templateUrl: './cleansia-productivity-gauges.component.html',
@@ -73,7 +73,7 @@ export class CleansiaProductivityGaugesComponent {
     if (!date) {
       return '';
     }
-    const locale = this.translate.currentLang || 'cs-CZ';
+    const locale = this.translate.currentLang || 'en-GB';
     return date.toLocaleDateString(locale, {
       year: 'numeric',
       month: 'short',

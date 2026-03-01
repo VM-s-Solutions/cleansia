@@ -88,18 +88,19 @@ public abstract class BaseIntegrationTest : BaseTransactionalPostgresSqlTest<Cle
     {
         await using var conn = new NpgsqlConnection(Fixture.GetConnectionString());
         await conn.OpenAsync();
-        var checkpoint = new Checkpoint
+        var respawner = await Respawner.CreateAsync(conn, new RespawnerOptions
         {
             DbAdapter = DbAdapter.Postgres,
             SchemasToExclude = ["pg_catalog", "information_schema"]
-        };
-        await checkpoint.Reset(conn);
+        });
+        await respawner.ResetAsync(conn);
         await base.TestMethod(Setup, arrange, act, assert, cleanup, transactional);
         return;
 
         async Task Setup(IServiceCollection services)
         {
             services.AddLogging(builder => { builder.AddConsole(); });
+            services.AddHttpContextAccessor();
             services.AddSingleton<IConfiguration>(_ => Configuration);
             services.AddCoreBindings(Configuration, new TestHostEnvironment());
 

@@ -71,11 +71,14 @@ public class EmployeeInvoiceEntityConfiguration : AuditableEntityConfiguration<E
             .HasMaxLength(1000);
 
         builder.Property(e => e.VariableSymbol)
-            .IsRequired()
+            .IsRequired(false)
             .HasMaxLength(10);
 
         builder.Property(e => e.SpecificSymbol)
             .HasMaxLength(10);
+
+        builder.Property(e => e.PaymentReference)
+            .HasMaxLength(50);
 
         builder.Property(e => e.BankTransferNote)
             .HasMaxLength(500);
@@ -119,7 +122,8 @@ public class EmployeeInvoiceEntityConfiguration : AuditableEntityConfiguration<E
             .IsUnique();
 
         builder.HasIndex(e => e.VariableSymbol)
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("\"VariableSymbol\" IS NOT NULL");
 
         builder.HasIndex(e => e.EmployeeId);
         builder.HasIndex(e => e.PayPeriodId);

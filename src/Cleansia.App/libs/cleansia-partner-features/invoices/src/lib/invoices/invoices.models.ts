@@ -3,7 +3,6 @@ import { TableColumn, TableAction } from '@cleansia/components';
 import { EmployeeInvoice } from './invoices.facade';
 
 export interface InvoicesActions {
-  onViewDetails: (invoice: EmployeeInvoice) => void;
   onDownload: (invoice: EmployeeInvoice) => void;
 }
 
@@ -31,7 +30,7 @@ export function getInvoicesTableDefinition(
         header: 'pages.invoices.generated_date',
         getValue: (invoice?: EmployeeInvoice) =>
           invoice
-            ? new Date(invoice.generatedAt).toLocaleDateString('cs-CZ')
+            ? new Date(invoice.generatedAt).toLocaleDateString('en-GB')
             : '',
         sortable: true,
       },
@@ -47,9 +46,9 @@ export function getInvoicesTableDefinition(
         header: 'pages.invoices.total_amount',
         getValue: (invoice?: EmployeeInvoice) =>
           invoice
-            ? new Intl.NumberFormat('cs-CZ', {
+            ? new Intl.NumberFormat('en-GB', {
                 style: 'currency',
-                currency: invoice.currencyCode || 'CZK',
+                currency: invoice.currencyCode || 'EUR',
               }).format(invoice.totalAmount)
             : '',
         sortable: true,
@@ -64,11 +63,6 @@ export function getInvoicesTableDefinition(
       },
     ],
     actions: [
-      {
-        icon: 'pi pi-eye',
-        tooltip: 'pages.invoices.view_details',
-        onClick: actions.onViewDetails,
-      },
       {
         icon: 'pi pi-download',
         tooltip: 'pages.invoices.download_pdf',

@@ -21,6 +21,11 @@ public static class AuthExtensions
         yield return new Claim(ClaimTypes.Name, $"{user.FirstName} {user.LastName}");
         yield return new Claim(ClaimTypes.Email, user.Email);
         yield return new Claim(ClaimTypes.Role, user.Profile.ToString());
+
+        if (!string.IsNullOrEmpty(user.TenantId))
+        {
+            yield return new Claim("tenant_id", user.TenantId);
+        }
     }
 
     private static byte[] GetSaltFromHashBytes(byte[] hashBytes)

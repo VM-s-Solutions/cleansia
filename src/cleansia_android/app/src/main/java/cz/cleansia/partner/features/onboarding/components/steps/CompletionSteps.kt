@@ -210,12 +210,14 @@ internal fun AddressStep(
     street: String,
     city: String,
     zipCode: String,
+    state: String,
     countryId: String,
     countries: List<Country>,
     languageCode: String,
     onStreetChange: (String) -> Unit,
     onCityChange: (String) -> Unit,
     onZipCodeChange: (String) -> Unit,
+    onStateChange: (String) -> Unit,
     onCountrySelected: (String) -> Unit
 ) {
     SectionHeader(
@@ -246,6 +248,14 @@ internal fun AddressStep(
         onValueChange = onZipCodeChange,
         label = stringResource(R.string.zip_code),
         keyboardType = KeyboardType.Number,
+        imeAction = ImeAction.Next
+    )
+    Spacer(modifier = Modifier.height(12.dp))
+
+    CleansiaTextField(
+        value = state,
+        onValueChange = onStateChange,
+        label = stringResource(R.string.state_region),
         imeAction = ImeAction.Done
     )
     Spacer(modifier = Modifier.height(12.dp))

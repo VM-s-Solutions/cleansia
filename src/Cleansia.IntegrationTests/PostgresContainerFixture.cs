@@ -1,5 +1,4 @@
-﻿using DotNet.Testcontainers.Builders;
-using Testcontainers.PostgreSql;
+﻿using Testcontainers.PostgreSql;
 
 namespace Cleansia.IntegrationTests;
 
@@ -15,7 +14,6 @@ public class PostgresContainerFixture : IAsyncDisposable
             .WithUsername("testuser")
             .WithPassword("testpass")
             .WithPortBinding(5432, 5432)
-            .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5432))
             .Build();
         InitializeAsync().GetAwaiter().GetResult();
     }

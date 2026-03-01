@@ -24,6 +24,12 @@ public class AuditableEntityConfiguration<T, TKey> : BaseEntityConfiguration<T, 
     {
         base.Configure(builder);
 
+        builder.Property(e => e.TenantId)
+            .HasMaxLength(26)
+            .IsRequired(false);
+
+        builder.HasIndex(e => e.TenantId);
+
         builder.Property(e => e.CreatedBy)
             .IsRequired()
             .HasMaxLength(255);

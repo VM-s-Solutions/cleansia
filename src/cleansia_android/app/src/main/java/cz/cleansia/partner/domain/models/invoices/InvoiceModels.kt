@@ -45,14 +45,15 @@ data class Invoice(
     val approvedBy: String? = null,
     val paidAt: String? = null,
     val adminNotes: String? = null,
-    val bankTransferNote: String? = null
+    val bankTransferNote: String? = null,
+    val paymentReference: String? = null
 ) {
     // Helper properties for UI compatibility
     val invoiceStatusEnum: InvoiceStatus get() = InvoiceStatus.fromApiValue(status)
     val period: String get() = payPeriodLabel ?: ""
     val issueDate: String get() = generatedAt ?: ""
     val dueDate: String get() = "" // Not available in the API
-    val currency: String get() = currencyCode ?: "CZK"
+    val currency: String get() = currencyCode ?: "EUR"
     val orderCount: Int get() = totalOrders ?: 0
 }
 
@@ -69,7 +70,7 @@ data class InvoiceDetail(
     val subtotal: Double = 0.0,
     val taxAmount: Double = 0.0,
     val totalAmount: Double = 0.0,
-    val currency: String = "CZK",
+    val currency: String = "EUR",
     val orders: List<InvoiceOrderItem> = emptyList(),
     val employeeId: String? = null,
     val employeeName: String? = null,
@@ -85,7 +86,8 @@ data class InvoiceDetail(
     val bankTransferNote: String? = null,
     val approvedAt: String? = null,
     val approvedBy: String? = null,
-    val totalOrders: Int? = null
+    val totalOrders: Int? = null,
+    val paymentReference: String? = null
 ) {
     val status: InvoiceStatus get() = InvoiceStatus.fromApiValue(statusValue)
 
@@ -108,7 +110,7 @@ data class InvoiceOrderItem(
     val completedDate: String = "",
     val serviceName: String? = null,
     val amount: Double = 0.0,
-    val currency: String = "CZK"
+    val currency: String = "EUR"
 )
 
 @Serializable

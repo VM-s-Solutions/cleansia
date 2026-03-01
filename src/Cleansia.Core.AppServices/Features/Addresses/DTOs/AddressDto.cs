@@ -4,4 +4,5 @@ public record AddressDto(
     string Street,
     string City,
     string ZipCode,
-    string CountryId);
+    string CountryId,
+    string? State);

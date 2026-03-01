@@ -82,8 +82,7 @@ public class TakeOrder
 
             if (employee == null) return false;
 
-            return !string.IsNullOrWhiteSpace(employee.ICO) &&
-                   employee.Address is not null &&
+            return employee.Address is not null &&
                    employee.Availability.Any();
         }
 

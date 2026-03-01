@@ -3,7 +3,7 @@ using Cleansia.Core.Domain.Enums;
 
 namespace Cleansia.Core.Domain.Orders;
 
-public class OrderStatusTrack : Auditable
+public class OrderStatusTrack : Auditable, ITenantEntity
 {
     public OrderStatus Status { get; private set; }
 

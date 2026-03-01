@@ -45,6 +45,7 @@ data class ProfileCompletionUiState(
     val street: String = "",
     val city: String = "",
     val zipCode: String = "",
+    val state: String = "",
     val countryId: String = "",
     // Bank
     val iban: String = "",
@@ -116,6 +117,7 @@ class ProfileCompletionViewModel @Inject constructor(
                             street = profile.street ?: "",
                             city = profile.city ?: "",
                             zipCode = profile.zipCode ?: "",
+                            state = profile.state ?: "",
                             countryId = profile.countryId ?: "",
                             iban = profile.iban ?: "",
                             emergencyContactName = profile.emergencyContactName ?: "",
@@ -172,6 +174,7 @@ class ProfileCompletionViewModel @Inject constructor(
     fun updateStreet(value: String) { _uiState.update { it.copy(street = value) } }
     fun updateCity(value: String) { _uiState.update { it.copy(city = value) } }
     fun updateZipCode(value: String) { _uiState.update { it.copy(zipCode = value) } }
+    fun updateState(value: String) { _uiState.update { it.copy(state = value) } }
     fun updateCountryId(value: String) { _uiState.update { it.copy(countryId = value) } }
 
     // Bank updates
@@ -208,6 +211,7 @@ class ProfileCompletionViewModel @Inject constructor(
                 street = state.street,
                 city = state.city,
                 zipCode = state.zipCode,
+                state = state.state.ifBlank { null },
                 countryId = state.countryId.ifBlank { null },
                 iban = state.iban,
                 emergencyContactName = state.emergencyContactName.ifBlank { null },

@@ -1,7 +1,7 @@
 @if (isRoot()) {
 <div class="sidebar-container">
   <!-- Mobile backdrop -->
-  @if (isMobile() && isSidebarExpanded()) {
+  @if (isMobile() && mobileExpanded()) {
   <div
     class="sidebar-backdrop"
     (click)="toggleSidebar()"
@@ -10,24 +10,12 @@
   ></div>
   }
 
-  <!-- Mobile toggle button -->
-  @if (isMobile() && !isSidebarExpanded()) {
-  <div class="sidebar-toggler">
-    <cleansia-button
-      icon="pi pi-bars"
-      severity="primary"
-      size="xx-small-width"
-      (clickFn)="toggleSidebar()"
-    />
-  </div>
-  }
-
   <!-- Main sidebar -->
   <aside
     class="sidebar"
     [class.sidebar--collapsed]="effectiveCollapsed()"
     [class.sidebar--mobile]="isMobile()"
-    [class.sidebar--mobile-expanded]="isMobile() && isSidebarExpanded()"
+    [class.sidebar--mobile-expanded]="isMobile() && mobileExpanded()"
   >
     <!-- Header with gradient background -->
     <header class="sidebar-header">
@@ -36,12 +24,14 @@
         [wrapped]="true"
       />
       @if (isMobile()) {
-      <cleansia-button
-        icon="pi pi-times"
-        severity="secondary"
-        size="xx-small-width"
-        (clickFn)="toggleSidebar()"
-      />
+      <button
+        type="button"
+        class="sidebar-close"
+        (click)="toggleSidebar()"
+        aria-label="Close menu"
+      >
+        <i class="pi pi-times"></i>
+      </button>
       }
     </header>
 
@@ -103,9 +93,12 @@
       </ul>
     </nav>
 
-    <!-- Footer with collapse toggle -->
+    <!-- Footer with language switcher + collapse toggle -->
     @if (!isMobile()) {
     <footer class="sidebar-footer">
+      @if (!effectiveCollapsed()) {
+      <cleansia-language-switcher />
+      }
       <cleansia-button
         [icon]="effectiveCollapsed() ? 'pi pi-angle-right' : 'pi pi-angle-left'"
         severity="secondary"

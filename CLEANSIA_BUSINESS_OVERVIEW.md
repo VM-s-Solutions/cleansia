@@ -1,7 +1,7 @@
 # Cleansia - Business Overview & Application Flow
 
-**Last Updated**: 2026-01-17
-**Version**: 2.0.0
+**Last Updated**: 2026-03-01
+**Version**: 2.1.0
 **For**: Non-Technical Stakeholders
 
 ---
@@ -344,7 +344,7 @@ Final Pay: 800 CZK
   - Company information
 
 **Multilingual:**
-- Documents in Czech and English
+- Documents in Czech, English, and Polish
 - Matches the user's preferred language
 - Professional translations
 
@@ -365,7 +365,7 @@ Final Pay: 800 CZK
 | Period Closes | All employees | "Pay period closed. Your invoice is attached" |
 | Period Ending Soon | All employees | "3 days until period ends. Check your hours" |
 
-**Languages:** All emails in Czech and English
+**Languages:** All emails in Czech, English, and Polish
 
 **Real-World Benefit:** Keep everyone informed automatically, no manual follow-ups needed.
 
@@ -605,7 +605,7 @@ Most employees use their phones, not computers. Cleansia is fully optimized for 
 
 ### Supported Languages
 
-Currently: **Czech** and **English**
+Currently: **Czech**, **English**, and **Polish**
 
 ### What's Translated
 
@@ -639,8 +639,9 @@ Currently: **Czech** and **English**
 **For Business:**
 - Attract international customers
 - Employ non-Czech speakers
-- Professional in both languages
+- Professional in all three languages
 - No manual translation needed
+- Easy to add more languages in the future
 
 ---
 
@@ -650,13 +651,17 @@ Currently: **Czech** and **English**
 
 **Partner App - What's Working:**
 - ✅ Employee registration and login
-- ✅ Order viewing and acceptance
+- ✅ Order viewing and acceptance with clickable table rows
 - ✅ Photo upload and management
 - ✅ Order completion workflow
-- ✅ Invoice viewing and download
-- ✅ Dashboard analytics (earnings, productivity, time tracking)
+- ✅ Invoice viewing and download with clickable table rows
+- ✅ Dashboard analytics (earnings, productivity, time tracking) with skeleton loaders
 - ✅ Mobile responsive interface
-- ✅ Profile management
+- ✅ Profile management with phone input and country codes
+- ✅ Consistent filter drawers with reactive filter chips on orders and invoices
+- ✅ Help cards explaining workflow steps and status flows
+- ✅ Skeleton loaders on all pages (no spinners)
+- ✅ Full Polish language support (Czech, English, Polish)
 
 **Admin App - What's Working:**
 - ✅ Admin user authentication
@@ -671,18 +676,29 @@ Currently: **Czech** and **English**
 - ✅ Currency management (CRUD operations)
 - ✅ Company info management
 - ✅ Admin user management
+- ✅ Feature flag management (CRUD operations)
+- ✅ GDPR management (data export, account deletion)
 - ✅ Template management (email, invoice, receipt templates)
 - ✅ Reports with date filtering
 - ✅ Mobile responsive interface with filter drawers
+- ✅ Full Polish language support (Czech, English, Polish)
 
 **Backend Infrastructure:**
 - ✅ Payment processing (Stripe + Cash)
 - ✅ Automated payroll calculations
 - ✅ PDF generation (invoices, receipts)
 - ✅ Email notifications (SendGrid)
-- ✅ Background jobs (Hangfire)
+- ✅ Background jobs (Hangfire) — period closure, reminders, data retention
 - ✅ Health monitoring
 - ✅ Request logging
+- ✅ Error monitoring (Sentry)
+- ✅ Multi-tenancy (shared DB with TenantId filter)
+- ✅ GDPR compliance (data export, account deletion, consent tracking)
+- ✅ Feature flags (global, country, tenant scoped)
+- ✅ Data retention policies (weekly automated cleanup)
+- ✅ Country-specific configuration (VAT, currency, language per country)
+- ✅ Centralized API controller and Startup base classes
+- ✅ Consistent CQRS handlers (IQuery/ICommand with BusinessResult)
 
 **What's Coming Next:**
 - ⏳ Customer-facing app (for customers to book services)
@@ -742,10 +758,16 @@ Automatic invoices and receipts in multiple languages make you look established 
 Built for people who work on their phones, not at desks.
 
 ### 7. **Multilingual**
-Serve both local and international markets without extra work.
+Serve local and international markets without extra work. Currently Czech, English, and Polish.
 
 ### 8. **Scalable**
 Works for 5 employees or 500. System doesn't slow down as you grow.
+
+### 9. **GDPR Compliant**
+Built-in data protection: users can export or delete their data. Consent tracking and automated data retention policies keep you compliant with EU regulations.
+
+### 10. **Multi-Country Ready**
+Country-specific configuration for currency, VAT rates, tax IDs, and date formats. Feature flags let you roll out features per country or tenant. Expand to new markets without code changes.
 
 ---
 
@@ -888,7 +910,13 @@ Yes! The Admin app allows full management of services, packages, and pricing. Yo
 The Admin app provides comprehensive reports with date filtering. Both Partner and Admin apps have dashboard analytics showing earnings, order distribution, time tracking, and productivity metrics.
 
 ### "Is customer data secure?"
-Yes. All data encrypted, secure cloud storage, HTTPS everywhere, compliant with data protection regulations.
+Yes. All data encrypted, secure cloud storage, HTTPS everywhere, compliant with data protection regulations. Full GDPR compliance with data export, account deletion, and consent tracking.
+
+### "Can users request their data or delete their account?"
+Yes. GDPR compliance is built-in. Users can export all their personal data as JSON, or request account deletion. Account deletion anonymizes all personal information while preserving financial records for tax compliance. Admins can also perform these operations on behalf of users.
+
+### "Can we expand to new countries?"
+Yes. The system supports country-specific configuration (currency, language, VAT rates, tax ID format, date format). Feature flags can be scoped per country or per tenant. Polish language was recently added alongside Czech and English.
 
 ---
 
@@ -931,6 +959,8 @@ Complete business control is NOW available:
 - Template customization
 - Comprehensive reports
 - System configuration (languages, currencies, countries)
+- Feature flag management
+- GDPR compliance tools (data export, account deletion)
 
 ### Phase 3: Customer App (⏳ Coming)
 When ready, customers can:
@@ -958,6 +988,6 @@ Documentation: See CLEANSIA_PROJECT_DOCUMENTATION.md for technical details
 
 ---
 
-**Version**: 2.0.0
-**Last Updated**: 2026-01-17
+**Version**: 2.1.0
+**Last Updated**: 2026-03-01
 **Status**: Partner App & Admin App Complete & Ready for Use ✅

@@ -1,0 +1,168 @@
+:host {
+  display: block;
+  position: relative;
+}
+
+.cleansia-telephone {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--p-inputtext-border-color, #d1d5db);
+  border-radius: var(--p-inputtext-border-radius, 6px);
+  background: var(--p-inputtext-background, #ffffff);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  overflow: hidden;
+
+  &:hover {
+    border-color: var(--p-inputtext-hover-border-color, #94a3b8);
+  }
+
+  &--focused {
+    border-color: var(--p-inputtext-focus-border-color, var(--p-primary-color, #3b82f6));
+    box-shadow: var(--p-inputtext-focus-ring-shadow, 0 0 0 0.2rem rgba(59, 130, 246, 0.2));
+  }
+
+  &--invalid {
+    border-color: var(--p-inputtext-invalid-border-color, #e24c4c);
+  }
+
+  &__trigger {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: var(--p-inputtext-padding-y, 0.5rem) 0.5rem var(--p-inputtext-padding-y, 0.5rem) var(--p-inputtext-padding-x, 0.75rem);
+    background: transparent;
+    border: none;
+    border-right: 1px solid var(--p-inputtext-border-color, #d1d5db);
+    cursor: pointer;
+    white-space: nowrap;
+    color: var(--p-inputtext-color, #334155);
+    font-size: var(--p-inputtext-font-size, 1rem);
+
+    &:hover:not(:disabled) {
+      background: var(--p-content-hover-background, #f1f5f9);
+    }
+
+    &:disabled {
+      cursor: default;
+      opacity: 0.6;
+    }
+  }
+
+  &__flag {
+    border-radius: 2px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  }
+
+  &__code {
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  &__chevron {
+    font-size: 0.7rem;
+    opacity: 0.6;
+  }
+
+  &__input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: var(--p-inputtext-padding-y, 0.5rem) var(--p-inputtext-padding-x, 0.75rem);
+    font-size: var(--p-inputtext-font-size, 1rem);
+    font-family: inherit;
+    background: transparent;
+    color: var(--p-inputtext-color, #334155);
+    min-width: 0;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    &::placeholder {
+      color: var(--p-inputtext-placeholder-color, #94a3b8);
+    }
+  }
+}
+
+.cleansia-telephone__dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: var(--p-overlay-select-background, #ffffff);
+  border: 1px solid var(--p-overlay-select-border-color, #d1d5db);
+  border-radius: var(--p-overlay-select-border-radius, 6px);
+  box-shadow: var(--p-overlay-select-shadow, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+  margin-top: 2px;
+  max-height: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+.cleansia-telephone__search {
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-bottom: 1px solid var(--p-inputtext-border-color, #d1d5db);
+  outline: none;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: var(--p-inputtext-color, #334155);
+  background: transparent;
+
+  &::placeholder {
+    color: var(--p-inputtext-placeholder-color, #94a3b8);
+  }
+}
+
+.cleansia-telephone__list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  overflow-y: auto;
+  max-height: 250px;
+}
+
+.cleansia-telephone__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--p-inputtext-color, #334155);
+
+  &:hover {
+    background: var(--p-content-hover-background, #f1f5f9);
+  }
+
+  &--selected {
+    background: var(--p-highlight-background, #eff6ff);
+    font-weight: 500;
+  }
+
+  &--empty {
+    cursor: default;
+    color: var(--p-inputtext-placeholder-color, #94a3b8);
+    justify-content: center;
+
+    &:hover {
+      background: transparent;
+    }
+  }
+
+  .fi {
+    border-radius: 2px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  }
+
+  &-name {
+    flex: 1;
+  }
+
+  &-code {
+    opacity: 0.6;
+    font-size: 0.8rem;
+  }
+}

@@ -29,17 +29,13 @@ public class EmployeePayrollController(IMediator mediator) : ApiController(media
     [HttpGet("GetInvoiceById/{invoiceId}")]
     [Permission(Policy.CanViewPagedInvoices)]
     [ProducesResponseType(typeof(EmployeeInvoiceDetailDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetInvoiceById(string invoiceId, CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(new GetInvoiceById.Query(invoiceId), cancellationToken);
-        if (result == null)
-        {
-            return NotFound();
-        }
-        return Ok(result);
+        return HandleResult<EmployeeInvoiceDetailDto>(result);
     }
 
     [HttpGet("GetPeriodPays")]
@@ -141,19 +137,19 @@ public class EmployeePayrollController(IMediator mediator) : ApiController(media
 
     [HttpGet("DownloadInvoice/{invoiceId}")]
     [Permission(Policy.CanViewPagedInvoices)]
-    [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> DownloadInvoice(string invoiceId, CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(new DownloadInvoice.Query(invoiceId), cancellationToken);
 
-        if (result == null)
+        if (!result.IsSuccess)
         {
-            return NotFound("Invoice or PDF not found");
+            return HandleResult<DownloadInvoice.Response>(result);
         }
 
-        return File(result.PdfBytes, "application/pdf", result.FileName);
+        return File(result.Value!.PdfBytes, "application/pdf", result.Value.FileName);
     }
 }

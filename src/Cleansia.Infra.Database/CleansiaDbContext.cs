@@ -1,6 +1,8 @@
+using System.Linq.Expressions;
 using System.Security.Claims;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Company;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Devices;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Documents;
@@ -24,14 +26,16 @@ namespace Cleansia.Infra.Database;
 public class CleansiaDbContext : DbContext, IUnitOfWork
 {
     private readonly IUserSessionProvider userSessionProvider;
+    private readonly ITenantProvider tenantProvider;
 
     public CleansiaDbContext()
     {
     }
 
-    public CleansiaDbContext(IUserSessionProvider userSessionProvider)
+    public CleansiaDbContext(IUserSessionProvider userSessionProvider, ITenantProvider tenantProvider)
     {
         this.userSessionProvider = userSessionProvider;
+        this.tenantProvider = tenantProvider;
     }
 
     public CleansiaDbContext(DbContextOptions dbContextOptions)
@@ -39,10 +43,11 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     {
     }
 
-    public CleansiaDbContext(DbContextOptions dbContextOptions, IUserSessionProvider userSessionProvider)
+    public CleansiaDbContext(DbContextOptions dbContextOptions, IUserSessionProvider userSessionProvider, ITenantProvider tenantProvider)
         : base(dbContextOptions)
     {
         this.userSessionProvider = userSessionProvider;
+        this.tenantProvider = tenantProvider;
     }
 
     public void Migrate()
@@ -55,11 +60,18 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
         var fullUserName = userSessionProvider.GetTypedUserClaim(ClaimTypes.Name)?.Value;
         var stateUser = string.IsNullOrWhiteSpace(fullUserName) ? "System" : fullUserName;
         var currentTime = DateTime.UtcNow;
+        var currentTenantId = tenantProvider?.GetCurrentTenantId();
+
         foreach (var entity in ChangeTracker.Entries<Auditable>())
         {
             if (entity.State == EntityState.Added)
             {
                 entity.Entity.Created(stateUser, currentTime);
+
+                if (entity.Entity is ITenantEntity tenantEntity && string.IsNullOrEmpty(tenantEntity.TenantId))
+                {
+                    tenantEntity.TenantId = currentTenantId;
+                }
             }
             else if (entity.State == EntityState.Modified)
             {
@@ -87,6 +99,55 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
         modelBuilder.ApplyConfigurationsFromAssembly(AssemblyReference.Assembly);
 
         modelBuilder.HasPostgresExtension("pg_trgm");
+
+        ApplyTenantQueryFilters(modelBuilder);
+    }
+
+    private void ApplyTenantQueryFilters(ModelBuilder modelBuilder)
+    {
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (!typeof(ITenantEntity).IsAssignableFrom(entityType.ClrType))
+                continue;
+
+            var parameter = Expression.Parameter(entityType.ClrType, "e");
+
+            // e.TenantId
+            var tenantIdProperty = Expression.Property(parameter, nameof(ITenantEntity.TenantId));
+
+            // this.tenantProvider.GetCurrentTenantId()
+            var tenantProviderField = Expression.Field(
+                Expression.Constant(this),
+                typeof(CleansiaDbContext).GetField(nameof(tenantProvider),
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!);
+
+            // tenantProvider == null (for migrations/design-time)
+            var providerNullCheck = Expression.Equal(
+                tenantProviderField,
+                Expression.Constant(null, typeof(ITenantProvider)));
+
+            // tenantProvider.GetCurrentTenantId()
+            var currentTenantCall = Expression.Call(
+                tenantProviderField,
+                typeof(ITenantProvider).GetMethod(nameof(ITenantProvider.GetCurrentTenantId))!);
+
+            // currentTenantId == null (no tenant context = show all)
+            var tenantIdNullCheck = Expression.Equal(
+                currentTenantCall,
+                Expression.Constant(null, typeof(string)));
+
+            // e.TenantId == currentTenantId
+            var tenantMatch = Expression.Equal(tenantIdProperty, currentTenantCall);
+
+            // Final: tenantProvider == null || currentTenantId == null || e.TenantId == currentTenantId
+            var body = Expression.OrElse(
+                providerNullCheck,
+                Expression.OrElse(tenantIdNullCheck, tenantMatch));
+
+            var filter = Expression.Lambda(body, parameter);
+
+            entityType.SetQueryFilter(filter);
+        }
     }
 
     // Entities
@@ -126,6 +187,11 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<Dispute> Disputes { get; set; }
     public virtual DbSet<DisputeMessage> DisputeMessages { get; set; }
     public virtual DbSet<DisputeEvidence> DisputeEvidence { get; set; }
+    public virtual DbSet<TenantConfiguration> TenantConfigurations { get; set; }
+    public virtual DbSet<CountryConfiguration> CountryConfigurations { get; set; }
+    public virtual DbSet<FeatureFlag> FeatureFlags { get; set; }
+    public virtual DbSet<UserConsent> UserConsents { get; set; }
+    public virtual DbSet<GdprRequest> GdprRequests { get; set; }
 
     // Views
 }

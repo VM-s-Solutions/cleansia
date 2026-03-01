@@ -133,7 +133,8 @@ public class CreateOrder
                 command.CustomerAddress.Street,
                 command.CustomerAddress.City,
                 command.CustomerAddress.ZipCode,
-                command.CustomerAddress.CountryId);
+                command.CustomerAddress.CountryId,
+                command.CustomerAddress.State);
 
             var order = Order.Create(
                 command.CustomerName,

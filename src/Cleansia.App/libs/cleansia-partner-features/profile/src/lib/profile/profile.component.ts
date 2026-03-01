@@ -3,8 +3,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import {
   CleansiaButtonComponent,
   CleansiaCheckboxComponent,
-  CleansiaLanguageSwitcherComponent,
-  CleansiaLoaderComponent,
+  CleansiaFormSkeletonComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -27,9 +26,8 @@ import { ProfileFacade } from './profile.facade';
     ReactiveFormsModule,
     CleansiaTitleComponent,
     CleansiaButtonComponent,
-    CleansiaLoaderComponent,
+    CleansiaFormSkeletonComponent,
     CleansiaCheckboxComponent,
-    CleansiaLanguageSwitcherComponent,
     ProfilePersonalInfoComponent,
     ProfileBankDetailsComponent,
     ProfileEmergencyContactComponent,

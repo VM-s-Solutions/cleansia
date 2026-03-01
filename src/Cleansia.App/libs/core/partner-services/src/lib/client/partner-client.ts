@@ -2670,10 +2670,6 @@ export interface IApiClient {
      * @return OK
      */
     employee(id?: string | undefined, isActive?: boolean | undefined, contractStatuses?: ContractStatus[] | undefined, searchTerm?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfAdminEmployeeListItem>;
-    /**
-     * @return OK
-     */
-    health(): Observable<HealthCheckResponse>;
 }
 
 @Injectable({
@@ -2792,64 +2788,6 @@ export class ApiClient implements IApiClient {
             let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result403 = ProblemDetails.fromJS(resultData403);
             return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-
-    /**
-     * @return OK
-     */
-    health(): Observable<HealthCheckResponse> {
-        let url = this.baseUrl + "/api/Health";
-        url = url.replace(/[?&]$/, "");
-
-        let options : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processHealth(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processHealth(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<HealthCheckResponse>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<HealthCheckResponse>;
-        }));
-    }
-
-    protected processHealth(response: HttpResponseBase): Observable<HealthCheckResponse> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = HealthCheckResponse.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
-        } else if (status === 503) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result503: any = null;
-            let resultData503 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result503 = HealthCheckResponse.fromJS(resultData503);
-            return throwException("Service Unavailable", status, ResponseText, Headers, result503);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -3848,6 +3786,485 @@ export class EmployeePayrollClient implements IEmployeePayrollClient {
     }
 }
 
+export interface IFeatureFlagClient {
+    /**
+     * @param featureName (optional) 
+     * @param countryId (optional) 
+     * @return OK
+     */
+    check(featureName?: string | undefined, countryId?: string | undefined): Observable<CheckFeatureFlagResponse>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class FeatureFlagClient implements IFeatureFlagClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(APIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @param featureName (optional) 
+     * @param countryId (optional) 
+     * @return OK
+     */
+    check(featureName?: string | undefined, countryId?: string | undefined): Observable<CheckFeatureFlagResponse> {
+        let url = this.baseUrl + "/api/FeatureFlag/check?";
+        if (featureName === null)
+            throw new globalThis.Error("The parameter 'featureName' cannot be null.");
+        else if (featureName !== undefined)
+            url += "featureName=" + encodeURIComponent("" + featureName) + "&";
+        if (countryId === null)
+            throw new globalThis.Error("The parameter 'countryId' cannot be null.");
+        else if (countryId !== undefined)
+            url += "countryId=" + encodeURIComponent("" + countryId) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processCheck(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processCheck(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<CheckFeatureFlagResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<CheckFeatureFlagResponse>;
+        }));
+    }
+
+    protected processCheck(response: HttpResponseBase): Observable<CheckFeatureFlagResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = CheckFeatureFlagResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
+export interface IGdprClient {
+    /**
+     * @return OK
+     */
+    export(): Observable<GdprExportDto>;
+    /**
+     * @return OK
+     */
+    deleteAccount(): Observable<void>;
+    /**
+     * @return OK
+     */
+    consentsGet(): Observable<UserConsentDto[]>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    consentsPost(body?: GrantConsentCommand | undefined): Observable<void>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class GdprClient implements IGdprClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(APIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @return OK
+     */
+    export(): Observable<GdprExportDto> {
+        let url = this.baseUrl + "/api/v1/Gdpr/export";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processExport(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processExport(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<GdprExportDto>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<GdprExportDto>;
+        }));
+    }
+
+    protected processExport(response: HttpResponseBase): Observable<GdprExportDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = GdprExportDto.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    deleteAccount(): Observable<void> {
+        let url = this.baseUrl + "/api/v1/Gdpr/delete-account";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processDeleteAccount(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processDeleteAccount(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<void>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<void>;
+        }));
+    }
+
+    protected processDeleteAccount(response: HttpResponseBase): Observable<void> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return ObservableOf(null as any);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    consentsGet(): Observable<UserConsentDto[]> {
+        let url = this.baseUrl + "/api/v1/Gdpr/consents";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processConsentsGet(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processConsentsGet(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<UserConsentDto[]>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<UserConsentDto[]>;
+        }));
+    }
+
+    protected processConsentsGet(response: HttpResponseBase): Observable<UserConsentDto[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(UserConsentDto.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return ObservableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    consentsPost(body?: GrantConsentCommand | undefined): Observable<void> {
+        let url = this.baseUrl + "/api/v1/Gdpr/consents";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processConsentsPost(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processConsentsPost(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<void>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<void>;
+        }));
+    }
+
+    protected processConsentsPost(response: HttpResponseBase): Observable<void> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return ObservableOf(null as any);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
+export interface IConsentsClient {
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    withdraw(body?: WithdrawConsentCommand | undefined): Observable<void>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class ConsentsClient implements IConsentsClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(APIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    withdraw(body?: WithdrawConsentCommand | undefined): Observable<void> {
+        let url = this.baseUrl + "/api/v1/Gdpr/consents/withdraw";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processWithdraw(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processWithdraw(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<void>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<void>;
+        }));
+    }
+
+    protected processWithdraw(response: HttpResponseBase): Observable<void> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return ObservableOf(null as any);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
+export interface IV1Client {
+    /**
+     * @return OK
+     */
+    health(): Observable<HealthCheckResponse>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class V1Client implements IV1Client {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(APIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @return OK
+     */
+    health(): Observable<HealthCheckResponse> {
+        let url = this.baseUrl + "/api/v1/Health";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processHealth(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processHealth(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<HealthCheckResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<HealthCheckResponse>;
+        }));
+    }
+
+    protected processHealth(response: HttpResponseBase): Observable<HealthCheckResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = HealthCheckResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 503) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result503: any = null;
+            let resultData503 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result503 = HealthCheckResponse.fromJS(resultData503);
+            return throwException("Service Unavailable", status, ResponseText, Headers, result503);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
 export interface ILanguageClient {
     /**
      * @return OK
@@ -4010,6 +4427,16 @@ export interface IOrderClient {
      * @return OK
      */
     deletePhoto(photoId?: string | undefined, employeeId?: string | undefined): Observable<DeleteOrderPhotoResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    addNote(body?: AddOrderNoteCommand | undefined): Observable<AddOrderNoteResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    reportIssue(body?: ReportOrderIssueCommand | undefined): Observable<ReportOrderIssueResponse>;
 }
 
 @Injectable({
@@ -4936,6 +5363,160 @@ export class OrderClient implements IOrderClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = DeleteOrderPhotoResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    addNote(body?: AddOrderNoteCommand | undefined): Observable<AddOrderNoteResponse> {
+        let url = this.baseUrl + "/api/Order/AddNote";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processAddNote(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processAddNote(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<AddOrderNoteResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<AddOrderNoteResponse>;
+        }));
+    }
+
+    protected processAddNote(response: HttpResponseBase): Observable<AddOrderNoteResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = AddOrderNoteResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    reportIssue(body?: ReportOrderIssueCommand | undefined): Observable<ReportOrderIssueResponse> {
+        let url = this.baseUrl + "/api/Order/ReportIssue";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processReportIssue(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processReportIssue(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<ReportOrderIssueResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<ReportOrderIssueResponse>;
+        }));
+    }
+
+    protected processReportIssue(response: HttpResponseBase): Observable<ReportOrderIssueResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = ReportOrderIssueResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -6928,11 +7509,100 @@ export interface IAddDisputeMessageCommand {
     isStaffMessage: boolean;
 }
 
+export class AddOrderNoteCommand implements IAddOrderNoteCommand {
+    orderId!: string | undefined;
+    employeeId!: string | undefined;
+    content!: string | undefined;
+
+    constructor(data?: IAddOrderNoteCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.employeeId = Data["employeeId"];
+            this.content = Data["content"];
+        }
+    }
+
+    static fromJS(data: any): AddOrderNoteCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new AddOrderNoteCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        data["employeeId"] = this.employeeId;
+        data["content"] = this.content;
+        return data;
+    }
+}
+
+export interface IAddOrderNoteCommand {
+    orderId: string | undefined;
+    employeeId: string | undefined;
+    content: string | undefined;
+}
+
+export class AddOrderNoteResponse implements IAddOrderNoteResponse {
+    noteId!: string | undefined;
+    content!: string | undefined;
+    createdAt!: Date;
+
+    constructor(data?: IAddOrderNoteResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.noteId = Data["noteId"];
+            this.content = Data["content"];
+            this.createdAt = Data["createdAt"] ? new Date(Data["createdAt"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): AddOrderNoteResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new AddOrderNoteResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["noteId"] = this.noteId;
+        data["content"] = this.content;
+        data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IAddOrderNoteResponse {
+    noteId: string | undefined;
+    content: string | undefined;
+    createdAt: Date;
+}
+
 export class AddressDto implements IAddressDto {
     street!: string | undefined;
     city!: string | undefined;
     zipCode!: string | undefined;
     countryId!: string | undefined;
+    state!: string | undefined;
 
     constructor(data?: IAddressDto) {
         if (data) {
@@ -6949,6 +7619,7 @@ export class AddressDto implements IAddressDto {
             this.city = Data["city"];
             this.zipCode = Data["zipCode"];
             this.countryId = Data["countryId"];
+            this.state = Data["state"];
         }
     }
 
@@ -6965,6 +7636,7 @@ export class AddressDto implements IAddressDto {
         data["city"] = this.city;
         data["zipCode"] = this.zipCode;
         data["countryId"] = this.countryId;
+        data["state"] = this.state;
         return data;
     }
 }
@@ -6974,6 +7646,7 @@ export interface IAddressDto {
     city: string | undefined;
     zipCode: string | undefined;
     countryId: string | undefined;
+    state: string | undefined;
 }
 
 export class AdminEmployeeListItem implements IAdminEmployeeListItem {
@@ -7530,6 +8203,46 @@ export class CheckCurrentEmployeeQuery implements ICheckCurrentEmployeeQuery {
 export interface ICheckCurrentEmployeeQuery {
 }
 
+export class CheckFeatureFlagResponse implements ICheckFeatureFlagResponse {
+    featureName!: string | undefined;
+    isEnabled!: boolean;
+
+    constructor(data?: ICheckFeatureFlagResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.featureName = Data["featureName"];
+            this.isEnabled = Data["isEnabled"];
+        }
+    }
+
+    static fromJS(data: any): CheckFeatureFlagResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new CheckFeatureFlagResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["featureName"] = this.featureName;
+        data["isEnabled"] = this.isEnabled;
+        return data;
+    }
+}
+
+export interface ICheckFeatureFlagResponse {
+    featureName: string | undefined;
+    isEnabled: boolean;
+}
+
 export class ClosePayPeriodCommand implements IClosePayPeriodCommand {
     payPeriodId!: string | undefined;
     notes!: string | undefined;
@@ -7776,6 +8489,13 @@ export class ConfirmUserEmailCommand implements IConfirmUserEmailCommand {
 
 export interface IConfirmUserEmailCommand {
     code: string | undefined;
+}
+
+export enum ConsentType {
+    TermsOfService = 0,
+    PrivacyPolicy = 1,
+    MarketingEmails = 2,
+    DataProcessing = 3,
 }
 
 export enum ContractStatus {
@@ -9165,6 +9885,7 @@ export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
     invoiceNumber!: string | undefined;
     variableSymbol!: string | undefined;
     specificSymbol!: string | undefined;
+    paymentReference!: string | undefined;
     totalOrders!: number;
     subTotal!: number;
     bonusAmount!: number;
@@ -9200,6 +9921,7 @@ export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
             this.invoiceNumber = Data["invoiceNumber"];
             this.variableSymbol = Data["variableSymbol"];
             this.specificSymbol = Data["specificSymbol"];
+            this.paymentReference = Data["paymentReference"];
             this.totalOrders = Data["totalOrders"];
             this.subTotal = Data["subTotal"];
             this.bonusAmount = Data["bonusAmount"];
@@ -9239,6 +9961,7 @@ export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
         data["invoiceNumber"] = this.invoiceNumber;
         data["variableSymbol"] = this.variableSymbol;
         data["specificSymbol"] = this.specificSymbol;
+        data["paymentReference"] = this.paymentReference;
         data["totalOrders"] = this.totalOrders;
         data["subTotal"] = this.subTotal;
         data["bonusAmount"] = this.bonusAmount;
@@ -9271,6 +9994,7 @@ export interface IEmployeeInvoiceDetailDto {
     invoiceNumber: string | undefined;
     variableSymbol: string | undefined;
     specificSymbol: string | undefined;
+    paymentReference: string | undefined;
     totalOrders: number;
     subTotal: number;
     bonusAmount: number;
@@ -9296,6 +10020,7 @@ export class EmployeeInvoiceDto implements IEmployeeInvoiceDto {
     payPeriodLabel!: string | undefined;
     invoiceNumber!: string | undefined;
     variableSymbol!: string | undefined;
+    paymentReference!: string | undefined;
     totalOrders!: number;
     subTotal!: number;
     bonusAmount!: number;
@@ -9329,6 +10054,7 @@ export class EmployeeInvoiceDto implements IEmployeeInvoiceDto {
             this.payPeriodLabel = Data["payPeriodLabel"];
             this.invoiceNumber = Data["invoiceNumber"];
             this.variableSymbol = Data["variableSymbol"];
+            this.paymentReference = Data["paymentReference"];
             this.totalOrders = Data["totalOrders"];
             this.subTotal = Data["subTotal"];
             this.bonusAmount = Data["bonusAmount"];
@@ -9362,6 +10088,7 @@ export class EmployeeInvoiceDto implements IEmployeeInvoiceDto {
         data["payPeriodLabel"] = this.payPeriodLabel;
         data["invoiceNumber"] = this.invoiceNumber;
         data["variableSymbol"] = this.variableSymbol;
+        data["paymentReference"] = this.paymentReference;
         data["totalOrders"] = this.totalOrders;
         data["subTotal"] = this.subTotal;
         data["bonusAmount"] = this.bonusAmount;
@@ -9388,6 +10115,7 @@ export interface IEmployeeInvoiceDto {
     payPeriodLabel: string | undefined;
     invoiceNumber: string | undefined;
     variableSymbol: string | undefined;
+    paymentReference: string | undefined;
     totalOrders: number;
     subTotal: number;
     bonusAmount: number;
@@ -9424,6 +10152,7 @@ export class EmployeeItem implements IEmployeeItem {
     city!: string | undefined;
     zipCode!: string | undefined;
     countryId!: string | undefined;
+    state!: string | undefined;
     nationalityId!: string | undefined;
     passportId!: string | undefined;
     taxId!: string | undefined;
@@ -9456,6 +10185,7 @@ export class EmployeeItem implements IEmployeeItem {
             this.city = Data["city"];
             this.zipCode = Data["zipCode"];
             this.countryId = Data["countryId"];
+            this.state = Data["state"];
             this.nationalityId = Data["nationalityId"];
             this.passportId = Data["passportId"];
             this.taxId = Data["taxId"];
@@ -9469,7 +10199,7 @@ export class EmployeeItem implements IEmployeeItem {
                 this.availability = {} as any;
                 for (let key in Data["availability"]) {
                     if (Data["availability"].hasOwnProperty(key))
-                        (this.availability as any)![key] = Data["availability"][key] ? Data["availability"][key].map((i: any) => TimeRange.fromJS(i)) : undefined as any;
+                        (this.availability as any)![key] = Data["availability"][key] ? Data["availability"][key].map((i: any) => TimeRange.fromJS(i)) : [];
                 }
             }
         }
@@ -9494,6 +10224,7 @@ export class EmployeeItem implements IEmployeeItem {
         data["city"] = this.city;
         data["zipCode"] = this.zipCode;
         data["countryId"] = this.countryId;
+        data["state"] = this.state;
         data["nationalityId"] = this.nationalityId;
         data["passportId"] = this.passportId;
         data["taxId"] = this.taxId;
@@ -9525,6 +10256,7 @@ export interface IEmployeeItem {
     city: string | undefined;
     zipCode: string | undefined;
     countryId: string | undefined;
+    state: string | undefined;
     nationalityId: string | undefined;
     passportId: string | undefined;
     taxId: string | undefined;
@@ -9626,6 +10358,554 @@ export interface IEmployeePayConfigDto {
     currencyId: string | undefined;
     currencyCode: string | undefined;
     description: string | undefined;
+    createdOn: Date;
+}
+
+export class GdprExportAddressDto implements IGdprExportAddressDto {
+    street!: string | undefined;
+    city!: string | undefined;
+    zipCode!: string | undefined;
+    state!: string | undefined;
+    countryId!: string | undefined;
+
+    constructor(data?: IGdprExportAddressDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.street = Data["street"];
+            this.city = Data["city"];
+            this.zipCode = Data["zipCode"];
+            this.state = Data["state"];
+            this.countryId = Data["countryId"];
+        }
+    }
+
+    static fromJS(data: any): GdprExportAddressDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new GdprExportAddressDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["street"] = this.street;
+        data["city"] = this.city;
+        data["zipCode"] = this.zipCode;
+        data["state"] = this.state;
+        data["countryId"] = this.countryId;
+        return data;
+    }
+}
+
+export interface IGdprExportAddressDto {
+    street: string | undefined;
+    city: string | undefined;
+    zipCode: string | undefined;
+    state: string | undefined;
+    countryId: string | undefined;
+}
+
+export class GdprExportConsentDto implements IGdprExportConsentDto {
+    id!: string | undefined;
+    consentType!: ConsentType;
+    isGranted!: boolean;
+    grantedAt!: Date | undefined;
+    withdrawnAt!: Date | undefined;
+
+    constructor(data?: IGdprExportConsentDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.consentType = Data["consentType"];
+            this.isGranted = Data["isGranted"];
+            this.grantedAt = Data["grantedAt"] ? new Date(Data["grantedAt"].toString()) : undefined as any;
+            this.withdrawnAt = Data["withdrawnAt"] ? new Date(Data["withdrawnAt"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): GdprExportConsentDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new GdprExportConsentDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["consentType"] = this.consentType;
+        data["isGranted"] = this.isGranted;
+        data["grantedAt"] = this.grantedAt ? this.grantedAt.toISOString() : undefined as any;
+        data["withdrawnAt"] = this.withdrawnAt ? this.withdrawnAt.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IGdprExportConsentDto {
+    id: string | undefined;
+    consentType: ConsentType;
+    isGranted: boolean;
+    grantedAt: Date | undefined;
+    withdrawnAt: Date | undefined;
+}
+
+export class GdprExportDocumentDto implements IGdprExportDocumentDto {
+    id!: string | undefined;
+    fileName!: string | undefined;
+    documentType!: string | undefined;
+    createdOn!: Date;
+
+    constructor(data?: IGdprExportDocumentDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.fileName = Data["fileName"];
+            this.documentType = Data["documentType"];
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): GdprExportDocumentDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new GdprExportDocumentDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["fileName"] = this.fileName;
+        data["documentType"] = this.documentType;
+        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IGdprExportDocumentDto {
+    id: string | undefined;
+    fileName: string | undefined;
+    documentType: string | undefined;
+    createdOn: Date;
+}
+
+export class GdprExportDto implements IGdprExportDto {
+    profile!: GdprExportProfileDto;
+    address!: GdprExportAddressDto;
+    employee!: GdprExportEmployeeDto;
+    orders!: GdprExportOrderDto[] | undefined;
+    documents!: GdprExportDocumentDto[] | undefined;
+    invoices!: GdprExportInvoiceDto[] | undefined;
+    consents!: GdprExportConsentDto[] | undefined;
+    metadata!: GdprExportMetadataDto;
+
+    constructor(data?: IGdprExportDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.profile = Data["profile"] ? GdprExportProfileDto.fromJS(Data["profile"]) : undefined as any;
+            this.address = Data["address"] ? GdprExportAddressDto.fromJS(Data["address"]) : undefined as any;
+            this.employee = Data["employee"] ? GdprExportEmployeeDto.fromJS(Data["employee"]) : undefined as any;
+            if (Array.isArray(Data["orders"])) {
+                this.orders = [] as any;
+                for (let item of Data["orders"])
+                    this.orders!.push(GdprExportOrderDto.fromJS(item));
+            }
+            if (Array.isArray(Data["documents"])) {
+                this.documents = [] as any;
+                for (let item of Data["documents"])
+                    this.documents!.push(GdprExportDocumentDto.fromJS(item));
+            }
+            if (Array.isArray(Data["invoices"])) {
+                this.invoices = [] as any;
+                for (let item of Data["invoices"])
+                    this.invoices!.push(GdprExportInvoiceDto.fromJS(item));
+            }
+            if (Array.isArray(Data["consents"])) {
+                this.consents = [] as any;
+                for (let item of Data["consents"])
+                    this.consents!.push(GdprExportConsentDto.fromJS(item));
+            }
+            this.metadata = Data["metadata"] ? GdprExportMetadataDto.fromJS(Data["metadata"]) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): GdprExportDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new GdprExportDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["profile"] = this.profile ? this.profile.toJSON() : undefined as any;
+        data["address"] = this.address ? this.address.toJSON() : undefined as any;
+        data["employee"] = this.employee ? this.employee.toJSON() : undefined as any;
+        if (Array.isArray(this.orders)) {
+            data["orders"] = [];
+            for (let item of this.orders)
+                data["orders"].push(item ? item.toJSON() : undefined as any);
+        }
+        if (Array.isArray(this.documents)) {
+            data["documents"] = [];
+            for (let item of this.documents)
+                data["documents"].push(item ? item.toJSON() : undefined as any);
+        }
+        if (Array.isArray(this.invoices)) {
+            data["invoices"] = [];
+            for (let item of this.invoices)
+                data["invoices"].push(item ? item.toJSON() : undefined as any);
+        }
+        if (Array.isArray(this.consents)) {
+            data["consents"] = [];
+            for (let item of this.consents)
+                data["consents"].push(item ? item.toJSON() : undefined as any);
+        }
+        data["metadata"] = this.metadata ? this.metadata.toJSON() : undefined as any;
+        return data;
+    }
+}
+
+export interface IGdprExportDto {
+    profile: GdprExportProfileDto;
+    address: GdprExportAddressDto;
+    employee: GdprExportEmployeeDto;
+    orders: GdprExportOrderDto[] | undefined;
+    documents: GdprExportDocumentDto[] | undefined;
+    invoices: GdprExportInvoiceDto[] | undefined;
+    consents: GdprExportConsentDto[] | undefined;
+    metadata: GdprExportMetadataDto;
+}
+
+export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
+    id!: string | undefined;
+    taxId!: string | undefined;
+    iban!: string | undefined;
+    passportId!: string | undefined;
+    nationalityId!: string | undefined;
+    emergencyContactName!: string | undefined;
+    emergencyContactPhone!: string | undefined;
+    preferredCurrencyCode!: string | undefined;
+    averageRating!: number;
+    contractStatus!: ContractStatus;
+    createdOn!: Date;
+
+    constructor(data?: IGdprExportEmployeeDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.taxId = Data["taxId"];
+            this.iban = Data["iban"];
+            this.passportId = Data["passportId"];
+            this.nationalityId = Data["nationalityId"];
+            this.emergencyContactName = Data["emergencyContactName"];
+            this.emergencyContactPhone = Data["emergencyContactPhone"];
+            this.preferredCurrencyCode = Data["preferredCurrencyCode"];
+            this.averageRating = Data["averageRating"];
+            this.contractStatus = Data["contractStatus"];
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): GdprExportEmployeeDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new GdprExportEmployeeDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["taxId"] = this.taxId;
+        data["iban"] = this.iban;
+        data["passportId"] = this.passportId;
+        data["nationalityId"] = this.nationalityId;
+        data["emergencyContactName"] = this.emergencyContactName;
+        data["emergencyContactPhone"] = this.emergencyContactPhone;
+        data["preferredCurrencyCode"] = this.preferredCurrencyCode;
+        data["averageRating"] = this.averageRating;
+        data["contractStatus"] = this.contractStatus;
+        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IGdprExportEmployeeDto {
+    id: string | undefined;
+    taxId: string | undefined;
+    iban: string | undefined;
+    passportId: string | undefined;
+    nationalityId: string | undefined;
+    emergencyContactName: string | undefined;
+    emergencyContactPhone: string | undefined;
+    preferredCurrencyCode: string | undefined;
+    averageRating: number;
+    contractStatus: ContractStatus;
+    createdOn: Date;
+}
+
+export class GdprExportInvoiceDto implements IGdprExportInvoiceDto {
+    id!: string | undefined;
+    invoiceNumber!: string | undefined;
+    totalAmount!: number;
+    status!: EmployeeInvoiceStatus;
+    createdOn!: Date;
+
+    constructor(data?: IGdprExportInvoiceDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.invoiceNumber = Data["invoiceNumber"];
+            this.totalAmount = Data["totalAmount"];
+            this.status = Data["status"];
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): GdprExportInvoiceDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new GdprExportInvoiceDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["invoiceNumber"] = this.invoiceNumber;
+        data["totalAmount"] = this.totalAmount;
+        data["status"] = this.status;
+        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IGdprExportInvoiceDto {
+    id: string | undefined;
+    invoiceNumber: string | undefined;
+    totalAmount: number;
+    status: EmployeeInvoiceStatus;
+    createdOn: Date;
+}
+
+export class GdprExportMetadataDto implements IGdprExportMetadataDto {
+    exportedAt!: Date;
+    exportedBy!: string | undefined;
+    dataFormat!: string | undefined;
+
+    constructor(data?: IGdprExportMetadataDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.exportedAt = Data["exportedAt"] ? new Date(Data["exportedAt"].toString()) : undefined as any;
+            this.exportedBy = Data["exportedBy"];
+            this.dataFormat = Data["dataFormat"];
+        }
+    }
+
+    static fromJS(data: any): GdprExportMetadataDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new GdprExportMetadataDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["exportedAt"] = this.exportedAt ? this.exportedAt.toISOString() : undefined as any;
+        data["exportedBy"] = this.exportedBy;
+        data["dataFormat"] = this.dataFormat;
+        return data;
+    }
+}
+
+export interface IGdprExportMetadataDto {
+    exportedAt: Date;
+    exportedBy: string | undefined;
+    dataFormat: string | undefined;
+}
+
+export class GdprExportOrderDto implements IGdprExportOrderDto {
+    id!: string | undefined;
+    displayOrderNumber!: string | undefined;
+    customerName!: string | undefined;
+    customerEmail!: string | undefined;
+    status!: OrderStatus;
+    totalPrice!: number;
+    cleaningDateTime!: Date;
+    createdOn!: Date;
+
+    constructor(data?: IGdprExportOrderDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.displayOrderNumber = Data["displayOrderNumber"];
+            this.customerName = Data["customerName"];
+            this.customerEmail = Data["customerEmail"];
+            this.status = Data["status"];
+            this.totalPrice = Data["totalPrice"];
+            this.cleaningDateTime = Data["cleaningDateTime"] ? new Date(Data["cleaningDateTime"].toString()) : undefined as any;
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): GdprExportOrderDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new GdprExportOrderDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["displayOrderNumber"] = this.displayOrderNumber;
+        data["customerName"] = this.customerName;
+        data["customerEmail"] = this.customerEmail;
+        data["status"] = this.status;
+        data["totalPrice"] = this.totalPrice;
+        data["cleaningDateTime"] = this.cleaningDateTime ? this.cleaningDateTime.toISOString() : undefined as any;
+        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IGdprExportOrderDto {
+    id: string | undefined;
+    displayOrderNumber: string | undefined;
+    customerName: string | undefined;
+    customerEmail: string | undefined;
+    status: OrderStatus;
+    totalPrice: number;
+    cleaningDateTime: Date;
+    createdOn: Date;
+}
+
+export class GdprExportProfileDto implements IGdprExportProfileDto {
+    id!: string | undefined;
+    firstName!: string | undefined;
+    lastName!: string | undefined;
+    email!: string | undefined;
+    phoneNumber!: string | undefined;
+    birthDate!: Date | undefined;
+    preferredLanguageCode!: string | undefined;
+    createdOn!: Date;
+
+    constructor(data?: IGdprExportProfileDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.firstName = Data["firstName"];
+            this.lastName = Data["lastName"];
+            this.email = Data["email"];
+            this.phoneNumber = Data["phoneNumber"];
+            this.birthDate = Data["birthDate"] ? new Date(Data["birthDate"].toString()) : undefined as any;
+            this.preferredLanguageCode = Data["preferredLanguageCode"];
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): GdprExportProfileDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new GdprExportProfileDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["firstName"] = this.firstName;
+        data["lastName"] = this.lastName;
+        data["email"] = this.email;
+        data["phoneNumber"] = this.phoneNumber;
+        data["birthDate"] = this.birthDate ? formatDate(this.birthDate) : undefined as any;
+        data["preferredLanguageCode"] = this.preferredLanguageCode;
+        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IGdprExportProfileDto {
+    id: string | undefined;
+    firstName: string | undefined;
+    lastName: string | undefined;
+    email: string | undefined;
+    phoneNumber: string | undefined;
+    birthDate: Date | undefined;
+    preferredLanguageCode: string | undefined;
     createdOn: Date;
 }
 
@@ -10101,6 +11381,50 @@ export interface IGoogleAuthCommand {
     email: string | undefined;
     firstName: string | undefined;
     lastName: string | undefined;
+}
+
+export class GrantConsentCommand implements IGrantConsentCommand {
+    consentType!: ConsentType;
+    ipAddress!: string | undefined;
+    userAgent!: string | undefined;
+
+    constructor(data?: IGrantConsentCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.consentType = Data["consentType"];
+            this.ipAddress = Data["ipAddress"];
+            this.userAgent = Data["userAgent"];
+        }
+    }
+
+    static fromJS(data: any): GrantConsentCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new GrantConsentCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["consentType"] = this.consentType;
+        data["ipAddress"] = this.ipAddress;
+        data["userAgent"] = this.userAgent;
+        return data;
+    }
+}
+
+export interface IGrantConsentCommand {
+    consentType: ConsentType;
+    ipAddress: string | undefined;
+    userAgent: string | undefined;
 }
 
 export class HealthCheckResponse implements IHealthCheckResponse {
@@ -10775,6 +12099,62 @@ export interface IOrderEmployeePayDto {
     createdOn: Date;
 }
 
+export class OrderIssueDto implements IOrderIssueDto {
+    id!: string | undefined;
+    reportedByEmployeeId!: string | undefined;
+    description!: string | undefined;
+    isResolved!: boolean;
+    resolvedAt!: Date | undefined;
+    createdOn!: Date;
+
+    constructor(data?: IOrderIssueDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.reportedByEmployeeId = Data["reportedByEmployeeId"];
+            this.description = Data["description"];
+            this.isResolved = Data["isResolved"];
+            this.resolvedAt = Data["resolvedAt"] ? new Date(Data["resolvedAt"].toString()) : undefined as any;
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): OrderIssueDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new OrderIssueDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["reportedByEmployeeId"] = this.reportedByEmployeeId;
+        data["description"] = this.description;
+        data["isResolved"] = this.isResolved;
+        data["resolvedAt"] = this.resolvedAt ? this.resolvedAt.toISOString() : undefined as any;
+        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IOrderIssueDto {
+    id: string | undefined;
+    reportedByEmployeeId: string | undefined;
+    description: string | undefined;
+    isResolved: boolean;
+    resolvedAt: Date | undefined;
+    createdOn: Date;
+}
+
 export class OrderItem implements IOrderItem {
     id!: string | undefined;
     displayOrderNumber!: string | undefined;
@@ -10806,6 +12186,8 @@ export class OrderItem implements IOrderItem {
     updatedOn!: Date | undefined;
     assignedEmployees!: AssignedEmployeeDto[] | undefined;
     receiptNumber!: string | undefined;
+    orderNotes!: OrderNoteDto[] | undefined;
+    orderIssues!: OrderIssueDto[] | undefined;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -10870,6 +12252,16 @@ export class OrderItem implements IOrderItem {
                     this.assignedEmployees!.push(AssignedEmployeeDto.fromJS(item));
             }
             this.receiptNumber = Data["receiptNumber"];
+            if (Array.isArray(Data["orderNotes"])) {
+                this.orderNotes = [] as any;
+                for (let item of Data["orderNotes"])
+                    this.orderNotes!.push(OrderNoteDto.fromJS(item));
+            }
+            if (Array.isArray(Data["orderIssues"])) {
+                this.orderIssues = [] as any;
+                for (let item of Data["orderIssues"])
+                    this.orderIssues!.push(OrderIssueDto.fromJS(item));
+            }
         }
     }
 
@@ -10934,6 +12326,16 @@ export class OrderItem implements IOrderItem {
                 data["assignedEmployees"].push(item ? item.toJSON() : undefined as any);
         }
         data["receiptNumber"] = this.receiptNumber;
+        if (Array.isArray(this.orderNotes)) {
+            data["orderNotes"] = [];
+            for (let item of this.orderNotes)
+                data["orderNotes"].push(item ? item.toJSON() : undefined as any);
+        }
+        if (Array.isArray(this.orderIssues)) {
+            data["orderIssues"] = [];
+            for (let item of this.orderIssues)
+                data["orderIssues"].push(item ? item.toJSON() : undefined as any);
+        }
         return data;
     }
 }
@@ -10969,6 +12371,8 @@ export interface IOrderItem {
     updatedOn: Date | undefined;
     assignedEmployees: AssignedEmployeeDto[] | undefined;
     receiptNumber: string | undefined;
+    orderNotes: OrderNoteDto[] | undefined;
+    orderIssues: OrderIssueDto[] | undefined;
 }
 
 export class OrderListItem implements IOrderListItem {
@@ -11145,6 +12549,54 @@ export interface IOrderListItem {
     availableSpots: number;
     assignedEmployeesCount: number;
     hasAvailableSpots: boolean;
+}
+
+export class OrderNoteDto implements IOrderNoteDto {
+    id!: string | undefined;
+    employeeId!: string | undefined;
+    content!: string | undefined;
+    createdOn!: Date;
+
+    constructor(data?: IOrderNoteDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.employeeId = Data["employeeId"];
+            this.content = Data["content"];
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): OrderNoteDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new OrderNoteDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["employeeId"] = this.employeeId;
+        data["content"] = this.content;
+        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IOrderNoteDto {
+    id: string | undefined;
+    employeeId: string | undefined;
+    content: string | undefined;
+    createdOn: Date;
 }
 
 export enum OrderStatus {
@@ -12387,6 +13839,94 @@ export interface IRejectEmployeeResponse {
     rejectedAt: Date;
 }
 
+export class ReportOrderIssueCommand implements IReportOrderIssueCommand {
+    orderId!: string | undefined;
+    employeeId!: string | undefined;
+    description!: string | undefined;
+
+    constructor(data?: IReportOrderIssueCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.employeeId = Data["employeeId"];
+            this.description = Data["description"];
+        }
+    }
+
+    static fromJS(data: any): ReportOrderIssueCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new ReportOrderIssueCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        data["employeeId"] = this.employeeId;
+        data["description"] = this.description;
+        return data;
+    }
+}
+
+export interface IReportOrderIssueCommand {
+    orderId: string | undefined;
+    employeeId: string | undefined;
+    description: string | undefined;
+}
+
+export class ReportOrderIssueResponse implements IReportOrderIssueResponse {
+    issueId!: string | undefined;
+    description!: string | undefined;
+    createdAt!: Date;
+
+    constructor(data?: IReportOrderIssueResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.issueId = Data["issueId"];
+            this.description = Data["description"];
+            this.createdAt = Data["createdAt"] ? new Date(Data["createdAt"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): ReportOrderIssueResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new ReportOrderIssueResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["issueId"] = this.issueId;
+        data["description"] = this.description;
+        data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IReportOrderIssueResponse {
+    issueId: string | undefined;
+    description: string | undefined;
+    createdAt: Date;
+}
+
 export class RequestPasswordChangeCommand implements IRequestPasswordChangeCommand {
     email!: string | undefined;
     language!: string | undefined;
@@ -13617,6 +15157,7 @@ export class UpdateEmployeeCommand implements IUpdateEmployeeCommand {
     city!: string | undefined;
     zipCode!: string | undefined;
     countryId!: string | undefined;
+    state!: string | undefined;
     nationalityId!: string | undefined;
     phone!: string | undefined;
     email!: string | undefined;
@@ -13648,6 +15189,7 @@ export class UpdateEmployeeCommand implements IUpdateEmployeeCommand {
             this.city = Data["city"];
             this.zipCode = Data["zipCode"];
             this.countryId = Data["countryId"];
+            this.state = Data["state"];
             this.nationalityId = Data["nationalityId"];
             this.phone = Data["phone"];
             this.email = Data["email"];
@@ -13666,7 +15208,7 @@ export class UpdateEmployeeCommand implements IUpdateEmployeeCommand {
                 this.availability = {} as any;
                 for (let key in Data["availability"]) {
                     if (Data["availability"].hasOwnProperty(key))
-                        (this.availability as any)![key] = Data["availability"][key] ? Data["availability"][key].map((i: any) => UpdateEmployeeTimeRangeDto.fromJS(i)) : undefined as any;
+                        (this.availability as any)![key] = Data["availability"][key] ? Data["availability"][key].map((i: any) => UpdateEmployeeTimeRangeDto.fromJS(i)) : [];
                 }
             }
         }
@@ -13689,6 +15231,7 @@ export class UpdateEmployeeCommand implements IUpdateEmployeeCommand {
         data["city"] = this.city;
         data["zipCode"] = this.zipCode;
         data["countryId"] = this.countryId;
+        data["state"] = this.state;
         data["nationalityId"] = this.nationalityId;
         data["phone"] = this.phone;
         data["email"] = this.email;
@@ -13723,6 +15266,7 @@ export interface IUpdateEmployeeCommand {
     city: string | undefined;
     zipCode: string | undefined;
     countryId: string | undefined;
+    state: string | undefined;
     nationalityId: string | undefined;
     phone: string | undefined;
     email: string | undefined;
@@ -14068,6 +15612,62 @@ export interface IUploadOrderPhotoResponse {
     capturedAt: Date;
 }
 
+export class UserConsentDto implements IUserConsentDto {
+    id!: string | undefined;
+    consentType!: ConsentType;
+    isGranted!: boolean;
+    grantedAt!: Date | undefined;
+    withdrawnAt!: Date | undefined;
+    createdOn!: Date;
+
+    constructor(data?: IUserConsentDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.consentType = Data["consentType"];
+            this.isGranted = Data["isGranted"];
+            this.grantedAt = Data["grantedAt"] ? new Date(Data["grantedAt"].toString()) : undefined as any;
+            this.withdrawnAt = Data["withdrawnAt"] ? new Date(Data["withdrawnAt"].toString()) : undefined as any;
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): UserConsentDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new UserConsentDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["consentType"] = this.consentType;
+        data["isGranted"] = this.isGranted;
+        data["grantedAt"] = this.grantedAt ? this.grantedAt.toISOString() : undefined as any;
+        data["withdrawnAt"] = this.withdrawnAt ? this.withdrawnAt.toISOString() : undefined as any;
+        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IUserConsentDto {
+    id: string | undefined;
+    consentType: ConsentType;
+    isGranted: boolean;
+    grantedAt: Date | undefined;
+    withdrawnAt: Date | undefined;
+    createdOn: Date;
+}
+
 export class UserItem implements IUserItem {
     id!: string | undefined;
     isActive!: boolean;
@@ -14354,6 +15954,42 @@ export interface IWeeklyTimeSpent {
     totalMinutes: number;
     ordersCompleted: number;
     averageMinutesPerOrder: number;
+}
+
+export class WithdrawConsentCommand implements IWithdrawConsentCommand {
+    consentType!: ConsentType;
+
+    constructor(data?: IWithdrawConsentCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.consentType = Data["consentType"];
+        }
+    }
+
+    static fromJS(data: any): WithdrawConsentCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new WithdrawConsentCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["consentType"] = this.consentType;
+        return data;
+    }
+}
+
+export interface IWithdrawConsentCommand {
+    consentType: ConsentType;
 }
 
 function formatDate(d: Date) {

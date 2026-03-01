@@ -300,7 +300,7 @@ export class ReportsComponent implements OnInit {
   }
 
   private formatDate(date: Date): string {
-    return date.toLocaleDateString('cs-CZ', {
+    return date.toLocaleDateString('en-GB', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',

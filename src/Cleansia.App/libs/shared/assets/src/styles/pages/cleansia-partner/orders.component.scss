@@ -16,25 +16,19 @@
   }
 
   &__header {
-    text-align: center;
-
     .header-content {
       display: flex;
       align-items: center;
       justify-content: left;
-      gap: 2rem;
+      gap: 1rem;
 
       @media (max-width: 768px) {
-        flex-direction: column;
-        align-items: stretch;
+        gap: 0.5rem;
       }
 
       .header-text {
         text-align: left;
-
-        @media (max-width: 768px) {
-          text-align: center;
-        }
+        flex: 1;
       }
 
       // Help restore icon button in header
@@ -42,8 +36,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 40px;
-        height: 40px;
+        width: 36px;
+        height: 36px;
         background: rgba(var(--cleansia-primary-rgb), 0.08);
         border: 1px solid var(--cleansia-primary-200);
         border-radius: 8px;
@@ -56,11 +50,10 @@
           background: rgba(var(--cleansia-primary-rgb), 0.15);
           border-color: var(--cleansia-primary-300);
           color: var(--cleansia-primary-700);
-          transform: translateY(-1px);
         }
 
         i {
-          font-size: 1.25rem;
+          font-size: 1.125rem;
         }
       }
     }
@@ -70,6 +63,11 @@
     color: var(--cleansia-text-secondary);
     font-size: 1rem;
     line-height: 1.5;
+
+    @media (max-width: 768px) {
+      font-size: 0.875rem;
+      line-height: 1.4;
+    }
   }
 
   &__table {
@@ -693,6 +691,17 @@ cleansia-partner-orders {
   ::ng-deep cleansia-calendar {
     .p-calendar {
       overflow: visible !important;
+    }
+  }
+}
+
+// Clickable table rows for navigation
+.cleansia-orders {
+  ::ng-deep cleansia-table .table__row {
+    cursor: pointer;
+
+    &:hover td {
+      background: var(--cleansia-primary-50, #f0f9ff);
     }
   }
 }

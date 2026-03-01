@@ -50,9 +50,9 @@ export function getOrderTableDefinition(
               ? row.cleaningDateTime
               : new Date(row.cleaningDateTime);
           return (
-            date.toLocaleDateString('cs-CZ') +
+            date.toLocaleDateString('en-GB') +
             ' ' +
-            date.toLocaleTimeString('cs-CZ', {
+            date.toLocaleTimeString('en-GB', {
               hour: '2-digit',
               minute: '2-digit',
             })
@@ -67,7 +67,7 @@ export function getOrderTableDefinition(
         width: '10%',
         getValue: (row: OrderListItem) => {
           if (!row) return '';
-          const symbol = row.currency?.symbol || 'CZK';
+          const symbol = row.currency?.symbol || 'EUR';
           return `${row.totalPrice?.toFixed(2)} ${symbol}`;
         },
       },

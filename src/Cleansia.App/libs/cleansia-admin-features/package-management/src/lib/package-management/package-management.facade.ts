@@ -86,9 +86,9 @@ export class PackageManagementFacade {
 
   formatCurrency(value: number | undefined): string {
     if (value === undefined || value === null) return '';
-    return new Intl.NumberFormat('cs-CZ', {
+    return new Intl.NumberFormat('en-GB', {
       style: 'currency',
-      currency: 'CZK',
+      currency: 'EUR',
     }).format(value);
   }
 

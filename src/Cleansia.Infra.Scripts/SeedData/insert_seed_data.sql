@@ -63,7 +63,8 @@ INSERT INTO public."Languages" (
 VALUES
   (generate_ulid():: TEXT, true, 'en', 'English'),
   (generate_ulid():: TEXT, true, 'ru', 'Русский'),
-  (generate_ulid():: TEXT, true, 'cs', 'Čeština');
+  (generate_ulid():: TEXT, true, 'cs', 'Čeština'),
+  (generate_ulid():: TEXT, true, 'pl', 'Polski');
 
 -- 3. COUNTRIES
 INSERT INTO public."Countries" (
@@ -400,112 +401,112 @@ VALUES
 INSERT INTO public."Employees" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy",
-  "DeactivatedOn", "ICO", "IBAN", "AverageRating",
+  "DeactivatedOn", "TaxId", "IBAN", "AverageRating",
   "ComplaintsCount", "ContractStatus", "PassportId",
   "NationalityId", "EmergencyContactName", "EmergencyContactPhone",
-  "Availability", "UserId"
+  "Availability", "UserId", "PreferredCurrencyCode"
 )
 VALUES
-  -- Employee 1: Kateřina Novotná
+  -- Employee 1: Kateřina Novotná (Active, approved)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   '87654321', 'CZ6508000000192000145399', 4.8, 0, 1, 'P123456789',
+   '87654321', 'CZ6508000000192000145399', 4.8, 0, 2, 'P123456789',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE'),
    'Jana Novotná', '+420777888999',
    '{"Monday":[{"Start":"09:00:00","End":"17:00:00"}],"Tuesday":[{"Start":"09:00:00","End":"17:00:00"}],"Wednesday":[{"Start":"09:00:00","End":"17:00:00"}],"Thursday":[{"Start":"09:00:00","End":"17:00:00"}],"Friday":[{"Start":"09:00:00","End":"17:00:00"}]}',
-   (SELECT "Id" FROM public."Users" WHERE "Email" = 'katerina.novotna@cleansia.cz')),
+   (SELECT "Id" FROM public."Users" WHERE "Email" = 'katerina.novotna@cleansia.cz'), 'CZK'),
 
-  -- Employee 2: Michal Krejčí
+  -- Employee 2: Michal Krejčí (Active, approved)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   '87654322', 'CZ6508000000192000145400', 4.6, 1, 1, 'P987654321',
+   '87654322', 'CZ6508000000192000145400', 4.6, 1, 2, 'P987654321',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE'),
    'Eva Krejčí', '+420777888998',
    '{"Monday":[{"Start":"08:00:00","End":"16:00:00"}],"Tuesday":[{"Start":"08:00:00","End":"16:00:00"}],"Wednesday":[{"Start":"08:00:00","End":"16:00:00"}],"Thursday":[{"Start":"08:00:00","End":"16:00:00"}],"Friday":[{"Start":"08:00:00","End":"16:00:00"}],"Saturday":[{"Start":"10:00:00","End":"14:00:00"}]}',
-   (SELECT "Id" FROM public."Users" WHERE "Email" = 'michal.krejci@cleansia.cz')),
+   (SELECT "Id" FROM public."Users" WHERE "Email" = 'michal.krejci@cleansia.cz'), 'CZK'),
 
-  -- Employee 3: Zuzana Horáková
+  -- Employee 3: Zuzana Horáková (Active, approved)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   '87654323', 'CZ6508000000192000145401', 4.9, 0, 1, 'P456789123',
+   '87654323', 'CZ6508000000192000145401', 4.9, 0, 2, 'P456789123',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE'),
    'Martin Horák', '+420777888997',
    '{"Monday":[{"Start":"10:00:00","End":"18:00:00"}],"Tuesday":[{"Start":"10:00:00","End":"18:00:00"}],"Wednesday":[{"Start":"10:00:00","End":"18:00:00"}],"Thursday":[{"Start":"10:00:00","End":"18:00:00"}],"Friday":[{"Start":"10:00:00","End":"18:00:00"}]}',
-   (SELECT "Id" FROM public."Users" WHERE "Email" = 'zuzana.horakova@cleansia.cz')),
+   (SELECT "Id" FROM public."Users" WHERE "Email" = 'zuzana.horakova@cleansia.cz'), 'CZK'),
 
-  -- Employee 4: Pavel Veselý
+  -- Employee 4: Pavel Veselý (Active, approved)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   '87654324', 'CZ6508000000192000145402', 4.5, 2, 1, 'P789123456',
+   '87654324', 'CZ6508000000192000145402', 4.5, 2, 2, 'P789123456',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE'),
    'Petra Veselá', '+420777888996',
    '{"Monday":[{"Start":"07:00:00","End":"15:00:00"}],"Tuesday":[{"Start":"07:00:00","End":"15:00:00"}],"Wednesday":[{"Start":"07:00:00","End":"15:00:00"}],"Thursday":[{"Start":"07:00:00","End":"15:00:00"}],"Friday":[{"Start":"07:00:00","End":"15:00:00"}],"Saturday":[{"Start":"09:00:00","End":"13:00:00"}]}',
-   (SELECT "Id" FROM public."Users" WHERE "Email" = 'pavel.vesely@cleansia.cz')),
+   (SELECT "Id" FROM public."Users" WHERE "Email" = 'pavel.vesely@cleansia.cz'), 'CZK'),
 
-  -- Employee 5: Lenka Marková
+  -- Employee 5: Lenka Marková (Active, approved)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   '87654325', 'CZ6508000000192000145403', 4.7, 0, 1, 'P321654987',
+   '87654325', 'CZ6508000000192000145403', 4.7, 0, 2, 'P321654987',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE'),
    'Tomáš Marek', '+420777888995',
    '{"Monday":[{"Start":"09:30:00","End":"17:30:00"}],"Tuesday":[{"Start":"09:30:00","End":"17:30:00"}],"Wednesday":[{"Start":"09:30:00","End":"17:30:00"}],"Thursday":[{"Start":"09:30:00","End":"17:30:00"}],"Friday":[{"Start":"09:30:00","End":"17:30:00"}],"Sunday":[{"Start":"12:00:00","End":"16:00:00"}]}',
-   (SELECT "Id" FROM public."Users" WHERE "Email" = 'lenka.markova@cleansia.cz'));
+   (SELECT "Id" FROM public."Users" WHERE "Email" = 'lenka.markova@cleansia.cz'), 'CZK');
 
 -- 10. ADDRESSES
 INSERT INTO public."Addresses" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy",
-  "DeactivatedOn", "Street", "City", "ZipCode", "CountryId"
+  "DeactivatedOn", "Street", "City", "ZipCode", "State", "CountryId"
 )
 VALUES
   -- Customer Addresses in Prague
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'Wenceslas Square 1', 'Prague', '11000',
+   'Wenceslas Square 1', 'Prague', '11000', 'Prague',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE')),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'Národní třída 25', 'Prague', '11000',
+   'Národní třída 25', 'Prague', '11000', 'Prague',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE')),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'Vinohrady 456', 'Prague', '12000',
+   'Vinohrady 456', 'Prague', '12000', 'Prague',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE')),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'Karlínské náměstí 12', 'Prague', '18600',
+   'Karlínské náměstí 12', 'Prague', '18600', 'Prague',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE')),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'Smíchov 789', 'Prague', '15000',
+   'Smíchov 789', 'Prague', '15000', 'Prague',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE')),
 
   -- Customer Addresses in Other Czech Cities
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'Masarykova 567', 'Brno', '60200',
+   'Masarykova 567', 'Brno', '60200', 'South Moravian',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE')),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'Stodolní 123', 'Ostrava', '70200',
+   'Stodolní 123', 'Ostrava', '70200', 'Moravian-Silesian',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE')),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'Americká 45', 'Plzen', '30100',
+   'Americká 45', 'Plzen', '30100', 'Plzeň',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE')),
 
-  -- Employee Addresses
+  -- Employee Work Area Addresses
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'Dejvická 321', 'Prague', '16000',
-   (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE')),
-
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'Anděl 654', 'Prague', '15000',
+   'Dejvická 321', 'Prague', '16000', 'Prague',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE')),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'Náměstí Míru 987', 'Prague', '12000',
+   'Anděl 654', 'Prague', '15000', 'Prague',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE')),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'Florenc 147', 'Prague', '18600',
+   'Náměstí Míru 987', 'Prague', '12000', 'Prague',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE')),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'Waltrovka 258', 'Prague', '15000',
+   'Florenc 147', 'Prague', '18600', 'Prague',
+   (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE')),
+
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   'Waltrovka 258', 'Prague', '15000', 'Prague',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE'));
 
 -- 11. ORDERS AND RELATED DATA
@@ -598,17 +599,19 @@ INSERT INTO public."Orders" (
   "CustomerPhone", "CustomerAddressId", "DisplayOrderNumber",
   "Rooms", "Bathrooms", "CleaningDateTime", "PaymentType",
   "PaymentStatus", "TotalPrice", "EstimatedTime",
+  "ActualCompletionTime", "CompletionNotes",
   "ConfirmationCode", "StripeSessionId", "Notes",
   "SpecialInstructions", "AccessInstructions",
   "CurrencyId", "UserId", "Extras",
   "RequiredEmployees", "MaxEmployees"
 )
 VALUES
-  -- Order 1: Jan Novák - Essential Clean (180 min = 1 employee required, 1 max)
-  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+  -- Order 1: COMPLETED - Jan Novák - Essential Clean
+  (generate_ulid()::TEXT, true, true, 'system', CURRENT_TIMESTAMP - INTERVAL '45 days', NULL, NULL, NULL, NULL,
    'Jan Novák', 'jan.novak@email.cz', '+420123456789',
    (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Wenceslas Square 1' LIMIT 1),
-   'CLS-2025-0001', 3, 2, '2025-01-15 10:00:00', 1, 1, 1299.00, 180,
+   'CLS-2026-0001', 3, 2, '2026-01-15 10:00:00', 1, 2, 1299.00, 180,
+   170, 'All areas cleaned to satisfaction. Customer very happy.',
    'ABC123XYZ', 'cs_test_stripe_session_1',
    'Regular maintenance cleaning for family apartment',
    'Please be careful with the antique furniture in the living room',
@@ -618,11 +621,12 @@ VALUES
    '{"eco_products": true, "pet_friendly": false, "extra_vacuum": true}',
    1, 1),
 
-  -- Order 2: Marie Svobodová - Deep Clean Premium (240 min = 1 employee required, 1 max)
-  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+  -- Order 2: COMPLETED - Marie Svobodová - Deep Clean Premium
+  (generate_ulid()::TEXT, true, true, 'system', CURRENT_TIMESTAMP - INTERVAL '44 days', NULL, NULL, NULL, NULL,
    'Marie Svobodová', 'marie.svobodova@email.cz', '+420234567890',
    (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Národní třída 25' LIMIT 1),
-   'CLS-2025-0002', 4, 3, '2025-01-16 09:00:00', 2, 1, 2199.00, 240,
+   'CLS-2026-0002', 4, 3, '2026-01-16 09:00:00', 2, 2, 2199.00, 240,
+   255, 'Deep clean took slightly longer due to post-renovation dust.',
    'DEF456ABC', 'cs_test_stripe_session_2',
    'Deep cleaning after renovation work',
    'There was recent painting work, please be extra careful with dust removal',
@@ -632,11 +636,12 @@ VALUES
    '{"eco_products": false, "pet_friendly": true, "extra_vacuum": false}',
    1, 1),
 
-  -- Order 3: Petr Dvořák - Moving Day Special (300 min = 1 employee required, 1 max)
-  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+  -- Order 3: COMPLETED - Petr Dvořák - Moving Day Special
+  (generate_ulid()::TEXT, true, true, 'system', CURRENT_TIMESTAMP - INTERVAL '43 days', NULL, NULL, NULL, NULL,
    'Petr Dvořák', 'petr.dvorak@email.cz', '+420345678901',
    (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Vinohrady 456' LIMIT 1),
-   'CLS-2025-0003', 2, 1, '2025-01-17 14:00:00', 1, 1, 2799.00, 300,
+   'CLS-2026-0003', 2, 1, '2026-01-17 14:00:00', 1, 2, 2799.00, 300,
+   280, 'Move-out cleaning completed. Landlord signed off on inspection.',
    'GHI789DEF', 'cs_test_stripe_session_3',
    'Move-out cleaning for apartment rental',
    'Need to return security deposit, please ensure everything is spotless',
@@ -646,11 +651,12 @@ VALUES
    '{"eco_products": true, "pet_friendly": false, "extra_vacuum": true}',
    1, 1),
 
-  -- Order 4: Anna Černá - Kitchen & Bathroom Focus (150 min = 1 employee required, 1 max)
-  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+  -- Order 4: COMPLETED - Anna Černá - Kitchen & Bathroom Focus
+  (generate_ulid()::TEXT, true, true, 'system', CURRENT_TIMESTAMP - INTERVAL '42 days', NULL, NULL, NULL, NULL,
    'Anna Černá', 'anna.cerna@email.cz', '+420456789012',
    (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Karlínské náměstí 12' LIMIT 1),
-   'CLS-2025-0004', 3, 2, '2025-01-18 11:00:00', 1, 2, 1399.00, 150,
+   'CLS-2026-0004', 3, 2, '2026-01-18 11:00:00', 1, 2, 1399.00, 150,
+   145, 'Kitchen grease removed, bathrooms sparkling.',
    'JKL012GHI', 'cs_test_stripe_session_4',
    'Focus on kitchen and bathrooms only, other rooms are fine',
    'Kitchen has stubborn grease stains from cooking',
@@ -660,11 +666,12 @@ VALUES
    '{"eco_products": false, "pet_friendly": true, "extra_vacuum": false}',
    1, 1),
 
-  -- Order 5: Tomáš Procházka - Eco-Green Package (210 min = 1 employee required, 1 max)
-  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+  -- Order 5: COMPLETED - Tomáš Procházka - Eco-Green Package
+  (generate_ulid()::TEXT, true, true, 'system', CURRENT_TIMESTAMP - INTERVAL '41 days', NULL, NULL, NULL, NULL,
    'Tomáš Procházka', 'tomas.prochazka@email.cz', '+420567890123',
    (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Smíchov 789' LIMIT 1),
-   'CLS-2025-0005', 5, 3, '2025-01-19 08:00:00', 1, 1, 1899.00, 210,
+   'CLS-2026-0005', 5, 3, '2026-01-19 08:00:00', 1, 2, 1899.00, 210,
+   220, 'Eco products used throughout. Family satisfied with results.',
    'MNO345JKL', 'cs_test_stripe_session_5',
    'Eco-friendly cleaning for family with small children',
    'Please use only non-toxic products due to allergies',
@@ -674,17 +681,200 @@ VALUES
    '{"eco_products": true, "pet_friendly": true, "extra_vacuum": true}',
    1, 1),
 
-  -- Order 6: Complete Home Clean (No package, individual services) (165 min = 1 employee required, 1 max)
-  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+  -- Order 6: COMPLETED - Jan Novák - Individual services follow-up
+  (generate_ulid()::TEXT, true, true, 'system', CURRENT_TIMESTAMP - INTERVAL '35 days', NULL, NULL, NULL, NULL,
    'Jan Novák', 'jan.novak@email.cz', '+420123456789',
    (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Wenceslas Square 1' LIMIT 1),
-   'CLS-2025-0006', 3, 2, '2025-01-20 13:00:00', 2, 2, 1150.00, 165,
+   'CLS-2026-0006', 3, 2, '2026-01-25 13:00:00', 2, 2, 1150.00, 165,
+   160, 'Follow-up cleaning completed. All missed areas addressed.',
    'PQR678MNO', 'cs_test_stripe_session_6',
    'Follow-up cleaning with individual services',
    'Focus on areas missed in previous cleaning',
    'Same access as before',
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'jan.novak@email.cz' LIMIT 1),
+   '{"eco_products": false, "pet_friendly": false, "extra_vacuum": false}',
+   1, 1),
+
+  -- Order 7: CONFIRMED - Marie Svobodová - General Cleaning (upcoming)
+  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP - INTERVAL '5 days', NULL, NULL, NULL, NULL,
+   'Marie Svobodová', 'marie.svobodova@email.cz', '+420234567890',
+   (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Národní třída 25' LIMIT 1),
+   'CLS-2026-0007', 3, 1, '2026-03-05 10:00:00', 2, 2, 800.00, 120,
+   NULL, NULL,
+   'STU901PQR', 'cs_test_stripe_session_7',
+   'Monthly maintenance cleaning',
+   'Focus on living room and bedrooms',
+   'Same as previous visit - security code 1234',
+   (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
+   (SELECT "Id" FROM public."Users" WHERE "Email" = 'marie.svobodova@email.cz' LIMIT 1),
+   '{"eco_products": false, "pet_friendly": true, "extra_vacuum": false}',
+   1, 1),
+
+  -- Order 8: IN PROGRESS - Petr Dvořák - Deep Cleaning (today)
+  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP - INTERVAL '3 days', NULL, NULL, NULL, NULL,
+   'Petr Dvořák', 'petr.dvorak@email.cz', '+420345678901',
+   (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Vinohrady 456' LIMIT 1),
+   'CLS-2026-0008', 4, 2, '2026-02-28 09:00:00', 1, 1, 1800.00, 180,
+   NULL, NULL,
+   'VWX234STU', 'cs_test_stripe_session_8',
+   'Deep cleaning for spring preparation',
+   'Under the beds and behind furniture please',
+   'Key in lockbox, code 5678',
+   (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
+   (SELECT "Id" FROM public."Users" WHERE "Email" = 'petr.dvorak@email.cz' LIMIT 1),
+   '{"eco_products": true, "pet_friendly": false, "extra_vacuum": true}',
+   1, 2),
+
+  -- Order 9: PENDING - Anna Černá - Window Cleaning (new, awaiting confirmation)
+  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP - INTERVAL '1 day', NULL, NULL, NULL, NULL,
+   'Anna Černá', 'anna.cerna@email.cz', '+420456789012',
+   (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Karlínské náměstí 12' LIMIT 1),
+   'CLS-2026-0009', 3, 1, '2026-03-10 14:00:00', 1, 1, 350.00, 60,
+   NULL, NULL,
+   'YZA567VWX', 'cs_test_stripe_session_9',
+   'Window cleaning for spring',
+   'All windows including balcony doors',
+   'Elevator to 4th floor, ring bell',
+   (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
+   (SELECT "Id" FROM public."Users" WHERE "Email" = 'anna.cerna@email.cz' LIMIT 1),
+   '{"eco_products": false, "pet_friendly": false, "extra_vacuum": false}',
+   1, 1),
+
+  -- Order 10: PENDING - Tomáš Procházka - Carpet Cleaning (new, awaiting confirmation)
+  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   'Tomáš Procházka', 'tomas.prochazka@email.cz', '+420567890123',
+   (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Smíchov 789' LIMIT 1),
+   'CLS-2026-0010', 4, 2, '2026-03-15 09:00:00', 2, 1, 750.00, 90,
+   NULL, NULL,
+   'BCD890YZA', 'cs_test_stripe_session_10',
+   'Carpet cleaning for all rooms',
+   'Pet stains in living room need extra attention',
+   'Call on arrival, doorbell broken',
+   (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
+   (SELECT "Id" FROM public."Users" WHERE "Email" = 'tomas.prochazka@email.cz' LIMIT 1),
+   '{"eco_products": true, "pet_friendly": true, "extra_vacuum": true}',
+   1, 1),
+
+  -- Order 11: CANCELLED - Jan Novák - Post-Renovation (cancelled by customer)
+  (generate_ulid()::TEXT, false, false, 'system', CURRENT_TIMESTAMP - INTERVAL '20 days', NULL, NULL,
+   'jan.novak@email.cz', CURRENT_TIMESTAMP - INTERVAL '18 days',
+   'Jan Novák', 'jan.novak@email.cz', '+420123456789',
+   (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Wenceslas Square 1' LIMIT 1),
+   'CLS-2026-0011', 3, 2, '2026-02-15 10:00:00', 2, 1, 2799.00, 240,
+   NULL, NULL,
+   'EFG123BCD', 'cs_test_stripe_session_11',
+   'Post-renovation cleaning - CANCELLED: renovation delayed',
+   'After kitchen renovation is complete',
+   'Same access as usual',
+   (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
+   (SELECT "Id" FROM public."Users" WHERE "Email" = 'jan.novak@email.cz' LIMIT 1),
+   '{"eco_products": false, "pet_friendly": false, "extra_vacuum": true}',
+   1, 1),
+
+  -- Order 12: CONFIRMED - Marie Svobodová - Luxury Full Service (future, multi-employee)
+  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP - INTERVAL '2 days', NULL, NULL, NULL, NULL,
+   'Marie Svobodová', 'marie.svobodova@email.cz', '+420234567890',
+   (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Národní třída 25' LIMIT 1),
+   'CLS-2026-0012', 5, 3, '2026-03-20 08:00:00', 2, 2, 3499.00, 300,
+   NULL, NULL,
+   'HIJ456EFG', 'cs_test_stripe_session_12',
+   'Full luxury service for spring cleaning event',
+   'Everything must be perfect - hosting a party next week',
+   'Security code: 1234, full apartment access',
+   (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
+   (SELECT "Id" FROM public."Users" WHERE "Email" = 'marie.svobodova@email.cz' LIMIT 1),
+   '{"eco_products": true, "pet_friendly": true, "extra_vacuum": true}',
+   2, 3),
+
+  -- Order 13: COMPLETED - Anna Černá - Upholstery Cleaning (February)
+  (generate_ulid()::TEXT, true, true, 'system', CURRENT_TIMESTAMP - INTERVAL '15 days', NULL, NULL, NULL, NULL,
+   'Anna Černá', 'anna.cerna@email.cz', '+420456789012',
+   (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Karlínské náměstí 12' LIMIT 1),
+   'CLS-2026-0013', 3, 1, '2026-02-10 10:00:00', 1, 2, 450.00, 75,
+   70, 'Sofa and armchairs cleaned. Minor stain on dining chair could not be fully removed.',
+   'KLM789HIJ', 'cs_test_stripe_session_13',
+   'Upholstery cleaning for living room furniture',
+   'Focus on the sofa and two armchairs',
+   'Elevator to 4th floor',
+   (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
+   (SELECT "Id" FROM public."Users" WHERE "Email" = 'anna.cerna@email.cz' LIMIT 1),
+   '{"eco_products": false, "pet_friendly": true, "extra_vacuum": false}',
+   1, 1),
+
+  -- Order 14: IN PROGRESS - Tomáš Procházka - General Cleaning (in progress today)
+  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP - INTERVAL '2 days', NULL, NULL, NULL, NULL,
+   'Tomáš Procházka', 'tomas.prochazka@email.cz', '+420567890123',
+   (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Smíchov 789' LIMIT 1),
+   'CLS-2026-0014', 4, 2, '2026-02-28 14:00:00', 1, 1, 1100.00, 120,
+   NULL, NULL,
+   'NOP012KLM', 'cs_test_stripe_session_14',
+   'Regular bi-weekly cleaning',
+   'Standard cleaning, nothing special',
+   'Call on arrival',
+   (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
+   (SELECT "Id" FROM public."Users" WHERE "Email" = 'tomas.prochazka@email.cz' LIMIT 1),
+   '{"eco_products": true, "pet_friendly": true, "extra_vacuum": false}',
+   1, 1),
+
+  -- Order 15: CANCELLED - Petr Dvořák (cancelled, payment refunded)
+  (generate_ulid()::TEXT, false, false, 'system', CURRENT_TIMESTAMP - INTERVAL '25 days', NULL, NULL,
+   'petr.dvorak@email.cz', CURRENT_TIMESTAMP - INTERVAL '23 days',
+   'Petr Dvořák', 'petr.dvorak@email.cz', '+420345678901',
+   (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Vinohrady 456' LIMIT 1),
+   'CLS-2026-0015', 2, 1, '2026-02-05 09:00:00', 2, 4, 999.00, 150,
+   NULL, NULL,
+   'QRS345NOP', 'cs_test_stripe_session_15',
+   'Kitchen & Bathroom Focus - CANCELLED: customer moved out early',
+   'Standard cleaning',
+   'Landlord key',
+   (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
+   (SELECT "Id" FROM public."Users" WHERE "Email" = 'petr.dvorak@email.cz' LIMIT 1),
+   '{"eco_products": false, "pet_friendly": false, "extra_vacuum": false}',
+   1, 1),
+
+  -- Order 16: PENDING - Jan Novák - Bathroom Cleaning (just placed)
+  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   'Jan Novák', 'jan.novak@email.cz', '+420123456789',
+   (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Wenceslas Square 1' LIMIT 1),
+   'CLS-2026-0016', 1, 2, '2026-03-08 11:00:00', 1, 1, 300.00, 45,
+   NULL, NULL,
+   'TUV678QRS', 'cs_test_stripe_session_16',
+   'Quick bathroom deep clean',
+   'Both bathrooms need tile scrubbing',
+   'Key under mat',
+   (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
+   (SELECT "Id" FROM public."Users" WHERE "Email" = 'jan.novak@email.cz' LIMIT 1),
+   '{"eco_products": false, "pet_friendly": false, "extra_vacuum": false}',
+   1, 1),
+
+  -- Order 17: COMPLETED - Brno customer address order
+  (generate_ulid()::TEXT, true, true, 'system', CURRENT_TIMESTAMP - INTERVAL '30 days', NULL, NULL, NULL, NULL,
+   'Marie Svobodová', 'marie.svobodova@email.cz', '+420234567890',
+   (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Masarykova 567' LIMIT 1),
+   'CLS-2026-0017', 3, 1, '2026-02-01 10:00:00', 2, 2, 600.00, 135,
+   130, 'Eco-friendly cleaning completed at Brno location.',
+   'WXY901TUV', 'cs_test_stripe_session_17',
+   'Eco cleaning for Brno apartment',
+   'Use eco products only',
+   'Ground floor, ring bell',
+   (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
+   (SELECT "Id" FROM public."Users" WHERE "Email" = 'marie.svobodova@email.cz' LIMIT 1),
+   '{"eco_products": true, "pet_friendly": false, "extra_vacuum": false}',
+   1, 1),
+
+  -- Order 18: CONFIRMED - Ostrava customer
+  (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP - INTERVAL '3 days', NULL, NULL, NULL, NULL,
+   'Petr Dvořák', 'petr.dvorak@email.cz', '+420345678901',
+   (SELECT "Id" FROM public."Addresses" WHERE "Street" = 'Stodolní 123' LIMIT 1),
+   'CLS-2026-0018', 2, 1, '2026-03-12 09:00:00', 1, 1, 500.00, 120,
+   NULL, NULL,
+   'ZAB234WXY', 'cs_test_stripe_session_18',
+   'General cleaning for Ostrava flat',
+   'Standard cleaning',
+   'Buzzer 5B',
+   (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
+   (SELECT "Id" FROM public."Users" WHERE "Email" = 'petr.dvorak@email.cz' LIMIT 1),
    '{"eco_products": false, "pet_friendly": false, "extra_vacuum": false}',
    1, 1);
 
@@ -695,16 +885,51 @@ INSERT INTO public."OrderServices" (
 VALUES
   -- Additional services for Order 6 (no package)
   (generate_ulid()::TEXT, true,
-   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0006' LIMIT 1),
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0006' LIMIT 1),
    (SELECT "Id" FROM public."Services" WHERE "Name" = 'General Cleaning' LIMIT 1)),
 
   (generate_ulid()::TEXT, true,
-   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0006' LIMIT 1),
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0006' LIMIT 1),
    (SELECT "Id" FROM public."Services" WHERE "Name" = 'Window Cleaning' LIMIT 1)),
 
   (generate_ulid()::TEXT, true,
-   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0006' LIMIT 1),
-   (SELECT "Id" FROM public."Services" WHERE "Name" = 'Carpet Cleaning' LIMIT 1));
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0006' LIMIT 1),
+   (SELECT "Id" FROM public."Services" WHERE "Name" = 'Carpet Cleaning' LIMIT 1)),
+
+  -- Order 9: Window Cleaning
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0009' LIMIT 1),
+   (SELECT "Id" FROM public."Services" WHERE "Name" = 'Window Cleaning' LIMIT 1)),
+
+  -- Order 10: Carpet Cleaning
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0010' LIMIT 1),
+   (SELECT "Id" FROM public."Services" WHERE "Name" = 'Carpet Cleaning' LIMIT 1)),
+
+  -- Order 13: Upholstery Cleaning
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0013' LIMIT 1),
+   (SELECT "Id" FROM public."Services" WHERE "Name" = 'Upholstery Cleaning' LIMIT 1)),
+
+  -- Order 14: General Cleaning
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0014' LIMIT 1),
+   (SELECT "Id" FROM public."Services" WHERE "Name" = 'General Cleaning' LIMIT 1)),
+
+  -- Order 16: Bathroom Cleaning
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0016' LIMIT 1),
+   (SELECT "Id" FROM public."Services" WHERE "Name" = 'Bathroom Cleaning' LIMIT 1)),
+
+  -- Order 17: Eco-Friendly Cleaning
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0017' LIMIT 1),
+   (SELECT "Id" FROM public."Services" WHERE "Name" = 'Eco-Friendly Cleaning' LIMIT 1)),
+
+  -- Order 18: General Cleaning
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0018' LIMIT 1),
+   (SELECT "Id" FROM public."Services" WHERE "Name" = 'General Cleaning' LIMIT 1));
 
 -- Insert Order Packages (Junction table for orders and individual packages)
 INSERT INTO public."OrderPackages" (
@@ -713,50 +938,183 @@ INSERT INTO public."OrderPackages" (
 VALUES
   -- Additional services for Order 6
   (generate_ulid()::TEXT, true,
-   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0006' LIMIT 1),
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0006' LIMIT 1),
    (SELECT "Id" FROM public."Packages" WHERE "Name" = 'Essential Clean' LIMIT 1)),
 
   (generate_ulid()::TEXT, true,
-   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0006' LIMIT 1),
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0006' LIMIT 1),
    (SELECT "Id" FROM public."Packages" WHERE "Name" = 'Deep Clean Premium' LIMIT 1)),
 
   (generate_ulid()::TEXT, true,
-   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0006' LIMIT 1),
-   (SELECT "Id" FROM public."Packages" WHERE "Name" = 'Moving Day Special' LIMIT 1));
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0006' LIMIT 1),
+   (SELECT "Id" FROM public."Packages" WHERE "Name" = 'Moving Day Special' LIMIT 1)),
 
+  -- Order 7: General Cleaning (service-based, no package)
+  -- Order 8: Deep Clean Premium
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0008' LIMIT 1),
+   (SELECT "Id" FROM public."Packages" WHERE "Name" = 'Deep Clean Premium' LIMIT 1)),
+
+  -- Order 12: Luxury Full Service
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0012' LIMIT 1),
+   (SELECT "Id" FROM public."Packages" WHERE "Name" = 'Luxury Full Service' LIMIT 1));
+
+
+-- Insert Order Employee Assignments
+INSERT INTO public."OrderEmployees" (
+  "Id", "IsActive", "OrderId", "EmployeeId"
+)
+VALUES
+  -- Order 1 (Completed) - Kateřina
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0001' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654321' LIMIT 1)),
+  -- Order 2 (Completed) - Michal
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0002' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654322' LIMIT 1)),
+  -- Order 3 (Completed) - Zuzana
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0003' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654323' LIMIT 1)),
+  -- Order 4 (Completed) - Pavel
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0004' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654324' LIMIT 1)),
+  -- Order 5 (Completed) - Lenka
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0005' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654325' LIMIT 1)),
+  -- Order 6 (Completed) - Kateřina
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0006' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654321' LIMIT 1)),
+  -- Order 7 (Confirmed) - Kateřina
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0007' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654321' LIMIT 1)),
+  -- Order 8 (In Progress) - Michal
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0008' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654322' LIMIT 1)),
+  -- Order 12 (Confirmed, multi-employee) - Zuzana + Kateřina
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0012' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654323' LIMIT 1)),
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0012' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654321' LIMIT 1)),
+  -- Order 13 (Completed) - Pavel
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0013' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654324' LIMIT 1)),
+  -- Order 14 (In Progress) - Lenka
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0014' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654325' LIMIT 1)),
+  -- Order 17 (Completed) - Lenka
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0017' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654325' LIMIT 1)),
+  -- Order 18 (Confirmed) - Michal
+  (generate_ulid()::TEXT, true,
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0018' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654322' LIMIT 1));
 
 -- Insert Order Status Tracks (Order history)
+-- Status: 1=Pending, 2=Confirmed, 3=InProgress, 4=Completed, 5=Cancelled
 INSERT INTO public."OrderStatusHistory" (
   "Id", "IsActive","CreatedBy", "CreatedOn", "Status", "OrderId"
 )
 VALUES
-  -- Order 1 Status History
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0001' LIMIT 1)),
+  -- Order 1: Pending -> Confirmed -> InProgress -> Completed
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '45 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0001' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '44 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0001' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '43 days', 3, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0001' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '43 days', 4, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0001' LIMIT 1)),
 
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0001' LIMIT 1)),
+  -- Order 2: Pending -> Confirmed -> InProgress -> Completed
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '44 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0002' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '43 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0002' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '42 days', 3, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0002' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '42 days', 4, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0002' LIMIT 1)),
 
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, 3, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0001' LIMIT 1)),
+  -- Order 3: Pending -> Confirmed -> InProgress -> Completed
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '43 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0003' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '42 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0003' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '41 days', 3, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0003' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '41 days', 4, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0003' LIMIT 1)),
 
-  -- Order 2 Status History
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, 4, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0002' LIMIT 1)),
+  -- Order 4: Pending -> Confirmed -> InProgress -> Completed
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '42 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0004' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '41 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0004' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '40 days', 3, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0004' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '40 days', 4, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0004' LIMIT 1)),
 
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0002' LIMIT 1)),
+  -- Order 5: Pending -> Confirmed -> InProgress -> Completed
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '41 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0005' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '40 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0005' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '39 days', 3, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0005' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '39 days', 4, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0005' LIMIT 1)),
 
-  -- Order 3 Status History
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0003' LIMIT 1)),
+  -- Order 6: Pending -> Confirmed -> InProgress -> Completed
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '35 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0006' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '34 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0006' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '33 days', 3, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0006' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '33 days', 4, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0006' LIMIT 1)),
 
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP,1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0003' LIMIT 1)),
+  -- Order 7: Pending -> Confirmed
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '5 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0007' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '4 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0007' LIMIT 1)),
 
-  -- Order 4 Status History
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0004' LIMIT 1)),
+  -- Order 8: Pending -> Confirmed -> InProgress
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '3 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0008' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '2 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0008' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, 3, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0008' LIMIT 1)),
 
-  -- Order 5 Status History
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0005' LIMIT 1)),
+  -- Order 9: Pending
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '1 day', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0009' LIMIT 1)),
 
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0005' LIMIT 1)),
+  -- Order 10: Pending
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0010' LIMIT 1)),
 
-  -- Order 6 Status History
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0006' LIMIT 1));
+  -- Order 11: Pending -> Confirmed -> Cancelled
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '20 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0011' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '19 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0011' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '18 days', 5, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0011' LIMIT 1)),
+
+  -- Order 12: Pending -> Confirmed
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '2 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0012' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '1 day', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0012' LIMIT 1)),
+
+  -- Order 13: Pending -> Confirmed -> InProgress -> Completed
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '18 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0013' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '16 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0013' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '15 days', 3, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0013' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '15 days', 4, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0013' LIMIT 1)),
+
+  -- Order 14: Pending -> Confirmed -> InProgress
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '2 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0014' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '1 day', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0014' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, 3, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0014' LIMIT 1)),
+
+  -- Order 15: Pending -> Cancelled (with refund)
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '25 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0015' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '23 days', 5, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0015' LIMIT 1)),
+
+  -- Order 16: Pending
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0016' LIMIT 1)),
+
+  -- Order 17: Pending -> Confirmed -> InProgress -> Completed
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '32 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0017' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '31 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0017' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '30 days', 3, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0017' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '30 days', 4, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0017' LIMIT 1)),
+
+  -- Order 18: Pending -> Confirmed
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '3 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0018' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '2 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0018' LIMIT 1));
 
 -- 12. PAY PERIODS
 -- Creating monthly pay periods for the last 3 months and upcoming month
@@ -766,35 +1124,35 @@ INSERT INTO public."PayPeriods" (
   "StartDate", "EndDate", "Status", "ClosedAt", "ClosedBy", "PaidAt", "Notes"
 )
 VALUES
-  -- December 2024 (Closed and Paid)
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '90 days', NULL, NULL, NULL, NULL,
-   '2024-12-01 00:00:00', '2024-12-31 23:59:59', 2,
-   '2025-01-02 10:00:00', 'admin@cleansia.cz', '2025-01-05 14:30:00',
-   'December 2024 period - All invoices paid on time'),
-
-  -- January 2025 (Closed but not yet paid)
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '60 days', NULL, NULL, NULL, NULL,
-   '2025-01-01 00:00:00', '2025-01-31 23:59:59', 1,
-   '2025-02-01 09:00:00', 'admin@cleansia.cz', NULL,
-   'January 2025 period - Ready for payment processing'),
-
-  -- February 2025 (Open - Current)
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '30 days', NULL, NULL, NULL, NULL,
-   '2025-02-01 00:00:00', '2025-02-28 23:59:59', 1,
-   NULL, NULL, NULL,
-   'February 2025 period - Currently active'),
-
-  -- March 2025 (Open - Future)
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   '2025-03-01 00:00:00', '2025-03-31 23:59:59', 1,
-   NULL, NULL, NULL,
-   'March 2025 period - Upcoming'),
-
-  -- November 2024 (Closed and Paid - Historical)
+  -- November 2025 (Closed and Paid - Historical)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '120 days', NULL, NULL, NULL, NULL,
-   '2024-11-01 00:00:00', '2024-11-30 23:59:59', 2,
-   '2024-12-01 10:00:00', 'admin@cleansia.cz', '2024-12-05 15:00:00',
-   'November 2024 period - Historical data');
+   '2025-11-01', '2025-11-30', 3,
+   '2025-12-01 10:00:00', 'admin@cleansia.cz', '2025-12-05 15:00:00',
+   'November 2025 period - Historical data'),
+
+  -- December 2025 (Closed and Paid)
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '90 days', NULL, NULL, NULL, NULL,
+   '2025-12-01', '2025-12-31', 3,
+   '2026-01-02 10:00:00', 'admin@cleansia.cz', '2026-01-05 14:30:00',
+   'December 2025 period - All invoices paid on time'),
+
+  -- January 2026 (Closed, ready for payment)
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '60 days', NULL, NULL, NULL, NULL,
+   '2026-01-01', '2026-01-31', 2,
+   '2026-02-01 09:00:00', 'admin@cleansia.cz', NULL,
+   'January 2026 period - Ready for payment processing'),
+
+  -- February 2026 (Open - Current)
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '30 days', NULL, NULL, NULL, NULL,
+   '2026-02-01', '2026-02-28', 1,
+   NULL, NULL, NULL,
+   'February 2026 period - Currently active'),
+
+  -- March 2026 (Open - Future)
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   '2026-03-01', '2026-03-31', 1,
+   NULL, NULL, NULL,
+   'March 2026 period - Upcoming');
 
 -- 13. EMPLOYEE PAY CONFIG
 -- INSERT EMPLOYEE PAY CONFIG
@@ -892,56 +1250,56 @@ INSERT INTO public."OrderEmployeePays" (
   "PayBreakdown", "IsApproved"
 )
 VALUES
-  -- Order 1 (CLS-2025-0001) - Kateřina Novotná - January period
+  -- Order 1 (CLS-2026-0001) - Kateřina Novotná - January period
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '20 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0001' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654321' LIMIT 1),
-   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2025-01-01 00:00:00' LIMIT 1),
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0001' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654321' LIMIT 1),
+   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2026-01-01' LIMIT 1),
    400.00, 260.00, 50.00, 100.00, 0.00, 810.00,
    '{"basePay": 400, "roomExtras": 160, "bathroomExtras": 100, "travelExpenses": 50, "qualityBonus": 100}',
    true),
 
-  -- Order 2 (CLS-2025-0002) - Michal Krejčí - January period
+  -- Order 2 (CLS-2026-0002) - Michal Krejčí - January period
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '19 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0002' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654322' LIMIT 1),
-   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2025-01-01 00:00:00' LIMIT 1),
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0002' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654322' LIMIT 1),
+   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2026-01-01' LIMIT 1),
    600.00, 500.00, 80.00, 150.00, 0.00, 1330.00,
    '{"basePay": 600, "roomExtras": 300, "bathroomExtras": 200, "travelExpenses": 80, "qualityBonus": 150}',
    true),
 
-  -- Order 3 (CLS-2025-0003) - Zuzana Horáková - January period
+  -- Order 3 (CLS-2026-0003) - Zuzana Horáková - January period
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '18 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0003' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654323' LIMIT 1),
-   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2025-01-01 00:00:00' LIMIT 1),
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0003' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654323' LIMIT 1),
+   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2026-01-01' LIMIT 1),
    700.00, 290.00, 100.00, 200.00, 0.00, 1290.00,
    '{"basePay": 700, "roomExtras": 180, "bathroomExtras": 110, "travelExpenses": 100, "performanceBonus": 200}',
    true),
 
-  -- Order 4 (CLS-2025-0004) - Pavel Veselý - January period
+  -- Order 4 (CLS-2026-0004) - Pavel Veselý - January period
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '17 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0004' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654324' LIMIT 1),
-   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2025-01-01 00:00:00' LIMIT 1),
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0004' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654324' LIMIT 1),
+   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2026-01-01' LIMIT 1),
    450.00, 80.00, 40.00, 0.00, 50.00, 520.00,
    '{"basePay": 450, "bathroomExtras": 80, "travelExpenses": 40, "lateArrivalDeduction": -50}',
    true),
 
-  -- Order 5 (CLS-2025-0005) - Lenka Marková - January period
+  -- Order 5 (CLS-2026-0005) - Lenka Marková - January period
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '16 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0005' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654325' LIMIT 1),
-   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2025-01-01 00:00:00' LIMIT 1),
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0005' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654325' LIMIT 1),
+   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2026-01-01' LIMIT 1),
    550.00, 510.00, 60.00, 120.00, 0.00, 1240.00,
    '{"basePay": 550, "roomExtras": 360, "bathroomExtras": 150, "travelExpenses": 60, "ecoProductBonus": 120}',
    true),
 
-  -- Order 6 (CLS-2025-0006) - Kateřina Novotná - February period
+  -- Order 6 (CLS-2026-0006) - Kateřina Novotná - February period
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '10 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2025-0006' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654321' LIMIT 1),
-   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2025-02-01 00:00:00' LIMIT 1),
+   (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0006' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654321' LIMIT 1),
+   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2026-02-01' LIMIT 1),
    350.00, 240.00, 45.00, 80.00, 0.00, 715.00,
    '{"basePay": 350, "roomExtras": 160, "bathroomExtras": 80, "travelExpenses": 45, "repeatClientBonus": 80}',
    true);
@@ -956,102 +1314,102 @@ INSERT INTO public."EmployeeInvoices" (
   "SubTotal", "BonusAmount", "DeductionAmount", "TotalAmount",
   "CurrencyId", "Status", "PdfBlobUrl", "GeneratedAt",
   "ApprovedAt", "ApprovedBy", "PaidAt", "AdminNotes",
-  "VariableSymbol", "SpecificSymbol", "BankTransferNote", "PdfGenerationFailed", "IsCancelled"
+  "VariableSymbol", "SpecificSymbol", "PaymentReference", "BankTransferNote", "PdfGenerationFailed", "IsCancelled"
 )
 VALUES
-  -- Invoice 1: Kateřina Novotná - January 2025 (Approved, not paid yet)
+  -- Invoice 1: Kateřina Novotná - January 2026 (Approved, not paid yet)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '15 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654321' LIMIT 1),
-   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2025-01-01 00:00:00' LIMIT 1),
-   'INV-202501-KN001', 1, 710.00, 100.00, 0.00, 810.00,
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654321' LIMIT 1),
+   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2026-01-01' LIMIT 1),
+   'INV-202601-KN001', 1, 710.00, 100.00, 0.00, 810.00,
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    1, NULL, CURRENT_TIMESTAMP - INTERVAL '15 days',
    CURRENT_TIMESTAMP - INTERVAL '10 days', 'admin@cleansia.cz', NULL,
-   'Excellent performance in January. Quality bonus awarded.',
-   '0321876543', NULL, NULL, false, false),
+   'Excellent performance in January 2026. Quality bonus awarded.',
+   '0321876543', NULL, 'INV-202601-KN001', NULL, false, false),
 
-  -- Invoice 2: Michal Krejčí - January 2025 (Approved, not paid yet)
+  -- Invoice 2: Michal Krejčí - January 2026 (Approved, not paid yet)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '15 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654322' LIMIT 1),
-   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2025-01-01 00:00:00' LIMIT 1),
-   'INV-202501-MK001', 1, 1180.00, 150.00, 0.00, 1330.00,
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654322' LIMIT 1),
+   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2026-01-01' LIMIT 1),
+   'INV-202601-MK001', 1, 1180.00, 150.00, 0.00, 1330.00,
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    1, NULL, CURRENT_TIMESTAMP - INTERVAL '15 days',
    CURRENT_TIMESTAMP - INTERVAL '10 days', 'admin@cleansia.cz', NULL,
    'Deep cleaning work completed to high standard.',
-   '0322987654', NULL, NULL, false, false),
+   '0322987654', NULL, 'INV-202601-MK001', NULL, false, false),
 
-  -- Invoice 3: Zuzana Horáková - January 2025 (Paid)
+  -- Invoice 3: Zuzana Horáková - January 2026 (Paid)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '15 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654323' LIMIT 1),
-   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2025-01-01 00:00:00' LIMIT 1),
-   'INV-202501-ZH001', 1, 1090.00, 200.00, 0.00, 1290.00,
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654323' LIMIT 1),
+   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2026-01-01' LIMIT 1),
+   'INV-202601-ZH001', 1, 1090.00, 200.00, 0.00, 1290.00,
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
-   2, 'https://storage.cleansia.cz/invoices/2025/01/inv-zh001.pdf',
+   2, 'https://storage.cleansia.cz/invoices/2026/01/inv-zh001.pdf',
    CURRENT_TIMESTAMP - INTERVAL '15 days',
    CURRENT_TIMESTAMP - INTERVAL '10 days', 'admin@cleansia.cz',
    CURRENT_TIMESTAMP - INTERVAL '5 days',
    'Move-out cleaning excellent. Performance bonus granted. Paid via bank transfer.',
-   '0323098765', '2501', 'Payment for Invoice INV-202501-ZH001', false, false),
+   '0323098765', '2501', 'INV-202601-ZH001', 'Payment for Invoice INV-202601-ZH001', false, false),
 
-  -- Invoice 4: Pavel Veselý - January 2025 (Approved, not paid yet)
+  -- Invoice 4: Pavel Veselý - January 2026 (Approved, not paid yet)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '15 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654324' LIMIT 1),
-   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2025-01-01 00:00:00' LIMIT 1),
-   'INV-202501-PV001', 1, 570.00, 0.00, 50.00, 520.00,
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654324' LIMIT 1),
+   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2026-01-01' LIMIT 1),
+   'INV-202601-PV001', 1, 570.00, 0.00, 50.00, 520.00,
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    1, NULL, CURRENT_TIMESTAMP - INTERVAL '15 days',
    CURRENT_TIMESTAMP - INTERVAL '10 days', 'admin@cleansia.cz', NULL,
    'Good work, but late arrival noted. Minor deduction applied.',
-   '0324109876', NULL, NULL, false, false),
+   '0324109876', NULL, 'INV-202601-PV001', NULL, false, false),
 
-  -- Invoice 5: Lenka Marková - January 2025 (Approved, not paid yet)
+  -- Invoice 5: Lenka Marková - January 2026 (Approved, not paid yet)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '15 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654325' LIMIT 1),
-   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2025-01-01 00:00:00' LIMIT 1),
-   'INV-202501-LM001', 1, 1120.00, 120.00, 0.00, 1240.00,
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654325' LIMIT 1),
+   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2026-01-01' LIMIT 1),
+   'INV-202601-LM001', 1, 1120.00, 120.00, 0.00, 1240.00,
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    1, NULL, CURRENT_TIMESTAMP - INTERVAL '15 days',
    CURRENT_TIMESTAMP - INTERVAL '10 days', 'admin@cleansia.cz', NULL,
    'Eco-friendly cleaning done professionally. Bonus for using green products.',
-   '0325210987', NULL, NULL, false, false),
+   '0325210987', NULL, 'INV-202601-LM001', NULL, false, false),
 
-  -- Invoice 6: Kateřina Novotná - February 2025 (Pending approval)
+  -- Invoice 6: Kateřina Novotná - February 2026 (Pending approval)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '5 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654321' LIMIT 1),
-   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2025-02-01 00:00:00' LIMIT 1),
-   'INV-202502-KN001', 1, 635.00, 80.00, 0.00, 715.00,
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654321' LIMIT 1),
+   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2026-02-01' LIMIT 1),
+   'INV-202602-KN001', 1, 635.00, 80.00, 0.00, 715.00,
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    0, NULL, CURRENT_TIMESTAMP - INTERVAL '5 days',
    NULL, NULL, NULL,
    'February work in progress. Awaiting approval.',
-   '0321987654', NULL, NULL, false, false),
+   '0321987654', NULL, 'INV-202602-KN001', NULL, false, false),
 
-  -- Invoice 7: Kateřina Novotná - December 2024 (Paid - Historical)
+  -- Invoice 7: Kateřina Novotná - December 2025 (Paid - Historical)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '60 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654321' LIMIT 1),
-   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2024-12-01 00:00:00' LIMIT 1),
-   'INV-202412-KN001', 8, 6800.00, 500.00, 0.00, 7300.00,
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654321' LIMIT 1),
+   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2025-12-01' LIMIT 1),
+   'INV-202512-KN001', 8, 6800.00, 500.00, 0.00, 7300.00,
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
-   2, 'https://storage.cleansia.cz/invoices/2024/12/inv-kn001.pdf',
+   2, 'https://storage.cleansia.cz/invoices/2025/12/inv-kn001.pdf',
    CURRENT_TIMESTAMP - INTERVAL '60 days',
    CURRENT_TIMESTAMP - INTERVAL '58 days', 'admin@cleansia.cz',
    CURRENT_TIMESTAMP - INTERVAL '55 days',
    'Excellent month with 8 completed orders. Monthly bonus granted.',
-   '0321765432', '2412', 'Payment for Invoice INV-202412-KN001', false, false),
+   '0321765432', '2412', 'INV-202512-KN001', 'Payment for Invoice INV-202512-KN001', false, false),
 
-  -- Invoice 8: Michal Krejčí - December 2024 (Paid - Historical)
+  -- Invoice 8: Michal Krejčí - December 2025 (Paid - Historical)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '60 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Employees" WHERE "ICO" = '87654322' LIMIT 1),
-   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2024-12-01 00:00:00' LIMIT 1),
-   'INV-202412-MK001', 6, 7200.00, 400.00, 100.00, 7500.00,
+   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654322' LIMIT 1),
+   (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2025-12-01' LIMIT 1),
+   'INV-202512-MK001', 6, 7200.00, 400.00, 100.00, 7500.00,
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
-   2, 'https://storage.cleansia.cz/invoices/2024/12/inv-mk001.pdf',
+   2, 'https://storage.cleansia.cz/invoices/2025/12/inv-mk001.pdf',
    CURRENT_TIMESTAMP - INTERVAL '60 days',
    CURRENT_TIMESTAMP - INTERVAL '58 days', 'admin@cleansia.cz',
    CURRENT_TIMESTAMP - INTERVAL '55 days',
    'Good performance. One customer complaint resulted in minor deduction.',
-   '0322876543', '2412', 'Payment for Invoice INV-202412-MK001', false, false);
+   '0322876543', '2412', 'INV-202512-MK001', 'Payment for Invoice INV-202512-MK001', false, false);
 
 -- ============================================================
 -- INVOICE TEMPLATES
@@ -1156,6 +1514,100 @@ VALUES
    'Factura emitida de acuerdo con la ley española. Condiciones de pago: 14 días desde la fecha de emisión.');
 
 -- ============================================================
+-- COUNTRY CONFIGURATIONS
+-- ============================================================
+INSERT INTO public."CountryConfigurations" (
+  "Id", "IsActive", "CreatedBy", "CreatedOn",
+  "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
+  "CountryId", "DefaultCurrencyCode", "DefaultLanguageCode",
+  "DateFormat", "TimeZoneId", "PhonePrefix",
+  "StandardVatRate", "ReducedVatRate",
+  "TaxIdLabel", "TaxIdFormat", "DefaultPaymentGateway"
+)
+VALUES
+  -- Czech Republic
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1),
+   'CZK', 'cs', 'dd.MM.yyyy', 'Europe/Prague', '+420',
+   0.21, 0.15, 'IČO', '^\d{8}$', 'Stripe'),
+
+  -- Slovakia
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'SVK' LIMIT 1),
+   'EUR', 'sk', 'dd.MM.yyyy', 'Europe/Bratislava', '+421',
+   0.20, 0.10, 'IČO', '^\d{8}$', 'Stripe'),
+
+  -- Poland
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'POL' LIMIT 1),
+   'PLN', 'pl', 'dd.MM.yyyy', 'Europe/Warsaw', '+48',
+   0.23, 0.08, 'NIP', '^\d{10}$', 'Stripe'),
+
+  -- Germany
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'DEU' LIMIT 1),
+   'EUR', 'de', 'dd.MM.yyyy', 'Europe/Berlin', '+49',
+   0.19, 0.07, 'Steuernummer', '^\d{10,13}$', 'Stripe'),
+
+  -- Austria
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'AUT' LIMIT 1),
+   'EUR', 'de', 'dd.MM.yyyy', 'Europe/Vienna', '+43',
+   0.20, 0.10, 'UID-Nummer', '^ATU\d{8}$', 'Stripe'),
+
+  -- United Kingdom
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'GBR' LIMIT 1),
+   'GBP', 'en', 'dd/MM/yyyy', 'Europe/London', '+44',
+   0.20, 0.05, 'UTR', '^\d{10}$', 'Stripe'),
+
+  -- France
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'FRA' LIMIT 1),
+   'EUR', 'fr', 'dd/MM/yyyy', 'Europe/Paris', '+33',
+   0.20, 0.055, 'SIRET', '^\d{14}$', 'Stripe'),
+
+  -- Italy
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'ITA' LIMIT 1),
+   'EUR', 'it', 'dd/MM/yyyy', 'Europe/Rome', '+39',
+   0.22, 0.10, 'Codice Fiscale', '^[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$', 'Stripe'),
+
+  -- Spain
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'ESP' LIMIT 1),
+   'EUR', 'es', 'dd/MM/yyyy', 'Europe/Madrid', '+34',
+   0.21, 0.10, 'NIF', '^[A-Z]\d{7}[A-Z0-9]$', 'Stripe'),
+
+  -- United States
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'USA' LIMIT 1),
+   'USD', 'en', 'MM/dd/yyyy', 'America/New_York', '+1',
+   0.00, NULL, 'EIN', '^\d{2}-\d{7}$', 'Stripe');
+
+-- ============================================================
+-- FEATURE FLAGS
+-- ============================================================
+INSERT INTO public."FeatureFlags" (
+  "Id", "IsActive", "CreatedBy", "CreatedOn",
+  "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
+  "Name", "Description", "IsEnabled", "Scope", "ScopeValue"
+)
+VALUES
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   'StripePayments', 'Enable Stripe payment processing', true, 'global', NULL),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   'EcoFriendlyBadge', 'Show eco-friendly badge on qualifying services', true, 'global', NULL),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   'EmployeeSelfService', 'Allow employees to manage their own profiles', true, 'global', NULL),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   'AutoInvoiceGeneration', 'Automatically generate invoices when pay period closes', true, 'global', NULL),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   'DisputeSystem', 'Enable customer dispute/complaint system', true, 'global', NULL),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   'PushNotifications', 'Enable push notifications for mobile app', false, 'global', NULL);
+
+-- ============================================================
 -- COMPANY INFO
 -- ============================================================
 INSERT INTO public."CompanyInfo" (
@@ -1211,7 +1663,7 @@ VALUES
 (generate_ulid()::TEXT, true, 1, 'SupportEmail', 'support@cleansia.com', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 (generate_ulid()::TEXT, true, 1, 'Closing', 'Best regards,', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 (generate_ulid()::TEXT, true, 1, 'TeamName', 'The Cleansia Team', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
-(generate_ulid()::TEXT, true, 1, 'FooterText', '© 2025 Cleansia. All rights reserved.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 1, 'FooterText', '© 2026 Cleansia. All rights reserved.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 
 -- Password Reset - Czech
 (generate_ulid()::TEXT, true, 1, 'Subject', 'Obnovení hesla', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
@@ -1225,7 +1677,7 @@ VALUES
 (generate_ulid()::TEXT, true, 1, 'SupportEmail', 'support@cleansia.cz', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 (generate_ulid()::TEXT, true, 1, 'Closing', 'S pozdravem,', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 (generate_ulid()::TEXT, true, 1, 'TeamName', 'Tým Cleansia', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
-(generate_ulid()::TEXT, true, 1, 'FooterText', '© 2025 Cleansia. Všechna práva vyhrazena.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 1, 'FooterText', '© 2026 Cleansia. Všechna práva vyhrazena.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 
 -- Order Receipt - English
 (generate_ulid()::TEXT, true, 2, 'Subject', 'Your Order Receipt', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
@@ -1243,7 +1695,7 @@ VALUES
 (generate_ulid()::TEXT, true, 2, 'SupportEmail', 'support@cleansia.com', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 (generate_ulid()::TEXT, true, 2, 'Closing', 'Best regards,', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 (generate_ulid()::TEXT, true, 2, 'TeamName', 'The Cleansia Team', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
-(generate_ulid()::TEXT, true, 2, 'FooterText', '© 2025 Cleansia. All rights reserved.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'FooterText', '© 2026 Cleansia. All rights reserved.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 
 -- Order Receipt - Czech
 (generate_ulid()::TEXT, true, 2, 'Subject', 'Potvrzení objednávky', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
@@ -1261,7 +1713,7 @@ VALUES
 (generate_ulid()::TEXT, true, 2, 'SupportEmail', 'support@cleansia.cz', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 (generate_ulid()::TEXT, true, 2, 'Closing', 'S pozdravem,', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 (generate_ulid()::TEXT, true, 2, 'TeamName', 'Tým Cleansia', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
-(generate_ulid()::TEXT, true, 2, 'FooterText', '© 2025 Cleansia. Všechna práva vyhrazena.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 2, 'FooterText', '© 2026 Cleansia. Všechna práva vyhrazena.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 
 -- Email Confirmation - English
 (generate_ulid()::TEXT, true, 3, 'Subject', 'Confirm Your Email Address', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
@@ -1276,7 +1728,7 @@ VALUES
 (generate_ulid()::TEXT, true, 3, 'SupportEmail', 'support@cleansia.com', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 (generate_ulid()::TEXT, true, 3, 'Closing', 'Best regards,', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 (generate_ulid()::TEXT, true, 3, 'TeamName', 'The Cleansia Team', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
-(generate_ulid()::TEXT, true, 3, 'FooterText', '© 2025 Cleansia. All rights reserved.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 3, 'FooterText', '© 2026 Cleansia. All rights reserved.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 
 -- Email Confirmation - Czech
 (generate_ulid()::TEXT, true, 3, 'Subject', 'Potvrďte Vaši e-mailovou adresu', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
@@ -1291,7 +1743,7 @@ VALUES
 (generate_ulid()::TEXT, true, 3, 'SupportEmail', 'support@cleansia.cz', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 (generate_ulid()::TEXT, true, 3, 'Closing', 'S pozdravem,', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 (generate_ulid()::TEXT, true, 3, 'TeamName', 'Tým Cleansia', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
-(generate_ulid()::TEXT, true, 3, 'FooterText', '© 2025 Cleansia. Všechna práva vyhrazena.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 3, 'FooterText', '© 2026 Cleansia. Všechna práva vyhrazena.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 
 -- Pay Period Closed - English
 (generate_ulid()::TEXT, true, 4, 'Subject', 'Pay Period Closed', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
@@ -1313,7 +1765,7 @@ VALUES
 (generate_ulid()::TEXT, true, 4, 'SupportEmail', 'it@cleansia.cz', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 (generate_ulid()::TEXT, true, 4, 'TeamSignature', 'Best regards', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 (generate_ulid()::TEXT, true, 4, 'TeamName', 'The Cleansia Team', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
-(generate_ulid()::TEXT, true, 4, 'FooterText', '© 2024 Cleansia. All rights reserved.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'FooterText', '© 2026 Cleansia. All rights reserved.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 
 -- Pay Period Closed - Czech
 (generate_ulid()::TEXT, true, 4, 'Subject', 'Platební období uzavřeno', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
@@ -1335,7 +1787,7 @@ VALUES
 (generate_ulid()::TEXT, true, 4, 'SupportEmail', 'it@cleansia.cz', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 (generate_ulid()::TEXT, true, 4, 'TeamSignature', 'S pozdravem', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 (generate_ulid()::TEXT, true, 4, 'TeamName', 'Tým Cleansia', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
-(generate_ulid()::TEXT, true, 4, 'FooterText', '© 2024 Cleansia. Všechna práva vyhrazena.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 4, 'FooterText', '© 2026 Cleansia. Všechna práva vyhrazena.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 
 -- Period End Reminder - English
 (generate_ulid()::TEXT, true, 5, 'Subject', 'Pay Period Ending Soon', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
@@ -1357,7 +1809,7 @@ VALUES
 (generate_ulid()::TEXT, true, 5, 'SupportEmail', 'it@cleansia.cz', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 (generate_ulid()::TEXT, true, 5, 'TeamSignature', 'Best regards', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 (generate_ulid()::TEXT, true, 5, 'TeamName', 'The Cleansia Team', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
-(generate_ulid()::TEXT, true, 5, 'FooterText', '© 2024 Cleansia. All rights reserved.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
+(generate_ulid()::TEXT, true, 5, 'FooterText', '© 2026 Cleansia. All rights reserved.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 
 -- Period End Reminder - Czech
 (generate_ulid()::TEXT, true, 5, 'Subject', 'Platební období brzy končí', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
@@ -1379,7 +1831,7 @@ VALUES
 (generate_ulid()::TEXT, true, 5, 'SupportEmail', 'it@cleansia.cz', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 (generate_ulid()::TEXT, true, 5, 'TeamSignature', 'S pozdravem', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 (generate_ulid()::TEXT, true, 5, 'TeamName', 'Tým Cleansia', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
-(generate_ulid()::TEXT, true, 5, 'FooterText', '© 2024 Cleansia. Všechna práva vyhrazena.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL);
+(generate_ulid()::TEXT, true, 5, 'FooterText', '© 2026 Cleansia. Všechna práva vyhrazena.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL);
 
 -- ============================================================
 -- RECEIPT TEMPLATES
@@ -1425,32 +1877,32 @@ VALUES
 INSERT INTO public."Addresses" (
     "Id", "IsActive", "CreatedBy", "CreatedOn",
     "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
-    "Street", "City", "ZipCode", "CountryId"
+    "Street", "City", "ZipCode", "State", "CountryId"
 )
 VALUES
     -- Employee Residential Address 1: Kateřina Novotná
     (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-     'Vinohrady 15', 'Prague 2', '12000',
+     'Vinohrady 15', 'Prague 2', '12000', 'Prague',
      (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1)),
 
     -- Employee Residential Address 2: Michal Krejčí
     (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-     'Karlín 28', 'Prague 8', '18600',
+     'Karlín 28', 'Prague 8', '18600', 'Prague',
      (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1)),
 
     -- Employee Residential Address 3: Zuzana Horáková
     (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-     'Smíchov 42', 'Prague 5', '15000',
+     'Smíchov 42', 'Prague 5', '15000', 'Prague',
      (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1)),
 
     -- Employee Residential Address 4: Pavel Veselý
     (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-     'Břevnov 67', 'Prague 6', '16900',
+     'Břevnov 67', 'Prague 6', '16900', 'Prague',
      (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1)),
 
     -- Employee Residential Address 5: Lenka Marková
     (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-     'Dejvice 89', 'Prague 6', '16000',
+     'Dejvice 89', 'Prague 6', '16000', 'Prague',
      (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1));
 
 

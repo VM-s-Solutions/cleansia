@@ -126,8 +126,40 @@ public static class PolicyBuilder
         [Policy.CanViewEmailTemplates] = PhysicalPolicy.AdminOnly,
         [Policy.CanUpdateEmailTemplate] = PhysicalPolicy.AdminOnly,
 
+        // Feature Flags
+        [Policy.CanViewFeatureFlags] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCreateFeatureFlag] = PhysicalPolicy.AdminOnly,
+        [Policy.CanToggleFeatureFlag] = PhysicalPolicy.AdminOnly,
+        [Policy.CanDeleteFeatureFlag] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCheckFeatureFlag] = PhysicalPolicy.Authenticated,
+
+        // Country Configuration
+        [Policy.CanViewCountryConfigurations] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCreateCountryConfiguration] = PhysicalPolicy.AdminOnly,
+        [Policy.CanUpdateCountryConfiguration] = PhysicalPolicy.AdminOnly,
+        [Policy.CanDeleteCountryConfiguration] = PhysicalPolicy.AdminOnly,
+
+        // Tenant Configuration
+        [Policy.CanViewTenantConfigurations] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCreateTenantConfiguration] = PhysicalPolicy.AdminOnly,
+        [Policy.CanUpdateTenantConfiguration] = PhysicalPolicy.AdminOnly,
+        [Policy.CanDeleteTenantConfiguration] = PhysicalPolicy.AdminOnly,
+
         // Device
         [Policy.Authenticated] = PhysicalPolicy.Authenticated,
+
+        // GDPR
+        [Policy.CanExportOwnData] = PhysicalPolicy.Authenticated,
+        [Policy.CanDeleteOwnAccount] = PhysicalPolicy.Authenticated,
+        [Policy.CanGrantConsent] = PhysicalPolicy.Authenticated,
+        [Policy.CanWithdrawConsent] = PhysicalPolicy.Authenticated,
+        [Policy.CanViewOwnConsents] = PhysicalPolicy.Authenticated,
+
+        // Admin GDPR
+        [Policy.CanAdminExportUserData] = PhysicalPolicy.AdminOnly,
+        [Policy.CanAdminDeleteUserAccount] = PhysicalPolicy.AdminOnly,
+        [Policy.CanAdminViewUserConsents] = PhysicalPolicy.AdminOnly,
+        [Policy.CanViewGdprRequests] = PhysicalPolicy.AdminOnly,
     };
 
     public static string ToPhysicalPolicy(this string permission) =>

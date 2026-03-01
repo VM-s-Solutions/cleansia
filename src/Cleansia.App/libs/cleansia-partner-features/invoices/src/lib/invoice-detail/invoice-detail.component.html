@@ -1,73 +1,80 @@
 <div class="cleansia-invoice-detail">
-  <div class="cleansia-invoice-detail__container page-wrapper">
-    <cleansia-language-switcher />
-    @if (loading() && !invoiceDetail()) {
-    <cleansia-loader />
-    } @else if (error()) {
-    <cleansia-section [title]="'global.error' | translate">
-      <div class="error-container">
-        <p class="error-message">{{ error() }}</p>
-        <div class="error-actions">
-          <cleansia-button
-            [title]="'global.actions.back' | translate"
-            (click)="navigateToInvoices()"
-            type="secondary"
-          />
-          <cleansia-button
-            [title]="'global.actions.retry' | translate"
-            (click)="retryLoadInvoice()"
-            type="primary"
-          />
-        </div>
-      </div>
-    </cleansia-section>
-    } @else if (invoiceDetail()) {
-    <!-- Invoice Header -->
-    <cleansia-section
-      [title]="'pages.invoice_detail.invoice_details' | translate"
-    >
-      <div class="invoice-header">
-        <div class="invoice-header__main">
-          <div class="invoice-info">
-            <h2 class="invoice-number">{{ invoiceDetail()!.invoiceNumber }}</h2>
-            <div class="invoice-meta">
-              <span class="pay-period">{{
-                invoiceDetail()!.payPeriodLabel
-              }}</span>
-              <span [class]="getStatusClass(invoiceDetail()!.status!)">
-                {{
-                  'pages.invoices.status_' +
-                    getStatusString(invoiceDetail()!.status!) | translate
-                }}
-              </span>
-            </div>
-          </div>
+  <!-- Breadcrumb navigation outside the card -->
+  <div class="cleansia-invoice-detail__breadcrumb-bar page-wrapper">
+    <nav class="cleansia-invoice-detail__breadcrumb">
+      <button
+        type="button"
+        class="cleansia-invoice-detail__back-btn"
+        (click)="navigateToInvoices()"
+      >
+        <i class="pi pi-arrow-left"></i>
+      </button>
+      <a class="cleansia-invoice-detail__breadcrumb-link" (click)="navigateToInvoices()">
+        {{ 'sidebar.invoices' | translate }}
+      </a>
+      <i class="pi pi-chevron-right cleansia-invoice-detail__breadcrumb-sep"></i>
+      <span class="cleansia-invoice-detail__breadcrumb-current">
+        {{ invoiceDetail()?.invoiceNumber || ('pages.invoice_detail.title' | translate) }}
+      </span>
+    </nav>
+  </div>
 
-          <div class="invoice-actions">
-            <cleansia-button
-              [title]="'global.actions.back' | translate"
-              (click)="navigateToInvoices()"
-              type="secondary"
-              icon="pi pi-arrow-left"
-            />
-            @if (invoiceDetail()!.pdfBlobName) {
-            <cleansia-button
-              [title]="'pages.invoices.download_pdf' | translate"
-              (click)="downloadPdf()"
-              type="primary"
-              icon="pi pi-download"
-            />
-            }
-            <cleansia-button
-              [title]="'pages.invoice_detail.print' | translate"
-              (click)="printInvoice()"
-              type="secondary"
-              icon="pi pi-print"
-            />
-          </div>
-        </div>
+  <div class="cleansia-invoice-detail__container page-wrapper">
+    @if (loading() && !invoiceDetail()) {
+    <cleansia-detail-skeleton />
+    } @else if (error()) {
+    <div class="not-found-state">
+      <div class="not-found-state__icon">
+        <i class="pi pi-search"></i>
       </div>
-    </cleansia-section>
+      <h3 class="not-found-state__title">{{ 'pages.invoice_detail.not_found_title' | translate }}</h3>
+      <p class="not-found-state__message">{{ error() }}</p>
+      <div class="not-found-state__actions">
+        <cleansia-button
+          [buttonType]="'button'"
+          [title]="'global.actions.back' | translate"
+          [icon]="'pi pi-arrow-left'"
+          [severity]="'secondary'"
+          [outlined]="true"
+          (clickFn)="navigateToInvoices()"
+        />
+        <cleansia-button
+          [buttonType]="'button'"
+          [title]="'global.actions.retry' | translate"
+          [icon]="'pi pi-refresh'"
+          (clickFn)="retryLoadInvoice()"
+        />
+      </div>
+    </div>
+    } @else if (invoiceDetail()) {
+
+    <!-- Invoice Header -->
+    <div class="invoice-detail-banner">
+      <div class="invoice-detail-banner__top">
+        <span class="invoice-detail-banner__number">{{ invoiceDetail()!.invoiceNumber }}</span>
+        <span [class]="getStatusClass(invoiceDetail()!.status!)">
+          {{ 'pages.invoices.status_' + getStatusString(invoiceDetail()!.status!) | translate }}
+        </span>
+      </div>
+      <div class="invoice-detail-banner__meta">
+        <span class="invoice-detail-banner__meta-item">
+          <i class="pi pi-calendar"></i>
+          {{ invoiceDetail()!.payPeriodLabel }}
+        </span>
+      </div>
+      <div class="invoice-detail-banner__actions">
+        @if (invoiceDetail()!.pdfBlobName) {
+        <button type="button" class="invoice-detail-banner__action-btn" (click)="downloadPdf()">
+          <i class="pi pi-download"></i>
+          <span>{{ 'pages.invoices.download_pdf' | translate }}</span>
+        </button>
+        }
+        <button type="button" class="invoice-detail-banner__action-btn" (click)="printInvoice()">
+          <i class="pi pi-print"></i>
+          <span>{{ 'pages.invoice_detail.print' | translate }}</span>
+        </button>
+      </div>
+    </div>
 
     <!-- Invoice Summary -->
     <cleansia-section [title]="'pages.invoice_detail.summary' | translate">

@@ -9,7 +9,7 @@ export const invoicesRoutes: Route[] = [
     data: { title: 'page_titles.partner.invoices' },
   },
   {
-    path: ':id',
+    path: ':invoiceId',
     component: InvoiceDetailComponent,
     data: { title: 'page_titles.partner.invoice_details' },
   },

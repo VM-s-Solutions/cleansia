@@ -8,7 +8,7 @@ import {
   CleansiaSidebarMenuComponent,
   SidebarMenuItem,
 } from '@cleansia/components';
-import { PageTitleService } from '@cleansia/services';
+import { DialogService, PageTitleService } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -32,13 +32,30 @@ export class AppComponent implements OnInit {
   private readonly translate = inject(TranslateService);
   private readonly authService = inject(AdminAuthService);
   private readonly pageTitleService = inject(PageTitleService);
+  private readonly dialogService = inject(DialogService);
 
   sidebarCollapsed = signal(false);
 
   constructor() {
-    this.translate.addLangs(['cs', 'en']);
-    this.translate.setDefaultLang('cs');
-    this.translate.use('cs');
+    this.translate.addLangs(['cs', 'en', 'pl']);
+    this.translate.setDefaultLang('en');
+    this.translate.use(this.detectLanguage());
+  }
+
+  private detectLanguage(): string {
+    const supported = ['cs', 'en', 'pl'];
+    // 1. Check stored preference
+    const stored = localStorage.getItem('preferred_language');
+    if (stored && supported.includes(stored)) {
+      return stored;
+    }
+    // 2. Detect from browser language
+    const browserLang = navigator.language?.split('-')[0]?.toLowerCase();
+    if (browserLang && supported.includes(browserLang)) {
+      return browserLang;
+    }
+    // 3. Default to English
+    return 'en';
   }
 
   ngOnInit(): void {
@@ -131,7 +148,11 @@ export class AppComponent implements OnInit {
       label: this.translate.instant('sidebar.logout'),
       icon: 'pi pi-sign-out',
       onClickFn: () => {
-        this.authService.logout();
+        this.dialogService
+          .confirmTranslated('global.dialog.confirm_logout', 'global.dialog.confirm')
+          .subscribe((confirmed) => {
+            if (confirmed) this.authService.logout();
+          });
       },
     },
   ];

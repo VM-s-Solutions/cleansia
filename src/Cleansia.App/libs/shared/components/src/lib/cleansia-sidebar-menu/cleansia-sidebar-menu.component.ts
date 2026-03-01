@@ -7,6 +7,7 @@ import {
   HostListener,
   inject,
   input,
+  model,
   output,
   signal,
 } from '@angular/core';
@@ -17,6 +18,7 @@ import { RippleModule } from 'primeng/ripple';
 import { TooltipModule } from 'primeng/tooltip';
 import { CleansiaBrandNameComponent } from '../cleansia-brand-name';
 import { CleansiaButtonComponent } from '../cleansia-button';
+import { CleansiaLanguageSwitcherComponent } from '../cleansia-language-switcher';
 import { SidebarMenuItem } from './cleansia-sidebar-menu.models';
 import { filter } from 'rxjs';
 
@@ -31,6 +33,7 @@ import { filter } from 'rxjs';
     TooltipModule,
     CleansiaBrandNameComponent,
     CleansiaButtonComponent,
+    CleansiaLanguageSwitcherComponent,
   ],
   templateUrl: './cleansia-sidebar-menu.component.html',
   styleUrls: ['../../../../assets/src/styles/components/cleansia-sidebar-menu.component.scss'],
@@ -45,13 +48,15 @@ export class CleansiaSidebarMenuComponent {
   isRoot = input(true);
   collapsed = input(false);
 
+  // Two-way binding for mobile sidebar expanded state (controlled by parent)
+  mobileExpanded = model(false);
+
   // Outputs
   collapsedChange = output<boolean>();
   menuItemSelected = output<string>();
 
   // Signals
   private isMobileSignal = signal(false);
-  isSidebarExpanded = signal(false);
   private localCollapsed = signal(false);
   currentRoute = signal<string>('');
 
@@ -92,7 +97,7 @@ export class CleansiaSidebarMenuComponent {
   }
 
   toggleSidebar(): void {
-    this.isSidebarExpanded.update((v) => !v);
+    this.mobileExpanded.update((v) => !v);
   }
 
   onMenuItemClick(item: SidebarMenuItem, event: Event): void {
@@ -108,7 +113,7 @@ export class CleansiaSidebarMenuComponent {
     }
 
     if (this.isRoot() && this.isMobile()) {
-      this.isSidebarExpanded.set(false);
+      this.mobileExpanded.set(false);
     }
 
     // Toggle submenu

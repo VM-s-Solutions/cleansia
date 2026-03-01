@@ -9,4 +9,5 @@ export const environment = {
     '354682423254-boe1nlnb1dbd3m6a013d3nkpo2e9bgiq.apps.googleusercontent.com',
   betaGateEnabled: false,
   betaGateUrl: 'http://localhost:5000/gate',
+  sentryDsn: '',
 };

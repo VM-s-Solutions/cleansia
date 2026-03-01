@@ -1,13 +1,11 @@
 @if(facade.profileLoading()){
-<cleansia-loader />
-}
+<cleansia-form-skeleton />
+} @else {
 <div class="cleansia-profile">
   <form
     class="cleansia-profile__form-card page-wrapper"
     [formGroup]="facade.formGroup"
   >
-    <cleansia-language-switcher />
-
     <div class="cleansia-profile__header">
       <cleansia-title [title]="'pages.profile.title' | translate" />
       <p class="cleansia-profile__description">
@@ -53,3 +51,4 @@
     </div>
   </form>
 </div>
+}

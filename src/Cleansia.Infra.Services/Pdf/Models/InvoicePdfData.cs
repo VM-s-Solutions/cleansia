@@ -3,7 +3,8 @@ namespace Cleansia.Infra.Services.Pdf.Models;
 public record InvoicePdfData
 {
     public required string InvoiceNumber { get; init; }
-    public required string VariableSymbol { get; init; }
+    public string? VariableSymbol { get; init; }
+    public string? PaymentReference { get; init; }
     public required DateTime GeneratedAt { get; init; }
 
     public required string EmployeeName { get; init; }

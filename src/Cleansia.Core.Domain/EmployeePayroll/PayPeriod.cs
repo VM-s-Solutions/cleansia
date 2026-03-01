@@ -4,7 +4,7 @@ using Cleansia.Core.Domain.Enums;
 
 namespace Cleansia.Core.Domain.EmployeePayroll;
 
-public class PayPeriod : Auditable
+public class PayPeriod : Auditable, ITenantEntity
 {
     [Required]
     public DateOnly StartDate { get; private set; }

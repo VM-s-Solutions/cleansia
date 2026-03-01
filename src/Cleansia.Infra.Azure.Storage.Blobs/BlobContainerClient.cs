@@ -27,7 +27,7 @@ public class BlobContainerClient : IBlobContainerClient
 
     public async Task<IEnumerable<string>> GetFilesAsync(string path, CancellationToken cancellationToken)
     {
-        var blobs = _container.GetBlobsAsync(prefix: path, cancellationToken: cancellationToken);
+        var blobs = _container.GetBlobsAsync(BlobTraits.None, BlobStates.None, path, cancellationToken);
         var fileNames = new List<string>();
 
         await foreach (var blob in blobs)

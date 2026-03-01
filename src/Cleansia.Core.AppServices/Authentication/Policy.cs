@@ -149,6 +149,38 @@ public class Policy
     public const string CanViewEmailTemplates = nameof(CanViewEmailTemplates); // Admin
     public const string CanUpdateEmailTemplate = nameof(CanUpdateEmailTemplate); // Admin
 
+    // Feature Flags
+    public const string CanViewFeatureFlags = nameof(CanViewFeatureFlags); // Admin
+    public const string CanCreateFeatureFlag = nameof(CanCreateFeatureFlag); // Admin
+    public const string CanToggleFeatureFlag = nameof(CanToggleFeatureFlag); // Admin
+    public const string CanDeleteFeatureFlag = nameof(CanDeleteFeatureFlag); // Admin
+    public const string CanCheckFeatureFlag = nameof(CanCheckFeatureFlag); // Authenticated (All roles)
+
+    // Country Configuration
+    public const string CanViewCountryConfigurations = nameof(CanViewCountryConfigurations); // Admin
+    public const string CanCreateCountryConfiguration = nameof(CanCreateCountryConfiguration); // Admin
+    public const string CanUpdateCountryConfiguration = nameof(CanUpdateCountryConfiguration); // Admin
+    public const string CanDeleteCountryConfiguration = nameof(CanDeleteCountryConfiguration); // Admin
+
+    // Tenant Configuration
+    public const string CanViewTenantConfigurations = nameof(CanViewTenantConfigurations); // Admin
+    public const string CanCreateTenantConfiguration = nameof(CanCreateTenantConfiguration); // Admin
+    public const string CanUpdateTenantConfiguration = nameof(CanUpdateTenantConfiguration); // Admin
+    public const string CanDeleteTenantConfiguration = nameof(CanDeleteTenantConfiguration); // Admin
+
     // Device
     public const string Authenticated = nameof(Authenticated); // Authenticated (All roles)
+
+    // GDPR
+    public const string CanExportOwnData = nameof(CanExportOwnData); // Authenticated (All roles)
+    public const string CanDeleteOwnAccount = nameof(CanDeleteOwnAccount); // Authenticated (All roles)
+    public const string CanGrantConsent = nameof(CanGrantConsent); // Authenticated (All roles)
+    public const string CanWithdrawConsent = nameof(CanWithdrawConsent); // Authenticated (All roles)
+    public const string CanViewOwnConsents = nameof(CanViewOwnConsents); // Authenticated (All roles)
+
+    // Admin GDPR
+    public const string CanAdminExportUserData = nameof(CanAdminExportUserData); // Admin
+    public const string CanAdminDeleteUserAccount = nameof(CanAdminDeleteUserAccount); // Admin
+    public const string CanAdminViewUserConsents = nameof(CanAdminViewUserConsents); // Admin
+    public const string CanViewGdprRequests = nameof(CanViewGdprRequests); // Admin
 }

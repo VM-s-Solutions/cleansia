@@ -1,6 +1,5 @@
 <div class="cleansia-invoices">
   <div class="cleansia-invoices__container page-wrapper">
-    <cleansia-language-switcher />
     <div class="cleansia-invoices__header">
       <div class="header-content">
         <div class="header-text">
@@ -208,13 +207,11 @@
     </div>
 
     <cleansia-section>
-      @if (facade.loading() && facade.invoices().length === 0) {
-      <cleansia-loader />
-      } @else {
       <cleansia-table
         [data]="facade.invoices()"
         [columns]="invoicesColumns"
         [actions]="invoicesActions"
+        [clickableRows]="true"
         [config]="{
           paginator: true,
           rows: 10,
@@ -225,9 +222,9 @@
         [loading]="facade.loading()"
         (pageChange)="onPageChange($event)"
         (sortChange)="onSortChange($event)"
+        (rowClick)="viewInvoiceDetails($event)"
       >
       </cleansia-table>
-      }
     </cleansia-section>
   </div>
 </div>

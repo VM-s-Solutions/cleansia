@@ -7,7 +7,7 @@ using Cleansia.Core.Domain.Internationalization;
 
 namespace Cleansia.Core.Domain.Users;
 
-public class User : Auditable
+public class User : Auditable, ITenantEntity
 {
     [Password]
     [MaxLength(255)]
@@ -153,6 +153,23 @@ public class User : Auditable
     public User UpdateLanguagePreference(string? languageCode)
     {
         PreferredLanguageCode = languageCode;
+        return this;
+    }
+
+    public User Anonymize()
+    {
+        FirstName = "[DELETED]";
+        LastName = "[DELETED]";
+        Email = $"deleted_{Id}@anonymized.local";
+        PhoneNumber = null;
+        BirthDate = null;
+        GoogleId = null;
+        Password = null;
+        ProfilePhotoName = null;
+        ResetPasswordCode = null;
+        ResetPasswordCodeExpiresAt = null;
+        ConfirmationCode = null;
+        ConfirmationCodeExpiresAt = null;
         return this;
     }
 }

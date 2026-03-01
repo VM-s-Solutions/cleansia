@@ -2,10 +2,31 @@
   @if (isLoggedIn) {
   <cleansia-sidebar-menu
     [menuItems]="sidebarMenuItems"
+    [(mobileExpanded)]="mobileSidebarExpanded"
     (collapsedChange)="onSidebarCollapsedChange($event)"
   />
   }
-  <main class="main-content" [ngClass]="{ 'main-content__margin': isLoggedIn }">
+
+  <!-- Mobile top toolbar -->
+  @if (isLoggedIn && isMobile()) {
+  <div class="mobile-toolbar">
+    <button
+      type="button"
+      class="mobile-toolbar__menu-btn"
+      (click)="openSidebar()"
+      aria-label="Open menu"
+    >
+      <i class="pi pi-bars"></i>
+    </button>
+    <div class="mobile-toolbar__brand">
+      <img src="assets/logos/Logo.webp" alt="Cleansia" width="28" height="28" />
+      <span>Cleansia</span>
+    </div>
+    <cleansia-language-switcher />
+  </div>
+  }
+
+  <main class="main-content" [ngClass]="{ 'main-content__margin': isLoggedIn, 'main-content__with-toolbar': isLoggedIn && isMobile() }">
     <router-outlet></router-outlet>
   </main>
 

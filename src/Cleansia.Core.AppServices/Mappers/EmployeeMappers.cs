@@ -10,8 +10,7 @@ public static class EmployeeMappers
     {
         return new RegistrationCompletionStatus(
             AreDocumentsUploaded: employee.ContractStatus != Domain.Enums.ContractStatus.Pending,
-            HasCompletedProfile: !string.IsNullOrWhiteSpace(employee.ICO)
-                                 && employee.Address is not null
+            HasCompletedProfile: employee.Address is not null
                                  && employee.Availability.Any());
     }
 
@@ -43,9 +42,10 @@ public static class EmployeeMappers
             City: employee.Address?.City,
             ZipCode: employee.Address?.ZipCode,
             CountryId: employee.Address?.CountryId,
+            State: employee.Address?.State,
             NationalityId: employee.NationalityId,
             PassportId: employee.PassportId,
-            TaxId: employee.ICO,
+            TaxId: employee.TaxId,
             Iban: employee.IBAN,
             EmergencyContactName: employee.EmergencyContactName,
             EmergencyContactPhone: employee.EmergencyContactPhone,
@@ -91,11 +91,12 @@ public static class EmployeeMappers
             City: employee.Address?.City,
             ZipCode: employee.Address?.ZipCode,
             CountryId: employee.Address?.CountryId,
+            State: employee.Address?.State,
             CountryName: employee.Address?.Country?.Name,
             NationalityId: employee.NationalityId,
             NationalityName: employee.Nationality?.Name,
             PassportId: employee.PassportId,
-            TaxId: employee.ICO,
+            TaxId: employee.TaxId,
             Iban: employee.IBAN,
             EmergencyContactName: employee.EmergencyContactName,
             EmergencyContactPhone: employee.EmergencyContactPhone,
@@ -135,8 +136,7 @@ public static class EmployeeMappers
                         !string.IsNullOrEmpty(employee.Address?.ZipCode) &&
                         !string.IsNullOrEmpty(employee.Address?.CountryId);
 
-        var hasEmployeeInfo = !string.IsNullOrEmpty(employee.ICO) &&
-                             !string.IsNullOrEmpty(employee.IBAN) &&
+        var hasEmployeeInfo = !string.IsNullOrEmpty(employee.IBAN) &&
                              !string.IsNullOrEmpty(employee.PassportId) &&
                              !string.IsNullOrEmpty(employee.NationalityId);
 

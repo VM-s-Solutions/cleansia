@@ -9,7 +9,7 @@ using Cleansia.Infra.Common.Configuration.Interfaces;
 
 namespace Cleansia.Web.Controllers;
 
-[Route("api/[controller]")]
+[Route("api/v{version:apiVersion}/[controller]")]
 [ApiController]
 [AllowAnonymous]
 public class HealthController(

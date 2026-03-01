@@ -1,4 +1,5 @@
-import { Injectable, OnDestroy, inject, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   EmployeeInvoiceDto,
   PagedDataOfEmployeeInvoiceDto,
@@ -7,7 +8,7 @@ import {
   SortDefinition,
 } from '@cleansia/partner-services';
 import { SnackbarService } from '@cleansia/services';
-import { Subject, catchError, of, takeUntil } from 'rxjs';
+import { catchError, of, takeUntil } from 'rxjs';
 
 export interface EmployeeInvoice {
   id: string;
@@ -40,10 +41,9 @@ export interface EmployeeInvoice {
 }
 
 @Injectable()
-export class InvoicesFacade implements OnDestroy {
+export class InvoicesFacade extends UnsubscribeControlDirective {
   private readonly snackbarService = inject(SnackbarService);
   private readonly partnerClient = inject(PartnerClient);
-  private readonly destroy$ = new Subject<void>();
 
   // Signals for reactive data
   invoices = signal<EmployeeInvoice[]>([]);
@@ -63,20 +63,16 @@ export class InvoicesFacade implements OnDestroy {
   } | null>(null);
 
   constructor() {
+    super();
     // Get current employee ID
     this.loadCurrentEmployee();
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 
   private loadCurrentEmployee(): void {
     this.partnerClient.employeeClient
       .getCurrentEmployee()
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((employee) => {
@@ -160,7 +156,7 @@ export class InvoicesFacade implements OnDestroy {
         limit
       )
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => {
           this.loading.set(false);
           return of(null);
@@ -218,19 +214,20 @@ export class InvoicesFacade implements OnDestroy {
     this.partnerClient.employeePayrollClient
       .downloadInvoice(invoice.id)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((fileResponse) => {
         if (fileResponse) {
-          // Create a blob from the file data and trigger download
           const blob = fileResponse.data;
           const url = window.URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
           link.download =
             fileResponse.fileName || `invoice-${invoice.invoiceNumber}.pdf`;
+          document.body.appendChild(link);
           link.click();
+          document.body.removeChild(link);
           window.URL.revokeObjectURL(url);
 
           this.snackbarService.showSuccessTranslated(

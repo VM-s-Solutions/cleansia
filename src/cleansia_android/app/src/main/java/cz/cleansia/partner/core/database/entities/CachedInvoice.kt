@@ -32,6 +32,7 @@ data class CachedInvoice(
     val paidAt: String?,
     val adminNotes: String?,
     val bankTransferNote: String?,
+    val paymentReference: String?,
     val cachedAt: Long = System.currentTimeMillis()
 ) {
     /**
@@ -59,7 +60,8 @@ data class CachedInvoice(
             approvedBy = approvedBy,
             paidAt = paidAt,
             adminNotes = adminNotes,
-            bankTransferNote = bankTransferNote
+            bankTransferNote = bankTransferNote,
+            paymentReference = paymentReference
         )
     }
 
@@ -89,7 +91,8 @@ data class CachedInvoice(
                 approvedBy = invoice.approvedBy,
                 paidAt = invoice.paidAt,
                 adminNotes = invoice.adminNotes,
-                bankTransferNote = invoice.bankTransferNote
+                bankTransferNote = invoice.bankTransferNote,
+                paymentReference = invoice.paymentReference
             )
         }
     }

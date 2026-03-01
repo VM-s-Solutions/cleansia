@@ -11,7 +11,7 @@ public class EmployeeEntityConfiguration : AuditableEntityConfiguration<Employee
     {
         base.Configure(builder);
 
-        builder.Property(e => e.ICO)
+        builder.Property(e => e.TaxId)
             .HasMaxLength(50);
 
         builder.Property(e => e.PassportId)

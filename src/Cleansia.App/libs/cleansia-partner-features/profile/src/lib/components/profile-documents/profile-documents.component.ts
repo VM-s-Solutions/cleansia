@@ -3,13 +3,13 @@ import { Component, Input, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   CleansiaButtonComponent,
-  CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaSelectComponent,
   ICleansiaSelectOption,
 } from '@cleansia/components';
 import { DocumentType } from '@cleansia/partner-services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { Skeleton } from 'primeng/skeleton';
 import { ProfileFacade } from '../../profile/profile.facade';
 
 @Component({
@@ -21,8 +21,8 @@ import { ProfileFacade } from '../../profile/profile.facade';
     TranslatePipe,
     CleansiaSectionComponent,
     CleansiaButtonComponent,
-    CleansiaLoaderComponent,
     CleansiaSelectComponent,
+    Skeleton,
   ],
   templateUrl: './profile-documents.component.html',
 })

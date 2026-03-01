@@ -17,6 +17,7 @@ export * from './cleansia-multiselect';
 export * from './cleansia-not-found';
 export * from './cleansia-registration-lock';
 export * from './cleansia-section';
+export * from './cleansia-skeleton';
 export * from './cleansia-select';
 export * from './cleansia-sidebar-menu';
 export * from './cleansia-table';

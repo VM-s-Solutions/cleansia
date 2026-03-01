@@ -9,7 +9,7 @@ data class DashboardStats(
     val completedThisMonth: Int = 0,
     val completedLastMonth: Int = 0,
     val pendingEarnings: Double = 0.0,
-    val currency: String = "CZK"
+    val currency: String = "EUR"
 ) {
     /**
      * Calculates the percentage change between this month and last month completions
@@ -48,7 +48,7 @@ data class EarningsAnalytics(
     val totalEarnings: Double = 0.0,
     val previousPeriodEarnings: Double = 0.0,
     val percentageChange: Double = 0.0,
-    val currency: String = "CZK",
+    val currency: String = "EUR",
     val dataPoints: List<EarningsDataPoint> = emptyList()
 )
 
@@ -64,7 +64,7 @@ data class EarningsSummary(
     val thisWeek: Double = 0.0,
     val thisMonth: Double = 0.0,
     val lastMonth: Double = 0.0,
-    val currency: String = "CZK"
+    val currency: String = "EUR"
 )
 
 @Serializable
@@ -77,7 +77,7 @@ data class UpcomingOrder(
     val address: String? = null,
     val city: String? = null,
     val totalAmount: Double = 0.0,
-    val currency: String = "CZK",
+    val currency: String = "EUR",
     val status: String = "Created",
     val servicesPreview: String? = null
 )

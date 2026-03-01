@@ -5,7 +5,7 @@ namespace Cleansia.Core.Domain.Repositories;
 public interface IReceiptTemplateRepository : IRepository<ReceiptTemplate, string>
 {
     Task<ReceiptTemplate?> GetActiveByCountryAndLanguageAsync(
-        string countryId,
+        string? countryId,
         string languageCode,
         CancellationToken cancellationToken);
 

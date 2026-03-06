@@ -1,0 +1,146 @@
+<div class="customer-orders">
+  <div
+    class="customer-orders__header mb-4 flex align-items-center justify-content-between"
+  >
+    <cleansia-title [title]="'pages.orders.title' | translate" />
+  </div>
+
+  @if (loading()) {
+  <div class="customer-orders__skeleton flex flex-column gap-3 mt-4">
+    @for (i of [1, 2, 3]; track i) {
+    <p-skeleton width="100%" height="8rem" borderRadius="16px" />
+    }
+  </div>
+  } @else if (orders().length === 0) {
+  <div
+    class="customer-orders__empty card shadow-1 surface-card border-round-2xl flex flex-column align-items-center justify-content-center p-6 mt-4"
+  >
+    <i class="pi pi-inbox text-500 mb-4" style="font-size: 4rem"></i>
+    <h3 class="text-900 font-medium text-2xl mb-2">
+      {{ 'pages.orders.no_orders' | translate }}
+    </h3>
+    <p class="text-600 mb-4">
+      {{ 'pages.orders.no_orders_description' | translate }}
+    </p>
+    <cleansia-button
+      [title]="'pages.orders.browse_services' | translate"
+      [severity]="'primary'"
+      [style]="'raised-button'"
+      (clickFn)="router.navigate(['/services'])"
+    />
+  </div>
+  } @else { @if (upcomingOrders().length > 0) {
+  <div class="customer-orders__section mb-6 mt-4">
+    <h2 class="text-900 font-semibold text-xl mb-4">
+      {{ 'pages.orders.upcoming_orders' | translate }}
+    </h2>
+    <div class="flex flex-column gap-3">
+      @for (order of upcomingOrders(); track order.id) {
+      <ng-container
+        *ngTemplateOutlet="orderCard; context: { $implicit: order }"
+      ></ng-container>
+      }
+    </div>
+  </div>
+  } @if (pastOrders().length > 0) {
+  <div class="customer-orders__section mb-5 mt-4">
+    <h2 class="text-900 font-semibold text-xl mb-4">
+      {{ 'pages.orders.past_orders' | translate }}
+    </h2>
+    <div class="flex flex-column gap-3">
+      @for (order of pastOrders(); track order.id) {
+      <ng-container
+        *ngTemplateOutlet="orderCard; context: { $implicit: order }"
+      ></ng-container>
+      }
+    </div>
+  </div>
+  }
+
+  <p-paginator
+    *ngIf="totalRecords() > rows"
+    class="mt-4"
+    [first]="first"
+    [rows]="rows"
+    [totalRecords]="totalRecords()"
+    (onPageChange)="onPageChange($event)"
+  >
+  </p-paginator>
+  }
+</div>
+
+<ng-template #orderCard let-order>
+  <div
+    class="order-card p-4 surface-card border-round-2xl border-1 surface-border shadow-none cursor-pointer flex flex-column md:flex-row align-items-start md:align-items-center justify-content-between gap-4"
+    (click)="viewOrder(order)"
+  >
+    <div class="flex align-items-center gap-4 flex-1">
+      <div
+        class="order-card__icon bg-primary-50 border-round-2xl flex align-items-center justify-content-center h-4rem w-4rem text-primary-600"
+      >
+        <i class="pi pi-calendar text-2xl"></i>
+      </div>
+
+      <div class="flex flex-column gap-1">
+        <div class="flex align-items-center gap-2 mb-1">
+          <span class="text-500 text-sm font-medium"
+            >#{{ order.displayOrderNumber }}</span
+          >
+          <p-tag
+            [value]="order.orderStatus?.name || ''"
+            [severity]="getOrderStatusSeverity(order.orderStatus)"
+            styleClass="text-xs"
+          />
+        </div>
+        <span class="text-900 font-bold text-lg">{{
+          formatDate(order.cleaningDateTime)
+        }}</span>
+        <div class="flex align-items-center text-600 text-sm mt-1">
+          <i class="pi pi-map-marker mr-2 text-xs"></i>
+          <span>{{ order.customerAddress }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="order-card__meta flex flex-column md:flex-row align-items-start md:align-items-center gap-4"
+    >
+      <div class="flex flex-column md:align-items-end">
+        <span class="text-900 font-bold text-xl">{{
+          formatPrice(order.totalPrice, order.currency)
+        }}</span>
+        <span class="text-500 text-sm mt-1 flex align-items-center gap-1">
+          <i
+            class="pi"
+            [ngClass]="
+              getPaymentStatusSeverity(order.paymentStatus) === 'success'
+                ? 'pi-check-circle text-green-500'
+                : 'pi-clock text-orange-500'
+            "
+          ></i>
+          {{ order.paymentStatus?.name || '' }}
+        </span>
+      </div>
+
+      <div class="flex gap-2">
+        <cleansia-button
+          [title]="'pages.orders.rebook' | translate"
+          [severity]="'primary'"
+          [style]="'raised-button'"
+          [icon]="'pi pi-sync'"
+          [iconPosition]="'left'"
+          (clickFn)="$event.stopPropagation(); router.navigate(['/order'])"
+          class="hidden md:block"
+        />
+        <cleansia-button
+          [title]="'global.actions.view' | translate"
+          [severity]="'secondary'"
+          [icon]="'pi pi-chevron-right'"
+          [iconPosition]="'right'"
+          (clickFn)="$event.stopPropagation(); viewOrder(order)"
+          class="hidden md:block"
+        />
+      </div>
+    </div>
+  </div>
+</ng-template>

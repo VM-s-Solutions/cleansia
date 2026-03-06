@@ -1,0 +1,70 @@
+<section class="cl-hero" id="hero">
+  <div class="cl-hero__bubble cl-hero__bubble--1" aria-hidden="true"></div>
+  <div class="cl-hero__bubble cl-hero__bubble--2" aria-hidden="true"></div>
+  <div class="cl-hero__bubble cl-hero__bubble--3" aria-hidden="true"></div>
+  <div class="cl-hero__bubble cl-hero__bubble--4" aria-hidden="true"></div>
+  <div class="cl-hero__bubble cl-hero__bubble--5" aria-hidden="true"></div>
+
+  <div class="cl-hero__inner">
+    <div class="cl-hero__text animate-on-scroll">
+      <p class="cl-hero__tagline">
+        <i class="pi pi-sparkles"></i>
+        {{ 'pages.home.hero.tagline' | translate }}
+      </p>
+      <h1 class="cl-title cl-title--hero">
+        {{ 'pages.home.hero.title' | translate }}
+      </h1>
+      <p class="cl-hero__subtitle">
+        {{ 'pages.home.hero.subtitle' | translate }}
+      </p>
+      <div class="cl-hero__buttons">
+        <a routerLink="/order" class="text-decoration-none">
+          <button
+            pButton
+            type="button"
+            [label]="'pages.home.hero.book_now' | translate"
+            class="p-button-lg p-button-rounded cl-btn-primary"
+          ></button>
+        </a>
+        <a routerLink="/services" class="text-decoration-none">
+          <button
+            pButton
+            type="button"
+            [label]="'pages.home.hero.view_services' | translate"
+            class="p-button-lg p-button-rounded p-button-outlined cl-btn-outline"
+          ></button>
+        </a>
+      </div>
+      <div class="cl-hero__trust">
+        <div class="cl-hero__trust-item">
+          <i class="pi pi-verified"></i>
+          <span>{{ 'pages.home.hero.badge_certified' | translate }}</span>
+        </div>
+        <div class="cl-hero__trust-item">
+          <i class="pi pi-star-fill"></i>
+          <span>{{ 'pages.home.hero.badge_rating' | translate }}</span>
+        </div>
+        <div class="cl-hero__trust-item">
+          <i class="pi pi-users"></i>
+          <span>{{ 'pages.home.hero.badge_customers' | translate }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="cl-hero__image animate-on-scroll delay-1">
+      <img src="assets/images/mascot/mascot-mopping.png" alt="Cleaning mascot" loading="eager" />
+      <div class="cl-hero__float-card cl-hero__float-card--left cl-glass animate-on-scroll delay-2">
+        <i class="pi pi-check-circle"></i>
+        <span>{{ 'pages.home.hero.float_guarantee' | translate }}</span>
+      </div>
+      <div class="cl-hero__float-card cl-hero__float-card--right cl-glass animate-on-scroll delay-3">
+        <i class="pi pi-clock"></i>
+        <span>{{ 'pages.home.hero.float_fast' | translate }}</span>
+      </div>
+    </div>
+  </div>
+  <div class="cl-wave" aria-hidden="true">
+    <svg viewBox="0 0 1440 100" preserveAspectRatio="none">
+      <path d="M0,40 C280,100 720,0 1440,60 L1440,100 L0,100 Z" />
+    </svg>
+  </div>
+</section>

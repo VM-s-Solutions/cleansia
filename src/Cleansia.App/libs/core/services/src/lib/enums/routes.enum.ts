@@ -30,6 +30,23 @@ export enum CleansiaAdminRoute {
   TEMPLATE_MANAGEMENT = 'template-management',
 }
 
+export enum CleansiaCustomerRoute {
+  HOME = '',
+  LOGIN = 'login',
+  REGISTER = 'register',
+  CONFIRM_EMAIL = 'confirm-email',
+  FORGOT_PASSWORD = 'forgot-password',
+  SERVICES = 'services',
+  ORDER = 'order',
+  ORDERS = 'orders',
+  PROFILE = 'profile',
+  DISPUTES = 'disputes',
+  GDPR = 'gdpr',
+  CHECKOUT_SUCCESS = 'checkout/success',
+  CHECKOUT_CANCEL = 'checkout/cancel',
+  NOT_FOUND = 'not-found',
+}
+
 export enum CommonRoute {
   HOME = '',
   NOT_FOUND = 'not-found',

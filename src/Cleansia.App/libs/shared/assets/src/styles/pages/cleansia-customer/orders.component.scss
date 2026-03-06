@@ -1,0 +1,39 @@
+.customer-orders {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+
+  &__header {
+    margin-bottom: 2rem;
+  }
+
+  &__skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-color-secondary);
+
+    i {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+
+    h3 {
+      color: var(--text-color);
+      margin-bottom: 0.5rem;
+    }
+
+    p {
+      margin-bottom: 1.5rem;
+    }
+  }
+
+  &__row {
+    cursor: pointer;
+  }
+}

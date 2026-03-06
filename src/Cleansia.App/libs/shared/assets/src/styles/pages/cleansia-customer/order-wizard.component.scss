@@ -1,0 +1,143 @@
+.order-wizard {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+
+  &__steps {
+    margin-bottom: 2rem;
+  }
+
+  &__content {
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: 12px;
+    padding: 2rem;
+    min-height: 400px;
+  }
+
+  &__step {
+    h3 {
+      margin: 0 0 1.5rem;
+      color: var(--text-color);
+    }
+    h4 {
+      margin: 1.5rem 0 0.75rem;
+      color: var(--text-color-secondary);
+    }
+  }
+
+  &__service-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+  }
+
+  &__service-card {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    border: 2px solid var(--surface-border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      border-color: var(--primary-color);
+    }
+
+    &--selected {
+      border-color: var(--primary-color);
+      background: var(--primary-50, rgba(var(--primary-color-rgb), 0.05));
+    }
+
+    p { margin: 0.25rem 0; color: var(--text-color-secondary); font-size: 0.875rem; }
+  }
+
+  &__price {
+    color: var(--primary-color);
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+
+  &__room-config {
+    display: flex;
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+
+  &__form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    label { font-weight: 600; color: var(--text-color); }
+
+    &--full { grid-column: 1 / -1; }
+  }
+
+  &__datetime {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+
+  &__payment-options {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  &__payment-option {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    border: 2px solid var(--surface-border);
+    border-radius: 8px;
+    cursor: pointer;
+
+    label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+  }
+
+  &__summary {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  &__summary-section {
+    h4 { margin: 0 0 0.5rem; color: var(--text-color-secondary); }
+    p { margin: 0.25rem 0; }
+  }
+
+  &__summary-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: var(--surface-ground);
+    border-radius: 8px;
+    font-size: 1.25rem;
+
+    strong { color: var(--primary-color); font-size: 1.5rem; }
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2rem;
+    gap: 1rem;
+  }
+}

@@ -26,3 +26,4 @@ export * from './cleansia-text-input';
 export * from './cleansia-textarea';
 export * from './cleansia-time-picker';
 export * from './cleansia-title';
+export * from './cleansia-scroll-top';

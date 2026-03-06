@@ -1,0 +1,179 @@
+@use './home-variables' as *;
+
+// =============================
+// Footer (LIGHT background — newsletter overlaps from above)
+// =============================
+.cl-footer {
+  background: $white;
+  color: $text-body;
+  position: relative;
+  z-index: 1;
+
+  &__body {
+    padding-top: 2rem;
+  }
+
+  &__columns {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1.25fr;
+    gap: 3rem;
+    max-width: $max-width;
+    margin: 0 auto;
+    padding: 0 2rem 3rem;
+  }
+
+  &__brand {
+    &-logo {
+      margin-bottom: 1rem;
+    }
+
+    &-desc {
+      font-size: 0.9rem;
+      color: $text-muted;
+      line-height: 1.7;
+      margin-bottom: 1rem !important;
+    }
+  }
+
+  &__socials {
+    display: flex;
+    gap: 0.75rem;
+
+    a {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: $bg-alt;
+      border: 1px solid $border;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: $text-muted;
+      text-decoration: none;
+      transition: all 0.3s;
+
+      &:hover {
+        background: $primary;
+        border-color: $primary;
+        color: $white;
+        transform: translateY(-2px);
+      }
+      i {
+        font-size: 1.05rem;
+      }
+    }
+  }
+
+  &__col {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+
+    h4 {
+      font-family: $font-heading;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: $text-dark;
+      margin: 0 0 2rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+
+      li {
+        margin-bottom: 0.8rem;
+        a {
+          color: $text-muted;
+          text-decoration: none;
+          font-size: 0.9rem;
+          transition: color 0.3s;
+          &:hover {
+            color: $primary;
+          }
+        }
+      }
+    }
+
+    &__actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+  }
+
+  &__contact {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.8rem;
+    color: $text-muted;
+    font-size: 0.9rem;
+
+    i {
+      font-size: 0.95rem;
+      color: $primary;
+      width: 20px;
+      text-align: center;
+    }
+
+    a {
+      color: $text-muted;
+      text-decoration: none;
+      transition: color 0.3s;
+      &:hover {
+        color: $primary;
+      }
+    }
+  }
+
+  &__bottom {
+    border-top: 1px solid $border;
+    padding: 1.25rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: $max-width;
+    margin: 0 auto;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    font-size: 0.85rem;
+    color: $text-light;
+
+    &-links {
+      display: flex;
+      gap: 1.5rem;
+      a {
+        color: $text-light;
+        text-decoration: none;
+        transition: color 0.3s;
+        &:hover {
+          color: $primary;
+        }
+      }
+    }
+  }
+}
+
+// =============================
+// Responsive — Footer
+// =============================
+@media (max-width: 768px) {
+  .cl-footer {
+    &__body {
+      padding-top: 1rem;
+    }
+    &__columns {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      padding: 0 1.5rem 2rem;
+    }
+    &__bottom {
+      flex-direction: column;
+      text-align: center;
+    }
+  }
+}

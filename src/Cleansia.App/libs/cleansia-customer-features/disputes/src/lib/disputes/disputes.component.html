@@ -1,0 +1,152 @@
+<div class="customer-disputes">
+  <div class="customer-disputes__header">
+    <cleansia-title [title]="'pages.disputes.title' | translate" />
+    <cleansia-button
+      [title]="'pages.disputes.create_new' | translate"
+      [severity]="'primary'"
+      [icon]="'pi pi-plus'"
+      (clickFn)="showCreateDialog.set(true)"
+    />
+  </div>
+
+  @if (loading()) {
+    <p>{{ 'global.loading' | translate }}</p>
+  } @else if (disputes().length === 0) {
+    <div class="customer-disputes__empty">
+      <i class="pi pi-inbox"></i>
+      <h3>{{ 'pages.disputes.no_disputes' | translate }}</h3>
+    </div>
+  } @else {
+    <p-table
+      [value]="disputes()"
+      [paginator]="true"
+      [rows]="rows"
+      [totalRecords]="totalRecords()"
+      [lazy]="true"
+      (onLazyLoad)="onPageChange($event)"
+      [rowHover]="true"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template #header>
+        <tr>
+          <th>{{ 'pages.disputes.table.order' | translate }}</th>
+          <th>{{ 'pages.disputes.table.reason' | translate }}</th>
+          <th>{{ 'pages.disputes.table.status' | translate }}</th>
+          <th>{{ 'pages.disputes.table.created' | translate }}</th>
+          <th></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-dispute>
+        <tr class="customer-disputes__row" (click)="openDetail(dispute)">
+          <td>{{ dispute.displayOrderNumber }}</td>
+          <td>{{ dispute.reason?.name }}</td>
+          <td>
+            <p-tag [value]="dispute.status?.name || ''" [severity]="getStatusSeverity(dispute.status)" />
+          </td>
+          <td>{{ formatDate(dispute.createdOn) }}</td>
+          <td>
+            <cleansia-button
+              [title]="'global.actions.view' | translate"
+              [severity]="'secondary'"
+              [icon]="'pi pi-eye'"
+              (clickFn)="openDetail(dispute)"
+            />
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  }
+
+  <!-- Create Dispute Dialog -->
+  <p-dialog
+    [header]="'pages.disputes.create_title' | translate"
+    [(visible)]="showCreateDialog"
+    [modal]="true"
+    [style]="{ width: '500px' }"
+  >
+    <div class="customer-disputes__create-form">
+      <div class="customer-disputes__field">
+        <label>{{ 'pages.disputes.order_id' | translate }}</label>
+        <input pInputText [(ngModel)]="createForm.orderId" />
+      </div>
+      <div class="customer-disputes__field">
+        <label>{{ 'pages.disputes.reason' | translate }}</label>
+        <p-select
+          [options]="reasonOptions"
+          [(ngModel)]="createForm.reason"
+          optionLabel="label"
+          optionValue="value"
+        />
+      </div>
+      <div class="customer-disputes__field">
+        <label>{{ 'pages.disputes.description' | translate }}</label>
+        <textarea pTextarea [(ngModel)]="createForm.description" [rows]="4"></textarea>
+      </div>
+    </div>
+    <ng-template #footer>
+      <cleansia-button
+        [title]="'global.actions.cancel' | translate"
+        [severity]="'secondary'"
+        (clickFn)="showCreateDialog.set(false)"
+      />
+      <cleansia-button
+        [title]="'pages.disputes.submit' | translate"
+        [severity]="'primary'"
+        (clickFn)="createDispute()"
+        [disabled]="!createForm.orderId || !createForm.description"
+      />
+    </ng-template>
+  </p-dialog>
+
+  <!-- Dispute Detail Dialog -->
+  <p-dialog
+    [header]="disputeDetail()?.displayOrderNumber ? ('pages.disputes.title' | translate) + ' - #' + disputeDetail()?.displayOrderNumber : ('pages.disputes.title' | translate)"
+    [(visible)]="showDetailDialog"
+    [modal]="true"
+    [style]="{ width: '600px' }"
+  >
+    @if (detailLoading()) {
+      <p>{{ 'global.loading' | translate }}</p>
+    } @else if (disputeDetail()) {
+      <div class="customer-disputes__detail">
+        <div class="customer-disputes__detail-info">
+          <p><strong>{{ 'pages.disputes.table.reason' | translate }}:</strong> {{ disputeDetail()!.reason?.name }}</p>
+          <p><strong>{{ 'pages.disputes.table.status' | translate }}:</strong>
+            <p-tag [value]="disputeDetail()!.status?.name || ''" [severity]="getStatusSeverity(disputeDetail()!.status)" />
+          </p>
+          <p><strong>{{ 'pages.disputes.description' | translate }}:</strong> {{ disputeDetail()!.description }}</p>
+          @if (disputeDetail()!.resolutionNotes) {
+            <p><strong>{{ 'pages.disputes.resolution' | translate }}:</strong> {{ disputeDetail()!.resolutionNotes }}</p>
+          }
+        </div>
+
+        @if (disputeDetail()!.messages && disputeDetail()!.messages!.length > 0) {
+          <h4>{{ 'pages.disputes.messages' | translate }}</h4>
+          <div class="customer-disputes__messages">
+            @for (msg of disputeDetail()!.messages!; track msg.id) {
+              <div class="customer-disputes__message" [class.customer-disputes__message--staff]="msg.isStaffMessage">
+                <div class="customer-disputes__message-header">
+                  <strong>{{ msg.authorName }}</strong>
+                  <small>{{ formatDate(msg.createdOn) }}</small>
+                </div>
+                <p>{{ msg.message }}</p>
+              </div>
+            }
+          </div>
+        }
+
+        <div class="customer-disputes__new-message">
+          <textarea pTextarea [ngModel]="newMessage()" (ngModelChange)="newMessage.set($event)" [rows]="2" [placeholder]="'pages.disputes.type_message' | translate"></textarea>
+          <cleansia-button
+            [title]="'pages.disputes.send' | translate"
+            [severity]="'primary'"
+            [icon]="'pi pi-send'"
+            [loading]="sendingMessage()"
+            [disabled]="!newMessage()"
+            (clickFn)="sendMessage()"
+          />
+        </div>
+      </div>
+    }
+  </p-dialog>
+</div>

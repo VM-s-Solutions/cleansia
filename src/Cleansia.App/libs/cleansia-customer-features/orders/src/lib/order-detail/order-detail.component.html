@@ -1,0 +1,180 @@
+<div class="order-detail">
+  <div class="order-detail__breadcrumb">
+    <cleansia-button
+      [title]="''"
+      [icon]="'pi pi-arrow-left'"
+      [severity]="'secondary'"
+      (clickFn)="goBack()"
+    />
+    <span (click)="goBack()" class="order-detail__breadcrumb-link">{{ 'nav.orders' | translate }}</span>
+    @if (order()) {
+      <span>/</span>
+      <span>{{ order()!.displayOrderNumber }}</span>
+    }
+  </div>
+
+  @if (loading()) {
+    <div class="order-detail__skeleton">
+      <p-skeleton width="40%" height="2rem" styleClass="mb-3" />
+      <p-skeleton width="100%" height="12rem" styleClass="mb-2" />
+      <p-skeleton width="100%" height="8rem" />
+    </div>
+  } @else if (error()) {
+    <div class="order-detail__error">
+      <i class="pi pi-exclamation-triangle"></i>
+      <h3>{{ 'pages.order_detail.not_found' | translate }}</h3>
+      <cleansia-button
+        [title]="'global.actions.back' | translate"
+        [severity]="'primary'"
+        (clickFn)="goBack()"
+      />
+    </div>
+  } @else if (order()) {
+    <div class="order-detail__card">
+      <!-- Header -->
+      <div class="order-detail__header">
+        <div>
+          <h2>{{ 'pages.order_detail.order' | translate }} #{{ order()!.displayOrderNumber }}</h2>
+          <span class="order-detail__date">{{ formatDate(order()!.createdOn) }}</span>
+        </div>
+        <div class="order-detail__header-actions">
+          @if (order()!.receiptNumber) {
+            <cleansia-button
+              [title]="'pages.order_detail.download_receipt' | translate"
+              [icon]="'pi pi-download'"
+              [severity]="'secondary'"
+              (clickFn)="downloadReceipt()"
+            />
+          }
+          <cleansia-button
+            [title]="'pages.order_detail.report_issue' | translate"
+            [icon]="'pi pi-exclamation-circle'"
+            [severity]="'warn'"
+            (clickFn)="reportIssue()"
+          />
+        </div>
+      </div>
+
+      <!-- Status -->
+      <div class="order-detail__section">
+        <h3>{{ 'pages.order_detail.status' | translate }}</h3>
+        <div class="order-detail__status-row">
+          <div>
+            <span>{{ 'pages.order_detail.order_status' | translate }}:</span>
+            <p-tag [value]="order()!.orderStatus?.name || ''" [severity]="getOrderStatusSeverity(order()!.orderStatus)" />
+          </div>
+          <div>
+            <span>{{ 'pages.order_detail.payment_status' | translate }}:</span>
+            <p-tag [value]="order()!.paymentStatus?.name || ''" [severity]="getPaymentStatusSeverity(order()!.paymentStatus)" />
+          </div>
+          <div>
+            <span>{{ 'pages.order_detail.payment_type' | translate }}:</span>
+            <span>{{ order()!.paymentType?.name }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Service Details -->
+      <div class="order-detail__section">
+        <h3>{{ 'pages.order_detail.service_details' | translate }}</h3>
+        <div class="order-detail__grid">
+          <div>
+            <label>{{ 'pages.order_detail.cleaning_date' | translate }}</label>
+            <p>{{ formatDate(order()!.cleaningDateTime) }}</p>
+          </div>
+          <div>
+            <label>{{ 'pages.order_detail.rooms' | translate }}</label>
+            <p>{{ order()!.rooms }}</p>
+          </div>
+          <div>
+            <label>{{ 'pages.order_detail.bathrooms' | translate }}</label>
+            <p>{{ order()!.bathrooms }}</p>
+          </div>
+          <div>
+            <label>{{ 'pages.order_detail.estimated_time' | translate }}</label>
+            <p>{{ order()!.estimatedTime }} min</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Address -->
+      @if (order()!.address) {
+        <div class="order-detail__section">
+          <h3>{{ 'pages.order_detail.address' | translate }}</h3>
+          <p>{{ order()!.address!.street }}, {{ order()!.address!.city }} {{ order()!.address!.zipCode }}</p>
+        </div>
+      }
+
+      <!-- Packages & Services -->
+      @if (order()!.selectedPackages && order()!.selectedPackages!.length > 0) {
+        <div class="order-detail__section">
+          <h3>{{ 'pages.order_detail.packages' | translate }}</h3>
+          @for (pkg of order()!.selectedPackages!; track pkg.id) {
+            <div class="order-detail__item">
+              <span>{{ pkg.name }}</span>
+              <span>{{ formatPrice(pkg.price) }}</span>
+            </div>
+          }
+        </div>
+      }
+
+      @if (order()!.selectedServices && order()!.selectedServices!.length > 0) {
+        <div class="order-detail__section">
+          <h3>{{ 'pages.order_detail.services' | translate }}</h3>
+          @for (svc of order()!.selectedServices!; track svc.id) {
+            <div class="order-detail__item">
+              <span>{{ svc.name }}</span>
+              <span>{{ svc.estimatedTime }} min</span>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Total -->
+      <div class="order-detail__total">
+        <span>{{ 'pages.order_detail.total' | translate }}</span>
+        <strong>{{ formatPrice(order()!.totalPrice) }}</strong>
+      </div>
+
+      <!-- Status Timeline -->
+      @if (order()!.statusHistory && order()!.statusHistory!.length > 0) {
+        <div class="order-detail__section">
+          <h3>{{ 'pages.order_detail.timeline' | translate }}</h3>
+          <p-timeline [value]="order()!.statusHistory!" layout="vertical">
+            <ng-template #content let-event>
+              <div class="order-detail__timeline-event">
+                <strong>{{ event.statusName }}</strong>
+                <small>{{ formatDate(event.changedOn) }}</small>
+              </div>
+            </ng-template>
+            <ng-template #marker let-event>
+              <span class="order-detail__timeline-marker">
+                <i [class]="getStatusIcon(event.statusValue)"></i>
+              </span>
+            </ng-template>
+          </p-timeline>
+        </div>
+      }
+
+      <!-- Notes -->
+      @if (order()!.notes || order()!.specialInstructions) {
+        <div class="order-detail__section">
+          <h3>{{ 'pages.order_detail.notes' | translate }}</h3>
+          @if (order()!.specialInstructions) {
+            <p><strong>{{ 'pages.order_detail.special_instructions' | translate }}:</strong> {{ order()!.specialInstructions }}</p>
+          }
+          @if (order()!.notes) {
+            <p>{{ order()!.notes }}</p>
+          }
+        </div>
+      }
+
+      @if (order()!.confirmationCode) {
+        <div class="order-detail__confirmation">
+          <span>{{ 'pages.order_detail.confirmation_code' | translate }}:</span>
+          <strong>{{ order()!.confirmationCode }}</strong>
+        </div>
+      }
+    </div>
+  }
+</div>

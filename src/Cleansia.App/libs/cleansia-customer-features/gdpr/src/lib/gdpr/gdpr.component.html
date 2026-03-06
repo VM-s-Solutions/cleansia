@@ -1,0 +1,65 @@
+<div class="customer-gdpr">
+  <cleansia-title [title]="'pages.gdpr.title' | translate" />
+  <p class="customer-gdpr__subtitle">{{ 'pages.gdpr.subtitle' | translate }}</p>
+
+  <!-- Data Export Section -->
+  <div class="customer-gdpr__section">
+    <h3>
+      <i class="pi pi-download"></i>
+      {{ 'pages.gdpr.export_title' | translate }}
+    </h3>
+    <p>{{ 'pages.gdpr.export_description' | translate }}</p>
+    <cleansia-button
+      [title]="'pages.gdpr.export_button' | translate"
+      [severity]="'primary'"
+      [icon]="'pi pi-download'"
+      [loading]="exporting()"
+      (clickFn)="exportData()"
+    />
+  </div>
+
+  <!-- Consent Management Section -->
+  <div class="customer-gdpr__section">
+    <h3>
+      <i class="pi pi-shield"></i>
+      {{ 'pages.gdpr.consents_title' | translate }}
+    </h3>
+    <p>{{ 'pages.gdpr.consents_description' | translate }}</p>
+
+    @if (loadingConsents()) {
+      <p>{{ 'global.loading' | translate }}</p>
+    } @else {
+      <div class="customer-gdpr__consents">
+        @for (type of [ConsentType.TermsOfService, ConsentType.PrivacyPolicy, ConsentType.MarketingEmails, ConsentType.DataProcessing]; track type) {
+          <div class="customer-gdpr__consent-item">
+            <div>
+              <strong>{{ consentLabels[type] | translate }}</strong>
+            </div>
+            <p-toggleSwitch
+              [ngModel]="isConsentGranted(type)"
+              (ngModelChange)="toggleConsent(type, $event)"
+            />
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Delete Account Section -->
+  <div class="customer-gdpr__section customer-gdpr__section--danger">
+    <h3>
+      <i class="pi pi-trash"></i>
+      {{ 'pages.gdpr.delete_title' | translate }}
+    </h3>
+    <p>{{ 'pages.gdpr.delete_description' | translate }}</p>
+    <cleansia-button
+      [title]="'pages.gdpr.delete_button' | translate"
+      [severity]="'danger'"
+      [icon]="'pi pi-trash'"
+      [loading]="deleting()"
+      (clickFn)="deleteAccount()"
+    />
+  </div>
+
+  <p-confirmDialog />
+</div>

@@ -21,4 +21,9 @@ var mobileApi = builder.AddProject<Projects.Cleansia_Web_Mobile>("mobile-api")
     .WithReference(cleansiaDb)
     .WaitFor(cleansiaDb);
 
+var customerApi = builder.AddProject<Projects.Cleansia_Web_Customer>("customer-api")
+    .WithEndpoint("http", e => { e.Port = 5003; e.IsProxied = false; })
+    .WithReference(cleansiaDb)
+    .WaitFor(cleansiaDb);
+
 builder.Build().Run();

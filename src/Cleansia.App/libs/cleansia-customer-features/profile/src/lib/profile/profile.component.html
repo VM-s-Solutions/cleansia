@@ -1,0 +1,89 @@
+<div class="customer-profile">
+  <cleansia-title [title]="'pages.profile.title' | translate" />
+
+  @if (loading()) {
+    <div class="customer-profile__skeleton">
+      <p-skeleton width="100%" height="3rem" styleClass="mb-3" />
+      <p-skeleton width="100%" height="3rem" styleClass="mb-3" />
+      <p-skeleton width="60%" height="3rem" />
+    </div>
+  } @else {
+    <p-tabs value="0">
+      <p-tablist>
+        <p-tab value="0">{{ 'pages.profile.personal_info' | translate }}</p-tab>
+        <p-tab value="1">{{ 'pages.profile.change_password' | translate }}</p-tab>
+      </p-tablist>
+      <p-tabpanels>
+        <p-tabpanel value="0">
+          <form [formGroup]="profileForm" class="customer-profile__form" (ngSubmit)="saveProfile()">
+            <div class="customer-profile__field">
+              <label>{{ 'pages.profile.email' | translate }}</label>
+              <input pInputText [value]="user()?.email || ''" [disabled]="true" />
+            </div>
+            <div class="customer-profile__row">
+              <div class="customer-profile__field">
+                <label>{{ 'pages.profile.first_name' | translate }}</label>
+                <input pInputText formControlName="firstName" />
+              </div>
+              <div class="customer-profile__field">
+                <label>{{ 'pages.profile.last_name' | translate }}</label>
+                <input pInputText formControlName="lastName" />
+              </div>
+            </div>
+            <div class="customer-profile__row">
+              <div class="customer-profile__field">
+                <label>{{ 'pages.profile.phone' | translate }}</label>
+                <input pInputText formControlName="phoneNumber" />
+              </div>
+              <div class="customer-profile__field">
+                <label>{{ 'pages.profile.birth_date' | translate }}</label>
+                <p-datePicker formControlName="birthDate" dateFormat="dd.mm.yy" [showIcon]="true" />
+              </div>
+            </div>
+            <div class="customer-profile__actions">
+              <cleansia-button
+                [title]="'global.actions.save' | translate"
+                [severity]="'primary'"
+                [style]="'raised-button'"
+                [loading]="saving()"
+                [disabled]="profileForm.invalid"
+                (clickFn)="saveProfile()"
+              />
+            </div>
+          </form>
+        </p-tabpanel>
+        <p-tabpanel value="1">
+          <form [formGroup]="passwordForm" class="customer-profile__form" (ngSubmit)="changePassword()">
+            <p class="customer-profile__info">
+              {{ 'pages.profile.password_info' | translate }}
+            </p>
+            <div class="customer-profile__field">
+              <label>{{ 'pages.profile.new_password' | translate }}</label>
+              <input pInputText type="password" [formControl]="passwordForm.controls.newPassword" />
+            </div>
+            <div class="customer-profile__field">
+              <label>{{ 'pages.profile.confirm_password' | translate }}</label>
+              <input pInputText type="password" [formControl]="passwordForm.controls.confirmPassword" />
+              @if (passwordMismatch && passwordForm.controls.confirmPassword.dirty) {
+                <small class="p-error">{{ 'pages.profile.passwords_not_match' | translate }}</small>
+              }
+            </div>
+            <p class="customer-profile__info">
+              {{ 'pages.profile.password_change_note' | translate }}
+            </p>
+            <div class="customer-profile__actions">
+              <cleansia-button
+                [title]="'global.actions.save' | translate"
+                [severity]="'primary'"
+                [style]="'raised-button'"
+                [loading]="saving()"
+                [disabled]="passwordForm.invalid || passwordMismatch"
+                (clickFn)="changePassword()"
+              />
+            </div>
+          </form>
+        </p-tabpanel>
+      </p-tabpanels>
+    </p-tabs>
+  }
+</div>

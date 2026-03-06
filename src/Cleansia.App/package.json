@@ -14,7 +14,8 @@
     "lint": "nx lint",
     "e2e": "nx e2e",
     "generate-partner-client": "npx nswag run nswag-partner.json && bash partner-client-formatter.sh",
-    "generate-admin-client": "npx nswag run nswag-admin.json && bash admin-client-formatter.sh"
+    "generate-admin-client": "npx nswag run nswag-admin.json && bash admin-client-formatter.sh",
+    "generate-customer-client": "npx nswag run nswag-customer.json && bash customer-client-formatter.sh"
   },
   "private": true,
   "dependencies": {

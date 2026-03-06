@@ -1,0 +1,11 @@
+// Cleansia Customer App Global Styles
+// Common styles, components, and customer pages are all imported here
+
+// 1. Common styles (variables, fonts, etc.)
+@use './common';
+
+// 2. Shared component styles
+@use './components/index.scss' as components;
+
+// 3. Customer app page styles
+@use './pages/cleansia-customer/index.scss' as customer;

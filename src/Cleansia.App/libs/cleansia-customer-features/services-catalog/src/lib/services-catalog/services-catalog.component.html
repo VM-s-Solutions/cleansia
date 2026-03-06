@@ -1,0 +1,144 @@
+<div class="catalog-container max-w-screen-xl mx-auto px-4 py-8 md:px-6 lg:px-8">
+  <div class="text-center mb-8">
+    <cleansia-title [title]="'pages.services.title' | translate" class="text-5xl font-bold text-gray-900 tracking-tight" />
+    <p class="text-gray-500 text-xl mt-3 font-light max-w-3xl mx-auto">
+      {{ 'pages.services.subtitle' | translate }}
+    </p>
+  </div>
+
+  @if (loading()) {
+    <div class="flex flex-wrap lg:flex-nowrap gap-5 justify-content-center">
+      @for (i of [1, 2, 3]; track i) {
+        <div class="w-full lg:w-4 premium-card p-5 border-round-2xl">
+          <p-skeleton width="60%" height="2rem" styleClass="mb-4" />
+          <p-skeleton width="100%" height="1rem" styleClass="mb-2" />
+          <p-skeleton width="80%" height="1rem" styleClass="mb-5" />
+          <p-skeleton width="100%" height="3rem" styleClass="border-round-xl" />
+        </div>
+      }
+    </div>
+  } @else {
+    <!-- PACKAGES: Premium Pricing Tiers Form -->
+    @if (packages().length > 0) {
+      <div class="mb-8">
+        <h2 class="text-3xl font-semibold text-gray-900 mb-6 text-center tracking-tight">
+          {{ 'pages.services.packages' | translate }}
+        </h2>
+        <div class="flex flex-column lg:flex-row gap-5 justify-content-center align-items-stretch showcase-tiers">
+          @for (pkg of packages(); track pkg.id; let idx = $index) {
+          <div class="flex-1 w-full flex">
+            <div
+              class="premium-card flex flex-column w-full p-6 border-round-3xl transition-all transition-duration-500 bg-white relative"
+              [class.highlight-tier]="idx === 1"
+            >
+              @if (idx === 1) {
+                <div class="absolute top-0 left-50 border-round-bottom-xl px-4 py-1 bg-primary text-white text-sm font-semibold popular-badge">
+                  {{ 'pages.services.most_popular' | translate }}
+                </div>
+              }
+              <div class="mb-4">
+                <h3 class="text-2xl font-bold text-gray-900 mb-2">
+                  {{ getTranslation(pkg, 'name') }}
+                </h3>
+                <div class="text-4xl font-extrabold text-primary mb-1 mt-4">
+                  {{ formatPrice(pkg.price) }}
+                </div>
+                <p class="text-gray-500 font-medium text-sm">{{ 'pages.services.per_cleaning' | translate }}</p>
+              </div>
+              
+              <div class="flex-grow-1 border-top-1 surface-border pt-4 mt-3">
+                <p class="text-gray-600 line-height-3 mb-4">
+                  {{ getTranslation(pkg, 'description') }}
+                </p>
+                <ul class="list-none p-0 m-0 flex flex-column gap-3 mb-5 text-gray-700">
+                  <li class="flex align-items-center gap-3">
+                    <i class="pi pi-check-circle text-green-500 text-xl"></i>
+                    <span>{{ 'pages.services.premium_quality' | translate }}</span>
+                  </li>
+                  <li class="flex align-items-center gap-3">
+                    <i class="pi pi-check-circle text-green-500 text-xl"></i>
+                    <span>{{ 'pages.services.vetted_professionals' | translate }}</span>
+                  </li>
+                  <li class="flex align-items-center gap-3">
+                    <i class="pi pi-check-circle text-green-500 text-xl"></i>
+                    <span>{{ 'pages.services.satisfaction_guarantee' | translate }}</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="mt-auto pt-2">
+                <cleansia-button
+                  [title]="'pages.services.book_now' | translate"
+                  [severity]="'primary'"
+                  [style]="'raised-button'"
+                  class="w-full book-btn"
+                  [size]="'full-width'"
+                  (clickFn)="bookNow()"
+                />
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- ALA CARTE / ADDITIONAL SERVICES -->
+    @if (services().length > 0) {
+      <div class="mb-6">
+        <h2 class="text-3xl font-semibold text-gray-900 mb-6 text-center tracking-tight">
+          {{ 'pages.services.cleaning_services' | translate }}
+        </h2>
+        <div class="grid grid-nogutter gap-4 justify-content-center">
+          @for (service of services(); track service.id) {
+          <div class="col-12 md:col-6 lg:col-4 flex gap-4">
+            <div
+              class="service-card flex flex-column w-full p-5 border-round-2xl surface-card transition-all transition-duration-300 relative group overflow-hidden bg-white mx-3 my-2"
+            >
+              <div class="card-glow absolute top-0 left-0 w-full h-full pointer-events-none"></div>
+              
+              <div class="flex flex-column h-full z-1 relative">
+                <h3 class="text-xl font-bold text-gray-900 mb-2">
+                  {{ getTranslation(service, 'name') }}
+                </h3>
+                <p class="text-gray-500 line-height-3 mb-4 flex-grow-1 text-sm">
+                  {{ getTranslation(service, 'description') }}
+                </p>
+
+                <div class="mt-auto border-top-1 surface-border pt-4 flex align-items-center justify-content-between">
+                  <div class="flex flex-column">
+                    <span class="text-sm text-gray-500 uppercase font-medium tracking-wide">{{ 'pages.services.from' | translate }}</span>
+                    <span class="text-xl font-bold text-gray-900">
+                      {{ formatPrice(service.basePrice) }}
+                    </span>
+                    @if (service.perRoomPrice > 0) {
+                      <span class="text-xs text-primary font-medium mt-1">
+                        + {{ formatPrice(service.perRoomPrice) }} {{ 'pages.services.per_room' | translate }}
+                      </span>
+                    }
+                  </div>
+                  <div>
+                    <button pButton icon="pi pi-arrow-right" class="p-button-rounded p-button-text p-button-plain hover:bg-gray-100 transition-colors transition-duration-300 w-3rem h-3rem" (click)="bookNow()"></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+    }
+
+    @if (services().length === 0 && packages().length === 0) {
+      <div class="text-center p-8 premium-card border-round-3xl mt-4 max-w-3xl mx-auto flex flex-column align-items-center justify-content-center bg-white">
+        <div class="surface-100 border-circle w-6rem h-6rem flex align-items-center justify-content-center mb-4">
+          <i class="pi pi-sparkles text-400 text-4xl"></i>
+        </div>
+        <h3 class="text-2xl font-semibold text-gray-900 m-0 mb-2">{{ 'pages.services.no_services' | translate }}</h3>
+        <p class="text-gray-500 text-lg m-0">
+          {{ 'pages.services.check_back_later' | translate }}
+        </p>
+      </div>
+    }
+  }
+</div>

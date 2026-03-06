@@ -1,0 +1,106 @@
+@use './home-variables' as *;
+
+// =============================
+// Dynamic Floating Background
+// =============================
+.cl-floating-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+
+  &__icon {
+    position: absolute;
+    color: $primary;
+    opacity: 0.06;
+
+    svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    &--broom {
+      width: 60px;
+      height: 60px;
+      top: 12%;
+      left: 6%;
+      animation: float-icon 17s ease-in-out infinite;
+    }
+    &--spray {
+      width: 48px;
+      height: 48px;
+      top: 70%;
+      left: 35%;
+      animation: float-icon 15s ease-in-out infinite;
+      animation-delay: -4s;
+    }
+    &--bucket {
+      width: 55px;
+      height: 55px;
+      top: 65%;
+      right: 12%;
+      animation: float-icon 21s ease-in-out infinite;
+      animation-delay: -8s;
+    }
+    &--sparkle {
+      width: 40px;
+      height: 40px;
+      top: 20%;
+      left: 50%;
+      animation: float-icon 16s ease-in-out infinite;
+      animation-delay: -2s;
+    }
+    &--soap {
+      width: 44px;
+      height: 44px;
+      top: 25%;
+      right: 15%;
+      animation: float-icon 19s ease-in-out infinite;
+      animation-delay: -6s;
+    }
+    &--droplet {
+      width: 42px;
+      height: 42px;
+      top: 45%;
+      right: 22%;
+      animation: float-icon 20s ease-in-out infinite;
+      animation-delay: -10s;
+    }
+    &--bubbles {
+      width: 50px;
+      height: 50px;
+      top: 55%;
+      left: 18%;
+      animation: float-icon 18s ease-in-out infinite;
+      animation-delay: -12s;
+    }
+    &--sponge {
+      width: 46px;
+      height: 46px;
+      top: 40%;
+      left: 42%;
+      animation: float-icon 22s ease-in-out infinite;
+      animation-delay: -14s;
+    }
+  }
+}
+
+@keyframes float-icon {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate(20px, -15px) rotate(8deg);
+  }
+  50% {
+    transform: translate(-10px, -25px) rotate(-5deg);
+  }
+  75% {
+    transform: translate(15px, 10px) rotate(12deg);
+  }
+}

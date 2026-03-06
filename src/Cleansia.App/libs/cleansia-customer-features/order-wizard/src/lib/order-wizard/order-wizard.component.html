@@ -1,0 +1,347 @@
+﻿<div class="order-wizard">
+  <cleansia-title [title]="'pages.order.title' | translate" />
+
+  <p-steps
+    [model]="stepsMenuItems()"
+    [activeIndex]="facade.activeStep()"
+    [readonly]="true"
+    styleClass="order-wizard__steps"
+  />
+
+  <div class="order-wizard__content">
+    <!-- Step 0: Services -->
+    @if (facade.activeStep() === 0) {
+    <div class="order-wizard__step">
+      <h3>{{ 'pages.order.select_services' | translate }}</h3>
+
+      @if (facade.services().length > 0) {
+      <h4>{{ 'pages.services.cleaning_services' | translate }}</h4>
+      <div class="order-wizard__service-grid">
+        @for (service of facade.services(); track service.id) {
+        <div
+          class="order-wizard__service-card"
+          [class.order-wizard__service-card--selected]="
+            isServiceSelected(service.id!)
+          "
+          (click)="toggleService(service.id!)"
+        >
+          <p-checkbox
+            [binary]="true"
+            [ngModel]="isServiceSelected(service.id!)"
+            (onChange)="toggleService(service.id!)"
+          />
+          <div>
+            <strong>{{ getTranslation(service, 'name') }}</strong>
+            <p>{{ getTranslation(service, 'description') }}</p>
+            <span class="order-wizard__price">{{
+              formatPrice(service.basePrice)
+            }}</span>
+          </div>
+        </div>
+        }
+      </div>
+      } @if (facade.packages().length > 0) {
+      <h4>{{ 'pages.services.packages' | translate }}</h4>
+      <div class="order-wizard__service-grid">
+        @for (pkg of facade.packages(); track pkg.id) {
+        <div
+          class="order-wizard__service-card"
+          [class.order-wizard__service-card--selected]="
+            isPackageSelected(pkg.id!)
+          "
+          (click)="togglePackage(pkg.id!)"
+        >
+          <p-checkbox
+            [binary]="true"
+            [ngModel]="isPackageSelected(pkg.id!)"
+            (onChange)="togglePackage(pkg.id!)"
+          />
+          <div>
+            <strong>{{ getTranslation(pkg, 'name') }}</strong>
+            <p>{{ getTranslation(pkg, 'description') }}</p>
+            <span class="order-wizard__price">{{
+              formatPrice(pkg.price)
+            }}</span>
+          </div>
+        </div>
+        }
+      </div>
+      }
+
+      <div class="order-wizard__room-config">
+        <div class="order-wizard__field">
+          <label>{{ 'pages.order.rooms' | translate }}</label>
+          <p-inputNumber
+            [ngModel]="facade.formData().rooms"
+            (ngModelChange)="facade.updateFormData({ rooms: $event })"
+            [min]="1"
+            [max]="20"
+            [showButtons]="true"
+          />
+        </div>
+        <div class="order-wizard__field">
+          <label>{{ 'pages.order.bathrooms' | translate }}</label>
+          <p-inputNumber
+            [ngModel]="facade.formData().bathrooms"
+            (ngModelChange)="facade.updateFormData({ bathrooms: $event })"
+            [min]="0"
+            [max]="10"
+            [showButtons]="true"
+          />
+        </div>
+      </div>
+
+      <!-- Sticky Calculator Footer for Step 1 -->
+      <div
+        class="sticky z-5 mt-5 p-4 surface-card shadow-4 border-round-xl flex align-items-center justify-content-between border-1 surface-border"
+        style="bottom: 1rem"
+      >
+        <div class="flex align-items-center gap-4">
+          <div
+            class="flex align-items-center justify-content-center bg-primary border-circle w-4rem h-4rem shadow-2"
+          >
+            <i class="pi pi-calculator text-white text-2xl"></i>
+          </div>
+          <div>
+            <span class="block text-600 font-medium text-lg mb-1">{{
+              'pages.order.total_price' | translate
+            }}</span>
+            <span class="text-4xl font-bold text-primary">{{
+              formatPrice(facade.totalPrice())
+            }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- Step 1: Contact & Address -->
+    @if (facade.activeStep() === 1) {
+    <div class="order-wizard__step">
+      @if (!facade.isAuthenticated()) {
+      <h3>{{ 'pages.order.contact_info' | translate }}</h3>
+      <div class="order-wizard__form-grid">
+        <div class="order-wizard__field order-wizard__field--full">
+          <label>{{ 'pages.order.customer_name' | translate }}</label>
+          <input
+            pInputText
+            [ngModel]="facade.formData().customerName"
+            (ngModelChange)="facade.updateFormData({ customerName: $event })"
+          />
+        </div>
+        <div class="order-wizard__field">
+          <label>{{ 'pages.order.customer_email' | translate }}</label>
+          <input
+            pInputText
+            [ngModel]="facade.formData().customerEmail"
+            (ngModelChange)="facade.updateFormData({ customerEmail: $event })"
+            type="email"
+          />
+        </div>
+        <div class="order-wizard__field">
+          <label>{{ 'pages.order.customer_phone' | translate }}</label>
+          <input
+            pInputText
+            [ngModel]="facade.formData().customerPhone"
+            (ngModelChange)="facade.updateFormData({ customerPhone: $event })"
+            type="tel"
+          />
+        </div>
+      </div>
+      }
+
+      <h3>{{ 'pages.order.address' | translate }}</h3>
+      <div class="order-wizard__form-grid">
+        <div class="order-wizard__field order-wizard__field--full">
+          <label>{{ 'pages.order.street' | translate }}</label>
+          <input
+            pInputText
+            [ngModel]="facade.formData().address.street"
+            (ngModelChange)="updateAddressField('street', $event)"
+          />
+        </div>
+        <div class="order-wizard__field">
+          <label>{{ 'pages.order.city' | translate }}</label>
+          <input
+            pInputText
+            [ngModel]="facade.formData().address.city"
+            (ngModelChange)="updateAddressField('city', $event)"
+          />
+        </div>
+        <div class="order-wizard__field">
+          <label>{{ 'pages.order.zip_code' | translate }}</label>
+          <input
+            pInputText
+            [ngModel]="facade.formData().address.zipCode"
+            (ngModelChange)="updateAddressField('zipCode', $event)"
+          />
+        </div>
+        @if (facade.countries().length > 0) {
+        <div class="order-wizard__field">
+          <label>{{ 'pages.order.country' | translate }}</label>
+          <p-select
+            [options]="facade.countries()"
+            [ngModel]="facade.formData().address.countryId"
+            (ngModelChange)="updateAddressField('countryId', $event)"
+            optionLabel="name"
+            optionValue="id"
+            [placeholder]="'pages.order.select_country' | translate"
+          />
+        </div>
+        }
+      </div>
+    </div>
+    }
+
+    <!-- Step 2: Date & Time -->
+    @if (facade.activeStep() === 2) {
+    <div class="order-wizard__step">
+      <h3>{{ 'pages.order.date_time' | translate }}</h3>
+      <div class="order-wizard__datetime">
+        <div class="order-wizard__field">
+          <label>{{ 'pages.order.cleaning_date' | translate }}</label>
+          <p-datePicker
+            [ngModel]="facade.formData().cleaningDate"
+            (ngModelChange)="facade.updateFormData({ cleaningDate: $event })"
+            [minDate]="minDate"
+            [showIcon]="true"
+            dateFormat="dd.mm.yy"
+          />
+        </div>
+        <div class="order-wizard__field">
+          <label>{{ 'pages.order.cleaning_time' | translate }}</label>
+          <p-select
+            [options]="timeOptions"
+            [ngModel]="facade.formData().cleaningTime"
+            (ngModelChange)="facade.updateFormData({ cleaningTime: $event })"
+            optionLabel="label"
+            optionValue="value"
+          />
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- Step 3: Payment -->
+    @if (facade.activeStep() === 3) {
+    <div class="order-wizard__step">
+      <h3>{{ 'pages.order.payment_method' | translate }}</h3>
+      <div class="order-wizard__payment-options">
+        <div class="order-wizard__payment-option">
+          <p-radioButton
+            name="paymentType"
+            [value]="PaymentType.Card"
+            [ngModel]="facade.formData().paymentType"
+            (ngModelChange)="facade.updateFormData({ paymentType: $event })"
+            inputId="card"
+          />
+          <label for="card">
+            <i class="pi pi-credit-card"></i>
+            {{ 'pages.order.pay_by_card' | translate }}
+          </label>
+        </div>
+        <div class="order-wizard__payment-option">
+          <p-radioButton
+            name="paymentType"
+            [value]="PaymentType.Cash"
+            [ngModel]="facade.formData().paymentType"
+            (ngModelChange)="facade.updateFormData({ paymentType: $event })"
+            inputId="cash"
+          />
+          <label for="cash">
+            <i class="pi pi-wallet"></i>
+            {{ 'pages.order.pay_by_cash' | translate }}
+          </label>
+        </div>
+      </div>
+
+      <div class="order-wizard__field order-wizard__field--full">
+        <label>{{ 'pages.order.special_instructions' | translate }}</label>
+        <textarea
+          pTextarea
+          [ngModel]="facade.formData().specialInstructions"
+          (ngModelChange)="
+            facade.updateFormData({ specialInstructions: $event })
+          "
+          [rows]="3"
+        ></textarea>
+      </div>
+    </div>
+    }
+
+    <!-- Step 4: Summary -->
+    @if (facade.activeStep() === 4) {
+    <div class="order-wizard__step">
+      <h3>{{ 'pages.order.summary' | translate }}</h3>
+      <div class="order-wizard__summary">
+        <div class="order-wizard__summary-section">
+          <h4>{{ 'pages.order.selected_services_label' | translate }}</h4>
+          @for (id of facade.formData().selectedServiceIds; track id) {
+            @if (getServiceById(id)) {
+              <p>{{ getTranslation(getServiceById(id)!, 'name') }}</p>
+            }
+          }
+          @for (id of facade.formData().selectedPackageIds; track id) {
+            @if (getPackageById(id)) {
+              <p>{{ getTranslation(getPackageById(id)!, 'name') }}</p>
+            }
+          }
+        </div>
+        <div class="order-wizard__summary-section">
+          <h4>{{ 'pages.order.address' | translate }}</h4>
+          <p>
+            {{ facade.formData().address.street }},
+            {{ facade.formData().address.city }}
+            {{ facade.formData().address.zipCode }}
+          </p>
+        </div>
+        <div class="order-wizard__summary-section">
+          <h4>{{ 'pages.order.date_time' | translate }}</h4>
+          <p>
+            {{ facade.formData().cleaningDate | date : 'dd.MM.yyyy' }}
+            {{ facade.formData().cleaningTime }}
+          </p>
+        </div>
+        <div class="order-wizard__summary-section">
+          <h4>
+            {{ 'pages.order.rooms' | translate }}:
+            {{ facade.formData().rooms }},
+            {{ 'pages.order.bathrooms' | translate }}:
+            {{ facade.formData().bathrooms }}
+          </h4>
+        </div>
+        <div class="order-wizard__summary-total">
+          <span>{{ 'pages.order.total_price' | translate }}</span>
+          <strong>{{ formatPrice(facade.totalPrice()) }}</strong>
+        </div>
+      </div>
+    </div>
+    }
+  </div>
+
+  <div class="order-wizard__actions">
+    @if (facade.activeStep() > 0) {
+    <cleansia-button
+      [title]="'global.actions.back' | translate"
+      [severity]="'secondary'"
+      (clickFn)="facade.prevStep()"
+    />
+    } @if (facade.activeStep() < facade.steps.length - 1) {
+    <cleansia-button
+      [title]="'global.actions.next' | translate"
+      [severity]="'primary'"
+      [style]="'raised-button'"
+      [disabled]="!facade.canProceed()"
+      (clickFn)="facade.nextStep()"
+    />
+    } @if (facade.activeStep() === facade.steps.length - 1) {
+    <cleansia-button
+      [title]="'pages.order.submit_order' | translate"
+      [severity]="'primary'"
+      [style]="'raised-button'"
+      [loading]="facade.submitting()"
+      (clickFn)="facade.submitOrder()"
+    />
+    }
+  </div>
+</div>

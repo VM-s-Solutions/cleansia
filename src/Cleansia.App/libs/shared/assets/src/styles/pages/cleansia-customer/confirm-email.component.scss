@@ -1,0 +1,72 @@
+.cleansia-email-confirm {
+  &__page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+  }
+
+  &__confirmation-card {
+    max-width: 28rem;
+    width: 100%;
+    background-color: var(--cleansia-white);
+    border-radius: 10px;
+    overflow: hidden;
+    padding: 1.5rem;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    row-gap: 1rem;
+
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 16px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  &__brand-name-container {
+    display: flex;
+    justify-content: center;
+    border-bottom: 1px solid var(--cleansia-light-gray);
+    padding-bottom: 10px;
+
+    &__actions {
+      display: flex;
+      justify-content: start;
+      align-items: center;
+      border-bottom: 1px solid var(--cleansia-light-gray);
+      padding-bottom: 10px;
+      gap: 3.5rem;
+    }
+  }
+
+  &__header {
+    text-transform: uppercase;
+  }
+
+  &__form-control {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: end;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  &__dialog-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    row-gap: 1rem;
+  }
+}

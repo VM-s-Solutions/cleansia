@@ -1,0 +1,51 @@
+.customer-orders {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+
+  &__header {
+    margin-bottom: 2rem;
+  }
+
+  &__skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  &__empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-color-secondary);
+  }
+
+  .order-card {
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    &__icon {
+      background-color: var(--primary-50);
+      color: var(--primary-600);
+      border-radius: 1.5rem; /* extra soft round */
+    }
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--surface-d) 0 10px 20px -5px, var(--surface-border) 0 4px 10px -5px !important;
+      border-color: var(--primary-200) !important;
+    }
+  }
+
+  @media screen and (max-width: 768px) {
+    .order-card {
+      align-items: stretch;
+      
+      &__meta {
+        width: 100%;
+        justify-content: space-between;
+        margin-top: 1rem;
+        border-top: 1px solid var(--surface-border);
+        padding-top: 1.25rem;
+      }
+    }
+  }
+}

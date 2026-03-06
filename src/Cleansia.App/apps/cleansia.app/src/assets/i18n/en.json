@@ -1,0 +1,748 @@
+{
+  "nav": {
+    "home": "Home",
+    "services": "Services",
+    "my_orders": "My Orders",
+    "orders": "My Orders",
+    "book_now": "Book Now",
+    "login": "Log In",
+    "register": "Sign Up",
+    "profile": "Profile",
+    "logout": "Log Out"
+  },
+  "cookies": {
+    "title": "Your Privacy Matters",
+    "description": "We use cookies to improve your browsing experience, provide personalized content, and analyze traffic. By clicking \"Accept\", you consent to the use of cookies.",
+    "accept": "Accept All",
+    "decline": "Decline",
+    "learn_more": "Learn More",
+    "banner_title": "Cookie Consent Banner"
+  },
+  "page_titles": {
+    "customer": {
+      "default": "Cleansia",
+      "login": "Log In",
+      "register": "Sign Up",
+      "confirm_email": "Confirm Email",
+      "forgot_password": "Forgot Password",
+      "services": "Our Services",
+      "order": "Book a Cleaning",
+      "orders": "My Orders",
+      "order_detail": "Order Detail",
+      "profile": "My Profile",
+      "disputes": "My Disputes",
+      "gdpr": "Privacy & Data",
+      "checkout_success": "Payment Successful",
+      "checkout_cancel": "Payment Cancelled",
+      "not_found": "Page Not Found"
+    }
+  },
+  "global": {
+    "loading": "Loading...",
+    "messages": {
+      "success": "Success",
+      "error": "Error",
+      "form": {
+        "request_sent": "Your request has been sent. We'll get back to you soon!"
+      }
+    },
+    "dialog": {
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "yes": "Yes",
+      "no": "No",
+      "confirm_logout": "Are you sure you want to log out?"
+    },
+    "validation": {
+      "required": "This field is required",
+      "email": "Please enter a valid email address",
+      "minlength": "Must be at least {{min}} characters",
+      "maxlength": "Must be at most {{max}} characters",
+      "passwords_mismatch": "Passwords do not match"
+    },
+    "actions": {
+      "actions": "Actions",
+      "login": "Log In",
+      "register": "Sign Up",
+      "save": "Save",
+      "cancel": "Cancel",
+      "back": "Back",
+      "next": "Next",
+      "submit": "Submit",
+      "view": "View",
+      "close": "Close",
+      "delete": "Delete",
+      "confirm": "Confirm",
+      "reset": "Reset",
+      "retry": "Retry",
+      "go_back": "Go Back",
+      "go_home": "Go to Home"
+    },
+    "user": {
+      "remember_me": "Remember me"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome Back",
+      "subtitle": "Log in to manage your cleanings",
+      "email": "Email",
+      "password": "Password",
+      "remember_me": "Remember me",
+      "submit": "Log In",
+      "forgot_password": "Forgot password?",
+      "no_account": "Don't have an account?",
+      "dont_have_account": "Don't have an account?",
+      "register_link": "Sign up",
+      "or": "or",
+      "google": "Continue with Google",
+      "success": "Successfully logged in!",
+      "error": "Invalid email or password"
+    },
+    "register": {
+      "title": "Create Account",
+      "subtitle": "Sign up to book your first cleaning",
+      "first_name": "First Name",
+      "last_name": "Last Name",
+      "email": "Email",
+      "password": "Password",
+      "confirm_password": "Confirm Password",
+      "terms": "I agree to the Terms of Service and Privacy Policy",
+      "submit": "Create Account",
+      "have_account": "Already have an account?",
+      "login_link": "Log in",
+      "success": "Account created! Please check your email to confirm.",
+      "error": "Registration failed. Please try again.",
+      "terms_agreement": "I agree to the terms",
+      "terms_and_conditions": "I agree to the <a href='/gdpr'>Terms of Service and Privacy Policy</a>",
+      "validation": {
+        "password_lowercase": "At least one lowercase letter",
+        "password_uppercase": "At least one uppercase letter",
+        "password_number": "At least one number",
+        "password_min_length": "At least 8 characters",
+        "password_special_character": "At least one special character",
+        "passwords_match": "Passwords match"
+      }
+    },
+    "confirm_email": {
+      "title": "Confirm Your Email",
+      "subtitle": "We're verifying your email address",
+      "verifying": "Verifying your email...",
+      "success": "Email confirmed successfully!",
+      "error": "Invalid or expired confirmation link",
+      "resend": "Resend confirmation email",
+      "resend_success": "Confirmation email sent!",
+      "back_to_login": "Back to login"
+    },
+    "forgot_password": {
+      "title": "Reset Password",
+      "subtitle": "Enter your email and we'll send you a reset link",
+      "email": "Email",
+      "submit": "Send Reset Link",
+      "success": "Password reset link sent! Check your email.",
+      "back_to_login": "Back to login"
+    }
+  },
+  "services": {
+    "title": "Our Services",
+    "subtitle": "Professional cleaning services tailored to your needs",
+    "per_room": "per room",
+    "base_price": "Base price",
+    "book_service": "Book Now",
+    "packages_title": "Cleaning Packages",
+    "packages_subtitle": "Save with our bundled packages",
+    "includes": "Includes",
+    "estimated_time": "Est. time",
+    "minutes": "min"
+  },
+  "order": {
+    "wizard": {
+      "title": "Book a Cleaning",
+      "step_services": "Services",
+      "step_address": "Address",
+      "step_datetime": "Date & Time",
+      "step_payment": "Payment",
+      "step_summary": "Summary",
+      "next": "Next",
+      "back": "Back",
+      "submit": "Place Order"
+    },
+    "services_step": {
+      "select_services": "Select Services",
+      "select_packages": "Or Choose a Package",
+      "rooms": "Number of Rooms",
+      "bathrooms": "Number of Bathrooms",
+      "extras": "Extras",
+      "no_selection": "Please select at least one service or package"
+    },
+    "address_step": {
+      "title": "Cleaning Address",
+      "street": "Street Address",
+      "city": "City",
+      "zip": "ZIP Code",
+      "country": "Country"
+    },
+    "datetime_step": {
+      "title": "Preferred Date & Time",
+      "date": "Date",
+      "time": "Time",
+      "note": "We'll confirm the exact time with you"
+    },
+    "payment_step": {
+      "title": "Payment Method",
+      "card": "Pay by Card (Stripe)",
+      "cash": "Pay in Cash",
+      "total": "Total Price",
+      "price_breakdown": "Price Breakdown"
+    },
+    "summary_step": {
+      "title": "Order Summary",
+      "services": "Selected Services",
+      "packages": "Selected Packages",
+      "address": "Address",
+      "date_time": "Date & Time",
+      "payment": "Payment Method",
+      "total": "Total",
+      "confirm": "Confirm & Pay"
+    }
+  },
+  "orders": {
+    "title": "My Orders",
+    "empty": "You haven't placed any orders yet",
+    "book_first": "Book your first cleaning",
+    "status": "Status",
+    "date": "Date",
+    "total": "Total",
+    "actions": "Actions",
+    "view_detail": "View Details",
+    "download_receipt": "Download Receipt",
+    "report_issue": "Report Issue",
+    "filter": {
+      "all": "All",
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "detail": {
+      "title": "Order Detail",
+      "order_number": "Order #",
+      "status_timeline": "Status Timeline",
+      "service_details": "Service Details",
+      "assigned_employees": "Assigned Cleaners",
+      "no_employees": "Cleaners will be assigned soon",
+      "notes": "Notes",
+      "issues": "Issues"
+    }
+  },
+  "checkout": {
+    "success": {
+      "title": "Payment Successful!",
+      "message": "Your order has been confirmed. You'll receive a confirmation email shortly.",
+      "confirmation_code": "Confirmation Code",
+      "view_orders": "View My Orders",
+      "book_another": "Book Another Cleaning"
+    },
+    "cancel": {
+      "title": "Payment Cancelled",
+      "message": "Your payment was not completed. No charges have been made.",
+      "try_again": "Try Again",
+      "back_home": "Back to Home"
+    }
+  },
+  "profile": {
+    "title": "My Profile",
+    "personal_info": "Personal Information",
+    "change_password": "Change Password",
+    "preferences": "Preferences",
+    "first_name": "First Name",
+    "last_name": "Last Name",
+    "email": "Email",
+    "phone": "Phone Number",
+    "language": "Language",
+    "currency": "Currency",
+    "save": "Save Changes",
+    "saved": "Profile updated successfully",
+    "current_password": "Current Password",
+    "new_password": "New Password",
+    "confirm_new_password": "Confirm New Password",
+    "change_password_submit": "Update Password",
+    "password_changed": "Password changed successfully"
+  },
+  "disputes": {
+    "title": "My Disputes",
+    "empty": "No disputes",
+    "create": "Create Dispute",
+    "select_order": "Select Order",
+    "reason": "Reason",
+    "description": "Description",
+    "submit": "Submit Dispute",
+    "created": "Dispute created successfully",
+    "detail": {
+      "title": "Dispute Detail",
+      "status": "Status",
+      "messages": "Messages",
+      "add_message": "Add Message",
+      "send": "Send",
+      "resolution": "Resolution"
+    },
+    "status": {
+      "open": "Open",
+      "in_review": "In Review",
+      "resolved": "Resolved",
+      "closed": "Closed"
+    }
+  },
+  "gdpr": {
+    "title": "Privacy & Data",
+    "subtitle": "Manage your personal data and privacy settings",
+    "export": {
+      "title": "Export My Data",
+      "description": "Download a copy of all your personal data we have on file",
+      "button": "Export Data",
+      "success": "Your data export is ready for download"
+    },
+    "delete": {
+      "title": "Delete My Account",
+      "description": "Permanently delete your account and all associated data. This action cannot be undone.",
+      "button": "Delete Account",
+      "confirm": "Are you sure? This will permanently delete your account and all your data.",
+      "success": "Your account has been deleted"
+    },
+    "consents": {
+      "title": "Consent Management",
+      "description": "Manage what data processing you consent to",
+      "marketing": "Marketing Communications",
+      "analytics": "Analytics & Improvements",
+      "third_party": "Third-party Sharing",
+      "granted": "Granted",
+      "withdrawn": "Withdrawn",
+      "grant": "Grant",
+      "withdraw": "Withdraw"
+    }
+  },
+  "pages": {
+    "home": {
+      "login": "Log In",
+      "register": "Sign Up",
+      "hero": {
+        "title": "Professional Cleaning Services at Your Doorstep",
+        "subtitle": "Book professional cleaning easily online. Deep cleaning of furniture, carpets, mattresses, and much more.",
+        "tagline": "Clean. Fast. Safe.",
+        "book_now": "Book a Cleaning",
+        "view_services": "Our Services",
+        "badge_certified": "Certified Pros",
+        "badge_rating": "4.9 Rating",
+        "badge_customers": "2,000+ Customers",
+        "float_guarantee": "100% Satisfaction",
+        "float_fast": "Done in 2-4h"
+      },
+      "why_choose_us": {
+        "title": "Why Choose Us?",
+        "badge": "Our Advantages",
+        "subtitle": "We combine professional equipment with eco-friendly products for the best results.",
+        "item1_title": "Fair Prices",
+        "item1_desc": "No hidden fees — transparent pricing from the start.",
+        "item2_title": "Safe Products",
+        "item2_desc": "Low-moisture formulas, safe for children and allergy sufferers.",
+        "item3_title": "Fast Drying",
+        "item3_desc": "Ready in 2-4 hours — start using your furniture right away."
+      },
+      "process": {
+        "title": "The Cleaning Process",
+        "badge": "How It Works",
+        "subtitle": "Our proven 5-step approach ensures a thorough and professional clean every time.",
+        "step1": "Inspection",
+        "step1_desc": "We assess your furniture and test for colour fastness.",
+        "step2": "Stain Removal",
+        "step2_desc": "Special agents treat tough and set-in stains.",
+        "step3": "Deep Cleaning",
+        "step3_desc": "Extraction machine applies solution and vacuums out dirt.",
+        "step4": "Steam Treatment",
+        "step4_desc": "Hot steam kills bacteria, removes allergens, and freshens fibres.",
+        "step5": "Drying",
+        "step5_desc": "Air movers speed up drying — ready in 2-4 hours."
+      },
+      "counter": {
+        "title": "We have completed over",
+        "unit": "cleanings"
+      },
+      "benefits": {
+        "title": "Why Is Professional Cleaning Better Than Regular Cleaning?",
+        "badge": "The Difference",
+        "b1": "Removes dirt from the inside, not just the surface.",
+        "b2": "Leaves no sticky film that attracts more dirt.",
+        "b3": "Eliminates bacteria, dust mites, and mold — safe for allergy sufferers and children.",
+        "b4": "Dries quickly — 2-4 hours with professional extraction."
+      },
+      "extra_services": {
+        "s1": { "name": "Car Interior Cleaning" },
+        "s2": { "name": "Office Cleaning" },
+        "s3": { "name": "Post-Renovation Cleaning" }
+      },
+      "fallback_services": {
+        "s1": { "name": "General Cleaning", "desc": "Standard cleaning of all rooms including dusting, vacuuming, and sanitizing." },
+        "s2": { "name": "Deep Cleaning", "desc": "Thorough cleaning including baseboards, inside appliances, and detailed sanitization." },
+        "s3": { "name": "Upholstery Cleaning", "desc": "Professional cleaning of sofas, armchairs, and other upholstered furniture." }
+      },
+      "services": {
+        "title": "Services & Pricing",
+        "badge": "What We Offer",
+        "subtitle": "Choose the service that fits your needs. All prices include professional equipment and eco products.",
+        "view_all": "View All Services",
+        "details": "Details",
+        "extra_stain": "Tough stain removal",
+        "extra_odour": "Odour removal (pets, cigarettes)"
+      },
+      "before_after": {
+        "title": "See the Difference",
+        "badge": "Real Results",
+        "subtitle": "Drag the slider to see real before and after results from our cleanings.",
+        "before": "Before",
+        "after": "After",
+        "label_sofa": "Sofa Deep Cleaning",
+        "label_carpet": "Carpet Restoration",
+        "label_mattress": "Mattress Cleaning"
+      },
+      "testimonials": {
+        "title": "What Our Customers Say",
+        "badge": "Testimonials",
+        "rating": "rating",
+        "review": "review",
+        "t1": { "text": "Incredible cleaning of sofas and carpets — like brand new! Great communication and fast service. Highly recommend to everyone!", "author": "Anna", "role": "homemaker" },
+        "t2": { "text": "Clean carpets and upholstery, results exceeded expectations! All stains gone. Very professional, concrete approach, great team.", "author": "Igor", "role": "office manager" },
+        "t3": { "text": "We tried several companies — Cleansia are the best. Our mattresses and carpets are now perfectly clean and smell wonderful.", "author": "Radmila", "role": "stay-at-home mum" }
+      },
+      "faq": {
+        "title": "Frequently Asked Questions",
+        "badge": "FAQ",
+        "desc": "Can't find the answer you're looking for? Get in touch with our team and we'll be happy to help.",
+        "q1": { "question": "Do you travel to the suburbs?", "answer": "Yes, we cover surrounding areas. Contact us to check availability for your location." },
+        "q2": { "question": "Can you clean furniture with delicate upholstery?", "answer": "Yes, we select gentle cleaning agents and methods appropriate for each fabric type: silk, wool, velvet, microfibre and more. Before cleaning, we always test on a small area to make sure the fabric won't be damaged." },
+        "q3": { "question": "Do you remove all stains completely?", "answer": "We remove 95% of stains. Some very old or chemically set stains may lighten significantly but not disappear fully." },
+        "q4": { "question": "Can I book cleaning in the evening or on weekends?", "answer": "Yes! We offer flexible scheduling including evenings and weekends to fit your schedule." }
+      },
+      "cta": {
+        "title": "Ready to Transform Your Space?",
+        "desc": "Book your professional cleaning today and enjoy a healthier, fresher home.",
+        "button": "Book Now"
+      },
+      "footer": {
+        "contacts": "Contact Us",
+        "request_quote": "Request a Quote",
+        "your_name": "Your Name",
+        "your_phone": "Your Phone",
+        "social": "Social Media",
+        "privacy": "Privacy Policy",
+        "newsletter_title": "Subscribe to our newsletter to get the latest updates",
+        "newsletter_subtitle": "Get 20% off on your first order just by subscribing to our newsletter.",
+        "newsletter_placeholder": "Enter your email",
+        "newsletter_button": "Subscribe",
+        "unsubscribe_note": "You will be able to unsubscribe at any time.",
+        "privacy_link_text": "Read our privacy policy here",
+        "company": "Company",
+        "support": "Support",
+        "links": "Links",
+        "help_center": "Help Center",
+        "gdpr_link": "Privacy & GDPR",
+        "terms_link": "Terms of Service",
+        "description": "Professional mobile cleaning services. Furniture, carpets, mattresses — we come to you.",
+        "address": "Prague, Czech Republic"
+      }
+    },
+    "profile": {
+      "title": "My Profile",
+      "personal_info": "Personal Information",
+      "change_password": "Change Password",
+      "email": "Email",
+      "first_name": "First Name",
+      "last_name": "Last Name",
+      "phone": "Phone",
+      "birth_date": "Date of Birth",
+      "password_info": "Enter a new password to change it.",
+      "new_password": "New Password",
+      "confirm_password": "Confirm Password",
+      "passwords_not_match": "Passwords do not match",
+      "password_change_note": "Password must be at least 8 characters with uppercase, lowercase, and a number.",
+      "save_success": "Profile saved successfully",
+      "save_error": "Failed to save profile"
+    },
+    "services": {
+      "title": "Our Services",
+      "subtitle": "Professional cleaning services tailored to your needs",
+      "cleaning_services": "Cleaning Services",
+      "packages": "Packages",
+      "book_now": "Book Now",
+      "from": "from",
+      "per_room": "per room",
+      "no_services": "No services available at the moment",
+      "most_popular": "Most Popular",
+      "per_cleaning": "per cleaning",
+      "premium_quality": "Premium quality cleaning",
+      "vetted_professionals": "Vetted professionals",
+      "satisfaction_guarantee": "100% satisfaction guarantee",
+      "check_back_later": "Check back later for our premium offerings."
+    },
+    "order": {
+      "title": "Book a Cleaning",
+      "select_services": "Select Services",
+      "rooms": "Number of Rooms",
+      "bathrooms": "Number of Bathrooms",
+      "address": "Address",
+      "street": "Street",
+      "city": "City",
+      "zip_code": "ZIP Code",
+      "country": "Country",
+      "select_country": "Select Country",
+      "date_time": "Date & Time",
+      "cleaning_date": "Cleaning Date",
+      "cleaning_time": "Cleaning Time",
+      "payment_method": "Payment Method",
+      "pay_by_card": "Pay by Card",
+      "pay_by_cash": "Pay in Cash",
+      "contact_info": "Contact Information",
+      "customer_name": "Full Name",
+      "customer_name_placeholder": "e.g. John Smith",
+      "customer_email": "Email",
+      "customer_email_placeholder": "e.g. john@example.com",
+      "customer_phone": "Phone Number",
+      "customer_phone_placeholder": "e.g. +420 123 456 789",
+      "special_instructions": "Special Instructions",
+      "summary": "Summary",
+      "selected_services_label": "Selected Services",
+      "total_price": "Total Price",
+      "submit_order": "Place Order",
+      "submit_success": "Order placed successfully!",
+      "submit_error": "Failed to place order",
+      "steps": {
+        "services": "Services",
+        "address": "Address",
+        "datetime": "Date & Time",
+        "payment": "Payment",
+        "summary": "Summary"
+      }
+    },
+    "orders": {
+      "title": "My Orders",
+      "no_orders": "You don't have any orders yet",
+      "no_orders_description": "Book your first cleaning!",
+      "browse_services": "Browse Services",
+      "upcoming_orders": "Upcoming Orders",
+      "past_orders": "Past Orders",
+      "rebook": "Rebook",
+      "table": {
+        "order_number": "Order Number",
+        "date": "Date",
+        "address": "Address",
+        "total": "Total",
+        "status": "Status",
+        "payment": "Payment"
+      }
+    },
+    "order_detail": {
+      "order": "Order",
+      "not_found": "Order not found",
+      "status": "Status",
+      "order_status": "Order Status",
+      "payment_status": "Payment Status",
+      "payment_type": "Payment Type",
+      "service_details": "Service Details",
+      "cleaning_date": "Cleaning Date",
+      "rooms": "Rooms",
+      "bathrooms": "Bathrooms",
+      "estimated_time": "Estimated Time",
+      "address": "Address",
+      "packages": "Packages",
+      "services": "Services",
+      "total": "Total",
+      "timeline": "Timeline",
+      "notes": "Notes",
+      "special_instructions": "Special Instructions",
+      "confirmation_code": "Confirmation Code",
+      "download_receipt": "Download Receipt",
+      "download_error": "Failed to download receipt",
+      "report_issue": "Report Issue"
+    },
+    "checkout": {
+      "success_title": "Payment Successful!",
+      "success_message": "Your order has been confirmed.",
+      "view_orders": "View Orders",
+      "cancel_title": "Payment Cancelled",
+      "cancel_message": "Your payment was not completed.",
+      "try_again": "Try Again",
+      "success": {
+        "title": "Payment Successful!",
+        "description": "Your order has been confirmed. You'll receive a confirmation email shortly.",
+        "view_orders": "View My Orders"
+      },
+      "cancel": {
+        "title": "Payment Cancelled",
+        "description": "Your payment was not completed. No charges have been made.",
+        "try_again": "Try Again",
+        "view_orders": "View My Orders"
+      }
+    },
+    "disputes": {
+      "title": "My Disputes",
+      "create_new": "New Dispute",
+      "create_title": "Create Dispute",
+      "no_disputes": "No disputes",
+      "order_id": "Order ID",
+      "reason": "Reason",
+      "description": "Description",
+      "submit": "Submit",
+      "resolution": "Resolution",
+      "messages": "Messages",
+      "type_message": "Type a message...",
+      "send": "Send",
+      "create_success": "Dispute created",
+      "create_error": "Failed to create dispute",
+      "send_error": "Failed to send message",
+      "reasons": {
+        "quality_issue": "Quality Issue",
+        "service_not_provided": "Service Not Provided",
+        "service_incomplete": "Service Incomplete",
+        "damaged_property": "Damaged Property",
+        "unauthorized_charge": "Unauthorized Charge",
+        "incorrect_amount": "Incorrect Amount",
+        "other": "Other"
+      },
+      "table": {
+        "order": "Order",
+        "reason": "Reason",
+        "status": "Status",
+        "created": "Created"
+      }
+    },
+    "gdpr": {
+      "title": "Privacy & Data",
+      "subtitle": "Manage your personal data and privacy settings",
+      "export_title": "Export My Data",
+      "export_desc": "Download a copy of all your personal data.",
+      "export_btn": "Export Data",
+      "export_success": "Data exported",
+      "export_error": "Failed to export data",
+      "consents_title": "Consent Management",
+      "consents_desc": "Manage what data processing you consent to.",
+      "consent_granted": "Granted",
+      "consent_withdrawn": "Withdrawn",
+      "consent_grant": "Grant",
+      "consent_withdraw": "Withdraw",
+      "consent_error": "Failed to update consent",
+      "consent_updated": "Consent updated successfully",
+      "consent_types": {
+        "terms_of_service": "Terms of Service",
+        "privacy_policy": "Privacy Policy",
+        "marketing_emails": "Marketing Emails",
+        "data_processing": "Data Processing"
+      },
+      "consents_description": "Manage what data processing you consent to.",
+      "export_description": "Download a copy of all your personal data we have on file.",
+      "export_button": "Export Data",
+      "delete_title": "Delete Account",
+      "delete_desc": "Permanently delete your account and all data. This action cannot be undone.",
+      "delete_btn": "Delete Account",
+      "delete_description": "Permanently delete your account and all associated data. This action cannot be undone.",
+      "delete_button": "Delete Account",
+      "delete_confirm": "Are you sure you want to delete your account? This cannot be undone.",
+      "delete_confirm_message": "Are you sure you want to permanently delete your account? All your data will be lost and this action cannot be undone.",
+      "delete_confirm_title": "Delete Account",
+      "delete_confirm_yes": "Yes, Delete My Account",
+      "delete_success": "Account deleted",
+      "delete_error": "Failed to delete account"
+    },
+    "forgot_password": {
+      "email": "Email",
+      "email_invalid": "Please enter a valid email address",
+      "password_invalid": "Password does not meet requirements",
+      "password_changed": "Password changed successfully!",
+      "email_input": {
+        "forgot_password": "Forgot Password",
+        "forgot_password_text": "Enter your email address and we'll send you a verification code to reset your password.",
+        "send_email": "Send Verification Code",
+        "dont_have_account": "Don't have an account?"
+      },
+      "password_change": {
+        "email_sent": "Verification Code Sent",
+        "email_sent_text": "We've sent a verification code to your email. Please check your inbox.",
+        "didnt_receive_email": "Didn't receive the email?",
+        "code": "Verification Code",
+        "new_password": "New Password",
+        "confirm_new_password": "Confirm New Password",
+        "resend_code": "Resend Code",
+        "change_password": "Change Password",
+        "remember_password": "Remember your password?"
+      }
+    }
+  },
+  "components": {
+    "not_found": {
+      "title": "Page Not Found",
+      "description": "The page you are looking for does not exist or has been moved."
+    }
+  },
+  "validation": {
+    "common": {
+      "not_all_fields_filled": "Please fill in all required fields"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "close": "Close",
+    "search": "Search",
+    "no_results": "No results found",
+    "error_occurred": "An error occurred. Please try again."
+  },
+  "footer": {
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "rights": "All rights reserved."
+  },
+  "terms_page": {
+    "title": "Terms of Service",
+    "last_updated": "Last updated",
+    "intro": "Please read these terms of service carefully before using our services.",
+    "section1_title": "1. Acceptance of Terms",
+    "section1_text": "By accessing and using Cleansia's services, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our services.",
+    "section2_title": "2. Services Description",
+    "section2_text": "Cleansia provides professional cleaning services for residential customers. Services include furniture cleaning, carpet cleaning, mattress cleaning, and other related services as listed on our website.",
+    "section3_title": "3. Ordering & Payment",
+    "section3_text": "Orders can be placed through our website. Payment is accepted via credit/debit card (processed by Stripe) or cash on delivery. Prices are displayed in CZK and include VAT.",
+    "section4_title": "4. Cancellation Policy",
+    "section4_text": "Orders may be cancelled free of charge up to 24 hours before the scheduled cleaning time. Cancellations made less than 24 hours before the appointment may be subject to a cancellation fee.",
+    "section5_title": "5. Liability",
+    "section5_text": "Cleansia takes utmost care during cleaning. In the unlikely event of damage, please report the issue within 24 hours through our dispute system. We will investigate and resolve all claims fairly.",
+    "section6_title": "6. Contact",
+    "section6_text": "For questions regarding these terms, please contact us at info@cleansia.cz or +420 739 788 108."
+  },
+  "privacy_page": {
+    "title": "Privacy Policy",
+    "last_updated": "Last updated",
+    "intro": "Your privacy is important to us. This policy explains how we collect, use, and protect your personal data.",
+    "section1_title": "1. Data We Collect",
+    "section1_text": "We collect personal information you provide when placing orders, creating an account, or contacting us. This includes your name, email address, phone number, and address.",
+    "section2_title": "2. How We Use Your Data",
+    "section2_text": "Your data is used to process orders, communicate about your bookings, improve our services, and send marketing communications (only with your consent).",
+    "section3_title": "3. Data Protection",
+    "section3_text": "We implement industry-standard security measures to protect your personal data. Your payment information is processed securely by Stripe and is never stored on our servers.",
+    "section4_title": "4. Your Rights (GDPR)",
+    "section4_text": "Under GDPR, you have the right to access, rectify, delete, and export your personal data. You can manage these rights through your account's Privacy & Data section, or by contacting us directly.",
+    "section5_title": "5. Cookies",
+    "section5_text": "We use cookies to improve your browsing experience and analyze traffic. You can manage your cookie preferences through the cookie consent banner.",
+    "section6_title": "6. Contact",
+    "section6_text": "For privacy-related inquiries, please contact us at info@cleansia.cz or +420 739 788 108."
+  },
+  "api": {
+    "common": {
+      "unauthorized": "You are not authorized to perform this action",
+      "error_occurred": "An error occurred"
+    }
+  }
+}

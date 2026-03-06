@@ -1,0 +1,93 @@
+.services-catalog {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+
+  &__header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  &__subtitle {
+    color: var(--text-color-secondary);
+    font-size: 1.1rem;
+    margin-top: 0.5rem;
+  }
+
+  &__section-title {
+    font-size: 1.5rem;
+    margin: 2rem 0 1rem;
+    color: var(--text-color);
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+
+  &__card {
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.2s;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    &--package {
+      border-color: var(--primary-color);
+      border-width: 2px;
+    }
+
+    &--skeleton {
+      min-height: 200px;
+    }
+  }
+
+  &__card-title {
+    font-size: 1.25rem;
+    margin: 0 0 0.5rem;
+    color: var(--text-color);
+  }
+
+  &__card-description {
+    color: var(--text-color-secondary);
+    flex: 1;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+  }
+
+  &__card-pricing {
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  &__card-price {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+  }
+
+  &__card-per-room {
+    font-size: 0.875rem;
+    color: var(--text-color-secondary);
+  }
+
+  &__empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-color-secondary);
+
+    i {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+  }
+}

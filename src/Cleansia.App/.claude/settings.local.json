@@ -74,7 +74,11 @@
       "Bash(test:*)",
       "Bash(git -C \"c:/Users/cmisa/Desktop/Mike/Projects/cleansia\" diff -- \"src/Cleansia.Infra.Scripts/SeedData/insert_employee_payroll.sql\")",
       "Bash(git -C \"c:/Users/cmisa/Desktop/Mike/Projects/cleansia\" diff -- \"src/Cleansia.Infra.Scripts/SeedData/insert_employee_invoices.sql\")",
-      "Bash(git -C \"c:/Users/cmisa/Desktop/Mike/Projects/cleansia\" diff -- \"src/Cleansia.Infra.Scripts/SeedData/insert_order_employee_pay.sql\")"
+      "Bash(git -C \"c:/Users/cmisa/Desktop/Mike/Projects/cleansia\" diff -- \"src/Cleansia.Infra.Scripts/SeedData/insert_order_employee_pay.sql\")",
+      "Bash(xargs grep -l \"CountryConfiguration\\\\|GetCountryConfiguration\")",
+      "Bash(xargs grep -l \"FeatureFlag\\\\|IsFeatureEnabledAsync\")",
+      "Bash(xargs grep -l \"class ApiController\")",
+      "WebFetch(domain:dribbble.com)"
     ],
     "deny": [],
     "ask": [],

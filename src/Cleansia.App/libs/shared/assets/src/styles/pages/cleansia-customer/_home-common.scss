@@ -1,0 +1,251 @@
+@use './home-variables' as *;
+
+// =============================
+// Host & Layout
+// =============================
+:host {
+  display: block;
+  position: relative;
+  overflow-x: hidden;
+  font-family: $font-body;
+}
+
+.cleansia-landing {
+  width: 100%;
+  position: relative;
+}
+
+// =============================
+// Glass Effect (reusable)
+// =============================
+.cl-glass {
+  background: rgba($white, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba($white, 0.5);
+}
+
+// =============================
+// Unified Title Component
+// =============================
+.cl-title {
+  display: block;
+  width: 100%;
+  font-family: $font-heading;
+  font-size: clamp(1.8rem, 4vw, 2.75rem);
+  font-weight: 700;
+  background: linear-gradient(135deg, $text-heading 0%, $primary 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+  margin: 0 0 1.5rem;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+
+  &--hero {
+    font-size: clamp(2.5rem, 5vw, 3.75rem);
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    text-align: left;
+    margin-bottom: 2rem;
+  }
+
+  &--left {
+    text-align: left;
+  }
+}
+
+// =============================
+// Buttons
+// =============================
+.cl-btn-primary {
+  box-shadow: 0 4px 14px rgba($primary, 0.3);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba($primary, 0.4);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.cl-btn-outline {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba($primary, 0.12);
+  }
+}
+
+// =============================
+// Scroll-triggered Animations
+// =============================
+.animate-on-scroll {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 1s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 1s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+.animate-on-scroll.section-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.animate-on-scroll.from-left {
+  transform: translateX(-40px);
+}
+.animate-on-scroll.from-left.section-visible {
+  transform: translateX(0);
+}
+
+.animate-on-scroll.from-right {
+  transform: translateX(40px);
+}
+.animate-on-scroll.from-right.section-visible {
+  transform: translateX(0);
+}
+
+.animate-on-scroll.delay-1 {
+  transition-delay: 0.12s;
+}
+.animate-on-scroll.delay-2 {
+  transition-delay: 0.24s;
+}
+.animate-on-scroll.delay-3 {
+  transition-delay: 0.36s;
+}
+.animate-on-scroll.delay-4 {
+  transition-delay: 0.48s;
+}
+.animate-on-scroll.delay-5 {
+  transition-delay: 0.6s;
+}
+
+// =============================
+// Wave Divider
+// =============================
+.cl-wave {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  line-height: 0;
+
+  svg {
+    width: 100%;
+    height: 80px;
+    display: block;
+
+    path {
+      fill: $white;
+    }
+  }
+}
+
+// =============================
+// Section shared
+// =============================
+.cl-section {
+  padding: 7rem 2rem;
+  position: relative;
+  z-index: 1;
+
+  &__inner {
+    max-width: $max-width;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  &__header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 4rem;
+
+    &--left {
+      align-items: flex-start;
+      text-align: left;
+    }
+  }
+
+  &__badge {
+    display: inline-block;
+    background: linear-gradient(
+      135deg,
+      rgba($primary, 0.08),
+      rgba($primary, 0.15)
+    );
+    color: $primary;
+    padding: 0.45rem 1.25rem;
+    border-radius: 2rem;
+    font-family: $font-heading;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 1.25rem;
+    border: 1px solid rgba($primary, 0.1);
+  }
+
+  &__desc {
+    font-size: clamp(0.95rem, 1.5vw, 1.05rem);
+    color: $text-muted;
+    max-width: 600px;
+    width: 100%;
+    margin: 0;
+    line-height: 1.8;
+    text-align: center;
+  }
+
+  &--features {
+    background: $white;
+  }
+  &--process {
+    background: $bg-alt;
+  }
+  &--benefits {
+    background: $white;
+    padding: 8rem 2rem;
+  }
+  &--services {
+    background: linear-gradient(180deg, $primary-lighter 0%, $white 100%);
+  }
+  &--gallery {
+    background: $bg-alt;
+  }
+  &--testimonials {
+    background: linear-gradient(180deg, $white 0%, $primary-lighter 100%);
+  }
+  &--faq {
+    background: $white;
+  }
+}
+
+// =============================
+// Responsive — Common
+// =============================
+@media (max-width: 768px) {
+  .cl-section {
+    padding: 5rem 1.5rem;
+  }
+  .cl-section--benefits {
+    padding: 5rem 1.5rem;
+  }
+
+  .cl-title--hero {
+    text-align: center;
+  }
+
+  .cl-floating-bg__icon {
+    opacity: 0.04;
+  }
+}

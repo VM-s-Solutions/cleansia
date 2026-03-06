@@ -1,0 +1,55 @@
+@use './home-variables' as *;
+
+// =============================
+// FAQ
+// =============================
+.cl-faq-layout {
+  display: flex;
+  gap: 4rem;
+  align-items: flex-start;
+
+  &__left {
+    flex: 0 0 340px;
+    position: sticky;
+    top: 100px;
+    .cl-title {
+      margin-bottom: 1.5rem;
+    }
+  }
+
+  &__desc {
+    font-size: 0.95rem;
+    color: $text-muted;
+    line-height: 1.8;
+  }
+
+  &__right {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.cl-faq__answer {
+  font-size: 0.95rem;
+  color: $text-muted;
+  line-height: 1.7;
+  margin: 0;
+}
+
+// =============================
+// Responsive — FAQ
+// =============================
+@media (max-width: 1024px) {
+  .cl-faq-layout {
+    flex-direction: column;
+    gap: 2rem;
+    &__left {
+      flex: none;
+      position: static;
+      text-align: center;
+      .cl-title {
+        text-align: center;
+      }
+    }
+  }
+}

@@ -1,0 +1,63 @@
+<section class="cl-section cl-section--services" id="services">
+  <div class="cl-section__inner">
+    <div class="cl-section__header animate-on-scroll">
+      <span class="cl-section__badge">{{ 'pages.home.services.badge' | translate }}</span>
+      <h2 class="cl-title">{{ 'pages.home.services.title' | translate }}</h2>
+      <p class="cl-section__desc">{{ 'pages.home.services.subtitle' | translate }}</p>
+    </div>
+
+    @if (services().length > 0) {
+    <div class="cl-services">
+      @for (service of services(); track service.id; let idx = $index) { @if (idx < 3) {
+      <a routerLink="/order" class="cl-services__card-link animate-on-scroll" [class]="'delay-' + (idx + 1)">
+        <div class="cl-services__card">
+          @if (idx === 0) {
+          <div class="cl-services__ribbon">{{ 'pages.services.most_popular' | translate }}</div>
+          }
+          <div class="cl-services__nav-arrow"><i class="pi pi-arrow-up-right"></i></div>
+          <div class="cl-services__icon"><i class="pi pi-sparkles"></i></div>
+          <div class="cl-services__name">{{ getTranslation(service, 'name') }}</div>
+          <div class="cl-services__price">{{ 'pages.services.from' | translate }} {{ formatPrice(service.basePrice) }}</div>
+          <div class="cl-services__desc">{{ getTranslation(service, 'description') }}</div>
+        </div>
+      </a>
+      } }
+    </div>
+    } @else {
+    <div class="cl-services">
+      @for (fs of fallbackServices; track fs.name; let idx = $index) {
+      <a routerLink="/order" class="cl-services__card-link animate-on-scroll" [class]="'delay-' + (idx + 1)">
+        <div class="cl-services__card">
+          @if (fs.popular) {
+          <div class="cl-services__ribbon">{{ 'pages.services.most_popular' | translate }}</div>
+          }
+          <div class="cl-services__nav-arrow"><i class="pi pi-arrow-up-right"></i></div>
+          <div class="cl-services__icon"><i class="pi" [ngClass]="fs.icon"></i></div>
+          <div class="cl-services__name">{{ fs.name | translate }}</div>
+          <div class="cl-services__price">{{ 'pages.services.from' | translate }} {{ formatPrice(fs.price) }}</div>
+          <div class="cl-services__desc">{{ fs.desc | translate }}</div>
+        </div>
+      </a>
+      }
+    </div>
+    }
+
+    <div class="cl-services__teasers animate-on-scroll delay-4">
+      @for (extra of extraServices; track extra.name) {
+      <div class="cl-services__teaser">
+        <div class="cl-services__teaser-inner">
+          <div class="cl-services__icon"><i class="pi" [ngClass]="extra.icon"></i></div>
+          <div class="cl-services__name">{{ extra.name | translate }}</div>
+          <div class="cl-services__price">{{ 'pages.services.from' | translate }} {{ formatPrice(extra.price) }}</div>
+        </div>
+      </div>
+      }
+    </div>
+
+    <div class="cl-services__actions animate-on-scroll delay-5">
+      <a routerLink="/services" class="text-decoration-none">
+        <button pButton type="button" [label]="'pages.home.services.view_all' | translate" class="p-button-outlined p-button-lg p-button-rounded cl-btn-outline"></button>
+      </a>
+    </div>
+  </div>
+</section>

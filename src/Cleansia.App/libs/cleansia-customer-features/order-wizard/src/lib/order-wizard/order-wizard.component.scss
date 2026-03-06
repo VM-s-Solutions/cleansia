@@ -1,0 +1,113 @@
+﻿/* order-wizard.component.scss (Premium Override) */
+:host {
+  display: block;
+}
+
+.order-wizard {
+  min-height: calc(100vh - 80px); /* Fill screen minus header */
+  
+  /* Reset primeng elements internal padding for step items that get in the way */
+  ::ng-deep {
+    .p-steps { display: none; } /* Hide old steps completely */
+    
+    .p-inputnumber-buttons-stacked .p-button.p-inputnumber-button-up {
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+  }
+
+
+  &__content {
+    min-height: 500px;
+    background-color: #ffffff;
+    border: 1px solid var(--surface-border);
+  }
+
+  /* Progress indicator overrides to look premium */
+  &__progress {
+    background-color: #ffffff;
+    border: 1px solid var(--surface-border);
+  }
+
+  /* Enhancing form elements */
+  ::ng-deep {
+    .p-inputtext, .p-dropdown, .p-datepicker {
+      border-color: #e2e8f0;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      
+      &:hover {
+        border-color: #cbd5e1;
+      }
+      
+      &:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px var(--primary-100);
+      }
+    }
+    
+    .p-inputnumber-input {
+      font-size: 1.5rem !important;
+      padding: 1rem !important;
+    }
+    
+    /* Make the calendar popup look more modern */
+    .p-datepicker table td > span {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+    }
+    
+    .p-select {
+        padding: 0.5rem;
+    }
+  }
+
+  /* Checkbox wrapper adjustments */
+  &__checkbox-wrapper {
+    ::ng-deep .p-checkbox .p-checkbox-box {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      border-color: #cbd5e1;
+      
+      &.p-highlight {
+        border-color: var(--primary-color);
+        background: var(--primary-color);
+      }
+    }
+  }
+
+  /* Make sticky receipt beautiful */
+  &__sticky-receipt {
+    border-radius: 16px;
+    box-shadow: 0 10px 40px -10px rgba(0,0,0,0.1);
+    max-height: calc(100vh - 4rem);
+    
+    /* Subtle inner glow */
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4);
+      pointer-events: none;
+    }
+  }
+}
+
+/* Animations */
+.fadein {
+  animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

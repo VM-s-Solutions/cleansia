@@ -34,22 +34,22 @@ Both environments are Azure-based. The user's own domain is configured in Azure 
 
 ### Backend — 4 .NET 10 API Projects (Aspire-orchestrated)
 
-| Project | Role | Port |
-|---------|------|------|
-| `Cleansia.Web` | Partner API (employee-facing) | 5000 |
-| `Cleansia.Web.Admin` | Admin API (back-office) | 5001 |
-| `Cleansia.Web.Mobile` | Mobile API (Android/iOS) | 5002 |
-| `Cleansia.Web.Customer` | Customer API (public-facing) | 5003 |
+| Project                 | Role                          | Port |
+| ----------------------- | ----------------------------- | ---- |
+| `Cleansia.Web`          | Partner API (employee-facing) | 5000 |
+| `Cleansia.Web.Admin`    | Admin API (back-office)       | 5001 |
+| `Cleansia.Web.Mobile`   | Mobile API (Android/iOS)      | 5002 |
+| `Cleansia.Web.Customer` | Customer API (public-facing)  | 5003 |
 
 All 4 APIs are orchestrated by .NET Aspire 13.1.1 (`Cleansia.AppHost`) and share `Cleansia.ServiceDefaults` for OpenTelemetry, health checks, Sentry, and HTTP resilience.
 
 ### Frontend — 3 Angular 19 Apps (Nx monorepo)
 
-| App | Type | Deployment Target |
-|-----|------|-------------------|
-| `cleansia.app` (Customer) | SSR (Angular Universal) | **Azure App Service (Node.js)** — NOT Static Web App |
-| `cleansia-partner.app` (Partner) | SPA | Azure Static Web App (Free tier) |
-| `cleansia-admin.app` (Admin) | SPA | Azure Static Web App (Free tier) |
+| App                              | Type                    | Deployment Target                                    |
+| -------------------------------- | ----------------------- | ---------------------------------------------------- |
+| `cleansia.app` (Customer)        | SSR (Angular Universal) | **Azure App Service (Node.js)** — NOT Static Web App |
+| `cleansia-partner.app` (Partner) | SPA                     | Azure Static Web App (Free tier)                     |
+| `cleansia-admin.app` (Admin)     | SPA                     | Azure Static Web App (Free tier)                     |
 
 > **Important**: The Customer app uses Server-Side Rendering (SSR) for SEO and initial load performance. It requires a Node.js runtime and must be deployed to App Service, not Static Web App.
 
@@ -69,31 +69,34 @@ All 4 APIs are orchestrated by .NET Aspire 13.1.1 (`Cleansia.AppHost`) and share
 
 ### DEV (~$41/month estimated)
 
-| Resource | Name | SKU/Tier |
-|----------|------|----------|
-| Resource Group | `rg-cleansia-dev` | — |
-| App Service Plan | `asp-cleansia-dev` | B1 (1 core, 1.75 GB RAM) |
-| App Service (.NET APIs) | `api-cleansia-dev` | Runs all 4 APIs behind Aspire |
-| App Service (Customer SSR) | `web-cleansia-customer-dev` | Node.js 20 LTS |
-| Static Web App (Partner) | `swa-cleansia-partner-dev` | Free |
-| Static Web App (Admin) | `swa-cleansia-admin-dev` | Free |
-| PostgreSQL Flexible Server | `psql-cleansia-dev` | Burstable B1ms (1 vCore, 2 GB) |
-| Key Vault | `kv-cleansia-dev` | Standard |
-| Application Insights | `ai-cleansia-dev` | Free tier (5 GB/month) |
+| Resource                   | Name                        | SKU/Tier                                 |
+| -------------------------- | --------------------------- | ---------------------------------------- |
+| Resource Group             | `rg-cleansia-dev`           | —                                        |
+| App Service Plan           | `asp-cleansia-dev`          | B1 (1 core, 1.75 GB RAM) — shared by all |
+| App Service (Partner API)  | `api-cleansia-dev`          | .NET 10 — Partner/employee-facing API    |
+| App Service (Admin API)    | `api-cleansia-admin-dev`    | .NET 10 — Back-office API                |
+| App Service (Customer API) | `api-cleansia-customer-dev` | .NET 10 — Public-facing API              |
+| App Service (Mobile API)   | `api-cleansia-mobile-dev`   | .NET 10 — Android/iOS API                |
+| App Service (Customer SSR) | `web-cleansia-customer-dev` | Node.js 20 LTS — Angular SSR frontend    |
+| Static Web App (Partner)   | `swa-cleansia-partner-dev`  | Free                                     |
+| Static Web App (Admin)     | `swa-cleansia-admin-dev`    | Free                                     |
+| PostgreSQL Flexible Server | `psql-cleansia-dev`         | Burstable B1ms (1 vCore, 2 GB)           |
+| Key Vault                  | `kv-cleansia-dev`           | Standard                                 |
+| Application Insights       | `ai-cleansia-dev`           | Free tier (5 GB/month)                   |
 
 ### PRO (~$328/month estimated)
 
-| Resource | Name | SKU/Tier |
-|----------|------|----------|
-| Resource Group | `rg-cleansia-pro` | — |
-| App Service Plan | `asp-cleansia-pro` | S1 or P1v2 (1 core, 1.75 GB RAM) |
-| App Service (.NET APIs) | `api-cleansia-pro` | Runs all 4 APIs behind Aspire + staging slot |
-| App Service (Customer SSR) | `web-cleansia-customer-pro` | Node.js 20 LTS + staging slot |
-| Static Web App (Partner) | `swa-cleansia-partner-pro` | Free |
-| Static Web App (Admin) | `swa-cleansia-admin-pro` | Free |
-| PostgreSQL Flexible Server | `psql-cleansia-pro` | Standard S2 (2 vCores, 8 GB) |
-| Key Vault | `kv-cleansia-pro` | Standard |
-| Application Insights | `ai-cleansia-pro` | Pay-as-you-go (~$10/mo) |
+| Resource                   | Name                        | SKU/Tier                                     |
+| -------------------------- | --------------------------- | -------------------------------------------- |
+| Resource Group             | `rg-cleansia-pro`           | —                                            |
+| App Service Plan           | `asp-cleansia-pro`          | S1 or P1v2 (1 core, 1.75 GB RAM)             |
+| App Service (.NET APIs)    | `api-cleansia-pro`          | Runs all 4 APIs behind Aspire + staging slot |
+| App Service (Customer SSR) | `web-cleansia-customer-pro` | Node.js 20 LTS + staging slot                |
+| Static Web App (Partner)   | `swa-cleansia-partner-pro`  | Free                                         |
+| Static Web App (Admin)     | `swa-cleansia-admin-pro`    | Free                                         |
+| PostgreSQL Flexible Server | `psql-cleansia-pro`         | Standard S2 (2 vCores, 8 GB)                 |
+| Key Vault                  | `kv-cleansia-pro`           | Standard                                     |
+| Application Insights       | `ai-cleansia-pro`           | Pay-as-you-go (~$10/mo)                      |
 
 > **PRO differences**: Staging slots on App Services for zero-downtime deployments, higher-tier PostgreSQL for production workloads, paid Application Insights for full telemetry.
 
@@ -103,12 +106,12 @@ All 4 APIs are orchestrated by .NET Aspire 13.1.1 (`Cleansia.AppHost`) and share
 
 ### Stripe (Payment Processing)
 
-| Concern | DEV | PRO |
-|---------|-----|-----|
-| Mode | Test mode | Live mode |
-| API keys | Test keys (`sk_test_...`) | Live keys (`sk_live_...`) |
-| Webhook endpoint | `https://api-cleansia-dev.azurewebsites.net/api/v1/payment/webhook` | `https://api.cleansia.cz/api/v1/payment/webhook` |
-| Local testing | Use `stripe listen --forward-to localhost:5003/api/v1/payment/webhook` | N/A |
+| Concern          | DEV                                                                    | PRO                                              |
+| ---------------- | ---------------------------------------------------------------------- | ------------------------------------------------ |
+| Mode             | Test mode                                                              | Live mode                                        |
+| API keys         | Test keys (`sk_test_...`)                                              | Live keys (`sk_live_...`)                        |
+| Webhook endpoint | `https://api-cleansia-dev.azurewebsites.net/api/v1/payment/webhook`    | `https://api.cleansia.cz/api/v1/payment/webhook` |
+| Local testing    | Use `stripe listen --forward-to localhost:5003/api/v1/payment/webhook` | N/A                                              |
 
 **Key Vault secrets:**
 
@@ -120,12 +123,12 @@ Stripe__PublishableKey
 
 ### SendGrid (Email)
 
-| Concern | DEV | PRO |
-|---------|-----|-----|
-| Mode | Sandbox mode (no emails sent) | Live sending |
-| Config | `SendGrid__SandboxMode=true` | `SendGrid__SandboxMode=false` |
-| Plan | Free (sandbox) | Essentials ($19.95/mo, 50k emails) |
-| Alternative | Use Mailtrap/Ethereal for visual email testing | N/A |
+| Concern     | DEV                                            | PRO                                |
+| ----------- | ---------------------------------------------- | ---------------------------------- |
+| Mode        | Sandbox mode (no emails sent)                  | Live sending                       |
+| Config      | `SendGrid__SandboxMode=true`                   | `SendGrid__SandboxMode=false`      |
+| Plan        | Free (sandbox)                                 | Essentials ($19.95/mo, 50k emails) |
+| Alternative | Use Mailtrap/Ethereal for visual email testing | N/A                                |
 
 **Key Vault secrets:**
 
@@ -135,11 +138,11 @@ SendGrid__ApiKey
 
 ### Sentry (Error Monitoring)
 
-| Concern | DEV | PRO |
-|---------|-----|-----|
-| Project | `sentry-cleansia-dev` | `sentry-cleansia-pro` |
-| Trace sample rate | 100% | 20% |
-| Alerts | Disabled | Enabled (Slack/email notifications) |
+| Concern           | DEV                   | PRO                                 |
+| ----------------- | --------------------- | ----------------------------------- |
+| Project           | `sentry-cleansia-dev` | `sentry-cleansia-pro`               |
+| Trace sample rate | 100%                  | 20%                                 |
+| Alerts            | Disabled              | Enabled (Slack/email notifications) |
 
 **Key Vault secrets:**
 
@@ -180,16 +183,16 @@ In App Service Configuration, reference Key Vault secrets using:
 
 ### Secrets Inventory
 
-| Secret | Key Vault Key | Used By |
-|--------|---------------|---------|
-| PostgreSQL connection string | `ConnectionStrings--DefaultConnection` | All 4 APIs |
-| JWT signing key | `Jwt--SecretKey` | All 4 APIs |
-| Stripe secret key | `Stripe--SecretKey` | Customer API |
-| Stripe webhook secret | `Stripe--WebhookSecret` | Customer API |
-| Stripe publishable key | `Stripe--PublishableKey` | Customer API |
-| SendGrid API key | `SendGrid--ApiKey` | All 4 APIs |
-| Sentry DSN | `Sentry--Dsn` | All 4 APIs |
-| Azure Blob Storage connection | `AzureBlobStorage--ConnectionString` | All 4 APIs |
+| Secret                        | Key Vault Key                          | Used By      |
+| ----------------------------- | -------------------------------------- | ------------ |
+| PostgreSQL connection string  | `ConnectionStrings--DefaultConnection` | All 4 APIs   |
+| JWT signing key               | `Jwt--SecretKey`                       | All 4 APIs   |
+| Stripe secret key             | `Stripe--SecretKey`                    | Customer API |
+| Stripe webhook secret         | `Stripe--WebhookSecret`                | Customer API |
+| Stripe publishable key        | `Stripe--PublishableKey`               | Customer API |
+| SendGrid API key              | `SendGrid--ApiKey`                     | All 4 APIs   |
+| Sentry DSN                    | `Sentry--Dsn`                          | All 4 APIs   |
+| Azure Blob Storage connection | `AzureBlobStorage--ConnectionString`   | All 4 APIs   |
 
 ---
 
@@ -302,11 +305,7 @@ az group create --name rg-cleansia-pro --location westeurope
 
 ```bash
 # DEV — B1 (Basic, 1 core, 1.75 GB)
-az appservice plan create \
-  --name asp-cleansia-dev \
-  --resource-group rg-cleansia-dev \
-  --sku B1 \
-  --is-linux
+az appservice plan create --name asp-cleansia-dev --resource-group rg-cleansia-dev --sku B1 --is-linux
 
 # PRO — S1 (Standard, 1 core, 1.75 GB, supports slots)
 az appservice plan create \
@@ -316,38 +315,40 @@ az appservice plan create \
   --is-linux
 ```
 
-#### 1.3 Create App Services (.NET APIs)
+#### 1.3 Create App Services (.NET APIs — one per API project)
+
+Each .NET API project needs its own App Service. They all share the same App Service Plan (no extra cost).
 
 ```bash
-# DEV — .NET 10 runtime
-az webapp create \
-  --name api-cleansia-dev \
-  --resource-group rg-cleansia-dev \
-  --plan asp-cleansia-dev \
-  --runtime "DOTNETCORE:10.0"
+# DEV — Partner API (employee-facing)
+az webapp create --name api-cleansia-dev --resource-group rg-cleansia-dev --plan asp-cleansia-dev --runtime "DOTNETCORE:10.0"
 
-# PRO — .NET 10 runtime + staging slot
-az webapp create \
-  --name api-cleansia-pro \
-  --resource-group rg-cleansia-pro \
-  --plan asp-cleansia-pro \
-  --runtime "DOTNETCORE:10.0"
+# DEV — Admin API (back-office)
+az webapp create --name api-cleansia-admin-dev --resource-group rg-cleansia-dev --plan asp-cleansia-dev --runtime "DOTNETCORE:10.0"
 
-az webapp deployment slot create \
-  --name api-cleansia-pro \
-  --resource-group rg-cleansia-pro \
-  --slot staging
+# DEV — Customer API (public-facing)
+az webapp create --name api-cleansia-customer-dev --resource-group rg-cleansia-dev --plan asp-cleansia-dev --runtime "DOTNETCORE:10.0"
+
+# DEV — Mobile API (Android/iOS)
+az webapp create --name api-cleansia-mobile-dev --resource-group rg-cleansia-dev --plan asp-cleansia-dev --runtime "DOTNETCORE:10.0"
+
+# PRO — same pattern with staging slots
+az webapp create --name api-cleansia-pro --resource-group rg-cleansia-pro --plan asp-cleansia-pro --runtime "DOTNETCORE:10.0"
+az webapp create --name api-cleansia-admin-pro --resource-group rg-cleansia-pro --plan asp-cleansia-pro --runtime "DOTNETCORE:10.0"
+az webapp create --name api-cleansia-customer-pro --resource-group rg-cleansia-pro --plan asp-cleansia-pro --runtime "DOTNETCORE:10.0"
+az webapp create --name api-cleansia-mobile-pro --resource-group rg-cleansia-pro --plan asp-cleansia-pro --runtime "DOTNETCORE:10.0"
+
+az webapp deployment slot create --name api-cleansia-pro --resource-group rg-cleansia-pro --slot staging
+az webapp deployment slot create --name api-cleansia-admin-pro --resource-group rg-cleansia-pro --slot staging
+az webapp deployment slot create --name api-cleansia-customer-pro --resource-group rg-cleansia-pro --slot staging
+az webapp deployment slot create --name api-cleansia-mobile-pro --resource-group rg-cleansia-pro --slot staging
 ```
 
 #### 1.4 Create App Services (Customer SSR — Node.js)
 
 ```bash
 # DEV — Node.js 20 for Angular SSR
-az webapp create \
-  --name web-cleansia-customer-dev \
-  --resource-group rg-cleansia-dev \
-  --plan asp-cleansia-dev \
-  --runtime "NODE:20-lts"
+az webapp create --name web-cleansia-customer-dev --resource-group rg-cleansia-dev --plan asp-cleansia-dev --runtime "NODE:20-lts"
 
 # PRO — Node.js 20 + staging slot
 az webapp create \
@@ -366,17 +367,9 @@ az webapp deployment slot create \
 
 ```bash
 # DEV
-az staticwebapp create \
-  --name swa-cleansia-partner-dev \
-  --resource-group rg-cleansia-dev \
-  --location westeurope \
-  --sku Free
+az staticwebapp create --name swa-cleansia-partner-dev --resource-group rg-cleansia-dev --location westeurope --sku Free
 
-az staticwebapp create \
-  --name swa-cleansia-admin-dev \
-  --resource-group rg-cleansia-dev \
-  --location westeurope \
-  --sku Free
+az staticwebapp create --name swa-cleansia-admin-dev --resource-group rg-cleansia-dev --location westeurope --sku Free
 
 # PRO
 az staticwebapp create \
@@ -396,22 +389,9 @@ az staticwebapp create \
 
 ```bash
 # DEV — Burstable B1ms
-az postgres flexible-server create \
-  --name psql-cleansia-dev \
-  --resource-group rg-cleansia-dev \
-  --location westeurope \
-  --sku-name Standard_B1ms \
-  --tier Burstable \
-  --storage-size 32 \
-  --version 16 \
-  --admin-user cleansiaadmin \
-  --admin-password '<STRONG_PASSWORD_HERE>' \
-  --yes
+az postgres flexible-server create --name psql-cleansia-dev --resource-group rg-cleansia-dev --location westeurope --sku-name Standard_B1ms --tier Burstable --storage-size 32 --version 16 --admin-user cleansiaadmin --admin-password '<STRONG_PASSWORD_HERE>' --yes
 
-az postgres flexible-server db create \
-  --resource-group rg-cleansia-dev \
-  --server-name psql-cleansia-dev \
-  --database-name cleansia
+az postgres flexible-server db create --resource-group rg-cleansia-dev --server-name psql-cleansia-dev --database-name cleansia
 
 # PRO — General Purpose Standard_D2s_v3 (or Standard_B2ms for cost savings)
 az postgres flexible-server create \
@@ -436,11 +416,7 @@ az postgres flexible-server db create \
 
 ```bash
 # DEV
-az keyvault create \
-  --name kv-cleansia-dev \
-  --resource-group rg-cleansia-dev \
-  --location westeurope \
-  --sku standard
+az keyvault create --name kv-cleansia-dev --resource-group rg-cleansia-dev --location westeurope --sku standard
 
 # PRO
 az keyvault create \
@@ -454,11 +430,7 @@ az keyvault create \
 
 ```bash
 # DEV
-az monitor app-insights component create \
-  --app ai-cleansia-dev \
-  --resource-group rg-cleansia-dev \
-  --location westeurope \
-  --kind web
+az monitor app-insights component create --app ai-cleansia-dev --resource-group rg-cleansia-dev --location westeurope --kind web
 
 # PRO
 az monitor app-insights component create \
@@ -475,24 +447,28 @@ az monitor app-insights component create \
 #### 2.1 Grant App Service Access to Key Vault
 
 ```bash
-# Enable managed identity on App Services
+# Enable managed identity on all App Services
 az webapp identity assign --name api-cleansia-dev --resource-group rg-cleansia-dev
+az webapp identity assign --name api-cleansia-admin-dev --resource-group rg-cleansia-dev
+az webapp identity assign --name api-cleansia-customer-dev --resource-group rg-cleansia-dev
+az webapp identity assign --name api-cleansia-mobile-dev --resource-group rg-cleansia-dev
 az webapp identity assign --name web-cleansia-customer-dev --resource-group rg-cleansia-dev
 
 # Get the principal IDs
-API_PRINCIPAL=$(az webapp identity show --name api-cleansia-dev --resource-group rg-cleansia-dev --query principalId -o tsv)
+PARTNER_PRINCIPAL=$(az webapp identity show --name api-cleansia-dev --resource-group rg-cleansia-dev --query principalId -o tsv)
+ADMIN_PRINCIPAL=$(az webapp identity show --name api-cleansia-admin-dev --resource-group rg-cleansia-dev --query principalId -o tsv)
+CUSTOMER_API_PRINCIPAL=$(az webapp identity show --name api-cleansia-customer-dev --resource-group rg-cleansia-dev --query principalId -o tsv)
+MOBILE_PRINCIPAL=$(az webapp identity show --name api-cleansia-mobile-dev --resource-group rg-cleansia-dev --query principalId -o tsv)
 WEB_PRINCIPAL=$(az webapp identity show --name web-cleansia-customer-dev --resource-group rg-cleansia-dev --query principalId -o tsv)
 
-# Grant Key Vault access
-az keyvault set-policy \
-  --name kv-cleansia-dev \
-  --object-id $API_PRINCIPAL \
-  --secret-permissions get list
+# Grant Key Vault access (RBAC-based — default for new vaults)
+KV_SCOPE=$(az keyvault show --name kv-cleansia-dev --query id -o tsv)
 
-az keyvault set-policy \
-  --name kv-cleansia-dev \
-  --object-id $WEB_PRINCIPAL \
-  --secret-permissions get list
+az role assignment create --role "Key Vault Secrets User" --assignee $PARTNER_PRINCIPAL --scope $KV_SCOPE
+az role assignment create --role "Key Vault Secrets User" --assignee $ADMIN_PRINCIPAL --scope $KV_SCOPE
+az role assignment create --role "Key Vault Secrets User" --assignee $CUSTOMER_API_PRINCIPAL --scope $KV_SCOPE
+az role assignment create --role "Key Vault Secrets User" --assignee $MOBILE_PRINCIPAL --scope $KV_SCOPE
+az role assignment create --role "Key Vault Secrets User" --assignee $WEB_PRINCIPAL --scope $KV_SCOPE
 ```
 
 Repeat for PRO environment.
@@ -501,16 +477,11 @@ Repeat for PRO environment.
 
 ```bash
 # Connection string (use -- for nested keys)
-az keyvault secret set \
-  --vault-name kv-cleansia-dev \
-  --name "ConnectionStrings--DefaultConnection" \
-  --value "Host=psql-cleansia-dev.postgres.database.azure.com;Database=cleansia;Username=cleansiaadmin;Password=<PASSWORD>;SSL Mode=Require"
+az keyvault secret set --vault-name kv-cleansia-dev --name "ConnectionStrings--DefaultConnection" --value 'Host=psql-cleansia-dev.postgres.database.azure.com;Database=cleansia;Username=cleansiaadmin;Password=<YOUR_ACTUAL_PASSWORD>;SSL Mode=Require'
+
 
 # JWT
-az keyvault secret set \
-  --vault-name kv-cleansia-dev \
-  --name "Jwt--SecretKey" \
-  --value "<GENERATE_A_256_BIT_KEY>"
+az keyvault secret set --vault-name kv-cleansia-dev --name "Jwt--SecretKey" --value "<GENERATE_A_256_BIT_KEY>"
 
 # Stripe
 az keyvault secret set \
@@ -541,10 +512,8 @@ az keyvault secret set \
   --value "https://...@sentry.io/..."
 
 # Azure Blob Storage
-az keyvault secret set \
-  --vault-name kv-cleansia-dev \
-  --name "AzureBlobStorage--ConnectionString" \
-  --value "DefaultEndpointsProtocol=https;AccountName=..."
+az keyvault secret set --vault-name kv-cleansia-dev --name "ConnectionStrings--BlobContainerConfigurationConnectionString" --value "$(az storage account show-connection-string --name stcleansiasdev --resource-group rg-cleansia-dev --query connectionString -o tsv)"
+
 ```
 
 Repeat for PRO with production values (live Stripe keys, production SendGrid key, etc.).
@@ -553,60 +522,46 @@ Repeat for PRO with production values (live Stripe keys, production SendGrid key
 
 ### Step 3: Configure App Services
 
-#### 3.1 .NET API App Service Configuration
+#### 3.1 .NET API App Services Configuration
+
+All 4 API App Services share the same Key Vault references. The shared settings string is reused below.
 
 ```bash
-# Set environment and Key Vault references
-az webapp config appsettings set \
-  --name api-cleansia-dev \
-  --resource-group rg-cleansia-dev \
-  --settings \
-    ASPNETCORE_ENVIRONMENT=Production \
-    ConnectionStrings__DefaultConnection="@Microsoft.KeyVault(SecretUri=https://kv-cleansia-dev.vault.azure.net/secrets/ConnectionStrings--DefaultConnection)" \
-    Jwt__SecretKey="@Microsoft.KeyVault(SecretUri=https://kv-cleansia-dev.vault.azure.net/secrets/Jwt--SecretKey)" \
-    Stripe__SecretKey="@Microsoft.KeyVault(SecretUri=https://kv-cleansia-dev.vault.azure.net/secrets/Stripe--SecretKey)" \
-    Stripe__WebhookSecret="@Microsoft.KeyVault(SecretUri=https://kv-cleansia-dev.vault.azure.net/secrets/Stripe--WebhookSecret)" \
-    Stripe__PublishableKey="@Microsoft.KeyVault(SecretUri=https://kv-cleansia-dev.vault.azure.net/secrets/Stripe--PublishableKey)" \
-    SendGrid__ApiKey="@Microsoft.KeyVault(SecretUri=https://kv-cleansia-dev.vault.azure.net/secrets/SendGrid--ApiKey)" \
-    SendGrid__SandboxMode=true \
-    Sentry__Dsn="@Microsoft.KeyVault(SecretUri=https://kv-cleansia-dev.vault.azure.net/secrets/Sentry--Dsn)" \
-    AzureBlobStorage__ConnectionString="@Microsoft.KeyVault(SecretUri=https://kv-cleansia-dev.vault.azure.net/secrets/AzureBlobStorage--ConnectionString)" \
-    CorsOrigins__0="https://web-cleansia-customer-dev.azurewebsites.net" \
-    CorsOrigins__1="https://swa-cleansia-partner-dev.azurestaticapps.net" \
-    CorsOrigins__2="https://swa-cleansia-admin-dev.azurestaticapps.net"
+# Shared Key Vault reference settings for all .NET APIs
+KV_SETTINGS='ASPNETCORE_ENVIRONMENT=Production ConnectionStrings__DefaultConnection="@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=ConnectionStrings--DefaultConnection)" Jwt__SecretKey="@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=Jwt--SecretKey)" Stripe__SecretKey="@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=Stripe--SecretKey)" Stripe__WebhookSecret="@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=Stripe--WebhookSecret)" Stripe__PublishableKey="@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=Stripe--PublishableKey)" SendGrid__ApiKey="@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=SendGrid--ApiKey)" SendGrid__SandboxMode=true ConnectionStrings__BlobContainerConfigurationConnectionString="@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=ConnectionStrings--BlobContainerConfigurationConnectionString)"'
+
+# Partner API — CORS: customer frontend + partner SPA
+az webapp config appsettings set --name api-cleansia-dev --resource-group rg-cleansia-dev --settings $KV_SETTINGS CorsOrigins__0="https://swa-cleansia-partner-dev.azurestaticapps.net"
+
+# Admin API — CORS: admin SPA
+az webapp config appsettings set --name api-cleansia-admin-dev --resource-group rg-cleansia-dev --settings $KV_SETTINGS CorsOrigins__0="https://swa-cleansia-admin-dev.azurestaticapps.net"
+
+# Customer API — CORS: customer SSR frontend
+az webapp config appsettings set --name api-cleansia-customer-dev --resource-group rg-cleansia-dev --settings $KV_SETTINGS CorsOrigins__0="https://web-cleansia-customer-dev.azurewebsites.net"
+
+# Mobile API — no CORS needed (native app uses direct API calls)
+az webapp config appsettings set --name api-cleansia-mobile-dev --resource-group rg-cleansia-dev --settings $KV_SETTINGS
 ```
 
-For PRO, set `SendGrid__SandboxMode=false` and use PRO Key Vault URIs and production CORS origins (custom domains).
+For PRO, set `SendGrid__SandboxMode=false` and use PRO Key Vault name and production CORS origins (custom domains).
 
 #### 3.2 Customer SSR App Service Configuration
 
 ```bash
-az webapp config appsettings set \
-  --name web-cleansia-customer-dev \
-  --resource-group rg-cleansia-dev \
-  --settings \
-    WEBSITE_NODE_DEFAULT_VERSION="~20" \
-    API_URL="https://api-cleansia-dev.azurewebsites.net"
+az webapp config appsettings set --name web-cleansia-customer-dev --resource-group rg-cleansia-dev --settings WEBSITE_NODE_DEFAULT_VERSION="~20"
 
 # Set startup command for Angular SSR
-az webapp config set \
-  --name web-cleansia-customer-dev \
-  --resource-group rg-cleansia-dev \
-  --startup-file "node dist/cleansia.app/server/server.mjs"
+az webapp config set --name web-cleansia-customer-dev --resource-group rg-cleansia-dev --startup-file "node server/server.mjs"
 ```
 
 #### 3.3 Enable Always On (prevents cold starts)
 
 ```bash
-az webapp config set \
-  --name api-cleansia-dev \
-  --resource-group rg-cleansia-dev \
-  --always-on true
-
-az webapp config set \
-  --name web-cleansia-customer-dev \
-  --resource-group rg-cleansia-dev \
-  --always-on true
+az webapp config set --name api-cleansia-dev --resource-group rg-cleansia-dev --always-on true
+az webapp config set --name api-cleansia-admin-dev --resource-group rg-cleansia-dev --always-on true
+az webapp config set --name api-cleansia-customer-dev --resource-group rg-cleansia-dev --always-on true
+az webapp config set --name api-cleansia-mobile-dev --resource-group rg-cleansia-dev --always-on true
+az webapp config set --name web-cleansia-customer-dev --resource-group rg-cleansia-dev --always-on true
 ```
 
 ---
@@ -621,7 +576,15 @@ Create `staticwebapp.config.json` in each SPA's build output:
 {
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/assets/*", "/*.ico", "/*.js", "/*.css", "/*.svg", "/*.png", "/*.jpg"]
+    "exclude": [
+      "/assets/*",
+      "/*.ico",
+      "/*.js",
+      "/*.css",
+      "/*.svg",
+      "/*.png",
+      "/*.jpg"
+    ]
   },
   "responseOverrides": {
     "404": {
@@ -658,24 +621,21 @@ az staticwebapp hostname set \
 
 Add the following secrets to the GitHub repository:
 
-| Secret | Description |
-|--------|-------------|
-| `AZURE_CREDENTIALS` | Service principal JSON for Azure login |
-| `AZURE_WEBAPP_PUBLISH_PROFILE_API_DEV` | Publish profile for `api-cleansia-dev` |
-| `AZURE_WEBAPP_PUBLISH_PROFILE_CUSTOMER_DEV` | Publish profile for `web-cleansia-customer-dev` |
-| `AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER_DEV` | Deployment token for partner SWA |
-| `AZURE_STATIC_WEB_APPS_API_TOKEN_ADMIN_DEV` | Deployment token for admin SWA |
-| Same set for PRO | Replace `DEV` with `PRO` |
+| Secret                                          | Description                                     |
+| ----------------------------------------------- | ----------------------------------------------- |
+| `AZURE_WEBAPP_PUBLISH_PROFILE_API_DEV`          | Publish profile for `api-cleansia-dev`          |
+| `AZURE_WEBAPP_PUBLISH_PROFILE_ADMIN_API_DEV`    | Publish profile for `api-cleansia-admin-dev`    |
+| `AZURE_WEBAPP_PUBLISH_PROFILE_CUSTOMER_API_DEV` | Publish profile for `api-cleansia-customer-dev` |
+| `AZURE_WEBAPP_PUBLISH_PROFILE_MOBILE_API_DEV`   | Publish profile for `api-cleansia-mobile-dev`   |
+| `AZURE_WEBAPP_PUBLISH_PROFILE_CUSTOMER_DEV`     | Publish profile for `web-cleansia-customer-dev` |
+| `AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER_DEV`   | Deployment token for partner SWA                |
+| `AZURE_STATIC_WEB_APPS_API_TOKEN_ADMIN_DEV`     | Deployment token for admin SWA                  |
+| Same set for PRO                                | Replace `DEV` with `PRO`                        |
 
 #### 5.2 Create Service Principal
 
 ```bash
-az ad sp create-for-rbac \
-  --name "github-cleansia-deploy" \
-  --role contributor \
-  --scopes /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/rg-cleansia-dev \
-           /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/rg-cleansia-pro \
-  --sdk-auth
+az ad sp create-for-rbac --name "github-cleansia-deploy" --role contributor --scopes /subscriptions/39aa3f73-f99d-4b0e-b946-0fe696cc3e13/resourceGroups/rg-cleansia-dev /subscriptions/39aa3f73-f99d-4b0e-b946-0fe696cc3e13/resourceGroups/rg-cleansia-pro --sdk-auth
 ```
 
 Save the JSON output as `AZURE_CREDENTIALS` in GitHub Secrets.
@@ -683,10 +643,7 @@ Save the JSON output as `AZURE_CREDENTIALS` in GitHub Secrets.
 #### 5.3 Get SWA Deployment Tokens
 
 ```bash
-az staticwebapp secrets list \
-  --name swa-cleansia-partner-dev \
-  --resource-group rg-cleansia-dev \
-  --query "properties.apiKey" -o tsv
+az staticwebapp secrets list --name swa-cleansia-partner-dev --resource-group rg-cleansia-dev --query "properties.apiKey" -o tsv
 ```
 
 #### 5.4 GitHub Actions Workflow Outline
@@ -776,17 +733,17 @@ az network dns zone create \
 
 #### 7.2 DNS Records
 
-| Record Type | Name | Value | Environment |
-|-------------|------|-------|-------------|
-| CNAME | `api-dev` | `api-cleansia-dev.azurewebsites.net` | DEV |
-| CNAME | `dev` | `web-cleansia-customer-dev.azurewebsites.net` | DEV |
-| CNAME | `partner-dev` | `<swa-cleansia-partner-dev>.azurestaticapps.net` | DEV |
-| CNAME | `admin-dev` | `<swa-cleansia-admin-dev>.azurestaticapps.net` | DEV |
-| CNAME | `api` | `api-cleansia-pro.azurewebsites.net` | PRO |
-| A / CNAME | `@` or `www` | `web-cleansia-customer-pro.azurewebsites.net` | PRO |
-| CNAME | `partner` | `<swa-cleansia-partner-pro>.azurestaticapps.net` | PRO |
-| CNAME | `admin` | `<swa-cleansia-admin-pro>.azurestaticapps.net` | PRO |
-| TXT | `asuid.api` | Custom domain verification ID | Both |
+| Record Type | Name          | Value                                            | Environment |
+| ----------- | ------------- | ------------------------------------------------ | ----------- |
+| CNAME       | `api-dev`     | `api-cleansia-dev.azurewebsites.net`             | DEV         |
+| CNAME       | `dev`         | `web-cleansia-customer-dev.azurewebsites.net`    | DEV         |
+| CNAME       | `partner-dev` | `<swa-cleansia-partner-dev>.azurestaticapps.net` | DEV         |
+| CNAME       | `admin-dev`   | `<swa-cleansia-admin-dev>.azurestaticapps.net`   | DEV         |
+| CNAME       | `api`         | `api-cleansia-pro.azurewebsites.net`             | PRO         |
+| A / CNAME   | `@` or `www`  | `web-cleansia-customer-pro.azurewebsites.net`    | PRO         |
+| CNAME       | `partner`     | `<swa-cleansia-partner-pro>.azurestaticapps.net` | PRO         |
+| CNAME       | `admin`       | `<swa-cleansia-admin-pro>.azurestaticapps.net`   | PRO         |
+| TXT         | `asuid.api`   | Custom domain verification ID                    | Both        |
 
 ```bash
 # Example: Create CNAME for api-dev
@@ -857,21 +814,22 @@ az webapp update \
 
 ## Cost Breakdown
 
-| Resource | DEV (Monthly) | PRO (Monthly) |
-|----------|---------------|---------------|
-| App Service Plan (B1 / S1) | $13 | $73 |
-| PostgreSQL Flexible Server (B1ms / D2s_v3) | $15 | $130 |
-| Static Web Apps (Free) | $0 | $0 |
-| Key Vault (operations) | ~$1 | ~$1 |
-| Application Insights | $0 (free tier) | ~$10 |
-| Bandwidth (egress) | ~$5 | ~$50 |
-| Azure Blob Storage | ~$2 | ~$10 |
-| SendGrid | $0 (sandbox) | ~$20 (Essentials) |
-| Sentry | Free (Developer) | Free (Team) |
-| Stripe | $0 (test mode) | 2.9% + 30c per txn |
-| **Total** | **~$41/mo** | **~$328/mo** |
+| Resource                                   | DEV (Monthly)    | PRO (Monthly)      |
+| ------------------------------------------ | ---------------- | ------------------ |
+| App Service Plan (B1 / S1)                 | $13              | $73                |
+| PostgreSQL Flexible Server (B1ms / D2s_v3) | $15              | $130               |
+| Static Web Apps (Free)                     | $0               | $0                 |
+| Key Vault (operations)                     | ~$1              | ~$1                |
+| Application Insights                       | $0 (free tier)   | ~$10               |
+| Bandwidth (egress)                         | ~$5              | ~$50               |
+| Azure Blob Storage                         | ~$2              | ~$10               |
+| SendGrid                                   | $0 (sandbox)     | ~$20 (Essentials)  |
+| Sentry                                     | Free (Developer) | Free (Team)        |
+| Stripe                                     | $0 (test mode)   | 2.9% + 30c per txn |
+| **Total**                                  | **~$41/mo**      | **~$328/mo**       |
 
 > **Notes:**
+>
 > - PRO costs will scale with usage (bandwidth, storage, App Insights data volume).
 > - Static Web Apps Free tier supports custom domains and SSL at no cost.
 > - Consider Azure Reserved Instances (1-year) for ~30% savings on App Service and PostgreSQL in PRO.

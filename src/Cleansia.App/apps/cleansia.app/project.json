@@ -14,6 +14,10 @@
         "outputPath": "dist/apps/cleansia.app",
         "index": "apps/cleansia.app/src/index.html",
         "browser": "apps/cleansia.app/src/main.ts",
+        "server": "apps/cleansia.app/src/main.server.ts",
+        "ssr": {
+          "entry": "apps/cleansia.app/server.ts"
+        },
         "polyfills": ["zone.js"],
         "tsConfig": "apps/cleansia.app/tsconfig.app.json",
         "inlineStyleLanguage": "scss",

@@ -24,6 +24,10 @@ jobs:
         run: npm ci
         working-directory: ./src/Cleansia.App
 
+      - name: Build Customer App
+        run: npm run build:cleansia-customer
+        working-directory: ./src/Cleansia.App
+
       - name: Build Partner App
         run: npm run build:cleansia-partner
         working-directory: ./src/Cleansia.App

@@ -1,4 +1,5 @@
-import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, PLATFORM_ID, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import {
   CleansiaCookieConsentComponent,
@@ -29,6 +30,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
   private readonly pageTitleService = inject(PageTitleService);
+  private readonly platformId = inject(PLATFORM_ID);
   private readonly destroy$ = new Subject<void>();
 
   isOnLandingPage = signal(true);
@@ -64,10 +66,12 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private detectLanguage(): string {
     const supported = ['cs', 'en', 'sk', 'uk', 'ru'];
-    const stored = localStorage.getItem('preferred_language');
-    if (stored && supported.includes(stored)) return stored;
-    const browserLang = navigator.language?.split('-')[0]?.toLowerCase();
-    if (browserLang && supported.includes(browserLang)) return browserLang;
+    if (isPlatformBrowser(this.platformId)) {
+      const stored = localStorage.getItem('preferred_language');
+      if (stored && supported.includes(stored)) return stored;
+      const browserLang = navigator.language?.split('-')[0]?.toLowerCase();
+      if (browserLang && supported.includes(browserLang)) return browserLang;
+    }
     return 'en';
   }
 }

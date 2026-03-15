@@ -1,6 +1,6 @@
 # Cleansia Architecture Improvements Roadmap
 
-> Generated: 2026-02-07 | Updated: 2026-03-01 (Phase 11 architecture consistency)
+> Generated: 2026-02-07 | Updated: 2026-03-15 (Phase 12 customer app)
 > Status: In Progress
 
 ---
@@ -305,13 +305,14 @@ Single `DataRetentionBackgroundService` registered as a Hangfire recurring job (
 Solution: Cleansia.Api.sln + Cleansia.Api.slnx
 
 00 Orchestration
-├── Cleansia.AppHost           # Aspire 13.1.1 — PostgreSQL + 3 API services
+├── Cleansia.AppHost           # Aspire 13.1.1 — PostgreSQL + 4 API services
 └── Cleansia.ServiceDefaults   # OpenTelemetry, health checks, Sentry, resilience
 
 05 Web (Presentation)
 ├── Cleansia.Web.Partner       # Partner API (18 controllers, port 5000)
 ├── Cleansia.Web.Admin         # Admin API (20 controllers, port 5001)
-└── Cleansia.Web.Mobile        # Mobile API (10 controllers, port 5002)
+├── Cleansia.Web.Mobile        # Mobile API (10 controllers, port 5002)
+└── Cleansia.Web.Customer      # Customer API (12 controllers, port 5003)
 
 04 Core (Business Logic)
 ├── Cleansia.Core.AppServices  # CQRS handlers, features, DTOs, FluentValidation
@@ -473,12 +474,79 @@ Added `pl.json` translation files for both Partner and Admin Angular apps (~1700
 
 ---
 
+## Phase 12: Customer-Facing App — **COMPLETE** ✅
+
+> Generated: 2026-03-15
+> Status: Complete
+
+### Overview
+
+Full customer-facing web application built as an Angular 19 SPA in the Nx monorepo. Includes backend API (`Cleansia.Web.Customer` on port 5003), 12+ feature libraries, 5 NgRx stores, and 900+ translation keys across 3 languages.
+
+### Backend
+
+| Task | Priority | Effort | Status |
+|------|----------|--------|--------|
+| Create `Cleansia.Web.Customer` API project (port 5003) | CRITICAL | 2 days | **Done** ✅ |
+| Auth controllers (login, register, confirm email, forgot password) | CRITICAL | 1 day | **Done** ✅ |
+| Order controller (create order, list orders, order detail) | CRITICAL | 1 day | **Done** ✅ |
+| Payment controller (create Stripe checkout session) | CRITICAL | 1 day | **Done** ✅ |
+| Dispute controller (create, list disputes) | HIGH | 4 hours | **Done** ✅ |
+| GDPR controller (export data, delete account, consents) | HIGH | 4 hours | **Done** ✅ |
+| Service/Package catalog controllers | HIGH | 2 hours | **Done** ✅ |
+| Profile controller | HIGH | 2 hours | **Done** ✅ |
+| Add to Aspire AppHost orchestration | MEDIUM | 30 min | **Done** ✅ |
+
+**12 controllers** in `Cleansia.Web.Customer`:
+Auth, Order, Payment, Dispute, Gdpr, Service, Package, Profile, User, Country, Language, Currency
+
+### Frontend
+
+| Task | Priority | Effort | Status |
+|------|----------|--------|--------|
+| Landing page (10 sections: hero, features, process, benefits, services, gallery, testimonials, FAQ, CTA, footer) | CRITICAL | 3 days | **Done** ✅ |
+| Service catalog page (dynamic from API) | CRITICAL | 1 day | **Done** ✅ |
+| Order wizard (5-step: services → contact → date → payment → summary) | CRITICAL | 2 days | **Done** ✅ |
+| Stripe checkout integration (success + cancel pages) | CRITICAL | 1 day | **Done** ✅ |
+| Auth pages (login, register, confirm email, forgot password) | CRITICAL | 1 day | **Done** ✅ |
+| Orders page (list + detail with status tracking) | HIGH | 1 day | **Done** ✅ |
+| Disputes page (list + create) | HIGH | 4 hours | **Done** ✅ |
+| Profile page | HIGH | 4 hours | **Done** ✅ |
+| GDPR page (export, consents, deletion) | HIGH | 4 hours | **Done** ✅ |
+| Terms of Service + Privacy Policy pages | MEDIUM | 2 hours | **Done** ✅ |
+| Cookie consent component | MEDIUM | 2 hours | **Done** ✅ |
+| Customer navbar + footer components | MEDIUM | 4 hours | **Done** ✅ |
+| 5 NgRx stores (user, loading, catalog, order, dispute) | HIGH | 1 day | **Done** ✅ |
+| 900+ i18n keys × 3 languages (CS, EN, PL) | HIGH | 2 days | **Done** ✅ |
+| Dark mode with full theme support | MEDIUM | 1 day | **Done** ✅ |
+| Mascot illustrations on key pages | LOW | 4 hours | **Done** ✅ |
+
+### Architecture
+
+**17 routes** all implemented:
+`/`, `/services`, `/order`, `/checkout/success`, `/checkout/cancel`, `/login`, `/register`, `/confirm-email`, `/forgot-password`, `/orders`, `/orders/:id`, `/disputes`, `/profile`, `/gdpr`, `/terms`, `/privacy`, `/not-found`
+
+**Feature libraries** (Nx):
+`cleansia-customer-features/home`, `/checkout`, `/login`, `/register`, `/confirm-email`, `/forgot-password`, `/order-wizard`, `/orders`, `/disputes`, `/profile`, `/gdpr`, `/services-catalog`
+
+**Shared components**: `cleansia-customer-navbar`, `cleansia-customer-footer`, `cleansia-cookie-consent`, `cleansia-brand-name`
+
+**Global SCSS**: All styles in `libs/shared/assets/src/styles/pages/cleansia-customer/` — no component-level `styleUrl` (consistent with partner/admin apps)
+
+---
+
 ## Remaining Work
 
 | Task | Priority | Status |
 |------|----------|--------|
+| Uncomment email confirmation call in Register.cs / RegisterEmployee.cs | HIGH | Pending |
+| Order status change notifications (email for InProgress, Cancelled, etc.) | MEDIUM | Planned |
 | Move duplicate EnumSchemaFilter to shared project | LOW | Planned |
 | EF Core migration for country expansion schema changes | HIGH | Pending |
 | Expand test coverage (target 80%+) | HIGH | Planned |
-| Update Docker base images to .NET 10 | LOW | Planned |
+| Update Docker base images to .NET 10 | LOW | **Done** ✅ |
 | Sentry account setup + DSN configuration | MEDIUM | Pending account |
+| Production deployment to Azure (DEV + PRO) | HIGH | Planned |
+| Customer reviews/ratings | MEDIUM | Planned |
+| Real-time order tracking (SignalR) | MEDIUM | Planned |
+| Mobile apps (iOS + Android) for Customer and Partner | HIGH | Planned |

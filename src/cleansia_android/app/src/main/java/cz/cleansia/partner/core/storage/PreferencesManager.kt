@@ -55,7 +55,9 @@ class PreferencesManager @Inject constructor(
             val lang = Locale.getDefault().language
             return when (lang) {
                 "cs" -> "cs"
-                "pl" -> "pl"
+                "sk" -> "sk"
+                "uk" -> "uk"
+                "ru" -> "ru"
                 else -> "en"
             }
         }

@@ -285,8 +285,9 @@ object DateTimeUtils {
         return when (locale.language) {
             "cs" -> "Dnes"
             "sk" -> "Dnes"
+            "uk" -> "Сьогодні"
+            "ru" -> "Сегодня"
             "de" -> "Heute"
-            "pl" -> "Dzisiaj"
             else -> "Today"
         }
     }
@@ -295,8 +296,9 @@ object DateTimeUtils {
         return when (locale.language) {
             "cs" -> "Zítra"
             "sk" -> "Zajtra"
+            "uk" -> "Завтра"
+            "ru" -> "Завтра"
             "de" -> "Morgen"
-            "pl" -> "Jutro"
             else -> "Tomorrow"
         }
     }
@@ -305,8 +307,9 @@ object DateTimeUtils {
         return when (locale.language) {
             "cs" -> "Včera"
             "sk" -> "Včera"
+            "uk" -> "Вчора"
+            "ru" -> "Вчера"
             "de" -> "Gestern"
-            "pl" -> "Wczoraj"
             else -> "Yesterday"
         }
     }

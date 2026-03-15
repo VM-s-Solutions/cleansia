@@ -1,0 +1,1709 @@
+{
+  "page_titles": {
+    "admin": {
+      "default": "Панель администратора",
+      "login": "Вход",
+      "employees": "Сотрудники",
+      "employee_details": "Детали сотрудника",
+      "pay_periods": "Расчётные периоды",
+      "pay_period_details": "Детали расчётного периода",
+      "orders": "Заказы",
+      "order_details": "Детали заказа",
+      "invoices": "Счета",
+      "invoice_details": "Детали счёта",
+      "reports": "Отчёты",
+      "services": "Услуги",
+      "service_create": "Создать услугу",
+      "service_edit": "Редактировать услугу",
+      "packages": "Пакеты",
+      "package_create": "Создать пакет",
+      "package_edit": "Редактировать пакет",
+      "admin_users": "Администраторы",
+      "admin_user_create": "Создать администратора",
+      "admin_user_edit": "Редактировать администратора",
+      "languages": "Языки",
+      "language_create": "Создать язык",
+      "language_edit": "Редактировать язык",
+      "countries": "Страны",
+      "country_create": "Создать страну",
+      "country_edit": "Редактировать страну",
+      "currencies": "Валюты",
+      "currency_create": "Создать валюту",
+      "currency_edit": "Редактировать валюту",
+      "company_info": "Информация о компании",
+      "company_info_create": "Создать информацию о компании",
+      "company_info_edit": "Редактировать информацию о компании",
+      "templates": "Шаблоны",
+      "invoice_templates": "Шаблоны счетов",
+      "invoice_template_create": "Создать шаблон счёта",
+      "invoice_template_edit": "Редактировать шаблон счёта",
+      "receipt_templates": "Шаблоны квитанций",
+      "receipt_template_create": "Создать шаблон квитанции",
+      "receipt_template_edit": "Редактировать шаблон квитанции",
+      "email_templates": "Шаблоны электронных писем",
+      "email_template_translations": "Переводы шаблонов электронных писем",
+      "not_found": "Страница не найдена"
+    }
+  },
+  "components": {
+    "not_found": {
+      "title": "Страница не найдена",
+      "description": "Страница, которую вы ищете, могла быть удалена, переименована или временно недоступна."
+    },
+    "availability": {
+      "days": {
+        "monday": "Понедельник",
+        "tuesday": "Вторник",
+        "wednesday": "Среда",
+        "thursday": "Четверг",
+        "friday": "Пятница",
+        "saturday": "Суббота",
+        "sunday": "Воскресенье"
+      },
+      "current_ranges": "Текущие диапазоны",
+      "no_availability": "Доступность не настроена",
+      "add_time_range": "Добавить временной диапазон",
+      "start_time": "Время начала",
+      "end_time": "Время окончания",
+      "quick_setup": "Быстрая настройка",
+      "weekly_schedule": "Недельное расписание",
+      "mon_fri_9_5": "Пн-Пт 9-17",
+      "mon_sat_8_4": "Пн-Сб 8-16",
+      "custom": "Пользовательский",
+      "legend_working": "Рабочий",
+      "legend_custom": "Свои часы",
+      "legend_off": "Выходной",
+      "no_days_selected": "Выберите рабочие дни для настройки расписания",
+      "working_day": "Рабочий день",
+      "day_off": "Выходной день",
+      "custom_hours": "Свои часы",
+      "exception_day_off": "Исключение - выходной день",
+      "edit_hours": "Редактировать часы",
+      "remove_exception": "Удалить исключение",
+      "mark_exception": "Отметить как исключение",
+      "set_custom_hours": "Установить свои часы",
+      "mark_unavailable": "Этот день будет отмечен как недоступный.",
+      "add_time_slot": "Добавить временной слот",
+      "schedule_setup": "Настройка расписания",
+      "schedule_setup_desc": "Выберите рабочие дни и установите часы.",
+      "working_hours": "Рабочие часы",
+      "working_days": "Рабочие дни",
+      "apply": "Применить"
+    }
+  },
+  "global": {
+    "yes": "Да",
+    "no": "Нет",
+    "all": "Все",
+    "no_data": "Нет данных для отображения",
+    "loading": "Загрузка...",
+    "refresh": "Обновить",
+    "rows_per_page": "Строк на страницу",
+    "of": "из",
+    "page": "Страница {{page}}",
+    "previous_page": "Предыдущая страница",
+    "next_page": "Следующая страница",
+    "actions": {
+      "login": "Войти",
+      "logout": "Выйти",
+      "back": "Назад",
+      "save": "Сохранить",
+      "create": "Создать",
+      "cancel": "Отменить",
+      "edit": "Редактировать",
+      "delete": "Удалить",
+      "add": "Добавить",
+      "ok": "OK",
+      "copy": "Копировать",
+      "close": "Закрыть",
+      "previous": "Предыдущий",
+      "next": "Следующий",
+      "go_back": "Назад",
+      "go_home": "На главную",
+      "go_to_login": "Перейти к входу"
+    },
+    "dialog": {
+      "confirm": "Подтвердить",
+      "confirm_logout": "Вы действительно хотите выйти?"
+    },
+    "user": {
+      "remember_me": "Запомнить меня"
+    },
+    "status": {
+      "active": "Активный",
+      "inactive": "Неактивный"
+    },
+    "messages": {
+      "success": "Успех",
+      "error": "Ошибка"
+    },
+    "languages": {
+      "en": "Английский",
+      "cs": "Чешский",
+      "de": "Немецкий",
+      "sk": "Словацкий",
+      "pl": "Польский"
+    }
+  },
+  "sidebar": {
+    "employees": "Сотрудники",
+    "payPeriods": "Расчётные периоды",
+    "orders": "Заказы",
+    "invoices": "Счета",
+    "reports": "Отчёты",
+    "services": "Услуги",
+    "packages": "Пакеты",
+    "adminUsers": "Администраторы",
+    "languages": "Языки",
+    "countries": "Страны",
+    "currencies": "Валюты",
+    "companyInfo": "Информация о компании",
+    "templates": "Шаблоны",
+    "logout": "Выйти"
+  },
+  "pages": {
+    "unauthorized": {
+      "title": "Доступ запрещён",
+      "message": "У вас нет разрешения на доступ к этой области. Требуются права администратора."
+    },
+    "login": {
+      "email": "Электронная почта",
+      "password": "Пароль",
+      "remember_me": "Запомнить меня"
+    },
+    "employee_management": {
+      "title": "Управление сотрудниками",
+      "description": "Управляйте сотрудниками, одобряйте регистрации и отслеживайте производительность",
+      "name": "Имя",
+      "email": "Электронная почта",
+      "phone": "Телефон",
+      "nationality": "Национальность",
+      "status": "Статус",
+      "rating": "Рейтинг",
+      "complaints": "Жалобы",
+      "created_at": "Создано",
+      "actions": "Действия",
+      "approve": "Одобрить",
+      "reject": "Отклонить",
+      "view_details": "Просмотреть детали",
+      "no_employees": "Нет сотрудников для отображения",
+      "filters": {
+        "title": "Фильтры",
+        "search": "Поиск",
+        "search_placeholder": "Искать по имени, электронной почте или телефону",
+        "contract_status": "Статус контракта",
+        "active_status": "Статус активности",
+        "reset": "Сбросить фильтры",
+        "clear_all": "Очистить все"
+      },
+      "reject_dialog": {
+        "title": "Отклонить сотрудника",
+        "subtitle": "Пожалуйста, укажите причину отклонения этого сотрудника",
+        "reason_label": "Причина отклонения",
+        "reason_placeholder": "Введите подробную причину отклонения...",
+        "reason_hint": "Максимум 500 символов",
+        "reason_required": "Причина отклонения обязательна",
+        "reason_too_long": "Причина отклонения слишком длинная (макс. 500 символов)",
+        "cancel_button": "Отменить",
+        "reject_button": "Отклонить сотрудника"
+      },
+      "messages": {
+        "load_error": "Не удалось загрузить сотрудников",
+        "approve_success": "Сотрудник успешно одобрен",
+        "approve_error": "Не удалось одобрить сотрудника",
+        "reject_success": "Сотрудник успешно отклонён",
+        "reject_error": "Не удалось отклонить сотрудника"
+      },
+      "contract_status": {
+        "pending": "Ожидает",
+        "active": "Активный",
+        "approved": "Одобрен",
+        "rejected": "Отклонён",
+        "terminated": "Прекращён"
+      },
+      "profile_incomplete_tooltip": "Профиль не заполнен — невозможно одобрить"
+    },
+    "employee_detail": {
+      "title": "Детали сотрудника",
+      "back_to_list": "Вернуться к списку сотрудников",
+      "personal_info": "Личная информация",
+      "first_name": "Имя",
+      "last_name": "Фамилия",
+      "email": "Электронная почта",
+      "phone": "Номер телефона",
+      "birth_date": "Дата рождения",
+      "address_info": "Адрес",
+      "street": "Улица",
+      "city": "Город",
+      "zip_code": "Почтовый индекс",
+      "country": "Страна",
+      "employment_info": "Информация о трудоустройстве",
+      "nationality": "Национальность",
+      "passport_id": "Паспорт/Национальное удостоверение",
+      "tax_id": "ИНН (ИКО)",
+      "iban": "IBAN",
+      "emergency_contact": "Экстренный контакт",
+      "emergency_name": "Имя",
+      "emergency_phone": "Телефон",
+      "contract_info": "Информация о контракте",
+      "contract_status": "Статус контракта",
+      "average_rating": "Средний рейтинг",
+      "complaints_count": "Жалобы",
+      "created_at": "Зарегистрирован",
+      "profile_status": "Статус профиля",
+      "profile_complete": "Профиль заполнен",
+      "profile_incomplete": "Профиль не заполнен",
+      "missing_fields": "Отсутствующие поля",
+      "approval_info": "Информация об одобрении",
+      "approval_notes": "Примечания к одобрению",
+      "approved_by": "Одобрил",
+      "approved_at": "Одобрено",
+      "rejection_info": "Информация об отклонении",
+      "rejection_reason": "Причина отклонения",
+      "rejected_by": "Отклонил",
+      "rejected_at": "Отклонено",
+      "availability": "Недельная доступность",
+      "Monday": "Понедельник",
+      "Tuesday": "Вторник",
+      "Wednesday": "Среда",
+      "Thursday": "Четверг",
+      "Friday": "Пятница",
+      "Saturday": "Суббота",
+      "Sunday": "Воскресенье",
+      "no_availability": "Доступность не настроена",
+      "documents": "Документы",
+      "no_documents": "Документы не загружены",
+      "pending_documents": "Ожидающие документы",
+      "approved_documents": "Одобренные документы",
+      "rejected_documents": "Отклонённые документы",
+      "document_type": "Тип документа",
+      "document_version": "Версия",
+      "file_size": "Размер файла",
+      "uploaded_at": "Загружен",
+      "reviewed_at": "Проверен",
+      "review_notes": "Примечания к проверке",
+      "document_description": "Описание",
+      "actions": {
+        "approve_employee": "Одобрить сотрудника",
+        "reject_employee": "Отклонить сотрудника",
+        "approve_document": "Одобрить",
+        "reject_document": "Отклонить",
+        "download_document": "Скачать",
+        "preview_document": "Предпросмотр"
+      },
+      "reject_employee_dialog": {
+        "title": "Отклонить сотрудника",
+        "subtitle": "Пожалуйста, укажите причину отклонения этого сотрудника",
+        "reason_label": "Причина отклонения",
+        "reason_placeholder": "Введите подробную причину отклонения...",
+        "reason_hint": "Максимум 500 символов",
+        "reason_required": "Причина отклонения обязательна",
+        "reason_too_long": "Причина отклонения слишком длинная (макс. 500 символов)",
+        "cancel_button": "Отменить",
+        "reject_button": "Отклонить сотрудника"
+      },
+      "reject_document_dialog": {
+        "title": "Отклонить документ",
+        "subtitle": "Пожалуйста, укажите причину отклонения этого документа",
+        "reason_label": "Причина отклонения",
+        "reason_placeholder": "Введите подробную причину отклонения...",
+        "reason_hint": "Максимум 500 символов",
+        "reason_required": "Причина отклонения обязательна",
+        "reason_too_long": "Причина отклонения слишком длинная (макс. 500 символов)",
+        "cancel_button": "Отменить",
+        "reject_button": "Отклонить документ"
+      },
+      "messages": {
+        "load_error": "Не удалось загрузить детали сотрудника",
+        "employee_approve_success": "Сотрудник успешно одобрен",
+        "employee_approve_error": "Не удалось одобрить сотрудника",
+        "employee_reject_success": "Сотрудник успешно отклонён",
+        "employee_reject_error": "Не удалось отклонить сотрудника",
+        "document_approve_success": "Документ успешно одобрен",
+        "document_approve_error": "Не удалось одобрить документ",
+        "document_reject_success": "Документ успешно отклонён",
+        "document_reject_error": "Не удалось отклонить документ",
+        "document_download_error": "Не удалось скачать документ",
+        "availability_save_success": "Доступность успешно обновлена",
+        "availability_save_error": "Не удалось обновить доступность"
+      },
+      "document_status": {
+        "pending": "Ожидает",
+        "approved": "Одобрен",
+        "rejected": "Отклонён",
+        "unknown": "Неизвестен"
+      },
+      "document_types": {
+        "identity_card": "Удостоверение личности",
+        "passport": "Паспорт",
+        "drivers_license": "Водительское удостоверение",
+        "work_permit": "Разрешение на работу",
+        "contract": "Контракт",
+        "certificate": "Сертификат",
+        "bank_statement": "Банковская выписка",
+        "tax_document": "Налоговый документ",
+        "insurance_document": "Страховой документ",
+        "other": "Другое",
+        "unknown": "Неизвестен"
+      }
+    },
+    "order_management": {
+      "title": "Управление заказами",
+      "description": "Просматривайте и управляйте заказами клиентов, отслеживайте статус заказов и платежей",
+      "order_number": "Заказ №",
+      "customer_name": "Клиент",
+      "customer_email": "Электронная почта",
+      "customer_phone": "Телефон",
+      "cleaning_date": "Дата уборки",
+      "total_price": "Итого",
+      "order_status_label": "Статус заказа",
+      "payment_status_label": "Статус оплаты",
+      "assigned_employees": "Назначены",
+      "actions": "Действия",
+      "view_details": "Просмотреть детали",
+      "no_orders": "Заказы не найдены",
+      "filters": {
+        "title": "Фильтры",
+        "search": "Поиск",
+        "search_placeholder": "Искать по имени клиента или номеру заказа",
+        "order_status": "Статус заказа",
+        "payment_status": "Статус оплаты",
+        "date_range": "Диапазон дат",
+        "date_from": "Дата с",
+        "date_to": "Дата по",
+        "reset": "Сбросить фильтры",
+        "clear_all": "Очистить все"
+      },
+      "order_status": {
+        "pending": "Ожидает",
+        "confirmed": "Подтверждён",
+        "in_progress": "В процессе",
+        "completed": "Завершён",
+        "cancelled": "Отменён"
+      },
+      "payment_status": {
+        "pending": "Ожидает",
+        "paid": "Оплачен",
+        "failed": "Не удался",
+        "refunded": "Возвращён",
+        "disputed": "Оспорен"
+      },
+      "messages": {
+        "load_error": "Не удалось загрузить заказы"
+      }
+    },
+    "order_detail": {
+      "title": "Детали заказа",
+      "back_to_list": "Вернуться к заказам",
+      "order_number": "Номер заказа",
+      "customer_info": "Информация о клиенте",
+      "customer_name": "Имя клиента",
+      "customer_email": "Электронная почта",
+      "customer_phone": "Телефон",
+      "address_info": "Адрес",
+      "street": "Улица",
+      "city": "Город",
+      "zip_code": "Почтовый индекс",
+      "country": "Страна",
+      "floor": "Этаж",
+      "apartment": "Квартира",
+      "cleaning_details": "Детали уборки",
+      "cleaning_date": "Дата уборки",
+      "cleaning_time": "Время уборки",
+      "rooms": "Комнаты",
+      "bathrooms": "Ванные комнаты",
+      "estimated_time": "Расчётное время",
+      "actual_time": "Фактическое время",
+      "selected_packages": "Выбранные пакеты",
+      "selected_services": "Выбранные услуги",
+      "extras": "Дополнительно",
+      "payment_info": "Информация об оплате",
+      "payment_type": "Тип оплаты",
+      "payment_status": "Статус оплаты",
+      "total_price": "Общая стоимость",
+      "receipt_number": "Номер квитанции",
+      "assigned_employee": "Назначенный сотрудник",
+      "assigned_employees": "Назначенные сотрудники",
+      "employee_name": "Имя",
+      "employee_phone": "Телефон",
+      "employee_email": "Электронная почта",
+      "instructions": "Инструкции",
+      "special_instructions": "Специальные инструкции",
+      "access_instructions": "Инструкции по доступу",
+      "notes": "Примечания",
+      "completion_notes": "Примечания к завершению",
+      "status_history": "История статусов",
+      "not_found": "Заказ не найден",
+      "photos": "Фотографии заказа",
+      "before_photos": "Фотографии до",
+      "after_photos": "Фотографии после",
+      "no_photos": "Для этого заказа фотографии не загружены",
+      "before": "До",
+      "after": "После",
+      "messages": {
+        "load_error": "Не удалось загрузить детали заказа",
+        "photos_error": "Не удалось загрузить фотографии заказа"
+      }
+    },
+    "invoice_management": {
+      "title": "Управление счетами",
+      "description": "Просматривайте и управляйте счетами сотрудников, одобряйте платежи и отслеживайте статус счетов",
+      "invoice_number": "Счёт №",
+      "employee_name": "Сотрудник",
+      "pay_period": "Расчётный период",
+      "total_orders": "Заказы",
+      "total_amount": "Общая сумма",
+      "status": "Статус",
+      "generated_at": "Создан",
+      "actions": "Действия",
+      "view_details": "Просмотреть детали",
+      "download": "Скачать PDF",
+      "no_invoices": "Счета не найдены",
+      "filters": {
+        "title": "Фильтры",
+        "search": "Поиск",
+        "search_placeholder": "Искать по номеру счёта или сотруднику",
+        "status": "Статус счёта",
+        "reset": "Сбросить фильтры",
+        "clear_all": "Очистить все"
+      },
+      "invoice_status": {
+        "pending": "Ожидает",
+        "approved": "Одобрен",
+        "paid": "Оплачен",
+        "disputed": "Оспорен",
+        "rejected": "Отклонён",
+        "cancelled": "Отменён"
+      },
+      "messages": {
+        "load_error": "Не удалось загрузить счета",
+        "download_error": "Не удалось скачать счёт"
+      }
+    },
+    "service_management": {
+      "title": "Управление услугами",
+      "description": "Просматривайте и управляйте услугами уборки, их ценами и конфигурациями",
+      "name": "Название",
+      "description_label": "Описание",
+      "base_price": "Базовая цена",
+      "price_per_m2": "Цена за м²",
+      "min_duration": "Мин. длительность",
+      "max_duration": "Макс. длительность",
+      "is_active": "Активна",
+      "actions": "Действия",
+      "view_details": "Просмотреть детали",
+      "create_service": "Создать услугу",
+      "edit_service": "Редактировать",
+      "delete_service": "Удалить услугу",
+      "delete_confirm": "Вы действительно хотите удалить эту услугу? Это действие нельзя отменить.",
+      "no_services": "Услуги не найдены",
+      "filters": {
+        "title": "Фильтры",
+        "search": "Поиск",
+        "search_placeholder": "Искать по названию или описанию",
+        "reset": "Сбросить фильтры",
+        "clear_all": "Очистить все"
+      },
+      "columns": {
+        "name": "Название",
+        "description": "Описание",
+        "base_price": "Базовая цена",
+        "per_room_price": "Цена за комнату",
+        "actions": "Действия"
+      },
+      "messages": {
+        "load_error": "Не удалось загрузить услуги",
+        "create_success": "Услуга успешно создана",
+        "create_error": "Не удалось создать услугу",
+        "update_success": "Услуга успешно обновлена",
+        "update_error": "Не удалось обновить услугу",
+        "delete_success": "Услуга успешно удалена",
+        "delete_error": "Не удалось удалить услугу"
+      }
+    },
+    "service_edit": {
+      "create_title": "Создать услугу",
+      "edit_title": "Редактировать услугу",
+      "basic_info": "Основная информация",
+      "translations_cs": "Чешский (CS)",
+      "translations_en": "Английский (EN)",
+      "name": "Название",
+      "description": "Описание",
+      "base_price": "Базовая цена (CZK)",
+      "per_room_price": "Цена за комнату (CZK)",
+      "estimated_time": "Расчётное время (минуты)"
+    },
+    "service_form": {
+      "create_title": "Создать услугу",
+      "edit_title": "Редактировать услугу",
+      "basic_info": "Основная информация",
+      "pricing": "Цены",
+      "translations": "Переводы",
+      "name": "Название",
+      "description": "Описание",
+      "base_price": "Базовая цена (CZK)",
+      "per_room_price": "Цена за комнату (CZK)",
+      "estimated_time": "Расчётное время (минуты)",
+      "messages": {
+        "load_error": "Не удалось загрузить услугу",
+        "create_success": "Услуга успешно создана",
+        "create_error": "Не удалось создать услугу",
+        "update_success": "Услуга успешно обновлена",
+        "update_error": "Не удалось обновить услугу"
+      }
+    },
+    "package_management": {
+      "title": "Управление пакетами",
+      "description": "Просматривайте и управляйте пакетами уборки, их ценами и включёнными услугами",
+      "create_package": "Создать пакет",
+      "edit_package": "Редактировать",
+      "delete_package": "Удалить пакет",
+      "delete_confirm": "Вы действительно хотите удалить этот пакет? Это действие нельзя отменить.",
+      "no_packages": "Пакеты не найдены",
+      "filters": {
+        "title": "Фильтры",
+        "search": "Поиск",
+        "search_placeholder": "Искать по названию или описанию",
+        "reset": "Сбросить фильтры",
+        "clear_all": "Очистить все"
+      },
+      "columns": {
+        "name": "Название",
+        "description": "Описание",
+        "price": "Цена",
+        "actions": "Действия"
+      },
+      "messages": {
+        "load_error": "Не удалось загрузить пакеты",
+        "create_success": "Пакет успешно создан",
+        "create_error": "Не удалось создать пакет",
+        "update_success": "Пакет успешно обновлён",
+        "update_error": "Не удалось обновить пакет",
+        "delete_success": "Пакет успешно удалён",
+        "delete_error": "Не удалось удалить пакет"
+      }
+    },
+    "package_form": {
+      "create_title": "Создать пакет",
+      "edit_title": "Редактировать пакет",
+      "basic_info": "Основная информация",
+      "services": "Включённые услуги",
+      "translations": "Переводы",
+      "name": "Название",
+      "description": "Описание",
+      "price": "Цена (CZK)",
+      "included_services": "Включённые услуги",
+      "select_services": "Выберите услуги для включения",
+      "messages": {
+        "load_error": "Не удалось загрузить пакет",
+        "create_success": "Пакет успешно создан",
+        "create_error": "Не удалось создать пакет",
+        "update_success": "Пакет успешно обновлён",
+        "update_error": "Не удалось обновить пакет"
+      }
+    },
+    "admin_user_management": {
+      "title": "Управление администраторами",
+      "description": "Управляйте учётными записями администраторов, создавайте новых и контролируйте доступ",
+      "create_user": "Создать администратора",
+      "edit_user": "Редактировать администратора",
+      "deactivate_user": "Деактивировать администратора",
+      "activate_user": "Активировать администратора",
+      "deactivate_confirm": "Вы действительно хотите деактивировать этого администратора? Он потеряет доступ к панели администратора.",
+      "activate_confirm": "Вы действительно хотите активировать этого администратора? Он снова получит доступ к панели администратора.",
+      "no_users": "Администраторы не найдены",
+      "filters": {
+        "title": "Фильтры",
+        "search": "Поиск",
+        "search_placeholder": "Искать по имени или электронной почте",
+        "reset": "Сбросить фильтры",
+        "clear_all": "Очистить все"
+      },
+      "columns": {
+        "name": "Имя",
+        "email": "Электронная почта",
+        "phone": "Телефон",
+        "status": "Статус",
+        "created_at": "Создано",
+        "actions": "Действия"
+      },
+      "messages": {
+        "load_error": "Не удалось загрузить администраторов",
+        "deactivate_success": "Администратор успешно деактивирован",
+        "deactivate_error": "Не удалось деактивировать администратора",
+        "activate_success": "Администратор успешно активирован",
+        "activate_error": "Не удалось активировать администратора"
+      }
+    },
+    "admin_user_form": {
+      "create_title": "Создать администратора",
+      "edit_title": "Редактировать администратора",
+      "account_info": "Информация об учётной записи",
+      "personal_info": "Личная информация",
+      "email": "Электронная почта",
+      "password": "Пароль",
+      "first_name": "Имя",
+      "last_name": "Фамилия",
+      "phone_number": "Номер телефона",
+      "messages": {
+        "load_error": "Не удалось загрузить администратора",
+        "create_success": "Администратор успешно создан",
+        "create_error": "Не удалось создать администратора",
+        "update_success": "Администратор успешно обновлён",
+        "update_error": "Не удалось обновить администратора"
+      }
+    },
+    "language_management": {
+      "title": "Управление языками",
+      "description": "Управляйте системными языками для переводов контента",
+      "create_language": "Создать язык",
+      "edit_language": "Редактировать язык",
+      "delete_language": "Удалить язык",
+      "delete_confirm": "Вы действительно хотите удалить этот язык? Это может повлиять на существующие переводы.",
+      "no_languages": "Языки не найдены",
+      "filters": {
+        "title": "Фильтры",
+        "search": "Поиск",
+        "search_placeholder": "Искать по коду или названию",
+        "reset": "Сбросить фильтры",
+        "clear_all": "Очистить все"
+      },
+      "columns": {
+        "code": "Код",
+        "name": "Название",
+        "actions": "Действия"
+      },
+      "messages": {
+        "load_error": "Не удалось загрузить языки",
+        "delete_success": "Язык успешно удалён",
+        "delete_error": "Не удалось удалить язык"
+      }
+    },
+    "language_form": {
+      "create_title": "Создать язык",
+      "edit_title": "Редактировать язык",
+      "basic_info": "Основная информация",
+      "code": "Код языка",
+      "code_placeholder": "напр. en, cs, de",
+      "name": "Название языка",
+      "name_placeholder": "напр. Английский, Чешский, Немецкий",
+      "messages": {
+        "load_error": "Не удалось загрузить язык",
+        "create_success": "Язык успешно создан",
+        "create_error": "Не удалось создать язык",
+        "update_success": "Язык успешно обновлён",
+        "update_error": "Не удалось обновить язык"
+      }
+    },
+    "country_management": {
+      "title": "Управление странами",
+      "description": "Управляйте странами, доступными в системе",
+      "create_country": "Создать страну",
+      "edit_country": "Редактировать страну",
+      "delete_country": "Удалить страну",
+      "delete_confirm": "Вы действительно хотите удалить эту страну? Это может повлиять на существующие данные.",
+      "no_countries": "Страны не найдены",
+      "columns": {
+        "iso_code": "ISO код",
+        "name": "Название",
+        "actions": "Действия"
+      },
+      "messages": {
+        "load_error": "Не удалось загрузить страны",
+        "delete_success": "Страна успешно удалена",
+        "delete_error": "Не удалось удалить страну"
+      }
+    },
+    "country_form": {
+      "create_title": "Создать страну",
+      "edit_title": "Редактировать страну",
+      "basic_info": "Основная информация",
+      "iso_code": "ISO код",
+      "iso_code_placeholder": "напр. CZ, US, DE",
+      "name": "Название страны",
+      "name_placeholder": "напр. Чешская Республика, Соединённые Штаты, Германия",
+      "messages": {
+        "load_error": "Не удалось загрузить страну",
+        "create_success": "Страна успешно создана",
+        "create_error": "Не удалось создать страну",
+        "update_success": "Страна успешно обновлена",
+        "update_error": "Не удалось обновить страну"
+      }
+    },
+    "currency_management": {
+      "title": "Управление валютами",
+      "description": "Управляйте валютами и обменными курсами",
+      "create_currency": "Создать валюту",
+      "edit_currency": "Редактировать валюту",
+      "delete_currency": "Удалить валюту",
+      "delete_confirm": "Вы действительно хотите удалить эту валюту? Это может повлиять на существующие данные.",
+      "cannot_delete_default": "Невозможно удалить валюту по умолчанию. Сначала установите другую валюту как валюту по умолчанию.",
+      "no_currencies": "Валюты не найдены",
+      "columns": {
+        "code": "Код",
+        "symbol": "Символ",
+        "name": "Название",
+        "exchange_rate": "Обменный курс",
+        "is_default": "По умолчанию",
+        "actions": "Действия"
+      },
+      "messages": {
+        "load_error": "Не удалось загрузить валюты",
+        "delete_success": "Валюта успешно удалена",
+        "delete_error": "Не удалось удалить валюту"
+      }
+    },
+    "currency_form": {
+      "create_title": "Создать валюту",
+      "edit_title": "Редактировать валюту",
+      "basic_info": "Основная информация",
+      "code": "Код валюты",
+      "code_placeholder": "напр. USD, EUR, CZK",
+      "symbol": "Символ",
+      "symbol_placeholder": "напр. $, €, Kč",
+      "name": "Название валюты",
+      "name_placeholder": "напр. Доллар США, Евро, Чешская крона",
+      "exchange_rate": "Обменный курс",
+      "exchange_rate_placeholder": "напр. 1.0, 0.92, 24.50",
+      "messages": {
+        "load_error": "Не удалось загрузить валюту",
+        "create_success": "Валюта успешно создана",
+        "create_error": "Не удалось создать валюту",
+        "update_success": "Валюта успешно обновлена",
+        "update_error": "Не удалось обновить валюту"
+      }
+    },
+    "company_info": {
+      "title": "Информация о компании",
+      "create_title": "Создать компанию",
+      "edit_title": "Редактировать компанию",
+      "description": "Управляйте данными компании, используемыми в счетах и квитанциях",
+      "sections": {
+        "legal_info": "Юридическая информация",
+        "tax_info": "Налоговая информация",
+        "address": "Адрес",
+        "contact": "Контактная информация",
+        "banking": "Банковская информация"
+      },
+      "legal_name": "Юридическое название",
+      "trading_name": "Торговое название",
+      "tagline": "Слоган",
+      "registration_number": "Регистрационный номер (ИКО)",
+      "vat_number": "Номер НДС (ДИЧ)",
+      "street": "Улица",
+      "city": "Город",
+      "zip_code": "Почтовый индекс",
+      "country": "Страна",
+      "phone": "Телефон",
+      "email": "Электронная почта",
+      "website": "Веб-сайт",
+      "bank_name": "Название банка",
+      "bank_account_number": "Номер банковского счёта",
+      "iban": "IBAN",
+      "swift": "SWIFT/BIC",
+      "messages": {
+        "load_error": "Не удалось загрузить информацию о компании",
+        "save_success": "Информация о компании успешно сохранена",
+        "save_error": "Не удалось сохранить информацию о компании",
+        "create_success": "Информация о компании успешно создана"
+      }
+    },
+    "template_management": {
+      "title": "Управление шаблонами",
+      "description": "Управляйте шаблонами счетов, квитанций и электронных писем",
+      "tabs": {
+        "invoice": "Шаблоны счетов",
+        "receipt": "Шаблоны квитанций",
+        "email": "Шаблоны электронных писем"
+      },
+      "invoice_templates": {
+        "title": "Шаблоны счетов"
+      },
+      "receipt_templates": {
+        "title": "Шаблоны квитанций"
+      },
+      "email_templates": {
+        "title": "Шаблоны электронных писем"
+      },
+      "create_template": "Создать шаблон",
+      "edit_template": "Редактировать шаблон",
+      "delete_template": "Удалить шаблон",
+      "activate_template": "Активировать шаблон",
+      "deactivate_template": "Деактивировать шаблон",
+      "create_invoice_template": "Создать шаблон счёта",
+      "edit_invoice_template": "Редактировать шаблон счёта",
+      "create_receipt_template": "Создать шаблон квитанции",
+      "edit_receipt_template": "Редактировать шаблон квитанции",
+      "edit_email_template": "Редактировать шаблон электронного письма",
+      "confirm_delete": "Вы действительно хотите удалить этот шаблон? Это действие нельзя отменить.",
+      "confirm_activate": "Вы действительно хотите активировать этот шаблон? Это деактивирует любой другой активный шаблон для той же страны и языка.",
+      "confirm_deactivate": "Вы действительно хотите деактивировать этот шаблон?",
+      "columns": {
+        "template_name": "Название шаблона",
+        "country": "Страна",
+        "language": "Язык",
+        "version": "Версия",
+        "status": "Статус",
+        "subject": "Тема",
+        "template_key": "Ключ шаблона",
+        "email_type": "Тип письма",
+        "value": "Содержимое",
+        "actions": "Действия",
+        "translation_count": "Переводы",
+        "languages": "Языки",
+        "last_modified": "Последнее изменение"
+      },
+      "fields": {
+        "template_name": "Название шаблона",
+        "country": "Страна",
+        "language": "Язык",
+        "template_file": "Файл шаблона",
+        "replace_file": "Заменить файл (необязательно)",
+        "description": "Описание",
+        "subject": "Тема",
+        "body": "Тело"
+      },
+      "current_file": {
+        "version": "Версия",
+        "download": "Скачать",
+        "open_new_tab": "Открыть в новом окне"
+      },
+      "placeholders": {
+        "template_name": "Введите название шаблона",
+        "country": "Выберите страну",
+        "language": "Выберите язык",
+        "blob_url": "Введите URL шаблона",
+        "description": "Введите описание (необязательно)",
+        "subject": "Введите тему письма",
+        "body": "Введите содержимое письма",
+        "value": "Введите значение перевода"
+      },
+      "hints": {
+        "html_supported": "HTML-содержимое поддерживается"
+      },
+      "sections": {
+        "basic_info": "Основная информация",
+        "template_file": "Файл шаблона",
+        "template_info": "Информация о шаблоне",
+        "content": "Содержимое",
+        "available_variables": "Доступные переменные",
+        "translations": "Переводы"
+      },
+      "variables": {
+        "hint": "Нажмите на переменную, чтобы скопировать её в буфер обмена. Используйте эти переменные в содержимом шаблона.",
+        "user_name": "Имя пользователя",
+        "verification_code": "Код подтверждения электронной почты",
+        "reset_password_link": "Ссылка на страницу сброса пароля",
+        "customer_name": "Имя клиента",
+        "order_number": "Референсный номер заказа",
+        "order_date": "Дата оформления заказа",
+        "total_amount": "Общая сумма заказа с валютой",
+        "order_status_link": "Ссылка для проверки статуса заказа",
+        "employee_name": "Имя сотрудника",
+        "period_label": "Обозначение расчётного периода (напр. 2025-01)",
+        "start_date": "Дата начала периода",
+        "end_date": "Дата окончания периода",
+        "closed_at": "Дата и время закрытия периода",
+        "days_remaining": "Количество дней до конца периода"
+      },
+      "preview": {
+        "title": "Предпросмотр шаблона",
+        "load": "Загрузить предпросмотр",
+        "open_new_tab": "Открыть в новом окне",
+        "error": "Не удалось загрузить предпросмотр шаблона",
+        "no_url": "Сохраните шаблон для включения предпросмотра"
+      },
+      "no_templates": "Шаблоны не найдены",
+      "translation_key_tooltip": "Нажмите, чтобы скопировать как переменную шаблона",
+      "view_translations": "Просмотреть переводы",
+      "back_to_email_types": "Вернуться к типам писем",
+      "no_translations_for_language": "Переводы для этого языка отсутствуют",
+      "email_type_detail": {
+        "title": "Переводы {{emailType}}",
+        "translations_section": "Переводы",
+        "variables_section": "Доступные переменные"
+      },
+      "actions": {
+        "send_test_email": "Отправить тестовое письмо",
+        "add_translation": "Добавить перевод"
+      },
+      "dialogs": {
+        "send_test_email": {
+          "title": "Отправить тестовое письмо",
+          "description": "Отправьте тестовое письмо по этому шаблону для проверки содержимого и форматирования.",
+          "recipient_email": "Электронная почта получателя",
+          "recipient_placeholder": "Введите адрес электронной почты",
+          "language_info": "Письмо будет отправлено на языке {{language}}"
+        },
+        "add_translation": {
+          "title": "Добавить перевод",
+          "description": "Добавьте новую пару ключ-значение перевода для этого типа письма.",
+          "key": "Ключ",
+          "key_placeholder": "Введите уникальное имя ключа (напр. Subject, Greeting)",
+          "value": "Значение",
+          "value_placeholder": "Введите значение перевода"
+        },
+        "delete_translation": {
+          "title": "Удалить перевод",
+          "message": "Вы действительно хотите удалить перевод '{{key}}'? Это действие нельзя отменить."
+        }
+      },
+      "messages": {
+        "load_error": "Не удалось загрузить шаблоны",
+        "save_error": "Не удалось сохранить шаблон",
+        "save_success": "Шаблон успешно сохранён",
+        "create_success": "Перевод успешно создан",
+        "create_error": "Не удалось создать перевод",
+        "delete_error": "Не удалось удалить перевод",
+        "delete_success": "Перевод успешно удалён",
+        "activate_error": "Не удалось активировать шаблон",
+        "activate_success": "Шаблон успешно активирован",
+        "deactivate_error": "Не удалось деактивировать шаблон",
+        "deactivate_success": "Шаблон успешно деактивирован",
+        "send_test_error": "Не удалось отправить тестовое письмо",
+        "send_test_success": "Тестовое письмо успешно отправлено на {{email}}",
+        "copied_to_clipboard": "Скопировано в буфер обмена"
+      }
+    },
+    "company_management": {
+      "title": "Управление компаниями",
+      "description": "Управляйте информацией о компаниях для разных стран",
+      "create_company": "Создать компанию",
+      "edit_company": "Редактировать компанию",
+      "delete_company": "Удалить компанию",
+      "delete_confirm": "Вы действительно хотите удалить эту информацию о компании? Это действие нельзя отменить.",
+      "no_companies": "Информация о компаниях не найдена",
+      "filters": {
+        "title": "Фильтры",
+        "search": "Поиск",
+        "search_placeholder": "Искать по названию или городу",
+        "reset": "Сбросить фильтры",
+        "clear_all": "Очистить все"
+      },
+      "columns": {
+        "legal_name": "Юридическое название",
+        "trading_name": "Торговое название",
+        "country": "Страна",
+        "city": "Город",
+        "email": "Электронная почта",
+        "status": "Статус",
+        "actions": "Действия"
+      },
+      "messages": {
+        "load_error": "Не удалось загрузить информацию о компаниях",
+        "delete_success": "Информация о компании успешно удалена",
+        "delete_error": "Не удалось удалить информацию о компании"
+      }
+    },
+    "reports": {
+      "title": "Отчёты",
+      "description": "Просматривайте отчёты о доходах и заработной плате, анализируйте производительность и отслеживайте финансовые данные",
+      "date_filter": "Диапазон дат",
+      "start_date": "Дата начала",
+      "end_date": "Дата окончания",
+      "apply_filter": "Применить фильтр",
+      "reset": "Сбросить фильтры",
+      "filters": {
+        "title": "Фильтры",
+        "date_range": "Диапазон дат",
+        "reset": "Сбросить фильтры",
+        "clear_all": "Очистить все"
+      },
+      "revenue_report": "Отчёт о доходах",
+      "payroll_report": "Отчёт о заработной плате",
+      "no_data": "Нет данных за выбранный период",
+      "total_revenue": "Общий доход",
+      "avg_order_value": "Средняя стоимость заказа",
+      "total_orders": "Общее количество заказов",
+      "completed_orders": "Завершённые заказы",
+      "cancelled_orders": "Отменённые заказы",
+      "growth": "Рост",
+      "revenue_by_service": "Доход по услугам",
+      "revenue_by_package": "Доход по пакетам",
+      "revenue_by_payment_type": "Доход по типу оплаты",
+      "service_name": "Услуга",
+      "package_name": "Пакет",
+      "payment_type": "Тип оплаты",
+      "order_count": "Заказы",
+      "total_payroll": "Общая заработная плата",
+      "avg_pay_per_employee": "Ср. оплата на сотрудника",
+      "total_invoices": "Общее количество счетов",
+      "pending_invoices": "Ожидающие счета",
+      "paid_invoices": "Оплаченные счета",
+      "total_bonuses": "Общие бонусы",
+      "employee_summaries": "Сводки по сотрудникам",
+      "employee_name": "Сотрудник",
+      "invoice_count": "Счета",
+      "subtotal": "Промежуточный итог",
+      "bonus": "Бонус",
+      "deductions": "Удержания",
+      "total_amount": "Итого",
+      "payroll_by_status": "Заработная плата по статусу",
+      "status": "Статус",
+      "monthly_payroll": "Ежемесячная заработная плата",
+      "month": "Месяц",
+      "messages": {
+        "revenue_load_error": "Не удалось загрузить отчёт о доходах",
+        "payroll_load_error": "Не удалось загрузить отчёт о заработной плате"
+      }
+    },
+    "invoice_detail": {
+      "title": "Детали счёта",
+      "back_to_list": "Вернуться к списку счетов",
+      "invoice_number": "Номер счёта",
+      "status": "Статус",
+      "actions_section": "Действия",
+      "invoice_summary": "Сводка счёта",
+      "employee_name": "Сотрудник",
+      "pay_period": "Расчётный период",
+      "variable_symbol": "Переменный символ",
+      "specific_symbol": "Специфический символ",
+      "total_orders": "Общее количество заказов",
+      "generated_at": "Создан",
+      "financial_summary": "Финансовая сводка",
+      "sub_total": "Промежуточный итог",
+      "bonus_amount": "Бонус",
+      "deduction_amount": "Удержание",
+      "total_amount": "Общая сумма",
+      "approval_payment_info": "Информация об одобрении и оплате",
+      "approved_at": "Одобрено",
+      "approved_by": "Одобрил",
+      "paid_at": "Оплачено",
+      "bank_transfer_note": "Примечание к банковскому переводу",
+      "admin_notes": "Примечания администратора",
+      "order_pays_section": "Оплаты за заказы",
+      "no_order_pays": "Оплаты за заказы не найдены",
+      "actions": {
+        "approve": "Одобрить счёт",
+        "mark_paid": "Отметить как оплаченный",
+        "cancel": "Отменить счёт",
+        "download": "Скачать PDF",
+        "regenerate_pdf": "Перегенерировать PDF"
+      },
+      "invoice_status": {
+        "pending": "Ожидает",
+        "approved": "Одобрен",
+        "paid": "Оплачен",
+        "disputed": "Оспорен",
+        "rejected": "Отклонён",
+        "cancelled": "Отменён"
+      },
+      "order_pays": {
+        "order_number": "Заказ №",
+        "base_pay": "Базовая оплата",
+        "extras_pay": "Дополнительные",
+        "expenses_pay": "Расходы",
+        "bonus_pay": "Бонус",
+        "deduction_pay": "Удержание",
+        "total_pay": "Итого",
+        "created_on": "Создано"
+      },
+      "cancel_dialog": {
+        "title": "Отменить счёт",
+        "subtitle": "Пожалуйста, укажите причину отмены этого счёта",
+        "reason_label": "Причина отмены",
+        "reason_placeholder": "Введите причину отмены..."
+      },
+      "messages": {
+        "load_error": "Не удалось загрузить детали счёта",
+        "approve_success": "Счёт успешно одобрен",
+        "approve_error": "Не удалось одобрить счёт",
+        "mark_paid_success": "Счёт успешно отмечен как оплаченный",
+        "mark_paid_error": "Не удалось отметить счёт как оплаченный",
+        "cancel_success": "Счёт успешно отменён",
+        "cancel_error": "Не удалось отменить счёт",
+        "download_error": "Не удалось скачать счёт",
+        "regenerate_success": "PDF счёта успешно перегенерирован",
+        "regenerate_error": "Не удалось перегенерировать PDF счёта"
+      }
+    }
+  },
+  "employees": {
+    "title": "Управление сотрудниками",
+    "list": "Список сотрудников",
+    "pending": "Ожидают одобрения",
+    "approved": "Одобренные",
+    "rejected": "Отклонённые"
+  },
+  "payPeriods": {
+    "title": "Управление расчётными периодами",
+    "description": "Управляйте расчётными периодами, закрывайте периоды и отслеживайте оплату сотрудников",
+    "confirmClose": "Вы действительно хотите закрыть этот расчётный период? Это действие нельзя отменить.",
+    "filters": {
+      "title": "Фильтры",
+      "status": "Статус",
+      "year": "Год",
+      "reset": "Сбросить фильтры",
+      "clear_all": "Очистить все"
+    },
+    "list": {
+      "title": "Расчётные периоды",
+      "createButton": "Создать расчётный период",
+      "filterByStatus": "Фильтровать по статусу",
+      "filterByYear": "Фильтровать по году",
+      "reset": "Сбросить фильтры",
+      "columns": {
+        "periodLabel": "Период",
+        "startDate": "Дата начала",
+        "endDate": "Дата окончания",
+        "duration": "Длительность",
+        "status": "Статус",
+        "closedAt": "Закрыт",
+        "closedBy": "Закрыл",
+        "actions": "Действия"
+      },
+      "viewDetails": "Просмотреть детали",
+      "closePeriod": "Закрыть период",
+      "noRecords": "Расчётные периоды не найдены",
+      "days": "дней"
+    },
+    "detail": {
+      "title": "Детали расчётного периода",
+      "backToList": "Вернуться к расчётным периодам",
+      "overview": "Обзор периода",
+      "closureInfo": "Информация о закрытии",
+      "metadata": "Метаданные",
+      "periodLabel": "Обозначение периода",
+      "status": "Статус",
+      "startDate": "Дата начала",
+      "endDate": "Дата окончания",
+      "duration": "Длительность",
+      "days": "дней",
+      "closedAt": "Закрыт",
+      "closedBy": "Закрыл",
+      "notes": "Примечания",
+      "createdAt": "Создано",
+      "createdBy": "Создал",
+      "modifiedAt": "Изменено",
+      "modifiedBy": "Изменил",
+      "closePeriod": "Закрыть расчётный период",
+      "notFound": "Расчётный период не найден"
+    },
+    "status": {
+      "open": "Открыт",
+      "closed": "Закрыт",
+      "paid": "Оплачен",
+      "unknown": "Неизвестен"
+    },
+    "messages": {
+      "loadError": "Не удалось загрузить расчётные периоды",
+      "loadDetailError": "Не удалось загрузить детали расчётного периода",
+      "closeSuccess": "Расчётный период успешно закрыт",
+      "closeError": "Не удалось закрыть расчётный период"
+    }
+  },
+  "orders": {
+    "title": "Управление заказами",
+    "list": "Все заказы",
+    "assign": "Назначить заказ"
+  },
+  "invoices": {
+    "title": "Управление счетами",
+    "list": "Все счета",
+    "pending": "Ожидают одобрения",
+    "approved": "Одобренные",
+    "cancelled": "Отменённые"
+  },
+  "errors": {
+    "auth": {
+      "google_type_error": "Ошибка типа аутентификации Google",
+      "internal_type_error": "Ошибка типа внутренней аутентификации",
+      "invalid_confirmation_code": "Недействительный код подтверждения",
+      "invalid_google_token": "Недействительный токен Google",
+      "invalid_password_format": "Недействительный формат пароля. Пароль должен содержать не менее 8 символов, включая хотя бы одну заглавную букву, одну строчную букву и одну цифру.",
+      "invalid_reset_token": "Недействительный или истёкший токен сброса пароля",
+      "same_reset_password": "Новый пароль должен отличаться от текущего пароля"
+    },
+    "common": {
+      "invalid_enum_value": "Предоставлено недействительное значение",
+      "max_length": "Превышена максимальная длина",
+      "required": "Это поле обязательно",
+      "unauthorized": "У вас нет разрешения на выполнение этого действия",
+      "error_occurred": "Произошла ошибка. Пожалуйста, попробуйте снова."
+    },
+    "company": {
+      "not_found": "Информация о компании не найдена",
+      "exists_for_country": "Информация о компании для этой страны уже существует",
+      "in_use": "Невозможно удалить компанию, так как она сейчас используется"
+    },
+    "country": {
+      "not_existing_id": "Страна не найдена",
+      "not_found": "Страна не найдена",
+      "iso_code_already_exists": "Страна с таким ISO кодом уже существует",
+      "in_use": "Невозможно удалить страну, так как она используется сотрудниками, шаблонами или другими сущностями"
+    },
+    "currency": {
+      "invalid": "Недействительная валюта",
+      "not_found": "Валюта не найдена",
+      "code_already_exists": "Валюта с таким кодом уже существует",
+      "in_use": "Невозможно удалить валюту, так как она сейчас используется",
+      "cannot_delete_default": "Невозможно удалить валюту по умолчанию",
+      "exchange_rate_must_be_positive": "Обменный курс должен быть положительным числом"
+    },
+    "dispute": {
+      "already_exists": "Спор для этого заказа уже существует",
+      "invalid_refund_amount": "Недействительная сумма возврата",
+      "max_length_exceeded": "Превышена максимальная длина",
+      "not_found": "Спор не найден"
+    },
+    "email": {
+      "invalid_format": "Недействительный формат электронной почты",
+      "invalid_email": "Недействительный адрес электронной почты",
+      "sending_failed": "Не удалось отправить электронное письмо"
+    },
+    "employee": {
+      "already_approved": "Сотрудник уже одобрен",
+      "already_rejected": "Сотрудник уже отклонён",
+      "documents_missing": "Отсутствуют необходимые документы",
+      "not_allowed_to_update": "У вас нет разрешения на обновление этого сотрудника",
+      "not_existing_email": "Сотрудник с такой электронной почтой не найден",
+      "not_found": "Сотрудник не найден",
+      "profile_incomplete": "Профиль сотрудника не заполнен"
+    },
+    "employee_document": {
+      "not_found": "Документ не найден",
+      "not_owned": "Вы можете получить доступ только к собственным документам",
+      "unauthorized": "У вас нет разрешения на доступ к этому документу"
+    },
+    "file": {
+      "content_type_doesnt_match": "Тип содержимого файла не совпадает",
+      "count_exceeded": "Загружено слишком много файлов",
+      "count_too_few": "Загружено недостаточно файлов",
+      "invalid_file_type": "Недействительный тип файла",
+      "required": "Файл обязателен",
+      "size_exceeded": "Размер файла превысил максимально допустимый размер"
+    },
+    "general": {
+      "not_found": "Ресурс не найден"
+    },
+    "service": {
+      "not_found": "Услуга не найдена",
+      "in_use": "Невозможно удалить услугу, так как она сейчас используется",
+      "translations_required": "Переводы обязательны для всех поддерживаемых языков",
+      "missing_translation_for_language": "Отсутствует перевод для обязательного языка"
+    },
+    "language": {
+      "not_found": "Язык не найден",
+      "not_supported": "Язык не поддерживается",
+      "code_already_exists": "Язык с таким кодом уже существует",
+      "in_use": "Невозможно удалить язык, так как он используется другими сущностями (пользователи, шаблоны, квитанции и т.д.)"
+    },
+    "order": {
+      "not_confirmed": "Заказ не подтверждён",
+      "after_photos": {
+        "required": "Фотографии после выполнения обязательны для завершения заказа"
+      },
+      "actual_time": {
+        "positive": "Фактическое время должно быть положительным"
+      },
+      "already_assigned": "Заказ уже назначен",
+      "cleaning_date": {
+        "future": "Дата уборки должна быть в будущем"
+      },
+      "completion_notes": {
+        "required": "Примечания к завершению обязательны",
+        "too_long": "Примечания к завершению слишком длинные"
+      },
+      "creation_failed": "Не удалось создать заказ",
+      "employee_already_assigned": "Сотрудник уже назначен на этот заказ",
+      "employee_not_assigned": "Сотрудник не назначен на этот заказ",
+      "empty": "Заказ пуст",
+      "max_employees_exceeded": "Превышено максимальное количество сотрудников",
+      "no_available_spots": "Для этого заказа нет свободных мест",
+      "not_found": "Заказ не найден",
+      "not_in_progress": "Заказ не в процессе выполнения",
+      "payment_gateway_unavailable": "Платёжный шлюз недоступен",
+      "selected_package": {
+        "invalid": "Выбранный пакет недействителен"
+      },
+      "selected_services": {
+        "invalid": "Выбранные услуги недействительны"
+      },
+      "total_price": {
+        "not_match": "Общая стоимость не совпадает",
+        "positive": "Общая стоимость должна быть положительной"
+      }
+    },
+    "package": {
+      "not_found": "Пакет не найден",
+      "in_use": "Невозможно удалить пакет, так как он сейчас используется"
+    },
+    "pay_config": {
+      "already_exists": "Конфигурация оплаты уже существует",
+      "base_pay_negative": "Базовая оплата не может быть отрицательной",
+      "cannot_have_both": "Невозможно иметь одновременно услугу и пакет",
+      "distance_rate_negative": "Ставка за расстояние не может быть отрицательной",
+      "extra_per_bathroom_negative": "Доплата за ванную комнату не может быть отрицательной",
+      "extra_per_room_negative": "Доплата за комнату не может быть отрицательной",
+      "has_order_pays": "Невозможно удалить конфигурацию оплаты, имеющую связанные оплаты за заказы",
+      "maximum_less_than_minimum": "Максимальная оплата не может быть меньше минимальной оплаты",
+      "maximum_pay_negative": "Максимальная оплата не может быть отрицательной",
+      "minimum_pay_negative": "Минимальная оплата не может быть отрицательной",
+      "not_found": "Конфигурация оплаты не найдена",
+      "service_or_package_required": "Требуется услуга или пакет"
+    },
+    "pay_period": {
+      "has_order_pays": "Невозможно удалить расчётный период, имеющий связанные оплаты за заказы",
+      "invalid_duration": "Недействительная длительность расчётного периода",
+      "not_closed": "Расчётный период не закрыт",
+      "overlapping_period": "Расчётный период пересекается с существующим периодом"
+    },
+    "payroll": {
+      "employee_not_assigned": "Сотрудник не назначен на этот заказ",
+      "invoice": {
+        "already_cancelled": "Счёт уже отменён",
+        "already_exists": "Счёт уже существует",
+        "cannot_cancel_paid": "Невозможно отменить оплаченный счёт",
+        "invalid_status": "Недействительный статус счёта",
+        "not_found": "Счёт не найден",
+        "pdf_generation_failed": "Не удалось сгенерировать PDF",
+        "template_not_found": "Шаблон счёта не найден"
+      },
+      "no_active_period": "Активный расчётный период не найден",
+      "no_currency": "Валюта не найдена",
+      "no_pay_configuration": "Конфигурация оплаты не найдена",
+      "no_unpaid_order_pays": "Неоплаченные оплаты за заказы не найдены",
+      "pay": {
+        "already_calculated": "Оплата уже рассчитана"
+      },
+      "pay_period": {
+        "not_found": "Расчётный период не найден",
+        "not_open": "Расчётный период не открыт"
+      },
+      "unpaid_invoices_exist": "Существуют неоплаченные счета"
+    },
+    "receipt": {
+      "generation_failed": "Не удалось сгенерировать квитанцию",
+      "not_found": "Квитанция не найдена"
+    },
+    "user": {
+      "email_confirmed": "Электронная почта уже подтверждена",
+      "existing_email": "Электронная почта уже существует",
+      "existing_phone_number": "Номер телефона уже существует",
+      "not_allowed_to_update": "У вас нет разрешения на обновление этого пользователя",
+      "not_existing_email": "Пользователь с такой электронной почтой не найден",
+      "not_existing_id": "Пользователь не найден",
+      "not_found": "Пользователь не найден"
+    },
+    "admin_user": {
+      "not_found": "Администратор не найден",
+      "email_exists": "Администратор с такой электронной почтой уже существует",
+      "cannot_deactivate_self": "Вы не можете деактивировать собственную учётную запись",
+      "cannot_delete_self": "Вы не можете удалить собственную учётную запись"
+    },
+    "template": {
+      "cannot_delete_active": "Невозможно удалить активный шаблон",
+      "invalid_file_type": "Недействительный тип файла шаблона",
+      "file_size_exceeded": "Превышен размер файла шаблона",
+      "file_required": "Файл шаблона обязателен",
+      "invoice": {
+        "not_found": "Шаблон счёта не найден",
+        "in_use": "Невозможно удалить шаблон счёта, так как он сейчас используется"
+      },
+      "receipt": {
+        "not_found": "Шаблон квитанции не найден",
+        "in_use": "Невозможно удалить шаблон квитанции, так как он сейчас используется"
+      },
+      "email": {
+        "not_found": "Шаблон электронного письма не найден",
+        "key_exists": "Перевод с таким ключом уже существует",
+        "invalid_type": "Недействительный тип шаблона электронного письма"
+      }
+    },
+    "validation": {
+      "must_be_positive": "Значение должно быть положительным",
+      "date_must_be_in_past": "Дата должна быть в прошлом",
+      "invalid_age": "Недействительный возраст",
+      "invalid_date": "Недействительная дата",
+      "invalid_iban": "Недействительный формат IBAN",
+      "invalid_national_id": "Недействительный формат национального удостоверения",
+      "invalid_password": "Недействительный пароль",
+      "invalid_phone_number": "Недействительный формат номера телефона",
+      "invalid_tax_id": "Недействительный формат ИНН",
+      "invalid_zip_code": "Недействительный формат почтового индекса"
+    },
+    "address": {
+      "invalid_length": "Недействительная длина адреса"
+    }
+  },
+  "validation": {
+    "common": {
+      "not_all_fields_filled": "Не все поля заполнены правильно",
+      "required": "Это поле обязательно",
+      "email": "Поле должно содержать действительный адрес электронной почты",
+      "min_length": "Поле должно содержать не менее {{ minLength }} символов",
+      "max_length": "Поле может содержать максимум {{ maxLength }} символов",
+      "pattern": "Поле не соответствует требуемому формату",
+      "phone_number": "Недействительный формат номера телефона",
+      "iban": "Недействительный формат IBAN",
+      "zip_code": "Недействительный формат почтового индекса",
+      "confirm_password": "Пароли не совпадают"
+    },
+    "auth": {
+      "email_not_confirmed": "Адрес электронной почты не подтверждён",
+      "admin_access_required": "Для доступа к этой панели требуются права администратора",
+      "login_failed": "Вход не удался. Пожалуйста, проверьте свои учётные данные и попробуйте снова."
+    },
+    "file": {
+      "required": "Файлы обязательны",
+      "invalid_type": "Недействительный тип файла. Пожалуйста, выберите допустимый файл документа.",
+      "size_too_large": "Файл слишком большой. Максимально допустимый размер — {{ maxSize }}МБ.",
+      "too_few_files": "Выбрано слишком мало файлов. Минимальное количество: {{ min }}",
+      "too_many_files": "Выбрано слишком много файлов. Максимальное количество: {{ max }}",
+      "generic_error": "Произошла ошибка проверки файла"
+    },
+    "password": {
+      "uppercase": "хотя бы одна заглавная буква",
+      "lowercase": "хотя бы одна строчная буква",
+      "number": "хотя бы одна цифра",
+      "special_char": "хотя бы один специальный символ",
+      "min_length": "минимум 8 символов",
+      "requirements": "Пароль должен содержать: {{ requirements }}"
+    }
+  },
+  "api": {
+    "auth": {
+      "google_type_error": "Ошибка типа аутентификации Google",
+      "internal_type_error": "Ошибка типа внутренней аутентификации",
+      "invalid_confirmation_code": "Недействительный код подтверждения",
+      "invalid_google_token": "Недействительный токен Google",
+      "invalid_password_format": "Недействительный формат пароля. Пароль должен содержать не менее 8 символов, включая хотя бы одну заглавную букву, одну строчную букву и одну цифру.",
+      "invalid_reset_token": "Недействительный или истёкший токен сброса пароля",
+      "same_reset_password": "Новый пароль должен отличаться от текущего пароля",
+      "insufficient_privileges": "У вас нет разрешения на доступ к панели администратора. Входить могут только администраторы и сотрудники."
+    },
+    "common": {
+      "invalid_enum_value": "Предоставлено недействительное значение",
+      "max_length": "Превышена максимальная длина",
+      "required": "Это поле обязательно",
+      "unauthorized": "У вас нет разрешения на выполнение этого действия",
+      "error_occurred": "Произошла ошибка. Пожалуйста, попробуйте снова."
+    },
+    "currency": {
+      "invalid": "Недействительная валюта",
+      "not_found": "Валюта не найдена",
+      "code_already_exists": "Валюта с таким кодом уже существует",
+      "in_use": "Невозможно удалить валюту, так как она сейчас используется",
+      "cannot_delete_default": "Невозможно удалить валюту по умолчанию",
+      "exchange_rate_must_be_positive": "Обменный курс должен быть положительным числом"
+    },
+    "email": {
+      "sending_failed": "Не удалось отправить электронное письмо",
+      "invalid_format": "Недействительный формат электронной почты",
+      "invalid_email": "Недействительный адрес электронной почты"
+    },
+    "order": {
+      "cleaning_date": {
+        "future": "Дата уборки должна быть в будущем"
+      },
+      "empty": "Заказ пуст",
+      "selected_package": {
+        "invalid": "Выбранный пакет недействителен"
+      },
+      "selected_services": {
+        "invalid": "Выбранные услуги недействительны"
+      },
+      "total_price": {
+        "positive": "Общая стоимость должна быть положительной",
+        "not_match": "Общая стоимость не совпадает"
+      },
+      "not_found": "Заказ не найден",
+      "already_assigned": "Заказ уже назначен",
+      "no_available_spots": "Для этого заказа нет свободных мест",
+      "employee_already_assigned": "Сотрудник уже назначен на этот заказ",
+      "employee_not_assigned": "Сотрудник не назначен на этот заказ",
+      "max_employees_exceeded": "Превышено максимальное количество сотрудников",
+      "not_in_progress": "Заказ не в процессе выполнения",
+      "not_confirmed": "Заказ не подтверждён",
+      "actual_time": {
+        "positive": "Фактическое время должно быть положительным"
+      },
+      "completion_notes": {
+        "required": "Примечания к завершению обязательны",
+        "too_long": "Примечания к завершению слишком длинные"
+      },
+      "after_photos": {
+        "required": "Фотографии после выполнения обязательны для завершения заказа"
+      },
+      "payment_gateway_unavailable": "Платёжный шлюз недоступен",
+      "creation_failed": "Не удалось создать заказ"
+    },
+    "user": {
+      "email_confirmed": "Электронная почта уже подтверждена",
+      "existing_email": "Электронная почта уже существует",
+      "not_existing_email": "Пользователь с такой электронной почтой не найден",
+      "not_existing_id": "Пользователь не найден",
+      "not_allowed_to_update": "У вас нет разрешения на обновление этого пользователя",
+      "existing_phone_number": "Номер телефона уже существует",
+      "not_found": "Пользователь не найден"
+    },
+    "employee": {
+      "not_found": "Сотрудник не найден",
+      "not_existing_email": "Сотрудник с такой электронной почтой не найден",
+      "not_allowed_to_update": "У вас нет разрешения на обновление этого сотрудника",
+      "profile_incomplete": "Профиль сотрудника не заполнен",
+      "documents_missing": "Отсутствуют необходимые документы",
+      "already_approved": "Сотрудник уже одобрен",
+      "already_rejected": "Сотрудник уже отклонён"
+    },
+    "employee_document": {
+      "not_found": "Документ не найден",
+      "unauthorized": "У вас нет разрешения на доступ к этому документу",
+      "not_owned": "Вы можете получить доступ только к собственным документам"
+    },
+    "payroll": {
+      "pay_period": {
+        "not_found": "Расчётный период не найден",
+        "not_open": "Расчётный период не открыт"
+      },
+      "invoice": {
+        "not_found": "Счёт не найден",
+        "invalid_status": "Недействительный статус счёта",
+        "already_exists": "Счёт уже существует",
+        "pdf_generation_failed": "Не удалось сгенерировать PDF",
+        "template_not_found": "Шаблон счёта не найден",
+        "cannot_cancel_paid": "Невозможно отменить оплаченный счёт",
+        "already_cancelled": "Счёт уже отменён"
+      },
+      "unpaid_invoices_exist": "Существуют неоплаченные счета",
+      "pay": {
+        "already_calculated": "Оплата уже рассчитана"
+      },
+      "no_unpaid_order_pays": "Неоплаченные оплаты за заказы не найдены",
+      "no_active_period": "Активный расчётный период не найден",
+      "no_pay_configuration": "Конфигурация оплаты не найдена",
+      "no_currency": "Валюта не найдена",
+      "employee_not_assigned": "Сотрудник не назначен на этот заказ"
+    },
+    "receipt": {
+      "not_found": "Квитанция не найдена",
+      "generation_failed": "Не удалось сгенерировать квитанцию"
+    },
+    "pay_period": {
+      "invalid_duration": "Недействительная длительность расчётного периода",
+      "overlapping_period": "Расчётный период пересекается с существующим периодом",
+      "has_order_pays": "Невозможно удалить расчётный период, имеющий связанные оплаты за заказы",
+      "not_closed": "Расчётный период не закрыт"
+    },
+    "pay_config": {
+      "service_or_package_required": "Требуется услуга или пакет",
+      "cannot_have_both": "Невозможно иметь одновременно услугу и пакет",
+      "already_exists": "Конфигурация оплаты уже существует",
+      "not_found": "Конфигурация оплаты не найдена",
+      "has_order_pays": "Невозможно удалить конфигурацию оплаты, имеющую связанные оплаты за заказы",
+      "base_pay_negative": "Базовая оплата не может быть отрицательной",
+      "extra_per_room_negative": "Доплата за комнату не может быть отрицательной",
+      "extra_per_bathroom_negative": "Доплата за ванную комнату не может быть отрицательной",
+      "distance_rate_negative": "Ставка за расстояние не может быть отрицательной",
+      "minimum_pay_negative": "Минимальная оплата не может быть отрицательной",
+      "maximum_pay_negative": "Максимальная оплата не может быть отрицательной",
+      "maximum_less_than_minimum": "Максимальная оплата не может быть меньше минимальной оплаты"
+    },
+    "file": {
+      "content_type_doesnt_match": "Тип содержимого файла не совпадает",
+      "invalid_file_type": "Недействительный тип файла",
+      "size_exceeded": "Размер файла превысил максимально допустимый размер",
+      "count_exceeded": "Загружено слишком много файлов",
+      "count_too_few": "Загружено недостаточно файлов",
+      "required": "Файл обязателен",
+      "size_exceeded_10mb": "Размер файла не должен превышать 10 МБ",
+      "type_not_allowed": "Тип файла не допускается. Принимаются: PDF, JPEG, PNG, DOC, DOCX"
+    },
+    "address": {
+      "invalid_length": "Недействительная длина адреса"
+    },
+    "language": {
+      "not_supported": "Язык не поддерживается",
+      "not_found": "Язык не найден",
+      "code_already_exists": "Язык с таким кодом уже существует",
+      "in_use": "Невозможно удалить язык, так как он сейчас используется"
+    },
+    "country": {
+      "not_existing_id": "Страна не найдена",
+      "not_found": "Страна не найдена",
+      "iso_code_already_exists": "Страна с таким ISO кодом уже существует",
+      "in_use": "Невозможно удалить страну, так как она сейчас используется"
+    },
+    "company": {
+      "not_found": "Информация о компании не найдена",
+      "exists_for_country": "Информация о компании для этой страны уже существует",
+      "in_use": "Невозможно удалить компанию, так как она сейчас используется"
+    },
+    "dispute": {
+      "not_found": "Спор не найден",
+      "already_exists": "Спор для этого заказа уже существует",
+      "invalid_refund_amount": "Недействительная сумма возврата",
+      "max_length_exceeded": "Превышена максимальная длина"
+    },
+    "admin_user": {
+      "not_found": "Администратор не найден",
+      "email_exists": "Администратор с такой электронной почтой уже существует",
+      "cannot_deactivate_self": "Вы не можете деактивировать собственную учётную запись",
+      "cannot_delete_self": "Вы не можете удалить собственную учётную запись"
+    },
+    "validation": {
+      "invalid_password": "Недействительный пароль",
+      "invalid_date": "Недействительная дата",
+      "date_must_be_in_past": "Дата должна быть в прошлом",
+      "invalid_age": "Недействительный возраст",
+      "invalid_phone_number": "Недействительный формат номера телефона",
+      "invalid_national_id": "Недействительный формат национального удостоверения",
+      "invalid_tax_id": "Недействительный формат ИНН",
+      "invalid_iban": "Недействительный формат IBAN",
+      "invalid_zip_code": "Недействительный формат почтового индекса",
+      "must_be_positive": "Значение должно быть положительным",
+      "invalid_availability_format": "Недействительный формат доступности. Дни должны быть допустимыми названиями дней или датами (yyyy-MM-dd), а временные диапазоны должны иметь начало раньше конца.",
+      "page_must_be_positive": "Страница должна быть больше 0",
+      "page_size_must_be_positive": "Размер страницы должен быть больше 0",
+      "page_size_exceeded": "Размер страницы не может превышать 100",
+      "invalid_contract_status": "Недействительное значение статуса контракта"
+    },
+    "service": {
+      "not_found": "Услуга не найдена",
+      "in_use": "Невозможно удалить услугу, так как она сейчас используется",
+      "translations_required": "Переводы обязательны для всех поддерживаемых языков",
+      "missing_translation_for_language": "Отсутствует перевод для обязательного языка"
+    },
+    "package": {
+      "not_found": "Пакет не найден",
+      "in_use": "Невозможно удалить пакет, так как он сейчас используется"
+    },
+    "general": {
+      "not_found": "Ресурс не найден"
+    },
+    "device": {
+      "invalid_platform": "Платформа должна быть 'android' или 'ios'"
+    },
+    "payment": {
+      "json_payload_required": "JSON-данные обязательны",
+      "stripe_signature_required": "Заголовок подписи Stripe обязателен"
+    },
+    "template": {
+      "cannot_delete_active": "Невозможно удалить активный шаблон",
+      "invalid_file_type": "Недействительный тип файла шаблона",
+      "file_size_exceeded": "Превышен размер файла шаблона",
+      "file_required": "Файл шаблона обязателен",
+      "invoice": {
+        "not_found": "Шаблон счёта не найден",
+        "in_use": "Невозможно удалить шаблон счёта, так как он сейчас используется"
+      },
+      "receipt": {
+        "not_found": "Шаблон квитанции не найден",
+        "in_use": "Невозможно удалить шаблон квитанции, так как он сейчас используется"
+      },
+      "email": {
+        "not_found": "Шаблон электронного письма не найден",
+        "key_exists": "Перевод с таким ключом уже существует",
+        "invalid_type": "Недействительный тип шаблона электронного письма"
+      }
+    }
+  },
+  "cookies": {
+    "title": "Мы ценим вашу конфиденциальность",
+    "description": "Мы используем файлы cookie для улучшения вашего опыта просмотра, предоставления персонализированного контента и анализа трафика. Нажимая «Принять», вы соглашаетесь на использование файлов cookie.",
+    "accept": "Принять все",
+    "decline": "Отклонить",
+    "learn_more": "Узнать больше",
+    "banner_title": "Баннер согласия на файлы cookie"
+  }
+}

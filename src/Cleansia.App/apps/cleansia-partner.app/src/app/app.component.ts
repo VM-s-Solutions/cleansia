@@ -66,13 +66,13 @@ export class AppComponent implements OnInit, OnDestroy {
 
   constructor() {
     this.updateMobileStatus();
-    this.translate.addLangs(['cs', 'en', 'pl']);
+    this.translate.addLangs(['cs', 'en', 'sk', 'uk', 'ru']);
     this.translate.setDefaultLang('en');
     this.translate.use(this.detectLanguage());
   }
 
   private detectLanguage(): string {
-    const supported = ['cs', 'en', 'pl'];
+    const supported = ['cs', 'en', 'sk', 'uk', 'ru'];
     // 1. Check stored preference
     const stored = localStorage.getItem('preferred_language');
     if (stored && supported.includes(stored)) {

@@ -141,7 +141,8 @@ All 3 web projects inherit from shared `CleansiaApiController` (with `[Authorize
 ```
 apps/
 ├── cleansia-partner.app/           # Partner application (cs/en/pl)
-└── cleansia-admin.app/             # Admin application (cs/en/pl)
+├── cleansia-admin.app/             # Admin application (cs/en/pl)
+└── cleansia.app/                   # Customer application (cs/en/pl)
 
 libs/
 ├── cleansia-partner-features/      # Partner feature modules
@@ -161,15 +162,31 @@ libs/
 │   ├── service-management/
 │   ├── package-management/
 │   └── reports/
+├── cleansia-customer-features/     # Customer feature modules
+│   ├── home/                       # Landing page (10 sections)
+│   ├── checkout/                   # Stripe success + cancel pages
+│   ├── login/
+│   ├── register/
+│   ├── confirm-email/
+│   ├── forgot-password/
+│   ├── order-wizard/               # 5-step booking wizard
+│   ├── orders/                     # List + detail pages
+│   ├── disputes/                   # List + create
+│   ├── profile/
+│   ├── gdpr/                       # Data export, consents, deletion
+│   └── services-catalog/           # Service + package browsing
 ├── core/                           # Core services
 │   └── services/
-│       ├── client/                 # HTTP clients (partner-client, admin-client)
+│       ├── client/                 # HTTP clients (partner-client, admin-client, customer-client)
 │       ├── auth/                   # Authentication
 │       └── dialog/                 # Dialog service
 ├── shared/                         # Shared components
 │   ├── components/
 │   │   ├── cleansia-button/        # Custom button component
-│   │   ├── cleansia-sidebar-menu/  # Responsive sidebar
+│   │   ├── cleansia-sidebar-menu/  # Responsive sidebar (partner/admin)
+│   │   ├── cleansia-customer-navbar/ # Customer app navbar
+│   │   ├── cleansia-customer-footer/ # Customer app footer with newsletter
+│   │   ├── cleansia-cookie-consent/  # GDPR cookie consent banner
 │   │   ├── cleansia-table/         # Data table with row click support
 │   │   ├── cleansia-skeleton/      # 4 skeleton loader components
 │   │   ├── cleansia-telephone/     # Phone input with country codes
@@ -180,7 +197,8 @@ libs/
 │   └── assets/
 │       └── styles/                 # Global styles (per page SCSS)
 └── data-access/                    # State management
-    └── stores/                     # NgRx stores
+    ├── stores/                     # NgRx stores (partner/admin)
+    └── customer-stores/            # NgRx stores (customer: user, loading, catalog, order, dispute)
 ```
 
 ### Mobile Responsiveness (NEW)
@@ -566,7 +584,8 @@ Comprehensive dispute tracking and resolution system for order-related issues.
 - ✅ Database seed data (8 sample disputes)
 - ✅ Permission system (CustomerOnly, AdminOnly)
 - ✅ Removed from partner app (not employee-facing)
-- ⏳ TODO: Implement UI in Customer & Admin applications
+- ✅ Customer App dispute UI (create + list)
+- ✅ Admin App dispute management
 
 #### API Endpoints
 
@@ -2274,6 +2293,50 @@ For issues or questions:
 
 ---
 
+### Version 3.0.0 (2026-03-15) - Customer App Complete
+
+#### New Features
+
+**Customer-Facing Web Application** (`cleansia.app`):
+- Full B2C platform for cleaning service booking
+- Landing page with 10 animated sections (hero, features, process, benefits, services, gallery, testimonials, FAQ, CTA, newsletter/footer)
+- Service catalog with dynamic pricing from Customer API
+- Multi-step order wizard (services → contact/address → date/time → payment → summary)
+- Stripe checkout integration with success and cancel pages
+- User authentication (login, register, email confirmation, forgot password)
+- Order history with detail view and status tracking
+- Dispute creation and management
+- User profile management
+- GDPR tools (data export, consent management, account deletion)
+- Terms of Service and Privacy Policy pages
+- Cookie consent banner with configurable options
+- 900+ translation keys in Czech, English, and Polish
+- Full dark mode support with automatic theme detection
+- Responsive mobile-first design
+- Mascot illustrations throughout the app
+- Unified footer with newsletter subscription block
+
+**Customer Backend API** (`Cleansia.Web.Customer`, port 5003):
+- 12 controllers: Auth, Order, Payment, Dispute, Gdpr, Service, Package, Profile, User, Country, Language, Currency
+- Stripe checkout session creation for card payments
+- Order creation with validation (contact, address, services, date/time)
+- Full GDPR compliance (export, deletion, consent tracking)
+- Integrated into .NET Aspire orchestration
+
+**Frontend Architecture**:
+- 12 feature libraries in `libs/cleansia-customer-features/`
+- 5 NgRx stores (user, loading, catalog, order, dispute)
+- 17 routes (public + authenticated)
+- Global SCSS only (no component-level styleUrl) — consistent with partner/admin apps
+- `TranslatePipe` instead of `TranslateModule` (standalone component pattern)
+- `ChangeDetectionStrategy.OnPush` on presentational components
+
+#### Improvements
+- Consolidated duplicate footer components (landing-footer + customer-footer → single component)
+- Merged 3 footer SCSS files into 1 global file
+- Removed outdated documentation files (CUSTOMER_APP_ANALYSIS.md, CUSTOMER_APP_REQUIREMENTS.md)
+- Updated all documentation to reflect customer app completion
+
 ### Version 1.1.0 (2025-12-20) - Partner App Complete
 
 #### New Features
@@ -2300,15 +2363,16 @@ For issues or questions:
 - API endpoint: `GET /api/order/DownloadOrderReceipt/{orderId}`
 - Receipt service for PDF generation and retrieval
 
-**Dispute Management (Backend)**:
-- Complete dispute tracking system
+**Dispute Management**:
+- Complete dispute tracking system (backend + frontend)
 - Dispute types: Refund, Chargeback, ServiceQuality, BillingError, Other
 - Status tracking: Open, InReview, Resolved, Closed, Escalated
 - Evidence upload support
 - Customer-only and Admin-only permissions
 - Database seed data with 8 sample disputes
 - DisputeController with HandleResult pattern
-- ⏳ Frontend UI pending for Customer & Admin apps
+- ✅ Customer App: dispute creation and list UI
+- ✅ Admin App: dispute management and resolution UI
 
 **Health Monitoring**:
 - Comprehensive health check endpoint: `GET /api/health`
@@ -2418,5 +2482,5 @@ For issues or questions:
 
 ---
 
-**Last Updated**: 2026-03-01
-**Version**: 2.1.0
+**Last Updated**: 2026-03-15
+**Version**: 3.0.0

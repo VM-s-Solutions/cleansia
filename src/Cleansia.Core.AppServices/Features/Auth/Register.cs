@@ -73,7 +73,7 @@ public class Register
 
             var userName = $"{userEntity.FirstName} {userEntity.LastName}";
 
-            //await emailService.SendEmailConfirmationAsync(userEntity.Email, userName, userEntity.ConfirmationCode!, command.Language, cancellationToken);
+            await emailService.SendEmailConfirmationAsync(userEntity.Email, userName, userEntity.ConfirmationCode!, command.Language, cancellationToken);
 
             return BusinessResult.Success(true);
         }

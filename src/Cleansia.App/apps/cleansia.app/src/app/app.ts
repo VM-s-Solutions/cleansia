@@ -34,7 +34,7 @@ export class AppComponent implements OnInit, OnDestroy {
   isOnLandingPage = signal(true);
 
   constructor() {
-    this.translate.addLangs(['cs', 'en', 'pl']);
+    this.translate.addLangs(['cs', 'en', 'sk', 'uk', 'ru']);
     this.translate.setDefaultLang('en');
     this.translate.use(this.detectLanguage());
   }
@@ -63,7 +63,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private detectLanguage(): string {
-    const supported = ['cs', 'en', 'pl'];
+    const supported = ['cs', 'en', 'sk', 'uk', 'ru'];
     const stored = localStorage.getItem('preferred_language');
     if (stored && supported.includes(stored)) return stored;
     const browserLang = navigator.language?.split('-')[0]?.toLowerCase();

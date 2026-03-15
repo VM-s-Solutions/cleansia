@@ -1,0 +1,1709 @@
+{
+  "page_titles": {
+    "admin": {
+      "default": "Панель адміністратора",
+      "login": "Вхід",
+      "employees": "Працівники",
+      "employee_details": "Деталі працівника",
+      "pay_periods": "Розрахункові періоди",
+      "pay_period_details": "Деталі розрахункового періоду",
+      "orders": "Замовлення",
+      "order_details": "Деталі замовлення",
+      "invoices": "Рахунки",
+      "invoice_details": "Деталі рахунку",
+      "reports": "Звіти",
+      "services": "Послуги",
+      "service_create": "Створити послугу",
+      "service_edit": "Редагувати послугу",
+      "packages": "Пакети",
+      "package_create": "Створити пакет",
+      "package_edit": "Редагувати пакет",
+      "admin_users": "Адміністратори",
+      "admin_user_create": "Створити адміністратора",
+      "admin_user_edit": "Редагувати адміністратора",
+      "languages": "Мови",
+      "language_create": "Створити мову",
+      "language_edit": "Редагувати мову",
+      "countries": "Країни",
+      "country_create": "Створити країну",
+      "country_edit": "Редагувати країну",
+      "currencies": "Валюти",
+      "currency_create": "Створити валюту",
+      "currency_edit": "Редагувати валюту",
+      "company_info": "Інформація про компанію",
+      "company_info_create": "Створити інформацію про компанію",
+      "company_info_edit": "Редагувати інформацію про компанію",
+      "templates": "Шаблони",
+      "invoice_templates": "Шаблони рахунків",
+      "invoice_template_create": "Створити шаблон рахунку",
+      "invoice_template_edit": "Редагувати шаблон рахунку",
+      "receipt_templates": "Шаблони квитанцій",
+      "receipt_template_create": "Створити шаблон квитанції",
+      "receipt_template_edit": "Редагувати шаблон квитанції",
+      "email_templates": "Шаблони електронних листів",
+      "email_template_translations": "Переклади шаблонів електронних листів",
+      "not_found": "Сторінку не знайдено"
+    }
+  },
+  "components": {
+    "not_found": {
+      "title": "Сторінку не знайдено",
+      "description": "Сторінка, яку ви шукаєте, могла бути видалена, перейменована або тимчасово недоступна."
+    },
+    "availability": {
+      "days": {
+        "monday": "Понеділок",
+        "tuesday": "Вівторок",
+        "wednesday": "Середа",
+        "thursday": "Четвер",
+        "friday": "П'ятниця",
+        "saturday": "Субота",
+        "sunday": "Неділя"
+      },
+      "current_ranges": "Поточні діапазони",
+      "no_availability": "Доступність не налаштована",
+      "add_time_range": "Додати часовий діапазон",
+      "start_time": "Час початку",
+      "end_time": "Час завершення",
+      "quick_setup": "Швидке налаштування",
+      "weekly_schedule": "Тижневий розклад",
+      "mon_fri_9_5": "Пн-Пт 9-17",
+      "mon_sat_8_4": "Пн-Сб 8-16",
+      "custom": "Власний",
+      "legend_working": "Робочий",
+      "legend_custom": "Власні години",
+      "legend_off": "Вихідний",
+      "no_days_selected": "Оберіть робочі дні для налаштування розкладу",
+      "working_day": "Робочий день",
+      "day_off": "Вихідний день",
+      "custom_hours": "Власні години",
+      "exception_day_off": "Виняток - вихідний день",
+      "edit_hours": "Редагувати години",
+      "remove_exception": "Видалити виняток",
+      "mark_exception": "Позначити як виняток",
+      "set_custom_hours": "Встановити власні години",
+      "mark_unavailable": "Цей день буде позначено як недоступний.",
+      "add_time_slot": "Додати часовий слот",
+      "schedule_setup": "Налаштування розкладу",
+      "schedule_setup_desc": "Оберіть робочі дні та встановіть години.",
+      "working_hours": "Робочі години",
+      "working_days": "Робочі дні",
+      "apply": "Застосувати"
+    }
+  },
+  "global": {
+    "yes": "Так",
+    "no": "Ні",
+    "all": "Все",
+    "no_data": "Немає даних для відображення",
+    "loading": "Завантаження...",
+    "refresh": "Оновити",
+    "rows_per_page": "Рядків на сторінку",
+    "of": "з",
+    "page": "Сторінка {{page}}",
+    "previous_page": "Попередня сторінка",
+    "next_page": "Наступна сторінка",
+    "actions": {
+      "login": "Увійти",
+      "logout": "Вийти",
+      "back": "Назад",
+      "save": "Зберегти",
+      "create": "Створити",
+      "cancel": "Скасувати",
+      "edit": "Редагувати",
+      "delete": "Видалити",
+      "add": "Додати",
+      "ok": "OK",
+      "copy": "Копіювати",
+      "close": "Закрити",
+      "previous": "Попередній",
+      "next": "Наступний",
+      "go_back": "Назад",
+      "go_home": "На головну",
+      "go_to_login": "Перейти до входу"
+    },
+    "dialog": {
+      "confirm": "Підтвердити",
+      "confirm_logout": "Ви дійсно хочете вийти?"
+    },
+    "user": {
+      "remember_me": "Запам'ятати мене"
+    },
+    "status": {
+      "active": "Активний",
+      "inactive": "Неактивний"
+    },
+    "messages": {
+      "success": "Успіх",
+      "error": "Помилка"
+    },
+    "languages": {
+      "en": "Англійська",
+      "cs": "Чеська",
+      "de": "Німецька",
+      "sk": "Словацька",
+      "pl": "Польська"
+    }
+  },
+  "sidebar": {
+    "employees": "Працівники",
+    "payPeriods": "Розрахункові періоди",
+    "orders": "Замовлення",
+    "invoices": "Рахунки",
+    "reports": "Звіти",
+    "services": "Послуги",
+    "packages": "Пакети",
+    "adminUsers": "Адміністратори",
+    "languages": "Мови",
+    "countries": "Країни",
+    "currencies": "Валюти",
+    "companyInfo": "Інформація про компанію",
+    "templates": "Шаблони",
+    "logout": "Вийти"
+  },
+  "pages": {
+    "unauthorized": {
+      "title": "Доступ заборонено",
+      "message": "У вас немає дозволу на доступ до цієї області. Потрібні права адміністратора."
+    },
+    "login": {
+      "email": "Електронна пошта",
+      "password": "Пароль",
+      "remember_me": "Запам'ятати мене"
+    },
+    "employee_management": {
+      "title": "Управління працівниками",
+      "description": "Керуйте працівниками, схвалюйте реєстрації та відстежуйте продуктивність",
+      "name": "Ім'я",
+      "email": "Електронна пошта",
+      "phone": "Телефон",
+      "nationality": "Національність",
+      "status": "Статус",
+      "rating": "Рейтинг",
+      "complaints": "Скарги",
+      "created_at": "Створено",
+      "actions": "Дії",
+      "approve": "Схвалити",
+      "reject": "Відхилити",
+      "view_details": "Переглянути деталі",
+      "no_employees": "Немає працівників для відображення",
+      "filters": {
+        "title": "Фільтри",
+        "search": "Пошук",
+        "search_placeholder": "Шукати за іменем, електронною поштою або телефоном",
+        "contract_status": "Статус контракту",
+        "active_status": "Статус активності",
+        "reset": "Скинути фільтри",
+        "clear_all": "Очистити все"
+      },
+      "reject_dialog": {
+        "title": "Відхилити працівника",
+        "subtitle": "Будь ласка, вкажіть причину відхилення цього працівника",
+        "reason_label": "Причина відхилення",
+        "reason_placeholder": "Введіть детальну причину відхилення...",
+        "reason_hint": "Максимум 500 символів",
+        "reason_required": "Причина відхилення є обов'язковою",
+        "reason_too_long": "Причина відхилення занадто довга (макс. 500 символів)",
+        "cancel_button": "Скасувати",
+        "reject_button": "Відхилити працівника"
+      },
+      "messages": {
+        "load_error": "Не вдалося завантажити працівників",
+        "approve_success": "Працівника успішно схвалено",
+        "approve_error": "Не вдалося схвалити працівника",
+        "reject_success": "Працівника успішно відхилено",
+        "reject_error": "Не вдалося відхилити працівника"
+      },
+      "contract_status": {
+        "pending": "Очікує",
+        "active": "Активний",
+        "approved": "Схвалений",
+        "rejected": "Відхилений",
+        "terminated": "Припинений"
+      },
+      "profile_incomplete_tooltip": "Профіль неповний - неможливо схвалити"
+    },
+    "employee_detail": {
+      "title": "Деталі працівника",
+      "back_to_list": "Повернутися до списку працівників",
+      "personal_info": "Особиста інформація",
+      "first_name": "Ім'я",
+      "last_name": "Прізвище",
+      "email": "Електронна пошта",
+      "phone": "Номер телефону",
+      "birth_date": "Дата народження",
+      "address_info": "Адреса",
+      "street": "Вулиця",
+      "city": "Місто",
+      "zip_code": "Поштовий індекс",
+      "country": "Країна",
+      "employment_info": "Інформація про працевлаштування",
+      "nationality": "Національність",
+      "passport_id": "Паспорт/Національне посвідчення",
+      "tax_id": "Ідентифікаційний код (ІКО)",
+      "iban": "IBAN",
+      "emergency_contact": "Екстрений контакт",
+      "emergency_name": "Ім'я",
+      "emergency_phone": "Телефон",
+      "contract_info": "Інформація про контракт",
+      "contract_status": "Статус контракту",
+      "average_rating": "Середній рейтинг",
+      "complaints_count": "Скарги",
+      "created_at": "Зареєстровано",
+      "profile_status": "Статус профілю",
+      "profile_complete": "Профіль заповнено",
+      "profile_incomplete": "Профіль неповний",
+      "missing_fields": "Відсутні поля",
+      "approval_info": "Інформація про схвалення",
+      "approval_notes": "Примітки до схвалення",
+      "approved_by": "Схвалив",
+      "approved_at": "Схвалено",
+      "rejection_info": "Інформація про відхилення",
+      "rejection_reason": "Причина відхилення",
+      "rejected_by": "Відхилив",
+      "rejected_at": "Відхилено",
+      "availability": "Тижнева доступність",
+      "Monday": "Понеділок",
+      "Tuesday": "Вівторок",
+      "Wednesday": "Середа",
+      "Thursday": "Четвер",
+      "Friday": "П'ятниця",
+      "Saturday": "Субота",
+      "Sunday": "Неділя",
+      "no_availability": "Доступність не налаштована",
+      "documents": "Документи",
+      "no_documents": "Документи не завантажено",
+      "pending_documents": "Очікуючі документи",
+      "approved_documents": "Схвалені документи",
+      "rejected_documents": "Відхилені документи",
+      "document_type": "Тип документа",
+      "document_version": "Версія",
+      "file_size": "Розмір файлу",
+      "uploaded_at": "Завантажено",
+      "reviewed_at": "Перевірено",
+      "review_notes": "Примітки до перевірки",
+      "document_description": "Опис",
+      "actions": {
+        "approve_employee": "Схвалити працівника",
+        "reject_employee": "Відхилити працівника",
+        "approve_document": "Схвалити",
+        "reject_document": "Відхилити",
+        "download_document": "Завантажити",
+        "preview_document": "Попередній перегляд"
+      },
+      "reject_employee_dialog": {
+        "title": "Відхилити працівника",
+        "subtitle": "Будь ласка, вкажіть причину відхилення цього працівника",
+        "reason_label": "Причина відхилення",
+        "reason_placeholder": "Введіть детальну причину відхилення...",
+        "reason_hint": "Максимум 500 символів",
+        "reason_required": "Причина відхилення є обов'язковою",
+        "reason_too_long": "Причина відхилення занадто довга (макс. 500 символів)",
+        "cancel_button": "Скасувати",
+        "reject_button": "Відхилити працівника"
+      },
+      "reject_document_dialog": {
+        "title": "Відхилити документ",
+        "subtitle": "Будь ласка, вкажіть причину відхилення цього документа",
+        "reason_label": "Причина відхилення",
+        "reason_placeholder": "Введіть детальну причину відхилення...",
+        "reason_hint": "Максимум 500 символів",
+        "reason_required": "Причина відхилення є обов'язковою",
+        "reason_too_long": "Причина відхилення занадто довга (макс. 500 символів)",
+        "cancel_button": "Скасувати",
+        "reject_button": "Відхилити документ"
+      },
+      "messages": {
+        "load_error": "Не вдалося завантажити деталі працівника",
+        "employee_approve_success": "Працівника успішно схвалено",
+        "employee_approve_error": "Не вдалося схвалити працівника",
+        "employee_reject_success": "Працівника успішно відхилено",
+        "employee_reject_error": "Не вдалося відхилити працівника",
+        "document_approve_success": "Документ успішно схвалено",
+        "document_approve_error": "Не вдалося схвалити документ",
+        "document_reject_success": "Документ успішно відхилено",
+        "document_reject_error": "Не вдалося відхилити документ",
+        "document_download_error": "Не вдалося завантажити документ",
+        "availability_save_success": "Доступність успішно оновлено",
+        "availability_save_error": "Не вдалося оновити доступність"
+      },
+      "document_status": {
+        "pending": "Очікує",
+        "approved": "Схвалений",
+        "rejected": "Відхилений",
+        "unknown": "Невідомий"
+      },
+      "document_types": {
+        "identity_card": "Посвідчення особи",
+        "passport": "Паспорт",
+        "drivers_license": "Водійське посвідчення",
+        "work_permit": "Дозвіл на роботу",
+        "contract": "Контракт",
+        "certificate": "Сертифікат",
+        "bank_statement": "Банківська виписка",
+        "tax_document": "Податковий документ",
+        "insurance_document": "Страховий документ",
+        "other": "Інше",
+        "unknown": "Невідомий"
+      }
+    },
+    "order_management": {
+      "title": "Управління замовленнями",
+      "description": "Переглядайте та керуйте замовленнями клієнтів, відстежуйте статус замовлень та платежів",
+      "order_number": "Замовлення №",
+      "customer_name": "Клієнт",
+      "customer_email": "Електронна пошта",
+      "customer_phone": "Телефон",
+      "cleaning_date": "Дата прибирання",
+      "total_price": "Разом",
+      "order_status_label": "Статус замовлення",
+      "payment_status_label": "Статус оплати",
+      "assigned_employees": "Призначені",
+      "actions": "Дії",
+      "view_details": "Переглянути деталі",
+      "no_orders": "Замовлення не знайдено",
+      "filters": {
+        "title": "Фільтри",
+        "search": "Пошук",
+        "search_placeholder": "Шукати за іменем клієнта або номером замовлення",
+        "order_status": "Статус замовлення",
+        "payment_status": "Статус оплати",
+        "date_range": "Діапазон дат",
+        "date_from": "Дата з",
+        "date_to": "Дата по",
+        "reset": "Скинути фільтри",
+        "clear_all": "Очистити все"
+      },
+      "order_status": {
+        "pending": "Очікує",
+        "confirmed": "Підтверджено",
+        "in_progress": "В процесі",
+        "completed": "Завершено",
+        "cancelled": "Скасовано"
+      },
+      "payment_status": {
+        "pending": "Очікує",
+        "paid": "Оплачено",
+        "failed": "Невдала",
+        "refunded": "Повернено",
+        "disputed": "Оскаржено"
+      },
+      "messages": {
+        "load_error": "Не вдалося завантажити замовлення"
+      }
+    },
+    "order_detail": {
+      "title": "Деталі замовлення",
+      "back_to_list": "Повернутися до замовлень",
+      "order_number": "Номер замовлення",
+      "customer_info": "Інформація про клієнта",
+      "customer_name": "Ім'я клієнта",
+      "customer_email": "Електронна пошта",
+      "customer_phone": "Телефон",
+      "address_info": "Адреса",
+      "street": "Вулиця",
+      "city": "Місто",
+      "zip_code": "Поштовий індекс",
+      "country": "Країна",
+      "floor": "Поверх",
+      "apartment": "Квартира",
+      "cleaning_details": "Деталі прибирання",
+      "cleaning_date": "Дата прибирання",
+      "cleaning_time": "Час прибирання",
+      "rooms": "Кімнати",
+      "bathrooms": "Ванні кімнати",
+      "estimated_time": "Орієнтовний час",
+      "actual_time": "Фактичний час",
+      "selected_packages": "Обрані пакети",
+      "selected_services": "Обрані послуги",
+      "extras": "Додатково",
+      "payment_info": "Інформація про оплату",
+      "payment_type": "Тип оплати",
+      "payment_status": "Статус оплати",
+      "total_price": "Загальна вартість",
+      "receipt_number": "Номер квитанції",
+      "assigned_employee": "Призначений працівник",
+      "assigned_employees": "Призначені працівники",
+      "employee_name": "Ім'я",
+      "employee_phone": "Телефон",
+      "employee_email": "Електронна пошта",
+      "instructions": "Інструкції",
+      "special_instructions": "Спеціальні інструкції",
+      "access_instructions": "Інструкції з доступу",
+      "notes": "Примітки",
+      "completion_notes": "Примітки до завершення",
+      "status_history": "Історія статусів",
+      "not_found": "Замовлення не знайдено",
+      "photos": "Фотографії замовлення",
+      "before_photos": "Фотографії до",
+      "after_photos": "Фотографії після",
+      "no_photos": "Для цього замовлення фотографії не завантажено",
+      "before": "До",
+      "after": "Після",
+      "messages": {
+        "load_error": "Не вдалося завантажити деталі замовлення",
+        "photos_error": "Не вдалося завантажити фотографії замовлення"
+      }
+    },
+    "invoice_management": {
+      "title": "Управління рахунками",
+      "description": "Переглядайте та керуйте рахунками працівників, схвалюйте платежі та відстежуйте статус рахунків",
+      "invoice_number": "Рахунок №",
+      "employee_name": "Працівник",
+      "pay_period": "Розрахунковий період",
+      "total_orders": "Замовлення",
+      "total_amount": "Загальна сума",
+      "status": "Статус",
+      "generated_at": "Створено",
+      "actions": "Дії",
+      "view_details": "Переглянути деталі",
+      "download": "Завантажити PDF",
+      "no_invoices": "Рахунки не знайдено",
+      "filters": {
+        "title": "Фільтри",
+        "search": "Пошук",
+        "search_placeholder": "Шукати за номером рахунку або працівником",
+        "status": "Статус рахунку",
+        "reset": "Скинути фільтри",
+        "clear_all": "Очистити все"
+      },
+      "invoice_status": {
+        "pending": "Очікує",
+        "approved": "Схвалений",
+        "paid": "Оплачений",
+        "disputed": "Оскаржений",
+        "rejected": "Відхилений",
+        "cancelled": "Скасований"
+      },
+      "messages": {
+        "load_error": "Не вдалося завантажити рахунки",
+        "download_error": "Не вдалося завантажити рахунок"
+      }
+    },
+    "service_management": {
+      "title": "Управління послугами",
+      "description": "Переглядайте та керуйте послугами прибирання, їх цінами та конфігураціями",
+      "name": "Назва",
+      "description_label": "Опис",
+      "base_price": "Базова ціна",
+      "price_per_m2": "Ціна за м²",
+      "min_duration": "Мінімальна тривалість",
+      "max_duration": "Максимальна тривалість",
+      "is_active": "Активна",
+      "actions": "Дії",
+      "view_details": "Переглянути деталі",
+      "create_service": "Створити послугу",
+      "edit_service": "Редагувати",
+      "delete_service": "Видалити послугу",
+      "delete_confirm": "Ви дійсно хочете видалити цю послугу? Цю дію неможливо скасувати.",
+      "no_services": "Послуги не знайдено",
+      "filters": {
+        "title": "Фільтри",
+        "search": "Пошук",
+        "search_placeholder": "Шукати за назвою або описом",
+        "reset": "Скинути фільтри",
+        "clear_all": "Очистити все"
+      },
+      "columns": {
+        "name": "Назва",
+        "description": "Опис",
+        "base_price": "Базова ціна",
+        "per_room_price": "Ціна за кімнату",
+        "actions": "Дії"
+      },
+      "messages": {
+        "load_error": "Не вдалося завантажити послуги",
+        "create_success": "Послугу успішно створено",
+        "create_error": "Не вдалося створити послугу",
+        "update_success": "Послугу успішно оновлено",
+        "update_error": "Не вдалося оновити послугу",
+        "delete_success": "Послугу успішно видалено",
+        "delete_error": "Не вдалося видалити послугу"
+      }
+    },
+    "service_edit": {
+      "create_title": "Створити послугу",
+      "edit_title": "Редагувати послугу",
+      "basic_info": "Основна інформація",
+      "translations_cs": "Чеська (CS)",
+      "translations_en": "Англійська (EN)",
+      "name": "Назва",
+      "description": "Опис",
+      "base_price": "Базова ціна (CZK)",
+      "per_room_price": "Ціна за кімнату (CZK)",
+      "estimated_time": "Орієнтовний час (хвилини)"
+    },
+    "service_form": {
+      "create_title": "Створити послугу",
+      "edit_title": "Редагувати послугу",
+      "basic_info": "Основна інформація",
+      "pricing": "Ціни",
+      "translations": "Переклади",
+      "name": "Назва",
+      "description": "Опис",
+      "base_price": "Базова ціна (CZK)",
+      "per_room_price": "Ціна за кімнату (CZK)",
+      "estimated_time": "Орієнтовний час (хвилини)",
+      "messages": {
+        "load_error": "Не вдалося завантажити послугу",
+        "create_success": "Послугу успішно створено",
+        "create_error": "Не вдалося створити послугу",
+        "update_success": "Послугу успішно оновлено",
+        "update_error": "Не вдалося оновити послугу"
+      }
+    },
+    "package_management": {
+      "title": "Управління пакетами",
+      "description": "Переглядайте та керуйте пакетами прибирання, їх цінами та включеними послугами",
+      "create_package": "Створити пакет",
+      "edit_package": "Редагувати",
+      "delete_package": "Видалити пакет",
+      "delete_confirm": "Ви дійсно хочете видалити цей пакет? Цю дію неможливо скасувати.",
+      "no_packages": "Пакети не знайдено",
+      "filters": {
+        "title": "Фільтри",
+        "search": "Пошук",
+        "search_placeholder": "Шукати за назвою або описом",
+        "reset": "Скинути фільтри",
+        "clear_all": "Очистити все"
+      },
+      "columns": {
+        "name": "Назва",
+        "description": "Опис",
+        "price": "Ціна",
+        "actions": "Дії"
+      },
+      "messages": {
+        "load_error": "Не вдалося завантажити пакети",
+        "create_success": "Пакет успішно створено",
+        "create_error": "Не вдалося створити пакет",
+        "update_success": "Пакет успішно оновлено",
+        "update_error": "Не вдалося оновити пакет",
+        "delete_success": "Пакет успішно видалено",
+        "delete_error": "Не вдалося видалити пакет"
+      }
+    },
+    "package_form": {
+      "create_title": "Створити пакет",
+      "edit_title": "Редагувати пакет",
+      "basic_info": "Основна інформація",
+      "services": "Включені послуги",
+      "translations": "Переклади",
+      "name": "Назва",
+      "description": "Опис",
+      "price": "Ціна (CZK)",
+      "included_services": "Включені послуги",
+      "select_services": "Оберіть послуги для включення",
+      "messages": {
+        "load_error": "Не вдалося завантажити пакет",
+        "create_success": "Пакет успішно створено",
+        "create_error": "Не вдалося створити пакет",
+        "update_success": "Пакет успішно оновлено",
+        "update_error": "Не вдалося оновити пакет"
+      }
+    },
+    "admin_user_management": {
+      "title": "Управління адміністраторами",
+      "description": "Керуйте обліковими записами адміністраторів, створюйте нових та контролюйте доступ",
+      "create_user": "Створити адміністратора",
+      "edit_user": "Редагувати адміністратора",
+      "deactivate_user": "Деактивувати адміністратора",
+      "activate_user": "Активувати адміністратора",
+      "deactivate_confirm": "Ви дійсно хочете деактивувати цього адміністратора? Він втратить доступ до панелі адміністратора.",
+      "activate_confirm": "Ви дійсно хочете активувати цього адміністратора? Він знову отримає доступ до панелі адміністратора.",
+      "no_users": "Адміністраторів не знайдено",
+      "filters": {
+        "title": "Фільтри",
+        "search": "Пошук",
+        "search_placeholder": "Шукати за іменем або електронною поштою",
+        "reset": "Скинути фільтри",
+        "clear_all": "Очистити все"
+      },
+      "columns": {
+        "name": "Ім'я",
+        "email": "Електронна пошта",
+        "phone": "Телефон",
+        "status": "Статус",
+        "created_at": "Створено",
+        "actions": "Дії"
+      },
+      "messages": {
+        "load_error": "Не вдалося завантажити адміністраторів",
+        "deactivate_success": "Адміністратора успішно деактивовано",
+        "deactivate_error": "Не вдалося деактивувати адміністратора",
+        "activate_success": "Адміністратора успішно активовано",
+        "activate_error": "Не вдалося активувати адміністратора"
+      }
+    },
+    "admin_user_form": {
+      "create_title": "Створити адміністратора",
+      "edit_title": "Редагувати адміністратора",
+      "account_info": "Інформація про обліковий запис",
+      "personal_info": "Особиста інформація",
+      "email": "Електронна пошта",
+      "password": "Пароль",
+      "first_name": "Ім'я",
+      "last_name": "Прізвище",
+      "phone_number": "Номер телефону",
+      "messages": {
+        "load_error": "Не вдалося завантажити адміністратора",
+        "create_success": "Адміністратора успішно створено",
+        "create_error": "Не вдалося створити адміністратора",
+        "update_success": "Адміністратора успішно оновлено",
+        "update_error": "Не вдалося оновити адміністратора"
+      }
+    },
+    "language_management": {
+      "title": "Управління мовами",
+      "description": "Керуйте системними мовами для перекладів контенту",
+      "create_language": "Створити мову",
+      "edit_language": "Редагувати мову",
+      "delete_language": "Видалити мову",
+      "delete_confirm": "Ви дійсно хочете видалити цю мову? Це може вплинути на існуючі переклади.",
+      "no_languages": "Мови не знайдено",
+      "filters": {
+        "title": "Фільтри",
+        "search": "Пошук",
+        "search_placeholder": "Шукати за кодом або назвою",
+        "reset": "Скинути фільтри",
+        "clear_all": "Очистити все"
+      },
+      "columns": {
+        "code": "Код",
+        "name": "Назва",
+        "actions": "Дії"
+      },
+      "messages": {
+        "load_error": "Не вдалося завантажити мови",
+        "delete_success": "Мову успішно видалено",
+        "delete_error": "Не вдалося видалити мову"
+      }
+    },
+    "language_form": {
+      "create_title": "Створити мову",
+      "edit_title": "Редагувати мову",
+      "basic_info": "Основна інформація",
+      "code": "Код мови",
+      "code_placeholder": "напр. en, cs, de",
+      "name": "Назва мови",
+      "name_placeholder": "напр. Англійська, Чеська, Німецька",
+      "messages": {
+        "load_error": "Не вдалося завантажити мову",
+        "create_success": "Мову успішно створено",
+        "create_error": "Не вдалося створити мову",
+        "update_success": "Мову успішно оновлено",
+        "update_error": "Не вдалося оновити мову"
+      }
+    },
+    "country_management": {
+      "title": "Управління країнами",
+      "description": "Керуйте країнами, доступними в системі",
+      "create_country": "Створити країну",
+      "edit_country": "Редагувати країну",
+      "delete_country": "Видалити країну",
+      "delete_confirm": "Ви дійсно хочете видалити цю країну? Це може вплинути на існуючі дані.",
+      "no_countries": "Країни не знайдено",
+      "columns": {
+        "iso_code": "ISO код",
+        "name": "Назва",
+        "actions": "Дії"
+      },
+      "messages": {
+        "load_error": "Не вдалося завантажити країни",
+        "delete_success": "Країну успішно видалено",
+        "delete_error": "Не вдалося видалити країну"
+      }
+    },
+    "country_form": {
+      "create_title": "Створити країну",
+      "edit_title": "Редагувати країну",
+      "basic_info": "Основна інформація",
+      "iso_code": "ISO код",
+      "iso_code_placeholder": "напр. CZ, US, DE",
+      "name": "Назва країни",
+      "name_placeholder": "напр. Чеська Республіка, Сполучені Штати, Німеччина",
+      "messages": {
+        "load_error": "Не вдалося завантажити країну",
+        "create_success": "Країну успішно створено",
+        "create_error": "Не вдалося створити країну",
+        "update_success": "Країну успішно оновлено",
+        "update_error": "Не вдалося оновити країну"
+      }
+    },
+    "currency_management": {
+      "title": "Управління валютами",
+      "description": "Керуйте валютами та обмінними курсами",
+      "create_currency": "Створити валюту",
+      "edit_currency": "Редагувати валюту",
+      "delete_currency": "Видалити валюту",
+      "delete_confirm": "Ви дійсно хочете видалити цю валюту? Це може вплинути на існуючі дані.",
+      "cannot_delete_default": "Неможливо видалити валюту за замовчуванням. Спочатку встановіть іншу валюту як валюту за замовчуванням.",
+      "no_currencies": "Валюти не знайдено",
+      "columns": {
+        "code": "Код",
+        "symbol": "Символ",
+        "name": "Назва",
+        "exchange_rate": "Обмінний курс",
+        "is_default": "За замовчуванням",
+        "actions": "Дії"
+      },
+      "messages": {
+        "load_error": "Не вдалося завантажити валюти",
+        "delete_success": "Валюту успішно видалено",
+        "delete_error": "Не вдалося видалити валюту"
+      }
+    },
+    "currency_form": {
+      "create_title": "Створити валюту",
+      "edit_title": "Редагувати валюту",
+      "basic_info": "Основна інформація",
+      "code": "Код валюти",
+      "code_placeholder": "напр. USD, EUR, CZK",
+      "symbol": "Символ",
+      "symbol_placeholder": "напр. $, €, Kč",
+      "name": "Назва валюти",
+      "name_placeholder": "напр. Долар США, Євро, Чеська крона",
+      "exchange_rate": "Обмінний курс",
+      "exchange_rate_placeholder": "напр. 1.0, 0.92, 24.50",
+      "messages": {
+        "load_error": "Не вдалося завантажити валюту",
+        "create_success": "Валюту успішно створено",
+        "create_error": "Не вдалося створити валюту",
+        "update_success": "Валюту успішно оновлено",
+        "update_error": "Не вдалося оновити валюту"
+      }
+    },
+    "company_info": {
+      "title": "Інформація про компанію",
+      "create_title": "Створити компанію",
+      "edit_title": "Редагувати компанію",
+      "description": "Керуйте даними компанії, що використовуються в рахунках та квитанціях",
+      "sections": {
+        "legal_info": "Юридична інформація",
+        "tax_info": "Податкова інформація",
+        "address": "Адреса",
+        "contact": "Контактна інформація",
+        "banking": "Банківська інформація"
+      },
+      "legal_name": "Юридична назва",
+      "trading_name": "Торгова назва",
+      "tagline": "Слоган",
+      "registration_number": "Реєстраційний номер (ІКО)",
+      "vat_number": "Номер ПДВ (ДІЧ)",
+      "street": "Вулиця",
+      "city": "Місто",
+      "zip_code": "Поштовий індекс",
+      "country": "Країна",
+      "phone": "Телефон",
+      "email": "Електронна пошта",
+      "website": "Вебсайт",
+      "bank_name": "Назва банку",
+      "bank_account_number": "Номер банківського рахунку",
+      "iban": "IBAN",
+      "swift": "SWIFT/BIC",
+      "messages": {
+        "load_error": "Не вдалося завантажити інформацію про компанію",
+        "save_success": "Інформацію про компанію успішно збережено",
+        "save_error": "Не вдалося зберегти інформацію про компанію",
+        "create_success": "Інформацію про компанію успішно створено"
+      }
+    },
+    "template_management": {
+      "title": "Управління шаблонами",
+      "description": "Керуйте шаблонами рахунків, квитанцій та електронних листів",
+      "tabs": {
+        "invoice": "Шаблони рахунків",
+        "receipt": "Шаблони квитанцій",
+        "email": "Шаблони електронних листів"
+      },
+      "invoice_templates": {
+        "title": "Шаблони рахунків"
+      },
+      "receipt_templates": {
+        "title": "Шаблони квитанцій"
+      },
+      "email_templates": {
+        "title": "Шаблони електронних листів"
+      },
+      "create_template": "Створити шаблон",
+      "edit_template": "Редагувати шаблон",
+      "delete_template": "Видалити шаблон",
+      "activate_template": "Активувати шаблон",
+      "deactivate_template": "Деактивувати шаблон",
+      "create_invoice_template": "Створити шаблон рахунку",
+      "edit_invoice_template": "Редагувати шаблон рахунку",
+      "create_receipt_template": "Створити шаблон квитанції",
+      "edit_receipt_template": "Редагувати шаблон квитанції",
+      "edit_email_template": "Редагувати шаблон електронного листа",
+      "confirm_delete": "Ви дійсно хочете видалити цей шаблон? Цю дію неможливо скасувати.",
+      "confirm_activate": "Ви дійсно хочете активувати цей шаблон? Це деактивує будь-який інший активний шаблон для тієї ж країни та мови.",
+      "confirm_deactivate": "Ви дійсно хочете деактивувати цей шаблон?",
+      "columns": {
+        "template_name": "Назва шаблону",
+        "country": "Країна",
+        "language": "Мова",
+        "version": "Версія",
+        "status": "Статус",
+        "subject": "Тема",
+        "template_key": "Ключ шаблону",
+        "email_type": "Тип листа",
+        "value": "Зміст",
+        "actions": "Дії",
+        "translation_count": "Переклади",
+        "languages": "Мови",
+        "last_modified": "Останнє редагування"
+      },
+      "fields": {
+        "template_name": "Назва шаблону",
+        "country": "Країна",
+        "language": "Мова",
+        "template_file": "Файл шаблону",
+        "replace_file": "Замінити файл (необов'язково)",
+        "description": "Опис",
+        "subject": "Тема",
+        "body": "Тіло"
+      },
+      "current_file": {
+        "version": "Версія",
+        "download": "Завантажити",
+        "open_new_tab": "Відкрити в новому вікні"
+      },
+      "placeholders": {
+        "template_name": "Введіть назву шаблону",
+        "country": "Оберіть країну",
+        "language": "Оберіть мову",
+        "blob_url": "Введіть URL шаблону",
+        "description": "Введіть опис (необов'язково)",
+        "subject": "Введіть тему листа",
+        "body": "Введіть зміст листа",
+        "value": "Введіть значення перекладу"
+      },
+      "hints": {
+        "html_supported": "HTML-контент підтримується"
+      },
+      "sections": {
+        "basic_info": "Основна інформація",
+        "template_file": "Файл шаблону",
+        "template_info": "Інформація про шаблон",
+        "content": "Зміст",
+        "available_variables": "Доступні змінні",
+        "translations": "Переклади"
+      },
+      "variables": {
+        "hint": "Натисніть на змінну, щоб скопіювати її до буфера обміну. Використовуйте ці змінні у змісті шаблону.",
+        "user_name": "Ім'я користувача",
+        "verification_code": "Код підтвердження електронної пошти",
+        "reset_password_link": "Посилання на сторінку скидання пароля",
+        "customer_name": "Ім'я клієнта",
+        "order_number": "Референсний номер замовлення",
+        "order_date": "Дата оформлення замовлення",
+        "total_amount": "Загальна сума замовлення з валютою",
+        "order_status_link": "Посилання для перевірки статусу замовлення",
+        "employee_name": "Ім'я працівника",
+        "period_label": "Позначення розрахункового періоду (напр. 2025-01)",
+        "start_date": "Дата початку періоду",
+        "end_date": "Дата закінчення періоду",
+        "closed_at": "Дата і час закриття періоду",
+        "days_remaining": "Кількість днів до кінця періоду"
+      },
+      "preview": {
+        "title": "Попередній перегляд шаблону",
+        "load": "Завантажити попередній перегляд",
+        "open_new_tab": "Відкрити в новому вікні",
+        "error": "Не вдалося завантажити попередній перегляд шаблону",
+        "no_url": "Збережіть шаблон, щоб увімкнути попередній перегляд"
+      },
+      "no_templates": "Шаблони не знайдено",
+      "translation_key_tooltip": "Натисніть, щоб скопіювати як змінну шаблону",
+      "view_translations": "Переглянути переклади",
+      "back_to_email_types": "Повернутися до типів листів",
+      "no_translations_for_language": "Переклади для цієї мови відсутні",
+      "email_type_detail": {
+        "title": "Переклади {{emailType}}",
+        "translations_section": "Переклади",
+        "variables_section": "Доступні змінні"
+      },
+      "actions": {
+        "send_test_email": "Надіслати тестовий лист",
+        "add_translation": "Додати переклад"
+      },
+      "dialogs": {
+        "send_test_email": {
+          "title": "Надіслати тестовий лист",
+          "description": "Надішліть тестовий лист за цим шаблоном для перевірки змісту та форматування.",
+          "recipient_email": "Електронна пошта одержувача",
+          "recipient_placeholder": "Введіть адресу електронної пошти",
+          "language_info": "Лист буде надіслано мовою {{language}}"
+        },
+        "add_translation": {
+          "title": "Додати переклад",
+          "description": "Додайте нову пару ключ-значення перекладу для цього типу листа.",
+          "key": "Ключ",
+          "key_placeholder": "Введіть унікальну назву ключа (напр. Subject, Greeting)",
+          "value": "Значення",
+          "value_placeholder": "Введіть значення перекладу"
+        },
+        "delete_translation": {
+          "title": "Видалити переклад",
+          "message": "Ви дійсно хочете видалити переклад '{{key}}'? Цю дію неможливо скасувати."
+        }
+      },
+      "messages": {
+        "load_error": "Не вдалося завантажити шаблони",
+        "save_error": "Не вдалося зберегти шаблон",
+        "save_success": "Шаблон успішно збережено",
+        "create_success": "Переклад успішно створено",
+        "create_error": "Не вдалося створити переклад",
+        "delete_error": "Не вдалося видалити переклад",
+        "delete_success": "Переклад успішно видалено",
+        "activate_error": "Не вдалося активувати шаблон",
+        "activate_success": "Шаблон успішно активовано",
+        "deactivate_error": "Не вдалося деактивувати шаблон",
+        "deactivate_success": "Шаблон успішно деактивовано",
+        "send_test_error": "Не вдалося надіслати тестовий лист",
+        "send_test_success": "Тестовий лист успішно надіслано на {{email}}",
+        "copied_to_clipboard": "Скопійовано до буфера обміну"
+      }
+    },
+    "company_management": {
+      "title": "Управління компаніями",
+      "description": "Керуйте інформацією про компанії для різних країн",
+      "create_company": "Створити компанію",
+      "edit_company": "Редагувати компанію",
+      "delete_company": "Видалити компанію",
+      "delete_confirm": "Ви дійсно хочете видалити цю інформацію про компанію? Цю дію неможливо скасувати.",
+      "no_companies": "Інформацію про компанії не знайдено",
+      "filters": {
+        "title": "Фільтри",
+        "search": "Пошук",
+        "search_placeholder": "Шукати за назвою або містом",
+        "reset": "Скинути фільтри",
+        "clear_all": "Очистити все"
+      },
+      "columns": {
+        "legal_name": "Юридична назва",
+        "trading_name": "Торгова назва",
+        "country": "Країна",
+        "city": "Місто",
+        "email": "Електронна пошта",
+        "status": "Статус",
+        "actions": "Дії"
+      },
+      "messages": {
+        "load_error": "Не вдалося завантажити інформацію про компанії",
+        "delete_success": "Інформацію про компанію успішно видалено",
+        "delete_error": "Не вдалося видалити інформацію про компанію"
+      }
+    },
+    "reports": {
+      "title": "Звіти",
+      "description": "Переглядайте звіти про доходи та заробітну плату, аналізуйте продуктивність та відстежуйте фінансові дані",
+      "date_filter": "Діапазон дат",
+      "start_date": "Дата початку",
+      "end_date": "Дата закінчення",
+      "apply_filter": "Застосувати фільтр",
+      "reset": "Скинути фільтри",
+      "filters": {
+        "title": "Фільтри",
+        "date_range": "Діапазон дат",
+        "reset": "Скинути фільтри",
+        "clear_all": "Очистити все"
+      },
+      "revenue_report": "Звіт про доходи",
+      "payroll_report": "Звіт про заробітну плату",
+      "no_data": "Немає даних за обраний період",
+      "total_revenue": "Загальний дохід",
+      "avg_order_value": "Середня вартість замовлення",
+      "total_orders": "Загальна кількість замовлень",
+      "completed_orders": "Завершені замовлення",
+      "cancelled_orders": "Скасовані замовлення",
+      "growth": "Зростання",
+      "revenue_by_service": "Дохід за послугами",
+      "revenue_by_package": "Дохід за пакетами",
+      "revenue_by_payment_type": "Дохід за типом оплати",
+      "service_name": "Послуга",
+      "package_name": "Пакет",
+      "payment_type": "Тип оплати",
+      "order_count": "Замовлення",
+      "total_payroll": "Загальна заробітна плата",
+      "avg_pay_per_employee": "Сер. оплата на працівника",
+      "total_invoices": "Загальна кількість рахунків",
+      "pending_invoices": "Очікуючі рахунки",
+      "paid_invoices": "Оплачені рахунки",
+      "total_bonuses": "Загальні бонуси",
+      "employee_summaries": "Підсумки по працівниках",
+      "employee_name": "Працівник",
+      "invoice_count": "Рахунки",
+      "subtotal": "Проміжний підсумок",
+      "bonus": "Бонус",
+      "deductions": "Утримання",
+      "total_amount": "Разом",
+      "payroll_by_status": "Заробітна плата за статусом",
+      "status": "Статус",
+      "monthly_payroll": "Місячна заробітна плата",
+      "month": "Місяць",
+      "messages": {
+        "revenue_load_error": "Не вдалося завантажити звіт про доходи",
+        "payroll_load_error": "Не вдалося завантажити звіт про заробітну плату"
+      }
+    },
+    "invoice_detail": {
+      "title": "Деталі рахунку",
+      "back_to_list": "Повернутися до списку рахунків",
+      "invoice_number": "Номер рахунку",
+      "status": "Статус",
+      "actions_section": "Дії",
+      "invoice_summary": "Підсумок рахунку",
+      "employee_name": "Працівник",
+      "pay_period": "Розрахунковий період",
+      "variable_symbol": "Змінний символ",
+      "specific_symbol": "Специфічний символ",
+      "total_orders": "Загальна кількість замовлень",
+      "generated_at": "Створено",
+      "financial_summary": "Фінансовий підсумок",
+      "sub_total": "Проміжний підсумок",
+      "bonus_amount": "Бонус",
+      "deduction_amount": "Утримання",
+      "total_amount": "Загальна сума",
+      "approval_payment_info": "Інформація про схвалення та оплату",
+      "approved_at": "Схвалено",
+      "approved_by": "Схвалив",
+      "paid_at": "Оплачено",
+      "bank_transfer_note": "Примітка до банківського переказу",
+      "admin_notes": "Примітки адміністратора",
+      "order_pays_section": "Оплати за замовлення",
+      "no_order_pays": "Оплати за замовлення не знайдено",
+      "actions": {
+        "approve": "Схвалити рахунок",
+        "mark_paid": "Позначити як оплачений",
+        "cancel": "Скасувати рахунок",
+        "download": "Завантажити PDF",
+        "regenerate_pdf": "Перегенерувати PDF"
+      },
+      "invoice_status": {
+        "pending": "Очікує",
+        "approved": "Схвалений",
+        "paid": "Оплачений",
+        "disputed": "Оскаржений",
+        "rejected": "Відхилений",
+        "cancelled": "Скасований"
+      },
+      "order_pays": {
+        "order_number": "Замовлення №",
+        "base_pay": "Базова оплата",
+        "extras_pay": "Додаткові",
+        "expenses_pay": "Витрати",
+        "bonus_pay": "Бонус",
+        "deduction_pay": "Утримання",
+        "total_pay": "Разом",
+        "created_on": "Створено"
+      },
+      "cancel_dialog": {
+        "title": "Скасувати рахунок",
+        "subtitle": "Будь ласка, вкажіть причину скасування цього рахунку",
+        "reason_label": "Причина скасування",
+        "reason_placeholder": "Введіть причину скасування..."
+      },
+      "messages": {
+        "load_error": "Не вдалося завантажити деталі рахунку",
+        "approve_success": "Рахунок успішно схвалено",
+        "approve_error": "Не вдалося схвалити рахунок",
+        "mark_paid_success": "Рахунок успішно позначено як оплачений",
+        "mark_paid_error": "Не вдалося позначити рахунок як оплачений",
+        "cancel_success": "Рахунок успішно скасовано",
+        "cancel_error": "Не вдалося скасувати рахунок",
+        "download_error": "Не вдалося завантажити рахунок",
+        "regenerate_success": "PDF рахунку успішно перегенеровано",
+        "regenerate_error": "Не вдалося перегенерувати PDF рахунку"
+      }
+    }
+  },
+  "employees": {
+    "title": "Управління працівниками",
+    "list": "Список працівників",
+    "pending": "Очікують схвалення",
+    "approved": "Схвалені",
+    "rejected": "Відхилені"
+  },
+  "payPeriods": {
+    "title": "Управління розрахунковими періодами",
+    "description": "Керуйте розрахунковими періодами, закривайте періоди та відстежуйте оплату працівників",
+    "confirmClose": "Ви дійсно хочете закрити цей розрахунковий період? Цю дію неможливо скасувати.",
+    "filters": {
+      "title": "Фільтри",
+      "status": "Статус",
+      "year": "Рік",
+      "reset": "Скинути фільтри",
+      "clear_all": "Очистити все"
+    },
+    "list": {
+      "title": "Розрахункові періоди",
+      "createButton": "Створити розрахунковий період",
+      "filterByStatus": "Фільтрувати за статусом",
+      "filterByYear": "Фільтрувати за роком",
+      "reset": "Скинути фільтри",
+      "columns": {
+        "periodLabel": "Період",
+        "startDate": "Дата початку",
+        "endDate": "Дата закінчення",
+        "duration": "Тривалість",
+        "status": "Статус",
+        "closedAt": "Закрито",
+        "closedBy": "Закрив",
+        "actions": "Дії"
+      },
+      "viewDetails": "Переглянути деталі",
+      "closePeriod": "Закрити період",
+      "noRecords": "Розрахункові періоди не знайдено",
+      "days": "днів"
+    },
+    "detail": {
+      "title": "Деталі розрахункового періоду",
+      "backToList": "Повернутися до розрахункових періодів",
+      "overview": "Огляд періоду",
+      "closureInfo": "Інформація про закриття",
+      "metadata": "Метадані",
+      "periodLabel": "Позначення періоду",
+      "status": "Статус",
+      "startDate": "Дата початку",
+      "endDate": "Дата закінчення",
+      "duration": "Тривалість",
+      "days": "днів",
+      "closedAt": "Закрито",
+      "closedBy": "Закрив",
+      "notes": "Примітки",
+      "createdAt": "Створено",
+      "createdBy": "Створив",
+      "modifiedAt": "Змінено",
+      "modifiedBy": "Змінив",
+      "closePeriod": "Закрити розрахунковий період",
+      "notFound": "Розрахунковий період не знайдено"
+    },
+    "status": {
+      "open": "Відкритий",
+      "closed": "Закритий",
+      "paid": "Оплачений",
+      "unknown": "Невідомий"
+    },
+    "messages": {
+      "loadError": "Не вдалося завантажити розрахункові періоди",
+      "loadDetailError": "Не вдалося завантажити деталі розрахункового періоду",
+      "closeSuccess": "Розрахунковий період успішно закрито",
+      "closeError": "Не вдалося закрити розрахунковий період"
+    }
+  },
+  "orders": {
+    "title": "Управління замовленнями",
+    "list": "Всі замовлення",
+    "assign": "Призначити замовлення"
+  },
+  "invoices": {
+    "title": "Управління рахунками",
+    "list": "Всі рахунки",
+    "pending": "Очікують схвалення",
+    "approved": "Схвалені",
+    "cancelled": "Скасовані"
+  },
+  "errors": {
+    "auth": {
+      "google_type_error": "Помилка типу автентифікації Google",
+      "internal_type_error": "Помилка типу внутрішньої автентифікації",
+      "invalid_confirmation_code": "Недійсний код підтвердження",
+      "invalid_google_token": "Недійсний токен Google",
+      "invalid_password_format": "Недійсний формат пароля. Пароль повинен містити щонайменше 8 символів, включаючи принаймні одну велику літеру, одну малу літеру та одну цифру.",
+      "invalid_reset_token": "Недійсний або прострочений токен скидання пароля",
+      "same_reset_password": "Новий пароль повинен відрізнятися від поточного пароля"
+    },
+    "common": {
+      "invalid_enum_value": "Надано недійсне значення",
+      "max_length": "Перевищено максимальну довжину",
+      "required": "Це поле є обов'язковим",
+      "unauthorized": "У вас немає дозволу на виконання цієї дії",
+      "error_occurred": "Виникла помилка. Будь ласка, спробуйте ще раз."
+    },
+    "company": {
+      "not_found": "Інформацію про компанію не знайдено",
+      "exists_for_country": "Інформація про компанію для цієї країни вже існує",
+      "in_use": "Неможливо видалити компанію, оскільки вона зараз використовується"
+    },
+    "country": {
+      "not_existing_id": "Країну не знайдено",
+      "not_found": "Країну не знайдено",
+      "iso_code_already_exists": "Країна з таким ISO кодом вже існує",
+      "in_use": "Неможливо видалити країну, оскільки вона використовується працівниками, шаблонами або іншими сутностями"
+    },
+    "currency": {
+      "invalid": "Недійсна валюта",
+      "not_found": "Валюту не знайдено",
+      "code_already_exists": "Валюта з таким кодом вже існує",
+      "in_use": "Неможливо видалити валюту, оскільки вона зараз використовується",
+      "cannot_delete_default": "Неможливо видалити валюту за замовчуванням",
+      "exchange_rate_must_be_positive": "Обмінний курс повинен бути додатним числом"
+    },
+    "dispute": {
+      "already_exists": "Суперечка для цього замовлення вже існує",
+      "invalid_refund_amount": "Недійсна сума повернення",
+      "max_length_exceeded": "Перевищено максимальну довжину",
+      "not_found": "Суперечку не знайдено"
+    },
+    "email": {
+      "invalid_format": "Недійсний формат електронної пошти",
+      "invalid_email": "Недійсна адреса електронної пошти",
+      "sending_failed": "Не вдалося надіслати електронний лист"
+    },
+    "employee": {
+      "already_approved": "Працівника вже схвалено",
+      "already_rejected": "Працівника вже відхилено",
+      "documents_missing": "Відсутні необхідні документи",
+      "not_allowed_to_update": "У вас немає дозволу на оновлення цього працівника",
+      "not_existing_email": "Працівника з такою електронною поштою не знайдено",
+      "not_found": "Працівника не знайдено",
+      "profile_incomplete": "Профіль працівника неповний"
+    },
+    "employee_document": {
+      "not_found": "Документ не знайдено",
+      "not_owned": "Ви можете отримати доступ лише до власних документів",
+      "unauthorized": "У вас немає дозволу на доступ до цього документа"
+    },
+    "file": {
+      "content_type_doesnt_match": "Тип вмісту файлу не збігається",
+      "count_exceeded": "Завантажено забагато файлів",
+      "count_too_few": "Завантажено недостатньо файлів",
+      "invalid_file_type": "Недійсний тип файлу",
+      "required": "Файл є обов'язковим",
+      "size_exceeded": "Розмір файлу перевищив максимально допустимий розмір"
+    },
+    "general": {
+      "not_found": "Ресурс не знайдено"
+    },
+    "service": {
+      "not_found": "Послугу не знайдено",
+      "in_use": "Неможливо видалити послугу, оскільки вона зараз використовується",
+      "translations_required": "Переклади є обов'язковими для всіх підтримуваних мов",
+      "missing_translation_for_language": "Відсутній переклад для обов'язкової мови"
+    },
+    "language": {
+      "not_found": "Мову не знайдено",
+      "not_supported": "Мова не підтримується",
+      "code_already_exists": "Мова з таким кодом вже існує",
+      "in_use": "Неможливо видалити мову, оскільки вона використовується іншими сутностями (користувачі, шаблони, квитанції тощо)"
+    },
+    "order": {
+      "not_confirmed": "Замовлення не підтверджено",
+      "after_photos": {
+        "required": "Фотографії після виконання є обов'язковими для завершення замовлення"
+      },
+      "actual_time": {
+        "positive": "Фактичний час повинен бути додатним"
+      },
+      "already_assigned": "Замовлення вже призначено",
+      "cleaning_date": {
+        "future": "Дата прибирання повинна бути в майбутньому"
+      },
+      "completion_notes": {
+        "required": "Примітки до завершення є обов'язковими",
+        "too_long": "Примітки до завершення занадто довгі"
+      },
+      "creation_failed": "Не вдалося створити замовлення",
+      "employee_already_assigned": "Працівника вже призначено до цього замовлення",
+      "employee_not_assigned": "Працівника не призначено до цього замовлення",
+      "empty": "Замовлення порожнє",
+      "max_employees_exceeded": "Перевищено максимальну кількість працівників",
+      "no_available_spots": "Для цього замовлення немає вільних місць",
+      "not_found": "Замовлення не знайдено",
+      "not_in_progress": "Замовлення не в процесі виконання",
+      "payment_gateway_unavailable": "Платіжний шлюз недоступний",
+      "selected_package": {
+        "invalid": "Обраний пакет є недійсним"
+      },
+      "selected_services": {
+        "invalid": "Обрані послуги є недійсними"
+      },
+      "total_price": {
+        "not_match": "Загальна вартість не збігається",
+        "positive": "Загальна вартість повинна бути додатною"
+      }
+    },
+    "package": {
+      "not_found": "Пакет не знайдено",
+      "in_use": "Неможливо видалити пакет, оскільки він зараз використовується"
+    },
+    "pay_config": {
+      "already_exists": "Конфігурація оплати вже існує",
+      "base_pay_negative": "Базова оплата не може бути від'ємною",
+      "cannot_have_both": "Неможливо мати одночасно послугу та пакет",
+      "distance_rate_negative": "Ставка за відстань не може бути від'ємною",
+      "extra_per_bathroom_negative": "Доплата за ванну кімнату не може бути від'ємною",
+      "extra_per_room_negative": "Доплата за кімнату не може бути від'ємною",
+      "has_order_pays": "Неможливо видалити конфігурацію оплати, яка має пов'язані оплати за замовлення",
+      "maximum_less_than_minimum": "Максимальна оплата не може бути меншою за мінімальну оплату",
+      "maximum_pay_negative": "Максимальна оплата не може бути від'ємною",
+      "minimum_pay_negative": "Мінімальна оплата не може бути від'ємною",
+      "not_found": "Конфігурацію оплати не знайдено",
+      "service_or_package_required": "Потрібна послуга або пакет"
+    },
+    "pay_period": {
+      "has_order_pays": "Неможливо видалити розрахунковий період, який має пов'язані оплати за замовлення",
+      "invalid_duration": "Недійсна тривалість розрахункового періоду",
+      "not_closed": "Розрахунковий період не закрито",
+      "overlapping_period": "Розрахунковий період перетинається з існуючим періодом"
+    },
+    "payroll": {
+      "employee_not_assigned": "Працівника не призначено до цього замовлення",
+      "invoice": {
+        "already_cancelled": "Рахунок вже скасовано",
+        "already_exists": "Рахунок вже існує",
+        "cannot_cancel_paid": "Неможливо скасувати оплачений рахунок",
+        "invalid_status": "Недійсний статус рахунку",
+        "not_found": "Рахунок не знайдено",
+        "pdf_generation_failed": "Не вдалося згенерувати PDF",
+        "template_not_found": "Шаблон рахунку не знайдено"
+      },
+      "no_active_period": "Активний розрахунковий період не знайдено",
+      "no_currency": "Валюту не знайдено",
+      "no_pay_configuration": "Конфігурацію оплати не знайдено",
+      "no_unpaid_order_pays": "Неоплачені оплати за замовлення не знайдено",
+      "pay": {
+        "already_calculated": "Оплату вже розраховано"
+      },
+      "pay_period": {
+        "not_found": "Розрахунковий період не знайдено",
+        "not_open": "Розрахунковий період не відкрито"
+      },
+      "unpaid_invoices_exist": "Існують неоплачені рахунки"
+    },
+    "receipt": {
+      "generation_failed": "Не вдалося згенерувати квитанцію",
+      "not_found": "Квитанцію не знайдено"
+    },
+    "user": {
+      "email_confirmed": "Електронну пошту вже підтверджено",
+      "existing_email": "Електронна пошта вже існує",
+      "existing_phone_number": "Номер телефону вже існує",
+      "not_allowed_to_update": "У вас немає дозволу на оновлення цього користувача",
+      "not_existing_email": "Користувача з такою електронною поштою не знайдено",
+      "not_existing_id": "Користувача не знайдено",
+      "not_found": "Користувача не знайдено"
+    },
+    "admin_user": {
+      "not_found": "Адміністратора не знайдено",
+      "email_exists": "Адміністратор з такою електронною поштою вже існує",
+      "cannot_deactivate_self": "Ви не можете деактивувати власний обліковий запис",
+      "cannot_delete_self": "Ви не можете видалити власний обліковий запис"
+    },
+    "template": {
+      "cannot_delete_active": "Неможливо видалити активний шаблон",
+      "invalid_file_type": "Недійсний тип файлу шаблону",
+      "file_size_exceeded": "Перевищено розмір файлу шаблону",
+      "file_required": "Файл шаблону є обов'язковим",
+      "invoice": {
+        "not_found": "Шаблон рахунку не знайдено",
+        "in_use": "Неможливо видалити шаблон рахунку, оскільки він зараз використовується"
+      },
+      "receipt": {
+        "not_found": "Шаблон квитанції не знайдено",
+        "in_use": "Неможливо видалити шаблон квитанції, оскільки він зараз використовується"
+      },
+      "email": {
+        "not_found": "Шаблон електронного листа не знайдено",
+        "key_exists": "Переклад з таким ключем вже існує",
+        "invalid_type": "Недійсний тип шаблону електронного листа"
+      }
+    },
+    "validation": {
+      "must_be_positive": "Значення повинно бути додатним",
+      "date_must_be_in_past": "Дата повинна бути в минулому",
+      "invalid_age": "Недійсний вік",
+      "invalid_date": "Недійсна дата",
+      "invalid_iban": "Недійсний формат IBAN",
+      "invalid_national_id": "Недійсний формат національного посвідчення",
+      "invalid_password": "Недійсний пароль",
+      "invalid_phone_number": "Недійсний формат номера телефону",
+      "invalid_tax_id": "Недійсний формат ідентифікаційного коду",
+      "invalid_zip_code": "Недійсний формат поштового індексу"
+    },
+    "address": {
+      "invalid_length": "Недійсна довжина адреси"
+    }
+  },
+  "validation": {
+    "common": {
+      "not_all_fields_filled": "Не всі поля заповнено правильно",
+      "required": "Це поле є обов'язковим",
+      "email": "Поле повинно містити дійсну адресу електронної пошти",
+      "min_length": "Поле повинно містити щонайменше {{ minLength }} символів",
+      "max_length": "Поле може містити максимум {{ maxLength }} символів",
+      "pattern": "Поле не відповідає необхідному формату",
+      "phone_number": "Недійсний формат номера телефону",
+      "iban": "Недійсний формат IBAN",
+      "zip_code": "Недійсний формат поштового індексу",
+      "confirm_password": "Паролі не збігаються"
+    },
+    "auth": {
+      "email_not_confirmed": "Адресу електронної пошти не підтверджено",
+      "admin_access_required": "Для доступу до цієї панелі потрібні права адміністратора",
+      "login_failed": "Вхід не вдався. Будь ласка, перевірте свої облікові дані та спробуйте ще раз."
+    },
+    "file": {
+      "required": "Файли є обов'язковими",
+      "invalid_type": "Недійсний тип файлу. Будь ласка, оберіть дійсний файл документа.",
+      "size_too_large": "Файл занадто великий. Максимально допустимий розмір — {{ maxSize }}МБ.",
+      "too_few_files": "Обрано занадто мало файлів. Мінімальна кількість: {{ min }}",
+      "too_many_files": "Обрано занадто багато файлів. Максимальна кількість: {{ max }}",
+      "generic_error": "Виникла помилка перевірки файлу"
+    },
+    "password": {
+      "uppercase": "принаймні одна велика літера",
+      "lowercase": "принаймні одна мала літера",
+      "number": "принаймні одна цифра",
+      "special_char": "принаймні один спеціальний символ",
+      "min_length": "мінімум 8 символів",
+      "requirements": "Пароль повинен містити: {{ requirements }}"
+    }
+  },
+  "api": {
+    "auth": {
+      "google_type_error": "Помилка типу автентифікації Google",
+      "internal_type_error": "Помилка типу внутрішньої автентифікації",
+      "invalid_confirmation_code": "Недійсний код підтвердження",
+      "invalid_google_token": "Недійсний токен Google",
+      "invalid_password_format": "Недійсний формат пароля. Пароль повинен містити щонайменше 8 символів, включаючи принаймні одну велику літеру, одну малу літеру та одну цифру.",
+      "invalid_reset_token": "Недійсний або прострочений токен скидання пароля",
+      "same_reset_password": "Новий пароль повинен відрізнятися від поточного пароля",
+      "insufficient_privileges": "У вас немає дозволу на доступ до панелі адміністратора. Входити можуть лише адміністратори та працівники."
+    },
+    "common": {
+      "invalid_enum_value": "Надано недійсне значення",
+      "max_length": "Перевищено максимальну довжину",
+      "required": "Це поле є обов'язковим",
+      "unauthorized": "У вас немає дозволу на виконання цієї дії",
+      "error_occurred": "Виникла помилка. Будь ласка, спробуйте ще раз."
+    },
+    "currency": {
+      "invalid": "Недійсна валюта",
+      "not_found": "Валюту не знайдено",
+      "code_already_exists": "Валюта з таким кодом вже існує",
+      "in_use": "Неможливо видалити валюту, оскільки вона зараз використовується",
+      "cannot_delete_default": "Неможливо видалити валюту за замовчуванням",
+      "exchange_rate_must_be_positive": "Обмінний курс повинен бути додатним числом"
+    },
+    "email": {
+      "sending_failed": "Не вдалося надіслати електронний лист",
+      "invalid_format": "Недійсний формат електронної пошти",
+      "invalid_email": "Недійсна адреса електронної пошти"
+    },
+    "order": {
+      "cleaning_date": {
+        "future": "Дата прибирання повинна бути в майбутньому"
+      },
+      "empty": "Замовлення порожнє",
+      "selected_package": {
+        "invalid": "Обраний пакет є недійсним"
+      },
+      "selected_services": {
+        "invalid": "Обрані послуги є недійсними"
+      },
+      "total_price": {
+        "positive": "Загальна вартість повинна бути додатною",
+        "not_match": "Загальна вартість не збігається"
+      },
+      "not_found": "Замовлення не знайдено",
+      "already_assigned": "Замовлення вже призначено",
+      "no_available_spots": "Для цього замовлення немає вільних місць",
+      "employee_already_assigned": "Працівника вже призначено до цього замовлення",
+      "employee_not_assigned": "Працівника не призначено до цього замовлення",
+      "max_employees_exceeded": "Перевищено максимальну кількість працівників",
+      "not_in_progress": "Замовлення не в процесі виконання",
+      "not_confirmed": "Замовлення не підтверджено",
+      "actual_time": {
+        "positive": "Фактичний час повинен бути додатним"
+      },
+      "completion_notes": {
+        "required": "Примітки до завершення є обов'язковими",
+        "too_long": "Примітки до завершення занадто довгі"
+      },
+      "after_photos": {
+        "required": "Фотографії після виконання є обов'язковими для завершення замовлення"
+      },
+      "payment_gateway_unavailable": "Платіжний шлюз недоступний",
+      "creation_failed": "Не вдалося створити замовлення"
+    },
+    "user": {
+      "email_confirmed": "Електронну пошту вже підтверджено",
+      "existing_email": "Електронна пошта вже існує",
+      "not_existing_email": "Користувача з такою електронною поштою не знайдено",
+      "not_existing_id": "Користувача не знайдено",
+      "not_allowed_to_update": "У вас немає дозволу на оновлення цього користувача",
+      "existing_phone_number": "Номер телефону вже існує",
+      "not_found": "Користувача не знайдено"
+    },
+    "employee": {
+      "not_found": "Працівника не знайдено",
+      "not_existing_email": "Працівника з такою електронною поштою не знайдено",
+      "not_allowed_to_update": "У вас немає дозволу на оновлення цього працівника",
+      "profile_incomplete": "Профіль працівника неповний",
+      "documents_missing": "Відсутні необхідні документи",
+      "already_approved": "Працівника вже схвалено",
+      "already_rejected": "Працівника вже відхилено"
+    },
+    "employee_document": {
+      "not_found": "Документ не знайдено",
+      "unauthorized": "У вас немає дозволу на доступ до цього документа",
+      "not_owned": "Ви можете отримати доступ лише до власних документів"
+    },
+    "payroll": {
+      "pay_period": {
+        "not_found": "Розрахунковий період не знайдено",
+        "not_open": "Розрахунковий період не відкрито"
+      },
+      "invoice": {
+        "not_found": "Рахунок не знайдено",
+        "invalid_status": "Недійсний статус рахунку",
+        "already_exists": "Рахунок вже існує",
+        "pdf_generation_failed": "Не вдалося згенерувати PDF",
+        "template_not_found": "Шаблон рахунку не знайдено",
+        "cannot_cancel_paid": "Неможливо скасувати оплачений рахунок",
+        "already_cancelled": "Рахунок вже скасовано"
+      },
+      "unpaid_invoices_exist": "Існують неоплачені рахунки",
+      "pay": {
+        "already_calculated": "Оплату вже розраховано"
+      },
+      "no_unpaid_order_pays": "Неоплачені оплати за замовлення не знайдено",
+      "no_active_period": "Активний розрахунковий період не знайдено",
+      "no_pay_configuration": "Конфігурацію оплати не знайдено",
+      "no_currency": "Валюту не знайдено",
+      "employee_not_assigned": "Працівника не призначено до цього замовлення"
+    },
+    "receipt": {
+      "not_found": "Квитанцію не знайдено",
+      "generation_failed": "Не вдалося згенерувати квитанцію"
+    },
+    "pay_period": {
+      "invalid_duration": "Недійсна тривалість розрахункового періоду",
+      "overlapping_period": "Розрахунковий період перетинається з існуючим періодом",
+      "has_order_pays": "Неможливо видалити розрахунковий період, який має пов'язані оплати за замовлення",
+      "not_closed": "Розрахунковий період не закрито"
+    },
+    "pay_config": {
+      "service_or_package_required": "Потрібна послуга або пакет",
+      "cannot_have_both": "Неможливо мати одночасно послугу та пакет",
+      "already_exists": "Конфігурація оплати вже існує",
+      "not_found": "Конфігурацію оплати не знайдено",
+      "has_order_pays": "Неможливо видалити конфігурацію оплати, яка має пов'язані оплати за замовлення",
+      "base_pay_negative": "Базова оплата не може бути від'ємною",
+      "extra_per_room_negative": "Доплата за кімнату не може бути від'ємною",
+      "extra_per_bathroom_negative": "Доплата за ванну кімнату не може бути від'ємною",
+      "distance_rate_negative": "Ставка за відстань не може бути від'ємною",
+      "minimum_pay_negative": "Мінімальна оплата не може бути від'ємною",
+      "maximum_pay_negative": "Максимальна оплата не може бути від'ємною",
+      "maximum_less_than_minimum": "Максимальна оплата не може бути меншою за мінімальну оплату"
+    },
+    "file": {
+      "content_type_doesnt_match": "Тип вмісту файлу не збігається",
+      "invalid_file_type": "Недійсний тип файлу",
+      "size_exceeded": "Розмір файлу перевищив максимально допустимий розмір",
+      "count_exceeded": "Завантажено забагато файлів",
+      "count_too_few": "Завантажено недостатньо файлів",
+      "required": "Файл є обов'язковим",
+      "size_exceeded_10mb": "Розмір файлу не повинен перевищувати 10 МБ",
+      "type_not_allowed": "Тип файлу не дозволений. Прийнятні: PDF, JPEG, PNG, DOC, DOCX"
+    },
+    "address": {
+      "invalid_length": "Недійсна довжина адреси"
+    },
+    "language": {
+      "not_supported": "Мова не підтримується",
+      "not_found": "Мову не знайдено",
+      "code_already_exists": "Мова з таким кодом вже існує",
+      "in_use": "Неможливо видалити мову, оскільки вона зараз використовується"
+    },
+    "country": {
+      "not_existing_id": "Країну не знайдено",
+      "not_found": "Країну не знайдено",
+      "iso_code_already_exists": "Країна з таким ISO кодом вже існує",
+      "in_use": "Неможливо видалити країну, оскільки вона зараз використовується"
+    },
+    "company": {
+      "not_found": "Інформацію про компанію не знайдено",
+      "exists_for_country": "Інформація про компанію для цієї країни вже існує",
+      "in_use": "Неможливо видалити компанію, оскільки вона зараз використовується"
+    },
+    "dispute": {
+      "not_found": "Суперечку не знайдено",
+      "already_exists": "Суперечка для цього замовлення вже існує",
+      "invalid_refund_amount": "Недійсна сума повернення",
+      "max_length_exceeded": "Перевищено максимальну довжину"
+    },
+    "admin_user": {
+      "not_found": "Адміністратора не знайдено",
+      "email_exists": "Адміністратор з такою електронною поштою вже існує",
+      "cannot_deactivate_self": "Ви не можете деактивувати власний обліковий запис",
+      "cannot_delete_self": "Ви не можете видалити власний обліковий запис"
+    },
+    "validation": {
+      "invalid_password": "Недійсний пароль",
+      "invalid_date": "Недійсна дата",
+      "date_must_be_in_past": "Дата повинна бути в минулому",
+      "invalid_age": "Недійсний вік",
+      "invalid_phone_number": "Недійсний формат номера телефону",
+      "invalid_national_id": "Недійсний формат національного посвідчення",
+      "invalid_tax_id": "Недійсний формат ідентифікаційного коду",
+      "invalid_iban": "Недійсний формат IBAN",
+      "invalid_zip_code": "Недійсний формат поштового індексу",
+      "must_be_positive": "Значення повинно бути додатним",
+      "invalid_availability_format": "Недійсний формат доступності. Дні повинні бути дійсними назвами днів або датами (yyyy-MM-dd), а часові діапазони повинні мати початок раніше за кінець.",
+      "page_must_be_positive": "Сторінка повинна бути більшою за 0",
+      "page_size_must_be_positive": "Розмір сторінки повинен бути більшим за 0",
+      "page_size_exceeded": "Розмір сторінки не може перевищувати 100",
+      "invalid_contract_status": "Недійсне значення статусу контракту"
+    },
+    "service": {
+      "not_found": "Послугу не знайдено",
+      "in_use": "Неможливо видалити послугу, оскільки вона зараз використовується",
+      "translations_required": "Переклади є обов'язковими для всіх підтримуваних мов",
+      "missing_translation_for_language": "Відсутній переклад для обов'язкової мови"
+    },
+    "package": {
+      "not_found": "Пакет не знайдено",
+      "in_use": "Неможливо видалити пакет, оскільки він зараз використовується"
+    },
+    "general": {
+      "not_found": "Ресурс не знайдено"
+    },
+    "device": {
+      "invalid_platform": "Платформа повинна бути 'android' або 'ios'"
+    },
+    "payment": {
+      "json_payload_required": "JSON-дані є обов'язковими",
+      "stripe_signature_required": "Заголовок підпису Stripe є обов'язковим"
+    },
+    "template": {
+      "cannot_delete_active": "Неможливо видалити активний шаблон",
+      "invalid_file_type": "Недійсний тип файлу шаблону",
+      "file_size_exceeded": "Перевищено розмір файлу шаблону",
+      "file_required": "Файл шаблону є обов'язковим",
+      "invoice": {
+        "not_found": "Шаблон рахунку не знайдено",
+        "in_use": "Неможливо видалити шаблон рахунку, оскільки він зараз використовується"
+      },
+      "receipt": {
+        "not_found": "Шаблон квитанції не знайдено",
+        "in_use": "Неможливо видалити шаблон квитанції, оскільки він зараз використовується"
+      },
+      "email": {
+        "not_found": "Шаблон електронного листа не знайдено",
+        "key_exists": "Переклад з таким ключем вже існує",
+        "invalid_type": "Недійсний тип шаблону електронного листа"
+      }
+    }
+  },
+  "cookies": {
+    "title": "Ми цінуємо вашу конфіденційність",
+    "description": "Ми використовуємо файли cookie для покращення вашого досвіду перегляду, надання персоналізованого контенту та аналізу трафіку. Натискаючи \"Прийняти\", ви погоджуєтесь на використання файлів cookie.",
+    "accept": "Прийняти все",
+    "decline": "Відхилити",
+    "learn_more": "Дізнатися більше",
+    "banner_title": "Банер згоди на файли cookie"
+  }
+}

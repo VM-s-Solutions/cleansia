@@ -1,8 +1,8 @@
 export const environment = {
-  apiHost: 'localhost',
-  apiPort: '5003',
-  apiProtocol: 'http',
-  apiBaseUrl: 'http://localhost:5003',
+  apiHost: 'api-customer.cleansia.cz',
+  apiPort: '443',
+  apiProtocol: 'https',
+  apiBaseUrl: 'https://api-customer.cleansia.cz',
   blobStorageUrl: '',
   googleClientId: '',
   isDevelopment: false,

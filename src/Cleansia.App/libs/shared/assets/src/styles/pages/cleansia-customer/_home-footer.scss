@@ -1,11 +1,161 @@
 @use './home-variables' as *;
 
 // =============================
-// Footer (LIGHT background — newsletter overlaps from above)
+// Newsletter (overlays footer from above)
+// =============================
+.cl-newsletter-wrap {
+  position: relative;
+  z-index: 5;
+  max-width: $max-width;
+  margin: 0 auto;
+  padding: 0 2rem;
+  transform: translateY(-30%);
+}
+
+.cl-newsletter {
+  border-radius: $radius-xl;
+  background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
+  box-shadow: 0 16px 48px rgba($primary-darker, 0.25);
+  position: relative;
+  overflow: hidden;
+  padding: 2.5rem 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+
+  &__mascot {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 200px;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 2;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: -20px;
+      bottom: -20px;
+      width: 220px;
+      height: 220px;
+      background: $white;
+      z-index: -1;
+      opacity: 0.95;
+    }
+
+    img {
+      width: 150px;
+      height: auto;
+      display: block;
+      position: relative;
+      z-index: 1;
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  &__content {
+    width: 100%;
+    color: $white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+
+    h3 {
+      font-family: $font-heading;
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+    }
+
+    p {
+      font-size: 0.88rem;
+      color: rgba($white, 0.8);
+      margin: 0 0 1.5rem;
+    }
+  }
+
+  &__form {
+    display: flex;
+    gap: 0.75rem;
+    max-width: 420px;
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  &__input {
+    flex: 1;
+    min-width: 180px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba($white, 0.15);
+    border: 2px solid rgba($white, 0.25);
+    border-radius: 2rem;
+    padding: 0 1rem;
+    transition: border-color 0.3s, background 0.3s;
+
+    &:focus-within {
+      border-color: rgba($white, 0.5);
+      background: rgba($white, 0.22);
+    }
+
+    i {
+      color: rgba($white, 0.6);
+      font-size: 0.9rem;
+    }
+
+    input {
+      flex: 1;
+      padding: 0.7rem 0;
+      border: none;
+      background: transparent;
+      color: $white;
+      font-size: 0.9rem;
+      outline: none;
+      &::placeholder {
+        color: rgba($white, 0.45);
+      }
+    }
+  }
+
+  &__note {
+    display: block;
+    margin-top: 1rem;
+    font-size: 0.75rem;
+    color: rgba($white, 0.5);
+    text-align: center;
+    a {
+      color: rgba($white, 0.75);
+      text-decoration: underline;
+    }
+  }
+}
+
+// =============================
+// Button override
+// =============================
+.cl-btn-primary {
+  box-shadow: 0 4px 14px rgba($primary, 0.3);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba($primary, 0.4);
+  }
+}
+
+// =============================
+// Footer
 // =============================
 .cl-footer {
-  background: $white;
-  color: $text-body;
+  background: var(--surface-card);
+  color: var(--text-color);
   position: relative;
   z-index: 1;
 
@@ -29,7 +179,7 @@
 
     &-desc {
       font-size: 0.9rem;
-      color: $text-muted;
+      color: var(--text-color-secondary);
       line-height: 1.7;
       margin-bottom: 1rem !important;
     }
@@ -43,12 +193,12 @@
       width: 40px;
       height: 40px;
       border-radius: 50%;
-      background: $bg-alt;
-      border: 1px solid $border;
+      background: var(--surface-ground);
+      border: 1px solid var(--surface-border);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: $text-muted;
+      color: var(--text-color-secondary);
       text-decoration: none;
       transition: all 0.3s;
 
@@ -73,7 +223,7 @@
       font-family: $font-heading;
       font-size: 0.82rem;
       font-weight: 700;
-      color: $text-dark;
+      color: var(--text-color);
       margin: 0 0 2rem;
       text-transform: uppercase;
       letter-spacing: 0.1em;
@@ -87,7 +237,7 @@
       li {
         margin-bottom: 0.8rem;
         a {
-          color: $text-muted;
+          color: var(--text-color-secondary);
           text-decoration: none;
           font-size: 0.9rem;
           transition: color 0.3s;
@@ -110,7 +260,7 @@
     align-items: center;
     gap: 0.6rem;
     margin-bottom: 0.8rem;
-    color: $text-muted;
+    color: var(--text-color-secondary);
     font-size: 0.9rem;
 
     i {
@@ -121,7 +271,7 @@
     }
 
     a {
-      color: $text-muted;
+      color: var(--text-color-secondary);
       text-decoration: none;
       transition: color 0.3s;
       &:hover {
@@ -131,7 +281,7 @@
   }
 
   &__bottom {
-    border-top: 1px solid $border;
+    border-top: 1px solid var(--surface-border);
     padding: 1.25rem 2rem;
     display: flex;
     justify-content: space-between;
@@ -141,13 +291,13 @@
     flex-wrap: wrap;
     gap: 0.75rem;
     font-size: 0.85rem;
-    color: $text-light;
+    color: var(--text-color-secondary);
 
     &-links {
       display: flex;
       gap: 1.5rem;
       a {
-        color: $text-light;
+        color: var(--text-color-secondary);
         text-decoration: none;
         transition: color 0.3s;
         &:hover {
@@ -159,9 +309,35 @@
 }
 
 // =============================
-// Responsive — Footer
+// Responsive
 // =============================
 @media (max-width: 768px) {
+  .cl-newsletter-wrap {
+    padding: 0 1rem;
+  }
+
+  .cl-newsletter {
+    border-radius: $radius-lg;
+    padding: 1.5rem;
+
+    &__mascot {
+      position: static;
+      width: auto;
+      height: auto;
+      justify-content: center;
+      margin-bottom: 0.5rem;
+
+      &::before {
+        display: none;
+      }
+
+      img {
+        width: 100px;
+        margin-bottom: 0;
+      }
+    }
+  }
+
   .cl-footer {
     &__body {
       padding-top: 1rem;
@@ -174,6 +350,89 @@
     &__bottom {
       flex-direction: column;
       text-align: center;
+    }
+  }
+}
+
+// =============================
+// Dark Mode
+// =============================
+:root.dark-mode {
+  .cl-newsletter {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    border: 1px solid #334155;
+
+    &__mascot::before {
+      background: #334155;
+      opacity: 0.8;
+    }
+
+    &__content {
+      h3 {
+        color: #e2e8f0;
+      }
+
+      p {
+        color: #94a3b8;
+      }
+    }
+
+    &__input {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: #334155;
+
+      &:focus-within {
+        border-color: #38bdf8;
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      i {
+        color: #64748b;
+      }
+
+      input {
+        color: #e2e8f0;
+        &::placeholder {
+          color: #64748b;
+        }
+      }
+    }
+
+    &__note {
+      color: #64748b;
+      a {
+        color: #94a3b8;
+      }
+    }
+
+    .cl-btn-primary {
+      background: #38bdf8;
+      border-color: #38bdf8;
+      box-shadow: 0 4px 14px rgba(56, 189, 248, 0.25);
+
+      &:hover {
+        background: #0ea5e9;
+        border-color: #0ea5e9;
+        box-shadow: 0 6px 20px rgba(56, 189, 248, 0.35);
+      }
+    }
+  }
+
+  .cl-footer {
+    &__socials a:hover {
+      background: #38bdf8;
+      border-color: #38bdf8;
+    }
+
+    &__col ul li a:hover,
+    &__contact a:hover,
+    &__bottom-links a:hover {
+      color: #38bdf8;
+    }
+
+    &__contact i {
+      color: #38bdf8;
     }
   }
 }

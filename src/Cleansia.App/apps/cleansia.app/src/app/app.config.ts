@@ -18,7 +18,7 @@ import {
 } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { provideRouter, Router } from '@angular/router';
+import { provideRouter, Router, withInMemoryScrolling } from '@angular/router';
 import { CleansiaPreset } from '@cleansia/assets';
 import {
   CUSTOMER_API_BASE_URL,
@@ -46,10 +46,10 @@ registerLocaleData(localePl);
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(appRoutes),
+    provideRouter(appRoutes, withInMemoryScrolling({ scrollPositionRestoration: 'top' })),
     provideAnimationsAsync(),
     providePrimeNG({
-      theme: { preset: CleansiaPreset, options: { darkModeSelector: false } },
+      theme: { preset: CleansiaPreset, options: { darkModeSelector: '.dark-mode' } },
     }),
     importProvidersFrom(
       TranslateModule.forRoot({

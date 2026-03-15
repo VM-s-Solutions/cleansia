@@ -78,7 +78,14 @@
       "Bash(xargs grep -l \"CountryConfiguration\\\\|GetCountryConfiguration\")",
       "Bash(xargs grep -l \"FeatureFlag\\\\|IsFeatureEnabledAsync\")",
       "Bash(xargs grep -l \"class ApiController\")",
-      "WebFetch(domain:dribbble.com)"
+      "WebFetch(domain:dribbble.com)",
+      "Bash(grep -r \"background: rgba\\\\|background-color: rgba\" /c/Users/cmisa/Desktop/Mike/Projects/cleansia/src/Cleansia.App/libs/shared/assets/src/styles/pages/cleansia-customer/*.scss)",
+      "Bash(grep -r \"insert_seed_data\\\\|ExecuteScript\\\\|SeedData\" /c/Users/cmisa/Desktop/Mike/Projects/cleansia/src/Cleansia.Infra.Database/Migrations/ --include=*.cs)",
+      "Bash(xargs grep:*)",
+      "Bash(grep -r \"Cleansia.Infra.Scripts\" /c/Users/cmisa/Desktop/Mike/Projects/cleansia/src/Cleansia.Web*/)",
+      "Bash(grep -r \"InjectUserId\\\\|InjectUser\" c:UserscmisaDesktopMikeProjectscleansiasrc --include=*.cs)",
+      "Bash(grep -r \"IPipelineBehavior\\\\|PipelineBehavior\" c:UserscmisaDesktopMikeProjectscleansiasrc --include=*.cs)",
+      "Bash(grep -r \"request.UserId\\\\|command.UserId\" c:UserscmisaDesktopMikeProjectscleansiasrcCleansia.Core.AppServices --include=*.cs)"
     ],
     "deny": [],
     "ask": [],

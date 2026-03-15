@@ -1,6 +1,9 @@
 import { inject, Injectable, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
-import { CustomerAuthService, CustomerClient } from '@cleansia/customer-services';
+import {
+  CustomerAuthService,
+  CustomerClient,
+} from '@cleansia/customer-services';
 import {
   loadCustomerPackages,
   loadCustomerServices,
@@ -19,7 +22,11 @@ import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ORDER_WIZARD_INITIAL_DATA, OrderWizardFormData } from './order-wizard.models';
+import {
+  ORDER_WIZARD_INITIAL_DATA,
+  OrderWizardFormData,
+  RebookParams,
+} from './order-wizard.models';
 
 @Injectable()
 export class OrderWizardFacade {
@@ -32,9 +39,14 @@ export class OrderWizardFacade {
 
   isAuthenticated = signal(false);
 
-  services = toSignal(this.store.select(selectCustomerServices), { initialValue: [] as ServiceListItem[] });
-  packages = toSignal(this.store.select(selectCustomerPackages), { initialValue: [] as PackageListItem[] });
+  services = toSignal(this.store.select(selectCustomerServices), {
+    initialValue: [] as ServiceListItem[],
+  });
+  packages = toSignal(this.store.select(selectCustomerPackages), {
+    initialValue: [] as PackageListItem[],
+  });
   countries = signal<CountryListItem[]>([]);
+  savedAddresses = signal<{ id: string; street: string; city: string; zip: string; country: string; isDefault: boolean }[]>([]);
 
   activeStep = signal(0);
   formData = signal<OrderWizardFormData>({ ...ORDER_WIZARD_INITIAL_DATA });
@@ -48,6 +60,14 @@ export class OrderWizardFacade {
     'pages.order.steps.summary',
   ];
 
+  stepIcons = [
+    'pi pi-list',
+    'pi pi-map-marker',
+    'pi pi-calendar',
+    'pi pi-credit-card',
+    'pi pi-check-circle',
+  ];
+
   totalPrice = computed(() => {
     const data = this.formData();
     let total = 0;
@@ -57,7 +77,7 @@ export class OrderWizardFacade {
     for (const id of data.selectedServiceIds) {
       const svc = allServices.find((s) => s.id === id);
       if (svc) {
-        total += svc.basePrice + svc.perRoomPrice * data.rooms;
+        total += svc.basePrice + svc.perRoomPrice * (data.rooms + data.bathrooms);
       }
     }
     for (const id of data.selectedPackageIds) {
@@ -73,21 +93,67 @@ export class OrderWizardFacade {
     this.store.dispatch(loadCustomerServices());
     this.store.dispatch(loadCustomerPackages());
     this.customerClient.countryClient.getOverview().subscribe({
-      next: (countries) => this.countries.set(countries),
+      next: (countries) => {
+        this.countries.set(countries);
+        // Auto-select first country if address has no country set
+        if (countries.length > 0 && !this.formData().address.countryId) {
+          this.updateFormData({
+            address: new AddressDto({
+              ...this.formData().address,
+              countryId: countries[0].id ?? '',
+            }),
+          });
+        }
+      },
     });
 
     const loggedIn = this.authService.isLoggedIn();
     this.isAuthenticated.set(loggedIn);
 
+    // Load saved addresses from localStorage
+    try {
+      const stored = localStorage.getItem('cleansia_saved_addresses');
+      if (stored) {
+        this.savedAddresses.set(JSON.parse(stored));
+      }
+    } catch {
+      // ignore
+    }
+
     if (loggedIn) {
       this.customerClient.userClient.getCurrent().subscribe({
         next: (user) => {
           this.updateFormData({
-            customerName: `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim(),
+            customerFirstName: user.firstName ?? '',
+            customerLastName: user.lastName ?? '',
             customerEmail: user.email ?? '',
             customerPhone: user.phoneNumber ?? '',
           });
+
+          // Prefill with default saved address if address is still empty
+          const currentAddr = this.formData().address;
+          if (!currentAddr.street && !currentAddr.city) {
+            const defaultAddr = this.savedAddresses().find(a => a.isDefault);
+            if (defaultAddr) {
+              this.selectSavedAddress(defaultAddr.id);
+            }
+          }
         },
+      });
+    }
+  }
+
+  selectSavedAddress(addressId: string): void {
+    const addr = this.savedAddresses().find(a => a.id === addressId);
+    if (addr) {
+      this.updateFormData({
+        address: new AddressDto({
+          street: addr.street,
+          city: addr.city,
+          zipCode: addr.zip,
+          countryId: addr.country || '',
+          state: '',
+        }),
       });
     }
   }
@@ -96,36 +162,123 @@ export class OrderWizardFacade {
     this.formData.update((current) => ({ ...current, ...partial }));
   }
 
+  prefillFromRebook(params: RebookParams): string[] {
+    const availableServices = this.services();
+    const availablePackages = this.packages();
+
+    const availableServiceIds = availableServices.map((s) => s.id);
+    const availablePackageIds = availablePackages.map((p) => p.id);
+
+    const validServiceIds = params.selectedServiceIds.filter((id) =>
+      availableServiceIds.includes(id)
+    );
+    const validPackageIds = params.selectedPackageIds.filter((id) =>
+      availablePackageIds.includes(id)
+    );
+
+    const unavailableItems: string[] = [];
+    params.selectedServiceIds.forEach((id, i) => {
+      if (!availableServiceIds.includes(id)) {
+        unavailableItems.push(params.selectedServiceNames[i] || id);
+      }
+    });
+    params.selectedPackageIds.forEach((id, i) => {
+      if (!availablePackageIds.includes(id)) {
+        unavailableItems.push(params.selectedPackageNames[i] || id);
+      }
+    });
+
+    const update: Partial<OrderWizardFormData> = {
+      selectedServiceIds: validServiceIds,
+      selectedPackageIds: validPackageIds,
+      rooms: params.rooms,
+      bathrooms: params.bathrooms,
+    };
+
+    if (params.address) {
+      update.address = new AddressDto(params.address);
+    }
+
+    this.updateFormData(update);
+
+    return unavailableItems;
+  }
+
   nextStep(): void {
     if (this.activeStep() < this.steps.length - 1) {
       this.activeStep.update((s) => s + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
   prevStep(): void {
     if (this.activeStep() > 0) {
       this.activeStep.update((s) => s - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
   goToStep(step: number): void {
     if (step >= 0 && step < this.steps.length) {
       this.activeStep.set(step);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  }
+
+  private readonly emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  private readonly phoneRegex = /^[+]?[\d\s()-]{6,20}$/;
+  private readonly zipRegex = /^[\d\s-]{3,20}$/;
+
+  isSavedAddressSelected(): boolean {
+    const saved = this.savedAddresses();
+    if (saved.length === 0) return false;
+    const current = this.formData().address;
+    return saved.some(
+      (a) =>
+        a.street === current.street &&
+        a.city === current.city &&
+        a.zip === current.zipCode
+    );
   }
 
   canProceed(): boolean {
     const data = this.formData();
     switch (this.activeStep()) {
       case 0:
-        return data.selectedServiceIds.length > 0 || data.selectedPackageIds.length > 0;
+        return (
+          data.selectedServiceIds.length > 0 ||
+          data.selectedPackageIds.length > 0
+        );
       case 1: {
-        const addressValid = !!(data.address.street && data.address.city && data.address.zipCode);
-        if (!this.isAuthenticated()) {
-          const contactValid = !!(data.customerName && data.customerEmail && data.customerPhone);
-          return addressValid && contactValid;
-        }
-        return addressValid;
+        // Phone is always required
+        const phoneValid = !!(data.customerPhone && this.phoneRegex.test(data.customerPhone.replace(/\s/g, '')));
+
+        // If authenticated user selected a saved address, only require non-empty fields
+        const usingSaved = this.isAuthenticated() && this.isSavedAddressSelected();
+        const addressValid = usingSaved
+          ? !!(data.address.street && data.address.city && data.address.zipCode)
+          : !!(
+              data.address.street &&
+              data.address.street.length >= 5 &&
+              data.address.street.length <= 255 &&
+              data.address.city &&
+              data.address.city.length >= 2 &&
+              data.address.city.length <= 100 &&
+              data.address.zipCode &&
+              this.zipRegex.test(data.address.zipCode)
+            );
+        const contactValid = !!(
+          data.customerFirstName &&
+          data.customerFirstName.length >= 2 &&
+          data.customerFirstName.length <= 50 &&
+          data.customerLastName &&
+          data.customerLastName.length >= 2 &&
+          data.customerLastName.length <= 50 &&
+          data.customerEmail &&
+          this.emailRegex.test(data.customerEmail) &&
+          data.customerEmail.length <= 50
+        );
+        return addressValid && contactValid && phoneValid;
       }
       case 2:
         return !!data.cleaningDate;
@@ -142,12 +295,17 @@ export class OrderWizardFacade {
 
     this.submitting.set(true);
 
-    const cleaningDate = new Date(data.cleaningDate);
+    const selectedDate = new Date(data.cleaningDate);
     const [hours, minutes] = data.cleaningTime.split(':').map(Number);
-    cleaningDate.setHours(hours, minutes, 0, 0);
+    const cleaningDate = new Date(Date.UTC(
+      selectedDate.getFullYear(),
+      selectedDate.getMonth(),
+      selectedDate.getDate(),
+      hours, minutes, 0, 0
+    ));
 
     const command = new CreateOrderCommand({
-      customerName: data.customerName,
+      customerName: `${data.customerFirstName} ${data.customerLastName}`.trim(),
       customerEmail: data.customerEmail,
       customerPhone: data.customerPhone,
       customerAddress: new AddressDto(data.address),

@@ -13,16 +13,26 @@
 .cleansia-landing {
   width: 100%;
   position: relative;
+
+  // Ensure all child Angular component host elements are block-level
+  // to prevent inline gaps between sections
+  > * {
+    display: block;
+  }
 }
 
 // =============================
 // Glass Effect (reusable)
 // =============================
 .cl-glass {
-  background: rgba($white, 0.75);
+  background: color-mix(in srgb, var(--surface-card) 85%, transparent);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba($white, 0.5);
+  border: 1px solid var(--surface-border);
+}
+
+:root.dark-mode .cl-glass {
+  background: color-mix(in srgb, var(--surface-card) 75%, transparent);
 }
 
 // =============================
@@ -145,7 +155,7 @@
     display: block;
 
     path {
-      fill: $white;
+      fill: var(--surface-card);
     }
   }
 }
@@ -198,7 +208,7 @@
 
   &__desc {
     font-size: clamp(0.95rem, 1.5vw, 1.05rem);
-    color: $text-muted;
+    color: var(--text-color-secondary);
     max-width: 600px;
     width: 100%;
     margin: 0;
@@ -207,26 +217,37 @@
   }
 
   &--features {
-    background: $white;
+    background: var(--surface-card);
   }
   &--process {
-    background: $bg-alt;
+    background: var(--surface-ground);
   }
   &--benefits {
-    background: $white;
+    background: var(--surface-card);
     padding: 8rem 2rem;
   }
   &--services {
-    background: linear-gradient(180deg, $primary-lighter 0%, $white 100%);
+    background: linear-gradient(180deg, $primary-lighter 0%, var(--surface-card) 100%);
+  }
+
+  // Dark mode overrides for section backgrounds
+  :root.dark-mode & {
+    &--services {
+      background: linear-gradient(180deg, rgba(56, 189, 248, 0.04) 0%, var(--surface-card) 100%);
+    }
+    &--testimonials {
+      background: linear-gradient(180deg, var(--surface-card) 0%, rgba(56, 189, 248, 0.04) 100%);
+    }
   }
   &--gallery {
-    background: $bg-alt;
+    background: var(--surface-ground);
   }
   &--testimonials {
-    background: linear-gradient(180deg, $white 0%, $primary-lighter 100%);
+    background: linear-gradient(180deg, var(--surface-card) 0%, $primary-lighter 100%);
   }
+
   &--faq {
-    background: $white;
+    background: var(--surface-card);
   }
 }
 
@@ -247,5 +268,22 @@
 
   .cl-floating-bg__icon {
     opacity: 0.04;
+  }
+}
+
+// =============================
+// Dark Mode — Common
+// =============================
+:root.dark-mode {
+  .cl-title {
+    background: linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
+  .cl-section__badge {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(56, 189, 248, 0.18));
+    border-color: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
   }
 }

@@ -3,14 +3,30 @@
   top: 10px;
   right: 10px;
   z-index: 900;
+  display: inline-flex;
+  align-items: center;
 
   &__language-item {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 8px;
+    line-height: 1;
   }
 
   &__flag {
     font-size: 1.2em;
+    vertical-align: middle;
+  }
+
+  .p-select {
+    display: inline-flex;
+    align-items: center;
+
+    .p-select-label {
+      display: inline-flex;
+      align-items: center;
+      padding-top: 0.375rem;
+      padding-bottom: 0.375rem;
+    }
   }
 }

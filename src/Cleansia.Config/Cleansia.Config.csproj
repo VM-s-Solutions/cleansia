@@ -15,7 +15,7 @@
 	  <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
 	  <PackageReference Include="Hangfire.AspNetCore" />
 	  <PackageReference Include="Hangfire.PostgreSql" />
-	  <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+
 	  <PackageReference Include="Swashbuckle.AspNetCore" />
 	</ItemGroup>
 

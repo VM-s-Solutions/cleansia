@@ -8,7 +8,16 @@
     "login": "Log In",
     "register": "Sign Up",
     "profile": "Profile",
-    "logout": "Log Out"
+    "logout": "Log Out",
+    "my_disputes": "My Disputes",
+    "theme_light": "Light Mode",
+    "theme_dark": "Dark Mode",
+    "language": "Language",
+    "settings": "Settings",
+    "section_account": "Account",
+    "section_activity": "Activity",
+    "email_verified": "Email verified",
+    "email_not_verified": "Email not verified"
   },
   "cookies": {
     "title": "Your Privacy Matters",
@@ -56,6 +65,8 @@
     "validation": {
       "required": "This field is required",
       "email": "Please enter a valid email address",
+      "phone": "Please enter a valid phone number",
+      "zip": "Please enter a valid zip/postal code",
       "minlength": "Must be at least {{min}} characters",
       "maxlength": "Must be at most {{max}} characters",
       "passwords_mismatch": "Passwords do not match"
@@ -97,7 +108,8 @@
       "or": "or",
       "google": "Continue with Google",
       "success": "Successfully logged in!",
-      "error": "Invalid email or password"
+      "error": "Invalid email or password",
+      "email_not_confirmed": "Please confirm your email address first"
     },
     "register": {
       "title": "Create Account",
@@ -119,7 +131,7 @@
         "password_lowercase": "At least one lowercase letter",
         "password_uppercase": "At least one uppercase letter",
         "password_number": "At least one number",
-        "password_min_length": "At least 8 characters",
+        "password_min_length": "At least 12 characters",
         "password_special_character": "At least one special character",
         "passwords_match": "Passwords match"
       }
@@ -132,6 +144,7 @@
       "error": "Invalid or expired confirmation link",
       "resend": "Resend confirmation email",
       "resend_success": "Confirmation email sent!",
+      "resend_error": "Failed to resend confirmation email. Please try again.",
       "back_to_login": "Back to login"
     },
     "forgot_password": {
@@ -382,9 +395,18 @@
         "s3": { "name": "Post-Renovation Cleaning" }
       },
       "fallback_services": {
-        "s1": { "name": "General Cleaning", "desc": "Standard cleaning of all rooms including dusting, vacuuming, and sanitizing." },
-        "s2": { "name": "Deep Cleaning", "desc": "Thorough cleaning including baseboards, inside appliances, and detailed sanitization." },
-        "s3": { "name": "Upholstery Cleaning", "desc": "Professional cleaning of sofas, armchairs, and other upholstered furniture." }
+        "s1": {
+          "name": "General Cleaning",
+          "desc": "Standard cleaning of all rooms including dusting, vacuuming, and sanitizing."
+        },
+        "s2": {
+          "name": "Deep Cleaning",
+          "desc": "Thorough cleaning including baseboards, inside appliances, and detailed sanitization."
+        },
+        "s3": {
+          "name": "Upholstery Cleaning",
+          "desc": "Professional cleaning of sofas, armchairs, and other upholstered furniture."
+        }
       },
       "services": {
         "title": "Services & Pricing",
@@ -410,18 +432,42 @@
         "badge": "Testimonials",
         "rating": "rating",
         "review": "review",
-        "t1": { "text": "Incredible cleaning of sofas and carpets — like brand new! Great communication and fast service. Highly recommend to everyone!", "author": "Anna", "role": "homemaker" },
-        "t2": { "text": "Clean carpets and upholstery, results exceeded expectations! All stains gone. Very professional, concrete approach, great team.", "author": "Igor", "role": "office manager" },
-        "t3": { "text": "We tried several companies — Cleansia are the best. Our mattresses and carpets are now perfectly clean and smell wonderful.", "author": "Radmila", "role": "stay-at-home mum" }
+        "t1": {
+          "text": "Incredible cleaning of sofas and carpets — like brand new! Great communication and fast service. Highly recommend to everyone!",
+          "author": "Anna",
+          "role": "homemaker"
+        },
+        "t2": {
+          "text": "Clean carpets and upholstery, results exceeded expectations! All stains gone. Very professional, concrete approach, great team.",
+          "author": "Igor",
+          "role": "office manager"
+        },
+        "t3": {
+          "text": "We tried several companies — Cleansia are the best. Our mattresses and carpets are now perfectly clean and smell wonderful.",
+          "author": "Radmila",
+          "role": "stay-at-home mum"
+        }
       },
       "faq": {
         "title": "Frequently Asked Questions",
         "badge": "FAQ",
         "desc": "Can't find the answer you're looking for? Get in touch with our team and we'll be happy to help.",
-        "q1": { "question": "Do you travel to the suburbs?", "answer": "Yes, we cover surrounding areas. Contact us to check availability for your location." },
-        "q2": { "question": "Can you clean furniture with delicate upholstery?", "answer": "Yes, we select gentle cleaning agents and methods appropriate for each fabric type: silk, wool, velvet, microfibre and more. Before cleaning, we always test on a small area to make sure the fabric won't be damaged." },
-        "q3": { "question": "Do you remove all stains completely?", "answer": "We remove 95% of stains. Some very old or chemically set stains may lighten significantly but not disappear fully." },
-        "q4": { "question": "Can I book cleaning in the evening or on weekends?", "answer": "Yes! We offer flexible scheduling including evenings and weekends to fit your schedule." }
+        "q1": {
+          "question": "Do you travel to the suburbs?",
+          "answer": "Yes, we cover surrounding areas. Contact us to check availability for your location."
+        },
+        "q2": {
+          "question": "Can you clean furniture with delicate upholstery?",
+          "answer": "Yes, we select gentle cleaning agents and methods appropriate for each fabric type: silk, wool, velvet, microfibre and more. Before cleaning, we always test on a small area to make sure the fabric won't be damaged."
+        },
+        "q3": {
+          "question": "Do you remove all stains completely?",
+          "answer": "We remove 95% of stains. Some very old or chemically set stains may lighten significantly but not disappear fully."
+        },
+        "q4": {
+          "question": "Can I book cleaning in the evening or on weekends?",
+          "answer": "Yes! We offer flexible scheduling including evenings and weekends to fit your schedule."
+        }
       },
       "cta": {
         "title": "Ready to Transform Your Space?",
@@ -453,7 +499,12 @@
     },
     "profile": {
       "title": "My Profile",
+      "hero_title": "My Profile",
+      "hero_subtitle": "Manage your personal information and account security",
       "personal_info": "Personal Information",
+      "personal_info_desc": "Update your name, phone number, and other details",
+      "security_title": "Security",
+      "security_desc": "Change your password to keep your account secure",
       "change_password": "Change Password",
       "email": "Email",
       "first_name": "First Name",
@@ -466,7 +517,34 @@
       "passwords_not_match": "Passwords do not match",
       "password_change_note": "Password must be at least 8 characters with uppercase, lowercase, and a number.",
       "save_success": "Profile saved successfully",
-      "save_error": "Failed to save profile"
+      "save_error": "Failed to save profile",
+      "addresses_title": "Addresses",
+      "addresses_desc": "Manage your saved addresses for quick booking",
+      "preferences_title": "Preferences",
+      "preferences_desc": "Customize your experience",
+      "no_addresses": "You haven't saved any addresses yet",
+      "default_address": "Default",
+      "set_default": "Set as default",
+      "add_address": "Add Address",
+      "edit_address": "Edit Address",
+      "pref_language": "Language",
+      "pref_theme": "Theme",
+      "theme_light": "Light Mode",
+      "theme_dark": "Dark Mode",
+      "pref_notifications": "Email Notifications",
+      "address_street": "Street",
+      "address_city": "City",
+      "address_zip": "ZIP Code",
+      "address_country": "Country",
+      "address_saved": "Address saved",
+      "address_deleted": "Address removed",
+      "current_password": "Current Password",
+      "danger_zone_title": "Danger Zone",
+      "danger_zone_desc": "Irreversible actions for your account",
+      "delete_account": "Delete Account",
+      "delete_account_desc": "Permanently delete your account and all data",
+      "export_data": "Export Data",
+      "export_data_desc": "Download a copy of all your personal data"
     },
     "services": {
       "title": "Our Services",
@@ -482,36 +560,104 @@
       "premium_quality": "Premium quality cleaning",
       "vetted_professionals": "Vetted professionals",
       "satisfaction_guarantee": "100% satisfaction guarantee",
-      "check_back_later": "Check back later for our premium offerings."
+      "check_back_later": "Check back later for our premium offerings.",
+      "trust_certified": "Certified Professionals",
+      "trust_eco": "Eco-Friendly Products",
+      "trust_guarantee": "100% Satisfaction",
+      "cta_title": "Ready for a Spotless Home?",
+      "cta_subtitle": "Book your professional cleaning today and enjoy a healthier, fresher space.",
+      "cta_button": "Book Your Cleaning",
+      "view_all_packages": "View All Packages",
+      "view_all_services": "View All Services",
+      "sort_price_asc": "Price: Low to High",
+      "sort_price_desc": "Price: High to Low",
+      "sort_name_asc": "Name: A–Z",
+      "features": {
+        "basic_supplies": "Standard cleaning supplies",
+        "basic_cleaner": "1 professional cleaner",
+        "basic_cleaning": "Basic room cleaning",
+        "basic_sessions": "Valid for 1 session",
+        "standard_supplies": "Premium eco-friendly supplies",
+        "standard_cleaners": "2 professional cleaners",
+        "standard_deep": "Deep cleaning included",
+        "standard_priority": "Priority booking",
+        "standard_sessions": "Valid for 3 sessions",
+        "premium_supplies": "Premium eco-friendly supplies",
+        "premium_cleaners": "3+ professional cleaners",
+        "premium_deep": "Deep cleaning + sanitization",
+        "premium_priority": "Priority booking",
+        "premium_sameday": "Same-day availability",
+        "premium_sessions": "Valid for 5 sessions"
+      }
     },
     "order": {
       "title": "Book a Cleaning",
+      "hero_title": "Book Your Cleaning",
+      "hero_subtitle": "Professional cleaning tailored to your needs. Choose services, pick a time, and relax.",
+      "trust_certified": "Certified Cleaners",
+      "trust_satisfaction": "100% Satisfaction",
+      "trust_no_hidden": "No Hidden Fees",
       "select_services": "Select Services",
+      "services_section_title": "Choose Your Services",
+      "packages_section_title": "Or Choose a Package",
+      "room_config_title": "Property Details",
       "rooms": "Number of Rooms",
+      "rooms_label": "Rooms",
       "bathrooms": "Number of Bathrooms",
+      "bathrooms_label": "Bathrooms",
       "address": "Address",
+      "contact_section_title": "Contact Information",
+      "contact_phone_title": "Phone Number",
+      "address_section_title": "Cleaning Address",
       "street": "Street",
       "city": "City",
       "zip_code": "ZIP Code",
       "country": "Country",
       "select_country": "Select Country",
       "date_time": "Date & Time",
+      "datetime_section_title": "When Should We Come?",
+      "datetime_note": "We'll confirm the exact time with you",
       "cleaning_date": "Cleaning Date",
+      "date_label": "Select Date",
       "cleaning_time": "Cleaning Time",
+      "time_label": "Select Time",
       "payment_method": "Payment Method",
+      "payment_section_title": "How Would You Like to Pay?",
       "pay_by_card": "Pay by Card",
+      "payment_card_title": "Credit / Debit Card",
+      "payment_card_desc": "Pay securely online via Stripe",
       "pay_by_cash": "Pay in Cash",
+      "payment_cash_title": "Cash on Delivery",
+      "payment_cash_desc": "Pay when the cleaning is done",
       "contact_info": "Contact Information",
-      "customer_name": "Full Name",
-      "customer_name_placeholder": "e.g. John Smith",
+      "customer_first_name": "First Name",
+      "customer_first_name_placeholder": "e.g. John",
+      "customer_last_name": "Last Name",
+      "customer_last_name_placeholder": "e.g. Smith",
       "customer_email": "Email",
       "customer_email_placeholder": "e.g. john@example.com",
       "customer_phone": "Phone Number",
       "customer_phone_placeholder": "e.g. +420 123 456 789",
       "special_instructions": "Special Instructions",
+      "special_instructions_placeholder": "Any special requests? (e.g., focus on kitchen, pet-friendly products...)",
+      "entry_instructions_label": "Entry Instructions",
+      "entry_instructions_placeholder": "How should we access your property? (e.g., doorbell, key under mat...)",
       "summary": "Summary",
+      "summary_section_title": "Review Your Order",
+      "summary_services": "Services",
+      "summary_packages": "Packages",
+      "summary_property": "Property",
+      "summary_rooms_count": "{{rooms}} rooms, {{bathrooms}} bathrooms",
+      "summary_address": "Address",
+      "summary_datetime": "Date & Time",
+      "summary_payment": "Payment",
+      "summary_contact": "Contact",
+      "summary_instructions": "Instructions",
+      "summary_edit": "Edit",
       "selected_services_label": "Selected Services",
       "total_price": "Total Price",
+      "price_total": "Total",
+      "place_order": "Place Order",
       "submit_order": "Place Order",
       "submit_success": "Order placed successfully!",
       "submit_error": "Failed to place order",
@@ -521,16 +667,40 @@
         "datetime": "Date & Time",
         "payment": "Payment",
         "summary": "Summary"
+      },
+      "saved_address_default": "Default",
+      "new_address": "Enter a new address",
+      "save_address": "Save this address for future orders",
+      "rebook_warning": {
+        "title": "Some Services Unavailable",
+        "description": "The following services from your previous order are no longer available:",
+        "continue": "OK, Continue"
       }
     },
     "orders": {
       "title": "My Orders",
+      "hero_title": "My Orders",
+      "hero_subtitle": "Track your upcoming and past cleaning appointments",
+      "stats_upcoming": "Upcoming",
+      "stats_completed": "Completed",
+      "stats_total_spent": "Total Spent",
       "no_orders": "You don't have any orders yet",
       "no_orders_description": "Book your first cleaning!",
       "browse_services": "Browse Services",
       "upcoming_orders": "Upcoming Orders",
       "past_orders": "Past Orders",
       "rebook": "Rebook",
+      "empty_subtitle": "Your cleaning journey starts here! Browse our services and book your first appointment.",
+      "empty_trust_certified": "Certified Professionals",
+      "empty_trust_satisfaction": "100% Satisfaction Guarantee",
+      "empty_trust_eco": "Eco-Friendly Products",
+      "empty_step1": "Choose a service",
+      "empty_step2": "Pick a date & time",
+      "empty_step3": "Relax & enjoy",
+      "empty_cta": "Book Your First Cleaning",
+      "need_help": "Need Help?",
+      "need_help_desc": "If you have any issues with a past order, you can report them.",
+      "go_to_disputes": "Go to Disputes",
       "table": {
         "order_number": "Order Number",
         "date": "Date",
@@ -565,30 +735,42 @@
       "report_issue": "Report Issue"
     },
     "checkout": {
-      "success_title": "Payment Successful!",
-      "success_message": "Your order has been confirmed.",
-      "view_orders": "View Orders",
-      "cancel_title": "Payment Cancelled",
-      "cancel_message": "Your payment was not completed.",
-      "try_again": "Try Again",
       "success": {
         "title": "Payment Successful!",
-        "description": "Your order has been confirmed. You'll receive a confirmation email shortly.",
-        "view_orders": "View My Orders"
+        "subtitle": "Thank you for your order",
+        "description": "Your cleaning has been booked and confirmed. You'll receive a confirmation email with all the details shortly.",
+        "what_next": "What happens next?",
+        "step_confirmation": "You'll receive a confirmation email within a few minutes",
+        "step_reminder": "We'll send you a reminder before your cleaning date",
+        "step_cleaner": "Our professional cleaner will arrive at your scheduled time",
+        "view_orders": "View My Orders",
+        "book_another": "Book Another Cleaning",
+        "back_home": "Back to Home"
       },
       "cancel": {
         "title": "Payment Cancelled",
-        "description": "Your payment was not completed. No charges have been made.",
+        "subtitle": "No worries — nothing has been charged",
+        "description": "Your payment was not completed and no charges have been made to your account. Your selected services are still available.",
+        "reasons_title": "Common reasons for cancellation:",
+        "reason_changed_mind": "Changed your mind about the service",
+        "reason_wrong_details": "Need to update booking details",
+        "reason_payment_issue": "Experienced a payment issue",
         "try_again": "Try Again",
-        "view_orders": "View My Orders"
+        "view_orders": "View My Orders",
+        "contact_support": "Need help? Contact our support team",
+        "back_home": "Back to Home"
       }
     },
     "disputes": {
       "title": "My Disputes",
+      "hero_title": "My Disputes",
+      "hero_subtitle": "View and manage your dispute cases",
+      "empty_description": "You have no open disputes. If you experience any issues with our service, you can create a new dispute here.",
       "create_new": "New Dispute",
       "create_title": "Create Dispute",
-      "no_disputes": "No disputes",
-      "order_id": "Order ID",
+      "no_disputes": "All Clear!",
+      "order_id": "Order",
+      "select_order": "Select an order...",
       "reason": "Reason",
       "description": "Description",
       "submit": "Submit",
@@ -608,6 +790,9 @@
         "incorrect_amount": "Incorrect Amount",
         "other": "Other"
       },
+      "empty_faq_title": "What can I report?",
+      "empty_faq_items": "Quality issues, incomplete service, damaged property, billing problems, and more.",
+      "empty_response_time": "We typically respond within 24–48 hours.",
       "table": {
         "order": "Order",
         "reason": "Reason",
@@ -679,12 +864,43 @@
   "components": {
     "not_found": {
       "title": "Page Not Found",
-      "description": "The page you are looking for does not exist or has been moved."
+      "description": "The page you are looking for does not exist or has been moved.",
+      "suggestion_home": "Return to the home page",
+      "suggestion_url": "Check the URL for typos",
+      "suggestion_contact": "Contact us if the problem persists",
+      "go_home": "Go to Home"
     }
   },
   "validation": {
     "common": {
-      "not_all_fields_filled": "Please fill in all required fields"
+      "not_all_fields_filled": "Please fill in all required fields",
+      "required": "This field is required",
+      "email": "Please enter a valid email address",
+      "birth_date": "Birth date is invalid. User must be younger than {{ yearsRange }} years",
+      "min_length": "Must contain at least {{ minLength }} characters",
+      "max_length": "Cannot exceed {{ maxLength }} characters",
+      "pattern": "Field does not match the required pattern",
+      "minimum_age": "Minimum age is {{ requiredAge }} years. Current age: {{ actualAge }} years",
+      "maximum_age": "Maximum age is {{ maxAge }} years. Current age: {{ actualAge }} years",
+      "phone_number": "Invalid phone number format",
+      "confirm_password": "Passwords do not match",
+      "no_whitespace": "Field cannot contain whitespace characters",
+      "zip_code": "Invalid zip code format"
+    },
+    "file": {
+      "required": "Files are required",
+      "invalid_type": "Invalid file type. Please select a valid document file.",
+      "max_size": "File size too large. Maximum allowed size is {{ maxSize }}MB.",
+      "too_few_files": "Too few files selected. Minimum required: {{ min }}",
+      "too_many_files": "Too many files selected. Maximum allowed: {{ max }}"
+    },
+    "password": {
+      "uppercase": "at least one uppercase letter",
+      "lowercase": "at least one lowercase letter",
+      "number": "at least one number",
+      "special_char": "at least one special character",
+      "min_length": "minimum 12 characters",
+      "requirements": "Password must contain: {{ requirements }}"
     }
   },
   "common": {

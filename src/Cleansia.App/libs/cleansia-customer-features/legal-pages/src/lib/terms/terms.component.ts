@@ -1,11 +1,11 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { CleansiaTitleComponent } from '@cleansia/components';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'cleansia-customer-terms',
   standalone: true,
-  imports: [TranslateModule, CleansiaTitleComponent],
+  imports: [TranslatePipe, CleansiaTitleComponent],
   template: `
     <div class="legal-page max-w-4xl mx-auto px-4 py-8 md:px-6 lg:px-8">
       <cleansia-title [title]="'terms_page.title' | translate" />
@@ -19,6 +19,7 @@ import { TranslateModule } from '@ngx-translate/core';
       }
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TermsComponent {
   sections = [1, 2, 3, 4, 5, 6];

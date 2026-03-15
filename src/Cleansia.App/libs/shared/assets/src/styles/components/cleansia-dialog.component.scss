@@ -1,0 +1,171 @@
+// ─── Cleansia Dialog — Shared styling for all p-dialog instances ───
+$primary: #0ea5e9;
+$primary-hover: #0284c7;
+
+.cleansia-dialog {
+  // Panel overrides
+  .p-dialog-header {
+    padding: 1.25rem 1.5rem 1rem;
+    border-bottom: 1px solid var(--surface-border);
+    background: var(--surface-card);
+    border-radius: 14px 14px 0 0;
+  }
+
+  .p-dialog-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+
+  .p-dialog-content {
+    padding: 1.25rem 1.5rem;
+    background: var(--surface-card);
+  }
+
+  .p-dialog-footer {
+    padding: 0.75rem 1.5rem 1.25rem;
+    background: var(--surface-card);
+    border-top: 1px solid var(--surface-border);
+    border-radius: 0 0 14px 14px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+
+  &.p-dialog {
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid var(--surface-border);
+  }
+
+  // Close button
+  .p-dialog-header-actions {
+    .p-button {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 8px;
+      color: var(--text-color-secondary);
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: var(--surface-hover);
+        color: var(--text-color);
+      }
+    }
+  }
+
+  // ─── Custom inner elements ───
+  &__body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.75rem;
+  }
+
+  &__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.25rem;
+
+    i {
+      font-size: 1.25rem;
+    }
+
+    &--warn {
+      background: rgba(245, 158, 11, 0.1);
+      i { color: #f59e0b; }
+    }
+
+    &--danger {
+      background: rgba(239, 68, 68, 0.1);
+      i { color: #ef4444; }
+    }
+
+    &--success {
+      background: rgba(34, 197, 94, 0.1);
+      i { color: #22c55e; }
+    }
+
+    &--info {
+      background: rgba(14, 165, 233, 0.1);
+      i { color: $primary; }
+    }
+  }
+
+  &__text {
+    font-size: 0.875rem;
+    color: var(--text-color-secondary);
+    line-height: 1.6;
+    margin: 0;
+    max-width: 340px;
+  }
+
+  &__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    background: var(--surface-ground);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.25rem;
+      font-size: 0.825rem;
+      color: var(--text-color);
+      border-bottom: 1px solid var(--surface-border);
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      &::before {
+        content: '\e90b'; // pi-minus-circle
+        font-family: 'primeicons';
+        font-size: 0.75rem;
+        color: var(--text-color-secondary);
+      }
+    }
+  }
+}
+
+// ─── Dark mode ───
+:root.dark-mode {
+  .cleansia-dialog {
+    &.p-dialog {
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    &__icon {
+      &--warn {
+        background: rgba(245, 158, 11, 0.15);
+        i { color: #fbbf24; }
+      }
+
+      &--danger {
+        background: rgba(239, 68, 68, 0.15);
+        i { color: #f87171; }
+      }
+
+      &--success {
+        background: rgba(34, 197, 94, 0.15);
+        i { color: #4ade80; }
+      }
+
+      &--info {
+        background: rgba(56, 189, 248, 0.15);
+        i { color: #38bdf8; }
+      }
+    }
+  }
+}

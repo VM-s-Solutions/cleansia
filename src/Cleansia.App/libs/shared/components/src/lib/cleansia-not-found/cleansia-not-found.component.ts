@@ -25,6 +25,7 @@ export class CleansiaNotFoundComponent {
   code = input<string>('404');
   title = input<string>();
   message = input<string>();
+  mascotSrc = input<string>('assets/images/mascot/mascot-waving.png');
   showBackButtons = input<boolean>(true);
   customButtonTemplate = input<TemplateRef<unknown>>();
 

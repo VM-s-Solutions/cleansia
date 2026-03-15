@@ -53,3 +53,43 @@
     }
   }
 }
+
+// =============================
+// Dark Mode — FAQ
+// =============================
+:root.dark-mode {
+  .cl-faq-layout {
+    &__desc {
+      color: #94a3b8;
+    }
+  }
+
+  .cl-faq__answer {
+    color: #94a3b8;
+  }
+
+  .cl-section--faq {
+    .p-accordion {
+      .p-accordionpanel {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 1rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .p-accordionheader {
+        background: transparent;
+        color: #e2e8f0;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.04);
+        }
+      }
+
+      .p-accordioncontent-content {
+        background: transparent;
+        border-top: 1px solid #334155;
+      }
+    }
+  }
+}

@@ -1,89 +1,473 @@
 <div class="customer-profile">
-  <cleansia-title [title]="'pages.profile.title' | translate" />
+  <!-- Hero Section -->
+  <div class="customer-profile__hero">
+    <h1 class="customer-profile__hero-title">
+      {{ 'pages.profile.hero_title' | translate }}
+    </h1>
+    <p class="customer-profile__hero-subtitle">
+      {{ 'pages.profile.hero_subtitle' | translate }}
+    </p>
+  </div>
 
   @if (loading()) {
-    <div class="customer-profile__skeleton">
-      <p-skeleton width="100%" height="3rem" styleClass="mb-3" />
-      <p-skeleton width="100%" height="3rem" styleClass="mb-3" />
-      <p-skeleton width="60%" height="3rem" />
-    </div>
+  <div class="customer-profile__skeleton">
+    <p-skeleton width="100%" height="8rem" borderRadius="16px" styleClass="mb-3" />
+    <p-skeleton width="100%" height="12rem" borderRadius="16px" styleClass="mb-3" />
+    <p-skeleton width="100%" height="12rem" borderRadius="16px" />
+  </div>
   } @else {
-    <p-tabs value="0">
-      <p-tablist>
-        <p-tab value="0">{{ 'pages.profile.personal_info' | translate }}</p-tab>
-        <p-tab value="1">{{ 'pages.profile.change_password' | translate }}</p-tab>
-      </p-tablist>
-      <p-tabpanels>
-        <p-tabpanel value="0">
-          <form [formGroup]="profileForm" class="customer-profile__form" (ngSubmit)="saveProfile()">
-            <div class="customer-profile__field">
-              <label>{{ 'pages.profile.email' | translate }}</label>
-              <input pInputText [value]="user()?.email || ''" [disabled]="true" />
+
+  <!-- Layout: Sidebar + Content -->
+  <div class="customer-profile__layout">
+    <!-- Sticky Left Sidebar Navigation -->
+    <aside class="customer-profile__sidebar">
+      <div class="customer-profile__sidebar-sticky">
+        <!-- User Info Card -->
+        <div class="customer-profile__user-card">
+          <div class="customer-profile__user-avatar">
+            {{ userInitials() || '?' }}
+          </div>
+          <div class="customer-profile__user-info">
+            <div class="customer-profile__user-name">
+              {{ user()?.firstName }} {{ user()?.lastName }}
             </div>
-            <div class="customer-profile__row">
-              <div class="customer-profile__field">
-                <label>{{ 'pages.profile.first_name' | translate }}</label>
-                <input pInputText formControlName="firstName" />
-              </div>
-              <div class="customer-profile__field">
-                <label>{{ 'pages.profile.last_name' | translate }}</label>
-                <input pInputText formControlName="lastName" />
-              </div>
+            <div class="customer-profile__user-email">
+              {{ user()?.email }}
             </div>
-            <div class="customer-profile__row">
-              <div class="customer-profile__field">
-                <label>{{ 'pages.profile.phone' | translate }}</label>
-                <input pInputText formControlName="phoneNumber" />
-              </div>
-              <div class="customer-profile__field">
-                <label>{{ 'pages.profile.birth_date' | translate }}</label>
-                <p-datePicker formControlName="birthDate" dateFormat="dd.mm.yy" [showIcon]="true" />
-              </div>
-            </div>
-            <div class="customer-profile__actions">
-              <cleansia-button
-                [title]="'global.actions.save' | translate"
-                [severity]="'primary'"
-                [style]="'raised-button'"
-                [loading]="saving()"
-                [disabled]="profileForm.invalid"
-                (clickFn)="saveProfile()"
-              />
-            </div>
-          </form>
-        </p-tabpanel>
-        <p-tabpanel value="1">
-          <form [formGroup]="passwordForm" class="customer-profile__form" (ngSubmit)="changePassword()">
-            <p class="customer-profile__info">
-              {{ 'pages.profile.password_info' | translate }}
+          </div>
+        </div>
+
+        <!-- Section Navigation -->
+        <nav class="customer-profile__nav">
+          @for (section of sections; track section.id) {
+          <button
+            class="customer-profile__nav-item"
+            [class.customer-profile__nav-item--active]="activeSection() === section.id"
+            [class.customer-profile__nav-item--danger]="section.id === 'danger'"
+            (click)="scrollToSection(section.id)"
+          >
+            <span class="customer-profile__nav-icon"><i [class]="section.icon"></i></span>
+            <span>{{ section.labelKey | translate }}</span>
+          </button>
+          }
+        </nav>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="customer-profile__content">
+      <!-- Personal Info Section -->
+      <div id="profile-personal" class="customer-profile__section-card">
+        <div class="customer-profile__section-header">
+          <div class="customer-profile__section-icon">
+            <i class="pi pi-user"></i>
+          </div>
+          <div>
+            <h2 class="customer-profile__section-title">
+              {{ 'pages.profile.personal_info' | translate }}
+            </h2>
+            <p class="customer-profile__section-subtitle">
+              {{ 'pages.profile.personal_info_desc' | translate }}
             </p>
-            <div class="customer-profile__field">
-              <label>{{ 'pages.profile.new_password' | translate }}</label>
-              <input pInputText type="password" [formControl]="passwordForm.controls.newPassword" />
-            </div>
-            <div class="customer-profile__field">
-              <label>{{ 'pages.profile.confirm_password' | translate }}</label>
-              <input pInputText type="password" [formControl]="passwordForm.controls.confirmPassword" />
+          </div>
+        </div>
+
+        <form
+          [formGroup]="profileForm"
+          class="customer-profile__form"
+          (ngSubmit)="saveProfile()"
+        >
+          <cleansia-text-input
+            [label]="'pages.profile.email' | translate"
+            [disabled]="true"
+            [ngModel]="user()?.email || ''"
+            [ngModelOptions]="{standalone: true}"
+            dataType="email"
+            floatVariant="on"
+            inputSize="full-width"
+          />
+
+          <div class="customer-profile__row">
+            <cleansia-text-input
+              formControlName="firstName"
+              [label]="'pages.profile.first_name' | translate"
+              [required]="true"
+              floatVariant="on"
+              inputSize="full-width"
+            />
+            <cleansia-text-input
+              formControlName="lastName"
+              [label]="'pages.profile.last_name' | translate"
+              [required]="true"
+              floatVariant="on"
+              inputSize="full-width"
+            />
+          </div>
+
+          <div class="customer-profile__row">
+            <cleansia-telephone
+              formControlName="phoneNumber"
+              [label]="'pages.profile.phone' | translate"
+              floatVariant="on"
+              defaultCountryFlag="cz"
+            />
+            <cleansia-calendar
+              formControlName="birthDate"
+              [label]="'pages.profile.birth_date' | translate"
+              floatVariant="on"
+              dateFormat="dd.mm.yy"
+              [showIcon]="true"
+            />
+          </div>
+
+          <div class="customer-profile__actions">
+            <cleansia-button
+              [title]="'global.actions.save' | translate"
+              [severity]="'primary'"
+              [style]="'raised-button'"
+              [loading]="saving()"
+              [disabled]="profileForm.invalid"
+              (clickFn)="saveProfile()"
+            />
+          </div>
+        </form>
+      </div>
+
+      <!-- Security Section -->
+      <div id="profile-security" class="customer-profile__section-card">
+        <div class="customer-profile__section-header">
+          <div class="customer-profile__section-icon">
+            <i class="pi pi-lock"></i>
+          </div>
+          <div>
+            <h2 class="customer-profile__section-title">
+              {{ 'pages.profile.security_title' | translate }}
+            </h2>
+            <p class="customer-profile__section-subtitle">
+              {{ 'pages.profile.security_desc' | translate }}
+            </p>
+          </div>
+        </div>
+
+        <form
+          [formGroup]="passwordForm"
+          class="customer-profile__form"
+          (ngSubmit)="changePassword()"
+        >
+          <cleansia-text-input
+            [formControl]="passwordForm.controls.currentPassword"
+            [label]="'pages.profile.current_password' | translate"
+            dataType="password"
+            floatVariant="on"
+            inputSize="full-width"
+          />
+
+          <div class="customer-profile__row">
+            <cleansia-text-input
+              [formControl]="passwordForm.controls.newPassword"
+              [label]="'pages.profile.new_password' | translate"
+              dataType="password"
+              floatVariant="on"
+              inputSize="full-width"
+              [showErrors]="false"
+            />
+            <div>
+              <cleansia-text-input
+                [formControl]="passwordForm.controls.confirmPassword"
+                [label]="'pages.profile.confirm_password' | translate"
+                dataType="password"
+                floatVariant="on"
+                inputSize="full-width"
+              />
               @if (passwordMismatch && passwordForm.controls.confirmPassword.dirty) {
-                <small class="p-error">{{ 'pages.profile.passwords_not_match' | translate }}</small>
+              <small class="p-error mt-1 block">{{
+                'pages.profile.passwords_not_match' | translate
+              }}</small>
               }
             </div>
-            <p class="customer-profile__info">
-              {{ 'pages.profile.password_change_note' | translate }}
+          </div>
+
+          <div class="customer-profile__password-checklist">
+            <ul>
+              <li [class.valid]="passwordValidation().hasLowerCase"
+                  [class.invalid]="hasNewPasswordInput && !passwordValidation().hasLowerCase">
+                {{ 'auth.register.validation.password_lowercase' | translate }}
+              </li>
+              <li [class.valid]="passwordValidation().hasUpperCase"
+                  [class.invalid]="hasNewPasswordInput && !passwordValidation().hasUpperCase">
+                {{ 'auth.register.validation.password_uppercase' | translate }}
+              </li>
+              <li [class.valid]="passwordValidation().hasNumber"
+                  [class.invalid]="hasNewPasswordInput && !passwordValidation().hasNumber">
+                {{ 'auth.register.validation.password_number' | translate }}
+              </li>
+              <li [class.valid]="passwordValidation().hasMinLength"
+                  [class.invalid]="hasNewPasswordInput && !passwordValidation().hasMinLength">
+                {{ 'auth.register.validation.password_min_length' | translate }}
+              </li>
+              <li [class.valid]="passwordValidation().hasSpecialCharacter"
+                  [class.invalid]="hasNewPasswordInput && !passwordValidation().hasSpecialCharacter">
+                {{ 'auth.register.validation.password_special_character' | translate }}
+              </li>
+            </ul>
+          </div>
+
+          <div class="customer-profile__actions">
+            <cleansia-button
+              [title]="'pages.profile.change_password' | translate"
+              [severity]="'primary'"
+              [style]="'raised-button'"
+              [loading]="saving()"
+              [disabled]="passwordForm.invalid || passwordMismatch"
+              (clickFn)="changePassword()"
+            />
+          </div>
+        </form>
+      </div>
+
+      <!-- Addresses Section -->
+      <div id="profile-addresses" class="customer-profile__section-card">
+        <div class="customer-profile__section-header">
+          <div class="customer-profile__section-icon">
+            <i class="pi pi-map-marker"></i>
+          </div>
+          <div>
+            <h2 class="customer-profile__section-title">
+              {{ 'pages.profile.addresses_title' | translate }}
+            </h2>
+            <p class="customer-profile__section-subtitle">
+              {{ 'pages.profile.addresses_desc' | translate }}
             </p>
-            <div class="customer-profile__actions">
-              <cleansia-button
-                [title]="'global.actions.save' | translate"
-                [severity]="'primary'"
-                [style]="'raised-button'"
-                [loading]="saving()"
-                [disabled]="passwordForm.invalid || passwordMismatch"
-                (clickFn)="changePassword()"
+          </div>
+        </div>
+
+        @if (addresses().length === 0) {
+        <div class="customer-profile__empty-addresses">
+          <div class="customer-profile__empty-icon">
+            <i class="pi pi-map-marker"></i>
+          </div>
+          <p>{{ 'pages.profile.no_addresses' | translate }}</p>
+        </div>
+        } @else {
+        <div class="customer-profile__address-list">
+          @for (addr of addresses(); track addr.id) {
+          <div class="customer-profile__address-card" [class.customer-profile__address-card--default]="addr.isDefault">
+            @if (addr.isDefault) {
+            <span class="customer-profile__address-default-badge">
+              <i class="pi pi-check-circle"></i>
+              {{ 'pages.profile.default_address' | translate }}
+            </span>
+            }
+            <div class="customer-profile__address-info">
+              <strong>{{ addr.street }}</strong>
+              <span>{{ addr.city }}, {{ addr.zip }}</span>
+              @if (addr.country) {
+              <span>{{ addr.country }}</span>
+              }
+            </div>
+            <div class="customer-profile__address-actions">
+              @if (!addr.isDefault) {
+              <button class="customer-profile__address-btn" (click)="setDefaultAddress(addr.id)" title="{{ 'pages.profile.set_default' | translate }}">
+                <i class="pi pi-star"></i>
+              </button>
+              }
+              <button class="customer-profile__address-btn" (click)="openEditAddress(addr)">
+                <i class="pi pi-pencil"></i>
+              </button>
+              <button class="customer-profile__address-btn customer-profile__address-btn--danger" (click)="deleteAddress(addr.id)">
+                <i class="pi pi-trash"></i>
+              </button>
+            </div>
+          </div>
+          }
+        </div>
+        }
+
+        <div class="customer-profile__actions" style="margin-top: 1rem;">
+          <cleansia-button
+            [title]="'pages.profile.add_address' | translate"
+            [severity]="'secondary'"
+            [style]="'raised-button'"
+            [icon]="'pi pi-plus'"
+            [iconPosition]="'left'"
+            (clickFn)="openAddAddress()"
+          />
+        </div>
+      </div>
+
+      <!-- Preferences Section -->
+      <div id="profile-preferences" class="customer-profile__section-card">
+        <div class="customer-profile__section-header">
+          <div class="customer-profile__section-icon">
+            <i class="pi pi-sliders-h"></i>
+          </div>
+          <div>
+            <h2 class="customer-profile__section-title">
+              {{ 'pages.profile.preferences_title' | translate }}
+            </h2>
+            <p class="customer-profile__section-subtitle">
+              {{ 'pages.profile.preferences_desc' | translate }}
+            </p>
+          </div>
+        </div>
+
+        <div class="customer-profile__pref-list">
+          <!-- Language -->
+          <div class="customer-profile__pref-row">
+            <div class="customer-profile__pref-label">
+              <i class="pi pi-globe"></i>
+              {{ 'pages.profile.pref_language' | translate }}
+            </div>
+            <div class="customer-profile__pref-control">
+              <cleansia-select
+                [options]="languageOptions"
+                [ngModel]="currentLanguage"
+                (ngModelChange)="onLanguageChange($event)"
+                [showClear]="false"
+                inputSize="small-width"
               />
             </div>
-          </form>
-        </p-tabpanel>
-      </p-tabpanels>
-    </p-tabs>
+          </div>
+
+          <!-- Theme -->
+          <div class="customer-profile__pref-row">
+            <div class="customer-profile__pref-label">
+              <i [class]="isDarkMode() ? 'pi pi-moon' : 'pi pi-sun'"></i>
+              {{ 'pages.profile.pref_theme' | translate }}
+            </div>
+            <div class="customer-profile__pref-control">
+              <button class="customer-profile__theme-btn" (click)="toggleTheme()">
+                <i [class]="isDarkMode() ? 'pi pi-sun' : 'pi pi-moon'"></i>
+                {{ isDarkMode() ? ('pages.profile.theme_light' | translate) : ('pages.profile.theme_dark' | translate) }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Email Notifications -->
+          <div class="customer-profile__pref-row">
+            <div class="customer-profile__pref-label">
+              <i class="pi pi-bell"></i>
+              {{ 'pages.profile.pref_notifications' | translate }}
+            </div>
+            <div class="customer-profile__pref-control">
+              <p-toggleSwitch [ngModel]="emailNotifications()" (ngModelChange)="emailNotifications.set($event)" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Danger Zone -->
+      <div id="profile-danger" class="customer-profile__section-card customer-profile__section-card--danger">
+        <div class="customer-profile__section-header">
+          <div class="customer-profile__section-icon customer-profile__section-icon--danger">
+            <i class="pi pi-exclamation-triangle"></i>
+          </div>
+          <div>
+            <h2 class="customer-profile__section-title">
+              {{ 'pages.profile.danger_zone_title' | translate }}
+            </h2>
+            <p class="customer-profile__section-subtitle">
+              {{ 'pages.profile.danger_zone_desc' | translate }}
+            </p>
+          </div>
+        </div>
+
+        <div class="customer-profile__danger-actions">
+          <div class="customer-profile__danger-row">
+            <div>
+              <strong>{{ 'pages.profile.export_data' | translate }}</strong>
+              <p>{{ 'pages.profile.export_data_desc' | translate }}</p>
+            </div>
+            <cleansia-button
+              [title]="'pages.profile.export_data' | translate"
+              [severity]="'secondary'"
+              [icon]="'pi pi-download'"
+              [iconPosition]="'left'"
+              (clickFn)="router.navigate(['/gdpr'])"
+            />
+          </div>
+          <div class="customer-profile__danger-divider"></div>
+          <div class="customer-profile__danger-row">
+            <div>
+              <strong>{{ 'pages.profile.delete_account' | translate }}</strong>
+              <p>{{ 'pages.profile.delete_account_desc' | translate }}</p>
+            </div>
+            <cleansia-button
+              [title]="'pages.profile.delete_account' | translate"
+              [severity]="'danger'"
+              [icon]="'pi pi-trash'"
+              [iconPosition]="'left'"
+              (clickFn)="router.navigate(['/gdpr'])"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
   }
+
+  <!-- Scroll to Top Button -->
+  @if (showScrollTop()) {
+  <button class="customer-profile__scroll-top" (click)="scrollToTop()" aria-label="Scroll to top">
+    <i class="pi pi-arrow-up"></i>
+  </button>
+  }
+
+  <!-- Address Dialog -->
+  <p-dialog
+    [header]="(editingAddress() ? 'pages.profile.edit_address' : 'pages.profile.add_address') | translate"
+    [(visible)]="showAddressDialog"
+    [modal]="true"
+    [style]="{ width: '450px' }"
+    [breakpoints]="{ '600px': '95vw' }"
+    styleClass="cleansia-dialog"
+  >
+    <div class="customer-profile__dialog-form">
+      <cleansia-text-input
+        [(ngModel)]="addressForm.street"
+        [label]="'pages.profile.address_street' | translate"
+        floatVariant="on"
+        inputSize="full-width"
+      />
+      <div class="customer-profile__dialog-row">
+        <cleansia-text-input
+          [(ngModel)]="addressForm.city"
+          [label]="'pages.profile.address_city' | translate"
+          floatVariant="on"
+          inputSize="full-width"
+        />
+        <cleansia-text-input
+          [(ngModel)]="addressForm.zip"
+          [label]="'pages.profile.address_zip' | translate"
+          floatVariant="on"
+          inputSize="full-width"
+        />
+      </div>
+      <cleansia-text-input
+        [(ngModel)]="addressForm.country"
+        [label]="'pages.profile.address_country' | translate"
+        floatVariant="on"
+        inputSize="full-width"
+      />
+      <div class="customer-profile__dialog-toggle">
+        <label>{{ 'pages.profile.default_address' | translate }}</label>
+        <p-toggleSwitch [(ngModel)]="addressForm.isDefault" />
+      </div>
+    </div>
+    <ng-template #footer>
+      <div class="customer-profile__dialog-footer">
+        <cleansia-button
+          [title]="'global.actions.cancel' | translate"
+          [severity]="'secondary'"
+          (clickFn)="showAddressDialog.set(false)"
+        />
+        <cleansia-button
+          [title]="'global.actions.save' | translate"
+          [severity]="'primary'"
+          [disabled]="!addressForm.street || !addressForm.city || !addressForm.zip"
+          (clickFn)="saveAddress()"
+        />
+      </div>
+    </ng-template>
+  </p-dialog>
 </div>

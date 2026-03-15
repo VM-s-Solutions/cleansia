@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Features.DataRetention;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Hangfire;
@@ -36,6 +37,7 @@ public static class HangfireConfiguration
 
         // Register background services
         services.AddScoped<IDataRetentionBackgroundService, DataRetentionBackgroundService>();
+        services.AddScoped<IStaleOrderCleanupService, StaleOrderCleanupService>();
 
         return services;
     }
@@ -60,6 +62,16 @@ public static class HangfireConfiguration
             "customer-data-retention-cleanup",
             service => service.RunAllRetentionTasksAsync(CancellationToken.None),
             "0 3 * * 0", // Sunday 3:00 AM UTC
+            new RecurringJobOptions
+            {
+                TimeZone = TimeZoneInfo.Utc
+            });
+
+        // Stale order cleanup - runs every 15 minutes to cancel abandoned Stripe checkout orders
+        RecurringJob.AddOrUpdate<IStaleOrderCleanupService>(
+            "stale-order-cleanup",
+            service => service.CancelStaleOrdersAsync(CancellationToken.None),
+            "*/15 * * * *", // Every 15 minutes
             new RecurringJobOptions
             {
                 TimeZone = TimeZoneInfo.Utc

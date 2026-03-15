@@ -1,10 +1,16 @@
 @use './home-variables' as *;
 
+cleansia-hero {
+  display: block;
+  background-color: var(--surface-card);
+}
+
 // =============================
 // Hero
 // =============================
 .cl-hero {
-  background: linear-gradient(
+  background-color: $primary-lighter;
+  background-image: linear-gradient(
     135deg,
     $primary-lighter 0%,
     $primary-light 40%,
@@ -54,7 +60,7 @@
 
   &__subtitle {
     font-size: clamp(1rem, 2vw, 1.1rem);
-    color: $text-muted;
+    color: var(--text-color-secondary);
     line-height: 1.8;
     margin-bottom: 2.5rem;
     max-width: 500px;
@@ -78,7 +84,7 @@
     align-items: center;
     gap: 0.4rem;
     font-size: 0.85rem;
-    color: $text-muted;
+    color: var(--text-color-secondary);
     font-weight: 600;
     i {
       color: $primary;
@@ -163,7 +169,7 @@
     font-family: $font-heading;
     font-size: 0.78rem;
     font-weight: 600;
-    color: $text-dark;
+    color: var(--text-color);
     box-shadow: $shadow-md;
     white-space: nowrap;
 
@@ -211,6 +217,30 @@
   }
   66% {
     transform: translate(-8px, 8px) scale(0.97);
+  }
+}
+
+// =============================
+// Dark Mode — Hero
+// =============================
+:root.dark-mode {
+  .cl-hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 40%, rgba(56, 189, 248, 0.06) 100%);
+  }
+
+  .cl-hero__tagline {
+    background: rgba(56, 189, 248, 0.1);
+    border-color: rgba(56, 189, 248, 0.15);
+  }
+
+  .cl-hero__bubble {
+    background: rgba(56, 189, 248, 0.04);
+    border-color: rgba(56, 189, 248, 0.06);
+  }
+
+  .cl-hero__float-card {
+    background: #1e293b;
+    border: 1px solid #334155;
   }
 }
 

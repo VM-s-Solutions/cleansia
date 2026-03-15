@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Payments;
 using Cleansia.Web.Customer.Abstractions;
 using MediatR;
@@ -10,6 +11,16 @@ namespace Cleansia.Web.Customer.Controllers;
 [ApiController]
 public class PaymentController(IMediator mediator) : CustomerApiController(mediator)
 {
+    [AllowAnonymous]
+    [HttpPost("CreateOrder")]
+    [ProducesResponseType(typeof(CreateOrder.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CreateOrder([FromBody] CreateOrder.Command command)
+    {
+        var result = await Mediator.Send(command);
+        return HandleResult<CreateOrder.Response>(result);
+    }
+
     [AllowAnonymous]
     [HttpPost("webhook")]
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]

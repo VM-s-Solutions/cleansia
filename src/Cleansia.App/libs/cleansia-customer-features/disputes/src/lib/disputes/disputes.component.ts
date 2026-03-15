@@ -1,35 +1,38 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { CleansiaButtonComponent, CleansiaTitleComponent } from '@cleansia/components';
+import { CleansiaButtonComponent } from '@cleansia/components';
 import { CustomerClient } from '@cleansia/customer-services';
 import {
   loadCustomerDisputes,
   loadCustomerDisputeDetail,
+  loadCustomerOrders,
   selectCustomerDisputes,
   selectCustomerDisputesTotal,
   selectCustomerDisputeDetail,
   selectCustomerDisputeLoading,
+  selectCustomerOrders,
 } from '@cleansia/customer-stores';
 import {
   AddDisputeMessageCommand,
   CreateDisputeCommand,
-  DisputeDetails,
   DisputeListItem,
   DisputeReason,
   DisputeStatus,
+  OrderListItem,
 } from '@cleansia/partner-services';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { Store } from '@ngrx/store';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 import { SelectModule } from 'primeng/select';
 import { DialogModule } from 'primeng/dialog';
+import { SkeletonModule } from 'primeng/skeleton';
+import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 
 @Component({
   selector: 'cleansia-customer-disputes',
@@ -37,15 +40,15 @@ import { DialogModule } from 'primeng/dialog';
   imports: [
     CommonModule,
     FormsModule,
-    TranslateModule,
-    TableModule,
+    TranslatePipe,
     TagModule,
     InputTextModule,
     TextareaModule,
     SelectModule,
     DialogModule,
+    SkeletonModule,
+    PaginatorModule,
     CleansiaButtonComponent,
-    CleansiaTitleComponent,
   ],
   templateUrl: './disputes.component.html',
 })
@@ -63,6 +66,14 @@ export class DisputesComponent implements OnInit {
   disputeDetail = toSignal(this.store.select(selectCustomerDisputeDetail));
   detailLoading = toSignal(this.store.select(selectCustomerDisputeLoading('detail')), { initialValue: false });
 
+  private readonly orders = toSignal(this.store.select(selectCustomerOrders), { initialValue: [] as OrderListItem[] });
+  readonly orderOptions = computed(() =>
+    (this.orders() || []).map(o => ({
+      label: `#${o.displayOrderNumber}`,
+      value: o.id,
+    }))
+  );
+
   showCreateDialog = signal(false);
   showDetailDialog = signal(false);
   newMessage = signal('');
@@ -73,6 +84,35 @@ export class DisputesComponent implements OnInit {
     reason: DisputeReason.QualityIssue,
     description: '',
   };
+  createFormTouched: Record<string, boolean> = {};
+
+  markCreateTouched(field: string): void {
+    this.createFormTouched[field] = true;
+  }
+
+  createFieldError(field: string): string | null {
+    if (!this.createFormTouched[field]) return null;
+    switch (field) {
+      case 'orderId':
+        return !this.createForm.orderId ? this.translate.instant('global.validation.required') : null;
+      case 'description':
+        if (!this.createForm.description) return this.translate.instant('global.validation.required');
+        if (this.createForm.description.length < 10) return this.translate.instant('global.validation.minlength', { min: 10 });
+        if (this.createForm.description.length > 2000) return this.translate.instant('global.validation.maxlength', { max: 2000 });
+        return null;
+      default:
+        return null;
+    }
+  }
+
+  isCreateFormValid(): boolean {
+    return !!(
+      this.createForm.orderId &&
+      this.createForm.description &&
+      this.createForm.description.length >= 10 &&
+      this.createForm.description.length <= 2000
+    );
+  }
 
   reasonOptions = [
     { label: this.translate.instant('pages.disputes.reasons.quality_issue'), value: DisputeReason.QualityIssue },
@@ -89,6 +129,7 @@ export class DisputesComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadDisputes();
+    this.store.dispatch(loadCustomerOrders({ offset: 0, limit: 100 }));
     const orderId = this.route.snapshot.queryParamMap.get('orderId');
     if (orderId) {
       this.createForm.orderId = orderId;
@@ -100,7 +141,7 @@ export class DisputesComponent implements OnInit {
     this.store.dispatch(loadCustomerDisputes({ offset: this.first, limit: this.rows }));
   }
 
-  onPageChange(event: TableLazyLoadEvent): void {
+  onPageChange(event: PaginatorState): void {
     this.first = event.first ?? 0;
     this.rows = event.rows ?? 10;
     this.loadDisputes();
@@ -176,9 +217,14 @@ export class DisputesComponent implements OnInit {
     }
   }
 
+  private getLocale(): string {
+    const localeMap: Record<string, string> = { cs: 'cs-CZ', en: 'en-US', pl: 'pl-PL' };
+    return localeMap[this.translate.currentLang] || 'en-US';
+  }
+
   formatDate(date: Date | undefined): string {
     if (!date) return '';
-    return new Date(date).toLocaleDateString('cs-CZ', {
+    return new Date(date).toLocaleDateString(this.getLocale(), {
       day: '2-digit', month: '2-digit', year: 'numeric',
     });
   }

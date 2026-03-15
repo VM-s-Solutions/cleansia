@@ -36,6 +36,17 @@ public class OrderController(IMediator mediator) : CustomerApiController(mediato
         return await Mediator.Send(request, cancellationToken);
     }
 
+    [HttpGet("GetPaged")]
+    [Permission(Policy.CanViewPagedUserOrder)]
+    [ProducesResponseType(typeof(PagedData<OrderListItem>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<PagedData<OrderListItem>> GetPaged([FromQuery] GetCustomerOrders.Request request, CancellationToken cancellationToken)
+    {
+        return await Mediator.Send(request, cancellationToken);
+    }
+
     [HttpGet("GetById")]
     [Permission(Policy.CanViewOrderDetail)]
     [ProducesResponseType(typeof(OrderItem), StatusCodes.Status200OK)]

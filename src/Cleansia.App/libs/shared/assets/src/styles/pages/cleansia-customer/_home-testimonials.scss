@@ -9,11 +9,11 @@
   gap: 2rem;
 
   &__card {
-    background: $white;
+    background: var(--surface-card);
     border-radius: $radius-xl;
     padding: 2.5rem 2rem 2rem;
     box-shadow: $shadow-card;
-    border: 1px solid rgba($border, 0.4);
+    border: 1px solid var(--surface-border);
     position: relative;
     transition: transform 0.4s ease;
     &:hover {
@@ -78,6 +78,32 @@
   &__role {
     font-size: 0.8rem;
     color: $text-light;
+  }
+}
+
+// =============================
+// Dark Mode — Testimonials
+// =============================
+:root.dark-mode {
+  .cl-reviews__text {
+    color: #94a3b8;
+  }
+
+  .cl-reviews__name {
+    color: #e2e8f0;
+  }
+
+  .cl-reviews__role {
+    color: #64748b;
+  }
+
+  .cl-reviews__avatar {
+    border-color: #334155;
+    outline-color: rgba(56, 189, 248, 0.12);
+  }
+
+  .cl-reviews__quote {
+    color: rgba(56, 189, 248, 0.06);
   }
 }
 

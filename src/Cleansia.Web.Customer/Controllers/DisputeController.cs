@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Disputes;
 using Cleansia.Core.AppServices.Features.Disputes.DTOs;
@@ -21,7 +22,9 @@ public class DisputeController(IMediator mediator) : CustomerApiController(media
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> CreateDispute([FromBody] CreateDispute.Command command, CancellationToken cancellationToken)
     {
-        var result = await Mediator.Send(command, cancellationToken);
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+        var enrichedCommand = command with { UserId = userId };
+        var result = await Mediator.Send(enrichedCommand, cancellationToken);
         return HandleResult<string>(result);
     }
 

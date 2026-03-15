@@ -31,6 +31,7 @@
   -webkit-user-select: none;
   aspect-ratio: 4 / 3;
   background: $bg-alt;
+  container-type: inline-size;
 
   &__after,
   &__before {
@@ -51,6 +52,10 @@
     overflow: hidden;
     z-index: 2;
     border-right: 2px solid $white;
+    img {
+      // Use container query width so the image spans the full slider, not the clipped before div
+      width: 100cqi;
+    }
   }
   &__after {
     z-index: 1;

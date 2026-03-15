@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import {
   CleansiaBrandNameComponent,
@@ -21,7 +21,7 @@ import { checkIfPasswordsValid, PasswordCheck } from './forgot-password.models';
   imports: [
     CommonModule,
     RouterModule,
-    TranslateModule,
+    TranslatePipe,
     ReactiveFormsModule,
     CleansiaButtonComponent,
     CleansiaBrandNameComponent,

@@ -39,6 +39,7 @@ export class LoginFacade extends UnsubscribeControlDirective {
       .subscribe({
         next: (authResult: JwtTokenResponse) => {
           if (!authResult.isEmailConfirmed) {
+            this.snackbarService.showSuccessTranslated('auth.login.email_not_confirmed');
             this.router.navigate([CleansiaCustomerRoute.CONFIRM_EMAIL], {
               queryParams: { email },
             });
@@ -46,7 +47,11 @@ export class LoginFacade extends UnsubscribeControlDirective {
           }
           this.authService.setSession(authResult);
           this.store.dispatch(loadCustomerUser());
+          this.snackbarService.showSuccessTranslated('auth.login.success');
           this.router.navigate([CleansiaCustomerRoute.ORDERS]);
+        },
+        error: (err) => {
+          this.snackbarService.showApiError(err, 'auth.login.error');
         },
       });
   }

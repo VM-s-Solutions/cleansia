@@ -1,5 +1,4 @@
 <cleansia-dynamic-background>
-  <cleansia-language-switcher />
   <div class="cleansia-register">
     <form
       class="cleansia-register__register-card"
@@ -49,19 +48,24 @@
         @if (isPasswordValid; as passwordValidation) {
         <div class="cleansia-register__password-validation">
           <ul>
-            <li [class.cleansia-register__password-validation--valid]="passwordValidation?.hasLowerCase">
+            <li [class.cleansia-register__password-validation--valid]="passwordValidation?.hasLowerCase"
+                [class.cleansia-register__password-validation--invalid]="hasPasswordInput && !passwordValidation?.hasLowerCase">
               {{ 'auth.register.validation.password_lowercase' | translate }}
             </li>
-            <li [class.cleansia-register__password-validation--valid]="passwordValidation?.hasUpperCase">
+            <li [class.cleansia-register__password-validation--valid]="passwordValidation?.hasUpperCase"
+                [class.cleansia-register__password-validation--invalid]="hasPasswordInput && !passwordValidation?.hasUpperCase">
               {{ 'auth.register.validation.password_uppercase' | translate }}
             </li>
-            <li [class.cleansia-register__password-validation--valid]="passwordValidation?.hasNumber">
+            <li [class.cleansia-register__password-validation--valid]="passwordValidation?.hasNumber"
+                [class.cleansia-register__password-validation--invalid]="hasPasswordInput && !passwordValidation?.hasNumber">
               {{ 'auth.register.validation.password_number' | translate }}
             </li>
-            <li [class.cleansia-register__password-validation--valid]="passwordValidation?.hasMinLength">
+            <li [class.cleansia-register__password-validation--valid]="passwordValidation?.hasMinLength"
+                [class.cleansia-register__password-validation--invalid]="hasPasswordInput && !passwordValidation?.hasMinLength">
               {{ 'auth.register.validation.password_min_length' | translate }}
             </li>
-            <li [class.cleansia-register__password-validation--valid]="passwordValidation?.hasSpecialCharacter">
+            <li [class.cleansia-register__password-validation--valid]="passwordValidation?.hasSpecialCharacter"
+                [class.cleansia-register__password-validation--invalid]="hasPasswordInput && !passwordValidation?.hasSpecialCharacter">
               {{ 'auth.register.validation.password_special_character' | translate }}
             </li>
           </ul>
@@ -81,7 +85,8 @@
         @if (isConfirmPasswordValid; as passwordValidation) {
         <div class="cleansia-register__password-validation">
           <ul>
-            <li [class.cleansia-register__password-validation--valid]="passwordValidation?.arePasswordsEqual">
+            <li [class.cleansia-register__password-validation--valid]="passwordValidation?.arePasswordsEqual"
+                [class.cleansia-register__password-validation--invalid]="hasConfirmPasswordInput && !passwordValidation?.arePasswordsEqual">
               {{ 'auth.register.validation.passwords_match' | translate }}
             </li>
           </ul>

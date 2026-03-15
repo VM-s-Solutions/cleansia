@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -8,7 +8,6 @@ import {
   CleansiaButtonComponent,
   CleansiaCheckboxComponent,
   CleansiaDynamicBackgroundComponent,
-  CleansiaLanguageSwitcherComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
@@ -33,16 +32,24 @@ import { checkIfPasswordsValid, PasswordCheck } from './register.models';
     CleansiaCheckboxComponent,
     CleansiaBrandNameComponent,
     CleansiaTextInputComponent,
-    CleansiaLanguageSwitcherComponent,
     CleansiaDynamicBackgroundComponent,
   ],
   providers: [RegisterFacade],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RegisterComponent {
   private readonly store = inject(Store);
   protected readonly facade = inject(RegisterFacade);
   protected readonly loading = toSignal(this.store.select(selectCustomerLoading));
   protected routes = CleansiaCustomerRoute;
+
+  get hasPasswordInput(): boolean {
+    return !!this.facade.formGroup.get('password')?.value;
+  }
+
+  get hasConfirmPasswordInput(): boolean {
+    return !!this.facade.formGroup.get('confirmPassword')?.value;
+  }
 
   get isPasswordValid(): PasswordCheck {
     const password = this.facade.formGroup.get('password')?.value;

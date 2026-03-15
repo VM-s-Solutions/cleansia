@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import {
@@ -6,7 +6,6 @@ import {
   CleansiaButtonComponent,
   CleansiaCheckboxComponent,
   CleansiaDynamicBackgroundComponent,
-  CleansiaLanguageSwitcherComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
@@ -27,10 +26,10 @@ import { LoginFacade } from './login.facade';
     CleansiaCheckboxComponent,
     CleansiaBrandNameComponent,
     CleansiaTextInputComponent,
-    CleansiaLanguageSwitcherComponent,
     CleansiaDynamicBackgroundComponent,
   ],
   providers: [LoginFacade],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginComponent {
   protected readonly facade = inject(LoginFacade);

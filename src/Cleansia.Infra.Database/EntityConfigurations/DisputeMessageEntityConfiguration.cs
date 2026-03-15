@@ -4,17 +4,13 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class DisputeMessageEntityConfiguration : IEntityTypeConfiguration<DisputeMessage>
+public class DisputeMessageEntityConfiguration : BaseEntityConfiguration<DisputeMessage, string>
 {
-    public void Configure(EntityTypeBuilder<DisputeMessage> builder)
+    public override void Configure(EntityTypeBuilder<DisputeMessage> builder)
     {
+        base.Configure(builder);
+
         builder.ToTable("DisputeMessages");
-
-        builder.HasKey(dm => dm.Id);
-
-        builder.Property(dm => dm.Id)
-            .HasMaxLength(50)
-            .ValueGeneratedOnAdd();
 
         builder.Property(dm => dm.DisputeId)
             .IsRequired()

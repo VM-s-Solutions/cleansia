@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { AccordionModule } from 'primeng/accordion';
 import { ButtonModule } from 'primeng/button';
 
@@ -9,7 +9,7 @@ import { ButtonModule } from 'primeng/button';
   templateUrl: './faq.component.html',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterModule, TranslateModule, AccordionModule, ButtonModule],
+  imports: [RouterModule, TranslatePipe, AccordionModule, ButtonModule],
 })
 export class FaqComponent {
   faqs = [

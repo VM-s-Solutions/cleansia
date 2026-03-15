@@ -8,7 +8,16 @@
     "login": "Přihlásit se",
     "register": "Registrace",
     "profile": "Profil",
-    "logout": "Odhlásit se"
+    "logout": "Odhlásit se",
+    "my_disputes": "Moje reklamace",
+    "theme_light": "Světlý režim",
+    "theme_dark": "Tmavý režim",
+    "language": "Jazyk",
+    "settings": "Nastavení",
+    "section_account": "Účet",
+    "section_activity": "Aktivita",
+    "email_verified": "E-mail ověřen",
+    "email_not_verified": "E-mail neověřen"
   },
   "cookies": {
     "title": "Vaše soukromí je pro nás důležité",
@@ -56,6 +65,8 @@
     "validation": {
       "required": "Toto pole je povinné",
       "email": "Zadejte platnou emailovou adresu",
+      "phone": "Zadejte platné telefonní číslo",
+      "zip": "Zadejte platné PSČ",
       "minlength": "Musí mít alespoň {{min}} znaků",
       "maxlength": "Nesmí mít více než {{max}} znaků",
       "passwords_mismatch": "Hesla se neshodují"
@@ -97,7 +108,8 @@
       "or": "nebo",
       "google": "Pokračovat přes Google",
       "success": "Úspěšně přihlášeno!",
-      "error": "Neplatný email nebo heslo"
+      "error": "Neplatný email nebo heslo",
+      "email_not_confirmed": "Nejprve prosím potvrďte svůj email"
     },
     "register": {
       "title": "Vytvořit účet",
@@ -119,7 +131,7 @@
         "password_lowercase": "Alespoň jedno malé písmeno",
         "password_uppercase": "Alespoň jedno velké písmeno",
         "password_number": "Alespoň jedna číslice",
-        "password_min_length": "Alespoň 8 znaků",
+        "password_min_length": "Alespoň 12 znaků",
         "password_special_character": "Alespoň jeden speciální znak",
         "passwords_match": "Hesla se shodují"
       }
@@ -132,6 +144,7 @@
       "error": "Neplatný nebo expirovaný potvrzovací odkaz",
       "resend": "Znovu odeslat potvrzovací email",
       "resend_success": "Potvrzovací email odeslán!",
+      "resend_error": "Nepodařilo se znovu odeslat potvrzovací email. Zkuste to prosím znovu.",
       "back_to_login": "Zpět na přihlášení"
     },
     "forgot_password": {
@@ -382,9 +395,18 @@
         "s3": { "name": "Úklid po rekonstrukci" }
       },
       "fallback_services": {
-        "s1": { "name": "Obecný úklid", "desc": "Standardní úklid všech místností včetně utírání prachu, vysávání a dezinfekce." },
-        "s2": { "name": "Hloubkové čištění", "desc": "Důkladné čištění včetně soklových lišt, vnitřku spotřebičů a detailní dezinfekce." },
-        "s3": { "name": "Čištění čalounění", "desc": "Profesionální čištění pohovek, křesel a dalšího čalouněného nábytku." }
+        "s1": {
+          "name": "Obecný úklid",
+          "desc": "Standardní úklid všech místností včetně utírání prachu, vysávání a dezinfekce."
+        },
+        "s2": {
+          "name": "Hloubkové čištění",
+          "desc": "Důkladné čištění včetně soklových lišt, vnitřku spotřebičů a detailní dezinfekce."
+        },
+        "s3": {
+          "name": "Čištění čalounění",
+          "desc": "Profesionální čištění pohovek, křesel a dalšího čalouněného nábytku."
+        }
       },
       "services": {
         "title": "Služby a ceník",
@@ -410,18 +432,42 @@
         "badge": "Reference",
         "rating": "hodnocení",
         "review": "recenze",
-        "t1": { "text": "Úžasné čištění pohovek a koberců — jako nové! Skvělá komunikace a rychlé jednání. Všem doporučuji!", "author": "Anna", "role": "v domácnosti" },
-        "t2": { "text": "Čisté koberce a čalounění, výsledky předčily očekávání! Všechny skvrny pryč. Velmi profesionální přístup, skvělý tým.", "author": "Igor", "role": "kancelářský pracovník" },
-        "t3": { "text": "Vyzkoušeli jsme několik firem — Cleansia je nejlepší. Matrace i koberce jsou teď dokonale čisté a krásně voní.", "author": "Radmila", "role": "maminka v domácnosti" }
+        "t1": {
+          "text": "Úžasné čištění pohovek a koberců — jako nové! Skvělá komunikace a rychlé jednání. Všem doporučuji!",
+          "author": "Anna",
+          "role": "v domácnosti"
+        },
+        "t2": {
+          "text": "Čisté koberce a čalounění, výsledky předčily očekávání! Všechny skvrny pryč. Velmi profesionální přístup, skvělý tým.",
+          "author": "Igor",
+          "role": "kancelářský pracovník"
+        },
+        "t3": {
+          "text": "Vyzkoušeli jsme několik firem — Cleansia je nejlepší. Matrace i koberce jsou teď dokonale čisté a krásně voní.",
+          "author": "Radmila",
+          "role": "maminka v domácnosti"
+        }
       },
       "faq": {
         "title": "Často kladené otázky",
         "badge": "FAQ",
         "desc": "Nenašli jste odpověď? Kontaktujte nás a rádi vám pomůžeme.",
-        "q1": { "question": "Vyjíždíte i do okolí?", "answer": "Ano, pokrýváme i okolní oblasti. Kontaktujte nás pro ověření dostupnosti ve vaší lokalitě." },
-        "q2": { "question": "Můžete čistit nábytek s delikátním potahem?", "answer": "Ano, vybíráme šetrné čisticí prostředky a metody vhodné pro každý typ látky: hedvábí, vlnu, velur, mikrovlákno a další. Před čištěním vždy provedeme test na malé ploše, abychom se ujistili, že látka nebude poškozena." },
-        "q3": { "question": "Odstraníte všechny skvrny úplně?", "answer": "Odstraníme 95 % skvrn. Některé velmi staré nebo chemicky fixované skvrny se mohou výrazně zesvětlit, ale nezmizí úplně." },
-        "q4": { "question": "Mohu si objednat čištění večer nebo o víkendu?", "answer": "Ano! Nabízíme flexibilní plánování včetně večerů a víkendů, aby to vyhovovalo vašemu rozvrhu." }
+        "q1": {
+          "question": "Vyjíždíte i do okolí?",
+          "answer": "Ano, pokrýváme i okolní oblasti. Kontaktujte nás pro ověření dostupnosti ve vaší lokalitě."
+        },
+        "q2": {
+          "question": "Můžete čistit nábytek s delikátním potahem?",
+          "answer": "Ano, vybíráme šetrné čisticí prostředky a metody vhodné pro každý typ látky: hedvábí, vlnu, velur, mikrovlákno a další. Před čištěním vždy provedeme test na malé ploše, abychom se ujistili, že látka nebude poškozena."
+        },
+        "q3": {
+          "question": "Odstraníte všechny skvrny úplně?",
+          "answer": "Odstraníme 95 % skvrn. Některé velmi staré nebo chemicky fixované skvrny se mohou výrazně zesvětlit, ale nezmizí úplně."
+        },
+        "q4": {
+          "question": "Mohu si objednat čištění večer nebo o víkendu?",
+          "answer": "Ano! Nabízíme flexibilní plánování včetně večerů a víkendů, aby to vyhovovalo vašemu rozvrhu."
+        }
       },
       "cta": {
         "title": "Připraveni proměnit váš prostor?",
@@ -453,7 +499,12 @@
     },
     "profile": {
       "title": "Můj profil",
+      "hero_title": "Můj profil",
+      "hero_subtitle": "Spravujte své osobní údaje a zabezpečení účtu",
       "personal_info": "Osobní údaje",
+      "personal_info_desc": "Aktualizujte své jméno, telefon a další údaje",
+      "security_title": "Zabezpečení",
+      "security_desc": "Změňte heslo pro ochranu svého účtu",
       "change_password": "Změnit heslo",
       "email": "Email",
       "first_name": "Jméno",
@@ -466,7 +517,34 @@
       "passwords_not_match": "Hesla se neshodují",
       "password_change_note": "Heslo musí obsahovat alespoň 8 znaků, velké a malé písmeno a číslo.",
       "save_success": "Profil úspěšně uložen",
-      "save_error": "Nepodařilo se uložit profil"
+      "save_error": "Nepodařilo se uložit profil",
+      "addresses_title": "Adresy",
+      "addresses_desc": "Spravujte uložené adresy pro rychlé objednávky",
+      "preferences_title": "Předvolby",
+      "preferences_desc": "Přizpůsobte si aplikaci",
+      "no_addresses": "Zatím nemáte žádné uložené adresy",
+      "default_address": "Výchozí",
+      "set_default": "Nastavit jako výchozí",
+      "add_address": "Přidat adresu",
+      "edit_address": "Upravit adresu",
+      "pref_language": "Jazyk",
+      "pref_theme": "Motiv",
+      "theme_light": "Světlý režim",
+      "theme_dark": "Tmavý režim",
+      "pref_notifications": "E-mailová oznámení",
+      "address_street": "Ulice",
+      "address_city": "Město",
+      "address_zip": "PSČ",
+      "address_country": "Země",
+      "address_saved": "Adresa uložena",
+      "address_deleted": "Adresa odstraněna",
+      "current_password": "Současné heslo",
+      "danger_zone_title": "Nebezpečná zóna",
+      "danger_zone_desc": "Nevratné akce pro váš účet",
+      "delete_account": "Smazat účet",
+      "delete_account_desc": "Trvale smazat váš účet a všechna data",
+      "export_data": "Exportovat data",
+      "export_data_desc": "Stáhnout kopii všech vašich osobních údajů"
     },
     "services": {
       "title": "Naše služby",
@@ -482,36 +560,104 @@
       "premium_quality": "Prémiová kvalita úklidu",
       "vetted_professionals": "Prověření profesionálové",
       "satisfaction_guarantee": "100% garance spokojenosti",
-      "check_back_later": "Podívejte se sem později pro naše prémiové nabídky."
+      "check_back_later": "Podívejte se sem později pro naše prémiové nabídky.",
+      "trust_certified": "Certifikovaní profesionálové",
+      "trust_eco": "Ekologické produkty",
+      "trust_guarantee": "100% spokojenost",
+      "cta_title": "Připraveni na zářivě čistý domov?",
+      "cta_subtitle": "Objednejte si profesionální úklid ještě dnes a užijte si zdravější a svěžejší prostředí.",
+      "cta_button": "Objednat úklid",
+      "view_all_packages": "Zobrazit všechny balíčky",
+      "view_all_services": "Zobrazit všechny služby",
+      "sort_price_asc": "Cena: od nejnižší",
+      "sort_price_desc": "Cena: od nejvyšší",
+      "sort_name_asc": "Název: A–Z",
+      "features": {
+        "basic_supplies": "Standardní čisticí prostředky",
+        "basic_cleaner": "1 profesionální uklízeč",
+        "basic_cleaning": "Základní úklid místností",
+        "basic_sessions": "Platí na 1 úklid",
+        "standard_supplies": "Prémiové ekologické prostředky",
+        "standard_cleaners": "2 profesionální uklízeči",
+        "standard_deep": "Hloubkové čištění zahrnuto",
+        "standard_priority": "Přednostní rezervace",
+        "standard_sessions": "Platí na 3 úklidy",
+        "premium_supplies": "Prémiové ekologické prostředky",
+        "premium_cleaners": "3+ profesionální uklízeči",
+        "premium_deep": "Hloubkové čištění + dezinfekce",
+        "premium_priority": "Přednostní rezervace",
+        "premium_sameday": "Dostupnost ve stejný den",
+        "premium_sessions": "Platí na 5 úklidů"
+      }
     },
     "order": {
       "title": "Objednat úklid",
+      "hero_title": "Objednejte si úklid",
+      "hero_subtitle": "Profesionální úklid na míru vašim potřebám. Vyberte služby, zvolte termín a relaxujte.",
+      "trust_certified": "Certifikovaní uklízeči",
+      "trust_satisfaction": "100% spokojenost",
+      "trust_no_hidden": "Žádné skryté poplatky",
       "select_services": "Vyberte služby",
+      "services_section_title": "Vyberte si služby",
+      "packages_section_title": "Nebo zvolte balíček",
+      "room_config_title": "Detaily nemovitosti",
       "rooms": "Počet pokojů",
+      "rooms_label": "Pokoje",
       "bathrooms": "Počet koupelen",
+      "bathrooms_label": "Koupelny",
       "address": "Adresa",
+      "contact_section_title": "Kontaktní údaje",
+      "contact_phone_title": "Telefonní číslo",
+      "address_section_title": "Adresa úklidu",
       "street": "Ulice",
       "city": "Město",
       "zip_code": "PSČ",
       "country": "Země",
       "select_country": "Vyberte zemi",
       "date_time": "Datum a čas",
+      "datetime_section_title": "Kdy máme přijít?",
+      "datetime_note": "Přesný čas s vámi potvrdíme",
       "cleaning_date": "Datum úklidu",
+      "date_label": "Vyberte datum",
       "cleaning_time": "Čas úklidu",
+      "time_label": "Vyberte čas",
       "payment_method": "Způsob platby",
+      "payment_section_title": "Jak chcete zaplatit?",
       "pay_by_card": "Platba kartou",
+      "payment_card_title": "Kreditní / Debetní karta",
+      "payment_card_desc": "Bezpečná online platba přes Stripe",
       "pay_by_cash": "Platba hotově",
+      "payment_cash_title": "Hotově při předání",
+      "payment_cash_desc": "Zaplaťte po dokončení úklidu",
       "contact_info": "Kontaktní údaje",
-      "customer_name": "Jméno a příjmení",
-      "customer_name_placeholder": "např. Jan Novák",
+      "customer_first_name": "Jméno",
+      "customer_first_name_placeholder": "např. Jan",
+      "customer_last_name": "Příjmení",
+      "customer_last_name_placeholder": "např. Novák",
       "customer_email": "Email",
       "customer_email_placeholder": "např. jan@example.com",
       "customer_phone": "Telefonní číslo",
       "customer_phone_placeholder": "např. +420 123 456 789",
       "special_instructions": "Speciální instrukce",
+      "special_instructions_placeholder": "Máte speciální požadavky? (např. zaměření na kuchyň, produkty pro domácnost se zvířaty...)",
+      "entry_instructions_label": "Pokyny pro vstup",
+      "entry_instructions_placeholder": "Jak se dostaneme do nemovitosti? (např. zvonek, klíč pod rohožkou...)",
       "summary": "Souhrn",
+      "summary_section_title": "Zkontrolujte objednávku",
+      "summary_services": "Služby",
+      "summary_packages": "Balíčky",
+      "summary_property": "Nemovitost",
+      "summary_rooms_count": "{{rooms}} pokojů, {{bathrooms}} koupelen",
+      "summary_address": "Adresa",
+      "summary_datetime": "Datum a čas",
+      "summary_payment": "Platba",
+      "summary_contact": "Kontakt",
+      "summary_instructions": "Instrukce",
+      "summary_edit": "Upravit",
       "selected_services_label": "Vybrané služby",
       "total_price": "Celková cena",
+      "price_total": "Celkem",
+      "place_order": "Odeslat objednávku",
       "submit_order": "Odeslat objednávku",
       "submit_success": "Objednávka úspěšně odeslána!",
       "submit_error": "Nepodařilo se odeslat objednávku",
@@ -521,16 +667,40 @@
         "datetime": "Datum a čas",
         "payment": "Platba",
         "summary": "Souhrn"
+      },
+      "saved_address_default": "Výchozí",
+      "new_address": "Zadat novou adresu",
+      "save_address": "Uložit tuto adresu pro budoucí objednávky",
+      "rebook_warning": {
+        "title": "Některé služby nejsou dostupné",
+        "description": "Následující služby z vaší předchozí objednávky již nejsou k dispozici:",
+        "continue": "OK, pokračovat"
       }
     },
     "orders": {
       "title": "Moje objednávky",
+      "hero_title": "Moje objednávky",
+      "hero_subtitle": "Sledujte své nadcházející a minulé úklidové schůzky",
+      "stats_upcoming": "Nadcházející",
+      "stats_completed": "Dokončené",
+      "stats_total_spent": "Celkem utraceno",
       "no_orders": "Zatím nemáte žádné objednávky",
       "no_orders_description": "Objednejte si první úklid!",
       "browse_services": "Prohlédnout služby",
       "upcoming_orders": "Nadcházející objednávky",
       "past_orders": "Předchozí objednávky",
       "rebook": "Objednat znovu",
+      "empty_subtitle": "Vaše cesta k čistému domovu začíná zde! Prohlédněte si naše služby a objednejte si první úklid.",
+      "empty_trust_certified": "Certifikovaní profesionálové",
+      "empty_trust_satisfaction": "100% záruka spokojenosti",
+      "empty_trust_eco": "Ekologické produkty",
+      "empty_step1": "Vyberte službu",
+      "empty_step2": "Zvolte datum a čas",
+      "empty_step3": "Relaxujte a užívejte si",
+      "empty_cta": "Objednejte si první úklid",
+      "need_help": "Potřebujete pomoc?",
+      "need_help_desc": "Pokud máte problémy s minulou objednávkou, můžete je nahlásit.",
+      "go_to_disputes": "Přejít na reklamace",
       "table": {
         "order_number": "Číslo objednávky",
         "date": "Datum",
@@ -565,30 +735,42 @@
       "report_issue": "Nahlásit problém"
     },
     "checkout": {
-      "success_title": "Platba úspěšná!",
-      "success_message": "Vaše objednávka byla potvrzena.",
-      "view_orders": "Zobrazit objednávky",
-      "cancel_title": "Platba zrušena",
-      "cancel_message": "Vaše platba nebyla dokončena.",
-      "try_again": "Zkusit znovu",
       "success": {
         "title": "Platba úspěšná!",
-        "description": "Vaše objednávka byla potvrzena. Brzy obdržíte potvrzovací email.",
-        "view_orders": "Zobrazit objednávky"
+        "subtitle": "Děkujeme za vaši objednávku",
+        "description": "Vaše úklid byl rezervován a potvrzen. Brzy obdržíte potvrzovací email se všemi podrobnostmi.",
+        "what_next": "Co se stane dál?",
+        "step_confirmation": "Obdržíte potvrzovací email během několika minut",
+        "step_reminder": "Pošleme vám připomínku před datem úklidu",
+        "step_cleaner": "Náš profesionální uklízeč dorazí v naplánovaném čase",
+        "view_orders": "Zobrazit objednávky",
+        "book_another": "Objednat další úklid",
+        "back_home": "Zpět na úvodní stránku"
       },
       "cancel": {
         "title": "Platba zrušena",
-        "description": "Vaše platba nebyla dokončena. Nebyly provedeny žádné transakce.",
+        "subtitle": "Žádné obavy — nic nebylo účtováno",
+        "description": "Vaše platba nebyla dokončena a z vašeho účtu nebyly strženy žádné prostředky. Vybrané služby jsou stále k dispozici.",
+        "reasons_title": "Časté důvody zrušení:",
+        "reason_changed_mind": "Změnili jste názor na službu",
+        "reason_wrong_details": "Potřebujete aktualizovat údaje rezervace",
+        "reason_payment_issue": "Vyskytl se problém s platbou",
         "try_again": "Zkusit znovu",
-        "view_orders": "Zobrazit objednávky"
+        "view_orders": "Zobrazit objednávky",
+        "contact_support": "Potřebujete pomoc? Kontaktujte náš tým podpory",
+        "back_home": "Zpět na úvodní stránku"
       }
     },
     "disputes": {
       "title": "Moje reklamace",
+      "hero_title": "Moje reklamace",
+      "hero_subtitle": "Zobrazení a správa vašich reklamací",
+      "empty_description": "Nemáte žádné otevřené reklamace. Pokud máte problém s naší službou, můžete zde vytvořit novou reklamaci.",
       "create_new": "Nová reklamace",
       "create_title": "Vytvořit reklamaci",
-      "no_disputes": "Žádné reklamace",
-      "order_id": "ID objednávky",
+      "no_disputes": "Vše v pořádku!",
+      "order_id": "Objednávka",
+      "select_order": "Vyberte objednávku...",
       "reason": "Důvod",
       "description": "Popis",
       "submit": "Odeslat",
@@ -608,6 +790,9 @@
         "incorrect_amount": "Nesprávná částka",
         "other": "Jiné"
       },
+      "empty_faq_title": "Co mohu nahlásit?",
+      "empty_faq_items": "Problémy s kvalitou, nedokončenou službu, poškozený majetek, problémy s fakturací a další.",
+      "empty_response_time": "Obvykle odpovídáme do 24–48 hodin.",
       "table": {
         "order": "Objednávka",
         "reason": "Důvod",
@@ -679,12 +864,43 @@
   "components": {
     "not_found": {
       "title": "Stránka nenalezena",
-      "description": "Stránka, kterou hledáte, neexistuje nebo byla přesunuta."
+      "description": "Stránka, kterou hledáte, neexistuje nebo byla přesunuta.",
+      "suggestion_home": "Vraťte se na domovskou stránku",
+      "suggestion_url": "Zkontrolujte správnost URL adresy",
+      "suggestion_contact": "Kontaktujte nás, pokud problém přetrvává",
+      "go_home": "Na domovskou stránku"
     }
   },
   "validation": {
     "common": {
-      "not_all_fields_filled": "Vyplňte prosím všechna povinná pole"
+      "not_all_fields_filled": "Vyplňte prosím všechna povinná pole",
+      "required": "Toto pole je povinné",
+      "email": "Zadejte prosím platnou e-mailovou adresu",
+      "birth_date": "Datum narození je neplatné. Uživatel musí být mladší než {{ yearsRange }} let",
+      "min_length": "Musí obsahovat alespoň {{ minLength }} znaků",
+      "max_length": "Nesmí přesáhnout {{ maxLength }} znaků",
+      "pattern": "Pole neodpovídá požadovanému vzoru",
+      "minimum_age": "Minimální věk je {{ requiredAge }} let. Současný věk: {{ actualAge }} let",
+      "maximum_age": "Maximální věk je {{ maxAge }} let. Současný věk: {{ actualAge }} let",
+      "phone_number": "Neplatný formát telefonního čísla",
+      "confirm_password": "Hesla se neshodují",
+      "no_whitespace": "Pole nesmí obsahovat mezery",
+      "zip_code": "Neplatný formát PSČ"
+    },
+    "file": {
+      "required": "Soubory jsou povinné",
+      "invalid_type": "Neplatný typ souboru. Vyberte prosím platný dokument.",
+      "max_size": "Velikost souboru je příliš velká. Maximální povolená velikost je {{ maxSize }}MB.",
+      "too_few_files": "Příliš málo souborů. Minimálně požadováno: {{ min }}",
+      "too_many_files": "Příliš mnoho souborů. Maximálně povoleno: {{ max }}"
+    },
+    "password": {
+      "uppercase": "alespoň jedno velké písmeno",
+      "lowercase": "alespoň jedno malé písmeno",
+      "number": "alespoň jednu číslici",
+      "special_char": "alespoň jeden speciální znak",
+      "min_length": "minimálně 12 znaků",
+      "requirements": "Heslo musí obsahovat: {{ requirements }}"
     }
   },
   "common": {

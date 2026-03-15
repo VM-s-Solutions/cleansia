@@ -6,14 +6,14 @@ import {
   HostListener,
   inject,
 } from '@angular/core';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'cleansia-gallery',
   templateUrl: './gallery.component.html',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslateModule],
+  imports: [TranslatePipe],
 })
 export class GalleryComponent {
   private readonly el = inject(ElementRef);

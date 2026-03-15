@@ -5,7 +5,7 @@ import { CleansiaButtonComponent, CleansiaTitleComponent } from '@cleansia/compo
 import { CustomerClient } from '@cleansia/customer-services';
 import { OrderItem, OrderStatus, PaymentStatus } from '@cleansia/partner-services';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { TagModule } from 'primeng/tag';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TimelineModule } from 'primeng/timeline';
@@ -15,7 +15,7 @@ import { TimelineModule } from 'primeng/timeline';
   standalone: true,
   imports: [
     CommonModule,
-    TranslateModule,
+    TranslatePipe,
     TagModule,
     SkeletonModule,
     TimelineModule,
@@ -119,9 +119,14 @@ export class OrderDetailComponent implements OnInit {
     }
   }
 
+  private getLocale(): string {
+    const localeMap: Record<string, string> = { cs: 'cs-CZ', en: 'en-US', pl: 'pl-PL' };
+    return localeMap[this.translate.currentLang] || 'en-US';
+  }
+
   formatDate(date: Date | undefined): string {
     if (!date) return '';
-    return new Date(date).toLocaleDateString('cs-CZ', {
+    return new Date(date).toLocaleDateString(this.getLocale(), {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -133,7 +138,7 @@ export class OrderDetailComponent implements OnInit {
   formatPrice(price: number | undefined): string {
     if (price == null) return '';
     const code = this.order()?.currency?.code || 'CZK';
-    return new Intl.NumberFormat('cs-CZ', {
+    return new Intl.NumberFormat(this.getLocale(), {
       style: 'currency',
       currency: code,
       minimumFractionDigits: 0,

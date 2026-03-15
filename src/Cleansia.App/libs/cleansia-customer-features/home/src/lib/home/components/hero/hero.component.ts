@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
 
 @Component({
@@ -8,6 +8,6 @@ import { ButtonModule } from 'primeng/button';
   templateUrl: './hero.component.html',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterModule, TranslateModule, ButtonModule],
+  imports: [RouterModule, TranslatePipe, ButtonModule],
 })
 export class HeroComponent {}

@@ -28,7 +28,7 @@ public class Order : Auditable, ITenantEntity
 
     [Required]
     [MaxLength(50)]
-    public string DisplayOrderNumber { get; private set; }
+    public string DisplayOrderNumber { get; private set; } = $"ORD-{Guid.NewGuid().ToString("N")[..8].ToUpper()}";
 
     public int Rooms { get; private set; }
 
@@ -69,7 +69,7 @@ public class Order : Auditable, ITenantEntity
     [MaxLength(50)]
     public string ConfirmationCode { get; private set; } = OrderExtensions.GenerateConfirmationCode();
 
-    public string StripeSessionId { get; private set; }
+    public string StripeSessionId { get; private set; } = string.Empty;
 
     public string? Notes { get; private set; }
 
@@ -167,6 +167,13 @@ public class Order : Auditable, ITenantEntity
     {
         EstimatedTime = estimatedTime;
 
+        return this;
+    }
+
+    public Order SetCurrency(Currency currency)
+    {
+        Currency = currency;
+        CurrencyId = currency.Id;
         return this;
     }
 

@@ -22,7 +22,6 @@ import { GalleryComponent } from './components/gallery/gallery.component';
 import { TestimonialsComponent } from './components/testimonials/testimonials.component';
 import { FaqComponent } from './components/faq/faq.component';
 import { CtaComponent } from './components/cta/cta.component';
-import { LandingFooterComponent } from './components/landing-footer/landing-footer.component';
 
 @Component({
   selector: 'cleansia-home',
@@ -39,7 +38,6 @@ import { LandingFooterComponent } from './components/landing-footer/landing-foot
     TestimonialsComponent,
     FaqComponent,
     CtaComponent,
-    LandingFooterComponent,
   ],
 })
 export class CleansiaComponent implements OnInit, AfterViewInit, OnDestroy {

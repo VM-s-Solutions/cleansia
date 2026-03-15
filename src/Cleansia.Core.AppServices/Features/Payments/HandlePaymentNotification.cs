@@ -35,19 +35,21 @@ public class HandlePaymentNotification
 
             RuleFor(x => x)
                 .MustAsync(OrderExistsAsync)
-                .When(NotificationIsCompleted);
+                .When(NotificationIsHandled);
         }
 
-        private bool NotificationIsCompleted(Command command)
+        private bool NotificationIsHandled(Command command)
         {
             var stripeEvent = EventUtility.ConstructEvent(command.JsonPayload, command.SignatureHeader, _stripeConfig.WebhookSecret);
-            return stripeEvent.Type == Constants.StripeEventType.CompletedSession;
+            return stripeEvent.Type is Constants.StripeEventType.CompletedSession
+                                   or Constants.StripeEventType.ExpiredSession;
         }
 
         private async Task<bool> OrderExistsAsync(Command command, CancellationToken cancellationToken)
         {
             var stripeEvent = EventUtility.ConstructEvent(command.JsonPayload, command.SignatureHeader, _stripeConfig.WebhookSecret);
-            if (stripeEvent.Type != Constants.StripeEventType.CompletedSession)
+            if (stripeEvent.Type is not (Constants.StripeEventType.CompletedSession
+                                     or Constants.StripeEventType.ExpiredSession))
             {
                 return true;
             }
@@ -78,7 +80,8 @@ public class HandlePaymentNotification
                     "Invalid webhook signature"));
             }
 
-            if (stripeEvent.Type != Constants.StripeEventType.CompletedSession)
+            if (stripeEvent.Type is not (Constants.StripeEventType.CompletedSession
+                                    or Constants.StripeEventType.ExpiredSession))
             {
                 logger.LogInformation("Received webhook event type {EventType}, ignoring", stripeEvent.Type);
                 return BusinessResult.Success(string.Empty);
@@ -104,6 +107,16 @@ public class HandlePaymentNotification
                     BusinessErrorMessage.OrderNotFound));
             }
 
+            if (stripeEvent.Type == Constants.StripeEventType.ExpiredSession)
+            {
+                return await HandleExpiredSession(order, orderId, cancellationToken);
+            }
+
+            return await HandleCompletedSession(order, orderId, command.Language, cancellationToken);
+        }
+
+        private async Task<BusinessResult<string>> HandleCompletedSession(Order order, string orderId, string language, CancellationToken cancellationToken)
+        {
             // Idempotency check - don't process if already paid
             if (order.PaymentStatus == PaymentStatus.Paid)
             {
@@ -118,16 +131,30 @@ public class HandlePaymentNotification
             // Try to generate and send receipt, but don't fail webhook if it fails
             try
             {
-                await GenerateAndSendReceiptAsync(order, command.Language, cancellationToken);
+                await GenerateAndSendReceiptAsync(order, language, cancellationToken);
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to generate/send receipt for order {OrderId}, will retry later", orderId);
-                // Don't fail the webhook - order is already marked as paid
-                // Receipt can be regenerated later if needed
             }
 
             logger.LogInformation("Successfully processed payment webhook for order {OrderId}", orderId);
+            return BusinessResult.Success(orderId);
+        }
+
+        private async Task<BusinessResult<string>> HandleExpiredSession(Order order, string orderId, CancellationToken cancellationToken)
+        {
+            // Idempotency check - don't process if already cancelled or paid
+            if (order.PaymentStatus is PaymentStatus.Failed or PaymentStatus.Paid)
+            {
+                logger.LogInformation("Order {OrderId} already has payment status {Status}, skipping expired session", orderId, order.PaymentStatus);
+                return BusinessResult.Success(orderId);
+            }
+
+            order.UpdatePaymentStatus(PaymentStatus.Failed);
+            order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, order));
+
+            logger.LogInformation("Cancelled order {OrderId} due to expired Stripe checkout session", orderId);
             return BusinessResult.Success(orderId);
         }
 

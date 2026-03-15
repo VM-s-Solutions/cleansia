@@ -1,32 +1,34 @@
 <footer class="cl-footer">
-  <div class="cl-newsletter-wrap">
-    <div class="cl-newsletter__mascot">
-      <img src="assets/images/mascot/mascot-cleaning.png" alt="Cleaning mascot" loading="lazy" />
-    </div>
-    <div class="cl-newsletter">
-      <div class="cl-newsletter__body">
-        <h3>{{ 'pages.home.footer.newsletter_title' | translate }}</h3>
-        <p>{{ 'pages.home.footer.newsletter_subtitle' | translate }}</p>
-        <form class="cl-newsletter__form" #newsletterForm (ngSubmit)="submitRequest(newsletterForm)">
-          <div class="cl-newsletter__input">
-            <i class="pi pi-envelope"></i>
-            <input
-              type="email"
-              name="email"
-              ngModel
-              [placeholder]="'pages.home.footer.newsletter_placeholder' | translate"
-              required
-            />
-          </div>
-          <button type="submit" pButton [label]="'pages.home.footer.newsletter_button' | translate" class="p-button-rounded cl-btn-primary"></button>
-        </form>
-        <small class="cl-newsletter__note">
-          {{ 'pages.home.footer.unsubscribe_note' | translate }}
-          <a routerLink="/privacy">{{ 'pages.home.footer.privacy_link_text' | translate }}</a>
-        </small>
+  @if (showNewsletter()) {
+    <div class="cl-newsletter-wrap">
+      <div class="cl-newsletter">
+        <div class="cl-newsletter__mascot">
+          <img src="assets/images/mascot/mascot-ready.png" alt="Cleaning mascot" loading="lazy" />
+        </div>
+        <div class="cl-newsletter__content">
+          <h3>{{ 'pages.home.footer.newsletter_title' | translate }}</h3>
+          <p>{{ 'pages.home.footer.newsletter_subtitle' | translate }}</p>
+          <form class="cl-newsletter__form" #newsletterForm (ngSubmit)="submitRequest(newsletterForm)">
+            <div class="cl-newsletter__input">
+              <i class="pi pi-envelope"></i>
+              <input
+                type="email"
+                name="email"
+                ngModel
+                [placeholder]="'pages.home.footer.newsletter_placeholder' | translate"
+                required
+              />
+            </div>
+            <button type="submit" pButton [label]="'pages.home.footer.newsletter_button' | translate" class="p-button-rounded cl-btn-primary"></button>
+          </form>
+          <small class="cl-newsletter__note">
+            {{ 'pages.home.footer.unsubscribe_note' | translate }}
+            <a routerLink="/privacy">{{ 'pages.home.footer.privacy_link_text' | translate }}</a>
+          </small>
+        </div>
       </div>
     </div>
-  </div>
+  }
 
   <div class="cl-footer__body">
     <div class="cl-footer__columns">

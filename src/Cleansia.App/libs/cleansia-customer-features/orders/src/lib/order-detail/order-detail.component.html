@@ -49,7 +49,7 @@
           <cleansia-button
             [title]="'pages.order_detail.report_issue' | translate"
             [icon]="'pi pi-exclamation-circle'"
-            [severity]="'warn'"
+            [severity]="'danger'"
             (clickFn)="reportIssue()"
           />
         </div>
@@ -143,13 +143,13 @@
           <p-timeline [value]="order()!.statusHistory!" layout="vertical">
             <ng-template #content let-event>
               <div class="order-detail__timeline-event">
-                <strong>{{ event.statusName }}</strong>
-                <small>{{ formatDate(event.changedOn) }}</small>
+                <strong>{{ event.status?.name }}</strong>
+                <small>{{ formatDate(event.createdOn) }}</small>
               </div>
             </ng-template>
             <ng-template #marker let-event>
               <span class="order-detail__timeline-marker">
-                <i [class]="getStatusIcon(event.statusValue)"></i>
+                <i [class]="getStatusIcon(event.status?.value)"></i>
               </span>
             </ng-template>
           </p-timeline>

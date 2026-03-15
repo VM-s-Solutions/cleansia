@@ -1,5 +1,10 @@
 @use './home-variables' as *;
 
+cleansia-features {
+  display: block;
+  background-color: var(--surface-card);
+}
+
 // =============================
 // Feature Cards
 // =============================
@@ -9,12 +14,12 @@
   gap: 2rem;
 
   &__card {
-    background: $white;
+    background: var(--surface-card);
     border-radius: $radius-xl;
     padding: 2.75rem 2rem 2.25rem;
     box-shadow: $shadow-card;
     text-align: center;
-    border: 1px solid rgba($border, 0.5);
+    border: 1px solid var(--surface-border);
     position: relative;
     overflow: hidden;
     transition: transform 0.4s ease;
@@ -60,15 +65,35 @@
     font-family: $font-heading;
     font-size: 1.2rem;
     font-weight: 600;
-    color: $text-heading;
+    color: var(--text-color);
     margin: 0 0 1rem;
   }
 
   &__card-desc {
     font-size: 0.95rem;
-    color: $text-muted;
+    color: var(--text-color-secondary);
     line-height: 1.7;
     margin: 0;
+  }
+}
+
+// =============================
+// Dark Mode — Features
+// =============================
+:root.dark-mode {
+  .cl-features__icon-wrap {
+    &--blue {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(56, 189, 248, 0.06));
+      i { color: #38bdf8; }
+    }
+    &--green {
+      background: linear-gradient(135deg, rgba(22, 163, 74, 0.12), rgba(22, 163, 74, 0.06));
+      i { color: #4ade80; }
+    }
+    &--amber {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.06));
+      i { color: #fbbf24; }
+    }
   }
 }
 

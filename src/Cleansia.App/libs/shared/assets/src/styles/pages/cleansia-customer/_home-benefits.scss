@@ -33,14 +33,14 @@
   }
 
   &__card {
-    background: $white;
+    background: var(--surface-card);
     border-radius: $radius-lg;
     padding: 2rem 1.75rem;
     box-shadow: $shadow-card;
     display: flex;
     align-items: flex-start;
     gap: 1.25rem;
-    border: 1px solid rgba($border, 0.4);
+    border: 1px solid var(--surface-border);
     position: relative;
     overflow: hidden;
     transition: transform 0.4s ease;
@@ -81,7 +81,7 @@
 
   &__card-text {
     font-size: 0.95rem;
-    color: $text-body;
+    color: var(--text-color);
     line-height: 1.7;
     margin: 0;
   }

@@ -16,14 +16,14 @@
   }
 
   &__card {
-    background: $white;
+    background: var(--surface-card);
     border-radius: $radius-xl;
     padding: 2.75rem 2rem 2rem;
     box-shadow: $shadow-card;
     text-align: center;
     display: flex;
     flex-direction: column;
-    border: 1px solid rgba($border, 0.4);
+    border: 1px solid var(--surface-border);
     position: relative;
     overflow: hidden;
     transition: transform 0.4s ease, border-color 0.4s ease;
@@ -66,7 +66,7 @@
     top: 24px;
     right: -28px;
     background: linear-gradient(135deg, $primary, $primary-accent);
-    color: $white;
+    color: #ffffff;
     font-family: $font-heading;
     font-size: 0.65rem;
     font-weight: 700;
@@ -98,7 +98,7 @@
     font-family: $font-heading;
     font-size: 1.2rem;
     font-weight: 600;
-    color: $text-heading;
+    color: var(--text-color);
     margin-bottom: 0.75rem;
   }
 
@@ -112,7 +112,7 @@
 
   &__desc {
     font-size: 0.9rem;
-    color: $text-muted;
+    color: var(--text-color-secondary);
     line-height: 1.7;
     flex: 1;
     margin-bottom: 0;
@@ -135,16 +135,16 @@
       left: 0;
       right: 0;
       height: 100%;
-      background: linear-gradient(180deg, transparent 0%, $white 85%);
+      background: linear-gradient(180deg, transparent 0%, var(--surface-card) 85%);
       pointer-events: none;
       z-index: 1;
     }
   }
 
   &__teaser {
-    background: $white;
+    background: var(--surface-card);
     border-radius: $radius-xl;
-    border: 1px solid rgba($border, 0.3);
+    border: 1px solid var(--surface-border);
     box-shadow: $shadow-card;
     overflow: hidden;
   }
@@ -159,6 +159,23 @@
     gap: 1rem;
     justify-content: center;
     flex-wrap: wrap;
+  }
+}
+
+// =============================
+// Dark Mode — Services
+// =============================
+:root.dark-mode {
+  .cl-services__icon {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(56, 189, 248, 0.18));
+  }
+
+  .cl-services__nav-arrow {
+    background: rgba(56, 189, 248, 0.1);
+  }
+
+  .cl-services__teasers::after {
+    background: linear-gradient(180deg, transparent 0%, var(--surface-card) 85%);
   }
 }
 

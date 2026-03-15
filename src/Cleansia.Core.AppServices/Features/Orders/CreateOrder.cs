@@ -37,12 +37,57 @@ public class CreateOrder
             RuleFor(x => x.PaymentType)
                 .IsInEnum().WithMessage(BusinessErrorMessage.InvalidEnumValue);
 
+            RuleFor(x => x.CustomerName)
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty()
+                .WithMessage(BusinessErrorMessage.Required)
+                .MinimumLength(2)
+                .WithMessage(BusinessErrorMessage.MinLength)
+                .MaximumLength(100)
+                .WithMessage(BusinessErrorMessage.MaxLength);
+
             RuleFor(x => x.CustomerEmail)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
                 .EmailAddress()
-                .WithMessage(BusinessErrorMessage.InvalidEmailFormat);
+                .WithMessage(BusinessErrorMessage.InvalidEmailFormat)
+                .MaximumLength(50)
+                .WithMessage(BusinessErrorMessage.MaxLength);
+
+            RuleFor(x => x.CustomerPhone)
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty()
+                .WithMessage(BusinessErrorMessage.Required)
+                .MaximumLength(20)
+                .WithMessage(BusinessErrorMessage.MaxLength);
+
+            RuleFor(x => x.CustomerAddress.Street)
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty()
+                .WithMessage(BusinessErrorMessage.Required)
+                .MinimumLength(5)
+                .WithMessage(BusinessErrorMessage.MinLength)
+                .MaximumLength(255)
+                .WithMessage(BusinessErrorMessage.MaxLength);
+
+            RuleFor(x => x.CustomerAddress.City)
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty()
+                .WithMessage(BusinessErrorMessage.Required)
+                .MinimumLength(2)
+                .WithMessage(BusinessErrorMessage.MinLength)
+                .MaximumLength(100)
+                .WithMessage(BusinessErrorMessage.MaxLength);
+
+            RuleFor(x => x.CustomerAddress.ZipCode)
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty()
+                .WithMessage(BusinessErrorMessage.Required)
+                .MinimumLength(3)
+                .WithMessage(BusinessErrorMessage.MinLength)
+                .MaximumLength(20)
+                .WithMessage(BusinessErrorMessage.MaxLength);
 
             RuleFor(x => x.CleaningDate)
                 .GreaterThan(DateTime.UtcNow)
@@ -52,12 +97,12 @@ public class CreateOrder
                 .GreaterThan(0)
                 .WithMessage(BusinessErrorMessage.TotalPriceMustBePositive);
 
-            RuleFor(x => x.CurrencyId)
-                .Cascade(CascadeMode.Stop)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(currencyRepository.ExistsAsync)
-                .WithMessage(BusinessErrorMessage.InvalidCurrency);
+            When(x => !string.IsNullOrEmpty(x.CurrencyId), () =>
+            {
+                RuleFor(x => x.CurrencyId!)
+                    .MustAsync(currencyRepository.ExistsAsync)
+                    .WithMessage(BusinessErrorMessage.InvalidCurrency);
+            });
 
             RuleFor(x => x.SelectedServiceIds)
                 .MustAsync(serviceRepository.ExistWithIdsAsync)
@@ -88,7 +133,9 @@ public class CreateOrder
             var services = await _serviceRepository.GetByIds(command.SelectedServiceIds).ToListAsync(cancellationToken);
             basePrice += services.Sum(s => s?.BasePrice + s?.PerRoomPrice * (command.Rooms + command.Bathrooms));
 
-            var currency = await _currencyRepository.GetByIdAsync(command.CurrencyId, cancellationToken);
+            var currency = string.IsNullOrEmpty(command.CurrencyId)
+                ? await _currencyRepository.GetDefaultAsync(cancellationToken)
+                : await _currencyRepository.GetByIdAsync(command.CurrencyId, cancellationToken);
             return basePrice * currency?.ExchangeRate == command.TotalPrice;
         }
     }
@@ -105,7 +152,7 @@ public class CreateOrder
         Dictionary<string, bool> Extras,
         DateTime CleaningDate,
         PaymentType PaymentType,
-        string CurrencyId,
+        string? CurrencyId,
         decimal TotalPrice,
         string Language = Constants.Language.English) : ICommand<Response>;
 
@@ -120,6 +167,8 @@ public class CreateOrder
         IAddressRepository addressRepository,
         IServiceRepository serviceRepository,
         IPackageRepository packageRepository,
+        ICurrencyRepository currencyRepository,
+        ICountryRepository countryRepository,
         ISendGridClientFactory clientFactory,
         IStripeClientFactory stripeClientFactory,
         IEmailService emailService,
@@ -127,14 +176,31 @@ public class CreateOrder
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
+            // Resolve country — verify provided CountryId exists, or fall back to default
+            var countryId = command.CustomerAddress.CountryId;
+            if (!string.IsNullOrEmpty(countryId) && !await countryRepository.ExistsAsync(countryId, cancellationToken))
+            {
+                countryId = null; // Invalid ID, fall back to default
+            }
+            if (string.IsNullOrEmpty(countryId))
+            {
+                var defaultCountry = await countryRepository.GetByIsoCodeAsync("CZE", cancellationToken)
+                    ?? await countryRepository.GetQueryable().FirstOrDefaultAsync(cancellationToken);
+                countryId = defaultCountry?.Id ?? throw new InvalidOperationException("No countries configured in the system");
+            }
+
             var address = await addressRepository.GetAddressAsync(command.CustomerAddress.Street,
-                command.CustomerAddress.City, command.CustomerAddress.ZipCode, command.CustomerAddress.CountryId,
+                command.CustomerAddress.City, command.CustomerAddress.ZipCode, countryId,
                 cancellationToken) ?? Address.Create(
                 command.CustomerAddress.Street,
                 command.CustomerAddress.City,
                 command.CustomerAddress.ZipCode,
-                command.CustomerAddress.CountryId,
+                countryId,
                 command.CustomerAddress.State);
+
+            var currency = string.IsNullOrEmpty(command.CurrencyId)
+                ? await currencyRepository.GetDefaultAsync(cancellationToken)
+                : await currencyRepository.GetByIdAsync(command.CurrencyId, cancellationToken);
 
             var order = Order.Create(
                 command.CustomerName,
@@ -147,8 +213,10 @@ public class CreateOrder
                 command.CleaningDate,
                 command.PaymentType,
                 command.TotalPrice,
-                command.CurrencyId,
+                currency!.Id,
                 PaymentStatus.Pending);
+
+            order.SetCurrency(currency!);
 
             var selectedServices = await serviceRepository
                 .GetByIds(command.SelectedServiceIds)
@@ -180,7 +248,8 @@ public class CreateOrder
                             var stripeClient = stripeClientFactory.CreateClient();
                             stripeSessionId = await stripeClient.CreateCheckoutSessionAsync(order, cancellationToken);
 
-                            // Only add order to repository after successful Stripe session creation
+                            // Order starts as Pending until Stripe webhook confirms payment
+                            order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Pending, order));
                             orderRepository.Add(order);
                         }
                         catch (Exception ex)
@@ -198,6 +267,9 @@ public class CreateOrder
                     {
                         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
 
+                        // Add order first so EF can resolve FK when receipt is created
+                        orderRepository.Add(order);
+
                         // Generate receipt and send email for cash payments
                         var receiptResult = await GenerateAndSendReceiptAsync(order, command.Language, cancellationToken);
                         if (!receiptResult)
@@ -207,8 +279,6 @@ public class CreateOrder
                                 BusinessErrorMessage.EmailNotSentError));
                         }
 
-                        // Add order to repository after successful receipt generation
-                        orderRepository.Add(order);
                         break;
                     }
                 default:

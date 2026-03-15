@@ -36,14 +36,9 @@ public class StripeClient(IStripeConfig config) : IStripeClient
             Metadata = new Dictionary<string, string> { { "OrderId", order.Id } }
         };
 
-        var service = new SessionService();
+        var service = new SessionService(new global::Stripe.StripeClient(config.SecretKey));
         var session = await service.CreateAsync(options, cancellationToken: cancellationToken);
 
-        // TODO: Add to method calling business logic
-        //order.StripeSessionId = session.Id;
-        //order.PaymentStatus = PaymentStatus.Pending;
-        //await _context.SaveChangesAsync();
-
-        return session.Id;
+        return session.Url;
     }
 }

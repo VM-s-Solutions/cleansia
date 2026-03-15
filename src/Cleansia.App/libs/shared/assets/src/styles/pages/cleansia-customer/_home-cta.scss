@@ -45,3 +45,22 @@
     padding: 3rem 1.5rem 5rem;
   }
 }
+
+// =============================
+// Dark Mode — CTA
+// =============================
+:root.dark-mode {
+  .cl-cta {
+    background: linear-gradient(180deg, var(--surface-card) 0%, rgba(56, 189, 248, 0.04) 100%);
+
+    &__title {
+      background: linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    &__desc {
+      color: #94a3b8;
+    }
+  }
+}

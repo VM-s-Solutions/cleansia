@@ -29,15 +29,19 @@ export class RegisterFacade extends UnsubscribeControlDirective {
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
         next: () => {
+          this.snackbarService.showSuccessTranslated('auth.register.success');
           this.router.navigate([CleansiaCustomerRoute.CONFIRM_EMAIL], {
             queryParams: { email },
           });
+        },
+        error: (err) => {
+          this.snackbarService.showApiError(err, 'auth.register.error');
         },
       });
   }
 
   private createFormGroup(): FormGroup {
-    const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()]).{12,}$/;
 
     return new FormGroup({
       firstName: new FormControl('', [

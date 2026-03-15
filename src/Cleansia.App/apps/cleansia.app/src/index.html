@@ -1,6 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="color-scheme: light">
   <head>
+    <script>
+      // Sync color-scheme with stored theme before CSS loads,
+      // so PrimeFlex light-dark() picks the correct values.
+      (function() {
+        var t = localStorage.getItem('cleansia-theme');
+        if (t === 'dark') {
+          document.documentElement.style.colorScheme = 'dark';
+          document.documentElement.classList.add('dark-mode');
+        }
+      })();
+    </script>
     <meta charset="utf-8" />
     <title>Cleansia</title>
     <base href="/" />

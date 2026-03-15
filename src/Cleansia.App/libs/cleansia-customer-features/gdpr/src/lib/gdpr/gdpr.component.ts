@@ -9,7 +9,7 @@ import {
   UserConsentDto,
 } from '@cleansia/partner-services';
 import { SnackbarService } from '@cleansia/services';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { FormsModule } from '@angular/forms';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -21,7 +21,7 @@ import { ConfirmationService } from 'primeng/api';
   imports: [
     CommonModule,
     FormsModule,
-    TranslateModule,
+    TranslatePipe,
     ToggleSwitchModule,
     ConfirmDialogModule,
     CleansiaButtonComponent,

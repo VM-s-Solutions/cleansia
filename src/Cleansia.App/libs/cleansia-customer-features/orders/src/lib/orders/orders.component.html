@@ -1,8 +1,12 @@
 <div class="customer-orders">
-  <div
-    class="customer-orders__header mb-4 flex align-items-center justify-content-between"
-  >
-    <cleansia-title [title]="'pages.orders.title' | translate" />
+  <!-- Hero Section -->
+  <div class="customer-orders__hero">
+    <h1 class="customer-orders__hero-title">
+      {{ 'pages.orders.hero_title' | translate }}
+    </h1>
+    <p class="customer-orders__hero-subtitle">
+      {{ 'pages.orders.hero_subtitle' | translate }}
+    </p>
   </div>
 
   @if (loading()) {
@@ -12,28 +16,93 @@
     }
   </div>
   } @else if (orders().length === 0) {
-  <div
-    class="customer-orders__empty card shadow-1 surface-card border-round-2xl flex flex-column align-items-center justify-content-center p-6 mt-4"
-  >
-    <i class="pi pi-inbox text-500 mb-4" style="font-size: 4rem"></i>
-    <h3 class="text-900 font-medium text-2xl mb-2">
+  <!-- Empty State -->
+  <div class="customer-orders__empty">
+    <div class="customer-orders__empty-icon">
+      <i class="pi pi-inbox"></i>
+    </div>
+    <h3 class="customer-orders__empty-title">
       {{ 'pages.orders.no_orders' | translate }}
     </h3>
-    <p class="text-600 mb-4">
-      {{ 'pages.orders.no_orders_description' | translate }}
+    <p class="customer-orders__empty-text">
+      {{ 'pages.orders.empty_subtitle' | translate }}
     </p>
+
+    <!-- Quick Steps -->
+    <div class="customer-orders__empty-steps">
+      <div class="customer-orders__empty-step">
+        <span class="customer-orders__empty-step-num">1</span>
+        <span>{{ 'pages.orders.empty_step1' | translate }}</span>
+      </div>
+      <div class="customer-orders__empty-step-arrow"><i class="pi pi-arrow-right"></i></div>
+      <div class="customer-orders__empty-step">
+        <span class="customer-orders__empty-step-num">2</span>
+        <span>{{ 'pages.orders.empty_step2' | translate }}</span>
+      </div>
+      <div class="customer-orders__empty-step-arrow"><i class="pi pi-arrow-right"></i></div>
+      <div class="customer-orders__empty-step">
+        <span class="customer-orders__empty-step-num">3</span>
+        <span>{{ 'pages.orders.empty_step3' | translate }}</span>
+      </div>
+    </div>
+
+    <!-- Trust Badges -->
+    <div class="customer-orders__empty-trust">
+      <span><i class="pi pi-verified"></i> {{ 'pages.orders.empty_trust_certified' | translate }}</span>
+      <span><i class="pi pi-heart"></i> {{ 'pages.orders.empty_trust_satisfaction' | translate }}</span>
+      <span><i class="pi pi-sparkles"></i> {{ 'pages.orders.empty_trust_eco' | translate }}</span>
+    </div>
+
     <cleansia-button
-      [title]="'pages.orders.browse_services' | translate"
+      [title]="'pages.orders.empty_cta' | translate"
       [severity]="'primary'"
       [style]="'raised-button'"
-      (clickFn)="router.navigate(['/services'])"
+      [icon]="'pi pi-calendar-plus'"
+      [iconPosition]="'left'"
+      (clickFn)="router.navigate(['/order'])"
     />
   </div>
-  } @else { @if (upcomingOrders().length > 0) {
-  <div class="customer-orders__section mb-6 mt-4">
-    <h2 class="text-900 font-semibold text-xl mb-4">
-      {{ 'pages.orders.upcoming_orders' | translate }}
-    </h2>
+  } @else {
+  <!-- Stats Bar -->
+  <div class="customer-orders__stats">
+    <div class="customer-orders__stat">
+      <div class="customer-orders__stat-icon customer-orders__stat-icon--upcoming">
+        <i class="pi pi-calendar"></i>
+      </div>
+      <div class="customer-orders__stat-info">
+        <span class="customer-orders__stat-value">{{ upcomingOrders().length }}</span>
+        <span class="customer-orders__stat-label">{{ 'pages.orders.stats_upcoming' | translate }}</span>
+      </div>
+    </div>
+    <div class="customer-orders__stat">
+      <div class="customer-orders__stat-icon customer-orders__stat-icon--completed">
+        <i class="pi pi-check-circle"></i>
+      </div>
+      <div class="customer-orders__stat-info">
+        <span class="customer-orders__stat-value">{{ pastOrders().length }}</span>
+        <span class="customer-orders__stat-label">{{ 'pages.orders.stats_completed' | translate }}</span>
+      </div>
+    </div>
+    <div class="customer-orders__stat">
+      <div class="customer-orders__stat-icon customer-orders__stat-icon--total">
+        <i class="pi pi-wallet"></i>
+      </div>
+      <div class="customer-orders__stat-info">
+        <span class="customer-orders__stat-value">{{ totalSpent() }}</span>
+        <span class="customer-orders__stat-label">{{ 'pages.orders.stats_total_spent' | translate }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upcoming Orders -->
+  @if (upcomingOrders().length > 0) {
+  <div class="customer-orders__section">
+    <div class="customer-orders__section-header">
+      <h2 class="customer-orders__section-title">
+        {{ 'pages.orders.upcoming_orders' | translate }}
+      </h2>
+      <span class="customer-orders__section-count">{{ upcomingOrders().length }}</span>
+    </div>
     <div class="flex flex-column gap-3">
       @for (order of upcomingOrders(); track order.id) {
       <ng-container
@@ -42,11 +111,17 @@
       }
     </div>
   </div>
-  } @if (pastOrders().length > 0) {
-  <div class="customer-orders__section mb-5 mt-4">
-    <h2 class="text-900 font-semibold text-xl mb-4">
-      {{ 'pages.orders.past_orders' | translate }}
-    </h2>
+  }
+
+  <!-- Past Orders -->
+  @if (pastOrders().length > 0) {
+  <div class="customer-orders__section">
+    <div class="customer-orders__section-header">
+      <h2 class="customer-orders__section-title">
+        {{ 'pages.orders.past_orders' | translate }}
+      </h2>
+      <span class="customer-orders__section-count">{{ pastOrders().length }}</span>
+    </div>
     <div class="flex flex-column gap-3">
       @for (order of pastOrders(); track order.id) {
       <ng-container
@@ -66,80 +141,86 @@
     (onPageChange)="onPageChange($event)"
   >
   </p-paginator>
+
+  <!-- Need Help Section -->
+  <div class="customer-orders__help">
+    <div class="customer-orders__help-icon"><i class="pi pi-question-circle"></i></div>
+    <div class="customer-orders__help-text">
+      <strong>{{ 'pages.orders.need_help' | translate }}</strong>
+      <p>{{ 'pages.orders.need_help_desc' | translate }}</p>
+    </div>
+    <cleansia-button
+      [title]="'pages.orders.go_to_disputes' | translate"
+      [severity]="'secondary'"
+      [icon]="'pi pi-arrow-right'"
+      [iconPosition]="'right'"
+      (clickFn)="router.navigate(['/disputes'])"
+    />
+  </div>
   }
 </div>
 
 <ng-template #orderCard let-order>
   <div
-    class="order-card p-4 surface-card border-round-2xl border-1 surface-border shadow-none cursor-pointer flex flex-column md:flex-row align-items-start md:align-items-center justify-content-between gap-4"
+    class="order-card cursor-pointer"
+    [class.order-card--upcoming]="isUpcoming(order)"
     (click)="viewOrder(order)"
   >
-    <div class="flex align-items-center gap-4 flex-1">
-      <div
-        class="order-card__icon bg-primary-50 border-round-2xl flex align-items-center justify-content-center h-4rem w-4rem text-primary-600"
-      >
-        <i class="pi pi-calendar text-2xl"></i>
+    <div class="order-card__status-bar" [class]="'order-card__status-bar--' + getOrderStatusSeverity(order.orderStatus)"></div>
+    <div class="order-card__body">
+      <div class="flex align-items-center gap-4 flex-1">
+        <div class="order-card__icon">
+          <i class="pi pi-calendar text-2xl"></i>
+        </div>
+
+        <div class="flex flex-column gap-1">
+          <div class="flex align-items-center gap-2 mb-1">
+            <span class="order-card__number">#{{ order.displayOrderNumber }}</span>
+            <p-tag
+              [value]="order.orderStatus?.name || ''"
+              [severity]="getOrderStatusSeverity(order.orderStatus)"
+              styleClass="text-xs"
+            />
+          </div>
+          <span class="order-card__date">{{
+            formatDate(order.cleaningDateTime)
+          }}</span>
+          <div class="order-card__address">
+            <i class="pi pi-map-marker"></i>
+            <span>{{ order.customerAddress }}</span>
+          </div>
+        </div>
       </div>
 
-      <div class="flex flex-column gap-1">
-        <div class="flex align-items-center gap-2 mb-1">
-          <span class="text-500 text-sm font-medium"
-            >#{{ order.displayOrderNumber }}</span
-          >
-          <p-tag
-            [value]="order.orderStatus?.name || ''"
-            [severity]="getOrderStatusSeverity(order.orderStatus)"
-            styleClass="text-xs"
+      <div class="order-card__meta">
+        <div class="flex flex-column md:align-items-end">
+          <span class="order-card__price">{{
+            formatPrice(order.totalPrice, order.currency)
+          }}</span>
+          <span class="order-card__payment">
+            <i
+              class="pi"
+              [ngClass]="
+                getPaymentStatusSeverity(order.paymentStatus) === 'success'
+                  ? 'pi-check-circle text-green-500'
+                  : 'pi-clock text-orange-500'
+              "
+            ></i>
+            {{ order.paymentStatus?.name || '' }}
+          </span>
+        </div>
+
+        <div class="flex gap-2">
+          <cleansia-button
+            [title]="'pages.orders.rebook' | translate"
+            [severity]="'primary'"
+            [style]="'raised-button'"
+            [icon]="'pi pi-sync'"
+            [iconPosition]="'left'"
+            (clickFn)="$event.stopPropagation(); rebookOrder(order)"
+            class="hidden md:block"
           />
         </div>
-        <span class="text-900 font-bold text-lg">{{
-          formatDate(order.cleaningDateTime)
-        }}</span>
-        <div class="flex align-items-center text-600 text-sm mt-1">
-          <i class="pi pi-map-marker mr-2 text-xs"></i>
-          <span>{{ order.customerAddress }}</span>
-        </div>
-      </div>
-    </div>
-
-    <div
-      class="order-card__meta flex flex-column md:flex-row align-items-start md:align-items-center gap-4"
-    >
-      <div class="flex flex-column md:align-items-end">
-        <span class="text-900 font-bold text-xl">{{
-          formatPrice(order.totalPrice, order.currency)
-        }}</span>
-        <span class="text-500 text-sm mt-1 flex align-items-center gap-1">
-          <i
-            class="pi"
-            [ngClass]="
-              getPaymentStatusSeverity(order.paymentStatus) === 'success'
-                ? 'pi-check-circle text-green-500'
-                : 'pi-clock text-orange-500'
-            "
-          ></i>
-          {{ order.paymentStatus?.name || '' }}
-        </span>
-      </div>
-
-      <div class="flex gap-2">
-        <cleansia-button
-          [title]="'pages.orders.rebook' | translate"
-          [severity]="'primary'"
-          [style]="'raised-button'"
-          [icon]="'pi pi-sync'"
-          [iconPosition]="'left'"
-          (clickFn)="$event.stopPropagation(); router.navigate(['/order'])"
-          class="hidden md:block"
-        />
-        <cleansia-button
-          [title]="'global.actions.view' | translate"
-          [severity]="'secondary'"
-          [icon]="'pi pi-chevron-right'"
-          [iconPosition]="'right'"
-          (clickFn)="$event.stopPropagation(); viewOrder(order)"
-          class="hidden md:block"
-        />
       </div>
     </div>
   </div>

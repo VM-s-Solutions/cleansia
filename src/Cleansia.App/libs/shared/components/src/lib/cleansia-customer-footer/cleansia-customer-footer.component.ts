@@ -1,27 +1,28 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { CleansiaBrandNameComponent } from '@cleansia/components';
 import { SnackbarService } from '@cleansia/services';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
+import { CleansiaBrandNameComponent } from '../cleansia-brand-name/cleansia-brand-name.component';
 
 @Component({
-  selector: 'cleansia-landing-footer',
-  templateUrl: './landing-footer.component.html',
+  selector: 'cleansia-customer-footer',
+  templateUrl: './cleansia-customer-footer.component.html',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     FormsModule,
     RouterModule,
-    TranslateModule,
+    TranslatePipe,
     ButtonModule,
     CleansiaBrandNameComponent,
   ],
 })
-export class LandingFooterComponent {
+export class CleansiaCustomerFooterComponent {
   private readonly snackbarService = inject(SnackbarService);
 
+  showNewsletter = input(false);
   currentYear = new Date().getFullYear();
 
   submitRequest(form: any): void {

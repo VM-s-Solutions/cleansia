@@ -614,19 +614,19 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "Devices",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "text", nullable: false),
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     UserId = table.Column<string>(type: "character varying(26)", nullable: false),
                     Platform = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
                     DeviceToken = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: false),
                     DeviceId = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
                     LastActiveAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "text", nullable: true),
-                    CreatedBy = table.Column<string>(type: "text", nullable: false),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "text", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    DeactivatedBy = table.Column<string>(type: "text", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
@@ -1353,7 +1353,7 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "DisputeEvidence",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     DisputeId = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     FileName = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     FilePath = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
@@ -1376,7 +1376,7 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "DisputeMessages",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     DisputeId = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     Message = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
                     AuthorId = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
@@ -1489,6 +1489,11 @@ namespace Cleansia.Infra.Database.Migrations
                 table: "Devices",
                 column: "DeviceId",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Devices_TenantId",
+                table: "Devices",
+                column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Devices_UserId",

@@ -15,6 +15,7 @@ public static class BusinessErrorMessage
     // Common
     public const string InvalidEnumValue = "common.invalid_enum_value";
     public const string MaxLength = "common.max_length";
+    public const string MinLength = "common.min_length";
     public const string Required = "common.required";
     
     // Currency

@@ -171,6 +171,9 @@ jobs:
           app-name: api-cleansia-pro
           package: ./partner-api
 
+      - name: Restart App Service
+        run: az webapp restart --name api-cleansia-pro --resource-group rg-cleansia-pro
+
   deploy-admin-api:
     name: Deploy Admin API
     needs: build-dotnet
@@ -195,6 +198,9 @@ jobs:
         with:
           app-name: api-cleansia-admin-pro
           package: ./admin-api
+
+      - name: Restart App Service
+        run: az webapp restart --name api-cleansia-admin-pro --resource-group rg-cleansia-pro
 
   deploy-customer-api:
     name: Deploy Customer API
@@ -221,6 +227,9 @@ jobs:
           app-name: api-cleansia-customer-pro
           package: ./customer-api
 
+      - name: Restart App Service
+        run: az webapp restart --name api-cleansia-customer-pro --resource-group rg-cleansia-pro
+
   deploy-mobile-api:
     name: Deploy Mobile API
     needs: build-dotnet
@@ -245,6 +254,9 @@ jobs:
         with:
           app-name: api-cleansia-mobile-pro
           package: ./mobile-api
+
+      - name: Restart App Service
+        run: az webapp restart --name api-cleansia-mobile-pro --resource-group rg-cleansia-pro
 
   deploy-customer-ssr:
     name: Deploy Customer SSR
@@ -273,6 +285,9 @@ jobs:
         with:
           app-name: web-cleansia-customer-pro
           package: ./customer-app
+
+      - name: Restart App Service
+        run: az webapp restart --name web-cleansia-customer-pro --resource-group rg-cleansia-pro
 
   deploy-partner-spa:
     name: Deploy Partner SPA

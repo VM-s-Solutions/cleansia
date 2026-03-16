@@ -7,7 +7,15 @@ const serverDistFolder = dirname(fileURLToPath(import.meta.url));
 const browserDistFolder = resolve(serverDistFolder, '../browser');
 
 const app = express();
-const angularApp = new AngularNodeAppEngine();
+
+/**
+ * Lazy-initialize AngularNodeAppEngine so the manifest is registered
+ * by the Angular build wrapper before we access it.
+ */
+let angularApp: AngularNodeAppEngine | undefined;
+function getAngularApp(): AngularNodeAppEngine {
+  return (angularApp ??= new AngularNodeAppEngine());
+}
 
 app.use(
   express.static(browserDistFolder, {
@@ -18,7 +26,7 @@ app.use(
 );
 
 app.use('/**', (req, res, next) => {
-  angularApp
+  getAngularApp()
     .handle(req)
     .then((response) =>
       response ? writeResponseToNodeResponse(response, res) : next(),

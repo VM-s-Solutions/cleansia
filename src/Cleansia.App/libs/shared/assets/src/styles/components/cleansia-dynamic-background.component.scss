@@ -1,8 +1,15 @@
 cleansia-dynamic-background {
-  display: block;
+  display: flex;
+  flex-direction: column;
   position: relative;
   overflow: hidden;
   min-height: 100dvh;
+
+  > * {
+    flex: 1;
+    position: relative;
+    z-index: 1;
+  }
 }
 
 .cleansia-dynamic-background__icon {

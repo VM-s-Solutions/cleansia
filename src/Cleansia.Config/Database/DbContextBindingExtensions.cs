@@ -16,7 +16,7 @@ public static class DbContextBindingExtensions
     {
         services.AddSingleton<IDatabaseConnectionString, DatabaseConnectionString>();
 
-        var connectionString = configuration.GetConnectionString("ConnectionString");
+        var connectionString = configuration.GetConnectionString("DefaultConnection");
 
         // Ensure citext extension exists before Npgsql caches the type catalog
         EnsureCitextExtension(connectionString!);

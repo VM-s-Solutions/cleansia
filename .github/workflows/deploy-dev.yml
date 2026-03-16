@@ -108,6 +108,11 @@ jobs:
         run: npm run build:cleansia-admin
         working-directory: ./src/Cleansia.App
 
+      - name: Prepare Customer SSR package.json
+        run: |
+          echo '{"name":"cleansia-customer-ssr","version":"1.0.0","type":"module","scripts":{"start":"node server/server.mjs"}}' \
+            > ./src/Cleansia.App/dist/apps/cleansia.app/package.json
+
       - name: Upload Customer App artifact (SSR)
         uses: actions/upload-artifact@v4
         with:
@@ -239,6 +244,9 @@ jobs:
         with:
           name: customer-app
           path: ./customer-app
+
+      - name: Configure startup command
+        run: az webapp config set --name web-cleansia-customer-dev --resource-group rg-cleansia-dev --startup-file "node server/server.mjs"
 
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3

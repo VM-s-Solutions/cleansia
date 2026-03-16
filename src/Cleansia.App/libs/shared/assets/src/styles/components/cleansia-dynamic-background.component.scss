@@ -1,3 +1,10 @@
+cleansia-dynamic-background {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  min-height: 100dvh;
+}
+
 .cleansia-dynamic-background__icon {
   position: absolute;
   color: var(--cleansia-primary, #0284c7);

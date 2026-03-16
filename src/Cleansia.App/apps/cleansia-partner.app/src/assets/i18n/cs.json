@@ -1200,5 +1200,32 @@
     "decline": "Odmítnout",
     "learn_more": "Více informací",
     "banner_title": "Banner souhlasu s cookies"
+  },
+  "auth": {
+    "login": {
+      "email": "E-mail",
+      "password": "Heslo",
+      "remember_me": "Zapamatovat si mě",
+      "forgot_password": "Zapomenuté heslo?",
+      "dont_have_account": "Nemáte účet?"
+    },
+    "register": {
+      "first_name": "Jméno",
+      "last_name": "Příjmení",
+      "email": "E-mail",
+      "password": "Heslo",
+      "confirm_password": "Potvrdit heslo",
+      "terms_agreement": "Souhlasím s podmínkami",
+      "terms_and_conditions": "Souhlasím s <a href='/gdpr'>Obchodními podmínkami a Zásadami ochrany osobních údajů</a>",
+      "have_account": "Již máte účet?",
+      "validation": {
+        "password_lowercase": "Alespoň jedno malé písmeno",
+        "password_uppercase": "Alespoň jedno velké písmeno",
+        "password_number": "Alespoň jedno číslo",
+        "password_min_length": "Alespoň 12 znaků",
+        "password_special_character": "Alespoň jeden speciální znak",
+        "passwords_match": "Hesla se shodují"
+      }
+    }
   }
 }

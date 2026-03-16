@@ -49,19 +49,19 @@ jobs:
         working-directory: ./src
 
       - name: Publish Partner API
-        run: dotnet publish Cleansia.Web/Cleansia.Web.Partner.csproj --configuration Release --no-build --output ./publish/partner-api
+        run: dotnet publish Cleansia.Web/Cleansia.Web.Partner.csproj --configuration Release --no-restore --output ./publish/partner-api
         working-directory: ./src
 
       - name: Publish Admin API
-        run: dotnet publish Cleansia.Web.Admin/Cleansia.Web.Admin.csproj --configuration Release --no-build --output ./publish/admin-api
+        run: dotnet publish Cleansia.Web.Admin/Cleansia.Web.Admin.csproj --configuration Release --no-restore --output ./publish/admin-api
         working-directory: ./src
 
       - name: Publish Customer API
-        run: dotnet publish Cleansia.Web.Customer/Cleansia.Web.Customer.csproj --configuration Release --no-build --output ./publish/customer-api
+        run: dotnet publish Cleansia.Web.Customer/Cleansia.Web.Customer.csproj --configuration Release --no-restore --output ./publish/customer-api
         working-directory: ./src
 
       - name: Publish Mobile API
-        run: dotnet publish Cleansia.Web.Mobile/Cleansia.Web.Mobile.csproj --configuration Release --no-build --output ./publish/mobile-api
+        run: dotnet publish Cleansia.Web.Mobile/Cleansia.Web.Mobile.csproj --configuration Release --no-restore --output ./publish/mobile-api
         working-directory: ./src
 
       - name: Upload Partner API artifact

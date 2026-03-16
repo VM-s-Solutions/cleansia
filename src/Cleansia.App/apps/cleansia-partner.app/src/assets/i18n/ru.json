@@ -1183,5 +1183,32 @@
     "decline": "Отклонить",
     "learn_more": "Узнать больше",
     "banner_title": "Баннер согласия на файлы cookie"
+  },
+  "auth": {
+    "login": {
+      "email": "Электронная почта",
+      "password": "Пароль",
+      "remember_me": "Запомнить меня",
+      "forgot_password": "Забыли пароль?",
+      "dont_have_account": "Нет учётной записи?"
+    },
+    "register": {
+      "first_name": "Имя",
+      "last_name": "Фамилия",
+      "email": "Электронная почта",
+      "password": "Пароль",
+      "confirm_password": "Подтвердить пароль",
+      "terms_agreement": "Я соглашаюсь с условиями",
+      "terms_and_conditions": "Я соглашаюсь с <a href='/gdpr'>Условиями обслуживания и Политикой конфиденциальности</a>",
+      "have_account": "Уже есть учётная запись?",
+      "validation": {
+        "password_lowercase": "Хотя бы одна строчная буква",
+        "password_uppercase": "Хотя бы одна заглавная буква",
+        "password_number": "Хотя бы одна цифра",
+        "password_min_length": "Минимум 12 символов",
+        "password_special_character": "Хотя бы один специальный символ",
+        "passwords_match": "Пароли совпадают"
+      }
+    }
   }
 }

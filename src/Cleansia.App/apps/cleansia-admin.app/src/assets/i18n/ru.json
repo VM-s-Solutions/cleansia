@@ -1705,5 +1705,14 @@
     "decline": "Отклонить",
     "learn_more": "Узнать больше",
     "banner_title": "Баннер согласия на файлы cookie"
+  },
+  "auth": {
+    "login": {
+      "email": "Электронная почта",
+      "password": "Пароль",
+      "remember_me": "Запомнить меня",
+      "forgot_password": "Забыли пароль?",
+      "dont_have_account": "Нет учётной записи?"
+    }
   }
 }

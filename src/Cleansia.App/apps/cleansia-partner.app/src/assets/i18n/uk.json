@@ -1183,5 +1183,32 @@
     "decline": "Відхилити",
     "learn_more": "Дізнатися більше",
     "banner_title": "Банер згоди на файли cookie"
+  },
+  "auth": {
+    "login": {
+      "email": "Електронна пошта",
+      "password": "Пароль",
+      "remember_me": "Запам'ятати мене",
+      "forgot_password": "Забули пароль?",
+      "dont_have_account": "Немає облікового запису?"
+    },
+    "register": {
+      "first_name": "Ім'я",
+      "last_name": "Прізвище",
+      "email": "Електронна пошта",
+      "password": "Пароль",
+      "confirm_password": "Підтвердити пароль",
+      "terms_agreement": "Я погоджуюсь з умовами",
+      "terms_and_conditions": "Я погоджуюсь з <a href='/gdpr'>Умовами обслуговування та Політикою конфіденційності</a>",
+      "have_account": "Вже є обліковий запис?",
+      "validation": {
+        "password_lowercase": "Принаймні одна мала літера",
+        "password_uppercase": "Принаймні одна велика літера",
+        "password_number": "Принаймні одна цифра",
+        "password_min_length": "Принаймні 12 символів",
+        "password_special_character": "Принаймні один спеціальний символ",
+        "passwords_match": "Паролі збігаються"
+      }
+    }
   }
 }

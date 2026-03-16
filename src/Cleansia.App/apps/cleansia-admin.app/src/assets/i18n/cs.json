@@ -1705,5 +1705,14 @@
     "decline": "Odmítnout",
     "learn_more": "Více informací",
     "banner_title": "Banner souhlasu s cookies"
+  },
+  "auth": {
+    "login": {
+      "email": "E-mail",
+      "password": "Heslo",
+      "remember_me": "Zapamatovat si mě",
+      "forgot_password": "Zapomenuté heslo?",
+      "dont_have_account": "Nemáte účet?"
+    }
   }
 }

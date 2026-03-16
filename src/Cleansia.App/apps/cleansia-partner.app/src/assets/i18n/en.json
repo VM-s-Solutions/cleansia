@@ -1183,5 +1183,32 @@
     "decline": "Decline",
     "learn_more": "Learn more",
     "banner_title": "Cookie consent banner"
+  },
+  "auth": {
+    "login": {
+      "email": "Email",
+      "password": "Password",
+      "remember_me": "Remember me",
+      "forgot_password": "Forgot password?",
+      "dont_have_account": "Don't have an account?"
+    },
+    "register": {
+      "first_name": "First Name",
+      "last_name": "Last Name",
+      "email": "Email",
+      "password": "Password",
+      "confirm_password": "Confirm Password",
+      "terms_agreement": "I agree to the terms",
+      "terms_and_conditions": "I agree to the <a href='/gdpr'>Terms of Service and Privacy Policy</a>",
+      "have_account": "Already have an account?",
+      "validation": {
+        "password_lowercase": "At least one lowercase letter",
+        "password_uppercase": "At least one uppercase letter",
+        "password_number": "At least one number",
+        "password_min_length": "At least 12 characters",
+        "password_special_character": "At least one special character",
+        "passwords_match": "Passwords match"
+      }
+    }
   }
 }

@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, OnDestroy, signal, effect, AfterViewInit } from '@angular/core';
+import { Component, computed, inject, OnInit, OnDestroy, PLATFORM_ID, signal, effect, AfterViewInit } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import {
   FormControl,
   FormGroup,
@@ -63,6 +64,7 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly translate = inject(TranslateService);
   private readonly snackbar = inject(SnackbarService);
   private readonly themeService = inject(ThemeService);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   readonly router = inject(Router);
 
   user = signal<UserListItem | null>(null);
@@ -154,7 +156,9 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnInit(): void {
     this.loadProfile();
     this.loadAddresses();
-    window.addEventListener('scroll', this.onScroll);
+    if (this.isBrowser) {
+      window.addEventListener('scroll', this.onScroll);
+    }
     this.passwordForm.controls.newPassword.valueChanges.subscribe(v => this.newPasswordValue.set(v || ''));
   }
 
@@ -164,14 +168,18 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnDestroy(): void {
     this.scrollObserver?.disconnect();
-    window.removeEventListener('scroll', this.onScroll);
+    if (this.isBrowser) {
+      window.removeEventListener('scroll', this.onScroll);
+    }
   }
 
   private onScroll = (): void => {
+    if (!this.isBrowser) return;
     this.showScrollTop.set(window.scrollY > 400);
   };
 
   scrollToTop(): void {
+    if (!this.isBrowser) return;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -191,6 +199,7 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
     }, options);
 
     for (const section of this.sections) {
+      if (!this.isBrowser) continue;
       const el = document.getElementById(`profile-${section.id}`);
       if (el) {
         this.scrollObserver.observe(el);
@@ -288,6 +297,7 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
   // Section navigation
   scrollToSection(sectionId: string): void {
     this.activeSection.set(sectionId);
+    if (!this.isBrowser) return;
     const el = document.getElementById(`profile-${sectionId}`);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -298,6 +308,7 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly STORAGE_KEY = 'cleansia_saved_addresses';
 
   loadAddresses(): void {
+    if (!this.isBrowser) return;
     try {
       const stored = localStorage.getItem(this.STORAGE_KEY);
       if (stored) {
@@ -309,6 +320,7 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private saveAddresses(): void {
+    if (!this.isBrowser) return;
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.addresses()));
   }
 
@@ -372,7 +384,9 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
 
   onLanguageChange(lang: string): void {
     this.translate.use(lang);
-    localStorage.setItem('preferred_language', lang);
+    if (this.isBrowser) {
+      localStorage.setItem('preferred_language', lang);
+    }
   }
 
   toggleTheme(): void {

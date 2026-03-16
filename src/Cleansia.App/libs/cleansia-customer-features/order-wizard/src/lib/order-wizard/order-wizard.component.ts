@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { CleansiaButtonComponent, CleansiaScrollTopComponent, CleansiaTelephoneComponent } from '@cleansia/components';
@@ -38,6 +39,7 @@ export class OrderWizardComponent implements OnInit {
   protected readonly facade = inject(OrderWizardFacade);
   protected readonly translate = inject(TranslateService);
   private readonly route = inject(ActivatedRoute);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   protected readonly PaymentType = PaymentType;
 
   showRebookWarning = signal(false);
@@ -170,7 +172,7 @@ export class OrderWizardComponent implements OnInit {
     this.facade.initialize();
 
     const rebook = this.route.snapshot.queryParamMap.get('rebook');
-    if (rebook === 'true') {
+    if (rebook === 'true' && this.isBrowser) {
       const raw = sessionStorage.getItem('cleansia_rebook_data');
       if (raw) {
         sessionStorage.removeItem('cleansia_rebook_data');
@@ -339,10 +341,12 @@ export class OrderWizardComponent implements OnInit {
 
     const updated = [...this.facade.savedAddresses(), newAddr];
     this.facade.savedAddresses.set(updated);
-    try {
-      localStorage.setItem('cleansia_saved_addresses', JSON.stringify(updated));
-    } catch {
-      // ignore
+    if (this.isBrowser) {
+      try {
+        localStorage.setItem('cleansia_saved_addresses', JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
     }
     this.saveNewAddress.set(false);
   }

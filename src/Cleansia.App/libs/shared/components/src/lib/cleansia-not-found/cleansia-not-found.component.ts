@@ -1,8 +1,10 @@
-import { NgTemplateOutlet } from '@angular/common';
+import { isPlatformBrowser, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  inject,
   input,
+  PLATFORM_ID,
   TemplateRef,
 } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -22,6 +24,8 @@ import { CleansiaDynamicBackgroundComponent } from '../cleansia-dynamic-backgrou
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaNotFoundComponent {
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
   code = input<string>('404');
   title = input<string>();
   message = input<string>();
@@ -30,10 +34,12 @@ export class CleansiaNotFoundComponent {
   customButtonTemplate = input<TemplateRef<unknown>>();
 
   get isHistoryAvailable(): boolean {
+    if (!this.isBrowser) return false;
     return window.history.length > 1;
   }
 
   goBack(): void {
+    if (!this.isBrowser) return;
     if (window.history.length > 1) {
       window.history.back();
       return;

@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, computed, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   CleansiaButtonComponent,
@@ -42,6 +42,7 @@ export class OrdersComponent implements OnInit {
   private readonly store = inject(Store);
   readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   orders = toSignal(this.store.select(selectCustomerOrders), {
     initialValue: [],
@@ -109,7 +110,9 @@ export class OrdersComponent implements OnInit {
       rooms: order.rooms,
       bathrooms: order.bathrooms,
     };
-    sessionStorage.setItem('cleansia_rebook_data', JSON.stringify(rebookData));
+    if (this.isBrowser) {
+      sessionStorage.setItem('cleansia_rebook_data', JSON.stringify(rebookData));
+    }
     this.router.navigate(['/order'], { queryParams: { rebook: 'true' } });
   }
 

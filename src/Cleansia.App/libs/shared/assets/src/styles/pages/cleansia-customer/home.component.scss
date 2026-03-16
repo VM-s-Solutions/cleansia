@@ -1,0 +1,46 @@
+// Home/Landing page styles for customer app
+// All styles are organized into partials by section.
+
+@use './home-common';
+@use './home-floating-bg';
+@use './home-hero';
+@use './home-features';
+@use './home-process';
+@use './home-benefits';
+@use './home-services';
+@use './home-gallery';
+@use './home-testimonials';
+@use './home-faq';
+@use './home-cta';
+@use './home-footer';
+
+// Menubar overrides for fixed navbar
+.p-menubar {
+  border: none !important;
+  border-radius: 0 !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 1000 !important;
+}
+
+.background {
+  background-image: url('/assets/images/mascot/mascot-mopping.png');
+  background-size: 25rem 25rem;
+  background-repeat: no-repeat;
+}
+
+.bg-typek-napad-inline {
+  background-image: url('/assets/images/mascot/mascot-idea.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+@media (max-width: 600px) {
+  .background {
+    background-size: 18rem 18rem;
+    position: absolute;
+  }
+}

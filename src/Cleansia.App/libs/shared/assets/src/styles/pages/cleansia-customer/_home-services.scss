@@ -1,0 +1,193 @@
+@use './home-variables' as *;
+
+// =============================
+// Services
+// =============================
+.cl-services {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  margin-bottom: 2rem;
+
+  &__card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+
+  &__card {
+    background: var(--surface-card);
+    border-radius: $radius-xl;
+    padding: 2.75rem 2rem 2rem;
+    box-shadow: $shadow-card;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--surface-border);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.4s ease, border-color 0.4s ease;
+    cursor: pointer;
+    height: 100%;
+
+    &:hover {
+      transform: translateY(-4px);
+      border-color: rgba($primary, 0.25);
+
+      .cl-services__nav-arrow {
+        opacity: 1;
+        transform: translate(0, 0);
+      }
+    }
+  }
+
+  &__nav-arrow {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: $primary-lighter;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: translate(4px, -4px);
+    transition: opacity 0.3s, transform 0.3s;
+    i {
+      font-size: 0.85rem;
+      color: $primary;
+    }
+  }
+
+  &__ribbon {
+    position: absolute;
+    top: 24px;
+    right: -28px;
+    background: linear-gradient(135deg, $primary, $primary-accent);
+    color: #ffffff;
+    font-family: $font-heading;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.35rem 2.5rem;
+    text-align: center;
+    transform: rotate(45deg);
+    box-shadow: 0 2px 8px rgba($primary, 0.3);
+    z-index: 4;
+  }
+
+  &__icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 1.25rem;
+    background: linear-gradient(135deg, $primary-lighter, $primary-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    i {
+      font-size: 1.8rem;
+      color: $primary;
+    }
+  }
+
+  &__name {
+    font-family: $font-heading;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.75rem;
+  }
+
+  &__price {
+    font-family: $font-heading;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: $primary;
+    margin-bottom: 1rem;
+  }
+
+  &__desc {
+    font-size: 0.9rem;
+    color: var(--text-color-secondary);
+    line-height: 1.7;
+    flex: 1;
+    margin-bottom: 0;
+  }
+
+  // 3 Faded teaser cards — partially visible, fading to transparent
+  &__teasers {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    margin-bottom: 2.5rem;
+    max-height: 120px;
+    overflow: hidden;
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 100%;
+      background: linear-gradient(180deg, transparent 0%, var(--surface-card) 85%);
+      pointer-events: none;
+      z-index: 1;
+    }
+  }
+
+  &__teaser {
+    background: var(--surface-card);
+    border-radius: $radius-xl;
+    border: 1px solid var(--surface-border);
+    box-shadow: $shadow-card;
+    overflow: hidden;
+  }
+
+  &__teaser-inner {
+    padding: 2.75rem 2rem 2rem;
+    text-align: center;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+// =============================
+// Dark Mode — Services
+// =============================
+:root.dark-mode {
+  .cl-services__icon {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(56, 189, 248, 0.18));
+  }
+
+  .cl-services__nav-arrow {
+    background: rgba(56, 189, 248, 0.1);
+  }
+
+  .cl-services__teasers::after {
+    background: linear-gradient(180deg, transparent 0%, var(--surface-card) 85%);
+  }
+}
+
+// =============================
+// Responsive — Services
+// =============================
+@media (max-width: 768px) {
+  .cl-services {
+    grid-template-columns: 1fr;
+  }
+  .cl-services__teasers {
+    grid-template-columns: 1fr;
+    max-height: 80px;
+  }
+}

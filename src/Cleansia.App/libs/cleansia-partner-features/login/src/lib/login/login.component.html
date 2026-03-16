@@ -10,7 +10,7 @@
       </div>
       <div class="cleansia-login__email">
         <cleansia-text-input
-          [label]="'pages.login.email' | translate"
+          [label]="'auth.login.email' | translate"
           [floatVariant]="'on'"
           formControlName="email"
           dataType="email"
@@ -19,7 +19,7 @@
       </div>
       <div class="cleansia-login__password">
         <cleansia-text-input
-          [label]="'pages.login.password' | translate"
+          [label]="'auth.login.password' | translate"
           [floatVariant]="'on'"
           formControlName="password"
           dataType="password"
@@ -33,10 +33,10 @@
             [title]="'global.user.remember_me' | translate"
             formControlName="rememberMe"
           />
-          <span>{{ 'pages.login.remember_me' | translate }}</span>
+          <span>{{ 'auth.login.remember_me' | translate }}</span>
         </div>
         <a [routerLink]="'/' + routes.FORGOT_PASSWORD">
-          <small>{{ 'pages.login.forgot_password' | translate }}</small>
+          <small>{{ 'auth.login.forgot_password' | translate }}</small>
         </a>
       </div>
       <div class="cleansia-login__user-actions">
@@ -49,7 +49,7 @@
         />
         <div>
           <span tabindex="-1">
-            {{ 'pages.login.dont_have_account' | translate }}
+            {{ 'auth.login.dont_have_account' | translate }}
             <a [routerLink]="'/' + routes.REGISTER">
               {{ 'global.actions.register' | translate }}
             </a>

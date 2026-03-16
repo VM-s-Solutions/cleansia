@@ -1,10 +1,10 @@
 export const environment = {
-  apiHost: 'localhost',
-  apiPort: '5001',
-  apiProtocol: 'http',
-  apiBaseUrl: 'http://localhost:5001', // Admin API (Cleansia.Web.Admin)
-  authApiBaseUrl: 'http://localhost:5000', // Auth API (Cleansia.Web)
-  blobStorageUrl: 'http://127.0.0.1:10000/devstoreaccount1',
+  apiHost: 'api-admin.cleansia.cz',
+  apiPort: '443',
+  apiProtocol: 'https',
+  apiBaseUrl: 'https://api-admin.cleansia.cz',
+  authApiBaseUrl: 'https://api.cleansia.cz',
+  blobStorageUrl: '',
   googleClientId: '',
   betaGateEnabled: false,
   betaGateUrl: '',

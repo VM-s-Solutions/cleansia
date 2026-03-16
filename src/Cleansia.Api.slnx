@@ -26,6 +26,7 @@
   </Folder>
   <Folder Name="/05 Web/">
     <Project Path="Cleansia.Web.Admin/Cleansia.Web.Admin.csproj" />
+    <Project Path="Cleansia.Web.Customer/Cleansia.Web.Customer.csproj" />
     <Project Path="Cleansia.Web.Mobile/Cleansia.Web.Mobile.csproj" />
     <Project Path="Cleansia.Web/Cleansia.Web.Partner.csproj" />
   </Folder>

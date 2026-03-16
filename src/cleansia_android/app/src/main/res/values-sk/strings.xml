@@ -1,0 +1,699 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Cleansia Partner</string>
+
+    <!-- Common -->
+    <string name="loading">Načítanie…</string>
+    <string name="error">Chyba</string>
+    <string name="retry">Skúsiť znova</string>
+    <string name="cancel">Zrušiť</string>
+    <string name="save">Uložiť</string>
+    <string name="saving">Ukladanie…</string>
+    <string name="no_data">Nezadané</string>
+    <string name="delete">Odstrániť</string>
+    <string name="see_all">Zobraziť všetko</string>
+    <string name="confirm">Potvrdiť</string>
+    <string name="ok">OK</string>
+
+    <!-- Auth -->
+    <string name="login">Prihlásiť sa</string>
+    <string name="register">Registrovať sa</string>
+    <string name="logout">Odhlásiť sa</string>
+    <string name="email">E-mail</string>
+    <string name="password">Heslo</string>
+    <string name="confirm_password">Potvrdiť heslo</string>
+    <string name="remember_me">Zapamätať si ma</string>
+    <string name="forgot_password">Zabudli ste heslo?</string>
+    <string name="dont_have_account">Nemáte účet?</string>
+    <string name="already_have_account">Už máte účet?</string>
+    <string name="sign_in">Prihlásiť sa</string>
+    <string name="sign_in_here">Prihláste sa tu</string>
+    <string name="sign_up_here">Zaregistrujte sa tu</string>
+    <string name="welcome_back">Vitajte späť!</string>
+    <string name="login_subtitle">Prihláste sa pre pokračovanie do svojho účtu</string>
+    <string name="create_account">Vytvoriť účet</string>
+    <string name="register_subtitle">Pridajte sa k nám a začnite zarábať ešte dnes</string>
+    <string name="first_name">Meno</string>
+    <string name="last_name">Priezvisko</string>
+    <string name="phone">Telefónne číslo</string>
+    <string name="phone_number">Telefónne číslo</string>
+    <string name="accept_terms">Súhlasím s obchodnými podmienkami</string>
+    <string name="accept_terms_prefix">Súhlasím s</string>
+    <string name="terms_and_conditions">obchodnými podmienkami</string>
+    <string name="back">Späť</string>
+
+    <!-- Email Confirmation -->
+    <string name="confirm_email">Potvrdiť e-mail</string>
+    <string name="verify_email">Overte svoj e-mail</string>
+    <string name="verify_email_subtitle">Na váš e-mail sme odoslali overovací kód. Zadajte ho nižšie.</string>
+    <string name="confirm_email_subtitle">Zadajte prosím potvrdzovací kód odoslaný na váš e-mail</string>
+    <string name="confirmation_code">Potvrdzovací kód</string>
+    <string name="verification_code">Overovací kód</string>
+    <string name="resend_code">Odoslať znova</string>
+    <string name="didnt_receive_code">Nedostali ste kód?</string>
+    <string name="verify">Overiť</string>
+
+    <!-- Forgot Password -->
+    <string name="forgot_password_title">Zabudnuté heslo</string>
+    <string name="forgot_password_subtitle">Zadajte svoju e-mailovú adresu a pošleme vám odkaz na obnovenie hesla</string>
+    <string name="send_reset_link">Odoslať odkaz na obnovenie</string>
+    <string name="back_to_login">Späť na prihlásenie</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard">Prehľad</string>
+    <string name="dashboard_subtitle">Tu je prehľad vašej aktivity</string>
+    <string name="good_morning">Dobré ráno!</string>
+    <string name="good_afternoon">Dobré popoludnie!</string>
+    <string name="good_evening">Dobrý večer!</string>
+    <string name="good_morning_name">Dobré ráno, %1$s</string>
+    <string name="good_afternoon_name">Dobré popoludnie, %1$s</string>
+    <string name="good_evening_name">Dobrý večer, %1$s</string>
+    <string name="todays_schedule">Dnešný rozvrh</string>
+    <string name="no_orders_today">Na dnes nie sú naplánované žiadne zákazky</string>
+    <string name="your_performance">Váš výkon</string>
+    <string name="statistics">Štatistiky</string>
+    <string name="available_orders">Dostupné zákazky</string>
+    <string name="my_active_orders">Moje aktívne zákazky</string>
+    <string name="completed_this_month">Dokončené tento mesiac</string>
+    <string name="pending_earnings">Čakajúci zárobok</string>
+    <string name="upcoming_orders">Nadchádzajúce zákazky</string>
+    <string name="earnings_overview">Prehľad zárobkov</string>
+    <string name="order_distribution">Rozdelenie zákazok</string>
+    <string name="no_upcoming_orders">Žiadne nadchádzajúce zákazky</string>
+    <string name="quick_actions">Rýchle akcie</string>
+    <string name="browse_orders">Zákazky</string>
+    <string name="view_all">Zobraziť všetko</string>
+    <string name="this_week">Tento týždeň</string>
+    <string name="this_month">Tento mesiac</string>
+    <string name="last_month">Minulý mesiac</string>
+    <string name="next_up">Nasledujúce</string>
+    <string name="starts_in">Začína o %1$s</string>
+    <string name="today_at">Dnes o %1$s</string>
+    <string name="tomorrow_at">Zajtra o %1$s</string>
+    <string name="completion_rate">Miera dokončenia</string>
+    <string name="completed_vs_total">%1$d z %2$d zákazok</string>
+
+    <!-- Analytics -->
+    <string name="analytics_title">Analytika</string>
+    <string name="period_comparison">Porovnanie období</string>
+    <string name="current_period">Aktuálne obdobie</string>
+    <string name="previous_period">Predchádzajúce obdobie</string>
+    <string name="daily_average">Denný priemer</string>
+    <string name="best_day">Najlepší deň</string>
+    <string name="worst_day">Najslabší deň</string>
+    <string name="earnings_by_day">Zárobky podľa dňa</string>
+    <string name="day_mon">Po</string>
+    <string name="day_tue">Ut</string>
+    <string name="day_wed">St</string>
+    <string name="day_thu">Št</string>
+    <string name="day_fri">Pi</string>
+    <string name="day_sat">So</string>
+    <string name="day_sun">Ne</string>
+
+    <!-- Analytics Extensions -->
+    <string name="order_status_title">Rozdelenie zákazok</string>
+    <string name="completed_orders">Dokončené</string>
+    <string name="in_progress_orders">Prebieha</string>
+    <string name="cancelled_orders">Zrušené</string>
+    <string name="pending_orders">Čakajúce</string>
+    <string name="performance_score">Skóre výkonu</string>
+    <string name="customer_rating">Hodnotenie zákazníkov</string>
+    <string name="on_time_rate">Miera včasnosti</string>
+    <string name="avg_response_time">Priem. odozva</string>
+    <string name="minutes_short">%1$d min</string>
+    <string name="monthly_earnings_trend">Mesačný trend zárobkov</string>
+    <string name="total_this_year">Celkom tento rok</string>
+    <string name="month_over_month">oproti minulému mesiacu</string>
+    <string name="revenue_by_service">Príjem podľa služby</string>
+    <string name="orders_count">%1$d zákazok</string>
+    <string name="schedule_utilization">Využitie rozvrhu</string>
+    <string name="available_hours_label">Dostupné</string>
+    <string name="booked_hours_label">Rezervované</string>
+    <string name="utilization_rate">Využitie</string>
+    <string name="hours_short">%1$.1fh</string>
+    <string name="completion_efficiency">Efektivita dokončenia</string>
+    <string name="estimated_label">Odhadované</string>
+    <string name="actual_label">Skutočné</string>
+    <string name="faster_than_estimate">o %1$d%% rýchlejšie</string>
+    <string name="slower_than_estimate">o %1$d%% pomalšie</string>
+
+    <!-- Orders -->
+    <string name="orders">Zákazky</string>
+    <string name="order_details">Detail zákazky</string>
+    <string name="active">Aktívne</string>
+    <string name="available">Dostupné</string>
+    <string name="my_orders">Moje zákazky</string>
+    <string name="completed">Dokončené</string>
+    <string name="take_order">Prevziať zákazku</string>
+    <string name="swipe_to_take">Potiahnite pre prevzatie</string>
+    <string name="start_order">Začať zákazku</string>
+    <string name="swipe_to_start">Potiahnite pre začatie</string>
+    <string name="swipe_to_complete">Potiahnite pre dokončenie</string>
+    <string name="waiting_for_other_employees">Ste priradený! Čakáme na potvrdenie od ostatných zamestnancov, aby mohla zákazka začať.</string>
+    <string name="order_started">Zahájené!</string>
+    <string name="complete_order">Dokončiť zákazku</string>
+    <string name="no_orders_available">Žiadne dostupné zákazky</string>
+    <string name="no_active_orders">Žiadne aktívne zákazky</string>
+    <string name="no_completed_orders">Žiadne dokončené zákazky</string>
+    <string name="no_services">Žiadne služby</string>
+    <string name="order_id">Zákazka #%1$s</string>
+    <string name="customer">Zákazník</string>
+    <string name="address">Adresa</string>
+    <string name="navigate">Navigovať</string>
+    <string name="services">Služby</string>
+    <string name="notes">Poznámky</string>
+    <string name="total">Celkom</string>
+    <string name="scheduled_date">Naplánovaný dátum</string>
+    <string name="upload_photos">Nahrať fotky</string>
+    <string name="photos">Fotky</string>
+    <string name="add_photo">Pridať fotku</string>
+    <string name="no_photos">Žiadne fotky nahrané</string>
+    <string name="take_photo">Odfotiť</string>
+    <string name="choose_from_gallery">Vybrať z galérie</string>
+    <string name="delete_photo">Vymazať fotku</string>
+    <string name="delete_photo_confirm">Naozaj chcete vymazať túto fotku?</string>
+    <string name="estimated_time">Odhadovaný čas</string>
+    <string name="actual_completion_time">Skutočný čas dokončenia (min)</string>
+    <string name="completion_notes">Poznámky k dokončeniu (voliteľné)</string>
+    <string name="rooms">Izby</string>
+    <string name="bathrooms">Kúpeľne</string>
+    <string name="payment_info">Platba</string>
+    <string name="payment_type">Typ platby</string>
+    <string name="payment_status_label">Stav platby</string>
+    <string name="notes_instructions">Poznámky a pokyny</string>
+    <string name="customer_notes">Poznámky zákazníka</string>
+    <string name="special_instructions">Špeciálne pokyny</string>
+    <string name="access_instructions">Pokyny pre prístup</string>
+    <string name="order_info">Informácie o zákazke</string>
+    <string name="created_on">Vytvorené</string>
+    <string name="updated_on">Aktualizované</string>
+    <string name="order_completed_message">Táto zákazka bola dokončená</string>
+    <string name="order_cancelled_message">Táto zákazka bola zrušená</string>
+    <string name="sort">Triediť</string>
+    <string name="filter">Filter</string>
+    <string name="filters">Filtre</string>
+    <string name="reset">Obnoviť</string>
+    <string name="clear_all">Vymazať všetko</string>
+    <string name="close">Zavrieť</string>
+    <string name="search">Hľadať</string>
+    <string name="search_orders">Hľadať zákazky…</string>
+    <string name="search_invoices">Hľadať faktúry…</string>
+    <string name="no_results">Žiadne výsledky</string>
+    <string name="coming_soon">Čoskoro</string>
+    <string name="coming_soon_desc">Táto funkcia je vo vývoji a čoskoro bude dostupná.</string>
+    <string name="search_customer">Hľadať podľa mena zákazníka</string>
+    <string name="search_invoice">Hľadať podľa čísla faktúry</string>
+    <string name="order_status_filter">Stav zákazky</string>
+    <string name="payment_status_filter">Stav platby</string>
+    <string name="invoice_status_filter">Stav faktúry</string>
+    <string name="date_range">Časové obdobie</string>
+    <string name="start_date">Dátum od</string>
+    <string name="end_date">Dátum do</string>
+    <string name="select_date">Vybrať dátum</string>
+    <string name="all_statuses">Všetky stavy</string>
+    <string name="apply">Použiť</string>
+
+    <!-- Sort Options -->
+    <string name="sort_date_newest">Dátum (najnovšie)</string>
+    <string name="sort_date_oldest">Dátum (najstaršie)</string>
+    <string name="sort_price_low_high">Cena (od najnižšej)</string>
+    <string name="sort_price_high_low">Cena (od najvyššej)</string>
+    <string name="sort_amount_low_high">Suma (od najnižšej)</string>
+    <string name="sort_amount_high_low">Suma (od najvyššej)</string>
+
+    <!-- Order Status -->
+    <string name="status_pending">Čakajúce</string>
+    <string name="status_confirmed">Potvrdené</string>
+    <string name="status_in_progress">Prebieha</string>
+    <string name="status_completed">Dokončené</string>
+    <string name="status_cancelled">Zrušené</string>
+
+    <!-- Payment Status -->
+    <string name="payment_pending">Čaká na platbu</string>
+    <string name="payment_paid">Zaplatené</string>
+    <string name="payment_failed">Platba zlyhala</string>
+    <string name="payment_refunded">Vrátené</string>
+
+    <!-- Invoices -->
+    <string name="invoices">Faktúry</string>
+    <string name="invoice_details">Detail faktúry</string>
+    <string name="download_invoice">Stiahnuť faktúru</string>
+    <string name="no_invoices">Žiadne faktúry</string>
+    <string name="invoice_number">Faktúra #%1$s</string>
+    <string name="period">Obdobie</string>
+    <string name="issue_date">Dátum vystavenia</string>
+    <string name="due_date">Dátum splatnosti</string>
+    <string name="orders_included">Zahrnutých zákazok</string>
+
+    <!-- Invoice Status -->
+    <string name="invoice_pending">Čakajúca</string>
+    <string name="invoice_approved">Schválená</string>
+    <string name="invoice_paid">Zaplatená</string>
+    <string name="invoice_disputed">Namieta sa</string>
+    <string name="invoice_rejected">Zamietnutá</string>
+    <string name="invoice_cancelled">Zrušená</string>
+
+    <!-- Profile -->
+    <string name="profile">Profil</string>
+    <string name="personal_info">Osobné údaje</string>
+    <string name="identification_info">Identifikácia</string>
+    <string name="address_info">Adresa</string>
+    <string name="bank_details">Bankové údaje</string>
+    <string name="documents">Dokumenty</string>
+    <string name="availability">Dostupnosť</string>
+    <string name="edit_profile">Upraviť profil</string>
+    <string name="missing_fields">Chýba:</string>
+    <string name="date_of_birth">Dátum narodenia</string>
+    <string name="nationality">Štátna príslušnosť</string>
+    <string name="national_id">Číslo občianskeho preukazu</string>
+    <string name="passport_id">Číslo pasu</string>
+    <string name="tax_id">DIČ</string>
+    <string name="street">Ulica</string>
+    <string name="city">Mesto</string>
+    <string name="zip_code">PSČ</string>
+    <string name="state_region">Kraj / Oblasť</string>
+    <string name="country">Krajina</string>
+    <string name="bank_name">Názov banky</string>
+    <string name="account_number">Číslo účtu</string>
+    <string name="iban">IBAN</string>
+    <string name="swift_code">SWIFT kód</string>
+    <string name="upload_document">Nahrať dokument</string>
+    <string name="no_documents">Žiadne dokumenty nahrané</string>
+
+    <!-- Emergency Contact -->
+    <string name="emergency_contact">Núdzový kontakt</string>
+    <string name="emergency_contact_desc">Osoba, ktorú môžeme kontaktovať v prípade núdze</string>
+    <string name="contact_name">Meno kontaktu</string>
+    <string name="relationship">Vzťah</string>
+    <string name="contact_phone">Telefónne číslo</string>
+    <string name="contact_email">E-mailová adresa</string>
+
+    <!-- Availability -->
+    <string name="set_availability">Nastaviť dostupnosť</string>
+    <string name="no_availability_set">Dostupnosť nie je nastavená</string>
+    <string name="select_time">Vybrať čas</string>
+    <string name="date_overrides">Výnimky v rozvrhu</string>
+    <string name="add_date_override">Pridať výnimku</string>
+    <string name="no_date_overrides">Žiadne výnimky v rozvrhu</string>
+    <string name="unavailable">Nedostupný</string>
+    <string name="custom_hours">Vlastné hodiny</string>
+    <string name="select_date_override">Vybrať dátum</string>
+    <string name="mark_unavailable">Označiť ako nedostupný</string>
+    <string name="set_custom_hours">Nastaviť vlastné hodiny</string>
+    <string name="date_override_note">Poznámka (voliteľné)</string>
+
+    <!-- Terms & Consent -->
+    <string name="terms_consent">Podmienky a súhlas</string>
+    <string name="terms_accepted">Podmienky prijaté</string>
+    <string name="terms_not_accepted">Podmienky neprijaté</string>
+    <string name="terms_accepted_on">Prijaté dňa %1$s</string>
+    <string name="view_terms">Zobraziť podmienky</string>
+    <string name="accept_terms_message">Prečítajte si a prijmite naše obchodné podmienky, aby ste mohli pokračovať v používaní aplikácie.</string>
+
+    <!-- Settings -->
+    <string name="settings">Nastavenia</string>
+    <string name="language">Jazyk</string>
+    <string name="theme">Téma</string>
+    <string name="notifications">Oznámenia</string>
+    <string name="biometric_login">Biometrické prihlásenie</string>
+    <string name="biometric_login_desc">Použite odtlačok prsta alebo rozpoznanie tváre na prihlásenie</string>
+    <string name="security">Bezpečnosť</string>
+    <string name="app_version">Verzia aplikácie</string>
+
+    <!-- Biometric -->
+    <string name="biometric_prompt_title">Biometrické prihlásenie</string>
+    <string name="biometric_prompt_subtitle">Použite biometrické overenie na prihlásenie</string>
+    <string name="biometric_prompt_negative">Použiť heslo</string>
+    <string name="biometric_not_available">Biometrické overovanie nie je na tomto zariadení dostupné</string>
+    <string name="biometric_not_enrolled">Žiadne biometrické údaje nie sú zaregistrované. Nastavte si odtlačok prsta alebo rozpoznanie tváre v nastaveniach zariadenia.</string>
+    <string name="biometric_auth_failed">Biometrické overenie zlyhalo</string>
+    <string name="biometric_auth_error">Chyba overenia: %1$s</string>
+    <string name="biometric_enabled">Biometrické prihlásenie zapnuté</string>
+    <string name="biometric_disabled">Biometrické prihlásenie vypnuté</string>
+
+    <!-- Document Types -->
+    <string name="doc_id_card">Občiansky preukaz</string>
+    <string name="doc_passport">Cestovný pas</string>
+    <string name="doc_driving_license">Vodičský preukaz</string>
+    <string name="doc_work_permit">Pracovné povolenie</string>
+    <string name="doc_contract">Zmluva</string>
+    <string name="doc_certificate">Certifikát</string>
+    <string name="doc_bank_statement">Bankový výpis</string>
+    <string name="doc_tax_document">Daňový doklad</string>
+    <string name="doc_insurance_document">Poistný doklad</string>
+    <string name="doc_other">Iné</string>
+
+    <!-- Document Management -->
+    <string name="document_type_label">Typ dokumentu</string>
+    <string name="select_files">Vybrať súbory</string>
+    <string name="upload_requirements">PDF, DOC, DOCX, JPG, JPEG, PNG — max 10 MB</string>
+    <string name="delete_document_confirm">Naozaj chcete vymazať \"%1$s\"?</string>
+    <string name="download">Stiahnuť</string>
+    <string name="pending_documents">Čakajúce</string>
+    <string name="approved_documents">Schválené</string>
+    <string name="rejected_documents">Zamietnuté</string>
+    <string name="expired_documents">Expirované</string>
+    <string name="review_notes">Poznámky k posúdeniu</string>
+
+    <!-- Help Cards -->
+    <string name="orders_help_title">Ako fungujú zákazky</string>
+    <string name="orders_help_step1_title">Prehliadajte dostupné zákazky</string>
+    <string name="orders_help_step1_desc">Prezrite si zákazky, ktoré sú pre vás dostupné</string>
+    <string name="orders_help_step2_title">Prevzať zákazku</string>
+    <string name="orders_help_step2_desc">Prijmite zákazku a pridajte si ju do rozvrhu</string>
+    <string name="orders_help_step3_title">Začať zákazku</string>
+    <string name="orders_help_step3_desc">Označte zákazku ako zahájenú, keď začnete pracovať</string>
+    <string name="orders_help_step4_title">Dokončiť zákazku</string>
+    <string name="orders_help_step4_desc">Po dokončení označte zákazku ako hotovú a pridajte poznámky</string>
+    <string name="invoices_help_title">Informácie o faktúrach</string>
+    <string name="invoices_help_desc">Faktúry sa generujú za dokončené zákazky. Po schválení obdržíte platbu podľa vášho platobného harmonogramu.</string>
+
+    <!-- Validation -->
+    <string name="error_email_required">E-mail je povinný</string>
+    <string name="error_email_invalid">Zadajte platný e-mail</string>
+    <string name="error_password_required">Heslo je povinné</string>
+    <string name="error_password_min_length">Heslo musí mať aspoň 8 znakov</string>
+    <string name="error_passwords_not_match">Heslá sa nezhodujú</string>
+    <string name="error_first_name_required">Meno je povinné</string>
+    <string name="error_last_name_required">Priezvisko je povinné</string>
+    <string name="error_terms_required">Musíte prijať obchodné podmienky</string>
+
+    <!-- Profile Validation -->
+    <string name="validation_required">Toto pole je povinné</string>
+    <string name="validation_max_50">Maximálne 50 znakov</string>
+    <string name="validation_max_20">Maximálne 20 znakov</string>
+    <string name="validation_max_100">Maximálne 100 znakov</string>
+    <string name="validation_date_past">Dátum musí byť v minulosti</string>
+    <string name="validation_min_age_18">Musíte mať aspoň 18 rokov</string>
+    <string name="validation_max_age_120">Neplatný dátum narodenia</string>
+    <string name="validation_invalid_date">Neplatný formát dátumu</string>
+    <string name="validation_invalid_phone">Neplatný formát telefónneho čísla</string>
+    <string name="validation_invalid_email">Neplatný formát e-mailu</string>
+    <string name="validation_length_5_20">Musí mať 5 až 20 znakov</string>
+    <string name="validation_alphanumeric">Povolené sú len písmená a čísla</string>
+    <string name="validation_length_5_255">Musí mať 5 až 255 znakov</string>
+    <string name="validation_length_2_100">Musí mať 2 až 100 znakov</string>
+    <string name="validation_length_3_20">Musí mať 3 až 20 znakov</string>
+    <string name="validation_invalid_zip">Neplatný formát PSČ</string>
+    <string name="validation_length_15_34">Musí mať 15 až 34 znakov</string>
+    <string name="validation_invalid_iban">Neplatný formát IBAN</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_welcome_title">Vitajte v Cleansia Partner</string>
+    <string name="onboarding_welcome_desc">Vaša partnerská aplikácia na správu upratovacích zákazok a zárobkov</string>
+    <string name="onboarding_orders_title">Spravujte svoje zákazky</string>
+    <string name="onboarding_orders_desc">Prehliadajte dostupné zákazky, prijímajte práce a sledujte svoj postup v reálnom čase</string>
+    <string name="onboarding_earnings_title">Sledujte svoje zárobky</string>
+    <string name="onboarding_earnings_desc">Prezerajte si faktúry, sledujte platby a sťahujte reporty</string>
+    <string name="onboarding_profile_title">Dokončite svoj profil</string>
+    <string name="onboarding_profile_desc">Udržujte svoje informácie aktuálne pre hladký priebeh a včasné platby</string>
+    <string name="onboarding_get_started">Začať</string>
+    <string name="onboarding_next">Ďalej</string>
+    <string name="onboarding_skip">Preskočiť</string>
+    <!-- Onboarding highlights -->
+    <string name="onboarding_highlight_orders">Správa zákazok</string>
+    <string name="onboarding_highlight_earnings">Sledovanie zárobkov</string>
+    <string name="onboarding_highlight_schedule">Nastavenie rozvrhu</string>
+    <string name="onboarding_highlight_realtime">Aktualizácie v reálnom čase</string>
+    <string name="onboarding_highlight_location">Mapový pohľad</string>
+    <string name="onboarding_highlight_tracking">Sledovanie postupu</string>
+    <string name="onboarding_highlight_invoices">Faktúry</string>
+    <string name="onboarding_highlight_analytics">Analytika</string>
+    <string name="onboarding_highlight_reports">Reporty</string>
+    <string name="onboarding_highlight_availability">Dostupnosť</string>
+    <string name="onboarding_highlight_documents">Dokumenty</string>
+    <string name="onboarding_highlight_ratings">Hodnotenia</string>
+
+    <!-- Profile Completion -->
+    <string name="complete_your_profile">Dokončite svoj profil</string>
+    <string name="profile_completion_subtitle">Vyplňte svoje údaje, aby ste mohli začať s Cleansia</string>
+    <string name="step_personal">Osobné</string>
+    <string name="step_address">Adresa</string>
+    <string name="step_bank">Banka</string>
+    <string name="step_schedule">Rozvrh</string>
+    <string name="profile_next_step">Ďalej</string>
+    <string name="profile_prev_step">Späť</string>
+    <string name="profile_finish">Dokončiť</string>
+    <string name="profile_skip_for_now">Zatiaľ preskočiť</string>
+    <string name="personal_details">Osobné údaje</string>
+    <string name="address_details">Údaje o adrese</string>
+    <string name="banking_details">Bankové údaje</string>
+    <string name="schedule_setup">Nastavenie rozvrhu</string>
+    <string name="schedule_setup_desc">Nastavte dni a časy, kedy ste k dispozícii na prácu.</string>
+
+    <!-- Registration Lock -->
+    <string name="registration_lock_title">Vyžaduje sa dokončenie profilu</string>
+    <string name="registration_lock_description">Pre prístup do tejto sekcie musíte dokončiť nastavenie profilu a nahrať požadované dokumenty.</string>
+    <string name="registration_lock_missing_requirements">Chýbajúce požiadavky:</string>
+    <string name="registration_lock_profile_completion">Dokončiť informácie v profile</string>
+    <string name="registration_lock_document_upload">Nahrať požadované dokumenty</string>
+    <string name="registration_lock_complete_profile">Dokončiť profil</string>
+
+    <!-- API Errors -->
+    <string name="error_network">Nepodarilo sa pripojiť k serveru. Skontrolujte pripojenie na internet.</string>
+    <string name="error_timeout">Časový limit pripojenia vypršal. Skúste to znova.</string>
+    <string name="error_unauthorized">Sedenie vypršalo. Prihláste sa znova.</string>
+
+    <!-- Session Expiration -->
+    <string name="session_expired_title">Sedenie vypršalo</string>
+    <string name="session_expired_message">Vaše sedenie vypršalo. Pre pokračovanie sa prihláste znova.</string>
+    <string name="error_not_found">Požadovaný zdroj nebol nájdený.</string>
+    <string name="error_server">Chyba servera. Skúste to neskôr.</string>
+    <string name="error_unknown">Nastala neočakávaná chyba.</string>
+
+    <!-- Timer -->
+    <string name="timer_minute">minúta</string>
+    <string name="timer_minutes">minúty</string>
+    <string name="timer_seconds">sekundy</string>
+    <string name="timer_remaining">zostáva</string>
+    <string name="timer_overtime">nadčas</string>
+    <string name="timer_cleaning_in_progress">Prebieha upratovanie</string>
+    <string name="timer_time_left">Zostáva čas</string>
+
+    <!-- Order Details - Redesigned -->
+    <string name="quick_info">Rýchle info</string>
+    <string name="order_workflow">Postup zákazky</string>
+    <string name="step_take_order">Prevziať zákazku</string>
+    <string name="step_start_cleaning">Začať upratovanie</string>
+    <string name="step_complete">Dokončiť</string>
+    <string name="current_step">Aktuálne</string>
+    <string name="step_done">Hotovo</string>
+    <string name="step_pending">Čaká sa</string>
+    <string name="view_details">Zobraziť detaily</string>
+    <string name="hide_details">Skryť detaily</string>
+    <string name="cleaning_timer">Časovač upratovania</string>
+    <string name="open_in_maps">Otvoriť v mapách</string>
+    <string name="call_customer">Zavolať zákazníkovi</string>
+    <string name="navigate_to_address">Navigovať na adresu</string>
+    <string name="report_issue">Problém</string>
+    <string name="report_issue_desc">Popíšte problém, ktorý nastal počas tohto upratovania.</string>
+    <string name="describe_issue">Popíšte problém</string>
+    <string name="submit">Odoslať</string>
+    <string name="add_note">Poznámka</string>
+    <string name="add_note_desc">Pridajte poznámku k tomuto upratovaniu.</string>
+    <string name="your_note">Vaša poznámka</string>
+    <string name="call">Zavolať</string>
+    <string name="message">Správa</string>
+    <string name="employee_notes_issues">Poznámky a problémy</string>
+    <string name="no_notes_or_issues">Zatiaľ žiadne poznámky ani problémy</string>
+    <string name="issue_resolved">Vyriešené</string>
+    <string name="issue_open">Otvorené</string>
+
+    <!-- Account Hub -->
+    <string name="account">Účet</string>
+    <string name="quick_access">Rýchly prístup</string>
+    <string name="recent_orders">Posledné zákazky</string>
+    <string name="help_support">Pomoc a podpora</string>
+    <string name="logout_confirm">Naozaj sa chcete odhlásiť?</string>
+    <string name="member_since">Členom od %1$s</string>
+    <string name="inactive_account">Neaktívny</string>
+
+    <!-- Invoice Details - Redesigned -->
+    <string name="invoice_summary">Zhrnutie</string>
+    <string name="invoice_information">Informácie o faktúre</string>
+    <string name="amount_breakdown">Rozpad sumy</string>
+    <string name="status_timeline">Časová os stavov</string>
+    <string name="employee">Zamestnanec</string>
+    <string name="variable_symbol">Variabilný symbol</string>
+    <string name="payment_reference">Referencia platby</string>
+    <string name="total_orders">Celkom zákazok</string>
+    <string name="pay_period">Platobné obdobie</string>
+    <string name="paid_date">Dátum platby</string>
+    <string name="subtotal">Medzisúčet</string>
+    <string name="bonus">Bonus</string>
+    <string name="deductions">Zrážky</string>
+    <string name="admin_notes">Poznámky administrátora</string>
+    <string name="bank_transfer_note">Poznámka k bankovému prevodu</string>
+    <string name="generated">Vygenerované</string>
+    <string name="approved">Schválené</string>
+    <string name="paid">Zaplatené</string>
+    <string name="invoice_notes">Poznámky</string>
+
+    <!-- Calendar Availability -->
+    <string name="previous_month">Predchádzajúci mesiac</string>
+    <string name="next_month">Nasledujúci mesiac</string>
+    <string name="legend_working">Pracovný</string>
+    <string name="legend_custom">Vlastný</string>
+    <string name="legend_off">Voľno</string>
+    <string name="working_day">Pracovný deň</string>
+    <string name="day_off">Voľný deň</string>
+    <string name="exception_day_off">Výnimka - Voľný deň</string>
+    <string name="edit_hours">Upraviť hodiny</string>
+    <string name="edit_hours_desc">Upravte pracovné hodiny pre tento deň.</string>
+    <string name="mark_as_exception">Označiť ako výnimku</string>
+    <string name="mark_exception_desc">Prepísať bežný rozvrh pre tento dátum.</string>
+    <string name="schedule_setup_title">Nastavenie rozvrhu</string>
+    <string name="schedule_setup_sheet_desc">Vyberte si pracovné dni a hodiny.</string>
+    <string name="remove_exception">Odstrániť výnimku</string>
+    <string name="add_time_slot">Pridať časový slot</string>
+    <string name="remove">Odstrániť</string>
+    <string name="weekly_schedule">Týždenný rozvrh</string>
+    <string name="edit">Upraviť</string>
+
+    <!-- Quick Setup Presets -->
+    <string name="quick_setup">Rýchle nastavenie</string>
+    <string name="mon_fri_9_5">Po-Pi 9-17</string>
+    <string name="mon_sat_8_4">Po-So 8-16</string>
+    <string name="custom">Vlastné</string>
+    <string name="custom_schedule">Vlastný rozvrh</string>
+    <string name="working_hours">Pracovné hodiny</string>
+    <string name="working_days">Pracovné dni</string>
+
+    <!-- Dashboard Working Hours -->
+    <string name="todays_working_hours">Dnešné pracovné hodiny</string>
+    <string name="day_complete">Deň je dokončený</string>
+    <string name="day_off_today">Dnes je voľno</string>
+    <string name="off_today">Dnes voľno</string>
+    <string name="remaining_time">Zostáva %1$s</string>
+
+    <!-- Before/After Photos -->
+    <string name="photos_before">Pred</string>
+    <string name="photos_after">Po</string>
+    <string name="no_before_photos">Zatiaľ žiadne fotky pred upratovaním</string>
+    <string name="no_after_photos">Zatiaľ žiadne fotky po upratovaní</string>
+    <string name="photos_required_warning">Na dokončenie zákazky sú potrebné fotky pred a po upratovaní</string>
+    <string name="photos_before_required">Pridajte aspoň jednu fotku pred upratovaním</string>
+    <string name="photos_after_required">Pridajte aspoň jednu fotku po upratovaní</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_timer">Časovač zákazky</string>
+    <string name="notification_channel_timer_desc">Priebežné oznámenie zobrazujúce postup časovača zákazky</string>
+    <string name="notification_channel_alerts">Upozornenia na zákazky</string>
+    <string name="notification_channel_alerts_desc">Dôležité upozornenia o časových limitoch zákazok</string>
+    <string name="notification_order_timer">Zákazka #%1$s</string>
+    <string name="notification_time_remaining">Zostáva %1$d min</string>
+    <string name="notification_overtime">%1$d min nad odhadovaný čas</string>
+    <string name="notification_caution_title">Čas sa kráti</string>
+    <string name="notification_caution_message">Zákazka #%1$s má ešte približne %2$d min</string>
+    <string name="notification_urgent_title">Takmer bez času!</string>
+    <string name="notification_urgent_message">Zákazka #%1$s má už len %2$d min</string>
+    <string name="notification_overtime_title">Čas prekročený</string>
+    <string name="notification_overtime_message">Zákazka #%1$s prekročila odhadovaný čas</string>
+    <string name="notification_caution_subtitle">Zostáva %1$d min — ponáhľajte sa</string>
+    <string name="notification_urgent_subtitle">Zostáva už len %1$d min!</string>
+    <string name="notification_elapsed">Ubehlo %1$d min</string>
+    <string name="notification_elapsed_detailed">Ubehlo %1$d:%2$02d</string>
+    <string name="notification_estimated">Odhad %1$d min</string>
+    <string name="notification_in_progress">Prebieha</string>
+    <string name="notification_overtime_elapsed">+%1$d min nadčas</string>
+    <string name="notification_enable_title">Povoliť oznámenia</string>
+    <string name="notification_enable_message">Oznámenia sú vypnuté. Zapnite ich, aby ste dostávali aktualizácie časovača zákazok a upozornenia.</string>
+    <string name="notification_enable_open_settings">Otvoriť nastavenia</string>
+
+    <!-- Urgency -->
+    <string name="urgency_overdue">Po termíne</string>
+    <string name="urgency_in_minutes">O %1$dm</string>
+    <string name="urgency_in_hours_minutes">O %1$dh %2$dm</string>
+    <string name="urgency_in_hours">O %1$dh</string>
+
+    <!-- API Error Translations -->
+    <!-- Auth -->
+    <string name="api_error_auth_google_type_error">Chyba typu overenia cez Google</string>
+    <string name="api_error_auth_internal_type_error">Interná chyba typu overenia</string>
+    <string name="api_error_auth_invalid_confirmation_code">Neplatný potvrdzovací kód</string>
+    <string name="api_error_auth_invalid_google_token">Neplatný token Google</string>
+    <string name="api_error_auth_invalid_password_format">Neplatný formát hesla</string>
+    <string name="api_error_auth_invalid_reset_token">Neplatný token na obnovenie hesla</string>
+    <string name="api_error_auth_same_reset_password">Nové heslo sa zhoduje so starým heslom</string>
+    <string name="api_error_auth_insufficient_privileges">Nemáte oprávnenie na vykonanie tejto akcie</string>
+    <!-- Common -->
+    <string name="api_error_common_invalid_enum_value">Neplatná hodnota</string>
+    <string name="api_error_common_max_length">Prekročená maximálna dĺžka</string>
+    <string name="api_error_common_required">Toto pole je povinné</string>
+    <!-- Email -->
+    <string name="api_error_email_sending_failed">Odoslanie e-mailu zlyhalo. Skúste to znova.</string>
+    <string name="api_error_email_invalid_format">Neplatný formát e-mailu</string>
+    <string name="api_error_email_invalid_email">Neplatná e-mailová adresa</string>
+    <!-- Order -->
+    <string name="api_error_order_cleaning_date_future">Dátum upratovania musí byť v budúcnosti</string>
+    <string name="api_error_order_empty">Zákazka nemôže byť prázdna</string>
+    <string name="api_error_order_not_found">Zákazka nebola nájdená</string>
+    <string name="api_error_order_already_assigned">Táto zákazka je už priradená</string>
+    <string name="api_error_order_no_available_spots">Žiadne voľné miesta pre túto zákazku</string>
+    <string name="api_error_order_employee_already_assigned">Už ste priradený k tejto zákazke</string>
+    <string name="api_error_order_employee_not_assigned">Nie ste priradený k tejto zákazke</string>
+    <string name="api_error_order_max_employees_exceeded">Prekročený maximálny počet zamestnancov</string>
+    <string name="api_error_order_not_in_progress">Zákazka nie je rozpracovaná</string>
+    <string name="api_error_order_not_confirmed">Zákazka nie je potvrdená</string>
+    <string name="api_error_order_employee_already_has_order_in_progress">Už máte rozpracovanú zákazku</string>
+    <string name="api_error_order_note_content_required">Obsah poznámky je povinný</string>
+    <string name="api_error_order_issue_description_required">Popis problému je povinný</string>
+    <!-- User -->
+    <string name="api_error_user_email_confirmed">E-mail je už potvrdený</string>
+    <string name="api_error_user_existing_email">Používateľ s týmto e-mailom už existuje</string>
+    <string name="api_error_user_not_existing_email">Používateľ s týmto e-mailom neexistuje</string>
+    <string name="api_error_user_not_existing_id">Používateľ nebol nájdený</string>
+    <string name="api_error_user_not_allowed_to_update">Nemáte oprávnenie aktualizovať tohto používateľa</string>
+    <string name="api_error_user_existing_phone_number">Používateľ s týmto telefónnym číslom už existuje</string>
+    <string name="api_error_user_not_found">Používateľ nebol nájdený</string>
+    <!-- Employee -->
+    <string name="api_error_employee_not_found">Zamestnanec nebol nájdený</string>
+    <string name="api_error_employee_not_existing_email">Zamestnanec s týmto e-mailom neexistuje</string>
+    <string name="api_error_employee_not_allowed_to_update">Nemáte oprávnenie aktualizovať tohto zamestnanca</string>
+    <string name="api_error_employee_profile_incomplete">Profil zamestnanca nie je kompletný</string>
+    <string name="api_error_employee_documents_missing">Chýbajú požadované dokumenty</string>
+    <!-- Employee Documents -->
+    <string name="api_error_employee_document_not_found">Dokument nebol nájdený</string>
+    <string name="api_error_employee_document_unauthorized">Nemáte oprávnenie pristupovať k tomuto dokumentu</string>
+    <string name="api_error_employee_document_not_owned">Tento dokument vám nepatrí</string>
+    <!-- Validation -->
+    <string name="api_error_validation_invalid_password">Neplatné heslo</string>
+    <string name="api_error_validation_invalid_date">Neplatný dátum</string>
+    <string name="api_error_validation_date_must_be_in_past">Dátum musí byť v minulosti</string>
+    <string name="api_error_validation_invalid_age">Neplatný vek</string>
+    <string name="api_error_validation_invalid_phone_number">Neplatný formát telefónneho čísla</string>
+    <string name="api_error_validation_invalid_national_id">Neplatný formát čísla občianskeho preukazu</string>
+    <string name="api_error_validation_invalid_tax_id">Neplatný formát DIČ</string>
+    <string name="api_error_validation_invalid_iban">Neplatný formát IBAN</string>
+    <string name="api_error_validation_invalid_zip_code">Neplatný formát PSČ</string>
+    <string name="api_error_validation_must_be_positive">Hodnota musí byť kladná</string>
+    <string name="api_error_validation_invalid_availability_format">Neplatný formát dostupnosti</string>
+    <string name="api_error_validation_page_must_be_positive">Strana musí byť väčšia ako 0</string>
+    <string name="api_error_validation_page_size_must_be_positive">Veľkosť stránky musí byť väčšia ako 0</string>
+    <string name="api_error_validation_page_size_exceeded">Veľkosť stránky nemôže prekročiť 100</string>
+    <string name="api_error_validation_invalid_contract_status">Neplatný stav zmluvy</string>
+    <!-- File -->
+    <string name="api_error_file_content_type_doesnt_match">Typ súboru nezodpovedá obsahu</string>
+    <string name="api_error_file_invalid_file_type">Neplatný typ súboru</string>
+    <string name="api_error_file_size_exceeded">Veľkosť súboru prekračuje maximálny povolený limit</string>
+    <string name="api_error_file_size_exceeded_10mb">Veľkosť súboru nesmie prekročiť 10 MB</string>
+    <string name="api_error_file_type_not_allowed">Typ súboru nie je povolený</string>
+    <string name="api_error_file_required">Nahranie súboru je povinné</string>
+    <!-- General -->
+    <string name="api_error_general_not_found">Požadovaný zdroj nebol nájdený</string>
+    <!-- Device -->
+    <string name="api_error_device_invalid_platform">Neplatná platforma</string>
+    <!-- Country -->
+    <string name="api_error_country_not_existing_id">Krajina nebola nájdená</string>
+    <!-- Address -->
+    <string name="api_error_address_invalid_length">Neplatná dĺžka adresy</string>
+
+    <!-- Tier 3 -->
+    <string name="scroll_to_top">Prejsť na vrch</string>
+    <string name="view_mode_list">Zobrazenie zoznamu</string>
+    <string name="view_mode_week">Týždenné zobrazenie</string>
+    <string name="no_orders_for_day">Žiadne zákazky na tento deň</string>
+    <string name="offline_mode">Ste offline</string>
+    <string name="last_updated_ago">Naposledy aktualizované %1$s</string>
+    <string name="syncing">Synchronizujem…</string>
+</resources>

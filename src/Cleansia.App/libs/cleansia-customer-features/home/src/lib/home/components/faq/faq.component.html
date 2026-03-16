@@ -1,0 +1,23 @@
+<section class="cl-section cl-section--faq" id="faq">
+  <div class="cl-section__inner">
+    <div class="cl-faq-layout">
+      <div class="cl-faq-layout__left animate-on-scroll">
+        <span class="cl-section__badge">{{ 'pages.home.faq.badge' | translate }}</span>
+        <h2 class="cl-title cl-title--left">{{ 'pages.home.faq.title' | translate }}</h2>
+        <p class="cl-faq-layout__desc">{{ 'pages.home.faq.desc' | translate }}</p>
+        <a routerLink="/order" class="text-decoration-none">
+          <button pButton type="button" [label]="'pages.home.cta.button' | translate" class="p-button-rounded cl-btn-primary mt-3"></button>
+        </a>
+      </div>
+      <div class="cl-faq-layout__right animate-on-scroll delay-1">
+        <p-accordion>
+          @for (faq of faqs; track faq.question) {
+          <p-accordion-tab [header]="faq.question | translate">
+            <p class="cl-faq__answer">{{ faq.answer | translate }}</p>
+          </p-accordion-tab>
+          }
+        </p-accordion>
+      </div>
+    </div>
+  </div>
+</section>

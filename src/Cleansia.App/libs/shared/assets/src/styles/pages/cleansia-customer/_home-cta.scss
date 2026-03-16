@@ -1,0 +1,66 @@
+@use './home-variables' as *;
+
+// =============================
+// CTA
+// =============================
+.cl-cta {
+  background: linear-gradient(180deg, $bg-alt 0%, $primary-lighter 100%);
+  padding: 4rem 2rem 6rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+
+  &__inner {
+    max-width: 700px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+  }
+
+  &__title {
+    font-family: $font-heading;
+    background: linear-gradient(135deg, $text-heading 0%, $primary 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: clamp(1.5rem, 3vw, 2.25rem);
+    font-weight: 700;
+    margin-bottom: 1rem;
+  }
+
+  &__desc {
+    color: $text-muted;
+    font-size: 1rem;
+    margin-bottom: 2rem;
+    line-height: 1.7;
+  }
+}
+
+// =============================
+// Responsive — CTA
+// =============================
+@media (max-width: 768px) {
+  .cl-cta {
+    padding: 3rem 1.5rem 5rem;
+  }
+}
+
+// =============================
+// Dark Mode — CTA
+// =============================
+:root.dark-mode {
+  .cl-cta {
+    background: linear-gradient(180deg, var(--surface-card) 0%, rgba(56, 189, 248, 0.04) 100%);
+
+    &__title {
+      background: linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    &__desc {
+      color: #94a3b8;
+    }
+  }
+}

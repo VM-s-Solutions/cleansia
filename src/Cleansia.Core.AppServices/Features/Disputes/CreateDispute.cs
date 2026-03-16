@@ -43,6 +43,8 @@ public class CreateDispute
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
+                .MinimumLength(10)
+                .WithMessage(BusinessErrorMessage.MinLength)
                 .MaximumLength(2000)
                 .WithMessage(BusinessErrorMessage.MaxLengthExceeded);
         }
@@ -50,9 +52,9 @@ public class CreateDispute
 
     public record Command(
         string OrderId,
-        string UserId,
         DisputeReason Reason,
-        string Description
+        string Description,
+        string UserId = ""
     ) : ICommand<string>;
 
     public class Handler : ICommandHandler<Command, string>

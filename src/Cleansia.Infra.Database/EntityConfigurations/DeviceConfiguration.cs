@@ -4,12 +4,13 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
-public class DeviceConfiguration : IEntityTypeConfiguration<Device>
+public class DeviceConfiguration : AuditableEntityConfiguration<Device, string>
 {
-    public void Configure(EntityTypeBuilder<Device> builder)
+    public override void Configure(EntityTypeBuilder<Device> builder)
     {
+        base.Configure(builder);
+
         builder.ToTable("Devices");
-        builder.HasKey(d => d.Id);
 
         builder.Property(d => d.UserId).IsRequired();
         builder.Property(d => d.Platform).IsRequired().HasMaxLength(10);

@@ -1,10 +1,11 @@
 <div class="cleansia-not-found">
   <cleansia-dynamic-background />
-  <i class="fa-solid fa-broom cleansia-not-found__icons__broom"></i>
-  <i class="fa-solid fa-spray-can cleansia-not-found__icons__spray"></i>
-  <i class="fa-solid fa-soap cleansia-not-found__icons__soap"></i>
-  <i class="fa-solid fa-droplet cleansia-not-found__icons__droplet"></i>
+
   <div class="cleansia-not-found__container">
+    <div class="cleansia-not-found__illustration">
+      <img [src]="mascotSrc()" alt="" class="cleansia-not-found__mascot" />
+    </div>
+
     <h1 class="cleansia-not-found__code">{{ code() }}</h1>
     <h2 class="cleansia-not-found__title">
       {{ title() ?? ('components.not_found.title' | translate) }}
@@ -12,6 +13,22 @@
     <p class="cleansia-not-found__msg">
       {{ message() ?? ('components.not_found.description' | translate) }}
     </p>
+
+    <div class="cleansia-not-found__suggestions">
+      <div class="cleansia-not-found__suggestion">
+        <i class="pi pi-home"></i>
+        <span>{{ 'components.not_found.suggestion_home' | translate }}</span>
+      </div>
+      <div class="cleansia-not-found__suggestion">
+        <i class="pi pi-search"></i>
+        <span>{{ 'components.not_found.suggestion_url' | translate }}</span>
+      </div>
+      <div class="cleansia-not-found__suggestion">
+        <i class="pi pi-envelope"></i>
+        <span>{{ 'components.not_found.suggestion_contact' | translate }}</span>
+      </div>
+    </div>
+
     @if (showBackButtons()) {
     <div class="cleansia-not-found__actions">
       <cleansia-button
@@ -24,6 +41,10 @@
         icon="pi pi-arrow-left"
         (onClick)="goBack()"
       />
+      <a href="/" class="cleansia-not-found__home-link">
+        <i class="pi pi-home"></i>
+        {{ 'components.not_found.go_home' | translate }}
+      </a>
     </div>
     } @if (customButtonTemplate()) {
     <ng-container *ngTemplateOutlet="customButtonTemplate()!" />

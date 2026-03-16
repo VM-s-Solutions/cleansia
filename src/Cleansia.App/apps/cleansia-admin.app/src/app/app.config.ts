@@ -8,7 +8,9 @@ import {
 } from '@angular/common/http';
 import localeCs from '@angular/common/locales/cs';
 import localeEn from '@angular/common/locales/en';
-import localePl from '@angular/common/locales/pl';
+import localeRu from '@angular/common/locales/ru';
+import localeSk from '@angular/common/locales/sk';
+import localeUk from '@angular/common/locales/uk';
 import {
   ApplicationConfig,
   ErrorHandler,
@@ -41,7 +43,9 @@ import { appRoutes } from './app.routes';
 
 registerLocaleData(localeCs);
 registerLocaleData(localeEn);
-registerLocaleData(localePl);
+registerLocaleData(localeSk);
+registerLocaleData(localeUk);
+registerLocaleData(localeRu);
 
 export const appConfig: ApplicationConfig = {
   providers: [

@@ -16,6 +16,7 @@
     <ProjectReference Include="..\Cleansia.Web\Cleansia.Web.Partner.csproj" />
     <ProjectReference Include="..\Cleansia.Web.Admin\Cleansia.Web.Admin.csproj" />
     <ProjectReference Include="..\Cleansia.Web.Mobile\Cleansia.Web.Mobile.csproj" />
+    <ProjectReference Include="..\Cleansia.Web.Customer\Cleansia.Web.Customer.csproj" />
   </ItemGroup>
 
 </Project>

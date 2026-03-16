@@ -1,0 +1,44 @@
+<div class="checkout-page">
+  <cleansia-dynamic-background [iconCount]="15" />
+  <div class="checkout-card">
+    <img src="assets/images/mascot/mascot-cleaning.png" alt="" class="checkout-card__mascot" />
+
+    <h1 class="checkout-card__title">{{ 'pages.checkout.success.title' | translate }}</h1>
+    <p class="checkout-card__subtitle">{{ 'pages.checkout.success.subtitle' | translate }}</p>
+    <p class="checkout-card__desc">{{ 'pages.checkout.success.description' | translate }}</p>
+
+    <div class="checkout-card__divider"></div>
+
+    <div class="checkout-card__steps">
+      <h3 class="checkout-card__steps-title">{{ 'pages.checkout.success.what_next' | translate }}</h3>
+      <div class="checkout-card__step">
+        <span class="checkout-card__step-num step-num--success">1</span>
+        <span>{{ 'pages.checkout.success.step_confirmation' | translate }}</span>
+      </div>
+      <div class="checkout-card__step">
+        <span class="checkout-card__step-num step-num--success">2</span>
+        <span>{{ 'pages.checkout.success.step_reminder' | translate }}</span>
+      </div>
+      <div class="checkout-card__step">
+        <span class="checkout-card__step-num step-num--success">3</span>
+        <span>{{ 'pages.checkout.success.step_cleaner' | translate }}</span>
+      </div>
+    </div>
+
+    <div class="checkout-card__actions">
+      <a [routerLink]="'/' + routes.ORDERS" class="checkout-card__btn checkout-card__btn--primary">
+        <i class="pi pi-list"></i>
+        {{ 'pages.checkout.success.view_orders' | translate }}
+      </a>
+      <a [routerLink]="'/' + routes.ORDER" class="checkout-card__btn checkout-card__btn--outline">
+        <i class="pi pi-plus"></i>
+        {{ 'pages.checkout.success.book_another' | translate }}
+      </a>
+    </div>
+
+    <a [routerLink]="'/'" class="checkout-card__home-link">
+      <i class="pi pi-arrow-left"></i>
+      {{ 'pages.checkout.success.back_home' | translate }}
+    </a>
+  </div>
+</div>

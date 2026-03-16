@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -319,5 +320,95 @@ public static class DatabaseMigrationExtensions
         using var scope = scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<Cleansia.Infra.Database.CleansiaDbContext>();
         dbContext.Migrate();
+
+        if (environment.IsDevelopment())
+        {
+            SeedDevelopmentData(dbContext, scope.ServiceProvider.GetRequiredService<ILogger<Cleansia.Infra.Database.CleansiaDbContext>>());
+        }
+    }
+
+    private static void SeedDevelopmentData(Cleansia.Infra.Database.CleansiaDbContext dbContext, ILogger logger)
+    {
+        try
+        {
+            Console.WriteLine("[SEED] Starting seed data check...");
+
+            // Check if seed data already exists (Languages table is populated by seed script)
+            try
+            {
+                var hasData = dbContext.Database.SqlQueryRaw<int>(
+                    "SELECT COUNT(*)::int AS \"Value\" FROM \"Languages\"").AsEnumerable().FirstOrDefault();
+                if (hasData > 0)
+                {
+                    Console.WriteLine("[SEED] Seed data already exists, skipping.");
+                    return;
+                }
+                Console.WriteLine("[SEED] Languages table is empty, will seed.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SEED] Languages check failed ({ex.Message}), will attempt to seed.");
+            }
+
+            // Look for the seed SQL file relative to solution root
+            var baseDir = AppContext.BaseDirectory;
+            var solutionDir = FindSolutionDirectory(baseDir);
+            Console.WriteLine($"[SEED] Base directory: {baseDir}");
+            Console.WriteLine($"[SEED] Solution directory: {solutionDir ?? "NOT FOUND"}");
+
+            if (solutionDir is null)
+            {
+                Console.WriteLine("[SEED] Could not locate solution directory. Skipping seed.");
+                return;
+            }
+
+            var seedFilePath = Path.Combine(solutionDir, "Cleansia.Infra.Scripts", "SeedData", "insert_seed_data.sql");
+            Console.WriteLine($"[SEED] Seed file path: {seedFilePath}");
+            Console.WriteLine($"[SEED] File exists: {File.Exists(seedFilePath)}");
+
+            if (!File.Exists(seedFilePath))
+            {
+                Console.WriteLine("[SEED] Seed file not found. Skipping seed.");
+                return;
+            }
+
+            Console.WriteLine("[SEED] Reading and executing seed SQL...");
+            var sql = File.ReadAllText(seedFilePath);
+
+            // Use the raw connection directly to avoid EF Core parameter parsing issues
+            var connection = dbContext.Database.GetDbConnection();
+            var wasOpen = connection.State == System.Data.ConnectionState.Open;
+            if (!wasOpen) connection.Open();
+            try
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText = sql;
+                command.CommandTimeout = 120; // 2 min for large seed file
+                command.ExecuteNonQuery();
+            }
+            finally
+            {
+                if (!wasOpen) connection.Close();
+            }
+
+            Console.WriteLine("[SEED] Development database seeded successfully!");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[SEED] FAILED: {ex.Message}");
+            logger.LogWarning(ex, "Failed to seed development data. This is non-fatal — you may need to seed manually.");
+        }
+    }
+
+    private static string? FindSolutionDirectory(string startPath)
+    {
+        var dir = new DirectoryInfo(startPath);
+        while (dir != null)
+        {
+            if (dir.GetFiles("*.sln").Length > 0)
+                return dir.FullName;
+            dir = dir.Parent;
+        }
+        return null;
     }
 }

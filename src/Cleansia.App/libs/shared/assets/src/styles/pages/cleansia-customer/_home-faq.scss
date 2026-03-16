@@ -1,0 +1,95 @@
+@use './home-variables' as *;
+
+// =============================
+// FAQ
+// =============================
+.cl-faq-layout {
+  display: flex;
+  gap: 4rem;
+  align-items: flex-start;
+
+  &__left {
+    flex: 0 0 340px;
+    position: sticky;
+    top: 100px;
+    .cl-title {
+      margin-bottom: 1.5rem;
+    }
+  }
+
+  &__desc {
+    font-size: 0.95rem;
+    color: $text-muted;
+    line-height: 1.8;
+  }
+
+  &__right {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.cl-faq__answer {
+  font-size: 0.95rem;
+  color: $text-muted;
+  line-height: 1.7;
+  margin: 0;
+}
+
+// =============================
+// Responsive — FAQ
+// =============================
+@media (max-width: 1024px) {
+  .cl-faq-layout {
+    flex-direction: column;
+    gap: 2rem;
+    &__left {
+      flex: none;
+      position: static;
+      text-align: center;
+      .cl-title {
+        text-align: center;
+      }
+    }
+  }
+}
+
+// =============================
+// Dark Mode — FAQ
+// =============================
+:root.dark-mode {
+  .cl-faq-layout {
+    &__desc {
+      color: #94a3b8;
+    }
+  }
+
+  .cl-faq__answer {
+    color: #94a3b8;
+  }
+
+  .cl-section--faq {
+    .p-accordion {
+      .p-accordionpanel {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 1rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .p-accordionheader {
+        background: transparent;
+        color: #e2e8f0;
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.04);
+        }
+      }
+
+      .p-accordioncontent-content {
+        background: transparent;
+        border-top: 1px solid #334155;
+      }
+    }
+  }
+}

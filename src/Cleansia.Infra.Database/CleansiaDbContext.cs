@@ -98,6 +98,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     {
         modelBuilder.ApplyConfigurationsFromAssembly(AssemblyReference.Assembly);
 
+        modelBuilder.HasPostgresExtension("citext");
         modelBuilder.HasPostgresExtension("pg_trgm");
 
         ApplyTenantQueryFilters(modelBuilder);

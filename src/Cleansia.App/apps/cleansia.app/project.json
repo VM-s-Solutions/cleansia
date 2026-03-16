@@ -8,25 +8,23 @@
   "targets": {
     "build": {
       "executor": "@angular/build:application",
+      "dependsOn": [],
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/apps/cleansia.app",
         "index": "apps/cleansia.app/src/index.html",
         "browser": "apps/cleansia.app/src/main.ts",
+        "server": "apps/cleansia.app/src/main.server.ts",
+        "ssr": {
+          "entry": "apps/cleansia.app/server.ts"
+        },
         "polyfills": ["zone.js"],
         "tsConfig": "apps/cleansia.app/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
-        "assets": [
-          "apps/cleansia.app/src",
-          {
-            "glob": "**/*",
-            "input": "apps/cleansia.app/public"
-          }
-        ],
+        "assets": ["apps/cleansia.app/src/assets"],
         "styles": [
           "apps/cleansia.app/src/styles.scss",
-          "libs/shared/assets/src/shared-styles.scss",
-          "node_modules/primeicons/primeicons.css"
+          "libs/shared/assets/src/styles/cleansia-customer.scss"
         ]
       },
       "configurations": {
@@ -36,6 +34,12 @@
           "sourceMap": false,
           "namedChunks": false,
           "extractLicenses": true,
+          "fileReplacements": [
+            {
+              "replace": "apps/cleansia.app/src/environments/environment.ts",
+              "with": "apps/cleansia.app/src/environments/environment.prod.ts"
+            }
+          ],
           "budgets": [
             {
               "type": "initial",

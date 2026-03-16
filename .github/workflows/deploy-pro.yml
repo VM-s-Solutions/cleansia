@@ -1,0 +1,268 @@
+name: Deploy to PRO
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "deploy" to confirm production deployment'
+        required: true
+
+concurrency:
+  group: deploy-pro
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate deployment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check confirmation
+        if: github.event.inputs.confirm != 'deploy'
+        run: |
+          echo "::error::You must type 'deploy' to confirm production deployment"
+          exit 1
+
+  build-dotnet:
+    name: Build .NET APIs
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.x
+
+      - name: Restore dependencies
+        run: dotnet restore Cleansia.Api.sln
+        working-directory: ./src
+
+      - name: Build solution
+        run: dotnet build Cleansia.Api.sln --configuration Release --no-restore
+        working-directory: ./src
+
+      - name: Run tests
+        run: dotnet test Cleansia.Api.sln --configuration Release --no-build --verbosity normal
+        working-directory: ./src
+
+      - name: Publish Partner API
+        run: dotnet publish Cleansia.Web/Cleansia.Web.Partner.csproj --configuration Release --no-build --output ./publish/partner-api
+        working-directory: ./src
+
+      - name: Publish Admin API
+        run: dotnet publish Cleansia.Web.Admin/Cleansia.Web.Admin.csproj --configuration Release --no-build --output ./publish/admin-api
+        working-directory: ./src
+
+      - name: Publish Customer API
+        run: dotnet publish Cleansia.Web.Customer/Cleansia.Web.Customer.csproj --configuration Release --no-build --output ./publish/customer-api
+        working-directory: ./src
+
+      - name: Publish Mobile API
+        run: dotnet publish Cleansia.Web.Mobile/Cleansia.Web.Mobile.csproj --configuration Release --no-build --output ./publish/mobile-api
+        working-directory: ./src
+
+      - name: Upload Partner API artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: partner-api
+          path: ./src/publish/partner-api
+
+      - name: Upload Admin API artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-api
+          path: ./src/publish/admin-api
+
+      - name: Upload Customer API artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: customer-api
+          path: ./src/publish/customer-api
+
+      - name: Upload Mobile API artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-api
+          path: ./src/publish/mobile-api
+
+  build-angular:
+    name: Build Angular Apps
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: ./src/Cleansia.App/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./src/Cleansia.App
+
+      - name: Build Customer App
+        run: npm run build:cleansia-customer
+        working-directory: ./src/Cleansia.App
+
+      - name: Build Partner App
+        run: npm run build:cleansia-partner
+        working-directory: ./src/Cleansia.App
+
+      - name: Build Admin App
+        run: npm run build:cleansia-admin
+        working-directory: ./src/Cleansia.App
+
+      - name: Upload Customer App artifact (SSR)
+        uses: actions/upload-artifact@v4
+        with:
+          name: customer-app
+          path: ./src/Cleansia.App/dist/apps/cleansia.app
+
+      - name: Upload Partner App artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: partner-app
+          path: ./src/Cleansia.App/dist/apps/cleansia-partner.app/browser
+
+      - name: Upload Admin App artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-app
+          path: ./src/Cleansia.App/dist/apps/cleansia-admin.app/browser
+
+  deploy-partner-api:
+    name: Deploy Partner API
+    needs: build-dotnet
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: partner-api
+          path: ./partner-api
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: api-cleansia-pro
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_API_PRO }}
+          package: ./partner-api
+
+  deploy-admin-api:
+    name: Deploy Admin API
+    needs: build-dotnet
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: admin-api
+          path: ./admin-api
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: api-cleansia-admin-pro
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_ADMIN_API_PRO }}
+          package: ./admin-api
+
+  deploy-customer-api:
+    name: Deploy Customer API
+    needs: build-dotnet
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: customer-api
+          path: ./customer-api
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: api-cleansia-customer-pro
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_CUSTOMER_API_PRO }}
+          package: ./customer-api
+
+  deploy-mobile-api:
+    name: Deploy Mobile API
+    needs: build-dotnet
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: mobile-api
+          path: ./mobile-api
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: api-cleansia-mobile-pro
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_MOBILE_API_PRO }}
+          package: ./mobile-api
+
+  deploy-customer-ssr:
+    name: Deploy Customer SSR
+    needs: build-angular
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: customer-app
+          path: ./customer-app
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: web-cleansia-customer-pro
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_CUSTOMER_PRO }}
+          package: ./customer-app
+
+  deploy-partner-spa:
+    name: Deploy Partner SPA
+    needs: build-angular
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: partner-app
+          path: ./partner-app
+
+      - name: Deploy to Azure Static Web App
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER_PRO }}
+          action: upload
+          app_location: ./partner-app
+          skip_app_build: true
+          skip_api_build: true
+
+  deploy-admin-spa:
+    name: Deploy Admin SPA
+    needs: build-angular
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: admin-app
+          path: ./admin-app
+
+      - name: Deploy to Azure Static Web App
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ADMIN_PRO }}
+          action: upload
+          app_location: ./admin-app
+          skip_app_build: true
+          skip_api_build: true

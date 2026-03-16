@@ -1,0 +1,117 @@
+@use './home-variables' as *;
+
+// =============================
+// Reviews
+// =============================
+.cl-reviews {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+
+  &__card {
+    background: var(--surface-card);
+    border-radius: $radius-xl;
+    padding: 2.5rem 2rem 2rem;
+    box-shadow: $shadow-card;
+    border: 1px solid var(--surface-border);
+    position: relative;
+    transition: transform 0.4s ease;
+    &:hover {
+      transform: translateY(-3px);
+    }
+  }
+
+  &__quote {
+    position: absolute;
+    top: 0.75rem;
+    right: 1.25rem;
+    font-size: 4.5rem;
+    font-weight: 900;
+    color: rgba($primary, 0.05);
+    line-height: 1;
+    font-family: Georgia, serif;
+  }
+
+  &__stars {
+    display: flex;
+    gap: 0.2rem;
+    margin-bottom: 1.25rem;
+    i {
+      color: $amber;
+      font-size: 0.95rem;
+    }
+  }
+
+  &__text {
+    font-size: 0.95rem;
+    color: $text-body;
+    line-height: 1.7;
+    margin-bottom: 1.5rem;
+    font-style: italic;
+    position: relative;
+    z-index: 1;
+  }
+
+  &__author {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    border: 3px solid $white;
+    outline: 2px solid rgba($primary, 0.08);
+  }
+
+  &__name {
+    font-family: $font-heading;
+    font-weight: 600;
+    color: $text-heading;
+    font-size: 0.95rem;
+  }
+
+  &__role {
+    font-size: 0.8rem;
+    color: $text-light;
+  }
+}
+
+// =============================
+// Dark Mode — Testimonials
+// =============================
+:root.dark-mode {
+  .cl-reviews__text {
+    color: #94a3b8;
+  }
+
+  .cl-reviews__name {
+    color: #e2e8f0;
+  }
+
+  .cl-reviews__role {
+    color: #64748b;
+  }
+
+  .cl-reviews__avatar {
+    border-color: #334155;
+    outline-color: rgba(56, 189, 248, 0.12);
+  }
+
+  .cl-reviews__quote {
+    color: rgba(56, 189, 248, 0.06);
+  }
+}
+
+// =============================
+// Responsive — Testimonials
+// =============================
+@media (max-width: 768px) {
+  .cl-reviews {
+    grid-template-columns: 1fr;
+  }
+}

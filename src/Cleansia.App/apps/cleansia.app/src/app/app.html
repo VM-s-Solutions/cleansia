@@ -1,1 +1,19 @@
-<router-outlet/>
+<div class="min-h-screen flex flex-column" style="background-color: var(--surface-ground)">
+  <cleansia-customer-navbar />
+  <div class="customer-navbar-spacer"></div>
+
+  <main class="flex-auto flex flex-column">
+    <router-outlet></router-outlet>
+  </main>
+
+  <cleansia-customer-footer [showNewsletter]="isOnLandingPage()" />
+
+  <p-toast></p-toast>
+  <p-confirmDialog styleClass="cleansia-dialog"></p-confirmDialog>
+
+  <cleansia-cookie-consent
+    [storageKey]="'cleansia-customer-cookie-consent'"
+    [showDeclineButton]="true"
+    [position]="'bottom'"
+  />
+</div>

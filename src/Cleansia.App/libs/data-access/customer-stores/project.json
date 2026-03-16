@@ -1,0 +1,13 @@
+{
+  "name": "customer-stores",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/data-access/customer-stores/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": ["scope:customer", "type:data-access"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

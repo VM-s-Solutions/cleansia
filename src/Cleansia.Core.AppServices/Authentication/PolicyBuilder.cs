@@ -23,7 +23,7 @@ public static class PolicyBuilder
         [Policy.CanViewOrderPhotos] = PhysicalPolicy.Authenticated,
         [Policy.CanDeleteOrderPhoto] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanAddOrderNote] = PhysicalPolicy.EmployeeOrAdmin,
-        [Policy.CanReportOrderIssue] = PhysicalPolicy.EmployeeOrAdmin,
+        [Policy.CanReportOrderIssue] = PhysicalPolicy.Authenticated,
         //[Policy.CanCreateOrder] = PhysicalPolicy.Anonymous,
         //[Policy.CanGetOrderStatus] = PhysicalPolicy.Anonymous,
 
@@ -57,7 +57,7 @@ public static class PolicyBuilder
         [Policy.CanCreateDispute] = PhysicalPolicy.CustomerOnly,
         [Policy.CanViewDispute] = PhysicalPolicy.CustomerOnly,
         [Policy.CanViewDisputeList] = PhysicalPolicy.CustomerOnly,
-        [Policy.CanRespondToDispute] = PhysicalPolicy.AdminOnly,
+        [Policy.CanRespondToDispute] = PhysicalPolicy.Authenticated,
         [Policy.CanResolveDispute] = PhysicalPolicy.AdminOnly,
         [Policy.CanUpdateDisputeStatus] = PhysicalPolicy.AdminOnly,
 

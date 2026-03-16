@@ -1,133 +1,195 @@
 @use '../common/variables' as variables;
 
-%cleansia-not-found__icon {
-  position: absolute;
-  top: 0;
-  left: 0;
-  font-size: 5rem;
-  -webkit-text-stroke: 1px variables.$cleansia-primary-700;
-  text-shadow: 3px 3px variables.$cleansia-primary-900;
-  color: variables.$cleansia-primary-200;
-  z-index: -1;
-  opacity: 0.7;
-}
-
-@keyframes broomAnimation {
-  0% {
-    translate: 30dvw -10rem;
-    rotate: 0deg;
-  }
-  100% {
-    translate: 85dvw 40rem;
-    rotate: 360deg;
-  }
-}
-
-@keyframes sprayAnimation {
-  0% {
-    translate: -5dvw 40rem;
-    rotate: 0deg;
-  }
-  100% {
-    translate: 50dvw -10rem;
-    rotate: -360deg;
-  }
-}
-
-@keyframes soapAnimation {
-  0% {
-    translate: 60dvw 40rem;
-    rotate: 0deg;
-  }
-  100% {
-    translate: 20dvw -10rem;
-    rotate: -360deg;
-  }
-}
-
-@keyframes dropletAnimation {
-  0% {
-    translate: 75dvw -10rem;
-    rotate: 0deg;
-  }
-  100% {
-    translate: 45dvw 40rem;
-    rotate: 360deg;
-  }
-}
+$not-found-primary: variables.$cleansia-primary;
 
 .cleansia-not-found {
   position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 3rem;
-  height: 100vh;
+  padding: 2rem;
+  min-height: 100vh;
   overflow: hidden;
-
-  &__icons {
-    &__broom {
-      @extend %cleansia-not-found__icon;
-      animation: broomAnimation 19s linear infinite;
-    }
-
-    &__spray {
-      @extend %cleansia-not-found__icon;
-      animation: sprayAnimation 20s linear infinite;
-    }
-
-    &__soap {
-      @extend %cleansia-not-found__icon;
-      animation: soapAnimation 18s linear infinite;
-    }
-
-    &__droplet {
-      @extend %cleansia-not-found__icon;
-      animation: dropletAnimation 16s linear infinite;
-    }
-  }
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0f9ff 100%);
 
   &__container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    row-gap: 0.5rem;
-    padding: 2rem 4dvw;
-    background: rgba(255, 255, 255, 0.85);
-    border-radius: 16px;
-    box-shadow: 0 4px 30px variables.$cleansia-black-100;
-    backdrop-filter: blur(3.3px);
-    border: 1px solid variables.$cleansia-white;
+    row-gap: 0.75rem;
+    padding: 2.5rem 3rem;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 24px;
+    box-shadow:
+      0 8px 32px rgba(2, 132, 199, 0.1),
+      0 2px 8px rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
     z-index: 1;
+    max-width: 520px;
+    width: 100%;
+  }
+
+  // ─── Illustration ───
+  &__illustration {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+  }
+
+  &__mascot {
+    max-width: 180px;
+    height: auto;
+    display: block;
+    filter: drop-shadow(0 4px 16px rgba(2, 132, 199, 0.15));
   }
 
   &__code {
-    font-size: 9rem;
+    font-size: 7rem;
     font-weight: 800;
-    color: variables.$cleansia-primary;
-    text-shadow: 2px 2px variables.$cleansia-primary-900;
+    background: linear-gradient(135deg, #0c4a6e 0%, $not-found-primary 60%, #38bdf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     line-height: 1;
     margin: 0;
+    letter-spacing: -0.04em;
   }
 
   &__title {
-    font-size: 2rem;
-    font-weight: 200;
-    text-transform: uppercase;
+    font-size: 1.5rem;
+    font-weight: 600;
     text-align: center;
-    color: variables.$cleansia-primary-900;
+    color: #0c4a6e;
     margin: 0;
+    letter-spacing: -0.01em;
   }
 
   &__msg {
     font-size: 0.95rem;
-    max-width: 30rem;
+    max-width: 28rem;
     text-align: center;
-    color: variables.$cleansia-gray;
+    color: #64748b;
     margin: 0;
+    line-height: 1.6;
   }
 
+  // ─── Suggestions ───
+  &__suggestions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+    margin: 0.75rem 0;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+  }
+
+  &__suggestion {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    font-size: 0.8rem;
+    color: #475569;
+
+    i {
+      font-size: 0.75rem;
+      color: $not-found-primary;
+      width: 1.25rem;
+      text-align: center;
+    }
+  }
+
+  // ─── Actions ───
   &__actions {
-    padding-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding-top: 0.5rem;
+  }
+
+  &__home-link {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.8rem;
+    color: #64748b;
+    text-decoration: none;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: $not-found-primary;
+    }
+
+    i {
+      font-size: 0.7rem;
+    }
+  }
+}
+
+// ─── Dark Mode ───
+:root.dark-mode {
+  .cleansia-not-found {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+
+    &__container {
+      background: rgba(30, 41, 59, 0.9);
+      border-color: rgba(255, 255, 255, 0.1);
+      box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    &__title {
+      color: #e2e8f0;
+    }
+
+    &__msg {
+      color: #94a3b8;
+    }
+
+    &__suggestions {
+      background: rgba(0, 0, 0, 0.2);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    &__suggestion {
+      color: #94a3b8;
+    }
+
+    &__home-link {
+      color: #94a3b8;
+
+      &:hover {
+        color: #38bdf8;
+      }
+    }
+  }
+}
+
+// ─── Responsive ───
+@media (max-width: 540px) {
+  .cleansia-not-found {
+    padding: 1rem;
+
+    &__container {
+      padding: 2rem 1.5rem;
+    }
+
+    &__code {
+      font-size: 5rem;
+    }
+
+    &__title {
+      font-size: 1.25rem;
+    }
+
+    &__mascot {
+      max-width: 140px;
+    }
   }
 }

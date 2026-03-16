@@ -1,0 +1,133 @@
+.order-detail {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+
+  &__breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    color: var(--text-color-secondary);
+
+    &-link {
+      cursor: pointer;
+      &:hover { text-decoration: underline; }
+    }
+  }
+
+  &__card {
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: 12px;
+    padding: 2rem;
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--surface-border);
+
+    h2 { margin: 0; }
+
+    &-actions { display: flex; gap: 0.5rem; }
+  }
+
+  &__date { color: var(--text-color-secondary); font-size: 0.875rem; }
+
+  &__section {
+    margin-bottom: 2rem;
+
+    h3 {
+      margin: 0 0 1rem;
+      color: var(--text-color);
+      font-size: 1.1rem;
+    }
+  }
+
+  &__status-row {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+
+    > div {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+
+    label { font-weight: 600; color: var(--text-color-secondary); font-size: 0.875rem; }
+    p { margin: 0.25rem 0 0; }
+  }
+
+  &__item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--surface-border);
+  }
+
+  &__total {
+    display: flex;
+    justify-content: space-between;
+    padding: 1rem;
+    background: var(--surface-ground);
+    border-radius: 8px;
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+
+    strong { color: var(--primary-color); font-size: 1.25rem; }
+  }
+
+  &__timeline-event {
+    display: flex;
+    flex-direction: column;
+    small { color: var(--text-color-secondary); }
+  }
+
+  &__timeline-marker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: var(--primary-color);
+    color: white;
+  }
+
+  &__confirmation {
+    text-align: center;
+    padding: 1rem;
+    background: var(--green-50, #f0fdf4);
+    border-radius: 8px;
+    font-size: 1.1rem;
+    margin-top: 1rem;
+
+    strong { font-size: 1.5rem; letter-spacing: 2px; margin-left: 0.5rem; }
+
+    :root.dark-mode & {
+      background: rgba(22, 163, 74, 0.12);
+      color: #86efac;
+
+      strong { color: #4ade80; }
+    }
+  }
+
+  &__error, &__skeleton {
+    text-align: center;
+    padding: 4rem 2rem;
+    i { font-size: 3rem; color: var(--text-color-secondary); margin-bottom: 1rem; }
+  }
+}

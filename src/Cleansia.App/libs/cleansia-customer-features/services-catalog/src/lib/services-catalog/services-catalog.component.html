@@ -1,0 +1,288 @@
+<div class="services-catalog">
+  <!-- Hero Header -->
+  <div class="services-catalog__hero">
+    <h1 class="services-catalog__hero-title">
+      {{ 'pages.services.title' | translate }}
+    </h1>
+    <p class="services-catalog__hero-subtitle">
+      {{ 'pages.services.subtitle' | translate }}
+    </p>
+    <div class="services-catalog__hero-badges">
+      <div class="services-catalog__hero-badge">
+        <i class="pi pi-verified"></i>
+        {{ 'pages.services.trust_certified' | translate }}
+      </div>
+      <div class="services-catalog__hero-badge">
+        <i class="pi pi-sparkles"></i>
+        {{ 'pages.services.trust_eco' | translate }}
+      </div>
+      <div class="services-catalog__hero-badge">
+        <i class="pi pi-shield"></i>
+        {{ 'pages.services.trust_guarantee' | translate }}
+      </div>
+    </div>
+  </div>
+
+  @if (loading()) {
+  <!-- Skeleton Loading -->
+  <div class="services-catalog__skeleton-grid">
+    @for (i of [1, 2, 3]; track i) {
+    <div class="services-catalog__skeleton-card">
+      <div class="flex justify-content-center mb-4">
+        <p-skeleton shape="circle" size="56px" />
+      </div>
+      <p-skeleton width="60%" height="1.5rem" styleClass="mx-auto mb-3" />
+      <p-skeleton width="40%" height="2.5rem" styleClass="mx-auto mb-2" />
+      <p-skeleton width="50%" height="0.875rem" styleClass="mx-auto mb-4" />
+      <p-skeleton width="100%" height="1px" styleClass="mb-4" />
+      <p-skeleton width="100%" height="1rem" styleClass="mb-2" />
+      <p-skeleton width="90%" height="1rem" styleClass="mb-2" />
+      <p-skeleton width="80%" height="1rem" styleClass="mb-4" />
+      <p-skeleton width="100%" height="2.75rem" styleClass="border-round-lg" />
+    </div>
+    }
+  </div>
+  } @else {
+  <!-- Packages Section -->
+  @if (packages().length > 0) {
+  <section class="services-catalog__packages">
+    <div class="services-catalog__section-header">
+      <h2 class="services-catalog__section-title">
+        {{ 'pages.services.packages' | translate }}
+      </h2>
+      <div class="services-catalog__sort-controls">
+        @for (opt of sortOptions; track opt.value) {
+        <button
+          class="services-catalog__sort-chip"
+          [class.services-catalog__sort-chip--active]="
+            packageSort() === opt.value
+          "
+          (click)="onPackageSortChange(opt.value)"
+        >
+          {{ opt.labelKey | translate }}
+        </button>
+        }
+      </div>
+    </div>
+
+    <div class="services-catalog__packages-grid">
+      @for (pkg of visiblePackages(); track pkg.id; let idx = $index) {
+      <div
+        class="services-catalog__package-card"
+        [class.services-catalog__package-card--highlighted]="
+          getPackageTierIndex(pkg) === 1
+        "
+      >
+        @if (getPackageTierIndex(pkg) === 1) {
+        <div class="services-catalog__package-badge">
+          {{ 'pages.services.most_popular' | translate }}
+        </div>
+        }
+
+        <div class="services-catalog__package-icon">
+          <i [class]="getPackageIcon(getPackageTierIndex(pkg))"></i>
+        </div>
+
+        <h3 class="services-catalog__package-name">
+          {{ getTranslation(pkg, 'name') }}
+        </h3>
+
+        <div class="services-catalog__package-price">
+          <div class="price">{{ formatPrice(pkg.price) }}</div>
+          <div class="label">
+            {{ 'pages.services.per_cleaning' | translate }}
+          </div>
+        </div>
+
+        <div class="services-catalog__package-divider"></div>
+
+        <p class="services-catalog__package-description">
+          {{ getTranslation(pkg, 'description') }}
+        </p>
+
+        <ul class="services-catalog__package-features">
+          @for (featureKey of getPackageFeatures(getPackageTierIndex(pkg));
+          track featureKey) {
+          <li>
+            <i class="pi pi-check-circle"></i>
+            {{ featureKey | translate }}
+          </li>
+          }
+        </ul>
+
+        <div class="services-catalog__package-cta">
+          <cleansia-button
+            [title]="'pages.services.book_now' | translate"
+            [severity]="
+              getPackageTierIndex(pkg) === 1 ? 'primary' : 'secondary'
+            "
+            [outlined]="getPackageTierIndex(pkg) !== 1"
+            [size]="'full-width'"
+            (clickFn)="bookNow()"
+          />
+        </div>
+      </div>
+      }
+    </div>
+
+    <!-- Package teasers (fade effect) -->
+    @if (teaserPackages().length > 0) {
+    <div class="services-catalog__teasers">
+      @for (pkg of teaserPackages(); track pkg.id) {
+      <div class="services-catalog__teaser-card">
+        <div class="services-catalog__teaser-inner">
+          <div class="services-catalog__package-icon">
+            <i class="pi pi-sparkles"></i>
+          </div>
+          <h3 class="services-catalog__package-name">
+            {{ getTranslation(pkg, 'name') }}
+          </h3>
+          <div class="services-catalog__package-price">
+            <div class="price">{{ formatPrice(pkg.price) }}</div>
+          </div>
+        </div>
+      </div>
+      }
+    </div>
+    } @if (hasMorePackages()) {
+    <div class="services-catalog__view-all-actions">
+      <button
+        class="services-catalog__view-all-btn"
+        (click)="toggleShowAllPackages()"
+      >
+        {{ 'pages.services.view_all_packages' | translate }}
+        <i class="pi pi-arrow-down"></i>
+      </button>
+    </div>
+    }
+  </section>
+  }
+
+  <!-- Individual Services Section -->
+  @if (services().length > 0) {
+  <section class="services-catalog__services">
+    <div class="services-catalog__section-header">
+      <h2 class="services-catalog__section-title">
+        {{ 'pages.services.cleaning_services' | translate }}
+      </h2>
+      <div class="services-catalog__sort-controls">
+        @for (opt of sortOptions; track opt.value) {
+        <button
+          class="services-catalog__sort-chip"
+          [class.services-catalog__sort-chip--active]="
+            serviceSort() === opt.value
+          "
+          (click)="onServiceSortChange(opt.value)"
+        >
+          {{ opt.labelKey | translate }}
+        </button>
+        }
+      </div>
+    </div>
+
+    <div class="services-catalog__services-grid">
+      @for (service of visibleServices(); track service.id; let idx = $index) {
+      <div class="services-catalog__service-card">
+        <div class="services-catalog__service-icon">
+          <i [class]="getServiceIcon(idx)"></i>
+        </div>
+        <div class="services-catalog__service-content">
+          <h3 class="services-catalog__service-name">
+            {{ getTranslation(service, 'name') }}
+          </h3>
+          <p class="services-catalog__service-description">
+            {{ getTranslation(service, 'description') }}
+          </p>
+          <div class="services-catalog__service-footer">
+            <div class="services-catalog__service-price">
+              <div class="from-label">
+                {{ 'pages.services.from' | translate }}
+              </div>
+              <div class="price">
+                {{ formatPrice(service.basePrice) }}
+              </div>
+              @if (service.perRoomPrice > 0) {
+              <div class="per-room">
+                + {{ formatPrice(service.perRoomPrice) }}
+                {{ 'pages.services.per_room' | translate }}
+              </div>
+              }
+            </div>
+            <button class="services-catalog__service-cta" (click)="bookNow()">
+              {{ 'pages.services.book_now' | translate }}
+            </button>
+          </div>
+        </div>
+      </div>
+      }
+    </div>
+
+    <!-- Service teasers (fade effect) -->
+    @if (teaserServices().length > 0) {
+    <div class="services-catalog__teasers services-catalog__teasers--services">
+      @for (service of teaserServices(); track service.id; let idx = $index) {
+      <div class="services-catalog__teaser-card">
+        <div
+          class="services-catalog__teaser-inner services-catalog__teaser-inner--service"
+        >
+          <div class="services-catalog__service-icon">
+            <i [class]="getServiceIcon(idx + 3)"></i>
+          </div>
+          <div>
+            <h3 class="services-catalog__service-name">
+              {{ getTranslation(service, 'name') }}
+            </h3>
+            <div class="services-catalog__service-price">
+              <div class="price">{{ formatPrice(service.basePrice) }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      }
+    </div>
+    } @if (hasMoreServices()) {
+    <div class="services-catalog__view-all-actions">
+      <button
+        class="services-catalog__view-all-btn"
+        (click)="toggleShowAllServices()"
+      >
+        {{ 'pages.services.view_all_services' | translate }}
+        <i class="pi pi-arrow-down"></i>
+      </button>
+    </div>
+    }
+  </section>
+  }
+
+  <!-- Empty State -->
+  @if (services().length === 0 && packages().length === 0) {
+  <div class="services-catalog__empty">
+    <div class="services-catalog__empty-icon">
+      <i class="pi pi-sparkles"></i>
+    </div>
+    <h3 class="services-catalog__empty-title">
+      {{ 'pages.services.no_services' | translate }}
+    </h3>
+    <p class="services-catalog__empty-text">
+      {{ 'pages.services.check_back_later' | translate }}
+    </p>
+  </div>
+  }
+
+  <!-- CTA Banner -->
+  @if (services().length > 0 || packages().length > 0) {
+  <div class="services-catalog__cta-banner">
+    <h2 class="services-catalog__cta-title">
+      {{ 'pages.services.cta_title' | translate }}
+    </h2>
+    <p class="services-catalog__cta-subtitle">
+      {{ 'pages.services.cta_subtitle' | translate }}
+    </p>
+    <button class="services-catalog__cta-button" (click)="bookNow()">
+      {{ 'pages.services.cta_button' | translate }}
+      <i class="pi pi-arrow-right"></i>
+    </button>
+  </div>
+  } }
+</div>
+<cleansia-scroll-top />

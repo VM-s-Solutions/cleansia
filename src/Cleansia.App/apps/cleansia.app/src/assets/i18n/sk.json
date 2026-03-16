@@ -1,0 +1,964 @@
+{
+  "nav": {
+    "home": "Domov",
+    "services": "Služby",
+    "my_orders": "Moje objednávky",
+    "orders": "Moje objednávky",
+    "book_now": "Objednať",
+    "login": "Prihlásiť sa",
+    "register": "Registrácia",
+    "profile": "Profil",
+    "logout": "Odhlásiť sa",
+    "my_disputes": "Moje reklamácie",
+    "theme_light": "Svetlý režim",
+    "theme_dark": "Tmavý režim",
+    "language": "Jazyk",
+    "settings": "Nastavenia",
+    "section_account": "Účet",
+    "section_activity": "Aktivita",
+    "email_verified": "E-mail overený",
+    "email_not_verified": "E-mail neoverený"
+  },
+  "cookies": {
+    "title": "Vaše súkromie je dôležité",
+    "description": "Používame cookies na zlepšenie prehliadania, poskytovanie personalizovaného obsahu a analýzu návštevnosti. Kliknutím na „Prijať" súhlasíte s používaním cookies.",
+    "accept": "Prijať všetky",
+    "decline": "Odmietnuť",
+    "learn_more": "Zistiť viac",
+    "banner_title": "Banner súhlasu s cookies"
+  },
+  "page_titles": {
+    "customer": {
+      "default": "Cleansia",
+      "login": "Prihlásenie",
+      "register": "Registrácia",
+      "confirm_email": "Potvrdenie e-mailu",
+      "forgot_password": "Zabudnuté heslo",
+      "services": "Naše služby",
+      "order": "Objednať čistenie",
+      "orders": "Moje objednávky",
+      "order_detail": "Detail objednávky",
+      "profile": "Môj profil",
+      "disputes": "Moje reklamácie",
+      "gdpr": "Súkromie a údaje",
+      "checkout_success": "Platba úspešná",
+      "checkout_cancel": "Platba zrušená",
+      "not_found": "Stránka nenájdená"
+    }
+  },
+  "global": {
+    "loading": "Načítava sa...",
+    "messages": {
+      "success": "Úspech",
+      "error": "Chyba",
+      "form": {
+        "request_sent": "Vaša požiadavka bola odoslaná. Čoskoro sa vám ozveme!"
+      }
+    },
+    "dialog": {
+      "confirm": "Potvrdiť",
+      "cancel": "Zrušiť",
+      "yes": "Áno",
+      "no": "Nie",
+      "confirm_logout": "Naozaj sa chcete odhlásiť?"
+    },
+    "validation": {
+      "required": "Toto pole je povinné",
+      "email": "Zadajte platnú e-mailovú adresu",
+      "phone": "Zadajte platné telefónne číslo",
+      "zip": "Zadajte platné PSČ",
+      "minlength": "Musí obsahovať aspoň {{min}} znakov",
+      "maxlength": "Môže obsahovať maximálne {{max}} znakov",
+      "passwords_mismatch": "Heslá sa nezhodujú"
+    },
+    "actions": {
+      "actions": "Akcie",
+      "login": "Prihlásiť sa",
+      "register": "Registrovať sa",
+      "save": "Uložiť",
+      "cancel": "Zrušiť",
+      "back": "Späť",
+      "next": "Ďalej",
+      "submit": "Odoslať",
+      "view": "Zobraziť",
+      "close": "Zavrieť",
+      "delete": "Vymazať",
+      "confirm": "Potvrdiť",
+      "reset": "Obnoviť",
+      "retry": "Skúsiť znova",
+      "go_back": "Vrátiť sa",
+      "go_home": "Na úvodnú stránku"
+    },
+    "user": {
+      "remember_me": "Zapamätať si ma"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Vitajte späť",
+      "subtitle": "Prihláste sa a spravujte svoje čistenia",
+      "email": "E-mail",
+      "password": "Heslo",
+      "remember_me": "Zapamätať si ma",
+      "submit": "Prihlásiť sa",
+      "forgot_password": "Zabudli ste heslo?",
+      "no_account": "Nemáte účet?",
+      "dont_have_account": "Nemáte účet?",
+      "register_link": "Zaregistrujte sa",
+      "or": "alebo",
+      "google": "Pokračovať cez Google",
+      "success": "Úspešne prihlásený!",
+      "error": "Nesprávny e-mail alebo heslo",
+      "email_not_confirmed": "Najprv potvrďte svoju e-mailovú adresu"
+    },
+    "register": {
+      "title": "Vytvoriť účet",
+      "subtitle": "Zaregistrujte sa a objednajte si prvé čistenie",
+      "first_name": "Meno",
+      "last_name": "Priezvisko",
+      "email": "E-mail",
+      "password": "Heslo",
+      "confirm_password": "Potvrdiť heslo",
+      "terms": "Súhlasím s obchodnými podmienkami a zásadami ochrany súkromia",
+      "submit": "Vytvoriť účet",
+      "have_account": "Už máte účet?",
+      "login_link": "Prihláste sa",
+      "success": "Účet vytvorený! Skontrolujte e-mail a potvrďte registráciu.",
+      "error": "Registrácia zlyhala. Skúste to prosím znova.",
+      "terms_agreement": "Súhlasím s podmienkami",
+      "terms_and_conditions": "Súhlasím s <a href='/gdpr'>obchodnými podmienkami a zásadami ochrany súkromia</a>",
+      "validation": {
+        "password_lowercase": "Aspoň jedno malé písmeno",
+        "password_uppercase": "Aspoň jedno veľké písmeno",
+        "password_number": "Aspoň jedna číslica",
+        "password_min_length": "Aspoň 12 znakov",
+        "password_special_character": "Aspoň jeden špeciálny znak",
+        "passwords_match": "Heslá sa zhodujú"
+      }
+    },
+    "confirm_email": {
+      "title": "Potvrďte svoj e-mail",
+      "subtitle": "Overujeme vašu e-mailovú adresu",
+      "verifying": "Overovanie e-mailu...",
+      "success": "E-mail úspešne potvrdený!",
+      "error": "Neplatný alebo expirovaný potvrdzovací odkaz",
+      "resend": "Znovu odoslať potvrdzovací e-mail",
+      "resend_success": "Potvrdzovací e-mail odoslaný!",
+      "resend_error": "Nepodarilo sa znovu odoslať potvrdzovací e-mail. Skúste to prosím znova.",
+      "back_to_login": "Späť na prihlásenie"
+    },
+    "forgot_password": {
+      "title": "Obnovenie hesla",
+      "subtitle": "Zadajte svoj e-mail a pošleme vám odkaz na obnovenie",
+      "email": "E-mail",
+      "submit": "Odoslať odkaz na obnovenie",
+      "success": "Odkaz na obnovenie hesla odoslaný! Skontrolujte svoj e-mail.",
+      "back_to_login": "Späť na prihlásenie"
+    }
+  },
+  "services": {
+    "title": "Naše služby",
+    "subtitle": "Profesionálne čistiace služby prispôsobené vašim potrebám",
+    "per_room": "za izbu",
+    "base_price": "Základná cena",
+    "book_service": "Objednať",
+    "packages_title": "Balíčky čistenia",
+    "packages_subtitle": "Ušetrite s našimi zvýhodnenými balíčkami",
+    "includes": "Obsahuje",
+    "estimated_time": "Odhadovaný čas",
+    "minutes": "min"
+  },
+  "order": {
+    "wizard": {
+      "title": "Objednať čistenie",
+      "step_services": "Služby",
+      "step_address": "Adresa",
+      "step_datetime": "Dátum a čas",
+      "step_payment": "Platba",
+      "step_summary": "Zhrnutie",
+      "next": "Ďalej",
+      "back": "Späť",
+      "submit": "Odoslať objednávku"
+    },
+    "services_step": {
+      "select_services": "Vyberte služby",
+      "select_packages": "Alebo si vyberte balíček",
+      "rooms": "Počet izieb",
+      "bathrooms": "Počet kúpeľní",
+      "extras": "Doplnky",
+      "no_selection": "Vyberte prosím aspoň jednu službu alebo balíček"
+    },
+    "address_step": {
+      "title": "Adresa čistenia",
+      "street": "Ulica",
+      "city": "Mesto",
+      "zip": "PSČ",
+      "country": "Krajina"
+    },
+    "datetime_step": {
+      "title": "Preferovaný dátum a čas",
+      "date": "Dátum",
+      "time": "Čas",
+      "note": "Presný čas s vami potvrdíme"
+    },
+    "payment_step": {
+      "title": "Spôsob platby",
+      "card": "Platba kartou (Stripe)",
+      "cash": "Platba v hotovosti",
+      "total": "Celková cena",
+      "price_breakdown": "Rozpis ceny"
+    },
+    "summary_step": {
+      "title": "Zhrnutie objednávky",
+      "services": "Vybrané služby",
+      "packages": "Vybrané balíčky",
+      "address": "Adresa",
+      "date_time": "Dátum a čas",
+      "payment": "Spôsob platby",
+      "total": "Celkom",
+      "confirm": "Potvrdiť a zaplatiť"
+    }
+  },
+  "orders": {
+    "title": "Moje objednávky",
+    "empty": "Zatiaľ ste nezadali žiadnu objednávku",
+    "book_first": "Objednajte si prvé čistenie",
+    "status": "Stav",
+    "date": "Dátum",
+    "total": "Celkom",
+    "actions": "Akcie",
+    "view_detail": "Zobraziť detail",
+    "download_receipt": "Stiahnuť účtenku",
+    "report_issue": "Nahlásiť problém",
+    "filter": {
+      "all": "Všetky",
+      "pending": "Čakajúce",
+      "confirmed": "Potvrdené",
+      "in_progress": "Prebieha",
+      "completed": "Dokončené",
+      "cancelled": "Zrušené"
+    },
+    "detail": {
+      "title": "Detail objednávky",
+      "order_number": "Objednávka č.",
+      "status_timeline": "Časová os stavu",
+      "service_details": "Podrobnosti služby",
+      "assigned_employees": "Pridelení pracovníci",
+      "no_employees": "Pracovníci budú čoskoro pridelení",
+      "notes": "Poznámky",
+      "issues": "Problémy"
+    }
+  },
+  "checkout": {
+    "success": {
+      "title": "Platba úspešná!",
+      "message": "Vaša objednávka bola potvrdená. Čoskoro dostanete potvrdzovací e-mail.",
+      "confirmation_code": "Potvrdzovací kód",
+      "view_orders": "Zobraziť moje objednávky",
+      "book_another": "Objednať ďalšie čistenie"
+    },
+    "cancel": {
+      "title": "Platba zrušená",
+      "message": "Vaša platba nebola dokončená. Neboli účtované žiadne poplatky.",
+      "try_again": "Skúsiť znova",
+      "back_home": "Späť na úvod"
+    }
+  },
+  "profile": {
+    "title": "Môj profil",
+    "personal_info": "Osobné údaje",
+    "change_password": "Zmeniť heslo",
+    "preferences": "Preferencie",
+    "first_name": "Meno",
+    "last_name": "Priezvisko",
+    "email": "E-mail",
+    "phone": "Telefónne číslo",
+    "language": "Jazyk",
+    "currency": "Mena",
+    "save": "Uložiť zmeny",
+    "saved": "Profil úspešne aktualizovaný",
+    "current_password": "Aktuálne heslo",
+    "new_password": "Nové heslo",
+    "confirm_new_password": "Potvrdiť nové heslo",
+    "change_password_submit": "Aktualizovať heslo",
+    "password_changed": "Heslo bolo úspešne zmenené"
+  },
+  "disputes": {
+    "title": "Moje reklamácie",
+    "empty": "Žiadne reklamácie",
+    "create": "Vytvoriť reklamáciu",
+    "select_order": "Vybrať objednávku",
+    "reason": "Dôvod",
+    "description": "Popis",
+    "submit": "Odoslať reklamáciu",
+    "created": "Reklamácia úspešne vytvorená",
+    "detail": {
+      "title": "Detail reklamácie",
+      "status": "Stav",
+      "messages": "Správy",
+      "add_message": "Pridať správu",
+      "send": "Odoslať",
+      "resolution": "Riešenie"
+    },
+    "status": {
+      "open": "Otvorená",
+      "in_review": "Posudzuje sa",
+      "resolved": "Vyriešená",
+      "closed": "Uzavretá"
+    }
+  },
+  "gdpr": {
+    "title": "Súkromie a údaje",
+    "subtitle": "Spravujte svoje osobné údaje a nastavenia súkromia",
+    "export": {
+      "title": "Exportovať moje údaje",
+      "description": "Stiahnite si kópiu všetkých vašich osobných údajov, ktoré máme v evidencii",
+      "button": "Exportovať údaje",
+      "success": "Váš export údajov je pripravený na stiahnutie"
+    },
+    "delete": {
+      "title": "Vymazať môj účet",
+      "description": "Trvalo vymazať váš účet a všetky súvisiace údaje. Túto akciu nie je možné vrátiť.",
+      "button": "Vymazať účet",
+      "confirm": "Ste si istí? Toto trvalo vymaže váš účet a všetky vaše údaje.",
+      "success": "Váš účet bol vymazaný"
+    },
+    "consents": {
+      "title": "Správa súhlasov",
+      "description": "Spravujte, s akým spracovaním údajov súhlasíte",
+      "marketing": "Marketingová komunikácia",
+      "analytics": "Analytika a vylepšenia",
+      "third_party": "Zdieľanie s tretími stranami",
+      "granted": "Udelený",
+      "withdrawn": "Odvolaný",
+      "grant": "Udeliť",
+      "withdraw": "Odvolať"
+    }
+  },
+  "pages": {
+    "home": {
+      "login": "Prihlásiť sa",
+      "register": "Registrácia",
+      "hero": {
+        "title": "Profesionálne čistiace služby priamo k vám domov",
+        "subtitle": "Objednajte si profesionálne čistenie jednoducho online. Hĺbkové čistenie nábytku, kobercov, matracov a oveľa viac.",
+        "tagline": "Čisto. Rýchlo. Bezpečne.",
+        "book_now": "Objednať čistenie",
+        "view_services": "Naše služby",
+        "badge_certified": "Certifikovaní odborníci",
+        "badge_rating": "Hodnotenie 4,9",
+        "badge_customers": "2 000+ zákazníkov",
+        "float_guarantee": "100% spokojnosť",
+        "float_fast": "Hotovo za 2 – 4 h"
+      },
+      "why_choose_us": {
+        "title": "Prečo si vybrať nás?",
+        "badge": "Naše výhody",
+        "subtitle": "Kombinujeme profesionálne vybavenie s ekologickými produktmi pre najlepšie výsledky.",
+        "item1_title": "Férové ceny",
+        "item1_desc": "Žiadne skryté poplatky — transparentné ceny od začiatku.",
+        "item2_title": "Bezpečné produkty",
+        "item2_desc": "Prípravky s nízkou vlhkosťou, bezpečné pre deti a alergikov.",
+        "item3_title": "Rýchle schnutie",
+        "item3_desc": "Pripravené za 2 – 4 hodiny — nábytok môžete ihneď používať."
+      },
+      "process": {
+        "title": "Proces čistenia",
+        "badge": "Ako to funguje",
+        "subtitle": "Náš overený 5-krokový postup zaručuje dôkladné a profesionálne čistenie zakaždým.",
+        "step1": "Kontrola",
+        "step1_desc": "Posúdime váš nábytok a otestujeme stálosť farieb.",
+        "step2": "Odstránenie škvŕn",
+        "step2_desc": "Špeciálne prípravky ošetria odolné a zaschnuté škvrny.",
+        "step3": "Hĺbkové čistenie",
+        "step3_desc": "Extrakčný stroj aplikuje roztok a vysaje nečistoty.",
+        "step4": "Parné ošetrenie",
+        "step4_desc": "Horúca para zabíja baktérie, odstraňuje alergény a osviežuje vlákna.",
+        "step5": "Sušenie",
+        "step5_desc": "Ventilátory urýchľujú schnutie — pripravené za 2 – 4 hodiny."
+      },
+      "counter": {
+        "title": "Dokončili sme viac ako",
+        "unit": "čistení"
+      },
+      "benefits": {
+        "title": "Prečo je profesionálne čistenie lepšie ako bežné?",
+        "badge": "Rozdiel",
+        "b1": "Odstraňuje nečistoty zvnútra, nielen z povrchu.",
+        "b2": "Nezanecháva lepkavý film, ktorý priťahuje ďalšiu špinu.",
+        "b3": "Eliminuje baktérie, roztoče a plesne — bezpečné pre alergikov a deti.",
+        "b4": "Rýchlo schne — 2 – 4 hodiny s profesionálnou extrakciou."
+      },
+      "extra_services": {
+        "s1": { "name": "Čistenie interiéru auta" },
+        "s2": { "name": "Čistenie kancelárií" },
+        "s3": { "name": "Upratovanie po rekonštrukcii" }
+      },
+      "fallback_services": {
+        "s1": {
+          "name": "Bežné upratovanie",
+          "desc": "Štandardné upratovanie všetkých miestností vrátane utierania prachu, vysávania a dezinfekcie."
+        },
+        "s2": {
+          "name": "Hĺbkové čistenie",
+          "desc": "Dôkladné čistenie vrátane líšt, vnútorných častí spotrebičov a podrobnej dezinfekcie."
+        },
+        "s3": {
+          "name": "Čistenie čalúnenia",
+          "desc": "Profesionálne čistenie pohoviek, kresiel a ďalšieho čalúneného nábytku."
+        }
+      },
+      "services": {
+        "title": "Služby a ceny",
+        "badge": "Čo ponúkame",
+        "subtitle": "Vyberte si službu, ktorá vám vyhovuje. Všetky ceny zahŕňajú profesionálne vybavenie a ekologické produkty.",
+        "view_all": "Zobraziť všetky služby",
+        "details": "Podrobnosti",
+        "extra_stain": "Odstránenie odolných škvŕn",
+        "extra_odour": "Odstránenie zápachu (domáce zvieratá, cigarety)"
+      },
+      "before_after": {
+        "title": "Pozrite si rozdiel",
+        "badge": "Skutočné výsledky",
+        "subtitle": "Posuňte posúvač a pozrite si skutočné výsledky pred a po našom čistení.",
+        "before": "Pred",
+        "after": "Po",
+        "label_sofa": "Hĺbkové čistenie pohovky",
+        "label_carpet": "Obnova koberca",
+        "label_mattress": "Čistenie matraca"
+      },
+      "testimonials": {
+        "title": "Čo hovoria naši zákazníci",
+        "badge": "Referencie",
+        "rating": "hodnotenie",
+        "review": "recenzia",
+        "t1": {
+          "text": "Neuveriteľné čistenie pohoviek a kobercov — ako nové! Skvelá komunikácia a rýchly servis. Vrelo odporúčam všetkým!",
+          "author": "Anna",
+          "role": "žena v domácnosti"
+        },
+        "t2": {
+          "text": "Čisté koberce a čalúnenie, výsledky prekonali očakávania! Všetky škvrny preč. Veľmi profesionálny, konkrétny prístup, skvelý tím.",
+          "author": "Igor",
+          "role": "office manažér"
+        },
+        "t3": {
+          "text": "Vyskúšali sme viaceré firmy — Cleansia sú najlepší. Naše matrace a koberce sú teraz dokonale čisté a nádherné voňajú.",
+          "author": "Radmila",
+          "role": "mamička na materskej"
+        }
+      },
+      "faq": {
+        "title": "Často kladené otázky",
+        "badge": "FAQ",
+        "desc": "Nenašli ste odpoveď? Kontaktujte náš tím a radi vám pomôžeme.",
+        "q1": {
+          "question": "Dochádzate aj do okolia?",
+          "answer": "Áno, pokrývame aj okolité oblasti. Kontaktujte nás a overte si dostupnosť pre vašu lokalitu."
+        },
+        "q2": {
+          "question": "Dokážete vyčistiť nábytok s jemným čalúnením?",
+          "answer": "Áno, vyberáme šetrné čistiace prostriedky a metódy vhodné pre každý typ látky: hodváb, vlnu, zamat, mikrovlákno a ďalšie. Pred čistením vždy testujeme na malom mieste, aby sme sa uistili, že látka nebude poškodená."
+        },
+        "q3": {
+          "question": "Odstránite všetky škvrny úplne?",
+          "answer": "Odstránime 95 % škvŕn. Niektoré veľmi staré alebo chemicky fixované škvrny sa môžu výrazne zosvetliť, ale nemusia úplne zmiznúť."
+        },
+        "q4": {
+          "question": "Môžem si objednať čistenie večer alebo cez víkend?",
+          "answer": "Áno! Ponúkame flexibilné plánovanie vrátane večerov a víkendov, aby to vyhovovalo vášmu rozvrhu."
+        }
+      },
+      "cta": {
+        "title": "Pripravení premeniť svoj priestor?",
+        "desc": "Objednajte si profesionálne čistenie ešte dnes a užívajte si zdravší, sviežejší domov.",
+        "button": "Objednať teraz"
+      },
+      "footer": {
+        "contacts": "Kontaktujte nás",
+        "request_quote": "Žiadosť o cenovú ponuku",
+        "your_name": "Vaše meno",
+        "your_phone": "Váš telefón",
+        "social": "Sociálne siete",
+        "privacy": "Zásady ochrany súkromia",
+        "newsletter_title": "Prihláste sa na odber noviniek a buďte informovaní",
+        "newsletter_subtitle": "Získajte 20% zľavu na vašu prvú objednávku len prihlásením sa na odber noviniek.",
+        "newsletter_placeholder": "Zadajte svoj e-mail",
+        "newsletter_button": "Prihlásiť sa",
+        "unsubscribe_note": "Odhlásiť sa môžete kedykoľvek.",
+        "privacy_link_text": "Prečítajte si naše zásady ochrany súkromia",
+        "company": "Spoločnosť",
+        "support": "Podpora",
+        "links": "Odkazy",
+        "help_center": "Centrum pomoci",
+        "gdpr_link": "Súkromie a GDPR",
+        "terms_link": "Obchodné podmienky",
+        "description": "Profesionálne mobilné čistiace služby. Nábytok, koberce, matrace — prídeme k vám.",
+        "address": "Praha, Česká republika"
+      }
+    },
+    "profile": {
+      "title": "Môj profil",
+      "hero_title": "Môj profil",
+      "hero_subtitle": "Spravujte svoje osobné údaje a zabezpečenie účtu",
+      "personal_info": "Osobné údaje",
+      "personal_info_desc": "Aktualizujte svoje meno, telefónne číslo a ďalšie údaje",
+      "security_title": "Zabezpečenie",
+      "security_desc": "Zmeňte si heslo pre väčšie zabezpečenie účtu",
+      "change_password": "Zmeniť heslo",
+      "email": "E-mail",
+      "first_name": "Meno",
+      "last_name": "Priezvisko",
+      "phone": "Telefón",
+      "birth_date": "Dátum narodenia",
+      "password_info": "Zadajte nové heslo na jeho zmenu.",
+      "new_password": "Nové heslo",
+      "confirm_password": "Potvrdiť heslo",
+      "passwords_not_match": "Heslá sa nezhodujú",
+      "password_change_note": "Heslo musí mať aspoň 8 znakov s veľkým písmenom, malým písmenom a číslicou.",
+      "save_success": "Profil úspešne uložený",
+      "save_error": "Nepodarilo sa uložiť profil",
+      "addresses_title": "Adresy",
+      "addresses_desc": "Spravujte uložené adresy pre rýchlejšie objednávanie",
+      "preferences_title": "Preferencie",
+      "preferences_desc": "Prispôsobte si svoj zážitok",
+      "no_addresses": "Zatiaľ nemáte uložené žiadne adresy",
+      "default_address": "Predvolená",
+      "set_default": "Nastaviť ako predvolenú",
+      "add_address": "Pridať adresu",
+      "edit_address": "Upraviť adresu",
+      "pref_language": "Jazyk",
+      "pref_theme": "Téma",
+      "theme_light": "Svetlý režim",
+      "theme_dark": "Tmavý režim",
+      "pref_notifications": "E-mailové upozornenia",
+      "address_street": "Ulica",
+      "address_city": "Mesto",
+      "address_zip": "PSČ",
+      "address_country": "Krajina",
+      "address_saved": "Adresa uložená",
+      "address_deleted": "Adresa odstránená",
+      "current_password": "Aktuálne heslo",
+      "danger_zone_title": "Nebezpečná zóna",
+      "danger_zone_desc": "Nevratné akcie pre váš účet",
+      "delete_account": "Vymazať účet",
+      "delete_account_desc": "Trvalo vymazať účet a všetky údaje",
+      "export_data": "Exportovať údaje",
+      "export_data_desc": "Stiahnuť kópiu všetkých osobných údajov"
+    },
+    "services": {
+      "title": "Naše služby",
+      "subtitle": "Profesionálne čistiace služby prispôsobené vašim potrebám",
+      "cleaning_services": "Čistiace služby",
+      "packages": "Balíčky",
+      "book_now": "Objednať",
+      "from": "od",
+      "per_room": "za izbu",
+      "no_services": "Momentálne nie sú dostupné žiadne služby",
+      "most_popular": "Najobľúbenejšie",
+      "per_cleaning": "za čistenie",
+      "premium_quality": "Prémiová kvalita čistenia",
+      "vetted_professionals": "Overení profesionáli",
+      "satisfaction_guarantee": "100% garancia spokojnosti",
+      "check_back_later": "Navštívte nás neskôr pre naše prémiové ponuky.",
+      "trust_certified": "Certifikovaní profesionáli",
+      "trust_eco": "Ekologické produkty",
+      "trust_guarantee": "100% spokojnosť",
+      "cta_title": "Pripravení na žiarivý domov?",
+      "cta_subtitle": "Objednajte si profesionálne čistenie ešte dnes a užívajte si zdravší, sviežejší priestor.",
+      "cta_button": "Objednať čistenie",
+      "view_all_packages": "Zobraziť všetky balíčky",
+      "view_all_services": "Zobraziť všetky služby",
+      "sort_price_asc": "Cena: od najnižšej",
+      "sort_price_desc": "Cena: od najvyššej",
+      "sort_name_asc": "Názov: A – Z",
+      "features": {
+        "basic_supplies": "Štandardné čistiace prostriedky",
+        "basic_cleaner": "1 profesionálny pracovník",
+        "basic_cleaning": "Základné čistenie miestností",
+        "basic_sessions": "Platí na 1 návštevu",
+        "standard_supplies": "Prémiové ekologické prostriedky",
+        "standard_cleaners": "2 profesionálni pracovníci",
+        "standard_deep": "Hĺbkové čistenie v cene",
+        "standard_priority": "Prednostná rezervácia",
+        "standard_sessions": "Platí na 3 návštevy",
+        "premium_supplies": "Prémiové ekologické prostriedky",
+        "premium_cleaners": "3+ profesionálni pracovníci",
+        "premium_deep": "Hĺbkové čistenie + dezinfekcia",
+        "premium_priority": "Prednostná rezervácia",
+        "premium_sameday": "Dostupnosť v ten istý deň",
+        "premium_sessions": "Platí na 5 návštev"
+      }
+    },
+    "order": {
+      "title": "Objednať čistenie",
+      "hero_title": "Objednajte si čistenie",
+      "hero_subtitle": "Profesionálne čistenie prispôsobené vašim potrebám. Vyberte si služby, termín a relaxujte.",
+      "trust_certified": "Certifikovaní pracovníci",
+      "trust_satisfaction": "100% spokojnosť",
+      "trust_no_hidden": "Žiadne skryté poplatky",
+      "select_services": "Vybrať služby",
+      "services_section_title": "Vyberte si služby",
+      "packages_section_title": "Alebo si vyberte balíček",
+      "room_config_title": "Údaje o nehnuteľnosti",
+      "rooms": "Počet izieb",
+      "rooms_label": "Izby",
+      "bathrooms": "Počet kúpeľní",
+      "bathrooms_label": "Kúpeľne",
+      "address": "Adresa",
+      "contact_section_title": "Kontaktné údaje",
+      "contact_phone_title": "Telefónne číslo",
+      "address_section_title": "Adresa čistenia",
+      "street": "Ulica",
+      "city": "Mesto",
+      "zip_code": "PSČ",
+      "country": "Krajina",
+      "select_country": "Vyberte krajinu",
+      "date_time": "Dátum a čas",
+      "datetime_section_title": "Kedy máme prísť?",
+      "datetime_note": "Presný čas s vami potvrdíme",
+      "cleaning_date": "Dátum čistenia",
+      "date_label": "Vyberte dátum",
+      "cleaning_time": "Čas čistenia",
+      "time_label": "Vyberte čas",
+      "payment_method": "Spôsob platby",
+      "payment_section_title": "Ako chcete platiť?",
+      "pay_by_card": "Platba kartou",
+      "payment_card_title": "Kreditná / debetná karta",
+      "payment_card_desc": "Bezpečná online platba cez Stripe",
+      "pay_by_cash": "Platba v hotovosti",
+      "payment_cash_title": "Platba pri prevzatí",
+      "payment_cash_desc": "Zaplatíte po dokončení čistenia",
+      "contact_info": "Kontaktné údaje",
+      "customer_first_name": "Meno",
+      "customer_first_name_placeholder": "napr. Ján",
+      "customer_last_name": "Priezvisko",
+      "customer_last_name_placeholder": "napr. Novák",
+      "customer_email": "E-mail",
+      "customer_email_placeholder": "napr. jan@example.com",
+      "customer_phone": "Telefónne číslo",
+      "customer_phone_placeholder": "napr. +421 900 123 456",
+      "special_instructions": "Špeciálne pokyny",
+      "special_instructions_placeholder": "Máte špeciálne požiadavky? (napr. zamerať sa na kuchyňu, produkty vhodné pre domáce zvieratá...)",
+      "entry_instructions_label": "Pokyny pre vstup",
+      "entry_instructions_placeholder": "Ako sa dostaneme k vám? (napr. zvonček, kľúč pod rohožkou...)",
+      "summary": "Zhrnutie",
+      "summary_section_title": "Skontrolujte svoju objednávku",
+      "summary_services": "Služby",
+      "summary_packages": "Balíčky",
+      "summary_property": "Nehnuteľnosť",
+      "summary_rooms_count": "{{rooms}} izieb, {{bathrooms}} kúpeľní",
+      "summary_address": "Adresa",
+      "summary_datetime": "Dátum a čas",
+      "summary_payment": "Platba",
+      "summary_contact": "Kontakt",
+      "summary_instructions": "Pokyny",
+      "summary_edit": "Upraviť",
+      "selected_services_label": "Vybrané služby",
+      "total_price": "Celková cena",
+      "price_total": "Celkom",
+      "place_order": "Odoslať objednávku",
+      "submit_order": "Odoslať objednávku",
+      "submit_success": "Objednávka úspešne odoslaná!",
+      "submit_error": "Nepodarilo sa odoslať objednávku",
+      "steps": {
+        "services": "Služby",
+        "address": "Adresa",
+        "datetime": "Dátum a čas",
+        "payment": "Platba",
+        "summary": "Zhrnutie"
+      },
+      "saved_address_default": "Predvolená",
+      "new_address": "Zadať novú adresu",
+      "save_address": "Uložiť túto adresu pre budúce objednávky",
+      "rebook_warning": {
+        "title": "Niektoré služby nie sú dostupné",
+        "description": "Nasledujúce služby z vašej predchádzajúcej objednávky už nie sú dostupné:",
+        "continue": "OK, pokračovať"
+      }
+    },
+    "orders": {
+      "title": "Moje objednávky",
+      "hero_title": "Moje objednávky",
+      "hero_subtitle": "Sledujte svoje nadchádzajúce a minulé termíny čistenia",
+      "stats_upcoming": "Nadchádzajúce",
+      "stats_completed": "Dokončené",
+      "stats_total_spent": "Celkovo zaplatené",
+      "no_orders": "Zatiaľ nemáte žiadne objednávky",
+      "no_orders_description": "Objednajte si prvé čistenie!",
+      "browse_services": "Prehľadať služby",
+      "upcoming_orders": "Nadchádzajúce objednávky",
+      "past_orders": "Minulé objednávky",
+      "rebook": "Objednať znova",
+      "empty_subtitle": "Vaša cesta k čistému domovu začína tu! Prezrite si naše služby a objednajte si prvý termín.",
+      "empty_trust_certified": "Certifikovaní profesionáli",
+      "empty_trust_satisfaction": "100% garancia spokojnosti",
+      "empty_trust_eco": "Ekologické produkty",
+      "empty_step1": "Vyberte si službu",
+      "empty_step2": "Zvoľte dátum a čas",
+      "empty_step3": "Relaxujte a užívajte si",
+      "empty_cta": "Objednajte si prvé čistenie",
+      "need_help": "Potrebujete pomoc?",
+      "need_help_desc": "Ak máte problémy s predchádzajúcou objednávkou, môžete ich nahlásiť.",
+      "go_to_disputes": "Prejsť na reklamácie",
+      "table": {
+        "order_number": "Číslo objednávky",
+        "date": "Dátum",
+        "address": "Adresa",
+        "total": "Celkom",
+        "status": "Stav",
+        "payment": "Platba"
+      }
+    },
+    "order_detail": {
+      "order": "Objednávka",
+      "not_found": "Objednávka nenájdená",
+      "status": "Stav",
+      "order_status": "Stav objednávky",
+      "payment_status": "Stav platby",
+      "payment_type": "Typ platby",
+      "service_details": "Podrobnosti služby",
+      "cleaning_date": "Dátum čistenia",
+      "rooms": "Izby",
+      "bathrooms": "Kúpeľne",
+      "estimated_time": "Odhadovaný čas",
+      "address": "Adresa",
+      "packages": "Balíčky",
+      "services": "Služby",
+      "total": "Celkom",
+      "timeline": "Časová os",
+      "notes": "Poznámky",
+      "special_instructions": "Špeciálne pokyny",
+      "confirmation_code": "Potvrdzovací kód",
+      "download_receipt": "Stiahnuť účtenku",
+      "download_error": "Nepodarilo sa stiahnuť účtenku",
+      "report_issue": "Nahlásiť problém"
+    },
+    "checkout": {
+      "success": {
+        "title": "Platba úspešná!",
+        "subtitle": "Ďakujeme za vašu objednávku",
+        "description": "Vaše čistenie bolo objednané a potvrdené. Čoskoro dostanete potvrdzovací e-mail so všetkými podrobnosťami.",
+        "what_next": "Čo bude nasledovať?",
+        "step_confirmation": "Do niekoľkých minút dostanete potvrdzovací e-mail",
+        "step_reminder": "Pred dátumom čistenia vám pošleme pripomienku",
+        "step_cleaner": "Náš profesionálny pracovník dorazí v naplánovanom čase",
+        "view_orders": "Zobraziť moje objednávky",
+        "book_another": "Objednať ďalšie čistenie",
+        "back_home": "Späť na úvod"
+      },
+      "cancel": {
+        "title": "Platba zrušená",
+        "subtitle": "Žiadne obavy — nič nebolo zaúčtované",
+        "description": "Vaša platba nebola dokončená a z vášho účtu neboli stiahnuté žiadne prostriedky. Vybrané služby sú stále dostupné.",
+        "reasons_title": "Bežné dôvody zrušenia:",
+        "reason_changed_mind": "Rozmysleli ste si službu",
+        "reason_wrong_details": "Potrebujete aktualizovať údaje objednávky",
+        "reason_payment_issue": "Vyskytol sa problém s platbou",
+        "try_again": "Skúsiť znova",
+        "view_orders": "Zobraziť moje objednávky",
+        "contact_support": "Potrebujete pomoc? Kontaktujte náš tím podpory",
+        "back_home": "Späť na úvod"
+      }
+    },
+    "disputes": {
+      "title": "Moje reklamácie",
+      "hero_title": "Moje reklamácie",
+      "hero_subtitle": "Zobrazenie a správa vašich reklamácií",
+      "empty_description": "Nemáte žiadne otvorené reklamácie. Ak sa vyskytnú problémy s našou službou, môžete tu vytvoriť novú reklamáciu.",
+      "create_new": "Nová reklamácia",
+      "create_title": "Vytvoriť reklamáciu",
+      "no_disputes": "Všetko v poriadku!",
+      "order_id": "Objednávka",
+      "select_order": "Vyberte objednávku...",
+      "reason": "Dôvod",
+      "description": "Popis",
+      "submit": "Odoslať",
+      "resolution": "Riešenie",
+      "messages": "Správy",
+      "type_message": "Napíšte správu...",
+      "send": "Odoslať",
+      "create_success": "Reklamácia vytvorená",
+      "create_error": "Nepodarilo sa vytvoriť reklamáciu",
+      "send_error": "Nepodarilo sa odoslať správu",
+      "reasons": {
+        "quality_issue": "Problém s kvalitou",
+        "service_not_provided": "Služba nebola poskytnutá",
+        "service_incomplete": "Neúplná služba",
+        "damaged_property": "Poškodený majetok",
+        "unauthorized_charge": "Neoprávnený poplatok",
+        "incorrect_amount": "Nesprávna suma",
+        "other": "Iné"
+      },
+      "empty_faq_title": "Čo môžem nahlásiť?",
+      "empty_faq_items": "Problémy s kvalitou, neúplnú službu, poškodený majetok, problémy s fakturáciou a ďalšie.",
+      "empty_response_time": "Zvyčajne odpovedáme do 24 – 48 hodín.",
+      "table": {
+        "order": "Objednávka",
+        "reason": "Dôvod",
+        "status": "Stav",
+        "created": "Vytvorená"
+      }
+    },
+    "gdpr": {
+      "title": "Súkromie a údaje",
+      "subtitle": "Spravujte svoje osobné údaje a nastavenia súkromia",
+      "export_title": "Exportovať moje údaje",
+      "export_desc": "Stiahnite si kópiu všetkých svojich osobných údajov.",
+      "export_btn": "Exportovať údaje",
+      "export_success": "Údaje exportované",
+      "export_error": "Nepodarilo sa exportovať údaje",
+      "consents_title": "Správa súhlasov",
+      "consents_desc": "Spravujte, s akým spracovaním údajov súhlasíte.",
+      "consent_granted": "Udelený",
+      "consent_withdrawn": "Odvolaný",
+      "consent_grant": "Udeliť",
+      "consent_withdraw": "Odvolať",
+      "consent_error": "Nepodarilo sa aktualizovať súhlas",
+      "consent_updated": "Súhlas úspešne aktualizovaný",
+      "consent_types": {
+        "terms_of_service": "Obchodné podmienky",
+        "privacy_policy": "Zásady ochrany súkromia",
+        "marketing_emails": "Marketingové e-maily",
+        "data_processing": "Spracovanie údajov"
+      },
+      "consents_description": "Spravujte, s akým spracovaním údajov súhlasíte.",
+      "export_description": "Stiahnite si kópiu všetkých osobných údajov, ktoré o vás máme v evidencii.",
+      "export_button": "Exportovať údaje",
+      "delete_title": "Vymazať účet",
+      "delete_desc": "Trvalo vymazať účet a všetky údaje. Túto akciu nie je možné vrátiť.",
+      "delete_btn": "Vymazať účet",
+      "delete_description": "Trvalo vymazať váš účet a všetky súvisiace údaje. Túto akciu nie je možné vrátiť.",
+      "delete_button": "Vymazať účet",
+      "delete_confirm": "Naozaj chcete vymazať svoj účet? Túto akciu nie je možné vrátiť.",
+      "delete_confirm_message": "Naozaj chcete trvalo vymazať svoj účet? Všetky vaše údaje budú stratené a túto akciu nie je možné vrátiť.",
+      "delete_confirm_title": "Vymazať účet",
+      "delete_confirm_yes": "Áno, vymazať môj účet",
+      "delete_success": "Účet vymazaný",
+      "delete_error": "Nepodarilo sa vymazať účet"
+    },
+    "forgot_password": {
+      "email": "E-mail",
+      "email_invalid": "Zadajte platnú e-mailovú adresu",
+      "password_invalid": "Heslo nespĺňa požiadavky",
+      "password_changed": "Heslo bolo úspešne zmenené!",
+      "email_input": {
+        "forgot_password": "Zabudnuté heslo",
+        "forgot_password_text": "Zadajte svoju e-mailovú adresu a pošleme vám overovací kód na obnovenie hesla.",
+        "send_email": "Odoslať overovací kód",
+        "dont_have_account": "Nemáte účet?"
+      },
+      "password_change": {
+        "email_sent": "Overovací kód odoslaný",
+        "email_sent_text": "Na váš e-mail sme odoslali overovací kód. Skontrolujte si doručenú poštu.",
+        "didnt_receive_email": "Nedostali ste e-mail?",
+        "code": "Overovací kód",
+        "new_password": "Nové heslo",
+        "confirm_new_password": "Potvrdiť nové heslo",
+        "resend_code": "Znovu odoslať kód",
+        "change_password": "Zmeniť heslo",
+        "remember_password": "Pamätáte si heslo?"
+      }
+    }
+  },
+  "components": {
+    "not_found": {
+      "title": "Stránka nenájdená",
+      "description": "Stránka, ktorú hľadáte, neexistuje alebo bola presunutá.",
+      "suggestion_home": "Vráťte sa na úvodnú stránku",
+      "suggestion_url": "Skontrolujte správnosť adresy URL",
+      "suggestion_contact": "Ak problém pretrváva, kontaktujte nás",
+      "go_home": "Na úvodnú stránku"
+    }
+  },
+  "validation": {
+    "common": {
+      "not_all_fields_filled": "Vyplňte prosím všetky povinné polia",
+      "required": "Toto pole je povinné",
+      "email": "Zadajte platnú e-mailovú adresu",
+      "birth_date": "Dátum narodenia je neplatný. Používateľ musí byť mladší ako {{ yearsRange }} rokov",
+      "min_length": "Musí obsahovať aspoň {{ minLength }} znakov",
+      "max_length": "Nemôže presiahnuť {{ maxLength }} znakov",
+      "pattern": "Pole nezodpovedá požadovanému formátu",
+      "minimum_age": "Minimálny vek je {{ requiredAge }} rokov. Aktuálny vek: {{ actualAge }} rokov",
+      "maximum_age": "Maximálny vek je {{ maxAge }} rokov. Aktuálny vek: {{ actualAge }} rokov",
+      "phone_number": "Neplatný formát telefónneho čísla",
+      "confirm_password": "Heslá sa nezhodujú",
+      "no_whitespace": "Pole nesmie obsahovať medzery",
+      "zip_code": "Neplatný formát PSČ"
+    },
+    "file": {
+      "required": "Súbory sú povinné",
+      "invalid_type": "Neplatný typ súboru. Vyberte platný dokumentový súbor.",
+      "max_size": "Súbor je príliš veľký. Maximálna povolená veľkosť je {{ maxSize }}MB.",
+      "too_few_files": "Príliš málo vybraných súborov. Minimálny požadovaný počet: {{ min }}",
+      "too_many_files": "Príliš veľa vybraných súborov. Maximálny povolený počet: {{ max }}"
+    },
+    "password": {
+      "uppercase": "aspoň jedno veľké písmeno",
+      "lowercase": "aspoň jedno malé písmeno",
+      "number": "aspoň jedna číslica",
+      "special_char": "aspoň jeden špeciálny znak",
+      "min_length": "minimálne 12 znakov",
+      "requirements": "Heslo musí obsahovať: {{ requirements }}"
+    }
+  },
+  "common": {
+    "loading": "Načítava sa...",
+    "save": "Uložiť",
+    "cancel": "Zrušiť",
+    "delete": "Vymazať",
+    "edit": "Upraviť",
+    "back": "Späť",
+    "next": "Ďalej",
+    "close": "Zavrieť",
+    "search": "Hľadať",
+    "no_results": "Neboli nájdené žiadne výsledky",
+    "error_occurred": "Vyskytla sa chyba. Skúste to prosím znova."
+  },
+  "footer": {
+    "terms": "Obchodné podmienky",
+    "privacy": "Zásady ochrany súkromia",
+    "rights": "Všetky práva vyhradené."
+  },
+  "terms_page": {
+    "title": "Obchodné podmienky",
+    "last_updated": "Posledná aktualizácia",
+    "intro": "Pred použitím našich služieb si pozorne prečítajte tieto obchodné podmienky.",
+    "section1_title": "1. Prijatie podmienok",
+    "section1_text": "Prístupom k službám Cleansia a ich používaním súhlasíte s týmito obchodnými podmienkami. Ak s nimi nesúhlasíte, nepoužívajte prosím naše služby.",
+    "section2_title": "2. Popis služieb",
+    "section2_text": "Cleansia poskytuje profesionálne čistiace služby pre domácnosti. Služby zahŕňajú čistenie nábytku, kobercov, matracov a ďalšie súvisiace služby uvedené na našej webovej stránke.",
+    "section3_title": "3. Objednávky a platby",
+    "section3_text": "Objednávky je možné zadať prostredníctvom našej webovej stránky. Platby prijímame kreditnou/debetnou kartou (spracované cez Stripe) alebo v hotovosti pri doručení. Ceny sú uvedené v CZK vrátane DPH.",
+    "section4_title": "4. Storno podmienky",
+    "section4_text": "Objednávky je možné bezplatne zrušiť až do 24 hodín pred plánovaným termínom čistenia. Pri zrušení menej ako 24 hodín pred termínom môže byť účtovaný storno poplatok.",
+    "section5_title": "5. Zodpovednosť",
+    "section5_text": "Cleansia pristupuje k čisteniu s maximálnou starostlivosťou. V nepravdepodobnom prípade poškodenia nahláste prosím problém do 24 hodín prostredníctvom nášho reklamačného systému. Všetky reklamácie prešetríme a spravodlivo vyriešime.",
+    "section6_title": "6. Kontakt",
+    "section6_text": "V prípade otázok k týmto podmienkam nás kontaktujte na info@cleansia.cz alebo +420 739 788 108."
+  },
+  "privacy_page": {
+    "title": "Zásady ochrany súkromia",
+    "last_updated": "Posledná aktualizácia",
+    "intro": "Vaše súkromie je pre nás dôležité. Tieto zásady vysvetľujú, ako zhromažďujeme, používame a chránime vaše osobné údaje.",
+    "section1_title": "1. Údaje, ktoré zhromažďujeme",
+    "section1_text": "Zhromažďujeme osobné údaje, ktoré nám poskytnete pri zadávaní objednávok, vytváraní účtu alebo kontaktovaní nás. Patria sem vaše meno, e-mailová adresa, telefónne číslo a adresa.",
+    "section2_title": "2. Ako používame vaše údaje",
+    "section2_text": "Vaše údaje používame na spracovanie objednávok, komunikáciu ohľadom vašich rezervácií, zlepšovanie našich služieb a zasielanie marketingovej komunikácie (iba s vaším súhlasom).",
+    "section3_title": "3. Ochrana údajov",
+    "section3_text": "Implementujeme štandardné bezpečnostné opatrenia na ochranu vašich osobných údajov. Vaše platobné údaje sú bezpečne spracované službou Stripe a nikdy nie sú uložené na našich serveroch.",
+    "section4_title": "4. Vaše práva (GDPR)",
+    "section4_text": "Podľa GDPR máte právo na prístup, opravu, vymazanie a export svojich osobných údajov. Tieto práva môžete spravovať prostredníctvom sekcie Súkromie a údaje vo vašom účte, alebo nás môžete kontaktovať priamo.",
+    "section5_title": "5. Cookies",
+    "section5_text": "Cookies používame na zlepšenie prehliadania a analýzu návštevnosti. Svoje preferencie cookies môžete spravovať prostredníctvom bannera súhlasu s cookies.",
+    "section6_title": "6. Kontakt",
+    "section6_text": "V prípade otázok týkajúcich sa súkromia nás kontaktujte na info@cleansia.cz alebo +420 739 788 108."
+  },
+  "api": {
+    "common": {
+      "unauthorized": "Nemáte oprávnenie na vykonanie tejto akcie",
+      "error_occurred": "Vyskytla sa chyba"
+    }
+  }
+}

@@ -22,6 +22,7 @@ public class Constants
     public class StripeEventType
     {
         public const string CompletedSession = "checkout.session.completed";
+        public const string ExpiredSession = "checkout.session.expired";
     }
 
     public class Language

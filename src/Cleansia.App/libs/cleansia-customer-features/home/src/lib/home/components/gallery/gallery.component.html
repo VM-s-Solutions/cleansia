@@ -1,0 +1,37 @@
+<section class="cl-section cl-section--gallery" id="before-after">
+  <div class="cl-section__inner">
+    <div class="cl-section__header animate-on-scroll">
+      <span class="cl-section__badge">{{ 'pages.home.before_after.badge' | translate }}</span>
+      <h2 class="cl-title">{{ 'pages.home.before_after.title' | translate }}</h2>
+      <p class="cl-section__desc">{{ 'pages.home.before_after.subtitle' | translate }}</p>
+    </div>
+
+    <div class="cl-gallery">
+      @for (pair of beforeAfterPairs; track pair.id; let idx = $index) {
+      <div class="cl-gallery__item animate-on-scroll" [class]="'delay-' + (idx + 1)">
+        <div
+          class="cl-slider"
+          [attr.data-slider-id]="pair.id"
+          (mousedown)="onSliderMouseDown($event, pair.id)"
+          (touchstart)="onSliderTouchStart($event, pair.id)"
+        >
+          <div class="cl-slider__after">
+            <img [src]="pair.after" [alt]="pair.label + ' - After'" />
+          </div>
+          <div class="cl-slider__before" [style.width.%]="getSliderPosition(pair.id)">
+            <img [src]="pair.before" [alt]="pair.label + ' - Before'" />
+          </div>
+          <div class="cl-slider__divider" [style.left.%]="getSliderPosition(pair.id)">
+            <div class="cl-slider__handle">
+              <i class="pi pi-arrows-h"></i>
+            </div>
+          </div>
+          <div class="cl-slider__label cl-slider__label--before">{{ 'pages.home.before_after.before' | translate }}</div>
+          <div class="cl-slider__label cl-slider__label--after">{{ 'pages.home.before_after.after' | translate }}</div>
+        </div>
+        <p class="cl-gallery__caption">{{ pair.label | translate }}</p>
+      </div>
+      }
+    </div>
+  </div>
+</section>

@@ -1,7 +1,7 @@
 # Cleansia - Business Overview & Application Flow
 
-**Last Updated**: 2026-03-01
-**Version**: 2.1.0
+**Last Updated**: 2026-03-15
+**Version**: 3.0.0
 **For**: Non-Technical Stakeholders
 
 ---
@@ -38,14 +38,17 @@ Think of it as your digital business assistant that:
 
 ## Who Uses Cleansia?
 
-### 1. **Customers** (Future - Not Yet Built)
-Customers will be able to:
-- Book cleaning services online
-- Pay with credit card or cash
-- Track their order status
-- View before/after photos of completed work
-- Download receipts
-- Raise concerns if something goes wrong
+### 1. **Customers** (✅ Complete - Customer App)
+Customers can:
+- Browse services and packages with pricing
+- Book cleaning services through a multi-step order wizard
+- Pay with credit card (Stripe) or cash
+- Register, log in, and manage their profile
+- Track their order status and view order history
+- File disputes if something goes wrong
+- Export personal data or delete their account (GDPR)
+- Use the app in Czech, English, or Polish
+- Enjoy full dark mode support
 
 ### 2. **Employees** (Currently Available - Partner App)
 Cleaning staff can:
@@ -396,13 +399,13 @@ Final Pay: 800 CZK
 
 **Real-World Benefit:** Make data-driven decisions, spot problems early, plan better.
 
-### 8. Dispute Management (Backend Ready)
+### 8. Dispute Management (✅ Complete)
 
 **Simple Explanation:** Handle customer complaints systematically.
 
 **How It Works:**
 
-**Customer Side (Future):**
+**Customer Side (Customer App ✅):**
 1. Customer notices a problem
 2. They create a dispute through the app
 3. They select the type:
@@ -415,7 +418,7 @@ Final Pay: 800 CZK
 5. They say what they want (refund, re-do, etc.)
 6. They can attach photos as evidence
 
-**Admin Side (Future):**
+**Admin Side (Admin App ✅):**
 1. Sees all disputes in one place
 2. Can update status:
    - Open (just created)
@@ -647,7 +650,7 @@ Currently: **Czech**, **English**, and **Polish**
 
 ## System Status & Reliability
 
-### Current Status: 100% Complete (Partner App + Admin App) ✅
+### Current Status: 100% Complete (Partner App + Admin App + Customer App) ✅
 
 **Partner App - What's Working:**
 - ✅ Employee registration and login
@@ -700,9 +703,30 @@ Currently: **Czech**, **English**, and **Polish**
 - ✅ Centralized API controller and Startup base classes
 - ✅ Consistent CQRS handlers (IQuery/ICommand with BusinessResult)
 
+**Customer App - What's Working:**
+- ✅ Landing page with 10 sections (hero, features, process, benefits, services, gallery, testimonials, FAQ, CTA, footer)
+- ✅ Service catalog with dynamic pricing from API
+- ✅ Multi-step order wizard (services → contact → date/time → payment → summary)
+- ✅ Stripe checkout integration (success + cancel pages)
+- ✅ User registration, login, email confirmation, forgot password
+- ✅ Order history with detail view and status tracking
+- ✅ Dispute creation and management
+- ✅ User profile management
+- ✅ GDPR tools (data export, consent management, account deletion)
+- ✅ Terms of Service and Privacy Policy pages
+- ✅ Cookie consent banner
+- ✅ Full i18n support (Czech, English, Polish — 900+ translation keys)
+- ✅ Dark mode with automatic theme detection
+- ✅ Responsive design (mobile-first)
+- ✅ Mascot illustrations throughout the app
+- ✅ Unified footer with newsletter subscription
+
 **What's Coming Next:**
-- ⏳ Customer-facing app (for customers to book services)
-- ⏳ Dispute resolution UI (backend ready)
+- ⏳ Customer reviews and ratings after completed orders
+- ⏳ Real-time order tracking (WebSocket/SignalR)
+- ⏳ Invoice/receipt PDF download for customers
+- ⏳ Social login (Google, Facebook)
+- ⏳ Recurring order subscriptions
 - ⏳ Employee performance tracking
 
 ### Reliability Features
@@ -847,11 +871,11 @@ Country-specific configuration for currency, VAT rates, tax IDs, and date format
 
 ---
 
-### Scenario 4: Customer Complaint (Future)
+### Scenario 4: Customer Complaint
 
 **Customer:**
 - Not happy with cleaning quality
-- Opens dispute in app
+- Opens dispute in Customer App
 - Selects: "Service Quality Issue"
 - Writes: "Bathroom not cleaned properly"
 - Attaches photo of missed spot
@@ -862,7 +886,7 @@ Country-specific configuration for currency, VAT rates, tax IDs, and date format
 - Sends notification to admin
 - Tracks status
 
-**Admin (Future):**
+**Admin:**
 - Sees dispute in dashboard
 - Changes status to "In Review"
 - Contacts employee for their side
@@ -962,13 +986,14 @@ Complete business control is NOW available:
 - Feature flag management
 - GDPR compliance tools (data export, account deletion)
 
-### Phase 3: Customer App (⏳ Coming)
-When ready, customers can:
-- Book online 24/7
-- Pay instantly
-- Track their orders
-- Rate services
-- Raise disputes
+### Phase 3: Customer App (✅ Complete)
+Customers can now:
+- Browse services and packages with pricing
+- Book cleaning services through a multi-step wizard
+- Pay instantly with Stripe or choose cash
+- Track their orders and view history
+- File disputes and manage their profile
+- Export data or delete account (GDPR)
 
 ---
 
@@ -988,6 +1013,6 @@ Documentation: See CLEANSIA_PROJECT_DOCUMENTATION.md for technical details
 
 ---
 
-**Version**: 2.1.0
-**Last Updated**: 2026-03-01
-**Status**: Partner App & Admin App Complete & Ready for Use ✅
+**Version**: 3.0.0
+**Last Updated**: 2026-03-15
+**Status**: All Apps Complete & Ready for Use ✅ (Partner + Admin + Customer + Android)

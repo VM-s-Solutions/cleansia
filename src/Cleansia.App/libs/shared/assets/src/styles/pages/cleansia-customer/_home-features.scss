@@ -1,0 +1,108 @@
+@use './home-variables' as *;
+
+cleansia-features {
+  display: block;
+  background-color: var(--surface-card);
+}
+
+// =============================
+// Feature Cards
+// =============================
+.cl-features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+
+  &__card {
+    background: var(--surface-card);
+    border-radius: $radius-xl;
+    padding: 2.75rem 2rem 2.25rem;
+    box-shadow: $shadow-card;
+    text-align: center;
+    border: 1px solid var(--surface-border);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.4s ease;
+
+    &:hover {
+      transform: translateY(-4px);
+    }
+  }
+
+  &__icon-wrap {
+    width: 76px;
+    height: 76px;
+    border-radius: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.75rem;
+    i {
+      font-size: 1.8rem;
+    }
+
+    &--blue {
+      background: linear-gradient(135deg, $primary-light, $primary-lighter);
+      i {
+        color: $primary;
+      }
+    }
+    &--green {
+      background: linear-gradient(135deg, $green-light, #f0fdf4);
+      i {
+        color: $green;
+      }
+    }
+    &--amber {
+      background: linear-gradient(135deg, #fef3c7, #fffbeb);
+      i {
+        color: $amber;
+      }
+    }
+  }
+
+  &__card-title {
+    font-family: $font-heading;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0 0 1rem;
+  }
+
+  &__card-desc {
+    font-size: 0.95rem;
+    color: var(--text-color-secondary);
+    line-height: 1.7;
+    margin: 0;
+  }
+}
+
+// =============================
+// Dark Mode — Features
+// =============================
+:root.dark-mode {
+  .cl-features__icon-wrap {
+    &--blue {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(56, 189, 248, 0.06));
+      i { color: #38bdf8; }
+    }
+    &--green {
+      background: linear-gradient(135deg, rgba(22, 163, 74, 0.12), rgba(22, 163, 74, 0.06));
+      i { color: #4ade80; }
+    }
+    &--amber {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.06));
+      i { color: #fbbf24; }
+    }
+  }
+}
+
+// =============================
+// Responsive — Features
+// =============================
+@media (max-width: 768px) {
+  .cl-features {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+}

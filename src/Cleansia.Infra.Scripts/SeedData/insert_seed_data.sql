@@ -62,9 +62,10 @@ INSERT INTO public."Languages" (
 )
 VALUES
   (generate_ulid():: TEXT, true, 'en', 'English'),
-  (generate_ulid():: TEXT, true, 'ru', 'Русский'),
   (generate_ulid():: TEXT, true, 'cs', 'Čeština'),
-  (generate_ulid():: TEXT, true, 'pl', 'Polski');
+  (generate_ulid():: TEXT, true, 'sk', 'Slovenčina'),
+  (generate_ulid():: TEXT, true, 'uk', 'Українська'),
+  (generate_ulid():: TEXT, true, 'ru', 'Русский');
 
 -- 3. COUNTRIES
 INSERT INTO public."Countries" (

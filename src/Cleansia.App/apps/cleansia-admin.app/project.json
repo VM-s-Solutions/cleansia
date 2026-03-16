@@ -17,7 +17,14 @@
         "polyfills": ["zone.js"],
         "tsConfig": "apps/cleansia-admin.app/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
-        "assets": ["apps/cleansia-admin.app/src/assets"],
+        "assets": [
+          "apps/cleansia-admin.app/src/assets",
+          {
+            "glob": "staticwebapp.config.json",
+            "input": "apps/cleansia-admin.app/src",
+            "output": "/"
+          }
+        ],
         "styles": [
           "apps/cleansia-admin.app/src/styles.scss",
           "libs/shared/assets/src/styles/cleansia-admin.scss"

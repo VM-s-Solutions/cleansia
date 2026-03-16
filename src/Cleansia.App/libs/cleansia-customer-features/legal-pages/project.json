@@ -1,0 +1,11 @@
+{
+  "name": "cleansia-customer-legal-pages",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/cleansia-customer-features/legal-pages/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": ["scope:customer", "type:feature"],
+  "targets": {
+    "lint": { "executor": "@nx/eslint:lint" }
+  }
+}

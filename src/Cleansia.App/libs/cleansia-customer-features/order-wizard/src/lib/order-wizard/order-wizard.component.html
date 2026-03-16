@@ -1,0 +1,822 @@
+<div class="order-wizard">
+  <!-- Hero Header -->
+  <div class="order-wizard__hero">
+    <h1 class="order-wizard__hero-title">
+      {{ 'pages.order.hero_title' | translate }}
+    </h1>
+    <p class="order-wizard__hero-subtitle">
+      {{ 'pages.order.hero_subtitle' | translate }}
+    </p>
+    <div class="order-wizard__hero-badges">
+      <div class="order-wizard__hero-badge">
+        <i class="pi pi-verified"></i>
+        {{ 'pages.order.trust_certified' | translate }}
+      </div>
+      <div class="order-wizard__hero-badge">
+        <i class="pi pi-sparkles"></i>
+        {{ 'pages.order.trust_satisfaction' | translate }}
+      </div>
+      <div class="order-wizard__hero-badge">
+        <i class="pi pi-shield"></i>
+        {{ 'pages.order.trust_no_hidden' | translate }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Stepper -->
+  <div class="order-wizard__stepper">
+    @for (step of facade.steps; track step; let i = $index) {
+    <div
+      class="order-wizard__stepper-item"
+      [class.order-wizard__stepper-item--active]="i === facade.activeStep()"
+      [class.order-wizard__stepper-item--completed]="i < facade.activeStep()"
+      (click)="i < facade.activeStep() ? facade.goToStep(i) : null"
+    >
+      <div class="order-wizard__stepper-icon">
+        @if (i < facade.activeStep()) {
+        <i class="pi pi-check"></i>
+        } @else {
+        <i [class]="facade.stepIcons[i]"></i>
+        }
+      </div>
+      <span class="order-wizard__stepper-label">
+        {{ step | translate }}
+      </span>
+    </div>
+    @if (i < facade.steps.length - 1) {
+    <div
+      class="order-wizard__stepper-line"
+      [class.order-wizard__stepper-line--completed]="i < facade.activeStep()"
+    ></div>
+    }
+    }
+  </div>
+
+  <!-- Layout: Main + Sidebar -->
+  <div class="order-wizard__layout">
+    <div class="order-wizard__main">
+      <!-- Step 0: Services -->
+      @if (facade.activeStep() === 0) {
+      <div class="order-wizard__step">
+        <!-- Services Section -->
+        @if (facade.services().length > 0) {
+        <div class="order-wizard__section">
+          <h2 class="order-wizard__section-title">
+            <i class="pi pi-list"></i>
+            {{ 'pages.order.services_section_title' | translate }}
+          </h2>
+          <div class="order-wizard__card-grid">
+            @for (service of facade.services(); track service.id) {
+            <div
+              class="order-wizard__selection-card"
+              [class.order-wizard__selection-card--selected]="isServiceSelected(service.id!)"
+              (click)="toggleService(service.id!)"
+            >
+              @if (isServiceSelected(service.id!)) {
+              <div class="order-wizard__selection-check">
+                <i class="pi pi-check"></i>
+              </div>
+              }
+              <div class="order-wizard__selection-icon">
+                <i class="pi pi-home"></i>
+              </div>
+              <h3 class="order-wizard__selection-name">
+                {{ getTranslation(service, 'name') }}
+              </h3>
+              <p class="order-wizard__selection-desc">
+                {{ getTranslation(service, 'description') }}
+              </p>
+              <div class="order-wizard__selection-price">
+                {{ formatPrice(service.basePrice) }}
+                @if (service.perRoomPrice > 0) {
+                <span class="order-wizard__selection-per-room">
+                  + {{ formatPrice(service.perRoomPrice) }}
+                  {{ 'pages.services.per_room' | translate }}
+                </span>
+                }
+              </div>
+            </div>
+            }
+          </div>
+        </div>
+        }
+
+        <!-- Packages Section -->
+        @if (facade.packages().length > 0) {
+        <div class="order-wizard__section">
+          <h2 class="order-wizard__section-title">
+            <i class="pi pi-box"></i>
+            {{ 'pages.order.packages_section_title' | translate }}
+          </h2>
+          <div class="order-wizard__card-grid">
+            @for (pkg of facade.packages(); track pkg.id) {
+            <div
+              class="order-wizard__selection-card"
+              [class.order-wizard__selection-card--selected]="isPackageSelected(pkg.id!)"
+              (click)="togglePackage(pkg.id!)"
+            >
+              @if (isPackageSelected(pkg.id!)) {
+              <div class="order-wizard__selection-check">
+                <i class="pi pi-check"></i>
+              </div>
+              }
+              <div class="order-wizard__selection-icon">
+                <i class="pi pi-star"></i>
+              </div>
+              <h3 class="order-wizard__selection-name">
+                {{ getTranslation(pkg, 'name') }}
+              </h3>
+              <p class="order-wizard__selection-desc">
+                {{ getTranslation(pkg, 'description') }}
+              </p>
+              <div class="order-wizard__selection-price">
+                {{ formatPrice(pkg.price) }}
+              </div>
+            </div>
+            }
+          </div>
+        </div>
+        }
+
+        <!-- Room Configuration -->
+        <div class="order-wizard__section">
+          <h2 class="order-wizard__section-title">
+            <i class="pi pi-building"></i>
+            {{ 'pages.order.room_config_title' | translate }}
+          </h2>
+          <div class="order-wizard__counters">
+            <div class="order-wizard__counter">
+              <label class="order-wizard__counter-label">
+                {{ 'pages.order.rooms_label' | translate }}
+              </label>
+              <div class="order-wizard__counter-controls">
+                <button
+                  class="order-wizard__counter-btn"
+                  (click)="decrementRooms()"
+                  [disabled]="facade.formData().rooms <= 1"
+                >
+                  <i class="pi pi-minus"></i>
+                </button>
+                <span class="order-wizard__counter-value">
+                  {{ facade.formData().rooms }}
+                </span>
+                <button
+                  class="order-wizard__counter-btn"
+                  (click)="incrementRooms()"
+                >
+                  <i class="pi pi-plus"></i>
+                </button>
+              </div>
+            </div>
+            <div class="order-wizard__counter">
+              <label class="order-wizard__counter-label">
+                {{ 'pages.order.bathrooms_label' | translate }}
+              </label>
+              <div class="order-wizard__counter-controls">
+                <button
+                  class="order-wizard__counter-btn"
+                  (click)="decrementBathrooms()"
+                  [disabled]="facade.formData().bathrooms <= 1"
+                >
+                  <i class="pi pi-minus"></i>
+                </button>
+                <span class="order-wizard__counter-value">
+                  {{ facade.formData().bathrooms }}
+                </span>
+                <button
+                  class="order-wizard__counter-btn"
+                  (click)="incrementBathrooms()"
+                >
+                  <i class="pi pi-plus"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      }
+
+      <!-- Step 1: Contact & Address -->
+      @if (facade.activeStep() === 1) {
+      <div class="order-wizard__step">
+        <div class="order-wizard__section">
+          <h2 class="order-wizard__section-title">
+            <i class="pi pi-user"></i>
+            {{ 'pages.order.contact_section_title' | translate }}
+          </h2>
+          <div class="order-wizard__form-grid">
+            <div class="order-wizard__field">
+              <label>{{ 'pages.order.customer_first_name' | translate }}</label>
+              <input
+                pInputText
+                [ngModel]="facade.formData().customerFirstName"
+                (ngModelChange)="facade.updateFormData({ customerFirstName: $event })"
+                (blur)="markTouched('customerFirstName')"
+                [placeholder]="'pages.order.customer_first_name_placeholder' | translate"
+                [class.ng-invalid]="fieldError('customerFirstName')"
+              />
+              @if (fieldError('customerFirstName')) {
+              <small class="order-wizard__field-error">{{ fieldError('customerFirstName') }}</small>
+              }
+            </div>
+            <div class="order-wizard__field">
+              <label>{{ 'pages.order.customer_last_name' | translate }}</label>
+              <input
+                pInputText
+                [ngModel]="facade.formData().customerLastName"
+                (ngModelChange)="facade.updateFormData({ customerLastName: $event })"
+                (blur)="markTouched('customerLastName')"
+                [placeholder]="'pages.order.customer_last_name_placeholder' | translate"
+                [class.ng-invalid]="fieldError('customerLastName')"
+              />
+              @if (fieldError('customerLastName')) {
+              <small class="order-wizard__field-error">{{ fieldError('customerLastName') }}</small>
+              }
+            </div>
+            <div class="order-wizard__field">
+              <label>{{ 'pages.order.customer_email' | translate }}</label>
+              <input
+                pInputText
+                [ngModel]="facade.formData().customerEmail"
+                (ngModelChange)="facade.updateFormData({ customerEmail: $event })"
+                (blur)="markTouched('customerEmail')"
+                type="email"
+                [placeholder]="'pages.order.customer_email_placeholder' | translate"
+                [class.ng-invalid]="fieldError('customerEmail')"
+              />
+              @if (fieldError('customerEmail')) {
+              <small class="order-wizard__field-error">{{ fieldError('customerEmail') }}</small>
+              }
+            </div>
+            <div class="order-wizard__field">
+              <label>{{ 'pages.order.customer_phone' | translate }} *</label>
+              <cleansia-telephone
+                [ngModel]="facade.formData().customerPhone"
+                (ngModelChange)="facade.updateFormData({ customerPhone: $event })"
+                (blur)="markTouched('customerPhone')"
+                defaultCountryFlag="cz"
+                [class.ng-invalid]="fieldError('customerPhone')"
+              />
+              @if (fieldError('customerPhone')) {
+              <small class="order-wizard__field-error">{{ fieldError('customerPhone') }}</small>
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="order-wizard__section">
+          <h2 class="order-wizard__section-title">
+            <i class="pi pi-map-marker"></i>
+            {{ 'pages.order.address_section_title' | translate }}
+          </h2>
+
+          @if (facade.isAuthenticated() && facade.savedAddresses().length > 0) {
+          <div class="order-wizard__saved-addresses">
+            @for (addr of facade.savedAddresses(); track addr.id) {
+            <div
+              class="order-wizard__saved-address"
+              [class.order-wizard__saved-address--selected]="isAddressSelected(addr)"
+              (click)="facade.selectSavedAddress(addr.id)"
+            >
+              <div class="order-wizard__saved-address-radio">
+                <i [class]="isAddressSelected(addr) ? 'pi pi-circle-fill' : 'pi pi-circle'"></i>
+              </div>
+              <div class="order-wizard__saved-address-info">
+                <strong>{{ addr.street }}</strong>
+                <span>{{ addr.city }}, {{ addr.zip }}</span>
+                @if (addr.isDefault) {
+                <span class="order-wizard__saved-address-badge">{{ 'pages.order.saved_address_default' | translate }}</span>
+                }
+              </div>
+            </div>
+            }
+            <div
+              class="order-wizard__saved-address"
+              [class.order-wizard__saved-address--selected]="isCustomAddress()"
+              (click)="clearAddress()"
+            >
+              <div class="order-wizard__saved-address-radio">
+                <i [class]="isCustomAddress() ? 'pi pi-circle-fill' : 'pi pi-circle'"></i>
+              </div>
+              <div class="order-wizard__saved-address-info">
+                <strong>{{ 'pages.order.new_address' | translate }}</strong>
+              </div>
+            </div>
+          </div>
+          }
+
+          @if (!facade.isAuthenticated() || isCustomAddress() || facade.savedAddresses().length === 0) {
+          <div class="order-wizard__form-grid">
+            <div class="order-wizard__field order-wizard__field--full">
+              <label>{{ 'pages.order.street' | translate }}</label>
+              <input
+                pInputText
+                [ngModel]="facade.formData().address.street"
+                (ngModelChange)="updateAddressField('street', $event)"
+                (blur)="markTouched('street')"
+                [class.ng-invalid]="fieldError('street')"
+              />
+              @if (fieldError('street')) {
+              <small class="order-wizard__field-error">{{ fieldError('street') }}</small>
+              }
+            </div>
+            <div class="order-wizard__field">
+              <label>{{ 'pages.order.city' | translate }}</label>
+              <input
+                pInputText
+                [ngModel]="facade.formData().address.city"
+                (ngModelChange)="updateAddressField('city', $event)"
+                (blur)="markTouched('city')"
+                [class.ng-invalid]="fieldError('city')"
+              />
+              @if (fieldError('city')) {
+              <small class="order-wizard__field-error">{{ fieldError('city') }}</small>
+              }
+            </div>
+            <div class="order-wizard__field">
+              <label>{{ 'pages.order.zip_code' | translate }}</label>
+              <input
+                pInputText
+                [ngModel]="facade.formData().address.zipCode"
+                (ngModelChange)="updateAddressField('zipCode', $event)"
+                (blur)="markTouched('zipCode')"
+                [class.ng-invalid]="fieldError('zipCode')"
+              />
+              @if (fieldError('zipCode')) {
+              <small class="order-wizard__field-error">{{ fieldError('zipCode') }}</small>
+              }
+            </div>
+            @if (facade.countries().length > 0) {
+            <div class="order-wizard__field">
+              <label>{{ 'pages.order.country' | translate }}</label>
+              <p-select
+                [options]="facade.countries()"
+                [ngModel]="facade.formData().address.countryId"
+                (ngModelChange)="updateAddressField('countryId', $event)"
+                optionLabel="name"
+                optionValue="id"
+                [placeholder]="'pages.order.select_country' | translate"
+              />
+            </div>
+            }
+            @if (facade.isAuthenticated()) {
+            <div class="order-wizard__field order-wizard__field--full order-wizard__save-address">
+              <p-checkbox
+                [ngModel]="saveNewAddress()"
+                (ngModelChange)="saveNewAddress.set($event)"
+                [binary]="true"
+                inputId="saveAddress"
+              />
+              <label for="saveAddress">{{ 'pages.order.save_address' | translate }}</label>
+            </div>
+            }
+          </div>
+          }
+        </div>
+
+        <!-- Entry Instructions -->
+        <div class="order-wizard__section">
+          <h2 class="order-wizard__section-title">
+            <i class="pi pi-key"></i>
+            {{ 'pages.order.entry_instructions_label' | translate }}
+          </h2>
+          <div class="order-wizard__field order-wizard__field--full">
+            <textarea
+              pTextarea
+              [ngModel]="facade.formData().entryInstructions"
+              (ngModelChange)="facade.updateFormData({ entryInstructions: $event })"
+              [rows]="3"
+              [placeholder]="'pages.order.entry_instructions_placeholder' | translate"
+            ></textarea>
+          </div>
+        </div>
+      </div>
+      }
+
+      <!-- Step 2: Date & Time -->
+      @if (facade.activeStep() === 2) {
+      <div class="order-wizard__step">
+        <div class="order-wizard__section">
+          <h2 class="order-wizard__section-title">
+            <i class="pi pi-calendar"></i>
+            {{ 'pages.order.datetime_section_title' | translate }}
+          </h2>
+          <p class="order-wizard__section-note">
+            {{ 'pages.order.datetime_note' | translate }}
+          </p>
+
+          <div class="order-wizard__datetime">
+            <div class="order-wizard__datetime-date">
+              <label class="order-wizard__field-label">
+                {{ 'pages.order.date_label' | translate }}
+              </label>
+              <p-datePicker
+                [ngModel]="facade.formData().cleaningDate"
+                (ngModelChange)="onDateChange($event)"
+                [minDate]="minDate()"
+                [inline]="true"
+                dateFormat="dd.mm.yy"
+              />
+            </div>
+
+            <div class="order-wizard__datetime-time">
+              <label class="order-wizard__field-label">
+                {{ 'pages.order.time_label' | translate }}
+              </label>
+              <div class="order-wizard__time-grid">
+                @for (opt of timeOptions(); track opt.value) {
+                <button
+                  class="order-wizard__time-slot"
+                  [class.order-wizard__time-slot--selected]="isTimeSelected(opt.value)"
+                  (click)="selectTime(opt.value)"
+                >
+                  {{ opt.label }}
+                </button>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      }
+
+      <!-- Step 3: Payment -->
+      @if (facade.activeStep() === 3) {
+      <div class="order-wizard__step">
+        <div class="order-wizard__section">
+          <h2 class="order-wizard__section-title">
+            <i class="pi pi-credit-card"></i>
+            {{ 'pages.order.payment_section_title' | translate }}
+          </h2>
+
+          <div class="order-wizard__payment-grid">
+            <div
+              class="order-wizard__payment-card"
+              [class.order-wizard__payment-card--selected]="facade.formData().paymentType === PaymentType.Card"
+              (click)="facade.updateFormData({ paymentType: PaymentType.Card })"
+            >
+              <div class="order-wizard__payment-card-icon">
+                <i class="pi pi-credit-card"></i>
+              </div>
+              <h3 class="order-wizard__payment-card-title">
+                {{ 'pages.order.payment_card_title' | translate }}
+              </h3>
+              <p class="order-wizard__payment-card-desc">
+                {{ 'pages.order.payment_card_desc' | translate }}
+              </p>
+              @if (facade.formData().paymentType === PaymentType.Card) {
+              <div class="order-wizard__payment-card-check">
+                <i class="pi pi-check"></i>
+              </div>
+              }
+            </div>
+
+            <div
+              class="order-wizard__payment-card"
+              [class.order-wizard__payment-card--selected]="facade.formData().paymentType === PaymentType.Cash"
+              (click)="facade.updateFormData({ paymentType: PaymentType.Cash })"
+            >
+              <div class="order-wizard__payment-card-icon">
+                <i class="pi pi-wallet"></i>
+              </div>
+              <h3 class="order-wizard__payment-card-title">
+                {{ 'pages.order.payment_cash_title' | translate }}
+              </h3>
+              <p class="order-wizard__payment-card-desc">
+                {{ 'pages.order.payment_cash_desc' | translate }}
+              </p>
+              @if (facade.formData().paymentType === PaymentType.Cash) {
+              <div class="order-wizard__payment-card-check">
+                <i class="pi pi-check"></i>
+              </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Special Instructions -->
+        <div class="order-wizard__section">
+          <h2 class="order-wizard__section-title">
+            <i class="pi pi-comment"></i>
+            {{ 'pages.order.special_instructions' | translate }}
+          </h2>
+          <div class="order-wizard__field order-wizard__field--full">
+            <textarea
+              pTextarea
+              [ngModel]="facade.formData().specialInstructions"
+              (ngModelChange)="facade.updateFormData({ specialInstructions: $event })"
+              [rows]="4"
+              [placeholder]="'pages.order.special_instructions_placeholder' | translate"
+            ></textarea>
+          </div>
+        </div>
+      </div>
+      }
+
+      <!-- Step 4: Summary -->
+      @if (facade.activeStep() === 4) {
+      <div class="order-wizard__step">
+        <div class="order-wizard__section">
+          <h2 class="order-wizard__section-title">
+            <i class="pi pi-check-circle"></i>
+            {{ 'pages.order.summary_section_title' | translate }}
+          </h2>
+
+          <!-- Services Summary -->
+          @if (selectedServices().length > 0) {
+          <div class="order-wizard__summary-card">
+            <div class="order-wizard__summary-card-header">
+              <div class="order-wizard__summary-card-icon">
+                <i class="pi pi-list"></i>
+              </div>
+              <h3>{{ 'pages.order.summary_services' | translate }}</h3>
+              <button class="order-wizard__summary-edit" (click)="facade.goToStep(0)">
+                {{ 'pages.order.summary_edit' | translate }}
+              </button>
+            </div>
+            <div class="order-wizard__summary-card-body">
+              @for (service of selectedServices(); track service.id) {
+              <div class="order-wizard__summary-row">
+                <span>{{ getTranslation(service, 'name') }}</span>
+                <span class="order-wizard__summary-row-price">{{ formatPrice(service.basePrice) }}</span>
+              </div>
+              }
+            </div>
+          </div>
+          }
+
+          <!-- Packages Summary -->
+          @if (selectedPackages().length > 0) {
+          <div class="order-wizard__summary-card">
+            <div class="order-wizard__summary-card-header">
+              <div class="order-wizard__summary-card-icon">
+                <i class="pi pi-box"></i>
+              </div>
+              <h3>{{ 'pages.order.summary_packages' | translate }}</h3>
+              <button class="order-wizard__summary-edit" (click)="facade.goToStep(0)">
+                {{ 'pages.order.summary_edit' | translate }}
+              </button>
+            </div>
+            <div class="order-wizard__summary-card-body">
+              @for (pkg of selectedPackages(); track pkg.id) {
+              <div class="order-wizard__summary-row">
+                <span>{{ getTranslation(pkg, 'name') }}</span>
+                <span class="order-wizard__summary-row-price">{{ formatPrice(pkg.price) }}</span>
+              </div>
+              }
+            </div>
+          </div>
+          }
+
+          <!-- Property Summary -->
+          <div class="order-wizard__summary-card">
+            <div class="order-wizard__summary-card-header">
+              <div class="order-wizard__summary-card-icon">
+                <i class="pi pi-building"></i>
+              </div>
+              <h3>{{ 'pages.order.summary_property' | translate }}</h3>
+              <button class="order-wizard__summary-edit" (click)="facade.goToStep(0)">
+                {{ 'pages.order.summary_edit' | translate }}
+              </button>
+            </div>
+            <div class="order-wizard__summary-card-body">
+              <div class="order-wizard__summary-row">
+                <span>{{ 'pages.order.rooms_label' | translate }}</span>
+                <span>{{ facade.formData().rooms }}</span>
+              </div>
+              <div class="order-wizard__summary-row">
+                <span>{{ 'pages.order.bathrooms_label' | translate }}</span>
+                <span>{{ facade.formData().bathrooms }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Address Summary -->
+          <div class="order-wizard__summary-card">
+            <div class="order-wizard__summary-card-header">
+              <div class="order-wizard__summary-card-icon">
+                <i class="pi pi-map-marker"></i>
+              </div>
+              <h3>{{ 'pages.order.summary_address' | translate }}</h3>
+              <button class="order-wizard__summary-edit" (click)="facade.goToStep(1)">
+                {{ 'pages.order.summary_edit' | translate }}
+              </button>
+            </div>
+            <div class="order-wizard__summary-card-body">
+              <div class="order-wizard__summary-row">
+                <span>{{ facade.formData().address.street }}, {{ facade.formData().address.city }} {{ facade.formData().address.zipCode }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Date & Time Summary -->
+          <div class="order-wizard__summary-card">
+            <div class="order-wizard__summary-card-header">
+              <div class="order-wizard__summary-card-icon">
+                <i class="pi pi-calendar"></i>
+              </div>
+              <h3>{{ 'pages.order.summary_datetime' | translate }}</h3>
+              <button class="order-wizard__summary-edit" (click)="facade.goToStep(2)">
+                {{ 'pages.order.summary_edit' | translate }}
+              </button>
+            </div>
+            <div class="order-wizard__summary-card-body">
+              <div class="order-wizard__summary-row">
+                <span>{{ facade.formData().cleaningDate | date:'dd.MM.yyyy' }} {{ facade.formData().cleaningTime }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Payment Summary -->
+          <div class="order-wizard__summary-card">
+            <div class="order-wizard__summary-card-header">
+              <div class="order-wizard__summary-card-icon">
+                <i class="pi pi-credit-card"></i>
+              </div>
+              <h3>{{ 'pages.order.summary_payment' | translate }}</h3>
+              <button class="order-wizard__summary-edit" (click)="facade.goToStep(3)">
+                {{ 'pages.order.summary_edit' | translate }}
+              </button>
+            </div>
+            <div class="order-wizard__summary-card-body">
+              <div class="order-wizard__summary-row">
+                <span>
+                  @if (facade.formData().paymentType === PaymentType.Card) {
+                    {{ 'pages.order.payment_card_title' | translate }}
+                  } @else {
+                    {{ 'pages.order.payment_cash_title' | translate }}
+                  }
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contact Summary -->
+          <div class="order-wizard__summary-card">
+            <div class="order-wizard__summary-card-header">
+              <div class="order-wizard__summary-card-icon">
+                <i class="pi pi-user"></i>
+              </div>
+              <h3>{{ 'pages.order.summary_contact' | translate }}</h3>
+              <button class="order-wizard__summary-edit" (click)="facade.goToStep(1)">
+                {{ 'pages.order.summary_edit' | translate }}
+              </button>
+            </div>
+            <div class="order-wizard__summary-card-body">
+              <div class="order-wizard__summary-row">
+                <span>{{ facade.formData().customerFirstName }} {{ facade.formData().customerLastName }}</span>
+              </div>
+              <div class="order-wizard__summary-row">
+                <span>{{ facade.formData().customerEmail }}</span>
+              </div>
+              <div class="order-wizard__summary-row">
+                <span>{{ facade.formData().customerPhone }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Instructions Summary -->
+          @if (facade.formData().specialInstructions || facade.formData().entryInstructions) {
+          <div class="order-wizard__summary-card">
+            <div class="order-wizard__summary-card-header">
+              <div class="order-wizard__summary-card-icon">
+                <i class="pi pi-comment"></i>
+              </div>
+              <h3>{{ 'pages.order.summary_instructions' | translate }}</h3>
+              <button class="order-wizard__summary-edit" (click)="facade.goToStep(3)">
+                {{ 'pages.order.summary_edit' | translate }}
+              </button>
+            </div>
+            <div class="order-wizard__summary-card-body">
+              @if (facade.formData().specialInstructions) {
+              <div class="order-wizard__summary-row">
+                <span>{{ facade.formData().specialInstructions }}</span>
+              </div>
+              }
+              @if (facade.formData().entryInstructions) {
+              <div class="order-wizard__summary-row">
+                <span>{{ facade.formData().entryInstructions }}</span>
+              </div>
+              }
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+      }
+
+      <!-- Actions -->
+      <div class="order-wizard__actions">
+        @if (facade.activeStep() > 0) {
+        <cleansia-button
+          [title]="'global.actions.back' | translate"
+          [severity]="'secondary'"
+          [outlined]="true"
+          (clickFn)="facade.prevStep()"
+        />
+        }
+        <div class="order-wizard__actions-spacer"></div>
+        @if (facade.activeStep() < facade.steps.length - 1) {
+        <cleansia-button
+          [title]="'global.actions.next' | translate"
+          [severity]="'primary'"
+          [style]="'raised-button'"
+          [disabled]="!facade.canProceed() || (facade.activeStep() === 2 && !hasValidTime())"
+          (clickFn)="onNextStep()"
+        />
+        }
+        @if (facade.activeStep() === facade.steps.length - 1) {
+        <cleansia-button
+          [title]="'pages.order.place_order' | translate"
+          [severity]="'primary'"
+          [style]="'raised-button'"
+          [loading]="facade.submitting()"
+          (clickFn)="facade.submitOrder()"
+        />
+        }
+      </div>
+    </div>
+
+    <!-- Price Sidebar (Desktop) -->
+    <aside class="order-wizard__sidebar">
+      <div class="order-wizard__sidebar-card">
+        <h3 class="order-wizard__sidebar-title">
+          {{ 'pages.order.price_total' | translate }}
+        </h3>
+        <div class="order-wizard__sidebar-price">
+          {{ formatPrice(facade.totalPrice()) }}
+        </div>
+
+        <!-- Sidebar breakdown -->
+        @if (selectedServices().length > 0 || selectedPackages().length > 0) {
+        <div class="order-wizard__sidebar-breakdown">
+          @for (service of selectedServices(); track service.id) {
+          <div class="order-wizard__sidebar-item">
+            <span>{{ getTranslation(service, 'name') }}</span>
+            <span>{{ formatPrice(service.basePrice) }}</span>
+          </div>
+          }
+          @for (pkg of selectedPackages(); track pkg.id) {
+          <div class="order-wizard__sidebar-item">
+            <span>{{ getTranslation(pkg, 'name') }}</span>
+            <span>{{ formatPrice(pkg.price) }}</span>
+          </div>
+          }
+        </div>
+        }
+
+        <div class="order-wizard__sidebar-badges">
+          <div class="order-wizard__sidebar-badge">
+            <i class="pi pi-verified"></i>
+            {{ 'pages.order.trust_certified' | translate }}
+          </div>
+          <div class="order-wizard__sidebar-badge">
+            <i class="pi pi-shield"></i>
+            {{ 'pages.order.trust_no_hidden' | translate }}
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Mobile Price Bar -->
+  <div class="order-wizard__mobile-price">
+    <div class="order-wizard__mobile-price-label">
+      {{ 'pages.order.price_total' | translate }}
+    </div>
+    <div class="order-wizard__mobile-price-value">
+      {{ formatPrice(facade.totalPrice()) }}
+    </div>
+  </div>
+</div>
+<cleansia-scroll-top />
+
+<!-- Rebook Warning Dialog -->
+<p-dialog
+  [header]="'pages.order.rebook_warning.title' | translate"
+  [(visible)]="showRebookWarning"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '450px' }"
+  [breakpoints]="{ '500px': '95vw' }"
+  styleClass="cleansia-dialog"
+>
+  <div class="cleansia-dialog__body">
+    <div class="cleansia-dialog__icon cleansia-dialog__icon--warn">
+      <i class="pi pi-exclamation-triangle"></i>
+    </div>
+    <p class="cleansia-dialog__text">{{ 'pages.order.rebook_warning.description' | translate }}</p>
+    <ul class="cleansia-dialog__list">
+      @for (item of unavailableItems(); track item) {
+      <li>{{ item }}</li>
+      }
+    </ul>
+  </div>
+  <ng-template #footer>
+    <cleansia-button
+      [title]="'pages.order.rebook_warning.continue' | translate"
+      [severity]="'primary'"
+      (clickFn)="showRebookWarning.set(false)"
+    />
+  </ng-template>
+</p-dialog>

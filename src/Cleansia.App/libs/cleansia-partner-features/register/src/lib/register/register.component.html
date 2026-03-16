@@ -13,7 +13,7 @@
       </div>
       <div class="cleansia-register__first-last-name">
         <cleansia-text-input
-          [label]="'pages.register.first_name' | translate"
+          [label]="'auth.register.first_name' | translate"
           [floatVariant]="'on'"
           formControlName="firstName"
           [required]="true"
@@ -21,7 +21,7 @@
           [autocomplete]="'given-name'"
         />
         <cleansia-text-input
-          [label]="'pages.register.last_name' | translate"
+          [label]="'auth.register.last_name' | translate"
           [floatVariant]="'on'"
           formControlName="lastName"
           [showErrors]="false"
@@ -30,7 +30,7 @@
       </div>
       <div class="cleansia-register__email">
         <cleansia-text-input
-          [label]="'pages.register.email' | translate"
+          [label]="'auth.register.email' | translate"
           [floatVariant]="'on'"
           formControlName="email"
           dataType="email"
@@ -39,7 +39,7 @@
       </div>
       <div class="cleansia-register__password">
         <cleansia-text-input
-          [label]="'pages.register.password' | translate"
+          [label]="'auth.register.password' | translate"
           [floatVariant]="'on'"
           formControlName="password"
           [dataType]="'password'"
@@ -54,35 +54,35 @@
                 passwordValidation?.hasLowerCase
               "
             >
-              {{ 'pages.register.validation.password_lowercase' | translate }}
+              {{ 'auth.register.validation.password_lowercase' | translate }}
             </li>
             <li
               [class.cleansia-register__password-validation--valid]="
                 passwordValidation?.hasUpperCase
               "
             >
-              {{ 'pages.register.validation.password_uppercase' | translate }}
+              {{ 'auth.register.validation.password_uppercase' | translate }}
             </li>
             <li
               [class.cleansia-register__password-validation--valid]="
                 passwordValidation?.hasNumber
               "
             >
-              {{ 'pages.register.validation.password_number' | translate }}
+              {{ 'auth.register.validation.password_number' | translate }}
             </li>
             <li
               [class.cleansia-register__password-validation--valid]="
                 passwordValidation?.hasMinLength
               "
             >
-              {{ 'pages.register.validation.password_min_length' | translate }}
+              {{ 'auth.register.validation.password_min_length' | translate }}
             </li>
             <li
               [class.cleansia-register__password-validation--valid]="
                 passwordValidation?.hasSpecialCharacter
               "
             >
-              {{ 'pages.register.validation.password_special_character' | translate }}
+              {{ 'auth.register.validation.password_special_character' | translate }}
             </li>
           </ul>
         </div>
@@ -92,7 +92,7 @@
         <cleansia-text-input
           [dataType]="'password'"
           [inputSize]="'full-width'"
-          [label]="'pages.register.confirm_password' | translate"
+          [label]="'auth.register.confirm_password' | translate"
           [showErrors]="false"
           [floatVariant]="'on'"
           [autocomplete]="'new-password'"
@@ -106,7 +106,7 @@
                 passwordValidation?.arePasswordsEqual
               "
             >
-              {{ 'pages.register.validation.passwords_match' | translate }}
+              {{ 'auth.register.validation.passwords_match' | translate }}
             </li>
           </ul>
         </div>
@@ -114,13 +114,13 @@
       </div>
       <div class="cleansia-register__terms">
         <cleansia-checkbox
-          [title]="'pages.register.terms_agreement' | translate"
+          [title]="'auth.register.terms_agreement' | translate"
           formControlName="terms"
           [required]="true"
           [showErrors]="false"
         />
         <span
-          [innerHtml]="'pages.register.terms_and_conditions' | translate"
+          [innerHtml]="'auth.register.terms_and_conditions' | translate"
         ></span>
       </div>
       <div class="cleansia-register__user-actions">
@@ -134,7 +134,7 @@
         />
         <div>
           <span tabindex="-1">
-            {{ 'pages.register.have_account' | translate }}
+            {{ 'auth.register.have_account' | translate }}
             <a [routerLink]="'/' + routes.LOGIN">
               {{ 'global.actions.login' | translate }}
             </a>

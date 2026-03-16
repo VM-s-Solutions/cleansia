@@ -2,5 +2,5 @@
 
 public interface IDatabaseConnectionString
 {
-    string ConnectionString { get; set; }
+    string DefaultConnection { get; set; }
 }

@@ -1,4 +1,5 @@
-import { inject, Injectable, signal, computed } from '@angular/core';
+import { inject, Injectable, PLATFORM_ID, signal, computed } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import {
   CustomerAuthService,
@@ -36,6 +37,7 @@ export class OrderWizardFacade {
   private readonly authService = inject(CustomerAuthService);
   private readonly translate = inject(TranslateService);
   private readonly snackbarService = inject(SnackbarService);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   isAuthenticated = signal(false);
 
@@ -111,13 +113,15 @@ export class OrderWizardFacade {
     this.isAuthenticated.set(loggedIn);
 
     // Load saved addresses from localStorage
-    try {
-      const stored = localStorage.getItem('cleansia_saved_addresses');
-      if (stored) {
-        this.savedAddresses.set(JSON.parse(stored));
+    if (this.isBrowser) {
+      try {
+        const stored = localStorage.getItem('cleansia_saved_addresses');
+        if (stored) {
+          this.savedAddresses.set(JSON.parse(stored));
+        }
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore
     }
 
     if (loggedIn) {
@@ -207,21 +211,21 @@ export class OrderWizardFacade {
   nextStep(): void {
     if (this.activeStep() < this.steps.length - 1) {
       this.activeStep.update((s) => s + 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (this.isBrowser) window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
   prevStep(): void {
     if (this.activeStep() > 0) {
       this.activeStep.update((s) => s - 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (this.isBrowser) window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
   goToStep(step: number): void {
     if (step >= 0 && step < this.steps.length) {
       this.activeStep.set(step);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (this.isBrowser) window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
@@ -326,7 +330,7 @@ export class OrderWizardFacade {
         next: (response) => {
           this.submitting.set(false);
           if (response.stripeSessionId) {
-            window.location.href = response.stripeSessionId;
+            if (this.isBrowser) window.location.href = response.stripeSessionId;
           } else {
             this.router.navigate([CleansiaCustomerRoute.CHECKOUT_SUCCESS]);
           }

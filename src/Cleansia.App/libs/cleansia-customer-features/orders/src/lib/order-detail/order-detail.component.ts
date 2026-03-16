@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CleansiaButtonComponent, CleansiaTitleComponent } from '@cleansia/components';
 import { CustomerClient } from '@cleansia/customer-services';
@@ -30,6 +30,7 @@ export class OrderDetailComponent implements OnInit {
   private readonly customerClient = inject(CustomerClient);
   private readonly translate = inject(TranslateService);
   private readonly snackbar = inject(SnackbarService);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   order = signal<OrderItem | null>(null);
   loading = signal(true);
@@ -65,6 +66,7 @@ export class OrderDetailComponent implements OnInit {
     if (!order?.id) return;
     this.customerClient.orderClient.downloadReceipt(order.id).subscribe({
       next: (file) => {
+        if (!this.isBrowser) return;
         const url = URL.createObjectURL(file.data);
         const a = document.createElement('a');
         a.href = url;

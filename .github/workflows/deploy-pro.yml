@@ -7,6 +7,10 @@ on:
         description: 'Type "deploy" to confirm production deployment'
         required: true
 
+permissions:
+  id-token: write
+  contents: read
+
 concurrency:
   group: deploy-pro
   cancel-in-progress: false
@@ -141,7 +145,15 @@ jobs:
     name: Deploy Partner API
     needs: build-dotnet
     runs-on: ubuntu-latest
+    environment: production
     steps:
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
@@ -152,14 +164,21 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: api-cleansia-pro
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_API_PRO }}
           package: ./partner-api
 
   deploy-admin-api:
     name: Deploy Admin API
     needs: build-dotnet
     runs-on: ubuntu-latest
+    environment: production
     steps:
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
@@ -170,14 +189,21 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: api-cleansia-admin-pro
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_ADMIN_API_PRO }}
           package: ./admin-api
 
   deploy-customer-api:
     name: Deploy Customer API
     needs: build-dotnet
     runs-on: ubuntu-latest
+    environment: production
     steps:
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
@@ -188,14 +214,21 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: api-cleansia-customer-pro
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_CUSTOMER_API_PRO }}
           package: ./customer-api
 
   deploy-mobile-api:
     name: Deploy Mobile API
     needs: build-dotnet
     runs-on: ubuntu-latest
+    environment: production
     steps:
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
@@ -206,14 +239,21 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: api-cleansia-mobile-pro
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_MOBILE_API_PRO }}
           package: ./mobile-api
 
   deploy-customer-ssr:
     name: Deploy Customer SSR
     needs: build-angular
     runs-on: ubuntu-latest
+    environment: production
     steps:
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
@@ -224,13 +264,13 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: web-cleansia-customer-pro
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_CUSTOMER_PRO }}
           package: ./customer-app
 
   deploy-partner-spa:
     name: Deploy Partner SPA
     needs: build-angular
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -251,6 +291,7 @@ jobs:
     name: Deploy Admin SPA
     needs: build-angular
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4

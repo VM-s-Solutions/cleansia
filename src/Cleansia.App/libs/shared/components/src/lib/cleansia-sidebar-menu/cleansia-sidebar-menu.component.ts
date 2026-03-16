@@ -9,9 +9,10 @@ import {
   input,
   model,
   output,
+  PLATFORM_ID,
   signal,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { RippleModule } from 'primeng/ripple';
@@ -42,6 +43,7 @@ import { filter } from 'rxjs';
 export class CleansiaSidebarMenuComponent {
   private readonly router = inject(Router);
   private readonly el = inject(ElementRef);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   // Inputs
   menuItems = input<SidebarMenuItem[]>([]);
@@ -68,7 +70,9 @@ export class CleansiaSidebarMenuComponent {
   isMobile = computed(() => this.isMobileSignal());
 
   constructor() {
-    this.updateMobileStatus();
+    if (this.isBrowser) {
+      this.updateMobileStatus();
+    }
     this.currentRoute.set(this.router.url);
 
     // Subscribe to route changes
@@ -81,10 +85,12 @@ export class CleansiaSidebarMenuComponent {
 
   @HostListener('window:resize')
   onResize() {
+    if (!this.isBrowser) return;
     this.updateMobileStatus();
   }
 
   private updateMobileStatus() {
+    if (!this.isBrowser) return;
     this.isMobileSignal.set(window.innerWidth < 768);
   }
 

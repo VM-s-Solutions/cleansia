@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
 import { CleansiaButtonComponent, CleansiaTitleComponent } from '@cleansia/components';
 import { CustomerClient, CustomerAuthService } from '@cleansia/customer-services';
 import {
@@ -36,6 +36,7 @@ export class GdprComponent implements OnInit {
   private readonly translate = inject(TranslateService);
   private readonly snackbar = inject(SnackbarService);
   private readonly confirmService = inject(ConfirmationService);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   consents = signal<UserConsentDto[]>([]);
   loadingConsents = signal(true);
@@ -98,12 +99,14 @@ export class GdprComponent implements OnInit {
       next: (data: GdprExportDto) => {
         const json = JSON.stringify(data, null, 2);
         const blob = new Blob([json], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'my-data-export.json';
-        a.click();
-        URL.revokeObjectURL(url);
+        if (this.isBrowser) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'my-data-export.json';
+          a.click();
+          URL.revokeObjectURL(url);
+        }
         this.exporting.set(false);
         this.snackbar.showSuccess(
           this.translate.instant('pages.gdpr.export_success')

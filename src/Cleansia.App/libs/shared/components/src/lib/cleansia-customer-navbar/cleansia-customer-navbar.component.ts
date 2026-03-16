@@ -7,8 +7,10 @@ import {
   inject,
   OnDestroy,
   OnInit,
+  PLATFORM_ID,
   signal,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { CustomerAuthService } from '@cleansia/customer-services';
@@ -47,6 +49,8 @@ export class CleansiaCustomerNavbarComponent implements OnInit, OnDestroy {
   private readonly themeService = inject(ThemeService);
   private readonly store = inject(Store);
   private readonly elRef = inject(ElementRef);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly isBrowser = isPlatformBrowser(this.platformId);
   private readonly destroy$ = new Subject<void>();
 
   readonly isMobile = signal(false);
@@ -88,7 +92,9 @@ export class CleansiaCustomerNavbarComponent implements OnInit, OnDestroy {
   readonly userProfileType = computed(() => this.currentUser()?.profile?.name ?? null);
 
   constructor() {
-    this.updateMobileStatus();
+    if (this.isBrowser) {
+      this.updateMobileStatus();
+    }
   }
 
   ngOnInit(): void {
@@ -120,11 +126,13 @@ export class CleansiaCustomerNavbarComponent implements OnInit, OnDestroy {
 
   @HostListener('window:resize')
   onResize(): void {
+    if (!this.isBrowser) return;
     this.updateMobileStatus();
   }
 
   @HostListener('window:scroll')
   onScroll(): void {
+    if (!this.isBrowser) return;
     const currentScrollY = window.scrollY;
     if (Math.abs(currentScrollY - this.lastScrollY) < this.scrollThreshold) {
       return;

@@ -3,11 +3,14 @@ import {
   Component,
   computed,
   HostBinding,
+  inject,
   input,
   OnInit,
   output,
+  PLATFORM_ID,
   signal,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 
 export interface HelpStep {
@@ -47,6 +50,7 @@ export interface StatusFlowItem {
   styles: [':host.hidden { display: none; }'],
 })
 export class CleansiaHelpCardComponent implements OnInit {
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   /** Translation key for the card title */
   titleKey = input<string>('');
 
@@ -92,7 +96,7 @@ export class CleansiaHelpCardComponent implements OnInit {
 
   ngOnInit(): void {
     // Check localStorage for dismissal state
-    if (this.storageKey()) {
+    if (this.storageKey() && this.isBrowser) {
       const dismissed = localStorage.getItem(this.storageKey());
       if (dismissed === 'true') {
         this.isDismissed.set(true);
@@ -111,7 +115,7 @@ export class CleansiaHelpCardComponent implements OnInit {
 
   dismiss(): void {
     this.isDismissed.set(true);
-    if (this.storageKey()) {
+    if (this.storageKey() && this.isBrowser) {
       localStorage.setItem(this.storageKey(), 'true');
     }
     this.dismissedChange.emit(true);
@@ -120,7 +124,7 @@ export class CleansiaHelpCardComponent implements OnInit {
   restore(): void {
     this.isDismissed.set(false);
     this.isCollapsed.set(false);
-    if (this.storageKey()) {
+    if (this.storageKey() && this.isBrowser) {
       localStorage.removeItem(this.storageKey());
     }
     this.dismissedChange.emit(false);
@@ -128,11 +132,13 @@ export class CleansiaHelpCardComponent implements OnInit {
 
   /** Check if help is dismissed (for external use) */
   static isHelpDismissed(storageKey: string): boolean {
+    if (typeof localStorage === 'undefined') return false;
     return localStorage.getItem(storageKey) === 'true';
   }
 
   /** Restore help from external call */
   static restoreHelp(storageKey: string): void {
+    if (typeof localStorage === 'undefined') return;
     localStorage.removeItem(storageKey);
   }
 }

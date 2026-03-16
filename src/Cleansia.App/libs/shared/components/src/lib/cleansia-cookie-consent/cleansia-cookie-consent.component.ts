@@ -2,11 +2,14 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   computed,
+  inject,
   input,
   OnInit,
   output,
+  PLATFORM_ID,
   signal,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 
 export interface CookieConsentConfig {
@@ -43,6 +46,7 @@ export type CookieConsentStatus = 'pending' | 'accepted' | 'declined';
   templateUrl: './cleansia-cookie-consent.component.html',
 })
 export class CleansiaCookieConsentComponent implements OnInit {
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   /** Storage key for remembering consent (default: 'cleansia-cookie-consent') */
   storageKey = input<string>('cleansia-cookie-consent');
 
@@ -73,6 +77,11 @@ export class CleansiaCookieConsentComponent implements OnInit {
   }
 
   private checkExistingConsent(): void {
+    if (!this.isBrowser) {
+      this.consentStatus.set('pending');
+      this.isVisible.set(false);
+      return;
+    }
     const storedConsent = localStorage.getItem(this.storageKey());
 
     if (storedConsent === 'accepted') {
@@ -97,14 +106,14 @@ export class CleansiaCookieConsentComponent implements OnInit {
 
   private setConsent(status: CookieConsentStatus): void {
     this.consentStatus.set(status);
-    localStorage.setItem(this.storageKey(), status);
+    if (this.isBrowser) localStorage.setItem(this.storageKey(), status);
     this.isVisible.set(false);
     this.consentChange.emit(status);
   }
 
   /** Reset consent (useful for testing or settings page) */
   resetConsent(): void {
-    localStorage.removeItem(this.storageKey());
+    if (this.isBrowser) localStorage.removeItem(this.storageKey());
     this.consentStatus.set('pending');
     this.isVisible.set(true);
     this.consentChange.emit('pending');
@@ -112,6 +121,7 @@ export class CleansiaCookieConsentComponent implements OnInit {
 
   /** Static method to check consent status from outside the component */
   static getConsentStatus(storageKey = 'cleansia-cookie-consent'): CookieConsentStatus {
+    if (typeof localStorage === 'undefined') return 'pending';
     const storedConsent = localStorage.getItem(storageKey);
     if (storedConsent === 'accepted') return 'accepted';
     if (storedConsent === 'declined') return 'declined';
@@ -120,6 +130,7 @@ export class CleansiaCookieConsentComponent implements OnInit {
 
   /** Static method to check if cookies are accepted */
   static hasAcceptedCookies(storageKey = 'cleansia-cookie-consent'): boolean {
+    if (typeof localStorage === 'undefined') return false;
     return localStorage.getItem(storageKey) === 'accepted';
   }
 }

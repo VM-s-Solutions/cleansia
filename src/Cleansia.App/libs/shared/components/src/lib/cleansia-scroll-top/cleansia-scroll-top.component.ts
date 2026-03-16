@@ -2,8 +2,11 @@ import {
   ChangeDetectionStrategy,
   Component,
   HostListener,
+  inject,
+  PLATFORM_ID,
   signal,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -67,14 +70,17 @@ import { CommonModule } from '@angular/common';
   `,
 })
 export class CleansiaScrollTopComponent {
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   readonly visible = signal(false);
 
   @HostListener('window:scroll')
   onScroll(): void {
+    if (!this.isBrowser) return;
     this.visible.set(window.scrollY > 300);
   }
 
   scrollToTop(): void {
+    if (!this.isBrowser) return;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }

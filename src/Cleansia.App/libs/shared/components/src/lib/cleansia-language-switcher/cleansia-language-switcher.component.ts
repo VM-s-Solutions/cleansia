@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, inject, OnInit, PLATFORM_ID } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 // Inlined from @cleansia/services to avoid module boundary issues
 const PREFERRED_LANGUAGE_KEY = 'preferred_language';
@@ -13,6 +13,7 @@ import { SelectModule } from 'primeng/select';
   imports: [FormsModule, CommonModule, SelectModule],
 })
 export class CleansiaLanguageSwitcherComponent implements OnInit {
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   languages: any[] = [];
   selectedLanguage: string;
 
@@ -60,6 +61,8 @@ export class CleansiaLanguageSwitcherComponent implements OnInit {
 
   changeLanguage(lang: string): void {
     this.translate.use(lang);
-    localStorage.setItem(PREFERRED_LANGUAGE_KEY, lang);
+    if (this.isBrowser) {
+      localStorage.setItem(PREFERRED_LANGUAGE_KEY, lang);
+    }
   }
 }

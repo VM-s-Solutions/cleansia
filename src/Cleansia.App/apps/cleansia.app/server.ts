@@ -25,7 +25,7 @@ app.use(
   }),
 );
 
-app.use('/**', (req, res, next) => {
+app.use('{*path}', (req, res, next) => {
   getAngularApp()
     .handle(req)
     .then((response) =>

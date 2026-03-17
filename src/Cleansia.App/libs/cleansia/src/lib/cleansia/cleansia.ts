@@ -5,7 +5,9 @@ import {
   inject,
   OnDestroy,
   OnInit,
+  PLATFORM_ID,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import {
   loadCustomerPackages,
   loadCustomerServices,
@@ -43,6 +45,7 @@ import { CtaComponent } from './components/cta/cta.component';
 export class CleansiaComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly el = inject(ElementRef);
   private readonly store = inject(Store);
+  private readonly platformId = inject(PLATFORM_ID);
 
   private observer?: IntersectionObserver;
   private mutationObserver?: MutationObserver;
@@ -53,7 +56,9 @@ export class CleansiaComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    this.setupScrollAnimations();
+    if (isPlatformBrowser(this.platformId)) {
+      this.setupScrollAnimations();
+    }
   }
 
   ngOnDestroy(): void {

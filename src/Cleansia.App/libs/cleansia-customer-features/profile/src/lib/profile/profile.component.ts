@@ -184,6 +184,8 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private setupScrollSpy(): void {
+    if (!this.isBrowser) return;
+
     const options: IntersectionObserverInit = {
       rootMargin: '-20% 0px -60% 0px',
       threshold: 0,

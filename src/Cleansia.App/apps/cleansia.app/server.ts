@@ -1,6 +1,7 @@
 import { AngularNodeAppEngine, createNodeRequestHandler, isMainModule, writeResponseToNodeResponse } from '@angular/ssr/node';
+import { ɵsetAngularAppEngineManifest } from '@angular/ssr';
 import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import express from 'express';
 
 const serverDistFolder = dirname(fileURLToPath(import.meta.url));
@@ -8,12 +9,16 @@ const browserDistFolder = resolve(serverDistFolder, '../browser');
 
 const app = express();
 
-/**
- * Lazy-initialize AngularNodeAppEngine so the manifest is registered
- * by the Angular build wrapper before we access it.
- */
 let angularApp: AngularNodeAppEngine | undefined;
-function getAngularApp(): AngularNodeAppEngine {
+let manifestLoaded = false;
+
+async function getAngularApp(): Promise<AngularNodeAppEngine> {
+  if (!manifestLoaded) {
+    const manifestPath = pathToFileURL(resolve(serverDistFolder, 'angular-app-engine-manifest.mjs')).href;
+    const engineManifest = await import(manifestPath);
+    ɵsetAngularAppEngineManifest(engineManifest.default);
+    manifestLoaded = true;
+  }
   return (angularApp ??= new AngularNodeAppEngine());
 }
 
@@ -27,7 +32,7 @@ app.use(
 
 app.use('{*path}', (req, res, next) => {
   getAngularApp()
-    .handle(req)
+    .then((engine) => engine.handle(req))
     .then((response) =>
       response ? writeResponseToNodeResponse(response, res) : next(),
     )

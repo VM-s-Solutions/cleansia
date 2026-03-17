@@ -97,7 +97,7 @@ jobs:
         working-directory: ./src/Cleansia.App
 
       - name: Build Customer App
-        run: npx nx build cleansia.app --configuration=production --skip-nx-cache
+        run: npx nx build cleansia.app --configuration=staging --skip-nx-cache
         working-directory: ./src/Cleansia.App
 
       - name: Build Partner App

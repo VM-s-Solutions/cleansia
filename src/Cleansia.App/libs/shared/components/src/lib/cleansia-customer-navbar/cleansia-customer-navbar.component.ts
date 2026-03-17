@@ -13,6 +13,7 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { CustomerAuthService } from '@cleansia/customer-services';
 import {
   loadCustomerUser,
@@ -23,6 +24,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { filter, Subject, takeUntil } from 'rxjs';
 
 import { CleansiaBrandNameComponent } from '../cleansia-brand-name';
@@ -33,9 +35,11 @@ import { CleansiaLanguageSwitcherComponent } from '../cleansia-language-switcher
   standalone: true,
   imports: [
     RouterModule,
+    FormsModule,
     TranslateModule,
     ButtonModule,
     AvatarModule,
+    ToggleSwitchModule,
     CleansiaBrandNameComponent,
     CleansiaLanguageSwitcherComponent,
   ],
@@ -140,6 +144,7 @@ export class CleansiaCustomerNavbarComponent implements OnInit, OnDestroy {
     if (currentScrollY > this.lastScrollY && currentScrollY > 64) {
       // Scrolling down & past the navbar height — hide
       this.navbarHidden.set(true);
+      this.mobileMenuOpen.set(false);
       this.userMenuOpen.set(false);
       this.settingsMenuOpen.set(false);
     } else {

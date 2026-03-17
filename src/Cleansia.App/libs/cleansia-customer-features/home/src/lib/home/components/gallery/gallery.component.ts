@@ -45,6 +45,7 @@ export class GalleryComponent {
   }
 
   onSliderTouchStart(event: TouchEvent, id: string): void {
+    event.preventDefault();
     this.isDragging = true;
     this.activeSlider = id;
     this.updateSliderPositionTouch(event);
@@ -66,6 +67,7 @@ export class GalleryComponent {
   @HostListener('window:touchmove', ['$event'])
   onTouchMove(event: TouchEvent): void {
     if (this.isDragging && this.activeSlider) {
+      event.preventDefault();
       this.updateSliderPositionTouch(event);
     }
   }

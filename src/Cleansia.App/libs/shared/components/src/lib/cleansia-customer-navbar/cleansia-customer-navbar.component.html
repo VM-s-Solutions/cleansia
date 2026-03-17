@@ -9,7 +9,7 @@
     </div>
     <!-- Logo (mobile) -->
     <div class="md:hidden">
-      <cleansia-brand-name [defaultRoute]="''" [showName]="!isMobile()" />
+      <cleansia-brand-name [defaultRoute]="''" [showName]="true" />
     </div>
 
     <!-- Desktop nav links -->
@@ -197,10 +197,13 @@
     </a>
 
     <div class="border-top-1 border-300 mt-2 pt-3 flex flex-column gap-3">
-      <a class="customer-navbar__mobile-link" (click)="toggleTheme()">
-        <i [class]="isDarkMode() ? 'pi pi-sun mr-2' : 'pi pi-moon mr-2'"></i>
-        {{ (isDarkMode() ? 'nav.theme_light' : 'nav.theme_dark') | translate }}
-      </a>
+      <div class="customer-navbar__mobile-link flex align-items-center justify-content-between" style="cursor: default">
+        <span class="flex align-items-center">
+          <i [class]="isDarkMode() ? 'pi pi-moon mr-2' : 'pi pi-sun mr-2'"></i>
+          {{ (isDarkMode() ? 'nav.theme_dark' : 'nav.theme_light') | translate }}
+        </span>
+        <p-toggleswitch [ngModel]="isDarkMode()" (onChange)="toggleTheme()" />
+      </div>
 
       <div class="flex align-items-center gap-2 p-2">
         <cleansia-language-switcher />

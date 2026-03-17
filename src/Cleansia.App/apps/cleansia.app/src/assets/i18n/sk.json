@@ -21,15 +21,38 @@
   },
   "cookies": {
     "title": "Vaše súkromie je dôležité",
-    "description": "Používame cookies na zlepšenie prehliadania, poskytovanie personalizovaného obsahu a analýzu návštevnosti. Kliknutím na „Prijať" súhlasíte s používaním cookies.",
+    "description": "Používame cookies na zlepšenie prehliadania, poskytovanie personalizovaného obsahu a analýzu návštevnosti.",
     "accept": "Prijať všetky",
-    "decline": "Odmietnuť",
+    "decline": "Odmietnuť všetky",
     "learn_more": "Zistiť viac",
-    "banner_title": "Banner súhlasu s cookies"
+    "banner_title": "Banner súhlasu s cookies",
+    "customize": "Prispôsobiť",
+    "hide_settings": "Skryť nastavenia",
+    "save_preferences": "Uložiť predvoľby",
+    "always_on": "Vždy zapnuté",
+    "categories": {
+      "necessary": {
+        "name": "Nevyhnutné",
+        "description": "Nevyhnutné pre fungovanie webu. Nedajú sa vypnúť."
+      },
+      "analytics": {
+        "name": "Analytické",
+        "description": "Pomáhajú nám pochopiť, ako návštevníci používajú náš web."
+      },
+      "marketing": {
+        "name": "Marketingové",
+        "description": "Slúžia na zobrazovanie relevantných reklám a sledovanie kampaní."
+      },
+      "preferences": {
+        "name": "Preferenčné",
+        "description": "Zapamätajú si vaše nastavenia, ako je jazyk a téma."
+      }
+    }
   },
   "page_titles": {
     "customer": {
       "default": "Cleansia",
+      "home": "Domov",
       "login": "Prihlásenie",
       "register": "Registrácia",
       "confirm_email": "Potvrdenie e-mailu",

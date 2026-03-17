@@ -3,11 +3,13 @@
   class="cleansia-cookie-consent"
   [class.cleansia-cookie-consent--top]="position() === 'top'"
   [class.cleansia-cookie-consent--bottom]="position() === 'bottom'"
+  [class.cleansia-cookie-consent--expanded]="showSettings()"
   role="dialog"
   aria-modal="false"
   [attr.aria-label]="'cookies.banner_title' | translate"
 >
   <div class="cleansia-cookie-consent__container">
+    <!-- Main banner -->
     <div class="cleansia-cookie-consent__content">
       <div class="cleansia-cookie-consent__icon">
         <i class="pi pi-shield"></i>
@@ -31,23 +33,81 @@
         </p>
       </div>
     </div>
-    <div class="cleansia-cookie-consent__actions">
-      @if (showDeclineButton()) {
-      <button
-        type="button"
-        class="cleansia-cookie-consent__btn cleansia-cookie-consent__btn--decline"
-        (click)="declineCookies()"
-      >
-        {{ 'cookies.decline' | translate }}
-      </button>
+
+    <!-- Settings panel -->
+    @if (showSettings()) {
+    <div class="cleansia-cookie-consent__settings">
+      @for (cat of categories; track cat.key) {
+      <div class="cleansia-cookie-consent__category">
+        <div class="cleansia-cookie-consent__category-header">
+          <div class="cleansia-cookie-consent__category-info">
+            <div class="cleansia-cookie-consent__category-icon">
+              <i [class]="cat.icon"></i>
+            </div>
+            <div>
+              <div class="cleansia-cookie-consent__category-name">
+                {{ 'cookies.categories.' + cat.key + '.name' | translate }}
+              </div>
+              <div class="cleansia-cookie-consent__category-desc">
+                {{ 'cookies.categories.' + cat.key + '.description' | translate }}
+              </div>
+            </div>
+          </div>
+          <div class="cleansia-cookie-consent__category-toggle">
+            @if (cat.locked) {
+              <span class="cleansia-cookie-consent__always-on">
+                {{ 'cookies.always_on' | translate }}
+              </span>
+            } @else {
+              <p-toggleswitch
+                [ngModel]="preferences()[cat.key]"
+                (onChange)="updatePreference(cat.key, $event.checked)"
+              />
+            }
+          </div>
+        </div>
+      </div>
       }
+    </div>
+    }
+
+    <!-- Actions -->
+    <div class="cleansia-cookie-consent__actions">
       <button
         type="button"
-        class="cleansia-cookie-consent__btn cleansia-cookie-consent__btn--accept"
-        (click)="acceptCookies()"
+        class="cleansia-cookie-consent__btn cleansia-cookie-consent__btn--settings"
+        (click)="toggleSettings()"
       >
-        {{ 'cookies.accept' | translate }}
+        <i [class]="showSettings() ? 'pi pi-chevron-up' : 'pi pi-cog'"></i>
+        {{ (showSettings() ? 'cookies.hide_settings' : 'cookies.customize') | translate }}
       </button>
+      <div class="cleansia-cookie-consent__actions-main">
+        @if (showDeclineButton()) {
+        <button
+          type="button"
+          class="cleansia-cookie-consent__btn cleansia-cookie-consent__btn--decline"
+          (click)="declineAll()"
+        >
+          {{ 'cookies.decline' | translate }}
+        </button>
+        }
+        @if (showSettings()) {
+        <button
+          type="button"
+          class="cleansia-cookie-consent__btn cleansia-cookie-consent__btn--save"
+          (click)="savePreferences()"
+        >
+          {{ 'cookies.save_preferences' | translate }}
+        </button>
+        }
+        <button
+          type="button"
+          class="cleansia-cookie-consent__btn cleansia-cookie-consent__btn--accept"
+          (click)="acceptAll()"
+        >
+          {{ 'cookies.accept' | translate }}
+        </button>
+      </div>
     </div>
   </div>
 </div>

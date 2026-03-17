@@ -1,5 +1,4 @@
-/* You can add global styles to this file, and also import other style files */
-@import 'primeflex/primeflex.css';
+/* PrimeFlex is loaded via CDN in index.html for better performance */
 
 html {
   // Force light color-scheme by default so PrimeFlex light-dark() picks light values.

@@ -21,15 +21,38 @@
   },
   "cookies": {
     "title": "Your Privacy Matters",
-    "description": "We use cookies to improve your browsing experience, provide personalized content, and analyze traffic. By clicking \"Accept\", you consent to the use of cookies.",
+    "description": "We use cookies to improve your browsing experience, provide personalized content, and analyze traffic.",
     "accept": "Accept All",
-    "decline": "Decline",
+    "decline": "Decline All",
     "learn_more": "Learn More",
-    "banner_title": "Cookie Consent Banner"
+    "banner_title": "Cookie Consent Banner",
+    "customize": "Customize",
+    "hide_settings": "Hide Settings",
+    "save_preferences": "Save Preferences",
+    "always_on": "Always On",
+    "categories": {
+      "necessary": {
+        "name": "Necessary",
+        "description": "Essential for the website to function. Cannot be disabled."
+      },
+      "analytics": {
+        "name": "Analytics",
+        "description": "Help us understand how visitors interact with our website."
+      },
+      "marketing": {
+        "name": "Marketing",
+        "description": "Used to deliver relevant ads and track campaigns."
+      },
+      "preferences": {
+        "name": "Preferences",
+        "description": "Remember your settings like language and theme."
+      }
+    }
   },
   "page_titles": {
     "customer": {
       "default": "Cleansia",
+      "home": "Home",
       "login": "Log In",
       "register": "Sign Up",
       "confirm_email": "Confirm Email",

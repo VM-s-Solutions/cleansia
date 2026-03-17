@@ -29,6 +29,7 @@
   cursor: ew-resize;
   user-select: none;
   -webkit-user-select: none;
+  touch-action: none;
   aspect-ratio: 4 / 3;
   background: $bg-alt;
   container-type: inline-size;

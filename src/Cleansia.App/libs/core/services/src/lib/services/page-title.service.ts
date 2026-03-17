@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRouteSnapshot, NavigationEnd, Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
-import { filter, map } from 'rxjs';
+import { filter, map, take } from 'rxjs';
 
 export interface PageTitleConfig {
   /** The base title for the application (e.g., "Cleansia Admin" or "Cleansia Partner") */
@@ -83,9 +83,12 @@ export class PageTitleService {
 
   private updateTitle(titleKey?: string): void {
     if (titleKey) {
-      const translatedTitle = this.translate.instant(titleKey);
-      const fullTitle = `${translatedTitle} | ${this.baseTitle}`;
-      this.titleService.setTitle(fullTitle);
+      // Use stream to handle the case where translations haven't loaded yet.
+      // instant() returns the key itself if translations aren't ready.
+      this.translate.stream(titleKey).pipe(take(1)).subscribe((translatedTitle) => {
+        const fullTitle = `${translatedTitle} | ${this.baseTitle}`;
+        this.titleService.setTitle(fullTitle);
+      });
     } else {
       this.titleService.setTitle(this.baseTitle);
     }

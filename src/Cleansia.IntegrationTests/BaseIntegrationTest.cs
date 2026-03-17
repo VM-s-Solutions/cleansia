@@ -107,7 +107,7 @@ public abstract class BaseIntegrationTest : BaseTransactionalPostgresSqlTest<Cle
             services.Replace(ServiceDescriptor.Scoped<IUserSessionProvider>(_ => new TestUserSessionProvider(new TestClaimsPrincipalUser())));
             services.Replace(ServiceDescriptor.Singleton<IDatabaseConnectionString>(_ => new DatabaseConnectionString(Configuration)
             {
-                DefaultConnection = Fixture.GetConnectionString() ?? throw new ArgumentNullException(nameof(Fixture.GetConnectionString))
+                ConnectionString = Fixture.GetConnectionString() ?? throw new ArgumentNullException(nameof(Fixture.GetConnectionString))
             }));
 
             if (setup is not null)

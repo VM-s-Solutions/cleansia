@@ -112,7 +112,7 @@ jobs:
         working-directory: ./src/Cleansia.App
 
       - name: Build Customer App
-        run: npm run build:cleansia-customer
+        run: npx nx build cleansia.app --configuration=production --skip-nx-cache
         working-directory: ./src/Cleansia.App
 
       - name: Build Partner App
@@ -171,8 +171,10 @@ jobs:
           app-name: api-cleansia-pro
           package: ./partner-api
 
-      - name: Restart App Service
-        run: az webapp restart --name api-cleansia-pro --resource-group rg-cleansia-pro
+      - name: Force container refresh
+        run: |
+          az webapp stop --name api-cleansia-pro --resource-group rg-cleansia-pro
+          az webapp start --name api-cleansia-pro --resource-group rg-cleansia-pro
 
   deploy-admin-api:
     name: Deploy Admin API
@@ -199,8 +201,10 @@ jobs:
           app-name: api-cleansia-admin-pro
           package: ./admin-api
 
-      - name: Restart App Service
-        run: az webapp restart --name api-cleansia-admin-pro --resource-group rg-cleansia-pro
+      - name: Force container refresh
+        run: |
+          az webapp stop --name api-cleansia-admin-pro --resource-group rg-cleansia-pro
+          az webapp start --name api-cleansia-admin-pro --resource-group rg-cleansia-pro
 
   deploy-customer-api:
     name: Deploy Customer API
@@ -227,8 +231,10 @@ jobs:
           app-name: api-cleansia-customer-pro
           package: ./customer-api
 
-      - name: Restart App Service
-        run: az webapp restart --name api-cleansia-customer-pro --resource-group rg-cleansia-pro
+      - name: Force container refresh
+        run: |
+          az webapp stop --name api-cleansia-customer-pro --resource-group rg-cleansia-pro
+          az webapp start --name api-cleansia-customer-pro --resource-group rg-cleansia-pro
 
   deploy-mobile-api:
     name: Deploy Mobile API
@@ -255,8 +261,10 @@ jobs:
           app-name: api-cleansia-mobile-pro
           package: ./mobile-api
 
-      - name: Restart App Service
-        run: az webapp restart --name api-cleansia-mobile-pro --resource-group rg-cleansia-pro
+      - name: Force container refresh
+        run: |
+          az webapp stop --name api-cleansia-mobile-pro --resource-group rg-cleansia-pro
+          az webapp start --name api-cleansia-mobile-pro --resource-group rg-cleansia-pro
 
   deploy-customer-ssr:
     name: Deploy Customer SSR
@@ -286,8 +294,10 @@ jobs:
           app-name: web-cleansia-customer-pro
           package: ./customer-app
 
-      - name: Restart App Service
-        run: az webapp restart --name web-cleansia-customer-pro --resource-group rg-cleansia-pro
+      - name: Force container refresh
+        run: |
+          az webapp stop --name web-cleansia-customer-pro --resource-group rg-cleansia-pro
+          az webapp start --name web-cleansia-customer-pro --resource-group rg-cleansia-pro
 
   deploy-partner-spa:
     name: Deploy Partner SPA

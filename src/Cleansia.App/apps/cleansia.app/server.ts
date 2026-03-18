@@ -22,6 +22,15 @@ async function getAngularApp(): Promise<AngularNodeAppEngine> {
   return (angularApp ??= new AngularNodeAppEngine());
 }
 
+app.get('/health', (_req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+  });
+});
+
 app.use(
   express.static(browserDistFolder, {
     maxAge: '1y',

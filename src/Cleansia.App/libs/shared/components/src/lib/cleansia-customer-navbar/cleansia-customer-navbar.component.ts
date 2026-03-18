@@ -12,7 +12,14 @@ import {
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { NavigationEnd, Router, RouterModule } from '@angular/router';
+import {
+  NavigationCancel,
+  NavigationEnd,
+  NavigationError,
+  NavigationStart,
+  Router,
+  RouterModule,
+} from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CustomerAuthService } from '@cleansia/customer-services';
 import {
@@ -25,7 +32,7 @@ import { Store } from '@ngrx/store';
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
-import { filter, Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil } from 'rxjs';
 
 import { CleansiaBrandNameComponent } from '../cleansia-brand-name';
 import { CleansiaLanguageSwitcherComponent } from '../cleansia-language-switcher';
@@ -62,6 +69,7 @@ export class CleansiaCustomerNavbarComponent implements OnInit, OnDestroy {
   readonly userMenuOpen = signal(false);
   readonly settingsMenuOpen = signal(false);
   readonly navbarHidden = signal(false);
+  readonly navigating = signal(false);
   private lastScrollY = 0;
   private readonly scrollThreshold = 10;
   private readonly isLoggedInSignal = signal(this.authService.isLoggedIn());
@@ -103,14 +111,21 @@ export class CleansiaCustomerNavbarComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.router.events
-      .pipe(
-        filter((event) => event instanceof NavigationEnd),
-        takeUntil(this.destroy$)
-      )
-      .subscribe(() => {
-        this.mobileMenuOpen.set(false);
-        this.userMenuOpen.set(false);
-        this.settingsMenuOpen.set(false);
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((event) => {
+        if (event instanceof NavigationStart) {
+          this.navigating.set(true);
+        }
+        if (
+          event instanceof NavigationEnd ||
+          event instanceof NavigationCancel ||
+          event instanceof NavigationError
+        ) {
+          this.navigating.set(false);
+          this.mobileMenuOpen.set(false);
+          this.userMenuOpen.set(false);
+          this.settingsMenuOpen.set(false);
+        }
       });
 
     this.authService.isLoggedIn$

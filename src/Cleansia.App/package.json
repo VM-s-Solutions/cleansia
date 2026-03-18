@@ -11,6 +11,7 @@
     "build:cleansia-partner": "nx build cleansia-partner.app --configuration=production",
     "build:cleansia-customer": "nx build cleansia.app --configuration=production",
     "build:cleansia-admin": "nx build cleansia-admin.app --configuration=production",
+    "start:cleansia-ssr": "nx build cleansia.app --configuration=development && node dist/apps/cleansia.app/server/server.mjs",
     "test": "nx e2e cleansia.app-e2e",
     "lint": "nx lint",
     "e2e": "nx e2e",

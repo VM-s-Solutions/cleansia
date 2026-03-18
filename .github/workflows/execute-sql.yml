@@ -52,7 +52,7 @@ jobs:
     name: Execute on ${{ inputs.environment }}
     needs: validate
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment == 'PRO' && 'production' || 'development' }}
+    environment: ${{ inputs.environment == 'PRO' && 'production' || '' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

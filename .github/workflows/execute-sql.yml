@@ -48,11 +48,11 @@ jobs:
           echo "--- Script contents ---"
           cat "$SCRIPT"
 
-  execute:
-    name: Execute on ${{ inputs.environment }}
+  execute-dev:
+    name: Execute on DEV
+    if: inputs.environment == 'DEV'
     needs: validate
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment == 'PRO' && 'production' || '' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -71,9 +71,14 @@ jobs:
 
       - name: Execute SQL script
         env:
-          DB_CONNECTION_STRING: ${{ inputs.environment == 'PRO' && secrets.DB_CONNECTION_STRING_PRO || secrets.DB_CONNECTION_STRING_DEV }}
+          DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING_DEV }}
         run: |
           SCRIPT="sql-scripts/${{ inputs.script_path }}"
+
+          if [ -z "$DB_CONNECTION_STRING" ]; then
+            echo "::error::DB_CONNECTION_STRING_DEV secret is not set"
+            exit 1
+          fi
 
           # Parse connection string components
           DB_HOST=$(echo "$DB_CONNECTION_STRING" | grep -oP 'Host=\K[^;]+')
@@ -84,7 +89,7 @@ jobs:
 
           echo "Executing script: $SCRIPT"
           echo "Target: $DB_HOST:$DB_PORT/$DB_NAME"
-          echo "Environment: ${{ inputs.environment }}"
+          echo "Environment: DEV"
           echo "---"
 
           PGPASSWORD="$DB_PASS" psql \
@@ -93,6 +98,64 @@ jobs:
             -U "$DB_USER" \
             -d "$DB_NAME" \
             --set ON_ERROR_STOP=1 \
+            --set sslmode=require \
+            -f "$SCRIPT"
+
+          echo "---"
+          echo "Script executed successfully."
+
+  execute-pro:
+    name: Execute on PRO
+    if: inputs.environment == 'PRO'
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Execute SQL script
+        env:
+          DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING_PRO }}
+        run: |
+          SCRIPT="sql-scripts/${{ inputs.script_path }}"
+
+          if [ -z "$DB_CONNECTION_STRING" ]; then
+            echo "::error::DB_CONNECTION_STRING_PRO secret is not set"
+            exit 1
+          fi
+
+          # Parse connection string components
+          DB_HOST=$(echo "$DB_CONNECTION_STRING" | grep -oP 'Host=\K[^;]+')
+          DB_PORT=$(echo "$DB_CONNECTION_STRING" | grep -oP 'Port=\K[^;]+' || echo "5432")
+          DB_NAME=$(echo "$DB_CONNECTION_STRING" | grep -oP 'Database=\K[^;]+')
+          DB_USER=$(echo "$DB_CONNECTION_STRING" | grep -oP 'Username=\K[^;]+')
+          DB_PASS=$(echo "$DB_CONNECTION_STRING" | grep -oP 'Password=\K[^;]+')
+
+          echo "Executing script: $SCRIPT"
+          echo "Target: $DB_HOST:$DB_PORT/$DB_NAME"
+          echo "Environment: PRO"
+          echo "---"
+
+          PGPASSWORD="$DB_PASS" psql \
+            -h "$DB_HOST" \
+            -p "$DB_PORT" \
+            -U "$DB_USER" \
+            -d "$DB_NAME" \
+            --set ON_ERROR_STOP=1 \
+            --set sslmode=require \
             -f "$SCRIPT"
 
           echo "---"

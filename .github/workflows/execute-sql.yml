@@ -1,0 +1,99 @@
+name: Execute SQL Script
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - DEV
+          - PRO
+      script_path:
+        description: 'SQL script filename from sql-scripts/ folder (e.g., check-db-health.sql)'
+        required: true
+        type: string
+      confirm:
+        description: 'Type "execute" to confirm (required for PRO)'
+        required: false
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  validate:
+    name: Validate inputs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PRO confirmation
+        if: inputs.environment == 'PRO' && inputs.confirm != 'execute'
+        run: |
+          echo "::error::You must type 'execute' to confirm production SQL execution"
+          exit 1
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify script exists
+        run: |
+          SCRIPT="sql-scripts/${{ inputs.script_path }}"
+          if [ ! -f "$SCRIPT" ]; then
+            echo "::error::Script not found: $SCRIPT"
+            exit 1
+          fi
+          echo "Script found: $SCRIPT"
+          echo "--- Script contents ---"
+          cat "$SCRIPT"
+
+  execute:
+    name: Execute on ${{ inputs.environment }}
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment == 'PRO' && 'production' || 'development' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Execute SQL script
+        env:
+          DB_CONNECTION_STRING: ${{ inputs.environment == 'PRO' && secrets.DB_CONNECTION_STRING_PRO || secrets.DB_CONNECTION_STRING_DEV }}
+        run: |
+          SCRIPT="sql-scripts/${{ inputs.script_path }}"
+
+          # Parse connection string components
+          DB_HOST=$(echo "$DB_CONNECTION_STRING" | grep -oP 'Host=\K[^;]+')
+          DB_PORT=$(echo "$DB_CONNECTION_STRING" | grep -oP 'Port=\K[^;]+' || echo "5432")
+          DB_NAME=$(echo "$DB_CONNECTION_STRING" | grep -oP 'Database=\K[^;]+')
+          DB_USER=$(echo "$DB_CONNECTION_STRING" | grep -oP 'Username=\K[^;]+')
+          DB_PASS=$(echo "$DB_CONNECTION_STRING" | grep -oP 'Password=\K[^;]+')
+
+          echo "Executing script: $SCRIPT"
+          echo "Target: $DB_HOST:$DB_PORT/$DB_NAME"
+          echo "Environment: ${{ inputs.environment }}"
+          echo "---"
+
+          PGPASSWORD="$DB_PASS" psql \
+            -h "$DB_HOST" \
+            -p "$DB_PORT" \
+            -U "$DB_USER" \
+            -d "$DB_NAME" \
+            --set ON_ERROR_STOP=1 \
+            -f "$SCRIPT"
+
+          echo "---"
+          echo "Script executed successfully."

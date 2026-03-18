@@ -1,7 +1,7 @@
 ﻿BEGIN TRANSACTION;
 
--- Temporarily disable foreign key constraints to handle circular dependencies
-SET session_replication_role = replica;
+-- Temporarily defer foreign key constraint checks (Azure-compatible)
+SET CONSTRAINTS ALL DEFERRED;
 
 -- 1. EXTENSION + FUNCTIONS (unchanged)
 
@@ -1932,7 +1932,6 @@ WHERE "UserId" IN (
 -- Dispute seed data has been moved to insert_disputes.sql
 -- Run that script separately after this one to populate disputes
 
--- Re-enable foreign key constraints
-SET session_replication_role = DEFAULT;
+-- Constraints are checked at COMMIT when using SET CONSTRAINTS ALL DEFERRED
 
 COMMIT;

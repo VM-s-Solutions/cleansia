@@ -131,8 +131,13 @@ jobs:
           name: admin-app
           path: ./src/Cleansia.App/dist/apps/cleansia-admin.app/browser
 
+  # =============================================
+  # Deploy step-by-step (sequential to avoid
+  # overloading the B1 App Service Plan)
+  # =============================================
+
   deploy-partner-api:
-    name: Deploy Partner API
+    name: 1/7 — Partner API
     needs: build-dotnet
     runs-on: ubuntu-latest
     steps:
@@ -161,8 +166,8 @@ jobs:
           az webapp start --name api-cleansia-dev --resource-group rg-cleansia-dev
 
   deploy-admin-api:
-    name: Deploy Admin API
-    needs: build-dotnet
+    name: 2/7 — Admin API
+    needs: [build-dotnet, deploy-partner-api]
     runs-on: ubuntu-latest
     steps:
       - name: Login to Azure
@@ -190,8 +195,8 @@ jobs:
           az webapp start --name api-cleansia-admin-dev --resource-group rg-cleansia-dev
 
   deploy-customer-api:
-    name: Deploy Customer API
-    needs: build-dotnet
+    name: 3/7 — Customer API
+    needs: [build-dotnet, deploy-admin-api]
     runs-on: ubuntu-latest
     steps:
       - name: Login to Azure
@@ -219,8 +224,8 @@ jobs:
           az webapp start --name api-cleansia-customer-dev --resource-group rg-cleansia-dev
 
   deploy-mobile-api:
-    name: Deploy Mobile API
-    needs: build-dotnet
+    name: 4/7 — Mobile API
+    needs: [build-dotnet, deploy-customer-api]
     runs-on: ubuntu-latest
     steps:
       - name: Login to Azure
@@ -248,8 +253,8 @@ jobs:
           az webapp start --name api-cleansia-mobile-dev --resource-group rg-cleansia-dev
 
   deploy-customer-ssr:
-    name: Deploy Customer SSR
-    needs: build-angular
+    name: 5/7 — Customer SSR
+    needs: [build-angular, deploy-mobile-api]
     runs-on: ubuntu-latest
     steps:
       - name: Login to Azure
@@ -280,8 +285,8 @@ jobs:
           az webapp start --name web-cleansia-customer-dev --resource-group rg-cleansia-dev
 
   deploy-partner-spa:
-    name: Deploy Partner SPA
-    needs: build-angular
+    name: 6/7 — Partner SPA
+    needs: [build-angular, deploy-customer-ssr]
     runs-on: ubuntu-latest
     steps:
       - name: Download artifact
@@ -300,8 +305,8 @@ jobs:
           skip_api_build: true
 
   deploy-admin-spa:
-    name: Deploy Admin SPA
-    needs: build-angular
+    name: 7/7 — Admin SPA
+    needs: [build-angular, deploy-partner-spa]
     runs-on: ubuntu-latest
     steps:
       - name: Download artifact

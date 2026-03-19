@@ -5,6 +5,7 @@
     "my_orders": "My Orders",
     "orders": "My Orders",
     "book_now": "Book Now",
+    "track_order": "Track Order",
     "login": "Log In",
     "register": "Sign Up",
     "profile": "Profile",
@@ -66,7 +67,8 @@
       "gdpr": "Privacy & Data",
       "checkout_success": "Payment Successful",
       "checkout_cancel": "Payment Cancelled",
-      "not_found": "Page Not Found"
+      "not_found": "Page Not Found",
+      "track_order": "Track Order"
     }
   },
   "global": {
@@ -858,7 +860,9 @@
       "delete_confirm_title": "Delete Account",
       "delete_confirm_yes": "Yes, Delete My Account",
       "delete_success": "Account deleted",
-      "delete_error": "Failed to delete account"
+      "delete_error": "Failed to delete account",
+      "guest_info_title": "Your Privacy Matters",
+      "guest_info_description": "We take your privacy seriously. Log in to manage your consents, export your data, or delete your account. For more details, see our Privacy Policy and Terms of Service."
     },
     "forgot_password": {
       "email": "Email",
@@ -882,6 +886,36 @@
         "change_password": "Change Password",
         "remember_password": "Remember your password?"
       }
+    },
+    "track_order": {
+      "title": "Track Your Order",
+      "subtitle": "Enter your order number and email to check the status of your order",
+      "order_number": "Order Number",
+      "order_number_placeholder": "e.g. ORD-A1B2C3D4",
+      "email": "Email Address",
+      "email_placeholder": "Email used when placing the order",
+      "search": "Track Order",
+      "not_found": "No order found with this combination. Please check your order number and email address.",
+      "not_found_title": "Order Not Found",
+      "order": "Order",
+      "status_details": "Status",
+      "order_status": "Order Status",
+      "payment_status": "Payment Status",
+      "payment_type": "Payment Type",
+      "service_info": "Service Details",
+      "cleaning_date": "Cleaning Date",
+      "estimated_time": "Estimated Time",
+      "confirmation_code": "Confirmation Code",
+      "packages": "Packages",
+      "services": "Services",
+      "total": "Total",
+      "timeline": "Order Timeline",
+      "hint": "You can find your order number in the confirmation email sent to you after placing your order.",
+      "recent_orders": "Recent Orders",
+      "lookup_another": "Look up another order",
+      "manual_lookup": "Manual Lookup",
+      "guest_limit": "As a guest, only your last 5 orders are tracked on this device. Create an account to access all your orders from anywhere.",
+      "guest_cta": "Create an account"
     }
   },
   "components": {

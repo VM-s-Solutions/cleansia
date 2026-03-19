@@ -3,7 +3,8 @@ cleansia-dynamic-background {
   flex-direction: column;
   position: relative;
   overflow: hidden;
-  min-height: 100dvh;
+  min-height: auto;
+  padding: 6rem 0;
 
   > * {
     flex: 1;

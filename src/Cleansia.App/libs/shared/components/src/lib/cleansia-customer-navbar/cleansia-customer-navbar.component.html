@@ -24,6 +24,10 @@
         <a class="customer-navbar__link" (click)="navigateTo('/orders')">
           {{ 'nav.my_orders' | translate }}
         </a>
+      } @else {
+        <a class="customer-navbar__link" (click)="navigateTo('/track-order')">
+          {{ 'nav.track_order' | translate }}
+        </a>
       }
       <a class="customer-navbar__link" (click)="navigateTo('/order')">
         {{ 'nav.book_now' | translate }}
@@ -196,6 +200,11 @@
       <a class="customer-navbar__mobile-link" (click)="navigateTo('/orders')">
         <i class="pi pi-shopping-bag mr-2"></i>
         {{ 'nav.my_orders' | translate }}
+      </a>
+    } @else {
+      <a class="customer-navbar__mobile-link" (click)="navigateTo('/track-order')">
+        <i class="pi pi-search mr-2"></i>
+        {{ 'nav.track_order' | translate }}
       </a>
     }
     <a class="customer-navbar__mobile-link" (click)="navigateTo('/order')">

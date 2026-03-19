@@ -8,7 +8,7 @@ import {
 } from '@cleansia/customer-services';
 import { JwtTokenResponse } from '@cleansia/partner-services';
 import { loadCustomerUser, selectCustomerLoading } from '@cleansia/customer-stores';
-import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
+import { CleansiaCustomerRoute, GuestOrderService, SnackbarService } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { takeUntil } from 'rxjs';
@@ -20,6 +20,7 @@ export class LoginFacade extends UnsubscribeControlDirective {
   private readonly authService = inject(CustomerAuthService);
   private readonly translate = inject(TranslateService);
   private readonly snackbarService = inject(SnackbarService);
+  private readonly guestOrderService = inject(GuestOrderService);
 
   formGroup = this.createFormGroup();
   loading = toSignal(this.store.select(selectCustomerLoading));
@@ -46,6 +47,7 @@ export class LoginFacade extends UnsubscribeControlDirective {
             return;
           }
           this.authService.setSession(authResult);
+          this.guestOrderService.clear();
           this.store.dispatch(loadCustomerUser());
           this.snackbarService.showSuccessTranslated('auth.login.success');
           this.router.navigate([CleansiaCustomerRoute.ORDERS]);

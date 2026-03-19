@@ -50,6 +50,16 @@ export const appRoutes: Route[] = [
     canActivate: [customerGuestGuard],
   },
 
+  // Track order (public — no auth required)
+  {
+    path: CleansiaCustomerRoute.TRACK_ORDER,
+    loadComponent: () =>
+      import('@cleansia-customer/orders').then(
+        (m) => m.TrackOrderComponent
+      ),
+    data: { title: 'page_titles.customer.track_order' },
+  },
+
   // Order wizard — authenticated only (per Customer App Requirements)
   {
     path: CleansiaCustomerRoute.ORDER,
@@ -79,18 +89,17 @@ export const appRoutes: Route[] = [
     canActivate: [customerAuthGuard],
   },
   {
-    path: CleansiaCustomerRoute.GDPR,
-    loadChildren: () =>
-      import('@cleansia-customer/gdpr').then((m) => m.gdprRoutes),
-    canActivate: [customerAuthGuard],
-  },
-  {
     path: 'checkout',
     loadChildren: () =>
       import('@cleansia-customer/checkout').then((m) => m.checkoutRoutes),
   },
 
-  // Legal pages (public)
+  // Legal / policy pages (public)
+  {
+    path: CleansiaCustomerRoute.GDPR,
+    loadChildren: () =>
+      import('@cleansia-customer/gdpr').then((m) => m.gdprRoutes),
+  },
   {
     path: 'terms',
     loadChildren: () =>

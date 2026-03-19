@@ -5,6 +5,7 @@
     "my_orders": "Moje objednávky",
     "orders": "Moje objednávky",
     "book_now": "Objednat",
+    "track_order": "Sledovat objednávku",
     "login": "Přihlásit se",
     "register": "Registrace",
     "profile": "Profil",
@@ -66,7 +67,8 @@
       "gdpr": "Ochrana údajů",
       "checkout_success": "Platba úspěšná",
       "checkout_cancel": "Platba zrušena",
-      "not_found": "Stránka nenalezena"
+      "not_found": "Stránka nenalezena",
+      "track_order": "Sledovat objednávku"
     }
   },
   "global": {
@@ -858,7 +860,9 @@
       "delete_confirm_title": "Smazat účet",
       "delete_confirm_yes": "Ano, smazat můj účet",
       "delete_success": "Účet smazán",
-      "delete_error": "Nepodařilo se smazat účet"
+      "delete_error": "Nepodařilo se smazat účet",
+      "guest_info_title": "Vaše soukromí je důležité",
+      "guest_info_description": "Vaše soukromí bereme vážně. Přihlaste se pro správu souhlasů, export dat nebo smazání účtu. Více informací najdete v našich Zásadách ochrany osobních údajů a Podmínkách služby."
     },
     "forgot_password": {
       "email": "Email",
@@ -882,6 +886,36 @@
         "change_password": "Změnit heslo",
         "remember_password": "Pamatujete si heslo?"
       }
+    },
+    "track_order": {
+      "title": "Sledovat objednávku",
+      "subtitle": "Zadejte číslo objednávky a e-mail pro kontrolu stavu vaší objednávky",
+      "order_number": "Číslo objednávky",
+      "order_number_placeholder": "např. ORD-A1B2C3D4",
+      "email": "E-mailová adresa",
+      "email_placeholder": "E-mail použitý při objednávce",
+      "search": "Sledovat objednávku",
+      "not_found": "Nebyla nalezena žádná objednávka s touto kombinací. Zkontrolujte číslo objednávky a e-mailovou adresu.",
+      "not_found_title": "Objednávka nenalezena",
+      "order": "Objednávka",
+      "status_details": "Stav",
+      "order_status": "Stav objednávky",
+      "payment_status": "Stav platby",
+      "payment_type": "Typ platby",
+      "service_info": "Detaily služby",
+      "cleaning_date": "Datum úklidu",
+      "estimated_time": "Odhadovaný čas",
+      "confirmation_code": "Potvrzovací kód",
+      "packages": "Balíčky",
+      "services": "Služby",
+      "total": "Celkem",
+      "timeline": "Průběh objednávky",
+      "hint": "Číslo objednávky najdete v potvrzovacím e-mailu, který jste obdrželi po zadání objednávky.",
+      "recent_orders": "Nedávné objednávky",
+      "lookup_another": "Vyhledat jinou objednávku",
+      "manual_lookup": "Ruční vyhledávání",
+      "guest_limit": "Jako host je sledováno pouze posledních 5 objednávek na tomto zařízení. Vytvořte si účet pro přístup ke všem objednávkám odkudkoli.",
+      "guest_cta": "Vytvořit účet"
     }
   },
   "components": {

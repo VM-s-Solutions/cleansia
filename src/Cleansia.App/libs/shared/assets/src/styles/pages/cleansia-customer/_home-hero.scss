@@ -51,7 +51,7 @@ cleansia-hero {
     font-family: $font-heading;
     font-size: 0.82rem;
     font-weight: 600;
-    margin-bottom: 2rem;
+    margin-bottom: 2rem !important;
     border: 1px solid rgba($primary, 0.1);
     i {
       font-size: 0.85rem;
@@ -225,7 +225,12 @@ cleansia-hero {
 // =============================
 :root.dark-mode {
   .cl-hero {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 40%, rgba(56, 189, 248, 0.06) 100%);
+    background: linear-gradient(
+      135deg,
+      #0f172a 0%,
+      #1e293b 40%,
+      rgba(56, 189, 248, 0.06) 100%
+    );
   }
 
   .cl-hero__tagline {

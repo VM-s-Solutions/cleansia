@@ -32,7 +32,7 @@
   &__desc {
     color: $text-muted;
     font-size: 1rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem !important;
     line-height: 1.7;
   }
 }
@@ -51,7 +51,11 @@
 // =============================
 :root.dark-mode {
   .cl-cta {
-    background: linear-gradient(180deg, var(--surface-card) 0%, rgba(56, 189, 248, 0.04) 100%);
+    background: linear-gradient(
+      180deg,
+      var(--surface-card) 0%,
+      rgba(56, 189, 248, 0.04) 100%
+    );
 
     &__title {
       background: linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%);

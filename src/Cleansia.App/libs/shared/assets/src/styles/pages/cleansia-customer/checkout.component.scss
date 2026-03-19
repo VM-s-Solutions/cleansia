@@ -14,8 +14,8 @@ $checkout-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 6px 16px rgba(0, 0, 0, 0.04);
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: 5rem 1.5rem 4rem;
-  min-height: calc(100vh - 200px);
+  padding: 2rem 1.5rem;
+  min-height: auto;
   position: relative;
   overflow: hidden;
 }

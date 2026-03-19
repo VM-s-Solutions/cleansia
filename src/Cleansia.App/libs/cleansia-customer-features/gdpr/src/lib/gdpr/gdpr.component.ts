@@ -52,8 +52,14 @@ export class GdprComponent implements OnInit {
     [ConsentType.DataProcessing]: 'pages.gdpr.consent_types.data_processing',
   };
 
+  readonly isAuthenticated = signal(this.authService.isLoggedIn());
+
   ngOnInit(): void {
-    this.loadConsents();
+    if (this.isAuthenticated()) {
+      this.loadConsents();
+    } else {
+      this.loadingConsents.set(false);
+    }
   }
 
   loadConsents(): void {

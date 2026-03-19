@@ -1,0 +1,718 @@
+// Track Order Page — BEM structured
+$primary: #0284c7;
+$primary-dark: #0369a1;
+$primary-lighter: #f0f9ff;
+$primary-light: #e0f2fe;
+$primary-accent: #38bdf8;
+$text-heading: #0c4a6e;
+$text-body: #334155;
+$text-muted: #64748b;
+$border: #e2e8f0;
+$bg-alt: #f8fafc;
+$white: #ffffff;
+$green: #16a34a;
+$shadow-card: 0 2px 16px rgba(0, 0, 0, 0.06);
+$max-width: 800px;
+$font-heading: 'Poppins', sans-serif;
+
+.track-order {
+  max-width: $max-width;
+  margin: 0 auto;
+  padding: 2rem 2rem 4rem;
+
+  cleansia-title {
+    text-align: center;
+  }
+
+  &__subtitle {
+    color: $text-muted;
+    text-align: center;
+    font-size: 0.95rem;
+    margin: -0.5rem 0 2rem !important;
+  }
+
+  // ─── FORM CARD ───
+  &__form-card {
+    background: $white;
+    border: 1px solid $border;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: $shadow-card;
+    margin-bottom: 1.5rem;
+  }
+
+  &__form {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+
+  &__field {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+
+    label {
+      font-family: $font-heading;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: $text-heading;
+    }
+  }
+
+  &__input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid $border;
+    border-radius: 0.5rem;
+    padding: 0 0.75rem;
+    transition: border-color 0.2s;
+
+    &:focus-within {
+      border-color: $primary;
+      box-shadow: 0 0 0 2px rgba($primary, 0.12);
+    }
+
+    i {
+      color: $text-muted;
+      font-size: 0.85rem;
+    }
+
+    input {
+      flex: 1;
+      border: none;
+      outline: none;
+      padding: 0.65rem 0;
+      font-size: 0.9rem;
+      color: $text-body;
+      background: transparent;
+
+      &::placeholder {
+        color: lighten($text-muted, 15%);
+      }
+    }
+  }
+
+  // ─── ERROR ───
+  &__error {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+
+    > i {
+      color: #ef4444;
+      font-size: 1.1rem;
+      margin-top: 0.15rem;
+    }
+
+    h4 {
+      margin: 0 0 0.25rem !important;
+      font-size: 0.9rem;
+      color: #991b1b;
+    }
+
+    p {
+      margin: 0 !important;
+      font-size: 0.82rem;
+      color: #b91c1c;
+    }
+  }
+
+  // ─── HINT ───
+  &__hint {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: $primary-lighter;
+    border: 1px solid rgba($primary, 0.12);
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+    color: $text-muted;
+    font-size: 0.85rem;
+
+    i {
+      color: $primary;
+      font-size: 1rem;
+    }
+
+    p {
+      margin: 0 !important;
+    }
+  }
+
+  // ─── GUEST BANNER ───
+  &__guest-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    background: $primary-lighter;
+    border: 1px solid rgba($primary, 0.15);
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.85rem;
+    color: $text-body;
+
+    > i {
+      color: $primary;
+      font-size: 1.1rem;
+      margin-top: 0.1rem;
+    }
+
+    p {
+      margin: 0 0 0.5rem !important;
+    }
+  }
+
+  &__guest-banner-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: $primary;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: color 0.2s;
+
+    &:hover {
+      color: $primary-dark;
+      text-decoration: underline;
+    }
+  }
+
+  // ─── LOADING ───
+  &__loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 2rem;
+    color: $text-muted;
+    font-size: 0.9rem;
+
+    i { font-size: 1.2rem; color: $primary; }
+  }
+
+  // ─── SECTION TITLE ───
+  &__section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: $font-heading;
+    font-size: 1rem;
+    font-weight: 600;
+    color: $text-heading;
+    margin: 0 0 1rem !important;
+
+    i { color: $primary; font-size: 0.95rem; }
+  }
+
+  // ─── ORDER CARD ───
+  &__order-card {
+    background: $white;
+    border: 1px solid $border;
+    border-radius: 1rem;
+    box-shadow: $shadow-card;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  &__order-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+
+    h4 {
+      font-family: $font-heading;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: $text-heading;
+      margin: 0 !important;
+    }
+  }
+
+  &__order-card-info {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+  }
+
+  &__order-card-date {
+    font-size: 0.78rem;
+    color: $text-muted;
+  }
+
+  &__order-card-badges {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  &__order-card-body {
+    display: flex;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+  }
+
+  &__order-card-detail {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.82rem;
+    color: $text-body;
+
+    i { color: $text-muted; font-size: 0.8rem; }
+  }
+
+  &__order-card-items {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+  }
+
+  &__order-card-chip {
+    display: inline-block;
+    background: $primary-lighter;
+    color: $primary-dark;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.2rem 0.6rem;
+    border-radius: 1rem;
+  }
+
+  &__order-card-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 0.5rem;
+    border-top: 1px solid $border;
+  }
+
+  &__order-card-total {
+    font-family: $font-heading;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: $primary;
+  }
+
+  &__order-card-timeline {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid $border;
+  }
+
+  // ─── TOGGLE MANUAL BUTTON ───
+  &__toggle-manual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    width: 100%;
+    padding: 0.65rem;
+    margin-bottom: 1.5rem;
+    border: 1px dashed $border;
+    border-radius: 0.5rem;
+    background: transparent;
+    color: $primary;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+
+    &:hover {
+      background: $primary-lighter;
+      border-color: $primary;
+    }
+  }
+
+  // ─── FORM TITLE ───
+  &__form-title {
+    font-family: $font-heading;
+    font-size: 1rem;
+    font-weight: 600;
+    color: $text-heading;
+    margin: 0 0 1rem !important;
+  }
+
+  // ─── RESULT CARD ───
+  &__result {
+    background: $white;
+    border: 1px solid $border;
+    border-radius: 1rem;
+    box-shadow: $shadow-card;
+    overflow: hidden;
+  }
+
+  &__result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid $border;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+
+    h2 {
+      font-family: $font-heading;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: $text-heading;
+      margin: 0 !important;
+    }
+  }
+
+  &__result-date {
+    font-size: 0.8rem;
+    color: $text-muted;
+  }
+
+  // ─── SECTIONS ───
+  &__section {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid $border;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    h3 {
+      font-family: $font-heading;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: $text-heading;
+      margin: 0 0 0.75rem !important;
+    }
+  }
+
+  &__status-row {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+
+    > div {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+      color: $text-body;
+    }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+
+    label {
+      font-size: 0.75rem;
+      color: $text-muted;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    p {
+      margin: 0.25rem 0 0 !important;
+      font-size: 0.9rem;
+      color: $text-body;
+    }
+  }
+
+  &__item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    font-size: 0.88rem;
+    color: $text-body;
+
+    & + & {
+      border-top: 1px solid rgba($border, 0.5);
+    }
+  }
+
+  &__total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    background: $bg-alt;
+    font-size: 1rem;
+
+    span {
+      font-weight: 600;
+      color: $text-heading;
+    }
+
+    strong {
+      font-family: $font-heading;
+      font-size: 1.25rem;
+      color: $primary;
+    }
+  }
+
+  // ─── TIMELINE ───
+  &__timeline-event {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+
+    strong {
+      font-size: 0.85rem;
+      color: $text-body;
+    }
+
+    small {
+      font-size: 0.75rem;
+      color: $text-muted;
+    }
+  }
+
+  &__timeline-marker {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: $primary-lighter;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    i {
+      font-size: 0.85rem;
+      color: $primary;
+    }
+  }
+}
+
+// ─── RESPONSIVE ───
+@media (max-width: 768px) {
+  .track-order {
+    padding: 1.5rem 1rem 3rem;
+
+    &__form {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    &__field {
+      min-width: 0;
+      width: 100%;
+    }
+
+    &__form cleansia-button {
+      width: 100%;
+    }
+
+    &__grid {
+      grid-template-columns: 1fr;
+    }
+
+    &__status-row {
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    &__result-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    &__order-card {
+      padding: 1rem;
+    }
+
+    &__order-card-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    &__order-card-body {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+  }
+}
+
+// ─── DARK MODE ───
+:root.dark-mode {
+  .track-order {
+    &__form-card {
+      background: #1e293b;
+      border-color: #334155;
+    }
+
+    &__input-wrap {
+      border-color: #334155;
+      background: #172033;
+
+      &:focus-within {
+        border-color: #38bdf8;
+        box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.12);
+      }
+
+      i {
+        color: #64748b;
+      }
+
+      input {
+        color: #e2e8f0;
+
+        &::placeholder {
+          color: #475569;
+        }
+      }
+    }
+
+    &__error {
+      background: rgba(239, 68, 68, 0.08);
+      border-color: rgba(239, 68, 68, 0.2);
+
+      h4 {
+        color: #fca5a5;
+      }
+
+      p {
+        color: #f87171;
+      }
+    }
+
+    &__hint {
+      background: rgba(56, 189, 248, 0.06);
+      border-color: rgba(56, 189, 248, 0.12);
+    }
+
+    &__result {
+      background: #1e293b;
+      border-color: #334155;
+    }
+
+    &__result-header {
+      border-bottom-color: #334155;
+
+      h2 {
+        color: #e2e8f0;
+      }
+    }
+
+    &__section {
+      border-bottom-color: #334155;
+
+      h3 {
+        color: #e2e8f0;
+      }
+    }
+
+    &__status-row > div {
+      color: #cbd5e1;
+    }
+
+    &__grid {
+      label {
+        color: #94a3b8;
+      }
+
+      p {
+        color: #e2e8f0;
+      }
+    }
+
+    &__item {
+      color: #cbd5e1;
+
+      & + & {
+        border-color: #334155;
+      }
+    }
+
+    &__total {
+      background: #172033;
+
+      span {
+        color: #e2e8f0;
+      }
+    }
+
+    &__timeline-event {
+      strong {
+        color: #e2e8f0;
+      }
+
+      small {
+        color: #94a3b8;
+      }
+    }
+
+    &__timeline-marker {
+      background: rgba(56, 189, 248, 0.1);
+    }
+
+    &__guest-banner {
+      background: rgba(56, 189, 248, 0.06);
+      border-color: rgba(56, 189, 248, 0.12);
+      color: #cbd5e1;
+    }
+
+    &__guest-banner-link {
+      color: #38bdf8;
+
+      &:hover {
+        color: #7dd3fc;
+      }
+    }
+
+    &__section-title {
+      color: #e2e8f0;
+    }
+
+    &__order-card {
+      background: #1e293b;
+      border-color: #334155;
+    }
+
+    &__order-card-header h4 {
+      color: #e2e8f0;
+    }
+
+    &__order-card-detail {
+      color: #cbd5e1;
+    }
+
+    &__order-card-chip {
+      background: rgba(56, 189, 248, 0.1);
+      color: #7dd3fc;
+    }
+
+    &__order-card-footer {
+      border-color: #334155;
+    }
+
+    &__order-card-timeline {
+      border-color: #334155;
+    }
+
+    &__toggle-manual {
+      border-color: #334155;
+      color: #38bdf8;
+
+      &:hover {
+        background: rgba(56, 189, 248, 0.06);
+        border-color: #38bdf8;
+      }
+    }
+
+    &__form-title {
+      color: #e2e8f0;
+    }
+  }
+}

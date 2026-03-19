@@ -21,6 +21,16 @@ html {
   --surface-hover: rgba(0, 0, 0, 0.04);
 }
 
+.cleansia-app-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.cleansia-app-main {
+  flex: 1 0 auto;
+}
+
 html,
 body {
   min-height: 100vh;

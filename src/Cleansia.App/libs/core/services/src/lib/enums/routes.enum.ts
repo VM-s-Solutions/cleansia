@@ -44,6 +44,7 @@ export enum CleansiaCustomerRoute {
   GDPR = 'gdpr',
   CHECKOUT_SUCCESS = 'checkout/success',
   CHECKOUT_CANCEL = 'checkout/cancel',
+  TRACK_ORDER = 'track-order',
   NOT_FOUND = 'not-found',
 }
 

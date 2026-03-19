@@ -38,8 +38,6 @@
     &::before {
       content: '';
       position: absolute;
-      left: -20px;
-      bottom: -20px;
       width: 220px;
       height: 220px;
       background: $white;
@@ -53,7 +51,7 @@
       display: block;
       position: relative;
       z-index: 1;
-      margin-bottom: 0.5rem;
+      margin-bottom: 2rem;
     }
   }
 
@@ -64,18 +62,19 @@
     flex-direction: column;
     align-items: center;
     text-align: center;
+    gap: 0.75rem;
 
     h3 {
       font-family: $font-heading;
       font-size: 1.2rem;
       font-weight: 700;
-      margin: 0 0 0.5rem;
+      margin: 0;
     }
 
     p {
       font-size: 0.88rem;
       color: rgba($white, 0.8);
-      margin: 0 0 1.5rem;
+      margin: 0 0 0.75rem;
     }
   }
 

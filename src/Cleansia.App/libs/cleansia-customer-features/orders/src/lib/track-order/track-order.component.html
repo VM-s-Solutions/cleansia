@@ -1,0 +1,208 @@
+<div class="track-order">
+  <cleansia-title [title]="'pages.track_order.title' | translate" />
+  <p class="track-order__subtitle">{{ 'pages.track_order.subtitle' | translate }}</p>
+
+  <!-- Guest banner -->
+  <div class="track-order__guest-banner">
+    <i class="pi pi-info-circle"></i>
+    <div>
+      <p>{{ 'pages.track_order.guest_limit' | translate }}</p>
+      <a [routerLink]="'/' + routes.REGISTER" class="track-order__guest-banner-link">
+        <i class="pi pi-user-plus"></i>
+        {{ 'pages.track_order.guest_cta' | translate }}
+      </a>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  @if (loading() && recentOrders().length === 0 && !searched()) {
+    <div class="track-order__loading">
+      <i class="pi pi-spin pi-spinner"></i>
+      <span>{{ 'global.loading' | translate }}</span>
+    </div>
+  }
+
+  <!-- Recent Orders (auto-loaded from localStorage) -->
+  @if (recentOrders().length > 0) {
+    <h3 class="track-order__section-title">
+      <i class="pi pi-history"></i>
+      {{ 'pages.track_order.recent_orders' | translate }}
+    </h3>
+
+    @for (order of recentOrders(); track order.id) {
+      <div class="track-order__order-card">
+        <div class="track-order__order-card-header">
+          <div class="track-order__order-card-info">
+            <h4>#{{ order.displayOrderNumber }}</h4>
+            <span class="track-order__order-card-date">{{ formatDate(order.createdOn) }}</span>
+          </div>
+          <div class="track-order__order-card-badges">
+            <p-tag [value]="order.orderStatus?.name || ''" [severity]="getOrderStatusSeverity(order.orderStatus)" />
+            <p-tag [value]="order.paymentStatus?.name || ''" [severity]="getPaymentStatusSeverity(order.paymentStatus)" />
+          </div>
+        </div>
+
+        <div class="track-order__order-card-body">
+          <div class="track-order__order-card-detail">
+            <i class="pi pi-calendar"></i>
+            <span>{{ formatDate(order.cleaningDateTime) }}</span>
+          </div>
+          <div class="track-order__order-card-detail">
+            <i class="pi pi-clock"></i>
+            <span>{{ order.estimatedTime }} min</span>
+          </div>
+          <div class="track-order__order-card-detail">
+            <i class="pi pi-tag"></i>
+            <span>{{ order.confirmationCode }}</span>
+          </div>
+        </div>
+
+        <!-- Services/Packages summary -->
+        @if ((order.selectedPackages && order.selectedPackages.length > 0) || (order.selectedServices && order.selectedServices.length > 0)) {
+          <div class="track-order__order-card-items">
+            @for (pkg of order.selectedPackages; track pkg.id) {
+              <span class="track-order__order-card-chip">{{ pkg.name }}</span>
+            }
+            @for (svc of order.selectedServices; track svc.id) {
+              <span class="track-order__order-card-chip">{{ svc.name }}</span>
+            }
+          </div>
+        }
+
+        <div class="track-order__order-card-footer">
+          <span class="track-order__order-card-total">
+            {{ formatPriceFor(order, order.totalPrice) }}
+          </span>
+        </div>
+
+        <!-- Timeline -->
+        @if (order.statusHistory && order.statusHistory.length > 0) {
+          <div class="track-order__order-card-timeline">
+            <p-timeline [value]="order.statusHistory" layout="vertical">
+              <ng-template #content let-event>
+                <div class="track-order__timeline-event">
+                  <strong>{{ event.status?.name }}</strong>
+                  <small>{{ formatDate(event.createdOn) }}</small>
+                </div>
+              </ng-template>
+              <ng-template #marker let-event>
+                <span class="track-order__timeline-marker">
+                  <i [class]="getStatusIcon(event.status?.value)"></i>
+                </span>
+              </ng-template>
+            </p-timeline>
+          </div>
+        }
+      </div>
+    }
+  }
+
+  <!-- Manual Lookup Toggle -->
+  @if (recentOrders().length > 0) {
+    <button class="track-order__toggle-manual" (click)="toggleManualLookup()">
+      <i class="pi pi-search"></i>
+      {{ 'pages.track_order.lookup_another' | translate }}
+    </button>
+  }
+
+  <!-- Manual Lookup Form -->
+  @if (showManualLookup()) {
+    <div class="track-order__form-card">
+      <h3 class="track-order__form-title">
+        {{ 'pages.track_order.manual_lookup' | translate }}
+      </h3>
+      <div class="track-order__form">
+        <div class="track-order__field">
+          <label>{{ 'pages.track_order.order_number' | translate }}</label>
+          <div class="track-order__input-wrap">
+            <i class="pi pi-hashtag"></i>
+            <input
+              type="text"
+              [placeholder]="'pages.track_order.order_number_placeholder' | translate"
+              [ngModel]="orderNumber()"
+              (ngModelChange)="orderNumber.set($event)"
+              (keyup.enter)="lookup()"
+            />
+          </div>
+        </div>
+        <div class="track-order__field">
+          <label>{{ 'pages.track_order.email' | translate }}</label>
+          <div class="track-order__input-wrap">
+            <i class="pi pi-envelope"></i>
+            <input
+              type="email"
+              [placeholder]="'pages.track_order.email_placeholder' | translate"
+              [ngModel]="email()"
+              (ngModelChange)="email.set($event)"
+              (keyup.enter)="lookup()"
+            />
+          </div>
+        </div>
+        <cleansia-button
+          [title]="'pages.track_order.search' | translate"
+          [severity]="'primary'"
+          [icon]="'pi pi-search'"
+          [loading]="loading()"
+          (clickFn)="lookup()"
+        />
+      </div>
+    </div>
+
+    <!-- Manual lookup error -->
+    @if (error()) {
+      <div class="track-order__error">
+        <i class="pi pi-info-circle"></i>
+        <div>
+          <h4>{{ 'pages.track_order.not_found_title' | translate }}</h4>
+          <p>{{ error() }}</p>
+        </div>
+      </div>
+    }
+
+    <!-- Manual lookup result -->
+    @if (manualResult(); as order) {
+      <div class="track-order__order-card">
+        <div class="track-order__order-card-header">
+          <div class="track-order__order-card-info">
+            <h4>#{{ order.displayOrderNumber }}</h4>
+            <span class="track-order__order-card-date">{{ formatDate(order.createdOn) }}</span>
+          </div>
+          <div class="track-order__order-card-badges">
+            <p-tag [value]="order.orderStatus?.name || ''" [severity]="getOrderStatusSeverity(order.orderStatus)" />
+            <p-tag [value]="order.paymentStatus?.name || ''" [severity]="getPaymentStatusSeverity(order.paymentStatus)" />
+          </div>
+        </div>
+
+        <div class="track-order__order-card-body">
+          <div class="track-order__order-card-detail">
+            <i class="pi pi-calendar"></i>
+            <span>{{ formatDate(order.cleaningDateTime) }}</span>
+          </div>
+          <div class="track-order__order-card-detail">
+            <i class="pi pi-clock"></i>
+            <span>{{ order.estimatedTime }} min</span>
+          </div>
+          <div class="track-order__order-card-detail">
+            <i class="pi pi-tag"></i>
+            <span>{{ order.confirmationCode }}</span>
+          </div>
+        </div>
+
+        <div class="track-order__order-card-footer">
+          <span class="track-order__order-card-total">
+            {{ formatPriceFor(order, order.totalPrice) }}
+          </span>
+        </div>
+      </div>
+    }
+  }
+
+  <!-- Empty state — no recent orders and no manual lookup yet -->
+  @if (!loading() && recentOrders().length === 0 && !searched() && showManualLookup()) {
+    <div class="track-order__hint">
+      <i class="pi pi-info-circle"></i>
+      <p>{{ 'pages.track_order.hint' | translate }}</p>
+    </div>
+  }
+</div>
+<cleansia-scroll-top />

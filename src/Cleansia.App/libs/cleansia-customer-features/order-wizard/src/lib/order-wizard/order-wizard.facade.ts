@@ -19,7 +19,7 @@ import {
   PaymentType,
   ServiceListItem,
 } from '@cleansia/partner-services';
-import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
+import { CleansiaCustomerRoute, GuestOrderService, SnackbarService } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -37,6 +37,7 @@ export class OrderWizardFacade {
   private readonly authService = inject(CustomerAuthService);
   private readonly translate = inject(TranslateService);
   private readonly snackbarService = inject(SnackbarService);
+  private readonly guestOrderService = inject(GuestOrderService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   isAuthenticated = signal(false);
@@ -329,6 +330,9 @@ export class OrderWizardFacade {
       this.customerClient.paymentClient.createOrder(command).subscribe({
         next: (response) => {
           this.submitting.set(false);
+          if (response.id) {
+            this.guestOrderService.save(response.id, data.customerEmail);
+          }
           if (response.stripeSessionId) {
             if (this.isBrowser) window.location.href = response.stripeSessionId;
           } else {
@@ -344,8 +348,11 @@ export class OrderWizardFacade {
       });
     } else {
       this.customerClient.orderClient.createOrder(command).subscribe({
-        next: () => {
+        next: (response) => {
           this.submitting.set(false);
+          if (response.id) {
+            this.guestOrderService.save(response.id, data.customerEmail);
+          }
           this.router.navigate([CleansiaCustomerRoute.CHECKOUT_SUCCESS]);
         },
         error: () => {

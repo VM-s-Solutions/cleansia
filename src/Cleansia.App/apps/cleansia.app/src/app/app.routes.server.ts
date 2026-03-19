@@ -4,7 +4,7 @@ export const serverRoutes: ServerRoute[] = [
   // Static pages — prerendered at build time (no API calls needed)
   { path: 'terms', renderMode: RenderMode.Prerender },
   { path: 'privacy', renderMode: RenderMode.Prerender },
-  { path: 'not-found', renderMode: RenderMode.Prerender },
+  { path: 'not-found', renderMode: RenderMode.Server },
 
   // SSR pages — rendered on request (need API data for SEO)
   { path: '', renderMode: RenderMode.Server },

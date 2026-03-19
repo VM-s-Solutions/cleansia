@@ -15,6 +15,25 @@ namespace Cleansia.Web.Customer.Controllers;
 public class OrderController(IMediator mediator) : CustomerApiController(mediator)
 {
     [AllowAnonymous]
+    [HttpGet("Lookup")]
+    [ProducesResponseType(typeof(LookupOrder.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> LookupOrder([FromQuery] string orderNumber, [FromQuery] string email, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new LookupOrder.Query(orderNumber, email), cancellationToken);
+        return HandleResult<LookupOrder.Response>(result);
+    }
+
+    [AllowAnonymous]
+    [HttpPost("LookupBatch")]
+    [ProducesResponseType(typeof(LookupOrderBatch.Response), StatusCodes.Status200OK)]
+    public async Task<IActionResult> LookupOrderBatch([FromBody] LookupOrderBatch.Query query, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(query, cancellationToken);
+        return HandleResult<LookupOrderBatch.Response>(result);
+    }
+
+    [AllowAnonymous]
     [HttpPost("CreateOrder")]
     [ProducesResponseType(typeof(CreateOrder.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]

@@ -1,5 +1,8 @@
 <cleansia-dynamic-background>
   <div class="cleansia-login">
+    <div class="cleansia-login__mascot">
+      <img src="assets/images/mascot/mascot-waving.png" alt="Cleansia mascot" />
+    </div>
     <form class="cleansia-login__login-card" [formGroup]="facade.formGroup">
       <div class="cleansia-login__brand-name-container">
         <cleansia-brand-name />
@@ -46,6 +49,10 @@
           (clickFn)="facade.login()"
           [loading]="facade.loading() ?? false"
         />
+        <div class="cleansia-login__divider">
+          <span>{{ 'auth.login.or' | translate }}</span>
+        </div>
+        <div class="cleansia-login__google-btn" #googleBtn></div>
         <div>
           <span tabindex="-1">
             {{ 'auth.login.dont_have_account' | translate }}

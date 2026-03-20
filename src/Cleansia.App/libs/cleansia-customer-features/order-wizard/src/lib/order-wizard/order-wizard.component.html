@@ -346,19 +346,7 @@
               <small class="order-wizard__field-error">{{ fieldError('zipCode') }}</small>
               }
             </div>
-            @if (facade.countries().length > 0) {
-            <div class="order-wizard__field">
-              <label>{{ 'pages.order.country' | translate }}</label>
-              <p-select
-                [options]="facade.countries()"
-                [ngModel]="facade.formData().address.countryId"
-                (ngModelChange)="updateAddressField('countryId', $event)"
-                optionLabel="name"
-                optionValue="id"
-                [placeholder]="'pages.order.select_country' | translate"
-              />
-            </div>
-            }
+            <!-- Country is hardcoded to CZ — auto-selected in facade -->
             @if (facade.isAuthenticated()) {
             <div class="order-wizard__field order-wizard__field--full order-wizard__save-address">
               <p-checkbox
@@ -750,17 +738,22 @@
         <!-- Sidebar breakdown -->
         @if (selectedServices().length > 0 || selectedPackages().length > 0) {
         <div class="order-wizard__sidebar-breakdown">
-          @for (service of selectedServices(); track service.id) {
-          <div class="order-wizard__sidebar-item">
-            <span>{{ getTranslation(service, 'name') }}</span>
-            <span>{{ formatPrice(service.basePrice) }}</span>
-          </div>
-          }
           @for (pkg of selectedPackages(); track pkg.id) {
           <div class="order-wizard__sidebar-item">
             <span>{{ getTranslation(pkg, 'name') }}</span>
             <span>{{ formatPrice(pkg.price) }}</span>
           </div>
+          }
+          @for (service of selectedServices(); track service.id) {
+          <div class="order-wizard__sidebar-item">
+            <span>{{ getTranslation(service, 'name') }}</span>
+            <span>{{ formatPrice(service.basePrice + service.perRoomPrice * (facade.formData().rooms + facade.formData().bathrooms)) }}</span>
+          </div>
+          @if (service.perRoomPrice > 0) {
+          <div class="order-wizard__sidebar-detail">
+            <span>{{ formatPrice(service.basePrice) }} + {{ formatPrice(service.perRoomPrice) }} × {{ facade.formData().rooms + facade.formData().bathrooms }} {{ 'pages.order_detail.rooms' | translate }}</span>
+          </div>
+          }
           }
         </div>
         }
@@ -780,12 +773,40 @@
   </div>
 
   <!-- Mobile Price Bar -->
-  <div class="order-wizard__mobile-price">
-    <div class="order-wizard__mobile-price-label">
-      {{ 'pages.order.price_total' | translate }}
+  <div class="order-wizard__mobile-price" [class.order-wizard__mobile-price--expanded]="mobileBreakdownExpanded()">
+    <div class="order-wizard__mobile-price-header" (click)="mobileBreakdownExpanded.set(!mobileBreakdownExpanded())">
+      <div class="order-wizard__mobile-price-label">
+        {{ 'pages.order.price_total' | translate }}
+      </div>
+      <div class="order-wizard__mobile-price-right">
+        <div class="order-wizard__mobile-price-value">
+          {{ formatPrice(facade.totalPrice()) }}
+        </div>
+        <i class="pi order-wizard__mobile-price-chevron"
+          [class.pi-chevron-up]="!mobileBreakdownExpanded()"
+          [class.pi-chevron-down]="mobileBreakdownExpanded()"
+        ></i>
+      </div>
     </div>
-    <div class="order-wizard__mobile-price-value">
-      {{ formatPrice(facade.totalPrice()) }}
+    <div class="order-wizard__mobile-price-breakdown"
+      [class.order-wizard__mobile-price-breakdown--expanded]="mobileBreakdownExpanded()">
+      @for (pkg of selectedPackages(); track pkg.id) {
+      <div class="order-wizard__mobile-price-item">
+        <span>{{ getTranslation(pkg, 'name') }}</span>
+        <span>{{ formatPrice(pkg.price) }}</span>
+      </div>
+      }
+      @for (service of selectedServices(); track service.id) {
+      <div class="order-wizard__mobile-price-item">
+        <span>{{ getTranslation(service, 'name') }}</span>
+        <span>{{ formatPrice(service.basePrice + service.perRoomPrice * (facade.formData().rooms + facade.formData().bathrooms)) }}</span>
+      </div>
+      @if (service.perRoomPrice > 0) {
+      <div class="order-wizard__mobile-price-detail">
+        {{ formatPrice(service.basePrice) }} + {{ formatPrice(service.perRoomPrice) }} × {{ facade.formData().rooms + facade.formData().bathrooms }} {{ 'pages.order_detail.rooms' | translate }}
+      </div>
+      }
+      }
     </div>
   </div>
 </div>

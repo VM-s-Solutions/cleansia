@@ -44,7 +44,13 @@
               "maximumError": "16kb"
             }
           ],
-          "outputHashing": "all"
+          "outputHashing": "all",
+          "fileReplacements": [
+            {
+              "replace": "apps/cleansia-partner.app/src/environments/environment.ts",
+              "with": "apps/cleansia-partner.app/src/environments/environment.prod.ts"
+            }
+          ]
         },
         "development": {
           "optimization": false,

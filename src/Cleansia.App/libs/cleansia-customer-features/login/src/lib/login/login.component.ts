@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, AfterViewInit, ElementRef, viewChild, NgZone, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import {
@@ -31,7 +32,48 @@ import { LoginFacade } from './login.facade';
   providers: [LoginFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LoginComponent {
+export class LoginComponent implements AfterViewInit {
   protected readonly facade = inject(LoginFacade);
   protected routes = CleansiaCustomerRoute;
+  private readonly zone = inject(NgZone);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  googleBtnRef = viewChild<ElementRef>('googleBtn');
+
+  ngAfterViewInit() {
+    if (!this.isBrowser) return;
+    this.initGoogleSignIn();
+  }
+
+  private _gsiRetries = 0;
+  private readonly _gsiMaxRetries = 20;
+
+  private initGoogleSignIn() {
+    const google = (window as any).google;
+    if (!google?.accounts?.id) {
+      if (this._gsiRetries < this._gsiMaxRetries) {
+        this._gsiRetries++;
+        setTimeout(() => this.initGoogleSignIn(), 300);
+      }
+      return;
+    }
+
+    google.accounts.id.initialize({
+      client_id: '354682423254-boe1nlnb1dbd3m6a013d3nkpo2e9bgiq.apps.googleusercontent.com',
+      callback: (response: any) => {
+        this.zone.run(() => this.facade.googleLogin(response.credential));
+      },
+    });
+
+    const btnEl = this.googleBtnRef()?.nativeElement;
+    if (btnEl) {
+      google.accounts.id.renderButton(btnEl, {
+        theme: 'outline',
+        size: 'large',
+        width: '100%',
+        text: 'continue_with',
+        shape: 'rectangular',
+      });
+    }
+  }
 }

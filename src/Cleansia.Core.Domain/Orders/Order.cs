@@ -110,6 +110,9 @@ public class Order : Auditable, ITenantEntity
     private ICollection<OrderIssue> _issues = [];
     public IReadOnlyCollection<OrderIssue> OrderIssues => _issues.ToList().AsReadOnly();
 
+    private ICollection<OrderReview> _reviews = [];
+    public IReadOnlyCollection<OrderReview> Reviews => _reviews.ToList().AsReadOnly();
+
     public static Order Create(string customerName, string customerEmail, string customerPhone,
         Address customerAddress, int rooms, int bathrooms,
         Dictionary<string, bool> extras, DateTime cleaningDateTime, PaymentType paymentType,
@@ -246,6 +249,12 @@ public class Order : Auditable, ITenantEntity
     public Order AddIssue(OrderIssue issue)
     {
         _issues.Add(issue);
+        return this;
+    }
+
+    public Order AddReview(OrderReview review)
+    {
+        _reviews.Add(review);
         return this;
     }
 

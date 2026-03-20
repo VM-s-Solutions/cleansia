@@ -58,6 +58,27 @@ export class LoginFacade extends UnsubscribeControlDirective {
       });
   }
 
+  googleLogin(credential: string) {
+    const decoded = JSON.parse(atob(credential.split('.')[1]));
+    const { sub: googleId, email, given_name: firstName, family_name: lastName } = decoded;
+
+    this.authService
+      .authenticateWithGoogle(credential, googleId, email, firstName || '', lastName || '')
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe({
+        next: (authResult: JwtTokenResponse) => {
+          this.authService.setSession(authResult);
+          this.guestOrderService.clear();
+          this.store.dispatch(loadCustomerUser());
+          this.snackbarService.showSuccessTranslated('auth.login.success');
+          this.router.navigate([CleansiaCustomerRoute.ORDERS]);
+        },
+        error: (err) => {
+          this.snackbarService.showApiError(err, 'auth.login.error');
+        },
+      });
+  }
+
   private createFormGroup(): FormGroup {
     return new FormGroup({
       email: new FormControl('', [Validators.required, Validators.email]),

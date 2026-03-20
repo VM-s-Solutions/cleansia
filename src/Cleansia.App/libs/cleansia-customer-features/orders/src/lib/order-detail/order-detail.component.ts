@@ -1,9 +1,10 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { Component, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
+import { Component, inject, OnInit, PLATFORM_ID, signal, computed } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CleansiaButtonComponent, CleansiaTitleComponent } from '@cleansia/components';
+import { FormsModule } from '@angular/forms';
+import { CleansiaButtonComponent } from '@cleansia/components';
 import { CustomerClient } from '@cleansia/customer-services';
-import { OrderItem, OrderStatus, PaymentStatus } from '@cleansia/partner-services';
+import { OrderItem, OrderStatus, PaymentStatus, SubmitOrderReviewCommand } from '@cleansia/partner-services';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { TagModule } from 'primeng/tag';
@@ -15,12 +16,12 @@ import { TimelineModule } from 'primeng/timeline';
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     TranslatePipe,
     TagModule,
     SkeletonModule,
     TimelineModule,
     CleansiaButtonComponent,
-    CleansiaTitleComponent,
   ],
   templateUrl: './order-detail.component.html',
 })
@@ -35,6 +36,15 @@ export class OrderDetailComponent implements OnInit {
   order = signal<OrderItem | null>(null);
   loading = signal(true);
   error = signal<string | null>(null);
+
+  // Rating
+  reviewRating = signal(0);
+  reviewComment = signal('');
+  reviewHover = signal(0);
+  reviewSubmitting = signal(false);
+  isCompleted = computed(() => this.order()?.orderStatus?.value === OrderStatus.Completed);
+  hasReview = computed(() => !!this.order()?.review);
+  stars = [1, 2, 3, 4, 5];
 
   ngOnInit(): void {
     const orderId = this.route.snapshot.paramMap.get('orderId');
@@ -85,6 +95,38 @@ export class OrderDetailComponent implements OnInit {
     if (!order?.id) return;
     this.router.navigate([CleansiaCustomerRoute.DISPUTES], {
       queryParams: { orderId: order.id },
+    });
+  }
+
+  setRating(star: number): void {
+    this.reviewRating.set(star);
+  }
+
+  submitReview(): void {
+    const order = this.order();
+    if (!order?.id || this.reviewRating() === 0) return;
+
+    this.reviewSubmitting.set(true);
+    const command = new SubmitOrderReviewCommand({
+      orderId: order.id,
+      rating: this.reviewRating(),
+      comment: this.reviewComment() || undefined,
+    });
+
+    this.customerClient.orderClient.submitReview(command).subscribe({
+      next: (review) => {
+        const current = this.order();
+        if (current) {
+          current.review = review;
+          this.order.set({ ...current } as OrderItem);
+        }
+        this.reviewSubmitting.set(false);
+        this.snackbar.showSuccess(this.translate.instant('pages.order_detail.review.success'));
+      },
+      error: (err) => {
+        this.reviewSubmitting.set(false);
+        this.snackbar.showApiError(err, 'pages.order_detail.review.error');
+      },
     });
   }
 

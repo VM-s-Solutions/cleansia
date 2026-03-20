@@ -62,12 +62,12 @@
           <div class="dispute-card__header">
             <span class="dispute-card__order">#{{ dispute.displayOrderNumber }}</span>
             <p-tag
-              [value]="dispute.status?.name || ''"
+              [value]="dispute.status.name || ''"
               [severity]="getStatusSeverity(dispute.status)"
               styleClass="text-xs"
             />
           </div>
-          <div class="dispute-card__reason">{{ dispute.reason?.name }}</div>
+          <div class="dispute-card__reason">{{ dispute.reason.name }}</div>
           <div class="dispute-card__date">
             <i class="pi pi-calendar"></i>
             {{ formatDate(dispute.createdOn) }}
@@ -191,11 +191,11 @@
       <div class="customer-disputes__detail-grid">
         <div class="customer-disputes__detail-item">
           <span class="customer-disputes__detail-label">{{ 'pages.disputes.reason' | translate }}</span>
-          <span class="customer-disputes__detail-value">{{ disputeDetail()!.reason?.name }}</span>
+          <span class="customer-disputes__detail-value">{{ disputeDetail()!.reason.name }}</span>
         </div>
         <div class="customer-disputes__detail-item">
           <span class="customer-disputes__detail-label">{{ 'pages.disputes.table.status' | translate }}</span>
-          <p-tag [value]="disputeDetail()!.status?.name || ''" [severity]="getStatusSeverity(disputeDetail()!.status)" />
+          <p-tag [value]="disputeDetail()!.status.name || ''" [severity]="getStatusSeverity(disputeDetail()!.status)" />
         </div>
       </div>
 

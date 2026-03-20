@@ -9,7 +9,7 @@ import {
   selectCustomerPackages,
   selectCustomerServices,
 } from '@cleansia/customer-stores';
-import { PackageListItem, ServiceListItem } from '@cleansia/partner-services';
+import { PackageListItem, PackageServiceSummary, ServiceListItem } from '@cleansia/partner-services';
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -174,6 +174,15 @@ export class ServicesCatalogComponent implements OnInit {
 
   getPackageFeatures(tierIndex: number): string[] {
     return this.packageFeatureKeys[tierIndex] ?? this.packageFeatureKeys[0];
+  }
+
+  getIncludedServiceNames(pkg: PackageListItem): string[] {
+    if (!pkg.includedServices?.length) return [];
+    const lang = this.translate.currentLang || this.translate.getDefaultLang();
+    return pkg.includedServices.map(svc => {
+      const t = svc.translations?.[lang];
+      return (t as any)?.name || svc.name || '';
+    }).filter(n => !!n);
   }
 
   onPackageSortChange(sort: SortOption): void {

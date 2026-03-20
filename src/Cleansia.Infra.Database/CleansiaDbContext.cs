@@ -173,6 +173,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<OrderStatusTrack> OrderStatusHistory { get; set; }
     public virtual DbSet<OrderNote> OrderNotes { get; set; }
     public virtual DbSet<OrderIssue> OrderIssues { get; set; }
+    public virtual DbSet<OrderReview> OrderReviews { get; set; }
     public virtual DbSet<EmailTranslation> EmailTranslations { get; set; }
     public virtual DbSet<EmployeePayConfig> EmployeePayConfigs { get; set; }
     public virtual DbSet<OrderEmployeePay> OrderEmployeePays { get; set; }

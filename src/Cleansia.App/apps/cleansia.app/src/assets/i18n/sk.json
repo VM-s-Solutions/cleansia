@@ -10,6 +10,7 @@
     "profile": "Profil",
     "logout": "Odhlásiť sa",
     "my_disputes": "Moje reklamácie",
+    "track_order": "Sledovať objednávku",
     "theme_light": "Svetlý režim",
     "theme_dark": "Tmavý režim",
     "language": "Jazyk",
@@ -66,7 +67,8 @@
       "gdpr": "Súkromie a údaje",
       "checkout_success": "Platba úspešná",
       "checkout_cancel": "Platba zrušená",
-      "not_found": "Stránka nenájdená"
+      "not_found": "Stránka nenájdená",
+      "track_order": "Sledovať objednávku"
     }
   },
   "global": {
@@ -153,6 +155,7 @@
       "validation": {
         "password_lowercase": "Aspoň jedno malé písmeno",
         "password_uppercase": "Aspoň jedno veľké písmeno",
+        "password_letter": "Aspoň jedno písmeno",
         "password_number": "Aspoň jedna číslica",
         "password_min_length": "Aspoň 12 znakov",
         "password_special_character": "Aspoň jeden špeciálny znak",
@@ -755,7 +758,15 @@
       "confirmation_code": "Potvrdzovací kód",
       "download_receipt": "Stiahnuť účtenku",
       "download_error": "Nepodarilo sa stiahnuť účtenku",
-      "report_issue": "Nahlásiť problém"
+      "report_issue": "Nahlásiť problém",
+      "review": {
+        "title": "Vaše hodnotenie",
+        "prompt": "Ako ste boli spokojní s upratovaním? Ohodnoťte objednávku a zanechajte komentár.",
+        "comment_placeholder": "Napíšte nám o svojom zážitku (nepovinné)",
+        "submit": "Odoslať hodnotenie",
+        "success": "Ďakujeme za vaše hodnotenie!",
+        "error": "Nepodarilo sa odoslať hodnotenie"
+      }
     },
     "checkout": {
       "success": {
@@ -858,7 +869,9 @@
       "delete_confirm_title": "Vymazať účet",
       "delete_confirm_yes": "Áno, vymazať môj účet",
       "delete_success": "Účet vymazaný",
-      "delete_error": "Nepodarilo sa vymazať účet"
+      "delete_error": "Nepodarilo sa vymazať účet",
+      "guest_info_title": "Vaše súkromie je dôležité",
+      "guest_info_description": "Berieme vaše súkromie vážne. Prihláste sa pre správu súhlasov, export údajov alebo vymazanie účtu. Viac informácií nájdete v Zásadách ochrany súkromia a Obchodných podmienkach."
     },
     "forgot_password": {
       "email": "E-mail",
@@ -882,6 +895,44 @@
         "change_password": "Zmeniť heslo",
         "remember_password": "Pamätáte si heslo?"
       }
+    },
+    "email_confirm": {
+      "title": "Potvrdenie e-mailu",
+      "description": "Skontrolujte svoj e-mail a zadajte potvrdzovací kód.",
+      "resend_code": "Znovu odoslať kód",
+      "verify_code": "Overiť kód",
+      "email_sent": "E-mail bol úspešne odoslaný",
+      "code_cooldown": "Potvrdzovací kód bol odoslaný. Počkajte prosím {{ cooldown }} sekúnd pred vyžiadaním nového kódu."
+    },
+    "track_order": {
+      "title": "Sledovať objednávku",
+      "subtitle": "Zadajte číslo objednávky a e-mail na kontrolu stavu vašej objednávky",
+      "order_number": "Číslo objednávky",
+      "order_number_placeholder": "napr. ORD-A1B2C3D4",
+      "email": "E-mailová adresa",
+      "email_placeholder": "E-mail použitý pri objednávke",
+      "search": "Sledovať objednávku",
+      "not_found": "Nebola nájdená žiadna objednávka s touto kombináciou. Skontrolujte číslo objednávky a e-mailovú adresu.",
+      "not_found_title": "Objednávka nenájdená",
+      "order": "Objednávka",
+      "status_details": "Stav",
+      "order_status": "Stav objednávky",
+      "payment_status": "Stav platby",
+      "payment_type": "Typ platby",
+      "service_info": "Detaily služby",
+      "cleaning_date": "Dátum čistenia",
+      "estimated_time": "Odhadovaný čas",
+      "confirmation_code": "Potvrdzovací kód",
+      "packages": "Balíky",
+      "services": "Služby",
+      "total": "Celkom",
+      "timeline": "Priebeh objednávky",
+      "hint": "Číslo objednávky nájdete v potvrdzujúcom e-maile, ktorý ste dostali po zadaní objednávky.",
+      "recent_orders": "Nedávne objednávky",
+      "lookup_another": "Vyhľadať inú objednávku",
+      "manual_lookup": "Ručné vyhľadávanie",
+      "guest_limit": "Ako hosť sa sleduje iba posledných 5 objednávok na tomto zariadení. Vytvorte si účet pre prístup ku všetkým objednávkam odkiaľkoľvek.",
+      "guest_cta": "Vytvoriť účet"
     }
   },
   "components": {

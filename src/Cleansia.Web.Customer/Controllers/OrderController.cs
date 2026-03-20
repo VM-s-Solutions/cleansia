@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
@@ -106,6 +107,20 @@ public class OrderController(IMediator mediator) : CustomerApiController(mediato
     {
         var result = await Mediator.Send(query, cancellationToken);
         return HandleResult<GetOrderPhotos.Response>(result);
+    }
+
+    [HttpPost("SubmitReview")]
+    [Permission(Policy.CanSubmitOrderReview)]
+    [ProducesResponseType(typeof(OrderReviewDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> SubmitReview([FromBody] SubmitOrderReview.Command command, CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+        var enrichedCommand = command with { UserId = userId };
+        var result = await Mediator.Send(enrichedCommand, cancellationToken);
+        return HandleResult<OrderReviewDto>(result);
     }
 
     [HttpPost("ReportIssue")]

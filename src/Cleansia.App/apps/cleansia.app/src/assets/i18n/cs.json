@@ -155,6 +155,7 @@
       "validation": {
         "password_lowercase": "Alespoň jedno malé písmeno",
         "password_uppercase": "Alespoň jedno velké písmeno",
+        "password_letter": "Alespoň jedno písmeno",
         "password_number": "Alespoň jedna číslice",
         "password_min_length": "Alespoň 12 znaků",
         "password_special_character": "Alespoň jeden speciální znak",
@@ -757,7 +758,15 @@
       "confirmation_code": "Potvrzovací kód",
       "download_receipt": "Stáhnout účtenku",
       "download_error": "Nepodařilo se stáhnout účtenku",
-      "report_issue": "Nahlásit problém"
+      "report_issue": "Nahlásit problém",
+      "review": {
+        "title": "Vaše hodnocení",
+        "prompt": "Jak jste byli spokojeni s úklidem? Ohodnoťte objednávku a zanechte komentář.",
+        "comment_placeholder": "Napište nám o svém zážitku (nepovinné)",
+        "submit": "Odeslat hodnocení",
+        "success": "Děkujeme za vaše hodnocení!",
+        "error": "Nepodařilo se odeslat hodnocení"
+      }
     },
     "checkout": {
       "success": {
@@ -886,6 +895,14 @@
         "change_password": "Změnit heslo",
         "remember_password": "Pamatujete si heslo?"
       }
+    },
+    "email_confirm": {
+      "title": "Potvrzení e-mailu",
+      "description": "Prosím, zkontrolujte svůj e-mail a zadejte kód pro potvrzení.",
+      "resend_code": "Odeslat kód",
+      "verify_code": "Potvrdit kód",
+      "email_sent": "E-mail byl úspěšně odeslán",
+      "code_cooldown": "Kód potvrzení byl odeslán. Prosím, počkejte {{ cooldown }} sekund, než požádáte o nový kód."
     },
     "track_order": {
       "title": "Sledovat objednávku",

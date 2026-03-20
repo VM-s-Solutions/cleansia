@@ -101,12 +101,20 @@
         </p>
 
         <ul class="services-catalog__package-features">
-          @for (featureKey of getPackageFeatures(getPackageTierIndex(pkg));
-          track featureKey) {
-          <li>
-            <i class="pi pi-check-circle"></i>
-            {{ featureKey | translate }}
-          </li>
+          @if (getIncludedServiceNames(pkg).length > 0) {
+            @for (serviceName of getIncludedServiceNames(pkg); track serviceName) {
+            <li>
+              <i class="pi pi-check-circle"></i>
+              {{ serviceName }}
+            </li>
+            }
+          } @else {
+            @for (featureKey of getPackageFeatures(getPackageTierIndex(pkg)); track featureKey) {
+            <li>
+              <i class="pi pi-check-circle"></i>
+              {{ featureKey | translate }}
+            </li>
+            }
           }
         </ul>
 

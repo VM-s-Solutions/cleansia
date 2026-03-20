@@ -92,7 +92,7 @@ $font-heading: 'Poppins', sans-serif;
       background: transparent;
 
       &::placeholder {
-        color: lighten($text-muted, 15%);
+        color: color-mix(in srgb, $text-muted, white 30%);
       }
     }
   }

@@ -1,5 +1,5 @@
 @if (floatVariant(); as variant) {
-<p-floatlabel [variant]="variant">
+<p-floatlabel [variant]="variant" [class.cleansia-text-input--has-eye]="dataType() === 'password'">
   @if (label()) {
   <label [for]="id()" [class.required]="isRequired() && showRequired()">{{
     label()
@@ -8,7 +8,7 @@
   <input
     pInputText
     [id]="id()"
-    [type]="dataType()"
+    [type]="effectiveType()"
     [value]="innerValue"
     (input)="handleChange($event)"
     (blur)="onTouch()"
@@ -23,30 +23,48 @@
       (hasErrors() ? 'ng-invalid ng-dirty' : '')
     "
   />
+  @if (dataType() === 'password') {
+  <i
+    class="cleansia-text-input__eye pi"
+    [class.pi-eye]="!passwordVisible()"
+    [class.pi-eye-slash]="passwordVisible()"
+    (click)="togglePasswordVisibility()"
+  ></i>
+  }
 </p-floatlabel>
 } @else { @if (label()) {
 <label [for]="id()" [class.required]="isRequired() && showRequired()">{{
   label()
 }}</label>
 }
-<input
-  pInputText
-  [id]="id()"
-  [type]="dataType()"
-  [value]="innerValue"
-  (input)="handleChange($event)"
-  (blur)="onTouch()"
-  [disabled]="disabled()"
-  [readonly]="readonlyInput()"
-  [placeholder]="placeholder()"
-  [autocomplete]="autocomplete()"
-  [class]="
-    inputSize() +
-    ' ' +
-    (className() ?? '') +
-    (hasErrors() ? 'ng-invalid ng-dirty' : '')
-  "
-/>
+<div class="cleansia-text-input__wrap" [class.cleansia-text-input--has-eye]="dataType() === 'password'">
+  <input
+    pInputText
+    [id]="id()"
+    [type]="effectiveType()"
+    [value]="innerValue"
+    (input)="handleChange($event)"
+    (blur)="onTouch()"
+    [disabled]="disabled()"
+    [readonly]="readonlyInput()"
+    [placeholder]="placeholder()"
+    [autocomplete]="autocomplete()"
+    [class]="
+      inputSize() +
+      ' ' +
+      (className() ?? '') +
+      (hasErrors() ? 'ng-invalid ng-dirty' : '')
+    "
+  />
+  @if (dataType() === 'password') {
+  <i
+    class="cleansia-text-input__eye pi"
+    [class.pi-eye]="!passwordVisible()"
+    [class.pi-eye-slash]="passwordVisible()"
+    (click)="togglePasswordVisibility()"
+  ></i>
+  }
+</div>
 } @if (showErrors() && formControl.invalid && (formControl.dirty ||
 formControl.touched)) {
 <ul class="cleansia-error-message-container">

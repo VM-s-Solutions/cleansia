@@ -124,7 +124,7 @@ $font-heading: 'Poppins', sans-serif;
         }
 
         .order-wizard__stepper-label {
-          color: darken($green, 5%);
+          color: color-mix(in srgb, $green, black 10%);
         }
       }
     }
@@ -871,8 +871,22 @@ $font-heading: 'Poppins', sans-serif;
     box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
     padding: 0.75rem 1.5rem;
     z-index: 1100;
+    flex-direction: column;
+    transition: max-height 0.3s ease;
+  }
+
+  &__mobile-price-header {
+    display: flex;
     align-items: center;
     justify-content: space-between;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  &__mobile-price-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   &__mobile-price-label {
@@ -888,6 +902,54 @@ $font-heading: 'Poppins', sans-serif;
     font-size: 1.5rem;
     font-weight: 700;
     color: $primary;
+  }
+
+  &__mobile-price-chevron {
+    font-size: 0.875rem;
+    color: $text-muted;
+    transition: transform 0.2s ease;
+  }
+
+  &__mobile-price-breakdown {
+    width: 100%;
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.35s ease, padding-top 0.35s ease, margin-top 0.35s ease;
+    padding-top: 0;
+    margin-top: 0;
+    border-top: 1px solid transparent;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+
+    &--expanded {
+      max-height: 600px;
+      padding-top: 0.75rem;
+      margin-top: 0.75rem;
+      border-top-color: $border;
+    }
+  }
+
+  &__mobile-price-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: $text-body;
+  }
+
+  &__mobile-price-detail {
+    font-size: 0.75rem;
+    color: $text-muted;
+    padding-left: 0.5rem;
+    margin-top: -0.25rem;
+  }
+
+  // ─── SIDEBAR DETAIL ───
+  &__sidebar-detail {
+    font-size: 0.75rem;
+    color: $text-muted;
+    padding-left: 0.5rem;
+    margin-top: -0.25rem;
   }
 
   // ─── RESPONSIVE ───
@@ -1293,6 +1355,19 @@ $font-heading: 'Poppins', sans-serif;
 
     &__mobile-price-label {
       color: #94a3b8;
+    }
+
+    &__mobile-price-breakdown--expanded {
+      border-top-color: #334155;
+    }
+
+    &__mobile-price-item {
+      color: #cbd5e1;
+    }
+
+    &__mobile-price-detail,
+    &__sidebar-detail {
+      color: #64748b;
     }
 
     &__save-address {

@@ -130,4 +130,97 @@
     padding: 4rem 2rem;
     i { font-size: 3rem; color: var(--text-color-secondary); margin-bottom: 1rem; }
   }
+
+  // =============================
+  // Review / Rating
+  // =============================
+  &__review {
+    border-top: 1px solid var(--surface-border);
+    padding-top: 2rem;
+  }
+
+  &__review-stars {
+    display: flex;
+    gap: 0.25rem;
+
+    i {
+      font-size: 1.5rem;
+      color: #fbbf24;
+    }
+
+    &--interactive i {
+      cursor: pointer;
+      transition: transform 0.15s ease, color 0.15s ease;
+
+      &:hover {
+        transform: scale(1.2);
+      }
+    }
+  }
+
+  &__review-display {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__review-comment {
+    margin: 0;
+    color: var(--text-color);
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  &__review-date {
+    color: var(--text-color-secondary);
+    font-size: 0.8rem;
+  }
+
+  &__review-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  &__review-prompt {
+    margin: 0;
+    color: var(--text-color-secondary);
+    font-size: 0.9rem;
+  }
+
+  &__review-textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--surface-border);
+    border-radius: 8px;
+    background: var(--surface-ground);
+    color: var(--text-color);
+    font-family: inherit;
+    font-size: 0.9rem;
+    resize: vertical;
+    min-height: 80px;
+    transition: border-color 0.15s ease;
+
+    &:focus {
+      outline: none;
+      border-color: var(--primary-color);
+    }
+
+    &::placeholder {
+      color: var(--text-color-secondary);
+    }
+  }
+}
+
+:root.dark-mode {
+  .order-detail {
+    &__review-textarea {
+      background: #1e293b;
+      border-color: #334155;
+
+      &:focus {
+        border-color: #38bdf8;
+      }
+    }
+  }
 }

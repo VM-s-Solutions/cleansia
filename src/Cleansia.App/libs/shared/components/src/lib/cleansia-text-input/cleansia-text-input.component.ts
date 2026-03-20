@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, forwardRef, input, output } from '@angular/core';
+import { Component, computed, forwardRef, input, output, signal } from '@angular/core';
 import { FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { ErrorPipe } from '@cleansia/pipes';
 import { FloatLabelModule } from 'primeng/floatlabel';
@@ -31,6 +31,15 @@ export class CleansiaTextInputComponent extends CleansiaBaseFormInputComponent {
   floatVariant = input<'over' | 'in' | 'on'>('on');
 
   valueChanges = output<any>();
+
+  passwordVisible = signal(false);
+  effectiveType = computed(() =>
+    this.dataType() === 'password' && this.passwordVisible() ? 'text' : this.dataType()
+  );
+
+  togglePasswordVisibility(): void {
+    this.passwordVisible.update((v) => !v);
+  }
 
   innerValue = '';
 

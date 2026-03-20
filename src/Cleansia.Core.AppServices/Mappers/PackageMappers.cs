@@ -11,7 +11,10 @@ public static class PackageMappers
             Name: package.Name,
             Description: package.Description,
             Price: package.Price,
-            Translations: package.Translations.ToDictionary());
+            Translations: package.Translations.ToDictionary(),
+            IncludedServices: package.IncludedServices.Select(ps => new PackageServiceSummary(
+                ps.Service.Name,
+                ps.Service.Translations.ToDictionary())));
     }
 
     public static PackageDetails MapToDetails(this Domain.Packages.Package package, string currencyCode)

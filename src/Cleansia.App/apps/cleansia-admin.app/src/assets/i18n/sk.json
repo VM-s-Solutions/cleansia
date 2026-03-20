@@ -1704,7 +1704,29 @@
     "accept": "Prijať všetko",
     "decline": "Odmietnuť",
     "learn_more": "Viac informácií",
-    "banner_title": "Banner so súhlasom s cookies"
+    "banner_title": "Banner so súhlasom s cookies",
+    "customize": "Prispôsobiť",
+    "hide_settings": "Skryť nastavenia",
+    "save_preferences": "Uložiť predvoľby",
+    "always_on": "Vždy zapnuté",
+    "categories": {
+      "necessary": {
+        "name": "Nevyhnutné",
+        "description": "Nevyhnutné pre fungovanie webu. Nedajú sa vypnúť."
+      },
+      "analytics": {
+        "name": "Analytické",
+        "description": "Pomáhajú nám pochopiť, ako návštevníci používajú náš web."
+      },
+      "marketing": {
+        "name": "Marketingové",
+        "description": "Slúžia na zobrazovanie relevantných reklám a sledovanie kampaní."
+      },
+      "preferences": {
+        "name": "Preferenčné",
+        "description": "Zapamätajú si vaše nastavenia, ako je jazyk a téma."
+      }
+    }
   },
   "auth": {
     "login": {

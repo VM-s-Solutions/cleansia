@@ -37,8 +37,8 @@
             <span class="track-order__order-card-date">{{ formatDate(order.createdOn) }}</span>
           </div>
           <div class="track-order__order-card-badges">
-            <p-tag [value]="order.orderStatus?.name || ''" [severity]="getOrderStatusSeverity(order.orderStatus)" />
-            <p-tag [value]="order.paymentStatus?.name || ''" [severity]="getPaymentStatusSeverity(order.paymentStatus)" />
+            <p-tag [value]="order.orderStatus.name || ''" [severity]="getOrderStatusSeverity(order.orderStatus)" />
+            <p-tag [value]="order.paymentStatus.name || ''" [severity]="getPaymentStatusSeverity(order.paymentStatus)" />
           </div>
         </div>
 
@@ -168,8 +168,8 @@
             <span class="track-order__order-card-date">{{ formatDate(order.createdOn) }}</span>
           </div>
           <div class="track-order__order-card-badges">
-            <p-tag [value]="order.orderStatus?.name || ''" [severity]="getOrderStatusSeverity(order.orderStatus)" />
-            <p-tag [value]="order.paymentStatus?.name || ''" [severity]="getPaymentStatusSeverity(order.paymentStatus)" />
+            <p-tag [value]="order.orderStatus.name || ''" [severity]="getOrderStatusSeverity(order.orderStatus)" />
+            <p-tag [value]="order.paymentStatus.name || ''" [severity]="getPaymentStatusSeverity(order.paymentStatus)" />
           </div>
         </div>
 

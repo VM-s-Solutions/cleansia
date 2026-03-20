@@ -41,11 +41,9 @@
       "have_account": "Už máte účet?",
       "remember_me": "Zapamätať si ma",
       "validation": {
-        "password_lowercase": "Heslo musí obsahovať aspoň jedno malé písmeno",
-        "password_uppercase": "Heslo musí obsahovať aspoň jedno veľké písmeno",
+        "password_letter": "Aspoň jedno písmeno",
         "password_number": "Heslo musí obsahovať aspoň jedno číslo",
-        "password_min_length": "Heslo musí mať aspoň 12 znakov",
-        "password_special_character": "Heslo musí obsahovať aspoň jeden špeciálny znak (@$!%*?&#^())",
+        "password_min_length": "Aspoň 8 znakov",
         "passwords_match": "Heslá sa musia zhodovať"
       }
     },
@@ -1182,7 +1180,29 @@
     "accept": "Prijať všetko",
     "decline": "Odmietnuť",
     "learn_more": "Zistiť viac",
-    "banner_title": "Banner so súhlasom s cookies"
+    "banner_title": "Banner so súhlasom s cookies",
+    "customize": "Prispôsobiť",
+    "hide_settings": "Skryť nastavenia",
+    "save_preferences": "Uložiť predvoľby",
+    "always_on": "Vždy zapnuté",
+    "categories": {
+      "necessary": {
+        "name": "Nevyhnutné",
+        "description": "Nevyhnutné pre fungovanie webu. Nedajú sa vypnúť."
+      },
+      "analytics": {
+        "name": "Analytické",
+        "description": "Pomáhajú nám pochopiť, ako návštevníci používajú náš web."
+      },
+      "marketing": {
+        "name": "Marketingové",
+        "description": "Slúžia na zobrazovanie relevantných reklám a sledovanie kampaní."
+      },
+      "preferences": {
+        "name": "Preferenčné",
+        "description": "Zapamätajú si vaše nastavenia, ako je jazyk a téma."
+      }
+    }
   },
   "auth": {
     "login": {
@@ -1202,11 +1222,9 @@
       "terms_and_conditions": "Súhlasím s <a href='/gdpr'>Obchodnými podmienkami a Zásadami ochrany osobných údajov</a>",
       "have_account": "Už máte účet?",
       "validation": {
-        "password_lowercase": "Aspoň jedno malé písmeno",
-        "password_uppercase": "Aspoň jedno veľké písmeno",
+        "password_letter": "Aspoň jedno písmeno",
         "password_number": "Aspoň jedno číslo",
-        "password_min_length": "Aspoň 12 znakov",
-        "password_special_character": "Aspoň jeden špeciálny znak",
+        "password_min_length": "Aspoň 8 znakov",
         "passwords_match": "Heslá sa zhodujú"
       }
     }

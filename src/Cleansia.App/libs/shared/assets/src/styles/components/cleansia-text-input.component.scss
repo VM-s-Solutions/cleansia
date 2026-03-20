@@ -1,0 +1,40 @@
+.cleansia-text-input--has-eye {
+  position: relative;
+
+  input {
+    padding-right: 2.5rem !important;
+  }
+}
+
+.cleansia-text-input__wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.cleansia-text-input__eye {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #94a3b8;
+  font-size: 1rem;
+  transition: color 0.2s;
+  user-select: none;
+  z-index: 1;
+
+  &:hover {
+    color: #475569;
+  }
+}
+
+:root.dark-mode {
+  .cleansia-text-input__eye {
+    color: #64748b;
+
+    &:hover {
+      color: #cbd5e1;
+    }
+  }
+}

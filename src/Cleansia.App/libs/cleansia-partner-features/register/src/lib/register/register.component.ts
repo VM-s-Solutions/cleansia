@@ -55,6 +55,14 @@ export class RegisterComponent {
     return checkIfPasswordsValid(password);
   }
 
+  get hasPasswordInput(): boolean {
+    return (this.facade.formGroup.get('password')?.value?.length ?? 0) > 0;
+  }
+
+  get hasConfirmPasswordInput(): boolean {
+    return (this.facade.formGroup.get('confirmPassword')?.value?.length ?? 0) > 0;
+  }
+
   get isConfirmPasswordValid(): PasswordCheck {
     const confirmPassword = this.facade.formGroup.get('confirmPassword')?.value;
     if (!this.facade.formGroup || !confirmPassword) {

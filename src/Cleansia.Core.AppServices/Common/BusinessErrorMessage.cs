@@ -54,6 +54,10 @@ public static class BusinessErrorMessage
     public const string OrderIssueDescriptionRequired = "order.issue.description_required";
     public const string PaymentGatewayUnavailable = "order.payment_gateway_unavailable";
     public const string OrderCreationFailed = "order.creation_failed";
+    public const string OrderNotCompleted = "order.not_completed";
+    public const string ReviewAlreadyExists = "order.review.already_exists";
+    public const string ReviewRatingInvalid = "order.review.rating_invalid";
+    public const string OrderNotOwnedByUser = "order.not_owned_by_user";
 
     // User
     public const string EmailConfirmed = "user.email_confirmed";

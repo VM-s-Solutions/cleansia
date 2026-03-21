@@ -63,7 +63,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- Drop all functions
+-- Drop all user-defined functions (skip extension-owned ones like citext)
 DO $$
 DECLARE
     r RECORD;
@@ -73,6 +73,11 @@ BEGIN
         FROM pg_proc p
         JOIN pg_namespace n ON p.pronamespace = n.oid
         WHERE n.nspname = 'public'
+          AND NOT EXISTS (
+              SELECT 1 FROM pg_depend d
+              WHERE d.objid = p.oid
+                AND d.deptype = 'e'
+          )
     ) LOOP
         EXECUTE 'DROP FUNCTION IF EXISTS ' || r.func_signature || ' CASCADE';
     END LOOP;

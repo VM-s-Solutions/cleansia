@@ -101,11 +101,11 @@ jobs:
         working-directory: ./src/Cleansia.App
 
       - name: Build Partner App
-        run: npm run build:cleansia-partner
+        run: npx nx build cleansia-partner.app --configuration=staging --skip-nx-cache
         working-directory: ./src/Cleansia.App
 
       - name: Build Admin App
-        run: npm run build:cleansia-admin
+        run: npx nx build cleansia-admin.app --configuration=staging --skip-nx-cache
         working-directory: ./src/Cleansia.App
 
       - name: Prepare Customer SSR package.json
@@ -157,13 +157,13 @@ jobs:
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
-          app-name: api-cleansia-dev
+          app-name: api-cleansia-partner-dev
           package: ./partner-api
 
       - name: Force container refresh
         run: |
-          az webapp stop --name api-cleansia-dev --resource-group rg-cleansia-dev
-          az webapp start --name api-cleansia-dev --resource-group rg-cleansia-dev
+          az webapp stop --name api-cleansia-partner-dev --resource-group rg-cleansia-dev
+          az webapp start --name api-cleansia-partner-dev --resource-group rg-cleansia-dev
 
   deploy-admin-api:
     name: 2/7 — Admin API

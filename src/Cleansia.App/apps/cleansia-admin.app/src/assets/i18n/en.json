@@ -1704,7 +1704,29 @@
     "accept": "Accept All",
     "decline": "Decline",
     "learn_more": "Learn more",
-    "banner_title": "Cookie consent banner"
+    "banner_title": "Cookie consent banner",
+    "customize": "Customize",
+    "hide_settings": "Hide Settings",
+    "save_preferences": "Save Preferences",
+    "always_on": "Always On",
+    "categories": {
+      "necessary": {
+        "name": "Necessary",
+        "description": "Essential for the website to function. Cannot be disabled."
+      },
+      "analytics": {
+        "name": "Analytics",
+        "description": "Help us understand how visitors interact with our website."
+      },
+      "marketing": {
+        "name": "Marketing",
+        "description": "Used to deliver relevant ads and track campaigns."
+      },
+      "preferences": {
+        "name": "Preferences",
+        "description": "Remember your settings like language and theme."
+      }
+    }
   },
   "auth": {
     "login": {

@@ -41,11 +41,9 @@
       "have_account": "Уже есть учётная запись?",
       "remember_me": "Запомнить меня",
       "validation": {
-        "password_lowercase": "Пароль должен содержать хотя бы одну строчную букву",
-        "password_uppercase": "Пароль должен содержать хотя бы одну заглавную букву",
+        "password_letter": "Хотя бы одна буква",
         "password_number": "Пароль должен содержать хотя бы одну цифру",
-        "password_min_length": "Пароль должен содержать не менее 12 символов",
-        "password_special_character": "Пароль должен содержать хотя бы один специальный символ (@$!%*?&#^())",
+        "password_min_length": "Минимум 8 символов",
         "passwords_match": "Пароли должны совпадать"
       }
     },
@@ -1182,7 +1180,29 @@
     "accept": "Принять все",
     "decline": "Отклонить",
     "learn_more": "Узнать больше",
-    "banner_title": "Баннер согласия на файлы cookie"
+    "banner_title": "Баннер согласия на файлы cookie",
+    "customize": "Настроить",
+    "hide_settings": "Скрыть настройки",
+    "save_preferences": "Сохранить настройки",
+    "always_on": "Всегда включено",
+    "categories": {
+      "necessary": {
+        "name": "Необходимые",
+        "description": "Необходимы для работы сайта. Нельзя отключить."
+      },
+      "analytics": {
+        "name": "Аналитические",
+        "description": "Помогают нам понять, как посетители используют наш сайт."
+      },
+      "marketing": {
+        "name": "Маркетинговые",
+        "description": "Используются для показа релевантной рекламы и отслеживания кампаний."
+      },
+      "preferences": {
+        "name": "Предпочтения",
+        "description": "Запоминают ваши настройки, такие как язык и тема."
+      }
+    }
   },
   "auth": {
     "login": {
@@ -1202,11 +1222,9 @@
       "terms_and_conditions": "Я соглашаюсь с <a href='/gdpr'>Условиями обслуживания и Политикой конфиденциальности</a>",
       "have_account": "Уже есть учётная запись?",
       "validation": {
-        "password_lowercase": "Хотя бы одна строчная буква",
-        "password_uppercase": "Хотя бы одна заглавная буква",
+        "password_letter": "Хотя бы одна буква",
         "password_number": "Хотя бы одна цифра",
-        "password_min_length": "Минимум 12 символов",
-        "password_special_character": "Хотя бы один специальный символ",
+        "password_min_length": "Минимум 8 символов",
         "passwords_match": "Пароли совпадают"
       }
     }

@@ -24,6 +24,8 @@ public class Policy
     public const string CanDeleteOrderPhoto = nameof(CanDeleteOrderPhoto); // Employee
     public const string CanAddOrderNote = nameof(CanAddOrderNote); // Employee
     public const string CanReportOrderIssue = nameof(CanReportOrderIssue); // Employee
+    public const string CanSubmitOrderReview = nameof(CanSubmitOrderReview); // Customer
+    public const string CanViewOrderReview = nameof(CanViewOrderReview); // Authenticated (All roles)
 
     // User
     public const string CanViewPagedUser = nameof(CanViewPagedUser); // Admin + Employee

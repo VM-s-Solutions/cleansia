@@ -61,15 +61,15 @@
         <div class="order-detail__status-row">
           <div>
             <span>{{ 'pages.order_detail.order_status' | translate }}:</span>
-            <p-tag [value]="order()!.orderStatus?.name || ''" [severity]="getOrderStatusSeverity(order()!.orderStatus)" />
+            <p-tag [value]="order()!.orderStatus.name || ''" [severity]="getOrderStatusSeverity(order()!.orderStatus)" />
           </div>
           <div>
             <span>{{ 'pages.order_detail.payment_status' | translate }}:</span>
-            <p-tag [value]="order()!.paymentStatus?.name || ''" [severity]="getPaymentStatusSeverity(order()!.paymentStatus)" />
+            <p-tag [value]="order()!.paymentStatus.name || ''" [severity]="getPaymentStatusSeverity(order()!.paymentStatus)" />
           </div>
           <div>
             <span>{{ 'pages.order_detail.payment_type' | translate }}:</span>
-            <span>{{ order()!.paymentType?.name }}</span>
+            <span>{{ order()!.paymentType.name }}</span>
           </div>
         </div>
       </div>
@@ -135,6 +135,56 @@
         <span>{{ 'pages.order_detail.total' | translate }}</span>
         <strong>{{ formatPrice(order()!.totalPrice) }}</strong>
       </div>
+
+      <!-- Rating / Review -->
+      @if (isCompleted()) {
+        <div class="order-detail__section order-detail__review">
+          <h3>{{ 'pages.order_detail.review.title' | translate }}</h3>
+          @if (hasReview()) {
+            <div class="order-detail__review-display">
+              <div class="order-detail__review-stars">
+                @for (star of stars; track star) {
+                  <i class="pi" [class.pi-star-fill]="star <= order()!.review!.rating" [class.pi-star]="star > order()!.review!.rating"></i>
+                }
+              </div>
+              @if (order()!.review!.comment) {
+                <p class="order-detail__review-comment">{{ order()!.review!.comment }}</p>
+              }
+              <small class="order-detail__review-date">{{ formatDate(order()!.review!.createdOn) }}</small>
+            </div>
+          } @else {
+            <div class="order-detail__review-form">
+              <p class="order-detail__review-prompt">{{ 'pages.order_detail.review.prompt' | translate }}</p>
+              <div class="order-detail__review-stars order-detail__review-stars--interactive">
+                @for (star of stars; track star) {
+                  <i class="pi"
+                    [class.pi-star-fill]="star <= (reviewHover() || reviewRating())"
+                    [class.pi-star]="star > (reviewHover() || reviewRating())"
+                    (mouseenter)="reviewHover.set(star)"
+                    (mouseleave)="reviewHover.set(0)"
+                    (click)="setRating(star)"></i>
+                }
+              </div>
+              <textarea
+                class="order-detail__review-textarea"
+                [placeholder]="'pages.order_detail.review.comment_placeholder' | translate"
+                [ngModel]="reviewComment()"
+                (ngModelChange)="reviewComment.set($event)"
+                rows="3"
+                maxlength="1000"
+              ></textarea>
+              <cleansia-button
+                [title]="'pages.order_detail.review.submit' | translate"
+                [icon]="'pi pi-send'"
+                [severity]="'primary'"
+                [loading]="reviewSubmitting()"
+                (clickFn)="submitReview()"
+                [disabled]="reviewRating() === 0"
+              />
+            </div>
+          }
+        </div>
+      }
 
       <!-- Status Timeline -->
       @if (order()!.statusHistory && order()!.statusHistory!.length > 0) {

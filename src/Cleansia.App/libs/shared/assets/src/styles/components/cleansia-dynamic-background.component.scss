@@ -2,15 +2,31 @@ cleansia-dynamic-background {
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   min-height: auto;
-  padding: 6rem 0;
+  padding: 3rem 0;
 
   > * {
     flex: 1;
     position: relative;
     z-index: 1;
   }
+
+  > cleansia-language-switcher {
+    flex: 0;
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 10;
+  }
+}
+
+.cleansia-dynamic-background__icons-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .cleansia-dynamic-background__icon {

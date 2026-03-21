@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260315101527_Initial")]
+    [Migration("20260320022930_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -2046,6 +2046,72 @@ namespace Cleansia.Infra.Database.Migrations
                     b.ToTable("OrderPhotos", (string)null);
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.Orders.OrderReview", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeactivatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("DeactivatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("OrderId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TenantId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId")
+                        .HasDatabaseName("IX_OrderReviews_OrderId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("OrderId", "UserId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_OrderReviews_OrderId_UserId");
+
+                    b.ToTable("OrderReviews", (string)null);
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Orders.OrderService", b =>
                 {
                     b.Property<string>("Id")
@@ -3329,6 +3395,17 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("Order");
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.Orders.OrderReview", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Orders.Order", "Order")
+                        .WithMany("Reviews")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Orders.OrderService", b =>
                 {
                     b.HasOne("Cleansia.Core.Domain.Orders.Order", "Order")
@@ -3570,6 +3647,8 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("Photos");
 
                     b.Navigation("Receipt");
+
+                    b.Navigation("Reviews");
 
                     b.Navigation("SelectedPackages");
 

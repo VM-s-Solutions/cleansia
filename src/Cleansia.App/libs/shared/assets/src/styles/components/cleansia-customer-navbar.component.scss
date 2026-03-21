@@ -312,7 +312,7 @@ $primary: #0284c7;
   &__progress-bar {
     height: 100%;
     width: 30%;
-    background: linear-gradient(90deg, $primary, lighten($primary, 15%));
+    background: linear-gradient(90deg, $primary, color-mix(in srgb, $primary, white 30%));
     border-radius: 0 2px 2px 0;
     animation: navProgress 1.2s ease-in-out infinite;
   }
@@ -356,6 +356,28 @@ $primary: #0284c7;
   // =============================
   // Language switcher override
   // =============================
+  cleansia-language-switcher {
+    display: inline-flex;
+    align-items: center;
+
+    .cleansia-language-switcher {
+      position: static;
+      top: auto;
+      right: auto;
+      z-index: auto;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .p-select {
+      width: auto;
+      min-width: auto;
+    }
+  }
+}
+
+// Language switcher inside mobile menu (outside .customer-navbar scope)
+.customer-navbar__mobile-menu {
   cleansia-language-switcher {
     display: inline-flex;
     align-items: center;

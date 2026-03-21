@@ -1,9 +1,10 @@
 .cleansia-login {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 3rem;
-  min-height: 100%;
+  padding: 2rem;
+  min-height: auto;
 
   a {
     color: var(--cleansia-primary);
@@ -41,6 +42,19 @@
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
     border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  &__mascot {
+    display: flex;
+    justify-content: center;
+    margin-bottom: -1.6rem;
+    z-index: 1;
+
+    img {
+      max-width: 130px;
+      height: auto;
+      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1));
+    }
   }
 
   &__brand-name-container {
@@ -89,5 +103,26 @@
     flex-direction: column;
     justify-content: center;
     row-gap: 1.5rem;
+  }
+}
+
+:root.dark-mode {
+  .cleansia-login {
+    &__login-card,
+    &__confirmation-card {
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid #334155;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    &__header {
+      color: #e2e8f0;
+    }
+
+    &__brand-name-container {
+      border-bottom-color: #334155;
+    }
   }
 }

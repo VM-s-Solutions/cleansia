@@ -42,6 +42,7 @@ export class OrderWizardComponent implements OnInit {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   protected readonly PaymentType = PaymentType;
 
+  mobileBreakdownExpanded = signal(false);
   showRebookWarning = signal(false);
   unavailableItems = signal<string[]>([]);
   private pendingRebook = signal<RebookParams | null>(null);

@@ -155,6 +155,7 @@
       "validation": {
         "password_lowercase": "At least one lowercase letter",
         "password_uppercase": "At least one uppercase letter",
+        "password_letter": "At least one letter",
         "password_number": "At least one number",
         "password_min_length": "At least 12 characters",
         "password_special_character": "At least one special character",
@@ -757,7 +758,15 @@
       "confirmation_code": "Confirmation Code",
       "download_receipt": "Download Receipt",
       "download_error": "Failed to download receipt",
-      "report_issue": "Report Issue"
+      "report_issue": "Report Issue",
+      "review": {
+        "title": "Your Review",
+        "prompt": "How was your cleaning experience? Rate your order and leave a comment.",
+        "comment_placeholder": "Tell us about your experience (optional)",
+        "submit": "Submit Review",
+        "success": "Thank you for your review!",
+        "error": "Failed to submit review"
+      }
     },
     "checkout": {
       "success": {
@@ -886,6 +895,14 @@
         "change_password": "Change Password",
         "remember_password": "Remember your password?"
       }
+    },
+    "email_confirm": {
+      "title": "Email Confirmation",
+      "description": "Please check your email and enter the confirmation code.",
+      "resend_code": "Resend code",
+      "verify_code": "Verify code",
+      "email_sent": "Email sent successfully",
+      "code_cooldown": "Confirmation code has been sent. Please wait {{ cooldown }} seconds before requesting a new code."
     },
     "track_order": {
       "title": "Track Your Order",

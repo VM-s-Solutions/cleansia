@@ -1,9 +1,11 @@
 @if (showIcons()) {
-  @for (icon of floatingIcons; track $index) {
-    <i
-      [class]="icon.iconClass + ' cleansia-dynamic-background__icon'"
-      [ngStyle]="icon.style"
-    ></i>
-  }
+  <div class="cleansia-dynamic-background__icons-layer">
+    @for (icon of floatingIcons; track $index) {
+      <i
+        [class]="icon.iconClass + ' cleansia-dynamic-background__icon'"
+        [ngStyle]="icon.style"
+      ></i>
+    }
+  </div>
 }
 <ng-content></ng-content>

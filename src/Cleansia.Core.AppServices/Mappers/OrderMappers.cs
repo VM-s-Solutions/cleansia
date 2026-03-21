@@ -79,7 +79,8 @@ public static class OrderMappers
             AssignedEmployees: order.AssignedEmployees.Select(ae => ae.MapToAssignedEmployeeDto()),
             ReceiptNumber: order.Receipt?.ReceiptNumber,
             OrderNotes: order.OrderNotes.Select(n => n.MapToDto()),
-            OrderIssues: order.OrderIssues.Select(i => i.MapToDto())
+            OrderIssues: order.OrderIssues.Select(i => i.MapToDto()),
+            Review: order.Reviews.FirstOrDefault()?.MapToDto()
         );
     }
 
@@ -102,6 +103,19 @@ public static class OrderMappers
             IsResolved: issue.IsResolved,
             ResolvedAt: issue.ResolvedAt,
             CreatedOn: issue.CreatedOn
+        );
+    }
+
+    public static OrderReviewDto MapToDto(this OrderReview review)
+    {
+        return new OrderReviewDto(
+            Id: review.Id,
+            OrderId: review.OrderId,
+            UserId: review.UserId,
+            Rating: review.Rating,
+            Comment: review.Comment,
+            CreatedOn: review.CreatedOn,
+            UpdatedOn: review.UpdatedOn
         );
     }
 

@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Npgsql;
 
 namespace Cleansia.Config.Database;
 
@@ -17,7 +18,12 @@ public static class DbContextBindingExtensions
 
         var connectionString = configuration.GetConnectionString("ConnectionString");
 
-        services.AddDbContext<CleansiaDbContext>(options => options.UseNpgsql(connectionString));
+        var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
+        dataSourceBuilder.EnableDynamicJson();
+        var dataSource = dataSourceBuilder.Build();
+
+        services.AddSingleton(dataSource);
+        services.AddDbContext<CleansiaDbContext>(options => options.UseNpgsql(dataSource));
         services.AddScoped<IUnitOfWork>(provider => provider.GetService<CleansiaDbContext>()!);
 
         return services;

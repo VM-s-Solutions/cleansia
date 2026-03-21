@@ -37,5 +37,6 @@ public record OrderItem(
     IEnumerable<AssignedEmployeeDto> AssignedEmployees,
     string? ReceiptNumber,
     IEnumerable<OrderNoteDto> OrderNotes,
-    IEnumerable<OrderIssueDto> OrderIssues
+    IEnumerable<OrderIssueDto> OrderIssues,
+    OrderReviewDto? Review
 );

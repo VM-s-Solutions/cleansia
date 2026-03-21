@@ -41,11 +41,9 @@
       "have_account": "Už máte účet?",
       "remember_me": "Zapamatovat si mě",
       "validation": {
-        "password_lowercase": "Heslo musí obsahovat alespoň jedno malé písmeno",
-        "password_uppercase": "Heslo musí obsahovat alespoň jedno velké písmeno",
+        "password_letter": "Alespoň jedno písmeno",
         "password_number": "Heslo musí obsahovat alespoň jedno číslo",
-        "password_min_length": "Heslo musí mít alespoň 12 znaků",
-        "password_special_character": "Heslo musí obsahovat alespoň jeden speciální znak (@$!%*?&#^())",
+        "password_min_length": "Alespoň 8 znaků",
         "passwords_match": "Hesla musí být stejná"
       }
     },
@@ -1199,7 +1197,29 @@
     "accept": "Přijmout vše",
     "decline": "Odmítnout",
     "learn_more": "Více informací",
-    "banner_title": "Banner souhlasu s cookies"
+    "banner_title": "Banner souhlasu s cookies",
+    "customize": "Přizpůsobit",
+    "hide_settings": "Skrýt nastavení",
+    "save_preferences": "Uložit předvolby",
+    "always_on": "Vždy zapnuto",
+    "categories": {
+      "necessary": {
+        "name": "Nezbytné",
+        "description": "Nezbytné pro fungování webu. Nelze vypnout."
+      },
+      "analytics": {
+        "name": "Analytické",
+        "description": "Pomáhají nám pochopit, jak návštěvníci používají náš web."
+      },
+      "marketing": {
+        "name": "Marketingové",
+        "description": "Slouží k zobrazování relevantních reklam a sledování kampaní."
+      },
+      "preferences": {
+        "name": "Preferenční",
+        "description": "Zapamatují si vaše nastavení, jako je jazyk a téma."
+      }
+    }
   },
   "auth": {
     "login": {
@@ -1219,11 +1239,9 @@
       "terms_and_conditions": "Souhlasím s <a href='/gdpr'>Obchodními podmínkami a Zásadami ochrany osobních údajů</a>",
       "have_account": "Již máte účet?",
       "validation": {
-        "password_lowercase": "Alespoň jedno malé písmeno",
-        "password_uppercase": "Alespoň jedno velké písmeno",
+        "password_letter": "Alespoň jedno písmeno",
         "password_number": "Alespoň jedno číslo",
-        "password_min_length": "Alespoň 12 znaků",
-        "password_special_character": "Alespoň jeden speciální znak",
+        "password_min_length": "Alespoň 8 znaků",
         "passwords_match": "Hesla se shodují"
       }
     }

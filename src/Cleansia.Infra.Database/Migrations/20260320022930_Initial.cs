@@ -1239,6 +1239,35 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "OrderReviews",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    OrderId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    UserId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    Rating = table.Column<int>(type: "integer", nullable: false),
+                    Comment = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OrderReviews", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_OrderReviews_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "OrderServices",
                 columns: table => new
                 {
@@ -1877,6 +1906,22 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_OrderReviews_OrderId",
+                table: "OrderReviews",
+                column: "OrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderReviews_OrderId_UserId",
+                table: "OrderReviews",
+                columns: new[] { "OrderId", "UserId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderReviews_TenantId",
+                table: "OrderReviews",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Orders_CurrencyId",
                 table: "Orders",
                 column: "CurrencyId");
@@ -2075,6 +2120,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "OrderReceipts");
+
+            migrationBuilder.DropTable(
+                name: "OrderReviews");
 
             migrationBuilder.DropTable(
                 name: "OrderServices");

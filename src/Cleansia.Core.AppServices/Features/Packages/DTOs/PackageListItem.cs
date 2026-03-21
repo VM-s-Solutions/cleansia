@@ -7,4 +7,9 @@ public record PackageListItem(
     string Name,
     string Description,
     decimal Price,
+    Dictionary<string, Translation> Translations,
+    IEnumerable<PackageServiceSummary> IncludedServices);
+
+public record PackageServiceSummary(
+    string Name,
     Dictionary<string, Translation> Translations);

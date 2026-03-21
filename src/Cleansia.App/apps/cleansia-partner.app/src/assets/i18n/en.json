@@ -41,11 +41,9 @@
       "have_account": "Already have an account?",
       "remember_me": "Remember me",
       "validation": {
-        "password_lowercase": "Password must contain at least one lowercase letter",
-        "password_uppercase": "Password must contain at least one uppercase letter",
+        "password_letter": "At least one letter",
         "password_number": "Password must contain at least one number",
-        "password_min_length": "Password must be at least 12 characters long",
-        "password_special_character": "Password must contain at least one special character (@$!%*?&#^())",
+        "password_min_length": "At least 8 characters",
         "passwords_match": "Passwords must match"
       }
     },
@@ -1182,7 +1180,29 @@
     "accept": "Accept All",
     "decline": "Decline",
     "learn_more": "Learn more",
-    "banner_title": "Cookie consent banner"
+    "banner_title": "Cookie consent banner",
+    "customize": "Customize",
+    "hide_settings": "Hide Settings",
+    "save_preferences": "Save Preferences",
+    "always_on": "Always On",
+    "categories": {
+      "necessary": {
+        "name": "Necessary",
+        "description": "Essential for the website to function. Cannot be disabled."
+      },
+      "analytics": {
+        "name": "Analytics",
+        "description": "Help us understand how visitors interact with our website."
+      },
+      "marketing": {
+        "name": "Marketing",
+        "description": "Used to deliver relevant ads and track campaigns."
+      },
+      "preferences": {
+        "name": "Preferences",
+        "description": "Remember your settings like language and theme."
+      }
+    }
   },
   "auth": {
     "login": {
@@ -1202,11 +1222,9 @@
       "terms_and_conditions": "I agree to the <a href='/gdpr'>Terms of Service and Privacy Policy</a>",
       "have_account": "Already have an account?",
       "validation": {
-        "password_lowercase": "At least one lowercase letter",
-        "password_uppercase": "At least one uppercase letter",
+        "password_letter": "At least one letter",
         "password_number": "At least one number",
-        "password_min_length": "At least 12 characters",
-        "password_special_character": "At least one special character",
+        "password_min_length": "At least 8 characters",
         "passwords_match": "Passwords match"
       }
     }

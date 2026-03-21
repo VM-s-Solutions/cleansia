@@ -14,7 +14,12 @@ public class GetPackageOverview
     {
         public async Task<IEnumerable<PackageListItem>> Handle(Request request, CancellationToken cancellationToken)
         {
-            return await packageRepository.GetAll().Select(package => package.MapToDto()).ToListAsync(cancellationToken);
+            var packages = await packageRepository.GetAll()
+                .Include(p => p.IncludedServices)
+                    .ThenInclude(ps => ps.Service)
+                .ToListAsync(cancellationToken);
+
+            return packages.Select(package => package.MapToDto());
         }
     }
 }

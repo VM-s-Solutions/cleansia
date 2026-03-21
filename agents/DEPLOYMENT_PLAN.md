@@ -73,7 +73,7 @@ All 4 APIs are orchestrated by .NET Aspire 13.1.1 (`Cleansia.AppHost`) and share
 | -------------------------- | --------------------------- | ---------------------------------------- |
 | Resource Group             | `rg-cleansia-dev`           | —                                        |
 | App Service Plan           | `asp-cleansia-dev`          | B1 (1 core, 1.75 GB RAM) — shared by all |
-| App Service (Partner API)  | `api-cleansia-dev`          | .NET 10 — Partner/employee-facing API    |
+| App Service (Partner API)  | `api-cleansia-partner-dev`  | .NET 10 — Partner/employee-facing API    |
 | App Service (Admin API)    | `api-cleansia-admin-dev`    | .NET 10 — Back-office API                |
 | App Service (Customer API) | `api-cleansia-customer-dev` | .NET 10 — Public-facing API              |
 | App Service (Mobile API)   | `api-cleansia-mobile-dev`   | .NET 10 — Android/iOS API                |
@@ -110,7 +110,7 @@ All 4 APIs are orchestrated by .NET Aspire 13.1.1 (`Cleansia.AppHost`) and share
 | ---------------- | ---------------------------------------------------------------------- | ------------------------------------------------ |
 | Mode             | Test mode                                                              | Live mode                                        |
 | API keys         | Test keys (`sk_test_...`)                                              | Live keys (`sk_live_...`)                        |
-| Webhook endpoint | `https://api-cleansia-dev.azurewebsites.net/api/v1/payment/webhook`    | `https://api.cleansia.cz/api/v1/payment/webhook` |
+| Webhook endpoint | `https://api-cleansia-partner-dev.azurewebsites.net/api/v1/payment/webhook`    | `https://api.cleansia.cz/api/v1/payment/webhook` |
 | Local testing    | Use `stripe listen --forward-to localhost:5003/api/v1/payment/webhook` | N/A                                              |
 
 **Key Vault secrets:**
@@ -227,7 +227,7 @@ feature/* ──► PR ──► master ──► auto-deploy DEV ──► manu
 
 #### 3. Deploy to DEV
 
-- [ ] Deploy .NET APIs to `api-cleansia-dev` App Service
+- [ ] Deploy .NET APIs to `api-cleansia-partner-dev` App Service
 - [ ] Deploy Customer SSR to `web-cleansia-customer-dev` App Service
 - [ ] Deploy Partner SPA to `swa-cleansia-partner-dev` Static Web App
 - [ ] Deploy Admin SPA to `swa-cleansia-admin-dev` Static Web App
@@ -321,7 +321,7 @@ Each .NET API project needs its own App Service. They all share the same App Ser
 
 ```bash
 # DEV — Partner API (employee-facing)
-az webapp create --name api-cleansia-dev --resource-group rg-cleansia-dev --plan asp-cleansia-dev --runtime "DOTNETCORE:10.0"
+az webapp create --name api-cleansia-partner-dev --resource-group rg-cleansia-dev --plan asp-cleansia-dev --runtime "DOTNETCORE:10.0"
 
 # DEV — Admin API (back-office)
 az webapp create --name api-cleansia-admin-dev --resource-group rg-cleansia-dev --plan asp-cleansia-dev --runtime "DOTNETCORE:10.0"
@@ -448,14 +448,14 @@ az monitor app-insights component create \
 
 ```bash
 # Enable managed identity on all App Services
-az webapp identity assign --name api-cleansia-dev --resource-group rg-cleansia-dev
+az webapp identity assign --name api-cleansia-partner-dev --resource-group rg-cleansia-dev
 az webapp identity assign --name api-cleansia-admin-dev --resource-group rg-cleansia-dev
 az webapp identity assign --name api-cleansia-customer-dev --resource-group rg-cleansia-dev
 az webapp identity assign --name api-cleansia-mobile-dev --resource-group rg-cleansia-dev
 az webapp identity assign --name web-cleansia-customer-dev --resource-group rg-cleansia-dev
 
 # Get the principal IDs
-PARTNER_PRINCIPAL=$(az webapp identity show --name api-cleansia-dev --resource-group rg-cleansia-dev --query principalId -o tsv)
+PARTNER_PRINCIPAL=$(az webapp identity show --name api-cleansia-partner-dev --resource-group rg-cleansia-dev --query principalId -o tsv)
 ADMIN_PRINCIPAL=$(az webapp identity show --name api-cleansia-admin-dev --resource-group rg-cleansia-dev --query principalId -o tsv)
 CUSTOMER_API_PRINCIPAL=$(az webapp identity show --name api-cleansia-customer-dev --resource-group rg-cleansia-dev --query principalId -o tsv)
 MOBILE_PRINCIPAL=$(az webapp identity show --name api-cleansia-mobile-dev --resource-group rg-cleansia-dev --query principalId -o tsv)
@@ -522,28 +522,109 @@ Repeat for PRO with production values (live Stripe keys, production SendGrid key
 
 ### Step 3: Configure App Services
 
-#### 3.1 .NET API App Services Configuration
+> **Important pattern**: Connection strings go in the **Connection Strings** tab (type: Custom), NOT as App Settings. The .NET code reads them via `configuration.GetConnectionString("ConnectionString")` which maps to the Connection Strings tab. Secrets use Key Vault references. Non-secret config (template IDs, URLs, log levels) is baked into `appsettings.Production.json`.
 
-All 4 API App Services share the same Key Vault references. The shared settings string is reused below.
+#### 3.1 Connection Strings (same for ALL 4 APIs)
+
+All APIs share the same database and blob storage. These go in the **Connection Strings tab**, type `Custom`:
 
 ```bash
-# Shared Key Vault reference settings for all .NET APIs
-KV_SETTINGS='ASPNETCORE_ENVIRONMENT=Production ConnectionStrings__DefaultConnection="@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=ConnectionStrings--DefaultConnection)" Jwt__SecretKey="@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=Jwt--SecretKey)" Stripe__SecretKey="@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=Stripe--SecretKey)" Stripe__WebhookSecret="@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=Stripe--WebhookSecret)" Stripe__PublishableKey="@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=Stripe--PublishableKey)" SendGrid__ApiKey="@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=SendGrid--ApiKey)" SendGrid__SandboxMode=true ConnectionStrings__BlobContainerConfigurationConnectionString="@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=ConnectionStrings--BlobContainerConfigurationConnectionString)"'
-
-# Partner API — CORS: customer frontend + partner SPA
-az webapp config appsettings set --name api-cleansia-dev --resource-group rg-cleansia-dev --settings $KV_SETTINGS CorsOrigins__0="https://swa-cleansia-partner-dev.azurestaticapps.net"
-
-# Admin API — CORS: admin SPA
-az webapp config appsettings set --name api-cleansia-admin-dev --resource-group rg-cleansia-dev --settings $KV_SETTINGS CorsOrigins__0="https://swa-cleansia-admin-dev.azurestaticapps.net"
-
-# Customer API — CORS: customer SSR frontend
-az webapp config appsettings set --name api-cleansia-customer-dev --resource-group rg-cleansia-dev --settings $KV_SETTINGS CorsOrigins__0="https://web-cleansia-customer-dev.azurewebsites.net"
-
-# Mobile API — no CORS needed (native app uses direct API calls)
-az webapp config appsettings set --name api-cleansia-mobile-dev --resource-group rg-cleansia-dev --settings $KV_SETTINGS
+for APP in api-cleansia-partner-dev api-cleansia-admin-dev api-cleansia-customer-dev api-cleansia-mobile-dev; do
+  az webapp config connection-string set \
+    --name "$APP" --resource-group rg-cleansia-dev \
+    --connection-string-type Custom \
+    --settings \
+      "ConnectionString=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=ConnectionStrings--DefaultConnection)" \
+      "BlobContainerConfigurationConnectionString=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=ConnectionStrings--BlobContainerConfigurationConnectionString)"
+done
 ```
 
-For PRO, set `SendGrid__SandboxMode=false` and use PRO Key Vault name and production CORS origins (custom domains).
+> **Do NOT** put `ConnectionStrings__*` as App Settings — the code uses `GetConnectionString()` which reads from the Connection Strings tab.
+
+#### 3.2 App Settings — per API
+
+Each API only gets the settings it actually uses. Not all APIs use Stripe.
+
+**Partner API** (`api-cleansia-partner-dev`) — uses Stripe (has PaymentController):
+
+```bash
+az webapp config appsettings set \
+  --name api-cleansia-partner-dev --resource-group rg-cleansia-dev \
+  --settings \
+    ASPNETCORE_ENVIRONMENT=Production \
+    "Jwt__SecretKey=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=Jwt--SecretKey)" \
+    "SendGrid__ApiKey=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=SendGrid--ApiKey)" \
+    SendGrid__SandboxMode=true \
+    "Stripe__SecretKey=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=Stripe--SecretKey)" \
+    "Stripe__PublishableKey=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=Stripe--PublishableKey)" \
+    "Stripe__WebhookSecret=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=Stripe--WebhookSecret)" \
+    "Stripe__SuccessUrlBase=https://web-cleansia-customer-dev.azurewebsites.net/checkout/success" \
+    "Stripe__CancelUrlBase=https://web-cleansia-customer-dev.azurewebsites.net/checkout/cancel" \
+    "CorsOrigins__0=https://swa-cleansia-partner-dev.azurestaticapps.net" \
+    "CorsOrigins__1=https://web-cleansia-customer-dev.azurewebsites.net"
+```
+
+**Admin API** (`api-cleansia-admin-dev`) — NO Stripe (no PaymentController):
+
+```bash
+az webapp config appsettings set \
+  --name api-cleansia-admin-dev --resource-group rg-cleansia-dev \
+  --settings \
+    ASPNETCORE_ENVIRONMENT=Production \
+    "Jwt__SecretKey=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=Jwt--SecretKey)" \
+    "SendGrid__ApiKey=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=SendGrid--ApiKey)" \
+    SendGrid__SandboxMode=true \
+    "CorsOrigins__0=https://swa-cleansia-admin-dev.azurestaticapps.net"
+```
+
+**Customer API** (`api-cleansia-customer-dev`) — uses Stripe (has PaymentController):
+
+```bash
+az webapp config appsettings set \
+  --name api-cleansia-customer-dev --resource-group rg-cleansia-dev \
+  --settings \
+    ASPNETCORE_ENVIRONMENT=Production \
+    "Jwt__SecretKey=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=Jwt--SecretKey)" \
+    "SendGrid__ApiKey=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=SendGrid--ApiKey)" \
+    SendGrid__SandboxMode=true \
+    "Stripe__SecretKey=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=Stripe--SecretKey)" \
+    "Stripe__PublishableKey=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=Stripe--PublishableKey)" \
+    "Stripe__WebhookSecret=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=Stripe--WebhookSecret)" \
+    "Stripe__SuccessUrlBase=https://web-cleansia-customer-dev.azurewebsites.net/checkout/success" \
+    "Stripe__CancelUrlBase=https://web-cleansia-customer-dev.azurewebsites.net/checkout/cancel" \
+    "CorsOrigins__0=https://web-cleansia-customer-dev.azurewebsites.net" \
+    "CorsOrigins__1=https://cleansia.cz"
+```
+
+**Mobile API** (`api-cleansia-mobile-dev`) — NO Stripe, NO CORS (native app):
+
+```bash
+az webapp config appsettings set \
+  --name api-cleansia-mobile-dev --resource-group rg-cleansia-dev \
+  --settings \
+    ASPNETCORE_ENVIRONMENT=Production \
+    "Jwt__SecretKey=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=Jwt--SecretKey)" \
+    "SendGrid__ApiKey=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=SendGrid--ApiKey)" \
+    SendGrid__SandboxMode=true
+```
+
+#### 3.3 Which API uses what (reference table)
+
+| Setting | Partner | Admin | Customer | Mobile |
+|---|---|---|---|---|
+| Jwt__SecretKey (KV) | Yes | Yes | Yes | Yes |
+| SendGrid__ApiKey (KV) | Yes | Yes | Yes | Yes |
+| SendGrid__SandboxMode | Yes | Yes | Yes | Yes |
+| Stripe__SecretKey (KV) | Yes | **No** | Yes | **No** |
+| Stripe__PublishableKey (KV) | Yes | **No** | Yes | **No** |
+| Stripe__WebhookSecret (KV) | Yes | **No** | Yes | **No** |
+| Stripe__SuccessUrlBase | Yes | **No** | Yes | **No** |
+| Stripe__CancelUrlBase | Yes | **No** | Yes | **No** |
+| CorsOrigins | Partner SWA + Customer SSR | Admin SWA | Customer SSR | None |
+| ConnectionString (Conn. Strings tab) | Yes | Yes | Yes | Yes |
+| BlobContainerConfigurationConnectionString (Conn. Strings tab) | Yes | Yes | Yes | Yes |
+
+> **For PRO**: Replace `kv-cleansia-dev` → `kv-cleansia-pro`, `SendGrid__SandboxMode=false`, and use production CORS origins (custom domains like `partner.cleansia.cz`, `admin.cleansia.cz`, `cleansia.cz`).
 
 #### 3.2 Customer SSR App Service Configuration
 
@@ -557,7 +638,7 @@ az webapp config set --name web-cleansia-customer-dev --resource-group rg-cleans
 #### 3.3 Enable Always On (prevents cold starts)
 
 ```bash
-az webapp config set --name api-cleansia-dev --resource-group rg-cleansia-dev --always-on true
+az webapp config set --name api-cleansia-partner-dev --resource-group rg-cleansia-dev --always-on true
 az webapp config set --name api-cleansia-admin-dev --resource-group rg-cleansia-dev --always-on true
 az webapp config set --name api-cleansia-customer-dev --resource-group rg-cleansia-dev --always-on true
 az webapp config set --name api-cleansia-mobile-dev --resource-group rg-cleansia-dev --always-on true
@@ -623,7 +704,7 @@ Add the following secrets to the GitHub repository:
 
 | Secret                                          | Description                                     |
 | ----------------------------------------------- | ----------------------------------------------- |
-| `AZURE_WEBAPP_PUBLISH_PROFILE_API_DEV`          | Publish profile for `api-cleansia-dev`          |
+| `AZURE_WEBAPP_PUBLISH_PROFILE_API_DEV`          | Publish profile for `api-cleansia-partner-dev`          |
 | `AZURE_WEBAPP_PUBLISH_PROFILE_ADMIN_API_DEV`    | Publish profile for `api-cleansia-admin-dev`    |
 | `AZURE_WEBAPP_PUBLISH_PROFILE_CUSTOMER_API_DEV` | Publish profile for `api-cleansia-customer-dev` |
 | `AZURE_WEBAPP_PUBLISH_PROFILE_MOBILE_API_DEV`   | Publish profile for `api-cleansia-mobile-dev`   |
@@ -659,7 +740,7 @@ az staticwebapp secrets list --name swa-cleansia-partner-dev --resource-group rg
 
 - [ ] Build .NET solution and publish
 - [ ] Build all 3 Angular apps (production config)
-- [ ] Deploy APIs to `api-cleansia-dev` via `azure/webapps-deploy@v3`
+- [ ] Deploy APIs to `api-cleansia-partner-dev` via `azure/webapps-deploy@v3`
 - [ ] Deploy Customer SSR to `web-cleansia-customer-dev`
 - [ ] Deploy Partner SPA via `Azure/static-web-apps-deploy@v1`
 - [ ] Deploy Admin SPA via `Azure/static-web-apps-deploy@v1`
@@ -735,7 +816,7 @@ az network dns zone create \
 
 | Record Type | Name          | Value                                            | Environment |
 | ----------- | ------------- | ------------------------------------------------ | ----------- |
-| CNAME       | `api-dev`     | `api-cleansia-dev.azurewebsites.net`             | DEV         |
+| CNAME       | `api-dev`     | `api-cleansia-partner-dev.azurewebsites.net`             | DEV         |
 | CNAME       | `dev`         | `web-cleansia-customer-dev.azurewebsites.net`    | DEV         |
 | CNAME       | `partner-dev` | `<swa-cleansia-partner-dev>.azurestaticapps.net` | DEV         |
 | CNAME       | `admin-dev`   | `<swa-cleansia-admin-dev>.azurestaticapps.net`   | DEV         |
@@ -751,7 +832,7 @@ az network dns record-set cname set-record \
   --resource-group rg-cleansia-pro \
   --zone-name cleansia.cz \
   --record-set-name api-dev \
-  --cname api-cleansia-dev.azurewebsites.net
+  --cname api-cleansia-partner-dev.azurewebsites.net
 
 # Example: Create CNAME for production API
 az network dns record-set cname set-record \
@@ -869,6 +950,6 @@ az webapp update \
 
 ---
 
-**Version**: 1.0.0
-**Last Updated**: 2026-03-15
-**Status**: Planning
+**Version**: 1.1.0
+**Last Updated**: 2026-03-21
+**Status**: DEV deployed, PRO planned

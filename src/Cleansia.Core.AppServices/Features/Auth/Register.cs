@@ -70,6 +70,11 @@ public class Register
                 userRepository.Add(userEntity);
                 cartRepository.Add(Cart.CreateWithUser(userEntity));
             }
+            else
+            {
+                // Re-registration: user exists but hasn't confirmed — refresh the code
+                userEntity.UpdateConfirmationCode();
+            }
 
             var userName = $"{userEntity.FirstName} {userEntity.LastName}";
 

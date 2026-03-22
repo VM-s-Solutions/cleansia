@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
+using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Features.Auth;
 
@@ -13,10 +14,12 @@ public class ConfirmUserEmail
     public class Validator : AbstractValidator<Command>
     {
         private readonly IUserRepository _userRepository;
+        private readonly ILogger<Validator> _logger;
 
-        public Validator(IUserRepository userRepository)
+        public Validator(IUserRepository userRepository, ILogger<Validator> logger)
         {
             _userRepository = userRepository;
+            _logger = logger;
 
             RuleFor(command => command.Code)
                 .Cascade(CascadeMode.Stop)
@@ -32,10 +35,20 @@ public class ConfirmUserEmail
         {
             var user = await _userRepository.GetByConfirmationCodeAsync(command.Code, cancellationToken);
 
-            return user is not null &&
-                   user.ConfirmationCode == command.Code &&
-                   user.ConfirmationCodeExpiresAt.HasValue &&
-                   DateTime.UtcNow < user.ConfirmationCodeExpiresAt.Value;
+            if (user is null)
+            {
+                _logger.LogWarning("Email confirmation failed: no user found with code {Code}", command.Code);
+                return false;
+            }
+
+            if (!user.ConfirmationCodeExpiresAt.HasValue || DateTime.UtcNow >= user.ConfirmationCodeExpiresAt.Value)
+            {
+                _logger.LogWarning("Email confirmation failed for user {Email}: code expired at {ExpiresAt}, current time {Now}",
+                    user.Email, user.ConfirmationCodeExpiresAt, DateTime.UtcNow);
+                return false;
+            }
+
+            return true;
         }
     }
 

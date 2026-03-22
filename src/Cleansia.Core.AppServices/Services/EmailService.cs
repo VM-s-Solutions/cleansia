@@ -267,7 +267,7 @@ public sealed class EmailService : IEmailService
 
         var client = new SendGridClient(sendGridConfig.ApiKey);
         var msg = MailHelper.CreateSingleTemplateEmail(
-            new EmailAddress(sendGridConfig.AddressFrom),
+            new EmailAddress(sendGridConfig.AddressFrom, "Cleansia"),
             new EmailAddress(email),
             templateId,
             model);
@@ -309,7 +309,7 @@ public sealed class EmailService : IEmailService
 
         var client = new SendGridClient(sendGridConfig.ApiKey);
         var msg = MailHelper.CreateSingleTemplateEmail(
-            new EmailAddress(sendGridConfig.AddressFrom),
+            new EmailAddress(sendGridConfig.AddressFrom, "Cleansia"),
             new EmailAddress(email),
             templateId,
             model);

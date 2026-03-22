@@ -898,7 +898,7 @@
     },
     "email_confirm": {
       "title": "Potvrzení e-mailu",
-      "description": "Prosím, zkontrolujte svůj e-mail a zadejte kód pro potvrzení.",
+      "description": "Na váš e-mail jsme odeslali 6místný ověřovací kód. Zadejte ho níže pro ověření vašeho účtu.",
       "resend_code": "Odeslat kód",
       "verify_code": "Potvrdit kód",
       "email_sent": "E-mail byl úspěšně odeslán",

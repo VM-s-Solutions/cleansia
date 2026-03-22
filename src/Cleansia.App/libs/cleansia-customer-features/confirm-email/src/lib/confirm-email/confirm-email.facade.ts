@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
@@ -16,8 +16,8 @@ export class ConfirmEmailFacade extends UnsubscribeControlDirective {
   private readonly store = inject(Store);
   private readonly snackbarService = inject(SnackbarService);
 
-  isResendDisabled = false;
-  resendCodeTimeout = 30;
+  readonly isResendDisabled = signal(false);
+  readonly resendCodeTimeout = signal(30);
 
   formGroup: FormGroup = this.createConfirmEmailFormGroup();
 
@@ -42,23 +42,29 @@ export class ConfirmEmailFacade extends UnsubscribeControlDirective {
   }
 
   resendCode(email: string): void {
-    this.isResendDisabled = true;
-    const resendCodeCooldown = 30_000;
+    this.isResendDisabled.set(true);
+    this.resendCodeTimeout.set(30);
+
+    const interval = setInterval(() => {
+      this.resendCodeTimeout.update(v => v - 1);
+      if (this.resendCodeTimeout() <= 0) {
+        clearInterval(interval);
+        this.isResendDisabled.set(false);
+        this.resendCodeTimeout.set(30);
+      }
+    }, 1000);
+
     this.authService.resendEmailConfirmation(email).pipe(
       takeUntil(this.destroyed$)
     ).subscribe({
       next: () => {
         this.snackbarService.showSuccessTranslated('auth.confirm_email.resend_success');
-        const interval = setInterval(() => this.resendCodeTimeout--, 1000);
-        setTimeout(() => {
-          this.isResendDisabled = false;
-          this.resendCodeTimeout = 30;
-          clearInterval(interval);
-        }, resendCodeCooldown);
       },
       error: (err) => {
         this.snackbarService.showApiError(err, 'auth.confirm_email.resend_error');
-        this.isResendDisabled = false;
+        clearInterval(interval);
+        this.isResendDisabled.set(false);
+        this.resendCodeTimeout.set(30);
       },
     });
   }

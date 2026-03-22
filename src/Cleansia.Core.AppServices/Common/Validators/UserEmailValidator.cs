@@ -68,7 +68,8 @@ public abstract class BaseUserValidator<TRequest> : AbstractValidator<TRequest>
 
     protected void AddPasswordRules(Expression<Func<TRequest, string>> passwordExpression)
     {
-        const string passwordPattern = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$";
+        // Requires: minimum 8 characters, at least one letter and one digit
+        const string passwordPattern = @"^(?=.*[a-zA-Z])(?=.*\d).{8,}$";
 
         RuleFor(passwordExpression)
             .Cascade(CascadeMode.Stop)

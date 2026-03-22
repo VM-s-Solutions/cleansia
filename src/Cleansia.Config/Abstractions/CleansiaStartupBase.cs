@@ -319,10 +319,13 @@ public static class DatabaseMigrationExtensions
 
         using var scope = scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<Cleansia.Infra.Database.CleansiaDbContext>();
-        dbContext.Migrate();
 
+        // In non-Development environments, migrations are applied by the CI/CD pipeline
+        // (EF migrations bundle) before any API is deployed. This prevents race conditions
+        // when multiple APIs start simultaneously and try to run migrations concurrently.
         if (environment.IsDevelopment())
         {
+            dbContext.Migrate();
             SeedDevelopmentData(dbContext, scope.ServiceProvider.GetRequiredService<ILogger<Cleansia.Infra.Database.CleansiaDbContext>>());
         }
     }

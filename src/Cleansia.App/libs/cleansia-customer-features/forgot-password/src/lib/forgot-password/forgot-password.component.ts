@@ -40,20 +40,23 @@ export class ForgotPasswordComponent implements OnInit {
 
   routes = CleansiaCustomerRoute;
 
+  get hasPasswordInput(): boolean {
+    return !!this.facade.passwordFormGroup.get('password')?.value;
+  }
+
+  get hasConfirmPasswordInput(): boolean {
+    return !!this.facade.passwordFormGroup.get('confirmPassword')?.value;
+  }
+
   get isPasswordValid(): PasswordCheck {
     const password = this.facade.passwordFormGroup.get('password')?.value;
-    if (!this.facade.passwordFormGroup || !password) {
-      return checkIfPasswordsValid('');
-    }
+    if (!password) return checkIfPasswordsValid('');
     return checkIfPasswordsValid(password);
   }
 
   get isConfirmPasswordValid(): PasswordCheck {
-    const confirmPassword =
-      this.facade.passwordFormGroup.get('confirmPassword')?.value;
-    if (!this.facade.passwordFormGroup || !confirmPassword) {
-      return checkIfPasswordsValid('');
-    }
+    const confirmPassword = this.facade.passwordFormGroup.get('confirmPassword')?.value;
+    if (!confirmPassword) return checkIfPasswordsValid('');
     const password = this.facade.passwordFormGroup.get('password')?.value;
     return checkIfPasswordsValid(confirmPassword, password);
   }

@@ -32,15 +32,15 @@ public static class ServiceExtensions
 
     public static void MigrateDatabase(this IApplicationBuilder app, IWebHostEnvironment environment)
     {
+        // In non-Development environments, migrations are applied by the CI/CD pipeline
+        // (EF migrations bundle) before any API is deployed.
+        if (!environment.IsDevelopment()) return;
+
         var scopeFactory = app.ApplicationServices.GetService<IServiceScopeFactory>();
-        if (scopeFactory is null)
-        {
-            return;
-        }
+        if (scopeFactory is null) return;
 
         using var scope = scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<CleansiaDbContext>();
-
         dbContext.Migrate();
     }
 

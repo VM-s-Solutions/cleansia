@@ -10,9 +10,9 @@
       <div class="cleansia-email-confirm__header">
         <cleansia-title [title]="'pages.email_confirm.title' | translate" />
       </div>
-      <p class="cleansia-email-confirm__message">
-        {{ 'pages.email_confirm.description' | translate }}
-      </p>
+      <div class="cleansia-email-confirm__description">
+        <p>{{ 'pages.email_confirm.description' | translate }}</p>
+      </div>
       <div class="cleansia-email-confirm__form-control">
         <cleansia-text-input
           formControlName="code"
@@ -22,28 +22,27 @@
         />
       </div>
       <div class="cleansia-email-confirm__actions">
-        <div>
-          @if (facade.isResendDisabled) {
-          {{ resendCodeTimeout }}
-          }
+        @if (facade.isResendDisabled()) {
+        <span class="cleansia-email-confirm__countdown">{{ resendCodeTimeout() }}</span>
+        }
+        <div class="cleansia-email-confirm__button-row">
           <cleansia-button
             [title]="'pages.email_confirm.resend_code' | translate"
-            [style]="'raised-button'"
+            [severity]="'secondary'"
             [icon]="'pi pi-refresh'"
-            [loading]="facade.isResendDisabled"
+            [disabled]="facade.isResendDisabled()"
             (clickFn)="onResendCode()"
           />
+          <cleansia-button
+            [buttonType]="'submit'"
+            [title]="'pages.email_confirm.verify_code' | translate"
+            [severity]="'primary'"
+            [icon]="'pi pi-check-circle'"
+            [iconPosition]="'right'"
+            [loading]="loading() || false"
+            (clickFn)="onVerifyCode()"
+          />
         </div>
-        <cleansia-button
-          [buttonType]="'submit'"
-          [title]="'pages.email_confirm.verify_code' | translate"
-          [severity]="'primary'"
-          [style]="'raised-button'"
-          [icon]="'pi pi-check-circle'"
-          [iconPosition]="'right'"
-          [loading]="loading() || false"
-          (clickFn)="onVerifyCode()"
-        />
       </div>
     </div>
   </div>

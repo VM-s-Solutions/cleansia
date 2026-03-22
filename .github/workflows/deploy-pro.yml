@@ -147,13 +147,58 @@ jobs:
           path: ./src/Cleansia.App/dist/apps/cleansia-admin.app/browser
 
   # =============================================
+  # Run EF migrations before any API deploys
+  # =============================================
+
+  migrate-database:
+    name: Run DB Migrations
+    needs: build-dotnet
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.x
+
+      - name: Install EF Core tools
+        run: dotnet tool install --global dotnet-ef
+
+      - name: Build EF migrations bundle
+        run: |
+          dotnet ef migrations bundle \
+            --project Cleansia.Infra.Database/Cleansia.Infra.Database.csproj \
+            --startup-project Cleansia.Web/Cleansia.Web.Partner.csproj \
+            --configuration Release \
+            --output ./efbundle \
+            --force
+        working-directory: ./src
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Apply migrations
+        env:
+          DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING_PRO }}
+        run: |
+          chmod +x ./src/efbundle
+          ./src/efbundle --connection "$DB_CONNECTION_STRING"
+
+  # =============================================
   # Deploy step-by-step (sequential to avoid
   # overloading the B1 App Service Plan)
   # =============================================
 
   deploy-partner-api:
     name: 1/7 — Partner API
-    needs: build-dotnet
+    needs: [build-dotnet, migrate-database]
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -183,7 +228,7 @@ jobs:
 
   deploy-admin-api:
     name: 2/7 — Admin API
-    needs: [build-dotnet, deploy-partner-api]
+    needs: [build-dotnet, migrate-database, deploy-partner-api]
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -213,7 +258,7 @@ jobs:
 
   deploy-customer-api:
     name: 3/7 — Customer API
-    needs: [build-dotnet, deploy-admin-api]
+    needs: [build-dotnet, migrate-database, deploy-admin-api]
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -243,7 +288,7 @@ jobs:
 
   deploy-mobile-api:
     name: 4/7 — Mobile API
-    needs: [build-dotnet, deploy-customer-api]
+    needs: [build-dotnet, migrate-database, deploy-customer-api]
     runs-on: ubuntu-latest
     environment: production
     steps:

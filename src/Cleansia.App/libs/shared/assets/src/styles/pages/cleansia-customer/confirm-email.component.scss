@@ -53,7 +53,7 @@
     justify-content: center;
 
     // Force text-center on the input even when validation error classes are added
-    input.text-center {
+    input {
       text-align: center !important;
     }
   }

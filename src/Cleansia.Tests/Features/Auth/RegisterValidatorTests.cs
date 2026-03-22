@@ -328,10 +328,9 @@ public class RegisterValidatorTests
         Assert.Equal("Password", errors[0].ErrorCode);
     }
     [Theory]
-    [InlineData("password1", "Missing uppercase letter")]
-    [InlineData("PASSWORD1", "Missing lowercase letter")]
     [InlineData("Password", "Missing digit")]
     [InlineData("Pass1", "Less than 8 characters")]
+    [InlineData("12345678", "Missing letter")]
     public async Task When_Password_Does_Not_Match_Pattern_Then_Validation_Fails_With_InvalidFormat_Error(string password, string reason)
     {
         // Arrange

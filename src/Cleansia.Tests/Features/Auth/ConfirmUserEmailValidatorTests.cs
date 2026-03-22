@@ -2,6 +2,7 @@
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.TestUtilities.MockDataFactories.Users;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Cleansia.Tests.Features.Auth;
@@ -15,7 +16,7 @@ public class ConfirmUserEmailValidatorTests
         var mockRepo = new Mock<IUserRepository>();
         mockRepo.Setup(r => r.ExistsWithConfirmationCodeAsync(null, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(false);
-        var validator = new ConfirmUserEmail.Validator(mockRepo.Object);
+        var validator = new ConfirmUserEmail.Validator(mockRepo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>());
         var command = new ConfirmUserEmail.Command(null);
 
         // Act
@@ -34,7 +35,7 @@ public class ConfirmUserEmailValidatorTests
         var mockRepo = new Mock<IUserRepository>();
         mockRepo.Setup(r => r.ExistsWithConfirmationCodeAsync(string.Empty, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(false);
-        var validator = new ConfirmUserEmail.Validator(mockRepo.Object);
+        var validator = new ConfirmUserEmail.Validator(mockRepo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>());
         var command = new ConfirmUserEmail.Command(string.Empty);
 
         // Act
@@ -52,7 +53,7 @@ public class ConfirmUserEmailValidatorTests
         // Arrange
         var mockRepo = new Mock<IUserRepository>();
         const string invalidCode = "invalidCode";
-        var validator = new ConfirmUserEmail.Validator(mockRepo.Object);
+        var validator = new ConfirmUserEmail.Validator(mockRepo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>());
         var command = new ConfirmUserEmail.Command(invalidCode);
 
         // Act
@@ -73,7 +74,7 @@ public class ConfirmUserEmailValidatorTests
         const string validCode = "validCode";
         mockRepo.Setup(r => r.GetByConfirmationCodeAsync(validCode, It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMockFactory.Generate(new UserMockFactory.UserPartial { ConfirmationCode = validCode, ConfirmationCodeExpiresAt = DateTimeOffset.UtcNow }));
-        var validator = new ConfirmUserEmail.Validator(mockRepo.Object);
+        var validator = new ConfirmUserEmail.Validator(mockRepo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>());
         var command = new ConfirmUserEmail.Command(validCode);
 
         // Act
@@ -94,7 +95,7 @@ public class ConfirmUserEmailValidatorTests
         const string validCode = "validCode";
         mockRepo.Setup(r => r.GetByConfirmationCodeAsync(validCode, It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMockFactory.Generate(new UserMockFactory.UserPartial { ConfirmationCode = validCode, ConfirmationCodeExpiresAt = DateTimeOffset.UtcNow.AddMinutes(15) }));
-        var validator = new ConfirmUserEmail.Validator(mockRepo.Object);
+        var validator = new ConfirmUserEmail.Validator(mockRepo.Object, Mock.Of<ILogger<ConfirmUserEmail.Validator>>());
         var command = new ConfirmUserEmail.Command(validCode);
 
         // Act

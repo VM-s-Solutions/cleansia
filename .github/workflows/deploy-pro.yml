@@ -167,6 +167,10 @@ jobs:
       - name: Install EF Core tools
         run: dotnet tool install --global dotnet-ef
 
+      - name: Restore packages
+        run: dotnet restore Cleansia.Api.sln
+        working-directory: ./src
+
       - name: Build EF migrations bundle
         run: |
           dotnet ef migrations bundle \

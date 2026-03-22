@@ -12,6 +12,7 @@ using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Order = Cleansia.Core.Domain.Orders.Order;
 using OrderService = Cleansia.Core.Domain.Orders.OrderService;
 
@@ -172,7 +173,8 @@ public class CreateOrder
         ISendGridClientFactory clientFactory,
         IStripeClientFactory stripeClientFactory,
         IEmailService emailService,
-        IReceiptService receiptService) : ICommandHandler<Command, Response>
+        IReceiptService receiptService,
+        ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -303,8 +305,9 @@ public class CreateOrder
 
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                logger.LogError(ex, "Failed to generate/send receipt for order {OrderId}", order.Id);
                 return false;
             }
         }

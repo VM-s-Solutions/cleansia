@@ -72,7 +72,7 @@ public class User : Auditable, ITenantEntity
             FirstName = firstName,
             LastName = lastName,
             PreferredLanguageCode = languageCode ?? "en",
-            ConfirmationCode = new Random().Next(100000, 999999).ToString(),
+            ConfirmationCode = Random.Shared.Next(100000, 999999).ToString(),
             ConfirmationCodeExpiresAt = DateTime.UtcNow.AddMinutes(15),
             Profile = profile,
         };
@@ -91,7 +91,7 @@ public class User : Auditable, ITenantEntity
 
     public User UpdateResetPasswordToken()
     {
-        ResetPasswordCode = new Random().Next(100000, 999999).ToString();
+        ResetPasswordCode = Random.Shared.Next(100000, 999999).ToString();
         ResetPasswordCodeExpiresAt = DateTime.UtcNow.AddMinutes(15);
         return this;
     }
@@ -144,7 +144,7 @@ public class User : Auditable, ITenantEntity
 
     public User UpdateConfirmationCode()
     {
-        ConfirmationCode = new Random().Next(100000, 999999).ToString();
+        ConfirmationCode = Random.Shared.Next(100000, 999999).ToString();
         ConfirmationCodeExpiresAt = DateTime.UtcNow.AddMinutes(15);
 
         return this;

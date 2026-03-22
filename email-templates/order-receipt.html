@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="{{lang}}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{Subject}}</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ---------- Base Styles ---------- */
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #f0f9ff; /* cleansia-primary-50 */
+        font-family: 'Nunito', 'Kanit', sans-serif;
+        color: #0c4a6e; /* cleansia-primary-900 */
+      }
+
+      /* ---------- Container ---------- */
+      #email-wrapper {
+        max-width: 480px;
+        margin: 40px auto;
+        background: #ffffff; /* cleansia-primary-0 */
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1); /* cleansia-black-100 */
+      }
+
+      /* ---------- Header ---------- */
+      .header {
+        padding: 28px 30px 20px;
+        text-align: center;
+        border-bottom: 1px solid #e0f2fe; /* cleansia-primary-100 */
+      }
+      .header h1 {
+        font-size: 26px;
+        color: #0284c7; /* cleansia-primary */
+        margin: 10px 0 0;
+      }
+
+      /* ---------- Content ---------- */
+      .content {
+        padding: 36px 30px 10px;
+        text-align: center;
+      }
+      .content h2 {
+        margin: 0 0 12px;
+        font-size: 20px;
+        color: #0369a1; /* cleansia-primary-700 */
+      }
+      .content p {
+        margin: 0 0 20px;
+        font-size: 14px;
+        line-height: 1.6;
+        color: #075985; /* cleansia-primary-800 */
+      }
+
+      /* ---------- Order Details Box ---------- */
+      .order-details {
+        background: #f0f9ff; /* cleansia-primary-50 */
+        border: 1px solid #e0f2fe; /* cleansia-primary-100 */
+        border-radius: 8px;
+        padding: 20px;
+        margin: 26px 0;
+        text-align: left;
+      }
+      .order-details table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .order-details td {
+        padding: 10px 0;
+        font-size: 14px;
+      }
+      .order-details td:first-child {
+        font-weight: 600;
+        color: #0369a1; /* cleansia-primary-700 */
+        width: 40%;
+      }
+      .order-details td:last-child {
+        color: #075985; /* cleansia-primary-800 */
+        text-align: right;
+      }
+      .order-details tr {
+        border-bottom: 1px solid #e0f2fe; /* cleansia-primary-100 */
+      }
+      .order-details tr:last-child {
+        border-bottom: none;
+      }
+      .total-row td {
+        font-size: 18px !important;
+        font-weight: 700 !important;
+        color: #0284c7 !important; /* cleansia-primary */
+        padding-top: 16px !important;
+      }
+
+      /* ---------- Call to Action Button ---------- */
+      .cta {
+        margin: 30px 0;
+      }
+      .cta a {
+        display: inline-block;
+        background: #0284c7; /* cleansia-primary */
+        color: #ffffff !important;
+        font-weight: 600;
+        font-size: 15px;
+        padding: 14px 32px;
+        border-radius: 8px;
+        text-decoration: none;
+        box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+        transition: background 0.2s;
+      }
+      .cta a:hover {
+        background: #0369a1; /* cleansia-primary-700 */
+      }
+
+      /* ---------- Footer ---------- */
+      .footer {
+        padding: 22px 30px;
+        text-align: center;
+        font-size: 12px;
+        color: #0c4a6e; /* cleansia-primary-900 */
+        background: #e0f2fe; /* cleansia-primary-100 */
+      }
+      .footer p {
+        margin: 8px 0;
+      }
+      .footer .signature {
+        margin-top: 16px;
+        font-weight: 600;
+        color: #0369a1; /* cleansia-primary-700 */
+      }
+      .footer .copyright {
+        margin-top: 12px;
+        font-size: 11px;
+        color: #64748b;
+      }
+      .footer a {
+        color: #0ea5e9; /* cleansia-primary-500 */
+        transition: color 0.1s; /* default-transition */
+      }
+      .footer a:hover {
+        color: #0284c7; /* cleansia-primary */
+      }
+
+      /* ---------- Mobile Styles ---------- */
+      @media screen and (max-width: 480px) {
+        body {
+          background: #ffffff; /* cleansia-primary-0 */
+        }
+        #email-wrapper {
+          margin: 0;
+          border-radius: 0;
+          box-shadow: none;
+        }
+        .content,
+        .header,
+        .footer {
+          padding-left: 20px;
+          padding-right: 20px;
+        }
+        .order-details {
+          padding: 16px;
+        }
+        .order-details td:first-child {
+          width: 50%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="email-wrapper">
+      <!-- Header -->
+      <div class="header">
+        <h1>Cleansia</h1>
+      </div>
+
+      <!-- Main Content -->
+      <div class="content">
+        <h2>{{Subject}}</h2>
+        <p>{{Greeting}}, <strong>{{CustomerName}}</strong>!</p>
+        <p>{{ThankYouText}}</p>
+
+        <!-- Order Details -->
+        <div class="order-details">
+          <table>
+            <tr>
+              <td>{{OrderNumberLabel}}</td>
+              <td>{{OrderNumber}}</td>
+            </tr>
+            <tr>
+              <td>{{OrderDateLabel}}</td>
+              <td>{{OrderDate}}</td>
+            </tr>
+            <tr class="total-row">
+              <td>{{TotalAmountLabel}}</td>
+              <td>{{TotalAmount}}</td>
+            </tr>
+          </table>
+        </div>
+
+        <p>{{AttachmentText}}</p>
+
+        <!-- Button -->
+        <div class="cta">
+          <a href="{{OrderStatusLink}}">{{ButtonText}}</a>
+        </div>
+
+        <p>{{QuestionsText}}</p>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <p>
+          {{SupportText}} <a href="mailto:{{SupportEmail}}">{{SupportEmail}}</a>
+        </p>
+        <p class="signature">{{Closing}}<br />{{TeamName}}</p>
+        <p class="copyright">{{FooterText}}</p>
+      </div>
+    </div>
+  </body>
+</html>

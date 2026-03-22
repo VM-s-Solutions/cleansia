@@ -10,11 +10,7 @@
   &__confirmation-card {
     max-width: 28rem;
     width: 100%;
-    background-color: var(--cleansia-white);
-    border-radius: 10px;
-    overflow: hidden;
     padding: 1.5rem;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
     text-align: center;
     display: flex;
     flex-direction: column;
@@ -31,21 +27,23 @@
   &__brand-name-container {
     display: flex;
     justify-content: center;
-    border-bottom: 1px solid var(--cleansia-light-gray);
+    border-bottom: 1px solid var(--cleansia-primary-200);
     padding-bottom: 10px;
-
-    &__actions {
-      display: flex;
-      justify-content: start;
-      align-items: center;
-      border-bottom: 1px solid var(--cleansia-light-gray);
-      padding-bottom: 10px;
-      gap: 3.5rem;
-    }
   }
 
   &__header {
     text-transform: uppercase;
+  }
+
+  &__description {
+    text-align: center;
+    color: var(--cleansia-text-secondary);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+
+    p {
+      margin: 0;
+    }
   }
 
   &__form-control {
@@ -53,22 +51,31 @@
     display: flex;
     align-items: center;
     justify-content: center;
+
+    // Force text-center on the input even when validation error classes are added
+    input.text-center {
+      text-align: center !important;
+    }
   }
 
   &__actions {
     display: flex;
-    align-items: end;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 1rem;
-  }
-
-  &__dialog-content {
-    display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    row-gap: 1rem;
+    gap: 0.75rem;
+  }
+
+  &__button-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__countdown {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--cleansia-text-secondary);
+    font-family: monospace;
   }
 }
 

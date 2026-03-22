@@ -898,7 +898,7 @@
     },
     "email_confirm": {
       "title": "Email Confirmation",
-      "description": "Please check your email and enter the confirmation code.",
+      "description": "We've sent a 6-digit verification code to your email. Enter the code below to verify your account.",
       "resend_code": "Resend code",
       "verify_code": "Verify code",
       "email_sent": "Email sent successfully",

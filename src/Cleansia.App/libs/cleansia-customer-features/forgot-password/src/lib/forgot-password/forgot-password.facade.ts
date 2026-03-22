@@ -44,8 +44,8 @@ export class ForgotPasswordFacade extends UnsubscribeControlDirective {
     }
 
     const email = this.emailFormGroup.value.email;
-    const resendCodeCooldown = 30_000;
     this.isResendDisabled = true;
+    this.resendCodeTimeout = 30;
 
     this.customerClient.userClient
       .requestPasswordChange(
@@ -59,12 +59,14 @@ export class ForgotPasswordFacade extends UnsubscribeControlDirective {
       .subscribe({
         next: () => {
           this.isEmailSent = true;
-          const interval = setInterval(() => this.resendCodeTimeout--, 1000);
-          setTimeout(() => {
-            this.isResendDisabled = false;
-            this.resendCodeTimeout = 30;
-            clearInterval(interval);
-          }, resendCodeCooldown);
+          const interval = setInterval(() => {
+            this.resendCodeTimeout--;
+            if (this.resendCodeTimeout <= 0) {
+              clearInterval(interval);
+              this.isResendDisabled = false;
+              this.resendCodeTimeout = 30;
+            }
+          }, 1000);
         },
       });
   }
@@ -110,7 +112,7 @@ export class ForgotPasswordFacade extends UnsubscribeControlDirective {
   }
 
   private createPasswordFormGroup(): FormGroup {
-    const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    const passwordPattern = /^(?=.*[a-zA-Z])(?=.*\d).{8,}$/;
     return new FormGroup({
       code: new FormControl(null, [
         Validators.required,

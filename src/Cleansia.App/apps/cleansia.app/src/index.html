@@ -6,7 +6,8 @@
       // so PrimeFlex light-dark() picks the correct values.
       (function() {
         var t = localStorage.getItem('cleansia-theme');
-        if (t === 'dark') {
+        var isDark = t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (isDark) {
           document.documentElement.style.colorScheme = 'dark';
           document.documentElement.classList.add('dark-mode');
         }

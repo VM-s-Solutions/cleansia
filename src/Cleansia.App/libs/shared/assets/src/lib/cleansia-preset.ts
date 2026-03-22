@@ -2,6 +2,9 @@ import { definePreset } from '@primeng/themes';
 import Aura from '@primeng/themes/aura';
 
 export const CleansiaPreset = definePreset(Aura, {
+  primitive: {
+    fontFamily: "'Nunito', sans-serif",
+  },
   semantic: {
     primary: {
       0: '#ffffff',

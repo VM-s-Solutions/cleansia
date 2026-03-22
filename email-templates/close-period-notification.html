@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="{{lang}}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{Subject}}</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ---------- Base Styles ---------- */
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #f0f9ff; /* cleansia-primary-50 */
+        font-family: 'Nunito', 'Kanit', sans-serif;
+        color: #0c4a6e; /* cleansia-primary-900 */
+      }
+
+      /* ---------- Container ---------- */
+      #email-wrapper {
+        max-width: 480px;
+        margin: 40px auto;
+        background: #ffffff; /* cleansia-primary-0 */
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1); /* cleansia-black-100 */
+      }
+
+      /* ---------- Header ---------- */
+      .header {
+        padding: 28px 30px 20px;
+        text-align: center;
+        border-bottom: 1px solid #e0f2fe; /* cleansia-primary-100 */
+      }
+      .header h1 {
+        font-size: 26px;
+        color: #0284c7; /* cleansia-primary */
+        margin: 10px 0 0;
+      }
+
+      /* ---------- Content ---------- */
+      .content {
+        padding: 36px 30px 10px;
+        text-align: center;
+      }
+      .content h2 {
+        margin: 0 0 12px;
+        font-size: 20px;
+        color: #0369a1; /* cleansia-primary-700 */
+      }
+      .content p {
+        margin: 0 0 20px;
+        font-size: 14px;
+        line-height: 1.6;
+        color: #075985; /* cleansia-primary-800 */
+      }
+
+      /* ---------- Status Badge ---------- */
+      .status-badge {
+        display: inline-block;
+        background: #0284c7; /* cleansia-primary */
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 13px;
+        padding: 6px 16px;
+        border-radius: 20px;
+        margin: 20px 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      /* ---------- Period Info Box ---------- */
+      .period-info {
+        background: #f0f9ff; /* cleansia-primary-50 */
+        border: 1px solid #e0f2fe; /* cleansia-primary-100 */
+        border-radius: 8px;
+        padding: 20px;
+        margin: 26px 0;
+        text-align: left;
+      }
+      .period-info h3 {
+        margin: 0 0 16px;
+        font-size: 16px;
+        color: #0369a1; /* cleansia-primary-700 */
+      }
+      .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #e0f2fe; /* cleansia-primary-100 */
+      }
+      .info-row:last-child {
+        border-bottom: none;
+      }
+      .info-label {
+        font-weight: 600;
+        color: #0369a1; /* cleansia-primary-700 */
+        font-size: 14px;
+      }
+      .info-value {
+        color: #075985; /* cleansia-primary-800 */
+        font-size: 14px;
+        text-align: right;
+      }
+
+      /* ---------- Next Steps ---------- */
+      .next-steps {
+        background: #e0f2fe; /* cleansia-primary-100 */
+        border-radius: 8px;
+        padding: 20px;
+        margin: 26px 0;
+        text-align: left;
+      }
+      .next-steps h3 {
+        margin: 0 0 16px;
+        font-size: 16px;
+        color: #0369a1; /* cleansia-primary-700 */
+      }
+      .next-steps ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+      .next-steps li {
+        margin-bottom: 10px;
+        color: #075985; /* cleansia-primary-800 */
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      /* ---------- Footer ---------- */
+      .footer {
+        padding: 22px 30px;
+        text-align: center;
+        font-size: 12px;
+        color: #0c4a6e; /* cleansia-primary-900 */
+        background: #e0f2fe; /* cleansia-primary-100 */
+      }
+      .footer p {
+        margin: 8px 0;
+      }
+      .footer .signature {
+        margin-top: 16px;
+        font-weight: 600;
+        color: #0369a1; /* cleansia-primary-700 */
+      }
+      .footer .copyright {
+        margin-top: 12px;
+        font-size: 11px;
+        color: #64748b;
+      }
+      .footer a {
+        color: #0ea5e9; /* cleansia-primary-500 */
+        transition: color 0.1s; /* default-transition */
+      }
+      .footer a:hover {
+        color: #0284c7; /* cleansia-primary */
+      }
+
+      /* ---------- Mobile Styles ---------- */
+      @media screen and (max-width: 480px) {
+        body {
+          background: #ffffff; /* cleansia-primary-0 */
+        }
+        #email-wrapper {
+          margin: 0;
+          border-radius: 0;
+          box-shadow: none;
+        }
+        .content,
+        .header,
+        .footer {
+          padding-left: 20px;
+          padding-right: 20px;
+        }
+        .period-info,
+        .next-steps {
+          padding: 16px;
+        }
+        .info-row {
+          flex-direction: column;
+          gap: 4px;
+        }
+        .info-value {
+          text-align: left;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="email-wrapper">
+      <!-- Header -->
+      <div class="header">
+        <h1>Cleansia</h1>
+      </div>
+
+      <!-- Main Content -->
+      <div class="content">
+        <h2>{{Subject}}</h2>
+
+        <p>{{Greeting}}, <strong>{{EmployeeName}}</strong>!</p>
+        <p>{{IntroText}}</p>
+
+        <div>
+          <span class="status-badge">{{StatusText}}</span>
+        </div>
+
+        <!-- Period Information -->
+        <div class="period-info">
+          <h3>{{PeriodDetailsTitle}}</h3>
+          <div class="info-row">
+            <span class="info-label">{{PeriodLabelText}}</span>
+            <span class="info-value">{{PeriodLabel}}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">{{StartDateText}}</span>
+            <span class="info-value">{{StartDate}}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">{{EndDateText}}</span>
+            <span class="info-value">{{EndDate}}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">{{ClosedAtText}}</span>
+            <span class="info-value">{{ClosedAt}}</span>
+          </div>
+        </div>
+
+        <p>{{DetailsText}}</p>
+
+        <!-- Next Steps -->
+        <div class="next-steps">
+          <h3>{{NextStepsTitle}}</h3>
+          <ul>
+            <li>{{NextStep1}}</li>
+            <li>{{NextStep2}}</li>
+            <li>{{NextStep3}}</li>
+          </ul>
+        </div>
+
+        <p>{{ClosingText}}</p>
+        <p>{{ContactText}}</p>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <p>
+          {{SupportText}} <a href="mailto:{{SupportEmail}}">{{SupportEmail}}</a>
+        </p>
+        <p class="signature">{{TeamSignature}}<br />{{TeamName}}</p>
+        <p class="copyright">{{FooterText}}</p>
+      </div>
+    </div>
+  </body>
+</html>

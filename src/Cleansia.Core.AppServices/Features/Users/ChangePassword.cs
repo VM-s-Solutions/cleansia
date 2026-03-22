@@ -17,8 +17,8 @@ public class ChangePassword
         {
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
 
-            // Requires: minimum 12 characters, at least one uppercase, one lowercase, one digit, one special character
-            const string passwordPattern = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()]).{12,}$";
+            // Requires: minimum 8 characters, at least one letter and one digit
+            const string passwordPattern = @"^(?=.*[a-zA-Z])(?=.*\d).{8,}$";
 
             RuleFor(command => command.Email)
                 .Cascade(CascadeMode.Stop)

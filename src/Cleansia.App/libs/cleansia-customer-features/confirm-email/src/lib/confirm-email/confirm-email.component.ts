@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -40,15 +40,12 @@ export class ConfirmEmailComponent implements OnInit {
 
   protected readonly loading = toSignal(this.store.select(selectCustomerLoading));
 
-  email!: string;
+  protected readonly resendCodeTimeout = computed(() => {
+    const t = this.facade.resendCodeTimeout();
+    return `00:${t > 9 ? t : '0' + t}`;
+  });
 
-  get resendCodeTimeout(): string {
-    return `00:${
-      this.facade.resendCodeTimeout > 9
-        ? this.facade.resendCodeTimeout
-        : '0' + this.facade.resendCodeTimeout
-    }`;
-  }
+  email!: string;
 
   ngOnInit(): void {
     if (!this.route.snapshot.queryParamMap.get('email')) {

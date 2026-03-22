@@ -1,5 +1,4 @@
-﻿using Azure.Identity;
-using Azure.Storage.Blobs.Models;
+﻿using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Blobs.Abstractions.Extensions;
@@ -11,12 +10,10 @@ public class BlobContainerClient : IBlobContainerClient
     private readonly bool _createContainerIfNotExists;
     private readonly global::Azure.Storage.Blobs.BlobContainerClient _container;
 
-    public BlobContainerClient(string connectionString, string container, bool useDefaultAzureCredential = false, bool createContainerIfNotExists = false)
+    public BlobContainerClient(string connectionString, string container, bool createContainerIfNotExists = false)
     {
         _createContainerIfNotExists = createContainerIfNotExists;
-        _container = useDefaultAzureCredential
-            ? new global::Azure.Storage.Blobs.BlobContainerClient(new Uri(connectionString + container), new DefaultAzureCredential())
-            : new global::Azure.Storage.Blobs.BlobContainerClient(connectionString, container);
+        _container = new global::Azure.Storage.Blobs.BlobContainerClient(connectionString, container);
     }
 
     public BlobContainerClient(global::Azure.Storage.Blobs.BlobContainerClient container, bool createContainerIfNotExists = false)

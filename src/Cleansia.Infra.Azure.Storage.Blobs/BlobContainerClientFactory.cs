@@ -1,24 +1,18 @@
-﻿using Cleansia.Core.Blobs.Abstractions;
+using Azure.Identity;
+using Cleansia.Core.Blobs.Abstractions;
 using Microsoft.Extensions.Configuration;
 
 namespace Cleansia.Infra.Azure.Storage.Blobs;
 
 public class BlobContainerClientFactory : IBlobContainerClientFactory
 {
-    private readonly string _azureStorageConnectionName;
-    private readonly bool _useDefaultAzureCredential;
+    private readonly BlobContainerConfiguration _config;
     private readonly IConfiguration _configuration;
 
-    public BlobContainerClientFactory(IConfiguration configuration, string azureStorageConnectionName, bool useDefaultAzureCredential = false)
+    public BlobContainerClientFactory(IConfiguration configuration, BlobContainerConfiguration config)
     {
-        if (string.IsNullOrWhiteSpace(azureStorageConnectionName))
-        {
-            throw new ArgumentNullException(nameof(azureStorageConnectionName));
-        }
-
-        _azureStorageConnectionName = azureStorageConnectionName;
-        _useDefaultAzureCredential = useDefaultAzureCredential;
         _configuration = configuration;
+        _config = config;
     }
 
     public IBlobContainerClient GetBlobContainerClient(string containerName)
@@ -28,9 +22,15 @@ public class BlobContainerClientFactory : IBlobContainerClientFactory
             throw new ArgumentNullException(nameof(containerName));
         }
 
-        var connectionString = _configuration.GetConnectionString(_azureStorageConnectionName);
-        var blobContainerName = new BlobContainerClient(connectionString, containerName, _useDefaultAzureCredential);
+        if (_config.UseManagedIdentity)
+        {
+            var accountUrl = _config.AccountUrl!.TrimEnd('/');
+            var containerUri = new Uri($"{accountUrl}/{containerName}");
+            var azureClient = new global::Azure.Storage.Blobs.BlobContainerClient(containerUri, new DefaultAzureCredential());
+            return new BlobContainerClient(azureClient);
+        }
 
-        return blobContainerName;
+        var connectionString = _configuration.GetConnectionString(_config.ConnectionStringName);
+        return new BlobContainerClient(connectionString, containerName);
     }
 }

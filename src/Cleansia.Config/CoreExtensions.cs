@@ -26,6 +26,6 @@ public static class CoreExtensions
             .AddConfigurationBindings()
             .AddStripe(configuration, env)
             .AddSendGrid()
-            .AddAzureBlobStorage(configuration, env);
+            .AddAzureBlobStorage(configuration);
     }
 }

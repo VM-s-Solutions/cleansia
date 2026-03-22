@@ -3,6 +3,15 @@
 public class BlobContainerConfiguration
 {
     public string ConnectionStringName { get; set; }
+
+    /// <summary>
+    /// Storage account URL for DefaultAzureCredential (e.g. https://mystorageaccount.blob.core.windows.net/).
+    /// When set, Managed Identity is used instead of the connection string.
+    /// </summary>
+    public string? AccountUrl { get; set; }
+
+    public bool UseManagedIdentity => !string.IsNullOrWhiteSpace(AccountUrl);
+
     public List<ContainerMapping> Containers { get; set; }
 
     public string GetContainerNameByPrefix(string prefix)

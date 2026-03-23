@@ -85,16 +85,11 @@ public class HandlebarsTemplateEngine : ITemplateEngine
             writer.WriteSafeString(number.ToString($"N{decimals}"));
         });
 
-        _handlebars.RegisterHelper("eq", (output, options, context, arguments) =>
+        _handlebars.RegisterHelper("eq", (writer, context, parameters) =>
         {
-            if (arguments.Length >= 2 && string.Equals(arguments[0]?.ToString(), arguments[1]?.ToString(), StringComparison.OrdinalIgnoreCase))
-            {
-                options.Template(output, context);
-            }
-            else
-            {
-                options.Inverse(output, context);
-            }
+            var result = parameters.Length >= 2 &&
+                         string.Equals(parameters[0]?.ToString(), parameters[1]?.ToString(), StringComparison.OrdinalIgnoreCase);
+            writer.WriteSafeString(result ? "true" : "");
         });
 
         _handlebars.RegisterHelper("add", (writer, context, parameters) =>

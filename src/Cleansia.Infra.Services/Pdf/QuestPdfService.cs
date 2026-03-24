@@ -8,13 +8,15 @@ namespace Cleansia.Infra.Services.Pdf;
 public class QuestPdfService : IPdfService
 {
     private readonly ITemplateEngine _templateEngine;
-    private static bool _chromiumDownloaded = false;
+    private readonly string? _chromiumExecutablePath;
+    private static bool _chromiumDownloaded;
 
     public QuestPdfService(ITemplateEngine templateEngine)
     {
         _templateEngine = templateEngine;
+        _chromiumExecutablePath = Environment.GetEnvironmentVariable("PUPPETEER_EXECUTABLE_PATH");
 
-        if (!_chromiumDownloaded)
+        if (string.IsNullOrEmpty(_chromiumExecutablePath) && !_chromiumDownloaded)
         {
             new BrowserFetcher().DownloadAsync().GetAwaiter().GetResult();
             _chromiumDownloaded = true;
@@ -53,7 +55,8 @@ public class QuestPdfService : IPdfService
         var launchOptions = new LaunchOptions
         {
             Headless = true,
-            Args = new[] { "--no-sandbox", "--disable-setuid-sandbox" }
+            Args = new[] { "--no-sandbox", "--disable-setuid-sandbox" },
+            ExecutablePath = _chromiumExecutablePath
         };
 
         using var browser = await Puppeteer.LaunchAsync(launchOptions);

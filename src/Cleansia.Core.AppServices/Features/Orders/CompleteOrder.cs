@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
-using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
@@ -135,8 +136,7 @@ public class CompleteOrder
 
     public class Handler(
         IOrderRepository orderRepository,
-        IReceiptService receiptService,
-        IEmailService emailService)
+        IQueueClient queueClient)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -162,48 +162,12 @@ public class CompleteOrder
             var completedStatusTrack = OrderStatusTrack.Create(OrderStatus.Completed, order);
             order.AddOrderStatus(completedStatusTrack);
 
-            // Generate and send receipt (skip if one already exists for this order)
-            if (order.Receipt != null)
-            {
-                return BusinessResult.Success(new Response(
-                    OrderId: order.Id,
-                    NewStatus: OrderStatus.Completed,
-                    ActualCompletionTime: command.ActualCompletionTimeMinutes
-                ));
-            }
-
-            try
+            // Enqueue receipt generation as a background job (skip if one already exists)
+            if (order.Receipt is null)
             {
                 var languageCode = order.User?.PreferredLanguageCode ?? "en";
-                var receipt = await receiptService.GenerateReceiptAsync(order, languageCode, cancellationToken);
-
-                // Send receipt email asynchronously (fire and forget)
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        var pdfBytes = await receiptService.DownloadReceiptPdfAsync(receipt, cancellationToken);
-                        await emailService.SendOrderReceiptEmailAsync(
-                            order.CustomerEmail,
-                            order,
-                            pdfBytes,
-                            receipt.FileName,
-                            languageCode,
-                            cancellationToken);
-                    }
-                    catch (Exception ex)
-                    {
-                        // Log the error but don't fail the order completion
-                        // TODO: Add proper logging
-                        Console.WriteLine($"Failed to send receipt email: {ex.Message}");
-                    }
-                }, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                // Log the error but don't fail the order completion
-                // TODO: Add proper logging
-                Console.WriteLine($"Failed to generate receipt: {ex.Message}");
+                await queueClient.SendAsync(QueueNames.GenerateReceipt,
+                    new GenerateReceiptMessage(order.Id, languageCode), cancellationToken);
             }
 
             return BusinessResult.Success(new Response(

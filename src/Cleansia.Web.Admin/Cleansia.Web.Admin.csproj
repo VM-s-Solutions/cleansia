@@ -10,8 +10,6 @@
 	<ItemGroup>
 		<PackageReference Include="Asp.Versioning.Mvc" />
 		<PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" />
-		<PackageReference Include="Hangfire.AspNetCore" />
-		<PackageReference Include="Hangfire.PostgreSql" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
 		<PackageReference Include="Swashbuckle.AspNetCore" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design">

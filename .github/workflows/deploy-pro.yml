@@ -320,8 +320,43 @@ jobs:
           az webapp stop --name api-cleansia-mobile-pro --resource-group rg-cleansia-pro
           az webapp start --name api-cleansia-mobile-pro --resource-group rg-cleansia-pro
 
+  build-and-deploy-functions:
+    name: 5/8 — Functions
+    needs: [build-dotnet, migrate-database]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push Docker image to ACR
+        run: |
+          az acr build \
+            --registry ${{ secrets.ACR_NAME }} \
+            --image cleansia-functions:${{ github.sha }} \
+            --file src/Cleansia.Functions/Dockerfile \
+            src/
+
+      - name: Deploy to Azure Functions
+        run: |
+          az functionapp config container set \
+            --name func-cleansia-pro \
+            --resource-group rg-cleansia-pro \
+            --image "${{ secrets.ACR_NAME }}.azurecr.io/cleansia-functions:${{ github.sha }}"
+
+      - name: Restart Functions App
+        run: |
+          az functionapp restart --name func-cleansia-pro --resource-group rg-cleansia-pro
+
   deploy-customer-ssr:
-    name: 5/7 — Customer SSR
+    name: 6/8 — Customer SSR
     needs: [build-angular, deploy-mobile-api]
     runs-on: ubuntu-latest
     environment: production
@@ -354,7 +389,7 @@ jobs:
           az webapp start --name web-cleansia-customer-pro --resource-group rg-cleansia-pro
 
   deploy-partner-spa:
-    name: 6/7 — Partner SPA
+    name: 7/8 — Partner SPA
     needs: [build-angular, deploy-customer-ssr]
     runs-on: ubuntu-latest
     environment: production
@@ -375,7 +410,7 @@ jobs:
           skip_api_build: true
 
   deploy-admin-spa:
-    name: 7/7 — Admin SPA
+    name: 8/8 — Admin SPA
     needs: [build-angular, deploy-partner-spa]
     runs-on: ubuntu-latest
     environment: production

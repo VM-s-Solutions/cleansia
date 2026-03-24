@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Azure.Storage" />
     <PackageReference Include="Aspire.Hosting.PostgreSQL" />
   </ItemGroup>
 
@@ -17,6 +18,7 @@
     <ProjectReference Include="..\Cleansia.Web.Admin\Cleansia.Web.Admin.csproj" />
     <ProjectReference Include="..\Cleansia.Web.Mobile\Cleansia.Web.Mobile.csproj" />
     <ProjectReference Include="..\Cleansia.Web.Customer\Cleansia.Web.Customer.csproj" />
+    <ProjectReference Include="..\Cleansia.Functions\Cleansia.Functions.csproj" />
   </ItemGroup>
 
 </Project>

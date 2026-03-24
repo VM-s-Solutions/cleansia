@@ -1,6 +1,7 @@
 ﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
-using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Core.Clients.Abstractions.SendGrid;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
@@ -63,7 +64,7 @@ public class HandlePaymentNotification
 
     public record Command(string JsonPayload, string SignatureHeader, string Language = Constants.Language.English) : ICommand<string>;
 
-    public class Handler(IStripeConfig stripeConfig, IOrderRepository orderRepository, IEmailService emailService, IReceiptService receiptService, ILogger<Handler> logger) : ICommandHandler<Command, string>
+    public class Handler(IStripeConfig stripeConfig, IOrderRepository orderRepository, IQueueClient queueClient, ILogger<Handler> logger) : ICommandHandler<Command, string>
     {
         public async Task<BusinessResult<string>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -128,15 +129,9 @@ public class HandlePaymentNotification
             order.UpdatePaymentStatus(PaymentStatus.Paid);
             order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
 
-            // Try to generate and send receipt, but don't fail webhook if it fails
-            try
-            {
-                await GenerateAndSendReceiptAsync(order, language, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Failed to generate/send receipt for order {OrderId}, will retry later", orderId);
-            }
+            // Enqueue receipt generation as a background job
+            await queueClient.SendAsync(QueueNames.GenerateReceipt,
+                new GenerateReceiptMessage(orderId, language), cancellationToken);
 
             logger.LogInformation("Successfully processed payment webhook for order {OrderId}", orderId);
             return BusinessResult.Success(orderId);
@@ -158,23 +153,5 @@ public class HandlePaymentNotification
             return BusinessResult.Success(orderId);
         }
 
-        private async Task<bool> GenerateAndSendReceiptAsync(Order order, string languageCode, CancellationToken cancellationToken)
-        {
-            try
-            {
-                var receipt = await receiptService.GenerateReceiptAsync(order, languageCode, cancellationToken);
-                var pdfBytes = await receiptService.DownloadReceiptPdfAsync(receipt, cancellationToken);
-
-                var messageId = await emailService.SendOrderReceiptEmailAsync(order.CustomerEmail, order, pdfBytes, receipt.FileName, languageCode, cancellationToken);
-                receipt.MarkEmailSent(messageId);
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Failed to generate and send receipt for order {OrderId}", order.Id);
-                return false;
-            }
-        }
     }
 }

@@ -2,13 +2,7 @@ using System.Diagnostics;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
-using Cleansia.Core.AppServices.Features.DataRetention;
-using Cleansia.Core.AppServices.Services;
-using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.ServiceDefaults;
-using Hangfire;
-using Hangfire.Dashboard;
-using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -36,9 +30,6 @@ public abstract class CleansiaStartupBase(IConfiguration configuration, IWebHost
         services.AddControllers();
         services.AddEndpointsApiExplorer();
         AddProjectServices(services);
-
-        // Add Hangfire for background jobs
-        services.AddHangfireServices(Configuration);
 
         var corsOrigins = Configuration.GetSection("CorsOrigins").Get<string[]>() ?? [];
         services.AddCors(options =>
@@ -103,9 +94,6 @@ public abstract class CleansiaStartupBase(IConfiguration configuration, IWebHost
         app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();
-
-        app.UseHangfireConfiguration();
-        HangfireConfiguration.ConfigureRecurringJobs();
 
         app.UseEndpoints(endpoints =>
         {
@@ -228,87 +216,10 @@ public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggi
                pathValue.Contains("/swagger") ||
                pathValue.Contains(".js") ||
                pathValue.Contains(".css") ||
-               pathValue.Contains(".map") ||
-               pathValue.Contains("/hangfire");
+               pathValue.Contains(".map");
     }
 }
 
-public static class HangfireConfiguration
-{
-    public static IServiceCollection AddHangfireServices(this IServiceCollection services, IConfiguration configuration)
-    {
-        var connectionString = configuration.GetConnectionString("ConnectionString");
-
-        services.AddHangfire(config => config
-            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-            .UseSimpleAssemblyNameTypeSerializer()
-            .UseRecommendedSerializerSettings()
-            .UsePostgreSqlStorage(options =>
-            {
-                options.UseNpgsqlConnection(connectionString);
-            }));
-
-        services.AddHangfireServer(options =>
-        {
-            options.WorkerCount = 2;
-            options.ServerName = "Cleansia-Server";
-        });
-
-        services.AddScoped<IPayPeriodBackgroundService, PayPeriodBackgroundService>();
-        services.AddScoped<IPeriodReminderBackgroundService, PeriodReminderBackgroundService>();
-        services.AddScoped<IDataRetentionBackgroundService, DataRetentionBackgroundService>();
-
-        return services;
-    }
-
-    public static IApplicationBuilder UseHangfireConfiguration(this IApplicationBuilder app)
-    {
-        app.UseHangfireDashboard("/hangfire", new DashboardOptions
-        {
-            Authorization = new[] { new HangfireAuthorizationFilter() },
-            DashboardTitle = "Cleansia Background Jobs",
-            StatsPollingInterval = 10000
-        });
-
-        return app;
-    }
-
-    public static void ConfigureRecurringJobs()
-    {
-        RecurringJob.AddOrUpdate<IPayPeriodBackgroundService>(
-            "close-expired-pay-periods",
-            service => service.CloseExpiredPeriodsAndOpenNewAsync(CancellationToken.None),
-            Cron.Daily(2),
-            new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
-
-        RecurringJob.AddOrUpdate<IPeriodReminderBackgroundService>(
-            "send-period-end-reminders",
-            service => service.SendPeriodEndRemindersAsync(CancellationToken.None),
-            Cron.Daily(9),
-            new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
-
-        RecurringJob.AddOrUpdate<IDataRetentionBackgroundService>(
-            "data-retention-cleanup",
-            service => service.RunAllRetentionTasksAsync(CancellationToken.None),
-            "0 3 * * 0",
-            new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
-    }
-}
-
-public class HangfireAuthorizationFilter : Hangfire.Dashboard.IDashboardAuthorizationFilter
-{
-    public bool Authorize(Hangfire.Dashboard.DashboardContext context)
-    {
-        var httpContext = context.GetHttpContext();
-
-#if DEBUG
-        return true;
-#else
-        return httpContext.User.Identity?.IsAuthenticated == true &&
-               httpContext.User.IsInRole("Admin");
-#endif
-    }
-}
 
 public static class DatabaseMigrationExtensions
 {

@@ -1,7 +1,8 @@
 ﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Addresses.DTOs;
-using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Core.Clients.Abstractions.SendGrid;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
@@ -172,8 +173,7 @@ public class CreateOrder
         ICountryRepository countryRepository,
         ISendGridClientFactory clientFactory,
         IStripeClientFactory stripeClientFactory,
-        IEmailService emailService,
-        IReceiptService receiptService,
+        IQueueClient queueClient,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -272,14 +272,9 @@ public class CreateOrder
                         // Add order first so EF can resolve FK when receipt is created
                         orderRepository.Add(order);
 
-                        // Generate receipt and send email for cash payments
-                        var receiptResult = await GenerateAndSendReceiptAsync(order, command.Language, cancellationToken);
-                        if (!receiptResult)
-                        {
-                            return BusinessResult.Failure<Response>(new Error(
-                                nameof(emailService.SendOrderReceiptEmailAsync),
-                                BusinessErrorMessage.EmailNotSentError));
-                        }
+                        // Enqueue receipt generation as a background job
+                        await queueClient.SendAsync(QueueNames.GenerateReceipt,
+                            new GenerateReceiptMessage(order.Id, command.Language), cancellationToken);
 
                         break;
                     }
@@ -293,23 +288,5 @@ public class CreateOrder
                         StripeSessionId: stripeSessionId));
         }
 
-        private async Task<bool> GenerateAndSendReceiptAsync(Order order, string languageCode, CancellationToken cancellationToken)
-        {
-            try
-            {
-                var receipt = await receiptService.GenerateReceiptAsync(order, languageCode, cancellationToken);
-                var pdfBytes = await receiptService.DownloadReceiptPdfAsync(receipt, cancellationToken);
-
-                var messageId = await emailService.SendOrderReceiptEmailAsync(order.CustomerEmail, order, pdfBytes, receipt.FileName, languageCode, cancellationToken);
-                receipt.MarkEmailSent(messageId);
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Failed to generate/send receipt for order {OrderId}", order.Id);
-                return false;
-            }
-        }
     }
 }

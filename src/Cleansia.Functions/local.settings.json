@@ -1,0 +1,12 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated"
+  },
+  "ConnectionStrings": {
+    "ConnectionString": "Host=localhost;Database=cleansia;Username=postgres;Password=postgres",
+    "QueueStorageConnectionString": "UseDevelopmentStorage=true",
+    "BlobContainerConfigurationConnectionString": "UseDevelopmentStorage=true"
+  }
+}

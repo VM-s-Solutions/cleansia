@@ -43,6 +43,22 @@ Both environments are Azure-based. The user's own domain is configured in Azure 
 
 All 4 APIs are orchestrated by .NET Aspire 13.1.1 (`Cleansia.AppHost`) and share `Cleansia.ServiceDefaults` for OpenTelemetry, health checks, Sentry, and HTTP resilience.
 
+### Background Jobs — Azure Functions (`Cleansia.Functions`)
+
+Deployed as a **Docker container** (with Chromium pre-installed for PDF generation via PuppeteerSharp).
+
+| Function                  | Trigger                        | Purpose                                          |
+| ------------------------- | ------------------------------ | ------------------------------------------------ |
+| `CloseExpiredPayPeriods`  | Timer — daily 2 AM UTC         | Closes pay periods, generates invoice PDFs       |
+| `SendPeriodEndReminders`  | Timer — daily 9 AM UTC         | Sends period end reminder emails                 |
+| `DataRetentionCleanup`    | Timer — weekly Sunday 3 AM UTC | GDPR cleanup, PII anonymization, stale data      |
+| `GenerateReceipt`         | Queue — `generate-receipt`     | Generates receipt PDF + sends email to customer  |
+| `GenerateInvoice`         | Queue — `generate-invoice`     | Generates invoice PDF for employee (future)      |
+
+APIs enqueue messages to Azure Storage Queues instead of generating PDFs synchronously. The Functions app picks up messages, generates PDFs with Chromium, uploads to blob storage, and sends emails via SendGrid.
+
+> **Why Docker?** PuppeteerSharp requires Chromium system libraries (`libnspr4.so`, etc.) that are not available on Azure App Service Linux. The Functions Dockerfile installs Chromium and sets `PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium`.
+
 ### Frontend — 3 Angular 19 Apps (Nx monorepo)
 
 | App                              | Type                    | Deployment Target                                    |
@@ -67,36 +83,44 @@ All 4 APIs are orchestrated by .NET Aspire 13.1.1 (`Cleansia.AppHost`) and share
 
 ## Azure Resources per Environment
 
-### DEV (~$41/month estimated)
+### DEV (~$55/month estimated)
 
-| Resource                   | Name                        | SKU/Tier                                 |
-| -------------------------- | --------------------------- | ---------------------------------------- |
-| Resource Group             | `rg-cleansia-dev`           | —                                        |
-| App Service Plan           | `asp-cleansia-dev`          | B1 (1 core, 1.75 GB RAM) — shared by all |
-| App Service (Partner API)  | `api-cleansia-partner-dev`  | .NET 10 — Partner/employee-facing API    |
-| App Service (Admin API)    | `api-cleansia-admin-dev`    | .NET 10 — Back-office API                |
-| App Service (Customer API) | `api-cleansia-customer-dev` | .NET 10 — Public-facing API              |
-| App Service (Mobile API)   | `api-cleansia-mobile-dev`   | .NET 10 — Android/iOS API                |
-| App Service (Customer SSR) | `web-cleansia-customer-dev` | Node.js 20 LTS — Angular SSR frontend    |
-| Static Web App (Partner)   | `swa-cleansia-partner-dev`  | Free                                     |
-| Static Web App (Admin)     | `swa-cleansia-admin-dev`    | Free                                     |
-| PostgreSQL Flexible Server | `psql-cleansia-dev`         | Burstable B1ms (1 vCore, 2 GB)           |
-| Key Vault                  | `kv-cleansia-dev`           | Standard                                 |
-| Application Insights       | `ai-cleansia-dev`           | Free tier (5 GB/month)                   |
+| Resource                    | Name                        | SKU/Tier                                 |
+| --------------------------- | --------------------------- | ---------------------------------------- |
+| Resource Group              | `rg-cleansia-dev`           | —                                        |
+| App Service Plan (APIs)     | `asp-cleansia-dev`          | B1 (1 core, 1.75 GB RAM) — shared by all |
+| App Service Plan (Functions)| `asp-func-cleansia-dev`     | B1 (1 core, 1.75 GB RAM) — Functions     |
+| App Service (Partner API)   | `api-cleansia-partner-dev`  | .NET 10 — Partner/employee-facing API    |
+| App Service (Admin API)     | `api-cleansia-admin-dev`    | .NET 10 — Back-office API                |
+| App Service (Customer API)  | `api-cleansia-customer-dev` | .NET 10 — Public-facing API              |
+| App Service (Mobile API)    | `api-cleansia-mobile-dev`   | .NET 10 — Android/iOS API                |
+| Azure Functions             | `func-cleansia-dev`         | Docker container — background jobs + PDF |
+| Container Registry          | `crcleansiadev`             | Basic — stores Functions Docker image    |
+| App Service (Customer SSR)  | `web-cleansia-customer-dev` | Node.js 20 LTS — Angular SSR frontend    |
+| Static Web App (Partner)    | `swa-cleansia-partner-dev`  | Free                                     |
+| Static Web App (Admin)      | `swa-cleansia-admin-dev`    | Free                                     |
+| Storage Account             | `stcleansiasdev`            | Standard LRS — blobs + queues            |
+| PostgreSQL Flexible Server  | `psql-cleansia-dev`         | Burstable B1ms (1 vCore, 2 GB)           |
+| Key Vault                   | `kv-cleansia-dev`           | Standard                                 |
+| Application Insights        | `ai-cleansia-dev`           | Free tier (5 GB/month)                   |
 
-### PRO (~$328/month estimated)
+### PRO (~$350/month estimated)
 
-| Resource                   | Name                        | SKU/Tier                                     |
-| -------------------------- | --------------------------- | -------------------------------------------- |
-| Resource Group             | `rg-cleansia-pro`           | —                                            |
-| App Service Plan           | `asp-cleansia-pro`          | S1 or P1v2 (1 core, 1.75 GB RAM)             |
-| App Service (.NET APIs)    | `api-cleansia-pro`          | Runs all 4 APIs behind Aspire + staging slot |
-| App Service (Customer SSR) | `web-cleansia-customer-pro` | Node.js 20 LTS + staging slot                |
-| Static Web App (Partner)   | `swa-cleansia-partner-pro`  | Free                                         |
-| Static Web App (Admin)     | `swa-cleansia-admin-pro`    | Free                                         |
-| PostgreSQL Flexible Server | `psql-cleansia-pro`         | Standard S2 (2 vCores, 8 GB)                 |
-| Key Vault                  | `kv-cleansia-pro`           | Standard                                     |
-| Application Insights       | `ai-cleansia-pro`           | Pay-as-you-go (~$10/mo)                      |
+| Resource                    | Name                        | SKU/Tier                                     |
+| --------------------------- | --------------------------- | -------------------------------------------- |
+| Resource Group              | `rg-cleansia-pro`           | —                                            |
+| App Service Plan (APIs)     | `asp-cleansia-pro`          | S1 or P1v2 (1 core, 1.75 GB RAM)             |
+| App Service Plan (Functions)| `asp-func-cleansia-pro`     | B1 (1 core, 1.75 GB RAM) — Functions         |
+| App Service (.NET APIs)     | `api-cleansia-pro`          | Runs all 4 APIs behind Aspire + staging slot |
+| Azure Functions             | `func-cleansia-pro`         | Docker container — background jobs + PDF     |
+| Container Registry          | `crcleansipro`              | Basic — stores Functions Docker image        |
+| App Service (Customer SSR)  | `web-cleansia-customer-pro` | Node.js 20 LTS + staging slot                |
+| Static Web App (Partner)    | `swa-cleansia-partner-pro`  | Free                                         |
+| Static Web App (Admin)      | `swa-cleansia-admin-pro`    | Free                                         |
+| Storage Account             | `stcleansiaspro`            | Standard LRS — blobs + queues                |
+| PostgreSQL Flexible Server  | `psql-cleansia-pro`         | Standard S2 (2 vCores, 8 GB)                 |
+| Key Vault                   | `kv-cleansia-pro`           | Standard                                     |
+| Application Insights        | `ai-cleansia-pro`           | Pay-as-you-go (~$10/mo)                      |
 
 > **PRO differences**: Staging slots on App Services for zero-downtime deployments, higher-tier PostgreSQL for production workloads, paid Application Insights for full telemetry.
 
@@ -183,16 +207,17 @@ In App Service Configuration, reference Key Vault secrets using:
 
 ### Secrets Inventory
 
-| Secret                        | Key Vault Key                          | Used By      |
-| ----------------------------- | -------------------------------------- | ------------ |
-| PostgreSQL connection string  | `ConnectionStrings--DefaultConnection` | All 4 APIs   |
-| JWT signing key               | `Jwt--SecretKey`                       | All 4 APIs   |
-| Stripe secret key             | `Stripe--SecretKey`                    | Customer API |
-| Stripe webhook secret         | `Stripe--WebhookSecret`                | Customer API |
-| Stripe publishable key        | `Stripe--PublishableKey`               | Customer API |
-| SendGrid API key              | `SendGrid--ApiKey`                     | All 4 APIs   |
-| Sentry DSN                    | `Sentry--Dsn`                          | All 4 APIs   |
-| Azure Blob Storage connection | `AzureBlobStorage--ConnectionString`   | All 4 APIs   |
+| Secret                        | Key Vault Key                                          | Used By              |
+| ----------------------------- | ------------------------------------------------------ | -------------------- |
+| PostgreSQL connection string  | `ConnectionStrings--ConnectionString`                   | All 4 APIs, Functions|
+| JWT signing key               | `JwtSettings--Secret`                                  | All 4 APIs, Functions|
+| Stripe secret key             | `Stripe--SecretKey`                                    | Customer API         |
+| Stripe webhook secret         | `Stripe--WebhookSecret`                                | Customer API         |
+| Stripe publishable key        | `Stripe--PublishableKey`                               | Customer API         |
+| SendGrid API key              | `SendGrid--ApiKey`                                     | All 4 APIs, Functions|
+| Sentry DSN                    | `Sentry--Dsn`                                          | All 4 APIs           |
+| Azure Blob Storage connection | `ConnectionStrings--BlobContainerConfigurationConnectionString` | All 4 APIs, Functions|
+| Azure Queue Storage conn str  | App Setting (not secret)                               | All 4 APIs, Functions|
 
 ---
 
@@ -227,27 +252,31 @@ feature/* ──► PR ──► master ──► auto-deploy DEV ──► manu
 
 #### 3. Deploy to DEV
 
-- [ ] Deploy .NET APIs to `api-cleansia-partner-dev` App Service
+- [ ] Run EF Core migrations against DEV PostgreSQL
+- [ ] Deploy .NET APIs to `api-cleansia-*-dev` App Services (sequential)
+- [ ] Build Functions Docker image and push to ACR
+- [ ] Deploy Functions container to `func-cleansia-dev`
 - [ ] Deploy Customer SSR to `web-cleansia-customer-dev` App Service
 - [ ] Deploy Partner SPA to `swa-cleansia-partner-dev` Static Web App
 - [ ] Deploy Admin SPA to `swa-cleansia-admin-dev` Static Web App
-- [ ] Run EF Core migrations against DEV PostgreSQL
 
 #### 4. Deploy to PRO (manual approval)
 
-- [ ] Swap staging slot on `api-cleansia-pro` (zero-downtime)
-- [ ] Swap staging slot on `web-cleansia-customer-pro`
+- [ ] Run EF Core migrations against PRO PostgreSQL
+- [ ] Deploy .NET APIs to `api-cleansia-*-pro` App Services
+- [ ] Build Functions Docker image and push to ACR
+- [ ] Deploy Functions container to `func-cleansia-pro`
+- [ ] Deploy Customer SSR to `web-cleansia-customer-pro`
 - [ ] Deploy Partner SPA to `swa-cleansia-partner-pro`
 - [ ] Deploy Admin SPA to `swa-cleansia-admin-pro`
-- [ ] Run EF Core migrations against PRO PostgreSQL
 
 ### GitHub Actions Workflow Structure
 
 ```
 .github/workflows/
+├── backend-ci.yml          # Build + test on PRs (no deploy)
 ├── deploy-dev.yml          # Triggered on push to master
-├── deploy-pro.yml          # Triggered manually or after DEV success
-└── pr-check.yml            # Build + test on PRs (no deploy)
+└── deploy-pro.yml          # Triggered manually with confirmation
 ```
 
 Each workflow has jobs:
@@ -257,18 +286,20 @@ pr-check.yml:
   job: build-and-test        # dotnet build + test + nx build (no deploy)
 
 deploy-dev.yml:
-  job: build-dotnet           # Build + publish .NET
+  job: build-dotnet           # Build + publish .NET APIs
   job: build-angular          # Build all 3 Angular apps (parallel with dotnet)
-  job: deploy-apis-dev        # Deploy to App Service (depends on build-dotnet)
+  job: migrate-database       # EF Core migrations (depends on build-dotnet)
+  job: deploy-apis-dev        # Deploy 4 APIs sequentially (depends on migrate-database)
+  job: build-deploy-functions # Build Docker image + deploy to Functions (depends on migrate-database)
   job: deploy-customer-dev    # Deploy SSR to App Service (depends on build-angular)
   job: deploy-partner-dev     # Deploy to Static Web App (depends on build-angular)
   job: deploy-admin-dev       # Deploy to Static Web App (depends on build-angular)
-  job: migrate-db-dev         # Run EF Core migrations (depends on deploy-apis-dev)
 
 deploy-pro.yml:
   environment: production     # Requires manual approval
-  job: deploy-apis-pro        # Slot swap on App Service
-  job: deploy-customer-pro    # Slot swap on App Service
+  job: deploy-apis-pro        # Deploy to App Service
+  job: build-deploy-functions # Build Docker image + deploy to Functions
+  job: deploy-customer-pro    # Deploy SSR to App Service
   job: deploy-partner-pro     # Deploy to Static Web App
   job: deploy-admin-pro       # Deploy to Static Web App
   job: migrate-db-pro         # Run EF Core migrations

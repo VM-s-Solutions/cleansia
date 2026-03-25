@@ -10,14 +10,14 @@ var host = new HostBuilder()
     .ConfigureFunctionsWorkerDefaults()
     .ConfigureServices((context, services) =>
     {
-        var config = context.Configuration;
-        var env = context.HostingEnvironment;
+        services.AddApplicationInsightsTelemetryWorkerService();
+        services.ConfigureFunctionsApplicationInsights();
 
         // Required by UserSessionProvider and TenantProvider which depend on IHttpContextAccessor.
         // In Functions context there is no HTTP context, but the providers handle null gracefully.
         services.AddHttpContextAccessor();
 
-        services.AddCoreBindings(config, env);
+        services.AddCoreBindings(context.Configuration, context.HostingEnvironment);
 
         services.AddScoped<IPayPeriodBackgroundService, PayPeriodBackgroundService>();
         services.AddScoped<IPeriodReminderBackgroundService, PeriodReminderBackgroundService>();

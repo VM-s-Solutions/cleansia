@@ -336,7 +336,9 @@ export class OrderWizardFacade {
           if (response.stripeSessionId) {
             if (this.isBrowser) window.location.href = response.stripeSessionId;
           } else {
-            this.router.navigate([CleansiaCustomerRoute.CHECKOUT_SUCCESS]);
+            this.router.navigate([CleansiaCustomerRoute.CHECKOUT_SUCCESS], {
+              queryParams: { type: 'card' },
+            });
           }
         },
         error: () => {
@@ -353,7 +355,9 @@ export class OrderWizardFacade {
           if (response.id) {
             this.guestOrderService.save(response.id, data.customerEmail);
           }
-          this.router.navigate([CleansiaCustomerRoute.CHECKOUT_SUCCESS]);
+          this.router.navigate([CleansiaCustomerRoute.CHECKOUT_SUCCESS], {
+              queryParams: { type: 'cash' },
+            });
         },
         error: () => {
           this.submitting.set(false);

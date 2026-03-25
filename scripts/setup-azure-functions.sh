@@ -185,6 +185,28 @@ az functionapp config appsettings set \
   --output none
 echo "  Key Vault references configured"
 
+# === 9b. Connect Application Insights ===
+echo ""
+echo "=== 9b. Connecting Application Insights ==="
+AI_NAME="ai-cleansia-${ENV}"
+AI_CONN_STRING=$(az monitor app-insights component show \
+  --app "$AI_NAME" \
+  --resource-group "$RG" \
+  --query connectionString --output tsv 2>/dev/null || echo "")
+
+if [ -n "$AI_CONN_STRING" ]; then
+  az functionapp config appsettings set \
+    --name "$FUNC_APP_NAME" \
+    --resource-group "$RG" \
+    --settings \
+      "APPLICATIONINSIGHTS_CONNECTION_STRING=${AI_CONN_STRING}" \
+    --output none
+  echo "  Application Insights connected: $AI_NAME"
+else
+  echo "  WARNING: Application Insights '$AI_NAME' not found. Skipping."
+  echo "  Create it manually: az monitor app-insights component create --app $AI_NAME --resource-group $RG --location $LOCATION"
+fi
+
 # === 10. Add Queue connection string to all API App Services ===
 echo ""
 echo "=== 10. Adding Queue connection string to API App Services ==="

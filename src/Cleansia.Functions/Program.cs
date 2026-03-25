@@ -13,6 +13,10 @@ var host = new HostBuilder()
         var config = context.Configuration;
         var env = context.HostingEnvironment;
 
+        // Required by UserSessionProvider and TenantProvider which depend on IHttpContextAccessor.
+        // In Functions context there is no HTTP context, but the providers handle null gracefully.
+        services.AddHttpContextAccessor();
+
         services.AddCoreBindings(config, env);
 
         services.AddScoped<IPayPeriodBackgroundService, PayPeriodBackgroundService>();

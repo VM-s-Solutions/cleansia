@@ -770,9 +770,17 @@
     },
     "checkout": {
       "success": {
-        "title": "Platba úspešná!",
-        "subtitle": "Ďakujeme za vašu objednávku",
-        "description": "Vaše čistenie bolo objednané a potvrdené. Čoskoro dostanete potvrdzovací e-mail so všetkými podrobnosťami.",
+        "card": {
+          "title": "Platba úspešná!",
+          "subtitle": "Ďakujeme za vašu objednávku",
+          "description": "Vaša platba bola spracovaná a vaše čistenie je potvrdené. Čoskoro dostanete potvrdzovací e-mail so všetkými podrobnosťami."
+        },
+        "cash": {
+          "title": "Objednávka potvrdená!",
+          "subtitle": "Ďakujeme za vašu rezerváciu",
+          "description": "Vaše čistenie bolo objednané a zaplatíte v hotovosti v deň služby. Čoskoro dostanete potvrdzovací e-mail so všetkými podrobnosťami.",
+          "step_payment": "Zaplaťte pracovníkovi v hotovosti po dokončení služby"
+        },
         "what_next": "Čo bude nasledovať?",
         "step_confirmation": "Do niekoľkých minút dostanete potvrdzovací e-mail",
         "step_reminder": "Pred dátumom čistenia vám pošleme pripomienku",

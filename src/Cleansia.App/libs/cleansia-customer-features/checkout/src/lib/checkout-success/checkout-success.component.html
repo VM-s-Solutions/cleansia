@@ -3,9 +3,15 @@
   <div class="checkout-card">
     <img src="assets/images/mascot/mascot-cleaning.png" alt="" class="checkout-card__mascot" />
 
-    <h1 class="checkout-card__title">{{ 'pages.checkout.success.title' | translate }}</h1>
-    <p class="checkout-card__subtitle">{{ 'pages.checkout.success.subtitle' | translate }}</p>
-    <p class="checkout-card__desc">{{ 'pages.checkout.success.description' | translate }}</p>
+    @if (isCash()) {
+      <h1 class="checkout-card__title">{{ 'pages.checkout.success.cash.title' | translate }}</h1>
+      <p class="checkout-card__subtitle">{{ 'pages.checkout.success.cash.subtitle' | translate }}</p>
+      <p class="checkout-card__desc">{{ 'pages.checkout.success.cash.description' | translate }}</p>
+    } @else {
+      <h1 class="checkout-card__title">{{ 'pages.checkout.success.card.title' | translate }}</h1>
+      <p class="checkout-card__subtitle">{{ 'pages.checkout.success.card.subtitle' | translate }}</p>
+      <p class="checkout-card__desc">{{ 'pages.checkout.success.card.description' | translate }}</p>
+    }
 
     <div class="checkout-card__divider"></div>
 
@@ -21,7 +27,11 @@
       </div>
       <div class="checkout-card__step">
         <span class="checkout-card__step-num step-num--success">3</span>
-        <span>{{ 'pages.checkout.success.step_cleaner' | translate }}</span>
+        @if (isCash()) {
+          <span>{{ 'pages.checkout.success.cash.step_payment' | translate }}</span>
+        } @else {
+          <span>{{ 'pages.checkout.success.step_cleaner' | translate }}</span>
+        }
       </div>
     </div>
 

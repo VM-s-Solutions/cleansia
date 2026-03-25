@@ -17,6 +17,7 @@ import {
   ErrorHandler,
   importProvidersFrom,
   LOCALE_ID,
+  PLATFORM_ID,
   provideZoneChangeDetection,
 } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -69,7 +70,7 @@ export const appConfig: ApplicationConfig = {
     {
       provide: APP_INITIALIZER,
       useFactory: initializeTranslations,
-      deps: [TranslateService],
+      deps: [TranslateService, PLATFORM_ID],
       multi: true,
     },
     MessageService,

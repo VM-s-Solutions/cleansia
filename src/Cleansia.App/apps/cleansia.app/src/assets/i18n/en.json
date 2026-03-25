@@ -770,9 +770,17 @@
     },
     "checkout": {
       "success": {
-        "title": "Payment Successful!",
-        "subtitle": "Thank you for your order",
-        "description": "Your cleaning has been booked and confirmed. You'll receive a confirmation email with all the details shortly.",
+        "card": {
+          "title": "Payment Successful!",
+          "subtitle": "Thank you for your order",
+          "description": "Your payment has been processed and your cleaning is confirmed. You'll receive a confirmation email with all the details shortly."
+        },
+        "cash": {
+          "title": "Order Confirmed!",
+          "subtitle": "Thank you for your booking",
+          "description": "Your cleaning has been booked and will be paid in cash on the day of service. You'll receive a confirmation email with all the details shortly.",
+          "step_payment": "Pay the cleaner in cash when the service is complete"
+        },
         "what_next": "What happens next?",
         "step_confirmation": "You'll receive a confirmation email within a few minutes",
         "step_reminder": "We'll send you a reminder before your cleaning date",

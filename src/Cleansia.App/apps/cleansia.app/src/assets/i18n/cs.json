@@ -770,9 +770,17 @@
     },
     "checkout": {
       "success": {
-        "title": "Platba úspěšná!",
-        "subtitle": "Děkujeme za vaši objednávku",
-        "description": "Vaše úklid byl rezervován a potvrzen. Brzy obdržíte potvrzovací email se všemi podrobnostmi.",
+        "card": {
+          "title": "Platba úspěšná!",
+          "subtitle": "Děkujeme za vaši objednávku",
+          "description": "Vaše platba byla zpracována a úklid je potvrzen. Brzy obdržíte potvrzovací email se všemi podrobnostmi."
+        },
+        "cash": {
+          "title": "Objednávka potvrzena!",
+          "subtitle": "Děkujeme za vaši rezervaci",
+          "description": "Váš úklid byl zarezervován a bude zaplacen hotově v den poskytnutí služby. Brzy obdržíte potvrzovací email se všemi podrobnostmi.",
+          "step_payment": "Zaplaťte uklízeči hotově po dokončení služby"
+        },
         "what_next": "Co se stane dál?",
         "step_confirmation": "Obdržíte potvrzovací email během několika minut",
         "step_reminder": "Pošleme vám připomínku před datem úklidu",

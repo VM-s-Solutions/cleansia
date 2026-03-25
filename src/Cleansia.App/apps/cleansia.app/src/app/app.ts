@@ -36,9 +36,7 @@ export class AppComponent implements OnInit, OnDestroy {
   isOnLandingPage = signal(true);
 
   constructor() {
-    this.translate.addLangs(['cs', 'en', 'sk', 'uk', 'ru']);
-    this.translate.setDefaultLang('en');
-    this.translate.use(this.detectLanguage());
+    // Translation initialization is handled by APP_INITIALIZER in app.config.ts
   }
 
   ngOnInit() {
@@ -64,14 +62,4 @@ export class AppComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  private detectLanguage(): string {
-    const supported = ['cs', 'en', 'sk', 'uk', 'ru'];
-    if (isPlatformBrowser(this.platformId)) {
-      const stored = localStorage.getItem('preferred_language');
-      if (stored && supported.includes(stored)) return stored;
-      const browserLang = navigator.language?.split('-')[0]?.toLowerCase();
-      if (browserLang && supported.includes(browserLang)) return browserLang;
-    }
-    return 'en';
-  }
 }

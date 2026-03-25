@@ -12,6 +12,7 @@ import localeRu from '@angular/common/locales/ru';
 import localeSk from '@angular/common/locales/sk';
 import localeUk from '@angular/common/locales/uk';
 import {
+  APP_INITIALIZER,
   ApplicationConfig,
   ErrorHandler,
   importProvidersFrom,
@@ -29,12 +30,13 @@ import { adminEffects, adminReducers } from '@cleansia/admin-stores';
 import { CleansiaPreset } from '@cleansia/assets';
 import {
   COMMON_INTERCEPTORS_FN,
+  initializeTranslations,
   JsonTranslationLoader,
 } from '@cleansia/services';
 import { EffectsModule } from '@ngrx/effects';
 import { provideStore, StoreModule } from '@ngrx/store';
 import { StoreDevtoolsModule } from '@ngrx/store-devtools';
-import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
+import { TranslateLoader, TranslateModule, TranslateService } from '@ngx-translate/core';
 import * as Sentry from '@sentry/angular';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
@@ -64,6 +66,12 @@ export const appConfig: ApplicationConfig = {
         },
       })
     ),
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initializeTranslations,
+      deps: [TranslateService],
+      multi: true,
+    },
     MessageService,
     ConfirmationService,
     provideHttpClient(

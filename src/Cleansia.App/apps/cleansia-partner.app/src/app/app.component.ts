@@ -66,25 +66,6 @@ export class AppComponent implements OnInit, OnDestroy {
 
   constructor() {
     this.updateMobileStatus();
-    this.translate.addLangs(['cs', 'en', 'sk', 'uk', 'ru']);
-    this.translate.setDefaultLang('en');
-    this.translate.use(this.detectLanguage());
-  }
-
-  private detectLanguage(): string {
-    const supported = ['cs', 'en', 'sk', 'uk', 'ru'];
-    // 1. Check stored preference
-    const stored = localStorage.getItem('preferred_language');
-    if (stored && supported.includes(stored)) {
-      return stored;
-    }
-    // 2. Detect from browser language
-    const browserLang = navigator.language?.split('-')[0]?.toLowerCase();
-    if (browserLang && supported.includes(browserLang)) {
-      return browserLang;
-    }
-    // 3. Default to English
-    return 'en';
   }
 
   ngOnInit() {

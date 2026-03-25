@@ -10,7 +10,6 @@ var host = new HostBuilder()
     .ConfigureFunctionsWorkerDefaults()
     .ConfigureServices((context, services) =>
     {
-        services.AddApplicationInsightsTelemetryWorkerService();
         services.ConfigureFunctionsApplicationInsights();
 
         // Required by UserSessionProvider and TenantProvider which depend on IHttpContextAccessor.

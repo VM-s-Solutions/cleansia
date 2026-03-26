@@ -71,26 +71,40 @@ public class QuestPdfService : IPdfService
         var launchOptions = new LaunchOptions
         {
             Headless = true,
-            Args = new[] { "--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu", "--disable-dev-shm-usage" },
-            ExecutablePath = executablePath
+            Args = new[] { "--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu", "--disable-dev-shm-usage", "--single-process" },
+            ExecutablePath = executablePath,
+            Timeout = 30000
         };
 
-        using var browser = await Puppeteer.LaunchAsync(launchOptions);
-        _logger.LogInformation("Chromium launched successfully");
-
-        await using var page = await browser.NewPageAsync();
-        await page.SetContentAsync(html, new NavigationOptions { WaitUntil = new[] { WaitUntilNavigation.Networkidle0 } });
-
-        var pdfOptions = new PdfOptions
+        try
         {
-            Format = PaperFormat.A4,
-            PrintBackground = true,
-            PreferCSSPageSize = true
-        };
+            using var browser = await Puppeteer.LaunchAsync(launchOptions);
+            _logger.LogInformation("Chromium launched successfully");
 
-        var pdfBytes = await page.PdfDataAsync(pdfOptions);
-        _logger.LogInformation("PDF generated successfully ({Size} bytes)", pdfBytes.Length);
+            await using var page = await browser.NewPageAsync();
+            await page.SetContentAsync(html, new NavigationOptions
+            {
+                WaitUntil = new[] { WaitUntilNavigation.DOMContentLoaded },
+                Timeout = 15000
+            });
+            _logger.LogInformation("HTML content loaded into Chromium page");
 
-        return pdfBytes;
+            var pdfOptions = new PdfOptions
+            {
+                Format = PaperFormat.A4,
+                PrintBackground = true,
+                PreferCSSPageSize = true
+            };
+
+            var pdfBytes = await page.PdfDataAsync(pdfOptions);
+            _logger.LogInformation("PDF generated successfully ({Size} bytes)", pdfBytes.Length);
+
+            return pdfBytes;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Chromium PDF generation failed. ExePath={Path}, Error={Message}", executablePath, ex.Message);
+            throw;
+        }
     }
 }

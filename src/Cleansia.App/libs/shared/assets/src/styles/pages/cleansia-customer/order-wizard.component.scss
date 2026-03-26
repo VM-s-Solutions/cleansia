@@ -566,10 +566,21 @@ $font-heading: 'Poppins', sans-serif;
     }
   }
 
+  &__time-hint {
+    font-size: 0.85rem;
+    color: $text-light;
+    margin-bottom: 0.5rem;
+  }
+
   &__time-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 0.5rem;
+
+    &--disabled {
+      opacity: 0.4;
+      pointer-events: none;
+    }
   }
 
   &__time-slot {

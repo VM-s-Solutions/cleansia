@@ -1,7 +1,7 @@
 # Cleansia — Azure Deployment Plan
 
 > Created: 2026-03-15
-> Status: Planned
+> Status: DEV deployed, PRO ready
 > Environments: DEV, PRO (Production)
 
 ---
@@ -57,7 +57,7 @@ Deployed as a **Docker container** (with Chromium pre-installed for PDF generati
 
 APIs enqueue messages to Azure Storage Queues instead of generating PDFs synchronously. The Functions app picks up messages, generates PDFs with Chromium, uploads to blob storage, and sends emails via SendGrid.
 
-> **Why Docker?** PuppeteerSharp requires Chromium system libraries (`libnspr4.so`, etc.) that are not available on Azure App Service Linux. The Functions Dockerfile installs Chromium and sets `PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium`.
+> **Why Docker?** PuppeteerSharp requires Chromium system libraries (`libnspr4.so`, etc.) that are not available on Azure App Service Linux. The Functions Dockerfile installs Chromium and sets `PUPPETEER_EXECUTABLE_PATH=/usr/local/bin/chromium-stable` (symlinked in Dockerfile).
 
 ### Frontend — 3 Angular 19 Apps (Nx monorepo)
 
@@ -83,7 +83,7 @@ APIs enqueue messages to Azure Storage Queues instead of generating PDFs synchro
 
 ## Azure Resources per Environment
 
-### DEV (~$55/month estimated)
+### DEV (~$66/month estimated)
 
 | Resource                    | Name                        | SKU/Tier                                 |
 | --------------------------- | --------------------------- | ---------------------------------------- |
@@ -103,15 +103,19 @@ APIs enqueue messages to Azure Storage Queues instead of generating PDFs synchro
 | PostgreSQL Flexible Server  | `psql-cleansia-dev`         | Burstable B1ms (1 vCore, 2 GB)           |
 | Key Vault                   | `kv-cleansia-dev`           | Standard                                 |
 | Application Insights        | `ai-cleansia-dev`           | Free tier (5 GB/month)                   |
+| App Registration (EasyAuth) | `cleansia-dev-gate`         | Entra ID — restricts DEV access to allowed users |
 
-### PRO (~$350/month estimated)
+### PRO (~$360/month estimated)
 
 | Resource                    | Name                        | SKU/Tier                                     |
 | --------------------------- | --------------------------- | -------------------------------------------- |
 | Resource Group              | `rg-cleansia-pro`           | —                                            |
 | App Service Plan (APIs)     | `asp-cleansia-pro`          | S1 or P1v2 (1 core, 1.75 GB RAM)             |
 | App Service Plan (Functions)| `asp-func-cleansia-pro`     | B1 (1 core, 1.75 GB RAM) — Functions         |
-| App Service (.NET APIs)     | `api-cleansia-pro`          | Runs all 4 APIs behind Aspire + staging slot |
+| App Service (Partner API)   | `api-cleansia-partner-pro`  | .NET 10 — Partner/employee-facing API        |
+| App Service (Admin API)     | `api-cleansia-admin-pro`    | .NET 10 — Back-office API                    |
+| App Service (Customer API)  | `api-cleansia-customer-pro` | .NET 10 — Public-facing API                  |
+| App Service (Mobile API)    | `api-cleansia-mobile-pro`   | .NET 10 — Android/iOS API                    |
 | Azure Functions             | `func-cleansia-pro`         | Docker container — background jobs + PDF     |
 | Container Registry          | `crcleansipro`              | Basic — stores Functions Docker image        |
 | App Service (Customer SSR)  | `web-cleansia-customer-pro` | Node.js 20 LTS + staging slot                |
@@ -123,6 +127,16 @@ APIs enqueue messages to Azure Storage Queues instead of generating PDFs synchro
 | Application Insights        | `ai-cleansia-pro`           | Pay-as-you-go (~$10/mo)                      |
 
 > **PRO differences**: Staging slots on App Services for zero-downtime deployments, higher-tier PostgreSQL for production workloads, paid Application Insights for full telemetry.
+
+> **DEV-only: EasyAuth Gate** — The DEV Customer SSR app (`web-cleansia-customer-dev`) has Azure AD (EasyAuth) authentication enabled to restrict access to authorized developers only. This gate:
+> - Requires Microsoft login before accessing the website
+> - Must exclude `/assets/*` from authentication so that SSR can load static files (translations, CSS, JS) after login
+> - Is NOT used in PRO (production is public-facing)
+>
+> Configure excluded paths:
+> ```bash
+> az webapp auth update --name web-cleansia-customer-dev --resource-group rg-cleansia-dev --excluded-paths "/assets/*"
+> ```
 
 ---
 
@@ -193,7 +207,7 @@ Sentry__Dsn
 In App Service Configuration, reference Key Vault secrets using:
 
 ```
-@Microsoft.KeyVault(SecretUri=https://kv-cleansia-dev.vault.azure.net/secrets/ConnectionStrings--DefaultConnection)
+@Microsoft.KeyVault(SecretUri=https://kv-cleansia-dev.vault.azure.net/secrets/ConnectionStrings--ConnectionString)
 ```
 
 ### Configuration Hierarchy
@@ -508,11 +522,11 @@ Repeat for PRO environment.
 
 ```bash
 # Connection string (use -- for nested keys)
-az keyvault secret set --vault-name kv-cleansia-dev --name "ConnectionStrings--DefaultConnection" --value 'Host=psql-cleansia-dev.postgres.database.azure.com;Database=cleansia;Username=cleansiaadmin;Password=<YOUR_ACTUAL_PASSWORD>;SSL Mode=Require'
+az keyvault secret set --vault-name kv-cleansia-dev --name "ConnectionStrings--ConnectionString" --value 'Host=psql-cleansia-dev.postgres.database.azure.com;Database=cleansia;Username=cleansiaadmin;Password=<YOUR_ACTUAL_PASSWORD>;SSL Mode=Require'
 
 
 # JWT
-az keyvault secret set --vault-name kv-cleansia-dev --name "Jwt--SecretKey" --value "<GENERATE_A_256_BIT_KEY>"
+az keyvault secret set --vault-name kv-cleansia-dev --name "JwtSettings--Secret" --value "<GENERATE_A_256_BIT_KEY>"
 
 # Stripe
 az keyvault secret set \
@@ -565,7 +579,7 @@ for APP in api-cleansia-partner-dev api-cleansia-admin-dev api-cleansia-customer
     --name "$APP" --resource-group rg-cleansia-dev \
     --connection-string-type Custom \
     --settings \
-      "ConnectionString=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=ConnectionStrings--DefaultConnection)" \
+      "ConnectionString=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=ConnectionStrings--ConnectionString)" \
       "BlobContainerConfigurationConnectionString=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=ConnectionStrings--BlobContainerConfigurationConnectionString)"
 done
 ```
@@ -583,7 +597,7 @@ az webapp config appsettings set \
   --name api-cleansia-partner-dev --resource-group rg-cleansia-dev \
   --settings \
     ASPNETCORE_ENVIRONMENT=Production \
-    "Jwt__SecretKey=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=Jwt--SecretKey)" \
+    "JwtSettings__Secret=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=JwtSettings--Secret)" \
     "SendGrid__ApiKey=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=SendGrid--ApiKey)" \
     SendGrid__SandboxMode=true \
     "Stripe__SecretKey=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=Stripe--SecretKey)" \
@@ -602,7 +616,7 @@ az webapp config appsettings set \
   --name api-cleansia-admin-dev --resource-group rg-cleansia-dev \
   --settings \
     ASPNETCORE_ENVIRONMENT=Production \
-    "Jwt__SecretKey=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=Jwt--SecretKey)" \
+    "JwtSettings__Secret=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=JwtSettings--Secret)" \
     "SendGrid__ApiKey=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=SendGrid--ApiKey)" \
     SendGrid__SandboxMode=true \
     "CorsOrigins__0=https://swa-cleansia-admin-dev.azurestaticapps.net"
@@ -615,7 +629,7 @@ az webapp config appsettings set \
   --name api-cleansia-customer-dev --resource-group rg-cleansia-dev \
   --settings \
     ASPNETCORE_ENVIRONMENT=Production \
-    "Jwt__SecretKey=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=Jwt--SecretKey)" \
+    "JwtSettings__Secret=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=JwtSettings--Secret)" \
     "SendGrid__ApiKey=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=SendGrid--ApiKey)" \
     SendGrid__SandboxMode=true \
     "Stripe__SecretKey=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=Stripe--SecretKey)" \
@@ -634,7 +648,7 @@ az webapp config appsettings set \
   --name api-cleansia-mobile-dev --resource-group rg-cleansia-dev \
   --settings \
     ASPNETCORE_ENVIRONMENT=Production \
-    "Jwt__SecretKey=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=Jwt--SecretKey)" \
+    "JwtSettings__Secret=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=JwtSettings--Secret)" \
     "SendGrid__ApiKey=@Microsoft.KeyVault(VaultName=kv-cleansia-dev;SecretName=SendGrid--ApiKey)" \
     SendGrid__SandboxMode=true
 ```
@@ -643,7 +657,7 @@ az webapp config appsettings set \
 
 | Setting | Partner | Admin | Customer | Mobile |
 |---|---|---|---|---|
-| Jwt__SecretKey (KV) | Yes | Yes | Yes | Yes |
+| JwtSettings__Secret (KV) | Yes | Yes | Yes | Yes |
 | SendGrid__ApiKey (KV) | Yes | Yes | Yes | Yes |
 | SendGrid__SandboxMode | Yes | Yes | Yes | Yes |
 | Stripe__SecretKey (KV) | Yes | **No** | Yes | **No** |
@@ -675,6 +689,30 @@ az webapp config set --name api-cleansia-customer-dev --resource-group rg-cleans
 az webapp config set --name api-cleansia-mobile-dev --resource-group rg-cleansia-dev --always-on true
 az webapp config set --name web-cleansia-customer-dev --resource-group rg-cleansia-dev --always-on true
 ```
+
+### Step 3b: Set Up Azure Functions
+
+Run the Azure Functions infrastructure setup script:
+
+```bash
+# Review and adjust variables at the top of the script (ENV, STORAGE_ACCOUNT, etc.)
+chmod +x scripts/setup-azure-functions.sh
+./scripts/setup-azure-functions.sh
+```
+
+This script creates:
+- Azure Container Registry (stores Functions Docker images)
+- Azure Functions App Service Plan (B1 Linux, separate from API plan)
+- Azure Functions App (Docker container with Chromium for PDF generation)
+- Managed Identity with roles: ACR Pull, Storage Blob Data Contributor, Storage Queue Data Contributor, Key Vault Secrets User
+- Application Insights connection
+- Queue storage connection string on all 4 API App Services
+- Required blob containers: `receipt-templates`, `generated-receipts`, `invoice-templates`, `generated-invoices`
+- Required storage queues: `generate-receipt`, `generate-invoice` (with poison queues)
+
+**Important**: After running the script, add `ACR_NAME` to GitHub Actions secrets.
+
+For PRO, change `ENV="pro"` at the top of the script and run again.
 
 ---
 
@@ -735,14 +773,16 @@ Add the following secrets to the GitHub repository:
 
 | Secret                                          | Description                                     |
 | ----------------------------------------------- | ----------------------------------------------- |
-| `AZURE_WEBAPP_PUBLISH_PROFILE_API_DEV`          | Publish profile for `api-cleansia-partner-dev`          |
-| `AZURE_WEBAPP_PUBLISH_PROFILE_ADMIN_API_DEV`    | Publish profile for `api-cleansia-admin-dev`    |
-| `AZURE_WEBAPP_PUBLISH_PROFILE_CUSTOMER_API_DEV` | Publish profile for `api-cleansia-customer-dev` |
-| `AZURE_WEBAPP_PUBLISH_PROFILE_MOBILE_API_DEV`   | Publish profile for `api-cleansia-mobile-dev`   |
-| `AZURE_WEBAPP_PUBLISH_PROFILE_CUSTOMER_DEV`     | Publish profile for `web-cleansia-customer-dev` |
-| `AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER_DEV`   | Deployment token for partner SWA                |
-| `AZURE_STATIC_WEB_APPS_API_TOKEN_ADMIN_DEV`     | Deployment token for admin SWA                  |
-| Same set for PRO                                | Replace `DEV` with `PRO`                        |
+| `AZURE_CLIENT_ID`                               | Service principal client ID (OIDC federation)   |
+| `AZURE_TENANT_ID`                               | Azure AD tenant ID                              |
+| `AZURE_SUBSCRIPTION_ID`                         | Azure subscription ID                           |
+| `DB_CONNECTION_STRING_DEV`                       | PostgreSQL connection string for DEV migrations |
+| `DB_CONNECTION_STRING_PRO`                       | PostgreSQL connection string for PRO migrations |
+| `ACR_NAME`                                       | Azure Container Registry name (e.g. crcleansiadev) |
+| `AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER_DEV`   | Deployment token for partner SWA DEV            |
+| `AZURE_STATIC_WEB_APPS_API_TOKEN_ADMIN_DEV`     | Deployment token for admin SWA DEV              |
+| `AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER_PRO`   | Deployment token for partner SWA PRO            |
+| `AZURE_STATIC_WEB_APPS_API_TOKEN_ADMIN_PRO`     | Deployment token for admin SWA PRO              |
 
 #### 5.2 Create Service Principal
 
@@ -929,16 +969,18 @@ az webapp update \
 | Resource                                   | DEV (Monthly)    | PRO (Monthly)      |
 | ------------------------------------------ | ---------------- | ------------------ |
 | App Service Plan (B1 / S1)                 | $13              | $73                |
+| App Service Plan (Functions B1)              | $13              | $13                |
 | PostgreSQL Flexible Server (B1ms / D2s_v3) | $15              | $130               |
 | Static Web Apps (Free)                     | $0               | $0                 |
 | Key Vault (operations)                     | ~$1              | ~$1                |
 | Application Insights                       | $0 (free tier)   | ~$10               |
 | Bandwidth (egress)                         | ~$5              | ~$50               |
 | Azure Blob Storage                         | ~$2              | ~$10               |
+| Azure Container Registry (Basic)             | ~$5              | ~$5                |
 | SendGrid                                   | $0 (sandbox)     | ~$20 (Essentials)  |
 | Sentry                                     | Free (Developer) | Free (Team)        |
 | Stripe                                     | $0 (test mode)   | 2.9% + 30c per txn |
-| **Total**                                  | **~$41/mo**      | **~$328/mo**       |
+| **Total**                                  | **~$66/mo**      | **~$360/mo**       |
 
 > **Notes:**
 >
@@ -963,6 +1005,12 @@ az webapp update \
 - [ ] Verify custom domains resolve correctly with HTTPS
 - [ ] Test database backup/restore procedure (PRO)
 - [ ] Set up Azure Alerts for API response time > 5s, error rate > 5%, DB CPU > 80%
+- [ ] Verify Azure Functions are running (check function list in Azure Portal)
+- [ ] Test receipt generation: create a cash order → check if receipt PDF appears in blob storage
+- [ ] Verify queue processing: check generate-receipt queue is being consumed
+- [ ] Upload receipt template: `receipt-template-v1.html` to `receipt-templates` blob container
+- [ ] Upload invoice template: `invoice-template-v1.html` to `invoice-templates` blob container
+- [ ] If DEV: configure EasyAuth excluded paths for `/assets/*` on Customer SSR
 
 ---
 
@@ -978,9 +1026,12 @@ az webapp update \
 - [ ] API versioning enabled (`/api/v1/...`)
 - [ ] Stripe webhook signature verification active
 - [ ] JWT signing key is at least 256 bits
+- [ ] Azure Functions Managed Identity has minimum required roles (no Owner/Contributor)
+- [ ] Storage account configured for private access (Managed Identity, not connection string keys)
+- [ ] DEV environment gated with EasyAuth (Microsoft Entra ID login required)
 
 ---
 
-**Version**: 1.1.0
-**Last Updated**: 2026-03-21
-**Status**: DEV deployed, PRO planned
+**Version**: 2.0.0
+**Last Updated**: 2026-03-26
+**Status**: DEV deployed and operational, PRO ready for deployment

@@ -1,4 +1,4 @@
-import { registerLocaleData } from '@angular/common';
+import { isPlatformBrowser, registerLocaleData } from '@angular/common';
 import {
   HttpClient,
   provideHttpClient,
@@ -64,8 +64,9 @@ export const appConfig: ApplicationConfig = {
       TranslateModule.forRoot({
         loader: {
           provide: TranslateLoader,
-          useFactory: (http: HttpClient) => new JsonTranslationLoader(http),
-          deps: [HttpClient],
+          useFactory: (http: HttpClient, platformId: object) =>
+            new JsonTranslationLoader(http, isPlatformBrowser(platformId)),
+          deps: [HttpClient, PLATFORM_ID],
         },
       })
     ),

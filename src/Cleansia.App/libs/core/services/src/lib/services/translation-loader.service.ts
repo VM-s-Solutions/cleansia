@@ -1,13 +1,20 @@
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { PLATFORM_ID } from '@angular/core';
 import { TranslateLoader, TranslateService } from '@ngx-translate/core';
-import { Observable, firstValueFrom } from 'rxjs';
+import { Observable, firstValueFrom, of } from 'rxjs';
 
 export class JsonTranslationLoader implements TranslateLoader {
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private isBrowser: boolean
+  ) {}
 
   getTranslation(lang: string): Observable<any> {
+    // On the server (SSR), return empty translations to avoid HTTP requests
+    // that would hit EasyAuth and fail with 401.
+    if (!this.isBrowser) {
+      return of({});
+    }
     return this.http.get(`/assets/i18n/${lang}.json`);
   }
 }
@@ -17,13 +24,13 @@ export function initializeTranslations(
   platformId: object
 ): () => Promise<void> {
   return async () => {
+    const isBrowser = isPlatformBrowser(platformId);
     const supported = ['cs', 'en', 'sk', 'uk', 'ru'];
+
     translate.addLangs(supported);
     translate.setDefaultLang('en');
 
-    // On server (SSR), skip loading — translations will load on the client after hydration.
-    // Loading on the server would hit the full URL and may fail with 401 from Azure auth.
-    if (!isPlatformBrowser(platformId)) {
+    if (!isBrowser) {
       return;
     }
 

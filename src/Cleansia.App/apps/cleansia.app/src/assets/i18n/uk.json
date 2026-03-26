@@ -647,6 +647,7 @@
       "date_label": "Оберіть дату",
       "cleaning_time": "Час прибирання",
       "time_label": "Оберіть час",
+      "select_date_first": "Спочатку оберіть дату",
       "payment_method": "Спосіб оплати",
       "payment_section_title": "Як ви хочете оплатити?",
       "pay_by_card": "Оплата карткою",

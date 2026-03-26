@@ -647,6 +647,7 @@
       "date_label": "Select Date",
       "cleaning_time": "Cleaning Time",
       "time_label": "Select Time",
+      "select_date_first": "Please select a date first",
       "payment_method": "Payment Method",
       "payment_section_title": "How Would You Like to Pay?",
       "pay_by_card": "Pay by Card",

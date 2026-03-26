@@ -250,6 +250,8 @@ export class OrderWizardComponent implements OnInit {
     this.facade.nextStep();
   }
 
+  isDateSelected = computed(() => !!this.facade.formData().cleaningDate);
+
   isTimeSelected(value: string): boolean {
     return this.facade.formData().cleaningTime === value;
   }

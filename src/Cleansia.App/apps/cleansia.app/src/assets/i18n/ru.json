@@ -647,6 +647,7 @@
       "date_label": "Выберите дату",
       "cleaning_time": "Время уборки",
       "time_label": "Выберите время",
+      "select_date_first": "Сначала выберите дату",
       "payment_method": "Способ оплаты",
       "payment_section_title": "Как Вы хотите оплатить?",
       "pay_by_card": "Оплата картой",

@@ -411,11 +411,15 @@
               <label class="order-wizard__field-label">
                 {{ 'pages.order.time_label' | translate }}
               </label>
-              <div class="order-wizard__time-grid">
+              @if (!isDateSelected()) {
+                <p class="order-wizard__time-hint">{{ 'pages.order.select_date_first' | translate }}</p>
+              }
+              <div class="order-wizard__time-grid" [class.order-wizard__time-grid--disabled]="!isDateSelected()">
                 @for (opt of timeOptions(); track opt.value) {
                 <button
                   class="order-wizard__time-slot"
                   [class.order-wizard__time-slot--selected]="isTimeSelected(opt.value)"
+                  [disabled]="!isDateSelected()"
                   (click)="selectTime(opt.value)"
                 >
                   {{ opt.label }}

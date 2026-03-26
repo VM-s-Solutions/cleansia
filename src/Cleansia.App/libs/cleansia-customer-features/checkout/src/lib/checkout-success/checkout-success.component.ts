@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
+import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CustomerAuthService } from '@cleansia/customer-services';
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { CleansiaDynamicBackgroundComponent } from '@cleansia/components';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 
@@ -17,6 +18,8 @@ import { map } from 'rxjs';
 export class CheckoutSuccessComponent {
   private readonly authService = inject(CustomerAuthService);
   private readonly route = inject(ActivatedRoute);
+  private readonly titleService = inject(Title);
+  private readonly translate = inject(TranslateService);
 
   routes = CleansiaCustomerRoute;
   ordersRoute = this.authService.isLoggedIn()
@@ -29,4 +32,14 @@ export class CheckoutSuccessComponent {
   );
 
   isCash = computed(() => this.paymentType() === 'cash');
+
+  constructor() {
+    effect(() => {
+      const titleKey = this.isCash()
+        ? 'pages.checkout.success.cash.title'
+        : 'pages.checkout.success.card.title';
+      const title = this.translate.instant(titleKey);
+      this.titleService.setTitle(`${title} | Cleansia`);
+    });
+  }
 }

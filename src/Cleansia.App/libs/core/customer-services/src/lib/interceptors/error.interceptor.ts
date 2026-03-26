@@ -14,8 +14,13 @@ export const CustomerErrorInterceptorFn: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === HttpStatusCode.Unauthorized) {
-        // Clear any expired/invalid session and redirect to login
+      if (
+        error.status === HttpStatusCode.Unauthorized &&
+        req.url.includes('/api/') &&
+        authService.isLoggedIn()
+      ) {
+        // Only redirect to login if this was an API call and the user was logged in
+        // (meaning the token expired). Don't redirect for public pages.
         authService.removeSession();
         router.navigate(['login']);
       }

@@ -647,6 +647,7 @@
       "date_label": "Vyberte dátum",
       "cleaning_time": "Čas čistenia",
       "time_label": "Vyberte čas",
+      "select_date_first": "Najprv vyberte dátum",
       "payment_method": "Spôsob platby",
       "payment_section_title": "Ako chcete platiť?",
       "pay_by_card": "Platba kartou",

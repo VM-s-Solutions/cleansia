@@ -168,7 +168,7 @@ az functionapp config appsettings set \
     "AzureWebJobsStorage=${STORAGE_CONN_STRING}" \
     "FUNCTIONS_WORKER_RUNTIME=dotnet-isolated" \
     "BlobContainerConfiguration__AccountUrl=${BLOB_URL}" \
-    "PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium" \
+    "PUPPETEER_EXECUTABLE_PATH=/usr/local/bin/chromium-stable" \
   --output none
 echo "  Base settings configured"
 

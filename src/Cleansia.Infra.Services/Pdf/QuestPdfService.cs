@@ -1,8 +1,9 @@
 using Cleansia.Infra.Services.Pdf.Models;
 using Cleansia.Infra.Services.Templates;
+using HTMLQuestPDF.Extensions;
 using Microsoft.Extensions.Logging;
-using PuppeteerSharp;
-using PuppeteerSharp.Media;
+using QuestPDF.Fluent;
+using QuestPDF.Infrastructure;
 
 namespace Cleansia.Infra.Services.Pdf;
 
@@ -10,36 +11,29 @@ public class QuestPdfService : IPdfService
 {
     private readonly ITemplateEngine _templateEngine;
     private readonly ILogger<QuestPdfService> _logger;
-    private readonly string? _chromiumExecutablePath;
-    private static bool _chromiumDownloaded;
+
+    static QuestPdfService()
+    {
+        QuestPDF.Settings.License = LicenseType.Community;
+    }
 
     public QuestPdfService(ITemplateEngine templateEngine, ILogger<QuestPdfService> logger)
     {
         _templateEngine = templateEngine;
         _logger = logger;
-        _chromiumExecutablePath = Environment.GetEnvironmentVariable("PUPPETEER_EXECUTABLE_PATH");
-
-        _logger.LogInformation("QuestPdfService initialized. PUPPETEER_EXECUTABLE_PATH={Path}", _chromiumExecutablePath ?? "(not set)");
-
-        if (string.IsNullOrEmpty(_chromiumExecutablePath) && !_chromiumDownloaded)
-        {
-            _logger.LogInformation("Downloading Chromium via BrowserFetcher...");
-            new BrowserFetcher().DownloadAsync().GetAwaiter().GetResult();
-            _chromiumDownloaded = true;
-            _logger.LogInformation("Chromium downloaded successfully");
-        }
     }
 
     public async Task<byte[]> GenerateInvoicePdfAsync(InvoicePdfData invoiceData, string templateHtml, CountryInvoiceContext? countryContext, CancellationToken cancellationToken)
     {
         var enrichedData = ApplyCountryLogic(invoiceData, countryContext);
         var mergedHtml = await _templateEngine.CompileAsync(templateHtml, enrichedData, cancellationToken);
-        return await ConvertHtmlToPdfBytesAsync(mergedHtml, cancellationToken);
+        return ConvertHtmlToPdfBytes(mergedHtml);
     }
 
-    public async Task<byte[]> GenerateReceiptPdfAsync(string templateHtml, CancellationToken cancellationToken)
+    public Task<byte[]> GenerateReceiptPdfAsync(string templateHtml, CancellationToken cancellationToken)
     {
-        return await ConvertHtmlToPdfBytesAsync(templateHtml, cancellationToken);
+        var pdfBytes = ConvertHtmlToPdfBytes(templateHtml);
+        return Task.FromResult(pdfBytes);
     }
 
     private InvoicePdfData ApplyCountryLogic(InvoicePdfData data, CountryInvoiceContext? context)
@@ -57,53 +51,27 @@ public class QuestPdfService : IPdfService
         return data;
     }
 
-    private async Task<byte[]> ConvertHtmlToPdfBytesAsync(string html, CancellationToken cancellationToken)
+    private byte[] ConvertHtmlToPdfBytes(string html)
     {
-        var executablePath = _chromiumExecutablePath;
-        _logger.LogInformation("Launching Chromium for PDF generation. ExecutablePath={Path}", executablePath ?? "(auto-detect)");
-
-        if (!string.IsNullOrEmpty(executablePath) && !File.Exists(executablePath))
-        {
-            _logger.LogError("Chromium executable not found at {Path}", executablePath);
-            throw new FileNotFoundException($"Chromium executable not found at '{executablePath}'", executablePath);
-        }
-
-        var launchOptions = new LaunchOptions
-        {
-            Headless = true,
-            Args = new[] { "--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu", "--disable-dev-shm-usage", "--single-process" },
-            ExecutablePath = executablePath,
-            Timeout = 30000
-        };
+        _logger.LogInformation("Generating PDF from HTML using QuestPDF");
 
         try
         {
-            using var browser = await Puppeteer.LaunchAsync(launchOptions);
-            _logger.LogInformation("Chromium launched successfully");
-
-            await using var page = await browser.NewPageAsync();
-            await page.SetContentAsync(html, new NavigationOptions
+            var pdfBytes = Document.Create(container =>
             {
-                WaitUntil = new[] { WaitUntilNavigation.DOMContentLoaded },
-                Timeout = 15000
-            });
-            _logger.LogInformation("HTML content loaded into Chromium page");
+                container.Page(page =>
+                {
+                    page.Size(QuestPDF.Helpers.PageSizes.A4);
+                    page.Content().HTML(h => h.SetHtml(html));
+                });
+            }).GeneratePdf();
 
-            var pdfOptions = new PdfOptions
-            {
-                Format = PaperFormat.A4,
-                PrintBackground = true,
-                PreferCSSPageSize = true
-            };
-
-            var pdfBytes = await page.PdfDataAsync(pdfOptions);
             _logger.LogInformation("PDF generated successfully ({Size} bytes)", pdfBytes.Length);
-
             return pdfBytes;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Chromium PDF generation failed. ExePath={Path}, Error={Message}", executablePath, ex.Message);
+            _logger.LogError(ex, "PDF generation failed: {Message}", ex.Message);
             throw;
         }
     }

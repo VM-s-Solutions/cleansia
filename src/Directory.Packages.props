@@ -37,8 +37,7 @@
   <ItemGroup Label="Document / PDF">
     <PackageVersion Include="Handlebars.Net" Version="2.1.6" />
     <PackageVersion Include="HTMLToQPDF" Version="1.2.0" />
-    <PackageVersion Include="PuppeteerSharp" Version="21.1.1" />
-    <PackageVersion Include="QuestPDF" Version="2026.2.2" />
+    <PackageVersion Include="QuestPDF" Version="2024.7.2" />
   </ItemGroup>
 
   <ItemGroup Label="Error Monitoring">

@@ -1,12 +1,22 @@
 {
-  "IsEncrypted": false,
-  "Values": {
-    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated"
-  },
-  "ConnectionStrings": {
-    "ConnectionString": "Host=localhost;Database=cleansia;Username=postgres;Password=postgres",
-    "QueueStorageConnectionString": "UseDevelopmentStorage=true",
-    "BlobContainerConfigurationConnectionString": "UseDevelopmentStorage=true"
-  }
+    "IsEncrypted": false,
+    "Values": {
+        "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+        "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+        "BlobContainerConfiguration__ConnectionStringName": "BlobContainerConfigurationConnectionString",
+        "SendGrid__ApiKey": "SET_VIA_USER_SECRETS",
+        "SendGrid__OrderReceiptTemplateId": "d-2e4f0bcc8af54b3d88c471d7e0cd507a",
+        "SendGrid__EmailConfirmationTemplateId": "d-eb7daac9cbe94f01beb2ee1bb0ec5c29",
+        "SendGrid__PeriodClosedTemplateId": "d-75a0f9cfdcc44eabb617de12e28d784d",
+        "SendGrid__PeriodEndReminderTemplateId": "d-d8428c5ffff14355a59d0a35023445da",
+        "SendGrid__ResetPasswordTemplateId": "d-c475f44d635f40569aa8b5171dc63270",
+        "SendGrid__AddressFrom": "it@cleansia.cz",
+        "SendGrid__ResetPasswordUrl": "http://localhost:4200/forgot-password",
+        "SendGrid__OrderStatusUrl": "http://localhost:4200/orders"
+    },
+    "ConnectionStrings": {
+        "ConnectionString": "Host=localhost;Port=5432;Username=postgres;Password=cCyb!.{w~!YC8fsZdAgTUr;Database=Cleansia",
+        "QueueStorageConnectionString": "UseDevelopmentStorage=true",
+        "BlobContainerConfigurationConnectionString": "UseDevelopmentStorage=true"
+    }
 }

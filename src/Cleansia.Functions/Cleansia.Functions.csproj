@@ -6,6 +6,7 @@
 		<Nullable>enable</Nullable>
 		<AzureFunctionsVersion>v4</AzureFunctionsVersion>
 		<OutputType>Exe</OutputType>
+		<UserSecretsId>2cc82bab-d6f6-4695-87fb-611c7b0d31bd</UserSecretsId>
 	</PropertyGroup>
 
 	<ItemGroup>

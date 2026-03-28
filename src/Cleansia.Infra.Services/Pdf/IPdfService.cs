@@ -4,6 +4,6 @@ namespace Cleansia.Infra.Services.Pdf;
 
 public interface IPdfService
 {
-    Task<byte[]> GenerateInvoicePdfAsync(InvoicePdfData invoiceData, string templateHtml, CountryInvoiceContext? countryContext, CancellationToken cancellationToken);
-    Task<byte[]> GenerateReceiptPdfAsync(string templateHtml, CancellationToken cancellationToken);
+    byte[] GenerateReceiptPdf(ReceiptPdfData data, string? countryCode = null);
+    byte[] GenerateInvoicePdf(InvoicePdfData data, CountryInvoiceContext? context, string? countryCode = null);
 }

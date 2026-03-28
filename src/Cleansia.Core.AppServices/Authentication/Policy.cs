@@ -133,20 +133,6 @@ public class Policy
     public const string CanUpdateCompanyInfo = nameof(CanUpdateCompanyInfo); // Admin
     public const string CanDeleteCompanyInfo = nameof(CanDeleteCompanyInfo); // Admin
 
-    // Invoice Templates
-    public const string CanViewInvoiceTemplates = nameof(CanViewInvoiceTemplates); // Admin
-    public const string CanCreateInvoiceTemplate = nameof(CanCreateInvoiceTemplate); // Admin
-    public const string CanUpdateInvoiceTemplate = nameof(CanUpdateInvoiceTemplate); // Admin
-    public const string CanDeleteInvoiceTemplate = nameof(CanDeleteInvoiceTemplate); // Admin
-    public const string CanActivateInvoiceTemplate = nameof(CanActivateInvoiceTemplate); // Admin
-
-    // Receipt Templates
-    public const string CanViewReceiptTemplates = nameof(CanViewReceiptTemplates); // Admin
-    public const string CanCreateReceiptTemplate = nameof(CanCreateReceiptTemplate); // Admin
-    public const string CanUpdateReceiptTemplate = nameof(CanUpdateReceiptTemplate); // Admin
-    public const string CanDeleteReceiptTemplate = nameof(CanDeleteReceiptTemplate); // Admin
-    public const string CanActivateReceiptTemplate = nameof(CanActivateReceiptTemplate); // Admin
-
     // Email Templates
     public const string CanViewEmailTemplates = nameof(CanViewEmailTemplates); // Admin
     public const string CanUpdateEmailTemplate = nameof(CanUpdateEmailTemplate); // Admin

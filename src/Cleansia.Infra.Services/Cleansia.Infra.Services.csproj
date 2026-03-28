@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <PackageReference Include="Handlebars.Net" />
-    <PackageReference Include="HTMLToQPDF" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="QuestPDF" />
   </ItemGroup>

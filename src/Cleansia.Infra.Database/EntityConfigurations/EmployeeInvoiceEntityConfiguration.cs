@@ -97,13 +97,6 @@ public class EmployeeInvoiceEntityConfiguration : AuditableEntityConfiguration<E
             .OnDelete(DeleteBehavior.Restrict);
 
         builder
-            .HasOne(e => e.Template)
-            .WithMany()
-            .HasForeignKey(e => e.TemplateId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired(false);
-
-        builder
             .HasOne(e => e.Country)
             .WithMany()
             .HasForeignKey(e => e.CountryId)

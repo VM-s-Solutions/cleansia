@@ -13,7 +13,6 @@ using Cleansia.Core.Domain.InvoiceTemplates;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Receipts;
-using Cleansia.Core.Domain.ReceiptTemplates;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Services;
@@ -179,10 +178,8 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<OrderEmployeePay> OrderEmployeePays { get; set; }
     public virtual DbSet<PayPeriod> PayPeriods { get; set; }
     public virtual DbSet<EmployeeInvoice> EmployeeInvoices { get; set; }
-    public virtual DbSet<InvoiceTemplate> InvoiceTemplates { get; set; }
     public virtual DbSet<CountryInvoiceConfig> CountryInvoiceConfigs { get; set; }
     public virtual DbSet<EmailTemplateTranslation> EmailTemplateTranslations { get; set; }
-    public virtual DbSet<ReceiptTemplate> ReceiptTemplates { get; set; }
     public virtual DbSet<OrderReceipt> OrderReceipts { get; set; }
     public virtual DbSet<CompanyInfo> CompanyInfo { get; set; }
     public virtual DbSet<Device> Devices { get; set; }

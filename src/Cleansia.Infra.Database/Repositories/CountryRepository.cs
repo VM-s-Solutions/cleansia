@@ -26,14 +26,6 @@ public class CountryRepository(CleansiaDbContext context) : BaseRepository<Count
         if (await Context.CompanyInfo.AnyAsync(c => c.CountryId == countryId, cancellationToken))
             return true;
 
-        // Check if country is used by ReceiptTemplates
-        if (await Context.ReceiptTemplates.AnyAsync(r => r.CountryId == countryId, cancellationToken))
-            return true;
-
-        // Check if country is used by InvoiceTemplates
-        if (await Context.InvoiceTemplates.AnyAsync(i => i.CountryId == countryId, cancellationToken))
-            return true;
-
         // Check if country is used by CountryInvoiceConfigs
         if (await Context.CountryInvoiceConfigs.AnyAsync(c => c.CountryId == countryId, cancellationToken))
             return true;

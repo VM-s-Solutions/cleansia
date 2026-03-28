@@ -231,9 +231,7 @@ echo "  Queue connection string added to all APIs"
 echo ""
 echo "=== 11. Creating blob containers ==="
 CONTAINERS=(
-  "receipt-templates"
   "generated-receipts"
-  "invoice-templates"
   "generated-invoices"
 )
 

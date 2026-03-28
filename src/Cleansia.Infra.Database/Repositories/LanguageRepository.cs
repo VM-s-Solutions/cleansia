@@ -37,14 +37,6 @@ public class LanguageRepository(CleansiaDbContext context) : BaseRepository<Lang
         if (await Context.EmailTemplateTranslations.AnyAsync(e => e.LanguageId == languageId, cancellationToken))
             return true;
 
-        // Check if language is used by InvoiceTemplates
-        if (await Context.InvoiceTemplates.AnyAsync(i => i.LanguageId == languageId, cancellationToken))
-            return true;
-
-        // Check if language is used by ReceiptTemplates
-        if (await Context.ReceiptTemplates.AnyAsync(r => r.LanguageId == languageId, cancellationToken))
-            return true;
-
         // Check if language is used by OrderReceipts
         if (await Context.OrderReceipts.AnyAsync(o => o.LanguageId == languageId, cancellationToken))
             return true;

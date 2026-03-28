@@ -22,30 +22,16 @@ public class RegenerateInvoicePdf
 
     public class Validator : AbstractValidator<Command>
     {
-        private readonly IEmployeeRepository _employeeRepository;
-        private readonly ILanguageRepository _languageRepository;
-        private readonly IEmployeeInvoiceRepository _invoiceRepository;
-        private readonly IInvoiceTemplateRepository _templateRepository;
-
         public Validator(
-            IEmployeeRepository employeeRepository,
-            ILanguageRepository languageRepository,
             IEmployeeInvoiceRepository invoiceRepository,
-            IInvoiceTemplateRepository templateRepository)
+            ILanguageRepository languageRepository)
         {
-            _invoiceRepository = invoiceRepository;
-            _employeeRepository = employeeRepository;
-            _languageRepository = languageRepository;
-            _templateRepository = templateRepository;
-
             RuleFor(x => x.InvoiceId)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
                 .MustAsync(invoiceRepository.ExistsAsync)
-                .WithMessage(BusinessErrorMessage.InvoiceNotFound)
-                .MustAsync(HasAvailableTemplateAsync)
-                .WithMessage(BusinessErrorMessage.TemplateNotFound);
+                .WithMessage(BusinessErrorMessage.InvoiceNotFound);
 
             RuleFor(x => x.LanguageCode)
                 .Cascade(CascadeMode.Stop)
@@ -54,52 +40,16 @@ public class RegenerateInvoicePdf
                 .MustAsync(languageRepository.ExistsWithCodeAsync)
                 .WithMessage(BusinessErrorMessage.InvoiceNotFound);
         }
-
-        private async Task<bool> HasAvailableTemplateAsync(Command command, string invoiceId, CancellationToken cancellationToken)
-        {
-            var invoice = await _invoiceRepository.GetByIdAsync(invoiceId, cancellationToken);
-            if (invoice == null)
-            {
-                return false;
-            }
-
-            var employee = await _employeeRepository
-                .GetQueryable()
-                .Include(e => e.Address)
-                .FirstOrDefaultAsync(e => e.Id == invoice.EmployeeId, cancellationToken);
-
-            if (employee == null)
-            {
-                return false;
-            }
-
-            var countryId = employee.Address?.CountryId;
-            var language = await _languageRepository.GetByCodeAsync(command.LanguageCode, cancellationToken);
-
-            if (language is null)
-            {
-                return false;
-            }
-
-            var template = await _templateRepository.GetActiveByCountryAndLanguageAsync(
-                countryId,
-                language.Code,
-                cancellationToken);
-
-            return template != null;
-        }
     }
 
     public class Handler(
         IPdfService pdfService,
-        ITemplateEngine templateEngine,
         ICurrencyRepository currencyRepository,
         IEmployeeRepository employeeRepository,
         ILanguageRepository languageRepository,
         ICompanyInfoRepository companyInfoRepository,
         IBlobContainerClientFactory clientFactory,
         IEmployeeInvoiceRepository employeeInvoiceRepository,
-        IInvoiceTemplateRepository invoiceTemplateRepository,
         IOrderEmployeePayRepository orderEmployeePayRepository,
         ICountryInvoiceConfigRepository countryInvoiceConfigRepository,
         ICountryConfigurationRepository countryConfigurationRepository)
@@ -144,15 +94,8 @@ public class RegenerateInvoicePdf
 
             var pdfData = invoice.CreatePdfData(employee, currency, orderPays, countryContext, companyInfo, dateFormat);
 
-            var templateHtml = await GetTemplateHtmlAsync(countryId, language!.Code, cancellationToken);
-
-            var mergedHtml = await templateEngine.CompileAsync(templateHtml, pdfData, cancellationToken);
-
-            var pdfBytes = await pdfService.GenerateInvoicePdfAsync(
-                pdfData,
-                mergedHtml,
-                countryContext,
-                cancellationToken);
+            var countryCode = employee.Address?.Country?.IsoCode;
+            var pdfBytes = pdfService.GenerateInvoicePdf(pdfData, countryContext, countryCode);
 
             var blobUrl = await UploadPdfAsync(invoice, employee, pdfBytes, cancellationToken);
 
@@ -180,19 +123,6 @@ public class RegenerateInvoicePdf
                 EInvoiceFormat = config.EInvoiceFormat,
                 LegalDisclaimerTemplate = config.LegalDisclaimerTemplate
             };
-        }
-
-        private async Task<string> GetTemplateHtmlAsync(string? countryId, string languageCode, CancellationToken cancellationToken)
-        {
-            var template = await invoiceTemplateRepository.GetActiveByCountryAndLanguageAsync(
-                countryId,
-                languageCode,
-                cancellationToken);
-
-            var templateBlobClient = clientFactory.GetBlobContainerClient(Constants.BlobContainers.InvoiceTemplates);
-            var templateBlob = await templateBlobClient.DownloadAsync(template!.BlobUrl, cancellationToken);
-            using var reader = new StreamReader(templateBlob.Content);
-            return await reader.ReadToEndAsync(cancellationToken);
         }
 
         private async Task<string> UploadPdfAsync(EmployeeInvoice invoice, Employee employee, byte[] pdfBytes, CancellationToken cancellationToken)

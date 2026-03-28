@@ -28,11 +28,9 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
     private readonly IOrderEmployeePayRepository _orderEmployeePayRepository;
     private readonly ICompanyInfoRepository _companyInfoRepository;
     private readonly ILanguageRepository _languageRepository;
-    private readonly IInvoiceTemplateRepository _invoiceTemplateRepository;
     private readonly ICountryInvoiceConfigRepository _countryInvoiceConfigRepository;
     private readonly ICountryConfigurationRepository _countryConfigurationRepository;
     private readonly IPdfService _pdfService;
-    private readonly ITemplateEngine _templateEngine;
     private readonly IBlobContainerClientFactory _blobContainerClientFactory;
 
     public PayPeriodBackgroundService(
@@ -46,11 +44,9 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         IOrderEmployeePayRepository orderEmployeePayRepository,
         ICompanyInfoRepository companyInfoRepository,
         ILanguageRepository languageRepository,
-        IInvoiceTemplateRepository invoiceTemplateRepository,
         ICountryInvoiceConfigRepository countryInvoiceConfigRepository,
         ICountryConfigurationRepository countryConfigurationRepository,
         IPdfService pdfService,
-        ITemplateEngine templateEngine,
         IBlobContainerClientFactory blobContainerClientFactory)
     {
         _payPeriodRepository = payPeriodRepository;
@@ -63,11 +59,9 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         _orderEmployeePayRepository = orderEmployeePayRepository;
         _companyInfoRepository = companyInfoRepository;
         _languageRepository = languageRepository;
-        _invoiceTemplateRepository = invoiceTemplateRepository;
         _countryInvoiceConfigRepository = countryInvoiceConfigRepository;
         _countryConfigurationRepository = countryConfigurationRepository;
         _pdfService = pdfService;
-        _templateEngine = templateEngine;
         _blobContainerClientFactory = blobContainerClientFactory;
     }
 
@@ -387,20 +381,8 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
 
             var pdfData = invoice.CreatePdfData(employee, currency, orderPays, countryContext, companyInfo, dateFormat);
 
-            var templateHtml = await GetTemplateHtmlAsync(countryId, languageCode, cancellationToken);
-            if (templateHtml == null)
-            {
-                _logger.LogError("Failed to get invoice template for country {CountryId} and language {LanguageCode}", countryId, languageCode);
-                return null;
-            }
-
-            var mergedHtml = await _templateEngine.CompileAsync(templateHtml, pdfData, cancellationToken);
-
-            var pdfBytes = await _pdfService.GenerateInvoicePdfAsync(
-                pdfData,
-                mergedHtml,
-                countryContext,
-                cancellationToken);
+            var countryCode = employee.Address?.Country?.IsoCode;
+            var pdfBytes = _pdfService.GenerateInvoicePdf(pdfData, countryContext, countryCode);
 
             return pdfBytes;
         }
@@ -431,32 +413,6 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         };
     }
 
-    private async Task<string?> GetTemplateHtmlAsync(string? countryId, string languageCode, CancellationToken cancellationToken)
-    {
-        try
-        {
-            var template = await _invoiceTemplateRepository.GetActiveByCountryAndLanguageAsync(
-                countryId,
-                languageCode,
-                cancellationToken);
-
-            if (template == null)
-            {
-                _logger.LogWarning("No invoice template found for country {CountryId} and language {LanguageCode}", countryId, languageCode);
-                return null;
-            }
-
-            var templateBlobClient = _blobContainerClientFactory.GetBlobContainerClient(Common.Constants.BlobContainers.InvoiceTemplates);
-            var templateBlob = await templateBlobClient.DownloadAsync(template.BlobUrl, cancellationToken);
-            using var reader = new StreamReader(templateBlob.Content);
-            return await reader.ReadToEndAsync(cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting invoice template HTML");
-            return null;
-        }
-    }
 
     private async Task<string> UploadInvoicePdfAsync(
         EmployeeInvoice invoice,

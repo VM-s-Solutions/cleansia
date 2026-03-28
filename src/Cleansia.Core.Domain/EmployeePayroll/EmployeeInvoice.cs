@@ -2,7 +2,6 @@ using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
-using Cleansia.Core.Domain.InvoiceTemplates;
 using Cleansia.Core.Domain.Users;
 
 namespace Cleansia.Core.Domain.EmployeePayroll;
@@ -50,9 +49,6 @@ public class EmployeeInvoice : Auditable, ITenantEntity
     public string? PdfGenerationError { get; private set; }
 
     public DateTime? PdfGenerationAttemptedAt { get; private set; }
-
-    public string? TemplateId { get; private set; }
-    public InvoiceTemplate? Template { get; private set; }
 
     public string? CountryId { get; private set; }
     public Country? Country { get; private set; }
@@ -190,9 +186,8 @@ public class EmployeeInvoice : Auditable, ITenantEntity
         return this;
     }
 
-    public EmployeeInvoice AssignTemplate(string templateId, string countryId, string languageId)
+    public EmployeeInvoice AssignCountryAndLanguage(string countryId, string languageId)
     {
-        TemplateId = templateId;
         CountryId = countryId;
         LanguageId = languageId;
         return this;

@@ -110,20 +110,6 @@ public static class PolicyBuilder
         [Policy.CanUpdateCompanyInfo] = PhysicalPolicy.AdminOnly,
         [Policy.CanDeleteCompanyInfo] = PhysicalPolicy.AdminOnly,
 
-        // Invoice Templates
-        [Policy.CanViewInvoiceTemplates] = PhysicalPolicy.AdminOnly,
-        [Policy.CanCreateInvoiceTemplate] = PhysicalPolicy.AdminOnly,
-        [Policy.CanUpdateInvoiceTemplate] = PhysicalPolicy.AdminOnly,
-        [Policy.CanDeleteInvoiceTemplate] = PhysicalPolicy.AdminOnly,
-        [Policy.CanActivateInvoiceTemplate] = PhysicalPolicy.AdminOnly,
-
-        // Receipt Templates
-        [Policy.CanViewReceiptTemplates] = PhysicalPolicy.AdminOnly,
-        [Policy.CanCreateReceiptTemplate] = PhysicalPolicy.AdminOnly,
-        [Policy.CanUpdateReceiptTemplate] = PhysicalPolicy.AdminOnly,
-        [Policy.CanDeleteReceiptTemplate] = PhysicalPolicy.AdminOnly,
-        [Policy.CanActivateReceiptTemplate] = PhysicalPolicy.AdminOnly,
-
         // Email Templates
         [Policy.CanViewEmailTemplates] = PhysicalPolicy.AdminOnly,
         [Policy.CanUpdateEmailTemplate] = PhysicalPolicy.AdminOnly,

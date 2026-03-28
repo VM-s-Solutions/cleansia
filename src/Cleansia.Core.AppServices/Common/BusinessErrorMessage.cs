@@ -191,15 +191,6 @@ public static class BusinessErrorMessage
     // General
     public const string NotFound = "general.not_found";
 
-    // Invoice Template
-    public const string InvoiceTemplateNotFound = "template.invoice.not_found";
-    public const string InvoiceTemplateInUse = "template.invoice.in_use";
-    public const string CannotDeleteActiveTemplate = "template.cannot_delete_active";
-
-    // Receipt Template
-    public const string ReceiptTemplateNotFound = "template.receipt.not_found";
-    public const string ReceiptTemplateInUse = "template.receipt.in_use";
-
     // Email Template
     public const string EmailTemplateNotFound = "template.email.not_found";
     public const string EmailTemplateKeyExists = "template.email.key_exists";

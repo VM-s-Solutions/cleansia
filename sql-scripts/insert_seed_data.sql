@@ -1413,32 +1413,6 @@ VALUES
    '0322876543', '2412', 'INV-202512-MK001', 'Payment for Invoice INV-202512-MK001', false, false);
 
 -- ============================================================
--- INVOICE TEMPLATES
--- ============================================================
-INSERT INTO public."InvoiceTemplates" (
-  "Id", "IsActive", "CreatedBy", "CreatedOn",
-  "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
-  "TemplateName", "CountryId", "LanguageId", "Version",
-  "BlobUrl", "ActivatedAt", "Description"
-)
-VALUES
-  -- Czech Republic + English
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'StandardInvoice',
-   (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1),
-   (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en' LIMIT 1),
-   1, 'invoice-templates/cze/en/standard-v1.html', CURRENT_TIMESTAMP,
-   'Default English invoice template for Czech Republic'),
-
-  -- Czech Republic + Czech
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   'StandardInvoice',
-   (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1),
-   (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs' LIMIT 1),
-   1, 'invoice-templates/cze/cs/standard-v1.html', CURRENT_TIMESTAMP,
-   'Výchozí česká šablona faktury pro Českou republiku');
-
--- ============================================================
 -- COUNTRY INVOICE CONFIGS
 -- ============================================================
 INSERT INTO public."CountryInvoiceConfigs" (
@@ -1837,45 +1811,6 @@ VALUES
 (generate_ulid()::TEXT, true, 5, 'TeamSignature', 'S pozdravem', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 (generate_ulid()::TEXT, true, 5, 'TeamName', 'Tým Cleansia', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL),
 (generate_ulid()::TEXT, true, 5, 'FooterText', '© 2026 Cleansia. Všechna práva vyhrazena.', (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs'), 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL);
-
--- ============================================================
--- RECEIPT TEMPLATES
--- ============================================================
-INSERT INTO public."ReceiptTemplates" (
-    "Id", "TemplateName", "CountryId", "LanguageId", "Version",
-    "BlobUrl", "IsActive", "ActivatedAt", "Description",
-    "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn"
-)
-VALUES
--- Czech Receipt Template
-(generate_ulid()::TEXT,
- 'Standard Receipt Template v1',
- (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1),
- (SELECT "Id" FROM public."Languages" WHERE "Code" = 'cs' LIMIT 1),
- 1,
- 'receipt-templates/receipt-template-v1.html',
- true,
- CURRENT_TIMESTAMP,
- 'Professional receipt template with company information, order details, and payment breakdown for Czech customers.',
- 'system',
- CURRENT_TIMESTAMP,
- 'system',
- CURRENT_TIMESTAMP),
-
--- English Receipt Template
-(generate_ulid()::TEXT,
- 'Standard Receipt Template v1 (English)',
- (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1),
- (SELECT "Id" FROM public."Languages" WHERE "Code" = 'en' LIMIT 1),
- 1,
- 'receipt-templates/receipt-template-v1.html',
- true,
- CURRENT_TIMESTAMP,
- 'Professional receipt template with company information, order details, and payment breakdown for English-speaking customers.',
- 'system',
- CURRENT_TIMESTAMP,
- 'system',
- CURRENT_TIMESTAMP);
 
 -- FIX EMPLOYEE ADDRESS CONNECTIONS
 -- Create proper residential addresses for employees and connect them

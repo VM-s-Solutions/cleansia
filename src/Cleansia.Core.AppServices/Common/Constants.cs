@@ -7,9 +7,7 @@ public class Constants
         public const string UserFiles = "user-files";
         public const string BetaWhiteList = "beta-whitelist";
         public const string EmployeeDocuments = "employee-documents";
-        public const string InvoiceTemplates = "invoice-templates";
         public const string GeneratedInvoices = "generated-invoices";
-        public const string ReceiptTemplates = "receipt-templates";
         public const string GeneratedReceipts = "generated-receipts";
         public const string OrderPhotos = "order-photos";
     }

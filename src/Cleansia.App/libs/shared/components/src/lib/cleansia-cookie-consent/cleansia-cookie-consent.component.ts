@@ -30,6 +30,13 @@ export interface CookiePreferences {
 
 export type CookieConsentStatus = 'pending' | 'accepted' | 'declined' | 'custom';
 
+/**
+ * Callback for syncing consent preferences to the backend.
+ * Called with the full preferences map whenever consent changes.
+ * Implementations should map cookie categories to backend ConsentType values.
+ */
+export type ConsentSyncFn = (preferences: CookiePreferences, status: CookieConsentStatus) => void;
+
 @Component({
   selector: 'cleansia-cookie-consent',
   standalone: true,
@@ -43,6 +50,13 @@ export class CleansiaCookieConsentComponent implements OnInit {
   showDeclineButton = input<boolean>(true);
   policyUrl = input<string>('');
   position = input<'bottom' | 'top'>('bottom');
+
+  /**
+   * Optional function to sync consent to the backend API.
+   * When provided, the component will call this after saving to localStorage.
+   */
+  syncToBackend = input<ConsentSyncFn | null>(null);
+
   consentChange = output<CookieConsentStatus>();
 
   private consentStatus = signal<CookieConsentStatus>('pending');
@@ -147,6 +161,12 @@ export class CleansiaCookieConsentComponent implements OnInit {
     this.isVisible.set(false);
     this.showSettings.set(false);
     this.consentChange.emit(status);
+
+    // Sync to backend if callback provided
+    const syncFn = this.syncToBackend();
+    if (syncFn) {
+      syncFn(this.preferences(), status);
+    }
   }
 
   resetConsent(): void {

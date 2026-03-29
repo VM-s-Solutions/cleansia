@@ -4214,6 +4214,13 @@ export class AdminInvoiceClient implements IAdminInvoiceClient {
             result200 = EmployeeInvoiceDetailDto.fromJS(resultData200);
             return ObservableOf(result200);
             }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
         } else if (status === 401) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result401: any = null;
@@ -4227,13 +4234,6 @@ export class AdminInvoiceClient implements IAdminInvoiceClient {
             let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result403 = ProblemDetails.fromJS(resultData403);
             return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status === 404) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result404: any = null;
-            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("Not Found", status, ResponseText, Headers, result404);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -4601,176 +4601,6 @@ export class AdminInvoiceClient implements IAdminInvoiceClient {
                 fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
             }
             return ObservableOf({ fileName: fileName, data: responseBlob as any, status: status, headers: Headers });
-        } else if (status === 401) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result401: any = null;
-            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, ResponseText, Headers, result401);
-            }));
-        } else if (status === 403) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result403: any = null;
-            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status === 404) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result404: any = null;
-            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("Not Found", status, ResponseText, Headers, result404);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-}
-
-export interface IAdminInvoiceTemplateClient {
-    /**
-     * @param searchTerm (optional) 
-     * @param countryId (optional) 
-     * @param languageId (optional) 
-     * @param isActive (optional) 
-     * @param sort (optional) 
-     * @param offset (optional) 
-     * @param limit (optional) 
-     * @return OK
-     */
-    getPaged(searchTerm?: string | undefined, countryId?: string | undefined, languageId?: string | undefined, isActive?: boolean | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfInvoiceTemplateListItem>;
-    /**
-     * @return OK
-     */
-    details(invoiceTemplateId: string): Observable<InvoiceTemplateDetailDto>;
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    create(body?: CreateInvoiceTemplateCommand | undefined): Observable<CreateInvoiceTemplateResponse>;
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    update(invoiceTemplateId: string, body?: UpdateInvoiceTemplateCommand | undefined): Observable<UpdateInvoiceTemplateResponse>;
-    /**
-     * @return OK
-     */
-    delete(invoiceTemplateId: string): Observable<DeleteInvoiceTemplateResponse>;
-    /**
-     * @return OK
-     */
-    activate(invoiceTemplateId: string): Observable<ActivateInvoiceTemplateResponse>;
-    /**
-     * @return OK
-     */
-    deactivate(invoiceTemplateId: string): Observable<DeactivateInvoiceTemplateResponse>;
-    /**
-     * @return OK
-     */
-    download(invoiceTemplateId: string): Observable<FileResponse>;
-}
-
-@Injectable({
-    providedIn: 'root'
-})
-export class AdminInvoiceTemplateClient implements IAdminInvoiceTemplateClient {
-    private http: HttpClient;
-    private baseUrl: string;
-    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
-
-    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(ADMINAPIBASEURL) baseUrl?: string) {
-        this.http = http;
-        this.baseUrl = baseUrl ?? "";
-    }
-
-    /**
-     * @param searchTerm (optional) 
-     * @param countryId (optional) 
-     * @param languageId (optional) 
-     * @param isActive (optional) 
-     * @param sort (optional) 
-     * @param offset (optional) 
-     * @param limit (optional) 
-     * @return OK
-     */
-    getPaged(searchTerm?: string | undefined, countryId?: string | undefined, languageId?: string | undefined, isActive?: boolean | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfInvoiceTemplateListItem> {
-        let url = this.baseUrl + "/api/AdminInvoiceTemplate/get-paged?";
-        if (searchTerm === null)
-            throw new globalThis.Error("The parameter 'searchTerm' cannot be null.");
-        else if (searchTerm !== undefined)
-            url += "Filter.SearchTerm=" + encodeURIComponent("" + searchTerm) + "&";
-        if (countryId === null)
-            throw new globalThis.Error("The parameter 'countryId' cannot be null.");
-        else if (countryId !== undefined)
-            url += "Filter.CountryId=" + encodeURIComponent("" + countryId) + "&";
-        if (languageId === null)
-            throw new globalThis.Error("The parameter 'languageId' cannot be null.");
-        else if (languageId !== undefined)
-            url += "Filter.LanguageId=" + encodeURIComponent("" + languageId) + "&";
-        if (isActive === null)
-            throw new globalThis.Error("The parameter 'isActive' cannot be null.");
-        else if (isActive !== undefined)
-            url += "Filter.IsActive=" + encodeURIComponent("" + isActive) + "&";
-        if (sort === null)
-            throw new globalThis.Error("The parameter 'sort' cannot be null.");
-        else if (sort !== undefined)
-            sort && sort.forEach((item, index) => {
-                for (const attr in item)
-        			if (item.hasOwnProperty(attr)) {
-        				url += "Sort[" + index + "]." + attr + "=" + encodeURIComponent("" + (item as any)[attr]) + "&";
-        			}
-            });
-        if (offset === null)
-            throw new globalThis.Error("The parameter 'offset' cannot be null.");
-        else if (offset !== undefined)
-            url += "Offset=" + encodeURIComponent("" + offset) + "&";
-        if (limit === null)
-            throw new globalThis.Error("The parameter 'limit' cannot be null.");
-        else if (limit !== undefined)
-            url += "Limit=" + encodeURIComponent("" + limit) + "&";
-        url = url.replace(/[?&]$/, "");
-
-        let options : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processGetPaged(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processGetPaged(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<PagedDataOfInvoiceTemplateListItem>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<PagedDataOfInvoiceTemplateListItem>;
-        }));
-    }
-
-    protected processGetPaged(response: HttpResponseBase): Observable<PagedDataOfInvoiceTemplateListItem> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = PagedDataOfInvoiceTemplateListItem.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
         } else if (status === 400) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
@@ -4791,584 +4621,6 @@ export class AdminInvoiceTemplateClient implements IAdminInvoiceTemplateClient {
             let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result403 = ProblemDetails.fromJS(resultData403);
             return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-
-    /**
-     * @return OK
-     */
-    details(invoiceTemplateId: string): Observable<InvoiceTemplateDetailDto> {
-        let url = this.baseUrl + "/api/AdminInvoiceTemplate/details/{invoiceTemplateId}";
-        if (invoiceTemplateId === undefined || invoiceTemplateId === null)
-            throw new globalThis.Error("The parameter 'invoiceTemplateId' must be defined.");
-        url = url.replace("{invoiceTemplateId}", encodeURIComponent("" + invoiceTemplateId));
-        url = url.replace(/[?&]$/, "");
-
-        let options : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processDetails(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processDetails(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<InvoiceTemplateDetailDto>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<InvoiceTemplateDetailDto>;
-        }));
-    }
-
-    protected processDetails(response: HttpResponseBase): Observable<InvoiceTemplateDetailDto> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = InvoiceTemplateDetailDto.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result400: any = null;
-            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, ResponseText, Headers, result400);
-            }));
-        } else if (status === 401) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result401: any = null;
-            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, ResponseText, Headers, result401);
-            }));
-        } else if (status === 403) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result403: any = null;
-            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status === 404) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result404: any = null;
-            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("Not Found", status, ResponseText, Headers, result404);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    create(body?: CreateInvoiceTemplateCommand | undefined): Observable<CreateInvoiceTemplateResponse> {
-        let url = this.baseUrl + "/api/AdminInvoiceTemplate/create";
-        url = url.replace(/[?&]$/, "");
-
-        const content = JSON.stringify(body);
-
-        let options : any = {
-            body: content,
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processCreate(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processCreate(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<CreateInvoiceTemplateResponse>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<CreateInvoiceTemplateResponse>;
-        }));
-    }
-
-    protected processCreate(response: HttpResponseBase): Observable<CreateInvoiceTemplateResponse> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = CreateInvoiceTemplateResponse.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result400: any = null;
-            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, ResponseText, Headers, result400);
-            }));
-        } else if (status === 401) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result401: any = null;
-            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, ResponseText, Headers, result401);
-            }));
-        } else if (status === 403) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result403: any = null;
-            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    update(invoiceTemplateId: string, body?: UpdateInvoiceTemplateCommand | undefined): Observable<UpdateInvoiceTemplateResponse> {
-        let url = this.baseUrl + "/api/AdminInvoiceTemplate/update/{invoiceTemplateId}";
-        if (invoiceTemplateId === undefined || invoiceTemplateId === null)
-            throw new globalThis.Error("The parameter 'invoiceTemplateId' must be defined.");
-        url = url.replace("{invoiceTemplateId}", encodeURIComponent("" + invoiceTemplateId));
-        url = url.replace(/[?&]$/, "");
-
-        const content = JSON.stringify(body);
-
-        let options : any = {
-            body: content,
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("put", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processUpdate(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processUpdate(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<UpdateInvoiceTemplateResponse>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<UpdateInvoiceTemplateResponse>;
-        }));
-    }
-
-    protected processUpdate(response: HttpResponseBase): Observable<UpdateInvoiceTemplateResponse> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = UpdateInvoiceTemplateResponse.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result400: any = null;
-            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, ResponseText, Headers, result400);
-            }));
-        } else if (status === 401) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result401: any = null;
-            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, ResponseText, Headers, result401);
-            }));
-        } else if (status === 403) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result403: any = null;
-            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status === 404) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result404: any = null;
-            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("Not Found", status, ResponseText, Headers, result404);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-
-    /**
-     * @return OK
-     */
-    delete(invoiceTemplateId: string): Observable<DeleteInvoiceTemplateResponse> {
-        let url = this.baseUrl + "/api/AdminInvoiceTemplate/delete/{invoiceTemplateId}";
-        if (invoiceTemplateId === undefined || invoiceTemplateId === null)
-            throw new globalThis.Error("The parameter 'invoiceTemplateId' must be defined.");
-        url = url.replace("{invoiceTemplateId}", encodeURIComponent("" + invoiceTemplateId));
-        url = url.replace(/[?&]$/, "");
-
-        let options : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("delete", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processDelete(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processDelete(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<DeleteInvoiceTemplateResponse>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<DeleteInvoiceTemplateResponse>;
-        }));
-    }
-
-    protected processDelete(response: HttpResponseBase): Observable<DeleteInvoiceTemplateResponse> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = DeleteInvoiceTemplateResponse.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result400: any = null;
-            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, ResponseText, Headers, result400);
-            }));
-        } else if (status === 401) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result401: any = null;
-            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, ResponseText, Headers, result401);
-            }));
-        } else if (status === 403) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result403: any = null;
-            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status === 404) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result404: any = null;
-            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("Not Found", status, ResponseText, Headers, result404);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-
-    /**
-     * @return OK
-     */
-    activate(invoiceTemplateId: string): Observable<ActivateInvoiceTemplateResponse> {
-        let url = this.baseUrl + "/api/AdminInvoiceTemplate/{invoiceTemplateId}/activate";
-        if (invoiceTemplateId === undefined || invoiceTemplateId === null)
-            throw new globalThis.Error("The parameter 'invoiceTemplateId' must be defined.");
-        url = url.replace("{invoiceTemplateId}", encodeURIComponent("" + invoiceTemplateId));
-        url = url.replace(/[?&]$/, "");
-
-        let options : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processActivate(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processActivate(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<ActivateInvoiceTemplateResponse>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<ActivateInvoiceTemplateResponse>;
-        }));
-    }
-
-    protected processActivate(response: HttpResponseBase): Observable<ActivateInvoiceTemplateResponse> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = ActivateInvoiceTemplateResponse.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result400: any = null;
-            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, ResponseText, Headers, result400);
-            }));
-        } else if (status === 401) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result401: any = null;
-            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, ResponseText, Headers, result401);
-            }));
-        } else if (status === 403) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result403: any = null;
-            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status === 404) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result404: any = null;
-            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("Not Found", status, ResponseText, Headers, result404);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-
-    /**
-     * @return OK
-     */
-    deactivate(invoiceTemplateId: string): Observable<DeactivateInvoiceTemplateResponse> {
-        let url = this.baseUrl + "/api/AdminInvoiceTemplate/{invoiceTemplateId}/deactivate";
-        if (invoiceTemplateId === undefined || invoiceTemplateId === null)
-            throw new globalThis.Error("The parameter 'invoiceTemplateId' must be defined.");
-        url = url.replace("{invoiceTemplateId}", encodeURIComponent("" + invoiceTemplateId));
-        url = url.replace(/[?&]$/, "");
-
-        let options : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processDeactivate(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processDeactivate(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<DeactivateInvoiceTemplateResponse>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<DeactivateInvoiceTemplateResponse>;
-        }));
-    }
-
-    protected processDeactivate(response: HttpResponseBase): Observable<DeactivateInvoiceTemplateResponse> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = DeactivateInvoiceTemplateResponse.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result400: any = null;
-            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, ResponseText, Headers, result400);
-            }));
-        } else if (status === 401) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result401: any = null;
-            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, ResponseText, Headers, result401);
-            }));
-        } else if (status === 403) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result403: any = null;
-            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status === 404) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result404: any = null;
-            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("Not Found", status, ResponseText, Headers, result404);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-
-    /**
-     * @return OK
-     */
-    download(invoiceTemplateId: string): Observable<FileResponse> {
-        let url = this.baseUrl + "/api/AdminInvoiceTemplate/{invoiceTemplateId}/download";
-        if (invoiceTemplateId === undefined || invoiceTemplateId === null)
-            throw new globalThis.Error("The parameter 'invoiceTemplateId' must be defined.");
-        url = url.replace("{invoiceTemplateId}", encodeURIComponent("" + invoiceTemplateId));
-        url = url.replace(/[?&]$/, "");
-
-        let options : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processDownload(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processDownload(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<FileResponse>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<FileResponse>;
-        }));
-    }
-
-    protected processDownload(response: HttpResponseBase): Observable<FileResponse> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200 || status === 206) {
-            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
-            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
-            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
-            if (fileName) {
-                fileName = decodeURIComponent(fileName);
-            } else {
-                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
-                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
-            }
-            return ObservableOf({ fileName: fileName, data: responseBlob as any, status: status, headers: Headers });
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result400: any = null;
-            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, ResponseText, Headers, result400);
-            }));
-        } else if (status === 401) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result401: any = null;
-            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, ResponseText, Headers, result401);
-            }));
-        } else if (status === 403) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result403: any = null;
-            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status === 404) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result404: any = null;
-            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("Not Found", status, ResponseText, Headers, result404);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -7284,754 +6536,6 @@ export class AdminPayPeriodClient implements IAdminPayPeriodClient {
     }
 }
 
-export interface IAdminReceiptTemplateClient {
-    /**
-     * @param searchTerm (optional) 
-     * @param countryId (optional) 
-     * @param languageId (optional) 
-     * @param isActive (optional) 
-     * @param sort (optional) 
-     * @param offset (optional) 
-     * @param limit (optional) 
-     * @return OK
-     */
-    getPaged(searchTerm?: string | undefined, countryId?: string | undefined, languageId?: string | undefined, isActive?: boolean | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfReceiptTemplateListItem>;
-    /**
-     * @return OK
-     */
-    details(receiptTemplateId: string): Observable<ReceiptTemplateDetailDto>;
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    create(body?: CreateReceiptTemplateCommand | undefined): Observable<CreateReceiptTemplateResponse>;
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    update(receiptTemplateId: string, body?: UpdateReceiptTemplateCommand | undefined): Observable<UpdateReceiptTemplateResponse>;
-    /**
-     * @return OK
-     */
-    delete(receiptTemplateId: string): Observable<DeleteReceiptTemplateResponse>;
-    /**
-     * @return OK
-     */
-    activate(receiptTemplateId: string): Observable<ActivateReceiptTemplateResponse>;
-    /**
-     * @return OK
-     */
-    deactivate(receiptTemplateId: string): Observable<DeactivateReceiptTemplateResponse>;
-    /**
-     * @return OK
-     */
-    download(receiptTemplateId: string): Observable<FileResponse>;
-}
-
-@Injectable({
-    providedIn: 'root'
-})
-export class AdminReceiptTemplateClient implements IAdminReceiptTemplateClient {
-    private http: HttpClient;
-    private baseUrl: string;
-    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
-
-    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(ADMINAPIBASEURL) baseUrl?: string) {
-        this.http = http;
-        this.baseUrl = baseUrl ?? "";
-    }
-
-    /**
-     * @param searchTerm (optional) 
-     * @param countryId (optional) 
-     * @param languageId (optional) 
-     * @param isActive (optional) 
-     * @param sort (optional) 
-     * @param offset (optional) 
-     * @param limit (optional) 
-     * @return OK
-     */
-    getPaged(searchTerm?: string | undefined, countryId?: string | undefined, languageId?: string | undefined, isActive?: boolean | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfReceiptTemplateListItem> {
-        let url = this.baseUrl + "/api/AdminReceiptTemplate/get-paged?";
-        if (searchTerm === null)
-            throw new globalThis.Error("The parameter 'searchTerm' cannot be null.");
-        else if (searchTerm !== undefined)
-            url += "Filter.SearchTerm=" + encodeURIComponent("" + searchTerm) + "&";
-        if (countryId === null)
-            throw new globalThis.Error("The parameter 'countryId' cannot be null.");
-        else if (countryId !== undefined)
-            url += "Filter.CountryId=" + encodeURIComponent("" + countryId) + "&";
-        if (languageId === null)
-            throw new globalThis.Error("The parameter 'languageId' cannot be null.");
-        else if (languageId !== undefined)
-            url += "Filter.LanguageId=" + encodeURIComponent("" + languageId) + "&";
-        if (isActive === null)
-            throw new globalThis.Error("The parameter 'isActive' cannot be null.");
-        else if (isActive !== undefined)
-            url += "Filter.IsActive=" + encodeURIComponent("" + isActive) + "&";
-        if (sort === null)
-            throw new globalThis.Error("The parameter 'sort' cannot be null.");
-        else if (sort !== undefined)
-            sort && sort.forEach((item, index) => {
-                for (const attr in item)
-        			if (item.hasOwnProperty(attr)) {
-        				url += "Sort[" + index + "]." + attr + "=" + encodeURIComponent("" + (item as any)[attr]) + "&";
-        			}
-            });
-        if (offset === null)
-            throw new globalThis.Error("The parameter 'offset' cannot be null.");
-        else if (offset !== undefined)
-            url += "Offset=" + encodeURIComponent("" + offset) + "&";
-        if (limit === null)
-            throw new globalThis.Error("The parameter 'limit' cannot be null.");
-        else if (limit !== undefined)
-            url += "Limit=" + encodeURIComponent("" + limit) + "&";
-        url = url.replace(/[?&]$/, "");
-
-        let options : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processGetPaged(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processGetPaged(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<PagedDataOfReceiptTemplateListItem>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<PagedDataOfReceiptTemplateListItem>;
-        }));
-    }
-
-    protected processGetPaged(response: HttpResponseBase): Observable<PagedDataOfReceiptTemplateListItem> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = PagedDataOfReceiptTemplateListItem.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result400: any = null;
-            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, ResponseText, Headers, result400);
-            }));
-        } else if (status === 401) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result401: any = null;
-            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, ResponseText, Headers, result401);
-            }));
-        } else if (status === 403) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result403: any = null;
-            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-
-    /**
-     * @return OK
-     */
-    details(receiptTemplateId: string): Observable<ReceiptTemplateDetailDto> {
-        let url = this.baseUrl + "/api/AdminReceiptTemplate/details/{receiptTemplateId}";
-        if (receiptTemplateId === undefined || receiptTemplateId === null)
-            throw new globalThis.Error("The parameter 'receiptTemplateId' must be defined.");
-        url = url.replace("{receiptTemplateId}", encodeURIComponent("" + receiptTemplateId));
-        url = url.replace(/[?&]$/, "");
-
-        let options : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processDetails(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processDetails(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<ReceiptTemplateDetailDto>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<ReceiptTemplateDetailDto>;
-        }));
-    }
-
-    protected processDetails(response: HttpResponseBase): Observable<ReceiptTemplateDetailDto> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = ReceiptTemplateDetailDto.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result400: any = null;
-            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, ResponseText, Headers, result400);
-            }));
-        } else if (status === 401) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result401: any = null;
-            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, ResponseText, Headers, result401);
-            }));
-        } else if (status === 403) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result403: any = null;
-            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status === 404) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result404: any = null;
-            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("Not Found", status, ResponseText, Headers, result404);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    create(body?: CreateReceiptTemplateCommand | undefined): Observable<CreateReceiptTemplateResponse> {
-        let url = this.baseUrl + "/api/AdminReceiptTemplate/create";
-        url = url.replace(/[?&]$/, "");
-
-        const content = JSON.stringify(body);
-
-        let options : any = {
-            body: content,
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processCreate(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processCreate(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<CreateReceiptTemplateResponse>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<CreateReceiptTemplateResponse>;
-        }));
-    }
-
-    protected processCreate(response: HttpResponseBase): Observable<CreateReceiptTemplateResponse> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = CreateReceiptTemplateResponse.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result400: any = null;
-            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, ResponseText, Headers, result400);
-            }));
-        } else if (status === 401) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result401: any = null;
-            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, ResponseText, Headers, result401);
-            }));
-        } else if (status === 403) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result403: any = null;
-            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    update(receiptTemplateId: string, body?: UpdateReceiptTemplateCommand | undefined): Observable<UpdateReceiptTemplateResponse> {
-        let url = this.baseUrl + "/api/AdminReceiptTemplate/update/{receiptTemplateId}";
-        if (receiptTemplateId === undefined || receiptTemplateId === null)
-            throw new globalThis.Error("The parameter 'receiptTemplateId' must be defined.");
-        url = url.replace("{receiptTemplateId}", encodeURIComponent("" + receiptTemplateId));
-        url = url.replace(/[?&]$/, "");
-
-        const content = JSON.stringify(body);
-
-        let options : any = {
-            body: content,
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("put", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processUpdate(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processUpdate(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<UpdateReceiptTemplateResponse>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<UpdateReceiptTemplateResponse>;
-        }));
-    }
-
-    protected processUpdate(response: HttpResponseBase): Observable<UpdateReceiptTemplateResponse> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = UpdateReceiptTemplateResponse.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result400: any = null;
-            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, ResponseText, Headers, result400);
-            }));
-        } else if (status === 401) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result401: any = null;
-            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, ResponseText, Headers, result401);
-            }));
-        } else if (status === 403) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result403: any = null;
-            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status === 404) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result404: any = null;
-            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("Not Found", status, ResponseText, Headers, result404);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-
-    /**
-     * @return OK
-     */
-    delete(receiptTemplateId: string): Observable<DeleteReceiptTemplateResponse> {
-        let url = this.baseUrl + "/api/AdminReceiptTemplate/delete/{receiptTemplateId}";
-        if (receiptTemplateId === undefined || receiptTemplateId === null)
-            throw new globalThis.Error("The parameter 'receiptTemplateId' must be defined.");
-        url = url.replace("{receiptTemplateId}", encodeURIComponent("" + receiptTemplateId));
-        url = url.replace(/[?&]$/, "");
-
-        let options : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("delete", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processDelete(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processDelete(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<DeleteReceiptTemplateResponse>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<DeleteReceiptTemplateResponse>;
-        }));
-    }
-
-    protected processDelete(response: HttpResponseBase): Observable<DeleteReceiptTemplateResponse> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = DeleteReceiptTemplateResponse.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result400: any = null;
-            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, ResponseText, Headers, result400);
-            }));
-        } else if (status === 401) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result401: any = null;
-            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, ResponseText, Headers, result401);
-            }));
-        } else if (status === 403) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result403: any = null;
-            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status === 404) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result404: any = null;
-            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("Not Found", status, ResponseText, Headers, result404);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-
-    /**
-     * @return OK
-     */
-    activate(receiptTemplateId: string): Observable<ActivateReceiptTemplateResponse> {
-        let url = this.baseUrl + "/api/AdminReceiptTemplate/{receiptTemplateId}/activate";
-        if (receiptTemplateId === undefined || receiptTemplateId === null)
-            throw new globalThis.Error("The parameter 'receiptTemplateId' must be defined.");
-        url = url.replace("{receiptTemplateId}", encodeURIComponent("" + receiptTemplateId));
-        url = url.replace(/[?&]$/, "");
-
-        let options : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processActivate(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processActivate(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<ActivateReceiptTemplateResponse>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<ActivateReceiptTemplateResponse>;
-        }));
-    }
-
-    protected processActivate(response: HttpResponseBase): Observable<ActivateReceiptTemplateResponse> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = ActivateReceiptTemplateResponse.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result400: any = null;
-            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, ResponseText, Headers, result400);
-            }));
-        } else if (status === 401) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result401: any = null;
-            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, ResponseText, Headers, result401);
-            }));
-        } else if (status === 403) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result403: any = null;
-            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status === 404) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result404: any = null;
-            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("Not Found", status, ResponseText, Headers, result404);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-
-    /**
-     * @return OK
-     */
-    deactivate(receiptTemplateId: string): Observable<DeactivateReceiptTemplateResponse> {
-        let url = this.baseUrl + "/api/AdminReceiptTemplate/{receiptTemplateId}/deactivate";
-        if (receiptTemplateId === undefined || receiptTemplateId === null)
-            throw new globalThis.Error("The parameter 'receiptTemplateId' must be defined.");
-        url = url.replace("{receiptTemplateId}", encodeURIComponent("" + receiptTemplateId));
-        url = url.replace(/[?&]$/, "");
-
-        let options : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processDeactivate(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processDeactivate(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<DeactivateReceiptTemplateResponse>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<DeactivateReceiptTemplateResponse>;
-        }));
-    }
-
-    protected processDeactivate(response: HttpResponseBase): Observable<DeactivateReceiptTemplateResponse> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = DeactivateReceiptTemplateResponse.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result400: any = null;
-            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, ResponseText, Headers, result400);
-            }));
-        } else if (status === 401) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result401: any = null;
-            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, ResponseText, Headers, result401);
-            }));
-        } else if (status === 403) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result403: any = null;
-            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status === 404) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result404: any = null;
-            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("Not Found", status, ResponseText, Headers, result404);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-
-    /**
-     * @return OK
-     */
-    download(receiptTemplateId: string): Observable<FileResponse> {
-        let url = this.baseUrl + "/api/AdminReceiptTemplate/{receiptTemplateId}/download";
-        if (receiptTemplateId === undefined || receiptTemplateId === null)
-            throw new globalThis.Error("The parameter 'receiptTemplateId' must be defined.");
-        url = url.replace("{receiptTemplateId}", encodeURIComponent("" + receiptTemplateId));
-        url = url.replace(/[?&]$/, "");
-
-        let options : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processDownload(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processDownload(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<FileResponse>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<FileResponse>;
-        }));
-    }
-
-    protected processDownload(response: HttpResponseBase): Observable<FileResponse> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200 || status === 206) {
-            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
-            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
-            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
-            if (fileName) {
-                fileName = decodeURIComponent(fileName);
-            } else {
-                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
-                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
-            }
-            return ObservableOf({ fileName: fileName, data: responseBlob as any, status: status, headers: Headers });
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result400: any = null;
-            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, ResponseText, Headers, result400);
-            }));
-        } else if (status === 401) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result401: any = null;
-            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, ResponseText, Headers, result401);
-            }));
-        } else if (status === 403) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result403: any = null;
-            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status === 404) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result404: any = null;
-            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("Not Found", status, ResponseText, Headers, result404);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-}
-
 export interface IAdminReportClient {
     /**
      * @param startDate (optional) 
@@ -9287,78 +7791,6 @@ export class ActivateAdminUserResponse implements IActivateAdminUserResponse {
 
 export interface IActivateAdminUserResponse {
     id: string | undefined;
-}
-
-export class ActivateInvoiceTemplateResponse implements IActivateInvoiceTemplateResponse {
-    success!: boolean;
-
-    constructor(data?: IActivateInvoiceTemplateResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.success = Data["success"];
-        }
-    }
-
-    static fromJS(data: any): ActivateInvoiceTemplateResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new ActivateInvoiceTemplateResponse();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["success"] = this.success;
-        return data;
-    }
-}
-
-export interface IActivateInvoiceTemplateResponse {
-    success: boolean;
-}
-
-export class ActivateReceiptTemplateResponse implements IActivateReceiptTemplateResponse {
-    success!: boolean;
-
-    constructor(data?: IActivateReceiptTemplateResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.success = Data["success"];
-        }
-    }
-
-    static fromJS(data: any): ActivateReceiptTemplateResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new ActivateReceiptTemplateResponse();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["success"] = this.success;
-        return data;
-    }
-}
-
-export interface IActivateReceiptTemplateResponse {
-    success: boolean;
 }
 
 export class AdminEmployeeDetail implements IAdminEmployeeDetail {
@@ -11464,102 +9896,6 @@ export interface ICreateFeatureFlagResponse {
     id: string | undefined;
 }
 
-export class CreateInvoiceTemplateCommand implements ICreateInvoiceTemplateCommand {
-    templateName!: string | undefined;
-    countryId!: string | undefined;
-    languageId!: string | undefined;
-    description!: string | undefined;
-    fileName!: string | undefined;
-    contentType!: string | undefined;
-    fileData!: string | undefined;
-
-    constructor(data?: ICreateInvoiceTemplateCommand) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.templateName = Data["templateName"];
-            this.countryId = Data["countryId"];
-            this.languageId = Data["languageId"];
-            this.description = Data["description"];
-            this.fileName = Data["fileName"];
-            this.contentType = Data["contentType"];
-            this.fileData = Data["fileData"];
-        }
-    }
-
-    static fromJS(data: any): CreateInvoiceTemplateCommand {
-        data = typeof data === 'object' ? data : {};
-        let result = new CreateInvoiceTemplateCommand();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["templateName"] = this.templateName;
-        data["countryId"] = this.countryId;
-        data["languageId"] = this.languageId;
-        data["description"] = this.description;
-        data["fileName"] = this.fileName;
-        data["contentType"] = this.contentType;
-        data["fileData"] = this.fileData;
-        return data;
-    }
-}
-
-export interface ICreateInvoiceTemplateCommand {
-    templateName: string | undefined;
-    countryId: string | undefined;
-    languageId: string | undefined;
-    description: string | undefined;
-    fileName: string | undefined;
-    contentType: string | undefined;
-    fileData: string | undefined;
-}
-
-export class CreateInvoiceTemplateResponse implements ICreateInvoiceTemplateResponse {
-    invoiceTemplateId!: string | undefined;
-
-    constructor(data?: ICreateInvoiceTemplateResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.invoiceTemplateId = Data["invoiceTemplateId"];
-        }
-    }
-
-    static fromJS(data: any): CreateInvoiceTemplateResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new CreateInvoiceTemplateResponse();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["invoiceTemplateId"] = this.invoiceTemplateId;
-        return data;
-    }
-}
-
-export interface ICreateInvoiceTemplateResponse {
-    invoiceTemplateId: string | undefined;
-}
-
 export class CreateLanguageCommand implements ICreateLanguageCommand {
     code!: string | undefined;
     name!: string | undefined;
@@ -11822,102 +10158,6 @@ export class CreatePayPeriodResponse implements ICreatePayPeriodResponse {
 
 export interface ICreatePayPeriodResponse {
     payPeriodId: string | undefined;
-}
-
-export class CreateReceiptTemplateCommand implements ICreateReceiptTemplateCommand {
-    templateName!: string | undefined;
-    countryId!: string | undefined;
-    languageId!: string | undefined;
-    description!: string | undefined;
-    fileName!: string | undefined;
-    contentType!: string | undefined;
-    fileData!: string | undefined;
-
-    constructor(data?: ICreateReceiptTemplateCommand) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.templateName = Data["templateName"];
-            this.countryId = Data["countryId"];
-            this.languageId = Data["languageId"];
-            this.description = Data["description"];
-            this.fileName = Data["fileName"];
-            this.contentType = Data["contentType"];
-            this.fileData = Data["fileData"];
-        }
-    }
-
-    static fromJS(data: any): CreateReceiptTemplateCommand {
-        data = typeof data === 'object' ? data : {};
-        let result = new CreateReceiptTemplateCommand();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["templateName"] = this.templateName;
-        data["countryId"] = this.countryId;
-        data["languageId"] = this.languageId;
-        data["description"] = this.description;
-        data["fileName"] = this.fileName;
-        data["contentType"] = this.contentType;
-        data["fileData"] = this.fileData;
-        return data;
-    }
-}
-
-export interface ICreateReceiptTemplateCommand {
-    templateName: string | undefined;
-    countryId: string | undefined;
-    languageId: string | undefined;
-    description: string | undefined;
-    fileName: string | undefined;
-    contentType: string | undefined;
-    fileData: string | undefined;
-}
-
-export class CreateReceiptTemplateResponse implements ICreateReceiptTemplateResponse {
-    receiptTemplateId!: string | undefined;
-
-    constructor(data?: ICreateReceiptTemplateResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.receiptTemplateId = Data["receiptTemplateId"];
-        }
-    }
-
-    static fromJS(data: any): CreateReceiptTemplateResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new CreateReceiptTemplateResponse();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["receiptTemplateId"] = this.receiptTemplateId;
-        return data;
-    }
-}
-
-export interface ICreateReceiptTemplateResponse {
-    receiptTemplateId: string | undefined;
 }
 
 export class CreateServiceCommand implements ICreateServiceCommand {
@@ -12256,78 +10496,6 @@ export interface IDeactivateAdminUserResponse {
     id: string | undefined;
 }
 
-export class DeactivateInvoiceTemplateResponse implements IDeactivateInvoiceTemplateResponse {
-    success!: boolean;
-
-    constructor(data?: IDeactivateInvoiceTemplateResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.success = Data["success"];
-        }
-    }
-
-    static fromJS(data: any): DeactivateInvoiceTemplateResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new DeactivateInvoiceTemplateResponse();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["success"] = this.success;
-        return data;
-    }
-}
-
-export interface IDeactivateInvoiceTemplateResponse {
-    success: boolean;
-}
-
-export class DeactivateReceiptTemplateResponse implements IDeactivateReceiptTemplateResponse {
-    success!: boolean;
-
-    constructor(data?: IDeactivateReceiptTemplateResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.success = Data["success"];
-        }
-    }
-
-    static fromJS(data: any): DeactivateReceiptTemplateResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new DeactivateReceiptTemplateResponse();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["success"] = this.success;
-        return data;
-    }
-}
-
-export interface IDeactivateReceiptTemplateResponse {
-    success: boolean;
-}
-
 export class DeleteCompanyInfoResponse implements IDeleteCompanyInfoResponse {
     success!: boolean;
 
@@ -12472,42 +10640,6 @@ export interface IDeleteEmailTemplateTranslationResponse {
     emailTemplateId: string | undefined;
 }
 
-export class DeleteInvoiceTemplateResponse implements IDeleteInvoiceTemplateResponse {
-    success!: boolean;
-
-    constructor(data?: IDeleteInvoiceTemplateResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.success = Data["success"];
-        }
-    }
-
-    static fromJS(data: any): DeleteInvoiceTemplateResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new DeleteInvoiceTemplateResponse();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["success"] = this.success;
-        return data;
-    }
-}
-
-export interface IDeleteInvoiceTemplateResponse {
-    success: boolean;
-}
-
 export class DeleteLanguageResponse implements IDeleteLanguageResponse {
     success!: boolean;
 
@@ -12614,42 +10746,6 @@ export class DeletePayPeriodResponse implements IDeletePayPeriodResponse {
 
 export interface IDeletePayPeriodResponse {
     payPeriodId: string | undefined;
-}
-
-export class DeleteReceiptTemplateResponse implements IDeleteReceiptTemplateResponse {
-    success!: boolean;
-
-    constructor(data?: IDeleteReceiptTemplateResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.success = Data["success"];
-        }
-    }
-
-    static fromJS(data: any): DeleteReceiptTemplateResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new DeleteReceiptTemplateResponse();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["success"] = this.success;
-        return data;
-    }
-}
-
-export interface IDeleteReceiptTemplateResponse {
-    success: boolean;
 }
 
 export class DeleteServiceResponse implements IDeleteServiceResponse {
@@ -14483,170 +12579,6 @@ export interface IGetOrderPhotosResponse {
     afterPhotoCount: number;
 }
 
-export class InvoiceTemplateDetailDto implements IInvoiceTemplateDetailDto {
-    id!: string | undefined;
-    templateName!: string | undefined;
-    countryId!: string | undefined;
-    countryName!: string | undefined;
-    languageId!: string | undefined;
-    languageCode!: string | undefined;
-    version!: number;
-    blobUrl!: string | undefined;
-    isActive!: boolean;
-    activatedAt!: Date | undefined;
-    description!: string | undefined;
-    createdOn!: Date;
-    createdBy!: string | undefined;
-    updatedOn!: Date | undefined;
-    updatedBy!: string | undefined;
-
-    constructor(data?: IInvoiceTemplateDetailDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.id = Data["id"];
-            this.templateName = Data["templateName"];
-            this.countryId = Data["countryId"];
-            this.countryName = Data["countryName"];
-            this.languageId = Data["languageId"];
-            this.languageCode = Data["languageCode"];
-            this.version = Data["version"];
-            this.blobUrl = Data["blobUrl"];
-            this.isActive = Data["isActive"];
-            this.activatedAt = Data["activatedAt"] ? new Date(Data["activatedAt"].toString()) : undefined as any;
-            this.description = Data["description"];
-            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
-            this.createdBy = Data["createdBy"];
-            this.updatedOn = Data["updatedOn"] ? new Date(Data["updatedOn"].toString()) : undefined as any;
-            this.updatedBy = Data["updatedBy"];
-        }
-    }
-
-    static fromJS(data: any): InvoiceTemplateDetailDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new InvoiceTemplateDetailDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["id"] = this.id;
-        data["templateName"] = this.templateName;
-        data["countryId"] = this.countryId;
-        data["countryName"] = this.countryName;
-        data["languageId"] = this.languageId;
-        data["languageCode"] = this.languageCode;
-        data["version"] = this.version;
-        data["blobUrl"] = this.blobUrl;
-        data["isActive"] = this.isActive;
-        data["activatedAt"] = this.activatedAt ? this.activatedAt.toISOString() : undefined as any;
-        data["description"] = this.description;
-        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
-        data["createdBy"] = this.createdBy;
-        data["updatedOn"] = this.updatedOn ? this.updatedOn.toISOString() : undefined as any;
-        data["updatedBy"] = this.updatedBy;
-        return data;
-    }
-}
-
-export interface IInvoiceTemplateDetailDto {
-    id: string | undefined;
-    templateName: string | undefined;
-    countryId: string | undefined;
-    countryName: string | undefined;
-    languageId: string | undefined;
-    languageCode: string | undefined;
-    version: number;
-    blobUrl: string | undefined;
-    isActive: boolean;
-    activatedAt: Date | undefined;
-    description: string | undefined;
-    createdOn: Date;
-    createdBy: string | undefined;
-    updatedOn: Date | undefined;
-    updatedBy: string | undefined;
-}
-
-export class InvoiceTemplateListItem implements IInvoiceTemplateListItem {
-    id!: string | undefined;
-    templateName!: string | undefined;
-    countryId!: string | undefined;
-    countryName!: string | undefined;
-    languageId!: string | undefined;
-    languageCode!: string | undefined;
-    version!: number;
-    isActive!: boolean;
-    activatedAt!: Date | undefined;
-    createdOn!: Date;
-
-    constructor(data?: IInvoiceTemplateListItem) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.id = Data["id"];
-            this.templateName = Data["templateName"];
-            this.countryId = Data["countryId"];
-            this.countryName = Data["countryName"];
-            this.languageId = Data["languageId"];
-            this.languageCode = Data["languageCode"];
-            this.version = Data["version"];
-            this.isActive = Data["isActive"];
-            this.activatedAt = Data["activatedAt"] ? new Date(Data["activatedAt"].toString()) : undefined as any;
-            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
-        }
-    }
-
-    static fromJS(data: any): InvoiceTemplateListItem {
-        data = typeof data === 'object' ? data : {};
-        let result = new InvoiceTemplateListItem();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["id"] = this.id;
-        data["templateName"] = this.templateName;
-        data["countryId"] = this.countryId;
-        data["countryName"] = this.countryName;
-        data["languageId"] = this.languageId;
-        data["languageCode"] = this.languageCode;
-        data["version"] = this.version;
-        data["isActive"] = this.isActive;
-        data["activatedAt"] = this.activatedAt ? this.activatedAt.toISOString() : undefined as any;
-        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
-        return data;
-    }
-}
-
-export interface IInvoiceTemplateListItem {
-    id: string | undefined;
-    templateName: string | undefined;
-    countryId: string | undefined;
-    countryName: string | undefined;
-    languageId: string | undefined;
-    languageCode: string | undefined;
-    version: number;
-    isActive: boolean;
-    activatedAt: Date | undefined;
-    createdOn: Date;
-}
-
 export class JwtTokenResponse implements IJwtTokenResponse {
     token!: string | undefined;
     isEmailConfirmed!: boolean;
@@ -15228,6 +13160,7 @@ export class OrderItem implements IOrderItem {
     receiptNumber!: string | undefined;
     orderNotes!: OrderNoteDto[] | undefined;
     orderIssues!: OrderIssueDto[] | undefined;
+    review!: OrderReviewDto;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -15302,6 +13235,7 @@ export class OrderItem implements IOrderItem {
                 for (let item of Data["orderIssues"])
                     this.orderIssues!.push(OrderIssueDto.fromJS(item));
             }
+            this.review = Data["review"] ? OrderReviewDto.fromJS(Data["review"]) : undefined as any;
         }
     }
 
@@ -15376,6 +13310,7 @@ export class OrderItem implements IOrderItem {
             for (let item of this.orderIssues)
                 data["orderIssues"].push(item ? item.toJSON() : undefined as any);
         }
+        data["review"] = this.review ? this.review.toJSON() : undefined as any;
         return data;
     }
 }
@@ -15413,6 +13348,7 @@ export interface IOrderItem {
     receiptNumber: string | undefined;
     orderNotes: OrderNoteDto[] | undefined;
     orderIssues: OrderIssueDto[] | undefined;
+    review: OrderReviewDto;
 }
 
 export class OrderListItem implements IOrderListItem {
@@ -15639,6 +13575,66 @@ export interface IOrderNoteDto {
     createdOn: Date;
 }
 
+export class OrderReviewDto implements IOrderReviewDto {
+    id!: string | undefined;
+    orderId!: string | undefined;
+    userId!: string | undefined;
+    rating!: number;
+    comment!: string | undefined;
+    createdOn!: Date;
+    updatedOn!: Date | undefined;
+
+    constructor(data?: IOrderReviewDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.orderId = Data["orderId"];
+            this.userId = Data["userId"];
+            this.rating = Data["rating"];
+            this.comment = Data["comment"];
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+            this.updatedOn = Data["updatedOn"] ? new Date(Data["updatedOn"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): OrderReviewDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new OrderReviewDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["orderId"] = this.orderId;
+        data["userId"] = this.userId;
+        data["rating"] = this.rating;
+        data["comment"] = this.comment;
+        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        data["updatedOn"] = this.updatedOn ? this.updatedOn.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IOrderReviewDto {
+    id: string | undefined;
+    orderId: string | undefined;
+    userId: string | undefined;
+    rating: number;
+    comment: string | undefined;
+    createdOn: Date;
+    updatedOn: Date | undefined;
+}
+
 export enum OrderStatus {
     Pending = 1,
     Confirmed = 2,
@@ -15761,6 +13757,7 @@ export class PackageListItem implements IPackageListItem {
     description!: string | undefined;
     price!: number;
     translations!: { [key: string]: Translation; } | undefined;
+    includedServices!: PackageServiceSummary[] | undefined;
 
     constructor(data?: IPackageListItem) {
         if (data) {
@@ -15783,6 +13780,11 @@ export class PackageListItem implements IPackageListItem {
                     if (Data["translations"].hasOwnProperty(key))
                         (this.translations as any)![key] = Data["translations"][key] ? Translation.fromJS(Data["translations"][key]) : new Translation();
                 }
+            }
+            if (Array.isArray(Data["includedServices"])) {
+                this.includedServices = [] as any;
+                for (let item of Data["includedServices"])
+                    this.includedServices!.push(PackageServiceSummary.fromJS(item));
             }
         }
     }
@@ -15807,6 +13809,11 @@ export class PackageListItem implements IPackageListItem {
                     (data["translations"] as any)[key] = this.translations[key] ? this.translations[key].toJSON() : undefined as any;
             }
         }
+        if (Array.isArray(this.includedServices)) {
+            data["includedServices"] = [];
+            for (let item of this.includedServices)
+                data["includedServices"].push(item ? item.toJSON() : undefined as any);
+        }
         return data;
     }
 }
@@ -15817,6 +13824,7 @@ export interface IPackageListItem {
     description: string | undefined;
     price: number;
     translations: { [key: string]: Translation; } | undefined;
+    includedServices: PackageServiceSummary[] | undefined;
 }
 
 export class PackageServiceDto implements IPackageServiceDto {
@@ -15861,6 +13869,58 @@ export interface IPackageServiceDto {
     id: string | undefined;
     name: string | undefined;
     description: string | undefined;
+}
+
+export class PackageServiceSummary implements IPackageServiceSummary {
+    name!: string | undefined;
+    translations!: { [key: string]: Translation; } | undefined;
+
+    constructor(data?: IPackageServiceSummary) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.name = Data["name"];
+            if (Data["translations"]) {
+                this.translations = {} as any;
+                for (let key in Data["translations"]) {
+                    if (Data["translations"].hasOwnProperty(key))
+                        (this.translations as any)![key] = Data["translations"][key] ? Translation.fromJS(Data["translations"][key]) : new Translation();
+                }
+            }
+        }
+    }
+
+    static fromJS(data: any): PackageServiceSummary {
+        data = typeof data === 'object' ? data : {};
+        let result = new PackageServiceSummary();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["name"] = this.name;
+        if (this.translations) {
+            data["translations"] = {};
+            for (let key in this.translations) {
+                if (this.translations.hasOwnProperty(key))
+                    (data["translations"] as any)[key] = this.translations[key] ? this.translations[key].toJSON() : undefined as any;
+            }
+        }
+        return data;
+    }
+}
+
+export interface IPackageServiceSummary {
+    name: string | undefined;
+    translations: { [key: string]: Translation; } | undefined;
 }
 
 export class PagedDataOfAdminEmployeeListItem implements IPagedDataOfAdminEmployeeListItem {
@@ -16199,62 +14259,6 @@ export interface IPagedDataOfEmployeeInvoiceDto {
     data: EmployeeInvoiceDto[] | undefined;
 }
 
-export class PagedDataOfInvoiceTemplateListItem implements IPagedDataOfInvoiceTemplateListItem {
-    pageNumber!: number;
-    pageSize!: number;
-    total!: number;
-    data!: InvoiceTemplateListItem[] | undefined;
-
-    constructor(data?: IPagedDataOfInvoiceTemplateListItem) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.pageNumber = Data["pageNumber"];
-            this.pageSize = Data["pageSize"];
-            this.total = Data["total"];
-            if (Array.isArray(Data["data"])) {
-                this.data = [] as any;
-                for (let item of Data["data"])
-                    this.data!.push(InvoiceTemplateListItem.fromJS(item));
-            }
-        }
-    }
-
-    static fromJS(data: any): PagedDataOfInvoiceTemplateListItem {
-        data = typeof data === 'object' ? data : {};
-        let result = new PagedDataOfInvoiceTemplateListItem();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["pageNumber"] = this.pageNumber;
-        data["pageSize"] = this.pageSize;
-        data["total"] = this.total;
-        if (Array.isArray(this.data)) {
-            data["data"] = [];
-            for (let item of this.data)
-                data["data"].push(item ? item.toJSON() : undefined as any);
-        }
-        return data;
-    }
-}
-
-export interface IPagedDataOfInvoiceTemplateListItem {
-    pageNumber: number;
-    pageSize: number;
-    total: number;
-    data: InvoiceTemplateListItem[] | undefined;
-}
-
 export class PagedDataOfOrderListItem implements IPagedDataOfOrderListItem {
     pageNumber!: number;
     pageSize!: number;
@@ -16421,62 +14425,6 @@ export interface IPagedDataOfPayPeriodDto {
     pageSize: number;
     total: number;
     data: PayPeriodDto[] | undefined;
-}
-
-export class PagedDataOfReceiptTemplateListItem implements IPagedDataOfReceiptTemplateListItem {
-    pageNumber!: number;
-    pageSize!: number;
-    total!: number;
-    data!: ReceiptTemplateListItem[] | undefined;
-
-    constructor(data?: IPagedDataOfReceiptTemplateListItem) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.pageNumber = Data["pageNumber"];
-            this.pageSize = Data["pageSize"];
-            this.total = Data["total"];
-            if (Array.isArray(Data["data"])) {
-                this.data = [] as any;
-                for (let item of Data["data"])
-                    this.data!.push(ReceiptTemplateListItem.fromJS(item));
-            }
-        }
-    }
-
-    static fromJS(data: any): PagedDataOfReceiptTemplateListItem {
-        data = typeof data === 'object' ? data : {};
-        let result = new PagedDataOfReceiptTemplateListItem();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["pageNumber"] = this.pageNumber;
-        data["pageSize"] = this.pageSize;
-        data["total"] = this.total;
-        if (Array.isArray(this.data)) {
-            data["data"] = [];
-            for (let item of this.data)
-                data["data"].push(item ? item.toJSON() : undefined as any);
-        }
-        return data;
-    }
-}
-
-export interface IPagedDataOfReceiptTemplateListItem {
-    pageNumber: number;
-    pageSize: number;
-    total: number;
-    data: ReceiptTemplateListItem[] | undefined;
 }
 
 export class PagedDataOfServiceListItem implements IPagedDataOfServiceListItem {
@@ -16845,170 +14793,6 @@ export interface IProblemDetails {
     instance: string | undefined;
 
     [key: string]: any;
-}
-
-export class ReceiptTemplateDetailDto implements IReceiptTemplateDetailDto {
-    id!: string | undefined;
-    templateName!: string | undefined;
-    countryId!: string | undefined;
-    countryName!: string | undefined;
-    languageId!: string | undefined;
-    languageCode!: string | undefined;
-    version!: number;
-    blobUrl!: string | undefined;
-    isActive!: boolean;
-    activatedAt!: Date | undefined;
-    description!: string | undefined;
-    createdOn!: Date;
-    createdBy!: string | undefined;
-    updatedOn!: Date | undefined;
-    updatedBy!: string | undefined;
-
-    constructor(data?: IReceiptTemplateDetailDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.id = Data["id"];
-            this.templateName = Data["templateName"];
-            this.countryId = Data["countryId"];
-            this.countryName = Data["countryName"];
-            this.languageId = Data["languageId"];
-            this.languageCode = Data["languageCode"];
-            this.version = Data["version"];
-            this.blobUrl = Data["blobUrl"];
-            this.isActive = Data["isActive"];
-            this.activatedAt = Data["activatedAt"] ? new Date(Data["activatedAt"].toString()) : undefined as any;
-            this.description = Data["description"];
-            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
-            this.createdBy = Data["createdBy"];
-            this.updatedOn = Data["updatedOn"] ? new Date(Data["updatedOn"].toString()) : undefined as any;
-            this.updatedBy = Data["updatedBy"];
-        }
-    }
-
-    static fromJS(data: any): ReceiptTemplateDetailDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new ReceiptTemplateDetailDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["id"] = this.id;
-        data["templateName"] = this.templateName;
-        data["countryId"] = this.countryId;
-        data["countryName"] = this.countryName;
-        data["languageId"] = this.languageId;
-        data["languageCode"] = this.languageCode;
-        data["version"] = this.version;
-        data["blobUrl"] = this.blobUrl;
-        data["isActive"] = this.isActive;
-        data["activatedAt"] = this.activatedAt ? this.activatedAt.toISOString() : undefined as any;
-        data["description"] = this.description;
-        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
-        data["createdBy"] = this.createdBy;
-        data["updatedOn"] = this.updatedOn ? this.updatedOn.toISOString() : undefined as any;
-        data["updatedBy"] = this.updatedBy;
-        return data;
-    }
-}
-
-export interface IReceiptTemplateDetailDto {
-    id: string | undefined;
-    templateName: string | undefined;
-    countryId: string | undefined;
-    countryName: string | undefined;
-    languageId: string | undefined;
-    languageCode: string | undefined;
-    version: number;
-    blobUrl: string | undefined;
-    isActive: boolean;
-    activatedAt: Date | undefined;
-    description: string | undefined;
-    createdOn: Date;
-    createdBy: string | undefined;
-    updatedOn: Date | undefined;
-    updatedBy: string | undefined;
-}
-
-export class ReceiptTemplateListItem implements IReceiptTemplateListItem {
-    id!: string | undefined;
-    templateName!: string | undefined;
-    countryId!: string | undefined;
-    countryName!: string | undefined;
-    languageId!: string | undefined;
-    languageCode!: string | undefined;
-    version!: number;
-    isActive!: boolean;
-    activatedAt!: Date | undefined;
-    createdOn!: Date;
-
-    constructor(data?: IReceiptTemplateListItem) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.id = Data["id"];
-            this.templateName = Data["templateName"];
-            this.countryId = Data["countryId"];
-            this.countryName = Data["countryName"];
-            this.languageId = Data["languageId"];
-            this.languageCode = Data["languageCode"];
-            this.version = Data["version"];
-            this.isActive = Data["isActive"];
-            this.activatedAt = Data["activatedAt"] ? new Date(Data["activatedAt"].toString()) : undefined as any;
-            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
-        }
-    }
-
-    static fromJS(data: any): ReceiptTemplateListItem {
-        data = typeof data === 'object' ? data : {};
-        let result = new ReceiptTemplateListItem();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["id"] = this.id;
-        data["templateName"] = this.templateName;
-        data["countryId"] = this.countryId;
-        data["countryName"] = this.countryName;
-        data["languageId"] = this.languageId;
-        data["languageCode"] = this.languageCode;
-        data["version"] = this.version;
-        data["isActive"] = this.isActive;
-        data["activatedAt"] = this.activatedAt ? this.activatedAt.toISOString() : undefined as any;
-        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
-        return data;
-    }
-}
-
-export interface IReceiptTemplateListItem {
-    id: string | undefined;
-    templateName: string | undefined;
-    countryId: string | undefined;
-    countryName: string | undefined;
-    languageId: string | undefined;
-    languageCode: string | undefined;
-    version: number;
-    isActive: boolean;
-    activatedAt: Date | undefined;
-    createdOn: Date;
 }
 
 export class RegenerateInvoicePdfCommand implements IRegenerateInvoicePdfCommand {
@@ -18460,98 +16244,6 @@ export interface IUpdateEmailTemplateResponse {
     emailTemplateId: string | undefined;
 }
 
-export class UpdateInvoiceTemplateCommand implements IUpdateInvoiceTemplateCommand {
-    invoiceTemplateId!: string | undefined;
-    templateName!: string | undefined;
-    description!: string | undefined;
-    fileName!: string | undefined;
-    contentType!: string | undefined;
-    fileData!: string | undefined;
-
-    constructor(data?: IUpdateInvoiceTemplateCommand) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.invoiceTemplateId = Data["invoiceTemplateId"];
-            this.templateName = Data["templateName"];
-            this.description = Data["description"];
-            this.fileName = Data["fileName"];
-            this.contentType = Data["contentType"];
-            this.fileData = Data["fileData"];
-        }
-    }
-
-    static fromJS(data: any): UpdateInvoiceTemplateCommand {
-        data = typeof data === 'object' ? data : {};
-        let result = new UpdateInvoiceTemplateCommand();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["invoiceTemplateId"] = this.invoiceTemplateId;
-        data["templateName"] = this.templateName;
-        data["description"] = this.description;
-        data["fileName"] = this.fileName;
-        data["contentType"] = this.contentType;
-        data["fileData"] = this.fileData;
-        return data;
-    }
-}
-
-export interface IUpdateInvoiceTemplateCommand {
-    invoiceTemplateId: string | undefined;
-    templateName: string | undefined;
-    description: string | undefined;
-    fileName: string | undefined;
-    contentType: string | undefined;
-    fileData: string | undefined;
-}
-
-export class UpdateInvoiceTemplateResponse implements IUpdateInvoiceTemplateResponse {
-    invoiceTemplateId!: string | undefined;
-
-    constructor(data?: IUpdateInvoiceTemplateResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.invoiceTemplateId = Data["invoiceTemplateId"];
-        }
-    }
-
-    static fromJS(data: any): UpdateInvoiceTemplateResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new UpdateInvoiceTemplateResponse();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["invoiceTemplateId"] = this.invoiceTemplateId;
-        return data;
-    }
-}
-
-export interface IUpdateInvoiceTemplateResponse {
-    invoiceTemplateId: string | undefined;
-}
-
 export class UpdateLanguageCommand implements IUpdateLanguageCommand {
     languageId!: string | undefined;
     name!: string | undefined;
@@ -18822,98 +16514,6 @@ export class UpdatePayPeriodResponse implements IUpdatePayPeriodResponse {
 
 export interface IUpdatePayPeriodResponse {
     payPeriodId: string | undefined;
-}
-
-export class UpdateReceiptTemplateCommand implements IUpdateReceiptTemplateCommand {
-    receiptTemplateId!: string | undefined;
-    templateName!: string | undefined;
-    description!: string | undefined;
-    fileName!: string | undefined;
-    contentType!: string | undefined;
-    fileData!: string | undefined;
-
-    constructor(data?: IUpdateReceiptTemplateCommand) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.receiptTemplateId = Data["receiptTemplateId"];
-            this.templateName = Data["templateName"];
-            this.description = Data["description"];
-            this.fileName = Data["fileName"];
-            this.contentType = Data["contentType"];
-            this.fileData = Data["fileData"];
-        }
-    }
-
-    static fromJS(data: any): UpdateReceiptTemplateCommand {
-        data = typeof data === 'object' ? data : {};
-        let result = new UpdateReceiptTemplateCommand();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["receiptTemplateId"] = this.receiptTemplateId;
-        data["templateName"] = this.templateName;
-        data["description"] = this.description;
-        data["fileName"] = this.fileName;
-        data["contentType"] = this.contentType;
-        data["fileData"] = this.fileData;
-        return data;
-    }
-}
-
-export interface IUpdateReceiptTemplateCommand {
-    receiptTemplateId: string | undefined;
-    templateName: string | undefined;
-    description: string | undefined;
-    fileName: string | undefined;
-    contentType: string | undefined;
-    fileData: string | undefined;
-}
-
-export class UpdateReceiptTemplateResponse implements IUpdateReceiptTemplateResponse {
-    receiptTemplateId!: string | undefined;
-
-    constructor(data?: IUpdateReceiptTemplateResponse) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.receiptTemplateId = Data["receiptTemplateId"];
-        }
-    }
-
-    static fromJS(data: any): UpdateReceiptTemplateResponse {
-        data = typeof data === 'object' ? data : {};
-        let result = new UpdateReceiptTemplateResponse();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["receiptTemplateId"] = this.receiptTemplateId;
-        return data;
-    }
-}
-
-export interface IUpdateReceiptTemplateResponse {
-    receiptTemplateId: string | undefined;
 }
 
 export class UpdateServiceCommand implements IUpdateServiceCommand {

@@ -45,7 +45,7 @@ All 4 APIs are orchestrated by .NET Aspire 13.1.1 (`Cleansia.AppHost`) and share
 
 ### Background Jobs — Azure Functions (`Cleansia.Functions`)
 
-Deployed as a **Docker container** (with Chromium pre-installed for PDF generation via PuppeteerSharp).
+Deployed as a **Docker container** with native QuestPDF for PDF generation (no browser dependency).
 
 | Function                  | Trigger                        | Purpose                                          |
 | ------------------------- | ------------------------------ | ------------------------------------------------ |
@@ -55,9 +55,9 @@ Deployed as a **Docker container** (with Chromium pre-installed for PDF generati
 | `GenerateReceipt`         | Queue — `generate-receipt`     | Generates receipt PDF + sends email to customer  |
 | `GenerateInvoice`         | Queue — `generate-invoice`     | Generates invoice PDF for employee (future)      |
 
-APIs enqueue messages to Azure Storage Queues instead of generating PDFs synchronously. The Functions app picks up messages, generates PDFs with Chromium, uploads to blob storage, and sends emails via SendGrid.
+APIs enqueue messages to Azure Storage Queues instead of generating PDFs synchronously. The Functions app picks up messages, generates PDFs using QuestPDF native layout builders, uploads to blob storage, and sends emails via SendGrid.
 
-> **Why Docker?** PuppeteerSharp requires Chromium system libraries (`libnspr4.so`, etc.) that are not available on Azure App Service Linux. The Functions Dockerfile installs Chromium and sets `PUPPETEER_EXECUTABLE_PATH=/usr/local/bin/chromium-stable` (symlinked in Dockerfile).
+> **PDF Generation**: Uses QuestPDF fluent API with a country-aware layout builder pattern (`IReceiptLayoutBuilder`, `IInvoiceLayoutBuilder`). No browser/Chromium dependency. HTML templates in blob storage are no longer used for PDF — only for email body rendering via Handlebars. The `InvoiceTemplates` and `ReceiptTemplates` DB tables have been removed.
 
 ### Frontend — 3 Angular 19 Apps (Nx monorepo)
 
@@ -219,7 +219,7 @@ In App Service Configuration, reference Key Vault secrets using:
 4. appsettings.json                    → Base configuration
 ```
 
-### Secrets Inventory
+### Secrets Inventory (Key Vault)
 
 | Secret                        | Key Vault Key                                          | Used By              |
 | ----------------------------- | ------------------------------------------------------ | -------------------- |
@@ -231,7 +231,53 @@ In App Service Configuration, reference Key Vault secrets using:
 | SendGrid API key              | `SendGrid--ApiKey`                                     | All 4 APIs, Functions|
 | Sentry DSN                    | `Sentry--Dsn`                                          | All 4 APIs           |
 | Azure Blob Storage connection | `ConnectionStrings--BlobContainerConfigurationConnectionString` | All 4 APIs, Functions|
-| Azure Queue Storage conn str  | App Setting (not secret)                               | All 4 APIs, Functions|
+
+### Azure Functions App Settings
+
+The Functions app (`func-cleansia-{env}`) requires these app settings. Secrets use Key Vault references; non-secrets are plain values.
+
+| Setting                                                | Value / Source                              | Type          |
+| ------------------------------------------------------ | ------------------------------------------- | ------------- |
+| `AzureWebJobsStorage`                                  | Storage account connection string           | Secret (KV)   |
+| `FUNCTIONS_WORKER_RUNTIME`                              | `dotnet-isolated`                           | Plain         |
+| `BlobContainerConfiguration__AccountUrl`                | `https://stcleansia{env}.blob.core.windows.net/` | Plain     |
+| `BlobContainerConfiguration__ConnectionStringName`      | `BlobContainerConfigurationConnectionString` | Plain        |
+| `ConnectionStrings__ConnectionString`                   | KV ref: `ConnectionStrings--ConnectionString` | Secret (KV) |
+| `ConnectionStrings__QueueStorageConnectionString`       | Storage account connection string           | Secret (KV)   |
+| `ConnectionStrings__BlobContainerConfigurationConnectionString` | KV ref: `ConnectionStrings--BlobContainerConfigurationConnectionString` | Secret (KV) |
+| `JwtSettings__Secret`                                   | KV ref: `JwtSettings--Secret`               | Secret (KV)   |
+| `SendGrid__ApiKey`                                      | KV ref: `SendGrid--ApiKey`                  | Secret (KV)   |
+| `SendGrid__OrderReceiptTemplateId`                      | `d-2e4f0bcc8af54b3d88c471d7e0cd507a`        | Plain         |
+| `SendGrid__EmailConfirmationTemplateId`                 | `d-eb7daac9cbe94f01beb2ee1bb0ec5c29`        | Plain         |
+| `SendGrid__PeriodClosedTemplateId`                      | `d-75a0f9cfdcc44eabb617de12e28d784d`        | Plain         |
+| `SendGrid__PeriodEndReminderTemplateId`                 | `d-d8428c5ffff14355a59d0a35023445da`        | Plain         |
+| `SendGrid__ResetPasswordTemplateId`                     | `d-c475f44d635f40569aa8b5171dc63270`        | Plain         |
+| `SendGrid__AddressFrom`                                 | `it@cleansia.cz`                            | Plain         |
+| `SendGrid__OrderStatusUrl`                              | `https://{domain}/orders`                   | Plain         |
+| `APPLICATIONINSIGHTS_CONNECTION_STRING`                  | Application Insights connection string      | Plain         |
+
+> **Note**: `PUPPETEER_EXECUTABLE_PATH` is no longer needed — PDF generation uses QuestPDF natively without Chromium.
+
+### Blob Storage Containers
+
+| Container            | Purpose                              | Used By       |
+| -------------------- | ------------------------------------ | ------------- |
+| `generated-receipts` | Stores generated receipt PDFs        | Functions     |
+| `generated-invoices` | Stores generated invoice PDFs        | Functions     |
+| `user-files`         | User-uploaded files                  | APIs          |
+| `employee-documents` | Employee document uploads            | APIs          |
+| `order-photos`       | Order completion photos              | APIs          |
+
+> **Removed containers**: `receipt-templates` and `invoice-templates` — no longer needed since PDF generation uses native QuestPDF layout builders instead of HTML templates.
+
+### Storage Queues
+
+| Queue                     | Purpose                              |
+| ------------------------- | ------------------------------------ |
+| `generate-receipt`        | Receipt PDF generation messages      |
+| `generate-receipt-poison` | Failed receipt messages (after 5 retries) |
+| `generate-invoice`        | Invoice PDF generation messages      |
+| `generate-invoice-poison` | Failed invoice messages              |
 
 ---
 

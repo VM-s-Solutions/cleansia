@@ -3056,6 +3056,13 @@ export class EmployeePayrollClient implements IEmployeePayrollClient {
             result200 = EmployeeInvoiceDetailDto.fromJS(resultData200);
             return ObservableOf(result200);
             }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
         } else if (status === 401) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result401: any = null;
@@ -3069,13 +3076,6 @@ export class EmployeePayrollClient implements IEmployeePayrollClient {
             let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result403 = ProblemDetails.fromJS(resultData403);
             return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status === 404) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result404: any = null;
-            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("Not Found", status, ResponseText, Headers, result404);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -3756,6 +3756,13 @@ export class EmployeePayrollClient implements IEmployeePayrollClient {
                 fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
             }
             return ObservableOf({ fileName: fileName, data: responseBlob as any, status: status, headers: Headers });
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
         } else if (status === 401) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result401: any = null;
@@ -3769,13 +3776,6 @@ export class EmployeePayrollClient implements IEmployeePayrollClient {
             let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result403 = ProblemDetails.fromJS(resultData403);
             return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status === 404) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result404: any = null;
-            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("Not Found", status, ResponseText, Headers, result404);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -4437,11 +4437,6 @@ export interface IOrderClient {
      * @return OK
      */
     reportIssue(body?: ReportOrderIssueCommand | undefined): Observable<ReportOrderIssueResponse>;
-    /**
-     * @param body (optional)
-     * @return OK
-     */
-    submitReview(body?: SubmitOrderReviewCommand | undefined): Observable<OrderReviewDto>;
 }
 
 @Injectable({
@@ -5544,69 +5539,6 @@ export class OrderClient implements IOrderClient {
             let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result403 = ProblemDetails.fromJS(resultData403);
             return throwException("Forbidden", status, ResponseText, Headers, result403);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
-    }
-
-    /**
-     * @param body (optional)
-     * @return OK
-     */
-    submitReview(body?: SubmitOrderReviewCommand | undefined): Observable<OrderReviewDto> {
-        let url = this.baseUrl + "/api/Order/SubmitReview";
-        url = url.replace(/[?&]$/, "");
-
-        const content = JSON.stringify(body);
-
-        let options : any = {
-            body: content,
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processSubmitReview(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processSubmitReview(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<OrderReviewDto>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<OrderReviewDto>;
-        }));
-    }
-
-    protected processSubmitReview(response: HttpResponseBase): Observable<OrderReviewDto> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = OrderReviewDto.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result400: any = null;
-            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -8636,9 +8568,9 @@ export interface ICountryListItem {
 
 export class CreateDisputeCommand implements ICreateDisputeCommand {
     orderId!: string | undefined;
-    userId!: string | undefined;
     reason!: DisputeReason;
     description!: string | undefined;
+    userId!: string | undefined;
 
     constructor(data?: ICreateDisputeCommand) {
         if (data) {
@@ -8652,9 +8584,9 @@ export class CreateDisputeCommand implements ICreateDisputeCommand {
     init(Data?: any) {
         if (Data) {
             this.orderId = Data["orderId"];
-            this.userId = Data["userId"];
             this.reason = Data["reason"];
             this.description = Data["description"];
+            this.userId = Data["userId"];
         }
     }
 
@@ -8668,18 +8600,18 @@ export class CreateDisputeCommand implements ICreateDisputeCommand {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["orderId"] = this.orderId;
-        data["userId"] = this.userId;
         data["reason"] = this.reason;
         data["description"] = this.description;
+        data["userId"] = this.userId;
         return data;
     }
 }
 
 export interface ICreateDisputeCommand {
     orderId: string | undefined;
-    userId: string | undefined;
     reason: DisputeReason;
     description: string | undefined;
+    userId: string | undefined;
 }
 
 export class CreateOrderCommand implements ICreateOrderCommand {
@@ -12223,110 +12155,6 @@ export interface IOrderIssueDto {
     createdOn: Date;
 }
 
-export class OrderReviewDto implements IOrderReviewDto {
-    id!: string | undefined;
-    orderId!: string | undefined;
-    userId!: string | undefined;
-    rating!: number;
-    comment!: string | undefined;
-    createdOn!: Date;
-    updatedOn!: Date | undefined;
-
-    constructor(data?: IOrderReviewDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.id = Data["id"];
-            this.orderId = Data["orderId"];
-            this.userId = Data["userId"];
-            this.rating = Data["rating"];
-            this.comment = Data["comment"];
-            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
-            this.updatedOn = Data["updatedOn"] ? new Date(Data["updatedOn"].toString()) : undefined;
-        }
-    }
-
-    static fromJS(data: any): OrderReviewDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new OrderReviewDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["id"] = this.id;
-        data["orderId"] = this.orderId;
-        data["userId"] = this.userId;
-        data["rating"] = this.rating;
-        data["comment"] = this.comment;
-        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
-        data["updatedOn"] = this.updatedOn ? this.updatedOn.toISOString() : undefined;
-        return data;
-    }
-}
-
-export interface IOrderReviewDto {
-    id: string | undefined;
-    orderId: string | undefined;
-    userId: string | undefined;
-    rating: number;
-    comment: string | undefined;
-    createdOn: Date;
-    updatedOn: Date | undefined;
-}
-
-export class SubmitOrderReviewCommand implements ISubmitOrderReviewCommand {
-    orderId!: string | undefined;
-    rating!: number;
-    comment!: string | undefined;
-
-    constructor(data?: ISubmitOrderReviewCommand) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.orderId = Data["orderId"];
-            this.rating = Data["rating"];
-            this.comment = Data["comment"];
-        }
-    }
-
-    static fromJS(data: any): SubmitOrderReviewCommand {
-        data = typeof data === 'object' ? data : {};
-        let result = new SubmitOrderReviewCommand();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["orderId"] = this.orderId;
-        data["rating"] = this.rating;
-        data["comment"] = this.comment;
-        return data;
-    }
-}
-
-export interface ISubmitOrderReviewCommand {
-    orderId: string | undefined;
-    rating: number;
-    comment: string | undefined;
-}
-
 export class OrderItem implements IOrderItem {
     id!: string | undefined;
     displayOrderNumber!: string | undefined;
@@ -12360,7 +12188,7 @@ export class OrderItem implements IOrderItem {
     receiptNumber!: string | undefined;
     orderNotes!: OrderNoteDto[] | undefined;
     orderIssues!: OrderIssueDto[] | undefined;
-    review!: OrderReviewDto | undefined;
+    review!: OrderReviewDto;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -12435,7 +12263,7 @@ export class OrderItem implements IOrderItem {
                 for (let item of Data["orderIssues"])
                     this.orderIssues!.push(OrderIssueDto.fromJS(item));
             }
-            this.review = Data["review"] ? OrderReviewDto.fromJS(Data["review"]) : undefined;
+            this.review = Data["review"] ? OrderReviewDto.fromJS(Data["review"]) : undefined as any;
         }
     }
 
@@ -12510,7 +12338,7 @@ export class OrderItem implements IOrderItem {
             for (let item of this.orderIssues)
                 data["orderIssues"].push(item ? item.toJSON() : undefined as any);
         }
-        data["review"] = this.review ? this.review.toJSON() : undefined;
+        data["review"] = this.review ? this.review.toJSON() : undefined as any;
         return data;
     }
 }
@@ -12548,7 +12376,7 @@ export interface IOrderItem {
     receiptNumber: string | undefined;
     orderNotes: OrderNoteDto[] | undefined;
     orderIssues: OrderIssueDto[] | undefined;
-    review: OrderReviewDto | undefined;
+    review: OrderReviewDto;
 }
 
 export class OrderListItem implements IOrderListItem {
@@ -12775,6 +12603,66 @@ export interface IOrderNoteDto {
     createdOn: Date;
 }
 
+export class OrderReviewDto implements IOrderReviewDto {
+    id!: string | undefined;
+    orderId!: string | undefined;
+    userId!: string | undefined;
+    rating!: number;
+    comment!: string | undefined;
+    createdOn!: Date;
+    updatedOn!: Date | undefined;
+
+    constructor(data?: IOrderReviewDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.orderId = Data["orderId"];
+            this.userId = Data["userId"];
+            this.rating = Data["rating"];
+            this.comment = Data["comment"];
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+            this.updatedOn = Data["updatedOn"] ? new Date(Data["updatedOn"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): OrderReviewDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new OrderReviewDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["orderId"] = this.orderId;
+        data["userId"] = this.userId;
+        data["rating"] = this.rating;
+        data["comment"] = this.comment;
+        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        data["updatedOn"] = this.updatedOn ? this.updatedOn.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IOrderReviewDto {
+    id: string | undefined;
+    orderId: string | undefined;
+    userId: string | undefined;
+    rating: number;
+    comment: string | undefined;
+    createdOn: Date;
+    updatedOn: Date | undefined;
+}
+
 export enum OrderStatus {
     Pending = 1,
     Confirmed = 2,
@@ -12891,58 +12779,6 @@ export interface IPackageDetails {
     includedServices: string[] | undefined;
 }
 
-export class PackageServiceSummary implements IPackageServiceSummary {
-    name!: string | undefined;
-    translations!: { [key: string]: Translation; } | undefined;
-
-    constructor(data?: IPackageServiceSummary) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.name = Data["name"];
-            if (Data["translations"]) {
-                this.translations = {} as any;
-                for (let key in Data["translations"]) {
-                    if (Data["translations"].hasOwnProperty(key))
-                        (this.translations as any)![key] = Data["translations"][key] ? Translation.fromJS(Data["translations"][key]) : new Translation();
-                }
-            }
-        }
-    }
-
-    static fromJS(data: any): PackageServiceSummary {
-        data = typeof data === 'object' ? data : {};
-        let result = new PackageServiceSummary();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["name"] = this.name;
-        if (this.translations) {
-            data["translations"] = {};
-            for (let key in this.translations) {
-                if (this.translations.hasOwnProperty(key))
-                    (data["translations"] as any)[key] = this.translations[key] ? this.translations[key].toJSON() : undefined as any;
-            }
-        }
-        return data;
-    }
-}
-
-export interface IPackageServiceSummary {
-    name: string | undefined;
-    translations: { [key: string]: Translation; } | undefined;
-}
-
 export class PackageListItem implements IPackageListItem {
     id!: string | undefined;
     name!: string | undefined;
@@ -13004,7 +12840,7 @@ export class PackageListItem implements IPackageListItem {
         if (Array.isArray(this.includedServices)) {
             data["includedServices"] = [];
             for (let item of this.includedServices)
-                data["includedServices"].push(item.toJSON());
+                data["includedServices"].push(item ? item.toJSON() : undefined as any);
         }
         return data;
     }
@@ -13017,6 +12853,58 @@ export interface IPackageListItem {
     price: number;
     translations: { [key: string]: Translation; } | undefined;
     includedServices: PackageServiceSummary[] | undefined;
+}
+
+export class PackageServiceSummary implements IPackageServiceSummary {
+    name!: string | undefined;
+    translations!: { [key: string]: Translation; } | undefined;
+
+    constructor(data?: IPackageServiceSummary) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.name = Data["name"];
+            if (Data["translations"]) {
+                this.translations = {} as any;
+                for (let key in Data["translations"]) {
+                    if (Data["translations"].hasOwnProperty(key))
+                        (this.translations as any)![key] = Data["translations"][key] ? Translation.fromJS(Data["translations"][key]) : new Translation();
+                }
+            }
+        }
+    }
+
+    static fromJS(data: any): PackageServiceSummary {
+        data = typeof data === 'object' ? data : {};
+        let result = new PackageServiceSummary();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["name"] = this.name;
+        if (this.translations) {
+            data["translations"] = {};
+            for (let key in this.translations) {
+                if (this.translations.hasOwnProperty(key))
+                    (data["translations"] as any)[key] = this.translations[key] ? this.translations[key].toJSON() : undefined as any;
+            }
+        }
+        return data;
+    }
+}
+
+export interface IPackageServiceSummary {
+    name: string | undefined;
+    translations: { [key: string]: Translation; } | undefined;
 }
 
 export class PagedDataOfAdminEmployeeListItem implements IPagedDataOfAdminEmployeeListItem {

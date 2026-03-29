@@ -119,6 +119,14 @@ public class User : Auditable, ITenantEntity
         return this;
     }
 
+    public User UpgradeToEmployee()
+    {
+        if (Profile == UserProfile.Customer)
+            Profile = UserProfile.Employee;
+
+        return this;
+    }
+
     public User UpdateProfilePhotoName(string? profilePhotoName)
     {
         ProfilePhotoName = profilePhotoName;

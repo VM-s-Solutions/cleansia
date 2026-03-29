@@ -6,6 +6,7 @@ import {
   CleansiaCustomerFooterComponent,
   CleansiaCustomerNavbarComponent,
 } from '@cleansia/components';
+import { ConsentSyncService } from '@cleansia/customer-services';
 import { PageTitleService } from '@cleansia/services';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -31,8 +32,10 @@ export class AppComponent implements OnInit, OnDestroy {
   private readonly translate = inject(TranslateService);
   private readonly pageTitleService = inject(PageTitleService);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly consentSync = inject(ConsentSyncService);
   private readonly destroy$ = new Subject<void>();
 
+  readonly consentSyncFn = this.consentSync.getSyncFn();
   isOnLandingPage = signal(true);
 
   constructor() {

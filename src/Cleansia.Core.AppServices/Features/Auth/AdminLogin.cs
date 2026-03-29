@@ -82,12 +82,15 @@ public class AdminLogin
         {
             var user = await userRepository.GetByEmailAsync(command.Email, cancellationToken);
 
-            var tokenResponse = tokenService.GenerateToken(user!, command.RememberMe);
+            if (user!.Profile != UserProfile.Administrator)
+            {
+                return BusinessResult.Failure<JwtTokenResponse>(
+                    new Error("AdminLogin", BusinessErrorMessage.InsufficientPrivileges));
+            }
 
-            // Check if user has admin privileges (Administrator or Employee role)
-            var hasAdminAccess = user!.Profile == UserProfile.Administrator;
+            var tokenResponse = tokenService.GenerateToken(user, command.RememberMe);
 
-            return BusinessResult.Success(tokenResponse with { HasAdminAccess = hasAdminAccess });
+            return BusinessResult.Success(tokenResponse with { HasAdminAccess = true });
         }
     }
 }

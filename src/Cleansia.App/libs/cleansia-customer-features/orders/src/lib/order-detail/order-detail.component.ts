@@ -1,14 +1,28 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { Component, inject, OnInit, PLATFORM_ID, signal, computed } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import {
+  Component,
+  computed,
+  inject,
+  OnInit,
+  PLATFORM_ID,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CleansiaButtonComponent } from '@cleansia/components';
-import { CustomerClient } from '@cleansia/customer-services';
-import { OrderItem, OrderStatus, PaymentStatus, SubmitOrderReviewCommand } from '@cleansia/partner-services';
+import {
+  CustomerClient,
+  SubmitOrderReview_Command,
+} from '@cleansia/customer-services';
+import {
+  OrderItem,
+  OrderStatus,
+  PaymentStatus,
+} from '@cleansia/partner-services';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { TagModule } from 'primeng/tag';
 import { SkeletonModule } from 'primeng/skeleton';
+import { TagModule } from 'primeng/tag';
 import { TimelineModule } from 'primeng/timeline';
 
 @Component({
@@ -42,7 +56,9 @@ export class OrderDetailComponent implements OnInit {
   reviewComment = signal('');
   reviewHover = signal(0);
   reviewSubmitting = signal(false);
-  isCompleted = computed(() => this.order()?.orderStatus?.value === OrderStatus.Completed);
+  isCompleted = computed(
+    () => this.order()?.orderStatus?.value === OrderStatus.Completed
+  );
   hasReview = computed(() => !!this.order()?.review);
   stars = [1, 2, 3, 4, 5];
 
@@ -85,7 +101,9 @@ export class OrderDetailComponent implements OnInit {
         URL.revokeObjectURL(url);
       },
       error: () => {
-        this.snackbar.showError(this.translate.instant('pages.order_detail.download_error'));
+        this.snackbar.showError(
+          this.translate.instant('pages.order_detail.download_error')
+        );
       },
     });
   }
@@ -107,23 +125,26 @@ export class OrderDetailComponent implements OnInit {
     if (!order?.id || this.reviewRating() === 0) return;
 
     this.reviewSubmitting.set(true);
-    const command = new SubmitOrderReviewCommand({
+    const command = new SubmitOrderReview_Command({
       orderId: order.id,
       rating: this.reviewRating(),
       comment: this.reviewComment() || undefined,
+      userId: undefined, // Set by backend from JWT
     });
 
-    this.customerClient.orderClient.submitReview(command).subscribe({
-      next: (review) => {
+    (this.customerClient.orderClient as any).submitReview(command).subscribe({
+      next: (review: any) => {
         const current = this.order();
         if (current) {
           current.review = review;
           this.order.set({ ...current } as OrderItem);
         }
         this.reviewSubmitting.set(false);
-        this.snackbar.showSuccess(this.translate.instant('pages.order_detail.review.success'));
+        this.snackbar.showSuccess(
+          this.translate.instant('pages.order_detail.review.success')
+        );
       },
-      error: (err) => {
+      error: (err: any) => {
         this.reviewSubmitting.set(false);
         this.snackbar.showApiError(err, 'pages.order_detail.review.error');
       },
@@ -132,39 +153,61 @@ export class OrderDetailComponent implements OnInit {
 
   getOrderStatusSeverity(status: { value?: number }): string {
     switch (status?.value) {
-      case OrderStatus.Pending: return 'warn';
-      case OrderStatus.Confirmed: return 'info';
-      case OrderStatus.InProgress: return 'info';
-      case OrderStatus.Completed: return 'success';
-      case OrderStatus.Cancelled: return 'danger';
-      default: return 'info';
+      case OrderStatus.Pending:
+        return 'warn';
+      case OrderStatus.Confirmed:
+        return 'info';
+      case OrderStatus.InProgress:
+        return 'info';
+      case OrderStatus.Completed:
+        return 'success';
+      case OrderStatus.Cancelled:
+        return 'danger';
+      default:
+        return 'info';
     }
   }
 
   getPaymentStatusSeverity(status: { value?: number }): string {
     switch (status?.value) {
-      case PaymentStatus.Pending: return 'warn';
-      case PaymentStatus.Paid: return 'success';
-      case PaymentStatus.Failed: return 'danger';
-      case PaymentStatus.Refunded: return 'info';
-      case PaymentStatus.Disputed: return 'danger';
-      default: return 'info';
+      case PaymentStatus.Pending:
+        return 'warn';
+      case PaymentStatus.Paid:
+        return 'success';
+      case PaymentStatus.Failed:
+        return 'danger';
+      case PaymentStatus.Refunded:
+        return 'info';
+      case PaymentStatus.Disputed:
+        return 'danger';
+      default:
+        return 'info';
     }
   }
 
   getStatusIcon(value: number): string {
     switch (value) {
-      case OrderStatus.Pending: return 'pi pi-clock';
-      case OrderStatus.Confirmed: return 'pi pi-check';
-      case OrderStatus.InProgress: return 'pi pi-spin pi-spinner';
-      case OrderStatus.Completed: return 'pi pi-check-circle';
-      case OrderStatus.Cancelled: return 'pi pi-times-circle';
-      default: return 'pi pi-circle';
+      case OrderStatus.Pending:
+        return 'pi pi-clock';
+      case OrderStatus.Confirmed:
+        return 'pi pi-check';
+      case OrderStatus.InProgress:
+        return 'pi pi-spin pi-spinner';
+      case OrderStatus.Completed:
+        return 'pi pi-check-circle';
+      case OrderStatus.Cancelled:
+        return 'pi pi-times-circle';
+      default:
+        return 'pi pi-circle';
     }
   }
 
   private getLocale(): string {
-    const localeMap: Record<string, string> = { cs: 'cs-CZ', en: 'en-US', pl: 'pl-PL' };
+    const localeMap: Record<string, string> = {
+      cs: 'cs-CZ',
+      en: 'en-US',
+      pl: 'pl-PL',
+    };
     return localeMap[this.translate.currentLang] || 'en-US';
   }
 

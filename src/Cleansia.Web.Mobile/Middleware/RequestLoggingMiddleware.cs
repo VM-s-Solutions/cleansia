@@ -87,8 +87,10 @@ public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggi
 
         _logger.Log(
             logLevel,
-            "[{RequestId}] Response: {StatusCode} | Duration: {Duration}ms | User: {UserId} | Body: {Body}",
+            "[{RequestId}] {Method} {Path} | Response: {StatusCode} | Duration: {Duration}ms | User: {UserId} | Body: {Body}",
             requestId,
+            context.Request.Method,
+            context.Request.Path,
             response.StatusCode,
             durationMs,
             userId,

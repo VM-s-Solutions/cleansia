@@ -215,6 +215,13 @@ export class PartnerAuthService {
     return exp ? new Date(exp * 1000) : null;
   }
 
+  /**
+   * Replaces the current JWT token with a new one (e.g., after profile upgrade).
+   */
+  updateToken(token: string): void {
+    this.setCookieSession(token);
+  }
+
   private setCookieSession(token: string): void {
     const decodedToken: JwtToken = jwtDecode(token);
     setCookieValue(LocalStorageKey.TOKEN, token);

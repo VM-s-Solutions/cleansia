@@ -3,10 +3,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Features.Employees.DTOs;
 using Cleansia.Core.AppServices.Mappers;
-using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Domain.SeedWork;
-using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 
@@ -16,12 +13,31 @@ public class CheckCurrentEmployee
 {
     public class Validator : AbstractValidator<Query>
     {
+        private readonly IEmployeeRepository _employeeRepository;
+        private readonly IUserSessionProvider _userSessionProvider;
+
         public Validator(
             IUserRepository userRepository,
+            IEmployeeRepository employeeRepository,
             IUserSessionProvider userSessionProvider)
         {
+            _employeeRepository = employeeRepository ?? throw new ArgumentNullException(nameof(employeeRepository));
+            _userSessionProvider = userSessionProvider ?? throw new ArgumentNullException(nameof(userSessionProvider));
+
             RuleFor(query => query)
                 .SetValidator(new UserEmailValidator<Query>(userRepository, userSessionProvider));
+
+            RuleFor(query => query)
+                .MustAsync(ExistsWithUserEmailAsync)
+                .WithMessage(BusinessErrorMessage.NotExistingUserWithEmail);
+        }
+
+        private Task<bool> ExistsWithUserEmailAsync(Query query, CancellationToken cancellationToken)
+        {
+            var userEmail = _userSessionProvider.GetUserEmail();
+            return userEmail is null
+                ? Task.FromResult(false)
+                : _employeeRepository.ExistsWithUserEmailAsync(userEmail, cancellationToken);
         }
     }
 
@@ -29,33 +45,13 @@ public class CheckCurrentEmployee
 
     public class Handler(
         IEmployeeRepository employeeRepository,
-        IUserRepository userRepository,
-        IUserSessionProvider userSessionProvider,
-        IUnitOfWork unitOfWork)
+        IUserSessionProvider userSessionProvider)
         : IQueryHandler<Query, RegistrationCompletionStatus>
     {
         public async Task<BusinessResult<RegistrationCompletionStatus>> Handle(Query query, CancellationToken cancellationToken)
         {
-            var userEmail = userSessionProvider.GetUserEmail()!;
-            var employee = await employeeRepository.GetByUserEmailAsync(userEmail, cancellationToken);
-
-            if (employee is null)
-            {
-                // Auto-create Employee record for Customer users accessing Partner app
-                var user = await userRepository.GetByEmailAsync(userEmail, cancellationToken);
-                if (user is null)
-                {
-                    return BusinessResult.Failure<RegistrationCompletionStatus>(
-                        new Error("Employee", BusinessErrorMessage.NotExistingUserWithEmail));
-                }
-
-                user.UpgradeToEmployee();
-                employee = Employee.CreateWithUser(user);
-                employeeRepository.Add(employee);
-                await unitOfWork.CommitAsync(cancellationToken);
-            }
-
-            return BusinessResult.Success(employee.ToRegistrationCompletionStatus());
+            var employee = await employeeRepository.GetByUserEmailAsync(userSessionProvider.GetUserEmail()!, cancellationToken);
+            return BusinessResult.Success(employee!.ToRegistrationCompletionStatus());
         }
     }
 }

@@ -41,14 +41,25 @@ public class HandlePaymentNotification
 
         private bool NotificationIsHandled(Command command)
         {
-            var stripeEvent = EventUtility.ConstructEvent(command.JsonPayload, command.SignatureHeader, _stripeConfig.WebhookSecret);
-            return stripeEvent.Type is Constants.StripeEventType.CompletedSession
-                                   or Constants.StripeEventType.ExpiredSession;
+            try
+            {
+                var stripeEvent = EventUtility.ConstructEvent(
+                    command.JsonPayload, command.SignatureHeader, _stripeConfig.WebhookSecret,
+                    throwOnApiVersionMismatch: false);
+                return stripeEvent.Type is Constants.StripeEventType.CompletedSession
+                                       or Constants.StripeEventType.ExpiredSession;
+            }
+            catch (StripeException)
+            {
+                return false; // Invalid signature — skip validation, handler will return proper error
+            }
         }
 
         private async Task<bool> OrderExistsAsync(Command command, CancellationToken cancellationToken)
         {
-            var stripeEvent = EventUtility.ConstructEvent(command.JsonPayload, command.SignatureHeader, _stripeConfig.WebhookSecret);
+            var stripeEvent = EventUtility.ConstructEvent(
+                command.JsonPayload, command.SignatureHeader, _stripeConfig.WebhookSecret,
+                throwOnApiVersionMismatch: false);
             if (stripeEvent.Type is not (Constants.StripeEventType.CompletedSession
                                      or Constants.StripeEventType.ExpiredSession))
             {
@@ -71,7 +82,9 @@ public class HandlePaymentNotification
             Event stripeEvent;
             try
             {
-                stripeEvent = EventUtility.ConstructEvent(command.JsonPayload, command.SignatureHeader, stripeConfig.WebhookSecret);
+                stripeEvent = EventUtility.ConstructEvent(
+                    command.JsonPayload, command.SignatureHeader, stripeConfig.WebhookSecret,
+                    throwOnApiVersionMismatch: false);
             }
             catch (StripeException ex)
             {

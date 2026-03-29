@@ -16,28 +16,19 @@ SELECT "Id", "Email", "FirstName", "LastName", "Profile", "IsEmailConfirmed"
 FROM "Users"
 WHERE "Email" = :'target_email';
 
--- Verify user exists before updating
-DO $$
-DECLARE
-    user_count INT;
-    user_email TEXT := :'target_email';
-BEGIN
-    SELECT COUNT(*) INTO user_count FROM "Users" WHERE "Email" = user_email;
+-- Verify user exists and update
+UPDATE "Users"
+SET "Profile" = 100,
+    "IsEmailConfirmed" = true,
+    "UpdatedOn" = NOW(),
+    "UpdatedBy" = 'admin-script'
+WHERE "Email" = :'target_email';
 
-    IF user_count = 0 THEN
-        RAISE EXCEPTION 'User with email "%" not found. Register the user first via the Customer app, then run this script.', user_email;
-    END IF;
-
-    -- Update profile to Administrator
-    UPDATE "Users"
-    SET "Profile" = 100,
-        "IsEmailConfirmed" = true,
-        "UpdatedOn" = NOW(),
-        "UpdatedBy" = 'admin-script'
-    WHERE "Email" = user_email;
-
-    RAISE NOTICE 'User "%" has been upgraded to Administrator (Profile=100)', user_email;
-END $$;
+-- Check if any rows were updated
+\if :ROW_COUNT = 0
+\echo 'ERROR: User not found. Register the user first via the Customer app, then run this script.'
+\quit
+\endif
 
 -- Confirm the update
 SELECT "Id", "Email", "FirstName", "LastName", "Profile", "IsEmailConfirmed"

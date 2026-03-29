@@ -65,16 +65,6 @@ export class TemplateManagementComponent implements OnInit, OnDestroy {
   private rebuildTabs(): void {
     this.tabs = [
       {
-        label: this.translate.instant('pages.template_management.tabs.invoice'),
-        route: 'invoice-templates',
-        icon: 'pi pi-file',
-      },
-      {
-        label: this.translate.instant('pages.template_management.tabs.receipt'),
-        route: 'receipt-templates',
-        icon: 'pi pi-receipt',
-      },
-      {
         label: this.translate.instant('pages.template_management.tabs.email'),
         route: 'email-templates',
         icon: 'pi pi-envelope',

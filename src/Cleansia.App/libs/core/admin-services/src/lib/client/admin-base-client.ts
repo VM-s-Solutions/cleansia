@@ -11,12 +11,10 @@ import {
   AdminEmployeeClient,
   AdminEmployeeDocumentClient,
   AdminInvoiceClient,
-  AdminInvoiceTemplateClient,
   AdminLanguageClient,
   AdminOrderClient,
   AdminPackageClient,
   AdminPayPeriodClient,
-  AdminReceiptTemplateClient,
   AdminReportClient,
   AdminServiceClient,
   AdminUserClient,
@@ -29,12 +27,10 @@ import {
   IAdminEmployeeClient,
   IAdminEmployeeDocumentClient,
   IAdminInvoiceClient,
-  IAdminInvoiceTemplateClient,
   IAdminLanguageClient,
   IAdminOrderClient,
   IAdminPackageClient,
   IAdminPayPeriodClient,
-  IAdminReceiptTemplateClient,
   IAdminReportClient,
   IAdminServiceClient,
   IAdminUserClient,
@@ -52,12 +48,10 @@ interface IAdminClient {
   adminEmailTemplateClient: IAdminEmailTemplateClient;
   adminEmployeeDocumentClient: IAdminEmployeeDocumentClient;
   adminInvoiceClient: IAdminInvoiceClient;
-  adminInvoiceTemplateClient: IAdminInvoiceTemplateClient;
   adminLanguageClient: IAdminLanguageClient;
   adminOrderClient: IAdminOrderClient;
   adminPackageClient: IAdminPackageClient;
   adminPayPeriodClient: IAdminPayPeriodClient;
-  adminReceiptTemplateClient: IAdminReceiptTemplateClient;
   adminReportClient: IAdminReportClient;
   adminServiceClient: IAdminServiceClient;
   adminUserClient: IAdminUserClient;
@@ -130,10 +124,6 @@ export class AdminClient implements IAdminClient {
     this.httpClient,
     this.apiBaseUrl
   );
-  adminInvoiceTemplateClient: IAdminInvoiceTemplateClient =
-    new AdminInvoiceTemplateClient(this.httpClient, this.apiBaseUrl);
-  adminReceiptTemplateClient: IAdminReceiptTemplateClient =
-    new AdminReceiptTemplateClient(this.httpClient, this.apiBaseUrl);
   adminEmailTemplateClient: IAdminEmailTemplateClient =
     new AdminEmailTemplateClient(this.httpClient, this.apiBaseUrl);
   emailTemplateTypesClient: ITypesClient = new TypesClient(

@@ -7,4 +7,5 @@ export const environment = {
   googleClientId: '',
   isDevelopment: false,
   sentryDsn: '',
+  bugReportUrl: '',
 };

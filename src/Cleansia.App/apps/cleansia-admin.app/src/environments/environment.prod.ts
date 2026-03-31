@@ -10,4 +10,5 @@ export const environment = {
   betaGateUrl: '',
   isDevelopment: false,
   sentryDsn: '',
+  bugReportUrl: '',
 };

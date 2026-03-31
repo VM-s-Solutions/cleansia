@@ -7,4 +7,6 @@ export const environment = {
   googleClientId: '',
   isDevelopment: false,
   sentryDsn: '',
+  bugReportUrl:
+    'https://docs.google.com/spreadsheets/d/1k4IbmrKPkZo79D4pDzukjUjQqY-ipnXqkUSSFoHtfFg/edit?usp=sharing',
 };

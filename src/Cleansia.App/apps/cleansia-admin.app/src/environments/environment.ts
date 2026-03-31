@@ -10,4 +10,5 @@ export const environment = {
   betaGateEnabled: false,
   betaGateUrl: 'http://localhost:5000/gate',
   sentryDsn: '',
+  bugReportUrl: '',
 };

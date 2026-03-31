@@ -5,6 +5,7 @@ export * from './cleansia-button';
 export * from './cleansia-calendar';
 export * from './cleansia-checkbox';
 export * from './cleansia-cookie-consent';
+export * from './cleansia-dev-banner';
 export * from './cleansia-customer-footer';
 export * from './cleansia-customer-navbar';
 export * from './cleansia-radio';

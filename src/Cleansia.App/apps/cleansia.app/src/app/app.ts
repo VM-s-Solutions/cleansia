@@ -5,8 +5,10 @@ import {
   CleansiaCookieConsentComponent,
   CleansiaCustomerFooterComponent,
   CleansiaCustomerNavbarComponent,
+  CleansiaDevBannerComponent,
 } from '@cleansia/components';
 import { ConsentSyncService } from '@cleansia/customer-services';
+import { environment } from '../environments/environment';
 import { PageTitleService } from '@cleansia/services';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -22,6 +24,7 @@ import { filter, map, Subject, takeUntil } from 'rxjs';
     CleansiaCustomerNavbarComponent,
     CleansiaCustomerFooterComponent,
     CleansiaCookieConsentComponent,
+    CleansiaDevBannerComponent,
   ],
   selector: 'app-root',
   templateUrl: './app.html',
@@ -36,6 +39,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   readonly consentSyncFn = this.consentSync.getSyncFn();
+  readonly bugReportUrl = environment.bugReportUrl;
   isOnLandingPage = signal(true);
 
   constructor() {

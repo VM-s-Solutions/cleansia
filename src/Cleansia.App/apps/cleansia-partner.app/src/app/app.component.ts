@@ -3,6 +3,7 @@ import { Component, HostListener, inject, OnDestroy, OnInit, signal } from '@ang
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import {
   CleansiaCookieConsentComponent,
+  CleansiaDevBannerComponent,
   CleansiaLanguageSwitcherComponent,
   CleansiaRegistrationLockComponent,
   CleansiaSidebarMenuComponent,
@@ -12,6 +13,7 @@ import {
   PartnerAuthService,
   RegistrationCompletionService,
 } from '@cleansia/partner-services';
+import { environment } from '../environments/environment';
 import {
   checkEmployeeCurrent,
   loadCodes,
@@ -42,6 +44,7 @@ import {
     CleansiaLanguageSwitcherComponent,
     CleansiaRegistrationLockComponent,
     CleansiaCookieConsentComponent,
+    CleansiaDevBannerComponent,
   ],
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -59,6 +62,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
   private hasCheckedEmployee = false;
 
+  readonly bugReportUrl = environment.bugReportUrl;
   sidebarCollapsed = signal(false);
   mobileSidebarExpanded = signal(false);
   shouldShowRegistrationLock = signal(false);

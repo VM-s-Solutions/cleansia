@@ -5,10 +5,12 @@ import { AdminAuthService } from '@cleansia/admin-services';
 import { loadAdminCodes } from '@cleansia/admin-stores';
 import {
   CleansiaCookieConsentComponent,
+  CleansiaDevBannerComponent,
   CleansiaSidebarMenuComponent,
   SidebarMenuItem,
 } from '@cleansia/components';
 import { DialogService, PageTitleService } from '@cleansia/services';
+import { environment } from '../environments/environment';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -22,6 +24,7 @@ import { ToastModule } from 'primeng/toast';
     RouterModule,
     CleansiaSidebarMenuComponent,
     CleansiaCookieConsentComponent,
+    CleansiaDevBannerComponent,
   ],
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -34,6 +37,7 @@ export class AppComponent implements OnInit {
   private readonly pageTitleService = inject(PageTitleService);
   private readonly dialogService = inject(DialogService);
 
+  readonly bugReportUrl = environment.bugReportUrl;
   sidebarCollapsed = signal(false);
 
   ngOnInit(): void {

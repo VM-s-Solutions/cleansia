@@ -8,4 +8,5 @@ export const environment = {
   googleClientId:
     '354682423254-boe1nlnb1dbd3m6a013d3nkpo2e9bgiq.apps.googleusercontent.com',
   sentryDsn: '',
+  bugReportUrl: '',
 };

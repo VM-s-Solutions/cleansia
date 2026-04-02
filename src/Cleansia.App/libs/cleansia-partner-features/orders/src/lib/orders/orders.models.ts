@@ -48,7 +48,7 @@ export function getAvailableOrdersTableDefinition(
           row?.totalPrice
             ? Number(row.totalPrice).toLocaleString('en-GB', {
                 style: 'currency',
-                currency: 'EUR',
+                currency: row?.currency?.code || 'CZK',
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })
@@ -150,7 +150,7 @@ export function getMyOrdersTableDefinition(
           row?.totalPrice
             ? Number(row.totalPrice).toLocaleString('en-GB', {
                 style: 'currency',
-                currency: 'EUR',
+                currency: row?.currency?.code || 'CZK',
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })

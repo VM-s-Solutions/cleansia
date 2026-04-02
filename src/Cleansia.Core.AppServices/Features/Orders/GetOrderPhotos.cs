@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -44,16 +45,19 @@ public class GetOrderPhotos
         }
     }
 
-    public class Handler(IOrderPhotoRepository photoRepository) : IQueryHandler<Query, Response>
+    public class Handler(
+        IOrderPhotoRepository photoRepository,
+        IBlobContainerClientFactory blobClientFactory) : IQueryHandler<Query, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Query query, CancellationToken cancellationToken)
         {
             var photos = await photoRepository.GetPhotosByOrderIdAsync(query.OrderId, cancellationToken);
+            var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.OrderPhotos);
 
             var photoDtos = photos.Select(p => new OrderPhotoDto(
                 Id: p.Id,
                 PhotoType: p.PhotoType,
-                BlobUrl: p.BlobUrl,
+                BlobUrl: GenerateSasUrl(blobClient, p.BlobUrl),
                 FileName: p.FileName,
                 OriginalFileName: p.OriginalFileName,
                 FileSizeBytes: p.FileSizeBytes,
@@ -82,6 +86,19 @@ public class GetOrderPhotos
                 Photos: photoDtos,
                 BeforePhotoCount: beforeCount,
                 AfterPhotoCount: afterCount));
+        }
+
+        private static string GenerateSasUrl(IBlobContainerClient blobClient, string blobUrl)
+        {
+            // Extract blob name from the stored URL
+            // URL format: https://<account>.blob.core.windows.net/<container>/<blobName>
+            var uri = new Uri(blobUrl);
+            var pathSegments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+            // Skip the first segment (container name), rejoin the rest as the blob name
+            var blobName = string.Join("/", pathSegments.Skip(1));
+
+            return blobClient.GenerateSasUri(blobName, TimeSpan.FromHours(1)).ToString();
         }
     }
 }

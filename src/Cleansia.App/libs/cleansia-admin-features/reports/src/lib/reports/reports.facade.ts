@@ -123,9 +123,9 @@ export class ReportsFacade {
 
   formatCurrency(value: number | undefined): string {
     if (value === undefined || value === null) return '0 Kč';
-    return new Intl.NumberFormat('en-GB', {
+    return new Intl.NumberFormat('cs-CZ', {
       style: 'currency',
-      currency: 'EUR',
+      currency: 'CZK',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);

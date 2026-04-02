@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Core.Domain.Enums;
@@ -136,7 +137,8 @@ public class CompleteOrder
 
     public class Handler(
         IOrderRepository orderRepository,
-        IQueueClient queueClient)
+        IQueueClient queueClient,
+        IEmailService emailService)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -169,6 +171,15 @@ public class CompleteOrder
                 await queueClient.SendAsync(QueueNames.GenerateReceipt,
                     new GenerateReceiptMessage(order.Id, languageCode), cancellationToken);
             }
+
+            // Send status update email
+            try
+            {
+                var languageCode = order.User?.PreferredLanguageCode ?? "en";
+                await emailService.SendOrderStatusUpdateEmailAsync(
+                    order.CustomerEmail, order, "Completed", languageCode, cancellationToken);
+            }
+            catch { /* Don't fail the order completion if email fails */ }
 
             return BusinessResult.Success(new Response(
                 OrderId: order.Id,

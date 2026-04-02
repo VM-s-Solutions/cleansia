@@ -62,6 +62,20 @@
         (onDownloadInvoice)="downloadInvoice()"
       />
 
+      <!-- Take Order Action -->
+      @if (canTakeOrder()) {
+      <div class="cleansia-order-details__primary-action cleansia-order-details__primary-action--take">
+        <cleansia-button
+          [buttonType]="'button'"
+          [style]="'raised-button'"
+          [title]="'pages.order_details.take_order' | translate"
+          [icon]="'pi pi-check'"
+          (clickFn)="takeOrder()"
+          [disabled]="loading()"
+        />
+      </div>
+      }
+
       <!-- Start Order Action - Prominently placed at top -->
       @if (canStartOrder()) {
       <div class="cleansia-order-details__primary-action">
@@ -133,29 +147,30 @@
       @if (orderDetails()!.assignedEmployees &&
       orderDetails()!.assignedEmployees!.length > 0) {
       <cleansia-section
-        [title]="'pages.order_details.assigned_employee' | translate"
+        [title]="(orderDetails()!.assignedEmployees!.length > 1
+          ? 'pages.order_details.assigned_employees'
+          : 'pages.order_details.assigned_employee') | translate"
       >
-        <div class="cleansia-order-details__grid">
+        @for (employee of orderDetails()!.assignedEmployees!; track employee.employeeId) {
+        <div class="cleansia-order-details__grid cleansia-order-details__employee-row">
           <div class="cleansia-order-details__field">
-            <cleansia-text-input
-              [label]="'pages.order_details.employee_name' | translate"
-              [floatVariant]="'on'"
-              formControlName="assignedEmployeeName"
-              dataType="text"
-              [disabled]="true"
-            />
+            <label class="cleansia-order-details__label">{{ 'pages.order_details.employee_name' | translate }}</label>
+            <span class="cleansia-order-details__value">{{ employee.fullName }}</span>
           </div>
-          @if (orderDetails()!.assignedEmployees![0].phoneNumber) {
+          @if (employee.phoneNumber) {
           <div class="cleansia-order-details__field">
-            <cleansia-telephone
-              [label]="'pages.order_details.employee_phone' | translate"
-              [floatVariant]="'on'"
-              formControlName="assignedEmployeePhone"
-              [disabled]="true"
-            />
+            <label class="cleansia-order-details__label">{{ 'pages.order_details.employee_phone' | translate }}</label>
+            <span class="cleansia-order-details__value">{{ employee.phoneNumber }}</span>
+          </div>
+          }
+          @if (employee.email) {
+          <div class="cleansia-order-details__field">
+            <label class="cleansia-order-details__label">{{ 'pages.order_details.employee_email' | translate }}</label>
+            <span class="cleansia-order-details__value">{{ employee.email }}</span>
           </div>
           }
         </div>
+        }
       </cleansia-section>
       }
 

@@ -15,7 +15,7 @@ import { TranslatePipe } from '@ngx-translate/core';
       <div class="cleansia-order-details__package-item">
         <div class="cleansia-order-details__package-header">
           <h5>{{ pkg.name }}</h5>
-          <span class="package-price">{{ pkg.price | currency:'EUR':'symbol':'1.2-2':'en-GB' }}</span>
+          <span class="package-price">{{ pkg.price | currency:currencyCode():'symbol':'1.2-2' }}</span>
         </div>
 
         @if (pkg.description) {
@@ -46,4 +46,5 @@ import { TranslatePipe } from '@ngx-translate/core';
 })
 export class OrderPackagesComponent {
   packages = input<any[]>();
+  currencyCode = input<string>('CZK');
 }

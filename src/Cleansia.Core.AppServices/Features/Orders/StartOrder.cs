@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
@@ -98,7 +99,8 @@ public class StartOrder
     }
 
     public class Handler(
-        IOrderRepository orderRepository)
+        IOrderRepository orderRepository,
+        IEmailService emailService)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -106,12 +108,24 @@ public class StartOrder
             var order = await orderRepository
                 .GetQueryable()
                 .Include(o => o.OrderStatusHistory)
+                .Include(o => o.Currency)
+                .Include(o => o.CustomerAddress)
+                .Include(o => o.User)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             order!.StartOrder();
 
             var statusTrack = OrderStatusTrack.Create(OrderStatus.InProgress, order);
             order.AddOrderStatus(statusTrack);
+
+            // Send status update email
+            try
+            {
+                var languageCode = order.User?.PreferredLanguageCode ?? "en";
+                await emailService.SendOrderStatusUpdateEmailAsync(
+                    order.CustomerEmail, order, "Started", languageCode, cancellationToken);
+            }
+            catch { /* Don't fail order start if email fails */ }
 
             return BusinessResult.Success(new Response(
                 OrderId: order.Id,

@@ -457,6 +457,34 @@
     }
   }
 
+  &__label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--cleansia-text-secondary, #6b7280);
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+  }
+
+  &__value {
+    display: block;
+    font-size: 0.95rem;
+    color: var(--cleansia-text-primary, #1f2937);
+  }
+
+  &__employee-row {
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid var(--surface-border, #e5e7eb);
+
+    &:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+  }
+
   // Packages section - Simple and distinct from services
   &__packages-section {
     h4 {

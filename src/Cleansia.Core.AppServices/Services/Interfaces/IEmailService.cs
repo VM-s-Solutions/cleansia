@@ -16,4 +16,6 @@ public interface IEmailService
     Task<string> SendPeriodClosedEmailAsync(string email, string employeeName, DateOnly startDate, DateOnly endDate, DateTime closedAt, string periodLabel, string languageCode = "en", byte[]? invoicePdfBytes = null, string? invoiceFileName = null, CancellationToken ct = default);
 
     Task<string> SendPeriodEndReminderEmailAsync(string email, string employeeName, DateOnly startDate, DateOnly endDate, int daysRemaining, string periodLabel, string languageCode = "en", CancellationToken ct = default);
+
+    Task<string> SendOrderStatusUpdateEmailAsync(string email, Order order, string newStatus, string languageCode = "en", CancellationToken ct = default);
 }

@@ -8,39 +8,25 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   CleansiaButtonComponent,
   CleansiaScrollTopComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
-import { CUSTOMER_API_BASE_URL } from '@cleansia/customer-services';
+import {
+  CustomerOrderClient,
+  CUSTOMER_API_BASE_URL,
+  LookupOrder_Response,
+  LookupOrderBatch_Query,
+  LookupOrderBatch_OrderLookupItem,
+  LookupOrderBatch_Response,
+} from '@cleansia/customer-services';
 import { OrderStatus, PaymentStatus } from '@cleansia/partner-services';
 import { CleansiaCustomerRoute, GuestOrderService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { TagModule } from 'primeng/tag';
 import { TimelineModule } from 'primeng/timeline';
-
-interface LookupResult {
-  id: string;
-  displayOrderNumber: string;
-  customerName: string;
-  cleaningDateTime: string;
-  paymentType: { name: string; value: number };
-  paymentStatus: { name: string; value: number };
-  totalPrice: number;
-  estimatedTime: number;
-  orderStatus: { name: string; value: number };
-  confirmationCode: string;
-  currency: { code: string; symbol: string } | null;
-  selectedServices: { id: string; name: string; estimatedTime: number }[];
-  selectedPackages: { id: string; name: string; price: number }[];
-  statusHistory: {
-    status: { name: string; value: number };
-    createdOn: string;
-  }[];
-  createdOn: string;
-}
 
 @Component({
   selector: 'cleansia-customer-track-order',
@@ -62,11 +48,13 @@ interface LookupResult {
 export class TrackOrderComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly translate = inject(TranslateService);
   private readonly guestOrderService = inject(GuestOrderService);
-  private readonly apiBaseUrl =
-    inject(CUSTOMER_API_BASE_URL, { optional: true }) ??
-    'http://localhost:5003';
+  private readonly orderClient = new CustomerOrderClient(
+    this.http,
+    inject(CUSTOMER_API_BASE_URL, { optional: true }) ?? 'http://localhost:5003'
+  );
 
   routes = CleansiaCustomerRoute;
 
@@ -76,14 +64,22 @@ export class TrackOrderComponent implements OnInit {
 
   // State
   loading = signal(false);
-  recentOrders = signal<LookupResult[]>([]);
-  manualResult = signal<LookupResult | null>(null);
+  recentOrders = signal<LookupOrder_Response[]>([]);
+  manualResult = signal<LookupOrder_Response | null>(null);
   error = signal<string | null>(null);
   searched = signal(false);
   showManualLookup = signal(false);
 
   ngOnInit(): void {
-    this.loadGuestOrders();
+    const params = this.route.snapshot.queryParams;
+    if (params['orderNumber'] && params['email']) {
+      this.orderNumber.set(params['orderNumber']);
+      this.email.set(params['email']);
+      this.showManualLookup.set(true);
+      this.lookup();
+    } else {
+      this.loadGuestOrders();
+    }
   }
 
   private loadGuestOrders(): void {
@@ -94,18 +90,18 @@ export class TrackOrderComponent implements OnInit {
     }
 
     this.loading.set(true);
-    const items = guestOrders.map((o) => ({
-      orderId: o.orderId,
-      email: o.email,
-    }));
+    const items = guestOrders.map(
+      (o) =>
+        new LookupOrderBatch_OrderLookupItem({
+          orderId: o.orderId,
+          email: o.email,
+        })
+    );
 
-    this.http
-      .post<{ orders: LookupResult[] }>(
-        `${this.apiBaseUrl}/api/Order/LookupBatch`,
-        { items }
-      )
+    this.orderClient
+      .lookupBatch(new LookupOrderBatch_Query({ items }))
       .subscribe({
-        next: (data) => {
+        next: (data: LookupOrderBatch_Response) => {
           this.recentOrders.set(data.orders || []);
           this.loading.set(false);
         },
@@ -130,22 +126,18 @@ export class TrackOrderComponent implements OnInit {
     this.manualResult.set(null);
     this.searched.set(true);
 
-    this.http
-      .get<LookupResult>(`${this.apiBaseUrl}/api/Order/Lookup`, {
-        params: { orderNumber, email },
-      })
-      .subscribe({
-        next: (data) => {
-          this.manualResult.set(data);
-          this.loading.set(false);
-        },
-        error: () => {
-          this.error.set(
-            this.translate.instant('pages.track_order.not_found')
-          );
-          this.loading.set(false);
-        },
-      });
+    this.orderClient.lookup(orderNumber, email).subscribe({
+      next: (data) => {
+        this.manualResult.set(data);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.error.set(
+          this.translate.instant('pages.track_order.not_found')
+        );
+        this.loading.set(false);
+      },
+    });
   }
 
   navigateToOrder(): void {
@@ -208,9 +200,10 @@ export class TrackOrderComponent implements OnInit {
     return localeMap[this.translate.currentLang] || 'en-US';
   }
 
-  formatDate(date: string | undefined): string {
+  formatDate(date: string | Date | undefined): string {
     if (!date) return '';
-    return new Date(date).toLocaleDateString(this.getLocale(), {
+    const d = date instanceof Date ? date : new Date(date);
+    return d.toLocaleDateString(this.getLocale(), {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -219,7 +212,10 @@ export class TrackOrderComponent implements OnInit {
     });
   }
 
-  formatPriceFor(order: LookupResult, price: number | undefined): string {
+  formatPriceFor(
+    order: LookupOrder_Response,
+    price: number | undefined
+  ): string {
     if (price == null) return '';
     const code = order.currency?.code || 'CZK';
     return new Intl.NumberFormat(this.getLocale(), {

@@ -46,7 +46,7 @@ export function getInvoiceTableColumns(
       sortable: true,
       width: '12%',
       getValue: (row: EmployeeInvoiceDto) => {
-        const currency = row.currencyCode || 'EUR';
+        const currency = row.currencyCode || 'CZK';
         return `${row.totalAmount?.toFixed(2)} ${currency}`;
       },
     },

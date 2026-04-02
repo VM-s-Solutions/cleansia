@@ -88,7 +88,7 @@ export class PackageManagementFacade {
     if (value === undefined || value === null) return '';
     return new Intl.NumberFormat('en-GB', {
       style: 'currency',
-      currency: 'EUR',
+      currency: 'CZK',
     }).format(value);
   }
 

@@ -48,7 +48,7 @@ export function getInvoicesTableDefinition(
           invoice
             ? new Intl.NumberFormat('en-GB', {
                 style: 'currency',
-                currency: invoice.currencyCode || 'EUR',
+                currency: invoice.currencyCode || 'CZK',
               }).format(invoice.totalAmount)
             : '',
         sortable: true,

@@ -13,6 +13,7 @@ public class SendGridConfig(IConfiguration configuration)
     public string ResetPasswordTemplateId { get; set; } = null!;
     public string PeriodClosedTemplateId { get; set; } = null!;
     public string PeriodEndReminderTemplateId { get; set; } = null!;
+    public string OrderStatusUpdateTemplateId { get; set; } = null!;
     public string ClientDomainUrl { get; set; } = null!;
     public string ResetPasswordUrl { get; set; } = null!;
     public string EmailConfirmationUrl { get; set; } = null!;

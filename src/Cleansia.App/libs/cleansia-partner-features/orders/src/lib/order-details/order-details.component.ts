@@ -8,7 +8,6 @@ import {
   CleansiaButtonComponent,
   CleansiaDetailSkeletonComponent,
   CleansiaSectionComponent,
-  CleansiaTelephoneComponent,
   CleansiaTextInputComponent,
 } from '@cleansia/components';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -40,7 +39,6 @@ import { OrderDetailsFacade } from './order-details.facade';
     CleansiaSectionComponent,
     OrderPaymentInfoComponent,
     CleansiaTextInputComponent,
-    CleansiaTelephoneComponent,
     OrderCustomerInfoComponent,
     OrderServiceDetailsComponent,
     OrderAdditionalServicesComponent,
@@ -181,8 +179,7 @@ export class OrderDetailsComponent implements OnInit {
 
     if (!order || !employeeId) return false;
 
-    // Order must have available spots and employee not already assigned
-    const hasAvailableSpots = order.hasAvailableSpots;
+    // Employee must not already be assigned
     const isNotAssigned = !order.assignedEmployees?.some(
       (e) => e.employeeId === employeeId
     );
@@ -190,7 +187,7 @@ export class OrderDetailsComponent implements OnInit {
     const isPendingOrConfirmed =
       order.orderStatus.value === 1 || order.orderStatus.value === 2;
 
-    return isPendingOrConfirmed && hasAvailableSpots && isNotAssigned;
+    return isPendingOrConfirmed && isNotAssigned;
   });
 
   protected readonly canStartOrder = computed(() => {

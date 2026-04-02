@@ -8,6 +8,7 @@ using Cleansia.Web.Customer.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Customer.Controllers;
 
@@ -16,6 +17,7 @@ namespace Cleansia.Web.Customer.Controllers;
 public class OrderController(IMediator mediator) : CustomerApiController(mediator)
 {
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     [HttpGet("Lookup")]
     [ProducesResponseType(typeof(LookupOrder.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -26,6 +28,7 @@ public class OrderController(IMediator mediator) : CustomerApiController(mediato
     }
 
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     [HttpPost("LookupBatch")]
     [ProducesResponseType(typeof(LookupOrderBatch.Response), StatusCodes.Status200OK)]
     public async Task<IActionResult> LookupOrderBatch([FromBody] LookupOrderBatch.Query query, CancellationToken cancellationToken)

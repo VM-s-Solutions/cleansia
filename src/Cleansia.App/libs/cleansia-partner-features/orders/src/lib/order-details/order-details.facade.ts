@@ -4,6 +4,7 @@ import {
   OrderItem,
   PartnerClient,
   StartOrderCommand,
+  TakeOrderCommand,
 } from '@cleansia/partner-services';
 import * as OrderActions from '@cleansia/partner-stores';
 import { SnackbarService } from '@cleansia/services';
@@ -154,6 +155,32 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
             'global.messages.orders.order_started'
           );
           // Reload order details to reflect new status
+          this.loadOrderDetails(orderId);
+        }),
+        catchError(() => of(null)),
+        finalize(() => this.loading.set(false))
+      )
+      .subscribe();
+  }
+
+  takeOrder(orderId: string, employeeId: string): void {
+    if (!orderId || !employeeId) {
+      this.snackbarService.showErrorTranslated(
+        'global.messages.orders.invalid_request'
+      );
+      return;
+    }
+
+    this.loading.set(true);
+
+    this.partnerClient.orderClient
+      .takeOrder(new TakeOrderCommand({ orderId, employeeId }))
+      .pipe(
+        takeUntil(this.destroyed$),
+        tap(() => {
+          this.snackbarService.showSuccessTranslated(
+            'pages.orders.order_taken_success'
+          );
           this.loadOrderDetails(orderId);
         }),
         catchError(() => of(null)),

@@ -273,7 +273,7 @@ export class InvoiceDetailFacade {
     currencyCode?: string
   ): string {
     if (amount === null || amount === undefined) return '-';
-    const currency = currencyCode || 'EUR';
+    const currency = currencyCode || 'CZK';
     return `${amount.toFixed(2)} ${currency}`;
   }
 

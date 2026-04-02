@@ -50,15 +50,28 @@ public class DefaultReceiptLayoutBuilder : IReceiptLayoutBuilder
             // Customer & Company info
             col.Item().Element(c => BuildInfoSection(c, data));
 
+            // Order details (cleaning date, rooms, etc.)
+            if (data.CleaningDate != null || data.Rooms != null || data.Bathrooms != null)
+            {
+                col.Item().Element(c => c.SectionTitle("Order Details"));
+                col.Item().Element(c => BuildOrderDetails(c, data));
+            }
+
             // Services & Packages table
             col.Item().Element(c => c.SectionTitle("Services & Packages"));
             col.Item().Element(c => BuildItemsTable(c, data));
+
+            // Extras
+            if (data.Extras.Count > 0)
+            {
+                col.Item().Element(c => BuildExtrasSection(c, data));
+            }
 
             // Summary
             col.Item().PaddingTop(CleansiaPdfTheme.SectionSpacing).Element(c => BuildSummary(c, data));
 
             // Payment status
-            col.Item().Element(c => c.PaymentStatusSection(data.PaymentStatus));
+            col.Item().Element(c => BuildPaymentInfo(c, data));
         });
     }
 
@@ -110,6 +123,76 @@ public class DefaultReceiptLayoutBuilder : IReceiptLayoutBuilder
             });
     }
 
+    protected virtual void BuildOrderDetails(IContainer container, ReceiptPdfData data)
+    {
+        container.PaddingTop(10)
+            .Background(CleansiaPdfTheme.LightBlue)
+            .Padding(14)
+            .Row(row =>
+            {
+                if (data.CleaningDate != null)
+                {
+                    row.RelativeItem().Column(col =>
+                    {
+                        col.Item().Text("Cleaning Date")
+                            .FontSize(CleansiaPdfTheme.FontSizeLabel)
+                            .FontColor(CleansiaPdfTheme.TextSecondary)
+                            .Bold();
+                        col.Item().Text(data.CleaningDate)
+                            .FontSize(CleansiaPdfTheme.FontSizeBody)
+                            .FontColor(CleansiaPdfTheme.TextPrimary);
+                    });
+                }
+
+                if (data.Rooms.HasValue)
+                {
+                    row.RelativeItem().Column(col =>
+                    {
+                        col.Item().Text("Rooms")
+                            .FontSize(CleansiaPdfTheme.FontSizeLabel)
+                            .FontColor(CleansiaPdfTheme.TextSecondary)
+                            .Bold();
+                        col.Item().Text(data.Rooms.Value.ToString())
+                            .FontSize(CleansiaPdfTheme.FontSizeBody)
+                            .FontColor(CleansiaPdfTheme.TextPrimary);
+                    });
+                }
+
+                if (data.Bathrooms.HasValue)
+                {
+                    row.RelativeItem().Column(col =>
+                    {
+                        col.Item().Text("Bathrooms")
+                            .FontSize(CleansiaPdfTheme.FontSizeLabel)
+                            .FontColor(CleansiaPdfTheme.TextSecondary)
+                            .Bold();
+                        col.Item().Text(data.Bathrooms.Value.ToString())
+                            .FontSize(CleansiaPdfTheme.FontSizeBody)
+                            .FontColor(CleansiaPdfTheme.TextPrimary);
+                    });
+                }
+
+                if (data.EstimatedTime.HasValue)
+                {
+                    row.RelativeItem().Column(col =>
+                    {
+                        col.Item().Text("Est. Duration")
+                            .FontSize(CleansiaPdfTheme.FontSizeLabel)
+                            .FontColor(CleansiaPdfTheme.TextSecondary)
+                            .Bold();
+                        var hours = data.EstimatedTime.Value / 60;
+                        var mins = data.EstimatedTime.Value % 60;
+                        var duration = hours > 0
+                            ? mins > 0 ? $"{hours}h {mins}m" : $"{hours}h"
+                            : $"{mins}m";
+                        col.Item().Text(duration)
+                            .FontSize(CleansiaPdfTheme.FontSizeBody)
+                            .FontColor(CleansiaPdfTheme.TextPrimary);
+                    });
+                }
+            });
+    }
+
     protected virtual void BuildItemsTable(IContainer container, ReceiptPdfData data)
     {
         container.StyledTable(
@@ -126,7 +209,7 @@ public class DefaultReceiptLayoutBuilder : IReceiptLayoutBuilder
 
                 foreach (var package in data.Packages)
                 {
-                    table.TableCell(package.Name, rowIndex);
+                    table.TableCell($"{package.Name} (Package)", rowIndex);
                     table.TableCell($"{data.Currency}{package.Price:N2}", rowIndex, alignRight: true);
                     rowIndex++;
                 }
@@ -137,6 +220,35 @@ public class DefaultReceiptLayoutBuilder : IReceiptLayoutBuilder
                     table.TableCell("—", 0, alignRight: true);
                 }
             });
+    }
+
+    protected virtual void BuildExtrasSection(IContainer container, ReceiptPdfData data)
+    {
+        container.PaddingTop(10).Column(col =>
+        {
+            col.Item().Text("EXTRAS INCLUDED")
+                .FontSize(CleansiaPdfTheme.FontSizeLabel)
+                .Bold()
+                .FontColor(CleansiaPdfTheme.BrandPrimary);
+
+            col.Item().PaddingTop(4).Row(row =>
+            {
+                foreach (var extra in data.Extras)
+                {
+                    row.AutoItem()
+                        .PaddingRight(8)
+                        .PaddingBottom(4)
+                        .Background(CleansiaPdfTheme.LightBlue)
+                        .Border(1)
+                        .BorderColor(CleansiaPdfTheme.BorderLight)
+                        .PaddingVertical(4)
+                        .PaddingHorizontal(10)
+                        .Text(extra)
+                        .FontSize(CleansiaPdfTheme.FontSizeBody)
+                        .FontColor(CleansiaPdfTheme.TextPrimary);
+                }
+            });
+        });
     }
 
     protected virtual void BuildSummary(IContainer container, ReceiptPdfData data)
@@ -150,6 +262,55 @@ public class DefaultReceiptLayoutBuilder : IReceiptLayoutBuilder
         container.SummaryBox(lines);
     }
 
+    protected virtual void BuildPaymentInfo(IContainer container, ReceiptPdfData data)
+    {
+        container.PaddingTop(CleansiaPdfTheme.SectionSpacing)
+            .Row(row =>
+            {
+                // Payment status
+                row.RelativeItem().AlignCenter().Column(col =>
+                {
+                    col.Item().AlignCenter().Text("Payment Status:")
+                        .FontSize(CleansiaPdfTheme.FontSizeBody)
+                        .FontColor(CleansiaPdfTheme.TextSecondary);
+
+                    var statusColor = CleansiaPdfTheme.GetStatusColor(data.PaymentStatus);
+                    col.Item().PaddingTop(6).AlignCenter()
+                        .Background(statusColor)
+                        .PaddingVertical(6)
+                        .PaddingHorizontal(24)
+                        .Text(data.PaymentStatus.ToUpperInvariant())
+                        .FontSize(10)
+                        .FontColor(CleansiaPdfTheme.White)
+                        .Bold()
+                        .AlignCenter();
+                });
+
+                // Payment type
+                if (!string.IsNullOrWhiteSpace(data.PaymentType))
+                {
+                    row.RelativeItem().AlignCenter().Column(col =>
+                    {
+                        col.Item().AlignCenter().Text("Payment Method:")
+                            .FontSize(CleansiaPdfTheme.FontSizeBody)
+                            .FontColor(CleansiaPdfTheme.TextSecondary);
+
+                        col.Item().PaddingTop(6).AlignCenter()
+                            .Background(CleansiaPdfTheme.TableHeaderBg)
+                            .Border(1)
+                            .BorderColor(CleansiaPdfTheme.BorderLight)
+                            .PaddingVertical(6)
+                            .PaddingHorizontal(24)
+                            .Text(data.PaymentType.ToUpperInvariant())
+                            .FontSize(10)
+                            .FontColor(CleansiaPdfTheme.TextPrimary)
+                            .Bold()
+                            .AlignCenter();
+                    });
+                }
+            });
+    }
+
     protected virtual void BuildFooter(IContainer container, ReceiptPdfData data)
     {
         var contactInfo = data.Company != null
@@ -158,6 +319,7 @@ public class DefaultReceiptLayoutBuilder : IReceiptLayoutBuilder
 
         container.StandardFooter(
             data.Company?.TradingName ?? "CLEANSIA",
-            contactInfo);
+            contactInfo,
+            DateTime.UtcNow);
     }
 }

@@ -83,7 +83,7 @@ public sealed class EmailService : IEmailService
         var translations = await emailTemplateTranslationRepository
             .GetTranslationsByTypeAndLanguageAsync(EmailType.OrderReceipt, languageCode, ct);
 
-        var orderStatusLink = $"{sendGridConfig.ClientDomainUrl}{sendGridConfig.OrderStatusUrl}?orderId={order.Id}";
+        var orderStatusLink = $"{sendGridConfig.ClientDomainUrl}/track-order?orderNumber={Uri.EscapeDataString(order.DisplayOrderNumber)}&email={Uri.EscapeDataString(email)}";
 
         var mergeData = MergeTranslationsWithData(translations, new
         {
@@ -119,7 +119,7 @@ public sealed class EmailService : IEmailService
         var translations = await emailTemplateTranslationRepository
             .GetTranslationsByTypeAndLanguageAsync(EmailType.OrderReceipt, languageCode, ct);
 
-        var orderStatusLink = $"{sendGridConfig.ClientDomainUrl}{sendGridConfig.OrderStatusUrl}?orderId=test-order-id";
+        var orderStatusLink = $"{sendGridConfig.ClientDomainUrl}/track-order?orderNumber={Uri.EscapeDataString(orderNumber)}&email={Uri.EscapeDataString(email)}";
 
         var mergeData = MergeTranslationsWithData(translations, new
         {
@@ -250,6 +250,86 @@ public sealed class EmailService : IEmailService
             mergeData,
             subject,
             $"Period end reminder email to {email}",
+            ct);
+    }
+
+    public async Task<string> SendOrderStatusUpdateEmailAsync(
+        string email,
+        Order order,
+        string newStatus,
+        string languageCode = "en",
+        CancellationToken ct = default)
+    {
+        var translations = await emailTemplateTranslationRepository
+            .GetTranslationsByTypeAndLanguageAsync(EmailType.OrderStatusUpdate, languageCode, ct);
+
+        var orderStatusLink = $"{sendGridConfig.ClientDomainUrl}/track-order?orderNumber={Uri.EscapeDataString(order.DisplayOrderNumber)}&email={Uri.EscapeDataString(email)}";
+        var address = order.CustomerAddress != null
+            ? $"{order.CustomerAddress.Street}, {order.CustomerAddress.City}"
+            : "";
+        var currencySymbol = order.Currency?.Symbol ?? "Kč";
+
+        var (statusTitle, statusMessage, statusClass) = newStatus.ToLowerInvariant() switch
+        {
+            "confirmed" => (
+                translations.GetValueOrDefault("StatusTitle_Confirmed", "Order Confirmed"),
+                translations.GetValueOrDefault("StatusMessage_Confirmed", "Your cleaning order has been confirmed and is scheduled."),
+                "confirmed"),
+            "assigned" => (
+                translations.GetValueOrDefault("StatusTitle_Assigned", "Cleaner Assigned"),
+                translations.GetValueOrDefault("StatusMessage_Assigned", "A professional cleaner has been assigned to your order."),
+                "assigned"),
+            "inprogress" or "started" => (
+                translations.GetValueOrDefault("StatusTitle_Started", "Cleaning Started"),
+                translations.GetValueOrDefault("StatusMessage_Started", "Your cleaning session has started."),
+                "started"),
+            "completed" => (
+                translations.GetValueOrDefault("StatusTitle_Completed", "Cleaning Complete"),
+                translations.GetValueOrDefault("StatusMessage_Completed", "Your cleaning has been completed successfully."),
+                "completed"),
+            "cancelled" => (
+                translations.GetValueOrDefault("StatusTitle_Cancelled", "Order Cancelled"),
+                translations.GetValueOrDefault("StatusMessage_Cancelled", "Your order has been cancelled."),
+                "cancelled"),
+            _ => (
+                translations.GetValueOrDefault("StatusTitle_Default", "Order Update"),
+                translations.GetValueOrDefault("StatusMessage_Default", "Your order status has been updated."),
+                "confirmed")
+        };
+
+        var subject = translations.GetValueOrDefault("Subject", $"Order {order.DisplayOrderNumber} — {statusTitle}");
+
+        var mergeData = MergeTranslationsWithData(translations, new
+        {
+            Subject = subject,
+            StatusMessage = statusMessage,
+            StatusSectionLabel = translations.GetValueOrDefault("StatusSectionLabel", "Current Status"),
+            StatusClass = statusClass,
+            StatusLabel = newStatus.ToUpperInvariant(),
+            OrderNumberLabel = translations.GetValueOrDefault("OrderNumberLabel", "Order #"),
+            OrderNumber = order.DisplayOrderNumber,
+            CleaningDateLabel = translations.GetValueOrDefault("CleaningDateLabel", "Cleaning Date"),
+            CleaningDate = order.CleaningDateTime.ToString("dd.MM.yyyy HH:mm"),
+            AddressLabel = translations.GetValueOrDefault("AddressLabel", "Address"),
+            Address = address,
+            TotalLabel = translations.GetValueOrDefault("TotalLabel", "Total"),
+            Total = $"{currencySymbol}{order.TotalPrice:N2}",
+            OrderStatusLink = orderStatusLink,
+            ButtonText = translations.GetValueOrDefault("ButtonText", "View Order Details"),
+            QuestionsText = translations.GetValueOrDefault("QuestionsText", "If you have any questions about your order, don't hesitate to reach out."),
+            SupportText = translations.GetValueOrDefault("SupportText", "Need help? Contact us at"),
+            SupportEmail = translations.GetValueOrDefault("SupportEmail", "info@cleansia.cz"),
+            Closing = translations.GetValueOrDefault("Closing", "Best regards,"),
+            TeamName = translations.GetValueOrDefault("TeamName", "The Cleansia Team"),
+            FooterText = translations.GetValueOrDefault("FooterText", $"© {DateTime.UtcNow.Year} Cleansia s.r.o. All rights reserved.")
+        });
+
+        return await SendTemplatedAsync(
+            email,
+            sendGridConfig.OrderStatusUpdateTemplateId,
+            mergeData,
+            subject,
+            $"Order status update ({newStatus}) to {email}",
             ct);
     }
 

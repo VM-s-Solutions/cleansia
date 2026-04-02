@@ -16,6 +16,7 @@ public class GetDashboardStats
     internal class Handler(
         IOrderRepository orderRepository,
         IEmployeeInvoiceRepository employeeInvoiceRepository,
+        IOrderEmployeePayRepository orderEmployeePayRepository,
         IEmployeeRepository employeeRepository,
         IUserSessionProvider userSessionProvider)
         : IQueryHandler<Query, DashboardStatsDto>
@@ -51,12 +52,16 @@ public class GetDashboardStats
             var latestInvoice = await employeeInvoiceRepository.GetLatestInvoiceAsync(
                 employeeId, cancellationToken);
 
+            // Calculate pending earnings from completed orders not yet invoiced
+            var unassignedPays = orderEmployeePayRepository.GetUnassignedPays(employeeId);
+            var pendingEarnings = unassignedPays.Sum(p => p.TotalPay);
+
             return new DashboardStatsDto(
                 AvailableOrdersCount: availableOrdersCount,
                 MyActiveOrdersCount: activeOrdersCount,
                 ThisMonthCompletedOrders: thisMonthCompletedOrders,
                 LastMonthCompletedOrders: lastMonthCompletedOrders,
-                CurrentPeriodEarnings: latestInvoice?.TotalAmount ?? 0,
+                CurrentPeriodEarnings: pendingEarnings > 0 ? pendingEarnings : latestInvoice?.TotalAmount ?? 0,
                 LatestInvoiceStatus: latestInvoice?.Status.ToString()
             );
         }

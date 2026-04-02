@@ -67,7 +67,7 @@ export function getOrderTableDefinition(
         width: '10%',
         getValue: (row: OrderListItem) => {
           if (!row) return '';
-          const symbol = row.currency?.symbol || 'EUR';
+          const symbol = row.currency?.symbol || 'Kc';
           return `${row.totalPrice?.toFixed(2)} ${symbol}`;
         },
       },

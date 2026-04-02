@@ -11,10 +11,16 @@ public record ReceiptPdfData
     public string? CustomerAddress { get; init; }
     public required List<ReceiptLineItem> Services { get; init; }
     public required List<ReceiptLineItem> Packages { get; init; }
+    public List<string> Extras { get; init; } = [];
     public required decimal Subtotal { get; init; }
     public required decimal Total { get; init; }
     public required string Currency { get; init; }
     public required string PaymentStatus { get; init; }
+    public string? PaymentType { get; init; }
+    public string? CleaningDate { get; init; }
+    public int? Rooms { get; init; }
+    public int? Bathrooms { get; init; }
+    public int? EstimatedTime { get; init; }
     public CompanyInfoData? Company { get; init; }
 }
 

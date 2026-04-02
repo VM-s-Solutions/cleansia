@@ -96,10 +96,19 @@ public sealed class ReceiptService(
             Packages = order.SelectedPackages
                 .Select(p => new ReceiptLineItem(p.Package?.Name ?? "Package", p.Package?.Price ?? 0))
                 .ToList(),
+            Extras = order.Extras
+                .Where(e => e.Value)
+                .Select(e => e.Key)
+                .ToList(),
             Subtotal = order.TotalPrice,
             Total = order.TotalPrice,
-            Currency = order.Currency?.Symbol ?? "€",
+            Currency = order.Currency?.Symbol ?? "Kč",
             PaymentStatus = order.PaymentStatus.ToString(),
+            PaymentType = order.PaymentType.ToString(),
+            CleaningDate = order.CleaningDateTime.ToString("dd.MM.yyyy HH:mm"),
+            Rooms = order.Rooms,
+            Bathrooms = order.Bathrooms,
+            EstimatedTime = order.EstimatedTime,
             Company = new CompanyInfoData
             {
                 LegalName = companyInfo.LegalName,

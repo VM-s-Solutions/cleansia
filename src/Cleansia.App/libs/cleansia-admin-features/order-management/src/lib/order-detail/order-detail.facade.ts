@@ -61,7 +61,7 @@ export class OrderDetailFacade {
 
   formatPrice(price: number | null | undefined): string {
     if (price === null || price === undefined) return '-';
-    const currency = this.order()?.currency?.symbol || 'EUR';
+    const currency = this.order()?.currency?.symbol || 'Kc';
     return `${price.toFixed(2)} ${currency}`;
   }
 

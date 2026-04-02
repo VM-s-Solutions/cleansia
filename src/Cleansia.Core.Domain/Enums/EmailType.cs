@@ -10,4 +10,5 @@ public enum EmailType
     OrderReceipt = 3,
     PeriodClosed = 4,
     PeriodEndReminder = 5,
+    OrderStatusUpdate = 6,
 }

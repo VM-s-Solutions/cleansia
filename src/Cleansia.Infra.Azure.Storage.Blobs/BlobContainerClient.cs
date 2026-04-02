@@ -1,5 +1,6 @@
 ﻿using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
+using Azure.Storage.Sas;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Blobs.Abstractions.Extensions;
 
@@ -8,11 +9,13 @@ namespace Cleansia.Infra.Azure.Storage.Blobs;
 public class BlobContainerClient : IBlobContainerClient
 {
     private readonly bool _createContainerIfNotExists;
+    private readonly bool _useManagedIdentity;
     private readonly global::Azure.Storage.Blobs.BlobContainerClient _container;
 
     public BlobContainerClient(string connectionString, string container, bool createContainerIfNotExists = false)
     {
         _createContainerIfNotExists = createContainerIfNotExists;
+        _useManagedIdentity = false;
         _container = new global::Azure.Storage.Blobs.BlobContainerClient(connectionString, container);
     }
 
@@ -20,6 +23,7 @@ public class BlobContainerClient : IBlobContainerClient
     {
         _container = container;
         _createContainerIfNotExists = createContainerIfNotExists;
+        _useManagedIdentity = true;
     }
 
     public async Task<IEnumerable<string>> GetFilesAsync(string path, CancellationToken cancellationToken)
@@ -78,6 +82,36 @@ public class BlobContainerClient : IBlobContainerClient
     }
 
     public Uri GetBlobUri(string blobName) => _container.GetBlobClient(blobName).Uri;
+
+    public Uri GenerateSasUri(string blobName, TimeSpan expiry)
+    {
+        var blobClient = _container.GetBlobClient(blobName);
+
+        var sasBuilder = new BlobSasBuilder
+        {
+            BlobContainerName = _container.Name,
+            BlobName = blobName,
+            Resource = "b",
+            ExpiresOn = DateTimeOffset.UtcNow.Add(expiry)
+        };
+        sasBuilder.SetPermissions(BlobSasPermissions.Read);
+
+        if (_useManagedIdentity)
+        {
+            var serviceClient = _container.GetParentBlobServiceClient();
+            var userDelegationKey = serviceClient.GetUserDelegationKey(
+                DateTimeOffset.UtcNow.AddMinutes(-5),
+                DateTimeOffset.UtcNow.Add(expiry));
+
+            var sasQueryParameters = sasBuilder.ToSasQueryParameters(
+                userDelegationKey.Value,
+                serviceClient.AccountName);
+
+            return new UriBuilder(blobClient.Uri) { Query = sasQueryParameters.ToString() }.Uri;
+        }
+
+        return blobClient.GenerateSasUri(sasBuilder);
+    }
 
     public async Task CopyAsync(Uri sourceUri, string targetBlob, CancellationToken cancellationToken)
     {

@@ -47,8 +47,8 @@ public static class FileExtensions
             DeductionAmount = invoice.DeductionAmount,
             VatAmount = 0,
             TotalAmount = invoice.TotalAmount,
-            CurrencyCode = currency?.Code ?? "EUR",
-            CurrencySymbol = currency?.Symbol ?? "€",
+            CurrencyCode = currency?.Code ?? "CZK",
+            CurrencySymbol = currency?.Symbol ?? "Kč",
             Orders = orderPays.Select(op => new OrderLineItem
             {
                 OrderNumber = op.Order?.DisplayOrderNumber ?? "N/A",

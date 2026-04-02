@@ -8,7 +8,6 @@ import {
   CleansiaButtonComponent,
   CleansiaDetailSkeletonComponent,
   CleansiaSectionComponent,
-  CleansiaTelephoneComponent,
   CleansiaTextInputComponent,
 } from '@cleansia/components';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -40,7 +39,6 @@ import { OrderDetailsFacade } from './order-details.facade';
     CleansiaSectionComponent,
     OrderPaymentInfoComponent,
     CleansiaTextInputComponent,
-    CleansiaTelephoneComponent,
     OrderCustomerInfoComponent,
     OrderServiceDetailsComponent,
     OrderAdditionalServicesComponent,
@@ -175,6 +173,23 @@ export class OrderDetailsComponent implements OnInit {
     );
   });
 
+  protected readonly canTakeOrder = computed(() => {
+    const order = this.orderDetails();
+    const employeeId = this.currentEmployeeId();
+
+    if (!order || !employeeId) return false;
+
+    // Employee must not already be assigned
+    const isNotAssigned = !order.assignedEmployees?.some(
+      (e) => e.employeeId === employeeId
+    );
+    // Only for Pending (1) or Confirmed (2) orders
+    const isPendingOrConfirmed =
+      order.orderStatus.value === 1 || order.orderStatus.value === 2;
+
+    return isPendingOrConfirmed && isNotAssigned;
+  });
+
   protected readonly canStartOrder = computed(() => {
     const order = this.orderDetails();
     const employeeId = this.currentEmployeeId();
@@ -306,6 +321,15 @@ export class OrderDetailsComponent implements OnInit {
 
   protected downloadInvoice(): void {
     this.facade.downloadInvoice();
+  }
+
+  protected takeOrder(): void {
+    const orderId = this.orderDetails()?.id;
+    const employeeId = this.currentEmployeeId();
+
+    if (orderId && employeeId) {
+      this.facade.takeOrder(orderId, employeeId);
+    }
   }
 
   protected startOrder(): void {

@@ -95,7 +95,7 @@
       "email": "E-mail",
       "nationality": "Státní příslušnost",
       "national_id": "Číslo občanského průkazu / Pasu",
-      "tax_id": "DIČ",
+      "tax_id": "IČO",
       "bank_details": "Bankovní údaje pro výplatu",
       "iban": "IBAN",
       "emergency_contact": "Kontakt v nouzi",
@@ -359,6 +359,12 @@
       "audit_information": "Auditní informace",
       "created_on": "Vytvořeno",
       "updated_on": "Aktualizováno",
+      "elapsed_time": "Uplynulý čas",
+      "report_issue": "Nahlásit problém",
+      "add_note": "Přidat poznámku",
+      "take_order": "Převzít objednávku",
+      "assigned_employees": "Přiřazení zaměstnanci",
+      "employee_email": "E-mail zaměstnance",
       "not_found_title": "Objednávka nenalezena",
       "not_found_message": "Objednávka, kterou hledáte, nebyla nalezena.",
       "load_failed": "Nepodařilo se načíst detail objednávky"
@@ -806,7 +812,14 @@
     "missingRequirements": "Chybějící požadavky:",
     "profileCompletion": "Dokončit informace v profilu",
     "documentUpload": "Nahrát požadované dokumenty",
-    "completeProfile": "Dokončit profil"
+    "completeProfile": "Dokončit profil",
+    "progress": "{{completed}} z {{total}} kroků dokončeno",
+    "categories": {
+      "profile": "Informace o profilu",
+      "documents": "Požadované dokumenty",
+      "availability": "Dostupnost",
+      "documentsRequired": "Nahrajte požadované dokumenty"
+    }
   },
   "validation": {
     "common": {
@@ -826,7 +839,7 @@
       "alphanumeric_only": "Pole může obsahovat pouze písmena a číslice",
       "zip_code": "Neplatný formát PSČ",
       "national_id": "Neplatný formát rodného čísla",
-      "tax_id": "Neplatný formát DIČ",
+      "tax_id": "Neplatný formát IČO",
       "confirm_password": "Hesla se neshodují",
       "no_whitespace": "Pole nesmí obsahovat mezery",
       "url": "Neplatný formát URL"
@@ -1037,7 +1050,7 @@
       "invalid_age": "Neplatný věk",
       "invalid_phone_number": "Neplatný formát telefonního čísla",
       "invalid_national_id": "Neplatný formát čísla občanského průkazu",
-      "invalid_tax_id": "Neplatný formát DIČ",
+      "invalid_tax_id": "Neplatný formát IČO",
       "invalid_iban": "Neplatný formát IBAN",
       "invalid_zip_code": "Neplatný formát PSČ",
       "must_be_positive": "Hodnota musí být kladná",

@@ -51,8 +51,15 @@ export class RegistrationCompletionService {
     const hasCompletedProfile = employeeStatus.hasCompletedProfile;
     const isComplete = hasCompletedProfile && hasUploadedDocuments;
 
-    // Add specific missing requirements with translations
-    if (!hasCompletedProfile) {
+    // Add specific missing fields from the API
+    if (
+      employeeStatus.missingFields &&
+      employeeStatus.missingFields.length > 0
+    ) {
+      for (const field of employeeStatus.missingFields) {
+        missingRequirements.push(field);
+      }
+    } else if (!hasCompletedProfile) {
       missingRequirements.push(
         this.translate.instant('api.employee.profile_incomplete')
       );

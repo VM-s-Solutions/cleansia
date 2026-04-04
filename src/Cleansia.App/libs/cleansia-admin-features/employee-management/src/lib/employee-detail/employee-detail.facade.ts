@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import {
   AdminClient,
   AdminUpdateEmployeeAvailabilityRequest,
+  AdminUpdateEmployeeCommand,
   ContractStatus,
   DocumentStatus,
   DocumentType,
@@ -39,6 +40,8 @@ export class EmployeeDetailFacade {
   readonly documentsLoading = signal<boolean>(false);
   readonly editingAvailability = signal<boolean>(false);
   readonly savingAvailability = signal<boolean>(false);
+  readonly editingSection = signal<string | null>(null);
+  readonly savingEmployee = signal<boolean>(false);
 
   loadEmployeeDetail(employeeId: string): void {
     this.loading.set(true);
@@ -286,6 +289,65 @@ export class EmployeeDetailFacade {
             )
           );
           this.editingAvailability.set(false);
+          this.loadEmployeeDetail(employeeId);
+        }
+      });
+  }
+
+  startEditingSection(section: string): void {
+    this.editingSection.set(section);
+  }
+
+  cancelEditingSection(): void {
+    this.editingSection.set(null);
+  }
+
+  updateEmployee(data: Partial<AdminUpdateEmployeeCommand>): void {
+    const employeeId = this.employee()?.id;
+    if (!employeeId) return;
+
+    this.savingEmployee.set(true);
+
+    const employee = this.employee();
+    const command = new AdminUpdateEmployeeCommand({
+      firstName: data.firstName ?? employee.firstName,
+      lastName: data.lastName ?? employee.lastName,
+      phoneNumber: data.phoneNumber ?? employee.phoneNumber,
+      birthDate: data.birthDate ?? employee.birthDate,
+      street: data.street ?? employee.street,
+      city: data.city ?? employee.city,
+      zipCode: data.zipCode ?? employee.zipCode,
+      countryId: data.countryId ?? employee.countryId,
+      nationalityId: data.nationalityId ?? employee.nationalityId,
+      passportId: data.passportId ?? employee.passportId,
+      taxId: data.taxId ?? employee.taxId,
+      iban: data.iban ?? employee.iban,
+      emergencyContactName: data.emergencyContactName ?? employee.emergencyContactName,
+      emergencyContactPhone: data.emergencyContactPhone ?? employee.emergencyContactPhone,
+    });
+
+    this.adminClient.adminEmployeeClient
+      .update(employeeId, command)
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError(() => {
+          this.snackbarService.showError(
+            this.translate.instant(
+              'pages.employee_detail.messages.employee_update_error'
+            )
+          );
+          return of(null);
+        }),
+        finalize(() => this.savingEmployee.set(false))
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.snackbarService.showSuccess(
+            this.translate.instant(
+              'pages.employee_detail.messages.employee_update_success'
+            )
+          );
+          this.editingSection.set(null);
           this.loadEmployeeDetail(employeeId);
         }
       });

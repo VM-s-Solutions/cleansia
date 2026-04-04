@@ -13854,6 +13854,7 @@ export interface IRegisterCommand {
 export class RegistrationCompletionStatus implements IRegistrationCompletionStatus {
     areDocumentsUploaded!: boolean;
     hasCompletedProfile!: boolean;
+    missingFields!: string[] | undefined;
 
     constructor(data?: IRegistrationCompletionStatus) {
         if (data) {
@@ -13868,6 +13869,11 @@ export class RegistrationCompletionStatus implements IRegistrationCompletionStat
         if (Data) {
             this.areDocumentsUploaded = Data["areDocumentsUploaded"];
             this.hasCompletedProfile = Data["hasCompletedProfile"];
+            if (Array.isArray(Data["missingFields"])) {
+                this.missingFields = [] as any;
+                for (let item of Data["missingFields"])
+                    this.missingFields!.push(item);
+            }
         }
     }
 
@@ -13882,6 +13888,11 @@ export class RegistrationCompletionStatus implements IRegistrationCompletionStat
         data = typeof data === 'object' ? data : {};
         data["areDocumentsUploaded"] = this.areDocumentsUploaded;
         data["hasCompletedProfile"] = this.hasCompletedProfile;
+        if (Array.isArray(this.missingFields)) {
+            data["missingFields"] = [];
+            for (let item of this.missingFields)
+                data["missingFields"].push(item);
+        }
         return data;
     }
 }
@@ -13889,6 +13900,7 @@ export class RegistrationCompletionStatus implements IRegistrationCompletionStat
 export interface IRegistrationCompletionStatus {
     areDocumentsUploaded: boolean;
     hasCompletedProfile: boolean;
+    missingFields: string[] | undefined;
 }
 
 export class RejectEmployeeRequest implements IRejectEmployeeRequest {

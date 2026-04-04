@@ -134,7 +134,7 @@ fun AnalyticsDetailScreen(
                         item {
                             DayOfWeekCard(
                                 dayOfWeekEarnings = uiState.dayOfWeekEarnings,
-                                currency = uiState.analytics?.currency ?: "EUR"
+                                currency = uiState.analytics?.currency ?: "CZK"
                             )
                         }
                     }
@@ -154,7 +154,7 @@ fun AnalyticsDetailScreen(
                         item {
                             MonthlyEarningsTrendCard(
                                 trend = data,
-                                currency = uiState.analytics?.currency ?: "EUR"
+                                currency = uiState.analytics?.currency ?: "CZK"
                             )
                         }
                     }
@@ -164,7 +164,7 @@ fun AnalyticsDetailScreen(
                         item {
                             ServiceRevenueCard(
                                 breakdown = data,
-                                currency = uiState.analytics?.currency ?: "EUR"
+                                currency = uiState.analytics?.currency ?: "CZK"
                             )
                         }
                     }

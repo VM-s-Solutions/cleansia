@@ -106,7 +106,8 @@ export class AppComponent implements OnInit, OnDestroy {
         }
 
         const isProtectedRoute = this.shouldCheckRegistrationCompletion(url);
-        const shouldShow = isLoggedIn && isProtectedRoute && !isComplete;
+        // Only show lock when we have confirmed incomplete status (not while loading)
+        const shouldShow = isLoggedIn && isProtectedRoute && employeeStatus != null && !isComplete;
 
         this.shouldShowRegistrationLock.set(shouldShow);
       });
@@ -144,27 +145,27 @@ export class AppComponent implements OnInit, OnDestroy {
 
   sidebarMenuItems: SidebarMenuItem[] = [
     {
-      label: this.translate.instant('sidebar.dashboard'),
+      label: 'sidebar.dashboard',
       icon: 'pi pi-home',
       route: `/${CleansiaPartnerRoute.DASHBOARD}`,
     },
     {
-      label: this.translate.instant('sidebar.profile'),
+      label: 'sidebar.profile',
       icon: 'pi pi-user',
       route: `/${CleansiaPartnerRoute.PROFILE}`,
     },
     {
-      label: this.translate.instant('sidebar.orders'),
+      label: 'sidebar.orders',
       icon: 'pi pi-shopping-cart',
       route: `/${CleansiaPartnerRoute.ORDERS}`,
     },
     {
-      label: this.translate.instant('sidebar.invoices'),
+      label: 'sidebar.invoices',
       icon: 'pi pi-file',
       route: `/${CleansiaPartnerRoute.INVOICES}`,
     },
     {
-      label: this.translate.instant('sidebar.logout'),
+      label: 'sidebar.logout',
       icon: 'pi pi-sign-out',
       onClickFn: () => {
         this.dialogService

@@ -128,9 +128,11 @@ export class ProfileFacade extends UnsubscribeControlDirective {
         const countryOptions: ICleansiaSelectOption[] = countries.map(
           (country) => {
             const translation =
-              country.translations![this.translate.currentLang].name;
+              country.translations?.[this.translate.currentLang]?.name;
+            const name = translation ?? country.name!;
+            const iso = country.isoCode ?? '';
             return {
-              label: translation ?? country.name!,
+              label: iso ? `${name} (${iso})` : name,
               value: country.id!,
             };
           }

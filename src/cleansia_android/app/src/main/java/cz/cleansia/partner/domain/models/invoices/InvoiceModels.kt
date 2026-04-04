@@ -53,7 +53,7 @@ data class Invoice(
     val period: String get() = payPeriodLabel ?: ""
     val issueDate: String get() = generatedAt ?: ""
     val dueDate: String get() = "" // Not available in the API
-    val currency: String get() = currencyCode ?: "EUR"
+    val currency: String get() = currencyCode ?: "CZK"
     val orderCount: Int get() = totalOrders ?: 0
 }
 
@@ -70,7 +70,7 @@ data class InvoiceDetail(
     val subtotal: Double = 0.0,
     val taxAmount: Double = 0.0,
     val totalAmount: Double = 0.0,
-    val currency: String = "EUR",
+    val currency: String = "CZK",
     val orders: List<InvoiceOrderItem> = emptyList(),
     val employeeId: String? = null,
     val employeeName: String? = null,
@@ -110,7 +110,7 @@ data class InvoiceOrderItem(
     val completedDate: String = "",
     val serviceName: String? = null,
     val amount: Double = 0.0,
-    val currency: String = "EUR"
+    val currency: String = "CZK"
 )
 
 @Serializable

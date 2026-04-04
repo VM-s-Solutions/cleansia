@@ -84,6 +84,9 @@
       "@cleansia/admin-features/service-management": [
         "libs/cleansia-admin-features/service-management/src/index.ts"
       ],
+      "@cleansia/admin-features/pay-config-management": [
+        "libs/cleansia-admin-features/pay-config-management/src/index.ts"
+      ],
       "@cleansia/admin-features/template-management": [
         "libs/cleansia-admin-features/template-management/src/index.ts"
       ],

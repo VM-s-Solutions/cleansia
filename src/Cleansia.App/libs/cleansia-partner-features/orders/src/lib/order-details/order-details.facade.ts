@@ -1,8 +1,11 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
+  AddOrderNoteCommand,
+  CompleteOrderCommand,
   OrderItem,
   PartnerClient,
+  ReportOrderIssueCommand,
   StartOrderCommand,
   TakeOrderCommand,
 } from '@cleansia/partner-services';
@@ -14,10 +17,13 @@ import { Store } from '@ngrx/store';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { catchError, finalize, of, take, takeUntil, tap } from 'rxjs';
 import {
-  CompleteOrderDialogComponent,
-  CompleteOrderDialogData,
-  CompleteOrderDialogResult,
-} from '../components/complete-order-dialog';
+  ReportIssueDialogComponent,
+  ReportIssueDialogResult,
+} from '../components/report-issue-dialog';
+import {
+  AddNoteDialogComponent,
+  AddNoteDialogResult,
+} from '../components/add-note-dialog';
 
 @Injectable()
 export class OrderDetailsFacade extends UnsubscribeControlDirective {
@@ -195,7 +201,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
     this.error.set(null);
   }
 
-  openCompleteOrderDialog(): void {
+  completeOrder(): void {
     const order = this.orderDetails();
     const employeeId = this.currentEmployeeId();
 
@@ -206,51 +212,130 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
       return;
     }
 
-    const dialogData: CompleteOrderDialogData = {
-      orderId: order.id!,
-      orderNumber: order.displayOrderNumber!,
-      estimatedTime: order.estimatedTime || 0,
-    };
+    // Calculate actual minutes from InProgress status start to now
+    const inProgressEntry = order.statusHistory?.find(h => h.status.value === 3);
+    let actualMinutes = 0;
+    if (inProgressEntry) {
+      const start = new Date(inProgressEntry.createdOn);
+      actualMinutes = Math.max(1, Math.floor((Date.now() - start.getTime()) / 60000));
+    }
+
+    // Subscribe to action result to reload only on success
+    this.actions$
+      .pipe(
+        ofType(
+          OrderActions.completeOrderSuccess,
+          OrderActions.completeOrderFailure
+        ),
+        take(1),
+        takeUntil(this.destroyed$)
+      )
+      .subscribe((action) => {
+        if (action.type === OrderActions.completeOrderSuccess.type) {
+          this.loadOrderDetails(order.id!);
+        }
+      });
+
+    this.store.dispatch(
+      OrderActions.completeOrder({
+        orderId: order.id!,
+        employeeId,
+        actualCompletionTimeMinutes: actualMinutes,
+        completionNotes: '',
+      })
+    );
+  }
+
+  openReportIssueDialog(): void {
+    const order = this.orderDetails();
+    const employeeId = this.currentEmployeeId();
+
+    if (!order || !employeeId) {
+      this.snackbarService.showErrorTranslated(
+        'global.messages.orders.invalid_request'
+      );
+      return;
+    }
 
     const ref: DynamicDialogRef = this.dialogService.open(
-      CompleteOrderDialogComponent,
+      ReportIssueDialogComponent,
       {
         header: undefined,
-        data: dialogData,
-        width: '600px',
+        data: { orderId: order.id },
+        width: '500px',
         modal: true,
-        dismissableMask: false,
+        dismissableMask: true,
       }
     );
 
-    ref.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: CompleteOrderDialogResult) => {
+    ref.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: ReportIssueDialogResult) => {
       if (result) {
-        // Subscribe to action result to reload only on success
-        this.actions$
-          .pipe(
-            ofType(
-              OrderActions.completeOrderSuccess,
-              OrderActions.completeOrderFailure
-            ),
-            take(1),
-            takeUntil(this.destroyed$)
-          )
-          .subscribe((action) => {
-            if (action.type === OrderActions.completeOrderSuccess.type) {
-              // Only reload order details on success
-              this.loadOrderDetails(order.id!);
-            }
-            // On failure, do not reload - the error message is already shown by the effect
-          });
-
-        this.store.dispatch(
-          OrderActions.completeOrder({
-            orderId: order.id!,
+        this.loading.set(true);
+        this.partnerClient.orderClient
+          .reportIssue(new ReportOrderIssueCommand({
+            orderId: order.id,
             employeeId,
-            actualCompletionTimeMinutes: result.actualCompletionTimeMinutes,
-            completionNotes: result.completionNotes,
-          })
-        );
+            description: result.description,
+          }))
+          .pipe(
+            takeUntil(this.destroyed$),
+            tap(() => {
+              this.snackbarService.showSuccessTranslated(
+                'global.messages.orders.issue_reported'
+              );
+              this.loadOrderDetails(order.id!);
+            }),
+            catchError(() => of(null)),
+            finalize(() => this.loading.set(false))
+          )
+          .subscribe();
+      }
+    });
+  }
+
+  openAddNoteDialog(): void {
+    const order = this.orderDetails();
+    const employeeId = this.currentEmployeeId();
+
+    if (!order || !employeeId) {
+      this.snackbarService.showErrorTranslated(
+        'global.messages.orders.invalid_request'
+      );
+      return;
+    }
+
+    const ref: DynamicDialogRef = this.dialogService.open(
+      AddNoteDialogComponent,
+      {
+        header: undefined,
+        data: { orderId: order.id },
+        width: '500px',
+        modal: true,
+        dismissableMask: true,
+      }
+    );
+
+    ref.onClose.pipe(takeUntil(this.destroyed$)).subscribe((result: AddNoteDialogResult) => {
+      if (result) {
+        this.loading.set(true);
+        this.partnerClient.orderClient
+          .addNote(new AddOrderNoteCommand({
+            orderId: order.id,
+            employeeId,
+            content: result.content,
+          }))
+          .pipe(
+            takeUntil(this.destroyed$),
+            tap(() => {
+              this.snackbarService.showSuccessTranslated(
+                'global.messages.orders.note_added'
+              );
+              this.loadOrderDetails(order.id!);
+            }),
+            catchError(() => of(null)),
+            finalize(() => this.loading.set(false))
+          )
+          .subscribe();
       }
     });
   }

@@ -201,6 +201,18 @@ export class ServicesCatalogComponent implements OnInit {
     this.showAllServices.set(true);
   }
 
+  bookPackage(pkg: PackageListItem): void {
+    this.router.navigate([CleansiaCustomerRoute.ORDER], {
+      queryParams: { packageId: pkg.id },
+    });
+  }
+
+  bookService(service: ServiceListItem): void {
+    this.router.navigate([CleansiaCustomerRoute.ORDER], {
+      queryParams: { serviceId: service.id },
+    });
+  }
+
   bookNow(): void {
     this.router.navigate([CleansiaCustomerRoute.ORDER]);
   }

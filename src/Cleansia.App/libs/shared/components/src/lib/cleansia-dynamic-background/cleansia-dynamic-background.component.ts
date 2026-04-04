@@ -20,16 +20,16 @@ export class CleansiaDynamicBackgroundComponent implements OnInit {
   floatingIcons: FloatingIcon[] = [];
 
   private readonly iconClasses = [
-    'fa-broom',
-    'fa-soap',
-    'fa-spray-can-sparkles',
-    'fa-bucket',
-    'fa-hands-bubbles',
-    'fa-shower',
-    'fa-droplet',
-    'fa-pump-soap',
-    'fa-sponge',
-    'fa-faucet-drip',
+    'pi-sparkles',
+    'pi-star',
+    'pi-sun',
+    'pi-heart',
+    'pi-home',
+    'pi-bolt',
+    'pi-cloud',
+    'pi-shield',
+    'pi-check-circle',
+    'pi-thumbs-up',
   ];
 
   ngOnInit(): void {
@@ -47,7 +47,7 @@ export class CleansiaDynamicBackgroundComponent implements OnInit {
     const opacity = 0.08 + Math.random() * 0.15; // 0.08 – 0.23
 
     return {
-      iconClass: `fa-solid ${icon}`,
+      iconClass: `pi ${icon}`,
       animationName: `float-${index}`,
       style: {
         'font-size': `${size}rem`,

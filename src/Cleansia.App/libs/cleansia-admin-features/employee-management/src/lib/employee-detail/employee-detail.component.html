@@ -113,6 +113,55 @@
       <cleansia-section
         [title]="'pages.employee_detail.personal_info' | translate"
       >
+        @if (facade.editingSection() === 'personal') {
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label">{{ 'pages.employee_detail.first_name' | translate }}:</span>
+            <input type="text" class="edit-input" [(ngModel)]="editFormData['firstName']" />
+          </div>
+          <div class="info-item">
+            <span class="label">{{ 'pages.employee_detail.last_name' | translate }}:</span>
+            <input type="text" class="edit-input" [(ngModel)]="editFormData['lastName']" />
+          </div>
+          <div class="info-item">
+            <span class="label">{{ 'pages.employee_detail.email' | translate }}:</span>
+            <span class="value">{{ facade.employee().email || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">{{ 'pages.employee_detail.phone' | translate }}:</span>
+            <input type="text" class="edit-input" [(ngModel)]="editFormData['phoneNumber']" />
+          </div>
+          <div class="info-item">
+            <span class="label">{{ 'pages.employee_detail.birth_date' | translate }}:</span>
+            <input type="date" class="edit-input" [(ngModel)]="editFormData['birthDate']" />
+          </div>
+          <div class="info-item">
+            <span class="label">{{ 'pages.employee_detail.created_at' | translate }}:</span>
+            <span class="value">{{ formatDateTime(facade.employee().createdAt) }}</span>
+          </div>
+        </div>
+        <div class="section-edit-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+          <cleansia-button
+            [label]="'common.save' | translate"
+            [loading]="facade.savingEmployee()"
+            (onClick)="onSaveSection()"
+          />
+          <cleansia-button
+            [label]="'common.cancel' | translate"
+            severity="secondary"
+            [disabled]="facade.savingEmployee()"
+            (onClick)="onCancelEditSection()"
+          />
+        </div>
+        } @else {
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
+          <cleansia-button
+            [label]="'common.edit' | translate"
+            severity="secondary"
+            icon="pi pi-pencil"
+            (onClick)="onEditSection('personal')"
+          />
+        </div>
         <div class="info-grid">
           <div class="info-item">
             <span class="label"
@@ -157,12 +206,54 @@
             }}</span>
           </div>
         </div>
+        }
       </cleansia-section>
 
       <!-- Address Information -->
       <cleansia-section
         [title]="'pages.employee_detail.address_info' | translate"
       >
+        @if (facade.editingSection() === 'address') {
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label">{{ 'pages.employee_detail.street' | translate }}:</span>
+            <input type="text" class="edit-input" [(ngModel)]="editFormData['street']" />
+          </div>
+          <div class="info-item">
+            <span class="label">{{ 'pages.employee_detail.city' | translate }}:</span>
+            <input type="text" class="edit-input" [(ngModel)]="editFormData['city']" />
+          </div>
+          <div class="info-item">
+            <span class="label">{{ 'pages.employee_detail.zip_code' | translate }}:</span>
+            <input type="text" class="edit-input" [(ngModel)]="editFormData['zipCode']" />
+          </div>
+          <div class="info-item">
+            <span class="label">{{ 'pages.employee_detail.country' | translate }}:</span>
+            <span class="value">{{ facade.employee().countryName || '-' }}</span>
+          </div>
+        </div>
+        <div class="section-edit-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+          <cleansia-button
+            [label]="'common.save' | translate"
+            [loading]="facade.savingEmployee()"
+            (onClick)="onSaveSection()"
+          />
+          <cleansia-button
+            [label]="'common.cancel' | translate"
+            severity="secondary"
+            [disabled]="facade.savingEmployee()"
+            (onClick)="onCancelEditSection()"
+          />
+        </div>
+        } @else {
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
+          <cleansia-button
+            [label]="'common.edit' | translate"
+            severity="secondary"
+            icon="pi pi-pencil"
+            (onClick)="onEditSection('address')"
+          />
+        </div>
         <div class="info-grid">
           <div class="info-item">
             <span class="label"
@@ -191,12 +282,54 @@
             }}</span>
           </div>
         </div>
+        }
       </cleansia-section>
 
       <!-- Employment Information -->
       <cleansia-section
         [title]="'pages.employee_detail.employment_info' | translate"
       >
+        @if (facade.editingSection() === 'employment') {
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label">{{ 'pages.employee_detail.nationality' | translate }}:</span>
+            <span class="value">{{ facade.employee().nationalityName || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">{{ 'pages.employee_detail.passport_id' | translate }}:</span>
+            <input type="text" class="edit-input" [(ngModel)]="editFormData['passportId']" />
+          </div>
+          <div class="info-item">
+            <span class="label">{{ 'pages.employee_detail.tax_id' | translate }}:</span>
+            <input type="text" class="edit-input" [(ngModel)]="editFormData['taxId']" />
+          </div>
+          <div class="info-item">
+            <span class="label">{{ 'pages.employee_detail.iban' | translate }}:</span>
+            <input type="text" class="edit-input" [(ngModel)]="editFormData['iban']" />
+          </div>
+        </div>
+        <div class="section-edit-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+          <cleansia-button
+            [label]="'common.save' | translate"
+            [loading]="facade.savingEmployee()"
+            (onClick)="onSaveSection()"
+          />
+          <cleansia-button
+            [label]="'common.cancel' | translate"
+            severity="secondary"
+            [disabled]="facade.savingEmployee()"
+            (onClick)="onCancelEditSection()"
+          />
+        </div>
+        } @else {
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
+          <cleansia-button
+            [label]="'common.edit' | translate"
+            severity="secondary"
+            icon="pi pi-pencil"
+            (onClick)="onEditSection('employment')"
+          />
+        </div>
         <div class="info-grid">
           <div class="info-item">
             <span class="label"
@@ -225,12 +358,46 @@
             <span class="value">{{ facade.employee().iban || '-' }}</span>
           </div>
         </div>
+        }
       </cleansia-section>
 
       <!-- Emergency Contact -->
       <cleansia-section
         [title]="'pages.employee_detail.emergency_contact' | translate"
       >
+        @if (facade.editingSection() === 'emergency') {
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label">{{ 'pages.employee_detail.emergency_name' | translate }}:</span>
+            <input type="text" class="edit-input" [(ngModel)]="editFormData['emergencyContactName']" />
+          </div>
+          <div class="info-item">
+            <span class="label">{{ 'pages.employee_detail.emergency_phone' | translate }}:</span>
+            <input type="text" class="edit-input" [(ngModel)]="editFormData['emergencyContactPhone']" />
+          </div>
+        </div>
+        <div class="section-edit-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+          <cleansia-button
+            [label]="'common.save' | translate"
+            [loading]="facade.savingEmployee()"
+            (onClick)="onSaveSection()"
+          />
+          <cleansia-button
+            [label]="'common.cancel' | translate"
+            severity="secondary"
+            [disabled]="facade.savingEmployee()"
+            (onClick)="onCancelEditSection()"
+          />
+        </div>
+        } @else {
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
+          <cleansia-button
+            [label]="'common.edit' | translate"
+            severity="secondary"
+            icon="pi pi-pencil"
+            (onClick)="onEditSection('emergency')"
+          />
+        </div>
         <div class="info-grid">
           <div class="info-item">
             <span class="label"
@@ -249,6 +416,7 @@
             }}</span>
           </div>
         </div>
+        }
       </cleansia-section>
 
       <!-- Availability -->

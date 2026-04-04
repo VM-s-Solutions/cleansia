@@ -229,62 +229,63 @@
       </div>
     </div>
 
-    <!-- Tabs for Available and My Orders -->
-    <p-tabs value="0" (valueChange)="onTabChange($event)">
-      <!-- Available Orders Tab -->
-      <p-tablist>
-        <p-tab value="0">{{
-          'pages.orders.available_orders' | translate
-        }}</p-tab>
-        <p-tab value="1">{{ 'pages.orders.my_orders' | translate }}</p-tab>
-      </p-tablist>
-      <p-tabpanel value="0">
-        <cleansia-section>
-          <cleansia-table
-            [data]="facade.availableOrders()"
-            [columns]="availableOrdersColumns"
-            [actions]="availableOrdersActions"
-            [clickableRows]="true"
-            [config]="{
-              paginator: true,
-              rows: 10,
-              lazy: true,
-              totalRecords: facade.totalRecords(),
-              emptyMessage: 'pages.orders.no_available_orders'
-            }"
-            [loading]="facade.loading()"
-            (pageChange)="onAvailableOrdersPageChange($event)"
-            (sortChange)="onSortChange($event)"
-            (rowClick)="viewOrderDetails($event)"
-          >
-          </cleansia-table>
-        </cleansia-section>
-      </p-tabpanel>
+    <!-- Available Orders Section -->
+    <cleansia-section>
+      <div class="section-header">
+        <h2 class="section-title">
+          {{ 'pages.orders.available_orders' | translate }}
+          <span class="count-badge">{{ facade.availableTotalRecords() }}</span>
+        </h2>
+      </div>
+      <cleansia-table
+        [data]="facade.availableOrders()"
+        [columns]="availableOrdersColumns"
+        [actions]="availableOrdersActions"
+        [clickableRows]="true"
+        [config]="{
+          paginator: true,
+          rows: 10,
+          lazy: true,
+          totalRecords: facade.availableTotalRecords(),
+          emptyMessage: 'pages.orders.no_available_orders'
+        }"
+        [loading]="facade.availableLoading()"
+        (pageChange)="onAvailableOrdersPageChange($event)"
+        (sortChange)="onAvailableSortChange($event)"
+        (rowClick)="viewOrderDetails($event)"
+      >
+      </cleansia-table>
+    </cleansia-section>
 
-      <!-- My Orders Tab -->
-      <p-tabpanel value="1">
-        <cleansia-section>
-          <cleansia-table
-            [data]="facade.myOrders()"
-            [columns]="myOrdersColumns"
-            [actions]="myOrdersActions"
-            [clickableRows]="true"
-            [config]="{
-              paginator: true,
-              rows: 10,
-              lazy: true,
-              totalRecords: facade.totalRecords(),
-              emptyMessage: 'pages.orders.no_my_orders'
-            }"
-            [loading]="facade.loading()"
-            (pageChange)="onMyOrdersPageChange($event)"
-            (sortChange)="onSortChange($event)"
-            (rowClick)="viewOrderDetails($event)"
-          >
-          </cleansia-table>
-        </cleansia-section>
-      </p-tabpanel>
-    </p-tabs>
+    <hr class="section-divider" />
+
+    <!-- My Orders Section -->
+    <cleansia-section>
+      <div class="section-header">
+        <h2 class="section-title">
+          {{ 'pages.orders.my_orders' | translate }}
+          <span class="count-badge">{{ facade.myTotalRecords() }}</span>
+        </h2>
+      </div>
+      <cleansia-table
+        [data]="facade.myOrders()"
+        [columns]="myOrdersColumns"
+        [actions]="myOrdersActions"
+        [clickableRows]="true"
+        [config]="{
+          paginator: true,
+          rows: 10,
+          lazy: true,
+          totalRecords: facade.myTotalRecords(),
+          emptyMessage: 'pages.orders.no_my_orders'
+        }"
+        [loading]="facade.myLoading()"
+        (pageChange)="onMyOrdersPageChange($event)"
+        (sortChange)="onMySortChange($event)"
+        (rowClick)="viewOrderDetails($event)"
+      >
+      </cleansia-table>
+    </cleansia-section>
   </div>
 </div>
 

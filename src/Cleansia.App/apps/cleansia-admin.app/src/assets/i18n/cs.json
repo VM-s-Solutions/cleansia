@@ -105,6 +105,7 @@
     "next_page": "Další stránka",
     "actions": {
       "login": "Přihlásit se",
+      "payConfigs": "Pay Configs",
       "logout": "Odhlásit se",
       "back": "Zpět",
       "save": "Uložit",
@@ -159,7 +160,8 @@
     "currencies": "Měny",
     "companyInfo": "Údaje o společnosti",
     "templates": "Šablony",
-    "logout": "Odhlásit se"
+    "payConfigs": "Pay Configs",
+      "logout": "Odhlásit se"
   },
   "pages": {
     "unauthorized": {
@@ -240,7 +242,7 @@
       "employment_info": "Pracovní informace",
       "nationality": "Státní příslušnost",
       "passport_id": "Číslo pasu/občanského průkazu",
-      "tax_id": "DIČ (IČO)",
+      "tax_id": "IČO",
       "iban": "IBAN",
       "emergency_contact": "Kontakt v nouzi",
       "emergency_name": "Jméno",
@@ -325,7 +327,9 @@
         "document_reject_error": "Nepodařilo se zamítnout dokument",
         "document_download_error": "Nepodařilo se stáhnout dokument",
         "availability_save_success": "Dostupnost byla úspěšně aktualizována",
-        "availability_save_error": "Nepodařilo se aktualizovat dostupnost"
+        "availability_save_error": "Nepodařilo se aktualizovat dostupnost",
+        "employee_update_success": "Zaměstnanec byl úspěšně aktualizován",
+        "employee_update_error": "Nepodařilo se aktualizovat zaměstnance"
       },
       "document_status": {
         "pending": "Čekající",
@@ -1419,7 +1423,7 @@
       "invalid_national_id": "Neplatný formát čísla občanského průkazu",
       "invalid_password": "Neplatné heslo",
       "invalid_phone_number": "Neplatný formát telefonního čísla",
-      "invalid_tax_id": "Neplatný formát DIČ",
+      "invalid_tax_id": "Neplatný formát IČO",
       "invalid_zip_code": "Neplatný formát PSČ"
     },
     "address": {
@@ -1648,7 +1652,7 @@
       "invalid_age": "Neplatný věk",
       "invalid_phone_number": "Neplatný formát telefonního čísla",
       "invalid_national_id": "Neplatný formát čísla občanského průkazu",
-      "invalid_tax_id": "Neplatný formát DIČ",
+      "invalid_tax_id": "Neplatný formát IČO",
       "invalid_iban": "Neplatný formát IBAN",
       "invalid_zip_code": "Neplatný formát PSČ",
       "must_be_positive": "Hodnota musí být kladná",

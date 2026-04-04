@@ -90,7 +90,7 @@ public sealed class EmailService : IEmailService
             CustomerName = order.CustomerName,
             OrderNumber = order.DisplayOrderNumber,
             OrderDate = order.CreatedOn.ToString("d"),
-            TotalAmount = order.TotalPrice.ToString("C"),
+            TotalAmount = $"{order.Currency?.Symbol ?? "Kč"}{order.TotalPrice:N2}",
             OrderStatusLink = orderStatusLink
         });
 

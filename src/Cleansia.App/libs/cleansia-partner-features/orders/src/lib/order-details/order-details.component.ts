@@ -225,6 +225,20 @@ export class OrderDetailsComponent implements OnInit {
     return !!order?.receiptNumber;
   });
 
+  protected readonly isInProgress = computed(() => {
+    return this.orderDetails()?.orderStatus.value === 3;
+  });
+
+  protected readonly elapsedTime = computed(() => {
+    const order = this.orderDetails();
+    if (!order || order.orderStatus.value !== 3) return null;
+    const startEntry = order.statusHistory?.find(h => h.status.value === 3);
+    if (!startEntry) return null;
+    const start = new Date(startEntry.createdOn);
+    const elapsed = Math.floor((Date.now() - start.getTime()) / 60000);
+    return { hours: Math.floor(elapsed / 60), minutes: elapsed % 60 };
+  });
+
   protected readonly canManagePhotos = computed(() => {
     const order = this.orderDetails();
     const employeeId = this.currentEmployeeId();
@@ -342,7 +356,15 @@ export class OrderDetailsComponent implements OnInit {
   }
 
   protected completeOrder(): void {
-    this.facade.openCompleteOrderDialog();
+    this.facade.completeOrder();
+  }
+
+  protected openReportIssue(): void {
+    this.facade.openReportIssueDialog();
+  }
+
+  protected openAddNote(): void {
+    this.facade.openAddNoteDialog();
   }
 
   private createFormGroup(): FormGroup {

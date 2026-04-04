@@ -181,7 +181,7 @@ private fun DashboardContent(
                 completedThisMonth = uiState.stats?.completedThisMonth ?: 0,
                 completionTrend = uiState.stats?.completionTrend,
                 pendingEarnings = uiState.stats?.pendingEarnings ?: 0.0,
-                currency = uiState.stats?.currency ?: "EUR",
+                currency = uiState.stats?.currency ?: "CZK",
                 onAvailableOrdersClick = onNavigateToAvailableOrders,
                 onActiveOrdersClick = onNavigateToActiveOrders,
                 onCompletedClick = onNavigateToCompletedOrders,

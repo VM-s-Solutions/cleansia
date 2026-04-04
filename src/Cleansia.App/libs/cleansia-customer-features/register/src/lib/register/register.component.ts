@@ -76,7 +76,17 @@ export class RegisterComponent implements AfterViewInit {
   private _gsiRetries = 0;
   private readonly _gsiMaxRetries = 20;
 
+  private loadGsiScript(): void {
+    if (document.querySelector('script[src*="accounts.google.com/gsi/client"]')) return;
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+  }
+
   private initGoogleSignIn() {
+    this.loadGsiScript();
     const google = (window as any).google;
     if (!google?.accounts?.id) {
       if (this._gsiRetries < this._gsiMaxRetries) {

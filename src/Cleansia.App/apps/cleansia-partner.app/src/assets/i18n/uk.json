@@ -789,7 +789,14 @@
     "missingRequirements": "Відсутні вимоги:",
     "profileCompletion": "Заповнити інформацію профілю",
     "documentUpload": "Завантажити необхідні документи",
-    "completeProfile": "Завершити профіль"
+    "completeProfile": "Завершити профіль",
+    "progress": "{{completed}} з {{total}} кроків виконано",
+    "categories": {
+      "profile": "Інформація профілю",
+      "documents": "Необхідні документи",
+      "availability": "Доступність",
+      "documentsRequired": "Завантажте необхідні документи"
+    }
   },
   "validation": {
     "common": {

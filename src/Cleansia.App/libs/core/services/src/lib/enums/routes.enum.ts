@@ -28,6 +28,7 @@ export enum CleansiaAdminRoute {
   CURRENCY_MANAGEMENT = 'currency-management',
   COMPANY_INFO = 'company-info',
   TEMPLATE_MANAGEMENT = 'template-management',
+  PAY_CONFIG_MANAGEMENT = 'pay-config-management',
 }
 
 export enum CleansiaCustomerRoute {

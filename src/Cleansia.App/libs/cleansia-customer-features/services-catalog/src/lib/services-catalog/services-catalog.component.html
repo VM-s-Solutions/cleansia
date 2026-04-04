@@ -126,7 +126,7 @@
             "
             [outlined]="getPackageTierIndex(pkg) !== 1"
             [size]="'full-width'"
-            (clickFn)="bookNow()"
+            (clickFn)="bookPackage(pkg)"
           />
         </div>
       </div>
@@ -216,7 +216,7 @@
               </div>
               }
             </div>
-            <button class="services-catalog__service-cta" (click)="bookNow()">
+            <button class="services-catalog__service-cta" (click)="bookService(service)">
               {{ 'pages.services.book_now' | translate }}
             </button>
           </div>

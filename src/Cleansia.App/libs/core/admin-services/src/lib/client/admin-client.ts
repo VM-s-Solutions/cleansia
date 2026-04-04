@@ -2480,6 +2480,11 @@ export interface IAdminEmployeeClient {
      * @return OK
      */
     updateAvailability(employeeId: string, body?: AdminUpdateEmployeeAvailabilityRequest | undefined): Observable<AdminUpdateEmployeeAvailabilityResponse>;
+    /**
+     * @param body (optional)
+     * @return OK
+     */
+    update(employeeId: string, body?: AdminUpdateEmployeeCommand | undefined): Observable<AdminUpdateEmployeeResponse>;
 }
 
 @Injectable({
@@ -2891,6 +2896,86 @@ export class AdminEmployeeClient implements IAdminEmployeeClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = AdminUpdateEmployeeAvailabilityResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional)
+     * @return OK
+     */
+    update(employeeId: string, body?: AdminUpdateEmployeeCommand | undefined): Observable<AdminUpdateEmployeeResponse> {
+        let url = this.baseUrl + "/api/AdminEmployee/{employeeId}/update";
+        if (employeeId === undefined || employeeId === null)
+            throw new globalThis.Error("The parameter 'employeeId' must be defined.");
+        url = url.replace("{employeeId}", encodeURIComponent("" + employeeId));
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("put", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processUpdate(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processUpdate(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<AdminUpdateEmployeeResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<AdminUpdateEmployeeResponse>;
+        }));
+    }
+
+    protected processUpdate(response: HttpResponseBase): Observable<AdminUpdateEmployeeResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = AdminUpdateEmployeeResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -8379,6 +8464,130 @@ export class AdminUpdateEmployeeAvailabilityTimeRangeDto implements IAdminUpdate
 export interface IAdminUpdateEmployeeAvailabilityTimeRangeDto {
     start: string | undefined;
     end: string | undefined;
+}
+
+export class AdminUpdateEmployeeCommand implements IAdminUpdateEmployeeCommand {
+    firstName!: string | undefined;
+    lastName!: string | undefined;
+    phoneNumber!: string | undefined;
+    birthDate!: Date | undefined;
+    street!: string | undefined;
+    city!: string | undefined;
+    zipCode!: string | undefined;
+    countryId!: string | undefined;
+    nationalityId!: string | undefined;
+    passportId!: string | undefined;
+    taxId!: string | undefined;
+    iban!: string | undefined;
+    emergencyContactName!: string | undefined;
+    emergencyContactPhone!: string | undefined;
+
+    constructor(data?: IAdminUpdateEmployeeCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.firstName = Data["firstName"];
+            this.lastName = Data["lastName"];
+            this.phoneNumber = Data["phoneNumber"];
+            this.birthDate = Data["birthDate"] ? new Date(Data["birthDate"].toString()) : undefined as any;
+            this.street = Data["street"];
+            this.city = Data["city"];
+            this.zipCode = Data["zipCode"];
+            this.countryId = Data["countryId"];
+            this.nationalityId = Data["nationalityId"];
+            this.passportId = Data["passportId"];
+            this.taxId = Data["taxId"];
+            this.iban = Data["iban"];
+            this.emergencyContactName = Data["emergencyContactName"];
+            this.emergencyContactPhone = Data["emergencyContactPhone"];
+        }
+    }
+
+    static fromJS(data: any): AdminUpdateEmployeeCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new AdminUpdateEmployeeCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["firstName"] = this.firstName;
+        data["lastName"] = this.lastName;
+        data["phoneNumber"] = this.phoneNumber;
+        data["birthDate"] = this.birthDate ? formatDate(this.birthDate) : undefined as any;
+        data["street"] = this.street;
+        data["city"] = this.city;
+        data["zipCode"] = this.zipCode;
+        data["countryId"] = this.countryId;
+        data["nationalityId"] = this.nationalityId;
+        data["passportId"] = this.passportId;
+        data["taxId"] = this.taxId;
+        data["iban"] = this.iban;
+        data["emergencyContactName"] = this.emergencyContactName;
+        data["emergencyContactPhone"] = this.emergencyContactPhone;
+        return data;
+    }
+}
+
+export interface IAdminUpdateEmployeeCommand {
+    firstName: string | undefined;
+    lastName: string | undefined;
+    phoneNumber: string | undefined;
+    birthDate: Date | undefined;
+    street: string | undefined;
+    city: string | undefined;
+    zipCode: string | undefined;
+    countryId: string | undefined;
+    nationalityId: string | undefined;
+    passportId: string | undefined;
+    taxId: string | undefined;
+    iban: string | undefined;
+    emergencyContactName: string | undefined;
+    emergencyContactPhone: string | undefined;
+}
+
+export class AdminUpdateEmployeeResponse implements IAdminUpdateEmployeeResponse {
+    employeeId!: string | undefined;
+
+    constructor(data?: IAdminUpdateEmployeeResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.employeeId = Data["employeeId"];
+        }
+    }
+
+    static fromJS(data: any): AdminUpdateEmployeeResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new AdminUpdateEmployeeResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["employeeId"] = this.employeeId;
+        return data;
+    }
+}
+
+export interface IAdminUpdateEmployeeResponse {
+    employeeId: string | undefined;
 }
 
 export class AdminUserDetailDto implements IAdminUserDetailDto {

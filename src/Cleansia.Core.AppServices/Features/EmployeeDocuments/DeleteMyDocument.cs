@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -41,7 +42,15 @@ public class DeleteMyDocument
                 .MustAsync(documentRepository.ExistsAsync)
                 .WithMessage(BusinessErrorMessage.NotFound)
                 .MustAsync(BeOwnedByCurrentEmployeeAsync)
-                .WithMessage(BusinessErrorMessage.EmployeeDocumentNotOwned);
+                .WithMessage(BusinessErrorMessage.EmployeeDocumentNotOwned)
+                .MustAsync(NotBeApprovedAsync)
+                .WithMessage("Cannot delete an approved document. Contact admin for assistance.");
+        }
+
+        private async Task<bool> NotBeApprovedAsync(string documentId, CancellationToken cancellationToken)
+        {
+            var document = await _documentRepository.GetByIdAsync(documentId, cancellationToken);
+            return document?.Status != DocumentStatus.Approved;
         }
 
         private async Task<bool> BeOwnedByCurrentEmployeeAsync(string documentId, CancellationToken cancellationToken)

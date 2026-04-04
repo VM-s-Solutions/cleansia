@@ -47,8 +47,13 @@ public class TakeOrder
                 .WithMessage(BusinessErrorMessage.EmployeeDocumentsMissing);
 
             RuleFor(x => x)
+                .Cascade(CascadeMode.Stop)
                 .MustAsync(NotAlreadyAssignedToEmployeeAsync)
-                .WithMessage(BusinessErrorMessage.EmployeeAlreadyAssignedToOrder);
+                .WithMessage(BusinessErrorMessage.EmployeeAlreadyAssignedToOrder)
+                .MustAsync(NotExceedWeeklyOrderLimitAsync)
+                .WithMessage(BusinessErrorMessage.WeeklyOrderLimitReached)
+                .MustAsync(NotHaveTimeConflictAsync)
+                .WithMessage(BusinessErrorMessage.TimeConflict);
         }
 
         private async Task<bool> HasAvailableSpotsAsync(string orderId, CancellationToken cancellationToken)
@@ -93,6 +98,38 @@ public class TakeOrder
             if (employee == null) return false;
 
             return employee.ContractStatus != Domain.Enums.ContractStatus.Pending;
+        }
+
+        private async Task<bool> NotExceedWeeklyOrderLimitAsync(Command command, CancellationToken cancellationToken)
+        {
+            var employee = await _employeeRepository.GetByIdAsync(command.EmployeeId, cancellationToken);
+            if (employee == null) return false;
+
+            var weeklyCount = await _orderRepository.GetEmployeeOrderCountThisWeekAsync(command.EmployeeId, cancellationToken);
+
+            var limit = employee.AverageRating switch
+            {
+                <= 3.5m => 3,
+                <= 4.5m => 6,
+                _ => 10
+            };
+
+            return weeklyCount < limit;
+        }
+
+        private async Task<bool> NotHaveTimeConflictAsync(Command command, CancellationToken cancellationToken)
+        {
+            var order = await _orderRepository
+                .GetQueryable()
+                .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
+
+            if (order == null) return false;
+
+            return !await _orderRepository.HasOverlappingOrderAsync(
+                command.EmployeeId,
+                order.CleaningDateTime,
+                order.EstimatedTime,
+                cancellationToken);
         }
     }
 

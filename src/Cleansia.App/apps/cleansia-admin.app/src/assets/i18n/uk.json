@@ -105,6 +105,7 @@
     "next_page": "Наступна сторінка",
     "actions": {
       "login": "Увійти",
+      "payConfigs": "Pay Configs",
       "logout": "Вийти",
       "back": "Назад",
       "save": "Зберегти",
@@ -159,7 +160,8 @@
     "currencies": "Валюти",
     "companyInfo": "Інформація про компанію",
     "templates": "Шаблони",
-    "logout": "Вийти"
+    "payConfigs": "Pay Configs",
+      "logout": "Вийти"
   },
   "pages": {
     "unauthorized": {
@@ -325,7 +327,9 @@
         "document_reject_error": "Не вдалося відхилити документ",
         "document_download_error": "Не вдалося завантажити документ",
         "availability_save_success": "Доступність успішно оновлено",
-        "availability_save_error": "Не вдалося оновити доступність"
+        "availability_save_error": "Не вдалося оновити доступність",
+        "employee_update_success": "Співробітника успішно оновлено",
+        "employee_update_error": "Не вдалося оновити співробітника"
       },
       "document_status": {
         "pending": "Очікує",

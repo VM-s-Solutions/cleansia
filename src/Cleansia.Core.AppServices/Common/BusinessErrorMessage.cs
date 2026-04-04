@@ -38,6 +38,8 @@ public static class BusinessErrorMessage
     public const string OrderNotFound = "order.not_found";
     public const string OrderAlreadyAssigned = "order.already_assigned";
     public const string NoAvailableSpots = "order.no_available_spots";
+    public const string WeeklyOrderLimitReached = "order.weekly_limit_reached";
+    public const string TimeConflict = "order.time_conflict";
     public const string EmployeeAlreadyAssignedToOrder = "order.employee_already_assigned";
     public const string EmployeeNotAssignedToOrder = "order.employee_not_assigned";
     public const string MaxEmployeesExceeded = "order.max_employees_exceeded";

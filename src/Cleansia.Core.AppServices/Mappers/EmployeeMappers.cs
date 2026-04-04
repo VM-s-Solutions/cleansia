@@ -10,8 +10,8 @@ public static class EmployeeMappers
     {
         return new RegistrationCompletionStatus(
             AreDocumentsUploaded: employee.ContractStatus != Domain.Enums.ContractStatus.Pending,
-            HasCompletedProfile: employee.Address is not null
-                                 && employee.Availability.Any());
+            HasCompletedProfile: employee.IsProfileComplete(),
+            MissingFields: employee.GetMissingProfileFields());
     }
 
     public static EmployeeListItem MapToDto(this Employee employee)

@@ -194,16 +194,12 @@ public class Employee : Auditable, ITenantEntity
                              !string.IsNullOrEmpty(PassportId) &&
                              !string.IsNullOrEmpty(NationalityId);
 
-        var hasEmergencyContact = !string.IsNullOrEmpty(EmergencyContactName) &&
-                                 !string.IsNullOrEmpty(EmergencyContactPhone);
-
         var hasDocuments = Documents.Any(d => d.IsActive);
 
         var hasAvailability = Availability.Any();
 
         return hasBasicInfo && hasPersonalInfo && hasAddress &&
-               hasEmployeeInfo && hasEmergencyContact && hasDocuments &&
-               hasAvailability;
+               hasEmployeeInfo && hasDocuments && hasAvailability;
     }
 
     public List<string> GetMissingProfileFields()
@@ -223,8 +219,6 @@ public class Employee : Auditable, ITenantEntity
         if (string.IsNullOrEmpty(IBAN)) missingFields.Add("IBAN");
         if (string.IsNullOrEmpty(PassportId)) missingFields.Add("Passport ID");
         if (string.IsNullOrEmpty(NationalityId)) missingFields.Add("Nationality");
-        if (string.IsNullOrEmpty(EmergencyContactName)) missingFields.Add("Emergency Contact Name");
-        if (string.IsNullOrEmpty(EmergencyContactPhone)) missingFields.Add("Emergency Contact Phone");
         if (!Documents.Any(d => d.IsActive)) missingFields.Add("Documents");
         if (!Availability.Any()) missingFields.Add("Availability");
 

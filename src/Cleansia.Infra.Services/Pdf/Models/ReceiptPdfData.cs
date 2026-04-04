@@ -12,7 +12,6 @@ public record ReceiptPdfData
     public required List<ReceiptLineItem> Services { get; init; }
     public required List<ReceiptLineItem> Packages { get; init; }
     public List<string> Extras { get; init; } = [];
-    public required decimal Subtotal { get; init; }
     public required decimal Total { get; init; }
     public required string Currency { get; init; }
     public required string PaymentStatus { get; init; }

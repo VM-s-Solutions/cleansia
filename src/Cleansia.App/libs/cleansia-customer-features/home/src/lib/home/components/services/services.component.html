@@ -9,7 +9,7 @@
     @if (services().length > 0) {
     <div class="cl-services">
       @for (service of services(); track service.id; let idx = $index) { @if (idx < 3) {
-      <a routerLink="/order" class="cl-services__card-link animate-on-scroll" [class]="'delay-' + (idx + 1)">
+      <a [routerLink]="'/order'" [queryParams]="{ serviceId: service.id }" class="cl-services__card-link animate-on-scroll" [class]="'delay-' + (idx + 1)">
         <div class="cl-services__card">
           @if (idx === 0) {
           <div class="cl-services__ribbon">{{ 'pages.services.most_popular' | translate }}</div>

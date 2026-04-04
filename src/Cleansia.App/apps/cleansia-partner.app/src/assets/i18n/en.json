@@ -342,6 +342,12 @@
       "audit_information": "Audit Information",
       "created_on": "Created On",
       "updated_on": "Updated On",
+      "elapsed_time": "Elapsed Time",
+      "report_issue": "Report Issue",
+      "add_note": "Add Note",
+      "take_order": "Take Order",
+      "assigned_employees": "Assigned Employees",
+      "employee_email": "Employee Email",
       "not_found_title": "Order Not Found",
       "not_found_message": "The order you are looking for could not be found.",
       "load_failed": "Failed to load order details"
@@ -789,7 +795,14 @@
     "missingRequirements": "Missing Requirements:",
     "profileCompletion": "Complete Profile Information",
     "documentUpload": "Upload Required Documents",
-    "completeProfile": "Complete Profile"
+    "completeProfile": "Complete Profile",
+    "progress": "{{completed}} of {{total}} steps complete",
+    "categories": {
+      "profile": "Profile Information",
+      "documents": "Required Documents",
+      "availability": "Availability",
+      "documentsRequired": "Upload required documents"
+    }
   },
   "validation": {
     "common": {

@@ -94,7 +94,7 @@
       "email": "E-mail",
       "nationality": "Štátna príslušnosť / Občianstvo",
       "national_id": "Číslo občianskeho preukazu / pasu",
-      "tax_id": "DIČ",
+      "tax_id": "IČO",
       "bank_details": "Bankové údaje pre výplatu",
       "iban": "IBAN",
       "emergency_contact": "Kontakt pre prípad núdze",
@@ -789,7 +789,14 @@
     "missingRequirements": "Chýbajúce požiadavky:",
     "profileCompletion": "Dokončiť informácie v profile",
     "documentUpload": "Nahrať požadované dokumenty",
-    "completeProfile": "Dokončiť profil"
+    "completeProfile": "Dokončiť profil",
+    "progress": "{{completed}} z {{total}} krokov dokončených",
+    "categories": {
+      "profile": "Informácie o profile",
+      "documents": "Požadované dokumenty",
+      "availability": "Dostupnosť",
+      "documentsRequired": "Nahrajte požadované dokumenty"
+    }
   },
   "validation": {
     "common": {
@@ -809,7 +816,7 @@
       "alphanumeric_only": "Pole môže obsahovať iba písmená a číslice",
       "zip_code": "Neplatný formát PSČ",
       "national_id": "Neplatný formát čísla občianskeho preukazu",
-      "tax_id": "Neplatný formát DIČ",
+      "tax_id": "Neplatný formát IČO",
       "confirm_password": "Heslá sa nezhodujú",
       "no_whitespace": "Pole nesmie obsahovať medzery",
       "url": "Neplatný formát URL"
@@ -1020,7 +1027,7 @@
       "invalid_age": "Neplatný vek",
       "invalid_phone_number": "Neplatný formát telefónneho čísla",
       "invalid_national_id": "Neplatný formát čísla občianskeho preukazu",
-      "invalid_tax_id": "Neplatný formát DIČ",
+      "invalid_tax_id": "Neplatný formát IČO",
       "invalid_iban": "Neplatný formát IBAN",
       "invalid_zip_code": "Neplatný formát PSČ",
       "must_be_positive": "Hodnota musí byť kladná",

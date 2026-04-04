@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Code, EmployeeDocumentItem, TimeRange } from '@cleansia/admin-services';
+import { AdminUpdateEmployeeCommand, Code, EmployeeDocumentItem, TimeRange } from '@cleansia/admin-services';
 import { selectDayOfWeekCodes } from '@cleansia/admin-stores';
 import {
   CleansiaAvailabilityComponent,
@@ -45,6 +45,7 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
 
   readonly daysOfWeek = signal<Code[]>([]);
   availabilityValue: { [key: string]: TimeRange[] } = {};
+  editFormData: Record<string, any> = {};
 
   ngOnInit(): void {
     const employeeId = this.route.snapshot.paramMap.get('employeeId');
@@ -107,5 +108,20 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
 
   onCancelEditAvailability(): void {
     this.facade.cancelEditingAvailability();
+  }
+
+  onEditSection(section: string): void {
+    const employee = this.facade.employee();
+    if (!employee) return;
+    this.editFormData = { ...employee };
+    this.facade.startEditingSection(section);
+  }
+
+  onSaveSection(): void {
+    this.facade.updateEmployee(this.editFormData as Partial<AdminUpdateEmployeeCommand>);
+  }
+
+  onCancelEditSection(): void {
+    this.facade.cancelEditingSection();
   }
 }

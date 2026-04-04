@@ -41,7 +41,10 @@ public class SubmitOrderReview
         }
     }
 
-    public class Handler(IOrderRepository orderRepository) : ICommandHandler<Command, OrderReviewDto>
+    public class Handler(
+        IOrderRepository orderRepository,
+        IEmployeeRepository employeeRepository
+    ) : ICommandHandler<Command, OrderReviewDto>
     {
         public async Task<BusinessResult<OrderReviewDto>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -49,6 +52,7 @@ public class SubmitOrderReview
                 .GetQueryable()
                 .Include(o => o.Reviews)
                 .Include(o => o.OrderStatusHistory)
+                .Include(o => o.AssignedEmployees)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             if (order == null)
@@ -77,6 +81,7 @@ public class SubmitOrderReview
             if (existingReview != null)
             {
                 existingReview.Update(command.Rating, command.Comment);
+                await RecalculateEmployeeRatings(order, cancellationToken);
                 return BusinessResult.Success(existingReview.MapToDto());
             }
 
@@ -84,7 +89,30 @@ public class SubmitOrderReview
             var review = OrderReview.Create(command.OrderId, command.UserId, command.Rating, command.Comment);
             order.AddReview(review);
 
+            await RecalculateEmployeeRatings(order, cancellationToken);
+
             return BusinessResult.Success(review.MapToDto());
+        }
+
+        private async Task RecalculateEmployeeRatings(Order order, CancellationToken cancellationToken)
+        {
+            foreach (var assignedEmployee in order.AssignedEmployees)
+            {
+                var employee = await employeeRepository.GetByIdAsync(assignedEmployee.EmployeeId, cancellationToken);
+                if (employee == null) continue;
+
+                // Query all reviews across all orders assigned to this employee
+                var allReviews = await orderRepository
+                    .GetQueryable()
+                    .Where(o => o.AssignedEmployees.Any(ae => ae.EmployeeId == employee.Id))
+                    .SelectMany(o => o.Reviews)
+                    .ToListAsync(cancellationToken);
+
+                if (allReviews.Count == 0) continue;
+
+                var averageRating = (decimal)allReviews.Average(r => r.Rating);
+                employee.UpdateRating(Math.Round(averageRating, 2), employee.ComplaintsCount);
+            }
         }
     }
 }

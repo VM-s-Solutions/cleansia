@@ -27,7 +27,7 @@ export function getAvailableOrdersTableDefinition(
         header: 'pages.orders.cleaning_date',
         getValue: (row?: OrderListItem) =>
           row?.cleaningDateTime
-            ? new Date(row.cleaningDateTime).toLocaleDateString('en-GB')
+            ? new Date(row.cleaningDateTime).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
             : '',
         sortable: true,
         width: '12%',
@@ -129,7 +129,7 @@ export function getMyOrdersTableDefinition(
         header: 'pages.orders.cleaning_date',
         getValue: (row?: OrderListItem) =>
           row?.cleaningDateTime
-            ? new Date(row.cleaningDateTime).toLocaleDateString('en-GB')
+            ? new Date(row.cleaningDateTime).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
             : '',
         sortable: true,
         width: '12%',

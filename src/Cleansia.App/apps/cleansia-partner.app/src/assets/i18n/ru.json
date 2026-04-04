@@ -789,7 +789,14 @@
     "missingRequirements": "Отсутствующие требования:",
     "profileCompletion": "Заполнить информацию профиля",
     "documentUpload": "Загрузить необходимые документы",
-    "completeProfile": "Завершить профиль"
+    "completeProfile": "Завершить профиль",
+    "progress": "{{completed}} из {{total}} шагов выполнено",
+    "categories": {
+      "profile": "Информация профиля",
+      "documents": "Необходимые документы",
+      "availability": "Доступность",
+      "documentsRequired": "Загрузите необходимые документы"
+    }
   },
   "validation": {
     "common": {

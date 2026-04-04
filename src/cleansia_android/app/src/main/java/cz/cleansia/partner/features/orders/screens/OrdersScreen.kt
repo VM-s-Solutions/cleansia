@@ -719,7 +719,7 @@ private fun EmptyOrdersView(message: String) {
     }
 }
 
-private fun formatCurrency(amount: Double, currency: String = "EUR"): String {
+private fun formatCurrency(amount: Double, currency: String = "CZK"): String {
     return try {
         val format = NumberFormat.getCurrencyInstance(Locale.getDefault())
         format.currency = Currency.getInstance(currency)

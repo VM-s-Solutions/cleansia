@@ -370,18 +370,14 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  onTabChange(tabIndex: string | number): void {
-    tabIndex = Number(tabIndex);
-    this.lastSortField = null;
-    this.lastSortOrder = null;
+  onAvailableSortChange(event: { field: string; order: number }): void {
+    this.facade.setActiveTab('available');
+    this.onSortChange(event);
+  }
 
-    if (tabIndex === 0) {
-      this.facade.setActiveTab('available');
-      this.facade.loadAvailableOrders();
-    } else if (tabIndex === 1) {
-      this.facade.setActiveTab('my');
-      this.facade.loadMyOrders();
-    }
+  onMySortChange(event: { field: string; order: number }): void {
+    this.facade.setActiveTab('my');
+    this.onSortChange(event);
   }
 
   onAvailableOrdersPageChange(event: PaginationState): void {

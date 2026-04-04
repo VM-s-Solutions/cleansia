@@ -205,17 +205,6 @@
               facade.downloadEmployeeDocument(doc.documentId!, doc.fileName!)
             "
           />
-          <cleansia-button
-            [buttonType]="'button'"
-            [style]="'basic-button'"
-            icon="pi pi-trash"
-            [severity]="'danger'"
-            [title]="'pages.profile.delete' | translate"
-            (clickFn)="
-              facade.deleteEmployeeDocument(doc.documentId!, doc.fileName!)
-            "
-            [loading]="facade.documentsDeleting()"
-          />
         </div>
       </div>
       }

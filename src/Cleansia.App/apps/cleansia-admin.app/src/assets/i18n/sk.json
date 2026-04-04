@@ -105,6 +105,7 @@
     "next_page": "Nasledujúca stránka",
     "actions": {
       "login": "Prihlásiť sa",
+      "payConfigs": "Pay Configs",
       "logout": "Odhlásiť sa",
       "back": "Späť",
       "save": "Uložiť",
@@ -159,7 +160,8 @@
     "currencies": "Meny",
     "companyInfo": "Informácie o spoločnosti",
     "templates": "Šablóny",
-    "logout": "Odhlásiť sa"
+    "payConfigs": "Pay Configs",
+      "logout": "Odhlásiť sa"
   },
   "pages": {
     "unauthorized": {
@@ -325,7 +327,9 @@
         "document_reject_error": "Nepodarilo sa zamietnuť dokument",
         "document_download_error": "Nepodarilo sa stiahnuť dokument",
         "availability_save_success": "Dostupnosť bola úspešne aktualizovaná",
-        "availability_save_error": "Nepodarilo sa aktualizovať dostupnosť"
+        "availability_save_error": "Nepodarilo sa aktualizovať dostupnosť",
+        "employee_update_success": "Zamestnanec bol úspešne aktualizovaný",
+        "employee_update_error": "Nepodarilo sa aktualizovať zamestnanca"
       },
       "document_status": {
         "pending": "Čakajúci",

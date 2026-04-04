@@ -15,7 +15,8 @@
 5. [Configuration Strategy](#configuration-strategy)
 6. [CI/CD Pipeline](#cicd-pipeline)
 7. [Step-by-Step Deployment Guide](#step-by-step-deployment-guide)
-8. [Cost Breakdown](#cost-breakdown)
+8. [Documentation Site Deployment](#documentation-site-deployment)
+9. [Cost Breakdown](#cost-breakdown)
 
 ---
 
@@ -99,6 +100,7 @@ APIs enqueue messages to Azure Storage Queues instead of generating PDFs synchro
 | App Service (Customer SSR)  | `web-cleansia-customer-dev` | Node.js 20 LTS — Angular SSR frontend    |
 | Static Web App (Partner)    | `swa-cleansia-partner-dev`  | Free                                     |
 | Static Web App (Admin)      | `swa-cleansia-admin-dev`    | Free                                     |
+| Static Web App (Docs)       | `swa-cleansia-docs-dev`     | Free — VitePress documentation site      |
 | Storage Account             | `stcleansiasdev`            | Standard LRS — blobs + queues            |
 | PostgreSQL Flexible Server  | `psql-cleansia-dev`         | Burstable B1ms (1 vCore, 2 GB)           |
 | Key Vault                   | `kv-cleansia-dev`           | Standard                                 |
@@ -253,10 +255,23 @@ The Functions app (`func-cleansia-{env}`) requires these app settings. Secrets u
 | `SendGrid__PeriodEndReminderTemplateId`                 | `d-d8428c5ffff14355a59d0a35023445da`        | Plain         |
 | `SendGrid__ResetPasswordTemplateId`                     | `d-c475f44d635f40569aa8b5171dc63270`        | Plain         |
 | `SendGrid__AddressFrom`                                 | `it@cleansia.cz`                            | Plain         |
-| `SendGrid__OrderStatusUrl`                              | `https://{domain}/orders`                   | Plain         |
+| `SendGrid__OrderStatusUpdateTemplateId`                  | `d-<template_id>`                           | Plain         |
+| `SendGrid__OrderStatusUrl`                              | `https://{domain}/track-order`              | Plain         |
 | `APPLICATIONINSIGHTS_CONNECTION_STRING`                  | Application Insights connection string      | Plain         |
 
-> **Note**: `PUPPETEER_EXECUTABLE_PATH` is no longer needed — PDF generation uses QuestPDF natively without Chromium.
+> **Note**: `PUPPETEER_EXECUTABLE_PATH` is no longer needed — PDF generation uses QuestPDF natively without Chromium. The Azure Functions Dockerfile no longer installs Chromium packages.
+
+> **Email links**: Order status emails use the `/track-order?orderNumber=X&email=Y` URL format. The `SendGrid__OrderStatusUrl` base is combined with query parameters at runtime.
+
+> **Blob photo access**: Order photos and user files are accessed via SAS (Shared Access Signature) URLs generated at runtime, rather than direct blob access. This allows time-limited, secure access without exposing storage keys to clients.
+
+> **Partner app authentication**: The Mobile API exposes a `PartnerLogin` endpoint (`POST /api/v1/auth/partner-login`) for the Android partner app, using the same JWT-based auth as the web Partner API.
+
+> **Handlebars helpers**: Email body templates use Handlebars for rendering. A custom `eq` helper is registered for conditional logic in templates (e.g., `{{#if (eq status "Completed")}}`).
+
+> **Email templates**: All SendGrid dynamic templates have been redesigned with a professional style (consistent branding, responsive layout). Template IDs above reflect the latest versions.
+
+> **Currency**: The default currency is CZK (Czech Koruna), not EUR. All monetary formatting, Stripe charges, and invoice/receipt generation use CZK.
 
 ### Blob Storage Containers
 
@@ -336,7 +351,8 @@ feature/* ──► PR ──► master ──► auto-deploy DEV ──► manu
 .github/workflows/
 ├── backend-ci.yml          # Build + test on PRs (no deploy)
 ├── deploy-dev.yml          # Triggered on push to master
-└── deploy-pro.yml          # Triggered manually with confirmation
+├── deploy-pro.yml          # Triggered manually with confirmation
+└── deploy-docs.yml         # Deploy VitePress docs to SWA on docs/ changes
 ```
 
 Each workflow has jobs:
@@ -749,11 +765,11 @@ chmod +x scripts/setup-azure-functions.sh
 This script creates:
 - Azure Container Registry (stores Functions Docker images)
 - Azure Functions App Service Plan (B1 Linux, separate from API plan)
-- Azure Functions App (Docker container with Chromium for PDF generation)
+- Azure Functions App (Docker container with native QuestPDF for PDF generation — no Chromium dependency)
 - Managed Identity with roles: ACR Pull, Storage Blob Data Contributor, Storage Queue Data Contributor, Key Vault Secrets User
 - Application Insights connection
 - Queue storage connection string on all 4 API App Services
-- Required blob containers: `receipt-templates`, `generated-receipts`, `invoice-templates`, `generated-invoices`
+- Required blob containers: `generated-receipts`, `generated-invoices`
 - Required storage queues: `generate-receipt`, `generate-invoice` (with poison queues)
 
 **Important**: After running the script, add `ACR_NAME` to GitHub Actions secrets.
@@ -829,6 +845,7 @@ Add the following secrets to the GitHub repository:
 | `AZURE_STATIC_WEB_APPS_API_TOKEN_ADMIN_DEV`     | Deployment token for admin SWA DEV              |
 | `AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER_PRO`   | Deployment token for partner SWA PRO            |
 | `AZURE_STATIC_WEB_APPS_API_TOKEN_ADMIN_PRO`     | Deployment token for admin SWA PRO              |
+| `AZURE_STATIC_WEB_APPS_API_TOKEN_DOCS_DEV`      | Deployment token for docs SWA DEV               |
 
 #### 5.2 Create Service Principal
 
@@ -1010,6 +1027,55 @@ az webapp update \
 
 ---
 
+## Documentation Site Deployment
+
+The project documentation is built with [VitePress](https://vitepress.dev/) and deployed to an Azure Static Web App.
+
+### Architecture
+
+- **Source**: `docs/` directory in the repository (Markdown files + VitePress config)
+- **Build**: `npm ci && npm run build` inside `docs/`
+- **Output**: `docs/.vitepress/dist`
+- **Deployment target**: `swa-cleansia-docs-dev` (Azure Static Web App, Free tier)
+
+### Azure Resource
+
+```bash
+# Create the Docs Static Web App (DEV)
+az staticwebapp create \
+  --name swa-cleansia-docs-dev \
+  --resource-group rg-cleansia-dev \
+  --location westeurope \
+  --sku Free
+```
+
+### CI/CD
+
+The docs site is deployed automatically via `.github/workflows/deploy-docs.yml` whenever files in `docs/` are pushed to `master`.
+
+**GitHub Secret required:**
+
+| Secret                                        | Description                              |
+| --------------------------------------------- | ---------------------------------------- |
+| `AZURE_STATIC_WEB_APPS_API_TOKEN_DOCS_DEV`    | Deployment token for docs SWA DEV        |
+
+Get the token:
+
+```bash
+az staticwebapp secrets list --name swa-cleansia-docs-dev --resource-group rg-cleansia-dev --query "properties.apiKey" -o tsv
+```
+
+### Custom Domain (optional)
+
+```bash
+az staticwebapp hostname set \
+  --name swa-cleansia-docs-dev \
+  --resource-group rg-cleansia-dev \
+  --hostname docs-dev.cleansia.cz
+```
+
+---
+
 ## Cost Breakdown
 
 | Resource                                   | DEV (Monthly)    | PRO (Monthly)      |
@@ -1054,8 +1120,10 @@ az webapp update \
 - [ ] Verify Azure Functions are running (check function list in Azure Portal)
 - [ ] Test receipt generation: create a cash order → check if receipt PDF appears in blob storage
 - [ ] Verify queue processing: check generate-receipt queue is being consumed
-- [ ] Upload receipt template: `receipt-template-v1.html` to `receipt-templates` blob container
-- [ ] Upload invoice template: `invoice-template-v1.html` to `invoice-templates` blob container
+- [ ] Verify order status update emails are sent correctly (check `SendGrid__OrderStatusUpdateTemplateId` is configured)
+- [ ] Verify `/track-order?orderNumber=X&email=Y` link in emails resolves correctly
+- [ ] Verify SAS URLs for blob photo access are generated and expire appropriately
+- [ ] Test PartnerLogin endpoint from Android app (`POST /api/v1/auth/partner-login`)
 - [ ] If DEV: configure EasyAuth excluded paths for `/assets/*` on Customer SSR
 
 ---
@@ -1078,6 +1146,6 @@ az webapp update \
 
 ---
 
-**Version**: 2.0.0
-**Last Updated**: 2026-03-26
+**Version**: 2.1.0
+**Last Updated**: 2026-04-02
 **Status**: DEV deployed and operational, PRO ready for deployment

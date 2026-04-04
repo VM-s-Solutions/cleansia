@@ -1,7 +1,7 @@
 <div class="checkout-page">
   <cleansia-dynamic-background [iconCount]="15" />
   <div class="checkout-card">
-    <img src="assets/images/mascot/mascot-cleaning.png" alt="" class="checkout-card__mascot" />
+    <img src="assets/images/mascot/mascot-cleaning.png" alt="" class="checkout-card__mascot" loading="lazy" />
 
     @if (isCash()) {
       <h1 class="checkout-card__title">{{ 'pages.checkout.success.cash.title' | translate }}</h1>

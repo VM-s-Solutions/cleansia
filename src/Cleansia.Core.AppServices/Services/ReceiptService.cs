@@ -91,7 +91,12 @@ public sealed class ReceiptService(
             CustomerPhone = order.CustomerPhone,
             CustomerAddress = $"{order.CustomerAddress?.Street}, {order.CustomerAddress?.City}, {order.CustomerAddress?.ZipCode}",
             Services = order.SelectedServices
-                .Select(s => new ReceiptLineItem(s.Service?.Name ?? "Service", s.Service?.BasePrice ?? 0))
+                .Select(s =>
+                {
+                    var basePrice = s.Service?.BasePrice ?? 0;
+                    var perRoom = (s.Service?.PerRoomPrice ?? 0) * (order.Rooms + order.Bathrooms);
+                    return new ReceiptLineItem(s.Service?.Name ?? "Service", basePrice + perRoom);
+                })
                 .ToList(),
             Packages = order.SelectedPackages
                 .Select(p => new ReceiptLineItem(p.Package?.Name ?? "Package", p.Package?.Price ?? 0))
@@ -100,7 +105,6 @@ public sealed class ReceiptService(
                 .Where(e => e.Value)
                 .Select(e => e.Key)
                 .ToList(),
-            Subtotal = order.TotalPrice,
             Total = order.TotalPrice,
             Currency = order.Currency?.Symbol ?? "Kč",
             PaymentStatus = order.PaymentStatus.ToString(),

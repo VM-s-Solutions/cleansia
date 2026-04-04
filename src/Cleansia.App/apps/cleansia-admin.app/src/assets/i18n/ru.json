@@ -105,6 +105,7 @@
     "next_page": "Следующая страница",
     "actions": {
       "login": "Войти",
+      "payConfigs": "Pay Configs",
       "logout": "Выйти",
       "back": "Назад",
       "save": "Сохранить",
@@ -159,7 +160,8 @@
     "currencies": "Валюты",
     "companyInfo": "Информация о компании",
     "templates": "Шаблоны",
-    "logout": "Выйти"
+    "payConfigs": "Pay Configs",
+      "logout": "Выйти"
   },
   "pages": {
     "unauthorized": {
@@ -325,7 +327,9 @@
         "document_reject_error": "Не удалось отклонить документ",
         "document_download_error": "Не удалось скачать документ",
         "availability_save_success": "Доступность успешно обновлена",
-        "availability_save_error": "Не удалось обновить доступность"
+        "availability_save_error": "Не удалось обновить доступность",
+        "employee_update_success": "Сотрудник успешно обновлён",
+        "employee_update_error": "Не удалось обновить сотрудника"
       },
       "document_status": {
         "pending": "Ожидает",

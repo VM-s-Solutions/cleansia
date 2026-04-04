@@ -338,7 +338,7 @@ private fun DetailRow(
     }
 }
 
-internal fun formatCurrency(amount: Double, currency: String = "EUR"): String {
+internal fun formatCurrency(amount: Double, currency: String = "CZK"): String {
     return try {
         val format = NumberFormat.getCurrencyInstance(Locale.getDefault())
         format.currency = Currency.getInstance(currency)

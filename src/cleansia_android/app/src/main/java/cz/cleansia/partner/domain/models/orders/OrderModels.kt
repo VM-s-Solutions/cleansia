@@ -106,7 +106,7 @@ data class Order(
     val scheduledDate: String get() = cleaningDateTime ?: ""
     val address: String get() = customerAddress ?: ""
     val totalAmount: Double get() = totalPrice ?: 0.0
-    val currencyCode: String get() = currency?.code ?: "EUR"
+    val currencyCode: String get() = currency?.code ?: "CZK"
 
     val services: List<String> get() = selectedServices?.mapNotNull { it.name } ?: emptyList()
 }
@@ -231,7 +231,7 @@ data class OrderDetail(
         ?: PaymentStatus.PENDING
     val scheduledDate: String get() = cleaningDateTime ?: ""
     val totalAmount: Double get() = totalPrice ?: 0.0
-    val currencyCode: String get() = currency?.code ?: "EUR"
+    val currencyCode: String get() = currency?.code ?: "CZK"
     val fullAddress: String get() = address?.formatted ?: ""
     val services: List<String> get() = selectedServices?.mapNotNull { it.name } ?: emptyList()
     val assignedCount: Int get() = assignedEmployees?.size ?: 0
@@ -245,7 +245,7 @@ data class OrderService(
     val description: String = "",
     val quantity: Int = 1,
     val price: Double = 0.0,
-    val currency: String = "EUR"
+    val currency: String = "CZK"
 )
 
 @Serializable
@@ -256,7 +256,7 @@ data class ServiceItem(
     val quantity: Int = 1,
     val unitPrice: Double = 0.0,
     val totalPrice: Double = 0.0,
-    val currency: String = "EUR"
+    val currency: String = "CZK"
 )
 
 /**

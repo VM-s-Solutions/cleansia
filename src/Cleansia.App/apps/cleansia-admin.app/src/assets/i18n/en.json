@@ -159,6 +159,7 @@
     "currencies": "Currencies",
     "companyInfo": "Company Info",
     "templates": "Templates",
+    "payConfigs": "Pay Configs",
     "logout": "Logout"
   },
   "pages": {
@@ -325,7 +326,9 @@
         "document_reject_error": "Failed to reject document",
         "document_download_error": "Failed to download document",
         "availability_save_success": "Availability updated successfully",
-        "availability_save_error": "Failed to update availability"
+        "availability_save_error": "Failed to update availability",
+        "employee_update_success": "Employee updated successfully",
+        "employee_update_error": "Failed to update employee"
       },
       "document_status": {
         "pending": "Pending",
@@ -478,6 +481,57 @@
       "messages": {
         "load_error": "Failed to load invoices",
         "download_error": "Failed to download invoice"
+      }
+    },
+    "pay_config_management": {
+      "title": "Pay Configuration",
+      "description": "Manage employee pay configurations for services and packages",
+      "create": "Create Pay Config",
+      "edit": "Edit",
+      "delete": "Delete Pay Config",
+      "delete_confirm": "Are you sure you want to delete this pay configuration? This action cannot be undone.",
+      "no_pay_configs": "No pay configurations found",
+      "columns": {
+        "service": "Service / Package",
+        "base_pay": "Base Pay",
+        "per_room": "Per Room",
+        "per_bathroom": "Per Bathroom",
+        "description": "Description"
+      },
+      "messages": {
+        "delete_success": "Pay configuration deleted successfully"
+      }
+    },
+    "pay_config_form": {
+      "create_title": "Create Pay Configuration",
+      "edit_title": "Edit Pay Configuration",
+      "assignment": "Assignment",
+      "service": "Service",
+      "package": "Package",
+      "select_service": "-- Select a service --",
+      "select_package": "-- Select a package --",
+      "service_or_package_hint": "Select either a service or a package, not both.",
+      "currency_section": "Currency",
+      "currency": "Currency",
+      "select_currency": "-- Select currency --",
+      "grade_template": "Grade Template",
+      "apply_grade": "Apply Grade Multiplier",
+      "select_grade": "-- Select grade --",
+      "apply": "Apply",
+      "grade_hint": "Applies a multiplier to base pay, per room, and per bathroom rates.",
+      "pay_rates": "Pay Rates",
+      "base_pay": "Base Pay",
+      "extra_per_room": "Extra Per Room",
+      "extra_per_bathroom": "Extra Per Bathroom",
+      "distance_rate": "Distance Rate (per km)",
+      "pay_limits": "Pay Limits",
+      "minimum_pay": "Minimum Pay",
+      "maximum_pay": "Maximum Pay",
+      "description_section": "Description",
+      "description": "Description",
+      "messages": {
+        "create_success": "Pay configuration created successfully",
+        "update_success": "Pay configuration updated successfully"
       }
     },
     "service_management": {

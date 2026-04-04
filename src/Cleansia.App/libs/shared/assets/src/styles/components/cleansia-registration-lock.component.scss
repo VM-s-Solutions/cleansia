@@ -59,6 +59,7 @@
   &__requirements-title {
     color: #e74c3c;
     font-size: 1rem;
+    text-align: center;
   }
 
   &__requirements-items {
@@ -96,6 +97,102 @@
       background: #d4edda;
       color: #155724;
     }
+  }
+
+  &__progress {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0 0.5rem;
+  }
+
+  &__progress-text {
+    font-size: 0.9rem;
+    color: #2c3e50;
+    font-weight: 600;
+  }
+
+  &__progress-bar {
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  &__progress-fill {
+    height: 100%;
+    background: #3498db;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+
+  &__categories {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    text-align: left;
+  }
+
+  &__category {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    background: #f8f9fa;
+
+    &--done {
+      background: #d4edda;
+    }
+
+    &--pending {
+      background: #fff3cd;
+    }
+
+    &--missing {
+      background: #f8d7da;
+    }
+  }
+
+  &__category-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__category-type-icon {
+    font-size: 1rem;
+    color: #2c3e50;
+  }
+
+  &__category-label {
+    flex: 1;
+    font-weight: 500;
+    color: #2c3e50;
+  }
+
+  &__category-status-icon {
+    font-size: 1.1rem;
+
+    .cleansia-registration-lock__category--done & {
+      color: #27ae60;
+    }
+
+    .cleansia-registration-lock__category--pending & {
+      color: #f39c12;
+    }
+
+    .cleansia-registration-lock__category--missing & {
+      color: #e74c3c;
+    }
+  }
+
+  &__category-details {
+    list-style: none;
+    padding: 0.5rem 0 0 1.5rem;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.85rem;
+    color: #6c757d;
   }
 
   &__actions {

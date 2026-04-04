@@ -36,7 +36,11 @@ export class OrdersFacade extends UnsubscribeControlDirective {
   availableOrders = signal<OrderListItem[]>([]);
   myOrders = signal<OrderListItem[]>([]);
   totalRecords = signal<number>(0);
+  availableTotalRecords = signal<number>(0);
+  myTotalRecords = signal<number>(0);
   loading = signal<boolean>(false);
+  availableLoading = signal<boolean>(false);
+  myLoading = signal<boolean>(false);
 
   private currentEmployeeId = signal<string | null>(null);
   private currentSort = signal<SortDefinition[]>([]);
@@ -56,10 +60,22 @@ export class OrdersFacade extends UnsubscribeControlDirective {
 
     this.total$.pipe(takeUntil(this.destroyed$)).subscribe((total) => {
       this.totalRecords.set(total);
+      const tab = this.activeTab();
+      if (tab === 'available') {
+        this.availableTotalRecords.set(total);
+      } else {
+        this.myTotalRecords.set(total);
+      }
     });
 
     this.loading$.pipe(takeUntil(this.destroyed$)).subscribe((loading) => {
       this.loading.set(loading);
+      const tab = this.activeTab();
+      if (tab === 'available') {
+        this.availableLoading.set(loading);
+      } else {
+        this.myLoading.set(loading);
+      }
     });
 
     this.loadCurrentEmployee();
@@ -94,6 +110,8 @@ export class OrdersFacade extends UnsubscribeControlDirective {
         if (employee?.id) {
           this.currentEmployeeId.set(employee.id);
           this.loadAvailableOrders();
+          // Also load my orders so both sections have data
+          setTimeout(() => this.loadMyOrders(), 100);
         }
       });
   }
@@ -236,23 +254,15 @@ export class OrdersFacade extends UnsubscribeControlDirective {
 
   applyFilters(filter: OrderFilter): void {
     this.currentFilter.set(filter);
-    const tab = this.activeTab();
-    // Reset to first page when filters change
-    if (tab === 'available') {
-      this.loadAvailableOrders(0, 10);
-    } else {
-      this.loadMyOrders(0, 10);
-    }
+    // Load both sections when filters change
+    this.loadAvailableOrders(0, 10);
+    setTimeout(() => this.loadMyOrders(0, 10), 100);
   }
 
   resetFilters(): void {
     this.currentFilter.set(null);
-    const tab = this.activeTab();
-    // Reset to first page when filters are cleared
-    if (tab === 'available') {
-      this.loadAvailableOrders(0, 10);
-    } else {
-      this.loadMyOrders(0, 10);
-    }
+    // Load both sections when filters are cleared
+    this.loadAvailableOrders(0, 10);
+    setTimeout(() => this.loadMyOrders(0, 10), 100);
   }
 }

@@ -152,6 +152,9 @@ export class OrderWizardComponent implements OnInit {
     return this.facade.packages().filter((p) => p.id && ids.includes(p.id));
   });
 
+  private pendingServiceId = signal<string | null>(null);
+  private pendingPackageId = signal<string | null>(null);
+
   private rebookEffect = effect(() => {
     const params = this.pendingRebook();
     if (!params) return;
@@ -169,8 +172,41 @@ export class OrderWizardComponent implements OnInit {
     this.pendingRebook.set(null);
   });
 
+  private preselectEffect = effect(() => {
+    const serviceId = this.pendingServiceId();
+    const packageId = this.pendingPackageId();
+    if (!serviceId && !packageId) return;
+
+    const services = this.facade.services();
+    const packages = this.facade.packages();
+    if (services.length === 0 && packages.length === 0) return;
+
+    const update: Partial<import('./order-wizard.models').OrderWizardFormData> = {};
+    if (serviceId && services.some((s) => s.id === serviceId)) {
+      update.selectedServiceIds = [serviceId];
+      this.pendingServiceId.set(null);
+    }
+    if (packageId && packages.some((p) => p.id === packageId)) {
+      update.selectedPackageIds = [packageId];
+      this.pendingPackageId.set(null);
+    }
+    if (Object.keys(update).length > 0) {
+      this.facade.updateFormData(update);
+    }
+  });
+
   ngOnInit(): void {
     this.facade.initialize();
+
+    // Pre-select service or package from query params (e.g., from services catalog)
+    const serviceId = this.route.snapshot.queryParamMap.get('serviceId');
+    const packageId = this.route.snapshot.queryParamMap.get('packageId');
+    if (serviceId) {
+      this.pendingServiceId.set(serviceId);
+    }
+    if (packageId) {
+      this.pendingPackageId.set(packageId);
+    }
 
     const rebook = this.route.snapshot.queryParamMap.get('rebook');
     if (rebook === 'true' && this.isBrowser) {

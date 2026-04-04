@@ -61,73 +61,22 @@ export class AppComponent implements OnInit {
   }
 
   sidebarMenuItems: SidebarMenuItem[] = [
+    { label: 'sidebar.employees', icon: 'pi pi-users', route: '/employee-management' },
+    { label: 'sidebar.payPeriods', icon: 'pi pi-calendar', route: '/pay-periods' },
+    { label: 'sidebar.orders', icon: 'pi pi-shopping-cart', route: '/order-management' },
+    { label: 'sidebar.invoices', icon: 'pi pi-file', route: '/invoice-management' },
+    { label: 'sidebar.reports', icon: 'pi pi-chart-bar', route: '/reports' },
+    { label: 'sidebar.services', icon: 'pi pi-wrench', route: '/service-management' },
+    { label: 'sidebar.packages', icon: 'pi pi-box', route: '/package-management' },
+    { label: 'sidebar.payConfigs', icon: 'pi pi-money-bill', route: '/pay-config-management' },
+    { label: 'sidebar.adminUsers', icon: 'pi pi-user-plus', route: '/admin-user-management' },
+    { label: 'sidebar.languages', icon: 'pi pi-globe', route: '/language-management' },
+    { label: 'sidebar.countries', icon: 'pi pi-map', route: '/country-management' },
+    { label: 'sidebar.currencies', icon: 'pi pi-dollar', route: '/currency-management' },
+    { label: 'sidebar.companyInfo', icon: 'pi pi-building', route: '/company-info' },
+    { label: 'sidebar.templates', icon: 'pi pi-file-edit', route: '/template-management' },
     {
-      label: this.translate.instant('sidebar.employees'),
-      icon: 'pi pi-users',
-      route: '/employee-management',
-    },
-    {
-      label: this.translate.instant('sidebar.payPeriods'),
-      icon: 'pi pi-calendar',
-      route: '/pay-periods',
-    },
-    {
-      label: this.translate.instant('sidebar.orders'),
-      icon: 'pi pi-shopping-cart',
-      route: '/order-management',
-    },
-    {
-      label: this.translate.instant('sidebar.invoices'),
-      icon: 'pi pi-file',
-      route: '/invoice-management',
-    },
-    {
-      label: this.translate.instant('sidebar.reports'),
-      icon: 'pi pi-chart-bar',
-      route: '/reports',
-    },
-    {
-      label: this.translate.instant('sidebar.services'),
-      icon: 'pi pi-wrench',
-      route: '/service-management',
-    },
-    {
-      label: this.translate.instant('sidebar.packages'),
-      icon: 'pi pi-box',
-      route: '/package-management',
-    },
-    {
-      label: this.translate.instant('sidebar.adminUsers'),
-      icon: 'pi pi-user-plus',
-      route: '/admin-user-management',
-    },
-    {
-      label: this.translate.instant('sidebar.languages'),
-      icon: 'pi pi-globe',
-      route: '/language-management',
-    },
-    {
-      label: this.translate.instant('sidebar.countries'),
-      icon: 'pi pi-map',
-      route: '/country-management',
-    },
-    {
-      label: this.translate.instant('sidebar.currencies'),
-      icon: 'pi pi-dollar',
-      route: '/currency-management',
-    },
-    {
-      label: this.translate.instant('sidebar.companyInfo'),
-      icon: 'pi pi-building',
-      route: '/company-info',
-    },
-    {
-      label: this.translate.instant('sidebar.templates'),
-      icon: 'pi pi-file-edit',
-      route: '/template-management',
-    },
-    {
-      label: this.translate.instant('sidebar.logout'),
+      label: 'sidebar.logout',
       icon: 'pi pi-sign-out',
       onClickFn: () => {
         this.dialogService

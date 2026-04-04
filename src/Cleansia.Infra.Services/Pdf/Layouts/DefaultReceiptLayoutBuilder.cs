@@ -255,7 +255,6 @@ public class DefaultReceiptLayoutBuilder : IReceiptLayoutBuilder
     {
         var lines = new List<(string Label, string Value, bool IsBold)>
         {
-            ("Subtotal", $"{data.Currency}{data.Subtotal:N2}", false),
             ("Total", $"{data.Currency}{data.Total:N2}", true)
         };
 
@@ -265,47 +264,34 @@ public class DefaultReceiptLayoutBuilder : IReceiptLayoutBuilder
     protected virtual void BuildPaymentInfo(IContainer container, ReceiptPdfData data)
     {
         container.PaddingTop(CleansiaPdfTheme.SectionSpacing)
+            .Background(CleansiaPdfTheme.TableHeaderBg)
+            .Padding(14)
             .Row(row =>
             {
-                // Payment status
-                row.RelativeItem().AlignCenter().Column(col =>
+                row.RelativeItem().Column(col =>
                 {
-                    col.Item().AlignCenter().Text("Payment Status:")
+                    col.Item().Text("Payment Status")
+                        .FontSize(CleansiaPdfTheme.FontSizeLabel)
+                        .FontColor(CleansiaPdfTheme.TextSecondary)
+                        .Bold();
+                    col.Item().Text(data.PaymentStatus)
                         .FontSize(CleansiaPdfTheme.FontSizeBody)
-                        .FontColor(CleansiaPdfTheme.TextSecondary);
-
-                    var statusColor = CleansiaPdfTheme.GetStatusColor(data.PaymentStatus);
-                    col.Item().PaddingTop(6).AlignCenter()
-                        .Background(statusColor)
-                        .PaddingVertical(6)
-                        .PaddingHorizontal(24)
-                        .Text(data.PaymentStatus.ToUpperInvariant())
-                        .FontSize(10)
-                        .FontColor(CleansiaPdfTheme.White)
-                        .Bold()
-                        .AlignCenter();
+                        .FontColor(CleansiaPdfTheme.TextPrimary)
+                        .Bold();
                 });
 
-                // Payment type
                 if (!string.IsNullOrWhiteSpace(data.PaymentType))
                 {
-                    row.RelativeItem().AlignCenter().Column(col =>
+                    row.RelativeItem().Column(col =>
                     {
-                        col.Item().AlignCenter().Text("Payment Method:")
+                        col.Item().Text("Payment Method")
+                            .FontSize(CleansiaPdfTheme.FontSizeLabel)
+                            .FontColor(CleansiaPdfTheme.TextSecondary)
+                            .Bold();
+                        col.Item().Text(data.PaymentType)
                             .FontSize(CleansiaPdfTheme.FontSizeBody)
-                            .FontColor(CleansiaPdfTheme.TextSecondary);
-
-                        col.Item().PaddingTop(6).AlignCenter()
-                            .Background(CleansiaPdfTheme.TableHeaderBg)
-                            .Border(1)
-                            .BorderColor(CleansiaPdfTheme.BorderLight)
-                            .PaddingVertical(6)
-                            .PaddingHorizontal(24)
-                            .Text(data.PaymentType.ToUpperInvariant())
-                            .FontSize(10)
                             .FontColor(CleansiaPdfTheme.TextPrimary)
-                            .Bold()
-                            .AlignCenter();
+                            .Bold();
                     });
                 }
             });

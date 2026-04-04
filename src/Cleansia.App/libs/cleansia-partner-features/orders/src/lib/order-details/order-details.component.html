@@ -90,18 +90,49 @@
       </div>
       }
 
-      <!-- Complete Order Action - Prominently placed at top -->
-      @if (canCompleteOrder()) {
-      <div class="cleansia-order-details__primary-action cleansia-order-details__primary-action--complete">
-        <cleansia-button
-          [buttonType]="'button'"
-          [style]="'raised-button'"
-          [title]="'pages.order_details.complete_order' | translate"
-          [icon]="'pi pi-check-circle'"
-          (clickFn)="completeOrder()"
-          [disabled]="loading()"
-        />
-      </div>
+      <!-- In-Progress Actions: Timer + Complete + Report Issue + Add Note -->
+      @if (isInProgress()) {
+        <!-- Elapsed Time -->
+        @if (elapsedTime()) {
+        <div class="cleansia-order-details__elapsed-time">
+          <i class="pi pi-clock"></i>
+          <span>
+            {{ 'pages.order_details.elapsed_time' | translate }}:
+            @if (elapsedTime()!.hours > 0) {
+              {{ elapsedTime()!.hours }}h
+            }
+            {{ elapsedTime()!.minutes }}m
+          </span>
+        </div>
+        }
+
+        <!-- Action buttons row -->
+        <div class="cleansia-order-details__actions-row">
+          <cleansia-button
+            [title]="'pages.order_details.report_issue' | translate"
+            [icon]="'pi pi-exclamation-triangle'"
+            [outlined]="true"
+            [severity]="'danger'"
+            (clickFn)="openReportIssue()"
+          />
+          <cleansia-button
+            [title]="'pages.order_details.add_note' | translate"
+            [icon]="'pi pi-file-edit'"
+            [outlined]="true"
+            (clickFn)="openAddNote()"
+          />
+          @if (canCompleteOrder()) {
+          <cleansia-button
+            [buttonType]="'button'"
+            [style]="'raised-button'"
+            [title]="'pages.order_details.complete_order' | translate"
+            [icon]="'pi pi-check-circle'"
+            [severity]="'success'"
+            (clickFn)="completeOrder()"
+            [disabled]="loading()"
+          />
+          }
+        </div>
       }
 
       <!-- Order Status Section -->

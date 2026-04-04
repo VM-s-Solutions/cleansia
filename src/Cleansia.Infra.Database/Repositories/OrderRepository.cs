@@ -79,4 +79,30 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
                        o.CleaningDateTime <= endDate)
             .AsSplitQuery();
     }
+
+    public async Task<int> GetEmployeeOrderCountThisWeekAsync(string employeeId, CancellationToken ct)
+    {
+        var today = DateTime.UtcNow.Date;
+        var daysSinceMonday = ((int)today.DayOfWeek + 6) % 7;
+        var weekStart = today.AddDays(-daysSinceMonday);
+        var weekEnd = weekStart.AddDays(7);
+
+        return await GetDbSet()
+            .Where(o => o.AssignedEmployees.Any(e => e.EmployeeId == employeeId) &&
+                       o.CleaningDateTime >= weekStart &&
+                       o.CleaningDateTime < weekEnd)
+            .CountAsync(ct);
+    }
+
+    public async Task<bool> HasOverlappingOrderAsync(string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct)
+    {
+        var newStart = cleaningDateTime;
+        var newEnd = cleaningDateTime.AddMinutes(estimatedTimeMinutes);
+
+        return await GetDbSet()
+            .Where(o => o.AssignedEmployees.Any(e => e.EmployeeId == employeeId) &&
+                       o.CleaningDateTime < newEnd &&
+                       o.CleaningDateTime.AddMinutes(o.EstimatedTime) > newStart)
+            .AnyAsync(ct);
+    }
 }

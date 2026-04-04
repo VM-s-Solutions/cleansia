@@ -1,0 +1,49 @@
+<div class="cleansia-pay-config-management">
+  <div class="cleansia-pay-config-management__container page-wrapper">
+    <div class="cleansia-pay-config-management__header">
+      <div class="header-content">
+        <cleansia-title
+          [title]="'pages.pay_config_management.title' | translate"
+        />
+        <p class="cleansia-pay-config-management__description">
+          {{ 'pages.pay_config_management.description' | translate }}
+        </p>
+      </div>
+    </div>
+
+    <div class="filter-header">
+      <div class="filter-chips-inline"></div>
+      <div class="header-actions">
+        <cleansia-button
+          [label]="'pages.pay_config_management.create' | translate"
+          icon="pi pi-plus"
+          (onClick)="createPayConfig()"
+        />
+      </div>
+    </div>
+
+    <cleansia-section>
+      @if (facade.initialLoading()) {
+      <cleansia-loader />
+      } @else {
+      <cleansia-table
+        [data]="facade.payConfigs()"
+        [columns]="payConfigColumns"
+        [actions]="payConfigActions"
+        [config]="{
+          paginator: true,
+          rows: 20,
+          lazy: true,
+          totalRecords: facade.totalRecords(),
+          emptyMessage: 'pages.pay_config_management.no_pay_configs'
+        }"
+        [loading]="facade.loading()"
+        (pageChange)="onPageChange($event)"
+      >
+      </cleansia-table>
+      }
+    </cleansia-section>
+  </div>
+</div>
+
+<p-confirmDialog />

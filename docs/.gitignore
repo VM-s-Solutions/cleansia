@@ -45,4 +45,5 @@ Thumbs.db
 
 .angular
 
-.vitepress
+.vitepress/cache
+.vitepress/dist

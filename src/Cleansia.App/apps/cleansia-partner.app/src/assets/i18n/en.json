@@ -1,5 +1,26 @@
 {
   "name": "Cleansia",
+  "profile": {
+    "fields": {
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email",
+      "phoneNumber": "Phone Number",
+      "birthDate": "Birth Date",
+      "street": "Street",
+      "city": "City",
+      "zipCode": "Zip Code",
+      "country": "Country",
+      "taxId": "Tax ID",
+      "registrationNumber": "Registration Number (IČO)",
+      "vatNumber": "VAT Number (DIČ)",
+      "legalEntityName": "Legal Entity Name",
+      "iban": "IBAN",
+      "passportId": "Passport ID",
+      "nationality": "Nationality",
+      "documents": "Documents"
+    }
+  },
   "page_titles": {
     "partner": {
       "default": "Partner Portal",
@@ -95,6 +116,12 @@
       "nationality": "Citizenship / Nationality",
       "national_id": "National ID / Passport Number",
       "tax_id": "Tax ID",
+      "entity_type": "Business Type",
+      "entity_type_natural_person": "Self-employed individual (OSVČ)",
+      "entity_type_legal_entity": "Legal entity (s.r.o., a.s., ...)",
+      "registration_number": "Registration Number (IČO)",
+      "vat_number": "VAT Number (DIČ)",
+      "legal_entity_name": "Legal Entity Name",
       "bank_details": "Bank Details for Payroll",
       "iban": "IBAN",
       "emergency_contact": "Emergency Contact",
@@ -801,7 +828,11 @@
       "profile": "Profile Information",
       "documents": "Required Documents",
       "availability": "Availability",
-      "documentsRequired": "Upload required documents"
+      "documentsRequired": "Upload required documents",
+      "approval": "Admin Approval",
+      "approvalAwaitingReview": "Your documents are being reviewed by our team. We'll notify you once approved.",
+      "approvalRejected": "Your submission was rejected. Please review the reason below and re-upload.",
+      "approvalCompleteProfileFirst": "Complete your profile and upload documents to request approval."
     }
   },
   "validation": {

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
-import { RegistrationCompletionStatus } from '../client/partner-client';
+import { ContractStatus, RegistrationCompletionStatus } from '../client/partner-client';
 import { PartnerAuthService } from './partner-auth.service';
 
 export interface RegistrationCompletionResult {
@@ -8,6 +8,10 @@ export interface RegistrationCompletionResult {
   hasUploadedDocuments: boolean;
   hasCompletedProfile: boolean;
   missingRequirements: string[];
+  contractStatus: ContractStatus | null;
+  awaitingApproval: boolean;
+  isRejected: boolean;
+  rejectionReason: string | null;
 }
 
 @Injectable({
@@ -32,6 +36,10 @@ export class RegistrationCompletionService {
         missingRequirements: [
           this.translate.instant('api.common.user_not_authenticated'),
         ],
+        contractStatus: null,
+        awaitingApproval: false,
+        isRejected: false,
+        rejectionReason: null,
       };
     }
 
@@ -43,13 +51,25 @@ export class RegistrationCompletionService {
         missingRequirements: [
           this.translate.instant('api.employee.data_not_available'),
         ],
+        contractStatus: null,
+        awaitingApproval: false,
+        isRejected: false,
+        rejectionReason: null,
       };
     }
 
     const missingRequirements: string[] = [];
     const hasUploadedDocuments = employeeStatus.areDocumentsUploaded;
     const hasCompletedProfile = employeeStatus.hasCompletedProfile;
-    const isComplete = hasCompletedProfile && hasUploadedDocuments;
+    const contractStatus = employeeStatus.contractStatus ?? null;
+    const awaitingApproval =
+      hasCompletedProfile && hasUploadedDocuments && contractStatus === ContractStatus.Pending;
+    const isRejected = contractStatus === ContractStatus.Rejected;
+    // Registration is only "complete" from the partner's perspective once admin has approved.
+    const isComplete =
+      hasCompletedProfile &&
+      hasUploadedDocuments &&
+      (contractStatus === ContractStatus.Approved || contractStatus === ContractStatus.Active);
 
     // Add specific missing fields from the API
     if (
@@ -76,6 +96,10 @@ export class RegistrationCompletionService {
       hasUploadedDocuments,
       hasCompletedProfile,
       missingRequirements,
+      contractStatus,
+      awaitingApproval,
+      isRejected,
+      rejectionReason: employeeStatus.rejectionReason ?? null,
     };
   }
 

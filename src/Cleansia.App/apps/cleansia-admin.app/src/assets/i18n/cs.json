@@ -1,4 +1,33 @@
 {
+  "profile": {
+    "fields": {
+      "firstName": "Jméno",
+      "lastName": "Příjmení",
+      "email": "E-mail",
+      "phoneNumber": "Telefonní číslo",
+      "birthDate": "Datum narození",
+      "street": "Ulice",
+      "city": "Město",
+      "zipCode": "PSČ",
+      "country": "Země",
+      "taxId": "DIČ",
+      "registrationNumber": "IČO",
+      "vatNumber": "DIČ",
+      "legalEntityName": "Název firmy",
+      "iban": "IBAN",
+      "passportId": "Číslo pasu",
+      "nationality": "Národnost",
+      "documents": "Dokumenty"
+    }
+  },
+  "common": {
+    "save": "Uložit",
+    "cancel": "Zrušit",
+    "edit": "Upravit",
+    "delete": "Smazat",
+    "loading": "Načítání...",
+    "confirm": "Potvrdit"
+  },
   "page_titles": {
     "admin": {
       "default": "Administrátorský portál",
@@ -53,12 +82,19 @@
     "availability": {
       "days": {
         "monday": "Pondělí",
+        "monday_short": "Po",
         "tuesday": "Úterý",
+        "tuesday_short": "Út",
         "wednesday": "Středa",
+        "wednesday_short": "St",
         "thursday": "Čtvrtek",
+        "thursday_short": "Čt",
         "friday": "Pátek",
+        "friday_short": "Pá",
         "saturday": "Sobota",
-        "sunday": "Neděle"
+        "saturday_short": "So",
+        "sunday": "Neděle",
+        "sunday_short": "Ne"
       },
       "current_ranges": "Aktuální časová rozmezí",
       "no_availability": "Není nastavena dostupnost",
@@ -243,6 +279,12 @@
       "nationality": "Státní příslušnost",
       "passport_id": "Číslo pasu/občanského průkazu",
       "tax_id": "IČO",
+      "entity_type": "Typ podnikání",
+      "entity_type_natural_person": "Osoba samostatně výdělečně činná",
+      "entity_type_legal_entity": "Právnická osoba",
+      "registration_number": "IČO",
+      "vat_number": "DIČ",
+      "legal_entity_name": "Název firmy",
       "iban": "IBAN",
       "emergency_contact": "Kontakt v nouzi",
       "emergency_name": "Jméno",

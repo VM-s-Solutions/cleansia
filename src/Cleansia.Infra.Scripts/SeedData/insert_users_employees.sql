@@ -53,51 +53,57 @@ VALUES
 INSERT INTO public."Employees" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy",
-  "DeactivatedOn", "TaxId", "IBAN", "AverageRating",
+  "DeactivatedOn", "EntityType", "RegistrationNumber", "VatNumber", "LegalEntityName",
+  "IBAN", "AverageRating",
   "ComplaintsCount", "ContractStatus", "PassportId",
   "NationalityId", "EmergencyContactName", "EmergencyContactPhone",
   "Availability", "DocumentFileNames", "UserId"
 )
 VALUES
-  -- Employee 1: Kateřina Novotná
+  -- Employee 1: Kateřina Novotná — OSVČ without VAT registration
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   '87654321', 'CZ6508000000192000145399', 4.8, 0, 1, 'P123456789',
+   1, '87654321', NULL, NULL,
+   'CZ6508000000192000145399', 4.8, 0, 1, 'P123456789',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE'),
    'Jana Novotná', '+420777888999',
    '{"Monday":[{"Start":"09:00:00","End":"17:00:00"}],"Tuesday":[{"Start":"09:00:00","End":"17:00:00"}],"Wednesday":[{"Start":"09:00:00","End":"17:00:00"}],"Thursday":[{"Start":"09:00:00","End":"17:00:00"}],"Friday":[{"Start":"09:00:00","End":"17:00:00"}]}',
    '[]',
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'katerina.novotna@cleansia.cz')),
 
-  -- Employee 2: Michal Krejčí
+  -- Employee 2: Michal Krejčí — OSVČ, VAT-registered
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   '87654322', 'CZ6508000000192000145400', 4.6, 1, 1, 'P987654321',
+   1, '87654322', 'CZ87654322', NULL,
+   'CZ6508000000192000145400', 4.6, 1, 1, 'P987654321',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE'),
    'Eva Krejčí', '+420777888998',
    '{"Monday":[{"Start":"08:00:00","End":"16:00:00"}],"Tuesday":[{"Start":"08:00:00","End":"16:00:00"}],"Wednesday":[{"Start":"08:00:00","End":"16:00:00"}],"Thursday":[{"Start":"08:00:00","End":"16:00:00"}],"Friday":[{"Start":"08:00:00","End":"16:00:00"}],"Saturday":[{"Start":"10:00:00","End":"14:00:00"}]}',
    '[]',
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'michal.krejci@cleansia.cz')),
 
-  -- Employee 3: Zuzana Horáková
+  -- Employee 3: Zuzana Horáková — OSVČ without VAT registration
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   '87654323', 'CZ6508000000192000145401', 4.9, 0, 1, 'P456789123',
+   1, '87654323', NULL, NULL,
+   'CZ6508000000192000145401', 4.9, 0, 1, 'P456789123',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE'),
    'Martin Horák', '+420777888997',
    '{"Monday":[{"Start":"10:00:00","End":"18:00:00"}],"Tuesday":[{"Start":"10:00:00","End":"18:00:00"}],"Wednesday":[{"Start":"10:00:00","End":"18:00:00"}],"Thursday":[{"Start":"10:00:00","End":"18:00:00"}],"Friday":[{"Start":"10:00:00","End":"18:00:00"}]}',
    '[]',
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'zuzana.horakova@cleansia.cz')),
 
-  -- Employee 4: Pavel Veselý
+  -- Employee 4: Pavel Veselý — OSVČ, VAT-registered
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   '87654324', 'CZ6508000000192000145402', 4.5, 2, 1, 'P789123456',
+   1, '87654324', 'CZ87654324', NULL,
+   'CZ6508000000192000145402', 4.5, 2, 1, 'P789123456',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE'),
    'Petra Veselá', '+420777888996',
    '{"Monday":[{"Start":"07:00:00","End":"15:00:00"}],"Tuesday":[{"Start":"07:00:00","End":"15:00:00"}],"Wednesday":[{"Start":"07:00:00","End":"15:00:00"}],"Thursday":[{"Start":"07:00:00","End":"15:00:00"}],"Friday":[{"Start":"07:00:00","End":"15:00:00"}],"Saturday":[{"Start":"09:00:00","End":"13:00:00"}]}',
    '[]',
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'pavel.vesely@cleansia.cz')),
 
-  -- Employee 5: Lenka Marková
+  -- Employee 5: Lenka Marková — Legal entity (s.r.o.), VAT-registered
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   '87654325', 'CZ6508000000192000145403', 4.7, 0, 1, 'P321654987',
+   2, '87654325', 'CZ87654325', 'Marková Cleaning s.r.o.',
+   'CZ6508000000192000145403', 4.7, 0, 1, 'P321654987',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE'),
    'Tomáš Marek', '+420777888995',
    '{"Monday":[{"Start":"09:30:00","End":"17:30:00"}],"Tuesday":[{"Start":"09:30:00","End":"17:30:00"}],"Wednesday":[{"Start":"09:30:00","End":"17:30:00"}],"Thursday":[{"Start":"09:30:00","End":"17:30:00"}],"Friday":[{"Start":"09:30:00","End":"17:30:00"}],"Sunday":[{"Start":"12:00:00","End":"16:00:00"}]}',

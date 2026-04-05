@@ -2,8 +2,8 @@ import { inject, Injectable } from '@angular/core';
 import {
   ConsentType,
   ConsentsClient,
-  GrantConsent_Command,
-  WithdrawConsent_Command,
+  GrantConsentCommand,
+  WithdrawConsentCommand,
 } from '../client/customer-client';
 import { CustomerClient } from '../client/customer-base-client';
 import { CustomerAuthService } from './customer-auth.service';
@@ -50,7 +50,7 @@ export class ConsentSyncService {
   }
 
   private grantConsent(consentType: ConsentType): void {
-    const command = new GrantConsent_Command({
+    const command = new GrantConsentCommand({
       consentType,
       ipAddress: undefined,
       userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
@@ -62,7 +62,7 @@ export class ConsentSyncService {
   }
 
   private withdrawConsent(consentType: ConsentType): void {
-    const command = new WithdrawConsent_Command({
+    const command = new WithdrawConsentCommand({
       consentType,
     });
 

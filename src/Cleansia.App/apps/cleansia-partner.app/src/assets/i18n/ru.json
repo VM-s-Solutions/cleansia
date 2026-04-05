@@ -1,5 +1,26 @@
 {
   "name": "Cleansia",
+  "profile": {
+    "fields": {
+      "firstName": "Имя",
+      "lastName": "Фамилия",
+      "email": "Электронная почта",
+      "phoneNumber": "Номер телефона",
+      "birthDate": "Дата рождения",
+      "street": "Улица",
+      "city": "Город",
+      "zipCode": "Почтовый индекс",
+      "country": "Страна",
+      "taxId": "Налоговый номер",
+      "registrationNumber": "Регистрационный номер",
+      "vatNumber": "Номер плательщика НДС",
+      "legalEntityName": "Название юридического лица",
+      "iban": "IBAN",
+      "passportId": "Номер паспорта",
+      "nationality": "Гражданство",
+      "documents": "Документы"
+    }
+  },
   "page_titles": {
     "partner": {
       "default": "Партнёрский портал",
@@ -95,6 +116,12 @@
       "nationality": "Гражданство / Национальность",
       "national_id": "Номер удостоверения / паспорта",
       "tax_id": "ИНН",
+      "entity_type": "Тип предприятия",
+      "entity_type_natural_person": "Самозанятый / ИП",
+      "entity_type_legal_entity": "Юридическое лицо (ООО, АО, ...)",
+      "registration_number": "Регистрационный номер",
+      "vat_number": "Номер плательщика НДС",
+      "legal_entity_name": "Название юридического лица",
       "bank_details": "Банковские реквизиты для выплат",
       "iban": "IBAN",
       "emergency_contact": "Контакт для экстренных случаев",
@@ -795,7 +822,11 @@
       "profile": "Информация профиля",
       "documents": "Необходимые документы",
       "availability": "Доступность",
-      "documentsRequired": "Загрузите необходимые документы"
+      "documentsRequired": "Загрузите необходимые документы",
+      "approval": "Одобрение администратором",
+      "approvalAwaitingReview": "Ваши документы проверяет наша команда. Мы уведомим Вас, как только они будут одобрены.",
+      "approvalRejected": "Ваша заявка была отклонена. Пожалуйста, ознакомьтесь с причиной ниже и загрузите документы повторно.",
+      "approvalCompleteProfileFirst": "Заполните профиль и загрузите документы, чтобы подать заявку на одобрение."
     }
   },
   "validation": {

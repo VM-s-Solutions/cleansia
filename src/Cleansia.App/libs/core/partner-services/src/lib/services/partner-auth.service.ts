@@ -17,7 +17,7 @@ import {
   ConfirmUserEmailCommand,
   GoogleAuthCommand,
   JwtTokenResponse,
-  LoginCommand,
+  PartnerLoginCommand,
   RegisterCommand,
   RegisterEmployeeCommand,
   ResendConfirmationEmailCommand,
@@ -47,7 +47,7 @@ export class PartnerAuthService {
     rememberMe = false
   ): Observable<JwtTokenResponse> {
     return this.partnerClient.authClient.login(
-      new LoginCommand({ email, password, rememberMe })
+      new PartnerLoginCommand({ email, password, rememberMe })
     );
   }
 

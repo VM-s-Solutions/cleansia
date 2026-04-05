@@ -1,4 +1,33 @@
 {
+  "profile": {
+    "fields": {
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email",
+      "phoneNumber": "Phone Number",
+      "birthDate": "Birth Date",
+      "street": "Street",
+      "city": "City",
+      "zipCode": "Zip Code",
+      "country": "Country",
+      "taxId": "Tax ID",
+      "registrationNumber": "Registration Number (IČO)",
+      "vatNumber": "VAT Number (DIČ)",
+      "legalEntityName": "Legal Entity Name",
+      "iban": "IBAN",
+      "passportId": "Passport ID",
+      "nationality": "Nationality",
+      "documents": "Documents"
+    }
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "loading": "Loading...",
+    "confirm": "Confirm"
+  },
   "page_titles": {
     "admin": {
       "default": "Admin Portal",
@@ -53,12 +82,19 @@
     "availability": {
       "days": {
         "monday": "Monday",
+        "monday_short": "Mon",
         "tuesday": "Tuesday",
+        "tuesday_short": "Tue",
         "wednesday": "Wednesday",
+        "wednesday_short": "Wed",
         "thursday": "Thursday",
+        "thursday_short": "Thu",
         "friday": "Friday",
+        "friday_short": "Fri",
         "saturday": "Saturday",
-        "sunday": "Sunday"
+        "saturday_short": "Sat",
+        "sunday": "Sunday",
+        "sunday_short": "Sun"
       },
       "current_ranges": "Current Ranges",
       "no_availability": "No availability set",
@@ -242,6 +278,12 @@
       "nationality": "Nationality",
       "passport_id": "Passport/National ID",
       "tax_id": "Tax ID (ICO)",
+      "entity_type": "Business Type",
+      "entity_type_natural_person": "Self-employed individual",
+      "entity_type_legal_entity": "Legal entity",
+      "registration_number": "Registration Number (IČO)",
+      "vat_number": "VAT Number (DIČ)",
+      "legal_entity_name": "Legal Entity Name",
       "iban": "IBAN",
       "emergency_contact": "Emergency Contact",
       "emergency_name": "Name",

@@ -1,6 +1,7 @@
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import {
   BlobFileDto,
+  EmployeeEntityType,
   EmployeeItem,
   UpdateEmployeeCommand,
 } from '@cleansia/partner-services';
@@ -80,11 +81,16 @@ export class ProfileFormFactory {
         Validators.maxLength(20),
         CustomValidators.passportId(),
       ]),
-      taxId: new FormControl(undefined, [
+      entityType: new FormControl<EmployeeEntityType>(
+        EmployeeEntityType.NaturalPerson,
+        [Validators.required]
+      ),
+      registrationNumber: new FormControl(undefined, [
         Validators.required,
-        Validators.maxLength(20),
-        CustomValidators.taxId(),
+        Validators.maxLength(50),
       ]),
+      vatNumber: new FormControl(undefined, [Validators.maxLength(50)]),
+      legalEntityName: new FormControl(undefined, [Validators.maxLength(200)]),
       iban: new FormControl(undefined, [
         Validators.required,
         Validators.minLength(15),
@@ -126,7 +132,10 @@ export class ProfileFormFactory {
       countryId: employee.countryId || undefined,
       nationalityId: employee.nationalityId || undefined,
       passportId: employee.passportId || undefined,
-      taxId: employee.taxId || undefined,
+      entityType: employee.entityType ?? EmployeeEntityType.NaturalPerson,
+      registrationNumber: employee.registrationNumber || undefined,
+      vatNumber: employee.vatNumber || undefined,
+      legalEntityName: employee.legalEntityName || undefined,
       iban: employee.iban || undefined,
       emergencyName: employee.emergencyContactName || undefined,
       emergencyPhone: employee.emergencyContactPhone || undefined,
@@ -182,7 +191,13 @@ export class ProfileFormFactory {
       state: formData.state,
       nationalityId: formData.nationalityId,
       passportId: formData.passportId,
-      taxId: formData.taxId,
+      entityType: formData.entityType ?? EmployeeEntityType.NaturalPerson,
+      registrationNumber: formData.registrationNumber,
+      vatNumber: formData.vatNumber || undefined,
+      legalEntityName:
+        formData.entityType === EmployeeEntityType.LegalEntity
+          ? formData.legalEntityName
+          : undefined,
       iban: formData.iban,
       emergencyName: formData.emergencyName,
       emergencyPhone: formData.emergencyPhone,

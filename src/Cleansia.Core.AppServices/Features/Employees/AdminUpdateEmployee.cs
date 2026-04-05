@@ -2,6 +2,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
@@ -54,7 +55,18 @@ public class AdminUpdateEmployee
                 .WithMessage(BusinessErrorMessage.NotExistingCountryWithId)
                 .When(c => !string.IsNullOrWhiteSpace(c.CountryId));
 
-            RuleFor(c => c.TaxId).ValidateTaxId().When(c => !string.IsNullOrWhiteSpace(c.TaxId));
+            RuleFor(c => c.RegistrationNumber)
+                .MaximumLength(50).WithMessage(BusinessErrorMessage.MaxLengthExceeded)
+                .When(c => !string.IsNullOrWhiteSpace(c.RegistrationNumber));
+
+            RuleFor(c => c.VatNumber)
+                .MaximumLength(50).WithMessage(BusinessErrorMessage.MaxLengthExceeded)
+                .When(c => !string.IsNullOrWhiteSpace(c.VatNumber));
+
+            RuleFor(c => c.LegalEntityName)
+                .MaximumLength(200).WithMessage(BusinessErrorMessage.MaxLengthExceeded)
+                .When(c => !string.IsNullOrWhiteSpace(c.LegalEntityName));
+
             RuleFor(c => c.Iban).ValidateIban().When(c => !string.IsNullOrWhiteSpace(c.Iban));
             RuleFor(c => c.PassportId).ValidatePassportId().When(c => !string.IsNullOrWhiteSpace(c.PassportId));
         }
@@ -73,7 +85,10 @@ public class AdminUpdateEmployee
         string? State,
         string? NationalityId,
         string? PassportId,
-        string? TaxId,
+        EmployeeEntityType? EntityType,
+        string? RegistrationNumber,
+        string? VatNumber,
+        string? LegalEntityName,
         string? Iban,
         string? EmergencyName,
         string? EmergencyPhone) : ICommand<Response>;
@@ -98,10 +113,10 @@ public class AdminUpdateEmployee
                     command.BirthDate != default ? command.BirthDate : employee.User.BirthDate);
             }
 
-            // Update address
+            Address address;
             if (!string.IsNullOrWhiteSpace(command.Street) || !string.IsNullOrWhiteSpace(command.City))
             {
-                var address = employee.Address is not null
+                address = employee.Address is not null
                     ? employee.Address.Update(
                         command.Street ?? employee.Address.Street,
                         command.City ?? employee.Address.City,
@@ -114,33 +129,27 @@ public class AdminUpdateEmployee
                         command.ZipCode ?? "",
                         command.CountryId ?? "",
                         command.State);
-
-                employee.UpdateEmployeeDetails(
-                    command.TaxId ?? employee.TaxId ?? "",
-                    command.NationalityId ?? employee.NationalityId ?? "",
-                    command.PassportId ?? employee.PassportId ?? "",
-                    command.Iban ?? employee.IBAN ?? "",
-                    address,
-                    employee.Availability.ToDictionary(
-                        kvp => kvp.Key,
-                        kvp => kvp.Value.ToList()),
-                    command.EmergencyName ?? employee.EmergencyContactName,
-                    command.EmergencyPhone ?? employee.EmergencyContactPhone);
             }
             else
             {
-                employee.UpdateEmployeeDetails(
-                    command.TaxId ?? employee.TaxId ?? "",
-                    command.NationalityId ?? employee.NationalityId ?? "",
-                    command.PassportId ?? employee.PassportId ?? "",
-                    command.Iban ?? employee.IBAN ?? "",
-                    employee.Address!,
-                    employee.Availability.ToDictionary(
-                        kvp => kvp.Key,
-                        kvp => kvp.Value.ToList()),
-                    command.EmergencyName ?? employee.EmergencyContactName,
-                    command.EmergencyPhone ?? employee.EmergencyContactPhone);
+                address = employee.Address!;
             }
+
+            // Admin edit is partial — preserve any fields the admin didn't explicitly supply.
+            employee.UpdateEmployeeDetails(
+                command.EntityType ?? employee.EntityType,
+                command.RegistrationNumber ?? employee.RegistrationNumber,
+                command.VatNumber ?? employee.VatNumber,
+                command.LegalEntityName ?? employee.LegalEntityName,
+                command.NationalityId ?? employee.NationalityId ?? "",
+                command.PassportId ?? employee.PassportId ?? "",
+                command.Iban ?? employee.IBAN ?? "",
+                address,
+                employee.Availability.ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value.ToList()),
+                command.EmergencyName ?? employee.EmergencyContactName,
+                command.EmergencyPhone ?? employee.EmergencyContactPhone);
 
             return BusinessResult.Success(new Response(employee.Id));
         }

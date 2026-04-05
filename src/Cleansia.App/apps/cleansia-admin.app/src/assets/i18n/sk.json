@@ -1,4 +1,33 @@
 {
+  "profile": {
+    "fields": {
+      "firstName": "Meno",
+      "lastName": "Priezvisko",
+      "email": "E-mail",
+      "phoneNumber": "Telefónne číslo",
+      "birthDate": "Dátum narodenia",
+      "street": "Ulica",
+      "city": "Mesto",
+      "zipCode": "PSČ",
+      "country": "Krajina",
+      "taxId": "DIČ",
+      "registrationNumber": "IČO",
+      "vatNumber": "IČ DPH",
+      "legalEntityName": "Názov firmy",
+      "iban": "IBAN",
+      "passportId": "Číslo pasu",
+      "nationality": "Národnosť",
+      "documents": "Dokumenty"
+    }
+  },
+  "common": {
+    "save": "Uložiť",
+    "cancel": "Zrušiť",
+    "edit": "Upraviť",
+    "delete": "Vymazať",
+    "loading": "Načítava sa...",
+    "confirm": "Potvrdiť"
+  },
   "page_titles": {
     "admin": {
       "default": "Administračný portál",
@@ -53,12 +82,19 @@
     "availability": {
       "days": {
         "monday": "Pondelok",
+        "monday_short": "Po",
         "tuesday": "Utorok",
+        "tuesday_short": "Ut",
         "wednesday": "Streda",
+        "wednesday_short": "St",
         "thursday": "Štvrtok",
+        "thursday_short": "Št",
         "friday": "Piatok",
+        "friday_short": "Pi",
         "saturday": "Sobota",
-        "sunday": "Nedeľa"
+        "saturday_short": "So",
+        "sunday": "Nedeľa",
+        "sunday_short": "Ne"
       },
       "current_ranges": "Aktuálne rozsahy",
       "no_availability": "Dostupnosť nie je nastavená",
@@ -243,6 +279,12 @@
       "nationality": "Národnosť",
       "passport_id": "Pas/občiansky preukaz",
       "tax_id": "IČO",
+      "entity_type": "Typ podnikania",
+      "entity_type_natural_person": "Samostatne zárobkovo činná osoba",
+      "entity_type_legal_entity": "Právnická osoba",
+      "registration_number": "IČO",
+      "vat_number": "IČ DPH",
+      "legal_entity_name": "Názov firmy",
       "iban": "IBAN",
       "emergency_contact": "Núdzový kontakt",
       "emergency_name": "Meno",

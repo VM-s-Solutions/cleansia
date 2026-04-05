@@ -57,7 +57,9 @@ public static class ExportUserData
             GdprExportEmployeeDto? employee = null;
             if (user.Employee is { } emp)
                 employee = new GdprExportEmployeeDto(
-                    emp.Id, emp.TaxId, emp.IBAN, emp.PassportId, emp.NationalityId,
+                    emp.Id,
+                    emp.EntityType, emp.RegistrationNumber, emp.VatNumber, emp.LegalEntityName,
+                    emp.IBAN, emp.PassportId, emp.NationalityId,
                     emp.EmergencyContactName, emp.EmergencyContactPhone,
                     emp.PreferredCurrencyCode, emp.AverageRating, emp.ContractStatus, emp.CreatedOn);
 

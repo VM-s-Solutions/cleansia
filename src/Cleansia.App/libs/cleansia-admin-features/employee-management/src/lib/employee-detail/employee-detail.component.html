@@ -114,26 +114,40 @@
         [title]="'pages.employee_detail.personal_info' | translate"
       >
         @if (facade.editingSection() === 'personal') {
-        <div class="info-grid">
+        <div class="info-grid" [formGroup]="editForm">
           <div class="info-item">
-            <span class="label">{{ 'pages.employee_detail.first_name' | translate }}:</span>
-            <input type="text" class="edit-input" [(ngModel)]="editFormData['firstName']" />
+            <cleansia-text-input
+              [label]="'pages.employee_detail.first_name' | translate"
+              [floatVariant]="'on'"
+              formControlName="firstName"
+              dataType="text"
+            />
           </div>
           <div class="info-item">
-            <span class="label">{{ 'pages.employee_detail.last_name' | translate }}:</span>
-            <input type="text" class="edit-input" [(ngModel)]="editFormData['lastName']" />
+            <cleansia-text-input
+              [label]="'pages.employee_detail.last_name' | translate"
+              [floatVariant]="'on'"
+              formControlName="lastName"
+              dataType="text"
+            />
           </div>
           <div class="info-item">
             <span class="label">{{ 'pages.employee_detail.email' | translate }}:</span>
             <span class="value">{{ facade.employee().email || '-' }}</span>
           </div>
           <div class="info-item">
-            <span class="label">{{ 'pages.employee_detail.phone' | translate }}:</span>
-            <input type="text" class="edit-input" [(ngModel)]="editFormData['phoneNumber']" />
+            <cleansia-telephone
+              [label]="'pages.employee_detail.phone' | translate"
+              [floatVariant]="'on'"
+              formControlName="phoneNumber"
+            />
           </div>
           <div class="info-item">
-            <span class="label">{{ 'pages.employee_detail.birth_date' | translate }}:</span>
-            <input type="date" class="edit-input" [(ngModel)]="editFormData['birthDate']" />
+            <cleansia-calendar
+              [label]="'pages.employee_detail.birth_date' | translate"
+              [floatVariant]="'on'"
+              formControlName="birthDate"
+            />
           </div>
           <div class="info-item">
             <span class="label">{{ 'pages.employee_detail.created_at' | translate }}:</span>
@@ -214,22 +228,39 @@
         [title]="'pages.employee_detail.address_info' | translate"
       >
         @if (facade.editingSection() === 'address') {
-        <div class="info-grid">
+        <div class="info-grid" [formGroup]="editForm">
           <div class="info-item">
-            <span class="label">{{ 'pages.employee_detail.street' | translate }}:</span>
-            <input type="text" class="edit-input" [(ngModel)]="editFormData['street']" />
+            <cleansia-text-input
+              [label]="'pages.employee_detail.street' | translate"
+              [floatVariant]="'on'"
+              formControlName="street"
+              dataType="text"
+            />
           </div>
           <div class="info-item">
-            <span class="label">{{ 'pages.employee_detail.city' | translate }}:</span>
-            <input type="text" class="edit-input" [(ngModel)]="editFormData['city']" />
+            <cleansia-text-input
+              [label]="'pages.employee_detail.city' | translate"
+              [floatVariant]="'on'"
+              formControlName="city"
+              dataType="text"
+            />
           </div>
           <div class="info-item">
-            <span class="label">{{ 'pages.employee_detail.zip_code' | translate }}:</span>
-            <input type="text" class="edit-input" [(ngModel)]="editFormData['zipCode']" />
+            <cleansia-text-input
+              [label]="'pages.employee_detail.zip_code' | translate"
+              [floatVariant]="'on'"
+              formControlName="zipCode"
+              dataType="text"
+            />
           </div>
           <div class="info-item">
-            <span class="label">{{ 'pages.employee_detail.country' | translate }}:</span>
-            <span class="value">{{ facade.employee().countryName || '-' }}</span>
+            <cleansia-select
+              [options]="facade.countries()"
+              [label]="'pages.employee_detail.country' | translate"
+              [floatVariant]="'on'"
+              [filter]="true"
+              formControlName="countryId"
+            />
           </div>
         </div>
         <div class="section-edit-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
@@ -290,22 +321,65 @@
         [title]="'pages.employee_detail.employment_info' | translate"
       >
         @if (facade.editingSection() === 'employment') {
-        <div class="info-grid">
+        <div class="info-grid" [formGroup]="editForm">
           <div class="info-item">
-            <span class="label">{{ 'pages.employee_detail.nationality' | translate }}:</span>
-            <span class="value">{{ facade.employee().nationalityName || '-' }}</span>
+            <cleansia-select
+              [options]="facade.countries()"
+              [label]="'pages.employee_detail.nationality' | translate"
+              [floatVariant]="'on'"
+              [filter]="true"
+              formControlName="nationalityId"
+            />
           </div>
           <div class="info-item">
-            <span class="label">{{ 'pages.employee_detail.passport_id' | translate }}:</span>
-            <input type="text" class="edit-input" [(ngModel)]="editFormData['passportId']" />
+            <cleansia-text-input
+              [label]="'pages.employee_detail.passport_id' | translate"
+              [floatVariant]="'on'"
+              formControlName="passportId"
+              dataType="text"
+            />
           </div>
           <div class="info-item">
-            <span class="label">{{ 'pages.employee_detail.tax_id' | translate }}:</span>
-            <input type="text" class="edit-input" [(ngModel)]="editFormData['taxId']" />
+            <cleansia-select
+              [options]="entityTypeOptions"
+              [label]="'pages.employee_detail.entity_type' | translate"
+              [floatVariant]="'on'"
+              formControlName="entityType"
+            />
           </div>
           <div class="info-item">
-            <span class="label">{{ 'pages.employee_detail.iban' | translate }}:</span>
-            <input type="text" class="edit-input" [(ngModel)]="editFormData['iban']" />
+            <cleansia-text-input
+              [label]="'pages.employee_detail.registration_number' | translate"
+              [floatVariant]="'on'"
+              formControlName="registrationNumber"
+              dataType="text"
+            />
+          </div>
+          <div class="info-item">
+            <cleansia-text-input
+              [label]="'pages.employee_detail.vat_number' | translate"
+              [floatVariant]="'on'"
+              formControlName="vatNumber"
+              dataType="text"
+            />
+          </div>
+          @if (isLegalEntity()) {
+            <div class="info-item">
+              <cleansia-text-input
+                [label]="'pages.employee_detail.legal_entity_name' | translate"
+                [floatVariant]="'on'"
+                formControlName="legalEntityName"
+                dataType="text"
+              />
+            </div>
+          }
+          <div class="info-item">
+            <cleansia-text-input
+              [label]="'pages.employee_detail.iban' | translate"
+              [floatVariant]="'on'"
+              formControlName="iban"
+              dataType="text"
+            />
           </div>
         </div>
         <div class="section-edit-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
@@ -347,10 +421,34 @@
           </div>
           <div class="info-item">
             <span class="label"
-              >{{ 'pages.employee_detail.tax_id' | translate }}:</span
+              >{{ 'pages.employee_detail.entity_type' | translate }}:</span
             >
-            <span class="value">{{ facade.employee().taxId || '-' }}</span>
+            <span class="value">{{
+              facade.employee().entityType === 2
+                ? ('pages.employee_detail.entity_type_legal_entity' | translate)
+                : ('pages.employee_detail.entity_type_natural_person' | translate)
+            }}</span>
           </div>
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.employee_detail.registration_number' | translate }}:</span
+            >
+            <span class="value">{{ facade.employee().registrationNumber || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.employee_detail.vat_number' | translate }}:</span
+            >
+            <span class="value">{{ facade.employee().vatNumber || '-' }}</span>
+          </div>
+          @if (facade.employee().entityType === 2) {
+            <div class="info-item">
+              <span class="label"
+                >{{ 'pages.employee_detail.legal_entity_name' | translate }}:</span
+              >
+              <span class="value">{{ facade.employee().legalEntityName || '-' }}</span>
+            </div>
+          }
           <div class="info-item">
             <span class="label"
               >{{ 'pages.employee_detail.iban' | translate }}:</span
@@ -366,14 +464,21 @@
         [title]="'pages.employee_detail.emergency_contact' | translate"
       >
         @if (facade.editingSection() === 'emergency') {
-        <div class="info-grid">
+        <div class="info-grid" [formGroup]="editForm">
           <div class="info-item">
-            <span class="label">{{ 'pages.employee_detail.emergency_name' | translate }}:</span>
-            <input type="text" class="edit-input" [(ngModel)]="editFormData['emergencyContactName']" />
+            <cleansia-text-input
+              [label]="'pages.employee_detail.emergency_name' | translate"
+              [floatVariant]="'on'"
+              formControlName="emergencyContactName"
+              dataType="text"
+            />
           </div>
           <div class="info-item">
-            <span class="label">{{ 'pages.employee_detail.emergency_phone' | translate }}:</span>
-            <input type="text" class="edit-input" [(ngModel)]="editFormData['emergencyContactPhone']" />
+            <cleansia-telephone
+              [label]="'pages.employee_detail.emergency_phone' | translate"
+              [floatVariant]="'on'"
+              formControlName="emergencyContactPhone"
+            />
           </div>
         </div>
         <div class="section-edit-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">

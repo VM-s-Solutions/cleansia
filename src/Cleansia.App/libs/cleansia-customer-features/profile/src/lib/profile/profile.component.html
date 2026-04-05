@@ -189,25 +189,17 @@
 
           <div class="customer-profile__password-checklist">
             <ul>
-              <li [class.valid]="passwordValidation().hasLowerCase"
-                  [class.invalid]="hasNewPasswordInput && !passwordValidation().hasLowerCase">
-                {{ 'auth.register.validation.password_lowercase' | translate }}
-              </li>
-              <li [class.valid]="passwordValidation().hasUpperCase"
-                  [class.invalid]="hasNewPasswordInput && !passwordValidation().hasUpperCase">
-                {{ 'auth.register.validation.password_uppercase' | translate }}
-              </li>
-              <li [class.valid]="passwordValidation().hasNumber"
-                  [class.invalid]="hasNewPasswordInput && !passwordValidation().hasNumber">
-                {{ 'auth.register.validation.password_number' | translate }}
-              </li>
               <li [class.valid]="passwordValidation().hasMinLength"
                   [class.invalid]="hasNewPasswordInput && !passwordValidation().hasMinLength">
                 {{ 'auth.register.validation.password_min_length' | translate }}
               </li>
-              <li [class.valid]="passwordValidation().hasSpecialCharacter"
-                  [class.invalid]="hasNewPasswordInput && !passwordValidation().hasSpecialCharacter">
-                {{ 'auth.register.validation.password_special_character' | translate }}
+              <li [class.valid]="passwordValidation().hasLetter"
+                  [class.invalid]="hasNewPasswordInput && !passwordValidation().hasLetter">
+                {{ 'auth.register.validation.password_letter' | translate }}
+              </li>
+              <li [class.valid]="passwordValidation().hasNumber"
+                  [class.invalid]="hasNewPasswordInput && !passwordValidation().hasNumber">
+                {{ 'auth.register.validation.password_number' | translate }}
               </li>
             </ul>
           </div>
@@ -422,36 +414,37 @@
     [breakpoints]="{ '600px': '95vw' }"
     styleClass="cleansia-dialog"
   >
-    <div class="customer-profile__dialog-form">
+    <div class="customer-profile__dialog-form" [formGroup]="addressForm">
       <cleansia-text-input
-        [(ngModel)]="addressForm.street"
+        formControlName="street"
         [label]="'pages.profile.address_street' | translate"
         floatVariant="on"
         inputSize="full-width"
       />
       <div class="customer-profile__dialog-row">
         <cleansia-text-input
-          [(ngModel)]="addressForm.city"
+          formControlName="city"
           [label]="'pages.profile.address_city' | translate"
           floatVariant="on"
           inputSize="full-width"
         />
         <cleansia-text-input
-          [(ngModel)]="addressForm.zip"
+          formControlName="zip"
           [label]="'pages.profile.address_zip' | translate"
           floatVariant="on"
           inputSize="full-width"
         />
       </div>
-      <cleansia-text-input
-        [(ngModel)]="addressForm.country"
+      <cleansia-select
+        formControlName="country"
+        [options]="countryOptions()"
         [label]="'pages.profile.address_country' | translate"
         floatVariant="on"
-        inputSize="full-width"
+        [filter]="true"
       />
       <div class="customer-profile__dialog-toggle">
         <label>{{ 'pages.profile.default_address' | translate }}</label>
-        <p-toggleSwitch [(ngModel)]="addressForm.isDefault" />
+        <p-toggleSwitch formControlName="isDefault" />
       </div>
     </div>
     <ng-template #footer>
@@ -464,7 +457,7 @@
         <cleansia-button
           [title]="'global.actions.save' | translate"
           [severity]="'primary'"
-          [disabled]="!addressForm.street || !addressForm.city || !addressForm.zip"
+          [disabled]="addressForm.invalid"
           (clickFn)="saveAddress()"
         />
       </div>

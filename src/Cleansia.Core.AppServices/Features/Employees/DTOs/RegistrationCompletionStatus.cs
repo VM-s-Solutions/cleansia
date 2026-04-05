@@ -1,6 +1,10 @@
+using Cleansia.Core.Domain.Enums;
+
 namespace Cleansia.Core.AppServices.Features.Employees.DTOs;
 
 public record RegistrationCompletionStatus(
     bool AreDocumentsUploaded,
     bool HasCompletedProfile,
-    List<string> MissingFields);
+    List<string> MissingFields,
+    ContractStatus ContractStatus,
+    string? RejectionReason);

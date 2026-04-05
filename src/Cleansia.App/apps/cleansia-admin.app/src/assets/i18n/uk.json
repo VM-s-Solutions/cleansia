@@ -1,4 +1,33 @@
 {
+  "profile": {
+    "fields": {
+      "firstName": "Ім'я",
+      "lastName": "Прізвище",
+      "email": "Електронна пошта",
+      "phoneNumber": "Номер телефону",
+      "birthDate": "Дата народження",
+      "street": "Вулиця",
+      "city": "Місто",
+      "zipCode": "Поштовий індекс",
+      "country": "Країна",
+      "taxId": "Податковий номер",
+      "registrationNumber": "Реєстраційний номер",
+      "vatNumber": "Номер платника ПДВ",
+      "legalEntityName": "Назва юридичної особи",
+      "iban": "IBAN",
+      "passportId": "Номер паспорта",
+      "nationality": "Громадянство",
+      "documents": "Документи"
+    }
+  },
+  "common": {
+    "save": "Зберегти",
+    "cancel": "Скасувати",
+    "edit": "Редагувати",
+    "delete": "Видалити",
+    "loading": "Завантаження...",
+    "confirm": "Підтвердити"
+  },
   "page_titles": {
     "admin": {
       "default": "Панель адміністратора",
@@ -53,12 +82,19 @@
     "availability": {
       "days": {
         "monday": "Понеділок",
+        "monday_short": "Пн",
         "tuesday": "Вівторок",
+        "tuesday_short": "Вт",
         "wednesday": "Середа",
+        "wednesday_short": "Ср",
         "thursday": "Четвер",
+        "thursday_short": "Чт",
         "friday": "П'ятниця",
+        "friday_short": "Пт",
         "saturday": "Субота",
-        "sunday": "Неділя"
+        "saturday_short": "Сб",
+        "sunday": "Неділя",
+        "sunday_short": "Нд"
       },
       "current_ranges": "Поточні діапазони",
       "no_availability": "Доступність не налаштована",
@@ -243,6 +279,12 @@
       "nationality": "Національність",
       "passport_id": "Паспорт/Національне посвідчення",
       "tax_id": "Ідентифікаційний код (ІКО)",
+      "entity_type": "Тип підприємства",
+      "entity_type_natural_person": "Фізична особа-підприємець",
+      "entity_type_legal_entity": "Юридична особа",
+      "registration_number": "Реєстраційний номер",
+      "vat_number": "Номер платника ПДВ",
+      "legal_entity_name": "Назва юридичної особи",
       "iban": "IBAN",
       "emergency_contact": "Екстрений контакт",
       "emergency_name": "Ім'я",

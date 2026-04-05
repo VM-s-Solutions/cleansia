@@ -2481,7 +2481,7 @@ export interface IAdminEmployeeClient {
      */
     updateAvailability(employeeId: string, body?: AdminUpdateEmployeeAvailabilityRequest | undefined): Observable<AdminUpdateEmployeeAvailabilityResponse>;
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     update(employeeId: string, body?: AdminUpdateEmployeeCommand | undefined): Observable<AdminUpdateEmployeeResponse>;
@@ -2928,7 +2928,7 @@ export class AdminEmployeeClient implements IAdminEmployeeClient {
     }
 
     /**
-     * @param body (optional)
+     * @param body (optional) 
      * @return OK
      */
     update(employeeId: string, body?: AdminUpdateEmployeeCommand | undefined): Observable<AdminUpdateEmployeeResponse> {
@@ -6007,6 +6007,486 @@ export class AdminPackageClient implements IAdminPackageClient {
     }
 }
 
+export interface IAdminPayConfigClient {
+    /**
+     * @param serviceId (optional) 
+     * @param packageId (optional) 
+     * @param currencyId (optional) 
+     * @param sort (optional) 
+     * @param offset (optional) 
+     * @param limit (optional) 
+     * @return OK
+     */
+    getPaged(serviceId?: string | undefined, packageId?: string | undefined, currencyId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfEmployeePayConfigDto>;
+    /**
+     * @return OK
+     */
+    details(payConfigId: string): Observable<EmployeePayConfigDto>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    create(body?: CreatePayConfigCommand | undefined): Observable<CreatePayConfigResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    update(payConfigId: string, body?: UpdatePayConfigCommand | undefined): Observable<UpdatePayConfigResponse>;
+    /**
+     * @return OK
+     */
+    delete(payConfigId: string): Observable<DeletePayConfigResponse>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class AdminPayConfigClient implements IAdminPayConfigClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(ADMINAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @param serviceId (optional) 
+     * @param packageId (optional) 
+     * @param currencyId (optional) 
+     * @param sort (optional) 
+     * @param offset (optional) 
+     * @param limit (optional) 
+     * @return OK
+     */
+    getPaged(serviceId?: string | undefined, packageId?: string | undefined, currencyId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfEmployeePayConfigDto> {
+        let url = this.baseUrl + "/api/AdminPayConfig/get-paged?";
+        if (serviceId === null)
+            throw new globalThis.Error("The parameter 'serviceId' cannot be null.");
+        else if (serviceId !== undefined)
+            url += "Filter.ServiceId=" + encodeURIComponent("" + serviceId) + "&";
+        if (packageId === null)
+            throw new globalThis.Error("The parameter 'packageId' cannot be null.");
+        else if (packageId !== undefined)
+            url += "Filter.PackageId=" + encodeURIComponent("" + packageId) + "&";
+        if (currencyId === null)
+            throw new globalThis.Error("The parameter 'currencyId' cannot be null.");
+        else if (currencyId !== undefined)
+            url += "Filter.CurrencyId=" + encodeURIComponent("" + currencyId) + "&";
+        if (sort === null)
+            throw new globalThis.Error("The parameter 'sort' cannot be null.");
+        else if (sort !== undefined)
+            sort && sort.forEach((item, index) => {
+                for (const attr in item)
+        			if (item.hasOwnProperty(attr)) {
+        				url += "Sort[" + index + "]." + attr + "=" + encodeURIComponent("" + (item as any)[attr]) + "&";
+        			}
+            });
+        if (offset === null)
+            throw new globalThis.Error("The parameter 'offset' cannot be null.");
+        else if (offset !== undefined)
+            url += "Offset=" + encodeURIComponent("" + offset) + "&";
+        if (limit === null)
+            throw new globalThis.Error("The parameter 'limit' cannot be null.");
+        else if (limit !== undefined)
+            url += "Limit=" + encodeURIComponent("" + limit) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetPaged(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetPaged(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<PagedDataOfEmployeePayConfigDto>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<PagedDataOfEmployeePayConfigDto>;
+        }));
+    }
+
+    protected processGetPaged(response: HttpResponseBase): Observable<PagedDataOfEmployeePayConfigDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = PagedDataOfEmployeePayConfigDto.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    details(payConfigId: string): Observable<EmployeePayConfigDto> {
+        let url = this.baseUrl + "/api/AdminPayConfig/details/{payConfigId}";
+        if (payConfigId === undefined || payConfigId === null)
+            throw new globalThis.Error("The parameter 'payConfigId' must be defined.");
+        url = url.replace("{payConfigId}", encodeURIComponent("" + payConfigId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processDetails(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processDetails(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<EmployeePayConfigDto>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<EmployeePayConfigDto>;
+        }));
+    }
+
+    protected processDetails(response: HttpResponseBase): Observable<EmployeePayConfigDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = EmployeePayConfigDto.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result404: any = null;
+            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, ResponseText, Headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    create(body?: CreatePayConfigCommand | undefined): Observable<CreatePayConfigResponse> {
+        let url = this.baseUrl + "/api/AdminPayConfig/create";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processCreate(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processCreate(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<CreatePayConfigResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<CreatePayConfigResponse>;
+        }));
+    }
+
+    protected processCreate(response: HttpResponseBase): Observable<CreatePayConfigResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = CreatePayConfigResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    update(payConfigId: string, body?: UpdatePayConfigCommand | undefined): Observable<UpdatePayConfigResponse> {
+        let url = this.baseUrl + "/api/AdminPayConfig/update/{payConfigId}";
+        if (payConfigId === undefined || payConfigId === null)
+            throw new globalThis.Error("The parameter 'payConfigId' must be defined.");
+        url = url.replace("{payConfigId}", encodeURIComponent("" + payConfigId));
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("put", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processUpdate(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processUpdate(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<UpdatePayConfigResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<UpdatePayConfigResponse>;
+        }));
+    }
+
+    protected processUpdate(response: HttpResponseBase): Observable<UpdatePayConfigResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = UpdatePayConfigResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result404: any = null;
+            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, ResponseText, Headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    delete(payConfigId: string): Observable<DeletePayConfigResponse> {
+        let url = this.baseUrl + "/api/AdminPayConfig/delete/{payConfigId}";
+        if (payConfigId === undefined || payConfigId === null)
+            throw new globalThis.Error("The parameter 'payConfigId' must be defined.");
+        url = url.replace("{payConfigId}", encodeURIComponent("" + payConfigId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("delete", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processDelete(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processDelete(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<DeletePayConfigResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<DeletePayConfigResponse>;
+        }));
+    }
+
+    protected processDelete(response: HttpResponseBase): Observable<DeletePayConfigResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = DeletePayConfigResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result404: any = null;
+            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, ResponseText, Headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
 export interface IAdminPayPeriodClient {
     /**
      * @param status (optional) 
@@ -7894,7 +8374,10 @@ export class AdminEmployeeDetail implements IAdminEmployeeDetail {
     nationalityId!: string | undefined;
     nationalityName!: string | undefined;
     passportId!: string | undefined;
-    taxId!: string | undefined;
+    entityType!: EmployeeEntityType;
+    registrationNumber!: string | undefined;
+    vatNumber!: string | undefined;
+    legalEntityName!: string | undefined;
     iban!: string | undefined;
     emergencyContactName!: string | undefined;
     emergencyContactPhone!: string | undefined;
@@ -7938,7 +8421,10 @@ export class AdminEmployeeDetail implements IAdminEmployeeDetail {
             this.nationalityId = Data["nationalityId"];
             this.nationalityName = Data["nationalityName"];
             this.passportId = Data["passportId"];
-            this.taxId = Data["taxId"];
+            this.entityType = Data["entityType"];
+            this.registrationNumber = Data["registrationNumber"];
+            this.vatNumber = Data["vatNumber"];
+            this.legalEntityName = Data["legalEntityName"];
             this.iban = Data["iban"];
             this.emergencyContactName = Data["emergencyContactName"];
             this.emergencyContactPhone = Data["emergencyContactPhone"];
@@ -7992,7 +8478,10 @@ export class AdminEmployeeDetail implements IAdminEmployeeDetail {
         data["nationalityId"] = this.nationalityId;
         data["nationalityName"] = this.nationalityName;
         data["passportId"] = this.passportId;
-        data["taxId"] = this.taxId;
+        data["entityType"] = this.entityType;
+        data["registrationNumber"] = this.registrationNumber;
+        data["vatNumber"] = this.vatNumber;
+        data["legalEntityName"] = this.legalEntityName;
         data["iban"] = this.iban;
         data["emergencyContactName"] = this.emergencyContactName;
         data["emergencyContactPhone"] = this.emergencyContactPhone;
@@ -8039,7 +8528,10 @@ export interface IAdminEmployeeDetail {
     nationalityId: string | undefined;
     nationalityName: string | undefined;
     passportId: string | undefined;
-    taxId: string | undefined;
+    entityType: EmployeeEntityType;
+    registrationNumber: string | undefined;
+    vatNumber: string | undefined;
+    legalEntityName: string | undefined;
     iban: string | undefined;
     emergencyContactName: string | undefined;
     emergencyContactPhone: string | undefined;
@@ -8467,20 +8959,25 @@ export interface IAdminUpdateEmployeeAvailabilityTimeRangeDto {
 }
 
 export class AdminUpdateEmployeeCommand implements IAdminUpdateEmployeeCommand {
+    employeeId!: string | undefined;
     firstName!: string | undefined;
     lastName!: string | undefined;
-    phoneNumber!: string | undefined;
-    birthDate!: Date | undefined;
+    birthDate!: Date;
+    phone!: string | undefined;
     street!: string | undefined;
     city!: string | undefined;
     zipCode!: string | undefined;
     countryId!: string | undefined;
+    state!: string | undefined;
     nationalityId!: string | undefined;
     passportId!: string | undefined;
-    taxId!: string | undefined;
+    entityType!: EmployeeEntityType;
+    registrationNumber!: string | undefined;
+    vatNumber!: string | undefined;
+    legalEntityName!: string | undefined;
     iban!: string | undefined;
-    emergencyContactName!: string | undefined;
-    emergencyContactPhone!: string | undefined;
+    emergencyName!: string | undefined;
+    emergencyPhone!: string | undefined;
 
     constructor(data?: IAdminUpdateEmployeeCommand) {
         if (data) {
@@ -8493,20 +8990,25 @@ export class AdminUpdateEmployeeCommand implements IAdminUpdateEmployeeCommand {
 
     init(Data?: any) {
         if (Data) {
+            this.employeeId = Data["employeeId"];
             this.firstName = Data["firstName"];
             this.lastName = Data["lastName"];
-            this.phoneNumber = Data["phoneNumber"];
             this.birthDate = Data["birthDate"] ? new Date(Data["birthDate"].toString()) : undefined as any;
+            this.phone = Data["phone"];
             this.street = Data["street"];
             this.city = Data["city"];
             this.zipCode = Data["zipCode"];
             this.countryId = Data["countryId"];
+            this.state = Data["state"];
             this.nationalityId = Data["nationalityId"];
             this.passportId = Data["passportId"];
-            this.taxId = Data["taxId"];
+            this.entityType = Data["entityType"];
+            this.registrationNumber = Data["registrationNumber"];
+            this.vatNumber = Data["vatNumber"];
+            this.legalEntityName = Data["legalEntityName"];
             this.iban = Data["iban"];
-            this.emergencyContactName = Data["emergencyContactName"];
-            this.emergencyContactPhone = Data["emergencyContactPhone"];
+            this.emergencyName = Data["emergencyName"];
+            this.emergencyPhone = Data["emergencyPhone"];
         }
     }
 
@@ -8519,39 +9021,49 @@ export class AdminUpdateEmployeeCommand implements IAdminUpdateEmployeeCommand {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
+        data["employeeId"] = this.employeeId;
         data["firstName"] = this.firstName;
         data["lastName"] = this.lastName;
-        data["phoneNumber"] = this.phoneNumber;
         data["birthDate"] = this.birthDate ? formatDate(this.birthDate) : undefined as any;
+        data["phone"] = this.phone;
         data["street"] = this.street;
         data["city"] = this.city;
         data["zipCode"] = this.zipCode;
         data["countryId"] = this.countryId;
+        data["state"] = this.state;
         data["nationalityId"] = this.nationalityId;
         data["passportId"] = this.passportId;
-        data["taxId"] = this.taxId;
+        data["entityType"] = this.entityType;
+        data["registrationNumber"] = this.registrationNumber;
+        data["vatNumber"] = this.vatNumber;
+        data["legalEntityName"] = this.legalEntityName;
         data["iban"] = this.iban;
-        data["emergencyContactName"] = this.emergencyContactName;
-        data["emergencyContactPhone"] = this.emergencyContactPhone;
+        data["emergencyName"] = this.emergencyName;
+        data["emergencyPhone"] = this.emergencyPhone;
         return data;
     }
 }
 
 export interface IAdminUpdateEmployeeCommand {
+    employeeId: string | undefined;
     firstName: string | undefined;
     lastName: string | undefined;
-    phoneNumber: string | undefined;
-    birthDate: Date | undefined;
+    birthDate: Date;
+    phone: string | undefined;
     street: string | undefined;
     city: string | undefined;
     zipCode: string | undefined;
     countryId: string | undefined;
+    state: string | undefined;
     nationalityId: string | undefined;
     passportId: string | undefined;
-    taxId: string | undefined;
+    entityType: EmployeeEntityType;
+    registrationNumber: string | undefined;
+    vatNumber: string | undefined;
+    legalEntityName: string | undefined;
     iban: string | undefined;
-    emergencyContactName: string | undefined;
-    emergencyContactPhone: string | undefined;
+    emergencyName: string | undefined;
+    emergencyPhone: string | undefined;
 }
 
 export class AdminUpdateEmployeeResponse implements IAdminUpdateEmployeeResponse {
@@ -10289,6 +10801,114 @@ export interface ICreatePackageResponse {
     packageId: string | undefined;
 }
 
+export class CreatePayConfigCommand implements ICreatePayConfigCommand {
+    serviceId!: string | undefined;
+    packageId!: string | undefined;
+    basePay!: number;
+    extraPerRoom!: number;
+    extraPerBathroom!: number;
+    distanceRatePerKm!: number;
+    minimumPay!: number;
+    maximumPay!: number;
+    currencyId!: string | undefined;
+    description!: string | undefined;
+
+    constructor(data?: ICreatePayConfigCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.serviceId = Data["serviceId"];
+            this.packageId = Data["packageId"];
+            this.basePay = Data["basePay"];
+            this.extraPerRoom = Data["extraPerRoom"];
+            this.extraPerBathroom = Data["extraPerBathroom"];
+            this.distanceRatePerKm = Data["distanceRatePerKm"];
+            this.minimumPay = Data["minimumPay"];
+            this.maximumPay = Data["maximumPay"];
+            this.currencyId = Data["currencyId"];
+            this.description = Data["description"];
+        }
+    }
+
+    static fromJS(data: any): CreatePayConfigCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreatePayConfigCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["serviceId"] = this.serviceId;
+        data["packageId"] = this.packageId;
+        data["basePay"] = this.basePay;
+        data["extraPerRoom"] = this.extraPerRoom;
+        data["extraPerBathroom"] = this.extraPerBathroom;
+        data["distanceRatePerKm"] = this.distanceRatePerKm;
+        data["minimumPay"] = this.minimumPay;
+        data["maximumPay"] = this.maximumPay;
+        data["currencyId"] = this.currencyId;
+        data["description"] = this.description;
+        return data;
+    }
+}
+
+export interface ICreatePayConfigCommand {
+    serviceId: string | undefined;
+    packageId: string | undefined;
+    basePay: number;
+    extraPerRoom: number;
+    extraPerBathroom: number;
+    distanceRatePerKm: number;
+    minimumPay: number;
+    maximumPay: number;
+    currencyId: string | undefined;
+    description: string | undefined;
+}
+
+export class CreatePayConfigResponse implements ICreatePayConfigResponse {
+    payConfigId!: string | undefined;
+
+    constructor(data?: ICreatePayConfigResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.payConfigId = Data["payConfigId"];
+        }
+    }
+
+    static fromJS(data: any): CreatePayConfigResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreatePayConfigResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["payConfigId"] = this.payConfigId;
+        return data;
+    }
+}
+
+export interface ICreatePayConfigResponse {
+    payConfigId: string | undefined;
+}
+
 export class CreatePayPeriodCommand implements ICreatePayPeriodCommand {
     startDate!: Date;
     endDate!: Date;
@@ -10921,6 +11541,42 @@ export interface IDeletePackageResponse {
     packageId: string | undefined;
 }
 
+export class DeletePayConfigResponse implements IDeletePayConfigResponse {
+    payConfigId!: string | undefined;
+
+    constructor(data?: IDeletePayConfigResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.payConfigId = Data["payConfigId"];
+        }
+    }
+
+    static fromJS(data: any): DeletePayConfigResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new DeletePayConfigResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["payConfigId"] = this.payConfigId;
+        return data;
+    }
+}
+
+export interface IDeletePayConfigResponse {
+    payConfigId: string | undefined;
+}
+
 export class DeletePayPeriodResponse implements IDeletePayPeriodResponse {
     payPeriodId!: string | undefined;
 
@@ -11270,6 +11926,7 @@ export enum EmailType {
     OrderReceipt = 3,
     PeriodClosed = 4,
     PeriodEndReminder = 5,
+    OrderStatusUpdate = 6,
 }
 
 export class EmailTypeDetailDto implements IEmailTypeDetailDto {
@@ -11540,6 +12197,11 @@ export interface IEmployeeDocumentItem {
     updatedOn: Date | undefined;
 }
 
+export enum EmployeeEntityType {
+    NaturalPerson = 1,
+    LegalEntity = 2,
+}
+
 export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
     id!: string | undefined;
     employeeId!: string | undefined;
@@ -11803,6 +12465,98 @@ export enum EmployeeInvoiceStatus {
     Disputed = 4,
     Rejected = 5,
     Cancelled = 6,
+}
+
+export class EmployeePayConfigDto implements IEmployeePayConfigDto {
+    id!: string | undefined;
+    serviceId!: string | undefined;
+    serviceName!: string | undefined;
+    packageId!: string | undefined;
+    packageName!: string | undefined;
+    basePay!: number;
+    extraPerRoom!: number;
+    extraPerBathroom!: number;
+    distanceRatePerKm!: number;
+    minimumPay!: number;
+    maximumPay!: number;
+    currencyId!: string | undefined;
+    currencyCode!: string | undefined;
+    description!: string | undefined;
+    createdOn!: Date;
+
+    constructor(data?: IEmployeePayConfigDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.serviceId = Data["serviceId"];
+            this.serviceName = Data["serviceName"];
+            this.packageId = Data["packageId"];
+            this.packageName = Data["packageName"];
+            this.basePay = Data["basePay"];
+            this.extraPerRoom = Data["extraPerRoom"];
+            this.extraPerBathroom = Data["extraPerBathroom"];
+            this.distanceRatePerKm = Data["distanceRatePerKm"];
+            this.minimumPay = Data["minimumPay"];
+            this.maximumPay = Data["maximumPay"];
+            this.currencyId = Data["currencyId"];
+            this.currencyCode = Data["currencyCode"];
+            this.description = Data["description"];
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): EmployeePayConfigDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new EmployeePayConfigDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["serviceId"] = this.serviceId;
+        data["serviceName"] = this.serviceName;
+        data["packageId"] = this.packageId;
+        data["packageName"] = this.packageName;
+        data["basePay"] = this.basePay;
+        data["extraPerRoom"] = this.extraPerRoom;
+        data["extraPerBathroom"] = this.extraPerBathroom;
+        data["distanceRatePerKm"] = this.distanceRatePerKm;
+        data["minimumPay"] = this.minimumPay;
+        data["maximumPay"] = this.maximumPay;
+        data["currencyId"] = this.currencyId;
+        data["currencyCode"] = this.currencyCode;
+        data["description"] = this.description;
+        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IEmployeePayConfigDto {
+    id: string | undefined;
+    serviceId: string | undefined;
+    serviceName: string | undefined;
+    packageId: string | undefined;
+    packageName: string | undefined;
+    basePay: number;
+    extraPerRoom: number;
+    extraPerBathroom: number;
+    distanceRatePerKm: number;
+    minimumPay: number;
+    maximumPay: number;
+    currencyId: string | undefined;
+    currencyCode: string | undefined;
+    description: string | undefined;
+    createdOn: Date;
 }
 
 export class EmployeePayrollSummary implements IEmployeePayrollSummary {
@@ -12183,7 +12937,10 @@ export interface IGdprExportDto {
 
 export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
     id!: string | undefined;
-    taxId!: string | undefined;
+    entityType!: EmployeeEntityType;
+    registrationNumber!: string | undefined;
+    vatNumber!: string | undefined;
+    legalEntityName!: string | undefined;
     iban!: string | undefined;
     passportId!: string | undefined;
     nationalityId!: string | undefined;
@@ -12206,7 +12963,10 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
     init(Data?: any) {
         if (Data) {
             this.id = Data["id"];
-            this.taxId = Data["taxId"];
+            this.entityType = Data["entityType"];
+            this.registrationNumber = Data["registrationNumber"];
+            this.vatNumber = Data["vatNumber"];
+            this.legalEntityName = Data["legalEntityName"];
             this.iban = Data["iban"];
             this.passportId = Data["passportId"];
             this.nationalityId = Data["nationalityId"];
@@ -12229,7 +12989,10 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["id"] = this.id;
-        data["taxId"] = this.taxId;
+        data["entityType"] = this.entityType;
+        data["registrationNumber"] = this.registrationNumber;
+        data["vatNumber"] = this.vatNumber;
+        data["legalEntityName"] = this.legalEntityName;
         data["iban"] = this.iban;
         data["passportId"] = this.passportId;
         data["nationalityId"] = this.nationalityId;
@@ -12245,7 +13008,10 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
 
 export interface IGdprExportEmployeeDto {
     id: string | undefined;
-    taxId: string | undefined;
+    entityType: EmployeeEntityType;
+    registrationNumber: string | undefined;
+    vatNumber: string | undefined;
+    legalEntityName: string | undefined;
     iban: string | undefined;
     passportId: string | undefined;
     nationalityId: string | undefined;
@@ -14468,6 +15234,62 @@ export interface IPagedDataOfEmployeeInvoiceDto {
     data: EmployeeInvoiceDto[] | undefined;
 }
 
+export class PagedDataOfEmployeePayConfigDto implements IPagedDataOfEmployeePayConfigDto {
+    pageNumber!: number;
+    pageSize!: number;
+    total!: number;
+    data!: EmployeePayConfigDto[] | undefined;
+
+    constructor(data?: IPagedDataOfEmployeePayConfigDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.pageNumber = Data["pageNumber"];
+            this.pageSize = Data["pageSize"];
+            this.total = Data["total"];
+            if (Array.isArray(Data["data"])) {
+                this.data = [] as any;
+                for (let item of Data["data"])
+                    this.data!.push(EmployeePayConfigDto.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): PagedDataOfEmployeePayConfigDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new PagedDataOfEmployeePayConfigDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["pageNumber"] = this.pageNumber;
+        data["pageSize"] = this.pageSize;
+        data["total"] = this.total;
+        if (Array.isArray(this.data)) {
+            data["data"] = [];
+            for (let item of this.data)
+                data["data"].push(item ? item.toJSON() : undefined as any);
+        }
+        return data;
+    }
+}
+
+export interface IPagedDataOfEmployeePayConfigDto {
+    pageNumber: number;
+    pageSize: number;
+    total: number;
+    data: EmployeePayConfigDto[] | undefined;
+}
+
 export class PagedDataOfOrderListItem implements IPagedDataOfOrderListItem {
     pageNumber!: number;
     pageSize!: number;
@@ -16639,6 +17461,106 @@ export class UpdatePackageResponse implements IUpdatePackageResponse {
 
 export interface IUpdatePackageResponse {
     packageId: string | undefined;
+}
+
+export class UpdatePayConfigCommand implements IUpdatePayConfigCommand {
+    payConfigId!: string | undefined;
+    basePay!: number;
+    extraPerRoom!: number;
+    extraPerBathroom!: number;
+    distanceRatePerKm!: number;
+    minimumPay!: number;
+    maximumPay!: number;
+    description!: string | undefined;
+
+    constructor(data?: IUpdatePayConfigCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.payConfigId = Data["payConfigId"];
+            this.basePay = Data["basePay"];
+            this.extraPerRoom = Data["extraPerRoom"];
+            this.extraPerBathroom = Data["extraPerBathroom"];
+            this.distanceRatePerKm = Data["distanceRatePerKm"];
+            this.minimumPay = Data["minimumPay"];
+            this.maximumPay = Data["maximumPay"];
+            this.description = Data["description"];
+        }
+    }
+
+    static fromJS(data: any): UpdatePayConfigCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdatePayConfigCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["payConfigId"] = this.payConfigId;
+        data["basePay"] = this.basePay;
+        data["extraPerRoom"] = this.extraPerRoom;
+        data["extraPerBathroom"] = this.extraPerBathroom;
+        data["distanceRatePerKm"] = this.distanceRatePerKm;
+        data["minimumPay"] = this.minimumPay;
+        data["maximumPay"] = this.maximumPay;
+        data["description"] = this.description;
+        return data;
+    }
+}
+
+export interface IUpdatePayConfigCommand {
+    payConfigId: string | undefined;
+    basePay: number;
+    extraPerRoom: number;
+    extraPerBathroom: number;
+    distanceRatePerKm: number;
+    minimumPay: number;
+    maximumPay: number;
+    description: string | undefined;
+}
+
+export class UpdatePayConfigResponse implements IUpdatePayConfigResponse {
+    payConfigId!: string | undefined;
+
+    constructor(data?: IUpdatePayConfigResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.payConfigId = Data["payConfigId"];
+        }
+    }
+
+    static fromJS(data: any): UpdatePayConfigResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdatePayConfigResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["payConfigId"] = this.payConfigId;
+        return data;
+    }
+}
+
+export interface IUpdatePayConfigResponse {
+    payConfigId: string | undefined;
 }
 
 export class UpdatePayPeriodCommand implements IUpdatePayPeriodCommand {

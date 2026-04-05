@@ -9,9 +9,11 @@ public static class EmployeeMappers
     public static RegistrationCompletionStatus ToRegistrationCompletionStatus(this Employee employee)
     {
         return new RegistrationCompletionStatus(
-            AreDocumentsUploaded: employee.ContractStatus != Domain.Enums.ContractStatus.Pending,
+            AreDocumentsUploaded: employee.Documents.Any(d => d.IsActive),
             HasCompletedProfile: employee.IsProfileComplete(),
-            MissingFields: employee.GetMissingProfileFields());
+            MissingFields: employee.GetMissingProfileFields(),
+            ContractStatus: employee.ContractStatus,
+            RejectionReason: employee.RejectionReason);
     }
 
     public static EmployeeListItem MapToDto(this Employee employee)
@@ -45,7 +47,10 @@ public static class EmployeeMappers
             State: employee.Address?.State,
             NationalityId: employee.NationalityId,
             PassportId: employee.PassportId,
-            TaxId: employee.TaxId,
+            EntityType: employee.EntityType,
+            RegistrationNumber: employee.RegistrationNumber,
+            VatNumber: employee.VatNumber,
+            LegalEntityName: employee.LegalEntityName,
             Iban: employee.IBAN,
             EmergencyContactName: employee.EmergencyContactName,
             EmergencyContactPhone: employee.EmergencyContactPhone,
@@ -96,7 +101,10 @@ public static class EmployeeMappers
             NationalityId: employee.NationalityId,
             NationalityName: employee.Nationality?.Name,
             PassportId: employee.PassportId,
-            TaxId: employee.TaxId,
+            EntityType: employee.EntityType,
+            RegistrationNumber: employee.RegistrationNumber,
+            VatNumber: employee.VatNumber,
+            LegalEntityName: employee.LegalEntityName,
             Iban: employee.IBAN,
             EmergencyContactName: employee.EmergencyContactName,
             EmergencyContactPhone: employee.EmergencyContactPhone,

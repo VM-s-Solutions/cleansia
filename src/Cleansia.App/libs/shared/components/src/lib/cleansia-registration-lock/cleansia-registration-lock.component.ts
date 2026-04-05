@@ -77,10 +77,7 @@ export class CleansiaRegistrationLockComponent implements OnInit {
   ): EnhancedRegistrationStatus {
     const categories: RegistrationCategory[] = [];
 
-    // Profile category
-    const profileMissing = (employeeStatus?.missingFields ?? []).filter(
-      (f) => !f.toLowerCase().includes('document')
-    );
+    const profileMissing = employeeStatus?.missingFields ?? [];
     categories.push({
       key: 'profile',
       translationKey: 'registrationLock.categories.profile',
@@ -89,7 +86,6 @@ export class CleansiaRegistrationLockComponent implements OnInit {
       details: result.hasCompletedProfile ? [] : profileMissing,
     });
 
-    // Documents category
     categories.push({
       key: 'documents',
       translationKey: 'registrationLock.categories.documents',
@@ -98,15 +94,29 @@ export class CleansiaRegistrationLockComponent implements OnInit {
       details: result.hasUploadedDocuments ? [] : ['registrationLock.categories.documentsRequired'],
     });
 
-    // Availability category - count as pending if profile is done but registration is not complete
-    const availabilityDone = result.isComplete;
-    const availabilityPending = result.hasCompletedProfile && result.hasUploadedDocuments && !result.isComplete;
+    let approvalStatus: 'done' | 'pending' | 'missing';
+    const approvalDetails: string[] = [];
+    if (result.isComplete) {
+      approvalStatus = 'done';
+    } else if (result.isRejected) {
+      approvalStatus = 'missing';
+      approvalDetails.push('registrationLock.categories.approvalRejected');
+      if (result.rejectionReason) {
+        approvalDetails.push(result.rejectionReason);
+      }
+    } else if (result.awaitingApproval) {
+      approvalStatus = 'pending';
+      approvalDetails.push('registrationLock.categories.approvalAwaitingReview');
+    } else {
+      approvalStatus = 'missing';
+      approvalDetails.push('registrationLock.categories.approvalCompleteProfileFirst');
+    }
     categories.push({
-      key: 'availability',
-      translationKey: 'registrationLock.categories.availability',
-      icon: 'pi pi-calendar',
-      status: availabilityDone ? 'done' : availabilityPending ? 'pending' : 'missing',
-      details: [],
+      key: 'approval',
+      translationKey: 'registrationLock.categories.approval',
+      icon: 'pi pi-shield',
+      status: approvalStatus,
+      details: approvalDetails,
     });
 
     const completedSteps = categories.filter((c) => c.status === 'done').length;

@@ -12,7 +12,7 @@ INSERT INTO public."EmployeeInvoices" (
 VALUES
   -- Invoice 1: Kateřina Novotná - January 2025 (Approved, not paid yet)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '15 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654321' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654321' LIMIT 1),
    (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2025-01-01 00:00:00' LIMIT 1),
    'INV-202501-KN001', 1, 710.00, 100.00, 0.00, 810.00,
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
@@ -23,7 +23,7 @@ VALUES
 
   -- Invoice 2: Michal Krejčí - January 2025 (Approved, not paid yet)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '15 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654322' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654322' LIMIT 1),
    (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2025-01-01 00:00:00' LIMIT 1),
    'INV-202501-MK001', 1, 1180.00, 150.00, 0.00, 1330.00,
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
@@ -34,7 +34,7 @@ VALUES
 
   -- Invoice 3: Zuzana Horáková - January 2025 (Paid)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '15 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654323' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654323' LIMIT 1),
    (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2025-01-01 00:00:00' LIMIT 1),
    'INV-202501-ZH001', 1, 1090.00, 200.00, 0.00, 1290.00,
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
@@ -47,7 +47,7 @@ VALUES
 
   -- Invoice 4: Pavel Veselý - January 2025 (Approved, not paid yet)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '15 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654324' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654324' LIMIT 1),
    (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2025-01-01 00:00:00' LIMIT 1),
    'INV-202501-PV001', 1, 570.00, 0.00, 50.00, 520.00,
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
@@ -58,7 +58,7 @@ VALUES
 
   -- Invoice 5: Lenka Marková - January 2025 (Approved, not paid yet)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '15 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654325' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654325' LIMIT 1),
    (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2025-01-01 00:00:00' LIMIT 1),
    'INV-202501-LM001', 1, 1120.00, 120.00, 0.00, 1240.00,
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
@@ -69,7 +69,7 @@ VALUES
 
   -- Invoice 6: Kateřina Novotná - February 2025 (Pending approval)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '5 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654321' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654321' LIMIT 1),
    (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2025-02-01 00:00:00' LIMIT 1),
    'INV-202502-KN001', 1, 635.00, 80.00, 0.00, 715.00,
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
@@ -80,7 +80,7 @@ VALUES
 
   -- Invoice 7: Kateřina Novotná - December 2024 (Paid - Historical)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '60 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654321' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654321' LIMIT 1),
    (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2024-12-01 00:00:00' LIMIT 1),
    'INV-202412-KN001', 8, 6800.00, 500.00, 0.00, 7300.00,
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
@@ -93,7 +93,7 @@ VALUES
 
   -- Invoice 8: Michal Krejčí - December 2024 (Paid - Historical)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '60 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654322' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654322' LIMIT 1),
    (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2024-12-01 00:00:00' LIMIT 1),
    'INV-202412-MK001', 6, 7200.00, 400.00, 100.00, 7500.00,
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),

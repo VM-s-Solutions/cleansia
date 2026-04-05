@@ -25,6 +25,12 @@ public class GetPagedOrders
     {
         public async Task<PagedData<OrderListItem>> Handle(Request request, CancellationToken cancellationToken)
         {
+            DateTime? cleaningDateFrom = request.Filter?.CleaningDateFrom;
+            if (request.Filter?.HasAvailableSpots == true && cleaningDateFrom is null)
+            {
+                cleaningDateFrom = DateTime.UtcNow.AddHours(-2);
+            }
+
             var specification = OrderSpecification.Create(
                 request.Filter?.Id,
                 request.Filter?.IsActive,
@@ -33,7 +39,7 @@ public class GetPagedOrders
                 request.Filter?.CustomerPhone,
                 request.Filter?.DisplayOrderNumber,
                 request.Filter?.EmployeeId,
-                request.Filter?.CleaningDateFrom,
+                cleaningDateFrom,
                 request.Filter?.CleaningDateTo,
                 request.Filter?.PaymentStatuses,
                 request.Filter?.PaymentTypes,

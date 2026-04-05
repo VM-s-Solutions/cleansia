@@ -40,6 +40,22 @@ public class CountryConfiguration : Auditable
     public string? TaxIdFormat { get; private set; }
 
     [MaxLength(50)]
+    public string? RegistrationNumberLabel { get; private set; }
+
+    [MaxLength(100)]
+    public string? RegistrationNumberFormat { get; private set; }
+
+    public bool RegistrationNumberRequired { get; private set; } = true;
+
+    [MaxLength(50)]
+    public string? VatNumberLabel { get; private set; }
+
+    [MaxLength(100)]
+    public string? VatNumberFormat { get; private set; }
+
+    public bool VatNumberRequired { get; private set; }
+
+    [MaxLength(50)]
     public string? DefaultPaymentGateway { get; private set; }
 
     [MaxLength(4000)]
@@ -56,7 +72,13 @@ public class CountryConfiguration : Auditable
         decimal? reducedVatRate = null,
         string? taxIdLabel = null,
         string? taxIdFormat = null,
-        string? defaultPaymentGateway = null)
+        string? defaultPaymentGateway = null,
+        string? registrationNumberLabel = null,
+        string? registrationNumberFormat = null,
+        bool registrationNumberRequired = true,
+        string? vatNumberLabel = null,
+        string? vatNumberFormat = null,
+        bool vatNumberRequired = false)
         => new()
         {
             CountryId = countryId,
@@ -69,7 +91,13 @@ public class CountryConfiguration : Auditable
             ReducedVatRate = reducedVatRate,
             TaxIdLabel = taxIdLabel,
             TaxIdFormat = taxIdFormat,
-            DefaultPaymentGateway = defaultPaymentGateway
+            DefaultPaymentGateway = defaultPaymentGateway,
+            RegistrationNumberLabel = registrationNumberLabel,
+            RegistrationNumberFormat = registrationNumberFormat,
+            RegistrationNumberRequired = registrationNumberRequired,
+            VatNumberLabel = vatNumberLabel,
+            VatNumberFormat = vatNumberFormat,
+            VatNumberRequired = vatNumberRequired
         };
 
     public CountryConfiguration UpdateVatRates(decimal standardRate, decimal? reducedRate)
@@ -83,6 +111,23 @@ public class CountryConfiguration : Auditable
     {
         TaxIdLabel = label;
         TaxIdFormat = format;
+        return this;
+    }
+
+    public CountryConfiguration UpdateBusinessIdentifierSettings(
+        string? registrationNumberLabel,
+        string? registrationNumberFormat,
+        bool registrationNumberRequired,
+        string? vatNumberLabel,
+        string? vatNumberFormat,
+        bool vatNumberRequired)
+    {
+        RegistrationNumberLabel = registrationNumberLabel;
+        RegistrationNumberFormat = registrationNumberFormat;
+        RegistrationNumberRequired = registrationNumberRequired;
+        VatNumberLabel = vatNumberLabel;
+        VatNumberFormat = vatNumberFormat;
+        VatNumberRequired = vatNumberRequired;
         return this;
     }
 

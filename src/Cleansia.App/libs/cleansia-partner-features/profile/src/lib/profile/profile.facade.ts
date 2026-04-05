@@ -14,7 +14,9 @@ import {
   FileValidationErrorService,
   SnackbarService,
 } from '@cleansia/services';
+import { checkEmployeeCurrent } from '@cleansia/partner-stores';
 import { FileTransformationUtils, FormUtils } from '@cleansia/utils';
+import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import {
   Observable,
@@ -68,6 +70,7 @@ export class ProfileFacade extends UnsubscribeControlDirective {
   private readonly fileValidationErrorService = inject(
     FileValidationErrorService
   );
+  private readonly store = inject(Store);
 
   readonly formGroup: FormGroup =
     ProfileFormFactory.createEmployeeProfileForm();
@@ -265,6 +268,7 @@ export class ProfileFacade extends UnsubscribeControlDirective {
                 'global.messages.profile.onboarding_submitted'
               )
             );
+            this.store.dispatch(checkEmployeeCurrent());
           }
         },
       });
@@ -408,6 +412,7 @@ export class ProfileFacade extends UnsubscribeControlDirective {
         saving: false,
       }));
       await this.loadEmployeeDocuments();
+      this.store.dispatch(checkEmployeeCurrent());
     } catch {
       this.documentsState.update((s) => ({ ...s, saving: false }));
     }
@@ -446,6 +451,7 @@ export class ProfileFacade extends UnsubscribeControlDirective {
         documents: s.documents.filter((d) => d.documentId !== documentId),
         deleting: false,
       }));
+      this.store.dispatch(checkEmployeeCurrent());
     } catch {
       this.documentsState.update((s) => ({ ...s, deleting: false }));
     }

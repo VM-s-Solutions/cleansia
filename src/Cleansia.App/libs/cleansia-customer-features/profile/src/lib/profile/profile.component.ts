@@ -15,6 +15,7 @@ import {
   CleansiaTelephoneComponent,
   CleansiaCalendarComponent,
   CleansiaSelectComponent,
+  ICleansiaSelectOption,
 } from '@cleansia/components';
 import { CustomerClient } from '@cleansia/customer-services';
 import {
@@ -85,13 +86,39 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
   addresses = signal<SavedAddress[]>([]);
   showAddressDialog = signal(false);
   editingAddress = signal<SavedAddress | null>(null);
-  addressForm = {
-    street: '',
-    city: '',
-    zip: '',
-    country: '',
-    isDefault: false,
-  };
+  countryOptions = signal<ICleansiaSelectOption[]>([]);
+
+  addressForm = new FormGroup({
+    street: new FormControl<string>('', {
+      nonNullable: true,
+      validators: [
+        Validators.required,
+        Validators.minLength(3),
+        Validators.maxLength(255),
+      ],
+    }),
+    city: new FormControl<string>('', {
+      nonNullable: true,
+      validators: [
+        Validators.required,
+        Validators.minLength(2),
+        Validators.maxLength(100),
+      ],
+    }),
+    zip: new FormControl<string>('', {
+      nonNullable: true,
+      validators: [
+        Validators.required,
+        Validators.minLength(3),
+        Validators.maxLength(20),
+      ],
+    }),
+    country: new FormControl<string>('', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
+    isDefault: new FormControl<boolean>(false, { nonNullable: true }),
+  });
 
   // Preferences
   readonly isDarkMode = computed(() => this.themeService.currentTheme() === 'dark');
@@ -128,7 +155,7 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
     currentPassword: new FormControl('', [Validators.required]),
     newPassword: new FormControl('', [
       Validators.required,
-      Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()]).{12,}$/),
+      Validators.pattern(/^(?=.*[a-zA-Z])(?=.*\d).{8,}$/),
     ]),
     confirmPassword: new FormControl('', [Validators.required]),
   });
@@ -142,11 +169,9 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
   readonly passwordValidation = computed(() => {
     const pw = this.newPasswordValue();
     return {
-      hasLowerCase: /[a-z]/.test(pw),
-      hasUpperCase: /[A-Z]/.test(pw),
+      hasMinLength: pw.length >= 8,
+      hasLetter: /[a-zA-Z]/.test(pw),
       hasNumber: /\d/.test(pw),
-      hasMinLength: pw.length >= 12,
-      hasSpecialCharacter: /[@$!%*?&#^()]/.test(pw),
     };
   });
 
@@ -156,6 +181,7 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnInit(): void {
     this.loadProfile();
     this.loadAddresses();
+    this.loadCountries();
     if (this.isBrowser) {
       window.addEventListener('scroll', this.onScroll);
     }
@@ -328,34 +354,51 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
 
   openAddAddress(): void {
     this.editingAddress.set(null);
-    this.addressForm = { street: '', city: '', zip: '', country: '', isDefault: false };
+    this.addressForm.reset({
+      street: '',
+      city: '',
+      zip: '',
+      // Default to Czech Republic when available.
+      country: this.defaultCountryId(),
+      isDefault: false,
+    });
     this.showAddressDialog.set(true);
   }
 
   openEditAddress(address: SavedAddress): void {
     this.editingAddress.set(address);
-    this.addressForm = { ...address };
+    this.addressForm.reset({
+      street: address.street,
+      city: address.city,
+      zip: address.zip,
+      country: address.country,
+      isDefault: address.isDefault,
+    });
     this.showAddressDialog.set(true);
   }
 
   saveAddress(): void {
-    if (!this.addressForm.street || !this.addressForm.city || !this.addressForm.zip) return;
+    if (this.addressForm.invalid) {
+      this.addressForm.markAllAsTouched();
+      return;
+    }
 
+    const value = this.addressForm.getRawValue();
     const current = [...this.addresses()];
     const editing = this.editingAddress();
 
-    if (this.addressForm.isDefault) {
-      current.forEach(a => a.isDefault = false);
+    if (value.isDefault) {
+      current.forEach((a) => (a.isDefault = false));
     }
 
     if (editing) {
-      const idx = current.findIndex(a => a.id === editing.id);
+      const idx = current.findIndex((a) => a.id === editing.id);
       if (idx !== -1) {
-        current[idx] = { ...this.addressForm, id: editing.id };
+        current[idx] = { ...value, id: editing.id };
       }
     } else {
       current.push({
-        ...this.addressForm,
+        ...value,
         id: crypto.randomUUID(),
       });
     }
@@ -364,6 +407,32 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
     this.saveAddresses();
     this.showAddressDialog.set(false);
     this.snackbar.showSuccess(this.translate.instant('pages.profile.address_saved'));
+  }
+
+  private loadCountries(): void {
+    this.customerClient.countryClient.getOverview().subscribe({
+      next: (countries) => {
+        const currentLang = this.translate.currentLang;
+        const options: ICleansiaSelectOption[] = (countries ?? []).map((country) => {
+          const translation = country.translations?.[currentLang]?.name;
+          const name = translation ?? country.name ?? '';
+          const iso = country.isoCode ?? '';
+          return {
+            label: iso ? `${name} (${iso})` : name,
+            value: country.id!,
+          };
+        });
+        this.countryOptions.set(options);
+      },
+    });
+  }
+
+  private defaultCountryId(): string {
+    // Pre-select Czech Republic so customers in CZ don't have to pick it every time.
+    const cz = this.countryOptions().find((o) =>
+      o.label.includes('(CZE)') || o.label.toLowerCase().includes('czech')
+    );
+    return (cz?.value as string) ?? '';
   }
 
   deleteAddress(id: string): void {

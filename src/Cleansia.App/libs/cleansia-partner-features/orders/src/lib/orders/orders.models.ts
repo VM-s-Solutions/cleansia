@@ -1,6 +1,86 @@
 import { TemplateRef } from '@angular/core';
-import { TableAction, TableColumn } from '@cleansia/components';
+import { HelpStep, StatusFlowItem, TableAction, TableColumn } from '@cleansia/components';
 import { OrderListItem, OrderStatus } from '@cleansia/partner-services';
+
+export interface FilterChip {
+  key: string;
+  label: string;
+  value: string;
+}
+
+export const ORDERS_HELP_STEPS: HelpStep[] = [
+  {
+    icon: 'pi pi-search',
+    titleKey: 'help.orders.step1_title',
+    descriptionKey: 'help.orders.step1_desc',
+  },
+  {
+    icon: 'pi pi-check-circle',
+    titleKey: 'help.orders.step2_title',
+    descriptionKey: 'help.orders.step2_desc',
+  },
+  {
+    icon: 'pi pi-briefcase',
+    titleKey: 'help.orders.step3_title',
+    descriptionKey: 'help.orders.step3_desc',
+  },
+  {
+    icon: 'pi pi-wallet',
+    titleKey: 'help.orders.step4_title',
+    descriptionKey: 'help.orders.step4_desc',
+  },
+];
+
+export const ORDER_STATUS_FLOW: StatusFlowItem[] = [
+  {
+    statusKey: 'enums.order_status.pending',
+    descriptionKey: 'help.orders.status.pending_desc',
+    colorClass: 'status-pending',
+  },
+  {
+    statusKey: 'enums.order_status.confirmed',
+    descriptionKey: 'help.orders.status.confirmed_desc',
+    colorClass: 'status-confirmed',
+  },
+  {
+    statusKey: 'enums.order_status.in_progress',
+    descriptionKey: 'help.orders.status.in_progress_desc',
+    colorClass: 'status-in-progress',
+  },
+  {
+    statusKey: 'enums.order_status.completed',
+    descriptionKey: 'help.orders.status.completed_desc',
+    colorClass: 'status-completed',
+  },
+  {
+    statusKey: 'enums.order_status.cancelled',
+    descriptionKey: 'help.orders.status.cancelled_desc',
+    colorClass: 'status-cancelled',
+  },
+];
+
+export const PAYMENT_STATUS_FLOW: StatusFlowItem[] = [
+  {
+    statusKey: 'enums.payment_status.pending',
+    descriptionKey: 'help.orders.payment.pending_desc',
+    colorClass: 'status-pending',
+  },
+  {
+    statusKey: 'enums.payment_status.paid',
+    descriptionKey: 'help.orders.payment.paid_desc',
+    colorClass: 'status-paid',
+  },
+  {
+    statusKey: 'enums.payment_status.failed',
+    descriptionKey: 'help.orders.payment.failed_desc',
+    colorClass: 'status-failed',
+  },
+  {
+    statusKey: 'enums.payment_status.refunded',
+    descriptionKey: 'help.orders.payment.refunded_desc',
+    colorClass: 'status-refunded',
+  },
+];
 
 export function getAvailableOrdersTableDefinition(
   defs: {

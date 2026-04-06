@@ -1,0 +1,174 @@
+import { TranslateService } from '@ngx-translate/core';
+import { toSnakeCase } from '@cleansia/utils';
+
+// --- Formatting helpers ---
+
+export function formatCurrency(amount: number, currencySymbol: string): string {
+  return `${amount.toLocaleString('en-GB', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} ${currencySymbol}`;
+}
+
+export function formatDate(date: string | Date | undefined): string {
+  if (!date) return '';
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const day = dateObj.getDate().toString().padStart(2, '0');
+  const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+  const year = dateObj.getFullYear();
+  return `${day}.${month}.${year}`;
+}
+
+export function formatDateTime(date: string | Date | undefined): string {
+  if (!date) return '';
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const day = dateObj.getDate().toString().padStart(2, '0');
+  const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+  const year = dateObj.getFullYear();
+  const hours = dateObj.getHours().toString().padStart(2, '0');
+  const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+  return `${day}.${month}.${year} ${hours}:${minutes}`;
+}
+
+export function formatAddress(address: {
+  street: string;
+  city: string;
+  zipCode: string;
+  country: string;
+} | null | undefined): string {
+  if (!address) return '';
+  return `${address.street}, ${address.city}, ${address.zipCode}, ${address.country}`;
+}
+
+// --- Translation helpers ---
+
+export function translateEnum(
+  translateService: TranslateService,
+  enumType: string,
+  name: string | undefined
+): string {
+  if (!name) return '';
+  const translationKey = `enums.${enumType}.${toSnakeCase(name)}`;
+  const translatedLabel = translateService.instant(translationKey);
+  return translatedLabel !== translationKey ? translatedLabel : name;
+}
+
+export function buildTranslatedOption(
+  translateService: TranslateService,
+  enumType: string,
+  enumObj: { name?: string } | undefined
+): { label: string; value: string }[] {
+  if (!enumObj?.name) return [];
+  const label = translateEnum(translateService, enumType, enumObj.name);
+  return [{ label, value: enumObj.name }];
+}
+
+// --- Status history helpers ---
+
+const STATUS_CLASS_MAP: Record<number, string> = {
+  1: 'status-pending',
+  2: 'status-confirmed',
+  3: 'status-inprogress',
+  4: 'status-completed',
+  5: 'status-cancelled',
+};
+
+const STATUS_ICON_MAP: Record<number, string> = {
+  1: 'pi pi-clock',
+  2: 'pi pi-check',
+  3: 'pi pi-spinner',
+  4: 'pi pi-check-circle',
+  5: 'pi pi-times-circle',
+};
+
+export function getStatusHistoryClass(statusValue: number | undefined): string {
+  const suffix = STATUS_CLASS_MAP[statusValue ?? 0] ?? 'status-pending';
+  return `status-history-item ${suffix}`;
+}
+
+export function getStatusHistoryIcon(statusValue: number | undefined): string {
+  return STATUS_ICON_MAP[statusValue ?? 0] ?? 'pi pi-circle';
+}
+
+// --- Order state helpers ---
+
+export function isEmployeeAssigned(
+  assignedEmployees: any[] | undefined,
+  employeeId: string
+): boolean {
+  return assignedEmployees?.some((e) => e.employeeId === employeeId) ?? false;
+}
+
+export function canTakeOrder(
+  orderStatusValue: number,
+  assignedEmployees: any[] | undefined,
+  employeeId: string
+): boolean {
+  const isPendingOrConfirmed = orderStatusValue === 1 || orderStatusValue === 2;
+  return isPendingOrConfirmed && !isEmployeeAssigned(assignedEmployees, employeeId);
+}
+
+export function canStartOrder(
+  orderStatusValue: number,
+  assignedEmployees: any[] | undefined,
+  employeeId: string
+): boolean {
+  return orderStatusValue === 2 && isEmployeeAssigned(assignedEmployees, employeeId);
+}
+
+export function canCompleteOrder(
+  orderStatusValue: number,
+  assignedEmployees: any[] | undefined,
+  employeeId: string
+): boolean {
+  return orderStatusValue === 3 && isEmployeeAssigned(assignedEmployees, employeeId);
+}
+
+export function canManagePhotos(
+  orderStatusValue: number,
+  assignedEmployees: any[] | undefined,
+  employeeId: string
+): boolean {
+  const isInProgressOrCompleted = orderStatusValue === 3 || orderStatusValue === 4;
+  return isInProgressOrCompleted && isEmployeeAssigned(assignedEmployees, employeeId);
+}
+
+export function canUploadPhotos(
+  orderStatusValue: number,
+  assignedEmployees: any[] | undefined,
+  employeeId: string
+): boolean {
+  return orderStatusValue === 3 && isEmployeeAssigned(assignedEmployees, employeeId);
+}
+
+export function computeElapsedTime(
+  orderStatusValue: number,
+  statusHistory: { status: { value: number }; createdOn: string | Date }[] | undefined
+): { hours: number; minutes: number } | null {
+  if (orderStatusValue !== 3) return null;
+  const startEntry = statusHistory?.find((h) => h.status.value === 3);
+  if (!startEntry) return null;
+  const start = new Date(startEntry.createdOn);
+  const elapsed = Math.floor((Date.now() - start.getTime()) / 60000);
+  return { hours: Math.floor(elapsed / 60), minutes: elapsed % 60 };
+}
+
+export function buildCurrencyOptions(
+  currency: any | undefined
+): { label: string; value: string }[] {
+  if (!currency) return [];
+  const display = `${currency.name} (${currency.code})`;
+  return [{ label: display, value: display }];
+}
+
+export function hasExtras(extras: Record<string, boolean> | undefined): boolean {
+  return !!extras && Object.entries(extras).some(([_, value]) => value);
+}
+
+export function getExtrasEntries(
+  extras: Record<string, boolean> | undefined
+): [string, boolean][] {
+  return extras
+    ? (Object.entries(extras).filter(([_, value]) => value) as [string, boolean][])
+    : [];
+}

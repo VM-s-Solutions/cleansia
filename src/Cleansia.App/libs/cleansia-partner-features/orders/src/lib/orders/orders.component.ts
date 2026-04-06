@@ -11,7 +11,6 @@ import {
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { toKebabCase, toSnakeCase } from '@cleansia/utils';
 import {
   CleansiaCalendarComponent,
   CleansiaSectionComponent,
@@ -21,18 +20,13 @@ import {
   CleansiaCheckboxComponent,
   CleansiaButtonComponent,
   CleansiaHelpCardComponent,
-  HelpStep,
-  StatusFlowItem,
   ICleansiaSelectOption,
   TableColumn,
   TableAction,
   PaginationState,
 } from '@cleansia/components';
-import { OrderFilter } from '@cleansia/models';
 import {
   OrderListItem,
-  OrderStatus,
-  PaymentStatus,
   SortDefinition,
   SortDirection,
 } from '@cleansia/partner-services';
@@ -45,13 +39,20 @@ import { OrdersFacade } from './orders.facade';
 import {
   getAvailableOrdersTableDefinition,
   getMyOrdersTableDefinition,
+  ORDERS_HELP_STEPS,
+  ORDER_STATUS_FLOW,
+  PAYMENT_STATUS_FLOW,
 } from './orders.models';
-
-interface FilterChip {
-  key: string;
-  label: string;
-  value: string;
-}
+import {
+  getStatusClass,
+  getOrderStatusClass,
+  getTranslatedPaymentStatus,
+  getTranslatedOrderStatus,
+  buildOrderStatusOptions,
+  buildPaymentStatusOptions,
+  buildActiveFilterChips,
+  buildOrderFilter,
+} from './orders.helpers';
 
 @Component({
   selector: 'cleansia-partner-orders',
@@ -102,14 +103,12 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
     paymentStatuses: [[] as number[]],
     cleaningDateFrom: [null as Date | null],
     cleaningDateTo: [null as Date | null],
-    // Individual checkbox controls for Order Status
     orderStatus_0: [false],
     orderStatus_1: [false],
     orderStatus_2: [false],
     orderStatus_3: [false],
     orderStatus_4: [false],
     orderStatus_5: [false],
-    // Individual checkbox controls for Payment Status
     paymentStatus_0: [false],
     paymentStatus_1: [false],
     paymentStatus_2: [false],
@@ -118,128 +117,15 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
   });
 
   // Filter options
-  orderStatusOptions: ICleansiaSelectOption[] = [
-    {
-      label: this.translate.instant('enums.order_status.pending'),
-      value: OrderStatus.Pending,
-    },
-    {
-      label: this.translate.instant('enums.order_status.confirmed'),
-      value: OrderStatus.Confirmed,
-    },
-    {
-      label: this.translate.instant('enums.order_status.in_progress'),
-      value: OrderStatus.InProgress,
-    },
-    {
-      label: this.translate.instant('enums.order_status.completed'),
-      value: OrderStatus.Completed,
-    },
-    {
-      label: this.translate.instant('enums.order_status.cancelled'),
-      value: OrderStatus.Cancelled,
-    },
-  ];
-
-  paymentStatusOptions: ICleansiaSelectOption[] = [
-    {
-      label: this.translate.instant('enums.payment_status.pending'),
-      value: PaymentStatus.Pending,
-    },
-    {
-      label: this.translate.instant('enums.payment_status.paid'),
-      value: PaymentStatus.Paid,
-    },
-    {
-      label: this.translate.instant('enums.payment_status.failed'),
-      value: PaymentStatus.Failed,
-    },
-    {
-      label: this.translate.instant('enums.payment_status.refunded'),
-      value: PaymentStatus.Refunded,
-    },
-  ];
-
-  // Multiselect options for PrimeNG
+  orderStatusOptions: ICleansiaSelectOption[] = buildOrderStatusOptions(this.translate);
+  paymentStatusOptions: ICleansiaSelectOption[] = buildPaymentStatusOptions(this.translate);
   orderStatusMultiOptions = this.orderStatusOptions;
   paymentStatusMultiOptions = this.paymentStatusOptions;
 
-  // Help card steps for orders workflow
-  ordersHelpSteps: HelpStep[] = [
-    {
-      icon: 'pi pi-search',
-      titleKey: 'help.orders.step1_title',
-      descriptionKey: 'help.orders.step1_desc',
-    },
-    {
-      icon: 'pi pi-check-circle',
-      titleKey: 'help.orders.step2_title',
-      descriptionKey: 'help.orders.step2_desc',
-    },
-    {
-      icon: 'pi pi-briefcase',
-      titleKey: 'help.orders.step3_title',
-      descriptionKey: 'help.orders.step3_desc',
-    },
-    {
-      icon: 'pi pi-wallet',
-      titleKey: 'help.orders.step4_title',
-      descriptionKey: 'help.orders.step4_desc',
-    },
-  ];
-
-  // Order status flow explanations
-  orderStatusFlow: StatusFlowItem[] = [
-    {
-      statusKey: 'enums.order_status.pending',
-      descriptionKey: 'help.orders.status.pending_desc',
-      colorClass: 'status-pending',
-    },
-    {
-      statusKey: 'enums.order_status.confirmed',
-      descriptionKey: 'help.orders.status.confirmed_desc',
-      colorClass: 'status-confirmed',
-    },
-    {
-      statusKey: 'enums.order_status.in_progress',
-      descriptionKey: 'help.orders.status.in_progress_desc',
-      colorClass: 'status-in-progress',
-    },
-    {
-      statusKey: 'enums.order_status.completed',
-      descriptionKey: 'help.orders.status.completed_desc',
-      colorClass: 'status-completed',
-    },
-    {
-      statusKey: 'enums.order_status.cancelled',
-      descriptionKey: 'help.orders.status.cancelled_desc',
-      colorClass: 'status-cancelled',
-    },
-  ];
-
-  // Payment status flow explanations
-  paymentStatusFlow: StatusFlowItem[] = [
-    {
-      statusKey: 'enums.payment_status.pending',
-      descriptionKey: 'help.orders.payment.pending_desc',
-      colorClass: 'status-pending',
-    },
-    {
-      statusKey: 'enums.payment_status.paid',
-      descriptionKey: 'help.orders.payment.paid_desc',
-      colorClass: 'status-paid',
-    },
-    {
-      statusKey: 'enums.payment_status.failed',
-      descriptionKey: 'help.orders.payment.failed_desc',
-      colorClass: 'status-failed',
-    },
-    {
-      statusKey: 'enums.payment_status.refunded',
-      descriptionKey: 'help.orders.payment.refunded_desc',
-      colorClass: 'status-refunded',
-    },
-  ];
+  // Help card / status flow constants
+  ordersHelpSteps = ORDERS_HELP_STEPS;
+  orderStatusFlow = ORDER_STATUS_FLOW;
+  paymentStatusFlow = PAYMENT_STATUS_FLOW;
 
   // Filter drawer state
   isFilterDrawerOpen = signal<boolean>(false);
@@ -247,21 +133,24 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
   // Help card dismissal state
   private helpDismissedVersion = signal(0);
   isOrdersHelpDismissed = computed(() => {
-    this.helpDismissedVersion(); // Track for reactivity
+    this.helpDismissedVersion();
     return CleansiaHelpCardComponent.isHelpDismissed('cleansia-orders-help-dismissed');
   });
   isPaymentHelpDismissed = computed(() => {
-    this.helpDismissedVersion(); // Track for reactivity
+    this.helpDismissedVersion();
     return CleansiaHelpCardComponent.isHelpDismissed('cleansia-orders-payment-help-dismissed');
   });
 
-  // Filter reactivity - increment this to trigger computed updates
+  // Filter reactivity
   private filterFormVersion = signal(0);
-
-  // Active filter chips - depend on filterFormVersion for reactivity
   activeFilterChips = computed(() => {
-    this.filterFormVersion(); // Track this signal for reactivity
-    return this.getActiveFilterChips();
+    this.filterFormVersion();
+    return buildActiveFilterChips(
+      this.searchForm.value,
+      this.orderStatusMultiOptions,
+      this.paymentStatusMultiOptions,
+      this.translate
+    );
   });
   activeFilterCount = computed(() => this.activeFilterChips().length);
   hasActiveFilters = computed(() => this.activeFilterCount() > 0);
@@ -271,21 +160,18 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
     this.rebuildFilterOptions();
     this.cd.detectChanges();
 
-    // Update filter version on every form change for reactive filter chips
     this.searchForm.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
         this.filterFormVersion.update(v => v + 1);
       });
 
-    // Setup automatic filtering with debounce
     this.searchForm.valueChanges
       .pipe(debounceTime(500), distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe(() => {
         this.applyFilters();
       });
 
-    // Rebuild tables and filters when language changes
     this.translate.onLangChange
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
@@ -297,9 +183,7 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
 
   private rebuildTableDefinitions(): void {
     const availableDef = getAvailableOrdersTableDefinition(
-      {
-        onTakeOrder: this.takeOrder.bind(this),
-      },
+      { onTakeOrder: this.takeOrder.bind(this) },
       this.statusTemplate(),
       this.orderStatusTemplate()
     );
@@ -307,9 +191,7 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
     this.availableOrdersActions = availableDef.actions;
 
     const myOrdersDef = getMyOrdersTableDefinition(
-      {
-        onCompleteOrder: this.completeOrder.bind(this),
-      },
+      { onCompleteOrder: this.completeOrder.bind(this) },
       this.statusTemplate(),
       this.orderStatusTemplate()
     );
@@ -318,49 +200,8 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
   }
 
   private rebuildFilterOptions(): void {
-    this.orderStatusOptions = [
-      {
-        label: this.translate.instant('enums.order_status.pending'),
-        value: OrderStatus.Pending,
-      },
-      {
-        label: this.translate.instant('enums.order_status.confirmed'),
-        value: OrderStatus.Confirmed,
-      },
-      {
-        label: this.translate.instant('enums.order_status.in_progress'),
-        value: OrderStatus.InProgress,
-      },
-      {
-        label: this.translate.instant('enums.order_status.completed'),
-        value: OrderStatus.Completed,
-      },
-      {
-        label: this.translate.instant('enums.order_status.cancelled'),
-        value: OrderStatus.Cancelled,
-      },
-    ];
-
-    this.paymentStatusOptions = [
-      {
-        label: this.translate.instant('enums.payment_status.pending'),
-        value: PaymentStatus.Pending,
-      },
-      {
-        label: this.translate.instant('enums.payment_status.paid'),
-        value: PaymentStatus.Paid,
-      },
-      {
-        label: this.translate.instant('enums.payment_status.failed'),
-        value: PaymentStatus.Failed,
-      },
-      {
-        label: this.translate.instant('enums.payment_status.refunded'),
-        value: PaymentStatus.Refunded,
-      },
-    ];
-
-    // Update multi-select options
+    this.orderStatusOptions = buildOrderStatusOptions(this.translate);
+    this.paymentStatusOptions = buildPaymentStatusOptions(this.translate);
     this.orderStatusMultiOptions = this.orderStatusOptions;
     this.paymentStatusMultiOptions = this.paymentStatusOptions;
   }
@@ -381,40 +222,26 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
   }
 
   onAvailableOrdersPageChange(event: PaginationState): void {
-    const offset = event.first;
-    const limit = event.rows;
-    this.facade.loadAvailableOrders(offset, limit);
+    this.facade.loadAvailableOrders(event.first, event.rows);
   }
 
   onMyOrdersPageChange(event: PaginationState): void {
-    const offset = event.first;
-    const limit = event.rows;
-    this.facade.loadMyOrders(offset, limit);
+    this.facade.loadMyOrders(event.first, event.rows);
   }
 
   onSortChange(event: { field: string; order: number }): void {
-    // Check if sort actually changed to prevent duplicate requests
-    if (
-      event.field === this.lastSortField &&
-      event.order === this.lastSortOrder
-    ) {
+    if (event.field === this.lastSortField && event.order === this.lastSortOrder) {
       return;
     }
-
-    // Update last sort state
     this.lastSortField = event.field;
     this.lastSortOrder = event.order;
 
-    const sortDef = [
+    this.facade.updateSort([
       new SortDefinition({
         field: event.field,
-        direction:
-          event.order === 1
-            ? SortDirection.Ascending
-            : SortDirection.Descending,
+        direction: event.order === 1 ? SortDirection.Ascending : SortDirection.Descending,
       }),
-    ];
-    this.facade.updateSort(sortDef);
+    ]);
   }
 
   viewOrderDetails(order: OrderListItem): void {
@@ -429,48 +256,25 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
     this.facade.openCompleteOrderDialog(order);
   }
 
+  // Delegate to extracted helpers — keep callable from template
   getStatusClass(order: OrderListItem): string {
-    const statusName = toKebabCase(order.paymentStatus?.name) || 'pending';
-    return `status-badge status-${statusName}`;
+    return getStatusClass(order);
   }
 
   getOrderStatusClass(order: OrderListItem): string {
-    const statusName = toKebabCase(order.orderStatus?.name) || 'pending';
-    return `order-status-badge status-${statusName}`;
+    return getOrderStatusClass(order);
   }
 
   getTranslatedPaymentStatus(paymentStatus: any): string {
-    if (!paymentStatus?.name) return '';
-    const key = `enums.payment_status.${toSnakeCase(paymentStatus.name)}`;
-    return this.translate.instant(key);
+    return getTranslatedPaymentStatus(paymentStatus, this.translate);
   }
 
   getTranslatedOrderStatus(orderStatus: any): string {
-    if (!orderStatus?.name) return '';
-    const key = `enums.order_status.${toSnakeCase(orderStatus.name)}`;
-    return this.translate.instant(key);
+    return getTranslatedOrderStatus(orderStatus, this.translate);
   }
 
   applyFilters(): void {
-    const formValues = this.searchForm.value;
-
-    const filter = new OrderFilter({
-      customerName: formValues.customerName || undefined,
-      customerEmail: formValues.customerEmail || undefined,
-      displayOrderNumber: formValues.displayOrderNumber || undefined,
-      orderStatuses:
-        formValues.orderStatuses && formValues.orderStatuses.length > 0
-          ? formValues.orderStatuses
-          : undefined,
-      paymentStatuses:
-        formValues.paymentStatuses && formValues.paymentStatuses.length > 0
-          ? formValues.paymentStatuses
-          : undefined,
-      cleaningDateFrom: formValues.cleaningDateFrom || undefined,
-      cleaningDateTo: formValues.cleaningDateTo || undefined,
-    });
-
-    this.facade.applyFilters(filter);
+    this.facade.applyFilters(buildOrderFilter(this.searchForm.value));
   }
 
   resetFilters(): void {
@@ -484,84 +288,6 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
 
   closeFilterDrawer(): void {
     this.isFilterDrawerOpen.set(false);
-  }
-
-  getActiveFilterChips(): FilterChip[] {
-    const chips: FilterChip[] = [];
-    const formValue = this.searchForm.value;
-
-    if (formValue.customerName) {
-      chips.push({
-        key: 'customerName',
-        label: this.translate.instant('pages.orders.filters.customer_name'),
-        value: formValue.customerName,
-      });
-    }
-
-    if (formValue.customerEmail) {
-      chips.push({
-        key: 'customerEmail',
-        label: this.translate.instant('pages.orders.filters.customer_email'),
-        value: formValue.customerEmail,
-      });
-    }
-
-    if (formValue.displayOrderNumber) {
-      chips.push({
-        key: 'displayOrderNumber',
-        label: this.translate.instant('pages.orders.filters.order_number'),
-        value: formValue.displayOrderNumber,
-      });
-    }
-
-    if (formValue.orderStatuses?.length) {
-      const statusNames = formValue.orderStatuses
-        .map(
-          (id) => this.orderStatusMultiOptions.find((o) => o.value === id)?.label
-        )
-        .filter(Boolean)
-        .join(', ');
-      chips.push({
-        key: 'orderStatuses',
-        label: this.translate.instant('pages.orders.filters.order_status'),
-        value: statusNames,
-      });
-    }
-
-    if (formValue.paymentStatuses?.length) {
-      const statusNames = formValue.paymentStatuses
-        .map(
-          (id) =>
-            this.paymentStatusMultiOptions.find((o) => o.value === id)?.label
-        )
-        .filter(Boolean)
-        .join(', ');
-      chips.push({
-        key: 'paymentStatuses',
-        label: this.translate.instant('pages.orders.filters.payment_status'),
-        value: statusNames,
-      });
-    }
-
-    if (formValue.cleaningDateFrom) {
-      const dateStr = new Date(formValue.cleaningDateFrom).toLocaleDateString();
-      chips.push({
-        key: 'cleaningDateFrom',
-        label: this.translate.instant('pages.orders.filters.cleaning_date_from'),
-        value: dateStr,
-      });
-    }
-
-    if (formValue.cleaningDateTo) {
-      const dateStr = new Date(formValue.cleaningDateTo).toLocaleDateString();
-      chips.push({
-        key: 'cleaningDateTo',
-        label: this.translate.instant('pages.orders.filters.cleaning_date_to'),
-        value: dateStr,
-      });
-    }
-
-    return chips;
   }
 
   removeFilterChip(chipKey: string): void {
@@ -588,35 +314,22 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
 
   onOrderStatusChange(checked: boolean, statusValue: number): void {
     const currentStatuses = this.searchForm.get('orderStatuses')?.value || [];
-
-    if (checked) {
-      this.searchForm.patchValue({
-        orderStatuses: [...currentStatuses, statusValue],
-      });
-    } else {
-      this.searchForm.patchValue({
-        orderStatuses: currentStatuses.filter((s: number) => s !== statusValue),
-      });
-    }
+    this.searchForm.patchValue({
+      orderStatuses: checked
+        ? [...currentStatuses, statusValue]
+        : currentStatuses.filter((s: number) => s !== statusValue),
+    });
   }
 
   onPaymentStatusChange(checked: boolean, statusValue: number): void {
     const currentStatuses = this.searchForm.get('paymentStatuses')?.value || [];
-
-    if (checked) {
-      this.searchForm.patchValue({
-        paymentStatuses: [...currentStatuses, statusValue],
-      });
-    } else {
-      this.searchForm.patchValue({
-        paymentStatuses: currentStatuses.filter(
-          (s: number) => s !== statusValue
-        ),
-      });
-    }
+    this.searchForm.patchValue({
+      paymentStatuses: checked
+        ? [...currentStatuses, statusValue]
+        : currentStatuses.filter((s: number) => s !== statusValue),
+    });
   }
 
-  // Help card methods
   onHelpDismissedChange(): void {
     this.helpDismissedVersion.update(v => v + 1);
   }
@@ -626,5 +339,4 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
     this.paymentHelpCard()?.restore();
     this.helpDismissedVersion.update(v => v + 1);
   }
-
 }

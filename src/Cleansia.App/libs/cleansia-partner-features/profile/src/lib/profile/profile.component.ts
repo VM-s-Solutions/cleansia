@@ -16,6 +16,7 @@ import {
   ProfileDocumentsComponent,
 } from '../components';
 import { ProfileFacade } from './profile.facade';
+import { ProfileDocumentsFacade } from './profile-documents.facade';
 
 @Component({
   selector: 'cleansia-partner-profile',
@@ -35,7 +36,7 @@ import { ProfileFacade } from './profile.facade';
     ProfileDocumentsComponent,
   ],
   templateUrl: './profile.component.html',
-  providers: [ProfileFacade],
+  providers: [ProfileDocumentsFacade, ProfileFacade],
 })
 export class ProfileComponent implements OnInit {
   protected readonly facade = inject(ProfileFacade);

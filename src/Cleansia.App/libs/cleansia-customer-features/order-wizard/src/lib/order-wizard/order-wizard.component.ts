@@ -13,7 +13,16 @@ import { SelectModule } from 'primeng/select';
 import { DialogModule } from 'primeng/dialog';
 import { CheckboxModule } from 'primeng/checkbox';
 import { OrderWizardFacade } from './order-wizard.facade';
-import { RebookParams } from './order-wizard.models';
+import {
+  RebookParams,
+  TimeOption,
+  filterTimeOptionsForToday,
+  formatPrice,
+  generateTimeOptions,
+  getFieldError,
+  getItemTranslation,
+} from './order-wizard.models';
+import { WizardSummaryStepComponent } from './components/wizard-summary-step.component';
 
 @Component({
   selector: 'cleansia-customer-order-wizard',
@@ -31,6 +40,7 @@ import { RebookParams } from './order-wizard.models';
     CleansiaButtonComponent,
     CleansiaScrollTopComponent,
     CleansiaTelephoneComponent,
+    WizardSummaryStepComponent,
   ],
   templateUrl: './order-wizard.component.html',
   providers: [OrderWizardFacade],
@@ -57,54 +67,12 @@ export class OrderWizardComponent implements OnInit {
     return !!this.touched()[field];
   }
 
-  private readonly emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  private readonly phoneRegex = /^[+]?[\d\s()-]{6,20}$/;
-  private readonly zipRegex = /^[\d\s-]{3,20}$/;
-
   fieldError(field: string): string | null {
     if (!this.isTouched(field)) return null;
-    const data = this.facade.formData();
-
-    switch (field) {
-      case 'customerFirstName':
-        if (!data.customerFirstName) return this.translate.instant('global.validation.required');
-        if (data.customerFirstName.length < 2) return this.translate.instant('global.validation.minlength', { min: 2 });
-        if (data.customerFirstName.length > 50) return this.translate.instant('global.validation.maxlength', { max: 50 });
-        return null;
-      case 'customerLastName':
-        if (!data.customerLastName) return this.translate.instant('global.validation.required');
-        if (data.customerLastName.length < 2) return this.translate.instant('global.validation.minlength', { min: 2 });
-        if (data.customerLastName.length > 50) return this.translate.instant('global.validation.maxlength', { max: 50 });
-        return null;
-      case 'customerEmail':
-        if (!data.customerEmail) return this.translate.instant('global.validation.required');
-        if (!this.emailRegex.test(data.customerEmail)) return this.translate.instant('global.validation.email');
-        if (data.customerEmail.length > 50) return this.translate.instant('global.validation.maxlength', { max: 50 });
-        return null;
-      case 'customerPhone':
-        if (!data.customerPhone) return this.translate.instant('global.validation.required');
-        if (!this.phoneRegex.test(data.customerPhone.replace(/\s/g, ''))) return this.translate.instant('global.validation.phone');
-        return null;
-      case 'street':
-        if (!data.address.street) return this.translate.instant('global.validation.required');
-        if (data.address.street.length < 5) return this.translate.instant('global.validation.minlength', { min: 5 });
-        if (data.address.street.length > 255) return this.translate.instant('global.validation.maxlength', { max: 255 });
-        return null;
-      case 'city':
-        if (!data.address.city) return this.translate.instant('global.validation.required');
-        if (data.address.city.length < 2) return this.translate.instant('global.validation.minlength', { min: 2 });
-        if (data.address.city.length > 100) return this.translate.instant('global.validation.maxlength', { max: 100 });
-        return null;
-      case 'zipCode':
-        if (!data.address.zipCode) return this.translate.instant('global.validation.required');
-        if (!this.zipRegex.test(data.address.zipCode)) return this.translate.instant('global.validation.zip');
-        return null;
-      default:
-        return null;
-    }
+    return getFieldError(field, this.facade.formData(), this.translate);
   }
 
-  allTimeOptions = this.generateTimeOptions();
+  allTimeOptions: TimeOption[] = generateTimeOptions();
 
   private todayHasSlots(): boolean {
     const now = new Date();
@@ -123,24 +91,9 @@ export class OrderWizardComponent implements OnInit {
     return tomorrow;
   });
 
-  timeOptions = computed(() => {
-    const selectedDate = this.facade.formData().cleaningDate;
-    if (!selectedDate) return this.allTimeOptions;
-
-    const now = new Date();
-    const isToday =
-      selectedDate.getFullYear() === now.getFullYear() &&
-      selectedDate.getMonth() === now.getMonth() &&
-      selectedDate.getDate() === now.getDate();
-
-    if (!isToday) return this.allTimeOptions;
-
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    return this.allTimeOptions.filter((opt) => {
-      const [h, m] = opt.value.split(':').map(Number);
-      return h * 60 + m > currentMinutes;
-    });
-  });
+  timeOptions = computed(() =>
+    filterTimeOptionsForToday(this.allTimeOptions, this.facade.formData().cleaningDate)
+  );
 
   selectedServices = computed(() => {
     const ids = this.facade.formData().selectedServiceIds;
@@ -262,21 +215,11 @@ export class OrderWizardComponent implements OnInit {
   }
 
   getTranslation(item: ServiceListItem | PackageListItem, field: string): string {
-    const lang = this.translate.currentLang || this.translate.getDefaultLang();
-    const translations = item.translations;
-    if (translations && translations[lang]) {
-      const translated = (translations[lang] as unknown as Record<string, string>)[field];
-      if (translated) return translated;
-    }
-    return (item as unknown as Record<string, string>)[field] || '';
+    return getItemTranslation(item, field, this.translate);
   }
 
   formatPrice(price: number): string {
-    return new Intl.NumberFormat('cs-CZ', {
-      style: 'currency',
-      currency: 'CZK',
-      minimumFractionDigits: 0,
-    }).format(price);
+    return formatPrice(price);
   }
 
   onNextStep(): void {
@@ -390,14 +333,4 @@ export class OrderWizardComponent implements OnInit {
     this.saveNewAddress.set(false);
   }
 
-  private generateTimeOptions(): { label: string; value: string }[] {
-    const options = [];
-    for (let h = 7; h <= 20; h++) {
-      options.push({ label: `${h.toString().padStart(2, '0')}:00`, value: `${h.toString().padStart(2, '0')}:00` });
-      if (h < 20) {
-        options.push({ label: `${h.toString().padStart(2, '0')}:30`, value: `${h.toString().padStart(2, '0')}:30` });
-      }
-    }
-    return options;
-  }
 }

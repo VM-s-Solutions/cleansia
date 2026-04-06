@@ -1,0 +1,51 @@
+.order-photos__save-section {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.order-photos__staged-count {
+  margin: 0;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.order-photos__save-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.order-photos__item--staged {
+  position: relative;
+  border: 2px solid #ffc107;
+}
+
+.order-photos__staged-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background-color: #ffc107;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  z-index: 1;
+  text-transform: uppercase;
+}
+
+.order-photos__item-status {
+  font-size: 12px;
+  color: #ffc107;
+  font-style: italic;
+}
+
+.order-photos__staged-indicator {
+  color: #ffc107;
+  font-size: 0.9em;
+  margin-left: 4px;
+}

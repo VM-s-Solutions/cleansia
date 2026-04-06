@@ -7,39 +7,39 @@
 /* eslint-disable */
 // ReSharper disable InconsistentNaming
 
-import { mergeMap as _observableMergeMap, catchError as _observableCatch } from 'rxjs/operators';
-import { Observable, throwError as _observableThrow, of as _observableOf } from 'rxjs';
+import { mergeMap as ObservableMergeMap, catchError as ObservableCatch } from 'rxjs/operators';
+import { Observable, throwError as ObservableThrow, of as ObservableOf } from 'rxjs';
 import { Injectable, Inject, Optional, InjectionToken } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpResponse, HttpResponseBase } from '@angular/common/http';
 
-export const CUSTOMER_API_BASE_URL = new InjectionToken<string>('CUSTOMER_API_BASE_URL');
+export const CUSTOMERAPIBASEURL = new InjectionToken<string>('CUSTOMERAPIBASEURL');
 
 export interface IAuthClient {
     /**
      * @param body (optional) 
      * @return OK
      */
-    register(body?: Register_Command | undefined): Observable<boolean>;
+    register(body?: RegisterCommand | undefined): Observable<boolean>;
     /**
      * @param body (optional) 
      * @return OK
      */
-    login(body?: Login_Command | undefined): Observable<JwtTokenResponse>;
+    login(body?: LoginCommand | undefined): Observable<JwtTokenResponse>;
     /**
      * @param body (optional) 
      * @return OK
      */
-    googleAuth(body?: GoogleAuth_Command | undefined): Observable<JwtTokenResponse>;
+    googleAuth(body?: GoogleAuthCommand | undefined): Observable<JwtTokenResponse>;
     /**
      * @param body (optional) 
      * @return OK
      */
-    confirmUserEmail(body?: ConfirmUserEmail_Command | undefined): Observable<JwtTokenResponse>;
+    confirmUserEmail(body?: ConfirmUserEmailCommand | undefined): Observable<JwtTokenResponse>;
     /**
      * @param body (optional) 
      * @return OK
      */
-    resendConfirmationEmail(body?: ResendConfirmationEmail_Command | undefined): Observable<boolean>;
+    resendConfirmationEmail(body?: ResendConfirmationEmailCommand | undefined): Observable<boolean>;
 }
 
 @Injectable({
@@ -50,7 +50,7 @@ export class AuthClient implements IAuthClient {
     private baseUrl: string;
     protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
 
-    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMER_API_BASE_URL) baseUrl?: string) {
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMERAPIBASEURL) baseUrl?: string) {
         this.http = http;
         this.baseUrl = baseUrl ?? "";
     }
@@ -59,14 +59,14 @@ export class AuthClient implements IAuthClient {
      * @param body (optional) 
      * @return OK
      */
-    register(body?: Register_Command | undefined): Observable<boolean> {
-        let url_ = this.baseUrl + "/api/Auth/Register";
-        url_ = url_.replace(/[?&]$/, "");
+    register(body?: RegisterCommand | undefined): Observable<boolean> {
+        let url = this.baseUrl + "/api/Auth/Register";
+        url = url.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(body);
+        const content = JSON.stringify(body);
 
-        let options_ : any = {
-            body: content_,
+        let options : any = {
+            body: content,
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -75,17 +75,17 @@ export class AuthClient implements IAuthClient {
             })
         };
 
-        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processRegister(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processRegister(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processRegister(response_ as any);
+                    return this.processRegister(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<boolean>;
+                    return ObservableThrow(e) as any as Observable<boolean>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<boolean>;
+                return ObservableThrow(response) as any as Observable<boolean>;
         }));
     }
 
@@ -95,49 +95,49 @@ export class AuthClient implements IAuthClient {
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
                 result200 = resultData200 !== undefined ? resultData200 : null as any;
     
-            return _observableOf(result200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status === 401) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result401: any = null;
-            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 
     /**
      * @param body (optional) 
      * @return OK
      */
-    login(body?: Login_Command | undefined): Observable<JwtTokenResponse> {
-        let url_ = this.baseUrl + "/api/Auth/Login";
-        url_ = url_.replace(/[?&]$/, "");
+    login(body?: LoginCommand | undefined): Observable<JwtTokenResponse> {
+        let url = this.baseUrl + "/api/Auth/Login";
+        url = url.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(body);
+        const content = JSON.stringify(body);
 
-        let options_ : any = {
-            body: content_,
+        let options : any = {
+            body: content,
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -146,17 +146,17 @@ export class AuthClient implements IAuthClient {
             })
         };
 
-        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processLogin(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processLogin(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processLogin(response_ as any);
+                    return this.processLogin(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<JwtTokenResponse>;
+                    return ObservableThrow(e) as any as Observable<JwtTokenResponse>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<JwtTokenResponse>;
+                return ObservableThrow(response) as any as Observable<JwtTokenResponse>;
         }));
     }
 
@@ -166,48 +166,48 @@ export class AuthClient implements IAuthClient {
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = JwtTokenResponse.fromJS(resultData200);
-            return _observableOf(result200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status === 401) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result401: any = null;
-            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 
     /**
      * @param body (optional) 
      * @return OK
      */
-    googleAuth(body?: GoogleAuth_Command | undefined): Observable<JwtTokenResponse> {
-        let url_ = this.baseUrl + "/api/Auth/GoogleAuth";
-        url_ = url_.replace(/[?&]$/, "");
+    googleAuth(body?: GoogleAuthCommand | undefined): Observable<JwtTokenResponse> {
+        let url = this.baseUrl + "/api/Auth/GoogleAuth";
+        url = url.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(body);
+        const content = JSON.stringify(body);
 
-        let options_ : any = {
-            body: content_,
+        let options : any = {
+            body: content,
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -216,17 +216,17 @@ export class AuthClient implements IAuthClient {
             })
         };
 
-        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processGoogleAuth(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGoogleAuth(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processGoogleAuth(response_ as any);
+                    return this.processGoogleAuth(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<JwtTokenResponse>;
+                    return ObservableThrow(e) as any as Observable<JwtTokenResponse>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<JwtTokenResponse>;
+                return ObservableThrow(response) as any as Observable<JwtTokenResponse>;
         }));
     }
 
@@ -236,48 +236,48 @@ export class AuthClient implements IAuthClient {
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = JwtTokenResponse.fromJS(resultData200);
-            return _observableOf(result200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status === 401) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result401: any = null;
-            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 
     /**
      * @param body (optional) 
      * @return OK
      */
-    confirmUserEmail(body?: ConfirmUserEmail_Command | undefined): Observable<JwtTokenResponse> {
-        let url_ = this.baseUrl + "/api/Auth/ConfirmUserEmail";
-        url_ = url_.replace(/[?&]$/, "");
+    confirmUserEmail(body?: ConfirmUserEmailCommand | undefined): Observable<JwtTokenResponse> {
+        let url = this.baseUrl + "/api/Auth/ConfirmUserEmail";
+        url = url.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(body);
+        const content = JSON.stringify(body);
 
-        let options_ : any = {
-            body: content_,
+        let options : any = {
+            body: content,
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -286,17 +286,17 @@ export class AuthClient implements IAuthClient {
             })
         };
 
-        return this.http.request("put", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processConfirmUserEmail(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("put", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processConfirmUserEmail(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processConfirmUserEmail(response_ as any);
+                    return this.processConfirmUserEmail(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<JwtTokenResponse>;
+                    return ObservableThrow(e) as any as Observable<JwtTokenResponse>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<JwtTokenResponse>;
+                return ObservableThrow(response) as any as Observable<JwtTokenResponse>;
         }));
     }
 
@@ -306,41 +306,41 @@ export class AuthClient implements IAuthClient {
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = JwtTokenResponse.fromJS(resultData200);
-            return _observableOf(result200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 
     /**
      * @param body (optional) 
      * @return OK
      */
-    resendConfirmationEmail(body?: ResendConfirmationEmail_Command | undefined): Observable<boolean> {
-        let url_ = this.baseUrl + "/api/Auth/ResendConfirmationEmail";
-        url_ = url_.replace(/[?&]$/, "");
+    resendConfirmationEmail(body?: ResendConfirmationEmailCommand | undefined): Observable<boolean> {
+        let url = this.baseUrl + "/api/Auth/ResendConfirmationEmail";
+        url = url.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(body);
+        const content = JSON.stringify(body);
 
-        let options_ : any = {
-            body: content_,
+        let options : any = {
+            body: content,
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -349,17 +349,17 @@ export class AuthClient implements IAuthClient {
             })
         };
 
-        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processResendConfirmationEmail(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processResendConfirmationEmail(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processResendConfirmationEmail(response_ as any);
+                    return this.processResendConfirmationEmail(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<boolean>;
+                    return ObservableThrow(e) as any as Observable<boolean>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<boolean>;
+                return ObservableThrow(response) as any as Observable<boolean>;
         }));
     }
 
@@ -369,28 +369,28 @@ export class AuthClient implements IAuthClient {
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
                 result200 = resultData200 !== undefined ? resultData200 : null as any;
     
-            return _observableOf(result200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 }
 
@@ -409,7 +409,7 @@ export class CountryClient implements ICountryClient {
     private baseUrl: string;
     protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
 
-    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMER_API_BASE_URL) baseUrl?: string) {
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMERAPIBASEURL) baseUrl?: string) {
         this.http = http;
         this.baseUrl = baseUrl ?? "";
     }
@@ -418,10 +418,10 @@ export class CountryClient implements ICountryClient {
      * @return OK
      */
     getOverview(): Observable<CountryListItem[]> {
-        let url_ = this.baseUrl + "/api/Country/GetOverview";
-        url_ = url_.replace(/[?&]$/, "");
+        let url = this.baseUrl + "/api/Country/GetOverview";
+        url = url.replace(/[?&]$/, "");
 
-        let options_ : any = {
+        let options : any = {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -429,17 +429,17 @@ export class CountryClient implements ICountryClient {
             })
         };
 
-        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processGetOverview(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetOverview(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processGetOverview(response_ as any);
+                    return this.processGetOverview(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<CountryListItem[]>;
+                    return ObservableThrow(e) as any as Observable<CountryListItem[]>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<CountryListItem[]>;
+                return ObservableThrow(response) as any as Observable<CountryListItem[]>;
         }));
     }
 
@@ -449,11 +449,11 @@ export class CountryClient implements ICountryClient {
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             if (Array.isArray(resultData200)) {
                 result200 = [] as any;
                 for (let item of resultData200)
@@ -462,21 +462,21 @@ export class CountryClient implements ICountryClient {
             else {
                 result200 = null as any;
             }
-            return _observableOf(result200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 }
 
@@ -485,35 +485,35 @@ export interface IDisputeClient {
      * @param body (optional) 
      * @return OK
      */
-    create(body?: CreateDispute_Command | undefined): Observable<string>;
+    create(body?: CreateDisputeCommand | undefined): Observable<string>;
     /**
      * @return OK
      */
     getById(disputeId: string): Observable<DisputeDetails>;
     /**
-     * @param filter_OrderId (optional) 
-     * @param filter_UserId (optional) 
-     * @param filter_CustomerName (optional) 
-     * @param filter_CustomerEmail (optional) 
-     * @param filter_Statuses (optional) 
-     * @param filter_Reasons (optional) 
-     * @param filter_CreatedFrom (optional) 
-     * @param filter_CreatedTo (optional) 
-     * @param filter_ResolvedFrom (optional) 
-     * @param filter_ResolvedTo (optional) 
-     * @param filter_MinRefundAmount (optional) 
-     * @param filter_MaxRefundAmount (optional) 
+     * @param orderId (optional) 
+     * @param userId (optional) 
+     * @param customerName (optional) 
+     * @param customerEmail (optional) 
+     * @param statuses (optional) 
+     * @param reasons (optional) 
+     * @param createdFrom (optional) 
+     * @param createdTo (optional) 
+     * @param resolvedFrom (optional) 
+     * @param resolvedTo (optional) 
+     * @param minRefundAmount (optional) 
+     * @param maxRefundAmount (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getPaged(filter_OrderId?: string | undefined, filter_UserId?: string | undefined, filter_CustomerName?: string | undefined, filter_CustomerEmail?: string | undefined, filter_Statuses?: number[] | undefined, filter_Reasons?: number[] | undefined, filter_CreatedFrom?: Date | undefined, filter_CreatedTo?: Date | undefined, filter_ResolvedFrom?: Date | undefined, filter_ResolvedTo?: Date | undefined, filter_MinRefundAmount?: number | undefined, filter_MaxRefundAmount?: number | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfDisputeListItem>;
+    getPaged(orderId?: string | undefined, userId?: string | undefined, customerName?: string | undefined, customerEmail?: string | undefined, statuses?: number[] | undefined, reasons?: number[] | undefined, createdFrom?: Date | undefined, createdTo?: Date | undefined, resolvedFrom?: Date | undefined, resolvedTo?: Date | undefined, minRefundAmount?: number | undefined, maxRefundAmount?: number | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfDisputeListItem>;
     /**
      * @param body (optional) 
      * @return OK
      */
-    addMessage(body?: AddDisputeMessage_Command | undefined): Observable<void>;
+    addMessage(body?: AddDisputeMessageCommand | undefined): Observable<void>;
 }
 
 @Injectable({
@@ -524,7 +524,7 @@ export class DisputeClient implements IDisputeClient {
     private baseUrl: string;
     protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
 
-    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMER_API_BASE_URL) baseUrl?: string) {
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMERAPIBASEURL) baseUrl?: string) {
         this.http = http;
         this.baseUrl = baseUrl ?? "";
     }
@@ -533,14 +533,14 @@ export class DisputeClient implements IDisputeClient {
      * @param body (optional) 
      * @return OK
      */
-    create(body?: CreateDispute_Command | undefined): Observable<string> {
-        let url_ = this.baseUrl + "/api/Dispute/Create";
-        url_ = url_.replace(/[?&]$/, "");
+    create(body?: CreateDisputeCommand | undefined): Observable<string> {
+        let url = this.baseUrl + "/api/Dispute/Create";
+        url = url.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(body);
+        const content = JSON.stringify(body);
 
-        let options_ : any = {
-            body: content_,
+        let options : any = {
+            body: content,
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -549,17 +549,17 @@ export class DisputeClient implements IDisputeClient {
             })
         };
 
-        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processCreate(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processCreate(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processCreate(response_ as any);
+                    return this.processCreate(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<string>;
+                    return ObservableThrow(e) as any as Observable<string>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<string>;
+                return ObservableThrow(response) as any as Observable<string>;
         }));
     }
 
@@ -569,55 +569,55 @@ export class DisputeClient implements IDisputeClient {
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
                 result200 = resultData200 !== undefined ? resultData200 : null as any;
     
-            return _observableOf(result200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status === 401) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result401: any = null;
-            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
             }));
         } else if (status === 403) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result403: any = null;
-            let resultData403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, _responseText, _headers, result403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 
     /**
      * @return OK
      */
     getById(disputeId: string): Observable<DisputeDetails> {
-        let url_ = this.baseUrl + "/api/Dispute/GetById/{disputeId}";
+        let url = this.baseUrl + "/api/Dispute/GetById/{disputeId}";
         if (disputeId === undefined || disputeId === null)
             throw new globalThis.Error("The parameter 'disputeId' must be defined.");
-        url_ = url_.replace("{disputeId}", encodeURIComponent("" + disputeId));
-        url_ = url_.replace(/[?&]$/, "");
+        url = url.replace("{disputeId}", encodeURIComponent("" + disputeId));
+        url = url.replace(/[?&]$/, "");
 
-        let options_ : any = {
+        let options : any = {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -625,17 +625,17 @@ export class DisputeClient implements IDisputeClient {
             })
         };
 
-        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processGetById(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetById(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processGetById(response_ as any);
+                    return this.processGetById(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<DisputeDetails>;
+                    return ObservableThrow(e) as any as Observable<DisputeDetails>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<DisputeDetails>;
+                return ObservableThrow(response) as any as Observable<DisputeDetails>;
         }));
     }
 
@@ -645,131 +645,131 @@ export class DisputeClient implements IDisputeClient {
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = DisputeDetails.fromJS(resultData200);
-            return _observableOf(result200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status === 401) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result401: any = null;
-            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
             }));
         } else if (status === 403) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result403: any = null;
-            let resultData403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, _responseText, _headers, result403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 
     /**
-     * @param filter_OrderId (optional) 
-     * @param filter_UserId (optional) 
-     * @param filter_CustomerName (optional) 
-     * @param filter_CustomerEmail (optional) 
-     * @param filter_Statuses (optional) 
-     * @param filter_Reasons (optional) 
-     * @param filter_CreatedFrom (optional) 
-     * @param filter_CreatedTo (optional) 
-     * @param filter_ResolvedFrom (optional) 
-     * @param filter_ResolvedTo (optional) 
-     * @param filter_MinRefundAmount (optional) 
-     * @param filter_MaxRefundAmount (optional) 
+     * @param orderId (optional) 
+     * @param userId (optional) 
+     * @param customerName (optional) 
+     * @param customerEmail (optional) 
+     * @param statuses (optional) 
+     * @param reasons (optional) 
+     * @param createdFrom (optional) 
+     * @param createdTo (optional) 
+     * @param resolvedFrom (optional) 
+     * @param resolvedTo (optional) 
+     * @param minRefundAmount (optional) 
+     * @param maxRefundAmount (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getPaged(filter_OrderId?: string | undefined, filter_UserId?: string | undefined, filter_CustomerName?: string | undefined, filter_CustomerEmail?: string | undefined, filter_Statuses?: number[] | undefined, filter_Reasons?: number[] | undefined, filter_CreatedFrom?: Date | undefined, filter_CreatedTo?: Date | undefined, filter_ResolvedFrom?: Date | undefined, filter_ResolvedTo?: Date | undefined, filter_MinRefundAmount?: number | undefined, filter_MaxRefundAmount?: number | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfDisputeListItem> {
-        let url_ = this.baseUrl + "/api/Dispute/GetPaged?";
-        if (filter_OrderId === null)
-            throw new globalThis.Error("The parameter 'filter_OrderId' cannot be null.");
-        else if (filter_OrderId !== undefined)
-            url_ += "Filter.OrderId=" + encodeURIComponent("" + filter_OrderId) + "&";
-        if (filter_UserId === null)
-            throw new globalThis.Error("The parameter 'filter_UserId' cannot be null.");
-        else if (filter_UserId !== undefined)
-            url_ += "Filter.UserId=" + encodeURIComponent("" + filter_UserId) + "&";
-        if (filter_CustomerName === null)
-            throw new globalThis.Error("The parameter 'filter_CustomerName' cannot be null.");
-        else if (filter_CustomerName !== undefined)
-            url_ += "Filter.CustomerName=" + encodeURIComponent("" + filter_CustomerName) + "&";
-        if (filter_CustomerEmail === null)
-            throw new globalThis.Error("The parameter 'filter_CustomerEmail' cannot be null.");
-        else if (filter_CustomerEmail !== undefined)
-            url_ += "Filter.CustomerEmail=" + encodeURIComponent("" + filter_CustomerEmail) + "&";
-        if (filter_Statuses === null)
-            throw new globalThis.Error("The parameter 'filter_Statuses' cannot be null.");
-        else if (filter_Statuses !== undefined)
-            filter_Statuses && filter_Statuses.forEach(item => { url_ += "Filter.Statuses=" + encodeURIComponent("" + item) + "&"; });
-        if (filter_Reasons === null)
-            throw new globalThis.Error("The parameter 'filter_Reasons' cannot be null.");
-        else if (filter_Reasons !== undefined)
-            filter_Reasons && filter_Reasons.forEach(item => { url_ += "Filter.Reasons=" + encodeURIComponent("" + item) + "&"; });
-        if (filter_CreatedFrom === null)
-            throw new globalThis.Error("The parameter 'filter_CreatedFrom' cannot be null.");
-        else if (filter_CreatedFrom !== undefined)
-            url_ += "Filter.CreatedFrom=" + encodeURIComponent(filter_CreatedFrom ? "" + filter_CreatedFrom.toISOString() : "") + "&";
-        if (filter_CreatedTo === null)
-            throw new globalThis.Error("The parameter 'filter_CreatedTo' cannot be null.");
-        else if (filter_CreatedTo !== undefined)
-            url_ += "Filter.CreatedTo=" + encodeURIComponent(filter_CreatedTo ? "" + filter_CreatedTo.toISOString() : "") + "&";
-        if (filter_ResolvedFrom === null)
-            throw new globalThis.Error("The parameter 'filter_ResolvedFrom' cannot be null.");
-        else if (filter_ResolvedFrom !== undefined)
-            url_ += "Filter.ResolvedFrom=" + encodeURIComponent(filter_ResolvedFrom ? "" + filter_ResolvedFrom.toISOString() : "") + "&";
-        if (filter_ResolvedTo === null)
-            throw new globalThis.Error("The parameter 'filter_ResolvedTo' cannot be null.");
-        else if (filter_ResolvedTo !== undefined)
-            url_ += "Filter.ResolvedTo=" + encodeURIComponent(filter_ResolvedTo ? "" + filter_ResolvedTo.toISOString() : "") + "&";
-        if (filter_MinRefundAmount === null)
-            throw new globalThis.Error("The parameter 'filter_MinRefundAmount' cannot be null.");
-        else if (filter_MinRefundAmount !== undefined)
-            url_ += "Filter.MinRefundAmount=" + encodeURIComponent("" + filter_MinRefundAmount) + "&";
-        if (filter_MaxRefundAmount === null)
-            throw new globalThis.Error("The parameter 'filter_MaxRefundAmount' cannot be null.");
-        else if (filter_MaxRefundAmount !== undefined)
-            url_ += "Filter.MaxRefundAmount=" + encodeURIComponent("" + filter_MaxRefundAmount) + "&";
+    getPaged(orderId?: string | undefined, userId?: string | undefined, customerName?: string | undefined, customerEmail?: string | undefined, statuses?: number[] | undefined, reasons?: number[] | undefined, createdFrom?: Date | undefined, createdTo?: Date | undefined, resolvedFrom?: Date | undefined, resolvedTo?: Date | undefined, minRefundAmount?: number | undefined, maxRefundAmount?: number | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfDisputeListItem> {
+        let url = this.baseUrl + "/api/Dispute/GetPaged?";
+        if (orderId === null)
+            throw new globalThis.Error("The parameter 'orderId' cannot be null.");
+        else if (orderId !== undefined)
+            url += "Filter.OrderId=" + encodeURIComponent("" + orderId) + "&";
+        if (userId === null)
+            throw new globalThis.Error("The parameter 'userId' cannot be null.");
+        else if (userId !== undefined)
+            url += "Filter.UserId=" + encodeURIComponent("" + userId) + "&";
+        if (customerName === null)
+            throw new globalThis.Error("The parameter 'customerName' cannot be null.");
+        else if (customerName !== undefined)
+            url += "Filter.CustomerName=" + encodeURIComponent("" + customerName) + "&";
+        if (customerEmail === null)
+            throw new globalThis.Error("The parameter 'customerEmail' cannot be null.");
+        else if (customerEmail !== undefined)
+            url += "Filter.CustomerEmail=" + encodeURIComponent("" + customerEmail) + "&";
+        if (statuses === null)
+            throw new globalThis.Error("The parameter 'statuses' cannot be null.");
+        else if (statuses !== undefined)
+            statuses && statuses.forEach(item => { url += "Filter.Statuses=" + encodeURIComponent("" + item) + "&"; });
+        if (reasons === null)
+            throw new globalThis.Error("The parameter 'reasons' cannot be null.");
+        else if (reasons !== undefined)
+            reasons && reasons.forEach(item => { url += "Filter.Reasons=" + encodeURIComponent("" + item) + "&"; });
+        if (createdFrom === null)
+            throw new globalThis.Error("The parameter 'createdFrom' cannot be null.");
+        else if (createdFrom !== undefined)
+            url += "Filter.CreatedFrom=" + encodeURIComponent(createdFrom ? "" + createdFrom.toISOString() : "") + "&";
+        if (createdTo === null)
+            throw new globalThis.Error("The parameter 'createdTo' cannot be null.");
+        else if (createdTo !== undefined)
+            url += "Filter.CreatedTo=" + encodeURIComponent(createdTo ? "" + createdTo.toISOString() : "") + "&";
+        if (resolvedFrom === null)
+            throw new globalThis.Error("The parameter 'resolvedFrom' cannot be null.");
+        else if (resolvedFrom !== undefined)
+            url += "Filter.ResolvedFrom=" + encodeURIComponent(resolvedFrom ? "" + resolvedFrom.toISOString() : "") + "&";
+        if (resolvedTo === null)
+            throw new globalThis.Error("The parameter 'resolvedTo' cannot be null.");
+        else if (resolvedTo !== undefined)
+            url += "Filter.ResolvedTo=" + encodeURIComponent(resolvedTo ? "" + resolvedTo.toISOString() : "") + "&";
+        if (minRefundAmount === null)
+            throw new globalThis.Error("The parameter 'minRefundAmount' cannot be null.");
+        else if (minRefundAmount !== undefined)
+            url += "Filter.MinRefundAmount=" + encodeURIComponent("" + minRefundAmount) + "&";
+        if (maxRefundAmount === null)
+            throw new globalThis.Error("The parameter 'maxRefundAmount' cannot be null.");
+        else if (maxRefundAmount !== undefined)
+            url += "Filter.MaxRefundAmount=" + encodeURIComponent("" + maxRefundAmount) + "&";
         if (sort === null)
             throw new globalThis.Error("The parameter 'sort' cannot be null.");
         else if (sort !== undefined)
             sort && sort.forEach((item, index) => {
                 for (const attr in item)
         			if (item.hasOwnProperty(attr)) {
-        				url_ += "Sort[" + index + "]." + attr + "=" + encodeURIComponent("" + (item as any)[attr]) + "&";
+        				url += "Sort[" + index + "]." + attr + "=" + encodeURIComponent("" + (item as any)[attr]) + "&";
         			}
             });
         if (offset === null)
             throw new globalThis.Error("The parameter 'offset' cannot be null.");
         else if (offset !== undefined)
-            url_ += "Offset=" + encodeURIComponent("" + offset) + "&";
+            url += "Offset=" + encodeURIComponent("" + offset) + "&";
         if (limit === null)
             throw new globalThis.Error("The parameter 'limit' cannot be null.");
         else if (limit !== undefined)
-            url_ += "Limit=" + encodeURIComponent("" + limit) + "&";
-        url_ = url_.replace(/[?&]$/, "");
+            url += "Limit=" + encodeURIComponent("" + limit) + "&";
+        url = url.replace(/[?&]$/, "");
 
-        let options_ : any = {
+        let options : any = {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -777,17 +777,17 @@ export class DisputeClient implements IDisputeClient {
             })
         };
 
-        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processGetPaged(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetPaged(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processGetPaged(response_ as any);
+                    return this.processGetPaged(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<PagedDataOfDisputeListItem>;
+                    return ObservableThrow(e) as any as Observable<PagedDataOfDisputeListItem>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<PagedDataOfDisputeListItem>;
+                return ObservableThrow(response) as any as Observable<PagedDataOfDisputeListItem>;
         }));
     }
 
@@ -797,55 +797,55 @@ export class DisputeClient implements IDisputeClient {
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = PagedDataOfDisputeListItem.fromJS(resultData200);
-            return _observableOf(result200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status === 401) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result401: any = null;
-            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
             }));
         } else if (status === 403) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result403: any = null;
-            let resultData403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, _responseText, _headers, result403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 
     /**
      * @param body (optional) 
      * @return OK
      */
-    addMessage(body?: AddDisputeMessage_Command | undefined): Observable<void> {
-        let url_ = this.baseUrl + "/api/Dispute/AddMessage";
-        url_ = url_.replace(/[?&]$/, "");
+    addMessage(body?: AddDisputeMessageCommand | undefined): Observable<void> {
+        let url = this.baseUrl + "/api/Dispute/AddMessage";
+        url = url.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(body);
+        const content = JSON.stringify(body);
 
-        let options_ : any = {
-            body: content_,
+        let options : any = {
+            body: content,
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -853,17 +853,17 @@ export class DisputeClient implements IDisputeClient {
             })
         };
 
-        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processAddMessage(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processAddMessage(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processAddMessage(response_ as any);
+                    return this.processAddMessage(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<void>;
+                    return ObservableThrow(e) as any as Observable<void>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<void>;
+                return ObservableThrow(response) as any as Observable<void>;
         }));
     }
 
@@ -873,38 +873,38 @@ export class DisputeClient implements IDisputeClient {
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return _observableOf(null as any);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return ObservableOf(null as any);
             }));
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status === 401) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result401: any = null;
-            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
             }));
         } else if (status === 403) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result403: any = null;
-            let resultData403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, _responseText, _headers, result403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 }
 
@@ -914,7 +914,7 @@ export interface IFeatureFlagClient {
      * @param countryId (optional) 
      * @return OK
      */
-    check(featureName?: string | undefined, countryId?: string | undefined): Observable<CheckFeatureFlag_Response>;
+    check(featureName?: string | undefined, countryId?: string | undefined): Observable<CheckFeatureFlagResponse>;
 }
 
 @Injectable({
@@ -925,7 +925,7 @@ export class FeatureFlagClient implements IFeatureFlagClient {
     private baseUrl: string;
     protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
 
-    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMER_API_BASE_URL) baseUrl?: string) {
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMERAPIBASEURL) baseUrl?: string) {
         this.http = http;
         this.baseUrl = baseUrl ?? "";
     }
@@ -935,19 +935,19 @@ export class FeatureFlagClient implements IFeatureFlagClient {
      * @param countryId (optional) 
      * @return OK
      */
-    check(featureName?: string | undefined, countryId?: string | undefined): Observable<CheckFeatureFlag_Response> {
-        let url_ = this.baseUrl + "/api/FeatureFlag/check?";
+    check(featureName?: string | undefined, countryId?: string | undefined): Observable<CheckFeatureFlagResponse> {
+        let url = this.baseUrl + "/api/FeatureFlag/check?";
         if (featureName === null)
             throw new globalThis.Error("The parameter 'featureName' cannot be null.");
         else if (featureName !== undefined)
-            url_ += "featureName=" + encodeURIComponent("" + featureName) + "&";
+            url += "featureName=" + encodeURIComponent("" + featureName) + "&";
         if (countryId === null)
             throw new globalThis.Error("The parameter 'countryId' cannot be null.");
         else if (countryId !== undefined)
-            url_ += "countryId=" + encodeURIComponent("" + countryId) + "&";
-        url_ = url_.replace(/[?&]$/, "");
+            url += "countryId=" + encodeURIComponent("" + countryId) + "&";
+        url = url.replace(/[?&]$/, "");
 
-        let options_ : any = {
+        let options : any = {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -955,40 +955,40 @@ export class FeatureFlagClient implements IFeatureFlagClient {
             })
         };
 
-        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processCheck(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processCheck(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processCheck(response_ as any);
+                    return this.processCheck(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<CheckFeatureFlag_Response>;
+                    return ObservableThrow(e) as any as Observable<CheckFeatureFlagResponse>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<CheckFeatureFlag_Response>;
+                return ObservableThrow(response) as any as Observable<CheckFeatureFlagResponse>;
         }));
     }
 
-    protected processCheck(response: HttpResponseBase): Observable<CheckFeatureFlag_Response> {
+    protected processCheck(response: HttpResponseBase): Observable<CheckFeatureFlagResponse> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = CheckFeatureFlag_Response.fromJS(resultData200);
-            return _observableOf(result200);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = CheckFeatureFlagResponse.fromJS(resultData200);
+            return ObservableOf(result200);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 }
 
@@ -1009,7 +1009,7 @@ export interface IGdprClient {
      * @param body (optional) 
      * @return OK
      */
-    consentsPost(body?: GrantConsent_Command | undefined): Observable<void>;
+    consentsPost(body?: GrantConsentCommand | undefined): Observable<void>;
 }
 
 @Injectable({
@@ -1020,7 +1020,7 @@ export class GdprClient implements IGdprClient {
     private baseUrl: string;
     protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
 
-    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMER_API_BASE_URL) baseUrl?: string) {
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMERAPIBASEURL) baseUrl?: string) {
         this.http = http;
         this.baseUrl = baseUrl ?? "";
     }
@@ -1029,10 +1029,10 @@ export class GdprClient implements IGdprClient {
      * @return OK
      */
     export(): Observable<GdprExportDto> {
-        let url_ = this.baseUrl + "/api/v1/Gdpr/export";
-        url_ = url_.replace(/[?&]$/, "");
+        let url = this.baseUrl + "/api/v1/Gdpr/export";
+        url = url.replace(/[?&]$/, "");
 
-        let options_ : any = {
+        let options : any = {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -1040,17 +1040,17 @@ export class GdprClient implements IGdprClient {
             })
         };
 
-        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processExport(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processExport(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processExport(response_ as any);
+                    return this.processExport(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<GdprExportDto>;
+                    return ObservableThrow(e) as any as Observable<GdprExportDto>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<GdprExportDto>;
+                return ObservableThrow(response) as any as Observable<GdprExportDto>;
         }));
     }
 
@@ -1060,47 +1060,47 @@ export class GdprClient implements IGdprClient {
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = GdprExportDto.fromJS(resultData200);
-            return _observableOf(result200);
+            return ObservableOf(result200);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 
     /**
      * @return OK
      */
     deleteAccount(): Observable<void> {
-        let url_ = this.baseUrl + "/api/v1/Gdpr/delete-account";
-        url_ = url_.replace(/[?&]$/, "");
+        let url = this.baseUrl + "/api/v1/Gdpr/delete-account";
+        url = url.replace(/[?&]$/, "");
 
-        let options_ : any = {
+        let options : any = {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
             })
         };
 
-        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processDeleteAccount(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processDeleteAccount(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processDeleteAccount(response_ as any);
+                    return this.processDeleteAccount(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<void>;
+                    return ObservableThrow(e) as any as Observable<void>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<void>;
+                return ObservableThrow(response) as any as Observable<void>;
         }));
     }
 
@@ -1110,27 +1110,27 @@ export class GdprClient implements IGdprClient {
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return _observableOf(null as any);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return ObservableOf(null as any);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 
     /**
      * @return OK
      */
     consentsGet(): Observable<UserConsentDto[]> {
-        let url_ = this.baseUrl + "/api/v1/Gdpr/consents";
-        url_ = url_.replace(/[?&]$/, "");
+        let url = this.baseUrl + "/api/v1/Gdpr/consents";
+        url = url.replace(/[?&]$/, "");
 
-        let options_ : any = {
+        let options : any = {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -1138,17 +1138,17 @@ export class GdprClient implements IGdprClient {
             })
         };
 
-        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processConsentsGet(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processConsentsGet(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processConsentsGet(response_ as any);
+                    return this.processConsentsGet(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<UserConsentDto[]>;
+                    return ObservableThrow(e) as any as Observable<UserConsentDto[]>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<UserConsentDto[]>;
+                return ObservableThrow(response) as any as Observable<UserConsentDto[]>;
         }));
     }
 
@@ -1158,11 +1158,11 @@ export class GdprClient implements IGdprClient {
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             if (Array.isArray(resultData200)) {
                 result200 = [] as any;
                 for (let item of resultData200)
@@ -1171,28 +1171,28 @@ export class GdprClient implements IGdprClient {
             else {
                 result200 = null as any;
             }
-            return _observableOf(result200);
+            return ObservableOf(result200);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 
     /**
      * @param body (optional) 
      * @return OK
      */
-    consentsPost(body?: GrantConsent_Command | undefined): Observable<void> {
-        let url_ = this.baseUrl + "/api/v1/Gdpr/consents";
-        url_ = url_.replace(/[?&]$/, "");
+    consentsPost(body?: GrantConsentCommand | undefined): Observable<void> {
+        let url = this.baseUrl + "/api/v1/Gdpr/consents";
+        url = url.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(body);
+        const content = JSON.stringify(body);
 
-        let options_ : any = {
-            body: content_,
+        let options : any = {
+            body: content,
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -1200,17 +1200,17 @@ export class GdprClient implements IGdprClient {
             })
         };
 
-        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processConsentsPost(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processConsentsPost(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processConsentsPost(response_ as any);
+                    return this.processConsentsPost(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<void>;
+                    return ObservableThrow(e) as any as Observable<void>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<void>;
+                return ObservableThrow(response) as any as Observable<void>;
         }));
     }
 
@@ -1220,17 +1220,17 @@ export class GdprClient implements IGdprClient {
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return _observableOf(null as any);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return ObservableOf(null as any);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 }
 
@@ -1239,7 +1239,7 @@ export interface IConsentsClient {
      * @param body (optional) 
      * @return OK
      */
-    withdraw(body?: WithdrawConsent_Command | undefined): Observable<void>;
+    withdraw(body?: WithdrawConsentCommand | undefined): Observable<void>;
 }
 
 @Injectable({
@@ -1250,7 +1250,7 @@ export class ConsentsClient implements IConsentsClient {
     private baseUrl: string;
     protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
 
-    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMER_API_BASE_URL) baseUrl?: string) {
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMERAPIBASEURL) baseUrl?: string) {
         this.http = http;
         this.baseUrl = baseUrl ?? "";
     }
@@ -1259,14 +1259,14 @@ export class ConsentsClient implements IConsentsClient {
      * @param body (optional) 
      * @return OK
      */
-    withdraw(body?: WithdrawConsent_Command | undefined): Observable<void> {
-        let url_ = this.baseUrl + "/api/v1/Gdpr/consents/withdraw";
-        url_ = url_.replace(/[?&]$/, "");
+    withdraw(body?: WithdrawConsentCommand | undefined): Observable<void> {
+        let url = this.baseUrl + "/api/v1/Gdpr/consents/withdraw";
+        url = url.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(body);
+        const content = JSON.stringify(body);
 
-        let options_ : any = {
-            body: content_,
+        let options : any = {
+            body: content,
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -1274,17 +1274,17 @@ export class ConsentsClient implements IConsentsClient {
             })
         };
 
-        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processWithdraw(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processWithdraw(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processWithdraw(response_ as any);
+                    return this.processWithdraw(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<void>;
+                    return ObservableThrow(e) as any as Observable<void>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<void>;
+                return ObservableThrow(response) as any as Observable<void>;
         }));
     }
 
@@ -1294,17 +1294,17 @@ export class ConsentsClient implements IConsentsClient {
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return _observableOf(null as any);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return ObservableOf(null as any);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 }
 
@@ -1323,7 +1323,7 @@ export class LanguageClient implements ILanguageClient {
     private baseUrl: string;
     protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
 
-    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMER_API_BASE_URL) baseUrl?: string) {
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMERAPIBASEURL) baseUrl?: string) {
         this.http = http;
         this.baseUrl = baseUrl ?? "";
     }
@@ -1332,10 +1332,10 @@ export class LanguageClient implements ILanguageClient {
      * @return OK
      */
     getOverview(): Observable<LanguageListItem[]> {
-        let url_ = this.baseUrl + "/api/Language/GetOverview";
-        url_ = url_.replace(/[?&]$/, "");
+        let url = this.baseUrl + "/api/Language/GetOverview";
+        url = url.replace(/[?&]$/, "");
 
-        let options_ : any = {
+        let options : any = {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -1343,17 +1343,17 @@ export class LanguageClient implements ILanguageClient {
             })
         };
 
-        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processGetOverview(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetOverview(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processGetOverview(response_ as any);
+                    return this.processGetOverview(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<LanguageListItem[]>;
+                    return ObservableThrow(e) as any as Observable<LanguageListItem[]>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<LanguageListItem[]>;
+                return ObservableThrow(response) as any as Observable<LanguageListItem[]>;
         }));
     }
 
@@ -1363,11 +1363,11 @@ export class LanguageClient implements ILanguageClient {
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             if (Array.isArray(resultData200)) {
                 result200 = [] as any;
                 for (let item of resultData200)
@@ -1376,21 +1376,21 @@ export class LanguageClient implements ILanguageClient {
             else {
                 result200 = null as any;
             }
-            return _observableOf(result200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 }
 
@@ -1400,65 +1400,65 @@ export interface IOrderClient {
      * @param email (optional) 
      * @return OK
      */
-    lookup(orderNumber?: string | undefined, email?: string | undefined): Observable<LookupOrder_Response>;
+    lookup(orderNumber?: string | undefined, email?: string | undefined): Observable<LookupOrderResponse>;
     /**
      * @param body (optional) 
      * @return OK
      */
-    lookupBatch(body?: LookupOrderBatch_Query | undefined): Observable<LookupOrderBatch_Response>;
+    lookupBatch(body?: LookupOrderBatchQuery | undefined): Observable<LookupOrderBatchResponse>;
     /**
      * @param body (optional) 
      * @return OK
      */
-    createOrder(body?: CreateOrder_Command | undefined): Observable<CreateOrder_Response>;
+    createOrder(body?: CreateOrderCommand | undefined): Observable<CreateOrderResponse>;
     /**
-     * @param filter_Id (optional) 
-     * @param filter_IsActive (optional) 
-     * @param filter_CustomerName (optional) 
-     * @param filter_CustomerEmail (optional) 
-     * @param filter_CustomerPhone (optional) 
-     * @param filter_DisplayOrderNumber (optional) 
-     * @param filter_EmployeeId (optional) 
-     * @param filter_CleaningDateFrom (optional) 
-     * @param filter_CleaningDateTo (optional) 
-     * @param filter_PaymentStatuses (optional) 
-     * @param filter_PaymentTypes (optional) 
-     * @param filter_MinTotalPrice (optional) 
-     * @param filter_MaxTotalPrice (optional) 
-     * @param filter_OrderStatuses (optional) 
-     * @param filter_HasAvailableSpots (optional) 
-     * @param filter_IsUnassigned (optional) 
-     * @param filter_ExcludeEmployeeId (optional) 
+     * @param id (optional) 
+     * @param isActive (optional) 
+     * @param customerName (optional) 
+     * @param customerEmail (optional) 
+     * @param customerPhone (optional) 
+     * @param displayOrderNumber (optional) 
+     * @param employeeId (optional) 
+     * @param cleaningDateFrom (optional) 
+     * @param cleaningDateTo (optional) 
+     * @param paymentStatuses (optional) 
+     * @param paymentTypes (optional) 
+     * @param minTotalPrice (optional) 
+     * @param maxTotalPrice (optional) 
+     * @param orderStatuses (optional) 
+     * @param hasAvailableSpots (optional) 
+     * @param isUnassigned (optional) 
+     * @param excludeEmployeeId (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getMyOrders(filter_Id?: string | undefined, filter_IsActive?: boolean | undefined, filter_CustomerName?: string | undefined, filter_CustomerEmail?: string | undefined, filter_CustomerPhone?: string | undefined, filter_DisplayOrderNumber?: string | undefined, filter_EmployeeId?: string | undefined, filter_CleaningDateFrom?: Date | undefined, filter_CleaningDateTo?: Date | undefined, filter_PaymentStatuses?: PaymentStatus[] | undefined, filter_PaymentTypes?: PaymentType[] | undefined, filter_MinTotalPrice?: number | undefined, filter_MaxTotalPrice?: number | undefined, filter_OrderStatuses?: OrderStatus[] | undefined, filter_HasAvailableSpots?: boolean | undefined, filter_IsUnassigned?: boolean | undefined, filter_ExcludeEmployeeId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem>;
+    getMyOrders(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem>;
     /**
-     * @param filter_Id (optional) 
-     * @param filter_IsActive (optional) 
-     * @param filter_CustomerName (optional) 
-     * @param filter_CustomerEmail (optional) 
-     * @param filter_CustomerPhone (optional) 
-     * @param filter_DisplayOrderNumber (optional) 
-     * @param filter_EmployeeId (optional) 
-     * @param filter_CleaningDateFrom (optional) 
-     * @param filter_CleaningDateTo (optional) 
-     * @param filter_PaymentStatuses (optional) 
-     * @param filter_PaymentTypes (optional) 
-     * @param filter_MinTotalPrice (optional) 
-     * @param filter_MaxTotalPrice (optional) 
-     * @param filter_OrderStatuses (optional) 
-     * @param filter_HasAvailableSpots (optional) 
-     * @param filter_IsUnassigned (optional) 
-     * @param filter_ExcludeEmployeeId (optional) 
+     * @param id (optional) 
+     * @param isActive (optional) 
+     * @param customerName (optional) 
+     * @param customerEmail (optional) 
+     * @param customerPhone (optional) 
+     * @param displayOrderNumber (optional) 
+     * @param employeeId (optional) 
+     * @param cleaningDateFrom (optional) 
+     * @param cleaningDateTo (optional) 
+     * @param paymentStatuses (optional) 
+     * @param paymentTypes (optional) 
+     * @param minTotalPrice (optional) 
+     * @param maxTotalPrice (optional) 
+     * @param orderStatuses (optional) 
+     * @param hasAvailableSpots (optional) 
+     * @param isUnassigned (optional) 
+     * @param excludeEmployeeId (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getPaged(filter_Id?: string | undefined, filter_IsActive?: boolean | undefined, filter_CustomerName?: string | undefined, filter_CustomerEmail?: string | undefined, filter_CustomerPhone?: string | undefined, filter_DisplayOrderNumber?: string | undefined, filter_EmployeeId?: string | undefined, filter_CleaningDateFrom?: Date | undefined, filter_CleaningDateTo?: Date | undefined, filter_PaymentStatuses?: PaymentStatus[] | undefined, filter_PaymentTypes?: PaymentType[] | undefined, filter_MinTotalPrice?: number | undefined, filter_MaxTotalPrice?: number | undefined, filter_OrderStatuses?: OrderStatus[] | undefined, filter_HasAvailableSpots?: boolean | undefined, filter_IsUnassigned?: boolean | undefined, filter_ExcludeEmployeeId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem>;
+    getPaged(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem>;
     /**
      * @param orderId (optional) 
      * @return OK
@@ -1473,17 +1473,17 @@ export interface IOrderClient {
      * @param orderId (optional) 
      * @return OK
      */
-    getPhotos(orderId?: string | undefined): Observable<GetOrderPhotos_Response>;
+    getPhotos(orderId?: string | undefined): Observable<GetOrderPhotosResponse>;
     /**
      * @param body (optional) 
      * @return OK
      */
-    submitReview(body?: SubmitOrderReview_Command | undefined): Observable<OrderReviewDto>;
+    submitReview(body?: SubmitOrderReviewCommand | undefined): Observable<OrderReviewDto>;
     /**
      * @param body (optional) 
      * @return OK
      */
-    reportIssue(body?: ReportOrderIssue_Command | undefined): Observable<ReportOrderIssue_Response>;
+    reportIssue(body?: ReportOrderIssueCommand | undefined): Observable<ReportOrderIssueResponse>;
 }
 
 @Injectable({
@@ -1494,7 +1494,7 @@ export class OrderClient implements IOrderClient {
     private baseUrl: string;
     protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
 
-    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMER_API_BASE_URL) baseUrl?: string) {
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMERAPIBASEURL) baseUrl?: string) {
         this.http = http;
         this.baseUrl = baseUrl ?? "";
     }
@@ -1504,19 +1504,19 @@ export class OrderClient implements IOrderClient {
      * @param email (optional) 
      * @return OK
      */
-    lookup(orderNumber?: string | undefined, email?: string | undefined): Observable<LookupOrder_Response> {
-        let url_ = this.baseUrl + "/api/Order/Lookup?";
+    lookup(orderNumber?: string | undefined, email?: string | undefined): Observable<LookupOrderResponse> {
+        let url = this.baseUrl + "/api/Order/Lookup?";
         if (orderNumber === null)
             throw new globalThis.Error("The parameter 'orderNumber' cannot be null.");
         else if (orderNumber !== undefined)
-            url_ += "orderNumber=" + encodeURIComponent("" + orderNumber) + "&";
+            url += "orderNumber=" + encodeURIComponent("" + orderNumber) + "&";
         if (email === null)
             throw new globalThis.Error("The parameter 'email' cannot be null.");
         else if (email !== undefined)
-            url_ += "email=" + encodeURIComponent("" + email) + "&";
-        url_ = url_.replace(/[?&]$/, "");
+            url += "email=" + encodeURIComponent("" + email) + "&";
+        url = url.replace(/[?&]$/, "");
 
-        let options_ : any = {
+        let options : any = {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -1524,61 +1524,61 @@ export class OrderClient implements IOrderClient {
             })
         };
 
-        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processLookup(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processLookup(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processLookup(response_ as any);
+                    return this.processLookup(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<LookupOrder_Response>;
+                    return ObservableThrow(e) as any as Observable<LookupOrderResponse>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<LookupOrder_Response>;
+                return ObservableThrow(response) as any as Observable<LookupOrderResponse>;
         }));
     }
 
-    protected processLookup(response: HttpResponseBase): Observable<LookupOrder_Response> {
+    protected processLookup(response: HttpResponseBase): Observable<LookupOrderResponse> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = LookupOrder_Response.fromJS(resultData200);
-            return _observableOf(result200);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = LookupOrderResponse.fromJS(resultData200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 
     /**
      * @param body (optional) 
      * @return OK
      */
-    lookupBatch(body?: LookupOrderBatch_Query | undefined): Observable<LookupOrderBatch_Response> {
-        let url_ = this.baseUrl + "/api/Order/LookupBatch";
-        url_ = url_.replace(/[?&]$/, "");
+    lookupBatch(body?: LookupOrderBatchQuery | undefined): Observable<LookupOrderBatchResponse> {
+        let url = this.baseUrl + "/api/Order/LookupBatch";
+        url = url.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(body);
+        const content = JSON.stringify(body);
 
-        let options_ : any = {
-            body: content_,
+        let options : any = {
+            body: content,
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -1587,54 +1587,54 @@ export class OrderClient implements IOrderClient {
             })
         };
 
-        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processLookupBatch(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processLookupBatch(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processLookupBatch(response_ as any);
+                    return this.processLookupBatch(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<LookupOrderBatch_Response>;
+                    return ObservableThrow(e) as any as Observable<LookupOrderBatchResponse>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<LookupOrderBatch_Response>;
+                return ObservableThrow(response) as any as Observable<LookupOrderBatchResponse>;
         }));
     }
 
-    protected processLookupBatch(response: HttpResponseBase): Observable<LookupOrderBatch_Response> {
+    protected processLookupBatch(response: HttpResponseBase): Observable<LookupOrderBatchResponse> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = LookupOrderBatch_Response.fromJS(resultData200);
-            return _observableOf(result200);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = LookupOrderBatchResponse.fromJS(resultData200);
+            return ObservableOf(result200);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 
     /**
      * @param body (optional) 
      * @return OK
      */
-    createOrder(body?: CreateOrder_Command | undefined): Observable<CreateOrder_Response> {
-        let url_ = this.baseUrl + "/api/Order/CreateOrder";
-        url_ = url_.replace(/[?&]$/, "");
+    createOrder(body?: CreateOrderCommand | undefined): Observable<CreateOrderResponse> {
+        let url = this.baseUrl + "/api/Order/CreateOrder";
+        url = url.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(body);
+        const content = JSON.stringify(body);
 
-        let options_ : any = {
-            body: content_,
+        let options : any = {
+            body: content,
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -1643,162 +1643,162 @@ export class OrderClient implements IOrderClient {
             })
         };
 
-        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processCreateOrder(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processCreateOrder(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processCreateOrder(response_ as any);
+                    return this.processCreateOrder(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<CreateOrder_Response>;
+                    return ObservableThrow(e) as any as Observable<CreateOrderResponse>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<CreateOrder_Response>;
+                return ObservableThrow(response) as any as Observable<CreateOrderResponse>;
         }));
     }
 
-    protected processCreateOrder(response: HttpResponseBase): Observable<CreateOrder_Response> {
+    protected processCreateOrder(response: HttpResponseBase): Observable<CreateOrderResponse> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = CreateOrder_Response.fromJS(resultData200);
-            return _observableOf(result200);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = CreateOrderResponse.fromJS(resultData200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 
     /**
-     * @param filter_Id (optional) 
-     * @param filter_IsActive (optional) 
-     * @param filter_CustomerName (optional) 
-     * @param filter_CustomerEmail (optional) 
-     * @param filter_CustomerPhone (optional) 
-     * @param filter_DisplayOrderNumber (optional) 
-     * @param filter_EmployeeId (optional) 
-     * @param filter_CleaningDateFrom (optional) 
-     * @param filter_CleaningDateTo (optional) 
-     * @param filter_PaymentStatuses (optional) 
-     * @param filter_PaymentTypes (optional) 
-     * @param filter_MinTotalPrice (optional) 
-     * @param filter_MaxTotalPrice (optional) 
-     * @param filter_OrderStatuses (optional) 
-     * @param filter_HasAvailableSpots (optional) 
-     * @param filter_IsUnassigned (optional) 
-     * @param filter_ExcludeEmployeeId (optional) 
+     * @param id (optional) 
+     * @param isActive (optional) 
+     * @param customerName (optional) 
+     * @param customerEmail (optional) 
+     * @param customerPhone (optional) 
+     * @param displayOrderNumber (optional) 
+     * @param employeeId (optional) 
+     * @param cleaningDateFrom (optional) 
+     * @param cleaningDateTo (optional) 
+     * @param paymentStatuses (optional) 
+     * @param paymentTypes (optional) 
+     * @param minTotalPrice (optional) 
+     * @param maxTotalPrice (optional) 
+     * @param orderStatuses (optional) 
+     * @param hasAvailableSpots (optional) 
+     * @param isUnassigned (optional) 
+     * @param excludeEmployeeId (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getMyOrders(filter_Id?: string | undefined, filter_IsActive?: boolean | undefined, filter_CustomerName?: string | undefined, filter_CustomerEmail?: string | undefined, filter_CustomerPhone?: string | undefined, filter_DisplayOrderNumber?: string | undefined, filter_EmployeeId?: string | undefined, filter_CleaningDateFrom?: Date | undefined, filter_CleaningDateTo?: Date | undefined, filter_PaymentStatuses?: PaymentStatus[] | undefined, filter_PaymentTypes?: PaymentType[] | undefined, filter_MinTotalPrice?: number | undefined, filter_MaxTotalPrice?: number | undefined, filter_OrderStatuses?: OrderStatus[] | undefined, filter_HasAvailableSpots?: boolean | undefined, filter_IsUnassigned?: boolean | undefined, filter_ExcludeEmployeeId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem> {
-        let url_ = this.baseUrl + "/api/Order/GetMyOrders?";
-        if (filter_Id === null)
-            throw new globalThis.Error("The parameter 'filter_Id' cannot be null.");
-        else if (filter_Id !== undefined)
-            url_ += "Filter.Id=" + encodeURIComponent("" + filter_Id) + "&";
-        if (filter_IsActive === null)
-            throw new globalThis.Error("The parameter 'filter_IsActive' cannot be null.");
-        else if (filter_IsActive !== undefined)
-            url_ += "Filter.IsActive=" + encodeURIComponent("" + filter_IsActive) + "&";
-        if (filter_CustomerName === null)
-            throw new globalThis.Error("The parameter 'filter_CustomerName' cannot be null.");
-        else if (filter_CustomerName !== undefined)
-            url_ += "Filter.CustomerName=" + encodeURIComponent("" + filter_CustomerName) + "&";
-        if (filter_CustomerEmail === null)
-            throw new globalThis.Error("The parameter 'filter_CustomerEmail' cannot be null.");
-        else if (filter_CustomerEmail !== undefined)
-            url_ += "Filter.CustomerEmail=" + encodeURIComponent("" + filter_CustomerEmail) + "&";
-        if (filter_CustomerPhone === null)
-            throw new globalThis.Error("The parameter 'filter_CustomerPhone' cannot be null.");
-        else if (filter_CustomerPhone !== undefined)
-            url_ += "Filter.CustomerPhone=" + encodeURIComponent("" + filter_CustomerPhone) + "&";
-        if (filter_DisplayOrderNumber === null)
-            throw new globalThis.Error("The parameter 'filter_DisplayOrderNumber' cannot be null.");
-        else if (filter_DisplayOrderNumber !== undefined)
-            url_ += "Filter.DisplayOrderNumber=" + encodeURIComponent("" + filter_DisplayOrderNumber) + "&";
-        if (filter_EmployeeId === null)
-            throw new globalThis.Error("The parameter 'filter_EmployeeId' cannot be null.");
-        else if (filter_EmployeeId !== undefined)
-            url_ += "Filter.EmployeeId=" + encodeURIComponent("" + filter_EmployeeId) + "&";
-        if (filter_CleaningDateFrom === null)
-            throw new globalThis.Error("The parameter 'filter_CleaningDateFrom' cannot be null.");
-        else if (filter_CleaningDateFrom !== undefined)
-            url_ += "Filter.CleaningDateFrom=" + encodeURIComponent(filter_CleaningDateFrom ? "" + filter_CleaningDateFrom.toISOString() : "") + "&";
-        if (filter_CleaningDateTo === null)
-            throw new globalThis.Error("The parameter 'filter_CleaningDateTo' cannot be null.");
-        else if (filter_CleaningDateTo !== undefined)
-            url_ += "Filter.CleaningDateTo=" + encodeURIComponent(filter_CleaningDateTo ? "" + filter_CleaningDateTo.toISOString() : "") + "&";
-        if (filter_PaymentStatuses === null)
-            throw new globalThis.Error("The parameter 'filter_PaymentStatuses' cannot be null.");
-        else if (filter_PaymentStatuses !== undefined)
-            filter_PaymentStatuses && filter_PaymentStatuses.forEach(item => { url_ += "Filter.PaymentStatuses=" + encodeURIComponent("" + item) + "&"; });
-        if (filter_PaymentTypes === null)
-            throw new globalThis.Error("The parameter 'filter_PaymentTypes' cannot be null.");
-        else if (filter_PaymentTypes !== undefined)
-            filter_PaymentTypes && filter_PaymentTypes.forEach(item => { url_ += "Filter.PaymentTypes=" + encodeURIComponent("" + item) + "&"; });
-        if (filter_MinTotalPrice === null)
-            throw new globalThis.Error("The parameter 'filter_MinTotalPrice' cannot be null.");
-        else if (filter_MinTotalPrice !== undefined)
-            url_ += "Filter.MinTotalPrice=" + encodeURIComponent("" + filter_MinTotalPrice) + "&";
-        if (filter_MaxTotalPrice === null)
-            throw new globalThis.Error("The parameter 'filter_MaxTotalPrice' cannot be null.");
-        else if (filter_MaxTotalPrice !== undefined)
-            url_ += "Filter.MaxTotalPrice=" + encodeURIComponent("" + filter_MaxTotalPrice) + "&";
-        if (filter_OrderStatuses === null)
-            throw new globalThis.Error("The parameter 'filter_OrderStatuses' cannot be null.");
-        else if (filter_OrderStatuses !== undefined)
-            filter_OrderStatuses && filter_OrderStatuses.forEach(item => { url_ += "Filter.OrderStatuses=" + encodeURIComponent("" + item) + "&"; });
-        if (filter_HasAvailableSpots === null)
-            throw new globalThis.Error("The parameter 'filter_HasAvailableSpots' cannot be null.");
-        else if (filter_HasAvailableSpots !== undefined)
-            url_ += "Filter.HasAvailableSpots=" + encodeURIComponent("" + filter_HasAvailableSpots) + "&";
-        if (filter_IsUnassigned === null)
-            throw new globalThis.Error("The parameter 'filter_IsUnassigned' cannot be null.");
-        else if (filter_IsUnassigned !== undefined)
-            url_ += "Filter.IsUnassigned=" + encodeURIComponent("" + filter_IsUnassigned) + "&";
-        if (filter_ExcludeEmployeeId === null)
-            throw new globalThis.Error("The parameter 'filter_ExcludeEmployeeId' cannot be null.");
-        else if (filter_ExcludeEmployeeId !== undefined)
-            url_ += "Filter.ExcludeEmployeeId=" + encodeURIComponent("" + filter_ExcludeEmployeeId) + "&";
+    getMyOrders(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem> {
+        let url = this.baseUrl + "/api/Order/GetMyOrders?";
+        if (id === null)
+            throw new globalThis.Error("The parameter 'id' cannot be null.");
+        else if (id !== undefined)
+            url += "Filter.Id=" + encodeURIComponent("" + id) + "&";
+        if (isActive === null)
+            throw new globalThis.Error("The parameter 'isActive' cannot be null.");
+        else if (isActive !== undefined)
+            url += "Filter.IsActive=" + encodeURIComponent("" + isActive) + "&";
+        if (customerName === null)
+            throw new globalThis.Error("The parameter 'customerName' cannot be null.");
+        else if (customerName !== undefined)
+            url += "Filter.CustomerName=" + encodeURIComponent("" + customerName) + "&";
+        if (customerEmail === null)
+            throw new globalThis.Error("The parameter 'customerEmail' cannot be null.");
+        else if (customerEmail !== undefined)
+            url += "Filter.CustomerEmail=" + encodeURIComponent("" + customerEmail) + "&";
+        if (customerPhone === null)
+            throw new globalThis.Error("The parameter 'customerPhone' cannot be null.");
+        else if (customerPhone !== undefined)
+            url += "Filter.CustomerPhone=" + encodeURIComponent("" + customerPhone) + "&";
+        if (displayOrderNumber === null)
+            throw new globalThis.Error("The parameter 'displayOrderNumber' cannot be null.");
+        else if (displayOrderNumber !== undefined)
+            url += "Filter.DisplayOrderNumber=" + encodeURIComponent("" + displayOrderNumber) + "&";
+        if (employeeId === null)
+            throw new globalThis.Error("The parameter 'employeeId' cannot be null.");
+        else if (employeeId !== undefined)
+            url += "Filter.EmployeeId=" + encodeURIComponent("" + employeeId) + "&";
+        if (cleaningDateFrom === null)
+            throw new globalThis.Error("The parameter 'cleaningDateFrom' cannot be null.");
+        else if (cleaningDateFrom !== undefined)
+            url += "Filter.CleaningDateFrom=" + encodeURIComponent(cleaningDateFrom ? "" + cleaningDateFrom.toISOString() : "") + "&";
+        if (cleaningDateTo === null)
+            throw new globalThis.Error("The parameter 'cleaningDateTo' cannot be null.");
+        else if (cleaningDateTo !== undefined)
+            url += "Filter.CleaningDateTo=" + encodeURIComponent(cleaningDateTo ? "" + cleaningDateTo.toISOString() : "") + "&";
+        if (paymentStatuses === null)
+            throw new globalThis.Error("The parameter 'paymentStatuses' cannot be null.");
+        else if (paymentStatuses !== undefined)
+            paymentStatuses && paymentStatuses.forEach(item => { url += "Filter.PaymentStatuses=" + encodeURIComponent("" + item) + "&"; });
+        if (paymentTypes === null)
+            throw new globalThis.Error("The parameter 'paymentTypes' cannot be null.");
+        else if (paymentTypes !== undefined)
+            paymentTypes && paymentTypes.forEach(item => { url += "Filter.PaymentTypes=" + encodeURIComponent("" + item) + "&"; });
+        if (minTotalPrice === null)
+            throw new globalThis.Error("The parameter 'minTotalPrice' cannot be null.");
+        else if (minTotalPrice !== undefined)
+            url += "Filter.MinTotalPrice=" + encodeURIComponent("" + minTotalPrice) + "&";
+        if (maxTotalPrice === null)
+            throw new globalThis.Error("The parameter 'maxTotalPrice' cannot be null.");
+        else if (maxTotalPrice !== undefined)
+            url += "Filter.MaxTotalPrice=" + encodeURIComponent("" + maxTotalPrice) + "&";
+        if (orderStatuses === null)
+            throw new globalThis.Error("The parameter 'orderStatuses' cannot be null.");
+        else if (orderStatuses !== undefined)
+            orderStatuses && orderStatuses.forEach(item => { url += "Filter.OrderStatuses=" + encodeURIComponent("" + item) + "&"; });
+        if (hasAvailableSpots === null)
+            throw new globalThis.Error("The parameter 'hasAvailableSpots' cannot be null.");
+        else if (hasAvailableSpots !== undefined)
+            url += "Filter.HasAvailableSpots=" + encodeURIComponent("" + hasAvailableSpots) + "&";
+        if (isUnassigned === null)
+            throw new globalThis.Error("The parameter 'isUnassigned' cannot be null.");
+        else if (isUnassigned !== undefined)
+            url += "Filter.IsUnassigned=" + encodeURIComponent("" + isUnassigned) + "&";
+        if (excludeEmployeeId === null)
+            throw new globalThis.Error("The parameter 'excludeEmployeeId' cannot be null.");
+        else if (excludeEmployeeId !== undefined)
+            url += "Filter.ExcludeEmployeeId=" + encodeURIComponent("" + excludeEmployeeId) + "&";
         if (sort === null)
             throw new globalThis.Error("The parameter 'sort' cannot be null.");
         else if (sort !== undefined)
             sort && sort.forEach((item, index) => {
                 for (const attr in item)
         			if (item.hasOwnProperty(attr)) {
-        				url_ += "Sort[" + index + "]." + attr + "=" + encodeURIComponent("" + (item as any)[attr]) + "&";
+        				url += "Sort[" + index + "]." + attr + "=" + encodeURIComponent("" + (item as any)[attr]) + "&";
         			}
             });
         if (offset === null)
             throw new globalThis.Error("The parameter 'offset' cannot be null.");
         else if (offset !== undefined)
-            url_ += "Offset=" + encodeURIComponent("" + offset) + "&";
+            url += "Offset=" + encodeURIComponent("" + offset) + "&";
         if (limit === null)
             throw new globalThis.Error("The parameter 'limit' cannot be null.");
         else if (limit !== undefined)
-            url_ += "Limit=" + encodeURIComponent("" + limit) + "&";
-        url_ = url_.replace(/[?&]$/, "");
+            url += "Limit=" + encodeURIComponent("" + limit) + "&";
+        url = url.replace(/[?&]$/, "");
 
-        let options_ : any = {
+        let options : any = {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -1806,17 +1806,17 @@ export class OrderClient implements IOrderClient {
             })
         };
 
-        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processGetMyOrders(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetMyOrders(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processGetMyOrders(response_ as any);
+                    return this.processGetMyOrders(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<PagedDataOfOrderListItem>;
+                    return ObservableThrow(e) as any as Observable<PagedDataOfOrderListItem>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<PagedDataOfOrderListItem>;
+                return ObservableThrow(response) as any as Observable<PagedDataOfOrderListItem>;
         }));
     }
 
@@ -1826,156 +1826,156 @@ export class OrderClient implements IOrderClient {
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = PagedDataOfOrderListItem.fromJS(resultData200);
-            return _observableOf(result200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status === 401) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result401: any = null;
-            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
             }));
         } else if (status === 403) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result403: any = null;
-            let resultData403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, _responseText, _headers, result403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 
     /**
-     * @param filter_Id (optional) 
-     * @param filter_IsActive (optional) 
-     * @param filter_CustomerName (optional) 
-     * @param filter_CustomerEmail (optional) 
-     * @param filter_CustomerPhone (optional) 
-     * @param filter_DisplayOrderNumber (optional) 
-     * @param filter_EmployeeId (optional) 
-     * @param filter_CleaningDateFrom (optional) 
-     * @param filter_CleaningDateTo (optional) 
-     * @param filter_PaymentStatuses (optional) 
-     * @param filter_PaymentTypes (optional) 
-     * @param filter_MinTotalPrice (optional) 
-     * @param filter_MaxTotalPrice (optional) 
-     * @param filter_OrderStatuses (optional) 
-     * @param filter_HasAvailableSpots (optional) 
-     * @param filter_IsUnassigned (optional) 
-     * @param filter_ExcludeEmployeeId (optional) 
+     * @param id (optional) 
+     * @param isActive (optional) 
+     * @param customerName (optional) 
+     * @param customerEmail (optional) 
+     * @param customerPhone (optional) 
+     * @param displayOrderNumber (optional) 
+     * @param employeeId (optional) 
+     * @param cleaningDateFrom (optional) 
+     * @param cleaningDateTo (optional) 
+     * @param paymentStatuses (optional) 
+     * @param paymentTypes (optional) 
+     * @param minTotalPrice (optional) 
+     * @param maxTotalPrice (optional) 
+     * @param orderStatuses (optional) 
+     * @param hasAvailableSpots (optional) 
+     * @param isUnassigned (optional) 
+     * @param excludeEmployeeId (optional) 
      * @param sort (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
      * @return OK
      */
-    getPaged(filter_Id?: string | undefined, filter_IsActive?: boolean | undefined, filter_CustomerName?: string | undefined, filter_CustomerEmail?: string | undefined, filter_CustomerPhone?: string | undefined, filter_DisplayOrderNumber?: string | undefined, filter_EmployeeId?: string | undefined, filter_CleaningDateFrom?: Date | undefined, filter_CleaningDateTo?: Date | undefined, filter_PaymentStatuses?: PaymentStatus[] | undefined, filter_PaymentTypes?: PaymentType[] | undefined, filter_MinTotalPrice?: number | undefined, filter_MaxTotalPrice?: number | undefined, filter_OrderStatuses?: OrderStatus[] | undefined, filter_HasAvailableSpots?: boolean | undefined, filter_IsUnassigned?: boolean | undefined, filter_ExcludeEmployeeId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem> {
-        let url_ = this.baseUrl + "/api/Order/GetPaged?";
-        if (filter_Id === null)
-            throw new globalThis.Error("The parameter 'filter_Id' cannot be null.");
-        else if (filter_Id !== undefined)
-            url_ += "Filter.Id=" + encodeURIComponent("" + filter_Id) + "&";
-        if (filter_IsActive === null)
-            throw new globalThis.Error("The parameter 'filter_IsActive' cannot be null.");
-        else if (filter_IsActive !== undefined)
-            url_ += "Filter.IsActive=" + encodeURIComponent("" + filter_IsActive) + "&";
-        if (filter_CustomerName === null)
-            throw new globalThis.Error("The parameter 'filter_CustomerName' cannot be null.");
-        else if (filter_CustomerName !== undefined)
-            url_ += "Filter.CustomerName=" + encodeURIComponent("" + filter_CustomerName) + "&";
-        if (filter_CustomerEmail === null)
-            throw new globalThis.Error("The parameter 'filter_CustomerEmail' cannot be null.");
-        else if (filter_CustomerEmail !== undefined)
-            url_ += "Filter.CustomerEmail=" + encodeURIComponent("" + filter_CustomerEmail) + "&";
-        if (filter_CustomerPhone === null)
-            throw new globalThis.Error("The parameter 'filter_CustomerPhone' cannot be null.");
-        else if (filter_CustomerPhone !== undefined)
-            url_ += "Filter.CustomerPhone=" + encodeURIComponent("" + filter_CustomerPhone) + "&";
-        if (filter_DisplayOrderNumber === null)
-            throw new globalThis.Error("The parameter 'filter_DisplayOrderNumber' cannot be null.");
-        else if (filter_DisplayOrderNumber !== undefined)
-            url_ += "Filter.DisplayOrderNumber=" + encodeURIComponent("" + filter_DisplayOrderNumber) + "&";
-        if (filter_EmployeeId === null)
-            throw new globalThis.Error("The parameter 'filter_EmployeeId' cannot be null.");
-        else if (filter_EmployeeId !== undefined)
-            url_ += "Filter.EmployeeId=" + encodeURIComponent("" + filter_EmployeeId) + "&";
-        if (filter_CleaningDateFrom === null)
-            throw new globalThis.Error("The parameter 'filter_CleaningDateFrom' cannot be null.");
-        else if (filter_CleaningDateFrom !== undefined)
-            url_ += "Filter.CleaningDateFrom=" + encodeURIComponent(filter_CleaningDateFrom ? "" + filter_CleaningDateFrom.toISOString() : "") + "&";
-        if (filter_CleaningDateTo === null)
-            throw new globalThis.Error("The parameter 'filter_CleaningDateTo' cannot be null.");
-        else if (filter_CleaningDateTo !== undefined)
-            url_ += "Filter.CleaningDateTo=" + encodeURIComponent(filter_CleaningDateTo ? "" + filter_CleaningDateTo.toISOString() : "") + "&";
-        if (filter_PaymentStatuses === null)
-            throw new globalThis.Error("The parameter 'filter_PaymentStatuses' cannot be null.");
-        else if (filter_PaymentStatuses !== undefined)
-            filter_PaymentStatuses && filter_PaymentStatuses.forEach(item => { url_ += "Filter.PaymentStatuses=" + encodeURIComponent("" + item) + "&"; });
-        if (filter_PaymentTypes === null)
-            throw new globalThis.Error("The parameter 'filter_PaymentTypes' cannot be null.");
-        else if (filter_PaymentTypes !== undefined)
-            filter_PaymentTypes && filter_PaymentTypes.forEach(item => { url_ += "Filter.PaymentTypes=" + encodeURIComponent("" + item) + "&"; });
-        if (filter_MinTotalPrice === null)
-            throw new globalThis.Error("The parameter 'filter_MinTotalPrice' cannot be null.");
-        else if (filter_MinTotalPrice !== undefined)
-            url_ += "Filter.MinTotalPrice=" + encodeURIComponent("" + filter_MinTotalPrice) + "&";
-        if (filter_MaxTotalPrice === null)
-            throw new globalThis.Error("The parameter 'filter_MaxTotalPrice' cannot be null.");
-        else if (filter_MaxTotalPrice !== undefined)
-            url_ += "Filter.MaxTotalPrice=" + encodeURIComponent("" + filter_MaxTotalPrice) + "&";
-        if (filter_OrderStatuses === null)
-            throw new globalThis.Error("The parameter 'filter_OrderStatuses' cannot be null.");
-        else if (filter_OrderStatuses !== undefined)
-            filter_OrderStatuses && filter_OrderStatuses.forEach(item => { url_ += "Filter.OrderStatuses=" + encodeURIComponent("" + item) + "&"; });
-        if (filter_HasAvailableSpots === null)
-            throw new globalThis.Error("The parameter 'filter_HasAvailableSpots' cannot be null.");
-        else if (filter_HasAvailableSpots !== undefined)
-            url_ += "Filter.HasAvailableSpots=" + encodeURIComponent("" + filter_HasAvailableSpots) + "&";
-        if (filter_IsUnassigned === null)
-            throw new globalThis.Error("The parameter 'filter_IsUnassigned' cannot be null.");
-        else if (filter_IsUnassigned !== undefined)
-            url_ += "Filter.IsUnassigned=" + encodeURIComponent("" + filter_IsUnassigned) + "&";
-        if (filter_ExcludeEmployeeId === null)
-            throw new globalThis.Error("The parameter 'filter_ExcludeEmployeeId' cannot be null.");
-        else if (filter_ExcludeEmployeeId !== undefined)
-            url_ += "Filter.ExcludeEmployeeId=" + encodeURIComponent("" + filter_ExcludeEmployeeId) + "&";
+    getPaged(id?: string | undefined, isActive?: boolean | undefined, customerName?: string | undefined, customerEmail?: string | undefined, customerPhone?: string | undefined, displayOrderNumber?: string | undefined, employeeId?: string | undefined, cleaningDateFrom?: Date | undefined, cleaningDateTo?: Date | undefined, paymentStatuses?: PaymentStatus[] | undefined, paymentTypes?: PaymentType[] | undefined, minTotalPrice?: number | undefined, maxTotalPrice?: number | undefined, orderStatuses?: OrderStatus[] | undefined, hasAvailableSpots?: boolean | undefined, isUnassigned?: boolean | undefined, excludeEmployeeId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfOrderListItem> {
+        let url = this.baseUrl + "/api/Order/GetPaged?";
+        if (id === null)
+            throw new globalThis.Error("The parameter 'id' cannot be null.");
+        else if (id !== undefined)
+            url += "Filter.Id=" + encodeURIComponent("" + id) + "&";
+        if (isActive === null)
+            throw new globalThis.Error("The parameter 'isActive' cannot be null.");
+        else if (isActive !== undefined)
+            url += "Filter.IsActive=" + encodeURIComponent("" + isActive) + "&";
+        if (customerName === null)
+            throw new globalThis.Error("The parameter 'customerName' cannot be null.");
+        else if (customerName !== undefined)
+            url += "Filter.CustomerName=" + encodeURIComponent("" + customerName) + "&";
+        if (customerEmail === null)
+            throw new globalThis.Error("The parameter 'customerEmail' cannot be null.");
+        else if (customerEmail !== undefined)
+            url += "Filter.CustomerEmail=" + encodeURIComponent("" + customerEmail) + "&";
+        if (customerPhone === null)
+            throw new globalThis.Error("The parameter 'customerPhone' cannot be null.");
+        else if (customerPhone !== undefined)
+            url += "Filter.CustomerPhone=" + encodeURIComponent("" + customerPhone) + "&";
+        if (displayOrderNumber === null)
+            throw new globalThis.Error("The parameter 'displayOrderNumber' cannot be null.");
+        else if (displayOrderNumber !== undefined)
+            url += "Filter.DisplayOrderNumber=" + encodeURIComponent("" + displayOrderNumber) + "&";
+        if (employeeId === null)
+            throw new globalThis.Error("The parameter 'employeeId' cannot be null.");
+        else if (employeeId !== undefined)
+            url += "Filter.EmployeeId=" + encodeURIComponent("" + employeeId) + "&";
+        if (cleaningDateFrom === null)
+            throw new globalThis.Error("The parameter 'cleaningDateFrom' cannot be null.");
+        else if (cleaningDateFrom !== undefined)
+            url += "Filter.CleaningDateFrom=" + encodeURIComponent(cleaningDateFrom ? "" + cleaningDateFrom.toISOString() : "") + "&";
+        if (cleaningDateTo === null)
+            throw new globalThis.Error("The parameter 'cleaningDateTo' cannot be null.");
+        else if (cleaningDateTo !== undefined)
+            url += "Filter.CleaningDateTo=" + encodeURIComponent(cleaningDateTo ? "" + cleaningDateTo.toISOString() : "") + "&";
+        if (paymentStatuses === null)
+            throw new globalThis.Error("The parameter 'paymentStatuses' cannot be null.");
+        else if (paymentStatuses !== undefined)
+            paymentStatuses && paymentStatuses.forEach(item => { url += "Filter.PaymentStatuses=" + encodeURIComponent("" + item) + "&"; });
+        if (paymentTypes === null)
+            throw new globalThis.Error("The parameter 'paymentTypes' cannot be null.");
+        else if (paymentTypes !== undefined)
+            paymentTypes && paymentTypes.forEach(item => { url += "Filter.PaymentTypes=" + encodeURIComponent("" + item) + "&"; });
+        if (minTotalPrice === null)
+            throw new globalThis.Error("The parameter 'minTotalPrice' cannot be null.");
+        else if (minTotalPrice !== undefined)
+            url += "Filter.MinTotalPrice=" + encodeURIComponent("" + minTotalPrice) + "&";
+        if (maxTotalPrice === null)
+            throw new globalThis.Error("The parameter 'maxTotalPrice' cannot be null.");
+        else if (maxTotalPrice !== undefined)
+            url += "Filter.MaxTotalPrice=" + encodeURIComponent("" + maxTotalPrice) + "&";
+        if (orderStatuses === null)
+            throw new globalThis.Error("The parameter 'orderStatuses' cannot be null.");
+        else if (orderStatuses !== undefined)
+            orderStatuses && orderStatuses.forEach(item => { url += "Filter.OrderStatuses=" + encodeURIComponent("" + item) + "&"; });
+        if (hasAvailableSpots === null)
+            throw new globalThis.Error("The parameter 'hasAvailableSpots' cannot be null.");
+        else if (hasAvailableSpots !== undefined)
+            url += "Filter.HasAvailableSpots=" + encodeURIComponent("" + hasAvailableSpots) + "&";
+        if (isUnassigned === null)
+            throw new globalThis.Error("The parameter 'isUnassigned' cannot be null.");
+        else if (isUnassigned !== undefined)
+            url += "Filter.IsUnassigned=" + encodeURIComponent("" + isUnassigned) + "&";
+        if (excludeEmployeeId === null)
+            throw new globalThis.Error("The parameter 'excludeEmployeeId' cannot be null.");
+        else if (excludeEmployeeId !== undefined)
+            url += "Filter.ExcludeEmployeeId=" + encodeURIComponent("" + excludeEmployeeId) + "&";
         if (sort === null)
             throw new globalThis.Error("The parameter 'sort' cannot be null.");
         else if (sort !== undefined)
             sort && sort.forEach((item, index) => {
                 for (const attr in item)
         			if (item.hasOwnProperty(attr)) {
-        				url_ += "Sort[" + index + "]." + attr + "=" + encodeURIComponent("" + (item as any)[attr]) + "&";
+        				url += "Sort[" + index + "]." + attr + "=" + encodeURIComponent("" + (item as any)[attr]) + "&";
         			}
             });
         if (offset === null)
             throw new globalThis.Error("The parameter 'offset' cannot be null.");
         else if (offset !== undefined)
-            url_ += "Offset=" + encodeURIComponent("" + offset) + "&";
+            url += "Offset=" + encodeURIComponent("" + offset) + "&";
         if (limit === null)
             throw new globalThis.Error("The parameter 'limit' cannot be null.");
         else if (limit !== undefined)
-            url_ += "Limit=" + encodeURIComponent("" + limit) + "&";
-        url_ = url_.replace(/[?&]$/, "");
+            url += "Limit=" + encodeURIComponent("" + limit) + "&";
+        url = url.replace(/[?&]$/, "");
 
-        let options_ : any = {
+        let options : any = {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -1983,17 +1983,17 @@ export class OrderClient implements IOrderClient {
             })
         };
 
-        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processGetPaged(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetPaged(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processGetPaged(response_ as any);
+                    return this.processGetPaged(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<PagedDataOfOrderListItem>;
+                    return ObservableThrow(e) as any as Observable<PagedDataOfOrderListItem>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<PagedDataOfOrderListItem>;
+                return ObservableThrow(response) as any as Observable<PagedDataOfOrderListItem>;
         }));
     }
 
@@ -2003,41 +2003,41 @@ export class OrderClient implements IOrderClient {
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = PagedDataOfOrderListItem.fromJS(resultData200);
-            return _observableOf(result200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status === 401) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result401: any = null;
-            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
             }));
         } else if (status === 403) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result403: any = null;
-            let resultData403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, _responseText, _headers, result403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 
     /**
@@ -2045,14 +2045,14 @@ export class OrderClient implements IOrderClient {
      * @return OK
      */
     getById(orderId?: string | undefined): Observable<OrderItem> {
-        let url_ = this.baseUrl + "/api/Order/GetById?";
+        let url = this.baseUrl + "/api/Order/GetById?";
         if (orderId === null)
             throw new globalThis.Error("The parameter 'orderId' cannot be null.");
         else if (orderId !== undefined)
-            url_ += "OrderId=" + encodeURIComponent("" + orderId) + "&";
-        url_ = url_.replace(/[?&]$/, "");
+            url += "OrderId=" + encodeURIComponent("" + orderId) + "&";
+        url = url.replace(/[?&]$/, "");
 
-        let options_ : any = {
+        let options : any = {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -2060,17 +2060,17 @@ export class OrderClient implements IOrderClient {
             })
         };
 
-        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processGetById(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetById(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processGetById(response_ as any);
+                    return this.processGetById(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<OrderItem>;
+                    return ObservableThrow(e) as any as Observable<OrderItem>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<OrderItem>;
+                return ObservableThrow(response) as any as Observable<OrderItem>;
         }));
     }
 
@@ -2080,41 +2080,41 @@ export class OrderClient implements IOrderClient {
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = OrderItem.fromJS(resultData200);
-            return _observableOf(result200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status === 401) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result401: any = null;
-            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
             }));
         } else if (status === 403) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result403: any = null;
-            let resultData403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, _responseText, _headers, result403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 
     /**
@@ -2122,14 +2122,14 @@ export class OrderClient implements IOrderClient {
      * @return OK
      */
     downloadReceipt(orderId?: string | undefined): Observable<FileResponse> {
-        let url_ = this.baseUrl + "/api/Order/DownloadReceipt?";
+        let url = this.baseUrl + "/api/Order/DownloadReceipt?";
         if (orderId === null)
             throw new globalThis.Error("The parameter 'orderId' cannot be null.");
         else if (orderId !== undefined)
-            url_ += "OrderId=" + encodeURIComponent("" + orderId) + "&";
-        url_ = url_.replace(/[?&]$/, "");
+            url += "OrderId=" + encodeURIComponent("" + orderId) + "&";
+        url = url.replace(/[?&]$/, "");
 
-        let options_ : any = {
+        let options : any = {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -2137,17 +2137,17 @@ export class OrderClient implements IOrderClient {
             })
         };
 
-        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processDownloadReceipt(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processDownloadReceipt(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processDownloadReceipt(response_ as any);
+                    return this.processDownloadReceipt(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<FileResponse>;
+                    return ObservableThrow(e) as any as Observable<FileResponse>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<FileResponse>;
+                return ObservableThrow(response) as any as Observable<FileResponse>;
         }));
     }
 
@@ -2157,7 +2157,7 @@ export class OrderClient implements IOrderClient {
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200 || status === 206) {
             const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
             let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
@@ -2168,49 +2168,49 @@ export class OrderClient implements IOrderClient {
                 fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
                 fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
             }
-            return _observableOf({ fileName: fileName, data: responseBlob as any, status: status, headers: _headers });
+            return ObservableOf({ fileName: fileName, data: responseBlob as any, status: status, headers: Headers });
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status === 401) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result401: any = null;
-            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
             }));
         } else if (status === 403) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result403: any = null;
-            let resultData403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, _responseText, _headers, result403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 
     /**
      * @param orderId (optional) 
      * @return OK
      */
-    getPhotos(orderId?: string | undefined): Observable<GetOrderPhotos_Response> {
-        let url_ = this.baseUrl + "/api/Order/GetPhotos?";
+    getPhotos(orderId?: string | undefined): Observable<GetOrderPhotosResponse> {
+        let url = this.baseUrl + "/api/Order/GetPhotos?";
         if (orderId === null)
             throw new globalThis.Error("The parameter 'orderId' cannot be null.");
         else if (orderId !== undefined)
-            url_ += "OrderId=" + encodeURIComponent("" + orderId) + "&";
-        url_ = url_.replace(/[?&]$/, "");
+            url += "OrderId=" + encodeURIComponent("" + orderId) + "&";
+        url = url.replace(/[?&]$/, "");
 
-        let options_ : any = {
+        let options : any = {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -2218,75 +2218,75 @@ export class OrderClient implements IOrderClient {
             })
         };
 
-        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processGetPhotos(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetPhotos(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processGetPhotos(response_ as any);
+                    return this.processGetPhotos(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<GetOrderPhotos_Response>;
+                    return ObservableThrow(e) as any as Observable<GetOrderPhotosResponse>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<GetOrderPhotos_Response>;
+                return ObservableThrow(response) as any as Observable<GetOrderPhotosResponse>;
         }));
     }
 
-    protected processGetPhotos(response: HttpResponseBase): Observable<GetOrderPhotos_Response> {
+    protected processGetPhotos(response: HttpResponseBase): Observable<GetOrderPhotosResponse> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = GetOrderPhotos_Response.fromJS(resultData200);
-            return _observableOf(result200);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = GetOrderPhotosResponse.fromJS(resultData200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status === 401) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result401: any = null;
-            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
             }));
         } else if (status === 403) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result403: any = null;
-            let resultData403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, _responseText, _headers, result403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 
     /**
      * @param body (optional) 
      * @return OK
      */
-    submitReview(body?: SubmitOrderReview_Command | undefined): Observable<OrderReviewDto> {
-        let url_ = this.baseUrl + "/api/Order/SubmitReview";
-        url_ = url_.replace(/[?&]$/, "");
+    submitReview(body?: SubmitOrderReviewCommand | undefined): Observable<OrderReviewDto> {
+        let url = this.baseUrl + "/api/Order/SubmitReview";
+        url = url.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(body);
+        const content = JSON.stringify(body);
 
-        let options_ : any = {
-            body: content_,
+        let options : any = {
+            body: content,
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -2295,17 +2295,17 @@ export class OrderClient implements IOrderClient {
             })
         };
 
-        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processSubmitReview(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processSubmitReview(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processSubmitReview(response_ as any);
+                    return this.processSubmitReview(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<OrderReviewDto>;
+                    return ObservableThrow(e) as any as Observable<OrderReviewDto>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<OrderReviewDto>;
+                return ObservableThrow(response) as any as Observable<OrderReviewDto>;
         }));
     }
 
@@ -2315,55 +2315,55 @@ export class OrderClient implements IOrderClient {
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = OrderReviewDto.fromJS(resultData200);
-            return _observableOf(result200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status === 401) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result401: any = null;
-            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
             }));
         } else if (status === 403) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result403: any = null;
-            let resultData403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, _responseText, _headers, result403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 
     /**
      * @param body (optional) 
      * @return OK
      */
-    reportIssue(body?: ReportOrderIssue_Command | undefined): Observable<ReportOrderIssue_Response> {
-        let url_ = this.baseUrl + "/api/Order/ReportIssue";
-        url_ = url_.replace(/[?&]$/, "");
+    reportIssue(body?: ReportOrderIssueCommand | undefined): Observable<ReportOrderIssueResponse> {
+        let url = this.baseUrl + "/api/Order/ReportIssue";
+        url = url.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(body);
+        const content = JSON.stringify(body);
 
-        let options_ : any = {
-            body: content_,
+        let options : any = {
+            body: content,
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -2372,61 +2372,61 @@ export class OrderClient implements IOrderClient {
             })
         };
 
-        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processReportIssue(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processReportIssue(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processReportIssue(response_ as any);
+                    return this.processReportIssue(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<ReportOrderIssue_Response>;
+                    return ObservableThrow(e) as any as Observable<ReportOrderIssueResponse>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<ReportOrderIssue_Response>;
+                return ObservableThrow(response) as any as Observable<ReportOrderIssueResponse>;
         }));
     }
 
-    protected processReportIssue(response: HttpResponseBase): Observable<ReportOrderIssue_Response> {
+    protected processReportIssue(response: HttpResponseBase): Observable<ReportOrderIssueResponse> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ReportOrderIssue_Response.fromJS(resultData200);
-            return _observableOf(result200);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = ReportOrderIssueResponse.fromJS(resultData200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status === 401) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result401: any = null;
-            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
             }));
         } else if (status === 403) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result403: any = null;
-            let resultData403 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result403 = ProblemDetails.fromJS(resultData403);
-            return throwException("Forbidden", status, _responseText, _headers, result403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 }
 
@@ -2445,7 +2445,7 @@ export class PackageClient implements IPackageClient {
     private baseUrl: string;
     protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
 
-    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMER_API_BASE_URL) baseUrl?: string) {
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMERAPIBASEURL) baseUrl?: string) {
         this.http = http;
         this.baseUrl = baseUrl ?? "";
     }
@@ -2454,10 +2454,10 @@ export class PackageClient implements IPackageClient {
      * @return OK
      */
     getOverview(): Observable<PackageListItem[]> {
-        let url_ = this.baseUrl + "/api/Package/GetOverview";
-        url_ = url_.replace(/[?&]$/, "");
+        let url = this.baseUrl + "/api/Package/GetOverview";
+        url = url.replace(/[?&]$/, "");
 
-        let options_ : any = {
+        let options : any = {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -2465,17 +2465,17 @@ export class PackageClient implements IPackageClient {
             })
         };
 
-        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processGetOverview(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetOverview(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processGetOverview(response_ as any);
+                    return this.processGetOverview(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<PackageListItem[]>;
+                    return ObservableThrow(e) as any as Observable<PackageListItem[]>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<PackageListItem[]>;
+                return ObservableThrow(response) as any as Observable<PackageListItem[]>;
         }));
     }
 
@@ -2485,11 +2485,11 @@ export class PackageClient implements IPackageClient {
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             if (Array.isArray(resultData200)) {
                 result200 = [] as any;
                 for (let item of resultData200)
@@ -2498,21 +2498,21 @@ export class PackageClient implements IPackageClient {
             else {
                 result200 = null as any;
             }
-            return _observableOf(result200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 }
 
@@ -2521,7 +2521,7 @@ export interface IPaymentClient {
      * @param body (optional) 
      * @return OK
      */
-    createOrder(body?: CreateOrder_Command | undefined): Observable<CreateOrder_Response>;
+    createOrder(body?: CreateOrderCommand | undefined): Observable<CreateOrderResponse>;
     /**
      * @return OK
      */
@@ -2536,7 +2536,7 @@ export class PaymentClient implements IPaymentClient {
     private baseUrl: string;
     protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
 
-    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMER_API_BASE_URL) baseUrl?: string) {
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMERAPIBASEURL) baseUrl?: string) {
         this.http = http;
         this.baseUrl = baseUrl ?? "";
     }
@@ -2545,14 +2545,14 @@ export class PaymentClient implements IPaymentClient {
      * @param body (optional) 
      * @return OK
      */
-    createOrder(body?: CreateOrder_Command | undefined): Observable<CreateOrder_Response> {
-        let url_ = this.baseUrl + "/api/Payment/CreateOrder";
-        url_ = url_.replace(/[?&]$/, "");
+    createOrder(body?: CreateOrderCommand | undefined): Observable<CreateOrderResponse> {
+        let url = this.baseUrl + "/api/Payment/CreateOrder";
+        url = url.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(body);
+        const content = JSON.stringify(body);
 
-        let options_ : any = {
-            body: content_,
+        let options : any = {
+            body: content,
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -2561,57 +2561,57 @@ export class PaymentClient implements IPaymentClient {
             })
         };
 
-        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processCreateOrder(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processCreateOrder(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processCreateOrder(response_ as any);
+                    return this.processCreateOrder(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<CreateOrder_Response>;
+                    return ObservableThrow(e) as any as Observable<CreateOrderResponse>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<CreateOrder_Response>;
+                return ObservableThrow(response) as any as Observable<CreateOrderResponse>;
         }));
     }
 
-    protected processCreateOrder(response: HttpResponseBase): Observable<CreateOrder_Response> {
+    protected processCreateOrder(response: HttpResponseBase): Observable<CreateOrderResponse> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = CreateOrder_Response.fromJS(resultData200);
-            return _observableOf(result200);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = CreateOrderResponse.fromJS(resultData200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 
     /**
      * @return OK
      */
     webhook(): Observable<string> {
-        let url_ = this.baseUrl + "/api/Payment/webhook";
-        url_ = url_.replace(/[?&]$/, "");
+        let url = this.baseUrl + "/api/Payment/webhook";
+        url = url.replace(/[?&]$/, "");
 
-        let options_ : any = {
+        let options : any = {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -2619,17 +2619,17 @@ export class PaymentClient implements IPaymentClient {
             })
         };
 
-        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processWebhook(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processWebhook(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processWebhook(response_ as any);
+                    return this.processWebhook(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<string>;
+                    return ObservableThrow(e) as any as Observable<string>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<string>;
+                return ObservableThrow(response) as any as Observable<string>;
         }));
     }
 
@@ -2639,28 +2639,28 @@ export class PaymentClient implements IPaymentClient {
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
                 result200 = resultData200 !== undefined ? resultData200 : null as any;
     
-            return _observableOf(result200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 }
 
@@ -2679,7 +2679,7 @@ export class ServiceClient implements IServiceClient {
     private baseUrl: string;
     protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
 
-    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMER_API_BASE_URL) baseUrl?: string) {
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMERAPIBASEURL) baseUrl?: string) {
         this.http = http;
         this.baseUrl = baseUrl ?? "";
     }
@@ -2688,10 +2688,10 @@ export class ServiceClient implements IServiceClient {
      * @return OK
      */
     getOverview(): Observable<ServiceListItem[]> {
-        let url_ = this.baseUrl + "/api/Service/GetOverview";
-        url_ = url_.replace(/[?&]$/, "");
+        let url = this.baseUrl + "/api/Service/GetOverview";
+        url = url.replace(/[?&]$/, "");
 
-        let options_ : any = {
+        let options : any = {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -2699,17 +2699,17 @@ export class ServiceClient implements IServiceClient {
             })
         };
 
-        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processGetOverview(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetOverview(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processGetOverview(response_ as any);
+                    return this.processGetOverview(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<ServiceListItem[]>;
+                    return ObservableThrow(e) as any as Observable<ServiceListItem[]>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<ServiceListItem[]>;
+                return ObservableThrow(response) as any as Observable<ServiceListItem[]>;
         }));
     }
 
@@ -2719,11 +2719,11 @@ export class ServiceClient implements IServiceClient {
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             if (Array.isArray(resultData200)) {
                 result200 = [] as any;
                 for (let item of resultData200)
@@ -2732,21 +2732,21 @@ export class ServiceClient implements IServiceClient {
             else {
                 result200 = null as any;
             }
-            return _observableOf(result200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 }
 
@@ -2755,22 +2755,22 @@ export interface IUserClient {
      * @param query (optional) 
      * @return OK
      */
-    getCurrent(query?: GetCurrentUser_Query | undefined): Observable<UserListItem>;
+    getCurrent(query?: GetCurrentUserQuery | undefined): Observable<UserListItem>;
     /**
      * @param body (optional) 
      * @return OK
      */
-    updateCurrentUser(body?: UpdateCurrentUser_Command | undefined): Observable<UpdateCurrentUser_Response>;
+    updateCurrentUser(body?: UpdateCurrentUserCommand | undefined): Observable<UpdateCurrentUserResponse>;
     /**
      * @param body (optional) 
      * @return OK
      */
-    requestPasswordChange(body?: RequestPasswordChange_Command | undefined): Observable<void>;
+    requestPasswordChange(body?: RequestPasswordChangeCommand | undefined): Observable<void>;
     /**
      * @param body (optional) 
      * @return OK
      */
-    changePassword(body?: ChangePassword_Command | undefined): Observable<ChangePassword_Response>;
+    changePassword(body?: ChangePasswordCommand | undefined): Observable<ChangePasswordResponse>;
 }
 
 @Injectable({
@@ -2781,7 +2781,7 @@ export class UserClient implements IUserClient {
     private baseUrl: string;
     protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
 
-    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMER_API_BASE_URL) baseUrl?: string) {
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMERAPIBASEURL) baseUrl?: string) {
         this.http = http;
         this.baseUrl = baseUrl ?? "";
     }
@@ -2790,15 +2790,15 @@ export class UserClient implements IUserClient {
      * @param query (optional) 
      * @return OK
      */
-    getCurrent(query?: GetCurrentUser_Query | undefined): Observable<UserListItem> {
-        let url_ = this.baseUrl + "/api/User/GetCurrent?";
+    getCurrent(query?: GetCurrentUserQuery | undefined): Observable<UserListItem> {
+        let url = this.baseUrl + "/api/User/GetCurrent?";
         if (query === null)
             throw new globalThis.Error("The parameter 'query' cannot be null.");
         else if (query !== undefined)
-            url_ += "query=" + encodeURIComponent("" + query) + "&";
-        url_ = url_.replace(/[?&]$/, "");
+            url += "query=" + encodeURIComponent("" + query) + "&";
+        url = url.replace(/[?&]$/, "");
 
-        let options_ : any = {
+        let options : any = {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -2806,17 +2806,17 @@ export class UserClient implements IUserClient {
             })
         };
 
-        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processGetCurrent(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetCurrent(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processGetCurrent(response_ as any);
+                    return this.processGetCurrent(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<UserListItem>;
+                    return ObservableThrow(e) as any as Observable<UserListItem>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<UserListItem>;
+                return ObservableThrow(response) as any as Observable<UserListItem>;
         }));
     }
 
@@ -2826,41 +2826,41 @@ export class UserClient implements IUserClient {
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = UserListItem.fromJS(resultData200);
-            return _observableOf(result200);
+            return ObservableOf(result200);
             }));
         } else if (status === 401) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result401: any = null;
-            let resultData401 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result401 = ProblemDetails.fromJS(resultData401);
-            return throwException("Unauthorized", status, _responseText, _headers, result401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 
     /**
      * @param body (optional) 
      * @return OK
      */
-    updateCurrentUser(body?: UpdateCurrentUser_Command | undefined): Observable<UpdateCurrentUser_Response> {
-        let url_ = this.baseUrl + "/api/User/UpdateCurrentUser";
-        url_ = url_.replace(/[?&]$/, "");
+    updateCurrentUser(body?: UpdateCurrentUserCommand | undefined): Observable<UpdateCurrentUserResponse> {
+        let url = this.baseUrl + "/api/User/UpdateCurrentUser";
+        url = url.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(body);
+        const content = JSON.stringify(body);
 
-        let options_ : any = {
-            body: content_,
+        let options : any = {
+            body: content,
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -2869,61 +2869,61 @@ export class UserClient implements IUserClient {
             })
         };
 
-        return this.http.request("put", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processUpdateCurrentUser(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("put", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processUpdateCurrentUser(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processUpdateCurrentUser(response_ as any);
+                    return this.processUpdateCurrentUser(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<UpdateCurrentUser_Response>;
+                    return ObservableThrow(e) as any as Observable<UpdateCurrentUserResponse>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<UpdateCurrentUser_Response>;
+                return ObservableThrow(response) as any as Observable<UpdateCurrentUserResponse>;
         }));
     }
 
-    protected processUpdateCurrentUser(response: HttpResponseBase): Observable<UpdateCurrentUser_Response> {
+    protected processUpdateCurrentUser(response: HttpResponseBase): Observable<UpdateCurrentUserResponse> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = UpdateCurrentUser_Response.fromJS(resultData200);
-            return _observableOf(result200);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = UpdateCurrentUserResponse.fromJS(resultData200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 
     /**
      * @param body (optional) 
      * @return OK
      */
-    requestPasswordChange(body?: RequestPasswordChange_Command | undefined): Observable<void> {
-        let url_ = this.baseUrl + "/api/User/RequestPasswordChange";
-        url_ = url_.replace(/[?&]$/, "");
+    requestPasswordChange(body?: RequestPasswordChangeCommand | undefined): Observable<void> {
+        let url = this.baseUrl + "/api/User/RequestPasswordChange";
+        url = url.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(body);
+        const content = JSON.stringify(body);
 
-        let options_ : any = {
-            body: content_,
+        let options : any = {
+            body: content,
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -2931,17 +2931,17 @@ export class UserClient implements IUserClient {
             })
         };
 
-        return this.http.request("put", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processRequestPasswordChange(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("put", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processRequestPasswordChange(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processRequestPasswordChange(response_ as any);
+                    return this.processRequestPasswordChange(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<void>;
+                    return ObservableThrow(e) as any as Observable<void>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<void>;
+                return ObservableThrow(response) as any as Observable<void>;
         }));
     }
 
@@ -2951,38 +2951,38 @@ export class UserClient implements IUserClient {
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return _observableOf(null as any);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return ObservableOf(null as any);
             }));
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 
     /**
      * @param body (optional) 
      * @return OK
      */
-    changePassword(body?: ChangePassword_Command | undefined): Observable<ChangePassword_Response> {
-        let url_ = this.baseUrl + "/api/User/ChangePassword";
-        url_ = url_.replace(/[?&]$/, "");
+    changePassword(body?: ChangePasswordCommand | undefined): Observable<ChangePasswordResponse> {
+        let url = this.baseUrl + "/api/User/ChangePassword";
+        url = url.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(body);
+        const content = JSON.stringify(body);
 
-        let options_ : any = {
-            body: content_,
+        let options : any = {
+            body: content,
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
@@ -2991,56 +2991,56 @@ export class UserClient implements IUserClient {
             })
         };
 
-        return this.http.request("put", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processChangePassword(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
+        return this.http.request("put", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processChangePassword(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
                 try {
-                    return this.processChangePassword(response_ as any);
+                    return this.processChangePassword(response as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<ChangePassword_Response>;
+                    return ObservableThrow(e) as any as Observable<ChangePasswordResponse>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<ChangePassword_Response>;
+                return ObservableThrow(response) as any as Observable<ChangePasswordResponse>;
         }));
     }
 
-    protected processChangePassword(response: HttpResponseBase): Observable<ChangePassword_Response> {
+    protected processChangePassword(response: HttpResponseBase): Observable<ChangePasswordResponse> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = ChangePassword_Response.fromJS(resultData200);
-            return _observableOf(result200);
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = ChangePasswordResponse.fromJS(resultData200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result400: any = null;
-            let resultData400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, _responseText, _headers, result400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
             }));
         }
-        return _observableOf(null as any);
+        return ObservableOf(null as any);
     }
 }
 
-export class AddDisputeMessage_Command implements IAddDisputeMessage_Command {
+export class AddDisputeMessageCommand implements IAddDisputeMessageCommand {
     disputeId!: string | undefined;
     message!: string | undefined;
     isStaffMessage!: boolean;
 
-    constructor(data?: IAddDisputeMessage_Command) {
+    constructor(data?: IAddDisputeMessageCommand) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -3049,17 +3049,17 @@ export class AddDisputeMessage_Command implements IAddDisputeMessage_Command {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.disputeId = _data["disputeId"];
-            this.message = _data["message"];
-            this.isStaffMessage = _data["isStaffMessage"];
+    init(Data?: any) {
+        if (Data) {
+            this.disputeId = Data["disputeId"];
+            this.message = Data["message"];
+            this.isStaffMessage = Data["isStaffMessage"];
         }
     }
 
-    static fromJS(data: any): AddDisputeMessage_Command {
+    static fromJS(data: any): AddDisputeMessageCommand {
         data = typeof data === 'object' ? data : {};
-        let result = new AddDisputeMessage_Command();
+        let result = new AddDisputeMessageCommand();
         result.init(data);
         return result;
     }
@@ -3073,7 +3073,7 @@ export class AddDisputeMessage_Command implements IAddDisputeMessage_Command {
     }
 }
 
-export interface IAddDisputeMessage_Command {
+export interface IAddDisputeMessageCommand {
     disputeId: string | undefined;
     message: string | undefined;
     isStaffMessage: boolean;
@@ -3095,13 +3095,13 @@ export class AddressDto implements IAddressDto {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.street = _data["street"];
-            this.city = _data["city"];
-            this.zipCode = _data["zipCode"];
-            this.countryId = _data["countryId"];
-            this.state = _data["state"];
+    init(Data?: any) {
+        if (Data) {
+            this.street = Data["street"];
+            this.city = Data["city"];
+            this.zipCode = Data["zipCode"];
+            this.countryId = Data["countryId"];
+            this.state = Data["state"];
         }
     }
 
@@ -3147,13 +3147,13 @@ export class AssignedEmployeeDto implements IAssignedEmployeeDto {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.employeeId = _data["employeeId"];
-            this.fullName = _data["fullName"];
-            this.phoneNumber = _data["phoneNumber"];
-            this.email = _data["email"];
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.employeeId = Data["employeeId"];
+            this.fullName = Data["fullName"];
+            this.phoneNumber = Data["phoneNumber"];
+            this.email = Data["email"];
         }
     }
 
@@ -3197,11 +3197,11 @@ export class BlobFileDto implements IBlobFileDto {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.fileName = _data["fileName"];
-            this.base64Content = _data["base64Content"];
-            this.contentType = _data["contentType"];
+    init(Data?: any) {
+        if (Data) {
+            this.fileName = Data["fileName"];
+            this.base64Content = Data["base64Content"];
+            this.contentType = Data["contentType"];
         }
     }
 
@@ -3227,12 +3227,12 @@ export interface IBlobFileDto {
     contentType: string | undefined;
 }
 
-export class ChangePassword_Command implements IChangePassword_Command {
+export class ChangePasswordCommand implements IChangePasswordCommand {
     email!: string | undefined;
     newPassword!: string | undefined;
     code!: string | undefined;
 
-    constructor(data?: IChangePassword_Command) {
+    constructor(data?: IChangePasswordCommand) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -3241,17 +3241,17 @@ export class ChangePassword_Command implements IChangePassword_Command {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.email = _data["email"];
-            this.newPassword = _data["newPassword"];
-            this.code = _data["code"];
+    init(Data?: any) {
+        if (Data) {
+            this.email = Data["email"];
+            this.newPassword = Data["newPassword"];
+            this.code = Data["code"];
         }
     }
 
-    static fromJS(data: any): ChangePassword_Command {
+    static fromJS(data: any): ChangePasswordCommand {
         data = typeof data === 'object' ? data : {};
-        let result = new ChangePassword_Command();
+        let result = new ChangePasswordCommand();
         result.init(data);
         return result;
     }
@@ -3265,16 +3265,16 @@ export class ChangePassword_Command implements IChangePassword_Command {
     }
 }
 
-export interface IChangePassword_Command {
+export interface IChangePasswordCommand {
     email: string | undefined;
     newPassword: string | undefined;
     code: string | undefined;
 }
 
-export class ChangePassword_Response implements IChangePassword_Response {
+export class ChangePasswordResponse implements IChangePasswordResponse {
     id!: string | undefined;
 
-    constructor(data?: IChangePassword_Response) {
+    constructor(data?: IChangePasswordResponse) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -3283,15 +3283,15 @@ export class ChangePassword_Response implements IChangePassword_Response {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
         }
     }
 
-    static fromJS(data: any): ChangePassword_Response {
+    static fromJS(data: any): ChangePasswordResponse {
         data = typeof data === 'object' ? data : {};
-        let result = new ChangePassword_Response();
+        let result = new ChangePasswordResponse();
         result.init(data);
         return result;
     }
@@ -3303,15 +3303,15 @@ export class ChangePassword_Response implements IChangePassword_Response {
     }
 }
 
-export interface IChangePassword_Response {
+export interface IChangePasswordResponse {
     id: string | undefined;
 }
 
-export class CheckFeatureFlag_Response implements ICheckFeatureFlag_Response {
+export class CheckFeatureFlagResponse implements ICheckFeatureFlagResponse {
     featureName!: string | undefined;
     isEnabled!: boolean;
 
-    constructor(data?: ICheckFeatureFlag_Response) {
+    constructor(data?: ICheckFeatureFlagResponse) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -3320,16 +3320,16 @@ export class CheckFeatureFlag_Response implements ICheckFeatureFlag_Response {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.featureName = _data["featureName"];
-            this.isEnabled = _data["isEnabled"];
+    init(Data?: any) {
+        if (Data) {
+            this.featureName = Data["featureName"];
+            this.isEnabled = Data["isEnabled"];
         }
     }
 
-    static fromJS(data: any): CheckFeatureFlag_Response {
+    static fromJS(data: any): CheckFeatureFlagResponse {
         data = typeof data === 'object' ? data : {};
-        let result = new CheckFeatureFlag_Response();
+        let result = new CheckFeatureFlagResponse();
         result.init(data);
         return result;
     }
@@ -3342,7 +3342,7 @@ export class CheckFeatureFlag_Response implements ICheckFeatureFlag_Response {
     }
 }
 
-export interface ICheckFeatureFlag_Response {
+export interface ICheckFeatureFlagResponse {
     featureName: string | undefined;
     isEnabled: boolean;
 }
@@ -3361,11 +3361,11 @@ export class Code implements ICode {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.type = _data["type"];
-            this.name = _data["name"];
-            this.value = _data["value"];
+    init(Data?: any) {
+        if (Data) {
+            this.type = Data["type"];
+            this.name = Data["name"];
+            this.value = Data["value"];
         }
     }
 
@@ -3391,10 +3391,10 @@ export interface ICode {
     value: number;
 }
 
-export class ConfirmUserEmail_Command implements IConfirmUserEmail_Command {
+export class ConfirmUserEmailCommand implements IConfirmUserEmailCommand {
     code!: string | undefined;
 
-    constructor(data?: IConfirmUserEmail_Command) {
+    constructor(data?: IConfirmUserEmailCommand) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -3403,15 +3403,15 @@ export class ConfirmUserEmail_Command implements IConfirmUserEmail_Command {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.code = _data["code"];
+    init(Data?: any) {
+        if (Data) {
+            this.code = Data["code"];
         }
     }
 
-    static fromJS(data: any): ConfirmUserEmail_Command {
+    static fromJS(data: any): ConfirmUserEmailCommand {
         data = typeof data === 'object' ? data : {};
-        let result = new ConfirmUserEmail_Command();
+        let result = new ConfirmUserEmailCommand();
         result.init(data);
         return result;
     }
@@ -3423,7 +3423,7 @@ export class ConfirmUserEmail_Command implements IConfirmUserEmail_Command {
     }
 }
 
-export interface IConfirmUserEmail_Command {
+export interface IConfirmUserEmailCommand {
     code: string | undefined;
 }
 
@@ -3457,16 +3457,16 @@ export class CountryListItem implements ICountryListItem {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.isoCode = _data["isoCode"];
-            this.name = _data["name"];
-            if (_data["translations"]) {
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.isoCode = Data["isoCode"];
+            this.name = Data["name"];
+            if (Data["translations"]) {
                 this.translations = {} as any;
-                for (let key in _data["translations"]) {
-                    if (_data["translations"].hasOwnProperty(key))
-                        (this.translations as any)![key] = _data["translations"][key] ? Translation.fromJS(_data["translations"][key]) : new Translation();
+                for (let key in Data["translations"]) {
+                    if (Data["translations"].hasOwnProperty(key))
+                        (this.translations as any)![key] = Data["translations"][key] ? Translation.fromJS(Data["translations"][key]) : new Translation();
                 }
             }
         }
@@ -3502,13 +3502,13 @@ export interface ICountryListItem {
     translations: { [key: string]: Translation; } | undefined;
 }
 
-export class CreateDispute_Command implements ICreateDispute_Command {
+export class CreateDisputeCommand implements ICreateDisputeCommand {
     orderId!: string | undefined;
     reason!: DisputeReason;
     description!: string | undefined;
     userId!: string | undefined;
 
-    constructor(data?: ICreateDispute_Command) {
+    constructor(data?: ICreateDisputeCommand) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -3517,18 +3517,18 @@ export class CreateDispute_Command implements ICreateDispute_Command {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.orderId = _data["orderId"];
-            this.reason = _data["reason"];
-            this.description = _data["description"];
-            this.userId = _data["userId"];
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.reason = Data["reason"];
+            this.description = Data["description"];
+            this.userId = Data["userId"];
         }
     }
 
-    static fromJS(data: any): CreateDispute_Command {
+    static fromJS(data: any): CreateDisputeCommand {
         data = typeof data === 'object' ? data : {};
-        let result = new CreateDispute_Command();
+        let result = new CreateDisputeCommand();
         result.init(data);
         return result;
     }
@@ -3543,14 +3543,14 @@ export class CreateDispute_Command implements ICreateDispute_Command {
     }
 }
 
-export interface ICreateDispute_Command {
+export interface ICreateDisputeCommand {
     orderId: string | undefined;
     reason: DisputeReason;
     description: string | undefined;
     userId: string | undefined;
 }
 
-export class CreateOrder_Command implements ICreateOrder_Command {
+export class CreateOrderCommand implements ICreateOrderCommand {
     customerName!: string | undefined;
     customerEmail!: string | undefined;
     customerPhone!: string | undefined;
@@ -3566,7 +3566,7 @@ export class CreateOrder_Command implements ICreateOrder_Command {
     totalPrice!: number;
     language!: string | undefined;
 
-    constructor(data?: ICreateOrder_Command) {
+    constructor(data?: ICreateOrderCommand) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -3575,42 +3575,42 @@ export class CreateOrder_Command implements ICreateOrder_Command {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.customerName = _data["customerName"];
-            this.customerEmail = _data["customerEmail"];
-            this.customerPhone = _data["customerPhone"];
-            this.customerAddress = _data["customerAddress"] ? AddressDto.fromJS(_data["customerAddress"]) : undefined as any;
-            if (Array.isArray(_data["selectedPackageIds"])) {
+    init(Data?: any) {
+        if (Data) {
+            this.customerName = Data["customerName"];
+            this.customerEmail = Data["customerEmail"];
+            this.customerPhone = Data["customerPhone"];
+            this.customerAddress = Data["customerAddress"] ? AddressDto.fromJS(Data["customerAddress"]) : undefined as any;
+            if (Array.isArray(Data["selectedPackageIds"])) {
                 this.selectedPackageIds = [] as any;
-                for (let item of _data["selectedPackageIds"])
+                for (let item of Data["selectedPackageIds"])
                     this.selectedPackageIds!.push(item);
             }
-            if (Array.isArray(_data["selectedServiceIds"])) {
+            if (Array.isArray(Data["selectedServiceIds"])) {
                 this.selectedServiceIds = [] as any;
-                for (let item of _data["selectedServiceIds"])
+                for (let item of Data["selectedServiceIds"])
                     this.selectedServiceIds!.push(item);
             }
-            this.rooms = _data["rooms"];
-            this.bathrooms = _data["bathrooms"];
-            if (_data["extras"]) {
+            this.rooms = Data["rooms"];
+            this.bathrooms = Data["bathrooms"];
+            if (Data["extras"]) {
                 this.extras = {} as any;
-                for (let key in _data["extras"]) {
-                    if (_data["extras"].hasOwnProperty(key))
-                        (this.extras as any)![key] = _data["extras"][key];
+                for (let key in Data["extras"]) {
+                    if (Data["extras"].hasOwnProperty(key))
+                        (this.extras as any)![key] = Data["extras"][key];
                 }
             }
-            this.cleaningDate = _data["cleaningDate"] ? new Date(_data["cleaningDate"].toString()) : undefined as any;
-            this.paymentType = _data["paymentType"];
-            this.currencyId = _data["currencyId"];
-            this.totalPrice = _data["totalPrice"];
-            this.language = _data["language"];
+            this.cleaningDate = Data["cleaningDate"] ? new Date(Data["cleaningDate"].toString()) : undefined as any;
+            this.paymentType = Data["paymentType"];
+            this.currencyId = Data["currencyId"];
+            this.totalPrice = Data["totalPrice"];
+            this.language = Data["language"];
         }
     }
 
-    static fromJS(data: any): CreateOrder_Command {
+    static fromJS(data: any): CreateOrderCommand {
         data = typeof data === 'object' ? data : {};
-        let result = new CreateOrder_Command();
+        let result = new CreateOrderCommand();
         result.init(data);
         return result;
     }
@@ -3649,7 +3649,7 @@ export class CreateOrder_Command implements ICreateOrder_Command {
     }
 }
 
-export interface ICreateOrder_Command {
+export interface ICreateOrderCommand {
     customerName: string | undefined;
     customerEmail: string | undefined;
     customerPhone: string | undefined;
@@ -3666,12 +3666,12 @@ export interface ICreateOrder_Command {
     language: string | undefined;
 }
 
-export class CreateOrder_Response implements ICreateOrder_Response {
+export class CreateOrderResponse implements ICreateOrderResponse {
     id!: string | undefined;
     confirmationCode!: string | undefined;
     stripeSessionId!: string | undefined;
 
-    constructor(data?: ICreateOrder_Response) {
+    constructor(data?: ICreateOrderResponse) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -3680,17 +3680,17 @@ export class CreateOrder_Response implements ICreateOrder_Response {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.confirmationCode = _data["confirmationCode"];
-            this.stripeSessionId = _data["stripeSessionId"];
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.confirmationCode = Data["confirmationCode"];
+            this.stripeSessionId = Data["stripeSessionId"];
         }
     }
 
-    static fromJS(data: any): CreateOrder_Response {
+    static fromJS(data: any): CreateOrderResponse {
         data = typeof data === 'object' ? data : {};
-        let result = new CreateOrder_Response();
+        let result = new CreateOrderResponse();
         result.init(data);
         return result;
     }
@@ -3704,7 +3704,7 @@ export class CreateOrder_Response implements ICreateOrder_Response {
     }
 }
 
-export interface ICreateOrder_Response {
+export interface ICreateOrderResponse {
     id: string | undefined;
     confirmationCode: string | undefined;
     stripeSessionId: string | undefined;
@@ -3727,14 +3727,14 @@ export class CurrencyDetailDto implements ICurrencyDetailDto {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.code = _data["code"];
-            this.name = _data["name"];
-            this.symbol = _data["symbol"];
-            this.exchangeRate = _data["exchangeRate"];
-            this.isDefault = _data["isDefault"];
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.code = Data["code"];
+            this.name = Data["name"];
+            this.symbol = Data["symbol"];
+            this.exchangeRate = Data["exchangeRate"];
+            this.isDefault = Data["isDefault"];
         }
     }
 
@@ -3783,14 +3783,14 @@ export class CurrencyListItem implements ICurrencyListItem {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.code = _data["code"];
-            this.symbol = _data["symbol"];
-            this.name = _data["name"];
-            this.exchangeRate = _data["exchangeRate"];
-            this.isDefault = _data["isDefault"];
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.code = Data["code"];
+            this.symbol = Data["symbol"];
+            this.name = Data["name"];
+            this.exchangeRate = Data["exchangeRate"];
+            this.isDefault = Data["isDefault"];
         }
     }
 
@@ -3853,36 +3853,36 @@ export class DisputeDetails implements IDisputeDetails {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.orderId = _data["orderId"];
-            this.displayOrderNumber = _data["displayOrderNumber"];
-            this.userId = _data["userId"];
-            this.customerName = _data["customerName"];
-            this.customerEmail = _data["customerEmail"];
-            this.reason = _data["reason"] ? Code.fromJS(_data["reason"]) : undefined as any;
-            this.description = _data["description"];
-            this.status = _data["status"] ? Code.fromJS(_data["status"]) : undefined as any;
-            this.resolutionNotes = _data["resolutionNotes"];
-            this.refundAmount = _data["refundAmount"];
-            this.resolvedBy = _data["resolvedBy"];
-            this.resolvedOn = _data["resolvedOn"] ? new Date(_data["resolvedOn"].toString()) : undefined as any;
-            this.stripeDisputeId = _data["stripeDisputeId"];
-            if (Array.isArray(_data["messages"])) {
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.orderId = Data["orderId"];
+            this.displayOrderNumber = Data["displayOrderNumber"];
+            this.userId = Data["userId"];
+            this.customerName = Data["customerName"];
+            this.customerEmail = Data["customerEmail"];
+            this.reason = Data["reason"] ? Code.fromJS(Data["reason"]) : undefined as any;
+            this.description = Data["description"];
+            this.status = Data["status"] ? Code.fromJS(Data["status"]) : undefined as any;
+            this.resolutionNotes = Data["resolutionNotes"];
+            this.refundAmount = Data["refundAmount"];
+            this.resolvedBy = Data["resolvedBy"];
+            this.resolvedOn = Data["resolvedOn"] ? new Date(Data["resolvedOn"].toString()) : undefined as any;
+            this.stripeDisputeId = Data["stripeDisputeId"];
+            if (Array.isArray(Data["messages"])) {
                 this.messages = [] as any;
-                for (let item of _data["messages"])
+                for (let item of Data["messages"])
                     this.messages!.push(DisputeMessageDto.fromJS(item));
             }
-            if (Array.isArray(_data["evidence"])) {
+            if (Array.isArray(Data["evidence"])) {
                 this.evidence = [] as any;
-                for (let item of _data["evidence"])
+                for (let item of Data["evidence"])
                     this.evidence!.push(DisputeEvidenceDto.fromJS(item));
             }
-            this.createdOn = _data["createdOn"] ? new Date(_data["createdOn"].toString()) : undefined as any;
-            this.createdBy = _data["createdBy"];
-            this.updatedOn = _data["updatedOn"] ? new Date(_data["updatedOn"].toString()) : undefined as any;
-            this.updatedBy = _data["updatedBy"];
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+            this.createdBy = Data["createdBy"];
+            this.updatedOn = Data["updatedOn"] ? new Date(Data["updatedOn"].toString()) : undefined as any;
+            this.updatedBy = Data["updatedBy"];
         }
     }
 
@@ -3966,13 +3966,13 @@ export class DisputeEvidenceDto implements IDisputeEvidenceDto {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.fileName = _data["fileName"];
-            this.filePath = _data["filePath"];
-            this.uploadedBy = _data["uploadedBy"];
-            this.uploadedOn = _data["uploadedOn"] ? new Date(_data["uploadedOn"].toString()) : undefined as any;
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.fileName = Data["fileName"];
+            this.filePath = Data["filePath"];
+            this.uploadedBy = Data["uploadedBy"];
+            this.uploadedOn = Data["uploadedOn"] ? new Date(Data["uploadedOn"].toString()) : undefined as any;
         }
     }
 
@@ -4023,18 +4023,18 @@ export class DisputeListItem implements IDisputeListItem {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.orderId = _data["orderId"];
-            this.displayOrderNumber = _data["displayOrderNumber"];
-            this.customerName = _data["customerName"];
-            this.customerEmail = _data["customerEmail"];
-            this.reason = _data["reason"] ? Code.fromJS(_data["reason"]) : undefined as any;
-            this.status = _data["status"] ? Code.fromJS(_data["status"]) : undefined as any;
-            this.createdOn = _data["createdOn"] ? new Date(_data["createdOn"].toString()) : undefined as any;
-            this.resolvedOn = _data["resolvedOn"] ? new Date(_data["resolvedOn"].toString()) : undefined as any;
-            this.refundAmount = _data["refundAmount"];
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.orderId = Data["orderId"];
+            this.displayOrderNumber = Data["displayOrderNumber"];
+            this.customerName = Data["customerName"];
+            this.customerEmail = Data["customerEmail"];
+            this.reason = Data["reason"] ? Code.fromJS(Data["reason"]) : undefined as any;
+            this.status = Data["status"] ? Code.fromJS(Data["status"]) : undefined as any;
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+            this.resolvedOn = Data["resolvedOn"] ? new Date(Data["resolvedOn"].toString()) : undefined as any;
+            this.refundAmount = Data["refundAmount"];
         }
     }
 
@@ -4091,14 +4091,14 @@ export class DisputeMessageDto implements IDisputeMessageDto {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.message = _data["message"];
-            this.authorId = _data["authorId"];
-            this.authorName = _data["authorName"];
-            this.isStaffMessage = _data["isStaffMessage"];
-            this.createdOn = _data["createdOn"] ? new Date(_data["createdOn"].toString()) : undefined as any;
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.message = Data["message"];
+            this.authorId = Data["authorId"];
+            this.authorName = Data["authorName"];
+            this.isStaffMessage = Data["isStaffMessage"];
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
         }
     }
 
@@ -4140,6 +4140,11 @@ export enum DisputeReason {
     Other = 7,
 }
 
+export enum EmployeeEntityType {
+    NaturalPerson = 1,
+    LegalEntity = 2,
+}
+
 export enum EmployeeInvoiceStatus {
     Pending = 1,
     Approved = 2,
@@ -4165,13 +4170,13 @@ export class GdprExportAddressDto implements IGdprExportAddressDto {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.street = _data["street"];
-            this.city = _data["city"];
-            this.zipCode = _data["zipCode"];
-            this.state = _data["state"];
-            this.countryId = _data["countryId"];
+    init(Data?: any) {
+        if (Data) {
+            this.street = Data["street"];
+            this.city = Data["city"];
+            this.zipCode = Data["zipCode"];
+            this.state = Data["state"];
+            this.countryId = Data["countryId"];
         }
     }
 
@@ -4217,13 +4222,13 @@ export class GdprExportConsentDto implements IGdprExportConsentDto {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.consentType = _data["consentType"];
-            this.isGranted = _data["isGranted"];
-            this.grantedAt = _data["grantedAt"] ? new Date(_data["grantedAt"].toString()) : undefined as any;
-            this.withdrawnAt = _data["withdrawnAt"] ? new Date(_data["withdrawnAt"].toString()) : undefined as any;
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.consentType = Data["consentType"];
+            this.isGranted = Data["isGranted"];
+            this.grantedAt = Data["grantedAt"] ? new Date(Data["grantedAt"].toString()) : undefined as any;
+            this.withdrawnAt = Data["withdrawnAt"] ? new Date(Data["withdrawnAt"].toString()) : undefined as any;
         }
     }
 
@@ -4268,12 +4273,12 @@ export class GdprExportDocumentDto implements IGdprExportDocumentDto {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.fileName = _data["fileName"];
-            this.documentType = _data["documentType"];
-            this.createdOn = _data["createdOn"] ? new Date(_data["createdOn"].toString()) : undefined as any;
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.fileName = Data["fileName"];
+            this.documentType = Data["documentType"];
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
         }
     }
 
@@ -4320,32 +4325,32 @@ export class GdprExportDto implements IGdprExportDto {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.profile = _data["profile"] ? GdprExportProfileDto.fromJS(_data["profile"]) : undefined as any;
-            this.address = _data["address"] ? GdprExportAddressDto.fromJS(_data["address"]) : undefined as any;
-            this.employee = _data["employee"] ? GdprExportEmployeeDto.fromJS(_data["employee"]) : undefined as any;
-            if (Array.isArray(_data["orders"])) {
+    init(Data?: any) {
+        if (Data) {
+            this.profile = Data["profile"] ? GdprExportProfileDto.fromJS(Data["profile"]) : undefined as any;
+            this.address = Data["address"] ? GdprExportAddressDto.fromJS(Data["address"]) : undefined as any;
+            this.employee = Data["employee"] ? GdprExportEmployeeDto.fromJS(Data["employee"]) : undefined as any;
+            if (Array.isArray(Data["orders"])) {
                 this.orders = [] as any;
-                for (let item of _data["orders"])
+                for (let item of Data["orders"])
                     this.orders!.push(GdprExportOrderDto.fromJS(item));
             }
-            if (Array.isArray(_data["documents"])) {
+            if (Array.isArray(Data["documents"])) {
                 this.documents = [] as any;
-                for (let item of _data["documents"])
+                for (let item of Data["documents"])
                     this.documents!.push(GdprExportDocumentDto.fromJS(item));
             }
-            if (Array.isArray(_data["invoices"])) {
+            if (Array.isArray(Data["invoices"])) {
                 this.invoices = [] as any;
-                for (let item of _data["invoices"])
+                for (let item of Data["invoices"])
                     this.invoices!.push(GdprExportInvoiceDto.fromJS(item));
             }
-            if (Array.isArray(_data["consents"])) {
+            if (Array.isArray(Data["consents"])) {
                 this.consents = [] as any;
-                for (let item of _data["consents"])
+                for (let item of Data["consents"])
                     this.consents!.push(GdprExportConsentDto.fromJS(item));
             }
-            this.metadata = _data["metadata"] ? GdprExportMetadataDto.fromJS(_data["metadata"]) : undefined as any;
+            this.metadata = Data["metadata"] ? GdprExportMetadataDto.fromJS(Data["metadata"]) : undefined as any;
         }
     }
 
@@ -4399,7 +4404,10 @@ export interface IGdprExportDto {
 
 export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
     id!: string | undefined;
-    taxId!: string | undefined;
+    entityType!: EmployeeEntityType;
+    registrationNumber!: string | undefined;
+    vatNumber!: string | undefined;
+    legalEntityName!: string | undefined;
     iban!: string | undefined;
     passportId!: string | undefined;
     nationalityId!: string | undefined;
@@ -4419,19 +4427,22 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.taxId = _data["taxId"];
-            this.iban = _data["iban"];
-            this.passportId = _data["passportId"];
-            this.nationalityId = _data["nationalityId"];
-            this.emergencyContactName = _data["emergencyContactName"];
-            this.emergencyContactPhone = _data["emergencyContactPhone"];
-            this.preferredCurrencyCode = _data["preferredCurrencyCode"];
-            this.averageRating = _data["averageRating"];
-            this.contractStatus = _data["contractStatus"];
-            this.createdOn = _data["createdOn"] ? new Date(_data["createdOn"].toString()) : undefined as any;
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.entityType = Data["entityType"];
+            this.registrationNumber = Data["registrationNumber"];
+            this.vatNumber = Data["vatNumber"];
+            this.legalEntityName = Data["legalEntityName"];
+            this.iban = Data["iban"];
+            this.passportId = Data["passportId"];
+            this.nationalityId = Data["nationalityId"];
+            this.emergencyContactName = Data["emergencyContactName"];
+            this.emergencyContactPhone = Data["emergencyContactPhone"];
+            this.preferredCurrencyCode = Data["preferredCurrencyCode"];
+            this.averageRating = Data["averageRating"];
+            this.contractStatus = Data["contractStatus"];
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
         }
     }
 
@@ -4445,7 +4456,10 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["id"] = this.id;
-        data["taxId"] = this.taxId;
+        data["entityType"] = this.entityType;
+        data["registrationNumber"] = this.registrationNumber;
+        data["vatNumber"] = this.vatNumber;
+        data["legalEntityName"] = this.legalEntityName;
         data["iban"] = this.iban;
         data["passportId"] = this.passportId;
         data["nationalityId"] = this.nationalityId;
@@ -4461,7 +4475,10 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
 
 export interface IGdprExportEmployeeDto {
     id: string | undefined;
-    taxId: string | undefined;
+    entityType: EmployeeEntityType;
+    registrationNumber: string | undefined;
+    vatNumber: string | undefined;
+    legalEntityName: string | undefined;
     iban: string | undefined;
     passportId: string | undefined;
     nationalityId: string | undefined;
@@ -4489,13 +4506,13 @@ export class GdprExportInvoiceDto implements IGdprExportInvoiceDto {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.invoiceNumber = _data["invoiceNumber"];
-            this.totalAmount = _data["totalAmount"];
-            this.status = _data["status"];
-            this.createdOn = _data["createdOn"] ? new Date(_data["createdOn"].toString()) : undefined as any;
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.invoiceNumber = Data["invoiceNumber"];
+            this.totalAmount = Data["totalAmount"];
+            this.status = Data["status"];
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
         }
     }
 
@@ -4539,11 +4556,11 @@ export class GdprExportMetadataDto implements IGdprExportMetadataDto {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.exportedAt = _data["exportedAt"] ? new Date(_data["exportedAt"].toString()) : undefined as any;
-            this.exportedBy = _data["exportedBy"];
-            this.dataFormat = _data["dataFormat"];
+    init(Data?: any) {
+        if (Data) {
+            this.exportedAt = Data["exportedAt"] ? new Date(Data["exportedAt"].toString()) : undefined as any;
+            this.exportedBy = Data["exportedBy"];
+            this.dataFormat = Data["dataFormat"];
         }
     }
 
@@ -4588,16 +4605,16 @@ export class GdprExportOrderDto implements IGdprExportOrderDto {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.displayOrderNumber = _data["displayOrderNumber"];
-            this.customerName = _data["customerName"];
-            this.customerEmail = _data["customerEmail"];
-            this.status = _data["status"];
-            this.totalPrice = _data["totalPrice"];
-            this.cleaningDateTime = _data["cleaningDateTime"] ? new Date(_data["cleaningDateTime"].toString()) : undefined as any;
-            this.createdOn = _data["createdOn"] ? new Date(_data["createdOn"].toString()) : undefined as any;
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.displayOrderNumber = Data["displayOrderNumber"];
+            this.customerName = Data["customerName"];
+            this.customerEmail = Data["customerEmail"];
+            this.status = Data["status"];
+            this.totalPrice = Data["totalPrice"];
+            this.cleaningDateTime = Data["cleaningDateTime"] ? new Date(Data["cleaningDateTime"].toString()) : undefined as any;
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
         }
     }
 
@@ -4652,16 +4669,16 @@ export class GdprExportProfileDto implements IGdprExportProfileDto {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.firstName = _data["firstName"];
-            this.lastName = _data["lastName"];
-            this.email = _data["email"];
-            this.phoneNumber = _data["phoneNumber"];
-            this.birthDate = _data["birthDate"] ? new Date(_data["birthDate"].toString()) : undefined as any;
-            this.preferredLanguageCode = _data["preferredLanguageCode"];
-            this.createdOn = _data["createdOn"] ? new Date(_data["createdOn"].toString()) : undefined as any;
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.firstName = Data["firstName"];
+            this.lastName = Data["lastName"];
+            this.email = Data["email"];
+            this.phoneNumber = Data["phoneNumber"];
+            this.birthDate = Data["birthDate"] ? new Date(Data["birthDate"].toString()) : undefined as any;
+            this.preferredLanguageCode = Data["preferredLanguageCode"];
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
         }
     }
 
@@ -4697,9 +4714,9 @@ export interface IGdprExportProfileDto {
     createdOn: Date;
 }
 
-export class GetCurrentUser_Query implements IGetCurrentUser_Query {
+export class GetCurrentUserQuery implements IGetCurrentUserQuery {
 
-    constructor(data?: IGetCurrentUser_Query) {
+    constructor(data?: IGetCurrentUserQuery) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -4708,12 +4725,12 @@ export class GetCurrentUser_Query implements IGetCurrentUser_Query {
         }
     }
 
-    init(_data?: any) {
+    init(Data?: any) {
     }
 
-    static fromJS(data: any): GetCurrentUser_Query {
+    static fromJS(data: any): GetCurrentUserQuery {
         data = typeof data === 'object' ? data : {};
-        let result = new GetCurrentUser_Query();
+        let result = new GetCurrentUserQuery();
         result.init(data);
         return result;
     }
@@ -4724,10 +4741,10 @@ export class GetCurrentUser_Query implements IGetCurrentUser_Query {
     }
 }
 
-export interface IGetCurrentUser_Query {
+export interface IGetCurrentUserQuery {
 }
 
-export class GetOrderPhotos_OrderPhotoDto implements IGetOrderPhotos_OrderPhotoDto {
+export class GetOrderPhotosOrderPhotoDto implements IGetOrderPhotosOrderPhotoDto {
     id!: string | undefined;
     photoType!: PhotoType;
     blobUrl!: string | undefined;
@@ -4742,7 +4759,7 @@ export class GetOrderPhotos_OrderPhotoDto implements IGetOrderPhotos_OrderPhotoD
     height!: number | undefined;
     notes!: string | undefined;
 
-    constructor(data?: IGetOrderPhotos_OrderPhotoDto) {
+    constructor(data?: IGetOrderPhotosOrderPhotoDto) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -4751,27 +4768,27 @@ export class GetOrderPhotos_OrderPhotoDto implements IGetOrderPhotos_OrderPhotoD
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.photoType = _data["photoType"];
-            this.blobUrl = _data["blobUrl"];
-            this.fileName = _data["fileName"];
-            this.originalFileName = _data["originalFileName"];
-            this.fileSizeBytes = _data["fileSizeBytes"];
-            this.contentType = _data["contentType"];
-            this.capturedAt = _data["capturedAt"] ? new Date(_data["capturedAt"].toString()) : undefined as any;
-            this.capturedByEmployeeId = _data["capturedByEmployeeId"];
-            this.capturedByEmployeeName = _data["capturedByEmployeeName"];
-            this.width = _data["width"];
-            this.height = _data["height"];
-            this.notes = _data["notes"];
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.photoType = Data["photoType"];
+            this.blobUrl = Data["blobUrl"];
+            this.fileName = Data["fileName"];
+            this.originalFileName = Data["originalFileName"];
+            this.fileSizeBytes = Data["fileSizeBytes"];
+            this.contentType = Data["contentType"];
+            this.capturedAt = Data["capturedAt"] ? new Date(Data["capturedAt"].toString()) : undefined as any;
+            this.capturedByEmployeeId = Data["capturedByEmployeeId"];
+            this.capturedByEmployeeName = Data["capturedByEmployeeName"];
+            this.width = Data["width"];
+            this.height = Data["height"];
+            this.notes = Data["notes"];
         }
     }
 
-    static fromJS(data: any): GetOrderPhotos_OrderPhotoDto {
+    static fromJS(data: any): GetOrderPhotosOrderPhotoDto {
         data = typeof data === 'object' ? data : {};
-        let result = new GetOrderPhotos_OrderPhotoDto();
+        let result = new GetOrderPhotosOrderPhotoDto();
         result.init(data);
         return result;
     }
@@ -4795,7 +4812,7 @@ export class GetOrderPhotos_OrderPhotoDto implements IGetOrderPhotos_OrderPhotoD
     }
 }
 
-export interface IGetOrderPhotos_OrderPhotoDto {
+export interface IGetOrderPhotosOrderPhotoDto {
     id: string | undefined;
     photoType: PhotoType;
     blobUrl: string | undefined;
@@ -4811,12 +4828,12 @@ export interface IGetOrderPhotos_OrderPhotoDto {
     notes: string | undefined;
 }
 
-export class GetOrderPhotos_Response implements IGetOrderPhotos_Response {
-    photos!: GetOrderPhotos_OrderPhotoDto[] | undefined;
+export class GetOrderPhotosResponse implements IGetOrderPhotosResponse {
+    photos!: GetOrderPhotosOrderPhotoDto[] | undefined;
     beforePhotoCount!: number;
     afterPhotoCount!: number;
 
-    constructor(data?: IGetOrderPhotos_Response) {
+    constructor(data?: IGetOrderPhotosResponse) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -4825,21 +4842,21 @@ export class GetOrderPhotos_Response implements IGetOrderPhotos_Response {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            if (Array.isArray(_data["photos"])) {
+    init(Data?: any) {
+        if (Data) {
+            if (Array.isArray(Data["photos"])) {
                 this.photos = [] as any;
-                for (let item of _data["photos"])
-                    this.photos!.push(GetOrderPhotos_OrderPhotoDto.fromJS(item));
+                for (let item of Data["photos"])
+                    this.photos!.push(GetOrderPhotosOrderPhotoDto.fromJS(item));
             }
-            this.beforePhotoCount = _data["beforePhotoCount"];
-            this.afterPhotoCount = _data["afterPhotoCount"];
+            this.beforePhotoCount = Data["beforePhotoCount"];
+            this.afterPhotoCount = Data["afterPhotoCount"];
         }
     }
 
-    static fromJS(data: any): GetOrderPhotos_Response {
+    static fromJS(data: any): GetOrderPhotosResponse {
         data = typeof data === 'object' ? data : {};
-        let result = new GetOrderPhotos_Response();
+        let result = new GetOrderPhotosResponse();
         result.init(data);
         return result;
     }
@@ -4857,20 +4874,20 @@ export class GetOrderPhotos_Response implements IGetOrderPhotos_Response {
     }
 }
 
-export interface IGetOrderPhotos_Response {
-    photos: GetOrderPhotos_OrderPhotoDto[] | undefined;
+export interface IGetOrderPhotosResponse {
+    photos: GetOrderPhotosOrderPhotoDto[] | undefined;
     beforePhotoCount: number;
     afterPhotoCount: number;
 }
 
-export class GoogleAuth_Command implements IGoogleAuth_Command {
+export class GoogleAuthCommand implements IGoogleAuthCommand {
     token!: string | undefined;
     googleId!: string | undefined;
     email!: string | undefined;
     firstName!: string | undefined;
     lastName!: string | undefined;
 
-    constructor(data?: IGoogleAuth_Command) {
+    constructor(data?: IGoogleAuthCommand) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -4879,19 +4896,19 @@ export class GoogleAuth_Command implements IGoogleAuth_Command {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.token = _data["token"];
-            this.googleId = _data["googleId"];
-            this.email = _data["email"];
-            this.firstName = _data["firstName"];
-            this.lastName = _data["lastName"];
+    init(Data?: any) {
+        if (Data) {
+            this.token = Data["token"];
+            this.googleId = Data["googleId"];
+            this.email = Data["email"];
+            this.firstName = Data["firstName"];
+            this.lastName = Data["lastName"];
         }
     }
 
-    static fromJS(data: any): GoogleAuth_Command {
+    static fromJS(data: any): GoogleAuthCommand {
         data = typeof data === 'object' ? data : {};
-        let result = new GoogleAuth_Command();
+        let result = new GoogleAuthCommand();
         result.init(data);
         return result;
     }
@@ -4907,7 +4924,7 @@ export class GoogleAuth_Command implements IGoogleAuth_Command {
     }
 }
 
-export interface IGoogleAuth_Command {
+export interface IGoogleAuthCommand {
     token: string | undefined;
     googleId: string | undefined;
     email: string | undefined;
@@ -4915,12 +4932,12 @@ export interface IGoogleAuth_Command {
     lastName: string | undefined;
 }
 
-export class GrantConsent_Command implements IGrantConsent_Command {
+export class GrantConsentCommand implements IGrantConsentCommand {
     consentType!: ConsentType;
     ipAddress!: string | undefined;
     userAgent!: string | undefined;
 
-    constructor(data?: IGrantConsent_Command) {
+    constructor(data?: IGrantConsentCommand) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -4929,17 +4946,17 @@ export class GrantConsent_Command implements IGrantConsent_Command {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.consentType = _data["consentType"];
-            this.ipAddress = _data["ipAddress"];
-            this.userAgent = _data["userAgent"];
+    init(Data?: any) {
+        if (Data) {
+            this.consentType = Data["consentType"];
+            this.ipAddress = Data["ipAddress"];
+            this.userAgent = Data["userAgent"];
         }
     }
 
-    static fromJS(data: any): GrantConsent_Command {
+    static fromJS(data: any): GrantConsentCommand {
         data = typeof data === 'object' ? data : {};
-        let result = new GrantConsent_Command();
+        let result = new GrantConsentCommand();
         result.init(data);
         return result;
     }
@@ -4953,7 +4970,7 @@ export class GrantConsent_Command implements IGrantConsent_Command {
     }
 }
 
-export interface IGrantConsent_Command {
+export interface IGrantConsentCommand {
     consentType: ConsentType;
     ipAddress: string | undefined;
     userAgent: string | undefined;
@@ -4975,13 +4992,13 @@ export class JwtTokenResponse implements IJwtTokenResponse {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.token = _data["token"];
-            this.isEmailConfirmed = _data["isEmailConfirmed"];
-            this.hasAdminAccess = _data["hasAdminAccess"];
-            this.userId = _data["userId"];
-            this.email = _data["email"];
+    init(Data?: any) {
+        if (Data) {
+            this.token = Data["token"];
+            this.isEmailConfirmed = Data["isEmailConfirmed"];
+            this.hasAdminAccess = Data["hasAdminAccess"];
+            this.userId = Data["userId"];
+            this.email = Data["email"];
         }
     }
 
@@ -5025,11 +5042,11 @@ export class LanguageListItem implements ILanguageListItem {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.code = _data["code"];
-            this.name = _data["name"];
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.code = Data["code"];
+            this.name = Data["name"];
         }
     }
 
@@ -5055,12 +5072,12 @@ export interface ILanguageListItem {
     name: string | undefined;
 }
 
-export class Login_Command implements ILogin_Command {
+export class LoginCommand implements ILoginCommand {
     email!: string | undefined;
     password!: string | undefined;
     rememberMe!: boolean;
 
-    constructor(data?: ILogin_Command) {
+    constructor(data?: ILoginCommand) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -5069,17 +5086,17 @@ export class Login_Command implements ILogin_Command {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.email = _data["email"];
-            this.password = _data["password"];
-            this.rememberMe = _data["rememberMe"];
+    init(Data?: any) {
+        if (Data) {
+            this.email = Data["email"];
+            this.password = Data["password"];
+            this.rememberMe = Data["rememberMe"];
         }
     }
 
-    static fromJS(data: any): Login_Command {
+    static fromJS(data: any): LoginCommand {
         data = typeof data === 'object' ? data : {};
-        let result = new Login_Command();
+        let result = new LoginCommand();
         result.init(data);
         return result;
     }
@@ -5093,17 +5110,17 @@ export class Login_Command implements ILogin_Command {
     }
 }
 
-export interface ILogin_Command {
+export interface ILoginCommand {
     email: string | undefined;
     password: string | undefined;
     rememberMe: boolean;
 }
 
-export class LookupOrderBatch_OrderLookupItem implements ILookupOrderBatch_OrderLookupItem {
+export class LookupOrderBatchOrderLookupItem implements ILookupOrderBatchOrderLookupItem {
     orderId!: string | undefined;
     email!: string | undefined;
 
-    constructor(data?: ILookupOrderBatch_OrderLookupItem) {
+    constructor(data?: ILookupOrderBatchOrderLookupItem) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -5112,16 +5129,16 @@ export class LookupOrderBatch_OrderLookupItem implements ILookupOrderBatch_Order
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.orderId = _data["orderId"];
-            this.email = _data["email"];
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.email = Data["email"];
         }
     }
 
-    static fromJS(data: any): LookupOrderBatch_OrderLookupItem {
+    static fromJS(data: any): LookupOrderBatchOrderLookupItem {
         data = typeof data === 'object' ? data : {};
-        let result = new LookupOrderBatch_OrderLookupItem();
+        let result = new LookupOrderBatchOrderLookupItem();
         result.init(data);
         return result;
     }
@@ -5134,15 +5151,15 @@ export class LookupOrderBatch_OrderLookupItem implements ILookupOrderBatch_Order
     }
 }
 
-export interface ILookupOrderBatch_OrderLookupItem {
+export interface ILookupOrderBatchOrderLookupItem {
     orderId: string | undefined;
     email: string | undefined;
 }
 
-export class LookupOrderBatch_Query implements ILookupOrderBatch_Query {
-    items!: LookupOrderBatch_OrderLookupItem[] | undefined;
+export class LookupOrderBatchQuery implements ILookupOrderBatchQuery {
+    items!: LookupOrderBatchOrderLookupItem[] | undefined;
 
-    constructor(data?: ILookupOrderBatch_Query) {
+    constructor(data?: ILookupOrderBatchQuery) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -5151,19 +5168,19 @@ export class LookupOrderBatch_Query implements ILookupOrderBatch_Query {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            if (Array.isArray(_data["items"])) {
+    init(Data?: any) {
+        if (Data) {
+            if (Array.isArray(Data["items"])) {
                 this.items = [] as any;
-                for (let item of _data["items"])
-                    this.items!.push(LookupOrderBatch_OrderLookupItem.fromJS(item));
+                for (let item of Data["items"])
+                    this.items!.push(LookupOrderBatchOrderLookupItem.fromJS(item));
             }
         }
     }
 
-    static fromJS(data: any): LookupOrderBatch_Query {
+    static fromJS(data: any): LookupOrderBatchQuery {
         data = typeof data === 'object' ? data : {};
-        let result = new LookupOrderBatch_Query();
+        let result = new LookupOrderBatchQuery();
         result.init(data);
         return result;
     }
@@ -5179,14 +5196,14 @@ export class LookupOrderBatch_Query implements ILookupOrderBatch_Query {
     }
 }
 
-export interface ILookupOrderBatch_Query {
-    items: LookupOrderBatch_OrderLookupItem[] | undefined;
+export interface ILookupOrderBatchQuery {
+    items: LookupOrderBatchOrderLookupItem[] | undefined;
 }
 
-export class LookupOrderBatch_Response implements ILookupOrderBatch_Response {
-    orders!: LookupOrder_Response[] | undefined;
+export class LookupOrderBatchResponse implements ILookupOrderBatchResponse {
+    orders!: LookupOrderResponse[] | undefined;
 
-    constructor(data?: ILookupOrderBatch_Response) {
+    constructor(data?: ILookupOrderBatchResponse) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -5195,19 +5212,19 @@ export class LookupOrderBatch_Response implements ILookupOrderBatch_Response {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            if (Array.isArray(_data["orders"])) {
+    init(Data?: any) {
+        if (Data) {
+            if (Array.isArray(Data["orders"])) {
                 this.orders = [] as any;
-                for (let item of _data["orders"])
-                    this.orders!.push(LookupOrder_Response.fromJS(item));
+                for (let item of Data["orders"])
+                    this.orders!.push(LookupOrderResponse.fromJS(item));
             }
         }
     }
 
-    static fromJS(data: any): LookupOrderBatch_Response {
+    static fromJS(data: any): LookupOrderBatchResponse {
         data = typeof data === 'object' ? data : {};
-        let result = new LookupOrderBatch_Response();
+        let result = new LookupOrderBatchResponse();
         result.init(data);
         return result;
     }
@@ -5223,11 +5240,11 @@ export class LookupOrderBatch_Response implements ILookupOrderBatch_Response {
     }
 }
 
-export interface ILookupOrderBatch_Response {
-    orders: LookupOrder_Response[] | undefined;
+export interface ILookupOrderBatchResponse {
+    orders: LookupOrderResponse[] | undefined;
 }
 
-export class LookupOrder_Response implements ILookupOrder_Response {
+export class LookupOrderResponse implements ILookupOrderResponse {
     id!: string | undefined;
     displayOrderNumber!: string | undefined;
     customerName!: string | undefined;
@@ -5244,7 +5261,7 @@ export class LookupOrder_Response implements ILookupOrder_Response {
     statusHistory!: OrderStatusTrackDto[] | undefined;
     createdOn!: Date;
 
-    constructor(data?: ILookupOrder_Response) {
+    constructor(data?: ILookupOrderResponse) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -5253,41 +5270,41 @@ export class LookupOrder_Response implements ILookupOrder_Response {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.displayOrderNumber = _data["displayOrderNumber"];
-            this.customerName = _data["customerName"];
-            this.cleaningDateTime = _data["cleaningDateTime"] ? new Date(_data["cleaningDateTime"].toString()) : undefined as any;
-            this.paymentType = _data["paymentType"] ? Code.fromJS(_data["paymentType"]) : undefined as any;
-            this.paymentStatus = _data["paymentStatus"] ? Code.fromJS(_data["paymentStatus"]) : undefined as any;
-            this.totalPrice = _data["totalPrice"];
-            this.estimatedTime = _data["estimatedTime"];
-            this.orderStatus = _data["orderStatus"] ? Code.fromJS(_data["orderStatus"]) : undefined as any;
-            this.confirmationCode = _data["confirmationCode"];
-            this.currency = _data["currency"] ? CurrencyDetailDto.fromJS(_data["currency"]) : undefined as any;
-            if (Array.isArray(_data["selectedServices"])) {
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.displayOrderNumber = Data["displayOrderNumber"];
+            this.customerName = Data["customerName"];
+            this.cleaningDateTime = Data["cleaningDateTime"] ? new Date(Data["cleaningDateTime"].toString()) : undefined as any;
+            this.paymentType = Data["paymentType"] ? Code.fromJS(Data["paymentType"]) : undefined as any;
+            this.paymentStatus = Data["paymentStatus"] ? Code.fromJS(Data["paymentStatus"]) : undefined as any;
+            this.totalPrice = Data["totalPrice"];
+            this.estimatedTime = Data["estimatedTime"];
+            this.orderStatus = Data["orderStatus"] ? Code.fromJS(Data["orderStatus"]) : undefined as any;
+            this.confirmationCode = Data["confirmationCode"];
+            this.currency = Data["currency"] ? CurrencyDetailDto.fromJS(Data["currency"]) : undefined as any;
+            if (Array.isArray(Data["selectedServices"])) {
                 this.selectedServices = [] as any;
-                for (let item of _data["selectedServices"])
+                for (let item of Data["selectedServices"])
                     this.selectedServices!.push(ServiceDetails.fromJS(item));
             }
-            if (Array.isArray(_data["selectedPackages"])) {
+            if (Array.isArray(Data["selectedPackages"])) {
                 this.selectedPackages = [] as any;
-                for (let item of _data["selectedPackages"])
+                for (let item of Data["selectedPackages"])
                     this.selectedPackages!.push(PackageDetails.fromJS(item));
             }
-            if (Array.isArray(_data["statusHistory"])) {
+            if (Array.isArray(Data["statusHistory"])) {
                 this.statusHistory = [] as any;
-                for (let item of _data["statusHistory"])
+                for (let item of Data["statusHistory"])
                     this.statusHistory!.push(OrderStatusTrackDto.fromJS(item));
             }
-            this.createdOn = _data["createdOn"] ? new Date(_data["createdOn"].toString()) : undefined as any;
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
         }
     }
 
-    static fromJS(data: any): LookupOrder_Response {
+    static fromJS(data: any): LookupOrderResponse {
         data = typeof data === 'object' ? data : {};
-        let result = new LookupOrder_Response();
+        let result = new LookupOrderResponse();
         result.init(data);
         return result;
     }
@@ -5325,7 +5342,7 @@ export class LookupOrder_Response implements ILookupOrder_Response {
     }
 }
 
-export interface ILookupOrder_Response {
+export interface ILookupOrderResponse {
     id: string | undefined;
     displayOrderNumber: string | undefined;
     customerName: string | undefined;
@@ -5358,12 +5375,12 @@ export class OrderAddress implements IOrderAddress {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.street = _data["street"];
-            this.city = _data["city"];
-            this.zipCode = _data["zipCode"];
-            this.country = _data["country"];
+    init(Data?: any) {
+        if (Data) {
+            this.street = Data["street"];
+            this.city = Data["city"];
+            this.zipCode = Data["zipCode"];
+            this.country = Data["country"];
         }
     }
 
@@ -5408,14 +5425,14 @@ export class OrderIssueDto implements IOrderIssueDto {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.reportedByEmployeeId = _data["reportedByEmployeeId"];
-            this.description = _data["description"];
-            this.isResolved = _data["isResolved"];
-            this.resolvedAt = _data["resolvedAt"] ? new Date(_data["resolvedAt"].toString()) : undefined as any;
-            this.createdOn = _data["createdOn"] ? new Date(_data["createdOn"].toString()) : undefined as any;
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.reportedByEmployeeId = Data["reportedByEmployeeId"];
+            this.description = Data["description"];
+            this.isResolved = Data["isResolved"];
+            this.resolvedAt = Data["resolvedAt"] ? new Date(Data["resolvedAt"].toString()) : undefined as any;
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
         }
     }
 
@@ -5491,71 +5508,71 @@ export class OrderItem implements IOrderItem {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.displayOrderNumber = _data["displayOrderNumber"];
-            this.customerName = _data["customerName"];
-            this.customerEmail = _data["customerEmail"];
-            this.customerPhone = _data["customerPhone"];
-            this.address = _data["address"] ? OrderAddress.fromJS(_data["address"]) : undefined as any;
-            this.rooms = _data["rooms"];
-            this.bathrooms = _data["bathrooms"];
-            if (_data["extras"]) {
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.displayOrderNumber = Data["displayOrderNumber"];
+            this.customerName = Data["customerName"];
+            this.customerEmail = Data["customerEmail"];
+            this.customerPhone = Data["customerPhone"];
+            this.address = Data["address"] ? OrderAddress.fromJS(Data["address"]) : undefined as any;
+            this.rooms = Data["rooms"];
+            this.bathrooms = Data["bathrooms"];
+            if (Data["extras"]) {
                 this.extras = {} as any;
-                for (let key in _data["extras"]) {
-                    if (_data["extras"].hasOwnProperty(key))
-                        (this.extras as any)![key] = _data["extras"][key];
+                for (let key in Data["extras"]) {
+                    if (Data["extras"].hasOwnProperty(key))
+                        (this.extras as any)![key] = Data["extras"][key];
                 }
             }
-            this.cleaningDateTime = _data["cleaningDateTime"] ? new Date(_data["cleaningDateTime"].toString()) : undefined as any;
-            this.paymentType = _data["paymentType"] ? Code.fromJS(_data["paymentType"]) : undefined as any;
-            this.paymentStatus = _data["paymentStatus"] ? Code.fromJS(_data["paymentStatus"]) : undefined as any;
-            this.totalPrice = _data["totalPrice"];
-            this.estimatedTime = _data["estimatedTime"];
-            this.actualCompletionTime = _data["actualCompletionTime"];
-            this.completionNotes = _data["completionNotes"];
-            this.orderStatus = _data["orderStatus"] ? Code.fromJS(_data["orderStatus"]) : undefined as any;
-            this.confirmationCode = _data["confirmationCode"];
-            this.stripeSessionId = _data["stripeSessionId"];
-            this.notes = _data["notes"];
-            this.specialInstructions = _data["specialInstructions"];
-            this.accessInstructions = _data["accessInstructions"];
-            if (Array.isArray(_data["selectedPackages"])) {
+            this.cleaningDateTime = Data["cleaningDateTime"] ? new Date(Data["cleaningDateTime"].toString()) : undefined as any;
+            this.paymentType = Data["paymentType"] ? Code.fromJS(Data["paymentType"]) : undefined as any;
+            this.paymentStatus = Data["paymentStatus"] ? Code.fromJS(Data["paymentStatus"]) : undefined as any;
+            this.totalPrice = Data["totalPrice"];
+            this.estimatedTime = Data["estimatedTime"];
+            this.actualCompletionTime = Data["actualCompletionTime"];
+            this.completionNotes = Data["completionNotes"];
+            this.orderStatus = Data["orderStatus"] ? Code.fromJS(Data["orderStatus"]) : undefined as any;
+            this.confirmationCode = Data["confirmationCode"];
+            this.stripeSessionId = Data["stripeSessionId"];
+            this.notes = Data["notes"];
+            this.specialInstructions = Data["specialInstructions"];
+            this.accessInstructions = Data["accessInstructions"];
+            if (Array.isArray(Data["selectedPackages"])) {
                 this.selectedPackages = [] as any;
-                for (let item of _data["selectedPackages"])
+                for (let item of Data["selectedPackages"])
                     this.selectedPackages!.push(PackageDetails.fromJS(item));
             }
-            this.currency = _data["currency"] ? CurrencyDetailDto.fromJS(_data["currency"]) : undefined as any;
-            if (Array.isArray(_data["selectedServices"])) {
+            this.currency = Data["currency"] ? CurrencyDetailDto.fromJS(Data["currency"]) : undefined as any;
+            if (Array.isArray(Data["selectedServices"])) {
                 this.selectedServices = [] as any;
-                for (let item of _data["selectedServices"])
+                for (let item of Data["selectedServices"])
                     this.selectedServices!.push(ServiceDetails.fromJS(item));
             }
-            if (Array.isArray(_data["statusHistory"])) {
+            if (Array.isArray(Data["statusHistory"])) {
                 this.statusHistory = [] as any;
-                for (let item of _data["statusHistory"])
+                for (let item of Data["statusHistory"])
                     this.statusHistory!.push(OrderStatusTrackDto.fromJS(item));
             }
-            this.createdOn = _data["createdOn"] ? new Date(_data["createdOn"].toString()) : undefined as any;
-            this.updatedOn = _data["updatedOn"] ? new Date(_data["updatedOn"].toString()) : undefined as any;
-            if (Array.isArray(_data["assignedEmployees"])) {
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+            this.updatedOn = Data["updatedOn"] ? new Date(Data["updatedOn"].toString()) : undefined as any;
+            if (Array.isArray(Data["assignedEmployees"])) {
                 this.assignedEmployees = [] as any;
-                for (let item of _data["assignedEmployees"])
+                for (let item of Data["assignedEmployees"])
                     this.assignedEmployees!.push(AssignedEmployeeDto.fromJS(item));
             }
-            this.receiptNumber = _data["receiptNumber"];
-            if (Array.isArray(_data["orderNotes"])) {
+            this.receiptNumber = Data["receiptNumber"];
+            if (Array.isArray(Data["orderNotes"])) {
                 this.orderNotes = [] as any;
-                for (let item of _data["orderNotes"])
+                for (let item of Data["orderNotes"])
                     this.orderNotes!.push(OrderNoteDto.fromJS(item));
             }
-            if (Array.isArray(_data["orderIssues"])) {
+            if (Array.isArray(Data["orderIssues"])) {
                 this.orderIssues = [] as any;
-                for (let item of _data["orderIssues"])
+                for (let item of Data["orderIssues"])
                     this.orderIssues!.push(OrderIssueDto.fromJS(item));
             }
-            this.review = _data["review"] ? OrderReviewDto.fromJS(_data["review"]) : undefined as any;
+            this.review = Data["review"] ? OrderReviewDto.fromJS(Data["review"]) : undefined as any;
         }
     }
 
@@ -5709,53 +5726,53 @@ export class OrderListItem implements IOrderListItem {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.customerName = _data["customerName"];
-            this.customerEmail = _data["customerEmail"];
-            this.customerPhone = _data["customerPhone"];
-            this.customerAddress = _data["customerAddress"];
-            this.displayOrderNumber = _data["displayOrderNumber"];
-            this.rooms = _data["rooms"];
-            this.bathrooms = _data["bathrooms"];
-            if (_data["extras"]) {
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.customerName = Data["customerName"];
+            this.customerEmail = Data["customerEmail"];
+            this.customerPhone = Data["customerPhone"];
+            this.customerAddress = Data["customerAddress"];
+            this.displayOrderNumber = Data["displayOrderNumber"];
+            this.rooms = Data["rooms"];
+            this.bathrooms = Data["bathrooms"];
+            if (Data["extras"]) {
                 this.extras = {} as any;
-                for (let key in _data["extras"]) {
-                    if (_data["extras"].hasOwnProperty(key))
-                        (this.extras as any)![key] = _data["extras"][key];
+                for (let key in Data["extras"]) {
+                    if (Data["extras"].hasOwnProperty(key))
+                        (this.extras as any)![key] = Data["extras"][key];
                 }
             }
-            this.cleaningDateTime = _data["cleaningDateTime"] ? new Date(_data["cleaningDateTime"].toString()) : undefined as any;
-            this.paymentType = _data["paymentType"] ? Code.fromJS(_data["paymentType"]) : undefined as any;
-            this.paymentStatus = _data["paymentStatus"] ? Code.fromJS(_data["paymentStatus"]) : undefined as any;
-            this.totalPrice = _data["totalPrice"];
-            this.estimatedTime = _data["estimatedTime"];
-            this.orderStatus = _data["orderStatus"] ? Code.fromJS(_data["orderStatus"]) : undefined as any;
-            this.confirmationCode = _data["confirmationCode"];
-            this.stripeSessionId = _data["stripeSessionId"];
-            if (Array.isArray(_data["selectedPackages"])) {
+            this.cleaningDateTime = Data["cleaningDateTime"] ? new Date(Data["cleaningDateTime"].toString()) : undefined as any;
+            this.paymentType = Data["paymentType"] ? Code.fromJS(Data["paymentType"]) : undefined as any;
+            this.paymentStatus = Data["paymentStatus"] ? Code.fromJS(Data["paymentStatus"]) : undefined as any;
+            this.totalPrice = Data["totalPrice"];
+            this.estimatedTime = Data["estimatedTime"];
+            this.orderStatus = Data["orderStatus"] ? Code.fromJS(Data["orderStatus"]) : undefined as any;
+            this.confirmationCode = Data["confirmationCode"];
+            this.stripeSessionId = Data["stripeSessionId"];
+            if (Array.isArray(Data["selectedPackages"])) {
                 this.selectedPackages = [] as any;
-                for (let item of _data["selectedPackages"])
+                for (let item of Data["selectedPackages"])
                     this.selectedPackages!.push(PackageListItem.fromJS(item));
             }
-            this.currencyId = _data["currencyId"];
-            this.currency = _data["currency"] ? CurrencyListItem.fromJS(_data["currency"]) : undefined as any;
-            if (Array.isArray(_data["assignedEmployees"])) {
+            this.currencyId = Data["currencyId"];
+            this.currency = Data["currency"] ? CurrencyListItem.fromJS(Data["currency"]) : undefined as any;
+            if (Array.isArray(Data["assignedEmployees"])) {
                 this.assignedEmployees = [] as any;
-                for (let item of _data["assignedEmployees"])
+                for (let item of Data["assignedEmployees"])
                     this.assignedEmployees!.push(item);
             }
-            if (Array.isArray(_data["selectedServices"])) {
+            if (Array.isArray(Data["selectedServices"])) {
                 this.selectedServices = [] as any;
-                for (let item of _data["selectedServices"])
+                for (let item of Data["selectedServices"])
                     this.selectedServices!.push(ServiceListItem.fromJS(item));
             }
-            this.requiredEmployees = _data["requiredEmployees"];
-            this.maxEmployees = _data["maxEmployees"];
-            this.availableSpots = _data["availableSpots"];
-            this.assignedEmployeesCount = _data["assignedEmployeesCount"];
-            this.hasAvailableSpots = _data["hasAvailableSpots"];
+            this.requiredEmployees = Data["requiredEmployees"];
+            this.maxEmployees = Data["maxEmployees"];
+            this.availableSpots = Data["availableSpots"];
+            this.assignedEmployeesCount = Data["assignedEmployeesCount"];
+            this.hasAvailableSpots = Data["hasAvailableSpots"];
         }
     }
 
@@ -5862,12 +5879,12 @@ export class OrderNoteDto implements IOrderNoteDto {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.employeeId = _data["employeeId"];
-            this.content = _data["content"];
-            this.createdOn = _data["createdOn"] ? new Date(_data["createdOn"].toString()) : undefined as any;
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.employeeId = Data["employeeId"];
+            this.content = Data["content"];
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
         }
     }
 
@@ -5913,15 +5930,15 @@ export class OrderReviewDto implements IOrderReviewDto {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.orderId = _data["orderId"];
-            this.userId = _data["userId"];
-            this.rating = _data["rating"];
-            this.comment = _data["comment"];
-            this.createdOn = _data["createdOn"] ? new Date(_data["createdOn"].toString()) : undefined as any;
-            this.updatedOn = _data["updatedOn"] ? new Date(_data["updatedOn"].toString()) : undefined as any;
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.orderId = Data["orderId"];
+            this.userId = Data["userId"];
+            this.rating = Data["rating"];
+            this.comment = Data["comment"];
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+            this.updatedOn = Data["updatedOn"] ? new Date(Data["updatedOn"].toString()) : undefined as any;
         }
     }
 
@@ -5976,10 +5993,10 @@ export class OrderStatusTrackDto implements IOrderStatusTrackDto {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.status = _data["status"] ? Code.fromJS(_data["status"]) : undefined as any;
-            this.createdOn = _data["createdOn"] ? new Date(_data["createdOn"].toString()) : undefined as any;
+    init(Data?: any) {
+        if (Data) {
+            this.status = Data["status"] ? Code.fromJS(Data["status"]) : undefined as any;
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
         }
     }
 
@@ -6021,17 +6038,17 @@ export class PackageDetails implements IPackageDetails {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.name = _data["name"];
-            this.description = _data["description"];
-            this.price = _data["price"];
-            this.estimatedTime = _data["estimatedTime"];
-            this.currencyCode = _data["currencyCode"];
-            if (Array.isArray(_data["includedServices"])) {
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.name = Data["name"];
+            this.description = Data["description"];
+            this.price = Data["price"];
+            this.estimatedTime = Data["estimatedTime"];
+            this.currencyCode = Data["currencyCode"];
+            if (Array.isArray(Data["includedServices"])) {
                 this.includedServices = [] as any;
-                for (let item of _data["includedServices"])
+                for (let item of Data["includedServices"])
                     this.includedServices!.push(item);
             }
         }
@@ -6088,22 +6105,22 @@ export class PackageListItem implements IPackageListItem {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.name = _data["name"];
-            this.description = _data["description"];
-            this.price = _data["price"];
-            if (_data["translations"]) {
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.name = Data["name"];
+            this.description = Data["description"];
+            this.price = Data["price"];
+            if (Data["translations"]) {
                 this.translations = {} as any;
-                for (let key in _data["translations"]) {
-                    if (_data["translations"].hasOwnProperty(key))
-                        (this.translations as any)![key] = _data["translations"][key] ? Translation.fromJS(_data["translations"][key]) : new Translation();
+                for (let key in Data["translations"]) {
+                    if (Data["translations"].hasOwnProperty(key))
+                        (this.translations as any)![key] = Data["translations"][key] ? Translation.fromJS(Data["translations"][key]) : new Translation();
                 }
             }
-            if (Array.isArray(_data["includedServices"])) {
+            if (Array.isArray(Data["includedServices"])) {
                 this.includedServices = [] as any;
-                for (let item of _data["includedServices"])
+                for (let item of Data["includedServices"])
                     this.includedServices!.push(PackageServiceSummary.fromJS(item));
             }
         }
@@ -6160,14 +6177,14 @@ export class PackageServiceSummary implements IPackageServiceSummary {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.name = _data["name"];
-            if (_data["translations"]) {
+    init(Data?: any) {
+        if (Data) {
+            this.name = Data["name"];
+            if (Data["translations"]) {
                 this.translations = {} as any;
-                for (let key in _data["translations"]) {
-                    if (_data["translations"].hasOwnProperty(key))
-                        (this.translations as any)![key] = _data["translations"][key] ? Translation.fromJS(_data["translations"][key]) : new Translation();
+                for (let key in Data["translations"]) {
+                    if (Data["translations"].hasOwnProperty(key))
+                        (this.translations as any)![key] = Data["translations"][key] ? Translation.fromJS(Data["translations"][key]) : new Translation();
                 }
             }
         }
@@ -6214,14 +6231,14 @@ export class PagedDataOfDisputeListItem implements IPagedDataOfDisputeListItem {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.pageNumber = _data["pageNumber"];
-            this.pageSize = _data["pageSize"];
-            this.total = _data["total"];
-            if (Array.isArray(_data["data"])) {
+    init(Data?: any) {
+        if (Data) {
+            this.pageNumber = Data["pageNumber"];
+            this.pageSize = Data["pageSize"];
+            this.total = Data["total"];
+            if (Array.isArray(Data["data"])) {
                 this.data = [] as any;
-                for (let item of _data["data"])
+                for (let item of Data["data"])
                     this.data!.push(DisputeListItem.fromJS(item));
             }
         }
@@ -6270,14 +6287,14 @@ export class PagedDataOfOrderListItem implements IPagedDataOfOrderListItem {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.pageNumber = _data["pageNumber"];
-            this.pageSize = _data["pageSize"];
-            this.total = _data["total"];
-            if (Array.isArray(_data["data"])) {
+    init(Data?: any) {
+        if (Data) {
+            this.pageNumber = Data["pageNumber"];
+            this.pageSize = Data["pageSize"];
+            this.total = Data["total"];
+            if (Array.isArray(Data["data"])) {
                 this.data = [] as any;
-                for (let item of _data["data"])
+                for (let item of Data["data"])
                     this.data!.push(OrderListItem.fromJS(item));
             }
         }
@@ -6347,17 +6364,17 @@ export class ProblemDetails implements IProblemDetails {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            for (var property in _data) {
-                if (_data.hasOwnProperty(property))
-                    this[property] = _data[property];
+    init(Data?: any) {
+        if (Data) {
+            for (var property in Data) {
+                if (Data.hasOwnProperty(property))
+                    this[property] = Data[property];
             }
-            this.type = _data["type"];
-            this.title = _data["title"];
-            this.status = _data["status"];
-            this.detail = _data["detail"];
-            this.instance = _data["instance"];
+            this.type = Data["type"];
+            this.title = Data["title"];
+            this.status = Data["status"];
+            this.detail = Data["detail"];
+            this.instance = Data["instance"];
         }
     }
 
@@ -6393,14 +6410,14 @@ export interface IProblemDetails {
     [key: string]: any;
 }
 
-export class Register_Command implements IRegister_Command {
+export class RegisterCommand implements IRegisterCommand {
     email!: string | undefined;
     password!: string | undefined;
     firstName!: string | undefined;
     lastName!: string | undefined;
     language!: string | undefined;
 
-    constructor(data?: IRegister_Command) {
+    constructor(data?: IRegisterCommand) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -6409,19 +6426,19 @@ export class Register_Command implements IRegister_Command {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.email = _data["email"];
-            this.password = _data["password"];
-            this.firstName = _data["firstName"];
-            this.lastName = _data["lastName"];
-            this.language = _data["language"];
+    init(Data?: any) {
+        if (Data) {
+            this.email = Data["email"];
+            this.password = Data["password"];
+            this.firstName = Data["firstName"];
+            this.lastName = Data["lastName"];
+            this.language = Data["language"];
         }
     }
 
-    static fromJS(data: any): Register_Command {
+    static fromJS(data: any): RegisterCommand {
         data = typeof data === 'object' ? data : {};
-        let result = new Register_Command();
+        let result = new RegisterCommand();
         result.init(data);
         return result;
     }
@@ -6437,7 +6454,7 @@ export class Register_Command implements IRegister_Command {
     }
 }
 
-export interface IRegister_Command {
+export interface IRegisterCommand {
     email: string | undefined;
     password: string | undefined;
     firstName: string | undefined;
@@ -6445,12 +6462,12 @@ export interface IRegister_Command {
     language: string | undefined;
 }
 
-export class ReportOrderIssue_Command implements IReportOrderIssue_Command {
+export class ReportOrderIssueCommand implements IReportOrderIssueCommand {
     orderId!: string | undefined;
     employeeId!: string | undefined;
     description!: string | undefined;
 
-    constructor(data?: IReportOrderIssue_Command) {
+    constructor(data?: IReportOrderIssueCommand) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -6459,17 +6476,17 @@ export class ReportOrderIssue_Command implements IReportOrderIssue_Command {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.orderId = _data["orderId"];
-            this.employeeId = _data["employeeId"];
-            this.description = _data["description"];
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.employeeId = Data["employeeId"];
+            this.description = Data["description"];
         }
     }
 
-    static fromJS(data: any): ReportOrderIssue_Command {
+    static fromJS(data: any): ReportOrderIssueCommand {
         data = typeof data === 'object' ? data : {};
-        let result = new ReportOrderIssue_Command();
+        let result = new ReportOrderIssueCommand();
         result.init(data);
         return result;
     }
@@ -6483,18 +6500,18 @@ export class ReportOrderIssue_Command implements IReportOrderIssue_Command {
     }
 }
 
-export interface IReportOrderIssue_Command {
+export interface IReportOrderIssueCommand {
     orderId: string | undefined;
     employeeId: string | undefined;
     description: string | undefined;
 }
 
-export class ReportOrderIssue_Response implements IReportOrderIssue_Response {
+export class ReportOrderIssueResponse implements IReportOrderIssueResponse {
     issueId!: string | undefined;
     description!: string | undefined;
     createdAt!: Date;
 
-    constructor(data?: IReportOrderIssue_Response) {
+    constructor(data?: IReportOrderIssueResponse) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -6503,17 +6520,17 @@ export class ReportOrderIssue_Response implements IReportOrderIssue_Response {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.issueId = _data["issueId"];
-            this.description = _data["description"];
-            this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : undefined as any;
+    init(Data?: any) {
+        if (Data) {
+            this.issueId = Data["issueId"];
+            this.description = Data["description"];
+            this.createdAt = Data["createdAt"] ? new Date(Data["createdAt"].toString()) : undefined as any;
         }
     }
 
-    static fromJS(data: any): ReportOrderIssue_Response {
+    static fromJS(data: any): ReportOrderIssueResponse {
         data = typeof data === 'object' ? data : {};
-        let result = new ReportOrderIssue_Response();
+        let result = new ReportOrderIssueResponse();
         result.init(data);
         return result;
     }
@@ -6527,17 +6544,17 @@ export class ReportOrderIssue_Response implements IReportOrderIssue_Response {
     }
 }
 
-export interface IReportOrderIssue_Response {
+export interface IReportOrderIssueResponse {
     issueId: string | undefined;
     description: string | undefined;
     createdAt: Date;
 }
 
-export class RequestPasswordChange_Command implements IRequestPasswordChange_Command {
+export class RequestPasswordChangeCommand implements IRequestPasswordChangeCommand {
     email!: string | undefined;
     language!: string | undefined;
 
-    constructor(data?: IRequestPasswordChange_Command) {
+    constructor(data?: IRequestPasswordChangeCommand) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -6546,16 +6563,16 @@ export class RequestPasswordChange_Command implements IRequestPasswordChange_Com
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.email = _data["email"];
-            this.language = _data["language"];
+    init(Data?: any) {
+        if (Data) {
+            this.email = Data["email"];
+            this.language = Data["language"];
         }
     }
 
-    static fromJS(data: any): RequestPasswordChange_Command {
+    static fromJS(data: any): RequestPasswordChangeCommand {
         data = typeof data === 'object' ? data : {};
-        let result = new RequestPasswordChange_Command();
+        let result = new RequestPasswordChangeCommand();
         result.init(data);
         return result;
     }
@@ -6568,16 +6585,16 @@ export class RequestPasswordChange_Command implements IRequestPasswordChange_Com
     }
 }
 
-export interface IRequestPasswordChange_Command {
+export interface IRequestPasswordChangeCommand {
     email: string | undefined;
     language: string | undefined;
 }
 
-export class ResendConfirmationEmail_Command implements IResendConfirmationEmail_Command {
+export class ResendConfirmationEmailCommand implements IResendConfirmationEmailCommand {
     email!: string | undefined;
     language!: string | undefined;
 
-    constructor(data?: IResendConfirmationEmail_Command) {
+    constructor(data?: IResendConfirmationEmailCommand) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -6586,16 +6603,16 @@ export class ResendConfirmationEmail_Command implements IResendConfirmationEmail
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.email = _data["email"];
-            this.language = _data["language"];
+    init(Data?: any) {
+        if (Data) {
+            this.email = Data["email"];
+            this.language = Data["language"];
         }
     }
 
-    static fromJS(data: any): ResendConfirmationEmail_Command {
+    static fromJS(data: any): ResendConfirmationEmailCommand {
         data = typeof data === 'object' ? data : {};
-        let result = new ResendConfirmationEmail_Command();
+        let result = new ResendConfirmationEmailCommand();
         result.init(data);
         return result;
     }
@@ -6608,7 +6625,7 @@ export class ResendConfirmationEmail_Command implements IResendConfirmationEmail
     }
 }
 
-export interface IResendConfirmationEmail_Command {
+export interface IResendConfirmationEmailCommand {
     email: string | undefined;
     language: string | undefined;
 }
@@ -6629,13 +6646,13 @@ export class ServiceDetails implements IServiceDetails {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.name = _data["name"];
-            this.description = _data["description"];
-            this.estimatedTime = _data["estimatedTime"];
-            this.currencyCode = _data["currencyCode"];
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.name = Data["name"];
+            this.description = Data["description"];
+            this.estimatedTime = Data["estimatedTime"];
+            this.currencyCode = Data["currencyCode"];
         }
     }
 
@@ -6682,18 +6699,18 @@ export class ServiceListItem implements IServiceListItem {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.name = _data["name"];
-            this.description = _data["description"];
-            this.basePrice = _data["basePrice"];
-            this.perRoomPrice = _data["perRoomPrice"];
-            if (_data["translations"]) {
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.name = Data["name"];
+            this.description = Data["description"];
+            this.basePrice = Data["basePrice"];
+            this.perRoomPrice = Data["perRoomPrice"];
+            if (Data["translations"]) {
                 this.translations = {} as any;
-                for (let key in _data["translations"]) {
-                    if (_data["translations"].hasOwnProperty(key))
-                        (this.translations as any)![key] = _data["translations"][key] ? Translation.fromJS(_data["translations"][key]) : new Translation();
+                for (let key in Data["translations"]) {
+                    if (Data["translations"].hasOwnProperty(key))
+                        (this.translations as any)![key] = Data["translations"][key] ? Translation.fromJS(Data["translations"][key]) : new Translation();
                 }
             }
         }
@@ -6746,10 +6763,10 @@ export class SortDefinition implements ISortDefinition {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.field = _data["field"];
-            this.direction = _data["direction"];
+    init(Data?: any) {
+        if (Data) {
+            this.field = Data["field"];
+            this.direction = Data["direction"];
         }
     }
 
@@ -6778,13 +6795,13 @@ export enum SortDirection {
     Descending = 1,
 }
 
-export class SubmitOrderReview_Command implements ISubmitOrderReview_Command {
+export class SubmitOrderReviewCommand implements ISubmitOrderReviewCommand {
     orderId!: string | undefined;
     rating!: number;
     comment!: string | undefined;
     userId!: string | undefined;
 
-    constructor(data?: ISubmitOrderReview_Command) {
+    constructor(data?: ISubmitOrderReviewCommand) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -6793,18 +6810,18 @@ export class SubmitOrderReview_Command implements ISubmitOrderReview_Command {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.orderId = _data["orderId"];
-            this.rating = _data["rating"];
-            this.comment = _data["comment"];
-            this.userId = _data["userId"];
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.rating = Data["rating"];
+            this.comment = Data["comment"];
+            this.userId = Data["userId"];
         }
     }
 
-    static fromJS(data: any): SubmitOrderReview_Command {
+    static fromJS(data: any): SubmitOrderReviewCommand {
         data = typeof data === 'object' ? data : {};
-        let result = new SubmitOrderReview_Command();
+        let result = new SubmitOrderReviewCommand();
         result.init(data);
         return result;
     }
@@ -6819,7 +6836,7 @@ export class SubmitOrderReview_Command implements ISubmitOrderReview_Command {
     }
 }
 
-export interface ISubmitOrderReview_Command {
+export interface ISubmitOrderReviewCommand {
     orderId: string | undefined;
     rating: number;
     comment: string | undefined;
@@ -6839,10 +6856,10 @@ export class Translation implements ITranslation {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.name = _data["name"];
-            this.description = _data["description"];
+    init(Data?: any) {
+        if (Data) {
+            this.name = Data["name"];
+            this.description = Data["description"];
         }
     }
 
@@ -6866,7 +6883,7 @@ export interface ITranslation {
     description: string | undefined;
 }
 
-export class UpdateCurrentUser_Command implements IUpdateCurrentUser_Command {
+export class UpdateCurrentUserCommand implements IUpdateCurrentUserCommand {
     id!: string | undefined;
     firstName!: string | undefined;
     lastName!: string | undefined;
@@ -6875,7 +6892,7 @@ export class UpdateCurrentUser_Command implements IUpdateCurrentUser_Command {
     photo!: BlobFileDto;
     languageCode!: string | undefined;
 
-    constructor(data?: IUpdateCurrentUser_Command) {
+    constructor(data?: IUpdateCurrentUserCommand) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -6884,21 +6901,21 @@ export class UpdateCurrentUser_Command implements IUpdateCurrentUser_Command {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.firstName = _data["firstName"];
-            this.lastName = _data["lastName"];
-            this.phoneNumber = _data["phoneNumber"];
-            this.birthDate = _data["birthDate"] ? new Date(_data["birthDate"].toString()) : undefined as any;
-            this.photo = _data["photo"] ? BlobFileDto.fromJS(_data["photo"]) : undefined as any;
-            this.languageCode = _data["languageCode"];
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.firstName = Data["firstName"];
+            this.lastName = Data["lastName"];
+            this.phoneNumber = Data["phoneNumber"];
+            this.birthDate = Data["birthDate"] ? new Date(Data["birthDate"].toString()) : undefined as any;
+            this.photo = Data["photo"] ? BlobFileDto.fromJS(Data["photo"]) : undefined as any;
+            this.languageCode = Data["languageCode"];
         }
     }
 
-    static fromJS(data: any): UpdateCurrentUser_Command {
+    static fromJS(data: any): UpdateCurrentUserCommand {
         data = typeof data === 'object' ? data : {};
-        let result = new UpdateCurrentUser_Command();
+        let result = new UpdateCurrentUserCommand();
         result.init(data);
         return result;
     }
@@ -6916,7 +6933,7 @@ export class UpdateCurrentUser_Command implements IUpdateCurrentUser_Command {
     }
 }
 
-export interface IUpdateCurrentUser_Command {
+export interface IUpdateCurrentUserCommand {
     id: string | undefined;
     firstName: string | undefined;
     lastName: string | undefined;
@@ -6926,10 +6943,10 @@ export interface IUpdateCurrentUser_Command {
     languageCode: string | undefined;
 }
 
-export class UpdateCurrentUser_Response implements IUpdateCurrentUser_Response {
+export class UpdateCurrentUserResponse implements IUpdateCurrentUserResponse {
     id!: string | undefined;
 
-    constructor(data?: IUpdateCurrentUser_Response) {
+    constructor(data?: IUpdateCurrentUserResponse) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -6938,15 +6955,15 @@ export class UpdateCurrentUser_Response implements IUpdateCurrentUser_Response {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
         }
     }
 
-    static fromJS(data: any): UpdateCurrentUser_Response {
+    static fromJS(data: any): UpdateCurrentUserResponse {
         data = typeof data === 'object' ? data : {};
-        let result = new UpdateCurrentUser_Response();
+        let result = new UpdateCurrentUserResponse();
         result.init(data);
         return result;
     }
@@ -6958,7 +6975,7 @@ export class UpdateCurrentUser_Response implements IUpdateCurrentUser_Response {
     }
 }
 
-export interface IUpdateCurrentUser_Response {
+export interface IUpdateCurrentUserResponse {
     id: string | undefined;
 }
 
@@ -6979,14 +6996,14 @@ export class UserConsentDto implements IUserConsentDto {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.consentType = _data["consentType"];
-            this.isGranted = _data["isGranted"];
-            this.grantedAt = _data["grantedAt"] ? new Date(_data["grantedAt"].toString()) : undefined as any;
-            this.withdrawnAt = _data["withdrawnAt"] ? new Date(_data["withdrawnAt"].toString()) : undefined as any;
-            this.createdOn = _data["createdOn"] ? new Date(_data["createdOn"].toString()) : undefined as any;
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.consentType = Data["consentType"];
+            this.isGranted = Data["isGranted"];
+            this.grantedAt = Data["grantedAt"] ? new Date(Data["grantedAt"].toString()) : undefined as any;
+            this.withdrawnAt = Data["withdrawnAt"] ? new Date(Data["withdrawnAt"].toString()) : undefined as any;
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
         }
     }
 
@@ -7041,20 +7058,20 @@ export class UserListItem implements IUserListItem {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.id = _data["id"];
-            this.email = _data["email"];
-            this.firstName = _data["firstName"];
-            this.lastName = _data["lastName"];
-            this.phoneNumber = _data["phoneNumber"];
-            this.profile = _data["profile"] ? Code.fromJS(_data["profile"]) : undefined as any;
-            this.authenticationType = _data["authenticationType"] ? Code.fromJS(_data["authenticationType"]) : undefined as any;
-            this.isEmailConfirmed = _data["isEmailConfirmed"];
-            this.birthDate = _data["birthDate"] ? new Date(_data["birthDate"].toString()) : undefined as any;
-            this.profilePhoto = _data["profilePhoto"] ? BlobFileDto.fromJS(_data["profilePhoto"]) : undefined as any;
-            this.preferredLanguageCode = _data["preferredLanguageCode"];
-            this.preferredLanguageName = _data["preferredLanguageName"];
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.email = Data["email"];
+            this.firstName = Data["firstName"];
+            this.lastName = Data["lastName"];
+            this.phoneNumber = Data["phoneNumber"];
+            this.profile = Data["profile"] ? Code.fromJS(Data["profile"]) : undefined as any;
+            this.authenticationType = Data["authenticationType"] ? Code.fromJS(Data["authenticationType"]) : undefined as any;
+            this.isEmailConfirmed = Data["isEmailConfirmed"];
+            this.birthDate = Data["birthDate"] ? new Date(Data["birthDate"].toString()) : undefined as any;
+            this.profilePhoto = Data["profilePhoto"] ? BlobFileDto.fromJS(Data["profilePhoto"]) : undefined as any;
+            this.preferredLanguageCode = Data["preferredLanguageCode"];
+            this.preferredLanguageName = Data["preferredLanguageName"];
         }
     }
 
@@ -7098,10 +7115,10 @@ export interface IUserListItem {
     preferredLanguageName: string | undefined;
 }
 
-export class WithdrawConsent_Command implements IWithdrawConsent_Command {
+export class WithdrawConsentCommand implements IWithdrawConsentCommand {
     consentType!: ConsentType;
 
-    constructor(data?: IWithdrawConsent_Command) {
+    constructor(data?: IWithdrawConsentCommand) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -7110,15 +7127,15 @@ export class WithdrawConsent_Command implements IWithdrawConsent_Command {
         }
     }
 
-    init(_data?: any) {
-        if (_data) {
-            this.consentType = _data["consentType"];
+    init(Data?: any) {
+        if (Data) {
+            this.consentType = Data["consentType"];
         }
     }
 
-    static fromJS(data: any): WithdrawConsent_Command {
+    static fromJS(data: any): WithdrawConsentCommand {
         data = typeof data === 'object' ? data : {};
-        let result = new WithdrawConsent_Command();
+        let result = new WithdrawConsentCommand();
         result.init(data);
         return result;
     }
@@ -7130,7 +7147,7 @@ export class WithdrawConsent_Command implements IWithdrawConsent_Command {
     }
 }
 
-export interface IWithdrawConsent_Command {
+export interface IWithdrawConsentCommand {
     consentType: ConsentType;
 }
 
@@ -7173,9 +7190,9 @@ export class ApiException extends Error {
 
 function throwException(message: string, status: number, response: string, headers: { [key: string]: any; }, result?: any): Observable<any> {
     if (result !== null && result !== undefined)
-        return _observableThrow(result);
+        return ObservableThrow(result);
     else
-        return _observableThrow(new ApiException(message, status, response, headers, null));
+        return ObservableThrow(new ApiException(message, status, response, headers, null));
 }
 
 function blobToText(blob: any): Observable<string> {

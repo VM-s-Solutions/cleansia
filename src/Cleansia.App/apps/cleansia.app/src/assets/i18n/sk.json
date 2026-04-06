@@ -385,23 +385,25 @@
         "item1_desc": "Žiadne skryté poplatky — transparentné ceny od začiatku.",
         "item2_title": "Bezpečné produkty",
         "item2_desc": "Prípravky s nízkou vlhkosťou, bezpečné pre deti a alergikov.",
-        "item3_title": "Rýchle schnutie",
-        "item3_desc": "Pripravené za 2 – 4 hodiny — nábytok môžete ihneď používať."
+        "item3_title": "Precízna starostlivosť",
+        "item3_desc": "Každému materiálu dožičíme správny postup aj správne prípravky."
       },
       "process": {
-        "title": "Proces čistenia",
+        "title": "Ako to funguje",
         "badge": "Ako to funguje",
-        "subtitle": "Náš overený 5-krokový postup zaručuje dôkladné a profesionálne čistenie zakaždým.",
-        "step1": "Kontrola",
-        "step1_desc": "Posúdime váš nábytok a otestujeme stálosť farieb.",
-        "step2": "Odstránenie škvŕn",
-        "step2_desc": "Špeciálne prípravky ošetria odolné a zaschnuté škvrny.",
-        "step3": "Hĺbkové čistenie",
-        "step3_desc": "Extrakčný stroj aplikuje roztok a vysaje nečistoty.",
-        "step4": "Parné ošetrenie",
-        "step4_desc": "Horúca para zabíja baktérie, odstraňuje alergény a osviežuje vlákna.",
-        "step5": "Sušenie",
-        "step5_desc": "Ventilátory urýchľujú schnutie — pripravené za 2 – 4 hodiny."
+        "subtitle": "Pár kliknutí, jasná cena a profesionálne upratovanie priamo u vás doma.",
+        "step1": "Vyberte si službu",
+        "step1_desc": "Upratovanie domácnosti, čistenie čalúnenia alebo pravidelná starostlivosť. Presne podľa vašich potrieb.",
+        "step2": "Zadajte detaily",
+        "step2_desc": "Adresa, termín, rozsah. Žiadne telefonáty, žiadne čakanie na odpoveď.",
+        "step3": "Zaplaťte online",
+        "step3_desc": "Cena je pevná a vidíte ju vopred. Objednávku potvrdíte v priebehu pár sekúnd.",
+        "step4": "Pridelíme vám profesionála",
+        "step4_desc": "Akonáhle zákazku prijme overený upratovač, dostanete potvrdenie s jeho menom a hodnotením.",
+        "step5": "Prídeme k vám",
+        "step5_desc": "V dohodnutom čase, plne vybavení a pripravení pustiť sa do práce.",
+        "step6": "Výsledok, ktorý je vidieť",
+        "step6_desc": "Starostlivo, spoľahlivo a bez kompromisov."
       },
       "counter": {
         "title": "Dokončili sme viac ako",
@@ -479,20 +481,28 @@
         "badge": "FAQ",
         "desc": "Nenašli ste odpoveď? Kontaktujte náš tím a radi vám pomôžeme.",
         "q1": {
-          "question": "Dochádzate aj do okolia?",
-          "answer": "Áno, pokrývame aj okolité oblasti. Kontaktujte nás a overte si dostupnosť pre vašu lokalitu."
+          "question": "Chodíte aj mimo Prahy?",
+          "answer": "Áno, pokrývame aj okolité oblasti do približne 30 km od Prahy. Pre vzdialenejšie lokality nás kontaktujte — riešenie nájdeme."
         },
         "q2": {
+          "question": "Musím byť počas upratovania doma?",
+          "answer": "Nie je to potrebné. Mnohí klienti nám odovzdajú kľúče alebo nás pustia dnu a odídu. Pracujeme samostatne a spoľahlivo."
+        },
+        "q3": {
+          "question": "Nosíte si vlastné vybavenie a prípravky?",
+          "answer": "Áno, prichádzame vždy plne vybavení. Používame profesionálne stroje a šetrné, certifikované prípravky."
+        },
+        "q4": {
           "question": "Dokážete vyčistiť nábytok s jemným čalúnením?",
           "answer": "Áno, vyberáme šetrné čistiace prostriedky a metódy vhodné pre každý typ látky: hodváb, vlnu, zamat, mikrovlákno a ďalšie. Pred čistením vždy testujeme na malom mieste, aby sme sa uistili, že látka nebude poškodená."
         },
-        "q3": {
+        "q5": {
           "question": "Odstránite všetky škvrny úplne?",
-          "answer": "Odstránime 95 % škvŕn. Niektoré veľmi staré alebo chemicky fixované škvrny sa môžu výrazne zosvetliť, ale nemusia úplne zmiznúť."
+          "answer": "Odstránime až 95 % škvŕn. Niektoré veľmi staré alebo chemicky fixované škvrny sa môžu výrazne zosvetliť, ale nemusia úplne zmiznúť — vždy vás úprimne informujeme o očakávanom výsledku."
         },
-        "q4": {
+        "q6": {
           "question": "Môžem si objednať čistenie večer alebo cez víkend?",
-          "answer": "Áno! Ponúkame flexibilné plánovanie vrátane večerov a víkendov, aby to vyhovovalo vášmu rozvrhu."
+          "answer": "Áno. Ponúkame flexibilné plánovanie vrátane večerov a víkendov, aby to vyhovovalo vášmu rozvrhu."
         }
       },
       "cta": {

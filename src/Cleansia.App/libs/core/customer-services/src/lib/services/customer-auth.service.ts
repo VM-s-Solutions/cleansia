@@ -5,11 +5,11 @@ import {
   ConfirmUserEmailCommand,
   GoogleAuthCommand,
   JwtTokenResponse,
-  LoginCommand,
   RegisterCommand,
   RequestPasswordChangeCommand,
   ResendConfirmationEmailCommand,
 } from '@cleansia/partner-services';
+import { LoginCommand } from '../client/customer-client';
 // Note: LocalStorageKey is available from @cleansia/services if needed
 import {
   extractCookieValue,

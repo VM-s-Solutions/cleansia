@@ -17,10 +17,10 @@ import {
 import {
   CustomerOrderClient,
   CUSTOMER_API_BASE_URL,
-  LookupOrder_Response,
-  LookupOrderBatch_Query,
-  LookupOrderBatch_OrderLookupItem,
-  LookupOrderBatch_Response,
+  LookupOrderResponse,
+  LookupOrderBatchQuery,
+  LookupOrderBatchOrderLookupItem,
+  LookupOrderBatchResponse,
 } from '@cleansia/customer-services';
 import { OrderStatus, PaymentStatus } from '@cleansia/partner-services';
 import { CleansiaCustomerRoute, GuestOrderService } from '@cleansia/services';
@@ -64,8 +64,8 @@ export class TrackOrderComponent implements OnInit {
 
   // State
   loading = signal(false);
-  recentOrders = signal<LookupOrder_Response[]>([]);
-  manualResult = signal<LookupOrder_Response | null>(null);
+  recentOrders = signal<LookupOrderResponse[]>([]);
+  manualResult = signal<LookupOrderResponse | null>(null);
   error = signal<string | null>(null);
   searched = signal(false);
   showManualLookup = signal(false);
@@ -92,16 +92,16 @@ export class TrackOrderComponent implements OnInit {
     this.loading.set(true);
     const items = guestOrders.map(
       (o) =>
-        new LookupOrderBatch_OrderLookupItem({
+        new LookupOrderBatchOrderLookupItem({
           orderId: o.orderId,
           email: o.email,
         })
     );
 
     this.orderClient
-      .lookupBatch(new LookupOrderBatch_Query({ items }))
+      .lookupBatch(new LookupOrderBatchQuery({ items }))
       .subscribe({
-        next: (data: LookupOrderBatch_Response) => {
+        next: (data: LookupOrderBatchResponse) => {
           this.recentOrders.set(data.orders || []);
           this.loading.set(false);
         },
@@ -213,7 +213,7 @@ export class TrackOrderComponent implements OnInit {
   }
 
   formatPriceFor(
-    order: LookupOrder_Response,
+    order: LookupOrderResponse,
     price: number | undefined
   ): string {
     if (price == null) return '';

@@ -6,9 +6,9 @@
       <p class="cl-section__desc">{{ 'pages.home.process.subtitle' | translate }}</p>
     </div>
     <div class="cl-roadmap">
-      <svg class="cl-roadmap__path" viewBox="0 0 800 1100" fill="none" aria-hidden="true">
+      <svg class="cl-roadmap__path" viewBox="0 0 800 1250" fill="none" aria-hidden="true">
         <path
-          d="M 200,50 C 200,50 650,30 650,130 C 650,230 150,180 150,310 C 150,440 650,380 650,520 C 650,660 150,600 150,730 C 150,860 650,810 650,930 C 650,1010 400,1060 400,1060"
+          d="M 200,50 C 200,50 650,30 650,130 C 650,230 150,180 150,310 C 150,440 650,380 650,520 C 650,660 150,600 150,730 C 150,860 650,810 650,930 C 650,1020 150,990 150,1100 C 150,1170 400,1200 400,1200"
           stroke-dasharray="10 8"
         />
         <circle cx="200" cy="50" r="6" class="cl-roadmap__dot" />
@@ -16,62 +16,36 @@
         <circle cx="150" cy="310" r="6" class="cl-roadmap__dot" />
         <circle cx="650" cy="520" r="6" class="cl-roadmap__dot" />
         <circle cx="150" cy="730" r="6" class="cl-roadmap__dot" />
+        <circle cx="650" cy="930" r="6" class="cl-roadmap__dot" />
+        <circle cx="150" cy="1100" r="6" class="cl-roadmap__dot" />
       </svg>
 
-      <div class="cl-roadmap__step cl-roadmap__step--1 animate-on-scroll delay-1">
+      @for (step of steps; track step.number) {
+      <div
+        class="cl-roadmap__step animate-on-scroll"
+        [class]="'cl-roadmap__step cl-roadmap__step--' + step.modifierIndex + ' animate-on-scroll ' + step.delayClass"
+      >
+        @if (step.side === 'right') {
         <div class="cl-roadmap__pin">
-          <span>01</span>
+          <span>{{ step.number }}</span>
           <div class="cl-roadmap__pin-point"></div>
         </div>
         <div class="cl-roadmap__text">
-          <h3 class="cl-roadmap__name">{{ 'pages.home.process.step1' | translate }}</h3>
-          <p class="cl-roadmap__desc">{{ 'pages.home.process.step1_desc' | translate }}</p>
+          <h3 class="cl-roadmap__name">{{ step.nameKey | translate }}</h3>
+          <p class="cl-roadmap__desc">{{ step.descKey | translate }}</p>
         </div>
-      </div>
-
-      <div class="cl-roadmap__step cl-roadmap__step--2 animate-on-scroll delay-2">
+        } @else {
         <div class="cl-roadmap__text cl-roadmap__text--left">
-          <h3 class="cl-roadmap__name">{{ 'pages.home.process.step2' | translate }}</h3>
-          <p class="cl-roadmap__desc">{{ 'pages.home.process.step2_desc' | translate }}</p>
+          <h3 class="cl-roadmap__name">{{ step.nameKey | translate }}</h3>
+          <p class="cl-roadmap__desc">{{ step.descKey | translate }}</p>
         </div>
         <div class="cl-roadmap__pin">
-          <span>02</span>
+          <span>{{ step.number }}</span>
           <div class="cl-roadmap__pin-point"></div>
         </div>
+        }
       </div>
-
-      <div class="cl-roadmap__step cl-roadmap__step--3 animate-on-scroll delay-3">
-        <div class="cl-roadmap__pin">
-          <span>03</span>
-          <div class="cl-roadmap__pin-point"></div>
-        </div>
-        <div class="cl-roadmap__text">
-          <h3 class="cl-roadmap__name">{{ 'pages.home.process.step3' | translate }}</h3>
-          <p class="cl-roadmap__desc">{{ 'pages.home.process.step3_desc' | translate }}</p>
-        </div>
-      </div>
-
-      <div class="cl-roadmap__step cl-roadmap__step--4 animate-on-scroll delay-4">
-        <div class="cl-roadmap__text cl-roadmap__text--left">
-          <h3 class="cl-roadmap__name">{{ 'pages.home.process.step4' | translate }}</h3>
-          <p class="cl-roadmap__desc">{{ 'pages.home.process.step4_desc' | translate }}</p>
-        </div>
-        <div class="cl-roadmap__pin">
-          <span>04</span>
-          <div class="cl-roadmap__pin-point"></div>
-        </div>
-      </div>
-
-      <div class="cl-roadmap__step cl-roadmap__step--5 animate-on-scroll delay-5">
-        <div class="cl-roadmap__pin">
-          <span>05</span>
-          <div class="cl-roadmap__pin-point"></div>
-        </div>
-        <div class="cl-roadmap__text">
-          <h3 class="cl-roadmap__name">{{ 'pages.home.process.step5' | translate }}</h3>
-          <p class="cl-roadmap__desc">{{ 'pages.home.process.step5_desc' | translate }}</p>
-        </div>
-      </div>
+      }
     </div>
   </div>
 </section>

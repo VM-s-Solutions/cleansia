@@ -385,23 +385,25 @@
         "item1_desc": "Bez skrytých poplatků — transparentní ceník od začátku.",
         "item2_title": "Bezpečná chemie",
         "item2_desc": "Šetrné přípravky, bezpečné pro děti i alergiky.",
-        "item3_title": "Rychlé schnutí",
-        "item3_desc": "Za 2-4 hodiny můžete nábytek opět používat."
+        "item3_title": "Přesná péče",
+        "item3_desc": "Každému materiálu dopřejeme správný postup i správné přípravky."
       },
       "process": {
-        "title": "Proces čištění",
+        "title": "Jak to funguje",
         "badge": "Jak to funguje",
-        "subtitle": "Náš osvědčený 5krokový postup zaručí důkladné a profesionální vyčištění pokaždé.",
-        "step1": "Prohlídka",
-        "step1_desc": "Posoudíme nábytek a otestujeme stálost barev.",
-        "step2": "Odstranění skvrn",
-        "step2_desc": "Speciální přípravky ošetří odolné a zaschlé skvrny.",
-        "step3": "Hloubkové čištění",
-        "step3_desc": "Extrakční stroj aplikuje roztok a vysaje nečistoty.",
-        "step4": "Ošetření párou",
-        "step4_desc": "Horká pára likviduje bakterie, alergeny a osvěžuje vlákna.",
-        "step5": "Vysoušení",
-        "step5_desc": "Ventilátory urychlí schnutí — za 2-4 hodiny hotovo."
+        "subtitle": "Pár kliknutí, jasná cena a profesionální úklid přímo u vás doma.",
+        "step1": "Vyberte službu",
+        "step1_desc": "Úklid domácnosti, čištění čalounění nebo pravidelná péče. Přesně podle vašich potřeb.",
+        "step2": "Zadejte detaily",
+        "step2_desc": "Adresa, termín, rozsah. Žádné telefonáty, žádné čekání na odpověď.",
+        "step3": "Zaplaťte online",
+        "step3_desc": "Cena je pevná a vidíte ji předem. Objednávku potvrdíte během pár sekund.",
+        "step4": "Přidělíme vám profesionála",
+        "step4_desc": "Jakmile zakázku přijme ověřený uklízeč, obdržíte potvrzení s jeho jménem a hodnocením.",
+        "step5": "Přijedeme k vám",
+        "step5_desc": "V domluvený čas, plně vybavení a připraveni pustit se do práce.",
+        "step6": "Výsledek, který je vidět",
+        "step6_desc": "Pečlivě, spolehlivě a bez kompromisů."
       },
       "counter": {
         "title": "Celkově jsme provedli již",
@@ -479,20 +481,28 @@
         "badge": "FAQ",
         "desc": "Nenašli jste odpověď? Kontaktujte nás a rádi vám pomůžeme.",
         "q1": {
-          "question": "Vyjíždíte i do okolí?",
-          "answer": "Ano, pokrýváme i okolní oblasti. Kontaktujte nás pro ověření dostupnosti ve vaší lokalitě."
+          "question": "Vyjíždíte i mimo Prahu?",
+          "answer": "Ano, pokrýváme i okolní oblasti do přibližně 30 km od Prahy. Pro vzdálenější lokality nás kontaktujte — řešení najdeme."
         },
         "q2": {
+          "question": "Musím být během úklidu doma?",
+          "answer": "Není to nutné. Mnoho klientů nám předá klíče nebo nás pustí dovnitř a odejde. Pracujeme samostatně a spolehlivě."
+        },
+        "q3": {
+          "question": "Nosíte si vlastní vybavení a prostředky?",
+          "answer": "Ano, přijíždíme vždy plně vybaveni. Používáme profesionální stroje a šetrné, certifikované přípravky."
+        },
+        "q4": {
           "question": "Můžete čistit nábytek s delikátním potahem?",
           "answer": "Ano, vybíráme šetrné čisticí prostředky a metody vhodné pro každý typ látky: hedvábí, vlnu, velur, mikrovlákno a další. Před čištěním vždy provedeme test na malé ploše, abychom se ujistili, že látka nebude poškozena."
         },
-        "q3": {
+        "q5": {
           "question": "Odstraníte všechny skvrny úplně?",
-          "answer": "Odstraníme 95 % skvrn. Některé velmi staré nebo chemicky fixované skvrny se mohou výrazně zesvětlit, ale nezmizí úplně."
+          "answer": "Odstraníme až 95 % skvrn. Některé velmi staré nebo chemicky fixované skvrny se mohou výrazně zesvětlit, ale nezmizí úplně — vždy vás poctivě informujeme o očekávaném výsledku."
         },
-        "q4": {
+        "q6": {
           "question": "Mohu si objednat čištění večer nebo o víkendu?",
-          "answer": "Ano! Nabízíme flexibilní plánování včetně večerů a víkendů, aby to vyhovovalo vašemu rozvrhu."
+          "answer": "Ano. Nabízíme flexibilní plánování včetně večerů a víkendů, aby to vyhovovalo vašemu rozvrhu."
         }
       },
       "cta": {

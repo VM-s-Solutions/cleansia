@@ -1,4 +1,5 @@
-import { Component, Input } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Component, Input, OnInit, inject, signal } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import {
   CleansiaCalendarComponent,
@@ -6,8 +7,10 @@ import {
   CleansiaSelectComponent,
   CleansiaTelephoneComponent,
   CleansiaTextInputComponent,
+  ICleansiaSelectOption,
 } from '@cleansia/components';
-import { TranslatePipe } from '@ngx-translate/core';
+import { EmployeeEntityType } from '@cleansia/partner-services';
+import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 import { CalendarModule } from 'primeng/calendar';
 import { ProfileFacade } from '../../profile/profile.facade';
 
@@ -15,6 +18,7 @@ import { ProfileFacade } from '../../profile/profile.facade';
   selector: 'cleansia-profile-personal-info',
   standalone: true,
   imports: [
+    CommonModule,
     ReactiveFormsModule,
     TranslatePipe,
     CalendarModule,
@@ -120,17 +124,69 @@ import { ProfileFacade } from '../../profile/profile.facade';
           />
         </div>
         <div class="cleansia-profile__field">
-          <cleansia-text-input
-            [label]="'pages.profile.tax_id' | translate"
+          <cleansia-select
+            [options]="entityTypeOptions"
+            [label]="'pages.profile.entity_type' | translate"
             [floatVariant]="'on'"
-            formControlName="taxId"
+            formControlName="entityType"
+          />
+        </div>
+        <div class="cleansia-profile__field">
+          <cleansia-text-input
+            [label]="'pages.profile.registration_number' | translate"
+            [floatVariant]="'on'"
+            formControlName="registrationNumber"
             dataType="text"
           />
         </div>
+        <div class="cleansia-profile__field">
+          <cleansia-text-input
+            [label]="'pages.profile.vat_number' | translate"
+            [floatVariant]="'on'"
+            formControlName="vatNumber"
+            dataType="text"
+          />
+        </div>
+        @if (isLegalEntity()) {
+          <div class="cleansia-profile__field">
+            <cleansia-text-input
+              [label]="'pages.profile.legal_entity_name' | translate"
+              [floatVariant]="'on'"
+              formControlName="legalEntityName"
+              dataType="text"
+            />
+          </div>
+        }
       </div>
     </cleansia-section>
   `,
 })
-export class ProfilePersonalInfoComponent {
+export class ProfilePersonalInfoComponent implements OnInit {
   @Input({ required: true }) facade!: ProfileFacade;
+
+  private readonly translate = inject(TranslateService);
+
+  readonly entityTypeOptions: ICleansiaSelectOption[] = [
+    {
+      value: EmployeeEntityType.NaturalPerson,
+      label: this.translate.instant('pages.profile.entity_type_natural_person'),
+    },
+    {
+      value: EmployeeEntityType.LegalEntity,
+      label: this.translate.instant('pages.profile.entity_type_legal_entity'),
+    },
+  ];
+
+  readonly isLegalEntity = signal(false);
+
+  ngOnInit(): void {
+    const control = this.facade.formGroup.get('entityType');
+    if (!control) {
+      return;
+    }
+    this.isLegalEntity.set(control.value === EmployeeEntityType.LegalEntity);
+    control.valueChanges.subscribe((value) =>
+      this.isLegalEntity.set(value === EmployeeEntityType.LegalEntity)
+    );
+  }
 }

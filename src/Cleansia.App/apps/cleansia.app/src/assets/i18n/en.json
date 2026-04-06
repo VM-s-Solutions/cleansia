@@ -385,23 +385,25 @@
         "item1_desc": "No hidden fees — transparent pricing from the start.",
         "item2_title": "Safe Products",
         "item2_desc": "Low-moisture formulas, safe for children and allergy sufferers.",
-        "item3_title": "Fast Drying",
-        "item3_desc": "Ready in 2-4 hours — start using your furniture right away."
+        "item3_title": "Precision Care",
+        "item3_desc": "We give each material the right procedure and the right products."
       },
       "process": {
-        "title": "The Cleaning Process",
+        "title": "How it works",
         "badge": "How It Works",
-        "subtitle": "Our proven 5-step approach ensures a thorough and professional clean every time.",
-        "step1": "Inspection",
-        "step1_desc": "We assess your furniture and test for colour fastness.",
-        "step2": "Stain Removal",
-        "step2_desc": "Special agents treat tough and set-in stains.",
-        "step3": "Deep Cleaning",
-        "step3_desc": "Extraction machine applies solution and vacuums out dirt.",
-        "step4": "Steam Treatment",
-        "step4_desc": "Hot steam kills bacteria, removes allergens, and freshens fibres.",
-        "step5": "Drying",
-        "step5_desc": "Air movers speed up drying — ready in 2-4 hours."
+        "subtitle": "A few clicks, a clear price and professional cleaning right at your home.",
+        "step1": "Choose a service",
+        "step1_desc": "Household cleaning, upholstery cleaning or regular care. Exactly according to your needs.",
+        "step2": "Enter details",
+        "step2_desc": "Address, date, scope. No phone calls, no waiting for a response.",
+        "step3": "Pay online",
+        "step3_desc": "The price is fixed and visible in advance. You will confirm the booking within seconds.",
+        "step4": "We will assign you a professional",
+        "step4_desc": "As soon as a verified cleaner accepts the order, you will receive a confirmation with their name and rating.",
+        "step5": "We will arrive at your place",
+        "step5_desc": "At the agreed time, fully equipped and ready to get to work.",
+        "step6": "A result that is visible",
+        "step6_desc": "Carefully, reliably and without compromise."
       },
       "counter": {
         "title": "We have completed over",
@@ -479,20 +481,28 @@
         "badge": "FAQ",
         "desc": "Can't find the answer you're looking for? Get in touch with our team and we'll be happy to help.",
         "q1": {
-          "question": "Do you travel to the suburbs?",
-          "answer": "Yes, we cover surrounding areas. Contact us to check availability for your location."
+          "question": "Do you also travel outside Prague?",
+          "answer": "Yes, we cover surrounding areas up to approximately 30 km from Prague. For more distant locations, contact us — we will find a solution."
         },
         "q2": {
+          "question": "Do I have to be at home during the cleaning?",
+          "answer": "It is not necessary. Many clients hand over the keys or let us in and leave. We work independently and reliably."
+        },
+        "q3": {
+          "question": "Do you bring your own equipment and products?",
+          "answer": "Yes, we always arrive fully equipped. We use professional machines and gentle, certified products."
+        },
+        "q4": {
           "question": "Can you clean furniture with delicate upholstery?",
           "answer": "Yes, we select gentle cleaning agents and methods appropriate for each fabric type: silk, wool, velvet, microfibre and more. Before cleaning, we always test on a small area to make sure the fabric won't be damaged."
         },
-        "q3": {
+        "q5": {
           "question": "Do you remove all stains completely?",
-          "answer": "We remove 95% of stains. Some very old or chemically set stains may lighten significantly but not disappear fully."
+          "answer": "We remove up to 95% of stains. Some very old or chemically set stains may lighten significantly but not disappear fully — we will always inform you honestly about the expected result."
         },
-        "q4": {
+        "q6": {
           "question": "Can I book cleaning in the evening or on weekends?",
-          "answer": "Yes! We offer flexible scheduling including evenings and weekends to fit your schedule."
+          "answer": "Yes. We offer flexible scheduling including evenings and weekends to fit your schedule."
         }
       },
       "cta": {

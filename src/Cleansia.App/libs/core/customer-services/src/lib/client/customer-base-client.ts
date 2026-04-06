@@ -1,36 +1,38 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable, InjectionToken } from '@angular/core';
 import {
-  AuthClient,
   CountryClient,
   DisputeClient,
   GdprClient,
-  IAuthClient,
   ICountryClient,
   IDisputeClient,
   IGdprClient,
   ILanguageClient,
-  IOrderClient,
   IPackageClient,
   IPaymentClient,
   IServiceClient,
   IUserClient,
   LanguageClient,
-  OrderClient,
   PackageClient,
   PaymentClient,
   ServiceClient,
   UserClient,
 } from '@cleansia/partner-services';
+import {
+  AuthClient as CustomerAuthClient,
+  IAuthClient as ICustomerAuthClient,
+  IOrderClient as ICustomerOrderClient,
+  OrderClient as CustomerOrderClient,
+} from './customer-client';
 
 export const CUSTOMER_API_BASE_URL = new InjectionToken<string>(
   'CUSTOMER_API_BASE_URL'
 );
 
 interface ICustomerClient {
-  authClient: IAuthClient;
+  authClient: ICustomerAuthClient;
   userClient: IUserClient;
-  orderClient: IOrderClient;
+  orderClient: ICustomerOrderClient;
   countryClient: ICountryClient;
   languageClient: ILanguageClient;
   packageClient: IPackageClient;
@@ -49,9 +51,12 @@ export class CustomerClient implements ICustomerClient {
     inject(CUSTOMER_API_BASE_URL, { optional: true }) ??
     'http://localhost:5003';
 
-  authClient: IAuthClient = new AuthClient(this.httpClient, this.apiBaseUrl);
+  authClient: ICustomerAuthClient = new CustomerAuthClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
   userClient: IUserClient = new UserClient(this.httpClient, this.apiBaseUrl);
-  orderClient: IOrderClient = new OrderClient(
+  orderClient: ICustomerOrderClient = new CustomerOrderClient(
     this.httpClient,
     this.apiBaseUrl
   );

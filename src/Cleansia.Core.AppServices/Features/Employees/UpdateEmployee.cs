@@ -9,6 +9,7 @@ using Cleansia.Core.Domain.Documents;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -22,14 +23,17 @@ public class UpdateEmployee
     {
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IUserSessionProvider _userSessionProvider;
+        private readonly ITaxIdValidator _taxIdValidator;
 
         public Validator(
             ICountryRepository countryRepository,
             IEmployeeRepository employeeRepository,
-            IUserSessionProvider userSessionProvider)
+            IUserSessionProvider userSessionProvider,
+            ITaxIdValidator taxIdValidator)
         {
             _employeeRepository = employeeRepository ?? throw new ArgumentNullException(nameof(employeeRepository));
             _userSessionProvider = userSessionProvider ?? throw new ArgumentNullException(nameof(userSessionProvider));
+            _taxIdValidator = taxIdValidator ?? throw new ArgumentNullException(nameof(taxIdValidator));
 
             RuleFor(c => c)
                 .MustAsync(AllowedToUpdateEmployee)
@@ -81,9 +85,43 @@ public class UpdateEmployee
             RuleFor(c => c.PassportId)
                 .ValidatePassportId();
 
-            RuleFor(c => c.TaxId)
-                .ValidateTaxId()
-                .When(c => !string.IsNullOrWhiteSpace(c.TaxId));
+            RuleFor(c => c.RegistrationNumber)
+                .MaximumLength(50)
+                .WithMessage(BusinessErrorMessage.MaxLengthExceeded);
+
+            RuleFor(c => c)
+                .CustomAsync(async (command, context, ct) =>
+                {
+                    var result = await _taxIdValidator.ValidateRegistrationNumberAsync(
+                        command.CountryId, command.EntityType, command.RegistrationNumber, ct);
+                    if (!result.IsValid)
+                    {
+                        context.AddFailure(nameof(command.RegistrationNumber), result.ErrorKey!);
+                    }
+                });
+
+            RuleFor(c => c.VatNumber)
+                .MaximumLength(50)
+                .WithMessage(BusinessErrorMessage.MaxLengthExceeded)
+                .When(c => !string.IsNullOrWhiteSpace(c.VatNumber));
+
+            RuleFor(c => c)
+                .CustomAsync(async (command, context, ct) =>
+                {
+                    var result = await _taxIdValidator.ValidateVatNumberAsync(
+                        command.CountryId, command.VatNumber, ct);
+                    if (!result.IsValid)
+                    {
+                        context.AddFailure(nameof(command.VatNumber), result.ErrorKey!);
+                    }
+                });
+
+            RuleFor(c => c.LegalEntityName)
+                .NotEmpty()
+                .WithMessage(BusinessErrorMessage.Required)
+                .MaximumLength(200)
+                .WithMessage(BusinessErrorMessage.MaxLengthExceeded)
+                .When(c => c.EntityType == EmployeeEntityType.LegalEntity);
 
             RuleFor(c => c.Iban)
                 .ValidateIban();
@@ -162,7 +200,10 @@ public class UpdateEmployee
         string Phone,
         string Email,
         string PassportId,
-        string? TaxId,
+        EmployeeEntityType EntityType,
+        string RegistrationNumber,
+        string? VatNumber,
+        string? LegalEntityName,
         string Iban,
         string? EmergencyName,
         string? EmergencyPhone,
@@ -278,7 +319,10 @@ public class UpdateEmployee
                 command.BirthDate);
 
             employee.UpdateEmployeeDetails(
-                command.TaxId ?? string.Empty,
+                command.EntityType,
+                command.RegistrationNumber,
+                command.VatNumber,
+                command.LegalEntityName,
                 command.NationalityId,
                 command.PassportId,
                 command.Iban,

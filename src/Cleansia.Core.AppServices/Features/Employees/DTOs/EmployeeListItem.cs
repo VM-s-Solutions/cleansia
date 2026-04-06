@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Shared.DTOs.Files;
+using Cleansia.Core.Domain.Enums;
 
 namespace Cleansia.Core.AppServices.Features.Employees.DTOs;
 
@@ -44,7 +45,10 @@ public record AdminEmployeeDetail(
     string? NationalityId,
     string? NationalityName,
     string? PassportId,
-    string? TaxId,
+    EmployeeEntityType EntityType,
+    string? RegistrationNumber,
+    string? VatNumber,
+    string? LegalEntityName,
     string? Iban,
     string? EmergencyContactName,
     string? EmergencyContactPhone,

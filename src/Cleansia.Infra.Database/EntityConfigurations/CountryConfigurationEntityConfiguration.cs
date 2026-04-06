@@ -51,6 +51,26 @@ public class CountryConfigurationEntityConfiguration : AuditableEntityConfigurat
         builder.Property(e => e.TaxIdFormat)
             .HasMaxLength(100);
 
+        builder.Property(e => e.RegistrationNumberLabel)
+            .HasMaxLength(50);
+
+        builder.Property(e => e.RegistrationNumberFormat)
+            .HasMaxLength(100);
+
+        builder.Property(e => e.RegistrationNumberRequired)
+            .IsRequired()
+            .HasDefaultValue(true);
+
+        builder.Property(e => e.VatNumberLabel)
+            .HasMaxLength(50);
+
+        builder.Property(e => e.VatNumberFormat)
+            .HasMaxLength(100);
+
+        builder.Property(e => e.VatNumberRequired)
+            .IsRequired()
+            .HasDefaultValue(false);
+
         builder.Property(e => e.DefaultPaymentGateway)
             .HasMaxLength(50);
 

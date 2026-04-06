@@ -42,10 +42,6 @@ public class UpdateIdentificationInfo
 
             RuleFor(c => c.PassportId)
                 .ValidatePassportId();
-
-            RuleFor(c => c.TaxId)
-                .ValidateTaxId()
-                .When(c => !string.IsNullOrWhiteSpace(c.TaxId));
         }
 
         private async Task<bool> AllowedToUpdateEmployee(Command command, CancellationToken cancellationToken)
@@ -59,8 +55,7 @@ public class UpdateIdentificationInfo
     public record Command(
         string EmployeeId,
         string NationalityId,
-        string PassportId,
-        string? TaxId) : ICommand<Response>;
+        string PassportId) : ICommand<Response>;
 
     public record Response(string EmployeeId);
 
@@ -73,8 +68,7 @@ public class UpdateIdentificationInfo
 
             employee!.UpdateIdentification(
                 command.NationalityId,
-                command.PassportId,
-                command.TaxId);
+                command.PassportId);
 
             return BusinessResult.Success(new Response(employee.Id));
         }

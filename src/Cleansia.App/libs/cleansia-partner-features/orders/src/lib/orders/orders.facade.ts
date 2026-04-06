@@ -6,6 +6,7 @@ import {
   OrderStatus,
   PartnerClient,
   SortDefinition,
+  SortDirection,
   TakeOrderCommand,
 } from '@cleansia/partner-services';
 import * as OrderActions from '@cleansia/partner-stores';
@@ -129,6 +130,7 @@ export class OrdersFacade extends UnsubscribeControlDirective {
       ],
       hasAvailableSpots: true,
       excludeEmployeeId: employeeId || undefined,
+      cleaningDateFrom: additionalFilters?.cleaningDateFrom ?? new Date(),
     });
 
     this.store.dispatch(
@@ -158,10 +160,16 @@ export class OrdersFacade extends UnsubscribeControlDirective {
       employeeId: employeeId,
     });
 
+    const currentSort = this.currentSort();
+    const sort: SortDefinition[] =
+      currentSort.length > 0
+        ? currentSort
+        : [new SortDefinition({ field: 'cleaningDateTime', direction: SortDirection.Descending })];
+
     this.store.dispatch(
       OrderActions.loadOrderPaged({
         filter,
-        sort: this.currentSort(),
+        sort,
         offset,
         limit,
       })

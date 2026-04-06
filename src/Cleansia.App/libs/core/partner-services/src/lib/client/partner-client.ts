@@ -29,7 +29,7 @@ export interface IAuthClient {
      * @param body (optional) 
      * @return OK
      */
-    login(body?: LoginCommand | undefined): Observable<JwtTokenResponse>;
+    login(body?: PartnerLoginCommand | undefined): Observable<JwtTokenResponse>;
     /**
      * @param body (optional) 
      * @return OK
@@ -206,7 +206,7 @@ export class AuthClient implements IAuthClient {
      * @param body (optional) 
      * @return OK
      */
-    login(body?: LoginCommand | undefined): Observable<JwtTokenResponse> {
+    login(body?: PartnerLoginCommand | undefined): Observable<JwtTokenResponse> {
         let url = this.baseUrl + "/api/Auth/Login";
         url = url.replace(/[?&]$/, "");
 
@@ -9876,6 +9876,11 @@ export interface IEarningsBreakdown {
     byServiceType: { [key: string]: number; } | undefined;
 }
 
+export enum EmployeeEntityType {
+    NaturalPerson = 1,
+    LegalEntity = 2,
+}
+
 export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
     id!: string | undefined;
     employeeId!: string | undefined;
@@ -10155,7 +10160,10 @@ export class EmployeeItem implements IEmployeeItem {
     state!: string | undefined;
     nationalityId!: string | undefined;
     passportId!: string | undefined;
-    taxId!: string | undefined;
+    entityType!: EmployeeEntityType;
+    registrationNumber!: string | undefined;
+    vatNumber!: string | undefined;
+    legalEntityName!: string | undefined;
     iban!: string | undefined;
     emergencyContactName!: string | undefined;
     emergencyContactPhone!: string | undefined;
@@ -10188,7 +10196,10 @@ export class EmployeeItem implements IEmployeeItem {
             this.state = Data["state"];
             this.nationalityId = Data["nationalityId"];
             this.passportId = Data["passportId"];
-            this.taxId = Data["taxId"];
+            this.entityType = Data["entityType"];
+            this.registrationNumber = Data["registrationNumber"];
+            this.vatNumber = Data["vatNumber"];
+            this.legalEntityName = Data["legalEntityName"];
             this.iban = Data["iban"];
             this.emergencyContactName = Data["emergencyContactName"];
             this.emergencyContactPhone = Data["emergencyContactPhone"];
@@ -10227,7 +10238,10 @@ export class EmployeeItem implements IEmployeeItem {
         data["state"] = this.state;
         data["nationalityId"] = this.nationalityId;
         data["passportId"] = this.passportId;
-        data["taxId"] = this.taxId;
+        data["entityType"] = this.entityType;
+        data["registrationNumber"] = this.registrationNumber;
+        data["vatNumber"] = this.vatNumber;
+        data["legalEntityName"] = this.legalEntityName;
         data["iban"] = this.iban;
         data["emergencyContactName"] = this.emergencyContactName;
         data["emergencyContactPhone"] = this.emergencyContactPhone;
@@ -10259,7 +10273,10 @@ export interface IEmployeeItem {
     state: string | undefined;
     nationalityId: string | undefined;
     passportId: string | undefined;
-    taxId: string | undefined;
+    entityType: EmployeeEntityType;
+    registrationNumber: string | undefined;
+    vatNumber: string | undefined;
+    legalEntityName: string | undefined;
     iban: string | undefined;
     emergencyContactName: string | undefined;
     emergencyContactPhone: string | undefined;
@@ -10611,7 +10628,10 @@ export interface IGdprExportDto {
 
 export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
     id!: string | undefined;
-    taxId!: string | undefined;
+    entityType!: EmployeeEntityType;
+    registrationNumber!: string | undefined;
+    vatNumber!: string | undefined;
+    legalEntityName!: string | undefined;
     iban!: string | undefined;
     passportId!: string | undefined;
     nationalityId!: string | undefined;
@@ -10634,7 +10654,10 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
     init(Data?: any) {
         if (Data) {
             this.id = Data["id"];
-            this.taxId = Data["taxId"];
+            this.entityType = Data["entityType"];
+            this.registrationNumber = Data["registrationNumber"];
+            this.vatNumber = Data["vatNumber"];
+            this.legalEntityName = Data["legalEntityName"];
             this.iban = Data["iban"];
             this.passportId = Data["passportId"];
             this.nationalityId = Data["nationalityId"];
@@ -10657,7 +10680,10 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["id"] = this.id;
-        data["taxId"] = this.taxId;
+        data["entityType"] = this.entityType;
+        data["registrationNumber"] = this.registrationNumber;
+        data["vatNumber"] = this.vatNumber;
+        data["legalEntityName"] = this.legalEntityName;
         data["iban"] = this.iban;
         data["passportId"] = this.passportId;
         data["nationalityId"] = this.nationalityId;
@@ -10673,7 +10699,10 @@ export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
 
 export interface IGdprExportEmployeeDto {
     id: string | undefined;
-    taxId: string | undefined;
+    entityType: EmployeeEntityType;
+    registrationNumber: string | undefined;
+    vatNumber: string | undefined;
+    legalEntityName: string | undefined;
     iban: string | undefined;
     passportId: string | undefined;
     nationalityId: string | undefined;
@@ -11621,50 +11650,6 @@ export interface ILanguageListItem {
     id: string | undefined;
     code: string | undefined;
     name: string | undefined;
-}
-
-export class LoginCommand implements ILoginCommand {
-    email!: string | undefined;
-    password!: string | undefined;
-    rememberMe!: boolean;
-
-    constructor(data?: ILoginCommand) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.email = Data["email"];
-            this.password = Data["password"];
-            this.rememberMe = Data["rememberMe"];
-        }
-    }
-
-    static fromJS(data: any): LoginCommand {
-        data = typeof data === 'object' ? data : {};
-        let result = new LoginCommand();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["email"] = this.email;
-        data["password"] = this.password;
-        data["rememberMe"] = this.rememberMe;
-        return data;
-    }
-}
-
-export interface ILoginCommand {
-    email: string | undefined;
-    password: string | undefined;
-    rememberMe: boolean;
 }
 
 export class MarkInvoicePaidCommand implements IMarkInvoicePaidCommand {
@@ -13299,6 +13284,50 @@ export interface IPagedDataOfUserListItem {
     data: UserListItem[] | undefined;
 }
 
+export class PartnerLoginCommand implements IPartnerLoginCommand {
+    email!: string | undefined;
+    password!: string | undefined;
+    rememberMe!: boolean;
+
+    constructor(data?: IPartnerLoginCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.email = Data["email"];
+            this.password = Data["password"];
+            this.rememberMe = Data["rememberMe"];
+        }
+    }
+
+    static fromJS(data: any): PartnerLoginCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new PartnerLoginCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["email"] = this.email;
+        data["password"] = this.password;
+        data["rememberMe"] = this.rememberMe;
+        return data;
+    }
+}
+
+export interface IPartnerLoginCommand {
+    email: string | undefined;
+    password: string | undefined;
+    rememberMe: boolean;
+}
+
 export class PayPeriodDto implements IPayPeriodDto {
     id!: string | undefined;
     startDate!: Date;
@@ -13855,6 +13884,8 @@ export class RegistrationCompletionStatus implements IRegistrationCompletionStat
     areDocumentsUploaded!: boolean;
     hasCompletedProfile!: boolean;
     missingFields!: string[] | undefined;
+    contractStatus!: ContractStatus;
+    rejectionReason!: string | undefined;
 
     constructor(data?: IRegistrationCompletionStatus) {
         if (data) {
@@ -13874,6 +13905,8 @@ export class RegistrationCompletionStatus implements IRegistrationCompletionStat
                 for (let item of Data["missingFields"])
                     this.missingFields!.push(item);
             }
+            this.contractStatus = Data["contractStatus"];
+            this.rejectionReason = Data["rejectionReason"];
         }
     }
 
@@ -13893,6 +13926,8 @@ export class RegistrationCompletionStatus implements IRegistrationCompletionStat
             for (let item of this.missingFields)
                 data["missingFields"].push(item);
         }
+        data["contractStatus"] = this.contractStatus;
+        data["rejectionReason"] = this.rejectionReason;
         return data;
     }
 }
@@ -13901,6 +13936,8 @@ export interface IRegistrationCompletionStatus {
     areDocumentsUploaded: boolean;
     hasCompletedProfile: boolean;
     missingFields: string[] | undefined;
+    contractStatus: ContractStatus;
+    rejectionReason: string | undefined;
 }
 
 export class RejectEmployeeRequest implements IRejectEmployeeRequest {
@@ -15302,7 +15339,10 @@ export class UpdateEmployeeCommand implements IUpdateEmployeeCommand {
     phone!: string | undefined;
     email!: string | undefined;
     passportId!: string | undefined;
-    taxId!: string | undefined;
+    entityType!: EmployeeEntityType;
+    registrationNumber!: string | undefined;
+    vatNumber!: string | undefined;
+    legalEntityName!: string | undefined;
     iban!: string | undefined;
     emergencyName!: string | undefined;
     emergencyPhone!: string | undefined;
@@ -15334,7 +15374,10 @@ export class UpdateEmployeeCommand implements IUpdateEmployeeCommand {
             this.phone = Data["phone"];
             this.email = Data["email"];
             this.passportId = Data["passportId"];
-            this.taxId = Data["taxId"];
+            this.entityType = Data["entityType"];
+            this.registrationNumber = Data["registrationNumber"];
+            this.vatNumber = Data["vatNumber"];
+            this.legalEntityName = Data["legalEntityName"];
             this.iban = Data["iban"];
             this.emergencyName = Data["emergencyName"];
             this.emergencyPhone = Data["emergencyPhone"];
@@ -15376,7 +15419,10 @@ export class UpdateEmployeeCommand implements IUpdateEmployeeCommand {
         data["phone"] = this.phone;
         data["email"] = this.email;
         data["passportId"] = this.passportId;
-        data["taxId"] = this.taxId;
+        data["entityType"] = this.entityType;
+        data["registrationNumber"] = this.registrationNumber;
+        data["vatNumber"] = this.vatNumber;
+        data["legalEntityName"] = this.legalEntityName;
         data["iban"] = this.iban;
         data["emergencyName"] = this.emergencyName;
         data["emergencyPhone"] = this.emergencyPhone;
@@ -15411,7 +15457,10 @@ export interface IUpdateEmployeeCommand {
     phone: string | undefined;
     email: string | undefined;
     passportId: string | undefined;
-    taxId: string | undefined;
+    entityType: EmployeeEntityType;
+    registrationNumber: string | undefined;
+    vatNumber: string | undefined;
+    legalEntityName: string | undefined;
     iban: string | undefined;
     emergencyName: string | undefined;
     emergencyPhone: string | undefined;

@@ -34,7 +34,10 @@ public record GdprExportAddressDto(
 
 public record GdprExportEmployeeDto(
     string Id,
-    string? TaxId,
+    EmployeeEntityType EntityType,
+    string? RegistrationNumber,
+    string? VatNumber,
+    string? LegalEntityName,
     string? IBAN,
     string? PassportId,
     string? NationalityId,

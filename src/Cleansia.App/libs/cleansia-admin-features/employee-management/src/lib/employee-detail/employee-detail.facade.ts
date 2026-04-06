@@ -15,6 +15,7 @@ import {
   SortDirection,
   TimeRange,
 } from '@cleansia/admin-services';
+import { ICleansiaSelectOption } from '@cleansia/components';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -42,6 +43,7 @@ export class EmployeeDetailFacade {
   readonly savingAvailability = signal<boolean>(false);
   readonly editingSection = signal<string | null>(null);
   readonly savingEmployee = signal<boolean>(false);
+  readonly countries = signal<ICleansiaSelectOption[]>([]);
 
   loadEmployeeDetail(employeeId: string): void {
     this.loading.set(true);
@@ -56,9 +58,31 @@ export class EmployeeDetailFacade {
       .subscribe((response) => {
         if (response) {
           this.employee.set(response);
-          // Load documents for this employee
           this.loadEmployeeDocuments(employeeId);
+          this.loadCountries();
         }
+      });
+  }
+
+  private loadCountries(): void {
+    if (this.countries().length > 0) {
+      return;
+    }
+    this.adminClient.adminCountryClient
+      .getOverview()
+      .pipe(takeUntil(this.destroy$), catchError(() => of([])))
+      .subscribe((countries) => {
+        const currentLang = this.translate.currentLang;
+        const options: ICleansiaSelectOption[] = (countries ?? []).map((country) => {
+          const translation = country.translations?.[currentLang]?.name;
+          const name = translation ?? country.name ?? '';
+          const iso = country.isoCode ?? '';
+          return {
+            label: iso ? `${name} (${iso})` : name,
+            value: country.id!,
+          };
+        });
+        this.countries.set(options);
       });
   }
 
@@ -302,7 +326,7 @@ export class EmployeeDetailFacade {
     this.editingSection.set(null);
   }
 
-  updateEmployee(data: Partial<AdminUpdateEmployeeCommand>): void {
+  updateEmployee(data: Record<string, any>): void {
     const employeeId = this.employee()?.id;
     if (!employeeId) return;
 
@@ -310,20 +334,27 @@ export class EmployeeDetailFacade {
 
     const employee = this.employee();
     const command = new AdminUpdateEmployeeCommand({
-      firstName: data.firstName ?? employee.firstName,
-      lastName: data.lastName ?? employee.lastName,
-      phoneNumber: data.phoneNumber ?? employee.phoneNumber,
-      birthDate: data.birthDate ?? employee.birthDate,
-      street: data.street ?? employee.street,
-      city: data.city ?? employee.city,
-      zipCode: data.zipCode ?? employee.zipCode,
-      countryId: data.countryId ?? employee.countryId,
-      nationalityId: data.nationalityId ?? employee.nationalityId,
-      passportId: data.passportId ?? employee.passportId,
-      taxId: data.taxId ?? employee.taxId,
-      iban: data.iban ?? employee.iban,
-      emergencyContactName: data.emergencyContactName ?? employee.emergencyContactName,
-      emergencyContactPhone: data.emergencyContactPhone ?? employee.emergencyContactPhone,
+      employeeId,
+      firstName: data['firstName'] ?? employee.firstName,
+      lastName: data['lastName'] ?? employee.lastName,
+      phone: data['phoneNumber'] ?? data['phone'] ?? employee.phoneNumber,
+      birthDate: data['birthDate'] ?? employee.birthDate,
+      street: data['street'] ?? employee.street,
+      city: data['city'] ?? employee.city,
+      zipCode: data['zipCode'] ?? employee.zipCode,
+      countryId: data['countryId'] ?? employee.countryId,
+      state: data['state'] ?? employee.state,
+      nationalityId: data['nationalityId'] ?? employee.nationalityId,
+      passportId: data['passportId'] ?? employee.passportId,
+      entityType: data['entityType'] ?? employee.entityType,
+      registrationNumber: data['registrationNumber'] ?? employee.registrationNumber,
+      vatNumber: data['vatNumber'] ?? employee.vatNumber,
+      legalEntityName: data['legalEntityName'] ?? employee.legalEntityName,
+      iban: data['iban'] ?? employee.iban,
+      emergencyName:
+        data['emergencyContactName'] ?? data['emergencyName'] ?? employee.emergencyContactName,
+      emergencyPhone:
+        data['emergencyContactPhone'] ?? data['emergencyPhone'] ?? employee.emergencyContactPhone,
     });
 
     this.adminClient.adminEmployeeClient

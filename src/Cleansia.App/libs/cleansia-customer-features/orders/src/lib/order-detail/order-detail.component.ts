@@ -12,7 +12,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CleansiaButtonComponent } from '@cleansia/components';
 import {
   CustomerClient,
-  SubmitOrderReview_Command,
+  SubmitOrderReviewCommand,
 } from '@cleansia/customer-services';
 import {
   OrderItem,
@@ -125,18 +125,20 @@ export class OrderDetailComponent implements OnInit {
     if (!order?.id || this.reviewRating() === 0) return;
 
     this.reviewSubmitting.set(true);
-    const command = new SubmitOrderReview_Command({
+    const command = new SubmitOrderReviewCommand({
       orderId: order.id,
       rating: this.reviewRating(),
       comment: this.reviewComment() || undefined,
       userId: undefined, // Set by backend from JWT
     });
 
-    (this.customerClient.orderClient as any).submitReview(command).subscribe({
-      next: (review: any) => {
+    this.customerClient.orderClient.submitReview(command).subscribe({
+      next: (review) => {
         const current = this.order();
         if (current) {
-          current.review = review;
+          // customer-generated OrderReviewDto is structurally identical to the
+          // partner-generated one used on OrderItem.review — cast bridges the nominal gap.
+          current.review = review as unknown as OrderItem['review'];
           this.order.set({ ...current } as OrderItem);
         }
         this.reviewSubmitting.set(false);

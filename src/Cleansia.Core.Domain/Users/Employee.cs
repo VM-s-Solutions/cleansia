@@ -9,8 +9,16 @@ namespace Cleansia.Core.Domain.Users;
 
 public class Employee : Auditable, ITenantEntity
 {
+    public EmployeeEntityType EntityType { get; private set; } = EmployeeEntityType.NaturalPerson;
+
     [MaxLength(50)]
-    public string? TaxId { get; private set; }
+    public string? RegistrationNumber { get; private set; }
+
+    [MaxLength(50)]
+    public string? VatNumber { get; private set; }
+
+    [MaxLength(200)]
+    public string? LegalEntityName { get; private set; }
 
     public string? IBAN { get; private set; }
 
@@ -64,11 +72,24 @@ public class Employee : Auditable, ITenantEntity
         UserId = user.Id
     };
 
-    public Employee UpdateEmployeeDetails(string taxId, string nationalityId, string passportId, string iban,
-        Address address, Dictionary<string, List<TimeRange>> availability, string? emergencyContactName,
-        string? emergencyContactPhone, ContractStatus? contractStatus = null)
+    public Employee UpdateEmployeeDetails(
+        EmployeeEntityType entityType,
+        string? registrationNumber,
+        string? vatNumber,
+        string? legalEntityName,
+        string nationalityId,
+        string passportId,
+        string iban,
+        Address address,
+        Dictionary<string, List<TimeRange>> availability,
+        string? emergencyContactName,
+        string? emergencyContactPhone,
+        ContractStatus? contractStatus = null)
     {
-        TaxId = taxId;
+        EntityType = entityType;
+        RegistrationNumber = registrationNumber;
+        VatNumber = vatNumber;
+        LegalEntityName = entityType == EmployeeEntityType.LegalEntity ? legalEntityName : null;
         NationalityId = nationalityId;
         PassportId = passportId;
         IBAN = iban;
@@ -84,11 +105,23 @@ public class Employee : Auditable, ITenantEntity
         return this;
     }
 
-    public Employee UpdateIdentification(string nationalityId, string passportId, string? taxId)
+    public Employee UpdateIdentification(string nationalityId, string passportId)
     {
         NationalityId = nationalityId;
         PassportId = passportId;
-        TaxId = taxId ?? string.Empty;
+        return this;
+    }
+
+    public Employee UpdateBusinessIdentity(
+        EmployeeEntityType entityType,
+        string? registrationNumber,
+        string? vatNumber,
+        string? legalEntityName)
+    {
+        EntityType = entityType;
+        RegistrationNumber = registrationNumber;
+        VatNumber = vatNumber;
+        LegalEntityName = entityType == EmployeeEntityType.LegalEntity ? legalEntityName : null;
         return this;
     }
 
@@ -168,7 +201,9 @@ public class Employee : Auditable, ITenantEntity
 
     public Employee Anonymize()
     {
-        TaxId = "[DELETED]";
+        RegistrationNumber = "[DELETED]";
+        VatNumber = null;
+        LegalEntityName = null;
         IBAN = "[DELETED]";
         PassportId = "[DELETED]";
         EmergencyContactName = null;
@@ -192,35 +227,40 @@ public class Employee : Auditable, ITenantEntity
 
         var hasEmployeeInfo = !string.IsNullOrEmpty(IBAN) &&
                              !string.IsNullOrEmpty(PassportId) &&
-                             !string.IsNullOrEmpty(NationalityId);
+                             !string.IsNullOrEmpty(NationalityId) &&
+                             !string.IsNullOrEmpty(RegistrationNumber);
+
+        var hasEntityIdentity = EntityType != EmployeeEntityType.LegalEntity ||
+                                !string.IsNullOrEmpty(LegalEntityName);
 
         var hasDocuments = Documents.Any(d => d.IsActive);
 
         var hasAvailability = Availability.Any();
 
         return hasBasicInfo && hasPersonalInfo && hasAddress &&
-               hasEmployeeInfo && hasDocuments && hasAvailability;
+               hasEmployeeInfo && hasEntityIdentity && hasDocuments && hasAvailability;
     }
 
     public List<string> GetMissingProfileFields()
     {
         var missingFields = new List<string>();
 
-        if (string.IsNullOrEmpty(User?.FirstName)) missingFields.Add("First Name");
-        if (string.IsNullOrEmpty(User?.LastName)) missingFields.Add("Last Name");
-        if (string.IsNullOrEmpty(User?.Email)) missingFields.Add("Email");
-        if (string.IsNullOrEmpty(User?.PhoneNumber)) missingFields.Add("Phone Number");
-        if (User?.BirthDate == null) missingFields.Add("Birth Date");
-        if (string.IsNullOrEmpty(Address?.Street)) missingFields.Add("Street");
-        if (string.IsNullOrEmpty(Address?.City)) missingFields.Add("City");
-        if (string.IsNullOrEmpty(Address?.ZipCode)) missingFields.Add("Zip Code");
-        if (string.IsNullOrEmpty(Address?.CountryId)) missingFields.Add("Country");
-        if (string.IsNullOrEmpty(TaxId)) missingFields.Add("Tax ID");
-        if (string.IsNullOrEmpty(IBAN)) missingFields.Add("IBAN");
-        if (string.IsNullOrEmpty(PassportId)) missingFields.Add("Passport ID");
-        if (string.IsNullOrEmpty(NationalityId)) missingFields.Add("Nationality");
-        if (!Documents.Any(d => d.IsActive)) missingFields.Add("Documents");
-        if (!Availability.Any()) missingFields.Add("Availability");
+        if (string.IsNullOrEmpty(User?.FirstName)) missingFields.Add("profile.fields.firstName");
+        if (string.IsNullOrEmpty(User?.LastName)) missingFields.Add("profile.fields.lastName");
+        if (string.IsNullOrEmpty(User?.Email)) missingFields.Add("profile.fields.email");
+        if (string.IsNullOrEmpty(User?.PhoneNumber)) missingFields.Add("profile.fields.phoneNumber");
+        if (User?.BirthDate == null) missingFields.Add("profile.fields.birthDate");
+        if (string.IsNullOrEmpty(Address?.Street)) missingFields.Add("profile.fields.street");
+        if (string.IsNullOrEmpty(Address?.City)) missingFields.Add("profile.fields.city");
+        if (string.IsNullOrEmpty(Address?.ZipCode)) missingFields.Add("profile.fields.zipCode");
+        if (string.IsNullOrEmpty(Address?.CountryId)) missingFields.Add("profile.fields.country");
+        if (string.IsNullOrEmpty(RegistrationNumber)) missingFields.Add("profile.fields.registrationNumber");
+        if (EntityType == EmployeeEntityType.LegalEntity && string.IsNullOrEmpty(LegalEntityName))
+            missingFields.Add("profile.fields.legalEntityName");
+        if (string.IsNullOrEmpty(IBAN)) missingFields.Add("profile.fields.iban");
+        if (string.IsNullOrEmpty(PassportId)) missingFields.Add("profile.fields.passportId");
+        if (string.IsNullOrEmpty(NationalityId)) missingFields.Add("profile.fields.nationality");
+        if (!Documents.Any(d => d.IsActive)) missingFields.Add("profile.fields.documents");
 
         return missingFields;
     }

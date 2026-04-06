@@ -1,5 +1,26 @@
 {
   "name": "Cleansia",
+  "profile": {
+    "fields": {
+      "firstName": "Meno",
+      "lastName": "Priezvisko",
+      "email": "E-mail",
+      "phoneNumber": "Telefónne číslo",
+      "birthDate": "Dátum narodenia",
+      "street": "Ulica",
+      "city": "Mesto",
+      "zipCode": "PSČ",
+      "country": "Krajina",
+      "taxId": "DIČ",
+      "registrationNumber": "IČO",
+      "vatNumber": "IČ DPH",
+      "legalEntityName": "Názov firmy",
+      "iban": "IBAN",
+      "passportId": "Číslo pasu",
+      "nationality": "Národnosť",
+      "documents": "Dokumenty"
+    }
+  },
   "page_titles": {
     "partner": {
       "default": "Partnerský portál",
@@ -95,6 +116,12 @@
       "nationality": "Štátna príslušnosť / Občianstvo",
       "national_id": "Číslo občianskeho preukazu / pasu",
       "tax_id": "IČO",
+      "entity_type": "Typ podnikania",
+      "entity_type_natural_person": "Samostatne zárobkovo činná osoba (OSVČ)",
+      "entity_type_legal_entity": "Právnická osoba (s.r.o., a.s., ...)",
+      "registration_number": "IČO",
+      "vat_number": "IČ DPH",
+      "legal_entity_name": "Názov firmy",
       "bank_details": "Bankové údaje pre výplatu",
       "iban": "IBAN",
       "emergency_contact": "Kontakt pre prípad núdze",
@@ -795,7 +822,11 @@
       "profile": "Informácie o profile",
       "documents": "Požadované dokumenty",
       "availability": "Dostupnosť",
-      "documentsRequired": "Nahrajte požadované dokumenty"
+      "documentsRequired": "Nahrajte požadované dokumenty",
+      "approval": "Schválenie administrátorom",
+      "approvalAwaitingReview": "Vaše dokumenty kontroluje náš tím. Akonáhle budú schválené, dáme vám vedieť.",
+      "approvalRejected": "Vaša žiadosť bola zamietnutá. Skontrolujte prosím dôvod nižšie a nahrajte dokumenty znova.",
+      "approvalCompleteProfileFirst": "Vyplňte profil a nahrajte dokumenty, aby ste mohli požiadať o schválenie."
     }
   },
   "validation": {

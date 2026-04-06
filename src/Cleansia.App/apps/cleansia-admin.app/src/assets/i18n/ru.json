@@ -1,4 +1,33 @@
 {
+  "profile": {
+    "fields": {
+      "firstName": "Имя",
+      "lastName": "Фамилия",
+      "email": "Электронная почта",
+      "phoneNumber": "Номер телефона",
+      "birthDate": "Дата рождения",
+      "street": "Улица",
+      "city": "Город",
+      "zipCode": "Почтовый индекс",
+      "country": "Страна",
+      "taxId": "Налоговый номер",
+      "registrationNumber": "Регистрационный номер",
+      "vatNumber": "Номер плательщика НДС",
+      "legalEntityName": "Название юридического лица",
+      "iban": "IBAN",
+      "passportId": "Номер паспорта",
+      "nationality": "Гражданство",
+      "documents": "Документы"
+    }
+  },
+  "common": {
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "edit": "Редактировать",
+    "delete": "Удалить",
+    "loading": "Загрузка...",
+    "confirm": "Подтвердить"
+  },
   "page_titles": {
     "admin": {
       "default": "Панель администратора",
@@ -53,12 +82,19 @@
     "availability": {
       "days": {
         "monday": "Понедельник",
+        "monday_short": "Пн",
         "tuesday": "Вторник",
+        "tuesday_short": "Вт",
         "wednesday": "Среда",
+        "wednesday_short": "Ср",
         "thursday": "Четверг",
+        "thursday_short": "Чт",
         "friday": "Пятница",
+        "friday_short": "Пт",
         "saturday": "Суббота",
-        "sunday": "Воскресенье"
+        "saturday_short": "Сб",
+        "sunday": "Воскресенье",
+        "sunday_short": "Вс"
       },
       "current_ranges": "Текущие диапазоны",
       "no_availability": "Доступность не настроена",
@@ -243,6 +279,12 @@
       "nationality": "Национальность",
       "passport_id": "Паспорт/Национальное удостоверение",
       "tax_id": "ИНН (ИКО)",
+      "entity_type": "Тип предприятия",
+      "entity_type_natural_person": "Самозанятый / ИП",
+      "entity_type_legal_entity": "Юридическое лицо",
+      "registration_number": "Регистрационный номер",
+      "vat_number": "Номер плательщика НДС",
+      "legal_entity_name": "Название юридического лица",
       "iban": "IBAN",
       "emergency_contact": "Экстренный контакт",
       "emergency_name": "Имя",

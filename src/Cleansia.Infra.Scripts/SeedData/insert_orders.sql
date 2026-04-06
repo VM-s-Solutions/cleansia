@@ -86,7 +86,7 @@ VALUES
    (SELECT "Id" FROM public."Packages" WHERE "Name" = 'Essential Clean' LIMIT 1),
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'jan.novak@email.cz' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654321' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654321' LIMIT 1),
    '{"eco_products": true, "pet_friendly": false, "extra_vacuum": true}'),
 
   -- Order 2: Marie Svobodová - Deep Clean Premium
@@ -101,7 +101,7 @@ VALUES
    (SELECT "Id" FROM public."Packages" WHERE "Name" = 'Deep Clean Premium' LIMIT 1),
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'marie.svobodova@email.cz' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654322' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654322' LIMIT 1),
    '{"eco_products": false, "pet_friendly": true, "extra_vacuum": false}'),
 
   -- Order 3: Petr Dvořák - Moving Day Special
@@ -116,7 +116,7 @@ VALUES
    (SELECT "Id" FROM public."Packages" WHERE "Name" = 'Moving Day Special' LIMIT 1),
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'petr.dvorak@email.cz' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654323' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654323' LIMIT 1),
    '{"eco_products": true, "pet_friendly": false, "extra_vacuum": true}'),
 
   -- Order 4: Anna Černá - Kitchen & Bathroom Focus
@@ -131,7 +131,7 @@ VALUES
    (SELECT "Id" FROM public."Packages" WHERE "Name" = 'Kitchen & Bathroom Focus' LIMIT 1),
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'anna.cerna@email.cz' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654324' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654324' LIMIT 1),
    '{"eco_products": false, "pet_friendly": true, "extra_vacuum": false}'),
 
   -- Order 5: Tomáš Procházka - Eco-Green Package
@@ -146,7 +146,7 @@ VALUES
    (SELECT "Id" FROM public."Packages" WHERE "Name" = 'Eco-Green Package' LIMIT 1),
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'tomas.prochazka@email.cz' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654325' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654325' LIMIT 1),
    '{"eco_products": true, "pet_friendly": true, "extra_vacuum": true}'),
 
   -- Order 6: Complete Home Clean (No package, individual services)
@@ -161,7 +161,7 @@ VALUES
    NULL,
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'jan.novak@email.cz' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654321' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654321' LIMIT 1),
    '{"eco_products": false, "pet_friendly": false, "extra_vacuum": false}');
 
 -- INSERT ORDER SERVICES (Junction table for orders and individual services)

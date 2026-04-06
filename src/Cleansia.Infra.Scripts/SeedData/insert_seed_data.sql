@@ -399,50 +399,58 @@ VALUES
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'lenka.markova@cleansia.cz'));
 
+-- Employees 1-4 are self-employed natural persons (OSVČ / FO), EntityType = 1.
+-- Employee 5 represents a small legal entity (s.r.o. / PO), EntityType = 2, with a legal entity name.
 INSERT INTO public."Employees" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy",
-  "DeactivatedOn", "TaxId", "IBAN", "AverageRating",
+  "DeactivatedOn", "EntityType", "RegistrationNumber", "VatNumber", "LegalEntityName",
+  "IBAN", "AverageRating",
   "ComplaintsCount", "ContractStatus", "PassportId",
   "NationalityId", "EmergencyContactName", "EmergencyContactPhone",
   "Availability", "UserId", "PreferredCurrencyCode"
 )
 VALUES
-  -- Employee 1: Kateřina Novotná (Active, approved)
+  -- Employee 1: Kateřina Novotná (Active, approved) — OSVČ without VAT registration
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   '87654321', 'CZ6508000000192000145399', 4.8, 0, 2, 'P123456789',
+   1, '87654321', NULL, NULL,
+   'CZ6508000000192000145399', 4.8, 0, 2, 'P123456789',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE'),
    'Jana Novotná', '+420777888999',
    '{"Monday":[{"Start":"09:00:00","End":"17:00:00"}],"Tuesday":[{"Start":"09:00:00","End":"17:00:00"}],"Wednesday":[{"Start":"09:00:00","End":"17:00:00"}],"Thursday":[{"Start":"09:00:00","End":"17:00:00"}],"Friday":[{"Start":"09:00:00","End":"17:00:00"}]}',
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'katerina.novotna@cleansia.cz'), 'CZK'),
 
-  -- Employee 2: Michal Krejčí (Active, approved)
+  -- Employee 2: Michal Krejčí (Active, approved) — OSVČ, VAT-registered
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   '87654322', 'CZ6508000000192000145400', 4.6, 1, 2, 'P987654321',
+   1, '87654322', 'CZ87654322', NULL,
+   'CZ6508000000192000145400', 4.6, 1, 2, 'P987654321',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE'),
    'Eva Krejčí', '+420777888998',
    '{"Monday":[{"Start":"08:00:00","End":"16:00:00"}],"Tuesday":[{"Start":"08:00:00","End":"16:00:00"}],"Wednesday":[{"Start":"08:00:00","End":"16:00:00"}],"Thursday":[{"Start":"08:00:00","End":"16:00:00"}],"Friday":[{"Start":"08:00:00","End":"16:00:00"}],"Saturday":[{"Start":"10:00:00","End":"14:00:00"}]}',
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'michal.krejci@cleansia.cz'), 'CZK'),
 
-  -- Employee 3: Zuzana Horáková (Active, approved)
+  -- Employee 3: Zuzana Horáková (Active, approved) — OSVČ without VAT registration
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   '87654323', 'CZ6508000000192000145401', 4.9, 0, 2, 'P456789123',
+   1, '87654323', NULL, NULL,
+   'CZ6508000000192000145401', 4.9, 0, 2, 'P456789123',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE'),
    'Martin Horák', '+420777888997',
    '{"Monday":[{"Start":"10:00:00","End":"18:00:00"}],"Tuesday":[{"Start":"10:00:00","End":"18:00:00"}],"Wednesday":[{"Start":"10:00:00","End":"18:00:00"}],"Thursday":[{"Start":"10:00:00","End":"18:00:00"}],"Friday":[{"Start":"10:00:00","End":"18:00:00"}]}',
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'zuzana.horakova@cleansia.cz'), 'CZK'),
 
-  -- Employee 4: Pavel Veselý (Active, approved)
+  -- Employee 4: Pavel Veselý (Active, approved) — OSVČ, VAT-registered
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   '87654324', 'CZ6508000000192000145402', 4.5, 2, 2, 'P789123456',
+   1, '87654324', 'CZ87654324', NULL,
+   'CZ6508000000192000145402', 4.5, 2, 2, 'P789123456',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE'),
    'Petra Veselá', '+420777888996',
    '{"Monday":[{"Start":"07:00:00","End":"15:00:00"}],"Tuesday":[{"Start":"07:00:00","End":"15:00:00"}],"Wednesday":[{"Start":"07:00:00","End":"15:00:00"}],"Thursday":[{"Start":"07:00:00","End":"15:00:00"}],"Friday":[{"Start":"07:00:00","End":"15:00:00"}],"Saturday":[{"Start":"09:00:00","End":"13:00:00"}]}',
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'pavel.vesely@cleansia.cz'), 'CZK'),
 
-  -- Employee 5: Lenka Marková (Active, approved)
+  -- Employee 5: Lenka Marková (Active, approved) — Legal entity (s.r.o.), VAT-registered
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
-   '87654325', 'CZ6508000000192000145403', 4.7, 0, 2, 'P321654987',
+   2, '87654325', 'CZ87654325', 'Marková Cleaning s.r.o.',
+   'CZ6508000000192000145403', 4.7, 0, 2, 'P321654987',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE'),
    'Tomáš Marek', '+420777888995',
    '{"Monday":[{"Start":"09:30:00","End":"17:30:00"}],"Tuesday":[{"Start":"09:30:00","End":"17:30:00"}],"Wednesday":[{"Start":"09:30:00","End":"17:30:00"}],"Thursday":[{"Start":"09:30:00","End":"17:30:00"}],"Friday":[{"Start":"09:30:00","End":"17:30:00"}],"Sunday":[{"Start":"12:00:00","End":"16:00:00"}]}',
@@ -970,58 +978,58 @@ VALUES
   -- Order 1 (Completed) - Kateřina
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0001' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654321' LIMIT 1)),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654321' LIMIT 1)),
   -- Order 2 (Completed) - Michal
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0002' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654322' LIMIT 1)),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654322' LIMIT 1)),
   -- Order 3 (Completed) - Zuzana
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0003' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654323' LIMIT 1)),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654323' LIMIT 1)),
   -- Order 4 (Completed) - Pavel
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0004' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654324' LIMIT 1)),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654324' LIMIT 1)),
   -- Order 5 (Completed) - Lenka
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0005' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654325' LIMIT 1)),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654325' LIMIT 1)),
   -- Order 6 (Completed) - Kateřina
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0006' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654321' LIMIT 1)),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654321' LIMIT 1)),
   -- Order 7 (Confirmed) - Kateřina
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0007' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654321' LIMIT 1)),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654321' LIMIT 1)),
   -- Order 8 (In Progress) - Michal
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0008' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654322' LIMIT 1)),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654322' LIMIT 1)),
   -- Order 12 (Confirmed, multi-employee) - Zuzana + Kateřina
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0012' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654323' LIMIT 1)),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654323' LIMIT 1)),
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0012' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654321' LIMIT 1)),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654321' LIMIT 1)),
   -- Order 13 (Completed) - Pavel
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0013' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654324' LIMIT 1)),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654324' LIMIT 1)),
   -- Order 14 (In Progress) - Lenka
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0014' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654325' LIMIT 1)),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654325' LIMIT 1)),
   -- Order 17 (Completed) - Lenka
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0017' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654325' LIMIT 1)),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654325' LIMIT 1)),
   -- Order 18 (Confirmed) - Michal
   (generate_ulid()::TEXT, true,
    (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0018' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654322' LIMIT 1));
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654322' LIMIT 1));
 
 -- Insert Order Status Tracks (Order history)
 -- Status: 1=Pending, 2=Confirmed, 3=InProgress, 4=Completed, 5=Cancelled
@@ -1254,7 +1262,7 @@ VALUES
   -- Order 1 (CLS-2026-0001) - Kateřina Novotná - January period
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '20 days', NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0001' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654321' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654321' LIMIT 1),
    (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2026-01-01' LIMIT 1),
    400.00, 260.00, 50.00, 100.00, 0.00, 810.00,
    '{"basePay": 400, "roomExtras": 160, "bathroomExtras": 100, "travelExpenses": 50, "qualityBonus": 100}',
@@ -1263,7 +1271,7 @@ VALUES
   -- Order 2 (CLS-2026-0002) - Michal Krejčí - January period
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '19 days', NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0002' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654322' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654322' LIMIT 1),
    (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2026-01-01' LIMIT 1),
    600.00, 500.00, 80.00, 150.00, 0.00, 1330.00,
    '{"basePay": 600, "roomExtras": 300, "bathroomExtras": 200, "travelExpenses": 80, "qualityBonus": 150}',
@@ -1272,7 +1280,7 @@ VALUES
   -- Order 3 (CLS-2026-0003) - Zuzana Horáková - January period
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '18 days', NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0003' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654323' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654323' LIMIT 1),
    (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2026-01-01' LIMIT 1),
    700.00, 290.00, 100.00, 200.00, 0.00, 1290.00,
    '{"basePay": 700, "roomExtras": 180, "bathroomExtras": 110, "travelExpenses": 100, "performanceBonus": 200}',
@@ -1281,7 +1289,7 @@ VALUES
   -- Order 4 (CLS-2026-0004) - Pavel Veselý - January period
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '17 days', NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0004' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654324' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654324' LIMIT 1),
    (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2026-01-01' LIMIT 1),
    450.00, 80.00, 40.00, 0.00, 50.00, 520.00,
    '{"basePay": 450, "bathroomExtras": 80, "travelExpenses": 40, "lateArrivalDeduction": -50}',
@@ -1290,7 +1298,7 @@ VALUES
   -- Order 5 (CLS-2026-0005) - Lenka Marková - January period
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '16 days', NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0005' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654325' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654325' LIMIT 1),
    (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2026-01-01' LIMIT 1),
    550.00, 510.00, 60.00, 120.00, 0.00, 1240.00,
    '{"basePay": 550, "roomExtras": 360, "bathroomExtras": 150, "travelExpenses": 60, "ecoProductBonus": 120}',
@@ -1299,7 +1307,7 @@ VALUES
   -- Order 6 (CLS-2026-0006) - Kateřina Novotná - February period
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '10 days', NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0006' LIMIT 1),
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654321' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654321' LIMIT 1),
    (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2026-02-01' LIMIT 1),
    350.00, 240.00, 45.00, 80.00, 0.00, 715.00,
    '{"basePay": 350, "roomExtras": 160, "bathroomExtras": 80, "travelExpenses": 45, "repeatClientBonus": 80}',
@@ -1320,7 +1328,7 @@ INSERT INTO public."EmployeeInvoices" (
 VALUES
   -- Invoice 1: Kateřina Novotná - January 2026 (Approved, not paid yet)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '15 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654321' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654321' LIMIT 1),
    (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2026-01-01' LIMIT 1),
    'INV-202601-KN001', 1, 710.00, 100.00, 0.00, 810.00,
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
@@ -1331,7 +1339,7 @@ VALUES
 
   -- Invoice 2: Michal Krejčí - January 2026 (Approved, not paid yet)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '15 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654322' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654322' LIMIT 1),
    (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2026-01-01' LIMIT 1),
    'INV-202601-MK001', 1, 1180.00, 150.00, 0.00, 1330.00,
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
@@ -1342,7 +1350,7 @@ VALUES
 
   -- Invoice 3: Zuzana Horáková - January 2026 (Paid)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '15 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654323' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654323' LIMIT 1),
    (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2026-01-01' LIMIT 1),
    'INV-202601-ZH001', 1, 1090.00, 200.00, 0.00, 1290.00,
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
@@ -1355,7 +1363,7 @@ VALUES
 
   -- Invoice 4: Pavel Veselý - January 2026 (Approved, not paid yet)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '15 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654324' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654324' LIMIT 1),
    (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2026-01-01' LIMIT 1),
    'INV-202601-PV001', 1, 570.00, 0.00, 50.00, 520.00,
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
@@ -1366,7 +1374,7 @@ VALUES
 
   -- Invoice 5: Lenka Marková - January 2026 (Approved, not paid yet)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '15 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654325' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654325' LIMIT 1),
    (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2026-01-01' LIMIT 1),
    'INV-202601-LM001', 1, 1120.00, 120.00, 0.00, 1240.00,
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
@@ -1377,7 +1385,7 @@ VALUES
 
   -- Invoice 6: Kateřina Novotná - February 2026 (Pending approval)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '5 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654321' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654321' LIMIT 1),
    (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2026-02-01' LIMIT 1),
    'INV-202602-KN001', 1, 635.00, 80.00, 0.00, 715.00,
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
@@ -1388,7 +1396,7 @@ VALUES
 
   -- Invoice 7: Kateřina Novotná - December 2025 (Paid - Historical)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '60 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654321' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654321' LIMIT 1),
    (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2025-12-01' LIMIT 1),
    'INV-202512-KN001', 8, 6800.00, 500.00, 0.00, 7300.00,
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
@@ -1401,7 +1409,7 @@ VALUES
 
   -- Invoice 8: Michal Krejčí - December 2025 (Paid - Historical)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '60 days', NULL, NULL, NULL, NULL,
-   (SELECT "Id" FROM public."Employees" WHERE "TaxId" = '87654322' LIMIT 1),
+   (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654322' LIMIT 1),
    (SELECT "Id" FROM public."PayPeriods" WHERE "StartDate" = '2025-12-01' LIMIT 1),
    'INV-202512-MK001', 6, 7200.00, 400.00, 100.00, 7500.00,
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
@@ -1497,68 +1505,101 @@ INSERT INTO public."CountryConfigurations" (
   "CountryId", "DefaultCurrencyCode", "DefaultLanguageCode",
   "DateFormat", "TimeZoneId", "PhonePrefix",
   "StandardVatRate", "ReducedVatRate",
-  "TaxIdLabel", "TaxIdFormat", "DefaultPaymentGateway"
+  "TaxIdLabel", "TaxIdFormat",
+  "RegistrationNumberLabel", "RegistrationNumberFormat", "RegistrationNumberRequired",
+  "VatNumberLabel", "VatNumberFormat", "VatNumberRequired",
+  "DefaultPaymentGateway"
 )
 VALUES
-  -- Czech Republic
+  -- Czech Republic — IČO (company ID) mandatory, DIČ (VAT ID) optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1),
    'CZK', 'cs', 'dd.MM.yyyy', 'Europe/Prague', '+420',
-   0.21, 0.15, 'IČO', '^\d{8}$', 'Stripe'),
+   0.21, 0.15, 'IČO', '^\d{8}$',
+   'IČO', '^\d{8}$', true,
+   'DIČ', '^CZ\d{8,10}$', false,
+   'Stripe'),
 
-  -- Slovakia
+  -- Slovakia — IČO mandatory, IČ DPH (VAT) optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'SVK' LIMIT 1),
    'EUR', 'sk', 'dd.MM.yyyy', 'Europe/Bratislava', '+421',
-   0.20, 0.10, 'IČO', '^\d{8}$', 'Stripe'),
+   0.20, 0.10, 'IČO', '^\d{8}$',
+   'IČO', '^\d{8}$', true,
+   'IČ DPH', '^SK\d{10}$', false,
+   'Stripe'),
 
-  -- Poland
+  -- Poland — NIP mandatory, EU VAT optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'POL' LIMIT 1),
    'PLN', 'pl', 'dd.MM.yyyy', 'Europe/Warsaw', '+48',
-   0.23, 0.08, 'NIP', '^\d{10}$', 'Stripe'),
+   0.23, 0.08, 'NIP', '^\d{10}$',
+   'NIP', '^\d{10}$', true,
+   'VAT UE', '^PL\d{10}$', false,
+   'Stripe'),
 
-  -- Germany
+  -- Germany — Steuernummer mandatory, USt-IdNr optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'DEU' LIMIT 1),
    'EUR', 'de', 'dd.MM.yyyy', 'Europe/Berlin', '+49',
-   0.19, 0.07, 'Steuernummer', '^\d{10,13}$', 'Stripe'),
+   0.19, 0.07, 'Steuernummer', '^\d{10,13}$',
+   'Steuernummer', '^\d{10,13}$', true,
+   'USt-IdNr', '^DE\d{9}$', false,
+   'Stripe'),
 
-  -- Austria
+  -- Austria — Firmenbuchnummer mandatory, UID (VAT) optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'AUT' LIMIT 1),
    'EUR', 'de', 'dd.MM.yyyy', 'Europe/Vienna', '+43',
-   0.20, 0.10, 'UID-Nummer', '^ATU\d{8}$', 'Stripe'),
+   0.20, 0.10, 'UID-Nummer', '^ATU\d{8}$',
+   'Firmenbuchnummer', '^[A-Z]?\d{1,6}[a-z]?$', true,
+   'UID-Nummer', '^ATU\d{8}$', false,
+   'Stripe'),
 
-  -- United Kingdom
+  -- United Kingdom — UTR mandatory, VAT number optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'GBR' LIMIT 1),
    'GBP', 'en', 'dd/MM/yyyy', 'Europe/London', '+44',
-   0.20, 0.05, 'UTR', '^\d{10}$', 'Stripe'),
+   0.20, 0.05, 'UTR', '^\d{10}$',
+   'UTR', '^\d{10}$', true,
+   'VAT Number', '^GB\d{9}$', false,
+   'Stripe'),
 
-  -- France
+  -- France — SIRET mandatory, TVA intracommunautaire optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'FRA' LIMIT 1),
    'EUR', 'fr', 'dd/MM/yyyy', 'Europe/Paris', '+33',
-   0.20, 0.055, 'SIRET', '^\d{14}$', 'Stripe'),
+   0.20, 0.055, 'SIRET', '^\d{14}$',
+   'SIRET', '^\d{14}$', true,
+   'TVA', '^FR[A-Z0-9]{2}\d{9}$', false,
+   'Stripe'),
 
-  -- Italy
+  -- Italy — Codice Fiscale mandatory, Partita IVA optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'ITA' LIMIT 1),
    'EUR', 'it', 'dd/MM/yyyy', 'Europe/Rome', '+39',
-   0.22, 0.10, 'Codice Fiscale', '^[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$', 'Stripe'),
+   0.22, 0.10, 'Codice Fiscale', '^[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$',
+   'Codice Fiscale', '^[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$', true,
+   'Partita IVA', '^IT\d{11}$', false,
+   'Stripe'),
 
-  -- Spain
+  -- Spain — NIF mandatory, NIF-IVA optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'ESP' LIMIT 1),
    'EUR', 'es', 'dd/MM/yyyy', 'Europe/Madrid', '+34',
-   0.21, 0.10, 'NIF', '^[A-Z]\d{7}[A-Z0-9]$', 'Stripe'),
+   0.21, 0.10, 'NIF', '^[A-Z]\d{7}[A-Z0-9]$',
+   'NIF', '^[A-Z]\d{7}[A-Z0-9]$', true,
+   'NIF-IVA', '^ES[A-Z0-9]\d{7}[A-Z0-9]$', false,
+   'Stripe'),
 
-  -- United States
+  -- United States — EIN mandatory, no separate VAT
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'USA' LIMIT 1),
    'USD', 'en', 'MM/dd/yyyy', 'America/New_York', '+1',
-   0.00, NULL, 'EIN', '^\d{2}-\d{7}$', 'Stripe');
+   0.00, NULL, 'EIN', '^\d{2}-\d{7}$',
+   'EIN', '^\d{2}-\d{7}$', true,
+   NULL, NULL, false,
+   'Stripe');
 
 -- ============================================================
 -- FEATURE FLAGS

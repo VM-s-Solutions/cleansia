@@ -79,7 +79,8 @@ public abstract class CleansiaApiController(IMediator mediator) : ControllerBase
     private static ProblemDetails CreateProblemDetails(string title, int status, Error error, Error[]? errors = null)
     {
         var errorDetails = errors?
-                .GroupBy(e => e.Code)
+                .Where(e => e.Code is not null)
+                .GroupBy(e => e.Code!)
                 .ToDictionary(
                     g => g.Key,
                     g => string.Join("; ", g.Select(e => e.Message))

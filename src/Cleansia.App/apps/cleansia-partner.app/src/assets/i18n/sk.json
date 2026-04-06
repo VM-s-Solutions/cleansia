@@ -132,7 +132,7 @@
       "availability": "Týždenná dostupnosť",
       "availability_description": "Nastavte si týždenné pracovné hodiny výberom časových rozsahov pre každý deň. Pomôže nám to efektívne plánovať vaše úlohy.",
       "consent": "Súhlas",
-      "consent_text": "Súhlasím so spracovaním mojich osobných údajov v súlade s GDPR a českými pracovnými zákonmi.",
+      "consent_text": "Súhlasím so spracovaním mojich osobných údajov v súlade s <a href='/gdpr'>GDPR</a> a českými pracovnými zákonmi.",
       "submit": "Odoslať nástupné údaje",
       "first_name": "Meno",
       "last_name": "Priezvisko",

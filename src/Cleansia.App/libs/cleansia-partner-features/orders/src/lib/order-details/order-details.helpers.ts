@@ -93,7 +93,7 @@ export function getStatusHistoryIcon(statusValue: number | undefined): string {
 // --- Order state helpers ---
 
 export function isEmployeeAssigned(
-  assignedEmployees: { employeeId: string }[] | undefined,
+  assignedEmployees: any[] | undefined,
   employeeId: string
 ): boolean {
   return assignedEmployees?.some((e) => e.employeeId === employeeId) ?? false;
@@ -101,7 +101,7 @@ export function isEmployeeAssigned(
 
 export function canTakeOrder(
   orderStatusValue: number,
-  assignedEmployees: { employeeId: string }[] | undefined,
+  assignedEmployees: any[] | undefined,
   employeeId: string
 ): boolean {
   const isPendingOrConfirmed = orderStatusValue === 1 || orderStatusValue === 2;
@@ -110,7 +110,7 @@ export function canTakeOrder(
 
 export function canStartOrder(
   orderStatusValue: number,
-  assignedEmployees: { employeeId: string }[] | undefined,
+  assignedEmployees: any[] | undefined,
   employeeId: string
 ): boolean {
   return orderStatusValue === 2 && isEmployeeAssigned(assignedEmployees, employeeId);
@@ -118,7 +118,7 @@ export function canStartOrder(
 
 export function canCompleteOrder(
   orderStatusValue: number,
-  assignedEmployees: { employeeId: string }[] | undefined,
+  assignedEmployees: any[] | undefined,
   employeeId: string
 ): boolean {
   return orderStatusValue === 3 && isEmployeeAssigned(assignedEmployees, employeeId);
@@ -126,7 +126,7 @@ export function canCompleteOrder(
 
 export function canManagePhotos(
   orderStatusValue: number,
-  assignedEmployees: { employeeId: string }[] | undefined,
+  assignedEmployees: any[] | undefined,
   employeeId: string
 ): boolean {
   const isInProgressOrCompleted = orderStatusValue === 3 || orderStatusValue === 4;
@@ -135,7 +135,7 @@ export function canManagePhotos(
 
 export function canUploadPhotos(
   orderStatusValue: number,
-  assignedEmployees: { employeeId: string }[] | undefined,
+  assignedEmployees: any[] | undefined,
   employeeId: string
 ): boolean {
   return orderStatusValue === 3 && isEmployeeAssigned(assignedEmployees, employeeId);
@@ -154,19 +154,21 @@ export function computeElapsedTime(
 }
 
 export function buildCurrencyOptions(
-  currency: { name: string; code: string } | undefined
+  currency: any | undefined
 ): { label: string; value: string }[] {
   if (!currency) return [];
   const display = `${currency.name} (${currency.code})`;
   return [{ label: display, value: display }];
 }
 
-export function hasExtras(extras: Record<string, unknown> | undefined): boolean {
+export function hasExtras(extras: Record<string, boolean> | undefined): boolean {
   return !!extras && Object.entries(extras).some(([_, value]) => value);
 }
 
 export function getExtrasEntries(
-  extras: Record<string, unknown> | undefined
-): [string, unknown][] {
-  return extras ? Object.entries(extras).filter(([_, value]) => value) : [];
+  extras: Record<string, boolean> | undefined
+): [string, boolean][] {
+  return extras
+    ? (Object.entries(extras).filter(([_, value]) => value) as [string, boolean][])
+    : [];
 }

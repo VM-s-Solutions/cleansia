@@ -76,32 +76,32 @@ export function buildActiveFilterChips(
 ): FilterChip[] {
   const chips: FilterChip[] = [];
 
-  if (formValue.customerName) {
+  if (formValue['customerName']) {
     chips.push({
       key: 'customerName',
       label: translate.instant('pages.orders.filters.customer_name'),
-      value: formValue.customerName,
+      value: formValue['customerName'],
     });
   }
 
-  if (formValue.customerEmail) {
+  if (formValue['customerEmail']) {
     chips.push({
       key: 'customerEmail',
       label: translate.instant('pages.orders.filters.customer_email'),
-      value: formValue.customerEmail,
+      value: formValue['customerEmail'],
     });
   }
 
-  if (formValue.displayOrderNumber) {
+  if (formValue['displayOrderNumber']) {
     chips.push({
       key: 'displayOrderNumber',
       label: translate.instant('pages.orders.filters.order_number'),
-      value: formValue.displayOrderNumber,
+      value: formValue['displayOrderNumber'],
     });
   }
 
-  if (formValue.orderStatuses?.length) {
-    const statusNames = formValue.orderStatuses
+  if (formValue['orderStatuses']?.length) {
+    const statusNames = formValue['orderStatuses']
       .map((id: number) => orderStatusMultiOptions.find((o) => o.value === id)?.label)
       .filter(Boolean)
       .join(', ');
@@ -112,8 +112,8 @@ export function buildActiveFilterChips(
     });
   }
 
-  if (formValue.paymentStatuses?.length) {
-    const statusNames = formValue.paymentStatuses
+  if (formValue['paymentStatuses']?.length) {
+    const statusNames = formValue['paymentStatuses']
       .map((id: number) => paymentStatusMultiOptions.find((o) => o.value === id)?.label)
       .filter(Boolean)
       .join(', ');
@@ -124,19 +124,19 @@ export function buildActiveFilterChips(
     });
   }
 
-  if (formValue.cleaningDateFrom) {
+  if (formValue['cleaningDateFrom']) {
     chips.push({
       key: 'cleaningDateFrom',
       label: translate.instant('pages.orders.filters.cleaning_date_from'),
-      value: new Date(formValue.cleaningDateFrom).toLocaleDateString(),
+      value: new Date(formValue['cleaningDateFrom']).toLocaleDateString(),
     });
   }
 
-  if (formValue.cleaningDateTo) {
+  if (formValue['cleaningDateTo']) {
     chips.push({
       key: 'cleaningDateTo',
       label: translate.instant('pages.orders.filters.cleaning_date_to'),
-      value: new Date(formValue.cleaningDateTo).toLocaleDateString(),
+      value: new Date(formValue['cleaningDateTo']).toLocaleDateString(),
     });
   }
 
@@ -147,18 +147,18 @@ export function buildActiveFilterChips(
 
 export function buildOrderFilter(formValues: Record<string, any>): OrderFilter {
   return new OrderFilter({
-    customerName: formValues.customerName || undefined,
-    customerEmail: formValues.customerEmail || undefined,
-    displayOrderNumber: formValues.displayOrderNumber || undefined,
+    customerName: formValues['customerName'] || undefined,
+    customerEmail: formValues['customerEmail'] || undefined,
+    displayOrderNumber: formValues['displayOrderNumber'] || undefined,
     orderStatuses:
-      formValues.orderStatuses && formValues.orderStatuses.length > 0
-        ? formValues.orderStatuses
+      formValues['orderStatuses'] && formValues['orderStatuses'].length > 0
+        ? formValues['orderStatuses']
         : undefined,
     paymentStatuses:
-      formValues.paymentStatuses && formValues.paymentStatuses.length > 0
-        ? formValues.paymentStatuses
+      formValues['paymentStatuses'] && formValues['paymentStatuses'].length > 0
+        ? formValues['paymentStatuses']
         : undefined,
-    cleaningDateFrom: formValues.cleaningDateFrom || undefined,
-    cleaningDateTo: formValues.cleaningDateTo || undefined,
+    cleaningDateFrom: formValues['cleaningDateFrom'] || undefined,
+    cleaningDateTo: formValues['cleaningDateTo'] || undefined,
   });
 }

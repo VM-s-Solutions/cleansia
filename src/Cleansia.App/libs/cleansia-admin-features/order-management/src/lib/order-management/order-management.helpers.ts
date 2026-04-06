@@ -28,7 +28,7 @@ export function getOrderStatusLabel(
   translate: TranslateService
 ): string {
   if (!order.orderStatus?.value) return '';
-  const key = ORDER_STATUS_TRANSLATION_MAP[order.orderStatus.value];
+  const key = ORDER_STATUS_TRANSLATION_MAP[order.orderStatus.value as OrderStatus];
   return key ? translate.instant(key) : order.orderStatus?.name || '';
 }
 
@@ -37,7 +37,7 @@ export function getPaymentStatusLabel(
   translate: TranslateService
 ): string {
   if (!order.paymentStatus?.value) return '';
-  const key = PAYMENT_STATUS_TRANSLATION_MAP[order.paymentStatus.value];
+  const key = PAYMENT_STATUS_TRANSLATION_MAP[order.paymentStatus.value as PaymentStatus];
   return key ? translate.instant(key) : order.paymentStatus?.name || '';
 }
 

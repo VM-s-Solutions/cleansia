@@ -97,48 +97,48 @@ export function buildFilterChips(
 ): FilterChip[] {
   const chips: FilterChip[] = [];
 
-  if (formValue.invoiceNumber) {
+  if (formValue['invoiceNumber']) {
     chips.push({
       key: 'invoiceNumber',
       label: translate.instant('pages.invoices.filters.invoice_number'),
-      value: formValue.invoiceNumber,
+      value: formValue['invoiceNumber'],
     });
   }
 
-  if (formValue.dateFrom) {
+  if (formValue['dateFrom']) {
     chips.push({
       key: 'dateFrom',
       label: translate.instant('pages.invoices.filters.date_from'),
-      value: new Date(formValue.dateFrom).toLocaleDateString(),
+      value: new Date(formValue['dateFrom']).toLocaleDateString(),
     });
   }
 
-  if (formValue.dateTo) {
+  if (formValue['dateTo']) {
     chips.push({
       key: 'dateTo',
       label: translate.instant('pages.invoices.filters.date_to'),
-      value: new Date(formValue.dateTo).toLocaleDateString(),
+      value: new Date(formValue['dateTo']).toLocaleDateString(),
     });
   }
 
-  if (formValue.minAmount != null) {
+  if (formValue['minAmount'] != null) {
     chips.push({
       key: 'minAmount',
       label: translate.instant('pages.invoices.filters.min_amount'),
-      value: formValue.minAmount.toString(),
+      value: formValue['minAmount'].toString(),
     });
   }
 
-  if (formValue.maxAmount != null) {
+  if (formValue['maxAmount'] != null) {
     chips.push({
       key: 'maxAmount',
       label: translate.instant('pages.invoices.filters.max_amount'),
-      value: formValue.maxAmount.toString(),
+      value: formValue['maxAmount'].toString(),
     });
   }
 
-  if (formValue.statuses && formValue.statuses.length > 0) {
-    const statusNames = formValue.statuses
+  if (formValue['statuses'] && formValue['statuses'].length > 0) {
+    const statusNames = formValue['statuses']
       .map((id: number) => statusOptions.find((o) => o.value === id)?.label)
       .filter(Boolean)
       .join(', ');

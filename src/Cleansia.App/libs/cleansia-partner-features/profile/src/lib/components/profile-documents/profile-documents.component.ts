@@ -10,7 +10,7 @@ import {
 import { DocumentType } from '@cleansia/partner-services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Skeleton } from 'primeng/skeleton';
-import { ProfileFacade } from '../../profile/profile.facade';
+import { ProfileDocumentsFacade } from '../../profile/profile-documents.facade';
 
 @Component({
   selector: 'cleansia-profile-documents',
@@ -27,7 +27,7 @@ import { ProfileFacade } from '../../profile/profile.facade';
   templateUrl: './profile-documents.component.html',
 })
 export class ProfileDocumentsComponent implements OnInit {
-  @Input({ required: true }) facade!: ProfileFacade;
+  @Input({ required: true }) facade!: ProfileDocumentsFacade;
 
   private readonly translate = inject(TranslateService);
 

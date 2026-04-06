@@ -30,6 +30,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SkeletonModule } from 'primeng/skeleton';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { DialogModule } from 'primeng/dialog';
+import { PROFILE_SECTIONS, SectionDef, setupScrollSpy } from './profile.helpers';
 
 export interface SavedAddress {
   id: string;
@@ -72,15 +73,8 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
   loading = signal(true);
   saving = signal(false);
 
-  // Section navigation
   activeSection = signal('personal');
-  sections = [
-    { id: 'personal', icon: 'pi pi-user', labelKey: 'pages.profile.personal_info' },
-    { id: 'security', icon: 'pi pi-lock', labelKey: 'pages.profile.security_title' },
-    { id: 'addresses', icon: 'pi pi-map-marker', labelKey: 'pages.profile.addresses_title' },
-    { id: 'preferences', icon: 'pi pi-sliders-h', labelKey: 'pages.profile.preferences_title' },
-    { id: 'danger', icon: 'pi pi-exclamation-triangle', labelKey: 'pages.profile.danger_zone_title' },
-  ];
+  sections: SectionDef[] = PROFILE_SECTIONS;
 
   // Addresses (localStorage-based until backend support)
   addresses = signal<SavedAddress[]>([]);
@@ -211,28 +205,9 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private setupScrollSpy(): void {
     if (!this.isBrowser) return;
-
-    const options: IntersectionObserverInit = {
-      rootMargin: '-20% 0px -60% 0px',
-      threshold: 0,
-    };
-
-    this.scrollObserver = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) {
-          const id = entry.target.id.replace('profile-', '');
-          this.activeSection.set(id);
-        }
-      }
-    }, options);
-
-    for (const section of this.sections) {
-      if (!this.isBrowser) continue;
-      const el = document.getElementById(`profile-${section.id}`);
-      if (el) {
-        this.scrollObserver.observe(el);
-      }
-    }
+    this.scrollObserver = setupScrollSpy(this.sections, (id) =>
+      this.activeSection.set(id)
+    );
   }
 
   loadProfile(): void {

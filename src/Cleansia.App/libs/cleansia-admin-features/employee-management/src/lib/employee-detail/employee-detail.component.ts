@@ -23,6 +23,8 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 import { EmployeeDetailFacade } from './employee-detail.facade';
+import { EmployeeDocumentsFacade } from './employee-documents.facade';
+import { EmployeeDocumentsSectionComponent } from './employee-documents-section.component';
 
 @Component({
   selector: 'cleansia-admin-employee-detail',
@@ -43,12 +45,14 @@ import { EmployeeDetailFacade } from './employee-detail.facade';
     CleansiaSectionComponent,
     CleansiaLanguageSwitcherComponent,
     ToastModule,
+    EmployeeDocumentsSectionComponent,
   ],
   templateUrl: './employee-detail.component.html',
-  providers: [EmployeeDetailFacade, DialogService],
+  providers: [EmployeeDocumentsFacade, EmployeeDetailFacade, DialogService],
 })
 export class EmployeeDetailComponent implements OnInit, OnDestroy {
   protected readonly facade = inject(EmployeeDetailFacade);
+  protected readonly docsFacade = inject(EmployeeDocumentsFacade);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly store = inject(Store);
@@ -122,6 +126,7 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.facade.ngOnDestroy();
+    this.docsFacade.ngOnDestroy();
   }
 
   goBack(): void {
@@ -151,7 +156,7 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
   }
 
   onRejectDocument(document: EmployeeDocumentItem): void {
-    this.facade.openRejectDocumentDialog(document);
+    this.docsFacade.openRejectDocumentDialog(document, this.facade.employee()?.id);
   }
 
   onEditAvailability(): void {

@@ -89,32 +89,29 @@ public class UpdateEmployee
                 .MaximumLength(50)
                 .WithMessage(BusinessErrorMessage.MaxLengthExceeded);
 
-            RuleFor(c => c)
-                .CustomAsync(async (command, context, ct) =>
+            RuleFor(c => c.RegistrationNumber)
+                .MustAsync(async (command, value, ct) =>
                 {
                     var result = await _taxIdValidator.ValidateRegistrationNumberAsync(
-                        command.CountryId, command.EntityType, command.RegistrationNumber, ct);
-                    if (!result.IsValid)
-                    {
-                        context.AddFailure(nameof(command.RegistrationNumber), result.ErrorKey!);
-                    }
-                });
+                        command.CountryId, command.EntityType, value, ct);
+                    return result.IsValid;
+                })
+                .WithMessage("validation.registration_number.invalid_format");
 
             RuleFor(c => c.VatNumber)
                 .MaximumLength(50)
                 .WithMessage(BusinessErrorMessage.MaxLengthExceeded)
                 .When(c => !string.IsNullOrWhiteSpace(c.VatNumber));
 
-            RuleFor(c => c)
-                .CustomAsync(async (command, context, ct) =>
+            RuleFor(c => c.VatNumber)
+                .MustAsync(async (command, value, ct) =>
                 {
                     var result = await _taxIdValidator.ValidateVatNumberAsync(
-                        command.CountryId, command.VatNumber, ct);
-                    if (!result.IsValid)
-                    {
-                        context.AddFailure(nameof(command.VatNumber), result.ErrorKey!);
-                    }
-                });
+                        command.CountryId, value, ct);
+                    return result.IsValid;
+                })
+                .WithMessage("validation.vat_number.invalid_format")
+                .When(c => !string.IsNullOrWhiteSpace(c.VatNumber));
 
             RuleFor(c => c.LegalEntityName)
                 .NotEmpty()

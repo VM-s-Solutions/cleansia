@@ -132,7 +132,7 @@
       "availability": "Weekly Availability",
       "availability_description": "Set your weekly working hours by selecting time ranges for each day. This helps us schedule your assignments effectively.",
       "consent": "Consent",
-      "consent_text": "I agree to the processing of my personal data in accordance with GDPR and Czech labor laws.",
+      "consent_text": "I agree to the processing of my personal data in accordance with <a href='/gdpr'>GDPR</a> and Czech labor laws.",
       "submit": "Submit Onboarding",
       "first_name": "First Name",
       "last_name": "Last Name",

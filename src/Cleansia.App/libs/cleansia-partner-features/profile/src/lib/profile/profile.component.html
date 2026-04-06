@@ -33,10 +33,13 @@
       <cleansia-checkbox
         [title]="'pages.profile.consent' | translate"
         formControlName="consent"
+        [required]="true"
+        [showErrors]="false"
       />
-      <span class="cleansia-profile__consent-text">
-        {{ 'pages.profile.consent_text' | translate }}
-      </span>
+      <span
+        class="cleansia-profile__consent-text"
+        [innerHtml]="'pages.profile.consent_text' | translate"
+      ></span>
     </div>
 
     <!-- Submit Button -->

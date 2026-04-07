@@ -39,6 +39,9 @@
       "@cleansia-partner/register": [
         "libs/cleansia-partner-features/register/src/index.ts"
       ],
+      "@cleansia-partner/gdpr": [
+        "libs/cleansia-partner-features/gdpr/src/index.ts"
+      ],
       "@cleansia.app/order-details": [
         "cleansia-partner-features/order-details/src/index.ts"
       ],

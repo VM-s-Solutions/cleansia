@@ -12,6 +12,7 @@ public class EmployeeRepository(CleansiaDbContext context) : BaseRepository<Empl
             .Include(e => e.User)
             .Include(e => e.Address)
             .Include(e => e.Nationality)
+            .Include(e => e.Documents)
             .FirstOrDefaultAsync(e => e.User != null && e.User.Email == email, cancellationToken);
     }
 

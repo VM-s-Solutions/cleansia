@@ -1,4 +1,5 @@
-﻿using Cleansia.Core.AppServices.Authentication;
+﻿using Cleansia.Config.Filters;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
@@ -11,6 +12,7 @@ namespace Cleansia.Web.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[RequireCompleteProfile]
 public class OrderController(IMediator mediator) : ApiController(mediator)
 {
     [HttpPost("CreateOrder")]

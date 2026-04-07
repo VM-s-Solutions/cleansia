@@ -19,7 +19,7 @@ import {
   loadCodes,
   selectEmployeeConfirmation,
 } from '@cleansia/partner-stores';
-import { CleansiaPartnerRoute, DialogService, PageTitleService } from '@cleansia/services';
+import { CleansiaPartnerRoute, CommonRoute, DialogService, PageTitleService } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -140,7 +140,16 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private shouldCheckRegistrationCompletion(url: string): boolean {
-    return !url.startsWith(`/${CleansiaPartnerRoute.PROFILE}`);
+    const excludedRoutes = [
+      `/${CleansiaPartnerRoute.PROFILE}`,
+      `/${CleansiaPartnerRoute.GDPR}`,
+      `/${CommonRoute.NOT_FOUND}`,
+      `/${CleansiaPartnerRoute.LOGIN}`,
+      `/${CleansiaPartnerRoute.REGISTER}`,
+      `/${CleansiaPartnerRoute.CONFIRM_EMAIL}`,
+      `/${CleansiaPartnerRoute.FORGOT_PASSWORD}`,
+    ];
+    return !excludedRoutes.some((route) => url.startsWith(route));
   }
 
   sidebarMenuItems: SidebarMenuItem[] = [

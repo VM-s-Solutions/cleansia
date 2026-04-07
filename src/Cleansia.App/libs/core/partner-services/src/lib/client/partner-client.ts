@@ -13883,6 +13883,7 @@ export interface IRegisterCommand {
 export class RegistrationCompletionStatus implements IRegistrationCompletionStatus {
     areDocumentsUploaded!: boolean;
     hasCompletedProfile!: boolean;
+    hasSetAvailability!: boolean;
     missingFields!: string[] | undefined;
     contractStatus!: ContractStatus;
     rejectionReason!: string | undefined;
@@ -13900,6 +13901,7 @@ export class RegistrationCompletionStatus implements IRegistrationCompletionStat
         if (Data) {
             this.areDocumentsUploaded = Data["areDocumentsUploaded"];
             this.hasCompletedProfile = Data["hasCompletedProfile"];
+            this.hasSetAvailability = Data["hasSetAvailability"];
             if (Array.isArray(Data["missingFields"])) {
                 this.missingFields = [] as any;
                 for (let item of Data["missingFields"])
@@ -13921,6 +13923,7 @@ export class RegistrationCompletionStatus implements IRegistrationCompletionStat
         data = typeof data === 'object' ? data : {};
         data["areDocumentsUploaded"] = this.areDocumentsUploaded;
         data["hasCompletedProfile"] = this.hasCompletedProfile;
+        data["hasSetAvailability"] = this.hasSetAvailability;
         if (Array.isArray(this.missingFields)) {
             data["missingFields"] = [];
             for (let item of this.missingFields)
@@ -13935,6 +13938,7 @@ export class RegistrationCompletionStatus implements IRegistrationCompletionStat
 export interface IRegistrationCompletionStatus {
     areDocumentsUploaded: boolean;
     hasCompletedProfile: boolean;
+    hasSetAvailability: boolean;
     missingFields: string[] | undefined;
     contractStatus: ContractStatus;
     rejectionReason: string | undefined;

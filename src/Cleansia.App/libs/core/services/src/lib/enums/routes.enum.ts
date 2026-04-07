@@ -9,6 +9,7 @@ export enum CleansiaPartnerRoute {
   REGISTER = 'register',
   FORGOT_PASSWORD = 'forgot-password',
   CONFIRM_EMAIL = 'confirm-email',
+  GDPR = 'gdpr',
 }
 
 export enum CleansiaAdminRoute {

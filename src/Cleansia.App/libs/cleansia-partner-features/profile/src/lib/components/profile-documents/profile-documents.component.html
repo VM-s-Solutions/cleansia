@@ -1,88 +1,85 @@
 <cleansia-section [title]="'pages.profile.documents' | translate">
-  <!-- Upload New Documents -->
-  <div class="cleansia-profile__documents-upload">
-    <div class="cleansia-profile__document-type-selector">
-      <cleansia-select
-        [label]="'pages.profile.document_type' | translate"
-        [options]="documentTypeOptions"
-        [floatVariant]="'on'"
-        [showClear]="false"
-        [(ngModel)]="selectedDocumentType"
-      />
-    </div>
-
-    <div class="cleansia-profile__file-input-wrapper">
-      <input
-        type="file"
-        #fileInput
-        multiple
-        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-        (change)="onFilesSelected($event)"
-        class="cleansia-profile__file-input"
-      />
-      <cleansia-button
-        [buttonType]="'button'"
-        [style]="'raised-button'"
-        icon="pi pi-upload"
-        [title]="'pages.profile.select_files' | translate"
-        (clickFn)="fileInput.click()"
-      />
-    </div>
-
-    <p class="cleansia-profile__upload-info">
-      {{ 'pages.profile.upload_requirements' | translate }}
-    </p>
+  <!-- Upload Dropzone -->
+  <div
+    class="doc-upload__dropzone"
+    [class.doc-upload__dropzone--active]="isDragOver"
+    (click)="fileInput.click()"
+    (dragover)="isDragOver = true; $event.preventDefault()"
+    (dragleave)="isDragOver = false"
+    (drop)="onDrop($event); isDragOver = false"
+  >
+    <input
+      type="file"
+      #fileInput
+      multiple
+      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+      (change)="onFilesSelected($event)"
+      hidden
+    />
+    <i class="pi pi-cloud-upload doc-upload__dropzone-icon"></i>
+    <p class="doc-upload__dropzone-title">{{ 'pages.profile.drop_files_here' | translate }}</p>
+    <p class="doc-upload__dropzone-subtitle">{{ 'pages.profile.or_click_to_browse' | translate }}</p>
+    <span class="doc-upload__dropzone-formats">PDF, DOC, DOCX, JPG, PNG &bull; max 10 MB</span>
   </div>
 
   <!-- Staged Documents -->
   @if (facade.hasStagedDocuments()) {
-  <div class="cleansia-profile__staged-documents">
-    <h3 class="cleansia-profile__staged-title">
-      {{ 'pages.profile.staged_documents' | translate }}
-    </h3>
-    <div class="cleansia-profile__staged-list">
+  <div class="doc-staged">
+    <div class="doc-staged__header">
+      <span class="doc-staged__title">
+        {{ 'pages.profile.staged_documents' | translate }}
+        <span class="doc-staged__count">{{ facade.stagedDocuments().length }}</span>
+      </span>
+    </div>
+    <div class="doc-staged__list">
       @for (doc of facade.stagedDocuments(); track $index) {
-      <div class="cleansia-profile__staged-item">
-        <img
-          [src]="doc.preview"
-          alt="Preview"
-          class="cleansia-profile__staged-preview"
-        />
-        <div class="cleansia-profile__staged-info">
-          <p class="cleansia-profile__staged-name">{{ doc.file.fileName }}</p>
-          <p class="cleansia-profile__staged-type">
-            {{ facade.getDocumentTypeLabel(doc.documentType) }}
-          </p>
+      <div class="doc-staged__item" [class.doc-staged__item--error]="showValidation && !doc.documentType">
+        <div class="doc-staged__file-icon" [style.background]="getFileColor(doc.file.fileName)">
+          <span [style.color]="getFileTextColor(doc.file.fileName)">{{ getFileExtension(doc.file.fileName) }}</span>
         </div>
-        <cleansia-button
-          [buttonType]="'button'"
-          [style]="'basic-button'"
-          icon="pi pi-times"
-          [severity]="'danger'"
-          [title]="'pages.profile.remove' | translate"
-          (clickFn)="facade.removeStagedEmployeeDocument($index)"
-        />
+        <p class="doc-staged__name" [title]="doc.file.fileName">{{ doc.file.fileName }}</p>
+        <div class="doc-staged__type-wrapper">
+          <cleansia-select
+            [options]="documentTypeOptions"
+            [label]="'pages.profile.document_type' | translate"
+            [floatVariant]="'on'"
+            [showClear]="false"
+            [ngModel]="doc.documentType"
+            (valueChanges)="onStagedTypeChange($index, $event)"
+            [ngClass]="{ 'p-invalid': showValidation && !doc.documentType }"
+          />
+        </div>
+        <button class="doc-staged__remove" (click)="facade.removeStagedEmployeeDocument($index)" [title]="'pages.profile.remove' | translate">
+          <i class="pi pi-times"></i>
+        </button>
       </div>
       }
     </div>
-    <cleansia-button
-      [buttonType]="'button'"
-      [style]="'raised-button'"
-      icon="pi pi-save"
-      [title]="'pages.profile.save_documents' | translate"
-      (clickFn)="facade.saveEmployeeDocuments()"
-      [loading]="facade.documentsSaving()"
-    />
+    @if (showValidation) {
+    <p class="doc-staged__error">
+      <i class="pi pi-exclamation-circle"></i>
+      {{ 'pages.profile.select_document_type_error' | translate }}
+    </p>
+    }
+    <div class="doc-staged__actions">
+      <cleansia-button
+        [style]="'raised-button'"
+        icon="pi pi-upload"
+        [title]="'pages.profile.save_documents' | translate"
+        (clickFn)="onSaveDocuments()"
+        [loading]="facade.documentsSaving()"
+      />
+    </div>
   </div>
   }
 
   <!-- Existing Documents -->
   @if (facade.documentsLoading()) {
-  <div style="display: flex; flex-direction: column; gap: 1rem;">
+  <div class="doc-skeleton">
     @for (i of [1, 2, 3]; track i) {
-    <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; border: 1px solid #e5e7eb; border-radius: 8px;">
-      <p-skeleton shape="circle" size="2.5rem" />
-      <div style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem;">
+    <div class="doc-skeleton__item">
+      <p-skeleton width="44px" height="44px" borderRadius="8px" />
+      <div class="doc-skeleton__text">
         <p-skeleton width="60%" height="1rem" />
         <p-skeleton width="40%" height="0.75rem" />
       </div>
@@ -91,196 +88,49 @@
     }
   </div>
   } @else {
-  <!-- Pending Documents -->
-  @if (facade.pendingDocuments().length > 0) {
-  <div class="cleansia-profile__documents-group">
-    <h3 class="cleansia-profile__documents-group-title">
-      {{ 'pages.profile.pending_documents' | translate }}
-    </h3>
-    <div class="cleansia-profile__documents-list">
-      @for (doc of facade.pendingDocuments(); track doc.documentId) {
-      <div class="cleansia-profile__document-card">
-        <div class="cleansia-profile__document-header">
-          <h4 class="cleansia-profile__document-name">{{ doc.fileName }}</h4>
-          <span
-            class="cleansia-profile__document-status"
-            [ngClass]="facade.getStatusClass(doc.status!)"
-          >
-            {{ facade.getStatusLabel(doc.status!) }}
-          </span>
-        </div>
-        <div class="cleansia-profile__document-details">
-          <p>
-            <strong
-              >{{ 'pages.profile.document_type_label' | translate }}:</strong
-            >
-            {{ facade.getDocumentTypeLabel(doc.documentType!) }}
-          </p>
-          <p>
-            <strong>{{ 'pages.profile.version' | translate }}:</strong>
-            {{ doc.version }}
-          </p>
-          <p>
-            <strong>{{ 'pages.profile.file_size' | translate }}:</strong>
-            {{ facade.formatFileSize(doc.fileSizeBytes!) }}
-          </p>
-          <p>
-            <strong>{{ 'pages.profile.uploaded_at' | translate }}:</strong>
-            {{ doc.uploadedAt | date : 'dd.MM.yyyy HH:mm' }}
-          </p>
-        </div>
-        <div class="cleansia-profile__document-actions">
-          <cleansia-button
-            [buttonType]="'button'"
-            [severity]="'secondary'"
-            icon="pi pi-download"
-            [title]="'pages.profile.download' | translate"
-            (clickFn)="
-              facade.downloadEmployeeDocument(doc.documentId!, doc.fileName!)
-            "
-          />
-          <cleansia-button
-            [buttonType]="'button'"
-            [style]="'basic-button'"
-            icon="pi pi-trash"
-            [severity]="'danger'"
-            [title]="'pages.profile.delete' | translate"
-            (clickFn)="
-              facade.deleteEmployeeDocument(doc.documentId!, doc.fileName!)
-            "
-            [loading]="facade.documentsDeleting()"
-          />
-        </div>
-      </div>
-      }
-    </div>
-  </div>
-  }
-
-  <!-- Approved Documents -->
-  @if (facade.approvedDocuments().length > 0) {
-  <div class="cleansia-profile__documents-group">
-    <h3 class="cleansia-profile__documents-group-title">
-      {{ 'pages.profile.approved_documents' | translate }}
-    </h3>
-    <div class="cleansia-profile__documents-list">
-      @for (doc of facade.approvedDocuments(); track doc.documentId) {
-      <div class="cleansia-profile__document-card">
-        <div class="cleansia-profile__document-header">
-          <h4 class="cleansia-profile__document-name">{{ doc.fileName }}</h4>
-          <span
-            class="cleansia-profile__document-status"
-            [ngClass]="facade.getStatusClass(doc.status!)"
-          >
-            {{ facade.getStatusLabel(doc.status!) }}
-          </span>
-        </div>
-        <div class="cleansia-profile__document-details">
-          <p>
-            <strong
-              >{{ 'pages.profile.document_type_label' | translate }}:</strong
-            >
-            {{ facade.getDocumentTypeLabel(doc.documentType!) }}
-          </p>
-          <p>
-            <strong>{{ 'pages.profile.version' | translate }}:</strong>
-            {{ doc.version }}
-          </p>
-          <p>
-            <strong>{{ 'pages.profile.file_size' | translate }}:</strong>
-            {{ facade.formatFileSize(doc.fileSizeBytes!) }}
-          </p>
-          <p>
-            <strong>{{ 'pages.profile.uploaded_at' | translate }}:</strong>
-            {{ doc.uploadedAt | date : 'dd.MM.yyyy HH:mm' }}
-          </p>
-        </div>
-        <div class="cleansia-profile__document-actions">
-          <cleansia-button
-            [buttonType]="'button'"
-            [style]="'raised-button'"
-            icon="pi pi-download"
-            [title]="'pages.profile.download' | translate"
-            (clickFn)="
-              facade.downloadEmployeeDocument(doc.documentId!, doc.fileName!)
-            "
-          />
-        </div>
-      </div>
-      }
-    </div>
-  </div>
-  }
-
-  <!-- Rejected Documents -->
-  @if (facade.rejectedDocuments().length > 0) {
-  <div class="cleansia-profile__documents-group">
-    <h3 class="cleansia-profile__documents-group-title">
-      {{ 'pages.profile.rejected_documents' | translate }}
-    </h3>
-    <div class="cleansia-profile__documents-list">
-      @for (doc of facade.rejectedDocuments(); track doc.documentId) {
-      <div class="cleansia-profile__document-card">
-        <div class="cleansia-profile__document-header">
-          <h4 class="cleansia-profile__document-name">{{ doc.fileName }}</h4>
-          <span
-            class="cleansia-profile__document-status"
-            [ngClass]="facade.getStatusClass(doc.status!)"
-          >
-            {{ facade.getStatusLabel(doc.status!) }}
-          </span>
-        </div>
-        <div class="cleansia-profile__document-details">
-          <p>
-            <strong
-              >{{ 'pages.profile.document_type_label' | translate }}:</strong
-            >
-            {{ facade.getDocumentTypeLabel(doc.documentType!) }}
-          </p>
-          <p>
-            <strong>{{ 'pages.profile.version' | translate }}:</strong>
-            {{ doc.version }}
-          </p>
-          <p>
-            <strong>{{ 'pages.profile.file_size' | translate }}:</strong>
-            {{ facade.formatFileSize(doc.fileSizeBytes!) }}
-          </p>
-          <p>
-            <strong>{{ 'pages.profile.uploaded_at' | translate }}:</strong>
-            {{ doc.uploadedAt | date : 'dd.MM.yyyy HH:mm' }}
-          </p>
-          @if (doc.reviewNotes) {
-          <p class="cleansia-profile__review-notes">
-            <strong>{{ 'pages.profile.review_notes' | translate }}:</strong>
-            {{ doc.reviewNotes }}
-          </p>
+    @for (group of documentGroups; track group.key) {
+      @if (group.docs().length > 0) {
+      <div class="doc-group">
+        <h3 class="doc-group__title">{{ group.titleKey | translate }}</h3>
+        <div class="doc-group__grid">
+          @for (doc of group.docs(); track doc.documentId) {
+          <div class="doc-card">
+            <div class="doc-card__icon-wrapper" [style.background]="getFileColor(doc.fileName)">
+              <span class="doc-card__ext" [style.color]="getFileTextColor(doc.fileName)">{{ getFileExtension(doc.fileName) }}</span>
+            </div>
+            <div class="doc-card__body">
+              <div class="doc-card__header">
+                <h4 class="doc-card__name" [title]="doc.fileName">{{ doc.fileName }}</h4>
+                <span class="doc-card__badge" [ngClass]="facade.getStatusClass(doc.status!)">
+                  {{ facade.getStatusLabel(doc.status!) }}
+                </span>
+              </div>
+              <div class="doc-card__meta">
+                <span><i class="pi pi-tag"></i> {{ facade.getDocumentTypeLabel(doc.documentType!) }}</span>
+                <span><i class="pi pi-file"></i> {{ facade.formatFileSize(doc.fileSizeBytes!) }}</span>
+                <span><i class="pi pi-calendar"></i> {{ doc.uploadedAt | date:'dd.MM.yyyy' }}</span>
+              </div>
+              @if (doc.reviewNotes) {
+              <div class="doc-card__review-notes">
+                <i class="pi pi-info-circle"></i> {{ doc.reviewNotes }}
+              </div>
+              }
+            </div>
+            <div class="doc-card__actions">
+              <button class="doc-card__action-btn" (click)="facade.downloadEmployeeDocument(doc.documentId!, doc.fileName!)" title="Download">
+                <i class="pi pi-download"></i>
+              </button>
+              @if (group.key !== 'approved') {
+              <button class="doc-card__action-btn doc-card__action-btn--danger" (click)="facade.deleteEmployeeDocument(doc.documentId!, doc.fileName!)" title="Delete">
+                <i class="pi pi-trash"></i>
+              </button>
+              }
+            </div>
+          </div>
           }
         </div>
-        <div class="cleansia-profile__document-actions">
-          <cleansia-button
-            [buttonType]="'button'"
-            [style]="'raised-button'"
-            icon="pi pi-download"
-            [title]="'pages.profile.download' | translate"
-            (clickFn)="
-              facade.downloadEmployeeDocument(doc.documentId!, doc.fileName!)
-            "
-          />
-          <cleansia-button
-            [buttonType]="'button'"
-            [style]="'basic-button'"
-            icon="pi pi-trash"
-            [severity]="'danger'"
-            [title]="'pages.profile.delete' | translate"
-            (clickFn)="
-              facade.deleteEmployeeDocument(doc.documentId!, doc.fileName!)
-            "
-            [loading]="facade.documentsDeleting()"
-          />
-        </div>
       </div>
       }
-    </div>
-  </div>
-  } }
+    }
+  }
 </cleansia-section>

@@ -56,6 +56,11 @@ export const appRoutes: Route[] = [
     canActivate: [authGuard],
   },
   {
+    path: CleansiaPartnerRoute.GDPR,
+    loadChildren: () =>
+      import('@cleansia-partner/gdpr').then((m) => m.gdprRoutes),
+  },
+  {
     path: CleansiaPartnerRoute.HOME,
     redirectTo: CleansiaPartnerRoute.ORDERS,
     pathMatch: 'full',

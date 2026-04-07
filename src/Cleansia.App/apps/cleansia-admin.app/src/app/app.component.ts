@@ -1,11 +1,12 @@
-import { NgClass } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { isPlatformBrowser, NgClass } from '@angular/common';
+import { Component, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { AdminAuthService } from '@cleansia/admin-services';
 import { loadAdminCodes } from '@cleansia/admin-stores';
 import {
   CleansiaCookieConsentComponent,
   CleansiaDevBannerComponent,
+  CleansiaLanguageSwitcherComponent,
   CleansiaSidebarMenuComponent,
   SidebarMenuItem,
 } from '@cleansia/components';
@@ -25,6 +26,7 @@ import { ToastModule } from 'primeng/toast';
     CleansiaSidebarMenuComponent,
     CleansiaCookieConsentComponent,
     CleansiaDevBannerComponent,
+    CleansiaLanguageSwitcherComponent,
   ],
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -36,28 +38,46 @@ export class AppComponent implements OnInit {
   private readonly authService = inject(AdminAuthService);
   private readonly pageTitleService = inject(PageTitleService);
   private readonly dialogService = inject(DialogService);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   readonly bugReportUrl = environment.bugReportUrl;
   sidebarCollapsed = signal(false);
+  mobileSidebarExpanded = signal(false);
+  private mobileSignal = signal(false);
 
   ngOnInit(): void {
-    // Initialize page title service
     this.pageTitleService.initialize({
       baseTitle: 'Cleansia Admin',
       defaultTitleKey: 'page_titles.admin.default',
       faviconPath: 'assets/logos/Logo.ico',
     });
 
-    // Load codes on app initialization
     this.store.dispatch(loadAdminCodes());
+
+    if (this.isBrowser) {
+      this.updateMobileStatus();
+      window.addEventListener('resize', () => this.updateMobileStatus());
+    }
   }
 
   get isLoggedIn(): boolean {
     return this.authService.isLoggedIn();
   }
 
+  isMobile(): boolean {
+    return this.mobileSignal();
+  }
+
+  openSidebar(): void {
+    this.mobileSidebarExpanded.set(true);
+  }
+
   onSidebarCollapsedChange(collapsed: boolean): void {
     this.sidebarCollapsed.set(collapsed);
+  }
+
+  private updateMobileStatus(): void {
+    this.mobileSignal.set(window.innerWidth < 768);
   }
 
   sidebarMenuItems: SidebarMenuItem[] = [

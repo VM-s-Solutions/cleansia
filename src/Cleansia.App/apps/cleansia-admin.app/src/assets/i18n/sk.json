@@ -77,7 +77,11 @@
   "components": {
     "not_found": {
       "title": "Stránka nebola nájdená",
-      "description": "Stránka, ktorú hľadáte, mohla byť odstránená, premenovaná alebo je dočasne nedostupná."
+      "description": "Stránka, ktorú hľadáte, mohla byť odstránená, premenovaná alebo je dočasne nedostupná.",
+      "suggestion_home": "Vráťte sa na úvodnú stránku",
+      "suggestion_url": "Skontrolujte správnosť adresy URL",
+      "suggestion_contact": "Ak problém pretrváva, kontaktujte nás",
+      "go_home": "Na úvodnú stránku"
     },
     "availability": {
       "days": {
@@ -197,7 +201,7 @@
     "companyInfo": "Informácie o spoločnosti",
     "templates": "Šablóny",
     "payConfigs": "Pay Configs",
-      "logout": "Odhlásiť sa"
+    "logout": "Odhlásiť sa"
   },
   "pages": {
     "unauthorized": {

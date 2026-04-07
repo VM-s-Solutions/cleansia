@@ -77,7 +77,11 @@
   "components": {
     "not_found": {
       "title": "Stránka nenalezena",
-      "description": "Stránka, kterou hledáte, byla pravděpodobně odstraněna, přejmenována nebo je dočasně nedostupná."
+      "description": "Stránka, kterou hledáte, byla pravděpodobně odstraněna, přejmenována nebo je dočasně nedostupná.",
+      "suggestion_home": "Vraťte se na domovskou stránku",
+      "suggestion_url": "Zkontrolujte správnost URL adresy",
+      "suggestion_contact": "Kontaktujte nás, pokud problém přetrvává",
+      "go_home": "Na domovskou stránku"
     },
     "availability": {
       "days": {
@@ -197,7 +201,7 @@
     "companyInfo": "Údaje o společnosti",
     "templates": "Šablony",
     "payConfigs": "Pay Configs",
-      "logout": "Odhlásit se"
+    "logout": "Odhlásit se"
   },
   "pages": {
     "unauthorized": {

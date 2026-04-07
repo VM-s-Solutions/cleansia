@@ -239,6 +239,16 @@ Authorization policies are defined in `src/Cleansia.Core.AppServices/Authenticat
 
 Policies are enforced using the `[Permission(Policy.XYZ)]` attribute on controller actions.
 
+### RequireCompleteProfile Filter
+
+Certain partner-facing endpoints are additionally protected by the `[RequireCompleteProfile]` action filter. This filter checks whether the authenticated employee has completed their registration (profile, availability, documents, and admin approval). If the employee's profile is incomplete, the filter short-circuits the request and returns **403 Forbidden**.
+
+Protected endpoint groups:
+- **Order** endpoints (browse, take, start, complete)
+- **Dashboard** endpoints
+- **Payroll** endpoints
+- **Dispute** endpoints
+
 ## CORS Configuration
 
 CORS origins are set per environment in `appsettings.json`:

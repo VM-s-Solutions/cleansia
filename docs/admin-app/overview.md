@@ -116,3 +116,13 @@ The admin app provides CRUD interfaces for platform-wide configuration:
 | Currencies | Supported payment currencies |
 | Company Info | Company legal and contact details |
 | Templates | Email and notification templates |
+
+## Mobile Responsiveness
+
+The admin app includes a mobile-optimized layout. On smaller screens, a **fixed mobile toolbar** is displayed with:
+
+- A **hamburger menu button** that toggles the sidebar navigation
+- A **centered brand name**
+- A **language switcher**
+
+This matches the partner app's mobile UX, providing a consistent experience across Cleansia applications.

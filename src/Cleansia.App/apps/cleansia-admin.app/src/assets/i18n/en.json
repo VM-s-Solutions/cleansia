@@ -77,7 +77,11 @@
   "components": {
     "not_found": {
       "title": "Page Not Found",
-      "description": "The page you are looking for might have been removed, had its name changed, or is temporarily unavailable."
+      "description": "The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.",
+      "suggestion_home": "Return to the home page",
+      "suggestion_url": "Check the URL for typos",
+      "suggestion_contact": "Contact us if the problem persists",
+      "go_home": "Go to Home"
     },
     "availability": {
       "days": {

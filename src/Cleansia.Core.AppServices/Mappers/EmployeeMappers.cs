@@ -11,6 +11,7 @@ public static class EmployeeMappers
         return new RegistrationCompletionStatus(
             AreDocumentsUploaded: employee.Documents.Any(d => d.IsActive),
             HasCompletedProfile: employee.IsProfileComplete(),
+            HasSetAvailability: employee.Availability.Any(),
             MissingFields: employee.GetMissingProfileFields(),
             ContractStatus: employee.ContractStatus,
             RejectionReason: employee.RejectionReason);
@@ -132,31 +133,6 @@ public static class EmployeeMappers
 
     private static bool IsEmployeeProfileComplete(Employee employee)
     {
-        var hasBasicInfo = !string.IsNullOrEmpty(employee.User?.FirstName) &&
-                           !string.IsNullOrEmpty(employee.User?.LastName) &&
-                           !string.IsNullOrEmpty(employee.User?.Email) &&
-                           !string.IsNullOrEmpty(employee.User?.PhoneNumber);
-
-        var hasPersonalInfo = employee.User?.BirthDate.HasValue == true;
-
-        var hasAddress = !string.IsNullOrEmpty(employee.Address?.Street) &&
-                        !string.IsNullOrEmpty(employee.Address?.City) &&
-                        !string.IsNullOrEmpty(employee.Address?.ZipCode) &&
-                        !string.IsNullOrEmpty(employee.Address?.CountryId);
-
-        var hasEmployeeInfo = !string.IsNullOrEmpty(employee.IBAN) &&
-                             !string.IsNullOrEmpty(employee.PassportId) &&
-                             !string.IsNullOrEmpty(employee.NationalityId);
-
-        var hasEmergencyContact = !string.IsNullOrEmpty(employee.EmergencyContactName) &&
-                                 !string.IsNullOrEmpty(employee.EmergencyContactPhone);
-
-        var hasDocuments = employee.Documents.Any(d => d.IsActive);
-
-        var hasAvailability = employee.Availability?.Any() == true;
-
-        return hasBasicInfo && hasPersonalInfo && hasAddress &&
-               hasEmployeeInfo && hasEmergencyContact && hasDocuments &&
-               hasAvailability;
+        return employee.IsProfileComplete();
     }
 }

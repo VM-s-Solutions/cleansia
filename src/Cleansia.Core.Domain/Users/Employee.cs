@@ -233,12 +233,10 @@ public class Employee : Auditable, ITenantEntity
         var hasEntityIdentity = EntityType != EmployeeEntityType.LegalEntity ||
                                 !string.IsNullOrEmpty(LegalEntityName);
 
-        var hasDocuments = Documents.Any(d => d.IsActive);
-
-        var hasAvailability = Availability.Any();
-
+        // Documents and emergency contacts are handled separately by the registration lock.
+        // Emergency contacts are optional. Documents have their own category.
         return hasBasicInfo && hasPersonalInfo && hasAddress &&
-               hasEmployeeInfo && hasEntityIdentity && hasDocuments && hasAvailability;
+               hasEmployeeInfo && hasEntityIdentity;
     }
 
     public List<string> GetMissingProfileFields()
@@ -260,7 +258,6 @@ public class Employee : Auditable, ITenantEntity
         if (string.IsNullOrEmpty(IBAN)) missingFields.Add("profile.fields.iban");
         if (string.IsNullOrEmpty(PassportId)) missingFields.Add("profile.fields.passportId");
         if (string.IsNullOrEmpty(NationalityId)) missingFields.Add("profile.fields.nationality");
-        if (!Documents.Any(d => d.IsActive)) missingFields.Add("profile.fields.documents");
 
         return missingFields;
     }

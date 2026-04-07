@@ -132,7 +132,7 @@
       "availability": "Weekly Availability",
       "availability_description": "Set your weekly working hours by selecting time ranges for each day. This helps us schedule your assignments effectively.",
       "consent": "Consent",
-      "consent_text": "I agree to the processing of my personal data in accordance with <a href='/gdpr'>GDPR</a> and Czech labor laws.",
+      "consent_text": "I agree to the processing of my personal data in accordance with <a href='/gdpr' target='_blank'>GDPR</a> and Czech labor laws.",
       "submit": "Submit Onboarding",
       "first_name": "First Name",
       "last_name": "Last Name",
@@ -151,7 +151,10 @@
       "view": "View",
       "download": "Download",
       "delete": "Delete",
-      "review_notes": "Review Notes"
+      "review_notes": "Review Notes",
+      "drop_files_here": "Drop files here",
+      "or_click_to_browse": "or click to browse",
+      "select_document_type_error": "Please select a document type for each file before uploading."
     },
     "dashboard": {
       "title": "Dashboard",
@@ -602,6 +605,20 @@
         "resolve_failed": "Failed to resolve dispute",
         "resolution_notes_required": "Resolution notes are required"
       }
+    },
+    "gdpr": {
+      "title": "Privacy Policy & GDPR",
+      "subtitle": "Information about how we process and protect your personal data.",
+      "data_collection_title": "What data we collect",
+      "data_collection_text": "We collect personal identification data (name, email, phone), business identification data (IČO, DIČ), bank details (IBAN), and work-related data necessary for providing our cleaning services.",
+      "data_usage_title": "How we use your data",
+      "data_usage_text": "Your data is used exclusively for: matching you with cleaning orders, processing payments, generating invoices, communicating service updates, and complying with Czech tax and labor regulations.",
+      "data_rights_title": "Your rights",
+      "data_rights_text": "Under GDPR you have the right to access, correct, delete, or export your personal data at any time. Contact us at privacy@cleansia.cz.",
+      "data_retention_title": "Data retention",
+      "data_retention_text": "We retain your data for the duration of your partnership and for the legally required period afterward (typically 10 years for tax documents under Czech law).",
+      "contact_title": "Contact",
+      "contact_text": "For any privacy-related questions, contact our Data Protection Officer at privacy@cleansia.cz."
     }
   },
   "sidebar": {
@@ -616,7 +633,11 @@
   "components": {
     "not_found": {
       "title": "Page Not Found",
-      "description": "The page you are looking for might have been removed, had its name changed, or is temporarily unavailable."
+      "description": "The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.",
+      "suggestion_home": "Return to the home page",
+      "suggestion_url": "Check the URL for typos",
+      "suggestion_contact": "Contact us if the problem persists",
+      "go_home": "Go to Home"
     },
     "file": {
       "click_to_select": "Click to select files",
@@ -832,7 +853,8 @@
       "approval": "Admin Approval",
       "approvalAwaitingReview": "Your documents are being reviewed by our team. We'll notify you once approved.",
       "approvalRejected": "Your submission was rejected. Please review the reason below and re-upload.",
-      "approvalCompleteProfileFirst": "Complete your profile and upload documents to request approval."
+      "approvalCompleteProfileFirst": "Complete your profile and upload documents to request approval.",
+      "availabilityRequired": "Set your weekly working schedule to receive orders."
     }
   },
   "validation": {

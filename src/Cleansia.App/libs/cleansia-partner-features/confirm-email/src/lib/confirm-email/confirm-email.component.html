@@ -15,11 +15,9 @@
         {{ 'pages.email_confirm.description' | translate }}
       </p>
       <div class="cleansia-email-confirm__form-control">
-        <cleansia-text-input
+        <cleansia-code-input
           formControlName="code"
-          [dataType]="'text'"
-          [inputSize]="'x-large-width'"
-          [className]="'text-center'"
+          (codeComplete)="onVerifyCode()"
         />
       </div>
       <div class="cleansia-email-confirm__actions">

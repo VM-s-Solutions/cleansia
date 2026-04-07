@@ -6,6 +6,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import {
   CleansiaBrandNameComponent,
   CleansiaButtonComponent,
+  CleansiaCodeInputComponent,
   CleansiaDynamicBackgroundComponent,
   CleansiaLanguageSwitcherComponent,
   CleansiaTextInputComponent,
@@ -27,6 +28,7 @@ import { ConfirmEmailFacade } from './confirm-email.facade';
     CleansiaTitleComponent,
     CleansiaButtonComponent,
     CleansiaBrandNameComponent,
+    CleansiaCodeInputComponent,
     CleansiaTextInputComponent,
     CleansiaLanguageSwitcherComponent,
     CleansiaDynamicBackgroundComponent,

@@ -43,10 +43,11 @@ After submission, the backend:
 
 After registration, partners are redirected to `/confirm-email`. The confirmation flow:
 
-1. Partner receives an email with a verification link
-2. Clicking the link opens the confirm-email page with a token query parameter
-3. The token is sent to the backend for validation
-4. On success, the email is marked as confirmed
+1. Partner receives an email with a 6-digit confirmation code
+2. The confirm-email page presents a 6-digit code input component with individual digit fields that auto-advance to the next field on entry
+3. The form auto-submits when the 6th digit is entered; clipboard paste of a full code is also supported
+4. The code is sent to the backend for validation
+5. On success, the email is marked as confirmed
 
 ::: warning
 Partners cannot log in until their email is confirmed. The login flow checks `isEmailConfirmed` and redirects back to the confirmation page if false.
@@ -67,15 +68,34 @@ Once logged in, partners need to complete their profile via the `/profile` page.
 - Personal details (name, phone, date of birth)
 - Address information
 - Bank account details (for invoice payments)
+- Business identity:
+  - Entity type (Natural Person or Legal Entity)
+  - Registration Number (IČO) -- mandatory
+  - VAT Number (DIČ) -- optional
+  - Legal Entity Name -- required only when Entity type is Legal Entity
 - Preferred languages
 - Availability schedule (days/times they can work)
-- Emergency contact (optional -- not required for profile completion)
+
+::: info
+Emergency contacts are optional and are **not** required for profile completion.
+:::
+
+::: tip Country Configuration
+Country-specific labels and validation rules (e.g., field names, format masks) are driven by the `CountryConfiguration` table managed in the admin app.
+:::
 
 The employee record has an `isProfileComplete` flag that tracks whether all required fields have been filled.
 
 ## Step 5: Document Upload
 
-Partners must upload identity and work-related documents through the profile page. Supported document types:
+Partners must upload identity and work-related documents through the profile page. The upload flow works as follows:
+
+1. A **drag-and-drop upload zone** is presented (no pre-selected document type)
+2. Files are staged with no type assigned -- each file gets its own **inline type selector** where the partner picks the document type
+3. **Validation:** all staged files must have a type selected before the upload can proceed; files missing a type are highlighted in red with an error message
+4. Document cards display file-type colored icons (PDF = red, DOC = blue, JPG = yellow, etc.)
+
+Supported document types:
 
 | Document Type | Description |
 |---|---|
@@ -127,11 +147,20 @@ Until approved, the partner can log in and access their profile, but their abili
 
 ### Registration Lock Screen
 
-Partners who have not yet been approved see a registration lock screen that displays:
+Partners who have not yet been approved see a registration lock screen that displays a **progress bar** and four requirement categories:
 
-- A **progress bar** indicating overall completion toward approval
-- **Categorized requirements** (profile completion, document uploads, admin approval) each with status icons showing completed, pending, or missing items
-- Clear guidance on what steps remain before full access is granted
+1. **Profile Information** -- lists the names of any missing required fields (translated to the partner's language)
+2. **Availability** -- whether a weekly availability schedule has been set
+3. **Required Documents** -- whether at least one active (uploaded) document exists
+4. **Admin Approval** -- shows one of the following distinct states:
+   - _"Complete profile first"_ -- profile is not yet complete
+   - _"Awaiting review"_ -- profile is complete and pending admin decision
+   - _"Rejected: {reason}"_ -- admin has rejected the application with a reason
+   - _"Approved"_ -- admin has approved the partner
+
+::: info Excluded Routes
+The following pages are accessible even when the registration lock is active and are **not** blocked by the lock screen: Profile, GDPR, 404, Login, Register, Confirm Email, Forgot Password.
+:::
 
 ## Step 7: Full Platform Access
 

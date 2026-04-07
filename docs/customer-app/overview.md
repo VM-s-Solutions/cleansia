@@ -10,15 +10,15 @@ Provide a seamless booking experience for cleaning services, allowing both authe
 
 | Feature | Description |
 |---|---|
-| Home page | Landing page with service highlights and CTA |
+| Home page | Landing page with service highlights, "How it works" (6 booking-flow steps), FAQ (6 questions), "Why Choose Us" section, and CTA |
 | Services catalog | Browse available cleaning services and packages |
 | Order wizard | Multi-step booking flow (services, address, date/time, payment, review) |
 | Checkout | Stripe card payments or cash-on-delivery |
 | Order tracking | Anonymous order lookup by order number + email |
 | My Orders | Authenticated order history with detail view and rebook |
 | Disputes | Submit and track order disputes |
-| Profile | Manage account details |
-| Authentication | Email/password login, Google OAuth, registration, email confirmation |
+| Profile | Manage account details (address form uses reactive FormGroup with country dropdown and validation) |
+| Authentication | Email/password login, Google OAuth, registration, email confirmation (6-digit code input) |
 | GDPR | Cookie consent and data management |
 
 ## SSR

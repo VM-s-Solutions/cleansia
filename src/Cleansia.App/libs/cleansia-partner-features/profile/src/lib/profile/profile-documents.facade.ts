@@ -184,6 +184,15 @@ export class ProfileDocumentsFacade {
     }));
   }
 
+  updateStagedDocumentType(index: number, documentType: DocumentType): void {
+    this.documentsState.update((s) => ({
+      ...s,
+      stagedDocuments: s.stagedDocuments.map((d, i) =>
+        i === index ? { ...d, documentType } : d
+      ),
+    }));
+  }
+
   async saveEmployeeDocuments(): Promise<void> {
     const staged = this.documentsState().stagedDocuments;
 

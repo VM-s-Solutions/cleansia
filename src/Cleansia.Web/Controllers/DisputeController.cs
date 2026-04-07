@@ -1,3 +1,4 @@
+using Cleansia.Config.Filters;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Disputes;
 using Cleansia.Core.AppServices.Features.Disputes.DTOs;
@@ -11,6 +12,7 @@ namespace Cleansia.Web.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[RequireCompleteProfile]
 public class DisputeController(IMediator mediator) : ApiController(mediator)
 {
     [HttpPost("Create")]

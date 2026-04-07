@@ -133,7 +133,7 @@
       "availability": "Týdenní dostupnost",
       "availability_description": "Nastavte si své týdenní pracovní hodiny výběrem časových rozmezí pro každý den. To nám pomůže efektivně plánovat vaše úkoly.",
       "consent": "Souhlas",
-      "consent_text": "Souhlasím se zpracováním svých osobních údajů v souladu s <a href='/gdpr'>GDPR</a> a českými pracovními zákony.",
+      "consent_text": "Souhlasím se zpracováním svých osobních údajů v souladu s <a href='/gdpr' target='_blank'>GDPR</a> a českými pracovními zákony.",
       "submit": "Odeslat onboarding",
       "document_type": "Typ dokumentu",
       "select_files": "Vybrat soubory",
@@ -150,7 +150,10 @@
       "view": "Zobrazit",
       "download": "Stáhnout",
       "delete": "Smazat",
-      "review_notes": "Poznámky ke kontrole"
+      "review_notes": "Poznámky ke kontrole",
+      "drop_files_here": "Přetáhněte soubory sem",
+      "or_click_to_browse": "nebo klikněte pro výběr",
+      "select_document_type_error": "Před nahráním vyberte typ dokumentu pro každý soubor."
     },
     "dashboard": {
       "title": "Nástěnka",
@@ -619,6 +622,20 @@
         "resolve_failed": "Nepodařilo se vyřešit spor",
         "resolution_notes_required": "Poznámky k vyřešení jsou povinné"
       }
+    },
+    "gdpr": {
+      "title": "Zásady ochrany osobních údajů & GDPR",
+      "subtitle": "Informace o tom, jak zpracováváme a chráníme vaše osobní údaje.",
+      "data_collection_title": "Jaké údaje shromažďujeme",
+      "data_collection_text": "Shromažďujeme osobní identifikační údaje, obchodní údaje (IČO, DIČ), bankovní údaje (IBAN) a pracovní údaje nezbytné pro poskytování úklidových služeb.",
+      "data_usage_title": "Jak vaše údaje používáme",
+      "data_usage_text": "Vaše údaje používáme výhradně pro přiřazování zakázek, zpracování plateb, generování faktur a dodržování českých předpisů.",
+      "data_rights_title": "Vaše práva",
+      "data_rights_text": "Podle GDPR máte právo na přístup, opravu, vymazání nebo export svých osobních údajů. Kontaktujte nás na privacy@cleansia.cz.",
+      "data_retention_title": "Uchovávání údajů",
+      "data_retention_text": "Vaše údaje uchováváme po dobu vaší spolupráce a zákonem stanovenou dobu poté (obvykle 10 let).",
+      "contact_title": "Kontakt",
+      "contact_text": "S jakýmikoli dotazy ohledně ochrany osobních údajů nás kontaktujte na privacy@cleansia.cz."
     }
   },
   "sidebar": {
@@ -633,7 +650,11 @@
   "components": {
     "not_found": {
       "title": "Stránka nenalezena",
-      "description": "Stránka, kterou hledáte, byla pravděpodobně odstraněna, přejmenována nebo je dočasně nedostupná."
+      "description": "Stránka, kterou hledáte, byla pravděpodobně odstraněna, přejmenována nebo je dočasně nedostupná.",
+      "suggestion_home": "Vraťte se na domovskou stránku",
+      "suggestion_url": "Zkontrolujte správnost URL adresy",
+      "suggestion_contact": "Kontaktujte nás, pokud problém přetrvává",
+      "go_home": "Na domovskou stránku"
     },
     "file": {
       "click_to_select": "Klikněte pro výběr souborů",
@@ -849,7 +870,8 @@
       "approval": "Schválení administrátorem",
       "approvalAwaitingReview": "Vaše dokumenty kontroluje náš tým. Jakmile budou schváleny, dáme vám vědět.",
       "approvalRejected": "Vaše žádost byla zamítnuta. Zkontrolujte prosím důvod níže a nahrajte dokumenty znovu.",
-      "approvalCompleteProfileFirst": "Vyplňte profil a nahrajte dokumenty, abyste mohli požádat o schválení."
+      "approvalCompleteProfileFirst": "Vyplňte profil a nahrajte dokumenty, abyste mohli požádat o schválení.",
+      "availabilityRequired": "Nastavte svůj týdenní pracovní rozvrh pro příjem zakázek."
     }
   },
   "validation": {
@@ -1280,7 +1302,7 @@
       "password": "Heslo",
       "confirm_password": "Potvrdit heslo",
       "terms_agreement": "Souhlasím s podmínkami",
-      "terms_and_conditions": "Souhlasím s <a href='/gdpr'>Obchodními podmínkami a Zásadami ochrany osobních údajů</a>",
+      "terms_and_conditions": "Souhlasím s <a href='/gdpr' target='_blank'>Obchodními podmínkami a Zásadami ochrany osobních údajů</a>",
       "have_account": "Již máte účet?",
       "validation": {
         "password_letter": "Alespoň jedno písmeno",

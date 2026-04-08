@@ -8,18 +8,18 @@ Provide a seamless booking experience for cleaning services, allowing both authe
 
 ## Key Features
 
-| Feature | Description |
-|---|---|
-| Home page | Landing page with "What you get with our service" benefits section (Less worries, More time, Professional approach, Clean home), "How it works" (6 booking-flow steps), FAQ (6 questions), "Why Choose Us" section, and CTA |
-| Services catalog | Browse available cleaning services and packages |
-| Order wizard | Multi-step booking flow (services, address, date/time, payment, review) |
-| Checkout | Stripe card payments or cash-on-delivery |
-| Order tracking | Anonymous order lookup by order number + email |
-| My Orders | Authenticated order history with detail view and rebook |
-| Disputes | Submit and track order disputes |
-| Profile | Manage account details (address form uses reactive FormGroup with country dropdown and validation) |
-| Authentication | Email/password login, Google OAuth, registration, email confirmation (6-digit code input) |
-| GDPR | Cookie consent and data management |
+| Feature          | Description                                                                                                                                                                                                                 |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Home page        | Landing page with "What you get with our service" benefits section (Less worries, More time, Professional approach, Clean home), "How it works" (6 booking-flow steps), FAQ (6 questions), "Why Choose Us" section, and CTA |
+| Services catalog | Browse available cleaning services and packages                                                                                                                                                                             |
+| Order wizard     | Multi-step booking flow (services, address, date/time, payment, review)                                                                                                                                                     |
+| Checkout         | Stripe card payments or cash-on-delivery                                                                                                                                                                                    |
+| Order tracking   | Anonymous order lookup by order number + email                                                                                                                                                                              |
+| My Orders        | Authenticated order history with detail view and rebook                                                                                                                                                                     |
+| Disputes         | Submit and track order disputes                                                                                                                                                                                             |
+| Profile          | Manage account details (address form uses reactive FormGroup with country dropdown and validation)                                                                                                                          |
+| Authentication   | Email/password login, Google OAuth, registration, email confirmation (6-digit code input)                                                                                                                                   |
+| GDPR             | Cookie consent and data management                                                                                                                                                                                          |
 
 ## SSR
 
@@ -60,28 +60,28 @@ All browser API access (`localStorage`, `window`, `sessionStorage`) is wrapped w
 
 Each feature is a separate Nx library under `libs/cleansia-customer-features/`:
 
-| Library | Import Path | Description |
-|---|---|---|
-| `home` | `@cleansia-customer/home` | Landing page |
-| `services-catalog` | `@cleansia-customer/services-catalog` | Service browsing |
-| `login` | `@cleansia-customer/login` | Authentication |
-| `register` | `@cleansia-customer/register` | Account creation |
-| `confirm-email` | `@cleansia-customer/confirm-email` | Email verification |
-| `forgot-password` | `@cleansia-customer/forgot-password` | Password reset |
-| `order-wizard` | `@cleansia-customer/order-wizard` | Booking flow |
-| `orders` | `@cleansia-customer/orders` | Order list, detail, tracking |
-| `checkout` | `@cleansia-customer/checkout` | Payment result pages |
-| `profile` | `@cleansia-customer/profile` | Account management |
-| `disputes` | `@cleansia-customer/disputes` | Dispute management |
-| `gdpr` | `@cleansia-customer/gdpr` | Cookie/data consent |
-| `legal-pages` | `@cleansia-customer/legal-pages` | Terms & privacy |
+| Library            | Import Path                           | Description                  |
+| ------------------ | ------------------------------------- | ---------------------------- |
+| `home`             | `@cleansia-customer/home`             | Landing page                 |
+| `services-catalog` | `@cleansia-customer/services-catalog` | Service browsing             |
+| `login`            | `@cleansia-customer/login`            | Authentication               |
+| `register`         | `@cleansia-customer/register`         | Account creation             |
+| `confirm-email`    | `@cleansia-customer/confirm-email`    | Email verification           |
+| `forgot-password`  | `@cleansia-customer/forgot-password`  | Password reset               |
+| `order-wizard`     | `@cleansia-customer/order-wizard`     | Booking flow                 |
+| `orders`           | `@cleansia-customer/orders`           | Order list, detail, tracking |
+| `checkout`         | `@cleansia-customer/checkout`         | Payment result pages         |
+| `profile`          | `@cleansia-customer/profile`          | Account management           |
+| `disputes`         | `@cleansia-customer/disputes`         | Dispute management           |
+| `gdpr`             | `@cleansia-customer/gdpr`             | Cookie/data consent          |
+| `legal-pages`      | `@cleansia-customer/legal-pages`      | Terms & privacy              |
 
 ## Guards
 
-| Guard | Behavior |
-|---|---|
-| `customerAuthGuard` | Redirects unauthenticated users to `/login` |
-| `customerGuestGuard` | Redirects authenticated users to `/orders` |
+| Guard                | Behavior                                    |
+| -------------------- | ------------------------------------------- |
+| `customerAuthGuard`  | Redirects unauthenticated users to `/login` |
+| `customerGuestGuard` | Redirects authenticated users to `/orders`  |
 
 ## State Management
 

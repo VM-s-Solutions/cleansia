@@ -374,7 +374,16 @@
       "updated_on": "Оновлено",
       "not_found_title": "Замовлення не знайдено",
       "not_found_message": "Замовлення, яке Ви шукаєте, не знайдено.",
-      "load_failed": "Не вдалося завантажити деталі замовлення"
+      "load_failed": "Не вдалося завантажити деталі замовлення",
+      "note_content": "Примітка",
+      "note_content_placeholder": "Введіть примітку...",
+      "issue_description": "Опис проблеми",
+      "issue_description_placeholder": "Опишіть проблему...",
+      "issue_type": "Тип проблеми",
+      "employee_notes": "Нотатки працівника",
+      "reported_issues": "Повідомлені проблеми",
+      "resolved": "Вирішено",
+      "open_issue": "Відкрито"
     },
     "invoices": {
       "title": "Мої зарплатні рахунки",
@@ -1140,7 +1149,8 @@
       "confirmed": "Підтверджено",
       "in_progress": "Виконується",
       "completed": "Завершено",
-      "cancelled": "Скасовано"
+      "cancelled": "Скасовано",
+      "new": "Нове"
     },
     "payment_status": {
       "pending": "Очікує",

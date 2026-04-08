@@ -410,17 +410,23 @@
         "unit": "cleanings"
       },
       "benefits": {
-        "title": "Why Is Professional Cleaning Better Than Regular Cleaning?",
+        "title": "What you get with our service",
         "badge": "The Difference",
-        "b1": "Removes dirt from the inside, not just the surface.",
-        "b2": "Leaves no sticky film that attracts more dirt.",
-        "b3": "Eliminates bacteria, dust mites, and mold — safe for allergy sufferers and children.",
-        "b4": "Dries quickly — 2-4 hours with professional extraction."
+        "b1": "Less worries — You can place your order online without delays, calls and unnecessary negotiations.",
+        "b2": "More time for yourself — We will take care of the cleaning for you, while you can focus on more important things.",
+        "b3": "Professional approach — Experienced team, proven procedures and attention to detail.",
+        "b4": "Clean and fresh home — Results that can be seen and felt."
       },
       "extra_services": {
-        "s1": { "name": "Car Interior Cleaning" },
-        "s2": { "name": "Office Cleaning" },
-        "s3": { "name": "Post-Renovation Cleaning" }
+        "s1": {
+          "name": "Car Interior Cleaning"
+        },
+        "s2": {
+          "name": "Office Cleaning"
+        },
+        "s3": {
+          "name": "Post-Renovation Cleaning"
+        }
       },
       "fallback_services": {
         "s1": {

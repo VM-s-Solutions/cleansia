@@ -56,6 +56,7 @@ export class OrderDetailComponent implements OnInit {
   reviewComment = signal('');
   reviewHover = signal(0);
   reviewSubmitting = signal(false);
+  downloading = signal(false);
   isCompleted = computed(
     () => this.order()?.orderStatus?.value === OrderStatus.Completed
   );
@@ -89,9 +90,11 @@ export class OrderDetailComponent implements OnInit {
 
   downloadReceipt(): void {
     const order = this.order();
-    if (!order?.id) return;
+    if (!order?.id || this.downloading()) return;
+    this.downloading.set(true);
     this.customerClient.orderClient.downloadReceipt(order.id).subscribe({
       next: (file) => {
+        this.downloading.set(false);
         if (!this.isBrowser) return;
         const url = URL.createObjectURL(file.data);
         const a = document.createElement('a');
@@ -101,6 +104,7 @@ export class OrderDetailComponent implements OnInit {
         URL.revokeObjectURL(url);
       },
       error: () => {
+        this.downloading.set(false);
         this.snackbar.showError(
           this.translate.instant('pages.order_detail.download_error')
         );

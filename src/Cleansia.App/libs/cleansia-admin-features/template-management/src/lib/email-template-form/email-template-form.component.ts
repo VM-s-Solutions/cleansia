@@ -6,7 +6,6 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { EmailType } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
-  CleansiaLanguageSwitcherComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTextareaComponent,
@@ -30,7 +29,6 @@ interface TemplateVariable {
     TranslateModule,
     DialogModule,
     CleansiaButtonComponent,
-    CleansiaLanguageSwitcherComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     CleansiaTextareaComponent,
@@ -108,6 +106,7 @@ export class EmailTemplateFormComponent implements OnInit, OnDestroy {
       [EmailType.OrderReceipt]: 'Order Receipt',
       [EmailType.PeriodClosed]: 'Period Closed',
       [EmailType.PeriodEndReminder]: 'Period End Reminder',
+      [EmailType.OrderStatusUpdate]: 'Order Status Update',
     };
     return typeNames[type] || '';
   }
@@ -146,6 +145,12 @@ export class EmailTemplateFormComponent implements OnInit, OnDestroy {
         { name: '{{StartDate}}', descriptionKey: 'pages.template_management.variables.start_date' },
         { name: '{{EndDate}}', descriptionKey: 'pages.template_management.variables.end_date' },
         { name: '{{DaysRemaining}}', descriptionKey: 'pages.template_management.variables.days_remaining' },
+      ],
+      [EmailType.OrderStatusUpdate]: [
+        { name: '{{CustomerName}}', descriptionKey: 'pages.template_management.variables.customer_name' },
+        { name: '{{OrderNumber}}', descriptionKey: 'pages.template_management.variables.order_number' },
+        { name: '{{OrderStatus}}', descriptionKey: 'pages.template_management.variables.order_status' },
+        { name: '{{OrderStatusLink}}', descriptionKey: 'pages.template_management.variables.order_status_link' },
       ],
     };
 

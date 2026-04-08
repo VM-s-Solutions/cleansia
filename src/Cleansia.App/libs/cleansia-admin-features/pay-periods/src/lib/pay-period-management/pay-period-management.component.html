@@ -1,11 +1,18 @@
 <div class="cleansia-pay-period-management">
   <div class="cleansia-pay-period-management__container page-wrapper">
-    <cleansia-language-switcher />
     <div class="cleansia-pay-period-management__header">
       <cleansia-title [title]="'payPeriods.title' | translate" />
       <p class="cleansia-pay-period-management__description">
         {{ 'payPeriods.description' | translate }}
       </p>
+    </div>
+    <div class="cleansia-pay-period-management__actions">
+      <cleansia-button
+        [label]="'payPeriods.create_new' | translate"
+        icon="pi pi-plus"
+        severity="primary"
+        (onClick)="openCreateDialog()"
+      />
     </div>
 
     <!-- Filter Header - Chips left, Button right -->
@@ -177,6 +184,51 @@
     />
   </div>
 </div>
+
+<!-- Create Pay Period Dialog -->
+@if (showCreateDialog()) {
+<div class="filter-drawer-backdrop" (click)="closeCreateDialog()"></div>
+<div class="filter-drawer open">
+  <div class="filter-drawer-header">
+    <div class="filter-drawer-title">
+      <i class="pi pi-plus"></i>
+      <span>{{ 'payPeriods.create_new' | translate }}</span>
+    </div>
+    <button class="filter-drawer-close" (click)="closeCreateDialog()">
+      <i class="pi pi-times"></i>
+    </button>
+  </div>
+  <div class="filter-drawer-content">
+    <div class="filter-section">
+      <h3 class="filter-section-title">{{ 'payPeriods.start_date' | translate }}</h3>
+      <cleansia-calendar
+        [ngModel]="createStartDate()"
+        (ngModelChange)="createStartDate.set($event)"
+      />
+    </div>
+    <div class="filter-section">
+      <h3 class="filter-section-title">{{ 'payPeriods.end_date' | translate }}</h3>
+      <cleansia-calendar
+        [ngModel]="createEndDate()"
+        (ngModelChange)="createEndDate.set($event)"
+      />
+    </div>
+  </div>
+  <div class="filter-drawer-footer">
+    <cleansia-button
+      [label]="'global.cancel' | translate"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="closeCreateDialog()"
+    />
+    <cleansia-button
+      [label]="'global.create' | translate"
+      severity="primary"
+      (onClick)="createPayPeriod()"
+    />
+  </div>
+</div>
+}
 
 <ng-template #statusTemplate let-item>
   <div class="status-cell">

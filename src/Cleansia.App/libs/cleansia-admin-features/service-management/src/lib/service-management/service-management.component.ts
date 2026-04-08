@@ -17,7 +17,6 @@ import {
 } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
-  CleansiaLanguageSwitcherComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTableComponent,
@@ -46,7 +45,6 @@ import { getServiceTableDefinition } from './service-management.models';
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
-    CleansiaLanguageSwitcherComponent,
     ReactiveFormsModule,
     ConfirmDialogModule,
   ],

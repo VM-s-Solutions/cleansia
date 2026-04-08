@@ -19,7 +19,6 @@ import {
 } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
-  CleansiaLanguageSwitcherComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTableComponent,
@@ -48,7 +47,6 @@ import { getCompanyInfoTableDefinition } from './company-info-list.models';
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
-    CleansiaLanguageSwitcherComponent,
     ReactiveFormsModule,
     ConfirmDialogModule,
   ],

@@ -126,3 +126,17 @@ The admin app includes a mobile-optimized layout. On smaller screens, a **fixed 
 - A **language switcher**
 
 This matches the partner app's mobile UX, providing a consistent experience across Cleansia applications.
+
+## v4 Updates
+
+### Centralized Language Switcher
+
+The language switcher is now centralized in the sidebar navigation. Individual page-level language switchers are being removed in favor of this single, consistent location.
+
+### Pay Period Management
+
+Pay period management will support manual creation of new periods via a "Create New Period" button, in addition to the existing automated period generation.
+
+### Pay Config -- Per-Employee Rate Overrides
+
+The pay configuration system will support per-employee rate overrides. Grade template buttons (Junior, Medior, Senior) allow administrators to quickly apply predefined rate sets to individual employees.

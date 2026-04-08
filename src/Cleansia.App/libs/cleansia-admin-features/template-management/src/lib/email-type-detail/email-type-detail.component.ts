@@ -23,7 +23,6 @@ import {
 } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
-  CleansiaLanguageSwitcherComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTextInputComponent,
@@ -54,7 +53,6 @@ import { EmailTypeDetailFacade } from './email-type-detail.facade';
     TabPanels,
     TabPanel,
     CleansiaButtonComponent,
-    CleansiaLanguageSwitcherComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     CleansiaTextInputComponent,

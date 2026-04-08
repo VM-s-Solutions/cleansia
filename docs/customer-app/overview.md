@@ -10,7 +10,7 @@ Provide a seamless booking experience for cleaning services, allowing both authe
 
 | Feature | Description |
 |---|---|
-| Home page | Landing page with service highlights, "How it works" (6 booking-flow steps), FAQ (6 questions), "Why Choose Us" section, and CTA |
+| Home page | Landing page with "What you get with our service" benefits section (Less worries, More time, Professional approach, Clean home), "How it works" (6 booking-flow steps), FAQ (6 questions), "Why Choose Us" section, and CTA |
 | Services catalog | Browse available cleaning services and packages |
 | Order wizard | Multi-step booking flow (services, address, date/time, payment, review) |
 | Checkout | Stripe card payments or cash-on-delivery |

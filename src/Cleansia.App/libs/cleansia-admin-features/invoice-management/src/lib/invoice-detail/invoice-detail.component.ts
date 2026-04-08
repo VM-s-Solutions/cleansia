@@ -7,7 +7,6 @@ import {
 } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
-  CleansiaLanguageSwitcherComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTableComponent,
@@ -33,7 +32,6 @@ import { getOrderPaysTableDefinition } from './invoice-detail.models';
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
-    CleansiaLanguageSwitcherComponent,
     CleansiaTableComponent,
     ToastModule,
   ],

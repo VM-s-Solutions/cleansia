@@ -20,7 +20,7 @@ import {
 } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
-  CleansiaLanguageSwitcherComponent,
+  CleansiaCalendarComponent,
   CleansiaLoaderComponent,
   CleansiaRadioComponent,
   CleansiaSectionComponent,
@@ -47,13 +47,13 @@ import {
   imports: [
     CommonModule,
     CleansiaButtonComponent,
+    CleansiaCalendarComponent,
     CleansiaRadioComponent,
     TranslatePipe,
     CleansiaTableComponent,
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
-    CleansiaLanguageSwitcherComponent,
     FormsModule,
     ReactiveFormsModule,
     ToastModule,
@@ -94,6 +94,11 @@ export class PayPeriodManagementComponent implements AfterViewInit, OnDestroy {
 
   // Status options - will be rebuilt on language change
   statusOptions: { label: string; value: PayPeriodStatus }[] = [];
+
+  // Create pay period dialog state
+  showCreateDialog = signal(false);
+  createStartDate = signal<Date | null>(null);
+  createEndDate = signal<Date | null>(null);
 
   // Filter drawer state
   isFilterDrawerOpen = signal(false);
@@ -290,6 +295,26 @@ export class PayPeriodManagementComponent implements AfterViewInit, OnDestroy {
     if (!payPeriod.status) return '';
     const statusKey = payPeriod.status.toLowerCase();
     return this.translate.instant(`payPeriods.status.${statusKey}`);
+  }
+
+  openCreateDialog(): void {
+    this.showCreateDialog.set(true);
+    this.createStartDate.set(null);
+    this.createEndDate.set(null);
+  }
+
+  closeCreateDialog(): void {
+    this.showCreateDialog.set(false);
+  }
+
+  createPayPeriod(): void {
+    const startDate = this.createStartDate();
+    const endDate = this.createEndDate();
+    if (!startDate || !endDate) return;
+
+    // TODO: Wire up to admin client create pay period endpoint once available
+    console.warn('Create pay period not yet wired to backend', { startDate, endDate });
+    this.closeCreateDialog();
   }
 
   getPayPeriodStatusClass(payPeriod: PayPeriodDto): string {

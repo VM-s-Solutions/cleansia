@@ -114,9 +114,14 @@ export class OrderWizardComponent implements OnInit {
 
     const services = this.facade.services();
     const packages = this.facade.packages();
-    if (services.length === 0 && packages.length === 0) return;
 
-    // Services/packages loaded — prefill now
+    // Wait until both lists have loaded before attempting to match.
+    // If the rebook references services, wait for services to load.
+    // If it references packages, wait for packages to load.
+    const needsServices = params.selectedServiceIds?.length > 0;
+    const needsPackages = params.selectedPackageIds?.length > 0;
+    if ((needsServices && services.length === 0) || (needsPackages && packages.length === 0)) return;
+
     const missing = this.facade.prefillFromRebook(params);
     if (missing.length > 0) {
       this.unavailableItems.set(missing);

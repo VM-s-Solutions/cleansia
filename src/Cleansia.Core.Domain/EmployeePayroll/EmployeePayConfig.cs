@@ -3,11 +3,15 @@ using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Services;
+using Cleansia.Core.Domain.Users;
 
 namespace Cleansia.Core.Domain.EmployeePayroll;
 
 public class EmployeePayConfig : Auditable, ITenantEntity
 {
+    public string? EmployeeId { get; private set; }
+    public Employee? Employee { get; private set; }
+
     public string? ServiceId { get; private set; }
     public Service? Service { get; private set; }
 
@@ -41,7 +45,8 @@ public class EmployeePayConfig : Auditable, ITenantEntity
         decimal extraPerRoom = 0,
         decimal extraPerBathroom = 0,
         decimal distanceRatePerKm = 0,
-        string? description = null)
+        string? description = null,
+        string? employeeId = null)
     {
         if (basePay < 0)
         {
@@ -50,6 +55,7 @@ public class EmployeePayConfig : Auditable, ITenantEntity
 
         return new EmployeePayConfig
         {
+            EmployeeId = employeeId,
             ServiceId = serviceId,
             BasePay = basePay,
             CurrencyId = currencyId,
@@ -67,7 +73,8 @@ public class EmployeePayConfig : Auditable, ITenantEntity
         decimal extraPerRoom = 0,
         decimal extraPerBathroom = 0,
         decimal distanceRatePerKm = 0,
-        string? description = null)
+        string? description = null,
+        string? employeeId = null)
     {
         if (basePay < 0)
         {
@@ -76,6 +83,7 @@ public class EmployeePayConfig : Auditable, ITenantEntity
 
         return new EmployeePayConfig
         {
+            EmployeeId = employeeId,
             PackageId = packageId,
             BasePay = basePay,
             CurrencyId = currencyId,

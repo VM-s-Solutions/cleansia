@@ -25,11 +25,15 @@ Each order row shows the **cleaning time** alongside the date for quick scheduli
 
 ### Available Orders
 
-Shows orders with statuses `Pending` or `Confirmed` that have available spots and are not already assigned to the current partner.
+Shows orders that have available spots and are not already assigned to the current partner.
+
+::: tip v4 Update
+The Available Orders tab will soon show only `New` and `Pending` status orders. `Confirmed` orders are excluded because they already have a cleaner assigned.
+:::
 
 ```typescript
 const filter = new OrderFilter({
-  orderStatuses: [OrderStatus.Pending, OrderStatus.Confirmed],
+  orderStatuses: [OrderStatus.New, OrderStatus.Pending],
   hasAvailableSpots: true,
   excludeEmployeeId: employeeId,
 });
@@ -81,7 +85,8 @@ Available (Pending/Confirmed)
 - Called via `OrderDetailsFacade.takeOrder(orderId, employeeId)` or `OrdersFacade.takeOrder(orderId)`
 - A **Take Order** button is available on the order detail page for available orders
 - Sends `TakeOrderCommand` to the API
-- On success, order is assigned to the partner
+- On success, the order transitions from `New`/`Pending` to `Confirmed` and is assigned to the partner
+- The order moves from the "Available Orders" table to the "My Orders" table
 - The order list is refreshed
 
 #### Take Order Validations
@@ -131,7 +136,7 @@ While an order is `InProgress`, an elapsed timer is displayed on the order detai
 
 ## In-Progress Actions
 
-While an order is `InProgress`, partners have access to Report Issue and Add Note dialogs directly from the order detail page.
+While an order is `InProgress`, partners have access to Report Issue and Add Note dialogs directly from the order detail page. Notes and issues submitted via these dialogs are visible on the order detail page alongside other order information.
 
 ## Report Issue Dialog
 

@@ -21,7 +21,6 @@ import { ServiceListItem } from '@cleansia/admin-services';
 import { CleansiaAdminRoute } from '@cleansia/services';
 import {
   CleansiaButtonComponent,
-  CleansiaLanguageSwitcherComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTextareaComponent,
@@ -53,7 +52,6 @@ import { PackageFormData, PackageFormFacade } from './package-form.facade';
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     CleansiaTitleComponent,
-    CleansiaLanguageSwitcherComponent,
   ],
   templateUrl: './package-form.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

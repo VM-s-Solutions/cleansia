@@ -1,26 +1,102 @@
-# Cleansia Agent System
+# Agent System
 
-This directory contains the configuration for the multi-agent automation system for the Cleansia project.
+A token-efficient agent workflow for managing multi-platform projects with Claude Code.
 
-## Overview
+## The Problem
 
-The agent system provides specialized AI agents for different aspects of the development workflow:
+Without structure, every Claude Code session burns 50-80% of tokens on codebase exploration. A typical 4-task session uses ~200k tokens when it should use ~50k.
 
-| Agent | Purpose |
-|-------|---------|
-| **Orchestrator** | Routes tasks to appropriate specialists |
-| **Backend Specialist** | .NET, C#, CQRS, PostgreSQL |
-| **Frontend Specialist** | Angular, TypeScript, NgRx, PrimeNG |
-| **Mobile Specialist** | Android (Kotlin/Compose), iOS (Swift) |
-| **Code Review** | Validates code against CODING_STANDARDS.md |
-| **Code Sync** | Synchronizes models between platforms |
-| **Docs** | Maintains documentation |
+## The Solution: Plan then Execute
+
+```
+You (natural language)  →  /plan  →  Task Specs  →  /execute  →  Code changes
+                            ↑                         ↑
+                     Reads CLAUDE.md            Reads specialist
+                     Greps codebase             prompts only
+                     ~20k tokens               ~15k tokens/task
+```
+
+## Quick Start
+
+### 1. Create CLAUDE.md in your project root
+
+Every project needs a `CLAUDE.md` that describes:
+- Tech stack and versions
+- Directory structure
+- Build/run commands
+- Architecture patterns and conventions
+- Key entities and relationships
+
+This is the single source of truth that agents read instead of exploring the entire codebase.
+
+### 2. Plan your work
+
+```
+/plan
+
+Customer app:
+- Optimize Lighthouse performance score (currently 46%)
+- Order confirmation email missing extras details
+- "View Order Status" button redirects to login
+
+Backend:
+- No order status update email being sent
+```
+
+The planner investigates the codebase and outputs precise task specs with exact file paths, line numbers, and change descriptions.
+
+### 3. Execute the plan
+
+```
+/execute TASK-001
+```
+
+Or execute an entire phase:
+```
+/execute phase 1
+```
+
+Or execute everything:
+```
+/execute all
+```
+
+The executor reads the task spec, applies the specialist's coding standards, makes the exact changes, and verifies the build.
+
+## Slash Commands
+
+| Command | Purpose | Token Budget |
+|---------|---------|-------------|
+| `/plan` | Decompose tasks into precise specs | ~20k |
+| `/execute` | Execute one or more task specs | ~15k per small task |
+| `/backend` | Direct backend work (skip planning) | ~30k |
+| `/frontend` | Direct frontend work (skip planning) | ~30k |
+| `/mobile` | Direct mobile work (skip planning) | ~30k |
+| `/review` | Code review against standards | ~15k |
+| `/sync` | NSwag client regeneration | ~5k |
+| `/docs` | Documentation updates | ~10k |
+| `/feature` | Full-stack feature (legacy - prefer /plan) | ~100k+ |
+
+## When to Use /plan vs Direct Commands
+
+**Use `/plan` when:**
+- You have 2+ tasks to do
+- Tasks span multiple apps or layers (backend + frontend)
+- You want to minimize token usage
+- Tasks have dependencies on each other
+
+**Use direct commands (`/backend`, `/frontend`) when:**
+- Single, well-defined task
+- You already know exactly what file to change
+- Quick fix that doesn't need investigation
 
 ## Directory Structure
 
 ```
 agents/
-├── config/                 # Agent YAML configurations
+├── README.md                          # This file
+├── config/                            # Agent configuration (YAML)
+│   ├── task-planner.yaml
 │   ├── orchestrator.yaml
 │   ├── backend-specialist.yaml
 │   ├── frontend-specialist.yaml
@@ -28,136 +104,55 @@ agents/
 │   ├── code-review.yaml
 │   ├── code-sync.yaml
 │   └── docs.yaml
-├── prompts/
-│   └── system/            # System prompts for each agent
-│       ├── orchestrator.md
-│       ├── backend-specialist.md
-│       ├── frontend-specialist.md
-│       ├── mobile-specialist.md
-│       ├── code-review.md
-│       ├── code-sync.md
-│       └── docs.md
-├── tools/                 # Custom tool definitions (future)
-└── README.md
+├── prompts/system/                    # Agent system prompts
+│   ├── task-planner.md               # Core - decomposes tasks into specs
+│   ├── orchestrator.md               # Routes tasks to specialists
+│   ├── backend-specialist.md         # .NET/C#/CQRS conventions
+│   ├── frontend-specialist.md        # Angular/Nx/NgRx conventions
+│   ├── mobile-specialist.md          # Kotlin/Compose conventions
+│   ├── code-review.md                # Quality standards
+│   ├── code-sync.md                  # NSwag/model sync
+│   └── docs.md                       # Documentation standards
+
+.claude/commands/                      # Slash commands (Claude Code)
+├── plan.md                            # /plan - task decomposition
+├── execute.md                         # /execute - run task specs
+├── backend.md                         # /backend - direct backend work
+├── frontend.md                        # /frontend - direct frontend work
+├── mobile.md                          # /mobile - direct mobile work
+├── review.md                          # /review - code review
+├── sync.md                            # /sync - client regeneration
+├── docs.md                            # /docs - documentation
+└── feature.md                         # /feature - full-stack (legacy)
 ```
 
-## Claude Code Custom Commands
+## Multi-Project Usage
 
-The following slash commands are available in Claude Code:
+This system works with any project. To add a new project:
 
-| Command | Description |
-|---------|-------------|
-| `/review` | Review code against coding standards |
-| `/sync` | Sync models between platforms |
-| `/backend` | Work on .NET backend tasks |
-| `/frontend` | Work on Angular frontend tasks |
-| `/mobile` | Work on Android/iOS mobile tasks |
-| `/feature` | Implement a full-stack feature |
-| `/docs` | Update documentation |
+1. **Create `CLAUDE.md`** in the project root with the project context
+2. **Copy `.claude/commands/`** to the new project's `.claude/commands/`
+3. **Copy `agents/prompts/system/`** for the relevant specialists
+4. Done. The task planner reads `CLAUDE.md` to understand the project.
 
-### Usage Examples
+The specialist prompts (`backend-specialist.md`, `frontend-specialist.md`) contain coding conventions. If the new project uses different conventions, create project-specific variants.
 
-```bash
-# Review a specific file
-/review src/Cleansia.App/Features/Orders/Commands/CreateOrder.cs
+## Token Budget Guide
 
-# Sync models to all platforms
-/sync all
+| Session Type | Expected Tokens | Example |
+|-------------|----------------|---------|
+| Plan 4 tasks | ~20k | `/plan` with 4 bullet points |
+| Execute 1 small task | ~15k | Single file change + build |
+| Execute 1 medium task | ~25k | Multi-file change + i18n + build |
+| Execute 1 large task | ~40k | New feature with multiple components |
+| Full session (plan + execute 4 tasks) | ~80-100k | Typical workday session |
+| Direct `/backend` small fix | ~20k | Single handler change |
 
-# Create a backend command
-/backend Create a command to update order status
+## Tips for Minimum Token Usage
 
-# Create a frontend component
-/frontend Create a status badge component
-
-# Implement a full feature
-/feature Add employee time tracking
-```
-
-## Key Coding Standards
-
-All agents enforce these critical rules:
-
-### Backend (.NET)
-- Nested classes for Command/Query structure
-- Handlers = happy path only (no validation, no try-catch)
-- No CommitAsync in handlers (UoW handles this)
-- DTOs are records, not classes
-- Extension methods for mapping (ToDto, ToEntity)
-
-### Frontend (Angular)
-- Never use enum values in templates
-- All text uses translation keys
-- Facade pattern for NgRx state access
-- OnPush change detection
-- Standalone components
-
-### Mobile (Android)
-- HiltViewModel for all ViewModels
-- StateFlow for UI state
-- Navigation via events
-- String resources for all text
-
-## Integration Options
-
-### 1. Claude Code CLI
-Use the slash commands directly in Claude Code:
-```
-/review
-/sync all
-/backend Create a new endpoint
-```
-
-### 2. Git Hooks (Future)
-```bash
-# .git/hooks/pre-commit
-claude code "/review staged"
-```
-
-### 3. GitHub Actions (Future)
-```yaml
-- name: Code Review
-  run: claude code "/review ${{ github.event.pull_request.number }}"
-```
-
-## Configuration
-
-Agent configurations are in YAML format in `config/`. Each config specifies:
-
-- **name** - Agent identifier
-- **description** - What the agent does
-- **model** - Claude model to use
-- **system_prompt_file** - Path to system prompt
-- **file_patterns** - Files the agent works with
-- **capabilities** - What the agent can do
-- **tools** - Available tools/commands
-
-## System Prompts
-
-System prompts in `prompts/system/` contain:
-
-- Role definition
-- Technology expertise
-- Coding standards to follow
-- Example code patterns
-- Common tasks
-- What NOT to do
-
-## Extending the System
-
-### Adding a New Agent
-
-1. Create `config/new-agent.yaml`
-2. Create `prompts/system/new-agent.md`
-3. Optionally add `.claude/commands/new-agent.md`
-
-### Adding Custom Tools
-
-Create tool definitions in `tools/` directory for reusable operations.
-
-## Maintenance
-
-Keep agents in sync with:
-- `CODING_STANDARDS.md` - Update prompts when standards change
-- `CLEANSIA_PROJECT_DOCUMENTATION.md` - Update when architecture changes
-- Platform-specific patterns - Update when adopting new patterns
+1. **Always /plan first** - investigation is cheaper than repeated exploration
+2. **Be specific in your task descriptions** - "fix login redirect after password reset on customer app" beats "fix login"
+3. **Group related tasks** - "Customer app: A, B, C" not three separate sessions
+4. **Use /execute per phase** - don't execute everything at once if phases are independent
+5. **Don't re-plan** - if the plan is good, just execute it
+6. **Keep CLAUDE.md updated** - stale context = wasted tokens re-discovering structure

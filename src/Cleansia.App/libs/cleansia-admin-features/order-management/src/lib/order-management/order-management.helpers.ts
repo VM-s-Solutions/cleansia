@@ -8,6 +8,7 @@ import { TranslateService } from '@ngx-translate/core';
 // --- Status label helpers ---
 
 const ORDER_STATUS_TRANSLATION_MAP: Record<OrderStatus, string> = {
+  [OrderStatus.New]: 'pages.order_management.order_status.new',
   [OrderStatus.Pending]: 'pages.order_management.order_status.pending',
   [OrderStatus.Confirmed]: 'pages.order_management.order_status.confirmed',
   [OrderStatus.InProgress]: 'pages.order_management.order_status.in_progress',

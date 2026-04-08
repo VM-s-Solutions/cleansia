@@ -19,7 +19,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CleansiaAdminRoute } from '@cleansia/services';
 import {
   CleansiaButtonComponent,
-  CleansiaLanguageSwitcherComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTextareaComponent,
@@ -48,7 +47,6 @@ import { ServiceFormData, ServiceFormFacade } from './service-form.facade';
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     CleansiaTitleComponent,
-    CleansiaLanguageSwitcherComponent,
   ],
   templateUrl: './service-form.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

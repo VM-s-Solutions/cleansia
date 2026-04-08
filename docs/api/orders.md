@@ -12,17 +12,22 @@ The Order API manages the full lifecycle of cleaning orders: creation, assignmen
 ## Order Lifecycle
 
 ```
-[Created] -> [Pending] -> [Confirmed] -> [Taken] -> [InProgress] -> [Completed]
-                |                                                        |
-                v                                                        v
-           [Cancelled]                                              [Receipt]
+[New] -> [Pending] -> [Confirmed] -> [InProgress] -> [Completed]
+            |                                             |
+            v                                             v
+       [Cancelled]                                   [Receipt]
 ```
 
-- **Pending** -- Card payment initiated, waiting for Stripe webhook
-- **Confirmed** -- Cash payment (immediate) or card payment confirmed
-- **Taken** -- Employee accepted the order
-- **InProgress** -- Employee started cleaning
-- **Completed** -- Employee finished and submitted completion
+### Order Statuses
+
+| Status | Value | Description |
+|---|---|---|
+| `New` | `0` | Initial status when an order is created |
+| `Pending` | `1` | Card payment initiated, waiting for Stripe webhook |
+| `Confirmed` | `2` | Set when a cleaner takes the order (or cash payment immediately confirmed) |
+| `InProgress` | `3` | Employee started cleaning |
+| `Completed` | `4` | Employee finished and submitted completion |
+| `Cancelled` | `5` | Order was cancelled |
 
 ## Endpoints
 
@@ -190,6 +195,7 @@ POST /api/Order/TakeOrder
 
 The backend enforces several checks before allowing an employee to take an order:
 
+- **`RequireCompleteProfile` filter** -- The order endpoints use this filter to ensure the employee has a complete profile before accessing order operations
 - **Weekly order limit** -- Based on the employee's `AverageRating`:
   - 0 -- 3.5: max 3 orders/week
   - 3.6 -- 4.5: max 6 orders/week

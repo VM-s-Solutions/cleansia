@@ -375,7 +375,11 @@
         "availability_save_success": "Доступність успішно оновлено",
         "availability_save_error": "Не вдалося оновити доступність",
         "employee_update_success": "Співробітника успішно оновлено",
-        "employee_update_error": "Не вдалося оновити співробітника"
+        "employee_update_error": "Не вдалося оновити співробітника",
+        "pay_config_save_success": "Конфігурацію оплати успішно збережено",
+        "pay_config_save_error": "Не вдалося зберегти конфігурацію оплати",
+        "pay_config_delete_success": "Конфігурацію оплати успішно видалено",
+        "pay_config_delete_error": "Не вдалося видалити конфігурацію оплати"
       },
       "document_status": {
         "pending": "Очікує",
@@ -395,7 +399,21 @@
         "insurance_document": "Страховий документ",
         "other": "Інше",
         "unknown": "Невідомий"
-      }
+      },
+      "pay_configuration": "Конфігурація оплати",
+      "add_pay_config": "Додати перевизначення оплати",
+      "no_pay_configs": "Немає перевизначень оплати для працівника. Застосовуються глобальні ставки.",
+      "pay_config_service": "Послуга",
+      "pay_config_package": "Пакет",
+      "pay_config_currency": "Валюта",
+      "pay_config_base_pay": "Базова оплата",
+      "pay_config_extra_room": "Доплата за кімнату",
+      "pay_config_extra_bathroom": "Доплата за ванну",
+      "pay_config_distance_rate": "Ставка за км",
+      "pay_config_min_pay": "Мінімальна оплата",
+      "pay_config_max_pay": "Максимальна оплата",
+      "pay_config_description": "Опис",
+      "grade_template": "Шаблон рівня"
     },
     "order_management": {
       "title": "Управління замовленнями",
@@ -429,7 +447,8 @@
         "confirmed": "Підтверджено",
         "in_progress": "В процесі",
         "completed": "Завершено",
-        "cancelled": "Скасовано"
+        "cancelled": "Скасовано",
+        "new": "Нове"
       },
       "payment_status": {
         "pending": "Очікує",

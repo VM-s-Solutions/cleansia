@@ -11,6 +11,7 @@ namespace Cleansia.Core.AppServices.Features.PayConfig;
 public class CreatePayConfig
 {
     public record Command(
+        string? EmployeeId,
         string? ServiceId,
         string? PackageId,
         decimal BasePay,
@@ -30,6 +31,7 @@ public class CreatePayConfig
         private readonly IPackageRepository _packageRepository;
         private readonly ICurrencyRepository _currencyRepository;
         private readonly IEmployeePayConfigRepository _payConfigRepository;
+        private readonly IEmployeeRepository _employeeRepository;
 
         public Validator(
             IUserRepository userRepository,
@@ -37,12 +39,14 @@ public class CreatePayConfig
             IServiceRepository serviceRepository,
             IPackageRepository packageRepository,
             ICurrencyRepository currencyRepository,
-            IEmployeePayConfigRepository payConfigRepository) : base(userRepository, userSessionProvider)
+            IEmployeePayConfigRepository payConfigRepository,
+            IEmployeeRepository employeeRepository) : base(userRepository, userSessionProvider)
         {
             _serviceRepository = serviceRepository;
             _packageRepository = packageRepository;
             _currencyRepository = currencyRepository;
             _payConfigRepository = payConfigRepository;
+            _employeeRepository = employeeRepository;
 
             RuleFor(x => x)
                 .Cascade(CascadeMode.Stop)
@@ -51,6 +55,14 @@ public class CreatePayConfig
                 .Must(x => string.IsNullOrEmpty(x.ServiceId) || string.IsNullOrEmpty(x.PackageId))
                 .WithMessage(BusinessErrorMessage.PayConfigCannotHaveBoth);
 
+            RuleFor(x => x.EmployeeId)
+                .MustAsync(async (employeeId, ct) =>
+                {
+                    if (string.IsNullOrEmpty(employeeId)) return true;
+                    return await _employeeRepository.ExistsAsync(employeeId, ct);
+                })
+                .WithMessage(BusinessErrorMessage.EmployeeNotFound);
+
             RuleFor(x => x.ServiceId)
                 .MustAsync(async (serviceId, ct) =>
                 {
@@ -58,7 +70,15 @@ public class CreatePayConfig
                     return await _serviceRepository.ExistsAsync(serviceId, ct);
                 })
                 .WithMessage(BusinessErrorMessage.NotFound)
-                .MustAsync(BeNoExistingConfigForServiceAsync)
+                .MustAsync(async (cmd, serviceId, ct) =>
+                {
+                    if (string.IsNullOrEmpty(serviceId)) return true;
+                    if (!string.IsNullOrEmpty(cmd.EmployeeId))
+                    {
+                        return await _payConfigRepository.GetByEmployeeServiceIdAsync(cmd.EmployeeId, serviceId, ct) == null;
+                    }
+                    return await _payConfigRepository.GetByServiceIdAsync(serviceId, ct) == null;
+                })
                 .WithMessage(BusinessErrorMessage.PayConfigAlreadyExists);
 
             RuleFor(x => x.PackageId)
@@ -68,7 +88,15 @@ public class CreatePayConfig
                     return await _packageRepository.ExistsAsync(packageId, ct);
                 })
                 .WithMessage(BusinessErrorMessage.NotFound)
-                .MustAsync(BeNoExistingConfigForPackageAsync)
+                .MustAsync(async (cmd, packageId, ct) =>
+                {
+                    if (string.IsNullOrEmpty(packageId)) return true;
+                    if (!string.IsNullOrEmpty(cmd.EmployeeId))
+                    {
+                        return await _payConfigRepository.GetByEmployeePackageIdAsync(cmd.EmployeeId, packageId, ct) == null;
+                    }
+                    return await _payConfigRepository.GetByPackageIdAsync(packageId, ct) == null;
+                })
                 .WithMessage(BusinessErrorMessage.PayConfigAlreadyExists);
 
             RuleFor(x => x.BasePay)
@@ -109,19 +137,6 @@ public class CreatePayConfig
                 .WithMessage(BusinessErrorMessage.MaxLength);
         }
 
-        private Task<bool> BeNoExistingConfigForServiceAsync(string? serviceId, CancellationToken cancellationToken)
-        {
-            if (string.IsNullOrEmpty(serviceId)) return Task.FromResult(true);
-            return _payConfigRepository.GetByServiceIdAsync(serviceId, cancellationToken)
-                .ContinueWith(t => t.Result == null, cancellationToken);
-        }
-
-        private Task<bool> BeNoExistingConfigForPackageAsync(string? packageId, CancellationToken cancellationToken)
-        {
-            if (string.IsNullOrEmpty(packageId)) return Task.FromResult(true);
-            return _payConfigRepository.GetByPackageIdAsync(packageId, cancellationToken)
-                .ContinueWith(t => t.Result == null, cancellationToken);
-        }
     }
 
     public class Handler(
@@ -141,7 +156,8 @@ public class CreatePayConfig
                     command.ExtraPerRoom,
                     command.ExtraPerBathroom,
                     command.DistanceRatePerKm,
-                    command.Description);
+                    command.Description,
+                    command.EmployeeId);
             }
             else
             {
@@ -152,7 +168,8 @@ public class CreatePayConfig
                     command.ExtraPerRoom,
                     command.ExtraPerBathroom,
                     command.DistanceRatePerKm,
-                    command.Description);
+                    command.Description,
+                    command.EmployeeId);
             }
 
             if (command.MinimumPay > 0 || command.MaximumPay > 0)

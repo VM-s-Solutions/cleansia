@@ -374,7 +374,16 @@
       "updated_on": "Aktualizované",
       "not_found_title": "Objednávka nenájdená",
       "not_found_message": "Objednávka, ktorú hľadáte, nebola nájdená.",
-      "load_failed": "Nepodarilo sa načítať detail objednávky"
+      "load_failed": "Nepodarilo sa načítať detail objednávky",
+      "note_content": "Poznámka",
+      "note_content_placeholder": "Zadajte poznámku...",
+      "issue_description": "Popis problému",
+      "issue_description_placeholder": "Popíšte problém...",
+      "issue_type": "Typ problému",
+      "employee_notes": "Poznámky zamestnanca",
+      "reported_issues": "Nahlásené problémy",
+      "resolved": "Vyriešené",
+      "open_issue": "Otvorený"
     },
     "invoices": {
       "title": "Moje mzdové faktúry",
@@ -1140,7 +1149,8 @@
       "confirmed": "Potvrdené",
       "in_progress": "Prebieha",
       "completed": "Dokončené",
-      "cancelled": "Zrušené"
+      "cancelled": "Zrušené",
+      "new": "Nová"
     },
     "payment_status": {
       "pending": "Čakajúce",

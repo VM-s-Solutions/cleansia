@@ -1,0 +1,53 @@
+name: task-planner
+description: Decomposes natural language task lists into precise, scoped work specs for specialist agents
+model: claude-sonnet-4-20250514
+
+system_prompt: prompts/system/task-planner.md
+
+triggers:
+  keywords:
+    - "plan"
+    - "tasks"
+    - "bugs"
+    - "improvements"
+    - "what needs to be done"
+  patterns:
+    - "Customer app:"
+    - "Partner app:"
+    - "Admin app:"
+    - "Backend:"
+    - "Mobile:"
+
+capabilities:
+  - decompose_tasks
+  - investigate_codebase
+  - estimate_complexity
+  - identify_dependencies
+  - generate_execution_plan
+
+investigation:
+  max_file_reads: 30
+  max_grep_searches: 50
+  always_read_first:
+    - "CLAUDE.md"
+  search_patterns:
+    - "**/*.ts"
+    - "**/*.cs"
+    - "**/*.html"
+    - "**/*.json"
+
+output:
+  format: yaml
+  sections:
+    - task_specs
+    - execution_plan
+    - token_estimate
+
+rules:
+  - "Always read CLAUDE.md before investigating"
+  - "Include exact file paths and line numbers"
+  - "Group tasks by specialist to minimize context switches"
+  - "Order tasks by dependency (backend before frontend)"
+  - "Flag NSwag regeneration needs"
+  - "Keep own token usage under 20k per planning session"
+  - "Never write code — only investigate and plan"

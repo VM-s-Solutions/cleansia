@@ -10,6 +10,9 @@ public class EmployeePayConfigEntityConfiguration : AuditableEntityConfiguration
     {
         base.Configure(builder);
 
+        builder.Property(e => e.EmployeeId)
+            .HasMaxLength(26);
+
         builder.Property(e => e.ServiceId)
             .HasMaxLength(26);
 
@@ -68,9 +71,18 @@ public class EmployeePayConfigEntityConfiguration : AuditableEntityConfiguration
             .HasForeignKey(e => e.CurrencyId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(e => e.Employee)
+            .WithMany()
+            .HasForeignKey(e => e.EmployeeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         // Indexes
         builder.HasIndex(e => e.ServiceId);
         builder.HasIndex(e => e.PackageId);
+        builder.HasIndex(e => e.EmployeeId);
         builder.HasIndex(e => new { e.ServiceId, e.PackageId });
+        builder.HasIndex(e => new { e.EmployeeId, e.ServiceId, e.PackageId })
+            .IsUnique()
+            .HasFilter("\"EmployeeId\" IS NOT NULL");
     }
 }

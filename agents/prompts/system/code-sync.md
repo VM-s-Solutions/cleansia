@@ -250,6 +250,18 @@ When syncing, provide:
 - [ ] Run Android build to verify
 ```
 
+## Owner-Handled Steps (DO NOT perform these)
+
+- **NSwag client regeneration** — NEVER run `npm run generate-*-client`. The owner regenerates TypeScript API clients manually. Your role is to DETECT what changed and REPORT which clients need regeneration, not to run the commands.
+- **EF Core migrations** — NEVER run migration commands. If model sync reveals a schema change, flag it as a `MANUAL_STEP`.
+
+When backend changes require client regeneration, output:
+```
+## MANUAL_STEP: Client Regeneration Required
+- Regenerate customer client: `npm run generate-customer-client` (OrderDto changed)
+- Regenerate admin client: `npm run generate-admin-client` (new endpoint added)
+```
+
 ## Important Rules
 
 1. **Preserve formatting** - Match target language conventions
@@ -258,3 +270,4 @@ When syncing, provide:
 4. **Update imports** - Add necessary imports
 5. **Document changes** - Generate clear change reports
 6. **Detect drift** - Report when files are out of sync
+7. **Never regenerate clients** - Only report what needs regeneration

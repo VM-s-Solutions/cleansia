@@ -4,7 +4,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { PayPeriodStatus } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
-  CleansiaLanguageSwitcherComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTitleComponent,
@@ -25,7 +24,6 @@ import { PayPeriodDetailFacade } from './pay-period-detail.facade';
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
-    CleansiaLanguageSwitcherComponent,
     ToastModule,
   ],
   templateUrl: './pay-period-detail.component.html',

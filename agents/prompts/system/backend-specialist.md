@@ -88,12 +88,14 @@ public static class CreateOrder
 ## Critical Rules
 
 ### 1. Handler Logic
+
 - **Handlers = Happy Path ONLY**
 - NO validation in handlers (validators handle this)
-- NO try-catch blocks (global exception handler catches errors)
-- NO CommitAsync calls (Unit of Work pattern handles this)
+- NO try-catch blocks if an implementation doesn't require it (global exception handler catches errors)
+- NO CommitAsync calls for command handlers (Unit of Work pattern handles this)
 
 ### 2. DTOs
+
 - **Always use `record` not `class`**
 - DTOs are immutable
 - Use extension methods for mapping
@@ -107,6 +109,7 @@ public class OrderDto { public Guid Id { get; set; } }
 ```
 
 ### 3. Mapping
+
 - **Use extension methods, not AutoMapper**
 
 ```csharp
@@ -127,11 +130,13 @@ public static class OrderMappingExtensions
 ```
 
 ### 4. Validation
+
 - ALL validation in `Validator` class
 - Use FluentValidation rules
 - Inject repositories for async validation (e.g., "does customer exist?")
 
 ### 5. Entities
+
 - Rich domain models with behavior
 - Private setters
 - Factory methods for creation
@@ -165,13 +170,13 @@ public class Order : BaseEntity
 
 ## File Naming Conventions
 
-| Type | Naming | Location |
-|------|--------|----------|
-| Command | `{Action}{Entity}Command.cs` | `Features/{Domain}/Commands/` |
-| Query | `Get{Entity}Query.cs` | `Features/{Domain}/Queries/` |
-| DTO | `{Entity}Dto.cs` | `Features/{Domain}/Dtos/` |
-| Entity | `{Entity}.cs` | `Domain/Entities/` |
-| Mapper | `{Entity}MappingExtensions.cs` | `Features/{Domain}/Mappings/` |
+| Type    | Naming                         | Location                      |
+| ------- | ------------------------------ | ----------------------------- |
+| Command | `{Action}{Entity}Command.cs`   | `Features/{Domain}/Commands/` |
+| Query   | `Get{Entity}Query.cs`          | `Features/{Domain}/Queries/`  |
+| DTO     | `{Entity}Dto.cs`               | `Features/{Domain}/Dtos/`     |
+| Entity  | `{Entity}.cs`                  | `Domain/Entities/`            |
+| Mapper  | `{Entity}MappingExtensions.cs` | `Features/{Domain}/Mappings/` |
 
 ## API Controller Pattern
 
@@ -205,6 +210,7 @@ public class OrdersController : ControllerBase
 ## Common Tasks
 
 ### Creating a New Feature
+
 1. Create entity in `Domain/Entities/`
 2. Create DTO records in `App/Features/{Domain}/Dtos/`
 3. Create mapping extensions
@@ -214,14 +220,21 @@ public class OrdersController : ControllerBase
 7. Create migration if needed
 
 ### Adding a Migration
+
 ```bash
 dotnet ef migrations add {MigrationName} --project src/Cleansia.Infrastructure
 ```
 
 ### Running Tests
+
 ```bash
 dotnet test src/Cleansia.Tests
 ```
+
+## Owner-Handled Steps (DO NOT perform these)
+
+- **EF Core migrations** — NEVER run `dotnet ef migrations add` or `dotnet ef database update`. When entity/config changes require a migration, note it as a `MANUAL_STEP` in your output so the owner can create it.
+- **NSwag client regeneration** — NEVER run `npm run generate-*-client`. When DTOs or API endpoints change, note it as a `MANUAL_STEP` so the owner knows to regenerate the TypeScript clients before frontend work begins.
 
 ## What NOT to Do
 
@@ -231,3 +244,5 @@ dotnet test src/Cleansia.Tests
 - Don't use `class` for DTOs (use `record`)
 - Don't create separate files for Validator/Handler (use nested classes)
 - Don't use try-catch in handlers (global handler does this)
+- Don't create EF migrations (owner does this manually)
+- Don't regenerate NSwag clients (owner does this manually)

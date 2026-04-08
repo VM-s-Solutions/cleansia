@@ -5973,6 +5973,7 @@ export interface IOrderReviewDto {
 }
 
 export enum OrderStatus {
+    New = 0,
     Pending = 1,
     Confirmed = 2,
     InProgress = 3,

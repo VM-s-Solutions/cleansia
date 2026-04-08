@@ -375,7 +375,11 @@
         "availability_save_success": "Dostupnost byla úspěšně aktualizována",
         "availability_save_error": "Nepodařilo se aktualizovat dostupnost",
         "employee_update_success": "Zaměstnanec byl úspěšně aktualizován",
-        "employee_update_error": "Nepodařilo se aktualizovat zaměstnance"
+        "employee_update_error": "Nepodařilo se aktualizovat zaměstnance",
+        "pay_config_save_success": "Konfigurace platby úspěšně uložena",
+        "pay_config_save_error": "Nepodařilo se uložit konfiguraci platby",
+        "pay_config_delete_success": "Konfigurace platby úspěšně smazána",
+        "pay_config_delete_error": "Nepodařilo se smazat konfiguraci platby"
       },
       "document_status": {
         "pending": "Čekající",
@@ -395,7 +399,21 @@
         "insurance_document": "Pojistný doklad",
         "other": "Ostatní",
         "unknown": "Neznámý"
-      }
+      },
+      "pay_configuration": "Konfigurace platby",
+      "add_pay_config": "Přidat přepsání platby",
+      "no_pay_configs": "Žádné přepsání platby pro zaměstnance. Platí globální sazby.",
+      "pay_config_service": "Služba",
+      "pay_config_package": "Balíček",
+      "pay_config_currency": "Měna",
+      "pay_config_base_pay": "Základní platba",
+      "pay_config_extra_room": "Příplatek za pokoj",
+      "pay_config_extra_bathroom": "Příplatek za koupelnu",
+      "pay_config_distance_rate": "Sazba za km",
+      "pay_config_min_pay": "Minimální platba",
+      "pay_config_max_pay": "Maximální platba",
+      "pay_config_description": "Popis",
+      "grade_template": "Šablona hodnosti"
     },
     "order_management": {
       "title": "Správa objednávek",
@@ -429,7 +447,8 @@
         "confirmed": "Potvrzeno",
         "in_progress": "Probíhá",
         "completed": "Dokončeno",
-        "cancelled": "Zrušeno"
+        "cancelled": "Zrušeno",
+        "new": "Nová"
       },
       "payment_status": {
         "pending": "Čekající",

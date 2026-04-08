@@ -410,17 +410,23 @@
         "unit": "úklidů"
       },
       "benefits": {
-        "title": "Proč je profesionální čištění lepší než běžný úklid?",
+        "title": "Co získáte s naší službou",
         "badge": "Rozdíl",
-        "b1": "Odstraňuje špínu zevnitř, ne jen z povrchu.",
-        "b2": "Nezanechává lepkavý film, který přitahuje další nečistoty.",
-        "b3": "Likviduje bakterie, roztoče, plísně — bezpečné pro alergiky i děti.",
-        "b4": "Rychle schne — 2-4 hodiny s profesionální extrakcí."
+        "b1": "Méně starostí — Objednávku zadáte online bez prodlev, telefonátů a zbytečného vyjednávání.",
+        "b2": "Více času pro sebe — O úklid se postaráme za vás, zatímco se můžete soustředit na důležitější věci.",
+        "b3": "Profesionální přístup — Zkušený tým, ověřené postupy a důraz na detail.",
+        "b4": "Čistý a svěží domov — Výsledky, které jsou vidět a cítit."
       },
       "extra_services": {
-        "s1": { "name": "Čištění interiéru auta" },
-        "s2": { "name": "Úklid kanceláří" },
-        "s3": { "name": "Úklid po rekonstrukci" }
+        "s1": {
+          "name": "Čištění interiéru auta"
+        },
+        "s2": {
+          "name": "Úklid kanceláří"
+        },
+        "s3": {
+          "name": "Úklid po rekonstrukci"
+        }
       },
       "fallback_services": {
         "s1": {

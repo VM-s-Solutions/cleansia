@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { Component, computed, effect, inject, OnInit } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -61,6 +62,7 @@ import {
     OrderServiceDetailsComponent,
     OrderAdditionalServicesComponent,
     OrderPhotosComponent,
+    DatePipe,
   ],
   templateUrl: './order-details.component.html',
   providers: [OrderDetailsFacade, DialogService],

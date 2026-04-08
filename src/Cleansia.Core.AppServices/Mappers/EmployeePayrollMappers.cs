@@ -70,6 +70,8 @@ public static class EmployeePayrollMappers
     public static EmployeePayConfigDto MapToDto(this EmployeePayConfig config) =>
         new(
             config.Id,
+            config.EmployeeId,
+            config.Employee != null ? $"{config.Employee.User?.FirstName} {config.Employee.User?.LastName}".Trim() : null,
             config.ServiceId,
             config.Service?.Name,
             config.PackageId,

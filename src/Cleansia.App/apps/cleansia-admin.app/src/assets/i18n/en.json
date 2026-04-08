@@ -374,7 +374,11 @@
         "availability_save_success": "Availability updated successfully",
         "availability_save_error": "Failed to update availability",
         "employee_update_success": "Employee updated successfully",
-        "employee_update_error": "Failed to update employee"
+        "employee_update_error": "Failed to update employee",
+        "pay_config_save_success": "Pay configuration saved successfully",
+        "pay_config_save_error": "Failed to save pay configuration",
+        "pay_config_delete_success": "Pay configuration deleted successfully",
+        "pay_config_delete_error": "Failed to delete pay configuration"
       },
       "document_status": {
         "pending": "Pending",
@@ -394,7 +398,21 @@
         "insurance_document": "Insurance Document",
         "other": "Other",
         "unknown": "Unknown"
-      }
+      },
+      "pay_configuration": "Pay Configuration",
+      "add_pay_config": "Add Pay Override",
+      "no_pay_configs": "No employee-specific pay overrides configured. Global rates apply.",
+      "pay_config_service": "Service",
+      "pay_config_package": "Package",
+      "pay_config_currency": "Currency",
+      "pay_config_base_pay": "Base Pay",
+      "pay_config_extra_room": "Extra Per Room",
+      "pay_config_extra_bathroom": "Extra Per Bathroom",
+      "pay_config_distance_rate": "Distance Rate / km",
+      "pay_config_min_pay": "Minimum Pay",
+      "pay_config_max_pay": "Maximum Pay",
+      "pay_config_description": "Description",
+      "grade_template": "Grade Template"
     },
     "order_management": {
       "title": "Order Management",
@@ -428,7 +446,8 @@
         "confirmed": "Confirmed",
         "in_progress": "In Progress",
         "completed": "Completed",
-        "cancelled": "Cancelled"
+        "cancelled": "Cancelled",
+        "new": "New"
       },
       "payment_status": {
         "pending": "Pending",

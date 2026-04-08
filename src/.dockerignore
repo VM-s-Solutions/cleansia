@@ -1,3 +1,13 @@
+# Exclude non-.NET projects (biggest context bloat)
+Cleansia.App/
+cleansia_android/
+
+# Exclude test projects (not needed for Functions build)
+Cleansia.Tests/
+Cleansia.IntegrationTests/
+Cleansia.TestUtilities/
+
+# Exclude IDE/tooling
 **/.classpath
 **/.dockerignore
 **/.env
@@ -12,19 +22,17 @@
 **/*.dbmdl
 **/*.jfm
 **/azds.yaml
-**/bin
 **/charts
 **/docker-compose*
 **/Dockerfile*
 **/node_modules
 **/npm-debug.log
-**/obj
 **/secrets.dev.yaml
 **/values.dev.yaml
 LICENSE
 README.md
-!**/.gitignore
-!.git/HEAD
-!.git/config
-!.git/packed-refs
-!.git/refs/heads/**
+
+# Exclude build artifacts
+**/bin
+**/obj
+**/publish

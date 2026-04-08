@@ -14,6 +14,7 @@ import {
   AdminLanguageClient,
   AdminOrderClient,
   AdminPackageClient,
+  AdminPayConfigClient,
   AdminPayPeriodClient,
   AdminReportClient,
   AdminServiceClient,
@@ -30,6 +31,7 @@ import {
   IAdminLanguageClient,
   IAdminOrderClient,
   IAdminPackageClient,
+  IAdminPayConfigClient,
   IAdminPayPeriodClient,
   IAdminReportClient,
   IAdminServiceClient,
@@ -56,6 +58,7 @@ interface IAdminClient {
   adminServiceClient: IAdminServiceClient;
   adminUserClient: IAdminUserClient;
   emailTemplateTypesClient: ITypesClient;
+  adminPayConfigClient: IAdminPayConfigClient;
 }
 
 @Injectable({
@@ -127,6 +130,10 @@ export class AdminClient implements IAdminClient {
   adminEmailTemplateClient: IAdminEmailTemplateClient =
     new AdminEmailTemplateClient(this.httpClient, this.apiBaseUrl);
   emailTemplateTypesClient: ITypesClient = new TypesClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  adminPayConfigClient: IAdminPayConfigClient = new AdminPayConfigClient(
     this.httpClient,
     this.apiBaseUrl
   );

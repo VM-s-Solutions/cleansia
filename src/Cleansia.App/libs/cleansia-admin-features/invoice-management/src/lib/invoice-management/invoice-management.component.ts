@@ -21,7 +21,6 @@ import {
 import {
   CleansiaButtonComponent,
   CleansiaCheckboxComponent,
-  CleansiaLanguageSwitcherComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTableComponent,
@@ -54,7 +53,6 @@ import {
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
-    CleansiaLanguageSwitcherComponent,
     FormsModule,
     ReactiveFormsModule,
     ToastModule,

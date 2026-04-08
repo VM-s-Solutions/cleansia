@@ -8,5 +8,11 @@ public interface IEmployeePayConfigRepository : IRepository<EmployeePayConfig, s
 
     Task<EmployeePayConfig?> GetByPackageIdAsync(string packageId, CancellationToken cancellationToken);
 
+    Task<EmployeePayConfig?> GetByEmployeeServiceIdAsync(string employeeId, string serviceId, CancellationToken cancellationToken);
+
+    Task<EmployeePayConfig?> GetByEmployeePackageIdAsync(string employeeId, string packageId, CancellationToken cancellationToken);
+
     IQueryable<EmployeePayConfig> GetAllConfigs();
+
+    IQueryable<EmployeePayConfig> GetByEmployeeId(string employeeId);
 }

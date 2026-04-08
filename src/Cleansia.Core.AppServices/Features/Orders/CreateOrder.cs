@@ -250,8 +250,7 @@ public class CreateOrder
                             var stripeClient = stripeClientFactory.CreateClient();
                             stripeSessionId = await stripeClient.CreateCheckoutSessionAsync(order, cancellationToken);
 
-                            // Order starts as Pending until Stripe webhook confirms payment
-                            order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Pending, order));
+                            order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
                             orderRepository.Add(order);
                         }
                         catch (Exception ex)
@@ -267,7 +266,7 @@ public class CreateOrder
                     }
                 case PaymentType.Cash:
                     {
-                        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
+                        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
 
                         // Add order first so EF can resolve FK when receipt is created
                         orderRepository.Add(order);

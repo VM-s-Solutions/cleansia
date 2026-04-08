@@ -71,7 +71,7 @@
           [title]="'pages.order_details.take_order' | translate"
           [icon]="'pi pi-check'"
           (clickFn)="takeOrder()"
-          [disabled]="loading()"
+          [loading]="loading()"
         />
       </div>
       }
@@ -85,7 +85,7 @@
           [title]="'pages.order_details.start_order' | translate"
           [icon]="'pi pi-play'"
           (clickFn)="startOrder()"
-          [disabled]="loading()"
+          [loading]="loading()"
         />
       </div>
       }
@@ -129,7 +129,7 @@
             [icon]="'pi pi-check-circle'"
             [severity]="'success'"
             (clickFn)="completeOrder()"
-            [disabled]="loading()"
+            [loading]="loading()"
           />
           }
         </div>
@@ -246,6 +246,59 @@
               dataType="text"
               [disabled]="true"
             />
+          </div>
+          }
+        </div>
+      </cleansia-section>
+      }
+
+      <!-- Employee Notes -->
+      @if (orderDetails()?.orderNotes?.length) {
+      <cleansia-section [title]="'pages.order_details.employee_notes' | translate">
+        <div class="cleansia-order-details__activity-list">
+          @for (note of orderDetails()!.orderNotes!; track note.id) {
+          <div class="cleansia-order-details__activity-item">
+            <div class="cleansia-order-details__activity-icon cleansia-order-details__activity-icon--note">
+              <i class="pi pi-file-edit"></i>
+            </div>
+            <div class="cleansia-order-details__activity-body">
+              <p class="cleansia-order-details__activity-text">{{ note.content }}</p>
+              <span class="cleansia-order-details__activity-date">
+                {{ note.createdOn | date:'dd.MM.yyyy HH:mm' }}
+              </span>
+            </div>
+          </div>
+          }
+        </div>
+      </cleansia-section>
+      }
+
+      <!-- Reported Issues -->
+      @if (orderDetails()?.orderIssues?.length) {
+      <cleansia-section [title]="'pages.order_details.reported_issues' | translate">
+        <div class="cleansia-order-details__activity-list">
+          @for (issue of orderDetails()!.orderIssues!; track issue.id) {
+          <div class="cleansia-order-details__activity-item" [class.cleansia-order-details__activity-item--resolved]="issue.isResolved">
+            <div class="cleansia-order-details__activity-icon cleansia-order-details__activity-icon--issue">
+              <i [class]="issue.isResolved ? 'pi pi-check-circle' : 'pi pi-exclamation-triangle'"></i>
+            </div>
+            <div class="cleansia-order-details__activity-body">
+              <p class="cleansia-order-details__activity-text">{{ issue.description }}</p>
+              <div class="cleansia-order-details__activity-meta">
+                <span class="cleansia-order-details__activity-date">
+                  {{ issue.createdOn | date:'dd.MM.yyyy HH:mm' }}
+                </span>
+                @if (issue.isResolved) {
+                <span class="cleansia-order-details__activity-badge cleansia-order-details__activity-badge--resolved">
+                  {{ 'pages.order_details.resolved' | translate }}
+                </span>
+                } @else {
+                <span class="cleansia-order-details__activity-badge cleansia-order-details__activity-badge--open">
+                  {{ 'pages.order_details.open_issue' | translate }}
+                </span>
+                }
+              </div>
+            </div>
           </div>
           }
         </div>

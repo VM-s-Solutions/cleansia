@@ -11,7 +11,6 @@ import {
 import { CurrencyListItem } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
-  CleansiaLanguageSwitcherComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTableComponent,
@@ -40,7 +39,6 @@ import {
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
-    CleansiaLanguageSwitcherComponent,
     ConfirmDialogModule,
   ],
   templateUrl: './currency-management.component.html',

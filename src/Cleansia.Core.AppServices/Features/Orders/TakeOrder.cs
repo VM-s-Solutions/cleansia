@@ -1,5 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -140,12 +142,22 @@ public class TakeOrder
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var order = await orderRepository.GetByIdAsync(command.OrderId, cancellationToken);
+            var order = await orderRepository
+                .GetQueryable()
+                .Include(o => o.AssignedEmployees)
+                .Include(o => o.OrderStatusHistory)
+                .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             var employee = await employeeRepository.GetByIdAsync(command.EmployeeId, cancellationToken);
 
-            var orderEmployee = OrderEmployee.Create(order, employee!);
-            order.AddAssignedEmployee(orderEmployee);
+            var orderEmployee = OrderEmployee.Create(order!, employee!);
+            order!.AddAssignedEmployee(orderEmployee);
+
+            var currentStatus = order.GetCurrentOrderStatus();
+            if (currentStatus is OrderStatus.New or OrderStatus.Pending)
+            {
+                order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
+            }
 
             return BusinessResult.Success(new Response(order.Id, command.EmployeeId));
         }

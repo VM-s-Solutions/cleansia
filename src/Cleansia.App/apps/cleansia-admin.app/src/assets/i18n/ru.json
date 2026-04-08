@@ -375,7 +375,11 @@
         "availability_save_success": "Доступность успешно обновлена",
         "availability_save_error": "Не удалось обновить доступность",
         "employee_update_success": "Сотрудник успешно обновлён",
-        "employee_update_error": "Не удалось обновить сотрудника"
+        "employee_update_error": "Не удалось обновить сотрудника",
+        "pay_config_save_success": "Конфигурация оплаты успешно сохранена",
+        "pay_config_save_error": "Не удалось сохранить конфигурацию оплаты",
+        "pay_config_delete_success": "Конфигурация оплаты успешно удалена",
+        "pay_config_delete_error": "Не удалось удалить конфигурацию оплаты"
       },
       "document_status": {
         "pending": "Ожидает",
@@ -395,7 +399,21 @@
         "insurance_document": "Страховой документ",
         "other": "Другое",
         "unknown": "Неизвестен"
-      }
+      },
+      "pay_configuration": "Конфигурация оплаты",
+      "add_pay_config": "Добавить переопределение оплаты",
+      "no_pay_configs": "Нет переопределений оплаты для сотрудника. Применяются глобальные ставки.",
+      "pay_config_service": "Услуга",
+      "pay_config_package": "Пакет",
+      "pay_config_currency": "Валюта",
+      "pay_config_base_pay": "Базовая оплата",
+      "pay_config_extra_room": "Доплата за комнату",
+      "pay_config_extra_bathroom": "Доплата за ванную",
+      "pay_config_distance_rate": "Ставка за км",
+      "pay_config_min_pay": "Минимальная оплата",
+      "pay_config_max_pay": "Максимальная оплата",
+      "pay_config_description": "Описание",
+      "grade_template": "Шаблон уровня"
     },
     "order_management": {
       "title": "Управление заказами",
@@ -429,7 +447,8 @@
         "confirmed": "Подтверждён",
         "in_progress": "В процессе",
         "completed": "Завершён",
-        "cancelled": "Отменён"
+        "cancelled": "Отменён",
+        "new": "Новый"
       },
       "payment_status": {
         "pending": "Ожидает",

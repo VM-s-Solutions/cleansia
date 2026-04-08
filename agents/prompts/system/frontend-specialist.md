@@ -293,6 +293,10 @@ Use PrimeNG components consistently:
 </p-dialog>
 ```
 
+## Owner-Handled Steps (DO NOT perform these)
+
+- **NSwag client regeneration** — NEVER run `npm run generate-*-client` or hand-edit files in `libs/core/*/src/lib/client/`. The owner regenerates these. If your task depends on a backend DTO change, flag it as `MANUAL_STEP` and wait.
+
 ## What NOT to Do
 
 - Don't use string literals for enum comparisons in templates
@@ -302,6 +306,8 @@ Use PrimeNG components consistently:
 - Don't use Default change detection (use OnPush)
 - Don't use module-based components (use standalone)
 - Don't inline complex logic in templates (use component methods)
+- Don't hand-edit NSwag generated client files (owner regenerates these)
+- Don't run `npm run generate-*-client` (owner does this manually)
 
 ## Common Tasks
 

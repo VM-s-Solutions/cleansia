@@ -6009,6 +6009,7 @@ export class AdminPackageClient implements IAdminPackageClient {
 
 export interface IAdminPayConfigClient {
     /**
+     * @param employeeId (optional) 
      * @param serviceId (optional) 
      * @param packageId (optional) 
      * @param currencyId (optional) 
@@ -6017,7 +6018,7 @@ export interface IAdminPayConfigClient {
      * @param limit (optional) 
      * @return OK
      */
-    getPaged(serviceId?: string | undefined, packageId?: string | undefined, currencyId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfEmployeePayConfigDto>;
+    getPaged(employeeId?: string | undefined, serviceId?: string | undefined, packageId?: string | undefined, currencyId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfEmployeePayConfigDto>;
     /**
      * @return OK
      */
@@ -6052,6 +6053,7 @@ export class AdminPayConfigClient implements IAdminPayConfigClient {
     }
 
     /**
+     * @param employeeId (optional) 
      * @param serviceId (optional) 
      * @param packageId (optional) 
      * @param currencyId (optional) 
@@ -6060,8 +6062,12 @@ export class AdminPayConfigClient implements IAdminPayConfigClient {
      * @param limit (optional) 
      * @return OK
      */
-    getPaged(serviceId?: string | undefined, packageId?: string | undefined, currencyId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfEmployeePayConfigDto> {
+    getPaged(employeeId?: string | undefined, serviceId?: string | undefined, packageId?: string | undefined, currencyId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfEmployeePayConfigDto> {
         let url = this.baseUrl + "/api/AdminPayConfig/get-paged?";
+        if (employeeId === null)
+            throw new globalThis.Error("The parameter 'employeeId' cannot be null.");
+        else if (employeeId !== undefined)
+            url += "Filter.EmployeeId=" + encodeURIComponent("" + employeeId) + "&";
         if (serviceId === null)
             throw new globalThis.Error("The parameter 'serviceId' cannot be null.");
         else if (serviceId !== undefined)
@@ -10802,6 +10808,7 @@ export interface ICreatePackageResponse {
 }
 
 export class CreatePayConfigCommand implements ICreatePayConfigCommand {
+    employeeId!: string | undefined;
     serviceId!: string | undefined;
     packageId!: string | undefined;
     basePay!: number;
@@ -10824,6 +10831,7 @@ export class CreatePayConfigCommand implements ICreatePayConfigCommand {
 
     init(Data?: any) {
         if (Data) {
+            this.employeeId = Data["employeeId"];
             this.serviceId = Data["serviceId"];
             this.packageId = Data["packageId"];
             this.basePay = Data["basePay"];
@@ -10846,6 +10854,7 @@ export class CreatePayConfigCommand implements ICreatePayConfigCommand {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
+        data["employeeId"] = this.employeeId;
         data["serviceId"] = this.serviceId;
         data["packageId"] = this.packageId;
         data["basePay"] = this.basePay;
@@ -10861,6 +10870,7 @@ export class CreatePayConfigCommand implements ICreatePayConfigCommand {
 }
 
 export interface ICreatePayConfigCommand {
+    employeeId: string | undefined;
     serviceId: string | undefined;
     packageId: string | undefined;
     basePay: number;
@@ -12469,6 +12479,8 @@ export enum EmployeeInvoiceStatus {
 
 export class EmployeePayConfigDto implements IEmployeePayConfigDto {
     id!: string | undefined;
+    employeeId!: string | undefined;
+    employeeName!: string | undefined;
     serviceId!: string | undefined;
     serviceName!: string | undefined;
     packageId!: string | undefined;
@@ -12496,6 +12508,8 @@ export class EmployeePayConfigDto implements IEmployeePayConfigDto {
     init(Data?: any) {
         if (Data) {
             this.id = Data["id"];
+            this.employeeId = Data["employeeId"];
+            this.employeeName = Data["employeeName"];
             this.serviceId = Data["serviceId"];
             this.serviceName = Data["serviceName"];
             this.packageId = Data["packageId"];
@@ -12523,6 +12537,8 @@ export class EmployeePayConfigDto implements IEmployeePayConfigDto {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["id"] = this.id;
+        data["employeeId"] = this.employeeId;
+        data["employeeName"] = this.employeeName;
         data["serviceId"] = this.serviceId;
         data["serviceName"] = this.serviceName;
         data["packageId"] = this.packageId;
@@ -12543,6 +12559,8 @@ export class EmployeePayConfigDto implements IEmployeePayConfigDto {
 
 export interface IEmployeePayConfigDto {
     id: string | undefined;
+    employeeId: string | undefined;
+    employeeName: string | undefined;
     serviceId: string | undefined;
     serviceName: string | undefined;
     packageId: string | undefined;
@@ -14611,6 +14629,7 @@ export interface IOrderReviewDto {
 }
 
 export enum OrderStatus {
+    New = 0,
     Pending = 1,
     Confirmed = 2,
     InProgress = 3,

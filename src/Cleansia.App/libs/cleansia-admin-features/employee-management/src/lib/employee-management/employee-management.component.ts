@@ -21,7 +21,6 @@ import {
 import {
   CleansiaButtonComponent,
   CleansiaCheckboxComponent,
-  CleansiaLanguageSwitcherComponent,
   CleansiaLoaderComponent,
   CleansiaRadioComponent,
   CleansiaSectionComponent,
@@ -63,7 +62,6 @@ import { getEmployeeTableDefinition } from './employee-management.models';
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
-    CleansiaLanguageSwitcherComponent,
     FormsModule,
     ReactiveFormsModule,
     ToastModule,

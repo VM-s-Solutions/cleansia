@@ -43,7 +43,8 @@ public class SubmitOrderReview
 
     public class Handler(
         IOrderRepository orderRepository,
-        IEmployeeRepository employeeRepository
+        IEmployeeRepository employeeRepository,
+        IUserSessionProvider userSessionProvider
     ) : ICommandHandler<Command, OrderReviewDto>
     {
         public async Task<BusinessResult<OrderReviewDto>> Handle(Command command, CancellationToken cancellationToken)
@@ -61,11 +62,15 @@ public class SubmitOrderReview
                     new Error(nameof(command.OrderId), BusinessErrorMessage.OrderNotFound));
             }
 
-            // Verify the order belongs to the user
-            if (order.UserId != command.UserId)
+            var currentUserId = userSessionProvider.GetTypedUserClaim(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var currentEmail = userSessionProvider.GetUserEmail();
+            var isOwner = (!string.IsNullOrEmpty(currentUserId) && order.UserId == currentUserId)
+                       || (!string.IsNullOrEmpty(currentEmail) && order.CustomerEmail == currentEmail);
+
+            if (!isOwner)
             {
                 return BusinessResult.Failure<OrderReviewDto>(
-                    new Error(nameof(command.UserId), BusinessErrorMessage.OrderNotOwnedByUser));
+                    new Error(nameof(command.OrderId), BusinessErrorMessage.OrderNotOwnedByUser));
             }
 
             // Verify order is completed
@@ -76,8 +81,10 @@ public class SubmitOrderReview
                     new Error(nameof(command.OrderId), BusinessErrorMessage.OrderNotCompleted));
             }
 
+            var reviewUserId = currentUserId ?? order.UserId ?? "";
+
             // Check if review already exists — update it
-            var existingReview = order.Reviews.FirstOrDefault(r => r.UserId == command.UserId);
+            var existingReview = order.Reviews.FirstOrDefault(r => r.UserId == reviewUserId);
             if (existingReview != null)
             {
                 existingReview.Update(command.Rating, command.Comment);
@@ -86,7 +93,7 @@ public class SubmitOrderReview
             }
 
             // Create new review
-            var review = OrderReview.Create(command.OrderId, command.UserId, command.Rating, command.Comment);
+            var review = OrderReview.Create(command.OrderId, reviewUserId, command.Rating, command.Comment);
             order.AddReview(review);
 
             await RecalculateEmployeeRatings(order, cancellationToken);

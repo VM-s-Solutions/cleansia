@@ -5,7 +5,6 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import {
   CleansiaButtonComponent,
   CleansiaCalendarComponent,
-  CleansiaLanguageSwitcherComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTableComponent,
@@ -36,7 +35,6 @@ import { ReportsFacade, ReportType } from './reports.facade';
     TabPanel,
     CleansiaButtonComponent,
     CleansiaCalendarComponent,
-    CleansiaLanguageSwitcherComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     CleansiaTableComponent,

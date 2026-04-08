@@ -5,7 +5,6 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { TabsModule } from 'primeng/tabs';
 import { filter, Subject, takeUntil } from 'rxjs';
 import {
-  CleansiaLanguageSwitcherComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
 
@@ -22,7 +21,6 @@ interface TemplateTab {
     RouterOutlet,
     TranslateModule,
     TabsModule,
-    CleansiaLanguageSwitcherComponent,
     CleansiaTitleComponent,
   ],
   templateUrl: './template-management.component.html',

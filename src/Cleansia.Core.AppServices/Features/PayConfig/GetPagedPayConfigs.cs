@@ -16,7 +16,7 @@ public class GetPagedPayConfigs
 {
     public class Request : DataRangeRequest, IRequest<PagedData<EmployeePayConfigDto>>
     {
-        public PayConfigFilter? Filter { get; init; }
+        public PayConfigFilter? Filter { get; set; }
     }
 
     internal class Handler(
@@ -26,6 +26,8 @@ public class GetPagedPayConfigs
         public async Task<PagedData<EmployeePayConfigDto>> Handle(Request request, CancellationToken cancellationToken)
         {
             var specification = EmployeePayConfigSpecification.Create(
+                employeeId: request.Filter?.EmployeeId,
+                globalOnly: string.IsNullOrEmpty(request.Filter?.EmployeeId) ? true : null,
                 serviceId: request.Filter?.ServiceId,
                 packageId: request.Filter?.PackageId,
                 currencyId: request.Filter?.CurrencyId);
@@ -39,6 +41,8 @@ public class GetPagedPayConfigs
                 .Include(c => c.Service)
                 .Include(c => c.Package)
                 .Include(c => c.Currency)
+                .Include(c => c.Employee)
+                    .ThenInclude(e => e!.User)
                 .Select(config => config.MapToDto())
                 .ToListAsync(cancellationToken);
 

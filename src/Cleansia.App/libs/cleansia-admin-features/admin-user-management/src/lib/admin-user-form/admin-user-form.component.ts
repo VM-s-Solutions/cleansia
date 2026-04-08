@@ -17,7 +17,6 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   CleansiaButtonComponent,
-  CleansiaLanguageSwitcherComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTelephoneComponent,
@@ -41,7 +40,6 @@ import { AdminUserFormData, AdminUserFormFacade } from './admin-user-form.facade
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     CleansiaTitleComponent,
-    CleansiaLanguageSwitcherComponent,
   ],
   templateUrl: './admin-user-form.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

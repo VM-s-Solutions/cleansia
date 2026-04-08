@@ -374,7 +374,16 @@
       "updated_on": "Обновлено",
       "not_found_title": "Заказ не найден",
       "not_found_message": "Заказ, который Вы ищете, не найден.",
-      "load_failed": "Не удалось загрузить детали заказа"
+      "load_failed": "Не удалось загрузить детали заказа",
+      "note_content": "Заметка",
+      "note_content_placeholder": "Введите заметку...",
+      "issue_description": "Описание проблемы",
+      "issue_description_placeholder": "Опишите проблему...",
+      "issue_type": "Тип проблемы",
+      "employee_notes": "Заметки сотрудника",
+      "reported_issues": "Сообщённые проблемы",
+      "resolved": "Решено",
+      "open_issue": "Открыто"
     },
     "invoices": {
       "title": "Мои зарплатные счета",
@@ -1140,7 +1149,8 @@
       "confirmed": "Подтверждён",
       "in_progress": "Выполняется",
       "completed": "Завершён",
-      "cancelled": "Отменён"
+      "cancelled": "Отменён",
+      "new": "Новый"
     },
     "payment_status": {
       "pending": "Ожидает",

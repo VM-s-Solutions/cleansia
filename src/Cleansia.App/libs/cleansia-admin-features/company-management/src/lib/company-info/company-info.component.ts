@@ -11,7 +11,6 @@ import {
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   CleansiaButtonComponent,
-  CleansiaLanguageSwitcherComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaSelectComponent,
@@ -37,7 +36,6 @@ import { CompanyInfoFormData, CompanyInfoFacade } from './company-info.facade';
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     CleansiaTitleComponent,
-    CleansiaLanguageSwitcherComponent,
   ],
   templateUrl: './company-info.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

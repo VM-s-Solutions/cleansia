@@ -442,53 +442,6 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "EmployeePayConfigs",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    ServiceId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
-                    PackageId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
-                    BasePay = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
-                    ExtraPerRoom = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
-                    ExtraPerBathroom = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
-                    DistanceRatePerKm = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
-                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    CurrencyId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    MinimumPay = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
-                    MaximumPay = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
-                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_EmployeePayConfigs", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_EmployeePayConfigs_Currencies_CurrencyId",
-                        column: x => x.CurrencyId,
-                        principalTable: "Currencies",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_EmployeePayConfigs_Packages_PackageId",
-                        column: x => x.PackageId,
-                        principalTable: "Packages",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_EmployeePayConfigs_Services_ServiceId",
-                        column: x => x.ServiceId,
-                        principalTable: "Services",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "PackageServices",
                 columns: table => new
                 {
@@ -926,6 +879,60 @@ namespace Cleansia.Infra.Database.Migrations
                         name: "FK_EmployeeInvoices_PayPeriods_PayPeriodId",
                         column: x => x.PayPeriodId,
                         principalTable: "PayPeriods",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "EmployeePayConfigs",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    EmployeeId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    ServiceId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    PackageId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    BasePay = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    ExtraPerRoom = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
+                    ExtraPerBathroom = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
+                    DistanceRatePerKm = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
+                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    CurrencyId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    MinimumPay = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
+                    MaximumPay = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_EmployeePayConfigs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_EmployeePayConfigs_Currencies_CurrencyId",
+                        column: x => x.CurrencyId,
+                        principalTable: "Currencies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_EmployeePayConfigs_Employees_EmployeeId",
+                        column: x => x.EmployeeId,
+                        principalTable: "Employees",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_EmployeePayConfigs_Packages_PackageId",
+                        column: x => x.PackageId,
+                        principalTable: "Packages",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_EmployeePayConfigs_Services_ServiceId",
+                        column: x => x.ServiceId,
+                        principalTable: "Services",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -1625,6 +1632,18 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_EmployeePayConfigs_CurrencyId",
                 table: "EmployeePayConfigs",
                 column: "CurrencyId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeePayConfigs_EmployeeId",
+                table: "EmployeePayConfigs",
+                column: "EmployeeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EmployeePayConfigs_EmployeeId_ServiceId_PackageId",
+                table: "EmployeePayConfigs",
+                columns: new[] { "EmployeeId", "ServiceId", "PackageId" },
+                unique: true,
+                filter: "\"EmployeeId\" IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_EmployeePayConfigs_PackageId",

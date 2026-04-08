@@ -37,6 +37,8 @@ public class GetPayConfigById
                 .Include(c => c.Service)
                 .Include(c => c.Package)
                 .Include(c => c.Currency)
+                .Include(c => c.Employee)
+                    .ThenInclude(e => e!.User)
                 .FirstOrDefaultAsync(c => c.Id == query.PayConfigId, cancellationToken);
 
             return BusinessResult.Success(payConfig!.MapToDto());

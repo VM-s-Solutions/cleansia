@@ -410,17 +410,23 @@
         "unit": "čistení"
       },
       "benefits": {
-        "title": "Prečo je profesionálne čistenie lepšie ako bežné?",
+        "title": "Čo získate s našou službou",
         "badge": "Rozdiel",
-        "b1": "Odstraňuje nečistoty zvnútra, nielen z povrchu.",
-        "b2": "Nezanecháva lepkavý film, ktorý priťahuje ďalšiu špinu.",
-        "b3": "Eliminuje baktérie, roztoče a plesne — bezpečné pre alergikov a deti.",
-        "b4": "Rýchlo schne — 2 – 4 hodiny s profesionálnou extrakciou."
+        "b1": "Menej starostí — Objednávku zadáte online bez oneskorení, telefonátov a zbytočného vyjednávania.",
+        "b2": "Viac času pre seba — O upratovanie sa postaráme za vás, zatiaľ čo sa môžete sústrediť na dôležitejšie veci.",
+        "b3": "Profesionálny prístup — Skúsený tím, overené postupy a dôraz na detail.",
+        "b4": "Čistý a sviež domov — Výsledky, ktoré sú vidieť a cítiť."
       },
       "extra_services": {
-        "s1": { "name": "Čistenie interiéru auta" },
-        "s2": { "name": "Čistenie kancelárií" },
-        "s3": { "name": "Upratovanie po rekonštrukcii" }
+        "s1": {
+          "name": "Čistenie interiéru auta"
+        },
+        "s2": {
+          "name": "Čistenie kancelárií"
+        },
+        "s3": {
+          "name": "Upratovanie po rekonštrukcii"
+        }
       },
       "fallback_services": {
         "s1": {

@@ -1119,6 +1119,10 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("numeric(18,2)")
                         .HasDefaultValue(0m);
 
+                    b.Property<string>("EmployeeId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
                     b.Property<decimal>("ExtraPerBathroom")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(18, 2)
@@ -1169,6 +1173,8 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasIndex("CurrencyId");
 
+                    b.HasIndex("EmployeeId");
+
                     b.HasIndex("PackageId");
 
                     b.HasIndex("ServiceId");
@@ -1176,6 +1182,10 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("TenantId");
 
                     b.HasIndex("ServiceId", "PackageId");
+
+                    b.HasIndex("EmployeeId", "ServiceId", "PackageId")
+                        .IsUnique()
+                        .HasFilter("\"EmployeeId\" IS NOT NULL");
 
                     b.ToTable("EmployeePayConfigs");
                 });
@@ -3080,6 +3090,11 @@ namespace Cleansia.Infra.Database.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Cleansia.Core.Domain.Users.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("Cleansia.Core.Domain.Packages.Package", "Package")
                         .WithMany()
                         .HasForeignKey("PackageId")
@@ -3091,6 +3106,8 @@ namespace Cleansia.Infra.Database.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Currency");
+
+                    b.Navigation("Employee");
 
                     b.Navigation("Package");
 

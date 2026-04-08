@@ -4,7 +4,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { OrderStatus, OrderStatusTrackDto } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
-  CleansiaLanguageSwitcherComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaTitleComponent,
@@ -23,7 +22,6 @@ import { OrderDetailFacade } from './order-detail.facade';
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
-    CleansiaLanguageSwitcherComponent,
     TranslatePipe,
     AdminOrderPhotosComponent,
   ],

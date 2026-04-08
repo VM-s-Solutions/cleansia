@@ -125,8 +125,8 @@ export class OrdersFacade extends UnsubscribeControlDirective {
       ...additionalFilters,
       employeeId: undefined,
       orderStatuses: additionalFilters?.orderStatuses || [
+        OrderStatus.New,
         OrderStatus.Pending,
-        OrderStatus.Confirmed,
       ],
       hasAvailableSpots: true,
       excludeEmployeeId: employeeId || undefined,
@@ -194,6 +194,7 @@ export class OrdersFacade extends UnsubscribeControlDirective {
             'pages.orders.order_taken_success'
           );
           this.loadAvailableOrders();
+          this.loadMyOrders();
         }
       });
   }

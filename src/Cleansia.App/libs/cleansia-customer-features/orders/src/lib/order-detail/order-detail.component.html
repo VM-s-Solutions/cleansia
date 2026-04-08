@@ -43,6 +43,7 @@
               [title]="'pages.order_detail.download_receipt' | translate"
               [icon]="'pi pi-download'"
               [severity]="'secondary'"
+              [loading]="downloading()"
               (clickFn)="downloadReceipt()"
             />
           }

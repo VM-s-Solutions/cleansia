@@ -4,6 +4,8 @@ import {
   AdminUpdateEmployeeAvailabilityRequest,
   AdminUpdateEmployeeCommand,
   ContractStatus,
+  CreatePayConfigCommand,
+  EmployeePayConfigDto,
   RejectEmployeeRequest,
   TimeRange,
 } from '@cleansia/admin-services';
@@ -36,6 +38,14 @@ export class EmployeeDetailFacade {
   readonly editingSection = signal<string | null>(null);
   readonly savingEmployee = signal<boolean>(false);
   readonly countries = signal<ICleansiaSelectOption[]>([]);
+
+  // Pay config
+  readonly employeePayConfigs = signal<EmployeePayConfigDto[]>([]);
+  readonly loadingPayConfigs = signal<boolean>(false);
+  readonly savingPayConfig = signal<boolean>(false);
+  readonly services = signal<ICleansiaSelectOption[]>([]);
+  readonly packages = signal<ICleansiaSelectOption[]>([]);
+  readonly currencies = signal<ICleansiaSelectOption[]>([]);
 
   loadEmployeeDetail(employeeId: string): void {
     this.loading.set(true);
@@ -267,6 +277,127 @@ export class EmployeeDetailFacade {
       employee?.isProfileComplete === true &&
       employee?.contractStatus === ContractStatus[ContractStatus.Pending]
     );
+  }
+
+  // Pay config methods
+  loadEmployeePayConfigs(employeeId: string): void {
+    this.loadingPayConfigs.set(true);
+    this.adminClient.adminPayConfigClient
+      .getPaged(employeeId, undefined, undefined, undefined, undefined, 0, 100)
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError(() => of(null)),
+        finalize(() => this.loadingPayConfigs.set(false))
+      )
+      .subscribe((response) => {
+        if (response?.data) {
+          this.employeePayConfigs.set(response.data);
+        }
+      });
+  }
+
+  loadPayConfigOptions(): void {
+    if (this.services().length > 0) return;
+
+    this.adminClient.adminServiceClient
+      .getPaged(undefined, undefined, 0, 100)
+      .pipe(takeUntil(this.destroy$), catchError(() => of(null)))
+      .subscribe((result) => {
+        this.services.set(
+          (result?.data ?? []).map((s: any) => ({ label: s.name ?? '', value: s.id! }))
+        );
+      });
+
+    this.adminClient.adminPackageClient
+      .getPaged(undefined, undefined, undefined, undefined, undefined)
+      .pipe(takeUntil(this.destroy$), catchError(() => of(null)))
+      .subscribe((result) => {
+        this.packages.set(
+          (result?.data ?? []).map((p: any) => ({ label: p.name ?? '', value: p.id! }))
+        );
+      });
+
+    this.adminClient.adminCurrencyClient
+      .getOverview()
+      .pipe(takeUntil(this.destroy$), catchError(() => of([])))
+      .subscribe((currencies) => {
+        this.currencies.set(
+          (currencies ?? []).map((c: any) => ({ label: c.code ?? '', value: c.id! }))
+        );
+      });
+  }
+
+  createEmployeePayConfig(data: Record<string, any>): void {
+    const employeeId = this.employee()?.id;
+    if (!employeeId) return;
+
+    this.savingPayConfig.set(true);
+
+    const command = new CreatePayConfigCommand({
+      employeeId,
+      serviceId: data['serviceId'] || undefined,
+      packageId: data['packageId'] || undefined,
+      basePay: data['basePay'] ?? 0,
+      extraPerRoom: data['extraPerRoom'] ?? 0,
+      extraPerBathroom: data['extraPerBathroom'] ?? 0,
+      distanceRatePerKm: data['distanceRatePerKm'] ?? 0,
+      minimumPay: data['minimumPay'] ?? 0,
+      maximumPay: data['maximumPay'] ?? 0,
+      currencyId: data['currencyId'],
+      description: data['description'] || undefined,
+    });
+
+    this.adminClient.adminPayConfigClient
+      .create(command)
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError(() => {
+          this.snackbarService.showError(
+            this.translate.instant('pages.employee_detail.messages.pay_config_save_error')
+          );
+          return of(null);
+        }),
+        finalize(() => this.savingPayConfig.set(false))
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.snackbarService.showSuccess(
+            this.translate.instant('pages.employee_detail.messages.pay_config_save_success')
+          );
+          this.editingSection.set(null);
+          this.loadEmployeePayConfigs(employeeId);
+        }
+      });
+  }
+
+  deleteEmployeePayConfig(payConfigId: string): void {
+    const employeeId = this.employee()?.id;
+    if (!employeeId) return;
+
+    this.adminClient.adminPayConfigClient
+      .delete(payConfigId)
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError(() => {
+          this.snackbarService.showError(
+            this.translate.instant('pages.employee_detail.messages.pay_config_delete_error')
+          );
+          return of(null);
+        })
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.snackbarService.showSuccess(
+            this.translate.instant('pages.employee_detail.messages.pay_config_delete_success')
+          );
+          this.loadEmployeePayConfigs(employeeId);
+        }
+      });
+  }
+
+  applyGradeTemplate(multiplier: number): void {
+    // Load global configs, apply multiplier, and use as template for the form
+    // This will be handled by the component
   }
 
   // Format date for display

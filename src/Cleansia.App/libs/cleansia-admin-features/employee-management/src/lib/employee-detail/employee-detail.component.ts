@@ -8,7 +8,6 @@ import {
   CleansiaAvailabilityComponent,
   CleansiaButtonComponent,
   CleansiaCalendarComponent,
-  CleansiaLanguageSwitcherComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
   CleansiaSelectComponent,
@@ -43,7 +42,6 @@ import { EmployeeDocumentsSectionComponent } from './employee-documents-section.
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
-    CleansiaLanguageSwitcherComponent,
     ToastModule,
     EmployeeDocumentsSectionComponent,
   ],
@@ -107,10 +105,25 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
 
   readonly isLegalEntity = signal(false);
 
+  readonly payConfigForm = new FormGroup({
+    serviceId: new FormControl<string | null>(null),
+    packageId: new FormControl<string | null>(null),
+    currencyId: new FormControl<string | null>(null, [Validators.required]),
+    basePay: new FormControl<number>(0, [Validators.required, Validators.min(0)]),
+    extraPerRoom: new FormControl<number>(0, [Validators.min(0)]),
+    extraPerBathroom: new FormControl<number>(0, [Validators.min(0)]),
+    distanceRatePerKm: new FormControl<number>(0, [Validators.min(0)]),
+    minimumPay: new FormControl<number>(0, [Validators.min(0)]),
+    maximumPay: new FormControl<number>(0, [Validators.min(0)]),
+    description: new FormControl<string | null>(null),
+  });
+
   ngOnInit(): void {
     const employeeId = this.route.snapshot.paramMap.get('employeeId');
     if (employeeId) {
       this.facade.loadEmployeeDetail(employeeId);
+      this.facade.loadEmployeePayConfigs(employeeId);
+      this.facade.loadPayConfigOptions();
     } else {
       this.router.navigate([CleansiaAdminRoute.EMPLOYEE_MANAGEMENT]);
     }
@@ -175,7 +188,43 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
     this.facade.cancelEditingAvailability();
   }
 
+  applyGradeMultiplier(multiplier: number): void {
+    // Load global configs and apply multiplier as base rates
+    const basePay = this.payConfigForm.controls.basePay.value ?? 0;
+    const baseRate = basePay > 0 ? basePay : 200; // default base if empty
+    this.payConfigForm.patchValue({
+      basePay: Math.round(baseRate * multiplier * 100) / 100,
+      extraPerRoom: Math.round(50 * multiplier * 100) / 100,
+      extraPerBathroom: Math.round(30 * multiplier * 100) / 100,
+      distanceRatePerKm: Math.round(10 * multiplier * 100) / 100,
+    });
+  }
+
+  onSavePayConfig(): void {
+    this.facade.createEmployeePayConfig(this.payConfigForm.getRawValue());
+  }
+
+  onDeletePayConfig(payConfigId: string): void {
+    this.facade.deleteEmployeePayConfig(payConfigId);
+  }
+
   onEditSection(section: string): void {
+    if (section === 'payConfig') {
+      this.payConfigForm.reset({
+        serviceId: null,
+        packageId: null,
+        currencyId: null,
+        basePay: 0,
+        extraPerRoom: 0,
+        extraPerBathroom: 0,
+        distanceRatePerKm: 0,
+        minimumPay: 0,
+        maximumPay: 0,
+        description: null,
+      });
+      this.facade.startEditingSection(section);
+      return;
+    }
     const employee = this.facade.employee();
     if (!employee) return;
     this.editForm.reset({

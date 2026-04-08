@@ -380,7 +380,16 @@
       "employee_email": "Employee Email",
       "not_found_title": "Order Not Found",
       "not_found_message": "The order you are looking for could not be found.",
-      "load_failed": "Failed to load order details"
+      "load_failed": "Failed to load order details",
+      "note_content": "Note",
+      "note_content_placeholder": "Enter your note here...",
+      "issue_description": "Issue Description",
+      "issue_description_placeholder": "Describe the issue...",
+      "issue_type": "Issue Type",
+      "employee_notes": "Employee Notes",
+      "reported_issues": "Reported Issues",
+      "resolved": "Resolved",
+      "open_issue": "Open"
     },
     "invoices": {
       "title": "My Payroll Invoices",
@@ -1146,7 +1155,8 @@
       "confirmed": "Confirmed",
       "in_progress": "In Progress",
       "completed": "Completed",
-      "cancelled": "Cancelled"
+      "cancelled": "Cancelled",
+      "new": "New"
     },
     "payment_status": {
       "pending": "Pending",

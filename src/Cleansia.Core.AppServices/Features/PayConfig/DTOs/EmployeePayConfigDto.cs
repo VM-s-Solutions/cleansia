@@ -2,6 +2,8 @@ namespace Cleansia.Core.AppServices.Features.PayConfig.DTOs;
 
 public record EmployeePayConfigDto(
     string Id,
+    string? EmployeeId,
+    string? EmployeeName,
     string? ServiceId,
     string? ServiceName,
     string? PackageId,

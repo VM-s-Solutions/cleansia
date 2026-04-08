@@ -148,6 +148,28 @@ The specialist prompts (`backend-specialist.md`, `frontend-specialist.md`) conta
 | Full session (plan + execute 4 tasks) | ~80-100k | Typical workday session |
 | Direct `/backend` small fix | ~20k | Single handler change |
 
+## Model Selection
+
+The `/plan` command includes a **Model Recommendations** section telling you which model to use for each phase. Switch before executing:
+
+```
+/model sonnet          # before /execute phase 1
+/model haiku           # before /execute phase 2 (i18n-only)
+/model opus            # before /execute TASK-005 (complex architecture)
+```
+
+| Model | Cost | Use For |
+|-------|------|---------|
+| **Haiku** | Cheapest | i18n keys, config edits, single-line fixes, copy-paste tasks |
+| **Sonnet** | Mid | 80% of execution tasks — components, handlers, bug fixes, refactors |
+| **Opus** | Expensive | **Planning** (`/plan`), complex multi-file architecture, novel design |
+
+**Rule of thumb:**
+- **Always plan on Opus** — the planner stays under 20k tokens but its quality determines whether execution wastes tokens or not. A precise Opus plan saves 2-3x its cost in downstream execution.
+- If the task spec is so precise it's basically a diff, **execute on Haiku**.
+- If you need the agent to make judgment calls, **execute on Sonnet**.
+- If the task says "design X from scratch", **execute on Opus**.
+
 ## Tips for Minimum Token Usage
 
 1. **Always /plan first** - investigation is cheaper than repeated exploration
@@ -156,3 +178,4 @@ The specialist prompts (`backend-specialist.md`, `frontend-specialist.md`) conta
 4. **Use /execute per phase** - don't execute everything at once if phases are independent
 5. **Don't re-plan** - if the plan is good, just execute it
 6. **Keep CLAUDE.md updated** - stale context = wasted tokens re-discovering structure
+7. **Switch models per phase** - use Haiku for i18n, Sonnet for code, Opus only when needed

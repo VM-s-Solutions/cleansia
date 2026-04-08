@@ -142,11 +142,34 @@ After all task specs, output a summary:
 - nx build cleansia.app
 - nx build cleansia-admin.app
 
+### Model Recommendations
+- Phase 1: **sonnet** (standard backend changes)
+- Phase 2: **sonnet** (standard frontend work)
+- TASK-001 only: **opus** if architecture decisions needed, otherwise **sonnet**
+- i18n-only tasks: **haiku** (just key/value additions)
+
 ### Token Estimate
 - Phase 1: ~15k tokens (2 small backend changes)
 - Phase 2: ~25k tokens (2 medium frontend tasks)
 - Total: ~40k tokens
 ```
+
+## Model Recommendation Rules
+
+For each task spec, include a `recommended_model` field:
+
+| Complexity | Model | When to Use |
+|-----------|-------|-------------|
+| **haiku** | Simple | i18n key additions, config changes, single-line fixes, copy-paste mirroring |
+| **sonnet** | Standard | Most coding tasks — new components, bug fixes, refactors, handler changes |
+| **opus** | Complex | Multi-file architecture decisions, complex state management, novel algorithms |
+
+Rules:
+- **This planner should run on Opus** — planning quality determines all downstream costs. A bad plan wastes 3x its cost in execution. Remind the user to `/model opus` before `/plan`.
+- Default execution to **sonnet** — it handles 80% of tasks well
+- Use **haiku** for execution when the spec is so precise that no judgment is needed (just apply the diff)
+- Use **opus** for execution only when the task requires cross-cutting reasoning or novel design
+- The user switches models with `/model` before running `/execute`
 
 ## What You Do NOT Do
 

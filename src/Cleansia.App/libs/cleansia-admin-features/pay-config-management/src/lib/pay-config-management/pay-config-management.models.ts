@@ -19,14 +19,6 @@ export interface PayConfigListItem {
   createdOn?: Date;
 }
 
-export type GradeLevel = 'junior' | 'medior' | 'senior';
-
-export const GRADE_MULTIPLIERS: Record<GradeLevel, number> = {
-  junior: 0.5,
-  medior: 0.75,
-  senior: 1.0,
-};
-
 export function getPayConfigTableDefinition(
   defs: {
     onEdit: (row: PayConfigListItem) => void;

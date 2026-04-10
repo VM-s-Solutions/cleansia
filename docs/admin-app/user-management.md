@@ -40,6 +40,7 @@ The detail page provides comprehensive information about a partner and tools for
 | Contract Status | Current status with approval/rejection actions |
 | Profile Completion | Whether all required fields are filled |
 | Availability | Weekly availability schedule with edit capability |
+| Pay Configuration | Per-employee rate overrides with bulk grade apply |
 | Documents | Uploaded documents with review workflow |
 
 ### Inline Profile Editing
@@ -175,6 +176,70 @@ Admins can view and edit an employee's weekly availability schedule:
 4. Click "Cancel" to discard changes
 
 The availability is stored as a map of day names to `TimeRange[]` arrays.
+
+## Pay Configuration
+
+The Pay Configuration section on the employee detail page allows admins to manage **per-employee pay rate overrides**. This is the only place where employee-specific rates are managed — Global Rates are managed separately on the [Global Rates page](./pay-config).
+
+### Progress Summary
+
+At the top of the section, a summary banner shows configuration coverage:
+
+```
+Services: X / Y configured
+Packages: X / Y configured
+```
+
+### Bulk Apply Grade Template
+
+The fastest way to onboard an employee. Pick a grade and currency, click **Apply to All**:
+
+| Grade  | Multiplier | Use Case                          |
+|--------|-----------|-----------------------------------|
+| Junior | 0.5x      | New hire, in training             |
+| Medior | 0.75x     | Experienced cleaner               |
+| Senior | 1.0x      | Top performer, full base rate     |
+
+The multiplier is applied to each service's `BasePrice` and `PerRoomPrice`, and to each package's `Price`. The result is stored as a per-employee `EmployeePayConfig` record.
+
+**Overwrite Existing** checkbox: when enabled, existing per-employee configs are deleted and replaced. When disabled (default), existing configs are skipped.
+
+API call:
+```
+POST /api/AdminPayConfig/bulk-create-for-employee
+{
+  "employeeId": "...",
+  "grade": "junior" | "medior" | "senior",
+  "currencyId": "...",
+  "overwriteExisting": false
+}
+```
+
+Returns:
+```
+{
+  "createdCount": 15,
+  "skippedCount": 3
+}
+```
+
+### Service & Package Tables
+
+Two tables list every active service and package with status icons:
+
+- ✓ Green checkmark — employee has a per-employee config for this item
+- ✗ Grey X — employee uses the global rate (or no rate exists)
+
+Each row shows the rate breakdown: `basePay + extraPerRoom/room + extraPerBathroom/bath {currency}`.
+
+### How Pay is Calculated for Orders
+
+When an order is completed, the system looks up the pay rate in this order:
+
+1. **Per-employee config** (`EmployeePayConfig` where `EmployeeId = currentEmployee.Id`) — used if exists
+2. **Global rate** (`EmployeePayConfig` where `EmployeeId IS NULL`) — fallback
+
+This means an employee can have overrides for some services and use global rates for others.
 
 ## Reject Dialog
 

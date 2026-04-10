@@ -20,13 +20,14 @@ import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
+  CleansiaSelectComponent,
   CleansiaTextInputComponent,
   CleansiaTextareaComponent,
   CleansiaTitleComponent,
+  ICleansiaSelectOption,
 } from '@cleansia/components';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { PayConfigFormData, PayConfigFormFacade } from './pay-config-form.facade';
-import { GRADE_MULTIPLIERS, GradeLevel } from '../pay-config-management/pay-config-management.models';
 import { AdminPayConfigService } from '../admin-pay-config.service';
 
 @Component({
@@ -41,6 +42,7 @@ import { AdminPayConfigService } from '../admin-pay-config.service';
     CleansiaTextareaComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
+    CleansiaSelectComponent,
     CleansiaTitleComponent,
   ],
   templateUrl: './pay-config-form.component.html',
@@ -74,14 +76,19 @@ export class PayConfigFormComponent implements OnInit, OnDestroy {
     maximumPay: [0, [Validators.min(0)]],
     currencyId: ['', [Validators.required]],
     description: [''],
-    gradeLevel: [''],
   });
 
-  readonly gradeOptions: { label: string; value: GradeLevel }[] = [
-    { label: 'Junior (0.5x)', value: 'junior' },
-    { label: 'Medior (0.75x)', value: 'medior' },
-    { label: 'Senior (1.0x)', value: 'senior' },
-  ];
+  readonly serviceOptions = computed<ICleansiaSelectOption[]>(() =>
+    this.facade.services().map((s) => ({ label: s.name, value: s.id }))
+  );
+
+  readonly packageOptions = computed<ICleansiaSelectOption[]>(() =>
+    this.facade.packages().map((p) => ({ label: p.name, value: p.id }))
+  );
+
+  readonly currencyOptions = computed<ICleansiaSelectOption[]>(() =>
+    this.facade.currencies().map((c) => ({ label: c.code, value: c.id }))
+  );
 
   private payConfigLoadEffect = effect(() => {
     const payConfig = this.facade.payConfig();
@@ -123,22 +130,6 @@ export class PayConfigFormComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.facade.ngOnDestroy();
-  }
-
-  applyGrade(): void {
-    const gradeLevel = this.form.getRawValue().gradeLevel as GradeLevel;
-    if (!gradeLevel || !GRADE_MULTIPLIERS[gradeLevel]) return;
-
-    const multiplier = GRADE_MULTIPLIERS[gradeLevel];
-    const currentBasePay = this.form.getRawValue().basePay;
-    const currentExtraPerRoom = this.form.getRawValue().extraPerRoom;
-    const currentExtraPerBathroom = this.form.getRawValue().extraPerBathroom;
-
-    this.form.patchValue({
-      basePay: Math.round(currentBasePay * multiplier * 100) / 100,
-      extraPerRoom: Math.round(currentExtraPerRoom * multiplier * 100) / 100,
-      extraPerBathroom: Math.round(currentExtraPerBathroom * multiplier * 100) / 100,
-    });
   }
 
   onSave(): void {

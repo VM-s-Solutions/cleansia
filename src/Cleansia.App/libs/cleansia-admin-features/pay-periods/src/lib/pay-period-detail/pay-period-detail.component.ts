@@ -58,7 +58,7 @@ export class PayPeriodDetailComponent implements OnInit, OnDestroy {
     const payPeriod = this.facade.payPeriod();
     if (!payPeriod?.id) return;
 
-    if (confirm(this.translate.instant('payPeriods.confirmClose'))) {
+    if (confirm(this.translate.instant('pay_periods.confirm_close'))) {
       this.facade.closePayPeriod(payPeriod.id);
     }
   }

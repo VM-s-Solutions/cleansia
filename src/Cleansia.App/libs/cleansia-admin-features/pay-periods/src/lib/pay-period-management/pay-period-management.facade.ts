@@ -31,15 +31,15 @@ export class PayPeriodManagementFacade {
 
   readonly statusOptions = [
     {
-      label: this.translate.instant('payPeriods.status.open'),
+      label: this.translate.instant('pay_periods.status.open'),
       value: PayPeriodStatus.Open,
     },
     {
-      label: this.translate.instant('payPeriods.status.closed'),
+      label: this.translate.instant('pay_periods.status.closed'),
       value: PayPeriodStatus.Closed,
     },
     {
-      label: this.translate.instant('payPeriods.status.paid'),
+      label: this.translate.instant('pay_periods.status.paid'),
       value: PayPeriodStatus.Paid,
     },
   ];
@@ -110,7 +110,7 @@ export class PayPeriodManagementFacade {
       .subscribe((response) => {
         if (response) {
           this.snackbarService.showSuccess(
-            this.translate.instant('payPeriods.messages.closeSuccess')
+            this.translate.instant('pay_periods.messages.close_success')
           );
           this.loadPayPeriods();
         }

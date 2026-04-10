@@ -1,21 +1,21 @@
 {
   "profile": {
     "fields": {
-      "firstName": "Jméno",
-      "lastName": "Příjmení",
+      "first_name": "Jméno",
+      "last_name": "Příjmení",
       "email": "E-mail",
-      "phoneNumber": "Telefonní číslo",
-      "birthDate": "Datum narození",
+      "phone_number": "Telefonní číslo",
+      "birth_date": "Datum narození",
       "street": "Ulice",
       "city": "Město",
-      "zipCode": "PSČ",
+      "zip_code": "PSČ",
       "country": "Země",
-      "taxId": "DIČ",
-      "registrationNumber": "IČO",
-      "vatNumber": "DIČ",
-      "legalEntityName": "Název firmy",
+      "tax_id": "DIČ",
+      "registration_number": "IČO",
+      "vat_number": "DIČ",
+      "legal_entity_name": "Název firmy",
       "iban": "IBAN",
-      "passportId": "Číslo pasu",
+      "passport_id": "Číslo pasu",
       "nationality": "Národnost",
       "documents": "Dokumenty"
     }
@@ -145,7 +145,7 @@
     "next_page": "Další stránka",
     "actions": {
       "login": "Přihlásit se",
-      "payConfigs": "Pay Configs",
+      "pay_configs": "Pay Configs",
       "logout": "Odhlásit se",
       "back": "Zpět",
       "save": "Uložit",
@@ -188,19 +188,19 @@
   },
   "sidebar": {
     "employees": "Zaměstnanci",
-    "payPeriods": "Platební období",
+    "pay_periods": "Platební období",
     "orders": "Objednávky",
     "invoices": "Faktury",
     "reports": "Přehledy",
     "services": "Služby",
     "packages": "Balíčky",
-    "adminUsers": "Administrátoři",
+    "admin_users": "Administrátoři",
     "languages": "Jazyky",
     "countries": "Země",
     "currencies": "Měny",
-    "companyInfo": "Údaje o společnosti",
+    "company_info": "Údaje o společnosti",
     "templates": "Šablony",
-    "payConfigs": "Pay Configs",
+    "global_rates": "Globální sazby",
     "logout": "Odhlásit se"
   },
   "pages": {
@@ -379,7 +379,8 @@
         "pay_config_save_success": "Konfigurace platby úspěšně uložena",
         "pay_config_save_error": "Nepodařilo se uložit konfiguraci platby",
         "pay_config_delete_success": "Konfigurace platby úspěšně smazána",
-        "pay_config_delete_error": "Nepodařilo se smazat konfiguraci platby"
+        "pay_config_delete_error": "Nepodařilo se smazat konfiguraci platby",
+        "pay_config_bulk_success": "Konfigurace platby použity: {{created}} vytvořeno, {{skipped}} přeskočeno"
       },
       "document_status": {
         "pending": "Čekající",
@@ -413,7 +414,17 @@
       "pay_config_min_pay": "Minimální platba",
       "pay_config_max_pay": "Maximální platba",
       "pay_config_description": "Popis",
-      "grade_template": "Šablona hodnosti"
+      "grade_template": "Šablona hodnosti",
+      "services_configured": "Služby",
+      "packages_configured": "Balíčky",
+      "bulk_apply_grade": "Použít šablonu hodnosti",
+      "bulk_apply_grade_hint": "Vyberte hodnost a měnu pro automatické vytvoření platových konfigurací pro všechny služby a balíčky. Sazby se vypočítávají ze základní ceny pomocí násobitelů hodností (Junior 0.5x, Medior 0.75x, Senior 1.0x).",
+      "grade": "Hodnost",
+      "overwrite_existing": "Přepsat existující konfigurace",
+      "apply_to_all": "Použít na vše",
+      "services": "Služby",
+      "packages": "Balíčky",
+      "not_configured": "Nenakonfigurováno"
     },
     "order_management": {
       "title": "Správa objednávek",
@@ -617,6 +628,50 @@
         "download_error": "Nepodařilo se stáhnout fakturu",
         "regenerate_success": "PDF faktury bylo úspěšně přegenerováno",
         "regenerate_error": "Nepodařilo se přegenerovat PDF faktury"
+      }
+    },
+    "pay_config_management": {
+      "title": "Globální sazby",
+      "description": "Spravujte výchozí platformové sazby, které se automaticky použijí pro všechny zaměstnance.",
+      "info_banner": "Toto jsou globální sazby, které platí pro každého zaměstnance. Chcete-li nastavit sazby jednotlivých zaměstnanců, otevřete detail zaměstnance a použijte funkci Použít šablonu hodnosti.",
+      "create": "Vytvořit globální sazbu",
+      "edit": "Upravit",
+      "delete": "Smazat globální sazbu",
+      "delete_confirm": "Opravdu chcete smazat tuto globální sazbu? Tuto akci nelze vrátit zpět.",
+      "no_pay_configs": "Žádné globální sazby nejsou nakonfigurovány",
+      "columns": {
+        "service": "Služba / Balíček",
+        "base_pay": "Základní platba",
+        "per_room": "Za pokoj",
+        "per_bathroom": "Za koupelnu",
+        "description": "Popis"
+      },
+      "messages": {
+        "delete_success": "Globální sazba byla úspěšně smazána"
+      }
+    },
+    "pay_config_form": {
+      "create_title": "Vytvořit globální sazbu",
+      "edit_title": "Upravit globální sazbu",
+      "target": "Pro co se tato sazba používá",
+      "target_hint": "Vyberte službu NEBO balíček, nikoli oba. Tato sazba se použije pro všechny zaměstnance, pokud nemají vlastní přepsání.",
+      "service": "Služba",
+      "package": "Balíček",
+      "currency": "Měna",
+      "pay_rates": "Sazby platby",
+      "base_pay": "Základní platba",
+      "extra_per_room": "Příplatek za pokoj",
+      "extra_per_bathroom": "Příplatek za koupelnu",
+      "distance_rate": "Sazba za km",
+      "pay_limits": "Limity platby",
+      "pay_limits_hint": "Volitelné. Ponechte 0 pro bez limitu. Pokud je nastaveno, vypočítaná platba bude omezena na tento rozsah.",
+      "minimum_pay": "Minimální platba",
+      "maximum_pay": "Maximální platba",
+      "description_section": "Poznámky",
+      "description": "Interní poznámky (volitelné)",
+      "messages": {
+        "create_success": "Globální sazba byla úspěšně vytvořena",
+        "update_success": "Globální sazba byla úspěšně aktualizována"
       }
     },
     "service_management": {
@@ -1194,10 +1249,11 @@
     "approved": "Schváleno",
     "rejected": "Zamítnuto"
   },
-  "payPeriods": {
+  "pay_periods": {
     "title": "Správa platebních období",
     "description": "Spravujte platební období, uzavírejte období a sledujte platby zaměstnanců",
-    "confirmClose": "Opravdu chcete uzavřít toto platební období? Tuto akci nelze vrátit zpět.",
+    "create_new": "Vytvořit nové výplatní období",
+    "confirm_close": "Opravdu chcete uzavřít toto platební období? Tuto akci nelze vrátit zpět.",
     "filters": {
       "title": "Filtry",
       "status": "Stav",
@@ -1207,46 +1263,46 @@
     },
     "list": {
       "title": "Platební období",
-      "createButton": "Vytvořit platební období",
-      "filterByStatus": "Filtrovat podle stavu",
-      "filterByYear": "Filtrovat podle roku",
+      "create_button": "Vytvořit platební období",
+      "filter_by_status": "Filtrovat podle stavu",
+      "filter_by_year": "Filtrovat podle roku",
       "reset": "Resetovat filtry",
       "columns": {
-        "periodLabel": "Období",
-        "startDate": "Datum začátku",
-        "endDate": "Datum konce",
+        "period_label": "Období",
+        "start_date": "Datum začátku",
+        "end_date": "Datum konce",
         "duration": "Délka trvání",
         "status": "Stav",
-        "closedAt": "Uzavřeno dne",
-        "closedBy": "Uzavřel",
+        "closed_at": "Uzavřeno dne",
+        "closed_by": "Uzavřel",
         "actions": "Akce"
       },
-      "viewDetails": "Zobrazit detail",
-      "closePeriod": "Uzavřít období",
-      "noRecords": "Nebyla nalezena žádná platební období",
+      "view_details": "Zobrazit detail",
+      "close_period": "Uzavřít období",
+      "no_records": "Nebyla nalezena žádná platební období",
       "days": "dní"
     },
     "detail": {
       "title": "Detail platebního období",
-      "backToList": "Zpět na platební období",
+      "back_to_list": "Zpět na platební období",
       "overview": "Přehled období",
-      "closureInfo": "Informace o uzavření",
+      "closure_info": "Informace o uzavření",
       "metadata": "Metadata",
-      "periodLabel": "Označení období",
+      "period_label": "Označení období",
       "status": "Stav",
-      "startDate": "Datum začátku",
-      "endDate": "Datum konce",
+      "start_date": "Datum začátku",
+      "end_date": "Datum konce",
       "duration": "Délka trvání",
       "days": "dní",
-      "closedAt": "Uzavřeno dne",
-      "closedBy": "Uzavřel",
+      "closed_at": "Uzavřeno dne",
+      "closed_by": "Uzavřel",
       "notes": "Poznámky",
-      "createdAt": "Vytvořeno dne",
-      "createdBy": "Vytvořil",
-      "modifiedAt": "Upraveno dne",
-      "modifiedBy": "Upravil",
-      "closePeriod": "Uzavřít platební období",
-      "notFound": "Platební období nenalezeno"
+      "created_at": "Vytvořeno dne",
+      "created_by": "Vytvořil",
+      "modified_at": "Upraveno dne",
+      "modified_by": "Upravil",
+      "close_period": "Uzavřít platební období",
+      "not_found": "Platební období nenalezeno"
     },
     "status": {
       "open": "Otevřeno",
@@ -1255,10 +1311,10 @@
       "unknown": "Neznámý"
     },
     "messages": {
-      "loadError": "Nepodařilo se načíst platební období",
-      "loadDetailError": "Nepodařilo se načíst detail platebního období",
-      "closeSuccess": "Platební období bylo úspěšně uzavřeno",
-      "closeError": "Nepodařilo se uzavřít platební období"
+      "load_error": "Nepodařilo se načíst platební období",
+      "load_detail_error": "Nepodařilo se načíst detail platebního období",
+      "close_success": "Platební období bylo úspěšně uzavřeno",
+      "close_error": "Nepodařilo se uzavřít platební období"
     }
   },
   "orders": {

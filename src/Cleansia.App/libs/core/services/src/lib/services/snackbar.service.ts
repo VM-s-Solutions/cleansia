@@ -132,6 +132,8 @@ export class SnackbarService {
       orderalreadyassigned: 'api.order.already_assigned',
       completionnotesrequired: 'api.order.completion_notes.required',
       actualtimemustbepositive: 'api.order.actual_time.positive',
+      validationregistrationnumberinvalidformat:
+        'api.validation.registration_number.invalid_format',
     };
 
     // Normalize the error message for lookup

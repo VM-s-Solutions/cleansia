@@ -20,21 +20,22 @@ The admin app does not support self-registration. Admin accounts must be provisi
 
 The admin app uses a sidebar layout with the following sections (all protected by `adminGuard`):
 
-| Route                    | Label        | Description                    |
-| ------------------------ | ------------ | ------------------------------ |
-| `/employee-management`   | Employees    | Partner/employee management    |
-| `/order-management`      | Orders       | Order oversight and management |
-| `/invoice-management`    | Invoices     | Invoice management             |
-| `/pay-periods`           | Pay Periods  | Pay period configuration       |
-| `/reports`               | Reports      | Revenue and payroll reports    |
-| `/service-management`    | Services     | Service configuration          |
-| `/package-management`    | Packages     | Package configuration          |
-| `/admin-user-management` | Admin Users  | Admin account management       |
-| `/language-management`   | Languages    | Language configuration         |
-| `/country-management`    | Countries    | Country configuration          |
-| `/currency-management`   | Currencies   | Currency configuration         |
-| `/company-info`          | Company Info | Company details                |
-| `/template-management`   | Templates    | Email/notification templates   |
+| Route                     | Label        | Description                                   |
+| ------------------------- | ------------ | --------------------------------------------- |
+| `/employee-management`    | Employees    | Partner/employee management                   |
+| `/order-management`       | Orders       | Order oversight and management                |
+| `/invoice-management`     | Invoices     | Invoice management                            |
+| `/pay-periods`            | Pay Periods  | Pay period management (open, close, paid)    |
+| `/reports`                | Reports      | Revenue and payroll reports                   |
+| `/service-management`     | Services     | Service configuration                         |
+| `/package-management`     | Packages     | Package configuration                         |
+| `/pay-config-management`  | Global Rates | Platform-wide pay rate defaults               |
+| `/admin-user-management`  | Admin Users  | Admin account management                      |
+| `/language-management`    | Languages    | Language configuration                        |
+| `/country-management`     | Countries    | Country configuration                         |
+| `/currency-management`    | Currencies   | Currency configuration                        |
+| `/company-info`           | Company Info | Company details                               |
+| `/template-management`    | Templates    | Email/notification templates                  |
 
 The default route (`/`) redirects to `/employee-management`.
 
@@ -52,6 +53,7 @@ The default route (`/`) redirects to `/employee-management`.
 /reports                  # Revenue & payroll reports (admin guard)
 /service-management       # Service CRUD (admin guard)
 /package-management       # Package CRUD (admin guard)
+/pay-config-management    # Global rate management (admin guard)
 /admin-user-management    # Admin user CRUD (admin guard)
 /language-management      # Language CRUD (admin guard)
 /country-management       # Country CRUD (admin guard)
@@ -74,6 +76,7 @@ The default route (`/`) redirects to `/employee-management`.
 | `reports`               | `@cleansia/admin-features/reports`               | Revenue & payroll reports |
 | `service-management`    | `@cleansia/admin-features/service-management`    | Service CRUD              |
 | `package-management`    | `@cleansia/admin-features/package-management`    | Package CRUD              |
+| `pay-config-management` | `@cleansia/admin-features/pay-config-management` | Global rate CRUD          |
 | `admin-user-management` | `@cleansia/admin-features/admin-user-management` | Admin user CRUD           |
 | `language-management`   | `@cleansia/admin-features/language-management`   | Language CRUD             |
 | `country-management`    | `@cleansia/admin-features/country-management`    | Country CRUD              |
@@ -101,21 +104,26 @@ All API calls use the `AdminClient` (NSwag-generated), which contains sub-client
 - `adminOrderClient` -- Order management, reassignment
 - `adminInvoiceClient` -- Invoice management
 - `adminReportClient` -- Revenue and payroll reports
+- `adminPayConfigClient` -- Global rate CRUD + employee pay config summary + bulk grade apply
+- `adminPayPeriodClient` -- Pay period CRUD (create, close, mark paid)
 - Various CRUD clients for services, packages, languages, countries, currencies, templates
 
 ## Configuration Management
 
 The admin app provides CRUD interfaces for platform-wide configuration:
 
-| Entity       | Purpose                                    |
-| ------------ | ------------------------------------------ |
-| Services     | Define cleaning service types with pricing |
-| Packages     | Define service packages with flat pricing  |
-| Languages    | Supported platform languages               |
-| Countries    | Supported countries for operations         |
-| Currencies   | Supported payment currencies               |
-| Company Info | Company legal and contact details          |
-| Templates    | Email and notification templates           |
+| Entity       | Purpose                                                 |
+| ------------ | ------------------------------------------------------- |
+| Services     | Define cleaning service types with pricing              |
+| Packages     | Define service packages with flat pricing               |
+| Global Rates | Platform-wide pay rate defaults per service/package     |
+| Languages    | Supported platform languages                            |
+| Countries    | Supported countries for operations                      |
+| Currencies   | Supported payment currencies                            |
+| Company Info | Company legal and contact details                       |
+| Templates    | Email and notification templates                        |
+
+Per-employee pay overrides are managed on the Employee Detail page (see [User Management](./user-management)), not via Global Rates.
 
 ## Mobile Responsiveness
 
@@ -127,16 +135,6 @@ The admin app includes a mobile-optimized layout. On smaller screens, a **fixed 
 
 This matches the partner app's mobile UX, providing a consistent experience across Cleansia applications.
 
-## v4 Updates
+## Centralized Language Switcher
 
-### Centralized Language Switcher
-
-The language switcher is now centralized in the sidebar navigation. Individual page-level language switchers are being removed in favor of this single, consistent location.
-
-### Pay Period Management
-
-Pay period management will support manual creation of new periods via a "Create New Period" button, in addition to the existing automated period generation.
-
-### Pay Config -- Per-Employee Rate Overrides
-
-The pay configuration system will support per-employee rate overrides. Grade template buttons (Junior, Medior, Senior) allow administrators to quickly apply predefined rate sets to individual employees.
+The language switcher is centralized in the sidebar navigation. Individual page-level language switchers have been removed in favor of this single, consistent location across all admin pages.

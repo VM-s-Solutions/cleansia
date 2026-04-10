@@ -24,7 +24,7 @@ public class AdminPackageController(IMediator mediator) : ApiController(mediator
         CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(request, cancellationToken);
-        return HandleResult<PagedData<PackageListItem>>(result);
+        return Ok(result);
     }
 
     [HttpGet("details/{packageId}")]

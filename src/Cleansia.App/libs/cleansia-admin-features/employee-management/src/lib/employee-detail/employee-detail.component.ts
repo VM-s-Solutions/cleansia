@@ -19,6 +19,7 @@ import {
 import { CleansiaAdminRoute } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { CheckboxModule } from 'primeng/checkbox';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 import { EmployeeDetailFacade } from './employee-detail.facade';
@@ -42,6 +43,7 @@ import { EmployeeDocumentsSectionComponent } from './employee-documents-section.
     CleansiaTitleComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
+    CheckboxModule,
     ToastModule,
     EmployeeDocumentsSectionComponent,
   ],
@@ -117,6 +119,18 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
     maximumPay: new FormControl<number>(0, [Validators.min(0)]),
     description: new FormControl<string | null>(null),
   });
+
+  readonly bulkGradeForm = new FormGroup({
+    grade: new FormControl<string | null>(null, [Validators.required]),
+    currencyId: new FormControl<string | null>(null, [Validators.required]),
+    overwriteExisting: new FormControl<boolean>(false),
+  });
+
+  readonly gradeOptions: ICleansiaSelectOption[] = [
+    { label: 'Junior (0.5x)', value: 'junior' },
+    { label: 'Medior (0.75x)', value: 'medior' },
+    { label: 'Senior (1.0x)', value: 'senior' },
+  ];
 
   ngOnInit(): void {
     const employeeId = this.route.snapshot.paramMap.get('employeeId');
@@ -206,6 +220,16 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
 
   onDeletePayConfig(payConfigId: string): void {
     this.facade.deleteEmployeePayConfig(payConfigId);
+  }
+
+  onBulkApplyGrade(): void {
+    if (this.bulkGradeForm.invalid) {
+      this.bulkGradeForm.markAllAsTouched();
+      return;
+    }
+    const { grade, currencyId, overwriteExisting } = this.bulkGradeForm.getRawValue();
+    if (!grade || !currencyId) return;
+    this.facade.bulkApplyGrade(grade, currencyId, overwriteExisting ?? false);
   }
 
   onEditSection(section: string): void {

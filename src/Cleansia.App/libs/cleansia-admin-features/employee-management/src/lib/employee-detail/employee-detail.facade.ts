@@ -3,11 +3,14 @@ import {
   AdminClient,
   AdminUpdateEmployeeAvailabilityRequest,
   AdminUpdateEmployeeCommand,
+  BulkCreateEmployeePayConfigsCommand,
   ContractStatus,
   CreatePayConfigCommand,
   EmployeePayConfigDto,
+  EmployeePayConfigSummaryDto,
   RejectEmployeeRequest,
   TimeRange,
+  UpdatePayConfigCommand,
 } from '@cleansia/admin-services';
 import { ICleansiaSelectOption } from '@cleansia/components';
 import { SnackbarService } from '@cleansia/services';
@@ -41,8 +44,10 @@ export class EmployeeDetailFacade {
 
   // Pay config
   readonly employeePayConfigs = signal<EmployeePayConfigDto[]>([]);
+  readonly payConfigSummary = signal<EmployeePayConfigSummaryDto | null>(null);
   readonly loadingPayConfigs = signal<boolean>(false);
   readonly savingPayConfig = signal<boolean>(false);
+  readonly bulkApplyingGrade = signal<boolean>(false);
   readonly services = signal<ICleansiaSelectOption[]>([]);
   readonly packages = signal<ICleansiaSelectOption[]>([]);
   readonly currencies = signal<ICleansiaSelectOption[]>([]);
@@ -281,17 +286,108 @@ export class EmployeeDetailFacade {
 
   // Pay config methods
   loadEmployeePayConfigs(employeeId: string): void {
+    this.loadPayConfigSummary(employeeId);
+  }
+
+  loadPayConfigSummary(employeeId: string): void {
     this.loadingPayConfigs.set(true);
     this.adminClient.adminPayConfigClient
-      .getPaged(employeeId, undefined, undefined, undefined, undefined, 0, 100)
+      .employeeSummary(employeeId)
       .pipe(
         takeUntil(this.destroy$),
         catchError(() => of(null)),
         finalize(() => this.loadingPayConfigs.set(false))
       )
       .subscribe((response) => {
-        if (response?.data) {
-          this.employeePayConfigs.set(response.data);
+        if (response) {
+          this.payConfigSummary.set(response);
+        }
+      });
+  }
+
+  bulkApplyGrade(grade: string, currencyId: string, overwriteExisting: boolean): void {
+    const employeeId = this.employee()?.id;
+    if (!employeeId) return;
+
+    this.bulkApplyingGrade.set(true);
+
+    const command = new BulkCreateEmployeePayConfigsCommand({
+      employeeId,
+      grade,
+      currencyId,
+      overwriteExisting,
+    });
+
+    this.adminClient.adminPayConfigClient
+      .bulkCreateForEmployee(command)
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError(() => {
+          this.snackbarService.showError(
+            this.translate.instant('pages.employee_detail.messages.pay_config_save_error')
+          );
+          return of(null);
+        }),
+        finalize(() => this.bulkApplyingGrade.set(false))
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.snackbarService.showSuccess(
+            this.translate.instant('pages.employee_detail.messages.pay_config_bulk_success', {
+              created: response.createdCount,
+              skipped: response.skippedCount,
+            })
+          );
+          this.loadPayConfigSummary(employeeId);
+        }
+      });
+  }
+
+  updateSinglePayConfig(
+    payConfigId: string,
+    data: {
+      basePay: number;
+      extraPerRoom: number;
+      extraPerBathroom: number;
+      distanceRatePerKm: number;
+      minimumPay: number;
+      maximumPay: number;
+    }
+  ): void {
+    const employeeId = this.employee()?.id;
+    if (!employeeId) return;
+
+    this.savingPayConfig.set(true);
+
+    const command = new UpdatePayConfigCommand({
+      payConfigId,
+      basePay: data.basePay,
+      extraPerRoom: data.extraPerRoom,
+      extraPerBathroom: data.extraPerBathroom,
+      distanceRatePerKm: data.distanceRatePerKm,
+      minimumPay: data.minimumPay,
+      maximumPay: data.maximumPay,
+      description: undefined,
+    });
+
+    this.adminClient.adminPayConfigClient
+      .update(payConfigId, command)
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError(() => {
+          this.snackbarService.showError(
+            this.translate.instant('pages.employee_detail.messages.pay_config_save_error')
+          );
+          return of(null);
+        }),
+        finalize(() => this.savingPayConfig.set(false))
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.snackbarService.showSuccess(
+            this.translate.instant('pages.employee_detail.messages.pay_config_save_success')
+          );
+          this.loadPayConfigSummary(employeeId);
         }
       });
   }
@@ -309,7 +405,7 @@ export class EmployeeDetailFacade {
       });
 
     this.adminClient.adminPackageClient
-      .getPaged(undefined, undefined, undefined, undefined, undefined)
+      .getPaged(undefined, undefined, 0, 100)
       .pipe(takeUntil(this.destroy$), catchError(() => of(null)))
       .subscribe((result) => {
         this.packages.set(

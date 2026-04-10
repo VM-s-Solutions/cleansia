@@ -16,14 +16,14 @@ export function getPayPeriodTableColumns(
     {
       id: 'periodLabel',
       field: 'periodLabel',
-      header: 'payPeriods.list.columns.periodLabel',
+      header: 'pay_periods.list.columns.period_label',
       sortable: true,
       width: '15%',
     },
     {
       id: 'startDate',
       field: 'startDate',
-      header: 'payPeriods.list.columns.startDate',
+      header: 'pay_periods.list.columns.start_date',
       sortable: true,
       width: '12%',
       getValue: (row: PayPeriodDto) => {
@@ -35,7 +35,7 @@ export function getPayPeriodTableColumns(
     {
       id: 'endDate',
       field: 'endDate',
-      header: 'payPeriods.list.columns.endDate',
+      header: 'pay_periods.list.columns.end_date',
       sortable: true,
       width: '12%',
       getValue: (row: PayPeriodDto) => {
@@ -47,17 +47,17 @@ export function getPayPeriodTableColumns(
     {
       id: 'durationDays',
       field: 'durationDays',
-      header: 'payPeriods.list.columns.duration',
+      header: 'pay_periods.list.columns.duration',
       width: '10%',
       getValue: (row: PayPeriodDto) =>
         row.durationDays
-          ? `${row.durationDays} ${translate.instant('payPeriods.list.days')}`
+          ? `${row.durationDays} ${translate.instant('pay_periods.list.days')}`
           : '',
     },
     {
       id: 'status',
       field: 'status',
-      header: 'payPeriods.list.columns.status',
+      header: 'pay_periods.list.columns.status',
       sortable: true,
       width: '12%',
       customTemplate: statusTemplate,
@@ -65,7 +65,7 @@ export function getPayPeriodTableColumns(
     {
       id: 'closedAt',
       field: 'closedAt',
-      header: 'payPeriods.list.columns.closedAt',
+      header: 'pay_periods.list.columns.closed_at',
       width: '12%',
       getValue: (row: PayPeriodDto) => {
         if (!row.closedAt) return '-';
@@ -79,7 +79,7 @@ export function getPayPeriodTableColumns(
     {
       id: 'closedBy',
       field: 'closedBy',
-      header: 'payPeriods.list.columns.closedBy',
+      header: 'pay_periods.list.columns.closed_by',
       width: '12%',
       getValue: (row: PayPeriodDto) => row.closedBy || '-',
     },
@@ -98,13 +98,13 @@ export function getPayPeriodTableActions(
       icon: 'pi pi-eye',
       onClick: (row: PayPeriodDto) => defs.onViewDetails(row),
       color: 'info',
-      tooltip: translate.instant('payPeriods.list.viewDetails'),
+      tooltip: translate.instant('pay_periods.list.view_details'),
     },
     {
       icon: 'pi pi-lock',
       onClick: (row: PayPeriodDto) => defs.onClose(row),
       color: 'warning',
-      tooltip: translate.instant('payPeriods.list.closePeriod'),
+      tooltip: translate.instant('pay_periods.list.close_period'),
       visible: (row: PayPeriodDto) =>
         row.status === PayPeriodStatus[PayPeriodStatus.Open],
     },

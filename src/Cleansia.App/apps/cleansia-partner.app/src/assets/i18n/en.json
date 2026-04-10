@@ -2,21 +2,21 @@
   "name": "Cleansia",
   "profile": {
     "fields": {
-      "firstName": "First Name",
-      "lastName": "Last Name",
+      "first_name": "First Name",
+      "last_name": "Last Name",
       "email": "Email",
-      "phoneNumber": "Phone Number",
-      "birthDate": "Birth Date",
+      "phone_number": "Phone Number",
+      "birth_date": "Birth Date",
       "street": "Street",
       "city": "City",
-      "zipCode": "Zip Code",
+      "zip_code": "Zip Code",
       "country": "Country",
-      "taxId": "Tax ID",
-      "registrationNumber": "Registration Number (IČO)",
-      "vatNumber": "VAT Number (DIČ)",
-      "legalEntityName": "Legal Entity Name",
+      "tax_id": "Tax ID",
+      "registration_number": "Registration Number (IČO)",
+      "vat_number": "VAT Number (DIČ)",
+      "legal_entity_name": "Legal Entity Name",
       "iban": "IBAN",
-      "passportId": "Passport ID",
+      "passport_id": "Passport ID",
       "nationality": "Nationality",
       "documents": "Documents"
     }
@@ -846,24 +846,24 @@
       "3": "Rejected"
     }
   },
-  "registrationLock": {
+  "registration_lock": {
     "title": "Profile Completion Required",
     "description": "To access this section, you need to complete your profile setup and upload required documents.",
-    "missingRequirements": "Missing Requirements:",
-    "profileCompletion": "Complete Profile Information",
-    "documentUpload": "Upload Required Documents",
-    "completeProfile": "Complete Profile",
+    "missing_requirements": "Missing Requirements:",
+    "profile_completion": "Complete Profile Information",
+    "document_upload": "Upload Required Documents",
+    "complete_profile": "Complete Profile",
     "progress": "{{completed}} of {{total}} steps complete",
     "categories": {
       "profile": "Profile Information",
       "documents": "Required Documents",
       "availability": "Availability",
-      "documentsRequired": "Upload required documents",
+      "documents_required": "Upload required documents",
       "approval": "Admin Approval",
-      "approvalAwaitingReview": "Your documents are being reviewed by our team. We'll notify you once approved.",
-      "approvalRejected": "Your submission was rejected. Please review the reason below and re-upload.",
-      "approvalCompleteProfileFirst": "Complete your profile and upload documents to request approval.",
-      "availabilityRequired": "Set your weekly working schedule to receive orders."
+      "approval_awaiting_review": "Your documents are being reviewed by our team. We'll notify you once approved.",
+      "approval_rejected": "Your submission was rejected. Please review the reason below and re-upload.",
+      "approval_complete_profile_first": "Complete your profile and upload documents to request approval.",
+      "availability_required": "Set your weekly working schedule to receive orders."
     }
   },
   "validation": {
@@ -923,6 +923,11 @@
       "unauthorized": "You are not authorized to perform this action",
       "error_occurred": "An error occurred. Please try again.",
       "user_not_authenticated": "User not authenticated"
+    },
+    "validation": {
+      "registration_number": {
+        "invalid_format": "Invalid registration number format (IČO)"
+      }
     },
     "currency": {
       "invalid": "Invalid currency",

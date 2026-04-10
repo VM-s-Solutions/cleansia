@@ -1,5 +1,6 @@
 <div class="cleansia-pay-config-form">
   <div class="cleansia-pay-config-form__container page-wrapper">
+    <!-- Header with Back Button -->
     <div class="cleansia-pay-config-form__header">
       <cleansia-button
         [label]="'global.actions.back' | translate"
@@ -18,78 +19,49 @@
       (ngSubmit)="onSave()"
       class="cleansia-pay-config-form__content"
     >
-      <!-- Service / Package Selection (only for create) -->
+      <!-- Target Assignment (create only) -->
       @if (!isEditMode()) {
-      <cleansia-section [title]="'pages.pay_config_form.assignment' | translate">
+      <cleansia-section
+        [title]="'pages.pay_config_form.target' | translate"
+      >
         <div class="form-grid">
           <div class="form-field">
-            <label>{{ 'pages.pay_config_form.service' | translate }}</label>
-            <select formControlName="serviceId" class="form-select">
-              <option value="">{{ 'pages.pay_config_form.select_service' | translate }}</option>
-              @for (service of facade.services(); track service.id) {
-              <option [value]="service.id">{{ service.name }}</option>
-              }
-            </select>
+            <cleansia-select
+              [options]="serviceOptions()"
+              [label]="'pages.pay_config_form.service' | translate"
+              [floatVariant]="'on'"
+              [filter]="true"
+              formControlName="serviceId"
+            />
           </div>
-
           <div class="form-field">
-            <label>{{ 'pages.pay_config_form.package' | translate }}</label>
-            <select formControlName="packageId" class="form-select">
-              <option value="">{{ 'pages.pay_config_form.select_package' | translate }}</option>
-              @for (pkg of facade.packages(); track pkg.id) {
-              <option [value]="pkg.id">{{ pkg.name }}</option>
-              }
-            </select>
+            <cleansia-select
+              [options]="packageOptions()"
+              [label]="'pages.pay_config_form.package' | translate"
+              [floatVariant]="'on'"
+              [filter]="true"
+              formControlName="packageId"
+            />
+          </div>
+          <div class="form-field">
+            <cleansia-select
+              [options]="currencyOptions()"
+              [label]="'pages.pay_config_form.currency' | translate"
+              [floatVariant]="'on'"
+              formControlName="currencyId"
+            />
           </div>
         </div>
-        <p class="form-hint">{{ 'pages.pay_config_form.service_or_package_hint' | translate }}</p>
+        <p class="form-hint">
+          {{ 'pages.pay_config_form.target_hint' | translate }}
+        </p>
       </cleansia-section>
       }
-
-      <!-- Currency (only for create) -->
-      @if (!isEditMode()) {
-      <cleansia-section [title]="'pages.pay_config_form.currency_section' | translate">
-        <div class="form-grid">
-          <div class="form-field">
-            <label>{{ 'pages.pay_config_form.currency' | translate }}</label>
-            <select formControlName="currencyId" class="form-select">
-              <option value="">{{ 'pages.pay_config_form.select_currency' | translate }}</option>
-              @for (currency of facade.currencies(); track currency.id) {
-              <option [value]="currency.id">{{ currency.code }}</option>
-              }
-            </select>
-          </div>
-        </div>
-      </cleansia-section>
-      }
-
-      <!-- Grade Template -->
-      <cleansia-section [title]="'pages.pay_config_form.grade_template' | translate">
-        <div class="form-grid">
-          <div class="form-field">
-            <label>{{ 'pages.pay_config_form.apply_grade' | translate }}</label>
-            <div class="grade-row">
-              <select formControlName="gradeLevel" class="form-select">
-                <option value="">{{ 'pages.pay_config_form.select_grade' | translate }}</option>
-                @for (grade of gradeOptions; track grade.value) {
-                <option [value]="grade.value">{{ grade.label }}</option>
-                }
-              </select>
-              <cleansia-button
-                [label]="'pages.pay_config_form.apply' | translate"
-                icon="pi pi-check"
-                severity="secondary"
-                [outlined]="true"
-                (onClick)="applyGrade()"
-              />
-            </div>
-            <p class="form-hint">{{ 'pages.pay_config_form.grade_hint' | translate }}</p>
-          </div>
-        </div>
-      </cleansia-section>
 
       <!-- Pay Rates -->
-      <cleansia-section [title]="'pages.pay_config_form.pay_rates' | translate">
+      <cleansia-section
+        [title]="'pages.pay_config_form.pay_rates' | translate"
+      >
         <div class="form-grid">
           <div class="form-field">
             <cleansia-text-input
@@ -99,7 +71,6 @@
               [required]="true"
             />
           </div>
-
           <div class="form-field">
             <cleansia-text-input
               [label]="'pages.pay_config_form.extra_per_room' | translate"
@@ -107,7 +78,6 @@
               dataType="number"
             />
           </div>
-
           <div class="form-field">
             <cleansia-text-input
               [label]="'pages.pay_config_form.extra_per_bathroom' | translate"
@@ -115,7 +85,6 @@
               dataType="number"
             />
           </div>
-
           <div class="form-field">
             <cleansia-text-input
               [label]="'pages.pay_config_form.distance_rate' | translate"
@@ -127,7 +96,9 @@
       </cleansia-section>
 
       <!-- Pay Limits -->
-      <cleansia-section [title]="'pages.pay_config_form.pay_limits' | translate">
+      <cleansia-section
+        [title]="'pages.pay_config_form.pay_limits' | translate"
+      >
         <div class="form-grid">
           <div class="form-field">
             <cleansia-text-input
@@ -136,7 +107,6 @@
               dataType="number"
             />
           </div>
-
           <div class="form-field">
             <cleansia-text-input
               [label]="'pages.pay_config_form.maximum_pay' | translate"
@@ -145,10 +115,15 @@
             />
           </div>
         </div>
+        <p class="form-hint">
+          {{ 'pages.pay_config_form.pay_limits_hint' | translate }}
+        </p>
       </cleansia-section>
 
       <!-- Description -->
-      <cleansia-section [title]="'pages.pay_config_form.description_section' | translate">
+      <cleansia-section
+        [title]="'pages.pay_config_form.description_section' | translate"
+      >
         <div class="form-grid">
           <div class="form-field full-width">
             <cleansia-textarea
@@ -160,6 +135,7 @@
         </div>
       </cleansia-section>
 
+      <!-- Form Actions -->
       <div class="form-actions">
         <cleansia-button
           [label]="'global.actions.cancel' | translate"

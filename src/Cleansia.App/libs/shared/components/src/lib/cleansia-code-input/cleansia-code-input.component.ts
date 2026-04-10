@@ -25,66 +25,71 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
   template: `
     <div class="cleansia-code-input">
       @for (digit of digits; track $index) {
-        <input
-          #digitInput
-          type="text"
-          inputmode="numeric"
-          maxlength="1"
-          class="cleansia-code-input__digit"
-          [class.cleansia-code-input__digit--filled]="digit !== ''"
-          [value]="digit"
-          (input)="onDigitInput($event, $index)"
-          (keydown)="onKeyDown($event, $index)"
-          (paste)="onPaste($event)"
-          (focus)="onFocus($index)"
-          autocomplete="one-time-code"
-        />
+      <input
+        #digitInput
+        type="text"
+        inputmode="numeric"
+        maxlength="1"
+        class="cleansia-code-input__digit"
+        [class.cleansia-code-input__digit--filled]="digit !== ''"
+        [value]="digit"
+        (input)="onDigitInput($event, $index)"
+        (keydown)="onKeyDown($event, $index)"
+        (paste)="onPaste($event)"
+        (focus)="onFocus($index)"
+        autocomplete="one-time-code"
+      />
       }
     </div>
   `,
-  styles: [`
-    .cleansia-code-input {
-      display: flex;
-      gap: 0.5rem;
-      justify-content: center;
+  styles: [
+    `
+      .cleansia-code-input {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
 
-      &__digit {
-        width: 3rem;
-        height: 3.5rem;
-        text-align: center;
-        font-size: 1.5rem;
-        font-weight: 600;
-        border: 2px solid var(--surface-border, #dee2e6);
-        border-radius: 8px;
-        background: var(--surface-card, #fff);
-        color: var(--text-color, #333);
-        outline: none;
-        transition: border-color 0.2s, box-shadow 0.2s;
-        caret-color: transparent;
+        &__digit {
+          width: 3rem;
+          height: 3.5rem;
+          text-align: center;
+          font-size: 1.5rem;
+          font-weight: 600;
+          border: 2px solid var(--surface-border, #dee2e6);
+          border-radius: 8px;
+          background: var(--surface-card, #fff);
+          color: var(--text-color, #333);
+          outline: none;
+          transition: border-color 0.2s, box-shadow 0.2s;
+          caret-color: transparent;
 
-        &:focus {
-          border-color: var(--primary-color, #3b82f6);
-          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
-        }
+          &:focus {
+            border-color: var(--primary-color, #3b82f6);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+          }
 
-        &--filled {
-          border-color: var(--primary-color, #3b82f6);
-          background: var(--primary-50, #eff6ff);
+          &--filled {
+            border-color: var(--primary-color, #3b82f6);
+            background: var(--surface-hover, #f0f0f0);
+            color: var(--text-color, #333);
+          }
         }
       }
-    }
 
-    @media (max-width: 480px) {
-      .cleansia-code-input__digit {
-        width: 2.5rem;
-        height: 3rem;
-        font-size: 1.25rem;
+      @media (max-width: 480px) {
+        .cleansia-code-input__digit {
+          width: 2.5rem;
+          height: 3rem;
+          font-size: 1.25rem;
+        }
       }
-    }
-  `],
+    `,
+  ],
 })
 export class CleansiaCodeInputComponent implements ControlValueAccessor {
-  @ViewChildren('digitInput') digitInputs!: QueryList<ElementRef<HTMLInputElement>>;
+  @ViewChildren('digitInput') digitInputs!: QueryList<
+    ElementRef<HTMLInputElement>
+  >;
   @Output() codeComplete = new EventEmitter<string>();
 
   length = input(6);
@@ -153,7 +158,10 @@ export class CleansiaCodeInputComponent implements ControlValueAccessor {
 
   onPaste(event: ClipboardEvent): void {
     event.preventDefault();
-    const pasted = (event.clipboardData?.getData('text') || '').replace(/\D/g, '');
+    const pasted = (event.clipboardData?.getData('text') || '').replace(
+      /\D/g,
+      ''
+    );
     if (!pasted) return;
 
     for (let i = 0; i < this.length(); i++) {
@@ -186,7 +194,10 @@ export class CleansiaCodeInputComponent implements ControlValueAccessor {
   private emitValue(): void {
     const code = this.digits.join('');
     this.onChange(code);
-    if (code.length === this.length() && code.replace(/\D/g, '').length === this.length()) {
+    if (
+      code.length === this.length() &&
+      code.replace(/\D/g, '').length === this.length()
+    ) {
       this.codeComplete.emit(code);
     }
   }

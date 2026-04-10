@@ -29,8 +29,8 @@ export class PackageManagementFacade {
   readonly totalRecords = signal<number>(0);
 
   private currentFilter = signal<PackageFilterParams | null>(null);
-  private currentPage = signal<number>(1);
-  private currentPageSize = signal<number>(20);
+  private currentOffset = signal<number>(0);
+  private currentLimit = signal<number>(20);
   private currentSort = signal<SortDefinition[] | undefined>(undefined);
 
   loadPackages(): void {
@@ -39,11 +39,10 @@ export class PackageManagementFacade {
 
     this.adminClient.adminPackageClient
       .getPaged(
-        this.currentPage(),
-        this.currentPageSize(),
         filterParams?.searchTerm,
-        this.currentSort()?.[0]?.field,
-        this.currentSort()?.[0]?.direction === 0
+        this.currentSort(),
+        this.currentOffset(),
+        this.currentLimit()
       )
       .pipe(
         takeUntil(this.destroy$),
@@ -61,9 +60,9 @@ export class PackageManagementFacade {
       });
   }
 
-  onPageChange(page: number, pageSize: number): void {
-    this.currentPage.set(page);
-    this.currentPageSize.set(pageSize);
+  onPageChange(offset: number, limit: number): void {
+    this.currentOffset.set(offset);
+    this.currentLimit.set(limit);
     this.loadPackages();
   }
 
@@ -74,13 +73,13 @@ export class PackageManagementFacade {
 
   applyFilter(filter: PackageFilterParams): void {
     this.currentFilter.set(filter);
-    this.currentPage.set(1);
+    this.currentOffset.set(0);
     this.loadPackages();
   }
 
   resetFilter(): void {
     this.currentFilter.set(null);
-    this.currentPage.set(1);
+    this.currentOffset.set(0);
     this.loadPackages();
   }
 

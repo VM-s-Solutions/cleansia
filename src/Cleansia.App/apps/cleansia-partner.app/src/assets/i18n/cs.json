@@ -2,21 +2,21 @@
   "name": "Cleansia",
   "profile": {
     "fields": {
-      "firstName": "Jméno",
-      "lastName": "Příjmení",
+      "first_name": "Jméno",
+      "last_name": "Příjmení",
       "email": "E-mail",
-      "phoneNumber": "Telefonní číslo",
-      "birthDate": "Datum narození",
+      "phone_number": "Telefonní číslo",
+      "birth_date": "Datum narození",
       "street": "Ulice",
       "city": "Město",
-      "zipCode": "PSČ",
+      "zip_code": "PSČ",
       "country": "Země",
-      "taxId": "DIČ",
-      "registrationNumber": "IČO",
-      "vatNumber": "DIČ",
-      "legalEntityName": "Název firmy",
+      "tax_id": "DIČ",
+      "registration_number": "IČO",
+      "vat_number": "DIČ",
+      "legal_entity_name": "Název firmy",
       "iban": "IBAN",
-      "passportId": "Číslo pasu",
+      "passport_id": "Číslo pasu",
       "nationality": "Národnost",
       "documents": "Dokumenty"
     }
@@ -863,24 +863,24 @@
       "3": "Zamítnuto"
     }
   },
-  "registrationLock": {
+  "registration_lock": {
     "title": "Vyžadováno dokončení profilu",
     "description": "Pro přístup k této sekci musíte dokončit nastavení profilu a nahrát požadované dokumenty.",
-    "missingRequirements": "Chybějící požadavky:",
-    "profileCompletion": "Dokončit informace v profilu",
-    "documentUpload": "Nahrát požadované dokumenty",
-    "completeProfile": "Dokončit profil",
+    "missing_requirements": "Chybějící požadavky:",
+    "profile_completion": "Dokončit informace v profilu",
+    "document_upload": "Nahrát požadované dokumenty",
+    "complete_profile": "Dokončit profil",
     "progress": "{{completed}} z {{total}} kroků dokončeno",
     "categories": {
       "profile": "Informace o profilu",
       "documents": "Požadované dokumenty",
       "availability": "Dostupnost",
-      "documentsRequired": "Nahrajte požadované dokumenty",
+      "documents_required": "Nahrajte požadované dokumenty",
       "approval": "Schválení administrátorem",
-      "approvalAwaitingReview": "Vaše dokumenty kontroluje náš tým. Jakmile budou schváleny, dáme vám vědět.",
-      "approvalRejected": "Vaše žádost byla zamítnuta. Zkontrolujte prosím důvod níže a nahrajte dokumenty znovu.",
-      "approvalCompleteProfileFirst": "Vyplňte profil a nahrajte dokumenty, abyste mohli požádat o schválení.",
-      "availabilityRequired": "Nastavte svůj týdenní pracovní rozvrh pro příjem zakázek."
+      "approval_awaiting_review": "Vaše dokumenty kontroluje náš tým. Jakmile budou schváleny, dáme vám vědět.",
+      "approval_rejected": "Vaše žádost byla zamítnuta. Zkontrolujte prosím důvod níže a nahrajte dokumenty znovu.",
+      "approval_complete_profile_first": "Vyplňte profil a nahrajte dokumenty, abyste mohli požádat o schválení.",
+      "availability_required": "Nastavte svůj týdenní pracovní rozvrh pro příjem zakázek."
     }
   },
   "validation": {
@@ -940,6 +940,11 @@
       "unauthorized": "Nemáte oprávnění k provedení této akce",
       "error_occurred": "Došlo k chybě. Zkuste to prosím znovu.",
       "user_not_authenticated": "Uživatel není přihlášen"
+    },
+    "validation": {
+      "registration_number": {
+        "invalid_format": "Neplatný formát IČO"
+      }
     },
     "currency": {
       "invalid": "Neplatná měna",

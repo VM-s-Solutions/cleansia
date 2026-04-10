@@ -1,64 +1,84 @@
 @if (registrationStatus$ | async; as status) {
-  <div class="cleansia-registration-lock">
-    <div class="cleansia-registration-lock__modal">
-      <div class="cleansia-registration-lock__lock-icon">
-        <i class="pi pi-lock"></i>
+<div class="cleansia-registration-lock">
+  <div class="cleansia-registration-lock__modal">
+    <div class="cleansia-registration-lock__lock-icon">
+      <i class="pi pi-lock"></i>
+    </div>
+
+    <h2 class="cleansia-registration-lock__title">
+      {{ 'registration_lock.title' | translate }}
+    </h2>
+
+    <p class="cleansia-registration-lock__description">
+      {{ 'registration_lock.description' | translate }}
+    </p>
+
+    <!-- Progress indicator -->
+    <div class="cleansia-registration-lock__progress">
+      <div class="cleansia-registration-lock__progress-text">
+        {{
+          'registration_lock.progress'
+            | translate
+              : { completed: status.completedSteps, total: status.totalSteps }
+        }}
       </div>
-
-      <h2 class="cleansia-registration-lock__title">{{ 'registrationLock.title' | translate }}</h2>
-
-      <p class="cleansia-registration-lock__description">
-        {{ 'registrationLock.description' | translate }}
-      </p>
-
-      <!-- Progress indicator -->
-      <div class="cleansia-registration-lock__progress">
-        <div class="cleansia-registration-lock__progress-text">
-          {{ 'registrationLock.progress' | translate: { completed: status.completedSteps, total: status.totalSteps } }}
-        </div>
-        <div class="cleansia-registration-lock__progress-bar">
-          <div
-            class="cleansia-registration-lock__progress-fill"
-            [style.width.%]="(status.completedSteps / status.totalSteps) * 100"
-          ></div>
-        </div>
-      </div>
-
-      <!-- Categorized requirements -->
-      <div class="cleansia-registration-lock__categories">
-        @for (category of status.categories; track category.key) {
-          <div
-            class="cleansia-registration-lock__category"
-            [class.cleansia-registration-lock__category--done]="category.status === 'done'"
-            [class.cleansia-registration-lock__category--pending]="category.status === 'pending'"
-            [class.cleansia-registration-lock__category--missing]="category.status === 'missing'"
-          >
-            <div class="cleansia-registration-lock__category-header">
-              <i [class]="category.icon" class="cleansia-registration-lock__category-type-icon"></i>
-              <span class="cleansia-registration-lock__category-label">{{ category.translationKey | translate }}</span>
-              <i [class]="getStatusIcon(category.status)" class="cleansia-registration-lock__category-status-icon"></i>
-            </div>
-            @if (category.details.length > 0) {
-              <ul class="cleansia-registration-lock__category-details">
-                @for (detail of category.details; track detail) {
-                  <li>{{ detail | translate }}</li>
-                }
-              </ul>
-            }
-          </div>
-        }
-      </div>
-
-      <div class="cleansia-registration-lock__actions">
-        <button
-          class="cleansia-registration-lock__complete-profile-btn"
-          (click)="goToProfile()"
-          type="button"
-        >
-          <i class="pi pi-user"></i>
-          {{ 'registrationLock.completeProfile' | translate }}
-        </button>
+      <div class="cleansia-registration-lock__progress-bar">
+        <div
+          class="cleansia-registration-lock__progress-fill"
+          [style.width.%]="(status.completedSteps / status.totalSteps) * 100"
+        ></div>
       </div>
     </div>
+
+    <!-- Categorized requirements -->
+    <div class="cleansia-registration-lock__categories">
+      @for (category of status.categories; track category.key) {
+      <div
+        class="cleansia-registration-lock__category"
+        [class.cleansia-registration-lock__category--done]="
+          category.status === 'done'
+        "
+        [class.cleansia-registration-lock__category--pending]="
+          category.status === 'pending'
+        "
+        [class.cleansia-registration-lock__category--missing]="
+          category.status === 'missing'
+        "
+      >
+        <div class="cleansia-registration-lock__category-header">
+          <i
+            [class]="category.icon"
+            class="cleansia-registration-lock__category-type-icon"
+          ></i>
+          <span class="cleansia-registration-lock__category-label">{{
+            category.translationKey | translate
+          }}</span>
+          <i
+            [class]="getStatusIcon(category.status)"
+            class="cleansia-registration-lock__category-status-icon"
+          ></i>
+        </div>
+        @if (category.details.length > 0) {
+        <ul class="cleansia-registration-lock__category-details">
+          @for (detail of category.details; track detail) {
+          <li>{{ detail | translate }}</li>
+          }
+        </ul>
+        }
+      </div>
+      }
+    </div>
+
+    <div class="cleansia-registration-lock__actions">
+      <button
+        class="cleansia-registration-lock__complete-profile-btn"
+        (click)="goToProfile()"
+        type="button"
+      >
+        <i class="pi pi-user"></i>
+        {{ 'registration_lock.complete_profile' | translate }}
+      </button>
+    </div>
   </div>
+</div>
 }

@@ -1,21 +1,21 @@
 {
   "profile": {
     "fields": {
-      "firstName": "First Name",
-      "lastName": "Last Name",
+      "first_name": "First Name",
+      "last_name": "Last Name",
       "email": "Email",
-      "phoneNumber": "Phone Number",
-      "birthDate": "Birth Date",
+      "phone_number": "Phone Number",
+      "birth_date": "Birth Date",
       "street": "Street",
       "city": "City",
-      "zipCode": "Zip Code",
+      "zip_code": "Zip Code",
       "country": "Country",
-      "taxId": "Tax ID",
-      "registrationNumber": "Registration Number (IČO)",
-      "vatNumber": "VAT Number (DIČ)",
-      "legalEntityName": "Legal Entity Name",
+      "tax_id": "Tax ID",
+      "registration_number": "Registration Number (IČO)",
+      "vat_number": "VAT Number (DIČ)",
+      "legal_entity_name": "Legal Entity Name",
       "iban": "IBAN",
-      "passportId": "Passport ID",
+      "passport_id": "Passport ID",
       "nationality": "Nationality",
       "documents": "Documents"
     }
@@ -187,19 +187,19 @@
   },
   "sidebar": {
     "employees": "Employees",
-    "payPeriods": "Pay Periods",
+    "pay_periods": "Pay Periods",
     "orders": "Orders",
     "invoices": "Invoices",
     "reports": "Reports",
     "services": "Services",
     "packages": "Packages",
-    "adminUsers": "Admin Users",
+    "admin_users": "Admin Users",
     "languages": "Languages",
     "countries": "Countries",
     "currencies": "Currencies",
-    "companyInfo": "Company Info",
+    "company_info": "Company Info",
     "templates": "Templates",
-    "payConfigs": "Pay Configs",
+    "global_rates": "Global Rates",
     "logout": "Logout"
   },
   "pages": {
@@ -378,7 +378,8 @@
         "pay_config_save_success": "Pay configuration saved successfully",
         "pay_config_save_error": "Failed to save pay configuration",
         "pay_config_delete_success": "Pay configuration deleted successfully",
-        "pay_config_delete_error": "Failed to delete pay configuration"
+        "pay_config_delete_error": "Failed to delete pay configuration",
+        "pay_config_bulk_success": "Pay configurations applied: {{created}} created, {{skipped}} skipped"
       },
       "document_status": {
         "pending": "Pending",
@@ -401,7 +402,7 @@
       },
       "pay_configuration": "Pay Configuration",
       "add_pay_config": "Add Pay Override",
-      "no_pay_configs": "No employee-specific pay overrides configured. Global rates apply.",
+      "no_pay_configs": "No services or packages found to configure.",
       "pay_config_service": "Service",
       "pay_config_package": "Package",
       "pay_config_currency": "Currency",
@@ -412,7 +413,17 @@
       "pay_config_min_pay": "Minimum Pay",
       "pay_config_max_pay": "Maximum Pay",
       "pay_config_description": "Description",
-      "grade_template": "Grade Template"
+      "grade_template": "Grade Template",
+      "services_configured": "Services",
+      "packages_configured": "Packages",
+      "bulk_apply_grade": "Apply Grade Template",
+      "bulk_apply_grade_hint": "Pick a grade and currency to automatically create pay configs for all services and packages. Rates are calculated from the base price using grade multipliers (Junior 0.5x, Medior 0.75x, Senior 1.0x).",
+      "grade": "Grade",
+      "overwrite_existing": "Overwrite existing configs",
+      "apply_to_all": "Apply to All",
+      "services": "Services",
+      "packages": "Packages",
+      "not_configured": "Not configured"
     },
     "order_management": {
       "title": "Order Management",
@@ -549,13 +560,14 @@
       }
     },
     "pay_config_management": {
-      "title": "Pay Configuration",
-      "description": "Manage employee pay configurations for services and packages",
-      "create": "Create Pay Config",
+      "title": "Global Rates",
+      "description": "Manage platform-wide rate defaults applied to all employees by default.",
+      "info_banner": "These are global rates that apply to every employee. To set per-employee rates, open an employee's detail page and use the Apply Grade Template feature.",
+      "create": "Create Global Rate",
       "edit": "Edit",
-      "delete": "Delete Pay Config",
-      "delete_confirm": "Are you sure you want to delete this pay configuration? This action cannot be undone.",
-      "no_pay_configs": "No pay configurations found",
+      "delete": "Delete Global Rate",
+      "delete_confirm": "Are you sure you want to delete this global rate? This action cannot be undone.",
+      "no_pay_configs": "No global rates configured yet",
       "columns": {
         "service": "Service / Package",
         "base_pay": "Base Pay",
@@ -564,39 +576,31 @@
         "description": "Description"
       },
       "messages": {
-        "delete_success": "Pay configuration deleted successfully"
+        "delete_success": "Global rate deleted successfully"
       }
     },
     "pay_config_form": {
-      "create_title": "Create Pay Configuration",
-      "edit_title": "Edit Pay Configuration",
-      "assignment": "Assignment",
+      "create_title": "Create Global Rate",
+      "edit_title": "Edit Global Rate",
+      "target": "What this rate applies to",
+      "target_hint": "Select a service OR a package, not both. This rate will apply to all employees unless they have a per-employee override.",
       "service": "Service",
       "package": "Package",
-      "select_service": "-- Select a service --",
-      "select_package": "-- Select a package --",
-      "service_or_package_hint": "Select either a service or a package, not both.",
-      "currency_section": "Currency",
       "currency": "Currency",
-      "select_currency": "-- Select currency --",
-      "grade_template": "Grade Template",
-      "apply_grade": "Apply Grade Multiplier",
-      "select_grade": "-- Select grade --",
-      "apply": "Apply",
-      "grade_hint": "Applies a multiplier to base pay, per room, and per bathroom rates.",
       "pay_rates": "Pay Rates",
       "base_pay": "Base Pay",
       "extra_per_room": "Extra Per Room",
       "extra_per_bathroom": "Extra Per Bathroom",
       "distance_rate": "Distance Rate (per km)",
       "pay_limits": "Pay Limits",
+      "pay_limits_hint": "Optional. Leave as 0 for no limit. If set, the calculated pay will be clamped to this range.",
       "minimum_pay": "Minimum Pay",
       "maximum_pay": "Maximum Pay",
-      "description_section": "Description",
-      "description": "Description",
+      "description_section": "Notes",
+      "description": "Internal notes (optional)",
       "messages": {
-        "create_success": "Pay configuration created successfully",
-        "update_success": "Pay configuration updated successfully"
+        "create_success": "Global rate created successfully",
+        "update_success": "Global rate updated successfully"
       }
     },
     "service_management": {
@@ -1244,10 +1248,11 @@
     "approved": "Approved",
     "rejected": "Rejected"
   },
-  "payPeriods": {
+  "pay_periods": {
     "title": "Pay Period Management",
     "description": "Manage pay periods, close periods, and track employee payments",
-    "confirmClose": "Are you sure you want to close this pay period? This action cannot be undone.",
+    "create_new": "Create New Pay Period",
+    "confirm_close": "Are you sure you want to close this pay period? This action cannot be undone.",
     "filters": {
       "title": "Filters",
       "status": "Status",
@@ -1257,46 +1262,46 @@
     },
     "list": {
       "title": "Pay Periods",
-      "createButton": "Create Pay Period",
-      "filterByStatus": "Filter by Status",
-      "filterByYear": "Filter by Year",
+      "create_button": "Create Pay Period",
+      "filter_by_status": "Filter by Status",
+      "filter_by_year": "Filter by Year",
       "reset": "Reset Filters",
       "columns": {
-        "periodLabel": "Period",
-        "startDate": "Start Date",
-        "endDate": "End Date",
+        "period_label": "Period",
+        "start_date": "Start Date",
+        "end_date": "End Date",
         "duration": "Duration",
         "status": "Status",
-        "closedAt": "Closed At",
-        "closedBy": "Closed By",
+        "closed_at": "Closed At",
+        "closed_by": "Closed By",
         "actions": "Actions"
       },
-      "viewDetails": "View Details",
-      "closePeriod": "Close Period",
-      "noRecords": "No pay periods found",
+      "view_details": "View Details",
+      "close_period": "Close Period",
+      "no_records": "No pay periods found",
       "days": "days"
     },
     "detail": {
       "title": "Pay Period Details",
-      "backToList": "Back to Pay Periods",
+      "back_to_list": "Back to Pay Periods",
       "overview": "Period Overview",
-      "closureInfo": "Closure Information",
+      "closure_info": "Closure Information",
       "metadata": "Metadata",
-      "periodLabel": "Period Label",
+      "period_label": "Period Label",
       "status": "Status",
-      "startDate": "Start Date",
-      "endDate": "End Date",
+      "start_date": "Start Date",
+      "end_date": "End Date",
       "duration": "Duration",
       "days": "days",
-      "closedAt": "Closed At",
-      "closedBy": "Closed By",
+      "closed_at": "Closed At",
+      "closed_by": "Closed By",
       "notes": "Notes",
-      "createdAt": "Created At",
-      "createdBy": "Created By",
-      "modifiedAt": "Modified At",
-      "modifiedBy": "Modified By",
-      "closePeriod": "Close Pay Period",
-      "notFound": "Pay period not found"
+      "created_at": "Created At",
+      "created_by": "Created By",
+      "modified_at": "Modified At",
+      "modified_by": "Modified By",
+      "close_period": "Close Pay Period",
+      "not_found": "Pay period not found"
     },
     "status": {
       "open": "Open",
@@ -1305,10 +1310,10 @@
       "unknown": "Unknown"
     },
     "messages": {
-      "loadError": "Failed to load pay periods",
-      "loadDetailError": "Failed to load pay period details",
-      "closeSuccess": "Pay period closed successfully",
-      "closeError": "Failed to close pay period"
+      "load_error": "Failed to load pay periods",
+      "load_detail_error": "Failed to load pay period details",
+      "close_success": "Pay period closed successfully",
+      "close_error": "Failed to close pay period"
     }
   },
   "orders": {

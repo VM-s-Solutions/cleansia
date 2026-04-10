@@ -51,7 +51,7 @@ export class PayPeriodDetailFacade {
       .subscribe((response) => {
         if (response) {
           this.snackbarService.showSuccess(
-            this.translate.instant('payPeriods.messages.closeSuccess')
+            this.translate.instant('pay_periods.messages.close_success')
           );
           // Reload the pay period to reflect the change
           this.loadPayPeriodDetail(payPeriodId);

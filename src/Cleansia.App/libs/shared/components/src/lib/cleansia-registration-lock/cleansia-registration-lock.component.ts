@@ -80,7 +80,7 @@ export class CleansiaRegistrationLockComponent implements OnInit {
     const profileMissing = employeeStatus?.missingFields ?? [];
     categories.push({
       key: 'profile',
-      translationKey: 'registrationLock.categories.profile',
+      translationKey: 'registration_lock.categories.profile',
       icon: 'pi pi-user',
       status: result.hasCompletedProfile ? 'done' : 'missing',
       details: result.hasCompletedProfile ? [] : profileMissing,
@@ -88,18 +88,22 @@ export class CleansiaRegistrationLockComponent implements OnInit {
 
     categories.push({
       key: 'availability',
-      translationKey: 'registrationLock.categories.availability',
+      translationKey: 'registration_lock.categories.availability',
       icon: 'pi pi-calendar',
       status: result.hasSetAvailability ? 'done' : 'missing',
-      details: result.hasSetAvailability ? [] : ['registrationLock.categories.availabilityRequired'],
+      details: result.hasSetAvailability
+        ? []
+        : ['registration_lock.categories.availability_required'],
     });
 
     categories.push({
       key: 'documents',
-      translationKey: 'registrationLock.categories.documents',
+      translationKey: 'registration_lock.categories.documents',
       icon: 'pi pi-file',
       status: result.hasUploadedDocuments ? 'done' : 'missing',
-      details: result.hasUploadedDocuments ? [] : ['registrationLock.categories.documentsRequired'],
+      details: result.hasUploadedDocuments
+        ? []
+        : ['registration_lock.categories.documents_required'],
     });
 
     let approvalStatus: 'done' | 'pending' | 'missing';
@@ -108,20 +112,24 @@ export class CleansiaRegistrationLockComponent implements OnInit {
       approvalStatus = 'done';
     } else if (result.isRejected) {
       approvalStatus = 'missing';
-      approvalDetails.push('registrationLock.categories.approvalRejected');
+      approvalDetails.push('registration_lock.categories.approval_rejected');
       if (result.rejectionReason) {
         approvalDetails.push(result.rejectionReason);
       }
     } else if (result.awaitingApproval) {
       approvalStatus = 'pending';
-      approvalDetails.push('registrationLock.categories.approvalAwaitingReview');
+      approvalDetails.push(
+        'registration_lock.categories.approval_awaiting_review'
+      );
     } else {
       approvalStatus = 'missing';
-      approvalDetails.push('registrationLock.categories.approvalCompleteProfileFirst');
+      approvalDetails.push(
+        'registration_lock.categories.approval_complete_profile_first'
+      );
     }
     categories.push({
       key: 'approval',
-      translationKey: 'registrationLock.categories.approval',
+      translationKey: 'registration_lock.categories.approval',
       icon: 'pi pi-shield',
       status: approvalStatus,
       details: approvalDetails,

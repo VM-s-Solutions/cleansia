@@ -1,20 +1,11 @@
 <div class="cleansia-pay-period-management">
   <div class="cleansia-pay-period-management__container page-wrapper">
     <div class="cleansia-pay-period-management__header">
-      <cleansia-title [title]="'payPeriods.title' | translate" />
+      <cleansia-title [title]="'pay_periods.title' | translate" />
       <p class="cleansia-pay-period-management__description">
-        {{ 'payPeriods.description' | translate }}
+        {{ 'pay_periods.description' | translate }}
       </p>
     </div>
-    <div class="cleansia-pay-period-management__actions">
-      <cleansia-button
-        [label]="'payPeriods.create_new' | translate"
-        icon="pi pi-plus"
-        severity="primary"
-        (onClick)="openCreateDialog()"
-      />
-    </div>
-
     <!-- Filter Header - Chips left, Button right -->
     <div class="filter-header">
       <div class="filter-chips-inline">
@@ -31,13 +22,19 @@
         </div>
         } @if (hasActiveFilters()) {
         <button class="filter-clear-all-btn" (click)="clearAllFilters()">
-          {{ 'payPeriods.filters.clear_all' | translate }}
+          {{ 'pay_periods.filters.clear_all' | translate }}
         </button>
         }
       </div>
       <div class="filter-actions">
         <cleansia-button
-          [label]="'payPeriods.filters.title' | translate"
+          [label]="'pay_periods.create_new' | translate"
+          icon="pi pi-plus"
+          severity="primary"
+          (onClick)="openCreateDialog()"
+        />
+        <cleansia-button
+          [label]="'pay_periods.filters.title' | translate"
           icon="pi pi-filter"
           [severity]="hasActiveFilters() ? 'primary' : 'secondary'"
           [outlined]="!hasActiveFilters()"
@@ -64,7 +61,7 @@
           lazy: true,
           totalRecords: facade.totalRecords(),
           hover: true,
-          emptyMessage: 'payPeriods.list.noRecords'
+          emptyMessage: 'pay_periods.list.no_records'
         }"
         [loading]="facade.loading()"
         (pageChange)="onPageChange($event)"
@@ -85,7 +82,7 @@
   <div class="filter-drawer-header">
     <div class="filter-drawer-title">
       <i class="pi pi-filter"></i>
-      <span>{{ 'payPeriods.filters.title' | translate }}</span>
+      <span>{{ 'pay_periods.filters.title' | translate }}</span>
     </div>
     <button class="filter-drawer-close" (click)="closeFilterDrawer()">
       <i class="pi pi-times"></i>
@@ -97,7 +94,7 @@
       <!-- Status Section -->
       <div class="filter-section">
         <h3 class="filter-section-title">
-          {{ 'payPeriods.filters.status' | translate }}
+          {{ 'pay_periods.filters.status' | translate }}
         </h3>
         <div class="filter-checkbox-group">
           <div
@@ -136,7 +133,7 @@
       <!-- Year Section -->
       <div class="filter-section">
         <h3 class="filter-section-title">
-          {{ 'payPeriods.filters.year' | translate }}
+          {{ 'pay_periods.filters.year' | translate }}
         </h3>
         <div class="filter-checkbox-group">
           <div
@@ -176,7 +173,7 @@
 
   <div class="filter-drawer-footer">
     <cleansia-button
-      [label]="'payPeriods.filters.reset' | translate"
+      [label]="'pay_periods.filters.reset' | translate"
       icon="pi pi-times"
       severity="secondary"
       [outlined]="true"
@@ -192,7 +189,7 @@
   <div class="filter-drawer-header">
     <div class="filter-drawer-title">
       <i class="pi pi-plus"></i>
-      <span>{{ 'payPeriods.create_new' | translate }}</span>
+      <span>{{ 'pay_periods.create_new' | translate }}</span>
     </div>
     <button class="filter-drawer-close" (click)="closeCreateDialog()">
       <i class="pi pi-times"></i>
@@ -200,14 +197,18 @@
   </div>
   <div class="filter-drawer-content">
     <div class="filter-section">
-      <h3 class="filter-section-title">{{ 'payPeriods.start_date' | translate }}</h3>
+      <h3 class="filter-section-title">
+        {{ 'pay_periods.list.columns.start_date' | translate }}
+      </h3>
       <cleansia-calendar
         [ngModel]="createStartDate()"
         (ngModelChange)="createStartDate.set($event)"
       />
     </div>
     <div class="filter-section">
-      <h3 class="filter-section-title">{{ 'payPeriods.end_date' | translate }}</h3>
+      <h3 class="filter-section-title">
+        {{ 'pay_periods.list.columns.end_date' | translate }}
+      </h3>
       <cleansia-calendar
         [ngModel]="createEndDate()"
         (ngModelChange)="createEndDate.set($event)"
@@ -216,13 +217,13 @@
   </div>
   <div class="filter-drawer-footer">
     <cleansia-button
-      [label]="'global.cancel' | translate"
+      [label]="'global.actions.cancel' | translate"
       severity="secondary"
       [outlined]="true"
       (onClick)="closeCreateDialog()"
     />
     <cleansia-button
-      [label]="'global.create' | translate"
+      [label]="'global.actions.create' | translate"
       severity="primary"
       (onClick)="createPayPeriod()"
     />

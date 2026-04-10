@@ -4,9 +4,6 @@ export default defineConfig({
   title: 'Cleansia Docs',
   description: 'Technical documentation for the Cleansia platform',
   srcExclude: [
-    '**/MOBILE_APP_REQUIREMENTS.md',
-    '**/ANDROID_KOTLIN_IMPLEMENTATION_PLAN.md',
-    '**/IOS_SWIFT_IMPLEMENTATION_PLAN.md',
     '**/templates/**',
     '**/node_modules/**',
   ],
@@ -63,6 +60,8 @@ export default defineConfig({
             { text: 'Overview', link: '/admin-app/overview' },
             { text: 'User Management', link: '/admin-app/user-management' },
             { text: 'Order Management', link: '/admin-app/order-management' },
+            { text: 'Pay Periods', link: '/admin-app/pay-periods' },
+            { text: 'Global Rates', link: '/admin-app/pay-config' },
             { text: 'Reporting', link: '/admin-app/reporting' },
           ],
         },

@@ -161,15 +161,15 @@ export class PayPeriodManagementComponent implements AfterViewInit, OnDestroy {
   private rebuildFilterOptions(): void {
     this.statusOptions = [
       {
-        label: this.translate.instant('payPeriods.status.open'),
+        label: this.translate.instant('pay_periods.status.open'),
         value: PayPeriodStatus.Open,
       },
       {
-        label: this.translate.instant('payPeriods.status.closed'),
+        label: this.translate.instant('pay_periods.status.closed'),
         value: PayPeriodStatus.Closed,
       },
       {
-        label: this.translate.instant('payPeriods.status.paid'),
+        label: this.translate.instant('pay_periods.status.paid'),
         value: PayPeriodStatus.Paid,
       },
     ];
@@ -257,7 +257,7 @@ export class PayPeriodManagementComponent implements AfterViewInit, OnDestroy {
       );
       chips.push({
         key: 'status',
-        label: this.translate.instant('payPeriods.filters.status'),
+        label: this.translate.instant('pay_periods.filters.status'),
         value: statusOption?.label || values.status.toString(),
       });
     }
@@ -265,7 +265,7 @@ export class PayPeriodManagementComponent implements AfterViewInit, OnDestroy {
     if (values.year !== null && values.year !== undefined) {
       chips.push({
         key: 'year',
-        label: this.translate.instant('payPeriods.filters.year'),
+        label: this.translate.instant('pay_periods.filters.year'),
         value: values.year.toString(),
       });
     }
@@ -294,7 +294,7 @@ export class PayPeriodManagementComponent implements AfterViewInit, OnDestroy {
   getPayPeriodStatusLabel(payPeriod: PayPeriodDto): string {
     if (!payPeriod.status) return '';
     const statusKey = payPeriod.status.toLowerCase();
-    return this.translate.instant(`payPeriods.status.${statusKey}`);
+    return this.translate.instant(`pay_periods.status.${statusKey}`);
   }
 
   openCreateDialog(): void {

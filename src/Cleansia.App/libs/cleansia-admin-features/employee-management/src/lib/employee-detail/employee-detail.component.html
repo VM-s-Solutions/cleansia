@@ -591,190 +591,120 @@
         @if (facade.loadingPayConfigs()) {
         <cleansia-loader />
         } @else {
-        <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem; gap: 0.5rem;">
-          @if (facade.editingSection() !== 'payConfig') {
-          <cleansia-button
-            [label]="'pages.employee_detail.add_pay_config' | translate"
-            icon="pi pi-plus"
-            severity="secondary"
-            (onClick)="onEditSection('payConfig')"
-          />
-          }
+        <!-- Progress summary -->
+        @if (facade.payConfigSummary(); as summary) {
+        <div class="pay-config-progress" style="display: flex; gap: 1.5rem; margin-bottom: 1rem; padding: 0.75rem 1rem; background: var(--surface-100); border-radius: 8px;">
+          <div>
+            <span class="label">{{ 'pages.employee_detail.services_configured' | translate }}:</span>
+            <strong>{{ summary.configuredServices }} / {{ summary.totalServices }}</strong>
+          </div>
+          <div>
+            <span class="label">{{ 'pages.employee_detail.packages_configured' | translate }}:</span>
+            <strong>{{ summary.configuredPackages }} / {{ summary.totalPackages }}</strong>
+          </div>
         </div>
 
-        @if (facade.editingSection() === 'payConfig') {
-        <div class="info-grid" [formGroup]="payConfigForm">
-          <div class="info-item">
-            <cleansia-select
-              [options]="facade.services()"
-              [label]="'pages.employee_detail.pay_config_service' | translate"
-              [floatVariant]="'on'"
-              formControlName="serviceId"
-            />
-          </div>
-          <div class="info-item">
-            <cleansia-select
-              [options]="facade.packages()"
-              [label]="'pages.employee_detail.pay_config_package' | translate"
-              [floatVariant]="'on'"
-              formControlName="packageId"
-            />
-          </div>
-          <div class="info-item">
-            <cleansia-select
-              [options]="facade.currencies()"
-              [label]="'pages.employee_detail.pay_config_currency' | translate"
-              [floatVariant]="'on'"
-              formControlName="currencyId"
-            />
-          </div>
-          <div class="info-item" style="grid-column: 1 / -1;">
-            <span class="label" style="margin-bottom: 0.5rem; display: block;">{{ 'pages.employee_detail.grade_template' | translate }}:</span>
-            <div style="display: flex; gap: 0.5rem;">
-              <cleansia-button
-                label="Junior (0.5x)"
-                severity="secondary"
-                [outlined]="true"
-                (onClick)="applyGradeMultiplier(0.5)"
-              />
-              <cleansia-button
-                label="Medior (0.75x)"
-                severity="secondary"
-                [outlined]="true"
-                (onClick)="applyGradeMultiplier(0.75)"
-              />
-              <cleansia-button
-                label="Senior (1.0x)"
-                severity="secondary"
-                [outlined]="true"
-                (onClick)="applyGradeMultiplier(1.0)"
+        <!-- Bulk apply grade controls -->
+        <div class="bulk-apply-grade" [formGroup]="bulkGradeForm" style="border: 1px solid var(--surface-border); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+          <h4 style="margin: 0 0 0.75rem 0;">{{ 'pages.employee_detail.bulk_apply_grade' | translate }}</h4>
+          <p style="margin: 0 0 1rem 0; color: var(--text-color-secondary); font-size: 0.875rem;">
+            {{ 'pages.employee_detail.bulk_apply_grade_hint' | translate }}
+          </p>
+          <div class="info-grid">
+            <div class="info-item">
+              <cleansia-select
+                [options]="gradeOptions"
+                [label]="'pages.employee_detail.grade' | translate"
+                [floatVariant]="'on'"
+                formControlName="grade"
               />
             </div>
+            <div class="info-item">
+              <cleansia-select
+                [options]="facade.currencies()"
+                [label]="'pages.employee_detail.pay_config_currency' | translate"
+                [floatVariant]="'on'"
+                formControlName="currencyId"
+              />
+            </div>
+            <div class="info-item" style="display: flex; align-items: center; gap: 0.5rem;">
+              <p-checkbox
+                formControlName="overwriteExisting"
+                [binary]="true"
+                inputId="overwriteExisting"
+              />
+              <label for="overwriteExisting">{{ 'pages.employee_detail.overwrite_existing' | translate }}</label>
+            </div>
           </div>
-          <div class="info-item">
-            <cleansia-text-input
-              [label]="'pages.employee_detail.pay_config_base_pay' | translate"
-              [floatVariant]="'on'"
-              formControlName="basePay"
-              dataType="number"
-            />
-          </div>
-          <div class="info-item">
-            <cleansia-text-input
-              [label]="'pages.employee_detail.pay_config_extra_room' | translate"
-              [floatVariant]="'on'"
-              formControlName="extraPerRoom"
-              dataType="number"
-            />
-          </div>
-          <div class="info-item">
-            <cleansia-text-input
-              [label]="'pages.employee_detail.pay_config_extra_bathroom' | translate"
-              [floatVariant]="'on'"
-              formControlName="extraPerBathroom"
-              dataType="number"
-            />
-          </div>
-          <div class="info-item">
-            <cleansia-text-input
-              [label]="'pages.employee_detail.pay_config_distance_rate' | translate"
-              [floatVariant]="'on'"
-              formControlName="distanceRatePerKm"
-              dataType="number"
-            />
-          </div>
-          <div class="info-item">
-            <cleansia-text-input
-              [label]="'pages.employee_detail.pay_config_min_pay' | translate"
-              [floatVariant]="'on'"
-              formControlName="minimumPay"
-              dataType="number"
-            />
-          </div>
-          <div class="info-item">
-            <cleansia-text-input
-              [label]="'pages.employee_detail.pay_config_max_pay' | translate"
-              [floatVariant]="'on'"
-              formControlName="maximumPay"
-              dataType="number"
-            />
-          </div>
-          <div class="info-item" style="grid-column: 1 / -1;">
-            <cleansia-text-input
-              [label]="'pages.employee_detail.pay_config_description' | translate"
-              [floatVariant]="'on'"
-              formControlName="description"
-              dataType="text"
+          <div style="display: flex; gap: 0.5rem; margin-top: 1rem; justify-content: flex-end;">
+            <cleansia-button
+              [label]="'pages.employee_detail.apply_to_all' | translate"
+              icon="pi pi-check"
+              severity="primary"
+              [loading]="facade.bulkApplyingGrade()"
+              (onClick)="onBulkApplyGrade()"
             />
           </div>
         </div>
-        <div class="section-edit-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-          <cleansia-button
-            [label]="'common.save' | translate"
-            [loading]="facade.savingPayConfig()"
-            (onClick)="onSavePayConfig()"
-          />
-          <cleansia-button
-            [label]="'common.cancel' | translate"
-            severity="secondary"
-            [disabled]="facade.savingPayConfig()"
-            (onClick)="onCancelEditSection()"
-          />
+
+        <!-- Services table -->
+        @if (summary.services && summary.services.length > 0) {
+        <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">{{ 'pages.employee_detail.services' | translate }}</h4>
+        <div class="pay-config-table">
+          @for (item of summary.services; track item.serviceId) {
+          <div class="pay-config-row" [class.configured]="item.hasConfig" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border: 1px solid var(--surface-border); border-radius: 6px; margin-bottom: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1;">
+              @if (item.hasConfig) {
+              <i class="pi pi-check-circle" style="color: var(--green-500);"></i>
+              } @else {
+              <i class="pi pi-times-circle" style="color: var(--surface-400);"></i>
+              }
+              <strong>{{ item.serviceName }}</strong>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              @if (item.hasConfig) {
+              <span class="value">
+                {{ item.basePay }} + {{ item.extraPerRoom }}/room + {{ item.extraPerBathroom }}/bath {{ item.currencyCode }}
+              </span>
+              } @else {
+              <span style="color: var(--text-color-secondary); font-style: italic;">
+                {{ 'pages.employee_detail.not_configured' | translate }}
+              </span>
+              }
+            </div>
+          </div>
+          }
         </div>
         }
 
-        @if (facade.employeePayConfigs().length > 0) {
-        <div class="pay-config-list">
-          @for (config of facade.employeePayConfigs(); track config.id) {
-          <div class="pay-config-card" style="border: 1px solid var(--surface-border); border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-              <strong>{{ config.serviceName || config.packageName || '-' }}</strong>
-              <cleansia-button
-                icon="pi pi-trash"
-                severity="danger"
-                [outlined]="true"
-                [text]="true"
-                (onClick)="onDeletePayConfig(config.id!)"
-              />
-            </div>
-            <div class="info-grid" style="gap: 0.5rem;">
-              <div class="info-item">
-                <span class="label">{{ 'pages.employee_detail.pay_config_base_pay' | translate }}:</span>
-                <span class="value">{{ config.basePay }} {{ config.currencyCode }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">{{ 'pages.employee_detail.pay_config_extra_room' | translate }}:</span>
-                <span class="value">{{ config.extraPerRoom }} {{ config.currencyCode }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">{{ 'pages.employee_detail.pay_config_extra_bathroom' | translate }}:</span>
-                <span class="value">{{ config.extraPerBathroom }} {{ config.currencyCode }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">{{ 'pages.employee_detail.pay_config_distance_rate' | translate }}:</span>
-                <span class="value">{{ config.distanceRatePerKm }} {{ config.currencyCode }}</span>
-              </div>
-              @if (config.minimumPay > 0 || config.maximumPay > 0) {
-              <div class="info-item">
-                <span class="label">{{ 'pages.employee_detail.pay_config_min_pay' | translate }}:</span>
-                <span class="value">{{ config.minimumPay }} {{ config.currencyCode }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">{{ 'pages.employee_detail.pay_config_max_pay' | translate }}:</span>
-                <span class="value">{{ config.maximumPay }} {{ config.currencyCode }}</span>
-              </div>
+        <!-- Packages table -->
+        @if (summary.packages && summary.packages.length > 0) {
+        <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">{{ 'pages.employee_detail.packages' | translate }}</h4>
+        <div class="pay-config-table">
+          @for (item of summary.packages; track item.packageId) {
+          <div class="pay-config-row" [class.configured]="item.hasConfig" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border: 1px solid var(--surface-border); border-radius: 6px; margin-bottom: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1;">
+              @if (item.hasConfig) {
+              <i class="pi pi-check-circle" style="color: var(--green-500);"></i>
+              } @else {
+              <i class="pi pi-times-circle" style="color: var(--surface-400);"></i>
               }
-              @if (config.description) {
-              <div class="info-item" style="grid-column: 1 / -1;">
-                <span class="label">{{ 'pages.employee_detail.pay_config_description' | translate }}:</span>
-                <span class="value">{{ config.description }}</span>
-              </div>
+              <strong>{{ item.packageName }}</strong>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              @if (item.hasConfig) {
+              <span class="value">{{ item.basePay }} {{ item.currencyCode }}</span>
+              } @else {
+              <span style="color: var(--text-color-secondary); font-style: italic;">
+                {{ 'pages.employee_detail.not_configured' | translate }}
+              </span>
               }
             </div>
           </div>
           }
         </div>
-        } @else if (facade.editingSection() !== 'payConfig') {
+        }
+        } @else {
         <p class="no-data">{{ 'pages.employee_detail.no_pay_configs' | translate }}</p>
         }
         }

@@ -90,4 +90,33 @@ public class AdminPayConfigController(IMediator mediator) : ApiController(mediat
         var result = await Mediator.Send(new DeletePayConfig.Command(payConfigId), cancellationToken);
         return HandleResult<DeletePayConfig.Response>(result);
     }
+
+    [HttpGet("employee-summary/{employeeId}")]
+    [Permission(Policy.CanViewPayConfigs)]
+    [ProducesResponseType(typeof(EmployeePayConfigSummaryDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetEmployeePayConfigSummary(
+        string employeeId,
+        CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new GetEmployeePayConfigSummary.Query(employeeId), cancellationToken);
+        return HandleResult<EmployeePayConfigSummaryDto>(result);
+    }
+
+    [HttpPost("bulk-create-for-employee")]
+    [Permission(Policy.CanCreatePayConfig)]
+    [ProducesResponseType(typeof(BulkCreateEmployeePayConfigs.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> BulkCreateForEmployee(
+        [FromBody] BulkCreateEmployeePayConfigs.Command command,
+        CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<BulkCreateEmployeePayConfigs.Response>(result);
+    }
 }

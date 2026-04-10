@@ -95,7 +95,7 @@ export class PayConfigFormFacade {
 
   loadPackages(): void {
     this.adminClient.adminPackageClient
-      .getPaged(1, 100)
+      .getPaged(undefined, undefined, 0, 100)
       .pipe(
         takeUntil(this.destroy$),
         catchError(() => of(null))

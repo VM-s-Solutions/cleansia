@@ -82,18 +82,18 @@ export class AppComponent implements OnInit {
 
   sidebarMenuItems: SidebarMenuItem[] = [
     { label: 'sidebar.employees', icon: 'pi pi-users', route: '/employee-management' },
-    { label: 'sidebar.payPeriods', icon: 'pi pi-calendar', route: '/pay-periods' },
+    { label: 'sidebar.pay_periods', icon: 'pi pi-calendar', route: '/pay-periods' },
     { label: 'sidebar.orders', icon: 'pi pi-shopping-cart', route: '/order-management' },
     { label: 'sidebar.invoices', icon: 'pi pi-file', route: '/invoice-management' },
     { label: 'sidebar.reports', icon: 'pi pi-chart-bar', route: '/reports' },
     { label: 'sidebar.services', icon: 'pi pi-wrench', route: '/service-management' },
     { label: 'sidebar.packages', icon: 'pi pi-box', route: '/package-management' },
-    { label: 'sidebar.payConfigs', icon: 'pi pi-money-bill', route: '/pay-config-management' },
-    { label: 'sidebar.adminUsers', icon: 'pi pi-user-plus', route: '/admin-user-management' },
+    { label: 'sidebar.global_rates', icon: 'pi pi-money-bill', route: '/pay-config-management' },
+    { label: 'sidebar.admin_users', icon: 'pi pi-user-plus', route: '/admin-user-management' },
     { label: 'sidebar.languages', icon: 'pi pi-globe', route: '/language-management' },
     { label: 'sidebar.countries', icon: 'pi pi-map', route: '/country-management' },
     { label: 'sidebar.currencies', icon: 'pi pi-dollar', route: '/currency-management' },
-    { label: 'sidebar.companyInfo', icon: 'pi pi-building', route: '/company-info' },
+    { label: 'sidebar.company_info', icon: 'pi pi-building', route: '/company-info' },
     { label: 'sidebar.templates', icon: 'pi pi-file-edit', route: '/template-management' },
     {
       label: 'sidebar.logout',

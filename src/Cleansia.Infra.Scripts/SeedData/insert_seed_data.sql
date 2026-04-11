@@ -1628,7 +1628,7 @@ VALUES
 -- ============================================================
 INSERT INTO public."CompanyInfo" (
     "Id", "LegalName", "TradingName", "Tagline",
-    "RegistrationNumber", "VatNumber",
+    "RegistrationNumber", "VatNumber", "IsVatPayer",
     "Street", "City", "ZipCode", "CountryId",
     "Phone", "Email", "Website",
     "BankName", "BankAccountNumber", "Iban", "Swift",
@@ -1641,6 +1641,7 @@ VALUES (
     'Professional Cleaning Services',
     '12345678',  -- IČO (Registration Number) - REPLACE WITH ACTUAL
     'CZ12345678',  -- DIČ (VAT Number) - REPLACE WITH ACTUAL
+    false,       -- IsVatPayer — seed company is not a VAT payer ("Nejsme plátci DPH")
     'Václavské náměstí 1',
     'Prague',
     '11000',

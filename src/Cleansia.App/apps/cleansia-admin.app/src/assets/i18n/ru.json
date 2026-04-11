@@ -71,6 +71,7 @@
       "receipt_template_edit": "Редактировать шаблон квитанции",
       "email_templates": "Шаблоны электронных писем",
       "email_template_translations": "Переводы шаблонов электронных писем",
+      "fiscal_failures": "Фискальные сбои",
       "not_found": "Страница не найдена"
     }
   },
@@ -201,6 +202,7 @@
     "company_info": "Информация о компании",
     "templates": "Шаблоны",
     "global_rates": "Глобальные ставки",
+    "fiscal_failures": "Фискальные сбои",
     "logout": "Выйти"
   },
   "pages": {
@@ -1860,6 +1862,36 @@
       "remember_me": "Запомнить меня",
       "forgot_password": "Забыли пароль?",
       "dont_have_account": "Нет учётной записи?"
+    }
+  },
+  "fiscal_failures": {
+    "title": "Фискальные сбои",
+    "description": "Квитанции, регистрация которых в фискальном органе не удалась. Повторы выполняются автоматически; подтверждение останавливает повторы.",
+    "error_kind": {
+      "transient": "Временная",
+      "permanent": "Постоянная",
+      "configuration": "Конфигурация",
+      "unknown": "Неизвестная"
+    },
+    "list": {
+      "no_records": "Нет сбоев фискальной регистрации",
+      "no_retry": "Не запланировано",
+      "retry_now": "Повторить сейчас",
+      "acknowledge": "Подтвердить",
+      "columns": {
+        "receipt_number": "№ квитанции",
+        "order_number": "№ заказа",
+        "issued_at": "Выдано",
+        "provider": "Поставщик",
+        "error_kind": "Тип ошибки",
+        "error_message": "Ошибка",
+        "retry_count": "Попытки",
+        "next_retry_at": "Следующая попытка"
+      }
+    },
+    "messages": {
+      "retry_scheduled": "Повтор запланирован",
+      "acknowledged": "Фискальный сбой подтверждён"
     }
   }
 }

@@ -12,7 +12,15 @@
         "SendGrid__ResetPasswordTemplateId": "d-c475f44d635f40569aa8b5171dc63270",
         "SendGrid__AddressFrom": "it@cleansia.cz",
         "SendGrid__ResetPasswordUrl": "http://localhost:4200/forgot-password",
-        "SendGrid__OrderStatusUrl": "http://localhost:4200/orders"
+        "SendGrid__OrderStatusUrl": "http://localhost:4200/orders",
+        "Fiscal__CzechEet2__ApiUrl": "",
+        "Fiscal__CzechEet2__ApiKey": "",
+        "Fiscal__CzechEet2__CertificatePath": "",
+        "Fiscal__CzechEet2__CertificatePassword": "",
+        "Fiscal__CzechEet2__TaxpayerIdentifier": "",
+        "Fiscal__CzechEet2__BusinessPremiseId": "",
+        "Fiscal__CzechEet2__CashRegisterId": "",
+        "Fiscal__CzechEet2__Enabled": "false"
     },
     "ConnectionStrings": {
         "ConnectionString": "Host=localhost;Port=5432;Username=postgres;Password=cCyb!.{w~!YC8fsZdAgTUr;Database=Cleansia",

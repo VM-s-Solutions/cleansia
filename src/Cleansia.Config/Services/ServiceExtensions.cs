@@ -15,8 +15,10 @@ public static class ServiceExtensions
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IReceiptService, ReceiptService>();
+        services.AddScoped<IFiscalRetryService, FiscalRetryService>();
         services.AddScoped<IAppConfigurationProvider, AppConfigurationProvider>();
         services.AddScoped<ITaxIdValidator, TaxIdValidator>();
+        services.AddScoped<IVatCalculator, VatCalculator>();
         services.AddInfrastructureServices();
 
         return services;

@@ -71,6 +71,7 @@
       "receipt_template_edit": "Редагувати шаблон квитанції",
       "email_templates": "Шаблони електронних листів",
       "email_template_translations": "Переклади шаблонів електронних листів",
+      "fiscal_failures": "Фіскальні збої",
       "not_found": "Сторінку не знайдено"
     }
   },
@@ -201,6 +202,7 @@
     "company_info": "Інформація про компанію",
     "templates": "Шаблони",
     "global_rates": "Глобальні ставки",
+    "fiscal_failures": "Фіскальні збої",
     "logout": "Вийти"
   },
   "pages": {
@@ -1860,6 +1862,36 @@
       "remember_me": "Запам'ятати мене",
       "forgot_password": "Забули пароль?",
       "dont_have_account": "Немає облікового запису?"
+    }
+  },
+  "fiscal_failures": {
+    "title": "Фіскальні збої",
+    "description": "Квитанції, реєстрація яких у фіскального органу не вдалася. Повтори виконуються автоматично; підтвердження зупиняє повтори.",
+    "error_kind": {
+      "transient": "Тимчасова",
+      "permanent": "Постійна",
+      "configuration": "Конфігурація",
+      "unknown": "Невідома"
+    },
+    "list": {
+      "no_records": "Немає збоїв фіскальної реєстрації",
+      "no_retry": "Не заплановано",
+      "retry_now": "Повторити зараз",
+      "acknowledge": "Підтвердити",
+      "columns": {
+        "receipt_number": "№ квитанції",
+        "order_number": "№ замовлення",
+        "issued_at": "Видано",
+        "provider": "Постачальник",
+        "error_kind": "Тип помилки",
+        "error_message": "Помилка",
+        "retry_count": "Спроби",
+        "next_retry_at": "Наступна спроба"
+      }
+    },
+    "messages": {
+      "retry_scheduled": "Повтор заплановано",
+      "acknowledged": "Фіскальний збій підтверджено"
     }
   }
 }

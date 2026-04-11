@@ -21,6 +21,20 @@ public record ReceiptPdfData
     public int? Bathrooms { get; init; }
     public int? EstimatedTime { get; init; }
     public CompanyInfoData? Company { get; init; }
+
+    // VAT breakdown — populated from Order at receipt generation time.
+    // When IsVatPayer is false, NonVatPayerNotice is shown instead of VAT rows.
+    public bool IsVatPayer { get; init; }
+    public decimal? NetAmount { get; init; }
+    public decimal? VatAmount { get; init; }
+    public decimal? VatRate { get; init; }
+    public string? NonVatPayerNotice { get; init; }
+
+    // Fiscal registration — set after fiscal authority responds.
+    // Null when the country has no fiscal system or registration failed.
+    public string? FiscalProviderKey { get; set; }
+    public string? FiscalCode { get; set; }
+    public string? FiscalRegisteredAt { get; set; }
 }
 
 public record ReceiptLineItem(string Name, decimal Price);

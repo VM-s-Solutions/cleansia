@@ -296,8 +296,8 @@ After implementing the features above, update:
 - [ ] VitePress docs: `docs/partner-app/onboarding.md` — emergency contact now optional
 - [ ] VitePress docs: `docs/admin-app/user-management.md` — admin can edit employee profiles
 - [ ] VitePress docs: `docs/api/orders.md` — new validation rules on TakeOrder
-- [ ] `agents/DEPLOYMENT_PLAN.md` — update if any config changes needed
-- [ ] `agents/BUGFIX_AND_IMPROVEMENTS_PLAN.md` — mark items as done
+- [ ] `planning/infra/deployment-plan.md` — update if any config changes needed
+- [ ] `planning/active/bugfix-improvements.md` — mark items as done
 
 ---
 

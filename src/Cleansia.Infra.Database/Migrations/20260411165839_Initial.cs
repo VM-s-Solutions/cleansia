@@ -237,6 +237,7 @@ namespace Cleansia.Infra.Database.Migrations
                     Tagline = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     RegistrationNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     VatNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    IsVatPayer = table.Column<bool>(type: "boolean", nullable: false),
                     Street = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     City = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     ZipCode = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
@@ -291,6 +292,7 @@ namespace Cleansia.Infra.Database.Migrations
                     VatNumberRequired = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     DefaultPaymentGateway = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     LegalRequirementsJson = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: true),
+                    FiscalEnforcementMode = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
@@ -627,6 +629,9 @@ namespace Cleansia.Infra.Database.Migrations
                     PaymentType = table.Column<int>(type: "integer", nullable: false),
                     PaymentStatus = table.Column<int>(type: "integer", nullable: false),
                     TotalPrice = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    NetAmount = table.Column<decimal>(type: "numeric", nullable: false),
+                    VatAmount = table.Column<decimal>(type: "numeric", nullable: false),
+                    AppliedVatRate = table.Column<decimal>(type: "numeric", nullable: true),
                     EstimatedTime = table.Column<int>(type: "integer", nullable: false),
                     ActualCompletionTime = table.Column<int>(type: "integer", nullable: true),
                     CompletionNotes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
@@ -1145,6 +1150,17 @@ namespace Cleansia.Infra.Database.Migrations
                     EmailSent = table.Column<bool>(type: "boolean", nullable: false),
                     EmailSentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     EmailMessageId = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    FiscalProviderKey = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    FiscalCode = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    FiscalRegisteredAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    FiscalRegistrationFailed = table.Column<bool>(type: "boolean", nullable: false),
+                    FiscalError = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    FiscalErrorKind = table.Column<int>(type: "integer", nullable: true),
+                    FiscalRetryCount = table.Column<int>(type: "integer", nullable: false),
+                    FiscalLastRetryAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    FiscalNextRetryAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    FiscalAcknowledged = table.Column<bool>(type: "boolean", nullable: false),
+                    FiscalAcknowledgedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
@@ -1802,6 +1818,12 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_OrderPhotos_TenantId",
                 table: "OrderPhotos",
                 column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderReceipts_FiscalNextRetryAt",
+                table: "OrderReceipts",
+                column: "FiscalNextRetryAt",
+                filter: "\"FiscalNextRetryAt\" IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrderReceipts_LanguageId",

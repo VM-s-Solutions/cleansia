@@ -13,6 +13,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\Cleansia.Core.Fiscal.Abstractions\Cleansia.Core.Fiscal.Abstractions.csproj" />
 	  <ProjectReference Include="..\Cleansia.Infra.Common\Cleansia.Infra.Common.csproj" />
 	</ItemGroup>
 

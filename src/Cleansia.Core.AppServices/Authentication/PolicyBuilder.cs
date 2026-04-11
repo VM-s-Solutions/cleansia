@@ -67,6 +67,9 @@ public static class PolicyBuilder
         [Policy.CanViewRevenueReport] = PhysicalPolicy.AdminOnly,
         [Policy.CanViewPayrollReport] = PhysicalPolicy.AdminOnly,
 
+        // Fiscal
+        [Policy.CanManageFiscalFailures] = PhysicalPolicy.AdminOnly,
+
         // Services
         [Policy.CanViewServices] = PhysicalPolicy.AdminOnly,
         [Policy.CanCreateService] = PhysicalPolicy.AdminOnly,

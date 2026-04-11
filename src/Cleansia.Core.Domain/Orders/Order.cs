@@ -44,6 +44,23 @@ public class Order : Auditable, ITenantEntity
     [Required]
     public decimal TotalPrice { get; private set; }
 
+    /// <summary>
+    /// Net amount (price excluding VAT). Equal to <see cref="TotalPrice"/> when the company is not a VAT payer.
+    /// </summary>
+    public decimal NetAmount { get; private set; }
+
+    /// <summary>
+    /// VAT portion of <see cref="TotalPrice"/>. Zero when the company is not a VAT payer.
+    /// </summary>
+    public decimal VatAmount { get; private set; }
+
+    /// <summary>
+    /// VAT rate applied at order creation time (e.g., 21.00m for 21%).
+    /// Null when no VAT was calculated (company is not a VAT payer).
+    /// Stored so historical orders retain their original rate when the country rate changes.
+    /// </summary>
+    public decimal? AppliedVatRate { get; private set; }
+
     [Required]
     public int EstimatedTime { get; private set; }
 
@@ -183,6 +200,21 @@ public class Order : Auditable, ITenantEntity
     public Order MarkEmployeePayCalculated()
     {
         EmployeePayCalculated = true;
+        return this;
+    }
+
+    /// <summary>
+    /// Persists the VAT breakdown computed at order creation time.
+    /// When the company is not a VAT payer, pass net=TotalPrice, vat=0, rate=null.
+    /// </summary>
+    public Order SetVatBreakdown(decimal netAmount, decimal vatAmount, decimal? appliedRate)
+    {
+        if (netAmount < 0) throw new ArgumentException("Net amount cannot be negative", nameof(netAmount));
+        if (vatAmount < 0) throw new ArgumentException("VAT amount cannot be negative", nameof(vatAmount));
+
+        NetAmount = netAmount;
+        VatAmount = vatAmount;
+        AppliedVatRate = appliedRate;
         return this;
     }
 

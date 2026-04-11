@@ -16,6 +16,7 @@
     <Project Path="Cleansia.Infra.Clients/Cleansia.Infra.Clients.csproj" />
     <Project Path="Cleansia.Infra.Common/Cleansia.Infra.Common.csproj" />
     <Project Path="Cleansia.Infra.Database/Cleansia.Infra.Database.csproj" />
+    <Project Path="Cleansia.Infra.Fiscal/Cleansia.Infra.Fiscal.csproj" />
     <Project Path="Cleansia.Infra.Scripts/Cleansia.Infra.Scripts.csproj" />
     <Project Path="Cleansia.Infra.Services/Cleansia.Infra.Services.csproj" />
   </Folder>
@@ -24,6 +25,7 @@
     <Project Path="Cleansia.Core.Blobs.Abstractions/Cleansia.Core.Blobs.Abstractions.csproj" />
     <Project Path="Cleansia.Core.Clients.Abstractions/Cleansia.Core.Clients.Abstractions.csproj" />
     <Project Path="Cleansia.Core.Domain/Cleansia.Core.Domain.csproj" />
+    <Project Path="Cleansia.Core.Fiscal.Abstractions/Cleansia.Core.Fiscal.Abstractions.csproj" />
     <Project Path="Cleansia.Core.Queue.Abstractions/Cleansia.Core.Queue.Abstractions.csproj" />
   </Folder>
   <Folder Name="/05 Web/">

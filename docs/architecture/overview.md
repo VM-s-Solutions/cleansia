@@ -94,6 +94,7 @@ Azure Functions run as a Docker container with QuestPDF for native PDF generatio
 |----------|---------|---------|
 | `GenerateReceipt` | Queue: `generate-receipt` | Receipt PDF + email |
 | `GenerateInvoice` | Queue: `generate-invoice` | Employee invoice PDF |
+| `RetryFailedFiscalRegistrations` | Timer: every 5 min | Retry failed fiscal-authority registrations with exponential backoff |
 | `CloseExpiredPayPeriods` | Timer: daily 2 AM | Pay period management |
 | `SendPeriodEndReminders` | Timer: daily 9 AM | Reminder emails |
 | `DataRetentionCleanup` | Timer: weekly Sunday 3 AM | GDPR cleanup |
@@ -105,3 +106,4 @@ Azure Functions run as a Docker container with QuestPDF for native PDF generatio
 3. **QuestPDF over Chromium** — Native .NET PDF generation without browser dependency
 4. **Separate APIs per audience** — Different auth policies, CORS, and rate limiting per API
 5. **Queue-based PDF generation** — APIs enqueue messages, Functions process asynchronously
+6. **Per-country fiscal enforcement modes** — Receipt generation routes through `None` / `AsyncBackground` / `BlockingOnline` modes so strict countries (DE/AT/ES) can hold the receipt email until a fiscal signature is obtained, while lenient countries (CZ/SK/IT/HU/PL) deliver immediately and retry fiscal registration in the background. Customer order completion is never blocked. See [Fiscal Compliance](/architecture/fiscal-compliance).

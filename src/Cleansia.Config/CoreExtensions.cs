@@ -8,6 +8,7 @@ using Cleansia.Infra.Azure.Storage.Blobs;
 using Cleansia.Infra.Azure.Storage.Queues;
 using Cleansia.Infra.Clients.SendGrid;
 using Cleansia.Infra.Clients.Stripe;
+using Cleansia.Infra.Fiscal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -28,6 +29,7 @@ public static class CoreExtensions
             .AddStripe(configuration, env)
             .AddSendGrid()
             .AddAzureBlobStorage(configuration)
-            .AddAzureStorageQueues(configuration);
+            .AddAzureStorageQueues(configuration)
+            .AddFiscalServices(configuration);
     }
 }

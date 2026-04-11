@@ -90,6 +90,9 @@ public class Policy
     public const string CanViewRevenueReport = nameof(CanViewRevenueReport); // Admin
     public const string CanViewPayrollReport = nameof(CanViewPayrollReport); // Admin
 
+    // Fiscal
+    public const string CanManageFiscalFailures = nameof(CanManageFiscalFailures); // Admin
+
     // Services
     public const string CanViewServices = nameof(CanViewServices); // Admin
     public const string CanCreateService = nameof(CanCreateService); // Admin

@@ -125,6 +125,14 @@ export const appRoutes: Route[] = [
       ),
   },
   {
+    path: 'fiscal-failures',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/fiscal-failures').then(
+        (m) => m.fiscalFailuresRoutes
+      ),
+  },
+  {
     path: 'unauthorized',
     loadComponent: () =>
       import('./unauthorized/unauthorized.component').then(

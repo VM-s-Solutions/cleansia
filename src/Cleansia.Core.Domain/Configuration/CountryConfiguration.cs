@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Fiscal.Abstractions;
 
 namespace Cleansia.Core.Domain.Configuration;
 
@@ -60,6 +61,14 @@ public class CountryConfiguration : Auditable
 
     [MaxLength(4000)]
     public string? LegalRequirementsJson { get; private set; }
+
+    /// <summary>
+    /// Per-country fiscal enforcement policy. Defaults to <see cref="FiscalEnforcementMode.None"/>
+    /// for countries without a mandatory fiscal reporting system (e.g., CZ today).
+    /// Strict countries (DE, AT, ES) use <see cref="FiscalEnforcementMode.BlockingOnline"/>
+    /// so the receipt is held until the fiscal authority issues the signature.
+    /// </summary>
+    public FiscalEnforcementMode FiscalEnforcementMode { get; private set; } = FiscalEnforcementMode.None;
 
     public static CountryConfiguration Create(
         string countryId,
@@ -149,6 +158,12 @@ public class CountryConfiguration : Auditable
     public CountryConfiguration UpdateLegalRequirements(string? legalRequirementsJson)
     {
         LegalRequirementsJson = legalRequirementsJson;
+        return this;
+    }
+
+    public CountryConfiguration UpdateFiscalEnforcementMode(FiscalEnforcementMode mode)
+    {
+        FiscalEnforcementMode = mode;
         return this;
     }
 }

@@ -73,6 +73,9 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsVatPayer")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("LegalName")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -189,6 +192,11 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<string>("DefaultPaymentGateway")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
+
+                    b.Property<int>("FiscalEnforcementMode")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
@@ -1589,6 +1597,9 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<int?>("ActualCompletionTime")
                         .HasColumnType("integer");
 
+                    b.Property<decimal?>("AppliedVatRate")
+                        .HasColumnType("numeric");
+
                     b.Property<int>("Bathrooms")
                         .HasColumnType("integer");
 
@@ -1663,6 +1674,9 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<int>("MaxEmployees")
                         .HasColumnType("integer");
 
+                    b.Property<decimal>("NetAmount")
+                        .HasColumnType("numeric");
+
                     b.Property<string>("Notes")
                         .HasColumnType("text");
 
@@ -1709,6 +1723,9 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.Property<string>("UserId")
                         .HasColumnType("character varying(26)");
+
+                    b.Property<decimal>("VatAmount")
+                        .HasColumnType("numeric");
 
                     b.HasKey("Id");
 
@@ -2261,6 +2278,42 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<bool>("FiscalAcknowledged")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("FiscalAcknowledgedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FiscalCode")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("FiscalError")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int?>("FiscalErrorKind")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("FiscalLastRetryAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("FiscalNextRetryAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FiscalProviderKey")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("FiscalRegisteredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("FiscalRegistrationFailed")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("FiscalRetryCount")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
@@ -2292,6 +2345,10 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("FiscalNextRetryAt")
+                        .HasDatabaseName("IX_OrderReceipts_FiscalNextRetryAt")
+                        .HasFilter("\"FiscalNextRetryAt\" IS NOT NULL");
 
                     b.HasIndex("LanguageId");
 

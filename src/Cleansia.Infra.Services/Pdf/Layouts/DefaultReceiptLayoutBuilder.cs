@@ -72,7 +72,62 @@ public class DefaultReceiptLayoutBuilder : IReceiptLayoutBuilder
 
             // Payment status
             col.Item().Element(c => BuildPaymentInfo(c, data));
+
+            // Fiscal registration (rendered only when the receipt was registered with a fiscal authority)
+            if (!string.IsNullOrWhiteSpace(data.FiscalCode))
+            {
+                col.Item().Element(c => BuildFiscalInfo(c, data));
+            }
         });
+    }
+
+    protected virtual void BuildFiscalInfo(IContainer container, ReceiptPdfData data)
+    {
+        container.PaddingTop(CleansiaPdfTheme.SectionSpacing)
+            .Column(col =>
+            {
+                col.Item().Element(c => c.SectionTitle("Fiscal Registration"));
+
+                col.Item().Row(row =>
+                {
+                    row.RelativeItem().Column(c =>
+                    {
+                        c.Item().Text("Fiscal Code")
+                            .FontSize(CleansiaPdfTheme.FontSizeBody)
+                            .FontColor(CleansiaPdfTheme.TextSecondary);
+                        c.Item().Text(data.FiscalCode ?? string.Empty)
+                            .FontSize(CleansiaPdfTheme.FontSizeBody)
+                            .FontColor(CleansiaPdfTheme.TextPrimary)
+                            .Bold();
+                    });
+
+                    if (!string.IsNullOrWhiteSpace(data.FiscalProviderKey))
+                    {
+                        row.RelativeItem().Column(c =>
+                        {
+                            c.Item().Text("Provider")
+                                .FontSize(CleansiaPdfTheme.FontSizeBody)
+                                .FontColor(CleansiaPdfTheme.TextSecondary);
+                            c.Item().Text(data.FiscalProviderKey)
+                                .FontSize(CleansiaPdfTheme.FontSizeBody)
+                                .FontColor(CleansiaPdfTheme.TextPrimary);
+                        });
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(data.FiscalRegisteredAt))
+                    {
+                        row.RelativeItem().Column(c =>
+                        {
+                            c.Item().Text("Registered")
+                                .FontSize(CleansiaPdfTheme.FontSizeBody)
+                                .FontColor(CleansiaPdfTheme.TextSecondary);
+                            c.Item().Text(data.FiscalRegisteredAt)
+                                .FontSize(CleansiaPdfTheme.FontSizeBody)
+                                .FontColor(CleansiaPdfTheme.TextPrimary);
+                        });
+                    }
+                });
+            });
     }
 
     protected virtual void BuildInfoSection(IContainer container, ReceiptPdfData data)
@@ -253,12 +308,35 @@ public class DefaultReceiptLayoutBuilder : IReceiptLayoutBuilder
 
     protected virtual void BuildSummary(IContainer container, ReceiptPdfData data)
     {
-        var lines = new List<(string Label, string Value, bool IsBold)>
-        {
-            ("Total", $"{data.Currency}{data.Total:N2}", true)
-        };
+        var lines = new List<(string Label, string Value, bool IsBold)>();
 
-        container.SummaryBox(lines);
+        // If the company is a VAT payer and we have a breakdown, show net + VAT + gross.
+        // Otherwise, show only the gross total (and the non-VAT-payer notice below).
+        if (data.IsVatPayer && data.VatAmount.HasValue && data.VatAmount.Value > 0)
+        {
+            var netAmount = data.NetAmount ?? data.Total - data.VatAmount.Value;
+            var vatRateDisplay = data.VatRate.HasValue ? $" {data.VatRate.Value:N0}%" : string.Empty;
+
+            lines.Add(("Subtotal (excl. VAT)", $"{data.Currency}{netAmount:N2}", false));
+            lines.Add(($"VAT{vatRateDisplay}", $"{data.Currency}{data.VatAmount.Value:N2}", false));
+        }
+
+        lines.Add(("Total", $"{data.Currency}{data.Total:N2}", true));
+
+        container.Column(col =>
+        {
+            col.Item().SummaryBox(lines);
+
+            // Non-VAT-payer notice — legally required when the company is not VAT-registered.
+            if (!data.IsVatPayer && !string.IsNullOrWhiteSpace(data.NonVatPayerNotice))
+            {
+                col.Item().PaddingTop(6)
+                    .Text(data.NonVatPayerNotice)
+                    .FontSize(CleansiaPdfTheme.FontSizeLabel)
+                    .FontColor(CleansiaPdfTheme.TextSecondary)
+                    .Italic();
+            }
+        });
     }
 
     protected virtual void BuildPaymentInfo(IContainer container, ReceiptPdfData data)

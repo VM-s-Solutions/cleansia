@@ -1,0 +1,35 @@
+<div class="cleansia-fiscal-failures">
+  <div class="cleansia-fiscal-failures__container page-wrapper">
+    <div class="cleansia-fiscal-failures__header">
+      <cleansia-title [title]="'fiscal_failures.title' | translate" />
+      <p class="cleansia-fiscal-failures__description">
+        {{ 'fiscal_failures.description' | translate }}
+      </p>
+    </div>
+
+    <cleansia-section>
+      @if (facade.initialLoading()) {
+        <cleansia-loader />
+      } @else {
+        <cleansia-table
+          [data]="facade.failures()"
+          [columns]="columns"
+          [actions]="actions"
+          [config]="{
+            paginator: true,
+            rows: 20,
+            hover: true,
+            emptyMessage: 'fiscal_failures.list.no_records'
+          }"
+          [loading]="facade.loading()"
+        />
+      }
+    </cleansia-section>
+  </div>
+</div>
+
+<ng-template #errorKindTemplate let-row>
+  <span [class]="getErrorKindClass(row.errorKind)">
+    {{ getErrorKindLabel(row.errorKind) }}
+  </span>
+</ng-template>

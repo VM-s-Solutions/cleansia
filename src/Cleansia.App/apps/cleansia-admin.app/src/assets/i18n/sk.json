@@ -71,6 +71,7 @@
       "receipt_template_edit": "Upraviť šablónu účtenky",
       "email_templates": "E-mailové šablóny",
       "email_template_translations": "Preklady e-mailových šablón",
+      "fiscal_failures": "Fiškálne zlyhania",
       "not_found": "Stránka nebola nájdená"
     }
   },
@@ -201,6 +202,7 @@
     "company_info": "Informácie o spoločnosti",
     "templates": "Šablóny",
     "global_rates": "Globálne sadzby",
+    "fiscal_failures": "Fiškálne zlyhania",
     "logout": "Odhlásiť sa"
   },
   "pages": {
@@ -1860,6 +1862,36 @@
       "remember_me": "Zapamätať si ma",
       "forgot_password": "Zabudnuté heslo?",
       "dont_have_account": "Nemáte účet?"
+    }
+  },
+  "fiscal_failures": {
+    "title": "Fiškálne zlyhania",
+    "description": "Účtenky, pri ktorých zlyhala registrácia u fiškálneho úradu. Opakovania prebiehajú automaticky; potvrdením sa zastavia.",
+    "error_kind": {
+      "transient": "Prechodné",
+      "permanent": "Trvalé",
+      "configuration": "Konfigurácia",
+      "unknown": "Neznáme"
+    },
+    "list": {
+      "no_records": "Žiadne zlyhania fiškálnej registrácie",
+      "no_retry": "Nenaplánované",
+      "retry_now": "Opakovať teraz",
+      "acknowledge": "Potvrdiť",
+      "columns": {
+        "receipt_number": "Č. účtenky",
+        "order_number": "Č. objednávky",
+        "issued_at": "Vystavené",
+        "provider": "Poskytovateľ",
+        "error_kind": "Druh chyby",
+        "error_message": "Chyba",
+        "retry_count": "Pokusy",
+        "next_retry_at": "Ďalší pokus"
+      }
+    },
+    "messages": {
+      "retry_scheduled": "Opakovanie naplánované",
+      "acknowledged": "Fiškálne zlyhanie potvrdené"
     }
   }
 }

@@ -76,5 +76,10 @@ public class CountryConfigurationEntityConfiguration : AuditableEntityConfigurat
 
         builder.Property(e => e.LegalRequirementsJson)
             .HasMaxLength(4000);
+
+        builder.Property(e => e.FiscalEnforcementMode)
+            .IsRequired()
+            .HasConversion<int>()
+            .HasDefaultValue(Cleansia.Core.Fiscal.Abstractions.FiscalEnforcementMode.None);
     }
 }

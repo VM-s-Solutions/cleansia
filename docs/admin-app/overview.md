@@ -36,6 +36,7 @@ The admin app uses a sidebar layout with the following sections (all protected b
 | `/currency-management`    | Currencies   | Currency configuration                        |
 | `/company-info`           | Company Info | Company details                               |
 | `/template-management`    | Templates    | Email/notification templates                  |
+| `/fiscal-failures`        | Fiscal Failures | Action queue for failed fiscal registrations (retry / acknowledge) |
 
 The default route (`/`) redirects to `/employee-management`.
 
@@ -60,6 +61,7 @@ The default route (`/`) redirects to `/employee-management`.
 /currency-management      # Currency CRUD (admin guard)
 /company-info             # Company info CRUD (admin guard)
 /template-management      # Template CRUD (admin guard)
+/fiscal-failures          # Failed fiscal registrations (admin guard)
 /unauthorized             # Unauthorized access page
 /not-found                # 404 page
 ```
@@ -83,6 +85,7 @@ The default route (`/`) redirects to `/employee-management`.
 | `currency-management`   | `@cleansia/admin-features/currency-management`   | Currency CRUD             |
 | `company-management`    | `@cleansia/admin-features/company-management`    | Company info CRUD         |
 | `template-management`   | `@cleansia/admin-features/template-management`   | Template CRUD             |
+| `fiscal-failures`       | `@cleansia/admin-features/fiscal-failures`       | Fiscal failure action queue |
 
 ## Guards
 

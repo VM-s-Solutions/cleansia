@@ -22,6 +22,7 @@
 		<ProjectReference Include="..\Cleansia.Infra.Azure.Storage.Queues\Cleansia.Infra.Azure.Storage.Queues.csproj" />
 		<ProjectReference Include="..\Cleansia.Infra.Clients\Cleansia.Infra.Clients.csproj" />
 		<ProjectReference Include="..\Cleansia.Infra.Database\Cleansia.Infra.Database.csproj" />
+		<ProjectReference Include="..\Cleansia.Infra.Fiscal\Cleansia.Infra.Fiscal.csproj" />
 		<ProjectReference Include="..\Cleansia.Infra.Services\Cleansia.Infra.Services.csproj" />
 		<ProjectReference Include="..\Cleansia.ServiceDefaults\Cleansia.ServiceDefaults.csproj" />
 	</ItemGroup>

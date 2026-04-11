@@ -3461,6 +3461,10 @@ export interface IApiClient {
      * @return OK
      */
     adminFeatureFlagDelete(id: string): Observable<void>;
+    /**
+     * @return OK
+     */
+    adminFiscalFailure(): Observable<FiscalFailureDto[]>;
 }
 
 @Injectable({
@@ -3644,6 +3648,78 @@ export class ApiClient implements IApiClient {
         }
         return ObservableOf(null as any);
     }
+
+    /**
+     * @return OK
+     */
+    adminFiscalFailure(): Observable<FiscalFailureDto[]> {
+        let url = this.baseUrl + "/api/AdminFiscalFailure";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processAdminFiscalFailure(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processAdminFiscalFailure(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<FiscalFailureDto[]>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<FiscalFailureDto[]>;
+        }));
+    }
+
+    protected processAdminFiscalFailure(response: HttpResponseBase): Observable<FiscalFailureDto[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(FiscalFailureDto.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return ObservableOf(result200);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
 }
 
 export interface IAdminFeatureFlagClient {
@@ -3784,6 +3860,173 @@ export class AdminFeatureFlagClient implements IAdminFeatureFlagClient {
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = CheckFeatureFlagResponse.fromJS(resultData200);
             return ObservableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
+export interface IAdminFiscalFailureClient {
+    /**
+     * @return No Content
+     */
+    retry(receiptId: string): Observable<void>;
+    /**
+     * @return No Content
+     */
+    acknowledge(receiptId: string): Observable<void>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class AdminFiscalFailureClient implements IAdminFiscalFailureClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(ADMINAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @return No Content
+     */
+    retry(receiptId: string): Observable<void> {
+        let url = this.baseUrl + "/api/AdminFiscalFailure/{receiptId}/retry";
+        if (receiptId === undefined || receiptId === null)
+            throw new globalThis.Error("The parameter 'receiptId' must be defined.");
+        url = url.replace("{receiptId}", encodeURIComponent("" + receiptId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processRetry(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processRetry(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<void>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<void>;
+        }));
+    }
+
+    protected processRetry(response: HttpResponseBase): Observable<void> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return ObservableOf(null as any);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return No Content
+     */
+    acknowledge(receiptId: string): Observable<void> {
+        let url = this.baseUrl + "/api/AdminFiscalFailure/{receiptId}/acknowledge";
+        if (receiptId === undefined || receiptId === null)
+            throw new globalThis.Error("The parameter 'receiptId' must be defined.");
+        url = url.replace("{receiptId}", encodeURIComponent("" + receiptId));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processAcknowledge(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processAcknowledge(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<void>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<void>;
+        }));
+    }
+
+    protected processAcknowledge(response: HttpResponseBase): Observable<void> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return ObservableOf(null as any);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -13122,6 +13365,94 @@ export interface IFeatureFlagDto {
     scopeValue: string | undefined;
     createdOn: Date;
     updatedOn: Date | undefined;
+}
+
+export enum FiscalErrorKind {
+    None = "None",
+    Transient = "Transient",
+    Permanent = "Permanent",
+    Configuration = "Configuration",
+    Unknown = "Unknown",
+}
+
+export class FiscalFailureDto implements IFiscalFailureDto {
+    receiptId!: string | undefined;
+    receiptNumber!: string | undefined;
+    orderId!: string | undefined;
+    orderNumber!: string | undefined;
+    issuedAt!: Date;
+    fiscalProviderKey!: string | undefined;
+    errorKind!: FiscalErrorKind;
+    errorMessage!: string | undefined;
+    retryCount!: number;
+    lastRetryAt!: Date | undefined;
+    nextRetryAt!: Date | undefined;
+    acknowledged!: boolean;
+
+    constructor(data?: IFiscalFailureDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.receiptId = Data["receiptId"];
+            this.receiptNumber = Data["receiptNumber"];
+            this.orderId = Data["orderId"];
+            this.orderNumber = Data["orderNumber"];
+            this.issuedAt = Data["issuedAt"] ? new Date(Data["issuedAt"].toString()) : undefined as any;
+            this.fiscalProviderKey = Data["fiscalProviderKey"];
+            this.errorKind = Data["errorKind"];
+            this.errorMessage = Data["errorMessage"];
+            this.retryCount = Data["retryCount"];
+            this.lastRetryAt = Data["lastRetryAt"] ? new Date(Data["lastRetryAt"].toString()) : undefined as any;
+            this.nextRetryAt = Data["nextRetryAt"] ? new Date(Data["nextRetryAt"].toString()) : undefined as any;
+            this.acknowledged = Data["acknowledged"];
+        }
+    }
+
+    static fromJS(data: any): FiscalFailureDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new FiscalFailureDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["receiptId"] = this.receiptId;
+        data["receiptNumber"] = this.receiptNumber;
+        data["orderId"] = this.orderId;
+        data["orderNumber"] = this.orderNumber;
+        data["issuedAt"] = this.issuedAt ? this.issuedAt.toISOString() : undefined as any;
+        data["fiscalProviderKey"] = this.fiscalProviderKey;
+        data["errorKind"] = this.errorKind;
+        data["errorMessage"] = this.errorMessage;
+        data["retryCount"] = this.retryCount;
+        data["lastRetryAt"] = this.lastRetryAt ? this.lastRetryAt.toISOString() : undefined as any;
+        data["nextRetryAt"] = this.nextRetryAt ? this.nextRetryAt.toISOString() : undefined as any;
+        data["acknowledged"] = this.acknowledged;
+        return data;
+    }
+}
+
+export interface IFiscalFailureDto {
+    receiptId: string | undefined;
+    receiptNumber: string | undefined;
+    orderId: string | undefined;
+    orderNumber: string | undefined;
+    issuedAt: Date;
+    fiscalProviderKey: string | undefined;
+    errorKind: FiscalErrorKind;
+    errorMessage: string | undefined;
+    retryCount: number;
+    lastRetryAt: Date | undefined;
+    nextRetryAt: Date | undefined;
+    acknowledged: boolean;
 }
 
 export class GdprExportAddressDto implements IGdprExportAddressDto {

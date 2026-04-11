@@ -209,7 +209,7 @@ Pay configs are per service/package (with per-employee overrides in progress —
 
 ## Active Bug/Improvement Tracker
 
-See `agents/BUGFIX_AND_IMPROVEMENTS_PLAN.md` for the full list.
+See `planning/active/bugfix-improvements.md` for the full list.
 
 **Completed (v3 + v4):** BUG-1 through BUG-21, IMP-2, IMP-4, CONTENT-1 through CONTENT-4
 

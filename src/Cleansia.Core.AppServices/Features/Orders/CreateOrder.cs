@@ -1,6 +1,7 @@
 ﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Addresses.DTOs;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Core.Clients.Abstractions.SendGrid;
@@ -171,6 +172,9 @@ public class CreateOrder
         IPackageRepository packageRepository,
         ICurrencyRepository currencyRepository,
         ICountryRepository countryRepository,
+        ICompanyInfoRepository companyInfoRepository,
+        ICountryConfigurationRepository countryConfigurationRepository,
+        IVatCalculator vatCalculator,
         ISendGridClientFactory clientFactory,
         IStripeClientFactory stripeClientFactory,
         IQueueClient queueClient,
@@ -238,6 +242,22 @@ public class CreateOrder
 
             order.UpdateEstimatedTime(estimatedTime);
             order.CalculateRequiredEmployees();
+
+            // Compute VAT breakdown so receipts + fiscal integration have accurate figures.
+            // When the company is not a VAT payer, this records net=TotalPrice, vat=0, rate=null.
+            var companyInfo = await companyInfoRepository.GetActiveByCountryAsync(countryId, cancellationToken)
+                              ?? await companyInfoRepository.GetActiveCompanyInfoAsync(cancellationToken);
+            if (companyInfo != null)
+            {
+                var countryConfig = await countryConfigurationRepository.GetByCountryIdAsync(countryId, cancellationToken);
+                var vatBreakdown = vatCalculator.Calculate(order.TotalPrice, companyInfo, countryConfig);
+                order.SetVatBreakdown(vatBreakdown.NetAmount, vatBreakdown.VatAmount, vatBreakdown.AppliedRate);
+            }
+            else
+            {
+                // No CompanyInfo configured — default to no VAT applied.
+                order.SetVatBreakdown(order.TotalPrice, 0m, null);
+            }
 
             string? stripeSessionId = null;
 

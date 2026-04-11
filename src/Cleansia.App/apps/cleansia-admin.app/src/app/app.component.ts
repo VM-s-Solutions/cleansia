@@ -95,6 +95,7 @@ export class AppComponent implements OnInit {
     { label: 'sidebar.currencies', icon: 'pi pi-dollar', route: '/currency-management' },
     { label: 'sidebar.company_info', icon: 'pi pi-building', route: '/company-info' },
     { label: 'sidebar.templates', icon: 'pi pi-file-edit', route: '/template-management' },
+    { label: 'sidebar.fiscal_failures', icon: 'pi pi-exclamation-triangle', route: '/fiscal-failures' },
     {
       label: 'sidebar.logout',
       icon: 'pi pi-sign-out',

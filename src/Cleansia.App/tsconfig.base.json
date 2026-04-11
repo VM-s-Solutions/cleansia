@@ -93,6 +93,9 @@
       "@cleansia/admin-features/template-management": [
         "libs/cleansia-admin-features/template-management/src/index.ts"
       ],
+      "@cleansia/admin-features/fiscal-failures": [
+        "libs/cleansia-admin-features/fiscal-failures/src/index.ts"
+      ],
       "@cleansia-customer/checkout": [
         "libs/cleansia-customer-features/checkout/src/index.ts"
       ],

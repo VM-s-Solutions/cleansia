@@ -71,6 +71,7 @@
       "receipt_template_edit": "Edit Receipt Template",
       "email_templates": "Email Templates",
       "email_template_translations": "Email Template Translations",
+      "fiscal_failures": "Fiscal Failures",
       "not_found": "Page Not Found"
     }
   },
@@ -200,6 +201,7 @@
     "company_info": "Company Info",
     "templates": "Templates",
     "global_rates": "Global Rates",
+    "fiscal_failures": "Fiscal Failures",
     "logout": "Logout"
   },
   "pages": {
@@ -1859,6 +1861,36 @@
       "remember_me": "Remember me",
       "forgot_password": "Forgot password?",
       "dont_have_account": "Don't have an account?"
+    }
+  },
+  "fiscal_failures": {
+    "title": "Fiscal Failures",
+    "description": "Receipts whose fiscal authority registration failed. Retries run automatically; acknowledge to stop retrying.",
+    "error_kind": {
+      "transient": "Transient",
+      "permanent": "Permanent",
+      "configuration": "Configuration",
+      "unknown": "Unknown"
+    },
+    "list": {
+      "no_records": "No failed fiscal registrations",
+      "no_retry": "Not scheduled",
+      "retry_now": "Retry now",
+      "acknowledge": "Acknowledge",
+      "columns": {
+        "receipt_number": "Receipt #",
+        "order_number": "Order #",
+        "issued_at": "Issued",
+        "provider": "Provider",
+        "error_kind": "Error Kind",
+        "error_message": "Error",
+        "retry_count": "Retries",
+        "next_retry_at": "Next Retry"
+      }
+    },
+    "messages": {
+      "retry_scheduled": "Retry scheduled",
+      "acknowledged": "Fiscal failure acknowledged"
     }
   }
 }

@@ -24,6 +24,13 @@ public class CompanyInfo : Auditable, ITenantEntity
     [MaxLength(50)]
     public string? VatNumber { get; private set; }
 
+    /// <summary>
+    /// Indicates whether this company is registered as a VAT payer (plátce DPH in CZ).
+    /// When false, receipts must display a "not a VAT payer" notice instead of VAT lines.
+    /// When true, the VAT calculation uses the country's <c>StandardVatRate</c>.
+    /// </summary>
+    public bool IsVatPayer { get; private set; }
+
     [Required]
     [MaxLength(100)]
     public string Street { get; private set; } = default!;
@@ -122,6 +129,16 @@ public class CompanyInfo : Auditable, ITenantEntity
     {
         RegistrationNumber = registrationNumber;
         VatNumber = vatNumber;
+        return this;
+    }
+
+    public CompanyInfo SetVatPayerStatus(bool isVatPayer)
+    {
+        IsVatPayer = isVatPayer;
+        if (!isVatPayer)
+        {
+            VatNumber = null;
+        }
         return this;
     }
 

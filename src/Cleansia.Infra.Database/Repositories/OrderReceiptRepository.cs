@@ -45,4 +45,31 @@ public class OrderReceiptRepository(CleansiaDbContext context)
 
         return count + 1;
     }
+
+    public async Task<List<OrderReceipt>> GetDueForRetryAsync(
+        DateTime utcNow,
+        int take,
+        CancellationToken cancellationToken)
+    {
+        return await GetDbSet()
+            .Include(r => r.Language)
+            .Where(r => r.FiscalRegistrationFailed
+                && r.FiscalNextRetryAt != null
+                && r.FiscalNextRetryAt <= utcNow)
+            .OrderBy(r => r.FiscalNextRetryAt)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<OrderReceipt>> GetRecentFiscalFailuresAsync(
+        int take,
+        CancellationToken cancellationToken)
+    {
+        return await GetDbSet()
+            .Include(r => r.Order)
+            .Where(r => r.FiscalRegistrationFailed && !r.FiscalAcknowledged)
+            .OrderByDescending(r => r.FiscalLastRetryAt ?? r.IssuedAt)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+    }
 }

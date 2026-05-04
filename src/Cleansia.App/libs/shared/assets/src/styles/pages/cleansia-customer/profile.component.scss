@@ -397,6 +397,13 @@ $font-heading: 'Poppins', sans-serif;
     }
   }
 
+  &__address-label {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--text-color);
+    margin-bottom: 0.125rem;
+  }
+
   &__address-actions {
     display: flex;
     gap: 0.25rem;
@@ -565,6 +572,57 @@ $font-heading: 'Poppins', sans-serif;
       font-weight: 500;
       color: var(--text-color);
     }
+  }
+
+  // Read-only resolved address shown after the user picks from Mapbox.
+  &__dialog-resolved {
+    border: 1px solid var(--surface-border);
+    border-radius: 0.625rem;
+    background: $primary-lighter;
+    padding: 0.75rem 1rem;
+  }
+
+  &__dialog-resolved-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+
+    > i {
+      color: $primary;
+      font-size: 1rem;
+      margin-top: 0.15rem;
+      flex-shrink: 0;
+    }
+
+    > div {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      min-width: 0;
+
+      strong {
+        font-family: $font-heading;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-color);
+      }
+
+      span {
+        font-size: 0.8rem;
+        color: var(--text-color-secondary);
+      }
+    }
+  }
+
+  &__dialog-hint {
+    margin: 0;
+    padding: 0.6rem 0.75rem;
+    border-radius: 0.5rem;
+    background: var(--surface-ground);
+    border: 1px dashed var(--surface-border);
+    font-size: 0.78rem;
+    color: var(--text-color-secondary);
+    line-height: 1.4;
   }
 
   &__dialog-footer {
@@ -752,6 +810,21 @@ $font-heading: 'Poppins', sans-serif;
     &__scroll-top {
       background: #38bdf8;
       color: #0c4a6e;
+    }
+
+    &__dialog-resolved {
+      background: rgba(56, 189, 248, 0.08);
+      border-color: #334155;
+
+      .customer-profile__dialog-resolved-row > i {
+        color: #38bdf8;
+      }
+    }
+
+    &__dialog-hint {
+      background: #172033;
+      border-color: #334155;
+      color: #94a3b8;
     }
   }
 }

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Users;
 
 namespace Cleansia.Core.Domain.Disputes;
 
@@ -15,6 +16,7 @@ public class DisputeMessage : BaseEntity
 
     [Required]
     public string AuthorId { get; private set; }
+    public User? Author { get; private set; }
 
     public bool IsStaffMessage { get; private set; }
 

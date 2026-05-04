@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Disputes.DTOs;
 using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 
@@ -14,10 +15,12 @@ public class GetDisputeDetails
     public class Handler : IQueryHandler<Query, DisputeDetails>
     {
         private readonly IDisputeRepository _disputeRepository;
+        private readonly IBlobContainerClientFactory _blobClientFactory;
 
-        public Handler(IDisputeRepository disputeRepository)
+        public Handler(IDisputeRepository disputeRepository, IBlobContainerClientFactory blobClientFactory)
         {
             _disputeRepository = disputeRepository;
+            _blobClientFactory = blobClientFactory;
         }
 
         public async Task<BusinessResult<DisputeDetails>> Handle(Query request, CancellationToken cancellationToken)
@@ -29,7 +32,8 @@ public class GetDisputeDetails
                 return BusinessResult.Failure<DisputeDetails>(new Error(nameof(request.DisputeId), BusinessErrorMessage.DisputeNotFound));
             }
 
-            return BusinessResult.Success(dispute.MapToDetails());
+            var evidenceBlobClient = _blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.DisputeEvidence);
+            return BusinessResult.Success(dispute.MapToDetails(evidenceBlobClient));
         }
     }
 }

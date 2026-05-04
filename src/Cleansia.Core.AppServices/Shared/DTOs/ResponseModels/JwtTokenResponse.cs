@@ -5,4 +5,6 @@ public record JwtTokenResponse(
     bool IsEmailConfirmed,
     bool HasAdminAccess = true,
     string? UserId = null,
-    string? Email = null);
+    string? Email = null,
+    string? RefreshToken = null,
+    DateTimeOffset? RefreshTokenExpiresAt = null);

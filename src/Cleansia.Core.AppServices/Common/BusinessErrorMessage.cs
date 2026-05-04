@@ -11,7 +11,9 @@ public static class BusinessErrorMessage
     public const string NotValidResetPasswordToken = "auth.invalid_reset_token";
     public const string SameResetPassword = "auth.same_reset_password";
     public const string InsufficientPrivileges = "auth.insufficient_privileges";
-    
+    public const string InvalidRefreshToken = "auth.invalid_refresh_token";
+    public const string RefreshTokenReused = "auth.refresh_token_reused";
+
     // Common
     public const string InvalidEnumValue = "common.invalid_enum_value";
     public const string MaxLength = "common.max_length";
@@ -32,6 +34,15 @@ public static class BusinessErrorMessage
 
     // Order
     public const string CleaningDateInFuture = "order.cleaning_date.future";
+    public const string CleaningDateBelowLeadTime = "order.cleaning_date.below_lead_time";
+    public const string OrderAlreadyCancelled = "order.already_cancelled";
+    public const string OrderAlreadyCompleted = "order.already_completed";
+    public const string OrderInProgressCannotCancel = "order.in_progress_cannot_cancel";
+    public const string CancellationWindowClosed = "order.cancellation_window_closed";
+    public const string AddressNotOwnedByUser = "address.not_owned_by_user";
+    public const string AddressLabelRequired = "address.label_required";
+    public const string SavedAddressAlreadyExists = "address.already_exists";
+    public const string OrderAddressExactlyOneRequired = "order.address_exactly_one_required";
     public const string EmptyOrder = "order.empty";
     public const string InvalidSelectedPackage = "order.selected_package.invalid";
     public const string InvalidSelectedServices = "order.selected_services.invalid";
@@ -45,6 +56,28 @@ public static class BusinessErrorMessage
     public const string MaxEmployeesExceeded = "order.max_employees_exceeded";
     public const string TotalPriceMustBePositive = "order.total_price.positive";
     public const string TotalPriceNotMatch = "order.total_price.not_match";
+    public const string PreferredEmployeeNotEligible = "order.preferred_employee.not_eligible";
+
+    // Cleansia Plus / membership errors. Surfaced by the subscribe + cancel
+    // flows; the customer UI maps each key to a localized snackbar string.
+    public const string MembershipPlanNotFound = "membership.plan.not_found";
+    public const string MembershipAlreadyActive = "membership.already_active";
+    public const string MembershipNotFound = "membership.not_found";
+    public const string MembershipNotOwnedByUser = "membership.not_owned_by_user";
+    public const string MembershipStripeCustomerRequired = "membership.stripe_customer_required";
+    public const string MembershipSwapSamePlan = "membership.swap_same_plan";
+
+    // Recurring booking template errors. Backend rejects with these keys; the
+    // customer UI maps to localized strings. NotOwnedByUser is the per-user
+    // ownership check inside the handler — Validator can't see UserId at the
+    // FluentValidation layer for ownership reasons.
+    public const string RecurringTemplateNotFound = "recurring_booking.not_found";
+    public const string RecurringTemplateNotOwnedByUser = "recurring_booking.not_owned_by_user";
+    public const string RecurringTemplateSavedAddressNotFound = "recurring_booking.saved_address_not_found";
+    public const string RecurringTemplateNoServicesOrPackages = "recurring_booking.no_services_or_packages";
+    public const string RecurringTemplateStartsOnInPast = "recurring_booking.starts_on_in_past";
+    public const string RecurringTemplateEndsOnBeforeStart = "recurring_booking.ends_on_before_start";
+
     public const string OrderNotInProgress = "order.not_in_progress";
     public const string OrderNotConfirmed = "order.not_confirmed";
     public const string EmployeeAlreadyHasOrderInProgress = "order.employee_already_has_order_in_progress";
@@ -135,6 +168,7 @@ public static class BusinessErrorMessage
 
     // Address
     public const string InvalidLength = "address.invalid_length";
+    public const string MapboxCoordsRequired = "address.mapbox_coords_required";
 
     // Language
     public const string LanguageNotSupported = "language.not_supported";
@@ -158,6 +192,7 @@ public static class BusinessErrorMessage
     public const string DisputeAlreadyExists = "dispute.already_exists";
     public const string InvalidRefundAmount = "dispute.invalid_refund_amount";
     public const string MaxLengthExceeded = "dispute.max_length_exceeded";
+    public const string DisputeNotOwnedByUser = "dispute.not_owned_by_user";
     public const string UserNotFound = "user.not_found";
 
     // Admin User
@@ -180,6 +215,7 @@ public static class BusinessErrorMessage
     // Service
     public const string ServiceNotFound = "service.not_found";
     public const string ServiceInUse = "service.in_use";
+    public const string ServiceCategoryNotFound = "service.category_not_found";
     public const string TranslationsRequired = "service.translations_required";
     public const string MissingTranslationForLanguage = "service.missing_translation_for_language";
 
@@ -242,4 +278,36 @@ public static class BusinessErrorMessage
     public const string GdprDeletionAlreadyPending = "gdpr.deletion_already_pending";
     public const string ConsentNotFound = "gdpr.consent_not_found";
     public const string ConsentAlreadyGranted = "gdpr.consent_already_granted";
+
+    // Promo codes — kept for client mapping consistency. Not used directly
+    // inside the handler (which returns the PromoCodeError enum stringified).
+    public const string PromoNotFound = "promo.not_found";
+    public const string PromoExpired = "promo.expired";
+    public const string PromoNotYetValid = "promo.not_yet_valid";
+    public const string PromoInactive = "promo.inactive";
+    public const string PromoGlobalLimitReached = "promo.global_limit_reached";
+    public const string PromoPerUserLimitReached = "promo.per_user_limit_reached";
+    public const string PromoBelowMinimumOrderAmount = "promo.below_minimum_order_amount";
+    public const string PromoCurrencyMismatch = "promo.currency_mismatch";
+
+    // Promo codes — admin
+    public const string PromoCodeAlreadyExists = "promo.code_already_exists";
+    public const string PromoCodeInvalidFormat = "promo.code_invalid_format";
+    public const string PromoCodeValidityRangeInvalid = "promo.validity_range_invalid";
+    public const string PromoCodePercentOutOfRange = "promo.percent_out_of_range";
+    public const string PromoCodeAmountMustBePositive = "promo.amount_must_be_positive";
+
+    // Loyalty tier configs — admin
+    public const string LoyaltyTierConfigNotFound = "loyalty.tier_config_not_found";
+    public const string LoyaltyTierPerksJsonInvalid = "loyalty.tier_perks_json_invalid";
+    public const string LoyaltyPointsExceedSanityCap = "loyalty.points_exceed_sanity_cap";
+    public const string LoyaltyReasonRequired = "loyalty.reason_required";
+
+    // Referrals — kept for client mapping consistency. The Validate handler
+    // returns the ReferralValidationError enum stringified; clients map to
+    // these dot-notation keys for the i18n lookup.
+    public const string ReferralNotFound = "referral.not_found";
+    public const string ReferralSelfReferral = "referral.self_referral";
+    public const string ReferralAlreadyReferred = "referral.already_referred";
+    public const string ReferralInactive = "referral.inactive";
 }

@@ -72,6 +72,13 @@
       "email_templates": "E-mailové šablóny",
       "email_template_translations": "Preklady e-mailových šablón",
       "fiscal_failures": "Fiškálne zlyhania",
+      "promo_codes": "Promo kódy",
+      "promo_code_create": "Vytvoriť promo kód",
+      "promo_code_edit": "Upraviť promo kód",
+      "promo_code_detail": "Detail promo kódu",
+      "loyalty_tiers": "Vernostné úrovne",
+      "loyalty_user_detail": "Vernosť používateľa",
+      "loyalty_referrals": "Odporúčania",
       "not_found": "Stránka nebola nájdená"
     }
   },
@@ -153,6 +160,7 @@
       "create": "Vytvoriť",
       "cancel": "Zrušiť",
       "edit": "Upraviť",
+      "view": "Zobraziť",
       "delete": "Odstrániť",
       "add": "Pridať",
       "ok": "OK",
@@ -203,6 +211,10 @@
     "templates": "Šablóny",
     "global_rates": "Globálne sadzby",
     "fiscal_failures": "Fiškálne zlyhania",
+    "loyalty": "Vernostný program",
+    "loyalty_promo_codes": "Promo kódy",
+    "loyalty_tiers": "Úrovne",
+    "loyalty_referrals": "Odporúčania",
     "logout": "Odhlásiť sa"
   },
   "pages": {
@@ -667,6 +679,7 @@
       "translations": "Preklady",
       "name": "Názov",
       "description": "Popis",
+      "category": "Kategória",
       "base_price": "Základná cena (CZK)",
       "per_room_price": "Cena za izbu (CZK)",
       "estimated_time": "Odhadovaný čas (minúty)",
@@ -1242,6 +1255,255 @@
         "regenerate_success": "PDF faktúry bolo úspešne obnovené",
         "regenerate_error": "Nepodarilo sa obnoviť PDF faktúry"
       }
+    },
+    "promo_codes": {
+      "title": "Promo kódy",
+      "new_button": "Nový kód",
+      "search_placeholder": "Hľadať podľa kódu",
+      "status_filter_all": "Všetky stavy",
+      "status_filter_active": "Aktívne",
+      "status_filter_inactive": "Neaktívne",
+      "status_filter_expired": "Expirované",
+      "empty_list": "Zatiaľ žiadne promo kódy",
+      "unlimited": "Bez obmedzenia",
+      "column": {
+        "code": "Kód",
+        "type": "Typ",
+        "discount": "Zľava",
+        "min_order": "Min. objednávka",
+        "per_user": "Na používateľa",
+        "global": "Celkom",
+        "validity": "Platnosť",
+        "status": "Stav",
+        "actions": "Akcie"
+      },
+      "type": {
+        "percent": "Percentuálna",
+        "fixed": "Pevná suma"
+      },
+      "validity": {
+        "indefinite": "Bez obmedzenia",
+        "from": "Od {{date}}",
+        "until": "Do {{date}}",
+        "range": "{{from}} – {{until}}"
+      },
+      "form": {
+        "create_title": "Vytvoriť promo kód",
+        "edit_title": "Upraviť promo kód",
+        "submit_create": "Vytvoriť kód",
+        "submit_update": "Uložiť zmeny",
+        "cancel": "Zrušiť",
+        "field": {
+          "code": "Kód",
+          "code_help": "3–20 znakov, len A-Z 0-9",
+          "type": "Typ zľavy",
+          "discount_percent": "Zľava %",
+          "discount_amount": "Výška zľavy",
+          "currency": "Mena",
+          "min_order": "Minimálna výška objednávky",
+          "max_per_user": "Max. uplatnení na používateľa",
+          "global_max_enabled": "Obmedziť celkový počet uplatnení",
+          "global_max": "Celkový limit uplatnení",
+          "valid_from": "Platí od",
+          "valid_until": "Platí do",
+          "description": "Interné poznámky",
+          "active": "Aktívne"
+        },
+        "validation": {
+          "code_pattern": "Kód musí mať 3–20 znakov (len A-Z 0-9)",
+          "code_required": "Kód je povinný",
+          "percent_range": "Zľava musí byť medzi 1 a 100",
+          "amount_positive": "Suma musí byť väčšia ako 0",
+          "currency_required": "Pri pevnej zľave je potrebná mena",
+          "validity_range": "Dátum konca musí byť po dátume začiatku"
+        },
+        "success": {
+          "created": "Promo kód vytvorený",
+          "updated": "Promo kód aktualizovaný",
+          "deactivated": "Promo kód deaktivovaný"
+        },
+        "error": {
+          "already_exists": "Kód s týmto názvom už existuje",
+          "generic": "Kód sa nepodarilo uložiť. Skúste to prosím znova."
+        }
+      },
+      "detail": {
+        "title": "Detail promo kódu",
+        "redemptions_title": "Uplatnenia",
+        "redemptions_empty": "Zatiaľ žiadne uplatnenia",
+        "deactivate_button": "Deaktivovať",
+        "deactivate_confirm_title": "Deaktivovať tento kód?",
+        "deactivate_confirm_body": "Zákazníci už nebudú môcť tento kód uplatniť. Existujúce uplatnenia zostanú.",
+        "deactivate_confirm_yes": "Deaktivovať",
+        "deactivate_confirm_cancel": "Ponechať aktívne",
+        "column": {
+          "user": "Používateľ",
+          "order": "Objednávka",
+          "applied": "Uplatnená zľava",
+          "redeemed_on": "Uplatnené"
+        }
+      }
+    },
+    "loyalty_tiers": {
+      "title": "Vernostné úrovne",
+      "description": "Upravte limity, zľavy a výhody pre každú úroveň. Zmeny sa okamžite prejavia u všetkých používateľov.",
+      "perks_count": "{{count}} výhod",
+      "discount_format": "{{percent}} %",
+      "no_min_order": "—",
+      "preview_impact_button": "Náhľad zmien limitov",
+      "column": {
+        "tier": "Úroveň",
+        "threshold": "Limit",
+        "discount": "Zľava",
+        "min_order": "Min. objednávka",
+        "perks": "Výhody",
+        "actions": "Akcie"
+      },
+      "tier": {
+        "BronzeCleaner": "Bronzový upratovač",
+        "SilverMopper": "Strieborný mopár",
+        "GoldPolisher": "Zlatý leštič",
+        "PlatinumSparkler": "Platinový žiarič"
+      },
+      "form": {
+        "title": "Upraviť úroveň",
+        "submit": "Uložiť zmeny",
+        "cancel": "Zrušiť",
+        "success": "Úroveň aktualizovaná",
+        "field": {
+          "threshold": "Limit doživotných bodov",
+          "threshold_help": "Používatelia s týmto počtom bodov a viac dosiahnu túto úroveň.",
+          "discount": "Zľava %",
+          "discount_help": "0 = žiadna zľava.",
+          "min_order": "Minimálna výška objednávky",
+          "min_order_help": "Ponechajte prázdne pre použitie zľavy na všetky objednávky.",
+          "perks_json": "Výhody (JSON)",
+          "perks_json_help": "Pole objektov s ikonou a kľúčom popisku. Príklad: [{\"icon\":\"badge\",\"labelKey\":\"loyalty.perks.welcome_badge\"}]"
+        },
+        "validation": {
+          "threshold_min": "Limit musí byť 0 alebo viac",
+          "discount_range": "Zľava musí byť medzi 0 a 100",
+          "min_order_min": "Minimálna objednávka musí byť 0 alebo viac",
+          "perks_json_invalid": "Výhody musia byť platný JSON"
+        },
+        "error": {
+          "generic": "Úroveň sa nepodarilo uložiť. Skúste to prosím znova."
+        }
+      },
+      "preview": {
+        "title": "Náhľad zmien limitov",
+        "description": "Upravte limity nižšie a zobrazte si, koľko používateľov bude preradených.",
+        "preview_button": "Zobraziť náhľad",
+        "preview_results_title": "Náhľad dopadu",
+        "result_row": "{{tier}}: {{currentCount}} → {{newCount}} ({{delta}})",
+        "apply_button": "Použiť zmeny",
+        "cancel_button": "Zrušiť",
+        "applying": "Prebieha ukladanie zmien...",
+        "success": "Limity aktualizované",
+        "error": {
+          "preview": "Nepodarilo sa zobraziť náhľad dopadu",
+          "apply": "Niektoré limity sa nepodarilo uložiť"
+        }
+      }
+    },
+    "loyalty_user_detail": {
+      "title": "Vernosť používateľa",
+      "title_for_user": "Vernosť pre {{email}}",
+      "loading": "Načítavanie účtu...",
+      "back": "Späť na používateľa",
+      "view_link": "Zobraziť vernosť",
+      "tier_label": "Aktuálna úroveň",
+      "lifetime_points": "Celkové body",
+      "completed_bookings_label": "Dokončené upratovania",
+      "completed_bookings": "{{count}} dokončených upratovaní",
+      "tier_achieved_label": "Úroveň dosiahnutá",
+      "tier_achieved_on": "Úroveň dosiahnutá dňa {{date}}",
+      "next_tier_label": "Postup",
+      "points_to_next_tier": "{{count}} bodov do {{tier}}",
+      "max_tier_reached": "Najvyššia úroveň dosiahnutá",
+      "tier": {
+        "BronzeCleaner": "Bronzový upratovač",
+        "SilverMopper": "Strieborný mopovač",
+        "GoldPolisher": "Zlatý leštič",
+        "PlatinumSparkler": "Platinový žiarič"
+      },
+      "actions": {
+        "grant": "Pridať body",
+        "revoke": "Odobrať body"
+      },
+      "activity": {
+        "title": "História aktivít",
+        "empty": "Žiadna aktivita",
+        "column": {
+          "date": "Dátum",
+          "type": "Typ",
+          "points": "Body",
+          "source": "Zdroj",
+          "order": "Objednávka"
+        },
+        "type": {
+          "Earn": "Pripísané",
+          "Revoke": "Odobrané"
+        },
+        "source": {
+          "OrderCompleted": "Dokončená objednávka",
+          "OrderCancelled": "Zrušená objednávka",
+          "Referral": "Bonus za odporúčanie",
+          "ManualGrant": "Manuálna úprava"
+        }
+      },
+      "grant_dialog": {
+        "title_grant": "Pridať body",
+        "title_revoke": "Odobrať body",
+        "field": {
+          "points": "Body",
+          "reason": "Dôvod",
+          "reason_help": "Viditeľné v audit logu."
+        },
+        "validation": {
+          "points_min": "Minimálne 1 bod",
+          "points_max": "Maximálne 100 000 bodov",
+          "reason_required": "Dôvod je povinný",
+          "reason_max": "Dôvod môže mať maximálne 500 znakov"
+        },
+        "submit_grant": "Pridať",
+        "submit_revoke": "Odobrať",
+        "cancel": "Zrušiť",
+        "success_grant": "Body pridané",
+        "success_revoke": "Body odobrané",
+        "error": {
+          "generic": "Body sa nepodarilo aktualizovať"
+        }
+      }
+    },
+    "loyalty_referrals": {
+      "title": "Odporúčania",
+      "description": "Všetka aktivita odporúčaní zákazníkov. Iba na čítanie.",
+      "filter": {
+        "status_all": "Všetky stavy",
+        "status_accepted": "Prijaté",
+        "status_qualified": "Kvalifikované",
+        "status_expired": "Expirované",
+        "date_from": "Od",
+        "date_to": "Do"
+      },
+      "column": {
+        "referrer": "Odporúčajúci",
+        "referred": "Odporúčaný",
+        "status": "Stav",
+        "accepted_on": "Prijaté dňa",
+        "qualified_on": "Kvalifikované dňa",
+        "points_awarded": "Udelené body"
+      },
+      "status": {
+        "Accepted": "Prijaté",
+        "Qualified": "Kvalifikované",
+        "Expired": "Expirované"
+      },
+      "points_format": "{{referrer}} / {{referred}}",
+      "not_yet": "—",
+      "empty": "Zatiaľ žiadne odporúčania",
+      "loading": "Načítavanie..."
     }
   },
   "employees": {

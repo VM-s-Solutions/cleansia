@@ -1,0 +1,9 @@
+{
+  "name": "loyalty-user-detail",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/cleansia-admin-features/loyalty-user-detail/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": [],
+  "targets": {}
+}

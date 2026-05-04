@@ -1,7 +1,22 @@
 <div class="checkout-page">
   <cleansia-dynamic-background [iconCount]="15" />
   <div class="checkout-card">
-    <img src="assets/images/mascot/mascot-cleaning.png" alt="" class="checkout-card__mascot" loading="lazy" />
+    <!-- Welcoming mascot — plays once on screen entry, freezes on last frame.
+         WebM with VP9 alpha keeps full transparency on any background. The
+         <img> fallback handles browsers that can't decode VP9-with-alpha
+         (older Safari) or the moment before the video buffers. -->
+    <video
+      class="checkout-card__mascot"
+      autoplay
+      muted
+      playsinline
+      disablePictureInPicture
+      preload="auto"
+      aria-hidden="true"
+    >
+      <source src="assets/videos/mascot-welcoming.webm" type="video/webm" />
+      <img src="assets/images/mascot/mascot-cleaning.png" alt="" loading="lazy" />
+    </video>
 
     @if (isCash()) {
       <h1 class="checkout-card__title">{{ 'pages.checkout.success.cash.title' | translate }}</h1>

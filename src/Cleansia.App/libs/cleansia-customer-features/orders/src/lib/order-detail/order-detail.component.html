@@ -56,6 +56,26 @@
         </div>
       </div>
 
+      <!-- Live mascot — only when cleaner is on-site (InProgress). Loops
+           continuously while status holds, vanishes when it transitions to
+           Completed/Cancelled. WebM keeps full alpha on any background. -->
+      @if (isInProgress()) {
+        <div class="order-detail__mascot-row">
+          <video
+            class="order-detail__mascot"
+            autoplay
+            muted
+            playsinline
+            loop
+            disablePictureInPicture
+            preload="auto"
+            aria-hidden="true"
+          >
+            <source src="assets/videos/mascot-cleaning-in-progress.webm" type="video/webm" />
+          </video>
+        </div>
+      }
+
       <!-- Status -->
       <div class="order-detail__section">
         <h3>{{ 'pages.order_detail.status' | translate }}</h3>
@@ -136,6 +156,21 @@
         <span>{{ 'pages.order_detail.total' | translate }}</span>
         <strong>{{ formatPrice(order()!.totalPrice) }}</strong>
       </div>
+
+      <!-- Make this recurring — Path B entry. Always visible on Completed
+           orders; non-Plus users get routed to /membership/subscribe via the
+           click handler so they don't fill out a wizard they can't save. -->
+      @if (isCompleted()) {
+        <div class="order-detail__section order-detail__make-recurring">
+          <cleansia-button
+            severity="secondary"
+            [outlined]="true"
+            icon="pi pi-calendar-plus"
+            [label]="'recurring_booking.order_detail_make_recurring' | translate"
+            (click)="makeRecurring()"
+          ></cleansia-button>
+        </div>
+      }
 
       <!-- Rating / Review -->
       @if (isCompleted()) {

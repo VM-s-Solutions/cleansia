@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Cleansia</string>
+    <string name="splash_tagline">Bezchybne čisté domovy, podľa vášho rozvrhu</string>
+
+    <!-- Chyby — všeobecné -->
+    <string name="error_generic_unknown">Niečo sa pokazilo. Skúste to znova.</string>
+    <string name="error_generic_network">Skontrolujte pripojenie na internet a skúste to znova.</string>
+    <string name="error_generic_server">Server je dočasne nedostupný. Skúste to neskôr.</string>
+    <string name="error_generic_unauthorized">Vaša relácia vypršala. Prihláste sa znova.</string>
+
+    <!-- Adresa -->
+    <string name="error_address_label_required">Zadajte prosím názov tejto adresy.</string>
+    <string name="error_address_not_owned_by_user">Môžete spravovať iba vlastné adresy.</string>
+
+    <!-- Objednávka -->
+    <string name="error_order_address_exactly_one_required">Vyberte prosím uloženú adresu alebo zadajte novú.</string>
+    <string name="error_booking_sign_in_required">Pre dokončenie rezervácie sa prosím prihláste.</string>
+    <string name="error_booking_pick_time">Vyberte prosím dátum a čas upratovania.</string>
+    <string name="error_booking_phone_missing">Pridajte si prosím do profilu telefónne číslo, aby sme vás mohli kontaktovať ohľadom tejto rezervácie.</string>
+    <string name="error_booking_profile_incomplete">Pred rezerváciou si prosím doplňte profil — potrebujeme vaše telefónne číslo, aby sme vás mohli kontaktovať.</string>
+
+    <!-- Profile onboarding -->
+    <string name="onboarding_greeting">Vitajte!</string>
+    <string name="onboarding_greeting_named">Vitajte, %1$s!</string>
+    <string name="onboarding_subtitle">Pár rýchlych údajov, aby sme vám mohli lepšie slúžiť. Môžete tento krok preskočiť a vyplniť neskôr.</string>
+    <string name="onboarding_phone_label">Telefónne číslo</string>
+    <string name="onboarding_phone_helper">Uveďte predvoľbu (napr. +420). Použijeme ho iba na to, aby sme vás kontaktovali ohľadom vašich rezervácií.</string>
+    <string name="onboarding_birthdate_label">Dátum narodenia</string>
+    <string name="onboarding_birthdate_placeholder">Ťuknite pre výber</string>
+    <string name="onboarding_birthdate_helper">Voliteľné — pre narodeninové výhody.</string>
+    <string name="onboarding_save">Uložiť a pokračovať</string>
+    <string name="onboarding_skip">Preskočiť</string>
+    <string name="booking_success_confirmation_code">Potvrdzovací kód</string>
+
+    <!-- Home — loyalty-driven milestone -->
+    <string name="home_milestone_title_v2">%1$s — Pokrok k ďalšej úrovni</string>
+    <string name="home_milestone_subtitle_v2">Ešte %1$d bodov do úrovne %2$s</string>
+</resources>

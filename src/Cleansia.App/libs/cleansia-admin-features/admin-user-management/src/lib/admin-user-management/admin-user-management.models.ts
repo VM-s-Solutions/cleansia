@@ -7,6 +7,7 @@ export function getAdminUserTableDefinition(
   defs: {
     onEdit: (row: AdminUserListItem) => void;
     onToggleStatus: (row: AdminUserListItem) => void;
+    onViewLoyalty: (row: AdminUserListItem) => void;
   },
   translate: TranslateService,
   statusTemplate?: TemplateRef<AdminUserListItem>
@@ -60,6 +61,12 @@ export function getAdminUserTableDefinition(
         tooltip: translate.instant('pages.admin_user_management.edit_user'),
         color: 'warning',
         onClick: (row: AdminUserListItem) => defs.onEdit(row),
+      },
+      {
+        icon: 'pi pi-star',
+        tooltip: translate.instant('pages.loyalty_user_detail.view_link'),
+        color: 'info',
+        onClick: (row: AdminUserListItem) => defs.onViewLoyalty(row),
       },
       {
         icon: 'pi pi-ban',

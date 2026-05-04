@@ -33,4 +33,12 @@ public interface IOrderRepository : IRepository<Order, string>
     /// Checks if an employee has an overlapping order at the given date/time range.
     /// </summary>
     Task<bool> HasOverlappingOrderAsync(string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct);
+
+    /// <summary>
+    /// True if the given user has previously had a Completed order assigned to
+    /// the given employee. Used to validate <c>PreferredEmployeeId</c> on new
+    /// bookings — customers can only request cleaners they've already worked
+    /// with, preventing random employee-id probing.
+    /// </summary>
+    Task<bool> UserHasCompletedOrderWithEmployeeAsync(string userId, string employeeId, CancellationToken ct);
 }

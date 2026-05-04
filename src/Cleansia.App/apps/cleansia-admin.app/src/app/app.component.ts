@@ -97,6 +97,27 @@ export class AppComponent implements OnInit {
     { label: 'sidebar.templates', icon: 'pi pi-file-edit', route: '/template-management' },
     { label: 'sidebar.fiscal_failures', icon: 'pi pi-exclamation-triangle', route: '/fiscal-failures' },
     {
+      label: 'sidebar.loyalty',
+      icon: 'pi pi-star',
+      children: [
+        {
+          label: 'sidebar.loyalty_promo_codes',
+          icon: 'pi pi-tag',
+          route: '/loyalty/promos',
+        },
+        {
+          label: 'sidebar.loyalty_tiers',
+          icon: 'pi pi-chart-line',
+          route: '/loyalty/tiers',
+        },
+        {
+          label: 'sidebar.loyalty_referrals',
+          icon: 'pi pi-share-alt',
+          route: '/loyalty/referrals',
+        },
+      ],
+    },
+    {
       label: 'sidebar.logout',
       icon: 'pi pi-sign-out',
       onClickFn: () => {

@@ -1,0 +1,269 @@
+<div class="cleansia-tier-configs">
+  <div class="cleansia-tier-configs__container page-wrapper">
+    <div class="cleansia-tier-configs__header">
+      <div class="header-content">
+        <cleansia-title [title]="'pages.loyalty_tiers.title' | translate" />
+        <p class="header-description">
+          {{ 'pages.loyalty_tiers.description' | translate }}
+        </p>
+      </div>
+      <div class="header-actions">
+        <cleansia-button
+          [label]="'pages.loyalty_tiers.preview_impact_button' | translate"
+          icon="pi pi-chart-bar"
+          [outlined]="true"
+          (onClick)="openPreview()"
+        />
+      </div>
+    </div>
+
+    <cleansia-section>
+      @if (facade.initialLoading()) {
+        <cleansia-loader />
+      } @else {
+        <p-table [value]="tierRows()" [tableStyle]="{ 'min-width': '50rem' }">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>{{ 'pages.loyalty_tiers.column.tier' | translate }}</th>
+              <th>{{ 'pages.loyalty_tiers.column.threshold' | translate }}</th>
+              <th>{{ 'pages.loyalty_tiers.column.discount' | translate }}</th>
+              <th>{{ 'pages.loyalty_tiers.column.min_order' | translate }}</th>
+              <th>{{ 'pages.loyalty_tiers.column.perks' | translate }}</th>
+              <th>{{ 'pages.loyalty_tiers.column.actions' | translate }}</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-row>
+            <tr>
+              <td>{{ row.tierName }}</td>
+              <td>{{ row.threshold }}</td>
+              <td>{{ formatDiscount(row.discountPercent) }}</td>
+              <td>{{ formatMinOrder(row.minimumOrderAmountForDiscount) }}</td>
+              <td>{{ formatPerksCount(row.perksCount) }}</td>
+              <td>
+                <cleansia-button
+                  [label]="'global.actions.edit' | translate"
+                  icon="pi pi-pencil"
+                  [outlined]="true"
+                  (onClick)="openEdit(row)"
+                />
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      }
+    </cleansia-section>
+  </div>
+</div>
+
+<!-- Edit tier dialog -->
+<p-dialog
+  [header]="'pages.loyalty_tiers.form.title' | translate"
+  [(visible)]="editDialogVisible"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '560px' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  @if (editingTier(); as tier) {
+    <form [formGroup]="editForm" (ngSubmit)="onEditSubmit()" class="tier-edit-form">
+      <div class="form-field">
+        <label class="static-label">
+          {{ 'pages.loyalty_tiers.column.tier' | translate }}
+        </label>
+        <div class="static-value">{{ tier.tierName }}</div>
+      </div>
+
+      <div class="form-field">
+        <cleansia-text-input
+          [label]="'pages.loyalty_tiers.form.field.threshold' | translate"
+          formControlName="threshold"
+          dataType="number"
+          [required]="true"
+        />
+        <small class="field-help">
+          {{ 'pages.loyalty_tiers.form.field.threshold_help' | translate }}
+        </small>
+        @if (editForm.controls.threshold.touched && editForm.controls.threshold.errors?.['min']) {
+          <small class="field-error">
+            {{ 'pages.loyalty_tiers.form.validation.threshold_min' | translate }}
+          </small>
+        }
+      </div>
+
+      <div class="form-field">
+        <cleansia-text-input
+          [label]="'pages.loyalty_tiers.form.field.discount' | translate"
+          formControlName="discountPercentUi"
+          dataType="number"
+          [required]="true"
+        />
+        <small class="field-help">
+          {{ 'pages.loyalty_tiers.form.field.discount_help' | translate }}
+        </small>
+        @if (
+          editForm.controls.discountPercentUi.touched &&
+          (editForm.controls.discountPercentUi.errors?.['min'] ||
+            editForm.controls.discountPercentUi.errors?.['max'])
+        ) {
+          <small class="field-error">
+            {{ 'pages.loyalty_tiers.form.validation.discount_range' | translate }}
+          </small>
+        }
+      </div>
+
+      <div class="form-field">
+        <cleansia-text-input
+          [label]="'pages.loyalty_tiers.form.field.min_order' | translate"
+          formControlName="minimumOrderAmount"
+          dataType="number"
+        />
+        <small class="field-help">
+          {{ 'pages.loyalty_tiers.form.field.min_order_help' | translate }}
+        </small>
+        @if (
+          editForm.controls.minimumOrderAmount.touched &&
+          editForm.controls.minimumOrderAmount.errors?.['min']
+        ) {
+          <small class="field-error">
+            {{ 'pages.loyalty_tiers.form.validation.min_order_min' | translate }}
+          </small>
+        }
+      </div>
+
+      <div class="form-field">
+        <cleansia-textarea
+          [label]="'pages.loyalty_tiers.form.field.perks_json' | translate"
+          formControlName="perksJson"
+          [rows]="6"
+        />
+        <small class="field-help">
+          {{ 'pages.loyalty_tiers.form.field.perks_json_help' | translate }}
+        </small>
+        @if (!perksJsonValid()) {
+          <small class="field-warning">
+            {{ 'pages.loyalty_tiers.form.validation.perks_json_invalid' | translate }}
+          </small>
+        }
+      </div>
+    </form>
+  }
+  <ng-template pTemplate="footer">
+    <cleansia-button
+      [label]="'pages.loyalty_tiers.form.cancel' | translate"
+      [outlined]="true"
+      (onClick)="closeEdit()"
+    />
+    <cleansia-button
+      [label]="'pages.loyalty_tiers.form.submit' | translate"
+      icon="pi pi-save"
+      [disabled]="facade.saving()"
+      [loading]="facade.saving()"
+      (onClick)="onEditSubmit()"
+    />
+  </ng-template>
+</p-dialog>
+
+<!-- Threshold preview dialog -->
+<p-dialog
+  [header]="'pages.loyalty_tiers.preview.title' | translate"
+  [(visible)]="previewDialogVisible"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '640px' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <p class="dialog-description">
+    {{ 'pages.loyalty_tiers.preview.description' | translate }}
+  </p>
+
+  <form [formGroup]="previewForm" class="threshold-preview-form">
+    <div class="form-field">
+      <cleansia-text-input
+        [label]="'pages.loyalty_tiers.tier.BronzeCleaner' | translate"
+        formControlName="bronzeThreshold"
+        dataType="number"
+        [required]="true"
+      />
+    </div>
+    <div class="form-field">
+      <cleansia-text-input
+        [label]="'pages.loyalty_tiers.tier.SilverMopper' | translate"
+        formControlName="silverThreshold"
+        dataType="number"
+        [required]="true"
+      />
+    </div>
+    <div class="form-field">
+      <cleansia-text-input
+        [label]="'pages.loyalty_tiers.tier.GoldPolisher' | translate"
+        formControlName="goldThreshold"
+        dataType="number"
+        [required]="true"
+      />
+    </div>
+    <div class="form-field">
+      <cleansia-text-input
+        [label]="'pages.loyalty_tiers.tier.PlatinumSparkler' | translate"
+        formControlName="platinumThreshold"
+        dataType="number"
+        [required]="true"
+      />
+    </div>
+  </form>
+
+  <div class="preview-actions">
+    <cleansia-button
+      [label]="'pages.loyalty_tiers.preview.preview_button' | translate"
+      icon="pi pi-search"
+      [outlined]="true"
+      [disabled]="facade.previewing()"
+      [loading]="facade.previewing()"
+      (onClick)="onPreviewSubmit()"
+    />
+  </div>
+
+  @if (facade.previewResult(); as impacts) {
+    <div class="preview-results">
+      <h4 class="preview-results__title">
+        {{ 'pages.loyalty_tiers.preview.preview_results_title' | translate }}
+      </h4>
+      <ul class="preview-results__list">
+        @for (impact of impacts; track impact.tier) {
+          <li>
+            {{
+              'pages.loyalty_tiers.preview.result_row'
+                | translate
+                  : {
+                      tier: tierKey(impact.tier) | translate,
+                      currentCount: impact.currentCount,
+                      newCount: impact.newCount,
+                      delta: formatDelta(impact.delta)
+                    }
+            }}
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+  <ng-template pTemplate="footer">
+    <cleansia-button
+      [label]="'pages.loyalty_tiers.preview.cancel_button' | translate"
+      [outlined]="true"
+      (onClick)="closePreview()"
+    />
+    <cleansia-button
+      [label]="
+        facade.applying()
+          ? ('pages.loyalty_tiers.preview.applying' | translate)
+          : ('pages.loyalty_tiers.preview.apply_button' | translate)
+      "
+      icon="pi pi-check"
+      [disabled]="facade.applying() || facade.previewResult() === null"
+      [loading]="facade.applying()"
+      (onClick)="onApplyChanges()"
+    />
+  </ng-template>
+</p-dialog>

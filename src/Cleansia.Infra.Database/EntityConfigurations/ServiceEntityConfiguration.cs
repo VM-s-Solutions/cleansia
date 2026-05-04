@@ -1,4 +1,4 @@
-﻿using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Services;
 using Cleansia.Infra.Database.Converters;
 using Microsoft.EntityFrameworkCore;
@@ -27,6 +27,14 @@ public class ServiceEntityConfiguration : AuditableEntityConfiguration<Service, 
         builder.Property(s => s.PerRoomPrice)
             .IsRequired()
             .HasPrecision(18, 2);
+
+        builder.Property(s => s.CategoryId)
+            .IsRequired();
+
+        builder.HasOne(s => s.Category)
+            .WithMany(c => c.Services)
+            .HasForeignKey(s => s.CategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(s => s.Translations)
             .HasConversion(new JsonValueConverter<IReadOnlyDictionary<string, Translation>>())

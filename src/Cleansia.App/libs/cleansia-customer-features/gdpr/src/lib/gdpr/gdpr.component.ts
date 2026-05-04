@@ -142,7 +142,8 @@ export class GdprComponent implements OnInit {
             this.snackbar.showSuccess(
               this.translate.instant('pages.gdpr.delete_success')
             );
-            this.authService.logout();
+            // Cold Observable — must subscribe so the local cleanup + redirect run.
+            this.authService.logout().subscribe();
           },
           error: () => {
             this.deleting.set(false);

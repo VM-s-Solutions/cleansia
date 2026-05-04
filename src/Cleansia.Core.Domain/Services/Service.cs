@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
@@ -22,6 +22,10 @@ public class Service : Auditable, ITenantEntity
 
     public int EstimatedTime { get; private set; }
 
+    [Required]
+    public string CategoryId { get; private set; }
+    public ServiceCategory? Category { get; private set; }
+
     private IDictionary<string, Translation> _translations = new Dictionary<string, Translation>();
     public IReadOnlyDictionary<string, Translation> Translations => _translations.AsReadOnly();
 
@@ -31,8 +35,9 @@ public class Service : Auditable, ITenantEntity
     private ICollection<OrderService> _includedInOrders = [];
     public IReadOnlyCollection<OrderService> IncludedInOrders => _includedInOrders.ToList().AsReadOnly();
 
-    public static Service Create(string name, string description, decimal basePrice, decimal perRoomPrice, int estimatedTime = 0) => new()
+    public static Service Create(string categoryId, string name, string description, decimal basePrice, decimal perRoomPrice, int estimatedTime = 0) => new()
     {
+        CategoryId = categoryId,
         Name = name,
         Description = description,
         BasePrice = basePrice,
@@ -40,8 +45,9 @@ public class Service : Auditable, ITenantEntity
         EstimatedTime = estimatedTime
     };
 
-    public Service Update(string name, string description, decimal basePrice, decimal perRoomPrice, int estimatedTime)
+    public Service Update(string categoryId, string name, string description, decimal basePrice, decimal perRoomPrice, int estimatedTime)
     {
+        CategoryId = categoryId;
         Name = name;
         Description = description;
         BasePrice = basePrice;

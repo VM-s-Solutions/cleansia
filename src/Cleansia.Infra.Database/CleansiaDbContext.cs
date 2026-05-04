@@ -10,6 +10,9 @@ using Cleansia.Core.Domain.Emails;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.InvoiceTemplates;
+using Cleansia.Core.Domain.Bookings;
+using Cleansia.Core.Domain.Loyalty;
+using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Receipts;
@@ -154,13 +157,16 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
 
     public virtual DbSet<Country> Countries { get; set; }
     public virtual DbSet<Address> Addresses { get; set; }
+    public virtual DbSet<SavedAddress> SavedAddresses { get; set; }
     public virtual DbSet<Employee> Employees { get; set; }
     public virtual DbSet<EmployeeDocument> EmployeeDocuments { get; set; }
     public virtual DbSet<User> Users { get; set; }
+    public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
     public virtual DbSet<Cart> Carts { get; set; }
     public virtual DbSet<CartServiceItem> CartServiceItems { get; set; }
     public virtual DbSet<CartPackageItem> CartPackageItems { get; set; }
     public virtual DbSet<Service> Services { get; set; }
+    public virtual DbSet<ServiceCategory> ServiceCategories { get; set; }
     public virtual DbSet<Package> Packages { get; set; }
     public virtual DbSet<Currency> Currencies { get; set; }
     public virtual DbSet<Language> Languages { get; set; }
@@ -191,6 +197,16 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<FeatureFlag> FeatureFlags { get; set; }
     public virtual DbSet<UserConsent> UserConsents { get; set; }
     public virtual DbSet<GdprRequest> GdprRequests { get; set; }
+    public virtual DbSet<LoyaltyAccount> LoyaltyAccounts { get; set; }
+    public virtual DbSet<LoyaltyTransaction> LoyaltyTransactions { get; set; }
+    public virtual DbSet<LoyaltyTierConfig> LoyaltyTierConfigs { get; set; }
+    public virtual DbSet<PromoCode> PromoCodes { get; set; }
+    public virtual DbSet<PromoCodeRedemption> PromoCodeRedemptions { get; set; }
+    public virtual DbSet<ReferralCode> ReferralCodes { get; set; }
+    public virtual DbSet<Referral> Referrals { get; set; }
+    public virtual DbSet<MembershipPlan> MembershipPlans { get; set; }
+    public virtual DbSet<UserMembership> UserMemberships { get; set; }
+    public virtual DbSet<RecurringBookingTemplate> RecurringBookingTemplates { get; set; }
 
     // Views
 }

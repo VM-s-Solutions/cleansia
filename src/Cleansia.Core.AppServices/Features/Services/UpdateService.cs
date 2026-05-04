@@ -11,6 +11,7 @@ public class UpdateService
 {
     public record Command(
         string ServiceId,
+        string CategoryId,
         string Name,
         string Description,
         decimal BasePrice,
@@ -22,7 +23,7 @@ public class UpdateService
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator(IServiceRepository serviceRepository, ILanguageRepository languageRepository)
+        public Validator(IServiceRepository serviceRepository, ILanguageRepository languageRepository, IServiceCategoryRepository categoryRepository)
         {
             RuleFor(x => x.ServiceId)
                 .Cascade(CascadeMode.Stop)
@@ -30,6 +31,13 @@ public class UpdateService
                 .WithMessage(BusinessErrorMessage.Required)
                 .MustAsync(serviceRepository.ExistsAsync)
                 .WithMessage(BusinessErrorMessage.ServiceNotFound);
+
+            RuleFor(x => x.CategoryId)
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty()
+                .WithMessage(BusinessErrorMessage.Required)
+                .MustAsync(categoryRepository.ExistsAsync)
+                .WithMessage(BusinessErrorMessage.ServiceCategoryNotFound);
 
             RuleFor(x => x.Name)
                 .Cascade(CascadeMode.Stop)
@@ -94,6 +102,7 @@ public class UpdateService
             var service = await serviceRepository.GetByIdAsync(command.ServiceId, cancellationToken);
 
             service!.Update(
+                command.CategoryId,
                 command.Name,
                 command.Description,
                 command.BasePrice,

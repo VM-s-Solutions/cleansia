@@ -53,6 +53,9 @@
       <div class="cl-footer__col">
         <h4>{{ 'pages.home.footer.support' | translate }}</h4>
         <ul>
+          @if (isAnonymous()) {
+            <li><a routerLink="/orders/lookup">{{ 'pages.order_lookup.entry_link' | translate }}</a></li>
+          }
           <li><a routerLink="/gdpr">{{ 'pages.home.footer.gdpr_link' | translate }}</a></li>
           <li><a routerLink="/terms">{{ 'pages.home.footer.terms_link' | translate }}</a></li>
         </ul>

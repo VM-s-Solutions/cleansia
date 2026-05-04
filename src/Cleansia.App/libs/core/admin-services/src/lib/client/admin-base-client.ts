@@ -12,10 +12,14 @@ import {
   AdminEmployeeDocumentClient,
   AdminInvoiceClient,
   AdminLanguageClient,
+  AdminLoyaltyClient,
+  AdminLoyaltyTierClient,
   AdminOrderClient,
   AdminPackageClient,
   AdminPayConfigClient,
   AdminPayPeriodClient,
+  AdminPromoCodeClient,
+  AdminReferralClient,
   AdminReportClient,
   AdminServiceClient,
   AdminUserClient,
@@ -29,10 +33,14 @@ import {
   IAdminEmployeeDocumentClient,
   IAdminInvoiceClient,
   IAdminLanguageClient,
+  IAdminLoyaltyClient,
+  IAdminLoyaltyTierClient,
   IAdminOrderClient,
   IAdminPackageClient,
   IAdminPayConfigClient,
   IAdminPayPeriodClient,
+  IAdminPromoCodeClient,
+  IAdminReferralClient,
   IAdminReportClient,
   IAdminServiceClient,
   IAdminUserClient,
@@ -59,6 +67,10 @@ interface IAdminClient {
   adminUserClient: IAdminUserClient;
   emailTemplateTypesClient: ITypesClient;
   adminPayConfigClient: IAdminPayConfigClient;
+  adminPromoCodeClient: IAdminPromoCodeClient;
+  adminLoyaltyTierClient: IAdminLoyaltyTierClient;
+  adminLoyaltyClient: IAdminLoyaltyClient;
+  adminReferralClient: IAdminReferralClient;
 }
 
 @Injectable({
@@ -134,6 +146,22 @@ export class AdminClient implements IAdminClient {
     this.apiBaseUrl
   );
   adminPayConfigClient: IAdminPayConfigClient = new AdminPayConfigClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  adminPromoCodeClient: IAdminPromoCodeClient = new AdminPromoCodeClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  adminLoyaltyTierClient: IAdminLoyaltyTierClient = new AdminLoyaltyTierClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  adminLoyaltyClient: IAdminLoyaltyClient = new AdminLoyaltyClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  adminReferralClient: IAdminReferralClient = new AdminReferralClient(
     this.httpClient,
     this.apiBaseUrl
   );

@@ -1,0 +1,31 @@
+@if (isMapboxConfigured) {
+<div class="cleansia-address-autocomplete">
+  <label class="cleansia-address-autocomplete__label">
+    <i class="pi pi-search"></i>
+    {{ 'address_picker.search_label' | translate }}
+  </label>
+  <p-autoComplete
+    [(ngModel)]="model"
+    [suggestions]="suggestions()"
+    field="placeName"
+    [forceSelection]="false"
+    [minLength]="3"
+    [delay]="300"
+    [placeholder]="'address_picker.search_placeholder' | translate"
+    [emptyMessage]="errored()
+      ? ('address_picker.search_failed' | translate)
+      : ('address_picker.no_results' | translate)"
+    appendTo="body"
+    (completeMethod)="onComplete($event)"
+    (onSelect)="onSelect($event)"
+    styleClass="cleansia-address-autocomplete__input"
+  >
+    <ng-template let-item pTemplate="item">
+      <div class="cleansia-address-autocomplete__suggestion">
+        <i class="pi pi-map-marker"></i>
+        <span>{{ item.placeName }}</span>
+      </div>
+    </ng-template>
+  </p-autoComplete>
+</div>
+}

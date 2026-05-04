@@ -8,7 +8,9 @@ public class JwtSettingsConfig(IConfiguration configuration)
 {
     public string Secret { get; set; } = null!;
 
-    public double DefaultTokenExpHours { get; set; } = 6;
+    public double AccessTokenExpMinutes { get; set; } = 15;
 
-    public double CookieTokenExpHours { get; set; } = 1;
+    public double RefreshTokenExpDays { get; set; } = 30;
+
+    public double RefreshTokenShortExpDays { get; set; } = 1;
 }

@@ -28,4 +28,25 @@ public class AdminAuthController(IMediator mediator) : ApiController(mediator)
 
         return HandleResult<JwtTokenResponse>(result);
     }
+
+    [AllowAnonymous]
+    [HttpPost("RefreshToken")]
+    [ProducesResponseType(typeof(JwtTokenResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshToken.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<JwtTokenResponse>(result);
+    }
+
+    [Authorize]
+    [HttpPost("Logout")]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Logout([FromBody] Logout.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<bool>(result);
+    }
 }

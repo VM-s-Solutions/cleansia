@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, OnDestroy, PLATFORM_ID, signal, effect, AfterViewInit } from '@angular/core';
+import { Component, computed, inject, OnInit, OnDestroy, PLATFORM_ID, signal, AfterViewInit } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import {
   FormControl,
@@ -10,6 +10,7 @@ import {
 } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
+  CleansiaAddressAutocompleteComponent,
   CleansiaButtonComponent,
   CleansiaTextInputComponent,
   CleansiaTelephoneComponent,
@@ -17,7 +18,14 @@ import {
   CleansiaSelectComponent,
   ICleansiaSelectOption,
 } from '@cleansia/components';
-import { CustomerClient } from '@cleansia/customer-services';
+import type { MapboxAddressSuggestion } from '@cleansia/services';
+import {
+  AddSavedAddressCommand,
+  CustomerClient,
+  SavedAddressDto,
+  UpdateSavedAddressCommand,
+} from '@cleansia/customer-services';
+import { SavedAddressStore } from '@cleansia/customer-stores';
 import {
   ChangePasswordCommand,
   GetCurrentUserQuery,
@@ -30,16 +38,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SkeletonModule } from 'primeng/skeleton';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { DialogModule } from 'primeng/dialog';
+import { RewardsCardComponent } from '@cleansia-customer/rewards';
 import { PROFILE_SECTIONS, SectionDef, setupScrollSpy } from './profile.helpers';
-
-export interface SavedAddress {
-  id: string;
-  street: string;
-  city: string;
-  zip: string;
-  country: string;
-  isDefault: boolean;
-}
 
 @Component({
   selector: 'cleansia-customer-profile',
@@ -58,6 +58,8 @@ export interface SavedAddress {
     CleansiaTelephoneComponent,
     CleansiaCalendarComponent,
     CleansiaSelectComponent,
+    CleansiaAddressAutocompleteComponent,
+    RewardsCardComponent,
   ],
   templateUrl: './profile.component.html',
 })
@@ -66,6 +68,7 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly translate = inject(TranslateService);
   private readonly snackbar = inject(SnackbarService);
   private readonly themeService = inject(ThemeService);
+  private readonly savedAddressStore = inject(SavedAddressStore);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   readonly router = inject(Router);
 
@@ -76,43 +79,37 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
   activeSection = signal('personal');
   sections: SectionDef[] = PROFILE_SECTIONS;
 
-  // Addresses (localStorage-based until backend support)
-  addresses = signal<SavedAddress[]>([]);
+  readonly addresses = this.savedAddressStore.addresses;
+  readonly addressesLoading = this.savedAddressStore.loading;
   showAddressDialog = signal(false);
-  editingAddress = signal<SavedAddress | null>(null);
+  editingAddressId = signal<string | null>(null);
   countryOptions = signal<ICleansiaSelectOption[]>([]);
 
   addressForm = new FormGroup({
-    street: new FormControl<string>('', {
+    label: new FormControl<string>('', {
       nonNullable: true,
-      validators: [
-        Validators.required,
-        Validators.minLength(3),
-        Validators.maxLength(255),
-      ],
+      validators: [Validators.required, Validators.maxLength(50)],
     }),
-    city: new FormControl<string>('', {
-      nonNullable: true,
-      validators: [
-        Validators.required,
-        Validators.minLength(2),
-        Validators.maxLength(100),
-      ],
-    }),
-    zip: new FormControl<string>('', {
-      nonNullable: true,
-      validators: [
-        Validators.required,
-        Validators.minLength(3),
-        Validators.maxLength(20),
-      ],
-    }),
+    // street/city/zip are populated by the Mapbox autocomplete picker
+    // (read-only in the dialog), so no user-typed validators are needed.
+    street: new FormControl<string>('', { nonNullable: true }),
+    city: new FormControl<string>('', { nonNullable: true }),
+    zip: new FormControl<string>('', { nonNullable: true }),
     country: new FormControl<string>('', {
       nonNullable: true,
       validators: [Validators.required],
     }),
     isDefault: new FormControl<boolean>(false, { nonNullable: true }),
   });
+
+  /**
+   * Lat/lng captured from a Mapbox autocomplete pick. Forwarded to the backend
+   * so cleaners get accurate routing. Manual edits do NOT clear it — the user
+   * is usually just adjusting the unit/floor, and the suggestion's coords are
+   * still close enough for routing.
+   */
+  pickedLatitude = signal<number | undefined>(undefined);
+  pickedLongitude = signal<number | undefined>(undefined);
 
   // Preferences
   readonly isDarkMode = computed(() => this.themeService.currentTheme() === 'dark');
@@ -174,7 +171,9 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnInit(): void {
     this.loadProfile();
-    this.loadAddresses();
+    if (!this.savedAddressStore.loaded()) {
+      void this.savedAddressStore.refresh();
+    }
     this.loadCountries();
     if (this.isBrowser) {
       window.addEventListener('scroll', this.onScroll);
@@ -307,81 +306,137 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  // Address management (localStorage-based — TODO: backend integration)
-  private readonly STORAGE_KEY = 'cleansia_saved_addresses';
-
-  loadAddresses(): void {
-    if (!this.isBrowser) return;
-    try {
-      const stored = localStorage.getItem(this.STORAGE_KEY);
-      if (stored) {
-        this.addresses.set(JSON.parse(stored));
-      }
-    } catch {
-      this.addresses.set([]);
-    }
-  }
-
-  private saveAddresses(): void {
-    if (!this.isBrowser) return;
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.addresses()));
-  }
-
   openAddAddress(): void {
-    this.editingAddress.set(null);
+    this.editingAddressId.set(null);
+    this.pickedLatitude.set(undefined);
+    this.pickedLongitude.set(undefined);
+    // First saved address — default the toggle to "Set as default" so the
+    // user doesn't have to flip it manually for the only address on file.
+    const isFirstAddress = this.addresses().length === 0;
     this.addressForm.reset({
+      label: '',
       street: '',
       city: '',
       zip: '',
-      // Default to Czech Republic when available.
       country: this.defaultCountryId(),
-      isDefault: false,
+      isDefault: isFirstAddress,
     });
     this.showAddressDialog.set(true);
   }
 
-  openEditAddress(address: SavedAddress): void {
-    this.editingAddress.set(address);
+  openEditAddress(address: SavedAddressDto): void {
+    this.editingAddressId.set(address.id ?? null);
+    // Preserve any previously-saved coords when editing — the user can re-pick
+    // from autocomplete to refresh them.
+    this.pickedLatitude.set(address.latitude ?? undefined);
+    this.pickedLongitude.set(address.longitude ?? undefined);
     this.addressForm.reset({
-      street: address.street,
-      city: address.city,
-      zip: address.zip,
-      country: address.country,
+      label: address.label ?? '',
+      street: address.street ?? '',
+      city: address.city ?? '',
+      zip: address.zipCode ?? '',
+      country: address.countryId ?? '',
       isDefault: address.isDefault,
     });
     this.showAddressDialog.set(true);
   }
 
-  saveAddress(): void {
+  /**
+   * Mapbox autocomplete picked a suggestion — populate the form fields and
+   * stash lat/lng for the eventual AddSavedAddressCommand. Country is left
+   * untouched: Mapbox doesn't return our internal Country.Id, and the user
+   * has typically already chosen it (defaults to CZ).
+   */
+  onAddressPicked(suggestion: MapboxAddressSuggestion): void {
+    this.addressForm.patchValue({
+      street: suggestion.street || this.addressForm.value.street || '',
+      city: suggestion.city || this.addressForm.value.city || '',
+      zip: suggestion.zipCode || this.addressForm.value.zip || '',
+    });
+    this.pickedLatitude.set(suggestion.latitude);
+    this.pickedLongitude.set(suggestion.longitude);
+  }
+
+  onAddressSearchFailed(): void {
+    this.snackbar.showError(
+      this.translate.instant('address_picker.search_failed')
+    );
+  }
+
+  private closeAddressDialog(): void {
+    this.showAddressDialog.set(false);
+    this.editingAddressId.set(null);
+  }
+
+  async saveAddress(): Promise<void> {
     if (this.addressForm.invalid) {
       this.addressForm.markAllAsTouched();
       return;
     }
+    const v = this.addressForm.getRawValue();
 
-    const value = this.addressForm.getRawValue();
-    const current = [...this.addresses()];
-    const editing = this.editingAddress();
-
-    if (value.isDefault) {
-      current.forEach((a) => (a.isDefault = false));
+    // Mapbox pick is mandatory — street is only populated by onAddressPicked.
+    if (!v.street) {
+      this.snackbar.showError(
+        this.translate.instant('api.address.mapbox_coords_required')
+      );
+      return;
     }
 
-    if (editing) {
-      const idx = current.findIndex((a) => a.id === editing.id);
-      if (idx !== -1) {
-        current[idx] = { ...value, id: editing.id };
+    // Backend now requires non-null lat/lng. Bail with the same message if
+    // the picker somehow filled the address but skipped coords.
+    const lat = this.pickedLatitude();
+    const lng = this.pickedLongitude();
+    if (lat === undefined || lng === undefined) {
+      this.snackbar.showError(
+        this.translate.instant('api.address.mapbox_coords_required')
+      );
+      return;
+    }
+
+    const editingId = this.editingAddressId();
+
+    if (editingId) {
+      const result = await this.savedAddressStore.update(
+        new UpdateSavedAddressCommand({
+          savedAddressId: editingId,
+          label: v.label,
+          street: v.street,
+          city: v.city,
+          zipCode: v.zip,
+          countryId: v.country || undefined,
+          latitude: lat,
+          longitude: lng,
+          userId: undefined,
+        })
+      );
+      if (result) {
+        this.snackbar.showSuccess(
+          this.translate.instant('pages.profile.address_saved')
+        );
+        this.closeAddressDialog();
       }
     } else {
-      current.push({
-        ...value,
-        id: crypto.randomUUID(),
-      });
+      const result = await this.savedAddressStore.add(
+        new AddSavedAddressCommand({
+          label: v.label,
+          street: v.street,
+          city: v.city,
+          zipCode: v.zip,
+          countryId: v.country || undefined,
+          setAsDefault: v.isDefault,
+          latitude: lat,
+          longitude: lng,
+          userId: undefined,
+        })
+      );
+      if (result) {
+        this.snackbar.showSuccess(
+          this.translate.instant('pages.profile.address_saved')
+        );
+        this.closeAddressDialog();
+      }
     }
-
-    this.addresses.set(current);
-    this.saveAddresses();
-    this.showAddressDialog.set(false);
-    this.snackbar.showSuccess(this.translate.instant('pages.profile.address_saved'));
   }
 
   private loadCountries(): void {
@@ -410,17 +465,17 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
     return (cz?.value as string) ?? '';
   }
 
-  deleteAddress(id: string): void {
-    this.addresses.update(list => list.filter(a => a.id !== id));
-    this.saveAddresses();
-    this.snackbar.showSuccess(this.translate.instant('pages.profile.address_deleted'));
+  async deleteAddress(id: string): Promise<void> {
+    const ok = await this.savedAddressStore.delete(id);
+    if (ok) {
+      this.snackbar.showSuccess(
+        this.translate.instant('pages.profile.address_deleted')
+      );
+    }
   }
 
-  setDefaultAddress(id: string): void {
-    this.addresses.update(list =>
-      list.map(a => ({ ...a, isDefault: a.id === id }))
-    );
-    this.saveAddresses();
+  async setDefaultAddress(id: string): Promise<void> {
+    await this.savedAddressStore.setDefault(id);
   }
 
   // Preferences

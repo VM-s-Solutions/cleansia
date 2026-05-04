@@ -1,3 +1,4 @@
+export * from './cleansia-address-autocomplete';
 export * from './cleansia-availability';
 export * from './cleansia-base-form';
 export * from './cleansia-brand-name';
@@ -5,6 +6,7 @@ export * from './cleansia-button';
 export * from './cleansia-calendar';
 export * from './cleansia-checkbox';
 export * from './cleansia-code-input';
+export * from './cleansia-code-input-dialog';
 export * from './cleansia-cookie-consent';
 export * from './cleansia-dev-banner';
 export * from './cleansia-customer-footer';

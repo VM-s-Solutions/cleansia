@@ -11,13 +11,15 @@ import {
 } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { jwtDecode } from 'jwt-decode';
-import { BehaviorSubject, Observable, map, of } from 'rxjs';
+import { BehaviorSubject, Observable, catchError, map, of, tap } from 'rxjs';
 import { PartnerClient } from '../client/base-client';
 import {
   ConfirmUserEmailCommand,
   GoogleAuthCommand,
   JwtTokenResponse,
+  LogoutCommand,
   PartnerLoginCommand,
+  RefreshTokenCommand,
   RegisterCommand,
   RegisterEmployeeCommand,
   ResendConfirmationEmailCommand,
@@ -128,9 +130,33 @@ export class PartnerAuthService {
   }
 
   logout(): Observable<boolean> {
-    this.removeSession();
-    this.router.navigate([`${CommonRoute.LOGIN}`]);
-    return of(true);
+    const refreshToken = this.getRefreshToken();
+    const serverCall = refreshToken
+      ? this.partnerClient.authClient
+          .logout(new LogoutCommand({ token: refreshToken }))
+          .pipe(catchError(() => of(false)))
+      : of(true);
+
+    return serverCall.pipe(
+      tap(() => {
+        this.removeSession();
+        this.router.navigate([`${CommonRoute.LOGIN}`]);
+      }),
+      map(() => true)
+    );
+  }
+
+  refreshSession(): Observable<string> {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
+    }
+    return this.partnerClient.authClient
+      .refreshToken(new RefreshTokenCommand({ token: refreshToken }))
+      .pipe(
+        tap((authResult) => this.setSession(authResult)),
+        map((authResult) => authResult.token!)
+      );
   }
 
   isLoggedIn(): boolean {
@@ -144,6 +170,17 @@ export class PartnerAuthService {
 
   getToken(): string | null {
     return this.getCookieToken();
+  }
+
+  getRefreshToken(): string | null {
+    return extractCookieValue(LocalStorageKey.REFRESH_TOKEN);
+  }
+
+  hasValidRefreshToken(): boolean {
+    if (!this.getRefreshToken()) return false;
+    const expStr = localStorage.getItem(LocalStorageKey.REFRESH_TOKEN_EXP);
+    if (!expStr) return false;
+    return Date.now() < new Date(expStr).getTime();
   }
 
   getRole(): string | null {
@@ -184,11 +221,24 @@ export class PartnerAuthService {
 
   removeSession(): void {
     this.removeCookieSession();
+    removeCookieValue(LocalStorageKey.REFRESH_TOKEN);
+    localStorage.removeItem(LocalStorageKey.REFRESH_TOKEN_EXP);
     this.isLoggedIn$.next(false);
   }
 
   setSession(authResult: JwtTokenResponse): void {
     this.setCookieSession(authResult.token!);
+
+    if (authResult.refreshToken) {
+      setCookieValue(LocalStorageKey.REFRESH_TOKEN, authResult.refreshToken);
+    }
+    if (authResult.refreshTokenExpiresAt) {
+      localStorage.setItem(
+        LocalStorageKey.REFRESH_TOKEN_EXP,
+        authResult.refreshTokenExpiresAt.toISOString()
+      );
+    }
+
     this.isLoggedIn$.next(true);
     this.setWarningDialogStatus(false);
   }

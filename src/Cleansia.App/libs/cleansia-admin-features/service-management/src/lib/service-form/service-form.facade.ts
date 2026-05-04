@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import {
   AdminClient,
   AdminServiceDetailDto,
+  CategoryDto,
   CreateServiceCommand,
   CreateServiceResponse,
   CreateServiceTranslationInput,
@@ -25,7 +26,14 @@ export interface ServiceFormData {
   basePrice: number;
   perRoomPrice: number;
   estimatedTime: number;
+  /** Category id from the picker — required by the backend validator. */
+  categoryId: string;
   translations: { [key: string]: { name: string; description: string } };
+}
+
+export interface CategoryOption {
+  id: string;
+  name: string;
 }
 
 @Injectable()
@@ -41,6 +49,7 @@ export class ServiceFormFacade {
   readonly loading = signal<boolean>(false);
   readonly saving = signal<boolean>(false);
   readonly languages = signal<LanguageOption[]>([]);
+  readonly categories = signal<CategoryOption[]>([]);
 
   loadService(serviceId: string): void {
     this.loading.set(true);
@@ -81,6 +90,28 @@ export class ServiceFormFacade {
       });
   }
 
+  /**
+   * Fetch service categories for the form's category picker. Required for
+   * create — backend validator rejects services with a missing categoryId.
+   * Falls back to empty list on failure (form will block save).
+   */
+  loadCategories(): void {
+    this.adminClient.adminServiceClient
+      .categories()
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError(() => of([] as CategoryDto[]))
+      )
+      .subscribe((categories: CategoryDto[]) => {
+        this.categories.set(
+          categories
+            .filter((c): c is CategoryDto & { id: string; name: string } =>
+              Boolean(c.id) && Boolean(c.name))
+            .map((c) => ({ id: c.id!, name: c.name! }))
+        );
+      });
+  }
+
   createService(data: ServiceFormData): void {
     this.saving.set(true);
 
@@ -101,6 +132,7 @@ export class ServiceFormFacade {
       perRoomPrice: data.perRoomPrice,
       estimatedTime: data.estimatedTime,
       translations,
+      categoryId: data.categoryId,
     });
 
     this.adminClient.adminServiceClient
@@ -141,6 +173,7 @@ export class ServiceFormFacade {
       perRoomPrice: data.perRoomPrice,
       estimatedTime: data.estimatedTime,
       translations,
+      categoryId: data.categoryId,
     });
 
     this.adminClient.adminServiceClient

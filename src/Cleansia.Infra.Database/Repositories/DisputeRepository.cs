@@ -50,6 +50,7 @@ public class DisputeRepository(CleansiaDbContext context) : BaseRepository<Dispu
             .Include(d => d.Order)
             .Include(d => d.User)
             .Include(d => d.Messages)
+                .ThenInclude(m => m.Author)
             .Include(d => d.Evidence)
             .AsSplitQuery()
             .FirstOrDefaultAsync(d => d.Id == disputeId);
@@ -61,6 +62,7 @@ public class DisputeRepository(CleansiaDbContext context) : BaseRepository<Dispu
             .Include(d => d.Order)
             .Include(d => d.User)
             .Include(d => d.Messages)
+                .ThenInclude(m => m.Author)
             .Include(d => d.Evidence)
             .AsSplitQuery()
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);

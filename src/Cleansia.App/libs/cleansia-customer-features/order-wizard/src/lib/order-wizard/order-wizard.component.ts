@@ -3,8 +3,11 @@ import { Component, computed, effect, inject, OnInit, PLATFORM_ID, signal } from
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { CleansiaButtonComponent, CleansiaScrollTopComponent, CleansiaTelephoneComponent } from '@cleansia/components';
-import { AddressDto, PackageListItem, PaymentType, ServiceListItem } from '@cleansia/partner-services';
+import { CleansiaAddressAutocompleteComponent, CleansiaButtonComponent, CleansiaScrollTopComponent, CleansiaTelephoneComponent } from '@cleansia/components';
+import { AddressDto, SavedAddressDto } from '@cleansia/customer-services';
+import type { MapboxAddressSuggestion } from '@cleansia/services';
+import { SnackbarService } from '@cleansia/services';
+import { CategoryDto, PackageListItem, PackageServiceSummary, PaymentType, ServiceListItem } from '@cleansia/partner-services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { InputTextModule } from 'primeng/inputtext';
 import { DatePickerModule } from 'primeng/datepicker';
@@ -37,6 +40,7 @@ import { WizardSummaryStepComponent } from './components/wizard-summary-step.com
     SelectModule,
     DialogModule,
     CheckboxModule,
+    CleansiaAddressAutocompleteComponent,
     CleansiaButtonComponent,
     CleansiaScrollTopComponent,
     CleansiaTelephoneComponent,
@@ -49,6 +53,7 @@ export class OrderWizardComponent implements OnInit {
   protected readonly facade = inject(OrderWizardFacade);
   protected readonly translate = inject(TranslateService);
   private readonly route = inject(ActivatedRoute);
+  private readonly snackbar = inject(SnackbarService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   protected readonly PaymentType = PaymentType;
 
@@ -57,6 +62,8 @@ export class OrderWizardComponent implements OnInit {
   unavailableItems = signal<string[]>([]);
   private pendingRebook = signal<RebookParams | null>(null);
   saveNewAddress = signal(false);
+  newAddressLabel = signal('');
+  labelError = signal<string | null>(null);
   touched = signal<Record<string, boolean>>({});
 
   markTouched(field: string): void {
@@ -180,11 +187,15 @@ export class OrderWizardComponent implements OnInit {
     }
   }
 
-  updateAddressField(field: string, value: string): void {
-    const current = this.facade.formData().address;
-    this.facade.updateFormData({
-      address: new AddressDto({ ...current, [field]: value }),
-    });
+  /** Wired to the autocomplete component's `picked` output. */
+  onAddressPicked(suggestion: MapboxAddressSuggestion): void {
+    this.facade.applyAddressSuggestion(suggestion);
+  }
+
+  onAddressSearchFailed(): void {
+    this.snackbar.showError(
+      this.translate.instant('address_picker.search_failed')
+    );
   }
 
   isServiceSelected(id: string): boolean {
@@ -219,8 +230,45 @@ export class OrderWizardComponent implements OnInit {
     return this.facade.packages().find((p) => p.id === id);
   }
 
-  getTranslation(item: ServiceListItem | PackageListItem, field: string): string {
+  getTranslation(item: ServiceListItem | PackageListItem | PackageServiceSummary, field: string): string {
     return getItemTranslation(item, field, this.translate);
+  }
+
+  /**
+   * Localized name for a category chip. Falls back to the default `name` when
+   * the backend didn't send a translation for the active language. CategoryDto
+   * has the same `translations` shape as ServiceListItem/PackageListItem so we
+   * reuse the existing helper via a structural cast.
+   */
+  getCategoryName(cat: CategoryDto): string {
+    const lang = this.translate.currentLang || this.translate.getDefaultLang();
+    const translations = cat.translations;
+    if (translations && translations[lang]) {
+      const t = (translations[lang] as unknown as Record<string, string>)['name'];
+      if (t) return t;
+    }
+    return cat.name ?? '';
+  }
+
+  /** Display name for the currently active filter, used in the "Filtering: X" note. */
+  activeCategoryName = computed(() => {
+    const slug = this.facade.selectedCategorySlug();
+    if (!slug) return '';
+    const cat = this.facade.categories().find((c) => c.slug === slug);
+    return cat ? this.getCategoryName(cat) : '';
+  });
+
+  /**
+   * Tapping the active chip clears the filter (mobile parity); tapping a different
+   * chip switches to it. Selected services persist across filter changes — the
+   * filter is purely visual.
+   */
+  onCategoryChipClick(slug: string | null): void {
+    if (this.facade.selectedCategorySlug() === slug) {
+      this.facade.setCategory(null);
+    } else {
+      this.facade.setCategory(slug);
+    }
   }
 
   formatPrice(price: number): string {
@@ -228,9 +276,6 @@ export class OrderWizardComponent implements OnInit {
   }
 
   onNextStep(): void {
-    if (this.facade.activeStep() === 1 && this.saveNewAddress() && this.isCustomAddress()) {
-      this.saveCurrentAddressToList();
-    }
     this.facade.nextStep();
   }
 
@@ -285,23 +330,19 @@ export class OrderWizardComponent implements OnInit {
     }
   }
 
-  isAddressSelected(addr: { id: string; street: string; city: string; zip: string }): boolean {
-    const current = this.facade.formData().address;
-    return (
-      current.street === addr.street &&
-      current.city === addr.city &&
-      current.zipCode === addr.zip
-    );
+  isAddressSelected(addr: SavedAddressDto): boolean {
+    return this.facade.selectedSavedAddressId() === addr.id;
   }
 
   isCustomAddress(): boolean {
-    const saved = this.facade.savedAddresses();
-    if (saved.length === 0) return true;
-    return !saved.some((addr) => this.isAddressSelected(addr));
+    return this.facade.selectedSavedAddressId() === null;
   }
 
   clearAddress(): void {
     this.saveNewAddress.set(false);
+    this.newAddressLabel.set('');
+    this.labelError.set(null);
+    this.facade.selectedSavedAddressId.set(null);
     this.facade.updateFormData({
       address: new AddressDto({
         street: '',
@@ -310,32 +351,32 @@ export class OrderWizardComponent implements OnInit {
         countryId: '',
         state: '',
       }),
+      addressLatitude: null,
+      addressLongitude: null,
     });
   }
 
-  saveCurrentAddressToList(): void {
-    const addr = this.facade.formData().address;
-    if (!addr.street || !addr.city || !addr.zipCode) return;
-
-    const newAddr = {
-      id: crypto.randomUUID(),
-      street: addr.street,
-      city: addr.city,
-      zip: addr.zipCode,
-      country: addr.countryId || '',
-      isDefault: this.facade.savedAddresses().length === 0,
-    };
-
-    const updated = [...this.facade.savedAddresses(), newAddr];
-    this.facade.savedAddresses.set(updated);
-    if (this.isBrowser) {
-      try {
-        localStorage.setItem('cleansia_saved_addresses', JSON.stringify(updated));
-      } catch {
-        // ignore
-      }
+  toggleSaveNewAddress(value: boolean): void {
+    this.saveNewAddress.set(value);
+    if (!value) {
+      this.newAddressLabel.set('');
+      this.labelError.set(null);
     }
-    this.saveNewAddress.set(false);
   }
 
+  async onPlaceOrder(): Promise<void> {
+    if (this.saveNewAddress() && this.isCustomAddress()) {
+      const label = this.newAddressLabel().trim();
+      if (!label) {
+        this.labelError.set(
+          this.translate.instant('pages.order.address_label_required')
+        );
+        return;
+      }
+      this.labelError.set(null);
+      await this.facade.submitOrder({ label });
+      return;
+    }
+    await this.facade.submitOrder(null);
+  }
 }

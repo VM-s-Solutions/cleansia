@@ -14,7 +14,11 @@ public class GetServiceOverview
     {
         public async Task<IEnumerable<ServiceListItem>> Handle(Request request, CancellationToken cancellationToken)
         {
-            return await serviceRepository.GetAll().Select(service => service.MapToDto()).ToListAsync(cancellationToken);
+            var services = await serviceRepository.GetAll()
+                .Include(s => s.Category)
+                .ToListAsync(cancellationToken);
+
+            return services.Select(service => service.MapToDto());
         }
     }
 }

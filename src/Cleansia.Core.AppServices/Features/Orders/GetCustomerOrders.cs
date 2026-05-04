@@ -59,6 +59,7 @@ public class GetCustomerOrders
                     .ThenInclude(sp => sp.Package)
                 .Include(o => o.SelectedServices)
                     .ThenInclude(sp => sp.Service)
+                        .ThenInclude(s => s.Category)
                 .Include(o => o.CustomerAddress)
                 .Include(o => o.AssignedEmployees)
                     .ThenInclude(ae => ae.Employee)

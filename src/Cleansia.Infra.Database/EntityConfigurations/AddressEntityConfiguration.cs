@@ -26,5 +26,11 @@ public class AddressEntityConfiguration : AuditableEntityConfiguration<Address, 
 
         builder.Property(a => a.State)
             .HasMaxLength(100);
+
+        builder.Property(a => a.Latitude)
+            .HasPrecision(9, 6);
+
+        builder.Property(a => a.Longitude)
+            .HasPrecision(9, 6);
     }
 }

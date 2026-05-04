@@ -1,4 +1,5 @@
-﻿using Cleansia.Core.Domain.Orders;
+﻿using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -103,6 +104,22 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
             .Where(o => o.AssignedEmployees.Any(e => e.EmployeeId == employeeId) &&
                        o.CleaningDateTime < newEnd &&
                        o.CleaningDateTime.AddMinutes(o.EstimatedTime) > newStart)
+            .AnyAsync(ct);
+    }
+
+    public async Task<bool> UserHasCompletedOrderWithEmployeeAsync(string userId, string employeeId, CancellationToken ct)
+    {
+        // Most-recent status flip on each candidate order tells us if the
+        // booking actually finished. Past Completed orders qualify; in-flight
+        // ones don't (you can't request "the cleaner I'm currently with" as a
+        // preference for a future booking — they need to have finished one).
+        return await GetDbSet()
+            .Where(o => o.UserId == userId
+                && o.AssignedEmployees.Any(e => e.EmployeeId == employeeId)
+                && o.OrderStatusHistory
+                    .OrderByDescending(s => s.CreatedOn)
+                    .Select(s => s.Status)
+                    .FirstOrDefault() == OrderStatus.Completed)
             .AnyAsync(ct);
     }
 }

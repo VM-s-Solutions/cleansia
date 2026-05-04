@@ -21,6 +21,22 @@ public class PaymentController(IMediator mediator) : CustomerApiController(media
         return HandleResult<CreateOrder.Response>(result);
     }
 
+    /// <summary>
+    /// Mobile PaymentSheet flow: convert an existing card-payable order into
+    /// a Stripe PaymentIntent + ephemeral key. Authenticated only — guest
+    /// checkout uses the web Checkout Session flow.
+    /// </summary>
+    [Authorize]
+    [HttpPost("CreatePaymentIntent")]
+    [ProducesResponseType(typeof(CreatePaymentIntent.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> CreatePaymentIntent([FromBody] CreatePaymentIntent.Command command)
+    {
+        var result = await Mediator.Send(command);
+        return HandleResult<CreatePaymentIntent.Response>(result);
+    }
+
     [AllowAnonymous]
     [HttpPost("webhook")]
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]

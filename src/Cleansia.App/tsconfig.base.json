@@ -96,6 +96,18 @@
       "@cleansia/admin-features/fiscal-failures": [
         "libs/cleansia-admin-features/fiscal-failures/src/index.ts"
       ],
+      "@cleansia/admin-features/loyalty-promo-codes": [
+        "libs/cleansia-admin-features/loyalty-promo-codes/src/index.ts"
+      ],
+      "@cleansia/admin-features/loyalty-tier-configs": [
+        "libs/cleansia-admin-features/loyalty-tier-configs/src/index.ts"
+      ],
+      "@cleansia/admin-features/loyalty-user-detail": [
+        "libs/cleansia-admin-features/loyalty-user-detail/src/index.ts"
+      ],
+      "@cleansia/admin-features/loyalty-referrals": [
+        "libs/cleansia-admin-features/loyalty-referrals/src/index.ts"
+      ],
       "@cleansia-customer/checkout": [
         "libs/cleansia-customer-features/checkout/src/index.ts"
       ],
@@ -125,6 +137,12 @@
       ],
       "@cleansia-customer/profile": [
         "libs/cleansia-customer-features/profile/src/index.ts"
+      ],
+      "@cleansia-customer/recurring-bookings": [
+        "libs/cleansia-customer-features/recurring-bookings/src/index.ts"
+      ],
+      "@cleansia-customer/rewards": [
+        "libs/cleansia-customer-features/rewards/src/index.ts"
       ],
       "@cleansia-customer/register": [
         "libs/cleansia-customer-features/register/src/index.ts"

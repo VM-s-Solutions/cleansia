@@ -1,0 +1,9 @@
+{
+  "name": "loyalty-referrals",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/cleansia-admin-features/loyalty-referrals/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": [],
+  "targets": {}
+}

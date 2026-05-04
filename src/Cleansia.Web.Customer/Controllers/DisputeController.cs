@@ -63,4 +63,38 @@ public class DisputeController(IMediator mediator) : CustomerApiController(media
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<object>(result);
     }
+
+    [HttpPost("UploadEvidence")]
+    [Permission(Policy.CanUploadDisputeEvidence)]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(UploadDisputeEvidence.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> UploadEvidence(
+        [FromForm] string disputeId,
+        IFormFile file,
+        CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(new ProblemDetails { Title = "File is required." });
+        }
+
+        using var ms = new MemoryStream();
+        await file.CopyToAsync(ms, cancellationToken);
+
+        var command = new UploadDisputeEvidence.Command(
+            DisputeId: disputeId,
+            FileName: file.FileName,
+            ContentType: file.ContentType,
+            FileData: ms.ToArray(),
+            UserId: userId
+        );
+
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<UploadDisputeEvidence.Response>(result);
+    }
 }

@@ -11,6 +11,7 @@ public static class RepositoryExtensions
     {
         services.AddScoped<IUserSessionProvider, UserSessionProvider>();
         services.AddScoped<ITenantProvider, TenantProvider>();
+        services.AddScoped<IRequestMetadataProvider, RequestMetadataProvider>();
 
         return services.RegisterFromAssemblies([AssemblyReference.Assembly], type => type.GetInterfaces().Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRepository<,>)));
     }

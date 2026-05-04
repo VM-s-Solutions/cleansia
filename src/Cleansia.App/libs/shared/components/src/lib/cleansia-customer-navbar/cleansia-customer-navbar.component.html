@@ -140,6 +140,14 @@
                 <span class="customer-navbar__dropdown-icon"><i class="pi pi-exclamation-triangle"></i></span>
                 {{ 'nav.my_disputes' | translate }}
               </a>
+              <a class="customer-navbar__dropdown-item" (click)="navigateTo('/rewards')">
+                <span class="customer-navbar__dropdown-icon"><i class="pi pi-star"></i></span>
+                {{ 'nav.my_rewards' | translate }}
+              </a>
+              <a class="customer-navbar__dropdown-item" (click)="navigateTo('/membership')">
+                <span class="customer-navbar__dropdown-icon"><i class="pi pi-bookmark-fill"></i></span>
+                {{ 'nav.cleansia_plus' | translate }}
+              </a>
             </div>
             <div class="customer-navbar__dropdown-divider"></div>
             <a class="customer-navbar__dropdown-item customer-navbar__dropdown-item--danger" (click)="logout()">
@@ -243,6 +251,14 @@
         <a class="customer-navbar__mobile-link" (click)="navigateTo('/disputes')">
           <i class="pi pi-exclamation-triangle mr-2"></i>
           {{ 'nav.my_disputes' | translate }}
+        </a>
+        <a class="customer-navbar__mobile-link" (click)="navigateTo('/rewards')">
+          <i class="pi pi-star mr-2"></i>
+          {{ 'nav.my_rewards' | translate }}
+        </a>
+        <a class="customer-navbar__mobile-link" (click)="navigateTo('/membership')">
+          <i class="pi pi-bookmark-fill mr-2"></i>
+          {{ 'nav.cleansia_plus' | translate }}
         </a>
         <a class="customer-navbar__mobile-link" (click)="logout()">
           <i class="pi pi-sign-out mr-2"></i>

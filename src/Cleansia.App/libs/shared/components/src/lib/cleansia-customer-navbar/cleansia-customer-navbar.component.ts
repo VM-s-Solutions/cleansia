@@ -214,7 +214,10 @@ export class CleansiaCustomerNavbarComponent implements OnInit, OnDestroy {
       )
       .subscribe((confirmed) => {
         if (confirmed) {
-          this.authService.logout();
+          // logout() returns a cold Observable — must subscribe or nothing
+          // happens (no server-side refresh-token revoke, no local cookie
+          // cleanup, no redirect). The pipe(tap(...)) inside the service does the work.
+          this.authService.logout().subscribe();
         }
       });
   }

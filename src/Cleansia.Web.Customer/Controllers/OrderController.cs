@@ -43,9 +43,26 @@ public class OrderController(IMediator mediator) : CustomerApiController(mediato
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrder.Command command)
     {
-        var result = await Mediator.Send(command);
+        // Web supports guest checkout (no token → empty UserId, only the inline
+        // CustomerAddress path is valid for guests). Mobile always sends a JWT,
+        // and the handler enforces SavedAddress ownership using UserId when it
+        // resolves to non-empty. AllowAnonymous + nullable principal is the
+        // ASP.NET pattern that keeps both paths working from one endpoint.
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+        var enriched = command with { UserId = userId };
+        var result = await Mediator.Send(enriched);
 
         return HandleResult<CreateOrder.Response>(result);
+    }
+
+    [AllowAnonymous]
+    [HttpPost("Quote")]
+    [ProducesResponseType(typeof(QuoteOrder.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Quote([FromBody] QuoteOrder.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<QuoteOrder.Response>(result);
     }
 
     [HttpGet("GetMyOrders")]
@@ -136,5 +153,30 @@ public class OrderController(IMediator mediator) : CustomerApiController(mediato
     {
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<ReportOrderIssue.Response>(result);
+    }
+
+    [HttpPost("Cancel")]
+    [Permission(Policy.CanCancelOrder)]
+    [ProducesResponseType(typeof(CancelOrder.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> CancelOrder([FromBody] CancelOrder.Command command, CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+        var enriched = command with { UserId = userId };
+        var result = await Mediator.Send(enriched, cancellationToken);
+        return HandleResult<CancelOrder.Response>(result);
+    }
+
+    [HttpGet("MyServingCleaners")]
+    [Authorize]
+    [ProducesResponseType(typeof(IReadOnlyList<GetMyServingCleaners.Response>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> MyServingCleaners(CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+        var result = await Mediator.Send(new GetMyServingCleaners.Query(userId), cancellationToken);
+        return HandleResult<IReadOnlyList<GetMyServingCleaners.Response>>(result);
     }
 }

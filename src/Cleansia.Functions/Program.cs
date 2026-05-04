@@ -22,6 +22,7 @@ var host = new HostBuilder()
         services.AddScoped<IPayPeriodBackgroundService, PayPeriodBackgroundService>();
         services.AddScoped<IPeriodReminderBackgroundService, PeriodReminderBackgroundService>();
         services.AddScoped<IDataRetentionBackgroundService, DataRetentionBackgroundService>();
+        services.AddScoped<IRefreshTokenCleanupService, RefreshTokenCleanupService>();
     })
     .Build();
 

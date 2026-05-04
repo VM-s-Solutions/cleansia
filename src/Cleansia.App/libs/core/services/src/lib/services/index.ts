@@ -7,3 +7,4 @@ export * from './snackbar.service';
 export * from './theme.service';
 export * from './translation-loader.service';
 export * from './guest-order.service';
+export * from './mapbox-autocomplete.service';

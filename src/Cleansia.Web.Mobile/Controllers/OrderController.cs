@@ -23,6 +23,15 @@ public class OrderController(IMediator mediator) : MobileApiController(mediator)
         return HandleResult<CreateOrder.Response>(result);
     }
 
+    [HttpPost("Quote")]
+    [ProducesResponseType(typeof(QuoteOrder.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Quote([FromBody] QuoteOrder.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<QuoteOrder.Response>(result);
+    }
+
     [HttpGet("GetPaged")]
     [Permission(Policy.CanViewPagedOrder)]
     [ProducesResponseType(typeof(PagedData<OrderListItem>), StatusCodes.Status200OK)]

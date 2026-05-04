@@ -114,6 +114,7 @@ export class AdminUserManagementComponent implements AfterViewInit, OnDestroy {
       {
         onEdit: this.editUser.bind(this),
         onToggleStatus: this.confirmToggleStatus.bind(this),
+        onViewLoyalty: this.viewLoyalty.bind(this),
       },
       this.translate,
       this.statusTemplate()
@@ -189,6 +190,13 @@ export class AdminUserManagementComponent implements AfterViewInit, OnDestroy {
 
   editUser(user: AdminUserListItem): void {
     this.facade.navigateToEditUser(user);
+  }
+
+  viewLoyalty(user: AdminUserListItem): void {
+    if (!user.id) return;
+    this.router.navigate(['/loyalty/users', user.id], {
+      queryParams: user.email ? { email: user.email } : undefined,
+    });
   }
 
   confirmToggleStatus(user: AdminUserListItem): void {

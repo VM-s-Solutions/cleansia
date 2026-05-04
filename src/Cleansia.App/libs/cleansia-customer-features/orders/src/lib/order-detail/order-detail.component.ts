@@ -12,6 +12,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CleansiaButtonComponent } from '@cleansia/components';
 import {
   CustomerClient,
+  GetMyMembershipResponse,
   SubmitOrderReviewCommand,
 } from '@cleansia/customer-services';
 import {
@@ -19,6 +20,10 @@ import {
   OrderStatus,
   PaymentStatus,
 } from '@cleansia/partner-services';
+import {
+  RECURRING_PREFILL_STORAGE_KEY,
+  RecurringPrefillParams,
+} from '@cleansia-customer/recurring-bookings';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -50,6 +55,8 @@ export class OrderDetailComponent implements OnInit {
   order = signal<OrderItem | null>(null);
   loading = signal(true);
   error = signal<string | null>(null);
+  /** Cached on first load — drives the "Make this recurring" CTA state. */
+  membership = signal<GetMyMembershipResponse | null>(null);
 
   // Rating
   reviewRating = signal(0);
@@ -60,6 +67,9 @@ export class OrderDetailComponent implements OnInit {
   isCompleted = computed(
     () => this.order()?.orderStatus?.value === OrderStatus.Completed
   );
+  isInProgress = computed(
+    () => this.order()?.orderStatus?.value === OrderStatus.InProgress
+  );
   hasReview = computed(() => !!this.order()?.review);
   stars = [1, 2, 3, 4, 5];
 
@@ -68,6 +78,68 @@ export class OrderDetailComponent implements OnInit {
     if (orderId) {
       this.loadOrder(orderId);
     }
+    // Best-effort membership fetch so the "Make this recurring" CTA can
+    // either deep-link straight into the wizard (Plus) or route to subscribe
+    // (non-Plus). Failure leaves membership=null which the template treats
+    // as "not Plus" — safe fallback.
+    this.customerClient.membershipClient.getMine().subscribe({
+      next: (m: GetMyMembershipResponse) => this.membership.set(m),
+      error: () => this.membership.set(null),
+    });
+  }
+
+  /**
+   * Path B entry — stash the order's services/packages/rooms/payment/time
+   * in sessionStorage and navigate into the recurring wizard. Non-Plus
+   * users are routed to the subscribe page first; the wizard would
+   * otherwise let them fill out a schedule they can't actually save.
+   */
+  makeRecurring(): void {
+    const order = this.order();
+    if (!order?.id) return;
+
+    const isPlus = this.membership()?.hasMembership === true;
+    if (!isPlus) {
+      this.snackbar.showError(
+        this.translate.instant('recurring_booking.order_detail_make_recurring_plus_required'),
+      );
+      this.router.navigate([CleansiaCustomerRoute.MEMBERSHIP, 'subscribe']);
+      return;
+    }
+
+    // Derive HH:mm from the order's cleaningDateTime in the user's local TZ.
+    let timeOfDay: string | null = null;
+    if (order.cleaningDateTime) {
+      const dt = new Date(order.cleaningDateTime);
+      if (!Number.isNaN(dt.getTime())) {
+        const hh = String(dt.getHours()).padStart(2, '0');
+        const mm = String(dt.getMinutes()).padStart(2, '0');
+        timeOfDay = `${hh}:${mm}`;
+      }
+    }
+
+    const prefill: RecurringPrefillParams = {
+      selectedServiceIds: (order.selectedServices || [])
+        .map((s) => s.id)
+        .filter((id): id is string => !!id),
+      selectedPackageIds: (order.selectedPackages || [])
+        .map((p) => p.id)
+        .filter((id): id is string => !!id),
+      selectedServiceNames: (order.selectedServices || []).map((s) => s.name || ''),
+      selectedPackageNames: (order.selectedPackages || []).map((p) => p.name || ''),
+      rooms: order.rooms ?? 0,
+      bathrooms: order.bathrooms ?? 0,
+      paymentType: order.paymentType?.value ?? 1,
+      timeOfDay,
+    };
+
+    if (this.isBrowser) {
+      sessionStorage.setItem(RECURRING_PREFILL_STORAGE_KEY, JSON.stringify(prefill));
+    }
+    this.router.navigate(
+      [CleansiaCustomerRoute.MEMBERSHIP, 'recurring', 'create'],
+      { queryParams: { prefill: 'true' } },
+    );
   }
 
   loadOrder(orderId: string): void {

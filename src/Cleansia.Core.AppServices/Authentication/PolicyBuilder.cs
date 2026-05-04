@@ -26,6 +26,16 @@ public static class PolicyBuilder
         [Policy.CanReportOrderIssue] = PhysicalPolicy.Authenticated,
         [Policy.CanSubmitOrderReview] = PhysicalPolicy.CustomerOnly,
         [Policy.CanViewOrderReview] = PhysicalPolicy.Authenticated,
+        [Policy.CanCancelOrder] = PhysicalPolicy.CustomerOnly,
+
+        // Saved addresses
+        [Policy.CanManageSavedAddresses] = PhysicalPolicy.CustomerOnly,
+
+        // Cleansia Plus membership — subscribe / cancel / read own status
+        [Policy.CanManageMembership] = PhysicalPolicy.CustomerOnly,
+
+        // Recurring booking templates — Plus perk, customer-only
+        [Policy.CanManageRecurringBookings] = PhysicalPolicy.CustomerOnly,
         //[Policy.CanCreateOrder] = PhysicalPolicy.Anonymous,
         //[Policy.CanGetOrderStatus] = PhysicalPolicy.Anonymous,
 
@@ -62,6 +72,7 @@ public static class PolicyBuilder
         [Policy.CanRespondToDispute] = PhysicalPolicy.Authenticated,
         [Policy.CanResolveDispute] = PhysicalPolicy.AdminOnly,
         [Policy.CanUpdateDisputeStatus] = PhysicalPolicy.AdminOnly,
+        [Policy.CanUploadDisputeEvidence] = PhysicalPolicy.CustomerOnly,
 
         // Reports
         [Policy.CanViewRevenueReport] = PhysicalPolicy.AdminOnly,
@@ -151,6 +162,32 @@ public static class PolicyBuilder
         [Policy.CanAdminDeleteUserAccount] = PhysicalPolicy.AdminOnly,
         [Policy.CanAdminViewUserConsents] = PhysicalPolicy.AdminOnly,
         [Policy.CanViewGdprRequests] = PhysicalPolicy.AdminOnly,
+
+        // Loyalty
+        [Policy.CanViewMyLoyalty] = PhysicalPolicy.CustomerOnly,
+
+        // Promo codes
+        [Policy.CanRedeemPromoCode] = PhysicalPolicy.CustomerOnly,
+
+        // Referrals
+        [Policy.CanViewMyReferral] = PhysicalPolicy.CustomerOnly,
+
+        // Admin Promo Codes
+        [Policy.CanViewPromoCodes] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCreatePromoCode] = PhysicalPolicy.AdminOnly,
+        [Policy.CanUpdatePromoCode] = PhysicalPolicy.AdminOnly,
+        [Policy.CanDeactivatePromoCode] = PhysicalPolicy.AdminOnly,
+
+        // Admin Loyalty Tier Configs
+        [Policy.CanViewLoyaltyTierConfigs] = PhysicalPolicy.AdminOnly,
+        [Policy.CanUpdateLoyaltyTierConfig] = PhysicalPolicy.AdminOnly,
+
+        // Admin Loyalty (manual grants + user inspection)
+        [Policy.CanGrantLoyaltyPoints] = PhysicalPolicy.AdminOnly,
+        [Policy.CanViewUserLoyalty] = PhysicalPolicy.AdminOnly,
+
+        // Admin Referrals
+        [Policy.CanViewReferrals] = PhysicalPolicy.AdminOnly,
     };
 
     public static string ToPhysicalPolicy(this string permission) =>

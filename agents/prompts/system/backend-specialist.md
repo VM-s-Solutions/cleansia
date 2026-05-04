@@ -73,7 +73,7 @@ public static class CreateOrder
                 request.ScheduledDate
             );
 
-            await _orderRepo.AddAsync(order, ct);
+            _orderRepo.Add(order, ct);
             // NO CommitAsync - UoW pattern handles this
 
             return new Response(order.Id);

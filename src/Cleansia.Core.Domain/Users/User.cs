@@ -1,4 +1,5 @@
 ﻿using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Orders;
 using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Enums;
@@ -57,12 +58,31 @@ public class User : Auditable, ITenantEntity
 
     public Language? PreferredLanguage { get; private set; }
 
+    /// <summary>
+    /// Persistent Stripe Customer id. Created lazily on the user's first
+    /// card-paying booking, then reused forever after to support saved
+    /// payment methods (PaymentSheet) and (future) subscriptions. Cash-only
+    /// users never get one.
+    /// </summary>
+    [MaxLength(64)]
+    public string? StripeCustomerId { get; private set; }
+
     public Cart? Cart { get; private set; }
 
     public Employee? Employee { get; private set; }
 
     private ICollection<Order> _orders = [];
     public virtual IReadOnlyCollection<Order> Orders => _orders.ToList().AsReadOnly();
+
+    private ICollection<UserMembership> _memberships = [];
+    public virtual IReadOnlyCollection<UserMembership> Memberships => _memberships.ToList().AsReadOnly();
+
+    /// <summary>
+    /// The user's currently-providing-benefits membership, or null. Reads from
+    /// the in-memory collection — caller must ensure the navigation is loaded
+    /// (Include or explicit load) before relying on this.
+    /// </summary>
+    public UserMembership? ActiveMembership => _memberships.FirstOrDefault(m => m.IsActive);
 
     public static User CreateWithPassword(string email, string password, string firstName, string lastName, UserProfile profile = UserProfile.Customer, string? languageCode = null)
         => new()
@@ -164,6 +184,17 @@ public class User : Auditable, ITenantEntity
         return this;
     }
 
+    /// <summary>
+    /// Set the Stripe Customer id once it's been created. Idempotent: callers
+    /// should check <see cref="StripeCustomerId"/> first and only call this
+    /// when transitioning from null → first card payment.
+    /// </summary>
+    public User AssignStripeCustomerId(string stripeCustomerId)
+    {
+        StripeCustomerId = stripeCustomerId;
+        return this;
+    }
+
     public User Anonymize()
     {
         FirstName = "[DELETED]";
@@ -178,6 +209,7 @@ public class User : Auditable, ITenantEntity
         ResetPasswordCodeExpiresAt = null;
         ConfirmationCode = null;
         ConfirmationCodeExpiresAt = null;
+        StripeCustomerId = null;
         return this;
     }
 }

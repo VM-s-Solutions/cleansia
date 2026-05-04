@@ -77,6 +77,7 @@ public static class ServiceExtensions
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "Cleansia.Mobile.API", Version = "v1" });
             c.CustomSchemaIds(type => GetSchemaId(type));
             c.SchemaFilter<EnumSchemaFilter>();
+            c.SchemaFilter<CreateOrderNullableCustomerAddressFilter>();
             c.CustomOperationIds(e => e.ActionDescriptor.DisplayName);
         });
 

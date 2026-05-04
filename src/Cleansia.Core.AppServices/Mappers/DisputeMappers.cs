@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Features.Disputes.DTOs;
 using Cleansia.Core.AppServices.Features.Disputes.Filters;
+using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Specifications;
@@ -24,7 +25,7 @@ public static class DisputeMappers
         );
     }
 
-    public static DisputeDetails MapToDetails(this Dispute dispute)
+    public static DisputeDetails MapToDetails(this Dispute dispute, IBlobContainerClient evidenceBlobClient)
     {
         return new DisputeDetails(
             Id: dispute.Id,
@@ -41,8 +42,8 @@ public static class DisputeMappers
             ResolvedBy: dispute.ResolvedBy,
             ResolvedOn: dispute.ResolvedOn,
             StripeDisputeId: dispute.StripeDisputeId,
-            Messages: dispute.Messages.Select(m => m.MapToDto()),
-            Evidence: dispute.Evidence.Select(e => e.MapToDto()),
+            Messages: dispute.Messages.Select(m => m.MapToDto()).ToList(),
+            Evidence: dispute.Evidence.Select(e => e.MapToDto(evidenceBlobClient)).ToList(),
             CreatedOn: dispute.CreatedOn,
             CreatedBy: dispute.CreatedBy,
             UpdatedOn: dispute.UpdatedOn,
@@ -52,22 +53,37 @@ public static class DisputeMappers
 
     public static DisputeMessageDto MapToDto(this DisputeMessage message)
     {
+        var authorName = message.Author != null
+            ? $"{message.Author.FirstName} {message.Author.LastName}".Trim()
+            : string.Empty;
+
         return new DisputeMessageDto(
             Id: message.Id,
             Message: message.Message,
             AuthorId: message.AuthorId,
-            AuthorName: "", // Will be populated from user lookup if needed
+            AuthorName: authorName,
             IsStaffMessage: message.IsStaffMessage,
             CreatedOn: message.CreatedOn
         );
     }
 
-    public static DisputeEvidenceDto MapToDto(this DisputeEvidence evidence)
+    public static DisputeEvidenceDto MapToDto(this DisputeEvidence evidence, IBlobContainerClient blobClient)
     {
+        string? blobUrl = null;
+        try
+        {
+            blobUrl = blobClient.GenerateSasUri(evidence.FilePath, TimeSpan.FromHours(1)).ToString();
+        }
+        catch
+        {
+            // Swallow — UI handles null gracefully.
+        }
+
         return new DisputeEvidenceDto(
             Id: evidence.Id,
             FileName: evidence.FileName,
             FilePath: evidence.FilePath,
+            BlobUrl: blobUrl,
             UploadedBy: evidence.UploadedBy,
             UploadedOn: evidence.UploadedOn
         );

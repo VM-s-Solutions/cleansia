@@ -1,0 +1,920 @@
+// Recurring bookings — list + create wizard styles.
+// Mirrors the mobile design language: outlined selectable cards, two-letter
+// day chips with weekend gap, time slots grouped under period headings,
+// premium-gold accent for active schedules.
+
+$primary: #0284c7;
+$primary-light: #38bdf8;
+$primary-dark: #082f49;
+$accent-gold: #d97706;
+$success: #16a34a;
+$danger: #dc2626;
+$slate-50: #f8fafc;
+$slate-100: #f1f5f9;
+$slate-200: #e2e8f0;
+$slate-300: #cbd5e1;
+$slate-400: #94a3b8;
+$slate-500: #64748b;
+$slate-700: #334155;
+$slate-900: #0f172a;
+$radius-md: 0.875rem;
+$radius-lg: 1.25rem;
+$font-heading: 'Poppins', sans-serif;
+
+// ─────────────────────────────────────────────────────────────────────
+// LIST screen
+// ─────────────────────────────────────────────────────────────────────
+.recurring-bookings-list {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 4rem;
+
+  .page-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+
+    h1 {
+      font-family: $font-heading;
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      font-weight: 800;
+      color: $slate-900;
+      margin: 0 0 0.25rem;
+      letter-spacing: -0.01em;
+    }
+    p {
+      color: $slate-500;
+      font-size: 0.95rem;
+      margin: 0;
+    }
+  }
+
+  .skeletons {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .empty-state {
+    text-align: center;
+    background: $slate-50;
+    border: 1px dashed $slate-300;
+    border-radius: $radius-lg;
+    padding: 3rem 1.5rem;
+
+    .empty-icon {
+      font-size: 2.75rem;
+      color: $primary-light;
+      margin-bottom: 0.75rem;
+      display: inline-block;
+    }
+    h2 {
+      font-family: $font-heading;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: $slate-900;
+      margin: 0 0 0.5rem;
+    }
+    p {
+      color: $slate-500;
+      max-width: 420px;
+      margin: 0 auto 1.25rem;
+    }
+  }
+
+  .template-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.875rem;
+  }
+
+  .template-card {
+    background: #fff;
+    border: 1px solid $slate-200;
+    border-radius: $radius-lg;
+    padding: 1rem 1.125rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+
+    &.paused {
+      background: $slate-50;
+      opacity: 0.85;
+    }
+
+    > header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .cadence-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: $slate-900;
+
+      i {
+        color: $primary;
+      }
+    }
+
+    .paused-pill {
+      background: $slate-200;
+      color: $slate-700;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.5rem;
+    }
+
+    .address {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: $slate-500;
+      font-size: 0.875rem;
+      margin: 0.25rem 0 0.875rem;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      border-top: 1px solid $slate-100;
+      padding-top: 0.75rem;
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// CREATE wizard
+// ─────────────────────────────────────────────────────────────────────
+.create-recurring-wizard {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 7rem; // bottom room for sticky actions
+
+  .wizard-header {
+    text-align: center;
+    margin-bottom: 1.25rem;
+
+    h1 {
+      font-family: $font-heading;
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: $slate-900;
+      margin: 0 0 0.25rem;
+    }
+    p {
+      color: $slate-500;
+      font-size: 0.95rem;
+      margin: 0;
+    }
+  }
+
+  // ── Step indicator strip ────────────────────────────────────────
+  .step-indicator {
+    list-style: none;
+    margin: 0 0 1.25rem;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+
+    .step-dot {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.875rem;
+      cursor: default;
+      transition: all 0.18s ease;
+      position: relative;
+
+      &::after {
+        content: '';
+        position: absolute;
+        left: 100%;
+        top: 50%;
+        width: 1.5rem;
+        height: 2px;
+        background: $slate-200;
+        transform: translateY(-50%);
+      }
+      &:last-child::after { display: none; }
+
+      &.future {
+        background: $slate-100;
+        color: $slate-400;
+        border: 1px solid $slate-200;
+      }
+      &.current {
+        background: $primary;
+        color: #fff;
+        border: 1px solid $primary;
+        box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.15);
+      }
+      &.done {
+        background: $primary;
+        color: #fff;
+        border: 1px solid $primary;
+        cursor: pointer;
+
+        &::after { background: $primary; }
+      }
+    }
+  }
+
+  // ── Live summary banner ─────────────────────────────────────────
+  .summary-banner {
+    background: rgba(2, 132, 199, 0.08);
+    border: 1px solid rgba(2, 132, 199, 0.18);
+    border-radius: $radius-md;
+    padding: 0.875rem 1rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    color: $slate-900;
+    font-weight: 600;
+
+    i {
+      color: $primary;
+      font-size: 1.125rem;
+    }
+  }
+
+  // ── Step body ───────────────────────────────────────────────────
+  .wizard-step {
+    h2 {
+      font-family: $font-heading;
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: $slate-900;
+      margin: 0 0 1rem;
+    }
+
+    fieldset {
+      border: none;
+      padding: 0;
+      margin: 0 0 1.5rem;
+
+      legend {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: $slate-700;
+        margin-bottom: 0.625rem;
+      }
+    }
+  }
+
+  // ── Frequency cards ─────────────────────────────────────────────
+  .frequency-grid {
+    display: grid;
+    gap: 0.625rem;
+
+    .frequency-card {
+      all: unset;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.875rem;
+      padding: 0.875rem 1rem;
+      border: 1px solid $slate-200;
+      border-radius: $radius-md;
+      background: #fff;
+      transition: all 0.15s ease;
+
+      &:hover { border-color: $primary-light; }
+      &.selected {
+        border: 2px solid $primary;
+        background: rgba(2, 132, 199, 0.04);
+      }
+
+      .freq-text { display: grid; gap: 0.125rem; }
+      .freq-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+      .freq-label {
+        font-weight: 600;
+        color: $slate-900;
+      }
+      .freq-badge {
+        background: rgba(217, 119, 6, 0.15);
+        color: $accent-gold;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        padding: 0.125rem 0.4rem;
+        border-radius: 0.375rem;
+      }
+      .freq-subline {
+        color: $slate-500;
+        font-size: 0.8rem;
+      }
+      .pi-check-circle {
+        color: $primary;
+        font-size: 1.5rem;
+      }
+    }
+  }
+
+  // ── Day-of-week chips ───────────────────────────────────────────
+  .day-chips .day-chip-row {
+    display: flex;
+    gap: 0.375rem;
+    align-items: stretch;
+
+    .weekend-gap {
+      width: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    .day-chip {
+      all: unset;
+      cursor: pointer;
+      flex: 1 1 0;
+      text-align: center;
+      padding: 0.625rem 0;
+      border: 1px solid $slate-200;
+      border-radius: $radius-md;
+      background: #fff;
+      font-weight: 600;
+      color: $slate-700;
+      transition: all 0.15s ease;
+      min-width: 2.25rem;
+
+      &.weekend:not(.selected) {
+        background: $slate-50;
+      }
+      &:hover { border-color: $primary-light; }
+      &.selected {
+        background: $primary;
+        color: #fff;
+        border-color: $primary;
+      }
+    }
+  }
+
+  // ── Time slot groups ────────────────────────────────────────────
+  .time-groups .time-group {
+    margin-bottom: 1rem;
+
+    h4 {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: $slate-500;
+      margin: 0 0 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      letter-spacing: 0.02em;
+
+      i { color: $accent-gold; }
+    }
+
+    .time-slot-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .time-slot {
+      all: unset;
+      cursor: pointer;
+      padding: 0.5rem 0.875rem;
+      border: 1px solid $slate-200;
+      border-radius: 999px;
+      background: #fff;
+      font-weight: 600;
+      color: $slate-700;
+      transition: all 0.15s ease;
+
+      &:hover { border-color: $primary-light; }
+      &.selected {
+        background: $primary;
+        color: #fff;
+        border-color: $primary;
+      }
+    }
+  }
+
+  // ── Catalog cards (services + packages) ─────────────────────────
+  .catalog-section {
+    .catalog-card {
+      all: unset;
+      cursor: pointer;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.875rem;
+      padding: 1rem;
+      border: 1px solid $slate-200;
+      border-radius: $radius-md;
+      background: #fff;
+      width: 100%;
+      box-sizing: border-box;
+      margin-bottom: 0.5rem;
+      transition: all 0.15s ease;
+
+      &:hover { border-color: $primary-light; }
+      &.selected {
+        border: 2px solid $primary;
+        background: rgba(2, 132, 199, 0.04);
+      }
+    }
+    .catalog-text {
+      flex: 1;
+      display: grid;
+      gap: 0.25rem;
+    }
+    .catalog-title {
+      font-weight: 600;
+      color: $slate-900;
+    }
+    .catalog-desc {
+      color: $slate-500;
+      font-size: 0.85rem;
+      line-height: 1.4;
+    }
+    .catalog-includes {
+      margin-top: 0.5rem;
+      .includes-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: $slate-700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      ul {
+        list-style: disc inside;
+        margin: 0.25rem 0 0;
+        padding: 0;
+        color: $slate-700;
+        font-size: 0.85rem;
+      }
+    }
+    .catalog-check {
+      color: $primary;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+  }
+
+  .loading-note {
+    color: $slate-500;
+    font-style: italic;
+  }
+
+  // ── Stepper (rooms / bathrooms) ────────────────────────────────
+  .stepper-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.875rem;
+
+    .stepper {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      border: 1px solid $slate-200;
+      border-radius: $radius-md;
+      padding: 0.25rem;
+      background: #fff;
+
+      button {
+        all: unset;
+        cursor: pointer;
+        width: 2rem;
+        height: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        color: $primary;
+
+        &:hover { background: rgba(2, 132, 199, 0.08); }
+        &:disabled { color: $slate-300; cursor: not-allowed; }
+      }
+      span {
+        min-width: 1.5rem;
+        text-align: center;
+        font-weight: 700;
+        color: $slate-900;
+      }
+    }
+  }
+
+  // ── Address picker ──────────────────────────────────────────────
+  .address-picker {
+    .address-card {
+      all: unset;
+      cursor: pointer;
+      width: 100%;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.875rem 1rem;
+      border: 1px solid $slate-200;
+      border-radius: $radius-md;
+      background: #fff;
+      margin-bottom: 0.5rem;
+      transition: all 0.15s ease;
+
+      &:hover { border-color: $primary-light; }
+      &.selected {
+        border: 2px solid $primary;
+        background: rgba(2, 132, 199, 0.04);
+      }
+    }
+    .address-text { display: grid; gap: 0.125rem; }
+    .address-label {
+      font-weight: 600;
+      color: $slate-900;
+    }
+    .address-line {
+      color: $slate-500;
+      font-size: 0.85rem;
+    }
+    .default-badge {
+      background: rgba(2, 132, 199, 0.12);
+      color: $primary;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.4rem;
+    }
+    .address-empty {
+      color: $slate-500;
+      font-style: italic;
+    }
+  }
+
+  // ── Payment cards ───────────────────────────────────────────────
+  .payment-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.625rem;
+
+    .payment-card {
+      all: unset;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 1.25rem 0.75rem;
+      border: 1px solid $slate-200;
+      border-radius: $radius-md;
+      background: #fff;
+      font-weight: 600;
+      color: $slate-700;
+      transition: all 0.15s ease;
+      text-align: center;
+
+      &:hover { border-color: $primary-light; }
+      &.selected {
+        border: 2px solid $primary;
+        background: rgba(2, 132, 199, 0.04);
+        color: $primary;
+      }
+
+      .payment-icon {
+        font-size: 1.75rem;
+        color: $primary;
+      }
+    }
+  }
+
+  // ── Sticky action footer ────────────────────────────────────────
+  .wizard-actions {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: 1.5rem -1.25rem 0;
+    padding: 1rem 1.25rem;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid $slate-200;
+    display: flex;
+    gap: 0.625rem;
+    justify-content: space-between;
+
+    > * {
+      flex: 1;
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Membership-page entry link to recurring (Plus-only)
+// ─────────────────────────────────────────────────────────────────────
+.recurring-link {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 1rem 1.125rem;
+  margin-top: 1rem;
+  background: #fff;
+  border: 1px solid $slate-200;
+  border-radius: $radius-lg;
+  text-decoration: none;
+  color: $slate-900;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: $primary-light;
+    box-shadow: 0 2px 6px rgba(2, 132, 199, 0.08);
+  }
+
+  .recurring-link-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(2, 132, 199, 0.12);
+    color: $primary;
+    border-radius: 50%;
+    font-size: 1.125rem;
+    flex-shrink: 0;
+  }
+  .recurring-link-text {
+    flex: 1;
+    display: grid;
+    gap: 0.125rem;
+
+    strong {
+      font-weight: 600;
+      color: $slate-900;
+    }
+    span {
+      color: $slate-500;
+      font-size: 0.85rem;
+    }
+  }
+  .recurring-link-chevron {
+    color: $slate-400;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Order-detail "Make this recurring" CTA section
+// ─────────────────────────────────────────────────────────────────────
+.order-detail__make-recurring {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Dark theme overrides — flips card backgrounds, neutral text, and
+// outline colors to dark-friendly equivalents. Accent colors (primary
+// blue + gold) stay as-is since they're already designed to pop on both
+// surfaces.
+// ─────────────────────────────────────────────────────────────────────
+:root.dark-mode {
+  $bg-card: #1e293b;
+  $bg-elevated: #0f172a;
+  $border: #334155;
+  $text-primary: #f1f5f9;
+  $text-secondary: #94a3b8;
+
+  // ── List screen ──
+  .recurring-bookings-list {
+    .page-header {
+      h1 { color: $text-primary; }
+      p { color: $text-secondary; }
+    }
+
+    .empty-state {
+      background: $bg-elevated;
+      border-color: $border;
+
+      h2 { color: $text-primary; }
+      p { color: $text-secondary; }
+    }
+
+    .template-card {
+      background: $bg-card;
+      border-color: $border;
+
+      &.paused {
+        background: $bg-elevated;
+      }
+
+      .cadence-badge {
+        color: $text-primary;
+      }
+
+      .paused-pill {
+        background: rgba(255, 255, 255, 0.08);
+        color: $text-secondary;
+      }
+
+      .address {
+        color: $text-secondary;
+      }
+
+      .actions {
+        border-top-color: rgba(255, 255, 255, 0.06);
+      }
+    }
+  }
+
+  // ── Wizard ──
+  .create-recurring-wizard {
+    .wizard-header {
+      h1 { color: $text-primary; }
+      p { color: $text-secondary; }
+    }
+
+    .step-indicator .step-dot {
+      &.future {
+        background: $bg-elevated;
+        color: $text-secondary;
+        border-color: $border;
+      }
+    }
+
+    .summary-banner {
+      background: rgba(56, 189, 248, 0.10);
+      border-color: rgba(56, 189, 248, 0.30);
+      color: $text-primary;
+    }
+
+    .wizard-step h2 { color: $text-primary; }
+    .wizard-step fieldset legend { color: $text-secondary; }
+
+    // Frequency cards
+    .frequency-grid .frequency-card {
+      background: $bg-card;
+      border-color: $border;
+
+      &:hover { border-color: $primary-light; }
+      &.selected {
+        border-color: $primary-light;
+        background: rgba(56, 189, 248, 0.08);
+      }
+
+      .freq-label { color: $text-primary; }
+      .freq-subline { color: $text-secondary; }
+      .pi-check-circle { color: $primary-light; }
+    }
+
+    // Day chips
+    .day-chips .day-chip-row .day-chip {
+      background: $bg-card;
+      border-color: $border;
+      color: $text-secondary;
+
+      &.weekend:not(.selected) {
+        background: rgba(255, 255, 255, 0.04);
+      }
+      &:hover { border-color: $primary-light; }
+      &.selected {
+        background: $primary;
+        color: #fff;
+        border-color: $primary;
+      }
+    }
+
+    // Time slots
+    .time-groups .time-group {
+      h4 { color: $text-secondary; }
+
+      .time-slot {
+        background: $bg-card;
+        border-color: $border;
+        color: $text-secondary;
+
+        &:hover { border-color: $primary-light; }
+        &.selected {
+          background: $primary;
+          color: #fff;
+          border-color: $primary;
+        }
+      }
+    }
+
+    // Catalog cards
+    .catalog-section {
+      .catalog-card {
+        background: $bg-card;
+        border-color: $border;
+
+        &:hover { border-color: $primary-light; }
+        &.selected {
+          border-color: $primary-light;
+          background: rgba(56, 189, 248, 0.08);
+        }
+      }
+      .catalog-title { color: $text-primary; }
+      .catalog-desc { color: $text-secondary; }
+      .catalog-includes {
+        .includes-label { color: $text-secondary; }
+        ul { color: $text-secondary; }
+      }
+      .catalog-check { color: $primary-light; }
+    }
+
+    .loading-note { color: $text-secondary; }
+
+    // Steppers
+    .stepper-row .stepper {
+      background: $bg-card;
+      border-color: $border;
+
+      button {
+        color: $primary-light;
+        &:hover { background: rgba(56, 189, 248, 0.10); }
+        &:disabled { color: $border; }
+      }
+      span { color: $text-primary; }
+    }
+
+    // Address picker
+    .address-picker {
+      .address-card {
+        background: $bg-card;
+        border-color: $border;
+
+        &:hover { border-color: $primary-light; }
+        &.selected {
+          border-color: $primary-light;
+          background: rgba(56, 189, 248, 0.08);
+        }
+      }
+      .address-label { color: $text-primary; }
+      .address-line { color: $text-secondary; }
+      .default-badge {
+        background: rgba(56, 189, 248, 0.18);
+        color: $primary-light;
+      }
+      .address-empty { color: $text-secondary; }
+    }
+
+    // Payment cards
+    .payment-grid .payment-card {
+      background: $bg-card;
+      border-color: $border;
+      color: $text-secondary;
+
+      &:hover { border-color: $primary-light; }
+      &.selected {
+        border-color: $primary-light;
+        background: rgba(56, 189, 248, 0.08);
+        color: $primary-light;
+      }
+      .payment-icon { color: $primary-light; }
+    }
+
+    // Sticky action footer
+    .wizard-actions {
+      background: rgba(15, 23, 42, 0.95);
+      border-top-color: $border;
+    }
+  }
+
+  // ── Membership-page entry link ──
+  .recurring-link {
+    background: $bg-card;
+    border-color: $border;
+    color: $text-primary;
+
+    &:hover {
+      border-color: $primary-light;
+      box-shadow: 0 2px 6px rgba(56, 189, 248, 0.15);
+    }
+
+    .recurring-link-icon {
+      background: rgba(56, 189, 248, 0.15);
+      color: $primary-light;
+    }
+    .recurring-link-text {
+      strong { color: $text-primary; }
+      span { color: $text-secondary; }
+    }
+    .recurring-link-chevron { color: $text-secondary; }
+  }
+}

@@ -3,6 +3,7 @@ using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Extensions;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Receipts;
 using Cleansia.Core.Domain.Users;
@@ -103,6 +104,84 @@ public class Order : Auditable, ITenantEntity
     public string? ReceiptId { get; private set; }
     public OrderReceipt? Receipt { get; private set; }
 
+    /// <summary>
+    /// When the customer cancelled this order. Null while active.
+    /// </summary>
+    public DateTime? CancelledAt { get; private set; }
+
+    /// <summary>
+    /// Amount actually refunded to the customer on cancellation.
+    /// Zero if the full fee applied (100% no-refund charge).
+    /// </summary>
+    public decimal? CancellationRefundAmount { get; private set; }
+
+    /// <summary>
+    /// Fee rate applied at cancellation (0.0 = free, 0.5 = half, 1.0 = full charge).
+    /// </summary>
+    public decimal? CancellationFeeRate { get; private set; }
+
+    /// <summary>
+    /// Who initiated the cancellation — "customer", "cleaner", or "system".
+    /// </summary>
+    [MaxLength(20)]
+    public string? CancelledBy { get; private set; }
+
+    [MaxLength(500)]
+    public string? CancellationReason { get; private set; }
+
+    /// <summary>
+    /// Loyalty tier discount applied at create-time (CZK amount, not %).
+    /// Null when no loyalty discount applied (legacy/anon orders, Bronze tier, or no qualifying account).
+    /// </summary>
+    public decimal? TierDiscountAmount { get; private set; }
+
+    /// <summary>
+    /// Snapshot of the customer's loyalty tier at the moment the booking was placed.
+    /// Null for orders booked without an authenticated user, or before loyalty foundation rolled out.
+    /// </summary>
+    public LoyaltyTier? TierAtPurchase { get; private set; }
+
+    /// <summary>
+    /// Promo-code discount applied at create-time (CZK amount, not %).
+    /// Null when no promo was applied (no code entered, code invalid, or
+    /// tier discount won the best-wins comparison).
+    /// </summary>
+    public decimal? PromoDiscountAmount { get; private set; }
+
+    /// <summary>
+    /// FK to the <see cref="Cleansia.Core.Domain.Loyalty.PromoCode"/> that was
+    /// redeemed for this order. Null when no promo applied. Restricted on
+    /// delete so we don't lose the audit linkage if the code gets removed.
+    /// </summary>
+    public string? PromoCodeId { get; private set; }
+
+    /// <summary>
+    /// Membership discount applied at create-time (CZK amount, not %). Null
+    /// when no membership discount applied (no active membership, or tier/promo
+    /// won the best-wins comparison). Mutually exclusive with TierDiscountAmount
+    /// and PromoDiscountAmount — only one of the three can be non-null.
+    /// </summary>
+    public decimal? MembershipDiscountAmount { get; private set; }
+
+    /// <summary>
+    /// Snapshot of the <see cref="Cleansia.Core.Domain.Memberships.MembershipPlan"/> id
+    /// that produced the discount. Stored even when discount is zero so receipts
+    /// can render "Cleansia Plus member" for transparency.
+    /// </summary>
+    [MaxLength(26)]
+    public string? MembershipPlanIdAtPurchase { get; private set; }
+
+    /// <summary>
+    /// Customer-requested cleaner. The matching algorithm boosts this employee's
+    /// score so they're more likely to be offered the order, but it's not a
+    /// guarantee — if they decline or are busy, the order falls back to normal
+    /// matching. Not exposed to the cleaner side (avoids "they didn't pick me"
+    /// awkwardness). Future Cleansia Plus perk; today the field exists but no
+    /// UI sets it.
+    /// </summary>
+    [MaxLength(26)]
+    public string? PreferredEmployeeId { get; private set; }
+
     public IDictionary<string, bool> _extras = new Dictionary<string, bool>();
     public IReadOnlyDictionary<string, bool> Extras => _extras.AsReadOnly();
 
@@ -133,7 +212,29 @@ public class Order : Auditable, ITenantEntity
     public static Order Create(string customerName, string customerEmail, string customerPhone,
         Address customerAddress, int rooms, int bathrooms,
         Dictionary<string, bool> extras, DateTime cleaningDateTime, PaymentType paymentType,
-        decimal totalPrice, string currencyId, PaymentStatus paymentStatus) => new()
+        decimal totalPrice, string currencyId, PaymentStatus paymentStatus,
+        // Optional: when present, links the order to the booking user so
+        // CancelOrder / SubmitReview / ReportIssue can enforce ownership.
+        // Empty/null is allowed for the (legacy) anonymous guest checkout
+        // path on web — those orders just can't be cancelled by the user.
+        string? userId = null,
+        // Loyalty: optional snapshot of the tier discount applied at booking
+        // time so receipts/order details can render the breakdown later.
+        // Null for anon/legacy orders or non-discount tiers.
+        decimal? tierDiscountAmount = null,
+        LoyaltyTier? tierAtPurchase = null,
+        // Promo: optional snapshot of the promo discount applied at booking
+        // time. Mutually exclusive with tierDiscountAmount in practice — the
+        // CreateOrder handler picks best-wins between tier and promo.
+        decimal? promoDiscountAmount = null,
+        string? promoCodeId = null,
+        // Membership: optional snapshot of the Cleansia Plus discount applied
+        // at booking time. Mutually exclusive with tier/promo via best-wins.
+        decimal? membershipDiscountAmount = null,
+        string? membershipPlanIdAtPurchase = null,
+        // Optional customer-requested cleaner. Used as a matching hint;
+        // silent fallback to normal matching if unavailable.
+        string? preferredEmployeeId = null) => new()
         {
             CustomerName = customerName,
             CustomerEmail = customerEmail,
@@ -146,7 +247,15 @@ public class Order : Auditable, ITenantEntity
             PaymentType = paymentType,
             TotalPrice = totalPrice,
             CurrencyId = currencyId,
-            PaymentStatus = paymentStatus
+            PaymentStatus = paymentStatus,
+            UserId = string.IsNullOrEmpty(userId) ? null : userId,
+            TierDiscountAmount = tierDiscountAmount is > 0 ? tierDiscountAmount : null,
+            TierAtPurchase = tierAtPurchase,
+            PromoDiscountAmount = promoDiscountAmount is > 0 ? promoDiscountAmount : null,
+            PromoCodeId = string.IsNullOrEmpty(promoCodeId) ? null : promoCodeId,
+            MembershipDiscountAmount = membershipDiscountAmount is > 0 ? membershipDiscountAmount : null,
+            MembershipPlanIdAtPurchase = string.IsNullOrEmpty(membershipPlanIdAtPurchase) ? null : membershipPlanIdAtPurchase,
+            PreferredEmployeeId = string.IsNullOrEmpty(preferredEmployeeId) ? null : preferredEmployeeId,
         };
 
     public Order AddSelectedServices(IEnumerable<OrderService> selectedServices)
@@ -269,6 +378,26 @@ public class Order : Auditable, ITenantEntity
 
     public Order StartOrder()
     {
+        return this;
+    }
+
+    /// <summary>
+    /// Mark this order as cancelled and record the refund breakdown.
+    /// Fee-rate / refund-amount should be computed by <see cref="Cleansia.Core.AppServices.Features.Orders.BookingPolicy"/>
+    /// at the application layer so this entity stays persistence-ignorant.
+    /// </summary>
+    public Order Cancel(
+        DateTime cancelledAtUtc,
+        string cancelledBy,
+        decimal feeRate,
+        decimal refundAmount,
+        string? reason)
+    {
+        CancelledAt = cancelledAtUtc;
+        CancelledBy = cancelledBy;
+        CancellationFeeRate = feeRate;
+        CancellationRefundAmount = refundAmount;
+        CancellationReason = reason;
         return this;
     }
 

@@ -12,6 +12,7 @@ namespace Cleansia.Core.AppServices.Features.Services;
 public class CreateService
 {
     public record Command(
+        string CategoryId,
         string Name,
         string Description,
         decimal BasePrice,
@@ -25,8 +26,15 @@ public class CreateService
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator(ILanguageRepository languageRepository)
+        public Validator(ILanguageRepository languageRepository, IServiceCategoryRepository categoryRepository)
         {
+            RuleFor(x => x.CategoryId)
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty()
+                .WithMessage(BusinessErrorMessage.Required)
+                .MustAsync(categoryRepository.ExistsAsync)
+                .WithMessage(BusinessErrorMessage.ServiceCategoryNotFound);
+
             RuleFor(x => x.Name)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
@@ -88,6 +96,7 @@ public class CreateService
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var service = Service.Create(
+                command.CategoryId,
                 command.Name,
                 command.Description,
                 command.BasePrice,

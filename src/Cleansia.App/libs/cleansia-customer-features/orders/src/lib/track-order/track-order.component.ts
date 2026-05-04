@@ -27,6 +27,7 @@ import { CleansiaCustomerRoute, GuestOrderService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { TagModule } from 'primeng/tag';
 import { TimelineModule } from 'primeng/timeline';
+import { GuestOrderLookupCacheService } from '../order-lookup/guest-order-lookup-cache.service';
 
 @Component({
   selector: 'cleansia-customer-track-order',
@@ -51,6 +52,7 @@ export class TrackOrderComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly translate = inject(TranslateService);
   private readonly guestOrderService = inject(GuestOrderService);
+  private readonly cache = inject(GuestOrderLookupCacheService);
   private readonly orderClient = new CustomerOrderClient(
     this.http,
     inject(CUSTOMER_API_BASE_URL, { optional: true }) ?? 'http://localhost:5003'
@@ -142,6 +144,18 @@ export class TrackOrderComponent implements OnInit {
 
   navigateToOrder(): void {
     this.router.navigate([CleansiaCustomerRoute.ORDER]);
+  }
+
+  viewDetails(orderId: string): void {
+    // Cache the loaded order so the detail page does not re-fetch and the
+    // guest does not have to re-enter their email.
+    const order = this.recentOrders().find((o) => o.id === orderId);
+    const email =
+      this.guestOrderService.getAll().find((g) => g.orderId === orderId)?.email ?? '';
+    if (order && email) {
+      this.cache.set(orderId, order, email);
+    }
+    this.router.navigate(['/' + CleansiaCustomerRoute.ORDERS, 'lookup', orderId]);
   }
 
   getOrderStatusSeverity(status: { value?: number }): string {

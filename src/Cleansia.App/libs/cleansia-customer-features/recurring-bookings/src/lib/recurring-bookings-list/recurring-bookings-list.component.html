@@ -1,0 +1,82 @@
+<section class="recurring-bookings-list">
+  <header class="page-header">
+    <div>
+      <h1>{{ 'recurring_booking.list_title' | translate }}</h1>
+      <p>{{ 'recurring_booking.list_subtitle' | translate }}</p>
+    </div>
+    @if (templates().length > 0) {
+      <cleansia-button
+        [label]="'recurring_booking.list_create_cta' | translate"
+        icon="pi pi-plus"
+        (click)="goToCreate()"
+      ></cleansia-button>
+    }
+  </header>
+
+  @if (initialLoading()) {
+    <div class="skeletons">
+      <p-skeleton height="120px" styleClass="rounded-2xl"></p-skeleton>
+      <p-skeleton height="120px" styleClass="rounded-2xl"></p-skeleton>
+    </div>
+  } @else if (templates().length === 0) {
+    <article class="empty-state">
+      <i class="pi pi-calendar empty-icon" aria-hidden="true"></i>
+      <h2>{{ 'recurring_booking.empty_title' | translate }}</h2>
+      <p>{{ 'recurring_booking.empty_subtitle' | translate }}</p>
+      <cleansia-button
+        [label]="'recurring_booking.empty_cta' | translate"
+        (click)="goToCreate()"
+      ></cleansia-button>
+    </article>
+  } @else {
+    <ul class="template-list">
+      @for (template of templates(); track trackById($index, template)) {
+        <li class="template-card" [class.paused]="!template.isActive">
+          <header>
+            <span class="cadence-badge">
+              <i class="pi pi-sparkles" aria-hidden="true"></i>
+              {{ formatSchedule(template) }}
+            </span>
+            @if (!template.isActive) {
+              <span class="paused-pill">{{ 'recurring_booking.paused_badge' | translate }}</span>
+            }
+          </header>
+
+          @if (template.addressLine) {
+            <p class="address">
+              <i class="pi pi-map-marker" aria-hidden="true"></i>
+              {{ template.addressLine }}
+            </p>
+          }
+
+          <footer class="actions">
+            <cleansia-button
+              severity="secondary"
+              [outlined]="true"
+              [label]="
+                (template.isActive
+                  ? 'recurring_booking.action_pause'
+                  : 'recurring_booking.action_resume'
+                ) | translate
+              "
+              [icon]="template.isActive ? 'pi pi-pause' : 'pi pi-play'"
+              [loading]="mutatingId() === template.id"
+              [disabled]="mutatingId() !== null && mutatingId() !== template.id"
+              (click)="toggleActive(template)"
+            ></cleansia-button>
+            <cleansia-button
+              severity="danger"
+              [outlined]="true"
+              [label]="'recurring_booking.action_delete' | translate"
+              icon="pi pi-trash"
+              [disabled]="mutatingId() !== null"
+              (click)="confirmDelete(template)"
+            ></cleansia-button>
+          </footer>
+        </li>
+      }
+    </ul>
+  }
+
+  <p-confirmDialog></p-confirmDialog>
+</section>

@@ -29,6 +29,15 @@
             />
           </div>
 
+          <div class="form-field">
+            <cleansia-select
+              [label]="'pages.service_form.category' | translate"
+              formControlName="categoryId"
+              [options]="categoryOptions()"
+              [required]="true"
+            />
+          </div>
+
           <div class="form-field full-width">
             <cleansia-textarea
               [label]="'pages.service_form.description' | translate"

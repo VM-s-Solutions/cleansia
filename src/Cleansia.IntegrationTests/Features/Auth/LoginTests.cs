@@ -46,6 +46,8 @@ public class LoginTests(PostgresContainerFixture fixture) : BaseIntegrationTest(
             var tokenResponse = result.Value;
             Assert.NotEmpty(tokenResponse.Token);
             Assert.True(tokenResponse.IsEmailConfirmed);
+            Assert.False(string.IsNullOrEmpty(tokenResponse.RefreshToken));
+            Assert.NotNull(tokenResponse.RefreshTokenExpiresAt);
 
             var user = await context.Users.FirstOrDefaultAsync(u => u.Email == Constants.TestUserSession.TestUserEmail);
             Assert.NotNull(user);
@@ -56,6 +58,12 @@ public class LoginTests(PostgresContainerFixture fixture) : BaseIntegrationTest(
 
             var orders = await context.Orders.Where(o => o.UserId == user.Id).ToListAsync();
             Assert.Empty(orders);
+
+            // Server-side refresh-token row was persisted — end-to-end pipeline check.
+            var refreshTokens = await context.RefreshTokens.Where(t => t.UserId == user.Id).ToListAsync();
+            Assert.Single(refreshTokens);
+            Assert.Null(refreshTokens[0].RevokedAt);
+            Assert.True(refreshTokens[0].ExpiresAt > DateTimeOffset.UtcNow);
         });
     }
 }

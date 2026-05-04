@@ -13,6 +13,7 @@ public static class ConfigurationExtensions
         services.AddSingleton<ISendGridConfig, SendGridConfig>();
         services.AddSingleton<IJwtSettings, JwtSettingsConfig>();
         services.AddSingleton<IGoogleConfig, GoogleConfig>();
+        services.AddSingleton<IMapboxConfig, MapboxConfig>();
 
         return services;
     }

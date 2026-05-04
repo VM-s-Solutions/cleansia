@@ -13,12 +13,18 @@ public static class ServiceExtensions
     public static IServiceCollection AddServices(this IServiceCollection services)
     {
         services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<IRefreshTokenService, RefreshTokenService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IReceiptService, ReceiptService>();
         services.AddScoped<IFiscalRetryService, FiscalRetryService>();
         services.AddScoped<IAppConfigurationProvider, AppConfigurationProvider>();
         services.AddScoped<ITaxIdValidator, TaxIdValidator>();
         services.AddScoped<IVatCalculator, VatCalculator>();
+        services.AddScoped<IOrderPricingCalculator, OrderPricingCalculator>();
+        services.AddScoped<ILoyaltyService, LoyaltyService>();
+        services.AddScoped<IPromoCodeService, PromoCodeService>();
+        services.AddScoped<IReferralService, ReferralService>();
+        services.AddScoped<ICancellationPolicyResolver, CancellationPolicyResolver>();
         services.AddInfrastructureServices();
 
         return services;

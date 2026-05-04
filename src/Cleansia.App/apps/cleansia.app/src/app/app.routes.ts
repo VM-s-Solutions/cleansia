@@ -69,6 +69,14 @@ export const appRoutes: Route[] = [
       ),
   },
 
+  // Guest order lookup (public — no auth) — MUST come before the auth-guarded
+  // `orders` route so the literal `orders/lookup` path wins the match.
+  {
+    path: CleansiaCustomerRoute.ORDERS + '/lookup',
+    loadChildren: () =>
+      import('@cleansia-customer/orders').then((m) => m.orderLookupRoutes),
+  },
+
   // Protected routes (require login)
   {
     path: CleansiaCustomerRoute.ORDERS,
@@ -86,6 +94,18 @@ export const appRoutes: Route[] = [
     path: CleansiaCustomerRoute.DISPUTES,
     loadChildren: () =>
       import('@cleansia-customer/disputes').then((m) => m.disputesRoutes),
+    canActivate: [customerAuthGuard],
+  },
+  {
+    path: CleansiaCustomerRoute.REWARDS,
+    loadChildren: () =>
+      import('@cleansia-customer/rewards').then((m) => m.rewardsRoutes),
+    canActivate: [customerAuthGuard],
+  },
+  {
+    path: CleansiaCustomerRoute.MEMBERSHIP,
+    loadChildren: () =>
+      import('@cleansia-customer/profile').then((m) => m.membershipRoutes),
     canActivate: [customerAuthGuard],
   },
   {

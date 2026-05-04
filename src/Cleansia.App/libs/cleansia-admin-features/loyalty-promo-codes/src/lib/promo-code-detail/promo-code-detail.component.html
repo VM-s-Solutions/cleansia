@@ -1,0 +1,116 @@
+<div class="cleansia-promo-code-detail">
+  <div class="cleansia-promo-code-detail__container page-wrapper">
+    <div class="cleansia-promo-code-detail__header">
+      <cleansia-button
+        [label]="'global.actions.back' | translate"
+        icon="pi pi-arrow-left"
+        (onClick)="onBack()"
+        [outlined]="true"
+      />
+      <cleansia-title
+        [title]="'pages.promo_codes.detail.title' | translate"
+      />
+    </div>
+
+    @if (facade.loading()) {
+      <cleansia-loader />
+    } @else if (facade.promoCode()) {
+      @let pc = facade.promoCode()!;
+      <cleansia-section [title]="pc.code ?? ''">
+        <div class="detail-grid">
+          <div class="detail-row">
+            <span class="detail-label">
+              {{ 'pages.promo_codes.column.type' | translate }}
+            </span>
+            <span class="detail-value">{{ formatType() }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">
+              {{ 'pages.promo_codes.column.discount' | translate }}
+            </span>
+            <span class="detail-value">{{ formatDiscount() }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">
+              {{ 'pages.promo_codes.column.min_order' | translate }}
+            </span>
+            <span class="detail-value">
+              {{ pc.minimumOrderAmount ?? '—' }}
+            </span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">
+              {{ 'pages.promo_codes.column.per_user' | translate }}
+            </span>
+            <span class="detail-value">{{ pc.maxRedemptionsPerUser }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">
+              {{ 'pages.promo_codes.column.global' | translate }}
+            </span>
+            <span class="detail-value">{{ formatGlobal() }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">
+              {{ 'pages.promo_codes.column.validity' | translate }}
+            </span>
+            <span class="detail-value">{{ formatValidity() }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">
+              {{ 'pages.promo_codes.column.status' | translate }}
+            </span>
+            <span class="detail-value">{{ formatStatus() }}</span>
+          </div>
+          @if (pc.description) {
+            <div class="detail-row full">
+              <span class="detail-label">
+                {{ 'pages.promo_codes.form.field.description' | translate }}
+              </span>
+              <span class="detail-value">{{ pc.description }}</span>
+            </div>
+          }
+        </div>
+
+        <div class="detail-actions">
+          <cleansia-button
+            [label]="'global.actions.edit' | translate"
+            icon="pi pi-pencil"
+            (onClick)="onEdit()"
+          />
+          @if (canDeactivate()) {
+            <cleansia-button
+              [label]="
+                'pages.promo_codes.detail.deactivate_button' | translate
+              "
+              icon="pi pi-ban"
+              severity="danger"
+              [outlined]="true"
+              (onClick)="confirmDeactivate()"
+            />
+          }
+        </div>
+      </cleansia-section>
+
+      <cleansia-section
+        [title]="'pages.promo_codes.detail.redemptions_title' | translate"
+      >
+        <cleansia-table
+          [data]="facade.redemptions()"
+          [columns]="redemptionColumns"
+          [config]="{
+            paginator: true,
+            rows: 20,
+            lazy: true,
+            totalRecords: facade.redemptionsTotal(),
+            emptyMessage: 'pages.promo_codes.detail.redemptions_empty'
+          }"
+          [loading]="facade.redemptionsLoading()"
+          (pageChange)="onRedemptionsPageChange($event)"
+        />
+      </cleansia-section>
+    }
+  </div>
+</div>
+
+<p-confirmDialog />

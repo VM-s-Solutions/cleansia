@@ -11,9 +11,14 @@ import {
   setLocalStorageValueByKey,
 } from '@cleansia/utils';
 import { jwtDecode } from 'jwt-decode';
-import { BehaviorSubject, Observable, map, of } from 'rxjs';
+import { BehaviorSubject, Observable, catchError, map, of, tap } from 'rxjs';
 import { AdminClient } from '../client/admin-base-client';
-import { AdminLoginCommand, JwtTokenResponse } from '../client/admin-client';
+import {
+  AdminLoginCommand,
+  JwtTokenResponse,
+  LogoutCommand,
+  RefreshTokenCommand,
+} from '../client/admin-client';
 
 @Injectable({
   providedIn: 'root',
@@ -43,9 +48,33 @@ export class AdminAuthService {
   }
 
   logout(): Observable<boolean> {
-    this.removeSession();
-    this.router.navigate([`${CleansiaAdminRoute.LOGIN}`]);
-    return of(true);
+    const refreshToken = this.getRefreshToken();
+    const serverCall = refreshToken
+      ? this.adminClient.adminAuthClient
+          .logout(new LogoutCommand({ token: refreshToken }))
+          .pipe(catchError(() => of(false)))
+      : of(true);
+
+    return serverCall.pipe(
+      tap(() => {
+        this.removeSession();
+        this.router.navigate([`${CleansiaAdminRoute.LOGIN}`]);
+      }),
+      map(() => true)
+    );
+  }
+
+  refreshSession(): Observable<string> {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
+    }
+    return this.adminClient.adminAuthClient
+      .refreshToken(new RefreshTokenCommand({ token: refreshToken }))
+      .pipe(
+        tap((authResult) => this.setSession(authResult)),
+        map((authResult) => authResult.token!)
+      );
   }
 
   isLoggedIn(): boolean {
@@ -59,6 +88,17 @@ export class AdminAuthService {
 
   getToken(): string | null {
     return this.getCookieToken();
+  }
+
+  getRefreshToken(): string | null {
+    return extractCookieValue(LocalStorageKey.REFRESH_TOKEN);
+  }
+
+  hasValidRefreshToken(): boolean {
+    if (!this.getRefreshToken()) return false;
+    const expStr = localStorage.getItem(LocalStorageKey.REFRESH_TOKEN_EXP);
+    if (!expStr) return false;
+    return Date.now() < new Date(expStr).getTime();
   }
 
   getRole(): string | null {
@@ -99,11 +139,24 @@ export class AdminAuthService {
 
   removeSession(): void {
     this.removeCookieSession();
+    removeCookieValue(LocalStorageKey.REFRESH_TOKEN);
+    localStorage.removeItem(LocalStorageKey.REFRESH_TOKEN_EXP);
     this.isLoggedIn$.next(false);
   }
 
   setSession(authResult: JwtTokenResponse): void {
     this.setCookieSession(authResult.token!);
+
+    if (authResult.refreshToken) {
+      setCookieValue(LocalStorageKey.REFRESH_TOKEN, authResult.refreshToken);
+    }
+    if (authResult.refreshTokenExpiresAt) {
+      localStorage.setItem(
+        LocalStorageKey.REFRESH_TOKEN_EXP,
+        authResult.refreshTokenExpiresAt.toISOString()
+      );
+    }
+
     this.isLoggedIn$.next(true);
     this.setWarningDialogStatus(false);
   }

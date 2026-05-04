@@ -1,0 +1,100 @@
+[versions]
+agp = "8.9.1"
+kotlin = "2.1.10"
+ksp = "2.1.10-1.0.31"
+hilt = "2.54"
+hiltNavigation = "1.2.0"
+composeBom = "2025.02.00"
+activityCompose = "1.10.0"
+navigation = "2.8.7"
+coroutines = "1.10.1"
+serialization = "1.7.3"
+kotlinxDatetime = "0.6.1"
+retrofit = "2.11.0"
+okhttp = "4.12.0"
+coil = "3.0.4"
+datastore = "1.1.1"
+securityCrypto = "1.1.0-alpha06"
+splashScreen = "1.0.1"
+lifecycle = "2.8.7"
+androidxCore = "1.15.0"
+appcompat = "1.7.0"
+mapbox = "11.8.0"
+mapboxCompose = "11.8.0"
+playServicesLocation = "21.2.0"
+spotless = "6.25.0"
+ktlint = "1.3.1"
+openapiGenerator = "7.10.0"
+sentry = "7.22.3"
+stripe = "21.2.0"
+
+[libraries]
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
+androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
+androidx-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "splashScreen" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
+androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle" }
+androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+
+compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
+compose-ui = { module = "androidx.compose.ui:ui" }
+compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }
+compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+compose-ui-text-google-fonts = { module = "androidx.compose.ui:ui-text-google-fonts" }
+compose-material3 = { module = "androidx.compose.material3:material3" }
+compose-material-icons = { module = "androidx.compose.material:material-icons-extended" }
+compose-foundation = { module = "androidx.compose.foundation:foundation" }
+
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation" }
+
+hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
+hilt-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt" }
+hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigation" }
+
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
+
+retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
+retrofit-kotlinx-serialization = { module = "com.squareup.retrofit2:converter-kotlinx-serialization", version.ref = "retrofit" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+okhttp-logging = { module = "com.squareup.okhttp3:logging-interceptor", version.ref = "okhttp" }
+
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coil" }
+# Animated image decoder for animated WebP / GIF — required for the looping
+# mascot clips. Coil 3 keeps it in a separate artifact to avoid pulling in
+# ImageDecoder code on apps that don't need it.
+coil-gif = { module = "io.coil-kt.coil3:coil-gif", version.ref = "coil" }
+
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+androidx-security-crypto = { module = "androidx.security:security-crypto-ktx", version.ref = "securityCrypto" }
+
+# Mapbox Maps SDK — requires MAPBOX_DOWNLOADS_TOKEN in ~/.gradle/gradle.properties
+mapbox-maps = { module = "com.mapbox.maps:android", version.ref = "mapbox" }
+mapbox-compose = { module = "com.mapbox.extension:maps-compose", version.ref = "mapboxCompose" }
+
+# Play Services Location — FusedLocationProvider for "my location" button
+play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
+
+junit = { module = "junit:junit", version = "4.13.2" }
+
+# Sentry — crash reporting + OkHttp network breadcrumbs + Timber log capture
+sentry-android = { module = "io.sentry:sentry-android", version.ref = "sentry" }
+sentry-okhttp = { module = "io.sentry:sentry-android-okhttp", version.ref = "sentry" }
+
+# Stripe Android SDK — drives the PaymentSheet bottom-sheet for card payments.
+# Includes Google Pay support, saved-card UX, and SCA/3DS challenge handling.
+stripe-android = { module = "com.stripe:stripe-android", version.ref = "stripe" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+openapi-generator = { id = "org.openapi.generator", version.ref = "openapiGenerator" }

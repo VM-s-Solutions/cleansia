@@ -4,6 +4,7 @@ public record DisputeEvidenceDto(
     string Id,
     string FileName,
     string FilePath,
+    string? BlobUrl,
     string UploadedBy,
     DateTimeOffset UploadedOn
 );

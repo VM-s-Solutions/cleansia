@@ -139,6 +139,72 @@ $primary-hover: #0284c7;
   }
 }
 
+// ─── Cleansia Code Input Dialog (promo / referral) ───
+// Compact modal triggered from the Wolt-style entry rows on the booking
+// summary step and the signup form. Single-input + helper + status banner.
+.cleansia-code-input-dialog {
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+    padding: 0.25rem 0;
+  }
+
+  &__field {
+    width: 100%;
+
+    input {
+      width: 100%;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-family: 'Poppins', sans-serif;
+    }
+  }
+
+  &__helper {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-color-secondary);
+    line-height: 1.45;
+  }
+
+  &__status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+
+    i {
+      font-size: 1rem;
+    }
+
+    &--neutral {
+      background: rgba(56, 189, 248, 0.12);
+      color: #0284c7;
+    }
+
+    &--success {
+      background: rgba(22, 163, 74, 0.12);
+      color: #16a34a;
+    }
+
+    &--error {
+      background: rgba(220, 38, 38, 0.1);
+      color: #dc2626;
+    }
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    width: 100%;
+  }
+}
+
 // ─── Dark mode ───
 :root.dark-mode {
   .cleansia-dialog {

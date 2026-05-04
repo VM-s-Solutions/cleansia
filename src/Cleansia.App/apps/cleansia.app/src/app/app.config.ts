@@ -33,6 +33,7 @@ import {
   COMMON_INTERCEPTORS_FN,
   initializeTranslations,
   JsonTranslationLoader,
+  MAPBOX_ACCESS_TOKEN,
 } from '@cleansia/services';
 import { EffectsModule } from '@ngrx/effects';
 import { provideStore, StoreModule } from '@ngrx/store';
@@ -91,6 +92,7 @@ export const appConfig: ApplicationConfig = {
     { provide: Sentry.TraceService, deps: [Router] },
     { provide: LOCALE_ID, useValue: 'en' },
     { provide: CUSTOMER_API_BASE_URL, useValue: environment.apiBaseUrl },
+    { provide: MAPBOX_ACCESS_TOKEN, useValue: environment.mapboxToken ?? '' },
     provideStore(),
     importProvidersFrom(
       BrowserAnimationsModule,

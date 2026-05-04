@@ -43,6 +43,8 @@ export enum CleansiaCustomerRoute {
   ORDERS = 'orders',
   PROFILE = 'profile',
   DISPUTES = 'disputes',
+  REWARDS = 'rewards',
+  MEMBERSHIP = 'membership',
   GDPR = 'gdpr',
   CHECKOUT_SUCCESS = 'checkout/success',
   CHECKOUT_CANCEL = 'checkout/cancel',

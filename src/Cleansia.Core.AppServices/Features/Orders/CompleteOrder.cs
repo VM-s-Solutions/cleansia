@@ -138,7 +138,9 @@ public class CompleteOrder
     public class Handler(
         IOrderRepository orderRepository,
         IQueueClient queueClient,
-        IEmailService emailService)
+        IEmailService emailService,
+        ILoyaltyService loyaltyService,
+        IReferralService referralService)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -180,6 +182,15 @@ public class CompleteOrder
                     order.CustomerEmail, order, "Completed", languageCode, cancellationToken);
             }
             catch { /* Don't fail the order completion if email fails */ }
+
+            // Loyalty: idempotent grant of tier-points. UoW pipeline commits
+            // the new ledger entry + recomputed tier alongside the order.
+            await loyaltyService.GrantForCompletedOrderAsync(order.Id, cancellationToken);
+
+            // Referrals: if this user was referred and this is their first
+            // completed order within the 90-day window, grant +150 to both
+            // sides. Idempotent — safe across handler retries.
+            await referralService.ProcessOrderCompletedAsync(order.Id, order.UserId, cancellationToken);
 
             return BusinessResult.Success(new Response(
                 OrderId: order.Id,

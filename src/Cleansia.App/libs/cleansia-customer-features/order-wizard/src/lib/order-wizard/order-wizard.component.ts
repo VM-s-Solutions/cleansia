@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -48,6 +48,7 @@ import { WizardSummaryStepComponent } from './components/wizard-summary-step.com
   ],
   templateUrl: './order-wizard.component.html',
   providers: [OrderWizardFacade],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OrderWizardComponent implements OnInit {
   protected readonly facade = inject(OrderWizardFacade);

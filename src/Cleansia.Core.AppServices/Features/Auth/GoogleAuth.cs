@@ -1,4 +1,5 @@
 ﻿using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auth.Validators;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -85,7 +86,8 @@ public class GoogleAuth
     internal class Handler(
         ITokenService tokenService,
         ICartRepository cartRepository,
-        IUserRepository userRepository)
+        IUserRepository userRepository,
+        IHostAudienceProvider hostAudience)
         : ICommandHandler<Command, JwtTokenResponse>
     {
         public async Task<BusinessResult<JwtTokenResponse>> Handle(Command command, CancellationToken cancellationToken)
@@ -93,7 +95,12 @@ public class GoogleAuth
             var user = await userRepository.GetByEmailAsync(command.Email, cancellationToken);
             if (user is not null)
             {
-                return BusinessResult.Success(tokenService.GenerateToken(user, rememberMe: true));
+                if (!user.IsActive)
+                {
+                    return BusinessResult.Failure<JwtTokenResponse>(
+                        new Error(nameof(Command.Email), BusinessErrorMessage.InvalidPassword));
+                }
+                return BusinessResult.Success(await tokenService.GenerateTokenAsync(user, rememberMe: true, hostAudience.Audience, cancellationToken));
             }
 
             var userEntity = User.CreateWithGoogle(command.Email, command.FirstName, command.LastName, command.GoogleId);
@@ -101,7 +108,7 @@ public class GoogleAuth
             userRepository.Add(userEntity);
             cartRepository.Add(Cart.CreateWithUser(userEntity));
 
-            return BusinessResult.Success(tokenService.GenerateToken(userEntity, rememberMe: true));
+            return BusinessResult.Success(await tokenService.GenerateTokenAsync(userEntity, rememberMe: true, hostAudience.Audience, cancellationToken));
         }
     }
 }

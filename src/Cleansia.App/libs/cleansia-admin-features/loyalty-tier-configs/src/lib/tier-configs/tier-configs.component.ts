@@ -3,11 +3,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   inject,
   OnDestroy,
   OnInit,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   LoyaltyTier,
@@ -17,26 +19,15 @@ import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
+  CleansiaTableComponent,
   CleansiaTextareaComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DialogModule } from 'primeng/dialog';
-import { TableModule } from 'primeng/table';
+import { getTierConfigsTableDefinition, TierRow } from './tier-configs.models';
 import { TierConfigsFacade } from './tier-configs.facade';
-
-interface TierRow {
-  id: string;
-  tier: LoyaltyTier;
-  tierName: string;
-  threshold: number;
-  discountPercent: number; // backend fraction 0..1
-  minimumOrderAmountForDiscount?: number;
-  perksJson?: string;
-  perksCount: number;
-  raw: TierConfigAdminDto;
-}
 
 @Component({
   selector: 'cleansia-admin-tier-configs',
@@ -47,10 +38,10 @@ interface TierRow {
     ReactiveFormsModule,
     TranslatePipe,
     DialogModule,
-    TableModule,
     CleansiaButtonComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
+    CleansiaTableComponent,
     CleansiaTextareaComponent,
     CleansiaTextInputComponent,
     CleansiaTitleComponent,
@@ -62,6 +53,7 @@ export class TierConfigsComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly translate = inject(TranslateService);
   protected readonly facade = inject(TierConfigsFacade);
+  private readonly destroyRef = inject(DestroyRef);
 
   // Edit modal state
   readonly editDialogVisible = signal<boolean>(false);
@@ -88,22 +80,38 @@ export class TierConfigsComponent implements OnInit, OnDestroy {
     const rows: TierRow[] = this.facade
       .tiers()
       .filter((t): t is TierConfigAdminDto & { id: string } => Boolean(t.id))
-      .map((t) => ({
-        id: t.id,
-        tier: t.tier,
-        tierName: this.translate.instant(this.tierKey(t.tier)),
-        threshold: t.lifetimePointsThreshold,
-        discountPercent: t.discountPercent,
-        minimumOrderAmountForDiscount: t.minimumOrderAmountForDiscount,
-        perksJson: t.perksJson,
-        perksCount: this.countPerks(t.perksJson),
-        raw: t,
-      }));
+      .map((t) => {
+        const perksCount = this.countPerks(t.perksJson);
+        return {
+          id: t.id,
+          tier: t.tier,
+          tierName: this.translate.instant(this.tierKey(t.tier)),
+          threshold: t.lifetimePointsThreshold,
+          discountPercent: t.discountPercent,
+          discountFormatted: this.formatDiscount(t.discountPercent),
+          minimumOrderAmountForDiscount: t.minimumOrderAmountForDiscount,
+          minOrderFormatted: this.formatMinOrder(t.minimumOrderAmountForDiscount),
+          perksJson: t.perksJson,
+          perksCount,
+          perksCountFormatted: this.formatPerksCount(perksCount),
+          raw: t,
+        };
+      });
     rows.sort(
       (a, b) => this.tierOrder.indexOf(a.tier) - this.tierOrder.indexOf(b.tier)
     );
     return rows;
   });
+
+  /**
+   * Column + action definitions for the cleansia-table. Built once at
+   * construction — header strings are resolved synchronously from the
+   * current language, matching the pattern used in admin-user-management.
+   */
+  readonly tableDefinition = getTierConfigsTableDefinition(
+    { onEdit: (row) => this.openEdit(row) },
+    this.translate
+  );
 
   // ---- Edit form (per-tier modal) ----
   readonly editForm = this.fb.group({
@@ -145,9 +153,11 @@ export class TierConfigsComponent implements OnInit, OnDestroy {
     this.facade.loadTiers();
 
     // Live perks JSON validation: yellow flag, doesn't block submit.
-    this.editForm.controls.perksJson.valueChanges.subscribe((value) => {
-      this.perksJsonValid.set(this.isValidPerksJson(value));
-    });
+    this.editForm.controls.perksJson.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((value) => {
+        this.perksJsonValid.set(this.isValidPerksJson(value));
+      });
   }
 
   ngOnDestroy(): void {

@@ -45,7 +45,6 @@ public class SendTestEmailByType
             var languageCode = command.LanguageCode;
             string messageId;
 
-            // Send test email based on email type with sample data
             switch (command.EmailType)
             {
                 case EmailType.ConfirmationEmail:

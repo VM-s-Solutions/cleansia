@@ -9,15 +9,6 @@ using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Features.Bookings;
 
-/// <summary>
-/// Edits an existing recurring booking template the calling user owns.
-/// Treated as a "replace contents" — the UI sends every field, even ones
-/// that didn't change. Cheaper than a partial-update protocol and matches
-/// how the customer form works (one form, one submit).
-///
-/// Future occurrences inherit the new values on the next materialization
-/// pass; already-spawned Order rows are independent and unaffected.
-/// </summary>
 public class UpdateRecurringBooking
 {
     public record Command(
@@ -32,15 +23,28 @@ public class UpdateRecurringBooking
         IReadOnlyList<string> SelectedPackageIds,
         int PaymentType,
         DateTime StartsOn,
-        DateTime? EndsOn = null,
-        string UserId = "") : ICommand<RecurringBookingTemplateDto>;
+        DateTime? EndsOn = null) : ICommand<RecurringBookingTemplateDto>;
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator()
+        private readonly IRecurringBookingTemplateRepository _templateRepository;
+        private readonly IUserSessionProvider _userSessionProvider;
+
+        public Validator(
+            IRecurringBookingTemplateRepository templateRepository,
+            IUserSessionProvider userSessionProvider)
         {
-            RuleFor(x => x.UserId).NotEmpty().WithMessage(BusinessErrorMessage.Required);
-            RuleFor(x => x.TemplateId).NotEmpty().WithMessage(BusinessErrorMessage.Required);
+            _templateRepository = templateRepository;
+            _userSessionProvider = userSessionProvider;
+
+            RuleFor(x => x.TemplateId)
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty()
+                .WithMessage(BusinessErrorMessage.Required)
+                .MustAsync(ExistsAsync)
+                .WithMessage(BusinessErrorMessage.RecurringTemplateNotFound)
+                .MustAsync(BeOwnedByCallerAsync)
+                .WithMessage(BusinessErrorMessage.RecurringTemplateNotOwnedByUser);
 
             RuleFor(x => x.Frequency)
                 .Must(f => Enum.IsDefined(typeof(RecurrenceFrequency), f))
@@ -76,30 +80,36 @@ public class UpdateRecurringBooking
                     .WithMessage(BusinessErrorMessage.RecurringTemplateEndsOnBeforeStart);
             });
         }
+
+        private async Task<bool> ExistsAsync(string id, CancellationToken cancellationToken)
+        {
+            return await _templateRepository.GetByIdAsync(id, cancellationToken) != null;
+        }
+
+        private async Task<bool> BeOwnedByCallerAsync(string id, CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId();
+            if (string.IsNullOrEmpty(userId)) return false;
+            var template = await _templateRepository.GetByIdAsync(id, cancellationToken);
+            return template != null && template.UserId == userId;
+        }
     }
 
     public class Handler(
         IRecurringBookingTemplateRepository templateRepository,
-        ISavedAddressRepository savedAddressRepository) : ICommandHandler<Command, RecurringBookingTemplateDto>
+        ISavedAddressRepository savedAddressRepository,
+        IUserSessionProvider userSessionProvider) : ICommandHandler<Command, RecurringBookingTemplateDto>
     {
         public async Task<BusinessResult<RecurringBookingTemplateDto>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var existing = await templateRepository.GetByIdAsync(command.TemplateId, cancellationToken);
-            if (existing == null)
-            {
-                return BusinessResult.Failure<RecurringBookingTemplateDto>(new Error(
-                    nameof(command.TemplateId),
-                    BusinessErrorMessage.RecurringTemplateNotFound));
-            }
+            // Existence + ownership of the template are enforced by Validator.
+            // The saved-address-belongs-to-user check stays here for now —
+            // it's a different entity and would need its own MustAsync rule;
+            // tracked as a small follow-up cleanup.
+            var userId = userSessionProvider.GetUserId()!;
+            var existing = (await templateRepository.GetByIdAsync(command.TemplateId, cancellationToken))!;
 
-            if (existing.UserId != command.UserId)
-            {
-                return BusinessResult.Failure<RecurringBookingTemplateDto>(new Error(
-                    nameof(command.TemplateId),
-                    BusinessErrorMessage.RecurringTemplateNotOwnedByUser));
-            }
-
-            var addresses = await savedAddressRepository.GetByUserAsync(command.UserId, cancellationToken);
+            var addresses = await savedAddressRepository.GetByUserAsync(userId, cancellationToken);
             var address = addresses.FirstOrDefault(a => a.Id == command.SavedAddressId);
             if (address?.Address == null)
             {
@@ -108,16 +118,9 @@ public class UpdateRecurringBooking
                     BusinessErrorMessage.RecurringTemplateSavedAddressNotFound));
             }
 
-            // Replace-in-place: the entity exposes only Pause/Resume/MarkMaterialized
-            // mutators, but for an edit we need to swap most fields. Removing then
-            // re-adding the row would lose CreatedOn / Id, so instead we delete the
-            // old and create a fresh one in the same transaction (UoW commits both
-            // together). Simpler than adding a per-field setter API to the entity
-            // for one caller.
-            templateRepository.Remove(existing);
-
-            var template = RecurringBookingTemplate.Create(
-                userId: command.UserId,
+            // Mutate in place so the template's Id survives an update. Clients
+            // caching the template by id (mobile list, web facade) stay valid.
+            existing.UpdateSchedule(
                 frequency: (RecurrenceFrequency)command.Frequency,
                 dayOfWeek: (System.DayOfWeek)command.DayOfWeek,
                 timeOfDay: TimeOnly.Parse(command.TimeOfDay),
@@ -130,26 +133,24 @@ public class UpdateRecurringBooking
                 startsOn: command.StartsOn,
                 endsOn: command.EndsOn);
 
-            templateRepository.Add(template);
-
             var line = $"{address.Address.Street}, {address.Address.City} {address.Address.ZipCode}";
 
             return BusinessResult.Success(new RecurringBookingTemplateDto(
-                Id: template.Id,
-                Frequency: (int)template.Frequency,
-                DayOfWeek: (int)template.DayOfWeek,
-                TimeOfDay: template.TimeOfDay.ToString("HH:mm"),
-                Rooms: template.Rooms,
-                Bathrooms: template.Bathrooms,
-                SavedAddressId: template.SavedAddressId,
+                Id: existing.Id,
+                Frequency: (int)existing.Frequency,
+                DayOfWeek: (int)existing.DayOfWeek,
+                TimeOfDay: existing.TimeOfDay.ToString("HH:mm"),
+                Rooms: existing.Rooms,
+                Bathrooms: existing.Bathrooms,
+                SavedAddressId: existing.SavedAddressId,
                 AddressLine: line,
-                SelectedServiceIds: template.SelectedServiceIds.ToList(),
-                SelectedPackageIds: template.SelectedPackageIds.ToList(),
-                PaymentType: (int)template.PaymentType,
-                StartsOn: template.StartsOn,
-                EndsOn: template.EndsOn,
-                LastMaterializedFor: template.LastMaterializedFor,
-                IsActive: template.IsActive));
+                SelectedServiceIds: existing.SelectedServiceIds.ToList(),
+                SelectedPackageIds: existing.SelectedPackageIds.ToList(),
+                PaymentType: (int)existing.PaymentType,
+                StartsOn: existing.StartsOn,
+                EndsOn: existing.EndsOn,
+                LastMaterializedFor: existing.LastMaterializedFor,
+                IsActive: existing.IsActive));
         }
     }
 }

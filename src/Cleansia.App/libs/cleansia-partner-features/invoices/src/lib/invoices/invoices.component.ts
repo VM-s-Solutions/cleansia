@@ -1,10 +1,10 @@
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   computed,
   inject,
-  OnDestroy,
   signal,
   TemplateRef,
   viewChild,
@@ -27,7 +27,6 @@ import {
 import { SortDefinition, SortDirection } from '@cleansia/partner-services';
 import { CleansiaPartnerRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { EmployeeInvoice, InvoicesFacade } from './invoices.facade';
 import {
   buildFilterChips,
@@ -55,14 +54,14 @@ import { getInvoicesTableDefinition } from './invoices.models';
   ],
   templateUrl: './invoices.component.html',
   providers: [InvoicesFacade],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class InvoicesComponent implements AfterViewInit, OnDestroy {
+export class InvoicesComponent implements AfterViewInit {
   private readonly router = inject(Router);
   private readonly cd = inject(ChangeDetectorRef);
   private readonly fb = inject(FormBuilder);
   protected readonly facade = inject(InvoicesFacade);
   private readonly translate = inject(TranslateService);
-  private readonly destroy$ = new Subject<void>();
 
   statusTemplate = viewChild<TemplateRef<any>>('statusTemplate');
   invoicesHelpCard = viewChild<CleansiaHelpCardComponent>('invoicesHelpCard');
@@ -119,25 +118,16 @@ export class InvoicesComponent implements AfterViewInit, OnDestroy {
     this.rebuildFilterOptions();
     this.cd.detectChanges();
 
-    this.searchForm.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.filterFormVersion.update(v => v + 1);
-      });
-
-    this.searchForm.valueChanges
-      .pipe(debounceTime(500), distinctUntilChanged(), takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.applyFilters();
-      });
-
-    this.translate.onLangChange
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
+    this.facade.bindFormChanges(
+      this.searchForm,
+      () => this.filterFormVersion.update((v) => v + 1),
+      () => this.applyFilters(),
+      () => {
         this.rebuildTableDefinitions();
         this.rebuildFilterOptions();
         this.cd.detectChanges();
-      });
+      }
+    );
   }
 
   private rebuildTableDefinitions(): void {
@@ -151,11 +141,6 @@ export class InvoicesComponent implements AfterViewInit, OnDestroy {
 
   private rebuildFilterOptions(): void {
     this.invoiceStatusOptions = buildInvoiceStatusOptions(this.translate);
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 
   onPageChange(event: PaginationState): void {

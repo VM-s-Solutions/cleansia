@@ -1,4 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { AbstractControl } from '@angular/forms';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { OrderFilter } from '@cleansia/models';
 import {
@@ -7,15 +8,21 @@ import {
   PartnerClient,
   SortDefinition,
   SortDirection,
+  StartOrderCommand,
   TakeOrderCommand,
 } from '@cleansia/partner-services';
 import * as OrderActions from '@cleansia/partner-stores';
-import { selectOrderItems, selectOrderLoading, selectOrderTotal } from '@cleansia/partner-stores';
+import {
+  selectOrderItems,
+  selectOrderLoading,
+  selectOrderTotal,
+} from '@cleansia/partner-stores';
 import { SnackbarService } from '@cleansia/services';
 import { Actions, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
+import { TranslateService } from '@ngx-translate/core';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { catchError, of, takeUntil } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, of, takeUntil } from 'rxjs';
 import {
   CompleteOrderDialogComponent,
   CompleteOrderDialogData,
@@ -29,19 +36,31 @@ export class OrdersFacade extends UnsubscribeControlDirective {
   private readonly snackbarService = inject(SnackbarService);
   private readonly dialogService = inject(DialogService);
   private readonly actions$ = inject(Actions);
+  private readonly translate = inject(TranslateService);
 
-  private readonly orders$ = this.store.select(selectOrderItems);
-  private readonly loading$ = this.store.select(selectOrderLoading('paged'));
-  private readonly total$ = this.store.select(selectOrderTotal);
+  // Per-list store streams. The page renders Available + My side-by-side
+  // so they MUST come from independent slices — a single shared `paged`
+  // slice was being clobbered by whichever load fired second, putting
+  // mine into available and hiding express orders.
+  private readonly availableOrders$ = this.store.select(selectOrderItems('available'));
+  private readonly availableTotal$ = this.store.select(selectOrderTotal('available'));
+  private readonly availableLoading$ = this.store.select(selectOrderLoading('paged:available'));
+  private readonly myOrders$ = this.store.select(selectOrderItems('my'));
+  private readonly myTotal$ = this.store.select(selectOrderTotal('my'));
+  private readonly myLoading$ = this.store.select(selectOrderLoading('paged:my'));
 
   availableOrders = signal<OrderListItem[]>([]);
   myOrders = signal<OrderListItem[]>([]);
-  totalRecords = signal<number>(0);
   availableTotalRecords = signal<number>(0);
   myTotalRecords = signal<number>(0);
-  loading = signal<boolean>(false);
   availableLoading = signal<boolean>(false);
   myLoading = signal<boolean>(false);
+
+  // Aggregate signals kept for any consumer that asks "is anything loading"
+  // or "what's the combined total" without caring which list. Derived from
+  // both per-list streams so they stay accurate as either side changes.
+  totalRecords = signal<number>(0);
+  loading = signal<boolean>(false);
 
   private currentEmployeeId = signal<string | null>(null);
   private currentSort = signal<SortDefinition[]>([]);
@@ -50,33 +69,29 @@ export class OrdersFacade extends UnsubscribeControlDirective {
 
   constructor() {
     super();
-    this.orders$.pipe(takeUntil(this.destroyed$)).subscribe((orders) => {
-      const tab = this.activeTab();
-      if (tab === 'available') {
-        this.availableOrders.set([...(orders || [])]);
-      } else {
-        this.myOrders.set([...(orders || [])]);
-      }
+
+    this.availableOrders$.pipe(takeUntil(this.destroyed$)).subscribe((orders) =>
+      this.availableOrders.set([...(orders || [])]),
+    );
+    this.availableTotal$.pipe(takeUntil(this.destroyed$)).subscribe((total) => {
+      this.availableTotalRecords.set(total);
+      this.totalRecords.set(total + this.myTotalRecords());
+    });
+    this.availableLoading$.pipe(takeUntil(this.destroyed$)).subscribe((loading) => {
+      this.availableLoading.set(loading);
+      this.loading.set(loading || this.myLoading());
     });
 
-    this.total$.pipe(takeUntil(this.destroyed$)).subscribe((total) => {
-      this.totalRecords.set(total);
-      const tab = this.activeTab();
-      if (tab === 'available') {
-        this.availableTotalRecords.set(total);
-      } else {
-        this.myTotalRecords.set(total);
-      }
+    this.myOrders$.pipe(takeUntil(this.destroyed$)).subscribe((orders) =>
+      this.myOrders.set([...(orders || [])]),
+    );
+    this.myTotal$.pipe(takeUntil(this.destroyed$)).subscribe((total) => {
+      this.myTotalRecords.set(total);
+      this.totalRecords.set(total + this.availableTotalRecords());
     });
-
-    this.loading$.pipe(takeUntil(this.destroyed$)).subscribe((loading) => {
-      this.loading.set(loading);
-      const tab = this.activeTab();
-      if (tab === 'available') {
-        this.availableLoading.set(loading);
-      } else {
-        this.myLoading.set(loading);
-      }
+    this.myLoading$.pipe(takeUntil(this.destroyed$)).subscribe((loading) => {
+      this.myLoading.set(loading);
+      this.loading.set(loading || this.availableLoading());
     });
 
     this.loadCurrentEmployee();
@@ -127,6 +142,7 @@ export class OrdersFacade extends UnsubscribeControlDirective {
       orderStatuses: additionalFilters?.orderStatuses || [
         OrderStatus.New,
         OrderStatus.Pending,
+        OrderStatus.Confirmed,
       ],
       hasAvailableSpots: true,
       excludeEmployeeId: employeeId || undefined,
@@ -135,6 +151,7 @@ export class OrdersFacade extends UnsubscribeControlDirective {
 
     this.store.dispatch(
       OrderActions.loadOrderPaged({
+        listKey: 'available',
         filter,
         sort: this.currentSort(),
         offset,
@@ -168,6 +185,7 @@ export class OrdersFacade extends UnsubscribeControlDirective {
 
     this.store.dispatch(
       OrderActions.loadOrderPaged({
+        listKey: 'my',
         filter,
         sort,
         offset,
@@ -187,13 +205,27 @@ export class OrdersFacade extends UnsubscribeControlDirective {
     }
 
     this.partnerClient.orderClient
-      .takeOrder(new TakeOrderCommand({ orderId, employeeId }))
+      .takeOrder(new TakeOrderCommand({ orderId }))
       .subscribe((response) => {
         if (response) {
           this.snackbarService.showSuccessTranslated(
             'pages.orders.order_taken_success'
           );
           this.loadAvailableOrders();
+          this.loadMyOrders();
+        }
+      });
+  }
+
+  startOrder(orderId: string): void {
+    this.partnerClient.orderClient
+      .startOrder(new StartOrderCommand({ orderId }))
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((response) => {
+        if (response) {
+          this.snackbarService.showSuccessTranslated(
+            'global.messages.orders.order_started'
+          );
           this.loadMyOrders();
         }
       });
@@ -248,7 +280,6 @@ export class OrdersFacade extends UnsubscribeControlDirective {
           this.store.dispatch(
             OrderActions.completeOrder({
               orderId: order.id!,
-              employeeId,
               actualCompletionTimeMinutes: result.actualCompletionTimeMinutes,
               completionNotes: result.completionNotes,
             })
@@ -273,5 +304,29 @@ export class OrdersFacade extends UnsubscribeControlDirective {
     // Load both sections when filters are cleared
     this.loadAvailableOrders(0, 10);
     setTimeout(() => this.loadMyOrders(0, 10), 100);
+  }
+
+  /**
+   * Wire form valueChanges and language change subscriptions.
+   * Component lifecycle invokes this once; cleanup is handled by the
+   * facade's destroyed$ Subject (UnsubscribeControlDirective).
+   */
+  bindFormChanges(
+    formCtrl: AbstractControl,
+    onFormChangeImmediate: () => void,
+    onFormChangeDebounced: () => void,
+    onLangChange: () => void
+  ): void {
+    formCtrl.valueChanges
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe(() => onFormChangeImmediate());
+
+    formCtrl.valueChanges
+      .pipe(debounceTime(500), distinctUntilChanged(), takeUntil(this.destroyed$))
+      .subscribe(() => onFormChangeDebounced());
+
+    this.translate.onLangChange
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe(() => onLangChange());
   }
 }

@@ -45,11 +45,11 @@
         <div class="order-detail__status-row">
           <div>
             <span>{{ 'pages.order_detail.order_status' | translate }}:</span>
-            <p-tag [value]="order()!.orderStatus.name || ''" [severity]="getOrderStatusSeverity(order()!.orderStatus)" />
+            <p-tag [value]="order()!.orderStatus | orderStatusLabel" [severity]="order()!.orderStatus | orderStatusSeverity" />
           </div>
           <div>
             <span>{{ 'pages.order_detail.payment_status' | translate }}:</span>
-            <p-tag [value]="order()!.paymentStatus.name || ''" [severity]="getPaymentStatusSeverity(order()!.paymentStatus)" />
+            <p-tag [value]="order()!.paymentStatus | paymentStatusLabel" [severity]="order()!.paymentStatus | paymentStatusSeverity" />
           </div>
           <div>
             <span>{{ 'pages.order_detail.payment_type' | translate }}:</span>
@@ -117,7 +117,7 @@
             </ng-template>
             <ng-template #marker let-event>
               <span class="order-detail__timeline-marker">
-                <i [class]="getStatusIcon(event.status?.value)"></i>
+                <i [class]="event.status?.value | orderStatusIcon"></i>
               </span>
             </ng-template>
           </p-timeline>

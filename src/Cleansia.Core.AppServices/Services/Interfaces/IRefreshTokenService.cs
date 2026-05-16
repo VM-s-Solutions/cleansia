@@ -11,7 +11,7 @@ public record IssuedRefreshToken(string RawToken, RefreshToken Record);
 public interface IRefreshTokenService
 {
     /// <summary>Creates a new refresh token for a user and returns both the raw value and the entity.</summary>
-    IssuedRefreshToken Issue(string userId, bool rememberMe, string? deviceLabel = null, string? ipAddress = null);
+    IssuedRefreshToken Issue(string userId, bool rememberMe, string audience, string? deviceLabel = null, string? ipAddress = null);
 
     /// <summary>
     /// Validates a raw refresh token, rotates it, and returns the new token. Throws

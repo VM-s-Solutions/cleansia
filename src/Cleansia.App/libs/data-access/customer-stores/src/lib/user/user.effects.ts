@@ -1,6 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { CustomerAuthService, CustomerClient } from '@cleansia/customer-services';
-import { GetCurrentUserQuery } from '@cleansia/partner-services';
+import { CustomerAuthService, CustomerClient, GetCurrentUserQuery } from '@cleansia/customer-services';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { catchError, map, mergeMap, of } from 'rxjs';
 import * as CustomerUserActions from './user.actions';
@@ -32,10 +31,10 @@ export class CustomerUserEffects {
   logout$ = createEffect(() =>
     this.actions$.pipe(
       ofType(CustomerUserActions.customerLogout),
-      mergeMap(() => {
-        this.authService.logout();
-        return of(CustomerUserActions.customerLogoutSuccess());
-      })
+      mergeMap(() => this.authService.logout().pipe(
+        map(() => CustomerUserActions.customerLogoutSuccess()),
+        catchError((error) => of(CustomerUserActions.customerLogoutFailure({ error })))
+      ))
     )
   );
 }

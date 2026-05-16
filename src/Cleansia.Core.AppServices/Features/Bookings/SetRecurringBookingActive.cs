@@ -6,44 +6,52 @@ using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Features.Bookings;
 
-/// <summary>
-/// Pauses or resumes a recurring booking template. Pausing skips the
-/// materializer (no new orders spawned) but preserves the template so the
-/// user can resume later with the same configuration. Already-spawned
-/// future Order rows are not cancelled — the user cancels those individually
-/// via the regular order flow.
-/// </summary>
 public class SetRecurringBookingActive
 {
-    public record Command(string TemplateId, bool IsActive, string UserId = "") : ICommand;
+    public record Command(string TemplateId, bool IsActive) : ICommand;
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator()
+        private readonly IRecurringBookingTemplateRepository _templateRepository;
+        private readonly IUserSessionProvider _userSessionProvider;
+
+        public Validator(
+            IRecurringBookingTemplateRepository templateRepository,
+            IUserSessionProvider userSessionProvider)
         {
-            RuleFor(x => x.UserId).NotEmpty().WithMessage(BusinessErrorMessage.Required);
-            RuleFor(x => x.TemplateId).NotEmpty().WithMessage(BusinessErrorMessage.Required);
+            _templateRepository = templateRepository;
+            _userSessionProvider = userSessionProvider;
+
+            RuleFor(x => x.TemplateId)
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty()
+                .WithMessage(BusinessErrorMessage.Required)
+                .MustAsync(ExistsAsync)
+                .WithMessage(BusinessErrorMessage.RecurringTemplateNotFound)
+                .MustAsync(BeOwnedByCallerAsync)
+                .WithMessage(BusinessErrorMessage.RecurringTemplateNotOwnedByUser);
+        }
+
+        private async Task<bool> ExistsAsync(string id, CancellationToken cancellationToken)
+        {
+            return await _templateRepository.GetByIdAsync(id, cancellationToken) != null;
+        }
+
+        private async Task<bool> BeOwnedByCallerAsync(string id, CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId();
+            if (string.IsNullOrEmpty(userId)) return false;
+            var template = await _templateRepository.GetByIdAsync(id, cancellationToken);
+            return template != null && template.UserId == userId;
         }
     }
 
-    public class Handler(IRecurringBookingTemplateRepository templateRepository) : ICommandHandler<Command>
+    public class Handler(
+        IRecurringBookingTemplateRepository templateRepository) : ICommandHandler<Command>
     {
         public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
         {
-            var template = await templateRepository.GetByIdAsync(command.TemplateId, cancellationToken);
-            if (template == null)
-            {
-                return BusinessResult.Failure(new Error(
-                    nameof(command.TemplateId),
-                    BusinessErrorMessage.RecurringTemplateNotFound));
-            }
-            if (template.UserId != command.UserId)
-            {
-                return BusinessResult.Failure(new Error(
-                    nameof(command.TemplateId),
-                    BusinessErrorMessage.RecurringTemplateNotOwnedByUser));
-            }
-
+            var template = (await templateRepository.GetByIdAsync(command.TemplateId, cancellationToken))!;
             if (command.IsActive) template.Resume(); else template.Pause();
             return BusinessResult.Success();
         }

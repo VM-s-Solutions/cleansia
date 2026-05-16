@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import {
+  ChangeDetectionStrategy,
   Component,
   computed,
   inject,
@@ -42,6 +43,7 @@ export type ConsentSyncFn = (preferences: CookiePreferences, status: CookieConse
   standalone: true,
   imports: [CommonModule, FormsModule, TranslateModule, ToggleSwitchModule],
   templateUrl: './cleansia-cookie-consent.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaCookieConsentComponent implements OnInit {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));

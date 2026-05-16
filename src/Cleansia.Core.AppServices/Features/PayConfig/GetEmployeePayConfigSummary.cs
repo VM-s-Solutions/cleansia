@@ -42,8 +42,7 @@ public class GetEmployeePayConfigSummary
                 .ToListAsync(cancellationToken);
 
             var employeeConfigs = await payConfigRepository
-                .GetByEmployeeId(query.EmployeeId)
-                .ToListAsync(cancellationToken);
+                .GetByEmployeeIdAsync(query.EmployeeId, cancellationToken);
 
             var serviceItems = services.Select(s =>
             {

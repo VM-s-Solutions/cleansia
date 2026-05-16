@@ -19,6 +19,7 @@ public interface IStripeClient
     /// perform Stripe-side dedup.
     /// </summary>
     Task<string> CreateCustomerAsync(
+        string userId,
         string email,
         string fullName,
         string? phone,
@@ -35,6 +36,18 @@ public interface IStripeClient
         string stripeCustomerId,
         string orderId,
         string displayOrderNumber,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Cancel a previously-created PaymentIntent that hasn't been confirmed yet.
+    /// Used when the order's amount changes mid-flow and a new intent is being
+    /// minted — the old intent must be cancelled so the customer can't end up
+    /// paying both. Safe to call on an intent in <c>requires_payment_method</c>
+    /// / <c>requires_confirmation</c> / <c>processing</c> states. Throws if the
+    /// intent has already succeeded.
+    /// </summary>
+    Task CancelPaymentIntentAsync(
+        string paymentIntentId,
         CancellationToken cancellationToken);
 
     /// <summary>
@@ -68,6 +81,7 @@ public interface IStripeClient
         string stripeCustomerId,
         string stripePriceId,
         int trialPeriodDays,
+        string idempotencyAttemptId,
         CancellationToken cancellationToken);
 
     /// <summary>
@@ -81,6 +95,7 @@ public interface IStripeClient
     Task<SubscriptionResult> SwapSubscriptionPriceAsync(
         string stripeSubscriptionId,
         string newStripePriceId,
+        string idempotencyAttemptId,
         CancellationToken cancellationToken);
 
     /// <summary>
@@ -109,6 +124,7 @@ public interface IStripeClient
         int trialPeriodDays,
         string successUrl,
         string cancelUrl,
+        string idempotencyAttemptId,
         CancellationToken cancellationToken);
 }
 

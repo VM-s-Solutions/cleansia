@@ -6,22 +6,21 @@ import {
   PackageListItem,
   SortDefinition,
 } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 export interface PackageFilterParams {
   searchTerm?: string;
 }
 
 @Injectable()
-export class PackageManagementFacade {
+export class PackageManagementFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
-
-  private destroy$ = new Subject<void>();
 
   readonly packages = signal<PackageListItem[]>([]);
   readonly loading = signal<boolean>(false);
@@ -45,7 +44,7 @@ export class PackageManagementFacade {
         this.currentLimit()
       )
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
@@ -107,7 +106,7 @@ export class PackageManagementFacade {
     this.adminClient.adminPackageClient
       .delete(pkg.id)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((response: DeletePackageResponse | null) => {
@@ -118,10 +117,5 @@ export class PackageManagementFacade {
           this.loadPackages();
         }
       });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

@@ -55,7 +55,6 @@ public class EmployeePayConfigEntityConfiguration : AuditableEntityConfiguration
         builder.Property(e => e.Description)
             .HasMaxLength(500);
 
-        // Relationships
         builder.HasOne(e => e.Service)
             .WithMany()
             .HasForeignKey(e => e.ServiceId)
@@ -76,7 +75,6 @@ public class EmployeePayConfigEntityConfiguration : AuditableEntityConfiguration
             .HasForeignKey(e => e.EmployeeId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Indexes
         builder.HasIndex(e => e.ServiceId);
         builder.HasIndex(e => e.PackageId);
         builder.HasIndex(e => e.EmployeeId);

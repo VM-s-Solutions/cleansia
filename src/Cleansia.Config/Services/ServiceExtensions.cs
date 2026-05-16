@@ -1,4 +1,6 @@
-﻿using Cleansia.Core.AppServices.Services;
+﻿using Cleansia.Core.AppServices.Authentication;
+using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Services;
@@ -21,10 +23,15 @@ public static class ServiceExtensions
         services.AddScoped<ITaxIdValidator, TaxIdValidator>();
         services.AddScoped<IVatCalculator, VatCalculator>();
         services.AddScoped<IOrderPricingCalculator, OrderPricingCalculator>();
+        services.AddScoped<IOrderFactory, OrderFactory>();
         services.AddScoped<ILoyaltyService, LoyaltyService>();
         services.AddScoped<IPromoCodeService, PromoCodeService>();
         services.AddScoped<IReferralService, ReferralService>();
+        services.AddScoped<IStripeSubscriptionWebhookHandler, StripeSubscriptionWebhookHandler>();
         services.AddScoped<ICancellationPolicyResolver, CancellationPolicyResolver>();
+        services.AddScoped<IOrderAccessService, OrderAccessService>();
+        services.AddScoped<IGdprDeletionService, GdprDeletionService>();
+        services.AddScoped<IGdprExportService, GdprExportService>();
         services.AddInfrastructureServices();
 
         return services;

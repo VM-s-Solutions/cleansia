@@ -4,18 +4,17 @@ import {
   ApiClient,
   FiscalFailureDto,
 } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 @Injectable()
-export class FiscalFailuresListFacade {
+export class FiscalFailuresListFacade extends UnsubscribeControlDirective {
   private readonly apiClient = inject(ApiClient);
   private readonly fiscalFailureClient = inject(AdminFiscalFailureClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
-
-  private destroy$ = new Subject<void>();
 
   readonly failures = signal<FiscalFailureDto[]>([]);
   readonly loading = signal<boolean>(false);
@@ -27,7 +26,7 @@ export class FiscalFailuresListFacade {
     this.apiClient
       .adminFiscalFailure()
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
@@ -45,7 +44,7 @@ export class FiscalFailuresListFacade {
     this.fiscalFailureClient
       .retry(receiptId)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe(() => {
@@ -60,7 +59,7 @@ export class FiscalFailuresListFacade {
     this.fiscalFailureClient
       .acknowledge(receiptId)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe(() => {
@@ -69,10 +68,5 @@ export class FiscalFailuresListFacade {
         );
         this.loadFailures();
       });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

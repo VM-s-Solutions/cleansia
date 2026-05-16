@@ -110,7 +110,6 @@ public class EmployeeInvoiceEntityConfiguration : AuditableEntityConfiguration<E
             .OnDelete(DeleteBehavior.Restrict)
             .IsRequired(false);
 
-        // Indexes
         builder.HasIndex(e => e.InvoiceNumber)
             .IsUnique();
 

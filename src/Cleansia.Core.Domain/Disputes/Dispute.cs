@@ -106,4 +106,19 @@ public class Dispute : Auditable, ITenantEntity
         StripeDisputeId = stripeDisputeId;
         Updated(updatedBy, DateTimeOffset.UtcNow);
     }
+
+    public Dispute Anonymize()
+    {
+        Description = AnonymizationMarker.Value;
+        ResolutionNotes = ResolutionNotes is null ? null : AnonymizationMarker.Value;
+        foreach (var message in _messages)
+        {
+            message.Anonymize();
+        }
+        foreach (var evidence in _evidence)
+        {
+            evidence.Anonymize();
+        }
+        return this;
+    }
 }

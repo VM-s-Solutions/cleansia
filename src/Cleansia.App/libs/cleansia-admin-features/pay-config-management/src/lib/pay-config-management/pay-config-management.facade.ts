@@ -1,8 +1,9 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 import { PayConfigListItem } from './pay-config-management.models';
 import { AdminPayConfigService } from '../admin-pay-config.service';
 
@@ -12,13 +13,11 @@ export interface PayConfigFilterParams {
 }
 
 @Injectable()
-export class PayConfigManagementFacade {
+export class PayConfigManagementFacade extends UnsubscribeControlDirective {
   private readonly payConfigService = inject(AdminPayConfigService);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
-
-  private destroy$ = new Subject<void>();
 
   readonly payConfigs = signal<PayConfigListItem[]>([]);
   readonly loading = signal<boolean>(false);
@@ -41,7 +40,7 @@ export class PayConfigManagementFacade {
         filterParams?.packageId
       )
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
@@ -98,7 +97,7 @@ export class PayConfigManagementFacade {
     this.payConfigService
       .delete(payConfig.id)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((response) => {
@@ -109,10 +108,5 @@ export class PayConfigManagementFacade {
           this.loadPayConfigs();
         }
       });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

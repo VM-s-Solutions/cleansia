@@ -5,6 +5,7 @@ using Cleansia.Web.Customer.Abstractions;
 using Cleansia.Web.Customer.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Customer.Controllers;
 
@@ -14,6 +15,7 @@ public class GdprController(IMediator mediator) : CustomerApiController(mediator
 {
     [HttpGet("export")]
     [Permission(Policy.CanExportOwnData)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(GdprExportDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> ExportMyData(CancellationToken cancellationToken)
     {
@@ -23,6 +25,7 @@ public class GdprController(IMediator mediator) : CustomerApiController(mediator
 
     [HttpPost("delete-account")]
     [Permission(Policy.CanDeleteOwnAccount)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> DeleteMyAccount(CancellationToken cancellationToken)
     {

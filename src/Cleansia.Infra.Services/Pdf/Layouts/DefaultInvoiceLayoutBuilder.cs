@@ -49,17 +49,13 @@ public class DefaultInvoiceLayoutBuilder : IInvoiceLayoutBuilder
         {
             col.Item().Element(c => c.DocumentTitle("Invoice"));
 
-            // Billed To & Payment Period
             col.Item().Element(c => BuildInfoSection(c, data));
 
-            // Order details table
             col.Item().Element(c => c.SectionTitle($"Order Details ({data.Orders.Count} orders)"));
             col.Item().Element(c => BuildOrderTable(c, data));
 
-            // Summary
             col.Item().PaddingTop(CleansiaPdfTheme.SectionSpacing).Element(c => BuildSummary(c, data));
 
-            // Legal notice
             if (!string.IsNullOrWhiteSpace(data.LegalDisclaimer))
             {
                 col.Item().PaddingTop(CleansiaPdfTheme.SectionSpacing)

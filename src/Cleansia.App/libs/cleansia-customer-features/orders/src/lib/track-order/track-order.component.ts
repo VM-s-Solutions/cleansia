@@ -7,7 +7,6 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   CleansiaButtonComponent,
@@ -15,19 +14,24 @@ import {
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import {
-  CustomerOrderClient,
-  CUSTOMER_API_BASE_URL,
   LookupOrderResponse,
-  LookupOrderBatchQuery,
-  LookupOrderBatchOrderLookupItem,
   LookupOrderBatchResponse,
 } from '@cleansia/customer-services';
-import { OrderStatus, PaymentStatus } from '@cleansia/partner-services';
-import { CleansiaCustomerRoute, GuestOrderService } from '@cleansia/services';
+import {
+  OrderStatusIconPipe,
+  OrderStatusLabelPipe,
+  OrderStatusSeverityPipe,
+  PaymentStatusLabelPipe,
+  PaymentStatusSeverityPipe,
+} from '@cleansia/pipes';
+import { CleansiaCustomerRoute } from '@cleansia/services';
+import { GuestOrderService } from './guest-order.service';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { TagModule } from 'primeng/tag';
 import { TimelineModule } from 'primeng/timeline';
+import { takeUntil } from 'rxjs';
 import { GuestOrderLookupCacheService } from '../order-lookup/guest-order-lookup-cache.service';
+import { TrackOrderFacade } from './track-order.facade';
 
 @Component({
   selector: 'cleansia-customer-track-order',
@@ -42,21 +46,23 @@ import { GuestOrderLookupCacheService } from '../order-lookup/guest-order-lookup
     CleansiaButtonComponent,
     CleansiaScrollTopComponent,
     CleansiaTitleComponent,
+    OrderStatusSeverityPipe,
+    OrderStatusLabelPipe,
+    PaymentStatusSeverityPipe,
+    PaymentStatusLabelPipe,
+    OrderStatusIconPipe,
   ],
   templateUrl: './track-order.component.html',
+  providers: [TrackOrderFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TrackOrderComponent implements OnInit {
-  private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly translate = inject(TranslateService);
   private readonly guestOrderService = inject(GuestOrderService);
   private readonly cache = inject(GuestOrderLookupCacheService);
-  private readonly orderClient = new CustomerOrderClient(
-    this.http,
-    inject(CUSTOMER_API_BASE_URL, { optional: true }) ?? 'http://localhost:5003'
-  );
+  private readonly facade = inject(TrackOrderFacade);
 
   routes = CleansiaCustomerRoute;
 
@@ -92,16 +98,9 @@ export class TrackOrderComponent implements OnInit {
     }
 
     this.loading.set(true);
-    const items = guestOrders.map(
-      (o) =>
-        new LookupOrderBatchOrderLookupItem({
-          orderId: o.orderId,
-          email: o.email,
-        })
-    );
-
-    this.orderClient
-      .lookupBatch(new LookupOrderBatchQuery({ items }))
+    this.facade
+      .lookupBatch(guestOrders.map((o) => ({ orderId: o.orderId, email: o.email })))
+      .pipe(takeUntil(this.facade.destroyed$))
       .subscribe({
         next: (data: LookupOrderBatchResponse) => {
           this.recentOrders.set(data.orders || []);
@@ -128,18 +127,21 @@ export class TrackOrderComponent implements OnInit {
     this.manualResult.set(null);
     this.searched.set(true);
 
-    this.orderClient.lookup(orderNumber, email).subscribe({
-      next: (data) => {
-        this.manualResult.set(data);
-        this.loading.set(false);
-      },
-      error: () => {
-        this.error.set(
-          this.translate.instant('pages.track_order.not_found')
-        );
-        this.loading.set(false);
-      },
-    });
+    this.facade
+      .lookup(orderNumber, email)
+      .pipe(takeUntil(this.facade.destroyed$))
+      .subscribe({
+        next: (data) => {
+          this.manualResult.set(data);
+          this.loading.set(false);
+        },
+        error: () => {
+          this.error.set(
+            this.translate.instant('pages.track_order.not_found')
+          );
+          this.loading.set(false);
+        },
+      });
   }
 
   navigateToOrder(): void {
@@ -158,59 +160,14 @@ export class TrackOrderComponent implements OnInit {
     this.router.navigate(['/' + CleansiaCustomerRoute.ORDERS, 'lookup', orderId]);
   }
 
-  getOrderStatusSeverity(status: { value?: number }): string {
-    switch (status?.value) {
-      case OrderStatus.Pending:
-        return 'warn';
-      case OrderStatus.Confirmed:
-        return 'info';
-      case OrderStatus.InProgress:
-        return 'info';
-      case OrderStatus.Completed:
-        return 'success';
-      case OrderStatus.Cancelled:
-        return 'danger';
-      default:
-        return 'info';
-    }
-  }
-
-  getPaymentStatusSeverity(status: { value?: number }): string {
-    switch (status?.value) {
-      case PaymentStatus.Pending:
-        return 'warn';
-      case PaymentStatus.Paid:
-        return 'success';
-      case PaymentStatus.Failed:
-        return 'danger';
-      case PaymentStatus.Refunded:
-        return 'info';
-      case PaymentStatus.Disputed:
-        return 'danger';
-      default:
-        return 'info';
-    }
-  }
-
-  getStatusIcon(value: number): string {
-    switch (value) {
-      case OrderStatus.Pending:
-        return 'pi pi-clock';
-      case OrderStatus.Confirmed:
-        return 'pi pi-check';
-      case OrderStatus.InProgress:
-        return 'pi pi-spin pi-spinner';
-      case OrderStatus.Completed:
-        return 'pi pi-check-circle';
-      case OrderStatus.Cancelled:
-        return 'pi pi-times-circle';
-      default:
-        return 'pi pi-circle';
-    }
-  }
-
   private getLocale(): string {
-    const localeMap: Record<string, string> = { cs: 'cs-CZ', en: 'en-US' };
+    const localeMap: Record<string, string> = {
+      cs: 'cs-CZ',
+      en: 'en-US',
+      sk: 'sk-SK',
+      uk: 'uk-UA',
+      ru: 'ru-RU',
+    };
     return localeMap[this.translate.currentLang] || 'en-US';
   }
 

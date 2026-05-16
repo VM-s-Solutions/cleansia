@@ -226,15 +226,18 @@ export class CleansiaTableComponent<T = any> {
   }
 
   // Methods
-  getCellValue(row: T, column: TableColumn<T>): any {
+  getCellValue(row: T, column: TableColumn<T>): unknown {
     if (column.getValue) {
       return column.getValue(row);
     }
     return this.getNestedValue(row, column.field);
   }
 
-  private getNestedValue(obj: any, path: string): any {
-    return path.split('.').reduce((current, prop) => current?.[prop], obj);
+  private getNestedValue(obj: unknown, path: string): unknown {
+    return path.split('.').reduce<unknown>(
+      (current, prop) => (current as Record<string, unknown> | null | undefined)?.[prop],
+      obj,
+    );
   }
 
   onRowClick(row: T): void {

@@ -1,16 +1,11 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { JwtToken } from '@cleansia/models';
-import { CleansiaAdminRoute, LocalStorageKey, Role } from '@cleansia/services';
+import { AUTH_COOKIE_KEYS, CleansiaAdminRoute, LocalStorageKey, Role } from '@cleansia/services';
 import {
-  extractCookieValue,
   getLocalStorageValueByKeyAsJSON,
-  removeCookieValue,
-  setCookieValue,
   setLocalStorageValueByKey,
 } from '@cleansia/utils';
-import { jwtDecode } from 'jwt-decode';
 import { BehaviorSubject, Observable, catchError, map, of, tap } from 'rxjs';
 import { AdminClient } from '../client/admin-base-client';
 import {
@@ -18,6 +13,7 @@ import {
   JwtTokenResponse,
   LogoutCommand,
   RefreshTokenCommand,
+  UserProfile,
 } from '../client/admin-client';
 
 @Injectable({
@@ -26,6 +22,7 @@ import {
 export class AdminAuthService {
   private readonly adminClient = inject(AdminClient);
   private readonly router = inject(Router);
+  private readonly cookieKeys = inject(AUTH_COOKIE_KEYS);
 
   readonly isLoggedIn$ = new BehaviorSubject<boolean>(this.isLoggedIn());
   readonly isLoggedInAction$: Observable<boolean> = this.isLoggedIn$.pipe(
@@ -48,12 +45,10 @@ export class AdminAuthService {
   }
 
   logout(): Observable<boolean> {
-    const refreshToken = this.getRefreshToken();
-    const serverCall = refreshToken
-      ? this.adminClient.adminAuthClient
-          .logout(new LogoutCommand({ token: refreshToken }))
-          .pipe(catchError(() => of(false)))
-      : of(true);
+    // Refresh token is in the HttpOnly cookie — server reads from cookie.
+    const serverCall = this.adminClient.adminAuthClient
+      .logout(new LogoutCommand({ token: '' }))
+      .pipe(catchError(() => of(false)));
 
     return serverCall.pipe(
       tap(() => {
@@ -64,51 +59,51 @@ export class AdminAuthService {
     );
   }
 
-  refreshSession(): Observable<string> {
-    const refreshToken = this.getRefreshToken();
-    if (!refreshToken) {
-      throw new Error('No refresh token available');
-    }
+  refreshSession(): Observable<boolean> {
     return this.adminClient.adminAuthClient
-      .refreshToken(new RefreshTokenCommand({ token: refreshToken }))
+      .refreshToken(
+        new RefreshTokenCommand({
+          token: '',
+          requiredProfile: UserProfile.Administrator,
+          requiredAudience: undefined,
+        })
+      )
       .pipe(
         tap((authResult) => this.setSession(authResult)),
-        map((authResult) => authResult.token!)
+        map(() => true)
       );
   }
 
   isLoggedIn(): boolean {
-    const expiration = this.getExpiration();
-    return expiration ? Date.now() < expiration.getTime() : false;
+    if (!this.getCsrfToken()) return false;
+    return this.hasValidRefreshToken();
   }
 
   isLoggedOut(): boolean {
     return !this.isLoggedIn();
   }
 
-  getToken(): string | null {
-    return this.getCookieToken();
-  }
-
-  getRefreshToken(): string | null {
-    return extractCookieValue(LocalStorageKey.REFRESH_TOKEN);
+  /** CSRF token from the most recent login/refresh response (double-submit pair
+   *  with the HttpOnly auth cookie). Read by the interceptor for X-CSRF-Token. */
+  getCsrfToken(): string | null {
+    return typeof localStorage === 'undefined'
+      ? null
+      : localStorage.getItem(this.cookieKeys.csrfToken);
   }
 
   hasValidRefreshToken(): boolean {
-    if (!this.getRefreshToken()) return false;
-    const expStr = localStorage.getItem(LocalStorageKey.REFRESH_TOKEN_EXP);
+    if (typeof localStorage === 'undefined') return false;
+    const expStr = localStorage.getItem(this.cookieKeys.refreshTokenExp);
     if (!expStr) return false;
     return Date.now() < new Date(expStr).getTime();
   }
 
+  /** Role attached to the most recent login/refresh response. Source-of-truth
+   *  remains server-side; this is a UI hint for permission gating. */
   getRole(): string | null {
-    const token: string | null = this.getToken();
-    if (!token) {
-      return null;
-    }
-
-    const decodedToken: JwtToken = jwtDecode(token);
-    return decodedToken.role;
+    return typeof localStorage === 'undefined'
+      ? null
+      : localStorage.getItem(this.cookieKeys.role);
   }
 
   isAdminOrEditor(): boolean {
@@ -138,54 +133,30 @@ export class AdminAuthService {
   }
 
   removeSession(): void {
-    this.removeCookieSession();
-    removeCookieValue(LocalStorageKey.REFRESH_TOKEN);
-    localStorage.removeItem(LocalStorageKey.REFRESH_TOKEN_EXP);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(this.cookieKeys.refreshTokenExp);
+      localStorage.removeItem(this.cookieKeys.csrfToken);
+      localStorage.removeItem(this.cookieKeys.role);
+    }
     this.isLoggedIn$.next(false);
   }
 
   setSession(authResult: JwtTokenResponse): void {
-    this.setCookieSession(authResult.token!);
-
-    if (authResult.refreshToken) {
-      setCookieValue(LocalStorageKey.REFRESH_TOKEN, authResult.refreshToken);
+    const role = (authResult as unknown as { role?: string }).role;
+    if (role) {
+      setLocalStorageValueByKey(this.cookieKeys.role, role);
     }
     if (authResult.refreshTokenExpiresAt) {
       localStorage.setItem(
-        LocalStorageKey.REFRESH_TOKEN_EXP,
+        this.cookieKeys.refreshTokenExp,
         authResult.refreshTokenExpiresAt.toISOString()
       );
+    }
+    if (authResult.csrfToken) {
+      localStorage.setItem(this.cookieKeys.csrfToken, authResult.csrfToken);
     }
 
     this.isLoggedIn$.next(true);
     this.setWarningDialogStatus(false);
-  }
-
-  private getExpiration(): Date | null {
-    return this.getCookieExpiration();
-  }
-
-  private removeCookieSession(): void {
-    removeCookieValue(LocalStorageKey.TOKEN);
-  }
-
-  private getCookieToken(): string | null {
-    return extractCookieValue(LocalStorageKey.TOKEN);
-  }
-
-  private getCookieExpiration(): Date | null {
-    const token = this.getCookieToken();
-    if (!token) {
-      return null;
-    }
-
-    const { exp } = jwtDecode(token);
-    return exp ? new Date(exp * 1000) : null;
-  }
-
-  private setCookieSession(token: string): void {
-    const decodedToken: JwtToken = jwtDecode(token);
-    setCookieValue(LocalStorageKey.TOKEN, token);
-    setLocalStorageValueByKey(LocalStorageKey.ROLE, decodedToken.role);
   }
 }

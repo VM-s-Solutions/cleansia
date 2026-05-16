@@ -5,18 +5,17 @@ import {
   PromoCodeDetailDto,
   PromoCodeRedemptionListItem,
 } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 @Injectable()
-export class PromoCodeDetailFacade {
+export class PromoCodeDetailFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
-
-  private destroy$ = new Subject<void>();
 
   readonly promoCode = signal<PromoCodeDetailDto | null>(null);
   readonly loading = signal<boolean>(false);
@@ -35,7 +34,7 @@ export class PromoCodeDetailFacade {
     this.adminClient.adminPromoCodeClient
       .details(id)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
@@ -56,7 +55,7 @@ export class PromoCodeDetailFacade {
     this.adminClient.adminPromoCodeClient
       .getRedemptions(id, offset, limit)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.redemptionsLoading.set(false))
       )
@@ -78,7 +77,7 @@ export class PromoCodeDetailFacade {
     this.adminClient.adminPromoCodeClient
       .deactivate(this.currentId)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((response) => {
@@ -103,10 +102,5 @@ export class PromoCodeDetailFacade {
 
   navigateToList(): void {
     this.router.navigate(['/loyalty/promos']);
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

@@ -43,12 +43,19 @@ public class RefreshToken : Auditable, ITenantEntity
     [MaxLength(45)] // IPv6 max length
     public string? IpAddress { get; private set; }
 
+    /// <summary>JWT audience the refresh token is bound to. On rotation, the new
+    /// access token is issued with the same audience so a token can't be transplanted
+    /// to a different host.</summary>
+    [MaxLength(40)]
+    public string? Audience { get; private set; }
+
     public bool IsAlive => RevokedAt is null && ExpiresAt > DateTimeOffset.UtcNow;
 
     public static RefreshToken Create(
         string userId,
         string tokenHash,
         DateTimeOffset expiresAt,
+        string audience,
         string? deviceLabel,
         string? ipAddress)
         => new()
@@ -56,6 +63,7 @@ public class RefreshToken : Auditable, ITenantEntity
             UserId = userId,
             TokenHash = tokenHash,
             ExpiresAt = expiresAt,
+            Audience = audience,
             DeviceLabel = deviceLabel,
             IpAddress = ipAddress,
         };

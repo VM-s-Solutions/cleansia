@@ -1,31 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CleansiaButtonComponent } from '@cleansia/components';
-import { CustomerClient } from '@cleansia/customer-services';
 import {
-  loadCustomerDisputes,
-  loadCustomerDisputeDetail,
-  loadCustomerOrders,
-  selectCustomerDisputes,
-  selectCustomerDisputesTotal,
-  selectCustomerDisputeDetail,
-  selectCustomerDisputeLoading,
-  selectCustomerOrders,
-} from '@cleansia/customer-stores';
-import {
-  AddDisputeMessageCommand,
-  CreateDisputeCommand,
   DisputeListItem,
   DisputeReason,
   DisputeStatus,
-  OrderListItem,
 } from '@cleansia/partner-services';
-import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
-import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { TagModule } from 'primeng/tag';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
@@ -33,6 +16,7 @@ import { SelectModule } from 'primeng/select';
 import { DialogModule } from 'primeng/dialog';
 import { SkeletonModule } from 'primeng/skeleton';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
+import { DisputesFacade } from './disputes.facade';
 
 @Component({
   selector: 'cleansia-customer-disputes',
@@ -51,33 +35,26 @@ import { PaginatorModule, PaginatorState } from 'primeng/paginator';
     CleansiaButtonComponent,
   ],
   templateUrl: './disputes.component.html',
+  providers: [DisputesFacade],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DisputesComponent implements OnInit {
-  private readonly store = inject(Store);
-  private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly customerClient = inject(CustomerClient);
   private readonly translate = inject(TranslateService);
-  private readonly snackbar = inject(SnackbarService);
+  protected readonly facade = inject(DisputesFacade);
 
-  disputes = toSignal(this.store.select(selectCustomerDisputes), { initialValue: [] as DisputeListItem[] });
-  totalRecords = toSignal(this.store.select(selectCustomerDisputesTotal), { initialValue: 0 });
-  loading = toSignal(this.store.select(selectCustomerDisputeLoading('paged')), { initialValue: false });
-  disputeDetail = toSignal(this.store.select(selectCustomerDisputeDetail));
-  detailLoading = toSignal(this.store.select(selectCustomerDisputeLoading('detail')), { initialValue: false });
-
-  private readonly orders = toSignal(this.store.select(selectCustomerOrders), { initialValue: [] as OrderListItem[] });
-  readonly orderOptions = computed(() =>
-    (this.orders() || []).map(o => ({
-      label: `#${o.displayOrderNumber}`,
-      value: o.id,
-    }))
-  );
+  // Re-expose facade signals to keep template bindings unchanged.
+  readonly disputes = this.facade.disputes;
+  readonly totalRecords = this.facade.totalRecords;
+  readonly loading = this.facade.loading;
+  readonly disputeDetail = this.facade.disputeDetail;
+  readonly detailLoading = this.facade.detailLoading;
+  readonly orderOptions = this.facade.orderOptions;
+  readonly sendingMessage = this.facade.sendingMessage;
 
   showCreateDialog = signal(false);
   showDetailDialog = signal(false);
   newMessage = signal('');
-  sendingMessage = signal(false);
 
   createForm = {
     orderId: '',
@@ -129,7 +106,7 @@ export class DisputesComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadDisputes();
-    this.store.dispatch(loadCustomerOrders({ offset: 0, limit: 100 }));
+    this.facade.loadOrdersForSelect();
     const orderId = this.route.snapshot.queryParamMap.get('orderId');
     if (orderId) {
       this.createForm.orderId = orderId;
@@ -138,7 +115,7 @@ export class DisputesComponent implements OnInit {
   }
 
   loadDisputes(): void {
-    this.store.dispatch(loadCustomerDisputes({ offset: this.first, limit: this.rows }));
+    this.facade.loadDisputes(this.first, this.rows);
   }
 
   onPageChange(event: PaginatorState): void {
@@ -149,33 +126,23 @@ export class DisputesComponent implements OnInit {
 
   openDetail(dispute: DisputeListItem): void {
     if (!dispute.id) return;
-    this.store.dispatch(loadCustomerDisputeDetail({ disputeId: dispute.id }));
+    this.facade.loadDisputeDetail(dispute.id);
     this.showDetailDialog.set(true);
   }
 
   createDispute(): void {
     if (!this.createForm.orderId || !this.createForm.description) return;
 
-    this.customerClient.disputeClient
-      .create(
-        new CreateDisputeCommand({
-          orderId: this.createForm.orderId,
-          reason: this.createForm.reason,
-          description: this.createForm.description,
-          userId: undefined,
-        })
-      )
-      .subscribe({
-        next: () => {
-          this.snackbar.showSuccess(this.translate.instant('pages.disputes.create_success'));
-          this.showCreateDialog.set(false);
-          this.createForm = { orderId: '', reason: DisputeReason.QualityIssue, description: '' };
-          this.loadDisputes();
-        },
-        error: () => {
-          this.snackbar.showError(this.translate.instant('pages.disputes.create_error'));
-        },
-      });
+    this.facade.createDispute(
+      this.createForm.orderId,
+      this.createForm.reason,
+      this.createForm.description,
+      () => {
+        this.showCreateDialog.set(false);
+        this.createForm = { orderId: '', reason: DisputeReason.QualityIssue, description: '' };
+        this.loadDisputes();
+      }
+    );
   }
 
   sendMessage(): void {
@@ -183,26 +150,9 @@ export class DisputesComponent implements OnInit {
     const message = this.newMessage();
     if (!detail?.id || !message) return;
 
-    this.sendingMessage.set(true);
-    this.customerClient.disputeClient
-      .addMessage(
-        new AddDisputeMessageCommand({
-          disputeId: detail.id,
-          message,
-          isStaffMessage: false,
-        })
-      )
-      .subscribe({
-        next: () => {
-          this.sendingMessage.set(false);
-          this.newMessage.set('');
-          this.store.dispatch(loadCustomerDisputeDetail({ disputeId: detail.id! }));
-        },
-        error: () => {
-          this.sendingMessage.set(false);
-          this.snackbar.showError(this.translate.instant('pages.disputes.send_error'));
-        },
-      });
+    this.facade.sendMessage(detail.id, message, () => {
+      this.newMessage.set('');
+    });
   }
 
   getStatusSeverity(status: { value?: number }): string {

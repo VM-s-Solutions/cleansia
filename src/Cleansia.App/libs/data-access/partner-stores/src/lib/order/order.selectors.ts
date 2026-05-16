@@ -1,18 +1,18 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
-import { ORDER_FEATURE_KEY, OrderState } from './order.state';
+import { ORDER_FEATURE_KEY, OrderListKey, OrderState } from './order.state';
 
 export const selectOrderState =
   createFeatureSelector<OrderState>(ORDER_FEATURE_KEY);
 
-export const selectOrderPage = createSelector(selectOrderState, (s) => s.page);
-export const selectOrderItems = createSelector(
-  selectOrderPage,
-  (page) => page?.data,
-);
-export const selectOrderTotal = createSelector(
-  selectOrderPage,
-  (page) => page?.total ?? 0,
-);
+export const selectOrderPage = (listKey: OrderListKey = 'paged') =>
+  createSelector(selectOrderState, (s) => s.pages[listKey]);
+
+export const selectOrderItems = (listKey: OrderListKey = 'paged') =>
+  createSelector(selectOrderPage(listKey), (page) => page?.data);
+
+export const selectOrderTotal = (listKey: OrderListKey = 'paged') =>
+  createSelector(selectOrderPage(listKey), (page) => page?.total ?? 0);
+
 export const selectOrderDetail = createSelector(
   selectOrderState,
   (s) => s.orderDetail,

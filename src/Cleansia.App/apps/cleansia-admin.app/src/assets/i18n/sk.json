@@ -79,6 +79,7 @@
       "loyalty_tiers": "Vernostné úrovne",
       "loyalty_user_detail": "Vernosť používateľa",
       "loyalty_referrals": "Odporúčania",
+      "sitewide_push": "Hromadné oznámenie",
       "not_found": "Stránka nebola nájdená"
     }
   },
@@ -153,7 +154,7 @@
     "next_page": "Nasledujúca stránka",
     "actions": {
       "login": "Prihlásiť sa",
-      "pay_configs": "Pay Configs",
+      "pay_configs": "Konfigurácie miezd",
       "logout": "Odhlásiť sa",
       "back": "Späť",
       "save": "Uložiť",
@@ -215,6 +216,8 @@
     "loyalty_promo_codes": "Promo kódy",
     "loyalty_tiers": "Úrovne",
     "loyalty_referrals": "Odporúčania",
+    "marketing": "Marketing",
+    "marketing_sitewide_push": "Hromadné oznámenie",
     "logout": "Odhlásiť sa"
   },
   "pages": {
@@ -402,6 +405,7 @@
         "rejected": "Zamietnutý",
         "unknown": "Neznámy"
       },
+      "grade": "Hodnosť",
       "document_types": {
         "identity_card": "Občiansky preukaz",
         "passport": "Pas",
@@ -433,7 +437,6 @@
       "packages_configured": "Balíčky",
       "bulk_apply_grade": "Použiť šablónu hodnosti",
       "bulk_apply_grade_hint": "Vyberte hodnosť a menu na automatické vytvorenie mzdových konfigurácií pre všetky služby a balíčky. Sadzby sa vypočítavajú zo základnej ceny pomocou násobiteľov hodnosti (Junior 0.5x, Medior 0.75x, Senior 1.0x).",
-      "grade": "Hodnosť",
       "overwrite_existing": "Prepísať existujúce konfigurácie",
       "apply_to_all": "Použiť na všetko",
       "services": "Služby",
@@ -470,6 +473,7 @@
       "order_status": {
         "pending": "Čakajúca",
         "confirmed": "Potvrdená",
+        "on_the_way": "Na ceste",
         "in_progress": "Prebieha",
         "completed": "Dokončená",
         "cancelled": "Zrušená",
@@ -1504,6 +1508,30 @@
       "not_yet": "—",
       "empty": "Zatiaľ žiadne odporúčania",
       "loading": "Načítavanie..."
+    },
+    "sitewide_push": {
+      "title": "Hromadné oznámenie",
+      "subtitle": "Odoslať jednorazové marketingové oznámenie všetkým zákazníkom, ktorí prijímajú marketingové správy. Doručovanie prebieha asynchrónne; doručenie typicky do niekoľkých minút.",
+      "titles_section": "Titulok oznámenia (podľa jazyka)",
+      "bodies_section": "Text oznámenia (podľa jazyka)",
+      "locale": {
+        "en_title": "Anglický titulok",
+        "cs_title": "Český titulok",
+        "sk_title": "Slovenský titulok",
+        "uk_title": "Ukrajinský titulok",
+        "ru_title": "Ruský titulok",
+        "en_body": "Anglický text",
+        "cs_body": "Český text",
+        "sk_body": "Slovenský text",
+        "uk_body": "Ukrajinský text",
+        "ru_body": "Ruský text"
+      },
+      "send": "Odoslať všetkým odberateľom",
+      "confirm_title": "Odoslať hromadné oznámenie?",
+      "confirm_send": "Týmto sa zaradí oznámenie do fronty pre každého zákazníka, ktorý prijíma marketingové správy. Po zaradení nie je možné odoslanie zastaviť.",
+      "validation_error": "Pred odoslaním vyplňte všetky jazykové polia.",
+      "send_success": "Hromadné oznámenie zaradené do fronty. Doručovanie beží na pozadí.",
+      "send_error": "Nepodarilo sa zaradiť oznámenie. Skontrolujte vstup a skúste to znova."
     }
   },
   "employees": {
@@ -2124,7 +2152,8 @@
       "remember_me": "Zapamätať si ma",
       "forgot_password": "Zabudnuté heslo?",
       "dont_have_account": "Nemáte účet?"
-    }
+    },
+    "refresh_token_reused": "Vaša relácia bola použitá inde. Prihláste sa, prosím, znova."
   },
   "fiscal_failures": {
     "title": "Fiškálne zlyhania",
@@ -2155,5 +2184,18 @@
       "retry_scheduled": "Opakovanie naplánované",
       "acknowledged": "Fiškálne zlyhanie potvrdené"
     }
+  },
+  "gdpr": {
+    "deletion_already_pending": "Žiadosť o vymazanie už prebieha.",
+    "deletion_blocked_by_order": "Účet nie je možné vymazať, kým máte aktívnu objednávku.",
+    "deletion_blocked_by_invoice": "Účet nie je možné vymazať, kým máte nevybavenú faktúru."
+  },
+  "order": {
+    "review": {
+      "already_exists": "Túto objednávku ste už hodnotili."
+    }
+  },
+  "recurring_booking": {
+    "not_found": "Táto opakovaná objednávka už neexistuje."
   }
 }

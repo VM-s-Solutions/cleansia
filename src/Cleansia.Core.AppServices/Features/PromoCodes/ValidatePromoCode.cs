@@ -7,12 +7,6 @@ using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Features.PromoCodes;
 
-/// <summary>
-/// Customer-facing validation of a promo code at booking time. Returns the
-/// computed discount + a stringified <see cref="PromoCodeError"/> the client
-/// maps to its own i18n. Does NOT redeem the code — actual redemption happens
-/// inside <c>CreateOrder.Handler</c> so the client cannot tamper.
-/// </summary>
 public class ValidatePromoCode
 {
     public class Validator : AbstractValidator<Command>
@@ -26,19 +20,12 @@ public class ValidatePromoCode
             RuleFor(x => x.OrderSubtotal)
                 .GreaterThan(0)
                 .WithMessage(BusinessErrorMessage.MustBePositive);
-
-            RuleFor(x => x.UserId)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required);
         }
     }
 
     public record Command(
         string Code,
-        decimal OrderSubtotal,
-        // Enriched server-side from the JWT in the controller — clients pass
-        // an empty string and the controller fills it in before forwarding.
-        string UserId = "") : ICommand<Response>;
+        decimal OrderSubtotal) : ICommand<Response>;
 
     public record Response(
         bool IsValid,
@@ -47,18 +34,17 @@ public class ValidatePromoCode
 
     public class Handler(
         IPromoCodeService promoCodeService,
-        ICurrencyRepository currencyRepository) : ICommandHandler<Command, Response>
+        ICurrencyRepository currencyRepository,
+        IUserSessionProvider userSessionProvider) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            // No order yet — validate against the tenant's default currency.
-            // The CreateOrder handler re-validates with the actual order
-            // currency when the user submits.
+            var userId = userSessionProvider.GetUserId()!;
             var defaultCurrency = await currencyRepository.GetDefaultAsync(cancellationToken);
 
             var preview = await promoCodeService.PreviewAsync(
                 command.Code,
-                command.UserId,
+                userId,
                 command.OrderSubtotal,
                 defaultCurrency?.Id,
                 cancellationToken);

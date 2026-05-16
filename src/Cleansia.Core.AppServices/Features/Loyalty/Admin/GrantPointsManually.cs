@@ -8,20 +8,12 @@ using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Features.Loyalty.Admin;
 
-/// <summary>
-/// Admin manual loyalty grant for ops/support cases (e.g. apology gift).
-/// Stores the free-text reason on the ledger row's Description; the audit
-/// trail lives in the existing transactions table — no separate "grants"
-/// log needed.
-/// </summary>
 public class GrantPointsManually
 {
     public record Command(
         string UserId,
         int Points,
-        string Reason,
-        // Filled by the controller from the JWT.
-        string ActorId = "") : ICommand<Response>;
+        string Reason) : ICommand<Response>;
 
     public record Response(string UserId, int Points);
 
@@ -52,16 +44,19 @@ public class GrantPointsManually
         }
     }
 
-    public class Handler(ILoyaltyService loyaltyService) : ICommandHandler<Command, Response>
+    public class Handler(
+        ILoyaltyService loyaltyService,
+        IUserSessionProvider userSessionProvider) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
+            var actorId = userSessionProvider.GetUserId() ?? string.Empty;
             await loyaltyService.GrantPointsManuallyAsync(
                 userId: command.UserId,
                 points: command.Points,
                 source: LoyaltyEarnSource.ManualGrant,
                 orderId: null,
-                actorId: command.ActorId,
+                actorId: actorId,
                 cancellationToken: cancellationToken);
 
             return BusinessResult.Success(new Response(command.UserId, command.Points));

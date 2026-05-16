@@ -3874,10 +3874,9 @@ export interface IAdminFeatureFlagClient {
     /**
      * @param featureName (optional) 
      * @param countryId (optional) 
-     * @param tenantId (optional) 
      * @return OK
      */
-    check(featureName?: string | undefined, countryId?: string | undefined, tenantId?: string | undefined): Observable<CheckFeatureFlagResponse>;
+    check(featureName?: string | undefined, countryId?: string | undefined): Observable<CheckFeatureFlagResponse>;
 }
 
 @Injectable({
@@ -3950,10 +3949,9 @@ export class AdminFeatureFlagClient implements IAdminFeatureFlagClient {
     /**
      * @param featureName (optional) 
      * @param countryId (optional) 
-     * @param tenantId (optional) 
      * @return OK
      */
-    check(featureName?: string | undefined, countryId?: string | undefined, tenantId?: string | undefined): Observable<CheckFeatureFlagResponse> {
+    check(featureName?: string | undefined, countryId?: string | undefined): Observable<CheckFeatureFlagResponse> {
         let url = this.baseUrl + "/api/AdminFeatureFlag/check?";
         if (featureName === null)
             throw new globalThis.Error("The parameter 'featureName' cannot be null.");
@@ -3963,10 +3961,6 @@ export class AdminFeatureFlagClient implements IAdminFeatureFlagClient {
             throw new globalThis.Error("The parameter 'countryId' cannot be null.");
         else if (countryId !== undefined)
             url += "countryId=" + encodeURIComponent("" + countryId) + "&";
-        if (tenantId === null)
-            throw new globalThis.Error("The parameter 'tenantId' cannot be null.");
-        else if (tenantId !== undefined)
-            url += "tenantId=" + encodeURIComponent("" + tenantId) + "&";
         url = url.replace(/[?&]$/, "");
 
         let options : any = {
@@ -11356,6 +11350,14 @@ export interface IAdminUserListItem {
     lastLoginAt: Date | undefined;
 }
 
+export enum AppliedDiscountSource {
+    None = 0,
+    Tier = 1,
+    Membership = 2,
+    Promo = 3,
+    Combined = 4,
+}
+
 export class ApproveDocumentCommand implements IApproveDocumentCommand {
     documentId!: string | undefined;
     notes!: string | undefined;
@@ -11589,7 +11591,6 @@ export class AssignedEmployeeDto implements IAssignedEmployeeDto {
     employeeId!: string | undefined;
     fullName!: string | undefined;
     phoneNumber!: string | undefined;
-    email!: string | undefined;
 
     constructor(data?: IAssignedEmployeeDto) {
         if (data) {
@@ -11606,7 +11607,6 @@ export class AssignedEmployeeDto implements IAssignedEmployeeDto {
             this.employeeId = Data["employeeId"];
             this.fullName = Data["fullName"];
             this.phoneNumber = Data["phoneNumber"];
-            this.email = Data["email"];
         }
     }
 
@@ -11623,7 +11623,6 @@ export class AssignedEmployeeDto implements IAssignedEmployeeDto {
         data["employeeId"] = this.employeeId;
         data["fullName"] = this.fullName;
         data["phoneNumber"] = this.phoneNumber;
-        data["email"] = this.email;
         return data;
     }
 }
@@ -11633,7 +11632,6 @@ export interface IAssignedEmployeeDto {
     employeeId: string | undefined;
     fullName: string | undefined;
     phoneNumber: string | undefined;
-    email: string | undefined;
 }
 
 export class BulkCreateEmployeePayConfigsCommand implements IBulkCreateEmployeePayConfigsCommand {
@@ -11727,7 +11725,6 @@ export interface IBulkCreateEmployeePayConfigsResponse {
 export class CancelInvoiceCommand implements ICancelInvoiceCommand {
     invoiceId!: string | undefined;
     reason!: string | undefined;
-    cancelledBy!: string | undefined;
 
     constructor(data?: ICancelInvoiceCommand) {
         if (data) {
@@ -11742,7 +11739,6 @@ export class CancelInvoiceCommand implements ICancelInvoiceCommand {
         if (Data) {
             this.invoiceId = Data["invoiceId"];
             this.reason = Data["reason"];
-            this.cancelledBy = Data["cancelledBy"];
         }
     }
 
@@ -11757,7 +11753,6 @@ export class CancelInvoiceCommand implements ICancelInvoiceCommand {
         data = typeof data === 'object' ? data : {};
         data["invoiceId"] = this.invoiceId;
         data["reason"] = this.reason;
-        data["cancelledBy"] = this.cancelledBy;
         return data;
     }
 }
@@ -11765,7 +11760,6 @@ export class CancelInvoiceCommand implements ICancelInvoiceCommand {
 export interface ICancelInvoiceCommand {
     invoiceId: string | undefined;
     reason: string | undefined;
-    cancelledBy: string | undefined;
 }
 
 export class CancelInvoiceResponse implements ICancelInvoiceResponse {
@@ -16512,7 +16506,6 @@ export class GrantPointsManuallyCommand implements IGrantPointsManuallyCommand {
     userId!: string | undefined;
     points!: number;
     reason!: string | undefined;
-    actorId!: string | undefined;
 
     constructor(data?: IGrantPointsManuallyCommand) {
         if (data) {
@@ -16528,7 +16521,6 @@ export class GrantPointsManuallyCommand implements IGrantPointsManuallyCommand {
             this.userId = Data["userId"];
             this.points = Data["points"];
             this.reason = Data["reason"];
-            this.actorId = Data["actorId"];
         }
     }
 
@@ -16544,7 +16536,6 @@ export class GrantPointsManuallyCommand implements IGrantPointsManuallyCommand {
         data["userId"] = this.userId;
         data["points"] = this.points;
         data["reason"] = this.reason;
-        data["actorId"] = this.actorId;
         return data;
     }
 }
@@ -16553,7 +16544,6 @@ export interface IGrantPointsManuallyCommand {
     userId: string | undefined;
     points: number;
     reason: string | undefined;
-    actorId: string | undefined;
 }
 
 export class GrantPointsManuallyResponse implements IGrantPointsManuallyResponse {
@@ -16604,6 +16594,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
     email!: string | undefined;
     refreshToken!: string | undefined;
     refreshTokenExpiresAt!: Date | undefined;
+    csrfToken!: string | undefined;
 
     constructor(data?: IJwtTokenResponse) {
         if (data) {
@@ -16623,6 +16614,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
             this.email = Data["email"];
             this.refreshToken = Data["refreshToken"];
             this.refreshTokenExpiresAt = Data["refreshTokenExpiresAt"] ? new Date(Data["refreshTokenExpiresAt"].toString()) : undefined as any;
+            this.csrfToken = Data["csrfToken"];
         }
     }
 
@@ -16642,6 +16634,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
         data["email"] = this.email;
         data["refreshToken"] = this.refreshToken;
         data["refreshTokenExpiresAt"] = this.refreshTokenExpiresAt ? this.refreshTokenExpiresAt.toISOString() : undefined as any;
+        data["csrfToken"] = this.csrfToken;
         return data;
     }
 }
@@ -16654,6 +16647,7 @@ export interface IJwtTokenResponse {
     email: string | undefined;
     refreshToken: string | undefined;
     refreshTokenExpiresAt: Date | undefined;
+    csrfToken: string | undefined;
 }
 
 export class LanguageDetailDto implements ILanguageDetailDto {
@@ -17221,15 +17215,20 @@ export class OrderItem implements IOrderItem {
     paymentType!: Code;
     paymentStatus!: Code;
     totalPrice!: number;
+    originalSubtotal!: number;
+    appliedDiscountSource!: AppliedDiscountSource;
+    tierDiscountAmount!: number | undefined;
+    membershipDiscountAmount!: number | undefined;
+    promoDiscountAmount!: number | undefined;
     estimatedTime!: number;
     actualCompletionTime!: number | undefined;
     completionNotes!: string | undefined;
     orderStatus!: Code;
     confirmationCode!: string | undefined;
-    stripeSessionId!: string | undefined;
     notes!: string | undefined;
     specialInstructions!: string | undefined;
     accessInstructions!: string | undefined;
+    recurringTemplateId!: string | undefined;
     selectedPackages!: PackageDetails[] | undefined;
     currency!: CurrencyDetailDto;
     selectedServices!: ServiceDetails[] | undefined;
@@ -17272,15 +17271,20 @@ export class OrderItem implements IOrderItem {
             this.paymentType = Data["paymentType"] ? Code.fromJS(Data["paymentType"]) : undefined as any;
             this.paymentStatus = Data["paymentStatus"] ? Code.fromJS(Data["paymentStatus"]) : undefined as any;
             this.totalPrice = Data["totalPrice"];
+            this.originalSubtotal = Data["originalSubtotal"];
+            this.appliedDiscountSource = Data["appliedDiscountSource"];
+            this.tierDiscountAmount = Data["tierDiscountAmount"];
+            this.membershipDiscountAmount = Data["membershipDiscountAmount"];
+            this.promoDiscountAmount = Data["promoDiscountAmount"];
             this.estimatedTime = Data["estimatedTime"];
             this.actualCompletionTime = Data["actualCompletionTime"];
             this.completionNotes = Data["completionNotes"];
             this.orderStatus = Data["orderStatus"] ? Code.fromJS(Data["orderStatus"]) : undefined as any;
             this.confirmationCode = Data["confirmationCode"];
-            this.stripeSessionId = Data["stripeSessionId"];
             this.notes = Data["notes"];
             this.specialInstructions = Data["specialInstructions"];
             this.accessInstructions = Data["accessInstructions"];
+            this.recurringTemplateId = Data["recurringTemplateId"];
             if (Array.isArray(Data["selectedPackages"])) {
                 this.selectedPackages = [] as any;
                 for (let item of Data["selectedPackages"])
@@ -17347,15 +17351,20 @@ export class OrderItem implements IOrderItem {
         data["paymentType"] = this.paymentType ? this.paymentType.toJSON() : undefined as any;
         data["paymentStatus"] = this.paymentStatus ? this.paymentStatus.toJSON() : undefined as any;
         data["totalPrice"] = this.totalPrice;
+        data["originalSubtotal"] = this.originalSubtotal;
+        data["appliedDiscountSource"] = this.appliedDiscountSource;
+        data["tierDiscountAmount"] = this.tierDiscountAmount;
+        data["membershipDiscountAmount"] = this.membershipDiscountAmount;
+        data["promoDiscountAmount"] = this.promoDiscountAmount;
         data["estimatedTime"] = this.estimatedTime;
         data["actualCompletionTime"] = this.actualCompletionTime;
         data["completionNotes"] = this.completionNotes;
         data["orderStatus"] = this.orderStatus ? this.orderStatus.toJSON() : undefined as any;
         data["confirmationCode"] = this.confirmationCode;
-        data["stripeSessionId"] = this.stripeSessionId;
         data["notes"] = this.notes;
         data["specialInstructions"] = this.specialInstructions;
         data["accessInstructions"] = this.accessInstructions;
+        data["recurringTemplateId"] = this.recurringTemplateId;
         if (Array.isArray(this.selectedPackages)) {
             data["selectedPackages"] = [];
             for (let item of this.selectedPackages)
@@ -17409,15 +17418,20 @@ export interface IOrderItem {
     paymentType: Code;
     paymentStatus: Code;
     totalPrice: number;
+    originalSubtotal: number;
+    appliedDiscountSource: AppliedDiscountSource;
+    tierDiscountAmount: number | undefined;
+    membershipDiscountAmount: number | undefined;
+    promoDiscountAmount: number | undefined;
     estimatedTime: number;
     actualCompletionTime: number | undefined;
     completionNotes: string | undefined;
     orderStatus: Code;
     confirmationCode: string | undefined;
-    stripeSessionId: string | undefined;
     notes: string | undefined;
     specialInstructions: string | undefined;
     accessInstructions: string | undefined;
+    recurringTemplateId: string | undefined;
     selectedPackages: PackageDetails[] | undefined;
     currency: CurrencyDetailDto;
     selectedServices: ServiceDetails[] | undefined;
@@ -17445,10 +17459,14 @@ export class OrderListItem implements IOrderListItem {
     paymentType!: Code;
     paymentStatus!: Code;
     totalPrice!: number;
+    originalSubtotal!: number;
+    appliedDiscountSource!: AppliedDiscountSource;
+    tierDiscountAmount!: number | undefined;
+    membershipDiscountAmount!: number | undefined;
+    promoDiscountAmount!: number | undefined;
     estimatedTime!: number;
     orderStatus!: Code;
     confirmationCode!: string | undefined;
-    stripeSessionId!: string | undefined;
     selectedPackages!: PackageListItem[] | undefined;
     currencyId!: string | undefined;
     currency!: CurrencyListItem;
@@ -17490,10 +17508,14 @@ export class OrderListItem implements IOrderListItem {
             this.paymentType = Data["paymentType"] ? Code.fromJS(Data["paymentType"]) : undefined as any;
             this.paymentStatus = Data["paymentStatus"] ? Code.fromJS(Data["paymentStatus"]) : undefined as any;
             this.totalPrice = Data["totalPrice"];
+            this.originalSubtotal = Data["originalSubtotal"];
+            this.appliedDiscountSource = Data["appliedDiscountSource"];
+            this.tierDiscountAmount = Data["tierDiscountAmount"];
+            this.membershipDiscountAmount = Data["membershipDiscountAmount"];
+            this.promoDiscountAmount = Data["promoDiscountAmount"];
             this.estimatedTime = Data["estimatedTime"];
             this.orderStatus = Data["orderStatus"] ? Code.fromJS(Data["orderStatus"]) : undefined as any;
             this.confirmationCode = Data["confirmationCode"];
-            this.stripeSessionId = Data["stripeSessionId"];
             if (Array.isArray(Data["selectedPackages"])) {
                 this.selectedPackages = [] as any;
                 for (let item of Data["selectedPackages"])
@@ -17547,10 +17569,14 @@ export class OrderListItem implements IOrderListItem {
         data["paymentType"] = this.paymentType ? this.paymentType.toJSON() : undefined as any;
         data["paymentStatus"] = this.paymentStatus ? this.paymentStatus.toJSON() : undefined as any;
         data["totalPrice"] = this.totalPrice;
+        data["originalSubtotal"] = this.originalSubtotal;
+        data["appliedDiscountSource"] = this.appliedDiscountSource;
+        data["tierDiscountAmount"] = this.tierDiscountAmount;
+        data["membershipDiscountAmount"] = this.membershipDiscountAmount;
+        data["promoDiscountAmount"] = this.promoDiscountAmount;
         data["estimatedTime"] = this.estimatedTime;
         data["orderStatus"] = this.orderStatus ? this.orderStatus.toJSON() : undefined as any;
         data["confirmationCode"] = this.confirmationCode;
-        data["stripeSessionId"] = this.stripeSessionId;
         if (Array.isArray(this.selectedPackages)) {
             data["selectedPackages"] = [];
             for (let item of this.selectedPackages)
@@ -17591,10 +17617,14 @@ export interface IOrderListItem {
     paymentType: Code;
     paymentStatus: Code;
     totalPrice: number;
+    originalSubtotal: number;
+    appliedDiscountSource: AppliedDiscountSource;
+    tierDiscountAmount: number | undefined;
+    membershipDiscountAmount: number | undefined;
+    promoDiscountAmount: number | undefined;
     estimatedTime: number;
     orderStatus: Code;
     confirmationCode: string | undefined;
-    stripeSessionId: string | undefined;
     selectedPackages: PackageListItem[] | undefined;
     currencyId: string | undefined;
     currency: CurrencyListItem;
@@ -17658,7 +17688,6 @@ export interface IOrderNoteDto {
 export class OrderReviewDto implements IOrderReviewDto {
     id!: string | undefined;
     orderId!: string | undefined;
-    userId!: string | undefined;
     rating!: number;
     comment!: string | undefined;
     createdOn!: Date;
@@ -17677,7 +17706,6 @@ export class OrderReviewDto implements IOrderReviewDto {
         if (Data) {
             this.id = Data["id"];
             this.orderId = Data["orderId"];
-            this.userId = Data["userId"];
             this.rating = Data["rating"];
             this.comment = Data["comment"];
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
@@ -17696,7 +17724,6 @@ export class OrderReviewDto implements IOrderReviewDto {
         data = typeof data === 'object' ? data : {};
         data["id"] = this.id;
         data["orderId"] = this.orderId;
-        data["userId"] = this.userId;
         data["rating"] = this.rating;
         data["comment"] = this.comment;
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
@@ -17708,7 +17735,6 @@ export class OrderReviewDto implements IOrderReviewDto {
 export interface IOrderReviewDto {
     id: string | undefined;
     orderId: string | undefined;
-    userId: string | undefined;
     rating: number;
     comment: string | undefined;
     createdOn: Date;
@@ -17719,9 +17745,10 @@ export enum OrderStatus {
     New = 0,
     Pending = 1,
     Confirmed = 2,
-    InProgress = 3,
-    Completed = 4,
-    Cancelled = 5,
+    OnTheWay = 3,
+    InProgress = 4,
+    Completed = 5,
+    Cancelled = 6,
 }
 
 export class OrderStatusTrackDto implements IOrderStatusTrackDto {
@@ -19569,6 +19596,8 @@ export enum ReferralStatus {
 
 export class RefreshTokenCommand implements IRefreshTokenCommand {
     token!: string | undefined;
+    requiredProfile!: UserProfile;
+    requiredAudience!: string | undefined;
 
     constructor(data?: IRefreshTokenCommand) {
         if (data) {
@@ -19582,6 +19611,8 @@ export class RefreshTokenCommand implements IRefreshTokenCommand {
     init(Data?: any) {
         if (Data) {
             this.token = Data["token"];
+            this.requiredProfile = Data["requiredProfile"];
+            this.requiredAudience = Data["requiredAudience"];
         }
     }
 
@@ -19595,12 +19626,16 @@ export class RefreshTokenCommand implements IRefreshTokenCommand {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["token"] = this.token;
+        data["requiredProfile"] = this.requiredProfile;
+        data["requiredAudience"] = this.requiredAudience;
         return data;
     }
 }
 
 export interface IRefreshTokenCommand {
     token: string | undefined;
+    requiredProfile: UserProfile;
+    requiredAudience: string | undefined;
 }
 
 export class RegenerateInvoicePdfCommand implements IRegenerateInvoicePdfCommand {
@@ -20143,7 +20178,6 @@ export class RevokePointsManuallyCommand implements IRevokePointsManuallyCommand
     userId!: string | undefined;
     points!: number;
     reason!: string | undefined;
-    actorId!: string | undefined;
 
     constructor(data?: IRevokePointsManuallyCommand) {
         if (data) {
@@ -20159,7 +20193,6 @@ export class RevokePointsManuallyCommand implements IRevokePointsManuallyCommand
             this.userId = Data["userId"];
             this.points = Data["points"];
             this.reason = Data["reason"];
-            this.actorId = Data["actorId"];
         }
     }
 
@@ -20175,7 +20208,6 @@ export class RevokePointsManuallyCommand implements IRevokePointsManuallyCommand
         data["userId"] = this.userId;
         data["points"] = this.points;
         data["reason"] = this.reason;
-        data["actorId"] = this.actorId;
         return data;
     }
 }
@@ -20184,7 +20216,6 @@ export interface IRevokePointsManuallyCommand {
     userId: string | undefined;
     points: number;
     reason: string | undefined;
-    actorId: string | undefined;
 }
 
 export class RevokePointsManuallyResponse implements IRevokePointsManuallyResponse {
@@ -21934,6 +21965,12 @@ export interface IUserConsentDto {
     grantedAt: Date | undefined;
     withdrawnAt: Date | undefined;
     createdOn: Date;
+}
+
+export enum UserProfile {
+    Customer = 1,
+    Employee = 2,
+    Administrator = 100,
 }
 
 function formatDate(d: Date) {

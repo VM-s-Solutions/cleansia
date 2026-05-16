@@ -76,14 +76,11 @@ public class RegenerateInvoicePdf
             }
 
             var orderPays = await orderEmployeePayRepository
-                .GetByInvoiceId(invoice.Id)
-                .Include(op => op.Order)
-                .ToListAsync(cancellationToken);
+                .GetByInvoiceIdAsync(invoice.Id, cancellationToken);
             var language = await languageRepository.GetByCodeAsync(command.LanguageCode, cancellationToken);
 
             var countryContext = await GetCountryInvoiceContextAsync(countryId, cancellationToken);
 
-            // Get date format from country configuration
             var dateFormat = "dd.MM.yyyy";
             if (!string.IsNullOrEmpty(countryId))
             {
@@ -100,7 +97,7 @@ public class RegenerateInvoicePdf
             var blobUrl = await UploadPdfAsync(invoice, employee, pdfBytes, cancellationToken);
 
             invoice.SetPdfBlobUrl(blobUrl);
-            invoice.ClearPdfGenerationError(); // Clear error on successful regeneration
+            invoice.ClearPdfGenerationError();
 
             return BusinessResult.Success(new Response(blobUrl));
         }

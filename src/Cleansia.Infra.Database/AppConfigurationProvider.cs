@@ -38,7 +38,6 @@ public class AppConfigurationProvider(CleansiaDbContext dbContext, ITenantProvid
                 return tenantFlag.IsEnabled;
         }
 
-        // Check country-level flag
         if (!string.IsNullOrEmpty(countryId))
         {
             var countryFlag = await dbContext.FeatureFlags
@@ -49,7 +48,6 @@ public class AppConfigurationProvider(CleansiaDbContext dbContext, ITenantProvid
                 return countryFlag.IsEnabled;
         }
 
-        // Fall back to global flag
         var globalFlag = await dbContext.FeatureFlags
             .AsNoTracking()
             .FirstOrDefaultAsync(f => f.Name == featureName && f.Scope == "global", cancellationToken);

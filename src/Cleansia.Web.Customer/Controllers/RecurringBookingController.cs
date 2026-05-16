@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.AppServices.Features.Bookings.DTOs;
@@ -9,11 +8,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Cleansia.Web.Customer.Controllers;
 
-/// <summary>
-/// Recurring booking template endpoints — the Plus "schedule a weekly cleaning"
-/// CRUD surface. All routes are scoped to the calling user via JWT-enriched
-/// UserId; clients never set it. Same role gate as saved addresses + memberships.
-/// </summary>
 [Route("api/[controller]")]
 [ApiController]
 public class RecurringBookingController(IMediator mediator) : CustomerApiController(mediator)
@@ -23,8 +17,7 @@ public class RecurringBookingController(IMediator mediator) : CustomerApiControl
     [ProducesResponseType(typeof(IReadOnlyList<RecurringBookingTemplateDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMine(CancellationToken cancellationToken)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-        var result = await Mediator.Send(new GetMyRecurringBookings.Query(userId), cancellationToken);
+        var result = await Mediator.Send(new GetMyRecurringBookings.Query(), cancellationToken);
         return HandleResult<IReadOnlyList<RecurringBookingTemplateDto>>(result);
     }
 
@@ -36,9 +29,7 @@ public class RecurringBookingController(IMediator mediator) : CustomerApiControl
         [FromBody] CreateRecurringBooking.Command command,
         CancellationToken cancellationToken)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-        var enriched = command with { UserId = userId };
-        var result = await Mediator.Send(enriched, cancellationToken);
+        var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<RecurringBookingTemplateDto>(result);
     }
 
@@ -50,16 +41,10 @@ public class RecurringBookingController(IMediator mediator) : CustomerApiControl
         [FromBody] UpdateRecurringBooking.Command command,
         CancellationToken cancellationToken)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-        var enriched = command with { UserId = userId };
-        var result = await Mediator.Send(enriched, cancellationToken);
+        var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<RecurringBookingTemplateDto>(result);
     }
 
-    /// <summary>
-    /// Pause / resume — sets the IsActive flag. Pausing skips the materializer;
-    /// already-spawned future Order rows are unaffected.
-    /// </summary>
     [HttpPost("SetActive")]
     [Permission(Policy.CanManageRecurringBookings)]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -68,9 +53,7 @@ public class RecurringBookingController(IMediator mediator) : CustomerApiControl
         [FromBody] SetRecurringBookingActive.Command command,
         CancellationToken cancellationToken)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-        var enriched = command with { UserId = userId };
-        var result = await Mediator.Send(enriched, cancellationToken);
+        var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<bool>(result);
     }
 
@@ -82,9 +65,7 @@ public class RecurringBookingController(IMediator mediator) : CustomerApiControl
         [FromBody] DeleteRecurringBooking.Command command,
         CancellationToken cancellationToken)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-        var enriched = command with { UserId = userId };
-        var result = await Mediator.Send(enriched, cancellationToken);
+        var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<bool>(result);
     }
 }

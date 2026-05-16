@@ -42,9 +42,11 @@ public class MarkInvoicePaid
                 .WithMessage(BusinessErrorMessage.MaxLength);
         }
 
-        private Task<bool> StatusIsValidAsync(string invoiceId, CancellationToken cancellationToken) => _invoiceRepository
-            .GetByIdAsync(invoiceId, cancellationToken)
-            .ContinueWith(t => t.Result!.Status == EmployeeInvoiceStatus.Approved, cancellationToken);
+        private async Task<bool> StatusIsValidAsync(string invoiceId, CancellationToken cancellationToken)
+        {
+            var invoice = await _invoiceRepository.GetByIdAsync(invoiceId, cancellationToken);
+            return invoice!.Status == EmployeeInvoiceStatus.Approved;
+        }
     }
 
     public class Handler(

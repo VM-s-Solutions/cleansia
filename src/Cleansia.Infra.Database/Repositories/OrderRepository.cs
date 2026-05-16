@@ -7,14 +7,17 @@ namespace Cleansia.Infra.Database.Repositories;
 
 public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(context), IOrderRepository
 {
-    public IQueryable<Order> GetOrdersByPhoneNumber(string phoneNumber)
+    public async Task<IReadOnlyList<Order>> GetOrdersByPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken)
     {
-        return GetDbSet().Where(x => x.CustomerPhone == phoneNumber);
+        return await GetDbSet()
+            .Where(x => x.CustomerPhone == phoneNumber)
+            .ToListAsync(cancellationToken);
     }
 
-    public IQueryable<Order> GetEmployeeOrdersByDateRange(string employeeId, DateTime startDate, DateTime endDate)
+    public async Task<IReadOnlyList<Order>> GetEmployeeOrdersByDateRangeAsync(
+        string employeeId, DateTime startDate, DateTime endDate, CancellationToken cancellationToken)
     {
-        return GetDbSet()
+        return await GetDbSet()
             .Include(o => o.OrderStatusHistory)
             .Include(o => o.AssignedEmployees)
             .Include(o => o.SelectedServices)
@@ -24,12 +27,14 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
             .Where(o => o.AssignedEmployees.Any(e => e.EmployeeId == employeeId) &&
                        o.CleaningDateTime >= startDate &&
                        o.CleaningDateTime <= endDate)
-            .AsSplitQuery();
+            .AsSplitQuery()
+            .ToListAsync(cancellationToken);
     }
 
-    public IQueryable<Order> GetCompletedOrdersByDateRange(string employeeId, DateTime startDate, DateTime endDate)
+    public async Task<IReadOnlyList<Order>> GetCompletedOrdersByDateRangeAsync(
+        string employeeId, DateTime startDate, DateTime endDate, CancellationToken cancellationToken)
     {
-        return GetDbSet()
+        return await GetDbSet()
             .Include(o => o.AssignedEmployees)
             .Include(o => o.OrderStatusHistory)
             .Include(o => o.SelectedServices)
@@ -38,10 +43,11 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
                 .ThenInclude(op => op.Package)
             .Where(o => o.AssignedEmployees.Any(e => e.EmployeeId == employeeId) &&
                        o.OrderStatusHistory.Any() &&
-                       o.OrderStatusHistory.OrderByDescending(h => h.CreatedOn).First().Status == Cleansia.Core.Domain.Enums.OrderStatus.Completed &&
+                       o.OrderStatusHistory.OrderByDescending(h => h.CreatedOn).First().Status == OrderStatus.Completed &&
                        o.CleaningDateTime >= startDate &&
                        o.CleaningDateTime <= endDate)
-            .AsSplitQuery();
+            .AsSplitQuery()
+            .ToListAsync(cancellationToken);
     }
 
     public override Task<Order?> GetByIdAsync(string id, CancellationToken cancellationToken)
@@ -68,9 +74,32 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
-    public IQueryable<Order> GetOrdersByDateRange(DateTime startDate, DateTime endDate)
+    public Task<Order?> GetByIdIgnoringTenantAsync(string id, CancellationToken cancellationToken)
     {
         return GetDbSet()
+            .IgnoreQueryFilters()
+            .Include(o => o.OrderStatusHistory)
+            .Include(o => o.Currency)
+            .Include(o => o.SelectedServices)
+                .ThenInclude(s => s.Service)
+            .Include(o => o.SelectedPackages)
+                .ThenInclude(op => op.Package)
+                    .ThenInclude(p => p.IncludedServices)
+                        .ThenInclude(s => s.Service)
+            .Include(o => o.AssignedEmployees)
+                .ThenInclude(ae => ae.Employee)
+                    .ThenInclude(e => e.User)
+            .Include(o => o.Receipt)
+            .Include(o => o.CustomerAddress)
+                .ThenInclude(ca => ca.Country)
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Order>> GetOrdersByDateRangeAsync(
+        DateTime startDate, DateTime endDate, CancellationToken cancellationToken)
+    {
+        return await GetDbSet()
             .Include(o => o.OrderStatusHistory)
             .Include(o => o.SelectedServices)
                 .ThenInclude(s => s.Service)
@@ -78,7 +107,8 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
                 .ThenInclude(op => op.Package)
             .Where(o => o.CleaningDateTime >= startDate &&
                        o.CleaningDateTime <= endDate)
-            .AsSplitQuery();
+            .AsSplitQuery()
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<int> GetEmployeeOrderCountThisWeekAsync(string employeeId, CancellationToken ct)

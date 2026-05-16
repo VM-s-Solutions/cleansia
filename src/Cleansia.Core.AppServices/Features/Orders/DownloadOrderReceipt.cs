@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Repositories;
@@ -49,6 +50,7 @@ public class DownloadOrderReceipt
 
     public class Handler(
         IOrderRepository orderRepository,
+        IOrderAccessService orderAccessService,
         IReceiptService receiptService) : IQueryHandler<Query, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Query query, CancellationToken cancellationToken)
@@ -56,9 +58,16 @@ public class DownloadOrderReceipt
             var order = await orderRepository
                 .GetQueryable()
                 .Include(o => o.Receipt)
+                .Include(o => o.AssignedEmployees)
                 .FirstOrDefaultAsync(o => o.Id == query.OrderId, cancellationToken);
 
-            var pdfBytes = await receiptService.DownloadReceiptPdfAsync(order!.Receipt!, cancellationToken);
+            if (order == null || !await orderAccessService.CanAccessOrderAsync(order, cancellationToken))
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(query.OrderId), BusinessErrorMessage.OrderNotFound));
+            }
+
+            var pdfBytes = await receiptService.DownloadReceiptPdfAsync(order.Receipt!, cancellationToken);
 
             return BusinessResult.Success(new Response(
                 PdfBytes: pdfBytes,

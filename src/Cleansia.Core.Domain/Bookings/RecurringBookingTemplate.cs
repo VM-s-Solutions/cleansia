@@ -96,6 +96,43 @@ public class RecurringBookingTemplate : Auditable, ITenantEntity
             EndsOn = endsOn,
         };
 
+    /// <summary>
+    /// Apply an in-place update to the template's schedule + targets. Preserves
+    /// the entity's <see cref="BaseEntity.Id"/> so any client holding a reference
+    /// (mobile/web caching by id) survives the edit.
+    ///
+    /// <see cref="LastMaterializedFor"/> is intentionally cleared because the
+    /// new schedule may put the next occurrence earlier than the previously
+    /// materialized one — the materializer must re-evaluate from scratch.
+    /// </summary>
+    public RecurringBookingTemplate UpdateSchedule(
+        RecurrenceFrequency frequency,
+        System.DayOfWeek dayOfWeek,
+        TimeOnly timeOfDay,
+        int rooms,
+        int bathrooms,
+        string savedAddressId,
+        IEnumerable<string> selectedServiceIds,
+        IEnumerable<string> selectedPackageIds,
+        PaymentType paymentType,
+        DateTime startsOn,
+        DateTime? endsOn)
+    {
+        Frequency = frequency;
+        DayOfWeek = dayOfWeek;
+        TimeOfDay = timeOfDay;
+        Rooms = rooms;
+        Bathrooms = bathrooms;
+        SavedAddressId = savedAddressId;
+        _selectedServiceIds = selectedServiceIds.ToList();
+        _selectedPackageIds = selectedPackageIds.ToList();
+        PaymentType = paymentType;
+        StartsOn = startsOn;
+        EndsOn = endsOn;
+        LastMaterializedFor = null;
+        return this;
+    }
+
     public RecurringBookingTemplate Pause()
     {
         IsActive = false;

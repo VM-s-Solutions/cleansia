@@ -84,6 +84,7 @@
   },
   "global": {
     "loading": "Завантаження...",
+    "scroll_to_top": "Прокрутити вгору",
     "messages": {
       "success": "Успішно",
       "error": "Помилка",
@@ -208,7 +209,8 @@
       "submit": "Надіслати посилання для скидання",
       "success": "Посилання для скидання пароля надіслано! Перевірте свій email.",
       "back_to_login": "Повернутися до входу"
-    }
+    },
+    "refresh_token_reused": "Сесію використано в іншому місці. Увійдіть, будь ласка, знову."
   },
   "services": {
     "title": "Наші послуги",
@@ -271,6 +273,9 @@
       "payment": "Спосіб оплати",
       "total": "Всього",
       "confirm": "Підтвердити і оплатити"
+    },
+    "review": {
+      "already_exists": "Ви вже залишили відгук про це замовлення."
     }
   },
   "orders": {
@@ -387,7 +392,10 @@
       "withdrawn": "Відкликано",
       "grant": "Надати",
       "withdraw": "Відкликати"
-    }
+    },
+    "deletion_already_pending": "Запит на видалення вже опрацьовується.",
+    "deletion_blocked_by_order": "Не можемо видалити обліковий запис, поки у вас є активне замовлення.",
+    "deletion_blocked_by_invoice": "Не можемо видалити обліковий запис, поки є непогашений рахунок."
   },
   "pages": {
     "home": {
@@ -624,7 +632,8 @@
       "export_data": "Експорт даних",
       "export_data_desc": "Завантажте копію всіх ваших персональних даних",
       "rewards_card_title": "Винагороди",
-      "rewards_card_link": "Переглянути винагороди"
+      "rewards_card_link": "Переглянути винагороди",
+      "scroll_to_top": "Прокрутити вгору"
     },
     "services": {
       "title": "Наші послуги",
@@ -704,6 +713,7 @@
       "select_date_first": "Спочатку оберіть дату",
       "slot_express": "Експрес +20 %",
       "slot_unavailable": "Недоступно",
+      "express_surcharge_label": "Експрес-слот (+20 %)",
       "cancel_policy_title": "Умови скасування",
       "cancel_policy_tier1_when": "До прийняття прибиральником",
       "cancel_policy_tier1_value": "Безкоштовно",
@@ -735,7 +745,14 @@
       "special_instructions_placeholder": "Маєте особливі побажання? (напр., зосередитися на кухні, засоби для тварин...)",
       "entry_instructions_label": "Інструкції щодо доступу",
       "entry_instructions_placeholder": "Як нам потрапити до вашого приміщення? (напр., дзвінок, ключ під килимком...)",
-      "summary": "Підсумок",
+      "summary": {
+        "totals_title": "Всього",
+        "subtotal": "Проміжний підсумок",
+        "promo_discount": "Промокод (-{{code}})",
+        "membership_discount": "Знижка Cleansia Plus",
+        "tier_discount": "Знижка за лояльність",
+        "tier_discount_min_not_met": "Знижка за лояльність діє для замовлень понад {{amount}}"
+      },
       "summary_section_title": "Перегляньте своє замовлення",
       "summary_services": "Послуги",
       "summary_packages": "Пакети",
@@ -743,6 +760,8 @@
       "summary_rooms_count": "{{rooms}} кімнат, {{bathrooms}} ванних кімнат",
       "summary_address": "Адреса",
       "summary_datetime": "Дата і час",
+      "summary_extras": "Додатки",
+      "extras_subtitle": "Виберіть додатки, які бажаєте. Ціна оновлюється миттєво.",
       "summary_payment": "Оплата",
       "summary_contact": "Контакт",
       "summary_instructions": "Інструкції",
@@ -814,11 +833,6 @@
         "error_already_referred": "Ви вже прийняли реферальне запрошення",
         "error_inactive": "Цей реферальний код більше неактивний",
         "error_generic": "Не вдалося перевірити код. Ви можете продовжити."
-      },
-      "summary": {
-        "totals_title": "Всього",
-        "subtotal": "Проміжний підсумок",
-        "promo_discount": "Промокод (-{{code}})"
       }
     },
     "orders": {
@@ -870,6 +884,9 @@
       "packages": "Пакети",
       "services": "Послуги",
       "total": "Всього",
+      "discount_tier": "Знижку за лояльність застосовано",
+      "discount_membership": "Знижку Cleansia Plus застосовано",
+      "discount_promo": "Промокод застосовано",
       "timeline": "Хронологія",
       "notes": "Примітки",
       "special_instructions": "Особливі побажання",
@@ -1295,8 +1312,8 @@
     "perks": {
       "welcome_badge": "Ласкаво просимо до винагород Cleansia",
       "discount_5_above_1000": "5% знижка на замовлення понад 1000 CZK",
-      "discount_10": "10% знижка на всі замовлення",
-      "discount_15": "15% знижка на всі замовлення",
+      "discount_10": "10% знижка на замовлення понад 1000 CZK",
+      "discount_12": "12% знижка на замовлення понад 1000 CZK",
       "priority_support": "Пріоритетна підтримка клієнтів",
       "dedicated_pool": "Виділена команда прибиральників"
     }
@@ -1397,5 +1414,23 @@
     "prefill_dropped_items": "Ми прибрали ці позиції з попереднього заповнення — вони більше недоступні: {{items}}",
     "order_detail_make_recurring": "Зробити регулярним",
     "order_detail_make_recurring_plus_required": "Для регулярних розкладів потрібна Cleansia Plus."
+  },
+  "enums": {
+    "order_status": {
+      "new": "Нове",
+      "pending": "Очікує",
+      "confirmed": "Підтверджено",
+      "on_the_way": "У дорозі",
+      "in_progress": "Виконується",
+      "completed": "Завершено",
+      "cancelled": "Скасовано"
+    },
+    "payment_status": {
+      "pending": "Очікує оплати",
+      "paid": "Оплачено",
+      "failed": "Не вдалося",
+      "refunded": "Повернено",
+      "disputed": "Спірне"
+    }
   }
 }

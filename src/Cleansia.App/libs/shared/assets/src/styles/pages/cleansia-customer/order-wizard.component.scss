@@ -1249,6 +1249,34 @@ $font-heading: 'Poppins', sans-serif;
       font-weight: 600;
       color: $text-heading;
     }
+
+    // Express surcharge line — visually distinguished so users notice the
+    // 20% bump before checkout. Border-top separates it from the per-line
+    // service breakdown above.
+    &--express {
+      margin-top: 0.5rem;
+      padding-top: 0.6rem;
+      border-top: 1px dashed $border;
+      color: $primary-accent;
+
+      span:last-child {
+        color: $primary-accent;
+      }
+    }
+
+    // Active discount line — green so the saving stands out. Same dashed
+    // separator as the express row so the breakdown reads cleanly when both
+    // apply simultaneously.
+    &--discount {
+      margin-top: 0.5rem;
+      padding-top: 0.6rem;
+      border-top: 1px dashed $border;
+      color: $green;
+
+      span:last-child {
+        color: $green;
+      }
+    }
   }
 
   &__sidebar-badges {
@@ -1349,6 +1377,22 @@ $font-heading: 'Poppins', sans-serif;
     justify-content: space-between;
     font-size: 0.85rem;
     color: $text-body;
+
+    &--express {
+      margin-top: 0.4rem;
+      padding-top: 0.5rem;
+      border-top: 1px dashed $border;
+      color: $primary-accent;
+      font-weight: 600;
+    }
+
+    &--discount {
+      margin-top: 0.4rem;
+      padding-top: 0.5rem;
+      border-top: 1px dashed $border;
+      color: $green;
+      font-weight: 600;
+    }
   }
 
   &__mobile-price-detail {

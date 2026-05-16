@@ -8,7 +8,7 @@
 |---|---|---|
 | Backend | .NET 10, PostgreSQL 16, EF Core 10, MediatR | `src/Cleansia.Core.*`, `src/Cleansia.Infra.*`, `src/Cleansia.Web.*` |
 | Frontend | Angular 19, Nx 21, NgRx, PrimeNG, ngx-translate | `src/Cleansia.App/` |
-| Mobile | Kotlin, Jetpack Compose, MVVM + Hilt | `src/cleansia_android/` |
+| Mobile | Kotlin, Jetpack Compose, MVVM + Hilt | `src/cleansia_android/` (multi-module: `:core`, `:partner-app`, `:customer-app`) |
 | Orchestration | .NET Aspire 13.1.1 | `src/Cleansia.AppHost/` |
 | Docs | VitePress | `docs/` |
 
@@ -42,7 +42,10 @@ cleansia/
 │   ├── Cleansia.Web.Customer/          # Customer API (port 5003)
 │   ├── Cleansia.Functions/             # Azure Functions (receipt, invoice, cleanup)
 │   ├── Cleansia.Tests/                 # Unit tests (xUnit)
-│   └── cleansia_android/               # Native Android app
+│   └── cleansia_android/        # Native Android multi-module
+│       ├── core/                       # Shared :core library — theme, components, auth/network, snackbar
+│       ├── partner-app/                # Partner Android app (cz.cleansia.partner)
+│       └── customer-app/               # Customer Android app (cz.cleansia.customer)
 │
 ├── docs/                                # VitePress documentation site
 ├── agents/                              # AI agent configs and plans

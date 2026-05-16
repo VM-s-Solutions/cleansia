@@ -1,0 +1,19 @@
+using Cleansia.ServiceDefaults;
+
+namespace Cleansia.Web.Mobile.Partner;
+
+public class Program
+{
+    public static void Main(string[] args)
+    {
+        CreateHostBuilder(args).Build().Run();
+    }
+
+    public static IHostBuilder CreateHostBuilder(string[] args) =>
+        Host.CreateDefaultBuilder(args)
+            .ConfigureWebHostDefaults(webBuilder =>
+            {
+                webBuilder.UseSentryMonitoring();
+                webBuilder.UseStartup<Startup>();
+            });
+}

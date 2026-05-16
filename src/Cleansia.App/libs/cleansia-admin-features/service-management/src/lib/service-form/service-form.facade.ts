@@ -11,9 +11,10 @@ import {
   UpdateServiceCommand,
   UpdateServiceResponse,
 } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 export interface LanguageOption {
   code: string;
@@ -37,13 +38,11 @@ export interface CategoryOption {
 }
 
 @Injectable()
-export class ServiceFormFacade {
+export class ServiceFormFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
-
-  private destroy$ = new Subject<void>();
 
   readonly service = signal<AdminServiceDetailDto | null>(null);
   readonly loading = signal<boolean>(false);
@@ -57,7 +56,7 @@ export class ServiceFormFacade {
     this.adminClient.adminServiceClient
       .details(serviceId)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
@@ -74,7 +73,7 @@ export class ServiceFormFacade {
     this.adminClient.adminLanguageClient
       .getOverview()
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of([] as LanguageListItem[]))
       )
       .subscribe((languages: LanguageListItem[]) => {
@@ -99,7 +98,7 @@ export class ServiceFormFacade {
     this.adminClient.adminServiceClient
       .categories()
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of([] as CategoryDto[]))
       )
       .subscribe((categories: CategoryDto[]) => {
@@ -138,7 +137,7 @@ export class ServiceFormFacade {
     this.adminClient.adminServiceClient
       .create(command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
@@ -179,7 +178,7 @@ export class ServiceFormFacade {
     this.adminClient.adminServiceClient
       .update(serviceId, command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
@@ -195,10 +194,5 @@ export class ServiceFormFacade {
 
   navigateBack(): void {
     this.router.navigate([CleansiaAdminRoute.SERVICE_MANAGEMENT]);
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

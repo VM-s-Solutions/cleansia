@@ -79,6 +79,7 @@
       "loyalty_tiers": "Loyalty tiers",
       "loyalty_user_detail": "User loyalty",
       "loyalty_referrals": "Referrals",
+      "sitewide_push": "Sitewide Push",
       "not_found": "Page Not Found"
     }
   },
@@ -169,7 +170,8 @@
       "next": "Next",
       "go_back": "Go Back",
       "go_home": "Go Home",
-      "go_to_login": "Go to Login"
+      "go_to_login": "Go to Login",
+      "pay_configs": "Pay Configs"
     },
     "dialog": {
       "confirm": "Confirm",
@@ -214,6 +216,8 @@
     "loyalty_promo_codes": "Promo codes",
     "loyalty_tiers": "Tiers",
     "loyalty_referrals": "Referrals",
+    "marketing": "Marketing",
+    "marketing_sitewide_push": "Sitewide Push",
     "logout": "Logout"
   },
   "pages": {
@@ -401,6 +405,7 @@
         "rejected": "Rejected",
         "unknown": "Unknown"
       },
+      "grade": "Grade",
       "document_types": {
         "identity_card": "Identity Card",
         "passport": "Passport",
@@ -432,7 +437,6 @@
       "packages_configured": "Packages",
       "bulk_apply_grade": "Apply Grade Template",
       "bulk_apply_grade_hint": "Pick a grade and currency to automatically create pay configs for all services and packages. Rates are calculated from the base price using grade multipliers (Junior 0.5x, Medior 0.75x, Senior 1.0x).",
-      "grade": "Grade",
       "overwrite_existing": "Overwrite existing configs",
       "apply_to_all": "Apply to All",
       "services": "Services",
@@ -469,6 +473,7 @@
       "order_status": {
         "pending": "Pending",
         "confirmed": "Confirmed",
+        "on_the_way": "On the way",
         "in_progress": "In Progress",
         "completed": "Completed",
         "cancelled": "Cancelled",
@@ -1503,6 +1508,30 @@
       "not_yet": "—",
       "empty": "No referrals yet",
       "loading": "Loading..."
+    },
+    "sitewide_push": {
+      "title": "Sitewide Push",
+      "subtitle": "Send a one-off promotional push to every customer opted in to marketing notifications. Fan-out runs asynchronously; expect delivery within a few minutes for typical recipient counts.",
+      "titles_section": "Notification title (per locale)",
+      "bodies_section": "Notification body (per locale)",
+      "locale": {
+        "en_title": "English title",
+        "cs_title": "Czech title",
+        "sk_title": "Slovak title",
+        "uk_title": "Ukrainian title",
+        "ru_title": "Russian title",
+        "en_body": "English body",
+        "cs_body": "Czech body",
+        "sk_body": "Slovak body",
+        "uk_body": "Ukrainian body",
+        "ru_body": "Russian body"
+      },
+      "send": "Send to all subscribers",
+      "confirm_title": "Send sitewide promo?",
+      "confirm_send": "This will queue a push notification to every customer who has opted in to marketing. Once enqueued the fan-out runs unstoppable — there is no recall.",
+      "validation_error": "Please fill in all locale fields before sending.",
+      "send_success": "Sitewide promo enqueued. Fan-out is now running in the background.",
+      "send_error": "Failed to enqueue the promo. Check your inputs and try again."
     }
   },
   "employees": {
@@ -2123,7 +2152,8 @@
       "remember_me": "Remember me",
       "forgot_password": "Forgot password?",
       "dont_have_account": "Don't have an account?"
-    }
+    },
+    "refresh_token_reused": "Your session was used elsewhere. Please sign in again."
   },
   "fiscal_failures": {
     "title": "Fiscal Failures",
@@ -2154,5 +2184,18 @@
       "retry_scheduled": "Retry scheduled",
       "acknowledged": "Fiscal failure acknowledged"
     }
+  },
+  "gdpr": {
+    "deletion_already_pending": "A deletion request is already in progress.",
+    "deletion_blocked_by_order": "We can't delete your account while you have an active order.",
+    "deletion_blocked_by_invoice": "We can't delete your account while you have a pending invoice."
+  },
+  "order": {
+    "review": {
+      "already_exists": "You've already reviewed this order."
+    }
+  },
+  "recurring_booking": {
+    "not_found": "That recurring booking no longer exists."
   }
 }

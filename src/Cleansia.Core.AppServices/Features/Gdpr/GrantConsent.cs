@@ -10,7 +10,10 @@ namespace Cleansia.Core.AppServices.Features.Gdpr;
 
 public static class GrantConsent
 {
-    public record Command(ConsentType ConsentType, string? IpAddress, string? UserAgent) : ICommand;
+    // IpAddress + UserAgent were previously on the Command but the client
+    // could lie about them. They're now read server-side from
+    // IRequestMetadataProvider so the legal-audit fields can't be spoofed.
+    public record Command(ConsentType ConsentType) : ICommand;
 
     internal class Validator : AbstractValidator<Command>
     {
@@ -21,22 +24,20 @@ public static class GrantConsent
     }
 
     internal class Handler(
-        IUserRepository userRepository,
         IUserSessionProvider userSessionProvider,
+        IRequestMetadataProvider requestMetadata,
         IUserConsentRepository userConsentRepository)
         : ICommandHandler<Command>
     {
         public async Task<BusinessResult> Handle(Command request, CancellationToken cancellationToken)
         {
-            var email = userSessionProvider.GetUserEmail();
-            var user = await userRepository.GetByEmailAsync(email!, cancellationToken);
-
-            if (user is null)
-                return BusinessResult.Failure(new Error(
-                    BusinessErrorMessage.NotExistingUserWithEmail, "User not found"));
+            // userId is non-null past the controller's [Permission] gate.
+            var userId = userSessionProvider.GetUserId()!;
+            var ipAddress = requestMetadata.IpAddress;
+            var userAgent = requestMetadata.DeviceLabel;
 
             var existing = await userConsentRepository.GetByUserAndTypeAsync(
-                user.Id, request.ConsentType, cancellationToken);
+                userId, request.ConsentType, cancellationToken);
 
             if (existing is not null)
             {
@@ -44,11 +45,11 @@ public static class GrantConsent
                     return BusinessResult.Failure(new Error(
                         BusinessErrorMessage.ConsentAlreadyGranted, "Consent already granted"));
 
-                existing.Regrant(request.IpAddress, request.UserAgent);
+                existing.Regrant(ipAddress, userAgent);
             }
             else
             {
-                var consent = UserConsent.Grant(user.Id, request.ConsentType, request.IpAddress, request.UserAgent);
+                var consent = UserConsent.Grant(userId, request.ConsentType, ipAddress, userAgent);
                 userConsentRepository.Add(consent);
             }
 

@@ -1,20 +1,28 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { Component, inject, OnInit, PLATFORM_ID } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, PLATFORM_ID } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 // Inlined from @cleansia/services to avoid module boundary issues
 const PREFERRED_LANGUAGE_KEY = 'preferred_language';
 import { TranslateService } from '@ngx-translate/core';
 import { SelectModule } from 'primeng/select';
 
+interface LanguageOption {
+  value: string;
+  label: string;
+  short: string;
+  icon: string;
+}
+
 @Component({
   selector: 'cleansia-language-switcher',
   templateUrl: './cleansia-language-switcher.component.html',
   standalone: true,
   imports: [FormsModule, CommonModule, SelectModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaLanguageSwitcherComponent implements OnInit {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
-  languages: any[] = [];
+  languages: LanguageOption[] = [];
   selectedLanguage: string;
 
   private iconMap: { [key: string]: string } = {

@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.SavedAddresses;
 using Cleansia.Core.AppServices.Features.SavedAddresses.DTOs;
@@ -19,8 +18,7 @@ public class SavedAddressController(IMediator mediator) : CustomerApiController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetMine(CancellationToken cancellationToken)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-        var result = await Mediator.Send(new GetSavedAddresses.Query(userId), cancellationToken);
+        var result = await Mediator.Send(new GetSavedAddresses.Query(), cancellationToken);
         return HandleResult<IReadOnlyList<SavedAddressDto>>(result);
     }
 
@@ -31,9 +29,7 @@ public class SavedAddressController(IMediator mediator) : CustomerApiController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Add([FromBody] AddSavedAddress.Command command, CancellationToken cancellationToken)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-        var enriched = command with { UserId = userId };
-        var result = await Mediator.Send(enriched, cancellationToken);
+        var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<SavedAddressDto>(result);
     }
 
@@ -44,9 +40,7 @@ public class SavedAddressController(IMediator mediator) : CustomerApiController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> SetDefault([FromBody] SetDefaultSavedAddress.Command command, CancellationToken cancellationToken)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-        var enriched = command with { UserId = userId };
-        var result = await Mediator.Send(enriched, cancellationToken);
+        var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<bool>(result);
     }
 
@@ -57,9 +51,7 @@ public class SavedAddressController(IMediator mediator) : CustomerApiController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Update([FromBody] UpdateSavedAddress.Command command, CancellationToken cancellationToken)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-        var enriched = command with { UserId = userId };
-        var result = await Mediator.Send(enriched, cancellationToken);
+        var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<SavedAddressDto>(result);
     }
 
@@ -70,8 +62,7 @@ public class SavedAddressController(IMediator mediator) : CustomerApiController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Delete(string id, CancellationToken cancellationToken)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-        var result = await Mediator.Send(new DeleteSavedAddress.Command(id, userId), cancellationToken);
+        var result = await Mediator.Send(new DeleteSavedAddress.Command(id), cancellationToken);
         return HandleResult<bool>(result);
     }
 }

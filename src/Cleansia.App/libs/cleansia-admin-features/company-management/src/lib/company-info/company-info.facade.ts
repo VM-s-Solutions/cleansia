@@ -5,9 +5,10 @@ import {
   CountryListItem,
   UpdateCompanyInfoCommand,
 } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 export interface CompanyInfoFormData {
   legalName: string;
@@ -29,12 +30,10 @@ export interface CompanyInfoFormData {
 }
 
 @Injectable()
-export class CompanyInfoFacade {
+export class CompanyInfoFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
-
-  private destroy$ = new Subject<void>();
 
   readonly companyInfo = signal<CompanyInfoDetailDto | null>(null);
   readonly countries = signal<CountryListItem[]>([]);
@@ -47,7 +46,7 @@ export class CompanyInfoFacade {
     this.adminClient.adminCompanyClient
       .getCurrent()
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
@@ -60,7 +59,7 @@ export class CompanyInfoFacade {
     this.adminClient.adminCountryClient
       .getOverview()
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of([]))
       )
       .subscribe((countries) => {
@@ -100,7 +99,7 @@ export class CompanyInfoFacade {
     this.adminClient.adminCompanyClient
       .update(currentCompanyInfo.id, command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
@@ -113,10 +112,5 @@ export class CompanyInfoFacade {
           this.loadCompanyInfo();
         }
       });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

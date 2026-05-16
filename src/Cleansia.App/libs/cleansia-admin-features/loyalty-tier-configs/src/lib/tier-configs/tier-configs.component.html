@@ -21,35 +21,12 @@
       @if (facade.initialLoading()) {
         <cleansia-loader />
       } @else {
-        <p-table [value]="tierRows()" [tableStyle]="{ 'min-width': '50rem' }">
-          <ng-template pTemplate="header">
-            <tr>
-              <th>{{ 'pages.loyalty_tiers.column.tier' | translate }}</th>
-              <th>{{ 'pages.loyalty_tiers.column.threshold' | translate }}</th>
-              <th>{{ 'pages.loyalty_tiers.column.discount' | translate }}</th>
-              <th>{{ 'pages.loyalty_tiers.column.min_order' | translate }}</th>
-              <th>{{ 'pages.loyalty_tiers.column.perks' | translate }}</th>
-              <th>{{ 'pages.loyalty_tiers.column.actions' | translate }}</th>
-            </tr>
-          </ng-template>
-          <ng-template pTemplate="body" let-row>
-            <tr>
-              <td>{{ row.tierName }}</td>
-              <td>{{ row.threshold }}</td>
-              <td>{{ formatDiscount(row.discountPercent) }}</td>
-              <td>{{ formatMinOrder(row.minimumOrderAmountForDiscount) }}</td>
-              <td>{{ formatPerksCount(row.perksCount) }}</td>
-              <td>
-                <cleansia-button
-                  [label]="'global.actions.edit' | translate"
-                  icon="pi pi-pencil"
-                  [outlined]="true"
-                  (onClick)="openEdit(row)"
-                />
-              </td>
-            </tr>
-          </ng-template>
-        </p-table>
+        <cleansia-table
+          [data]="tierRows()"
+          [columns]="tableDefinition.columns"
+          [actions]="tableDefinition.actions"
+          [config]="{ emptyMessage: 'pages.loyalty_tiers.no_tiers' }"
+        />
       }
     </cleansia-section>
   </div>

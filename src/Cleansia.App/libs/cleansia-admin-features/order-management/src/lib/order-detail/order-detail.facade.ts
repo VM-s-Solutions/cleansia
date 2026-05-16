@@ -6,17 +6,16 @@ import {
   OrderStatus,
   PaymentStatus,
 } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 @Injectable()
-export class OrderDetailFacade {
+export class OrderDetailFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
-
-  private destroy$ = new Subject<void>();
 
   readonly order = signal<OrderItem | null>(null);
   readonly loading = signal<boolean>(false);
@@ -27,7 +26,7 @@ export class OrderDetailFacade {
     this.adminClient.adminOrderClient
       .details(orderId)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
@@ -82,6 +81,8 @@ export class OrderDetailFacade {
         return 'order-status-badge status-pending';
       case OrderStatus.Confirmed:
         return 'order-status-badge status-confirmed';
+      case OrderStatus.OnTheWay:
+        return 'order-status-badge status-ontheway';
       case OrderStatus.InProgress:
         return 'order-status-badge status-inprogress';
       case OrderStatus.Completed:
@@ -91,6 +92,16 @@ export class OrderDetailFacade {
       default:
         return 'order-status-badge status-pending';
     }
+  }
+
+  getOrderStatusLabel(status: Code | undefined): string {
+    if (!status?.name) return '';
+    const key = `pages.order_management.order_status.${status.name
+      .replace(/([A-Z])/g, '_$1')
+      .toLowerCase()
+      .replace(/^_/, '')}`;
+    const translated = this.translate.instant(key);
+    return translated === key ? status.name : translated;
   }
 
   getPaymentStatusClass(status: Code | undefined): string {
@@ -141,10 +152,5 @@ export class OrderDetailFacade {
     return Object.entries(extras)
       .filter(([, value]) => value)
       .map(([key]) => key);
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

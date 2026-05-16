@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Extensions;
 using Cleansia.Core.AppServices.Features.Auth.Validators;
@@ -73,28 +74,26 @@ public class PartnerLogin
     internal class Handler(
         ITokenService tokenService,
         IUserRepository userRepository,
-        IEmployeeRepository employeeRepository,
-        IUnitOfWork unitOfWork)
+        IHostAudienceProvider hostAudience)
         : ICommandHandler<Command, JwtTokenResponse>
     {
         public async Task<BusinessResult<JwtTokenResponse>> Handle(Command command, CancellationToken cancellationToken)
         {
             var user = await userRepository.GetByEmailAsync(command.Email, cancellationToken);
 
-            // Auto-create Employee record if user is a Customer logging into Partner app
-            if (user!.Profile == UserProfile.Customer)
+            if (user is null || !user.IsActive)
             {
-                var employee = await employeeRepository.GetByUserEmailAsync(user.Email, cancellationToken);
-                if (employee is null)
-                {
-                    employeeRepository.Add(Employee.CreateWithUser(user));
-                }
-
-                user.UpgradeToEmployee();
-                await unitOfWork.CommitAsync(cancellationToken);
+                return BusinessResult.Failure<JwtTokenResponse>(
+                    new Error(nameof(Command.Email), BusinessErrorMessage.InvalidPassword));
             }
 
-            return BusinessResult.Success(tokenService.GenerateToken(user, command.RememberMe));
+            if (user.Profile != UserProfile.Employee && user.Profile != UserProfile.Administrator)
+            {
+                return BusinessResult.Failure<JwtTokenResponse>(
+                    new Error(nameof(command.Email), BusinessErrorMessage.InsufficientPrivileges));
+            }
+
+            return BusinessResult.Success(await tokenService.GenerateTokenAsync(user, command.RememberMe, hostAudience.Audience, cancellationToken));
         }
     }
 }

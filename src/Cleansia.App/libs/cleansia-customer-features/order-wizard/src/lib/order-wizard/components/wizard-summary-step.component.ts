@@ -44,293 +44,7 @@ const REFERRAL_ERROR_KEYS: Record<string, string> = {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, InputTextModule, TranslatePipe, CleansiaCodeInputDialogComponent],
-  template: `
-    <div class="order-wizard__step">
-      <div class="order-wizard__section">
-        <h2 class="order-wizard__section-title">
-          <i class="pi pi-check-circle"></i>
-          {{ 'pages.order.summary_section_title' | translate }}
-        </h2>
-
-        @if (selectedServices().length > 0) {
-          <ng-container
-            *ngTemplateOutlet="summaryCard; context: {
-              icon: 'pi-list',
-              titleKey: 'pages.order.summary_services',
-              editStep: 0,
-              rows: serviceRows()
-            }"
-          />
-        }
-
-        @if (selectedPackages().length > 0) {
-          <ng-container
-            *ngTemplateOutlet="summaryCard; context: {
-              icon: 'pi-box',
-              titleKey: 'pages.order.summary_packages',
-              editStep: 0,
-              rows: packageRows()
-            }"
-          />
-        }
-
-        <ng-container
-          *ngTemplateOutlet="summaryCard; context: {
-            icon: 'pi-building',
-            titleKey: 'pages.order.summary_property',
-            editStep: 0,
-            rows: propertyRows()
-          }"
-        />
-
-        <ng-container
-          *ngTemplateOutlet="summaryCard; context: {
-            icon: 'pi-map-marker',
-            titleKey: 'pages.order.summary_address',
-            editStep: 1,
-            rows: addressRows()
-          }"
-        />
-
-        <ng-container
-          *ngTemplateOutlet="summaryCard; context: {
-            icon: 'pi-calendar',
-            titleKey: 'pages.order.summary_datetime',
-            editStep: 2,
-            rows: dateTimeRows()
-          }"
-        />
-
-        <ng-container
-          *ngTemplateOutlet="summaryCard; context: {
-            icon: 'pi-credit-card',
-            titleKey: 'pages.order.summary_payment',
-            editStep: 3,
-            rows: paymentRows()
-          }"
-        />
-
-        <ng-container
-          *ngTemplateOutlet="summaryCard; context: {
-            icon: 'pi-user',
-            titleKey: 'pages.order.summary_contact',
-            editStep: 1,
-            rows: contactRows()
-          }"
-        />
-
-        @if (facade.formData().specialInstructions || facade.formData().entryInstructions) {
-          <ng-container
-            *ngTemplateOutlet="summaryCard; context: {
-              icon: 'pi-comment',
-              titleKey: 'pages.order.summary_instructions',
-              editStep: 3,
-              rows: instructionRows()
-            }"
-          />
-        }
-
-        <!-- Referral row — Wolt-style entry tile that opens a dialog. Backend
-             treats invalid codes as best-effort, so the row stays clickable
-             after a failure to let the user retry. -->
-        <div
-          class="order-wizard__code-row"
-          tabindex="0"
-          role="button"
-          (click)="openReferralDialog()"
-          (keydown.enter)="openReferralDialog()"
-        >
-          <div class="order-wizard__code-row-icon">
-            <i class="pi pi-users"></i>
-          </div>
-          <div class="order-wizard__code-row-content">
-            <div class="order-wizard__code-row-label">
-              {{ 'pages.order.referral.row_title' | translate }}
-            </div>
-            @if (facade.referralState().kind === 'valid') {
-              <div class="order-wizard__code-row-applied">
-                {{ 'pages.order.referral.row_applied' | translate: { code: facade.referralCode() } }}
-              </div>
-            }
-          </div>
-          <div class="order-wizard__code-row-action">
-            @if (facade.referralState().kind === 'valid') {
-              <button
-                type="button"
-                class="order-wizard__code-row-clear"
-                [attr.aria-label]="'pages.order.referral.dialog_cancel' | translate"
-                (click)="clearReferral($event)"
-              >
-                <i class="pi pi-times"></i>
-              </button>
-            } @else {
-              <i class="pi pi-chevron-right"></i>
-            }
-          </div>
-        </div>
-
-        <!-- Promo row — Wolt-style. Tap to open dialog → enter code → Apply
-             hits backend once → Done locks it in. The clear-X strips the
-             applied state without reopening the dialog. -->
-        <div
-          class="order-wizard__code-row"
-          tabindex="0"
-          role="button"
-          (click)="openPromoDialog()"
-          (keydown.enter)="openPromoDialog()"
-        >
-          <div class="order-wizard__code-row-icon">
-            <i class="pi pi-tag"></i>
-          </div>
-          <div class="order-wizard__code-row-content">
-            <div class="order-wizard__code-row-label">
-              {{ 'pages.order.promo.row_title' | translate }}
-            </div>
-            @if (facade.promoCodeState().kind === 'valid') {
-              <div class="order-wizard__code-row-applied">
-                {{ 'pages.order.promo.row_applied' | translate: { code: facade.promoCode() } }}
-              </div>
-            }
-          </div>
-          <div class="order-wizard__code-row-action">
-            @if (facade.promoCodeState().kind === 'valid') {
-              <button
-                type="button"
-                class="order-wizard__code-row-clear"
-                [attr.aria-label]="'pages.order.promo.dialog_cancel' | translate"
-                (click)="clearPromo($event)"
-              >
-                <i class="pi pi-times"></i>
-              </button>
-            } @else {
-              <i class="pi pi-chevron-right"></i>
-            }
-          </div>
-        </div>
-
-        <!-- Totals — subtotal + promo discount line (only when valid) + grand total.
-             Best-wins logic: when client-side tier discount preview ships later,
-             render whichever discount is larger here; backend re-picks the larger
-             of (tier, promo) at order-create time so the customer never overpays. -->
-        <div class="order-wizard__summary-card">
-          <div class="order-wizard__summary-card-header">
-            <div class="order-wizard__summary-card-icon">
-              <i class="pi pi-calculator"></i>
-            </div>
-            <h3>{{ 'pages.order.summary.totals_title' | translate }}</h3>
-          </div>
-          <div class="order-wizard__summary-card-body">
-            <div class="order-wizard__summary-row">
-              <span>{{ 'pages.order.summary.subtotal' | translate }}</span>
-              <span class="order-wizard__summary-row-price">{{ formatPriceFn(facade.totalPrice()) }}</span>
-            </div>
-            @if (facade.promoCodeState().kind === 'valid') {
-              <div class="order-wizard__summary-row order-wizard__summary-row--discount">
-                <span>{{ 'pages.order.summary.promo_discount' | translate: { code: promoCodeDisplay() } }}</span>
-                <span class="order-wizard__summary-row-price order-wizard__summary-row-price--discount">
-                  -{{ formattedPromoDiscount() }}
-                </span>
-              </div>
-            }
-            <div class="order-wizard__summary-row order-wizard__summary-row--total">
-              <span>{{ 'pages.order.price_total' | translate }}</span>
-              <span class="order-wizard__summary-row-price">{{ formatPriceFn(grandTotal()) }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Cancellation policy — disclosure required by Czech Civil Code §1811 before payment.
-             Styled as a summary-card sibling so it feels like part of the review, not an afterthought.
-             Plus members see the wider free window from their plan. -->
-        <div class="order-wizard__summary-card order-wizard__cancel-policy">
-          <div class="order-wizard__summary-card-header">
-            <div class="order-wizard__summary-card-icon">
-              <i class="pi pi-clock"></i>
-            </div>
-            <h3>{{ 'pages.order.cancel_policy_title' | translate }}</h3>
-            @if (plusFreeHours(); as plusH) {
-              <span class="order-wizard__plus-badge">{{ 'pages.membership.plus_badge' | translate }}</span>
-            }
-          </div>
-          <div class="order-wizard__summary-card-body">
-            <div class="order-wizard__cancel-policy-row">
-              <span>{{ 'pages.order.cancel_policy_tier1_when' | translate }}</span>
-              <strong class="order-wizard__cancel-policy-free">{{ 'pages.order.cancel_policy_tier1_value' | translate }}</strong>
-            </div>
-            <div class="order-wizard__cancel-policy-row">
-              @if (plusFreeHours(); as plusH) {
-                <span>{{ 'pages.order.cancel_policy_tier2_when_plus' | translate: { hours: plusH } }}</span>
-              } @else {
-                <span>{{ 'pages.order.cancel_policy_tier2_when' | translate }}</span>
-              }
-              <strong class="order-wizard__cancel-policy-free">{{ 'pages.order.cancel_policy_tier2_value' | translate }}</strong>
-            </div>
-            <div class="order-wizard__cancel-policy-row">
-              <span>{{ 'pages.order.cancel_policy_tier3_when' | translate }}</span>
-              <strong class="order-wizard__cancel-policy-mid">{{ 'pages.order.cancel_policy_tier3_value' | translate }}</strong>
-            </div>
-            <div class="order-wizard__cancel-policy-row">
-              <span>{{ 'pages.order.cancel_policy_tier4_when' | translate }}</span>
-              <strong class="order-wizard__cancel-policy-full">{{ 'pages.order.cancel_policy_tier4_value' | translate }}</strong>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <ng-template #summaryCard let-icon="icon" let-titleKey="titleKey" let-editStep="editStep" let-rows="rows">
-      <div class="order-wizard__summary-card">
-        <div class="order-wizard__summary-card-header">
-          <div class="order-wizard__summary-card-icon"><i class="pi {{ icon }}"></i></div>
-          <h3>{{ titleKey | translate }}</h3>
-          <button class="order-wizard__summary-edit" (click)="facade.goToStep(editStep)">
-            {{ 'pages.order.summary_edit' | translate }}
-          </button>
-        </div>
-        <div class="order-wizard__summary-card-body">
-          @for (row of rows; track $index) {
-            <div class="order-wizard__summary-row">
-              <span>{{ row.label }}</span>
-              @if (row.value) {
-                <span class="order-wizard__summary-row-price">{{ row.value }}</span>
-              }
-            </div>
-          }
-        </div>
-      </div>
-    </ng-template>
-
-    <!-- Code dialogs — rendered at the end so backdrop overlay layering Just Works. -->
-    <cleansia-code-input-dialog
-      [visible]="promoDialogVisible()"
-      (visibleChange)="onPromoDialogVisible($event)"
-      [initialCode]="facade.promoCode()"
-      [state]="promoDialogState()"
-      titleKey="pages.order.promo.dialog_title"
-      inputLabelKey="pages.order.promo.row_title"
-      helperKey="pages.order.promo.dialog_helper"
-      (applyClicked)="applyPromo($event)"
-      (done)="closePromoDialog()"
-      (cancelled)="closePromoDialog()"
-    />
-
-    <cleansia-code-input-dialog
-      [visible]="referralDialogVisible()"
-      (visibleChange)="onReferralDialogVisible($event)"
-      [initialCode]="facade.referralCode()"
-      [state]="referralDialogState()"
-      titleKey="pages.order.referral.dialog_title"
-      inputLabelKey="pages.order.referral.row_title"
-      helperKey="pages.order.referral.dialog_helper"
-      cancelKey="pages.order.referral.dialog_cancel"
-      applyKey="pages.order.referral.dialog_apply"
-      doneKey="pages.order.referral.dialog_done"
-      validatingKey="pages.order.referral.validating"
-      (applyClicked)="applyReferral($event)"
-      (done)="closeReferralDialog()"
-      (cancelled)="closeReferralDialog()"
-    />
-  `,
+  templateUrl: './wizard-summary-step.component.html',
 })
 export class WizardSummaryStepComponent implements OnInit {
   @Input({ required: true }) facade!: OrderWizardFacade;
@@ -350,6 +64,9 @@ export class WizardSummaryStepComponent implements OnInit {
   protected readonly plusFreeHours = signal<number | null>(null);
 
   ngOnInit(): void {
+    // Anonymous users can't hold a Plus membership — skip the call to avoid a
+    // noisy 401 on the booking wizard before sign-in.
+    if (!this.facade.isAuthenticated()) return;
     this.customerClient.membershipClient
       .getMine()
       .pipe(catchError(() => of(null)))
@@ -443,15 +160,56 @@ export class WizardSummaryStepComponent implements OnInit {
   });
 
   /**
-   * Best-wins grand total. Subtracts the effective discount (currently just
-   * promo; tier preview will fold in when its client-side path ships). Backend
-   * recomputes server-side at order-create time so this is display-only.
+   * Final price — `displayedTotalPrice` already includes both the best-of-three
+   * discount and the express surcharge (applied AFTER the discount so the
+   * surcharge tracks the discounted price). Mirrors CreateOrder.Handler. Wrapped
+   * in computed because `facade` is an @Input and isn't bound at field-init time.
    */
-  protected readonly grandTotal = computed(() => {
-    const subtotal = this.facade.totalPrice();
-    const discount = this.facade.effectivePromoDiscount();
-    return Math.max(0, subtotal - discount);
+  protected readonly grandTotal = computed(() => this.facade.displayedTotalPrice());
+
+  /**
+   * Render the membership chip when the membership discount wins (or ties promo).
+   * Mutually exclusive with the tier chip — only one renders.
+   */
+  // LOY-003 — Plus and tier are additive on the wire (server already
+  // returns both, capped at 12% combined). Promo replaces the combined
+  // pair when larger. So we show the membership chip whenever Plus has a
+  // non-zero amount AND promo isn't winning over the combined; same logic
+  // for the tier chip. Both can appear simultaneously.
+  protected readonly showMembershipChip = computed(() => {
+    const m = this.facade.membershipDiscount();
+    if (m <= 0) return false;
+    const combined = m + this.facade.tierDiscount();
+    return this.facade.effectivePromoDiscount() <= combined;
   });
+
+  protected readonly showTierChip = computed(() => {
+    const t = this.facade.tierDiscount();
+    if (t <= 0) return false;
+    const combined = t + this.facade.membershipDiscount();
+    return this.facade.effectivePromoDiscount() <= combined;
+  });
+
+  /** "Loyalty discount needs orders above X" hint when the floor wasn't met. */
+  protected readonly showTierFloorHint = computed(() => {
+    const floor = this.facade.tierDiscountMinOrderAmount();
+    if (floor == null || floor <= 0) return false;
+    if (this.facade.effectiveDiscount() > 0) return false;
+    return this.facade.totalPrice() < floor;
+  });
+
+  protected readonly tierFloorAmount = computed(() => {
+    const floor = this.facade.tierDiscountMinOrderAmount();
+    return floor != null ? formatPrice(floor) : '';
+  });
+
+  protected readonly membershipDiscountFormatted = computed(() =>
+    formatPrice(this.facade.membershipDiscount()),
+  );
+
+  protected readonly tierDiscountFormatted = computed(() =>
+    formatPrice(this.facade.tierDiscount()),
+  );
 
   readonly selectedServices = computed(() => {
     const ids = this.facade.formData().selectedServiceIds;

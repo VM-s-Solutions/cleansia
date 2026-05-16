@@ -41,9 +41,11 @@ public class OpenPayPeriod
                 .WithMessage(BusinessErrorMessage.MaxLength);
         }
 
-        private Task<bool> BeClosedStatusAsync(string payPeriodId, CancellationToken cancellationToken) =>
-            _payPeriodRepository.GetByIdAsync(payPeriodId, cancellationToken)
-                .ContinueWith(t => t.Result!.Status == PayPeriodStatus.Closed, cancellationToken);
+        private async Task<bool> BeClosedStatusAsync(string payPeriodId, CancellationToken cancellationToken)
+        {
+            var period = await _payPeriodRepository.GetByIdAsync(payPeriodId, cancellationToken);
+            return period!.Status == PayPeriodStatus.Closed;
+        }
     }
 
     public class Handler(

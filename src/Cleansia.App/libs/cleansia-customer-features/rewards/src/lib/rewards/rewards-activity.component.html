@@ -28,7 +28,7 @@
     </div>
   } @else {
     <ul class="customer-rewards__activity-list">
-      @for (item of facade.activityList(); track item.id) {
+      @for (item of facade.activityList(); track $index) {
         <li class="customer-rewards__activity-row">
           <span
             class="customer-rewards__activity-points"

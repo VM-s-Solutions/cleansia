@@ -1,0 +1,42 @@
+<div class="cleansia-gdpr">
+  <div class="cleansia-gdpr__card page-wrapper">
+    <cleansia-title [title]="'pages.gdpr.title' | translate" />
+    <p class="cleansia-gdpr__subtitle">
+      {{ 'pages.gdpr.subtitle' | translate }}
+    </p>
+
+    <div class="cleansia-gdpr__section">
+      <h3>{{ 'pages.gdpr.data_collection_title' | translate }}</h3>
+      <p>{{ 'pages.gdpr.data_collection_text' | translate }}</p>
+    </div>
+
+    <div class="cleansia-gdpr__section">
+      <h3>{{ 'pages.gdpr.data_usage_title' | translate }}</h3>
+      <p>{{ 'pages.gdpr.data_usage_text' | translate }}</p>
+    </div>
+
+    <div class="cleansia-gdpr__section">
+      <h3>{{ 'pages.gdpr.data_rights_title' | translate }}</h3>
+      <p>{{ 'pages.gdpr.data_rights_text' | translate }}</p>
+    </div>
+
+    <div class="cleansia-gdpr__section">
+      <h3>{{ 'pages.gdpr.data_retention_title' | translate }}</h3>
+      <p>{{ 'pages.gdpr.data_retention_text' | translate }}</p>
+    </div>
+
+    <div class="cleansia-gdpr__section">
+      <h3>{{ 'pages.gdpr.contact_title' | translate }}</h3>
+      <p>{{ 'pages.gdpr.contact_text' | translate }}</p>
+    </div>
+
+    <div class="cleansia-gdpr__actions">
+      <cleansia-button
+        [title]="'global.actions.go_back' | translate"
+        severity="secondary"
+        [outlined]="true"
+        routerLink="/profile"
+      />
+    </div>
+  </div>
+</div>

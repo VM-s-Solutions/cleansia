@@ -23,6 +23,8 @@ import {
   PaginationState,
   TableColumn,
 } from '@cleansia/components';
+import { CleansiaPermissionDirective } from '@cleansia/directives';
+import { Policy } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -50,6 +52,7 @@ import { PromoCodeDetailFacade } from './promo-code-detail.facade';
     CleansiaTableComponent,
     CleansiaTitleComponent,
     ConfirmDialogModule,
+    CleansiaPermissionDirective,
   ],
   templateUrl: './promo-code-detail.component.html',
   providers: [PromoCodeDetailFacade, ConfirmationService],
@@ -62,6 +65,7 @@ export class PromoCodeDetailComponent
   private readonly translate = inject(TranslateService);
   private readonly confirmationService = inject(ConfirmationService);
   protected readonly facade = inject(PromoCodeDetailFacade);
+  protected readonly Policy = Policy;
 
   protected readonly PromoCodeType = PromoCodeType;
 

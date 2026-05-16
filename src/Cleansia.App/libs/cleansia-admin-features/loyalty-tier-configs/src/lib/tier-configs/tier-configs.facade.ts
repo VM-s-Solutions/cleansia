@@ -9,10 +9,10 @@ import {
   UpdateTierConfigCommand,
   UpdateTierConfigResponse,
 } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import {
-  Subject,
   catchError,
   concatMap,
   finalize,
@@ -34,12 +34,10 @@ export interface TierConfigUpdateInput {
 }
 
 @Injectable()
-export class TierConfigsFacade {
+export class TierConfigsFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
-
-  private destroy$ = new Subject<void>();
 
   readonly tiers = signal<TierConfigAdminDto[]>([]);
   readonly loading = signal<boolean>(false);
@@ -58,7 +56,7 @@ export class TierConfigsFacade {
     this.adminClient.adminLoyaltyTierClient
       .getAll()
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
@@ -86,7 +84,7 @@ export class TierConfigsFacade {
     this.adminClient.adminLoyaltyTierClient
       .update(id, command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError((err) => {
           this.handleSaveError(err);
           return of(null);
@@ -122,7 +120,7 @@ export class TierConfigsFacade {
     this.adminClient.adminLoyaltyTierClient
       .previewThresholdImpact(command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => {
           this.snackbarService.showError(
             this.translate.instant('pages.loyalty_tiers.preview.error.preview')
@@ -184,7 +182,7 @@ export class TierConfigsFacade {
             .pipe(catchError(() => of(null)));
         }),
         toArray(),
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         finalize(() => this.applying.set(false))
       )
       .subscribe((results) => {
@@ -209,10 +207,5 @@ export class TierConfigsFacade {
     this.snackbarService.showError(
       this.translate.instant('pages.loyalty_tiers.form.error.generic')
     );
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

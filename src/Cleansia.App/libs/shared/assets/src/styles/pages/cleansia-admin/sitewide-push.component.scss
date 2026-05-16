@@ -1,0 +1,52 @@
+.cleansia-sitewide-push {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+  max-width: 100vw;
+  overflow-x: hidden;
+  position: relative;
+
+  &__container {
+    background: var(--cleansia-white);
+    border-radius: 12px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  &__subtitle {
+    color: var(--cleansia-text-muted, #64748b);
+    font-size: 0.95rem;
+    margin: -0.5rem 0 0;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.25rem;
+
+    &--bodies {
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 1rem;
+    border-top: 1px solid var(--cleansia-border, #e2e8f0);
+  }
+}

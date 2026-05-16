@@ -84,7 +84,6 @@ export class SavedAddressStore {
     try {
       const command = new SetDefaultSavedAddressCommand({
         savedAddressId,
-        userId: undefined,
       });
       await firstValueFrom(
         this.customerClient.savedAddressClient.setDefault(command)

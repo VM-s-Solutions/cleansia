@@ -158,33 +158,13 @@ export class PromoCodeFormComponent implements OnInit, OnDestroy {
 
     this.facade.loadCurrencies();
 
-    // Wire up type-driven validator switching.
+    // Apply initial type validation, then delegate ongoing form reactivity
+    // (type-validator switching, code uppercasing, global-max toggle) to
+    // the facade.
     this.applyTypeValidation(this.form.controls.type.value);
-    this.form.controls.type.valueChanges.subscribe((t) => {
-      this.applyTypeValidation(t as PromoCodeType);
-    });
-
-    // Auto-uppercase the code field as the user types.
-    this.form.controls.code.valueChanges.subscribe((v) => {
-      if (v && v !== v.toUpperCase()) {
-        this.form.controls.code.setValue(v.toUpperCase(), {
-          emitEvent: false,
-        });
-      }
-    });
-
-    // Wire up the global-max-enabled toggle (clears value when disabled).
-    this.form.controls.globalMaxEnabled.valueChanges.subscribe((enabled) => {
-      const ctrl = this.form.controls.globalMaxRedemptions;
-      if (enabled) {
-        ctrl.addValidators([Validators.required, Validators.min(1)]);
-      } else {
-        ctrl.clearValidators();
-        ctrl.addValidators([Validators.min(1)]);
-        ctrl.setValue(null, { emitEvent: false });
-      }
-      ctrl.updateValueAndValidity({ emitEvent: false });
-    });
+    this.facade.bindFormReactivity(this.form, (t) =>
+      this.applyTypeValidation(t)
+    );
 
     if (this.isEditMode()) {
       const id = this.route.snapshot.paramMap.get('id');

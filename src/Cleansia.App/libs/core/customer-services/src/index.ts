@@ -43,6 +43,8 @@ export {
   CustomerAddress,
   QuoteOrderCommand,
   QuoteOrderResponse,
+  ExtraClient,
+  ExtraListItem,
 } from './lib/client/customer-client';
 export type {
   ISavedAddressClient,
@@ -68,7 +70,7 @@ export type {
 } from './lib/client/customer-client';
 export {
   ReferralClient,
-  ValidateReferralCommand,
+  ValidateReferralQuery,
   ValidateReferralResponse,
   GetMyReferralResponse,
   GetMyReferralsReferralListItem,
@@ -78,7 +80,7 @@ export {
 } from './lib/client/customer-client';
 export type {
   IReferralClient,
-  IValidateReferralCommand,
+  IValidateReferralQuery,
   IValidateReferralResponse,
   IGetMyReferralResponse,
   IGetMyReferralsReferralListItem,
@@ -125,6 +127,23 @@ export type {
   IUpdateRecurringBookingCommand,
   ISetRecurringBookingActiveCommand,
   IDeleteRecurringBookingCommand,
+} from './lib/client/customer-client';
+export {
+  ApiException,
+  GetCurrentUserQuery,
+  MyProfileDto,
+  OrderItem,
+  OrderListItem,
+  OrderStatus,
+  PagedDataOfOrderListItem,
+  PaymentStatus,
+  PaymentType,
+  SortDefinition,
+  CreateOrderResponse,
+  DisputeDetails,
+  DisputeListItem,
+  PackageListItem,
+  ServiceListItem,
 } from './lib/client/customer-client';
 export * from './lib/guards';
 export * from './lib/interceptors';

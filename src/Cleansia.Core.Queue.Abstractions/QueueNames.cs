@@ -4,4 +4,6 @@ public static class QueueNames
 {
     public const string GenerateReceipt = "generate-receipt";
     public const string GenerateInvoice = "generate-invoice";
+    public const string NotificationsDispatch = "notifications-dispatch";
+    public const string SitewidePromoFanout = "sitewide-promo-fanout";
 }

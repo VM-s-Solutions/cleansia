@@ -1,0 +1,6 @@
+/build
+
+# Firebase service account / project config — owner provisions per environment.
+# A sample (placeholder ids only) ships at app/google-services.sample.json so
+# the project diff stays self-documenting, but the real file MUST stay local.
+google-services.json

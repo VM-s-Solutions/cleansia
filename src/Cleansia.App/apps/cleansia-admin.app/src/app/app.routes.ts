@@ -165,6 +165,14 @@ export const appRoutes: Route[] = [
       ),
   },
   {
+    path: 'marketing',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/marketing').then(
+        (m) => m.marketingRoutes
+      ),
+  },
+  {
     path: 'unauthorized',
     loadComponent: () =>
       import('./unauthorized/unauthorized.component').then(

@@ -91,16 +91,10 @@ public class CalculateOrderPay
             }
 
             var serviceIds = order.SelectedServices.Select(os => os.ServiceId).ToList();
-            var packageIds = order.SelectedPackages.Select(os => os.PackageId).ToList(); ;
+            var packageIds = order.SelectedPackages.Select(os => os.PackageId).ToList();
 
-            var hasPackageConfig = await _payConfigRepository.GetAllConfigs()
-                .Where(c => c.PackageId != null && packageIds.Contains(c.PackageId))
-                .AnyAsync(cancellationToken);
-            var hasServiceConfig = await _payConfigRepository.GetAllConfigs()
-                .Where(c => c.ServiceId != null && serviceIds.Contains(c.ServiceId))
-                .AnyAsync(cancellationToken);
-
-            return hasPackageConfig || hasServiceConfig;
+            return await _payConfigRepository.HasConfigForOrderAsync(
+                serviceIds, packageIds, command.EmployeeId, cancellationToken);
         }
     }
 
@@ -125,15 +119,13 @@ public class CalculateOrderPay
 
             var payConfigs = new List<EmployeePayConfig>();
 
-            var serviceConfigs = await payConfigRepository.GetAllConfigs()
-                .Where(c => c.ServiceId != null && serviceIds.Contains(c.ServiceId))
-                .ToListAsync(cancellationToken);
-            var packageConfigs = await payConfigRepository.GetAllConfigs()
-                .Where(c => c.PackageId != null && packageIds.Contains(c.PackageId))
-                .ToListAsync(cancellationToken);
+            var serviceConfigs = await payConfigRepository.GetServiceConfigsForOrderAsync(
+                serviceIds, command.EmployeeId, cancellationToken);
+            var packageConfigs = await payConfigRepository.GetPackageConfigsForOrderAsync(
+                packageIds, command.EmployeeId, cancellationToken);
 
-            payConfigs.AddRange(packageConfigs);
-            payConfigs.AddRange(serviceConfigs);
+            payConfigs.AddRange(SelectPreferredConfigs(packageConfigs, c => c.PackageId));
+            payConfigs.AddRange(SelectPreferredConfigs(serviceConfigs, c => c.ServiceId));
 
             var (basePay, extrasPay, expensesPay, totalPay, breakdown) = payConfigs.CalculateAggregatedPay(order);
 
@@ -152,6 +144,16 @@ public class CalculateOrderPay
             order.MarkEmployeePayCalculated();
 
             return BusinessResult.Success(new Response(orderEmployeePay.Id));
+        }
+
+        private static IEnumerable<EmployeePayConfig> SelectPreferredConfigs(
+            IEnumerable<EmployeePayConfig> configs,
+            Func<EmployeePayConfig, string?> targetIdSelector)
+        {
+            return configs
+                .GroupBy(targetIdSelector)
+                .Where(g => g.Key != null)
+                .Select(g => g.FirstOrDefault(c => c.EmployeeId != null) ?? g.First());
         }
     }
 }

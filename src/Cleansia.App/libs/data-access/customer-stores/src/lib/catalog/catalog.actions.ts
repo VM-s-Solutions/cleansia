@@ -2,7 +2,7 @@ import {
   ApiException,
   PackageListItem,
   ServiceListItem,
-} from '@cleansia/partner-services';
+} from '@cleansia/customer-services';
 import { createAction, props } from '@ngrx/store';
 
 export const loadCustomerServices = createAction('[Customer Catalog] Load Services');

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { CleansiaButtonComponent, CleansiaScrollTopComponent } from '@cleansia/components';
 import {
@@ -29,6 +29,7 @@ type SortOption = 'price_asc' | 'price_desc' | 'name_asc';
     Skeleton,
   ],
   templateUrl: './services-catalog.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ServicesCatalogComponent implements OnInit {
   private readonly store = inject(Store);

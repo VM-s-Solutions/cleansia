@@ -1,6 +1,3 @@
-using System.Diagnostics;
-using System.Security.Claims;
-using System.Text;
 using System.Threading.RateLimiting;
 using Cleansia.ServiceDefaults;
 using Microsoft.AspNetCore.Builder;
@@ -23,7 +20,16 @@ public abstract class CleansiaStartupBase(IConfiguration configuration, IWebHost
     protected abstract string CorsPolicyName { get; }
     protected abstract string SwaggerTitle { get; }
 
+    protected abstract Type RequestLoggingMiddlewareType { get; }
+
     protected abstract void AddProjectServices(IServiceCollection services);
+
+    /// <summary>
+    /// Host-specific middleware that runs after authentication but before
+    /// authorization. Default is no-op. Customer / Partner / Admin override
+    /// to register CSRF validation; Mobile inherits the no-op.
+    /// </summary>
+    protected virtual void UseHostAuthMiddleware(IApplicationBuilder app) { }
 
     public void ConfigureServices(IServiceCollection services)
     {
@@ -39,6 +45,11 @@ public abstract class CleansiaStartupBase(IConfiguration configuration, IWebHost
                 policy.WithOrigins(corsOrigins)
                     .AllowAnyMethod()
                     .AllowAnyHeader()
+                    // Required so the browser sends our HttpOnly auth cookies
+                    // on cross-origin requests (SPA on a different origin than
+                    // the API). Note: incompatible with AllowAnyOrigin, which
+                    // is why CorsOrigins is a fixed list.
+                    .AllowCredentials()
                     .WithExposedHeaders("Content-Disposition");
             });
         });
@@ -79,7 +90,7 @@ public abstract class CleansiaStartupBase(IConfiguration configuration, IWebHost
             });
         }
 
-        app.UseMiddleware<RequestLoggingMiddleware>();
+        app.UseMiddleware(RequestLoggingMiddlewareType);
 
         app.UseExceptionHandler(errorApp =>
         {
@@ -93,6 +104,10 @@ public abstract class CleansiaStartupBase(IConfiguration configuration, IWebHost
         app.UseCors(CorsPolicyName);
         app.UseRateLimiter();
         app.UseAuthentication();
+        // Hook for host-specific middleware that needs HttpContext.User populated
+        // but should run before authorization (e.g. CSRF validation on web hosts;
+        // mobile leaves this empty since it has no cookie surface).
+        UseHostAuthMiddleware(app);
         app.UseAuthorization();
 
         app.UseEndpoints(endpoints =>
@@ -102,124 +117,6 @@ public abstract class CleansiaStartupBase(IConfiguration configuration, IWebHost
         });
     }
 }
-
-public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggingMiddleware> logger)
-{
-    private readonly RequestDelegate _next = next;
-    private readonly ILogger<RequestLoggingMiddleware> _logger = logger;
-
-    public async Task InvokeAsync(HttpContext context)
-    {
-        if (ShouldSkipLogging(context.Request.Path))
-        {
-            await _next(context);
-            return;
-        }
-
-        var stopwatch = Stopwatch.StartNew();
-        var requestId = Guid.NewGuid().ToString();
-
-        await LogRequestAsync(context, requestId);
-
-        var originalBodyStream = context.Response.Body;
-        using var responseBody = new MemoryStream();
-        context.Response.Body = responseBody;
-
-        try
-        {
-            await _next(context);
-            stopwatch.Stop();
-            await LogResponseAsync(context, requestId, stopwatch.ElapsedMilliseconds);
-            await responseBody.CopyToAsync(originalBodyStream);
-        }
-        catch (Exception ex)
-        {
-            stopwatch.Stop();
-            LogError(context, requestId, stopwatch.ElapsedMilliseconds, ex);
-            throw;
-        }
-        finally
-        {
-            context.Response.Body = originalBodyStream;
-        }
-    }
-
-    private async Task LogRequestAsync(HttpContext context, string requestId)
-    {
-        var request = context.Request;
-        var userId = context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "Anonymous";
-        var userEmail = context.User?.FindFirst(ClaimTypes.Email)?.Value ?? "N/A";
-        var requestBody = await ReadRequestBodyAsync(request);
-
-        _logger.LogInformation(
-            "[{RequestId}] {Method} {Path}{QueryString} | User: {UserId} ({UserEmail}) | IP: {IP} | Body: {Body}",
-            requestId, request.Method, request.Path, request.QueryString,
-            userId, userEmail,
-            context.Connection.RemoteIpAddress?.ToString() ?? "Unknown",
-            string.IsNullOrEmpty(requestBody) ? "N/A" : requestBody);
-    }
-
-    private async Task LogResponseAsync(HttpContext context, string requestId, long durationMs)
-    {
-        var response = context.Response;
-        var userId = context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "Anonymous";
-        var responseBody = await ReadResponseBodyAsync(response);
-
-        var logLevel = response.StatusCode >= 500 ? LogLevel.Error :
-                      response.StatusCode >= 400 ? LogLevel.Warning :
-                      LogLevel.Information;
-
-        _logger.Log(logLevel,
-            "[{RequestId}] Response: {StatusCode} | Duration: {Duration}ms | User: {UserId} | Body: {Body}",
-            requestId, response.StatusCode, durationMs, userId,
-            string.IsNullOrEmpty(responseBody) ? "N/A" : TruncateBody(responseBody, 500));
-    }
-
-    private void LogError(HttpContext context, string requestId, long durationMs, Exception ex)
-    {
-        var userId = context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "Anonymous";
-
-        _logger.LogError(ex,
-            "[{RequestId}] Exception occurred | Duration: {Duration}ms | User: {UserId} | Path: {Path}",
-            requestId, durationMs, userId, context.Request.Path);
-    }
-
-    private static async Task<string> ReadRequestBodyAsync(HttpRequest request)
-    {
-        if (!request.Body.CanSeek) request.EnableBuffering();
-        request.Body.Position = 0;
-        using var reader = new StreamReader(request.Body, Encoding.UTF8, leaveOpen: true);
-        var body = await reader.ReadToEndAsync();
-        request.Body.Position = 0;
-        return TruncateBody(body, 1000);
-    }
-
-    private static async Task<string> ReadResponseBodyAsync(HttpResponse response)
-    {
-        response.Body.Seek(0, SeekOrigin.Begin);
-        using var reader = new StreamReader(response.Body, Encoding.UTF8, leaveOpen: true);
-        var body = await reader.ReadToEndAsync();
-        response.Body.Seek(0, SeekOrigin.Begin);
-        return body;
-    }
-
-    private static string TruncateBody(string body, int maxLength)
-    {
-        if (string.IsNullOrEmpty(body) || body.Length <= maxLength) return body;
-        return body.Substring(0, maxLength) + "... (truncated)";
-    }
-
-    private static bool ShouldSkipLogging(PathString path)
-    {
-        var pathValue = path.Value?.ToLower() ?? string.Empty;
-        return pathValue.Contains("/health") ||
-               pathValue.Contains("/swagger") ||
-               pathValue.Contains(".js") ||
-               pathValue.Contains(".css") ||
-               pathValue.Contains(".map");
-    }
-}
-
 
 public static class DatabaseMigrationExtensions
 {

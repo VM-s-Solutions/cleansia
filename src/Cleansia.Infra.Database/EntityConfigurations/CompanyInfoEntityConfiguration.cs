@@ -30,13 +30,11 @@ public class CompanyInfoEntityConfiguration : AuditableEntityConfiguration<Compa
         builder.Property(c => c.Iban).HasMaxLength(50);
         builder.Property(c => c.Swift).HasMaxLength(20);
 
-        // FK to Countries table
         builder.HasOne(c => c.Country)
             .WithMany()
             .HasForeignKey(c => c.CountryId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Keep global unique on RegistrationNumber
         builder.HasIndex(c => c.RegistrationNumber).IsUnique().HasDatabaseName("IX_CompanyInfo_RegistrationNumber");
         builder.HasIndex(c => c.IsActive).HasDatabaseName("IX_CompanyInfo_IsActive");
 

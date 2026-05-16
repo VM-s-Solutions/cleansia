@@ -29,7 +29,9 @@ public class DeactivatePromoCode
         }
     }
 
-    public class Handler(IPromoCodeRepository promoCodeRepository) : ICommandHandler<Command, Response>
+    public class Handler(
+        IPromoCodeRepository promoCodeRepository,
+        IUserSessionProvider userSessionProvider) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -37,11 +39,11 @@ public class DeactivatePromoCode
 
             if (!entity!.IsActive)
             {
-                // Idempotent — nothing to do.
                 return BusinessResult.Success(new Response(entity.Id));
             }
 
-            entity.Deactivate(string.Empty);
+            var actorId = userSessionProvider.GetUserId() ?? string.Empty;
+            entity.Deactivate(actorId);
 
             return BusinessResult.Success(new Response(entity.Id));
         }

@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Blobs.Abstractions;
+using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -68,13 +69,16 @@ public class DataRetentionBackgroundService(
 
         var now = DateTimeOffset.UtcNow;
 
-        var confirmationCount = await userRepository.GetQueryable()
+        // System job — no JWT context. Use IgnoreQueryFilters so the sweep
+        // sees rows across all tenants. Pure-modify (ExecuteUpdate) — no new
+        // rows created, so no tenant override needed.
+        var confirmationCount = await userRepository.GetQueryableIgnoringTenant()
             .Where(u => u.ConfirmationCode != null && u.ConfirmationCodeExpiresAt < now)
             .ExecuteUpdateAsync(s => s
                 .SetProperty(u => u.ConfirmationCode, (string?)null)
                 .SetProperty(u => u.ConfirmationCodeExpiresAt, (DateTimeOffset?)null), ct);
 
-        var resetCount = await userRepository.GetQueryable()
+        var resetCount = await userRepository.GetQueryableIgnoringTenant()
             .Where(u => u.ResetPasswordCode != null && u.ResetPasswordCodeExpiresAt < now)
             .ExecuteUpdateAsync(s => s
                 .SetProperty(u => u.ResetPasswordCode, (string?)null)
@@ -94,7 +98,7 @@ public class DataRetentionBackgroundService(
 
         while (true)
         {
-            var batch = await deviceRepository.GetQueryable()
+            var batch = await deviceRepository.GetQueryableIgnoringTenant()
                 .Where(device => device.IsActive && device.LastActiveAt < cutoff)
                 .Take(RetentionDefaults.BatchSize)
                 .ToListAsync(ct);
@@ -116,7 +120,7 @@ public class DataRetentionBackgroundService(
         var years = int.TryParse(yearsStr, out var y) ? y : RetentionDefaults.DefaultGdprRequestsYears;
         var cutoff = DateTimeOffset.UtcNow.AddYears(-years);
 
-        var affected = await gdprRequestRepository.GetQueryable()
+        var affected = await gdprRequestRepository.GetQueryableIgnoringTenant()
             .Where(r => r.Status == GdprRequestStatus.Completed
                      && r.CompletedAt < cutoff
                      && r.ProcessedBy != null)
@@ -137,17 +141,24 @@ public class DataRetentionBackgroundService(
 
         while (true)
         {
-            var batch = await orderRepository.GetQueryable()
+            var batch = await orderRepository.GetQueryableIgnoringTenant()
                 .Where(o => o.CleaningDateTime < cutoff
-                         && o.CustomerName != "[DELETED]"
+                         && o.CustomerName != AnonymizationMarker.Value
                          && o.OrderStatusHistory.Any(h => h.Status == OrderStatus.Completed))
+                .Include(o => o.Reviews)
+                .Include(o => o.OrderNotes)
+                .Include(o => o.OrderIssues)
+                .Include(o => o.CustomerAddress)
                 .Take(RetentionDefaults.BatchSize)
                 .ToListAsync(ct);
 
             if (batch.Count == 0) break;
 
             foreach (var order in batch)
+            {
                 order.AnonymizeCustomerData();
+                order.CustomerAddress?.Anonymize();
+            }
 
             await orderRepository.CommitAsync(ct);
             totalProcessed += batch.Count;
@@ -167,7 +178,7 @@ public class DataRetentionBackgroundService(
 
         while (true)
         {
-            var batch = await userConsentRepository.GetQueryable()
+            var batch = await userConsentRepository.GetQueryableIgnoringTenant()
                 .Where(c => !c.IsGranted && c.WithdrawnAt != null && c.WithdrawnAt < cutoff)
                 .Take(RetentionDefaults.BatchSize)
                 .ToListAsync(ct);
@@ -195,7 +206,7 @@ public class DataRetentionBackgroundService(
 
         while (true)
         {
-            var batch = await employeeDocumentRepository.GetQueryable()
+            var batch = await employeeDocumentRepository.GetQueryableIgnoringTenant()
                 .Where(doc => !doc.IsActive && doc.DeactivatedOn < cutoff)
                 .Take(RetentionDefaults.BatchSize)
                 .ToListAsync(ct);

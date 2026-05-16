@@ -1,4 +1,5 @@
 ﻿using Cleansia.Config;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Configuration;
 using Cleansia.Infra.Common.Configuration.Interfaces;
@@ -105,6 +106,7 @@ public abstract class BaseIntegrationTest : BaseTransactionalPostgresSqlTest<Cle
             services.AddCoreBindings(Configuration, new TestHostEnvironment());
 
             services.Replace(ServiceDescriptor.Scoped<IUserSessionProvider>(_ => new TestUserSessionProvider(new TestClaimsPrincipalUser())));
+            services.AddSingleton<IHostAudienceProvider>(new HostAudienceProvider(JwtAudiences.Customer));
             services.Replace(ServiceDescriptor.Singleton<IDatabaseConnectionString>(_ => new DatabaseConnectionString(Configuration)
             {
                 ConnectionString = Fixture.GetConnectionString() ?? throw new ArgumentNullException(nameof(Fixture.GetConnectionString))

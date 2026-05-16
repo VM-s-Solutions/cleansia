@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import {
+  ChangeDetectionStrategy,
   Component,
   computed,
   HostBinding,
@@ -48,6 +49,7 @@ export interface StatusFlowItem {
   imports: [CommonModule, TranslateModule],
   templateUrl: './cleansia-help-card.component.html',
   styles: [':host.hidden { display: none; }'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaHelpCardComponent implements OnInit {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));

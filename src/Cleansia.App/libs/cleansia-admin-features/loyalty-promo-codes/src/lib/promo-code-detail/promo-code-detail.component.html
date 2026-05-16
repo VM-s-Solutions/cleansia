@@ -74,12 +74,14 @@
 
         <div class="detail-actions">
           <cleansia-button
+            *cleansiaPermission="Policy.CanUpdatePromoCode"
             [label]="'global.actions.edit' | translate"
             icon="pi pi-pencil"
             (onClick)="onEdit()"
           />
           @if (canDeactivate()) {
             <cleansia-button
+              *cleansiaPermission="Policy.CanDeactivatePromoCode"
               [label]="
                 'pages.promo_codes.detail.deactivate_button' | translate
               "

@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   computed,
@@ -60,6 +61,7 @@ import {
   ],
   templateUrl: './invoice-management.component.html',
   providers: [InvoiceManagementFacade],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InvoiceManagementComponent implements AfterViewInit, OnDestroy {
   private readonly cd = inject(ChangeDetectorRef);

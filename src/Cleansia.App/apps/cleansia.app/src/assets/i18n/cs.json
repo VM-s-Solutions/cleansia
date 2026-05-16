@@ -84,6 +84,7 @@
   },
   "global": {
     "loading": "Načítání...",
+    "scroll_to_top": "Přejít nahoru",
     "messages": {
       "success": "Úspěch",
       "error": "Chyba",
@@ -208,7 +209,8 @@
       "submit": "Odeslat odkaz",
       "success": "Odkaz pro obnovení hesla odeslán! Zkontrolujte svůj email.",
       "back_to_login": "Zpět na přihlášení"
-    }
+    },
+    "refresh_token_reused": "Vaše relace byla použita jinde. Přihlaste se prosím znovu."
   },
   "services": {
     "title": "Naše služby",
@@ -271,6 +273,9 @@
       "payment": "Způsob platby",
       "total": "Celkem",
       "confirm": "Potvrdit a zaplatit"
+    },
+    "review": {
+      "already_exists": "Tuto objednávku jste už hodnotili."
     }
   },
   "orders": {
@@ -387,7 +392,10 @@
       "withdrawn": "Odvolán",
       "grant": "Udělit",
       "withdraw": "Odvolat"
-    }
+    },
+    "deletion_already_pending": "Žádost o smazání už probíhá.",
+    "deletion_blocked_by_order": "Účet nelze smazat, dokud máte aktivní objednávku.",
+    "deletion_blocked_by_invoice": "Účet nelze smazat, dokud máte nevyřízenou fakturu."
   },
   "pages": {
     "home": {
@@ -624,7 +632,8 @@
       "export_data": "Exportovat data",
       "export_data_desc": "Stáhnout kopii všech vašich osobních údajů",
       "rewards_card_title": "Odměny",
-      "rewards_card_link": "Zobrazit odměny"
+      "rewards_card_link": "Zobrazit odměny",
+      "scroll_to_top": "Přejít nahoru"
     },
     "services": {
       "title": "Naše služby",
@@ -704,6 +713,7 @@
       "select_date_first": "Nejprve vyberte datum",
       "slot_express": "Expres +20 %",
       "slot_unavailable": "Nedostupné",
+      "express_surcharge_label": "Expresní termín (+20 %)",
       "cancel_policy_title": "Storno podmínky",
       "cancel_policy_tier1_when": "Než uklízeč přijme objednávku",
       "cancel_policy_tier1_value": "Zdarma",
@@ -735,7 +745,14 @@
       "special_instructions_placeholder": "Máte speciální požadavky? (např. zaměření na kuchyň, produkty pro domácnost se zvířaty...)",
       "entry_instructions_label": "Pokyny pro vstup",
       "entry_instructions_placeholder": "Jak se dostaneme do nemovitosti? (např. zvonek, klíč pod rohožkou...)",
-      "summary": "Souhrn",
+      "summary": {
+        "totals_title": "Celkem",
+        "subtotal": "Mezisoučet",
+        "promo_discount": "Slevový kód (-{{code}})",
+        "membership_discount": "Sleva Cleansia Plus",
+        "tier_discount": "Věrnostní sleva",
+        "tier_discount_min_not_met": "Věrnostní sleva platí pro objednávky nad {{amount}}"
+      },
       "summary_section_title": "Zkontrolujte objednávku",
       "summary_services": "Služby",
       "summary_packages": "Balíčky",
@@ -743,6 +760,8 @@
       "summary_rooms_count": "{{rooms}} pokojů, {{bathrooms}} koupelen",
       "summary_address": "Adresa",
       "summary_datetime": "Datum a čas",
+      "summary_extras": "Doplňky",
+      "extras_subtitle": "Vyberte doplňky, které si přejete. Cena se aktualizuje živě.",
       "summary_payment": "Platba",
       "summary_contact": "Kontakt",
       "summary_instructions": "Instrukce",
@@ -814,11 +833,6 @@
         "error_already_referred": "Doporučení jste již přijali",
         "error_inactive": "Tento doporučovací kód již není aktivní",
         "error_generic": "Kód se nepodařilo ověřit. Můžete pokračovat."
-      },
-      "summary": {
-        "totals_title": "Celkem",
-        "subtotal": "Mezisoučet",
-        "promo_discount": "Slevový kód (-{{code}})"
       }
     },
     "orders": {
@@ -870,6 +884,9 @@
       "packages": "Balíčky",
       "services": "Služby",
       "total": "Celkem",
+      "discount_tier": "Věrnostní sleva uplatněna",
+      "discount_membership": "Sleva Cleansia Plus uplatněna",
+      "discount_promo": "Slevový kód uplatněn",
       "timeline": "Průběh",
       "notes": "Poznámky",
       "special_instructions": "Speciální instrukce",
@@ -1295,8 +1312,8 @@
     "perks": {
       "welcome_badge": "Vítejte v odměnách Cleansia",
       "discount_5_above_1000": "5 % sleva na objednávky nad 1000 CZK",
-      "discount_10": "10 % sleva na všechny objednávky",
-      "discount_15": "15 % sleva na všechny objednávky",
+      "discount_10": "10 % sleva na objednávky nad 1000 CZK",
+      "discount_12": "12 % sleva na objednávky nad 1000 CZK",
       "priority_support": "Prioritní zákaznická podpora",
       "dedicated_pool": "Vyhrazený tým uklízečů"
     }
@@ -1397,5 +1414,23 @@
     "prefill_dropped_items": "Tyto položky jsme z předvyplnění odstranili — už nejsou k dispozici: {{items}}",
     "order_detail_make_recurring": "Naplánovat opakovaně",
     "order_detail_make_recurring_plus_required": "Pro pravidelné rozvrhy je potřeba Cleansia Plus."
+  },
+  "enums": {
+    "order_status": {
+      "new": "Nová",
+      "pending": "Čeká",
+      "confirmed": "Potvrzeno",
+      "on_the_way": "Na cestě",
+      "in_progress": "Probíhá",
+      "completed": "Dokončeno",
+      "cancelled": "Zrušeno"
+    },
+    "payment_status": {
+      "pending": "Čeká na platbu",
+      "paid": "Zaplaceno",
+      "failed": "Neúspěšné",
+      "refunded": "Vráceno",
+      "disputed": "Sporné"
+    }
   }
 }

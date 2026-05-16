@@ -10,35 +10,10 @@ using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
 
 namespace Cleansia.Core.AppServices.Features.Memberships;
 
-/// <summary>
-/// Subscribe the calling user to a Cleansia Plus plan. Two-phase flow:
-///   1. If the user has no Stripe customer yet, create one. (Same lazy
-///      creation as the one-off card payment path.)
-///   2. Return a SetupIntent client_secret so the client (PaymentSheet on
-///      mobile, Stripe Elements on web) can attach a payment method.
-///   3. After the client confirms the SetupIntent (out of band), it calls
-///      this same endpoint a second time with <see cref="Command.PaymentMethodConfirmed"/>
-///      = true. This branch creates the actual Stripe subscription and the
-///      local <see cref="UserMembership"/> row.
-///
-/// We split the flow because Stripe needs the payment method attached BEFORE
-/// the subscription can be created with `default_incomplete` semantics. The
-/// alternative (create-then-attach) requires more webhook plumbing for the
-/// "incomplete" status and gives a worse UX.
-/// </summary>
 public class CreateMembershipSubscription
 {
-    public record Command(string PlanCode, bool PaymentMethodConfirmed = false, string UserId = "")
-        : ICommand<Response>;
+    public record Command(string PlanCode, bool PaymentMethodConfirmed = false) : ICommand<Response>;
 
-    /// <summary>
-    /// Two response shapes wrapped in one record:
-    ///  - When a payment method needs to be attached: <see cref="SetupIntentClientSecret"/> +
-    ///    <see cref="StripeCustomerId"/> populated, <see cref="MembershipId"/> empty.
-    ///  - After PaymentMethodConfirmed=true: <see cref="MembershipId"/> populated,
-    ///    SetupIntentClientSecret empty.
-    /// Discriminate via <see cref="MembershipId"/> being non-empty.
-    /// </summary>
     public record Response(
         string MembershipId,
         string SetupIntentClientSecret,
@@ -51,9 +26,6 @@ public class CreateMembershipSubscription
         {
             RuleFor(x => x.PlanCode)
                 .NotEmpty().WithMessage(BusinessErrorMessage.Required);
-
-            RuleFor(x => x.UserId)
-                .NotEmpty().WithMessage(BusinessErrorMessage.Required);
         }
     }
 
@@ -61,16 +33,18 @@ public class CreateMembershipSubscription
         IUserRepository userRepository,
         IUserMembershipRepository userMembershipRepository,
         IMembershipPlanRepository membershipPlanRepository,
+        IUserSessionProvider userSessionProvider,
         IStripeClient stripeClient,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var user = await userRepository.GetByIdAsync(command.UserId, cancellationToken);
+            var userId = userSessionProvider.GetUserId()!;
+            var user = await userRepository.GetByIdAsync(userId, cancellationToken);
             if (user == null)
             {
                 return BusinessResult.Failure<Response>(new Error(
-                    nameof(command.UserId), BusinessErrorMessage.UserNotFound));
+                    nameof(Command), BusinessErrorMessage.UserNotFound));
             }
 
             var plan = await membershipPlanRepository.GetByCodeAsync(command.PlanCode, cancellationToken);
@@ -80,7 +54,6 @@ public class CreateMembershipSubscription
                     nameof(command.PlanCode), BusinessErrorMessage.MembershipPlanNotFound));
             }
 
-            // Idempotency: bail if user already has an active membership.
             var existing = await userMembershipRepository.GetActiveForUserAsync(user.Id, cancellationToken);
             if (existing != null)
             {
@@ -88,11 +61,11 @@ public class CreateMembershipSubscription
                     nameof(UserMembership), BusinessErrorMessage.MembershipAlreadyActive));
             }
 
-            // Lazy Stripe customer creation, same as one-off card payment.
             var stripeCustomerId = user.StripeCustomerId;
             if (string.IsNullOrEmpty(stripeCustomerId))
             {
                 stripeCustomerId = await stripeClient.CreateCustomerAsync(
+                    user.Id,
                     user.Email,
                     $"{user.FirstName} {user.LastName}".Trim(),
                     user.PhoneNumber,
@@ -103,11 +76,14 @@ public class CreateMembershipSubscription
                     stripeCustomerId, user.Id);
             }
 
-            // Phase 2 — payment method attached, create the subscription.
             if (command.PaymentMethodConfirmed)
             {
+                // Fresh attempt id per call so re-subscribing after cancellation
+                // creates a new Stripe subscription rather than replaying the
+                // canceled one (idempotency-key collision).
+                var attemptId = Guid.NewGuid().ToString("N");
                 var subscription = await stripeClient.CreateSubscriptionAsync(
-                    stripeCustomerId, plan.StripePriceId, plan.TrialPeriodDays, cancellationToken);
+                    stripeCustomerId, plan.StripePriceId, plan.TrialPeriodDays, attemptId, cancellationToken);
 
                 var membership = UserMembership.Create(
                     userId: user.Id,
@@ -128,7 +104,6 @@ public class CreateMembershipSubscription
                     EphemeralKey: string.Empty));
             }
 
-            // Phase 1 — return SetupIntent so the client can attach a payment method.
             var setupIntent = await stripeClient.CreateSetupIntentAsync(stripeCustomerId, cancellationToken);
             var ephemeralKey = await stripeClient.CreateEphemeralKeyAsync(stripeCustomerId, cancellationToken);
 

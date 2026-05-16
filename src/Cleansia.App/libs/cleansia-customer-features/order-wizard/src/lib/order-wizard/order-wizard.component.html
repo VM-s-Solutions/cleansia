@@ -640,7 +640,7 @@
           {{ 'pages.order.price_total' | translate }}
         </h3>
         <div class="order-wizard__sidebar-price">
-          {{ formatPrice(facade.totalPrice()) }}
+          {{ formatPrice(facade.displayedTotalPrice()) }}
         </div>
 
         <!-- Sidebar breakdown -->
@@ -662,6 +662,43 @@
             <span>{{ formatPrice(service.basePrice) }} + {{ formatPrice(service.perRoomPrice) }} × {{ facade.formData().rooms + facade.formData().bathrooms }} {{ 'pages.order_detail.rooms' | translate }}</span>
           </div>
           }
+          }
+          @switch (facade.appliedDiscountKind()) {
+            @case ('membership') {
+              <div class="order-wizard__sidebar-item order-wizard__sidebar-item--discount">
+                <span>{{ 'pages.order.summary.membership_discount' | translate }}</span>
+                <span>− {{ formatPrice(facade.membershipDiscount()) }}</span>
+              </div>
+            }
+            @case ('tier') {
+              <div class="order-wizard__sidebar-item order-wizard__sidebar-item--discount">
+                <span>{{ 'pages.order.summary.tier_discount' | translate }}</span>
+                <span>− {{ formatPrice(facade.tierDiscount()) }}</span>
+              </div>
+            }
+            @case ('combined') {
+              <!-- LOY-003 — Plus + tier additive, render both rows so the user sees each source. -->
+              <div class="order-wizard__sidebar-item order-wizard__sidebar-item--discount">
+                <span>{{ 'pages.order.summary.membership_discount' | translate }}</span>
+                <span>− {{ formatPrice(facade.membershipDiscount()) }}</span>
+              </div>
+              <div class="order-wizard__sidebar-item order-wizard__sidebar-item--discount">
+                <span>{{ 'pages.order.summary.tier_discount' | translate }}</span>
+                <span>− {{ formatPrice(facade.tierDiscount()) }}</span>
+              </div>
+            }
+            @case ('promo') {
+              <div class="order-wizard__sidebar-item order-wizard__sidebar-item--discount">
+                <span>{{ 'pages.order.summary.promo_discount' | translate: { code: facade.promoCode().trim().toUpperCase() } }}</span>
+                <span>− {{ formatPrice(facade.effectivePromoDiscount()) }}</span>
+              </div>
+            }
+          }
+          @if (facade.isExpressSlot()) {
+          <div class="order-wizard__sidebar-item order-wizard__sidebar-item--express">
+            <span>{{ 'pages.order.express_surcharge_label' | translate }}</span>
+            <span>+ {{ formatPrice(facade.expressSurcharge()) }}</span>
+          </div>
           }
         </div>
         }
@@ -688,7 +725,7 @@
       </div>
       <div class="order-wizard__mobile-price-right">
         <div class="order-wizard__mobile-price-value">
-          {{ formatPrice(facade.totalPrice()) }}
+          {{ formatPrice(facade.displayedTotalPrice()) }}
         </div>
         <i class="pi order-wizard__mobile-price-chevron"
           [class.pi-chevron-up]="!mobileBreakdownExpanded()"
@@ -715,10 +752,47 @@
       </div>
       }
       }
+      @switch (facade.appliedDiscountKind()) {
+        @case ('membership') {
+          <div class="order-wizard__mobile-price-item order-wizard__mobile-price-item--discount">
+            <span>{{ 'pages.order.summary.membership_discount' | translate }}</span>
+            <span>− {{ formatPrice(facade.membershipDiscount()) }}</span>
+          </div>
+        }
+        @case ('tier') {
+          <div class="order-wizard__mobile-price-item order-wizard__mobile-price-item--discount">
+            <span>{{ 'pages.order.summary.tier_discount' | translate }}</span>
+            <span>− {{ formatPrice(facade.tierDiscount()) }}</span>
+          </div>
+        }
+        @case ('combined') {
+          <!-- LOY-003 — Plus + tier additive, render both rows. -->
+          <div class="order-wizard__mobile-price-item order-wizard__mobile-price-item--discount">
+            <span>{{ 'pages.order.summary.membership_discount' | translate }}</span>
+            <span>− {{ formatPrice(facade.membershipDiscount()) }}</span>
+          </div>
+          <div class="order-wizard__mobile-price-item order-wizard__mobile-price-item--discount">
+            <span>{{ 'pages.order.summary.tier_discount' | translate }}</span>
+            <span>− {{ formatPrice(facade.tierDiscount()) }}</span>
+          </div>
+        }
+        @case ('promo') {
+          <div class="order-wizard__mobile-price-item order-wizard__mobile-price-item--discount">
+            <span>{{ 'pages.order.summary.promo_discount' | translate: { code: facade.promoCode().trim().toUpperCase() } }}</span>
+            <span>− {{ formatPrice(facade.effectivePromoDiscount()) }}</span>
+          </div>
+        }
+      }
+      @if (facade.isExpressSlot()) {
+      <div class="order-wizard__mobile-price-item order-wizard__mobile-price-item--express">
+        <span>{{ 'pages.order.express_surcharge_label' | translate }}</span>
+        <span>+ {{ formatPrice(facade.expressSurcharge()) }}</span>
+      </div>
+      }
     </div>
   </div>
 </div>
-<cleansia-scroll-top />
+<cleansia-scroll-top [ariaLabel]="'global.scroll_to_top' | translate" />
 
 <!-- Rebook Warning Dialog -->
 <p-dialog

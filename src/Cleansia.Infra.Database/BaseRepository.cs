@@ -145,6 +145,11 @@ public abstract class BaseRepository<TEntity>(CleansiaDbContext context) : IRepo
         return GetDbSet();
     }
 
+    public virtual IQueryable<TEntity> GetQueryableIgnoringTenant()
+    {
+        return GetDbSet().IgnoreQueryFilters();
+    }
+
     protected DbSet<TEntity> GetDbSet() => Context.Set<TEntity>();
 
     protected IQueryable<TEntity> FilterData(Expression<Func<TEntity, bool>>? filter)

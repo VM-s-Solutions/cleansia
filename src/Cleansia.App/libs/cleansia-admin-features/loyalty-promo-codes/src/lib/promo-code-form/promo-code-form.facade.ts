@@ -1,4 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
   AdminClient,
@@ -10,9 +11,10 @@ import {
   UpdatePromoCodeCommand,
   UpdatePromoCodeResponse,
 } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 export interface CurrencyOption {
   id: string;
@@ -49,13 +51,11 @@ export interface PromoCodeUpdateInput {
 }
 
 @Injectable()
-export class PromoCodeFormFacade {
+export class PromoCodeFormFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
-
-  private destroy$ = new Subject<void>();
 
   readonly promoCode = signal<PromoCodeDetailDto | null>(null);
   readonly currencies = signal<CurrencyOption[]>([]);
@@ -67,7 +67,7 @@ export class PromoCodeFormFacade {
     this.adminClient.adminPromoCodeClient
       .details(id)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
@@ -84,7 +84,7 @@ export class PromoCodeFormFacade {
     this.adminClient.adminCurrencyClient
       .getOverview()
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of([] as CurrencyListItem[]))
       )
       .subscribe((items) => {
@@ -129,7 +129,7 @@ export class PromoCodeFormFacade {
     this.adminClient.adminPromoCodeClient
       .create(command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError((err) => {
           this.handleSaveError(err);
           return of(null);
@@ -167,7 +167,7 @@ export class PromoCodeFormFacade {
     this.adminClient.adminPromoCodeClient
       .update(id, command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError((err) => {
           this.handleSaveError(err);
           return of(null);
@@ -188,6 +188,62 @@ export class PromoCodeFormFacade {
     this.router.navigate(['/loyalty/promos']);
   }
 
+  /**
+   * Wire up the 3 form-reactivity subscriptions (type-validator switching,
+   * code auto-uppercasing, global-max toggle) onto the provided form group.
+   * All subscriptions are scoped to this facade's destroy lifecycle.
+   *
+   * @param form The promo-code form group (controls: code, type,
+   *   discountPercentUi, discountAmount, currencyId, globalMaxEnabled,
+   *   globalMaxRedemptions, ...).
+   * @param onTypeChange Callback invoked with the new type whenever the
+   *   `type` control changes; the component owns validator switching for
+   *   discount fields.
+   */
+  bindFormReactivity(
+    form: FormGroup,
+    onTypeChange: (type: PromoCodeType) => void
+  ): void {
+    const typeCtrl = form.controls['type'];
+    const codeCtrl = form.controls['code'];
+    const globalMaxEnabledCtrl = form.controls['globalMaxEnabled'];
+    const globalMaxRedemptionsCtrl = form.controls['globalMaxRedemptions'];
+
+    // Type-driven validator switching is delegated to the component because
+    // the form-control mapping is private to the component's form definition.
+    typeCtrl.valueChanges
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((t) => {
+        onTypeChange(t as PromoCodeType);
+      });
+
+    // Auto-uppercase the code field as the user types.
+    codeCtrl.valueChanges
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((v) => {
+        if (v && typeof v === 'string' && v !== v.toUpperCase()) {
+          codeCtrl.setValue(v.toUpperCase(), { emitEvent: false });
+        }
+      });
+
+    // Wire up the global-max-enabled toggle (clears value when disabled).
+    globalMaxEnabledCtrl.valueChanges
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((enabled) => {
+        if (enabled) {
+          globalMaxRedemptionsCtrl.addValidators([
+            Validators.required,
+            Validators.min(1),
+          ]);
+        } else {
+          globalMaxRedemptionsCtrl.clearValidators();
+          globalMaxRedemptionsCtrl.addValidators([Validators.min(1)]);
+          globalMaxRedemptionsCtrl.setValue(null, { emitEvent: false });
+        }
+        globalMaxRedemptionsCtrl.updateValueAndValidity({ emitEvent: false });
+      });
+  }
+
   private handleSaveError(err: unknown): void {
     const detail =
       typeof err === 'object' && err && 'response' in err
@@ -202,10 +258,5 @@ export class PromoCodeFormFacade {
         this.translate.instant('pages.promo_codes.form.error.generic')
       );
     }
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

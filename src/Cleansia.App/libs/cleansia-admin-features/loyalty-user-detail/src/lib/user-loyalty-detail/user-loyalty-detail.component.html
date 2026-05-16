@@ -58,12 +58,14 @@
 
         <div class="user-loyalty-detail__actions">
           <cleansia-button
+            *cleansiaPermission="Policy.CanGrantLoyaltyPoints"
             [label]="'pages.loyalty_user_detail.actions.grant' | translate"
             icon="pi pi-plus-circle"
             severity="success"
             (onClick)="openGrant()"
           />
           <cleansia-button
+            *cleansiaPermission="Policy.CanGrantLoyaltyPoints"
             [label]="'pages.loyalty_user_detail.actions.revoke' | translate"
             icon="pi pi-minus-circle"
             severity="danger"

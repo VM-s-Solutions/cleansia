@@ -84,6 +84,7 @@
   },
   "global": {
     "loading": "Загрузка...",
+    "scroll_to_top": "Прокрутить вверх",
     "messages": {
       "success": "Успешно",
       "error": "Ошибка",
@@ -208,7 +209,8 @@
       "submit": "Отправить ссылку для сброса",
       "success": "Ссылка для сброса пароля отправлена! Проверьте Вашу почту.",
       "back_to_login": "Вернуться ко входу"
-    }
+    },
+    "refresh_token_reused": "Сессия использована в другом месте. Войдите, пожалуйста, заново."
   },
   "services": {
     "title": "Наши услуги",
@@ -271,6 +273,9 @@
       "payment": "Способ оплаты",
       "total": "Итого",
       "confirm": "Подтвердить и оплатить"
+    },
+    "review": {
+      "already_exists": "Вы уже оставили отзыв по этому заказу."
     }
   },
   "orders": {
@@ -387,7 +392,10 @@
       "withdrawn": "Отозвано",
       "grant": "Предоставить",
       "withdraw": "Отозвать"
-    }
+    },
+    "deletion_already_pending": "Запрос на удаление уже в обработке.",
+    "deletion_blocked_by_order": "Удалить аккаунт нельзя, пока есть активный заказ.",
+    "deletion_blocked_by_invoice": "Удалить аккаунт нельзя, пока есть неоплаченный счёт."
   },
   "pages": {
     "home": {
@@ -624,7 +632,8 @@
       "export_data": "Экспортировать данные",
       "export_data_desc": "Скачать копию всех Ваших персональных данных",
       "rewards_card_title": "Награды",
-      "rewards_card_link": "Посмотреть награды"
+      "rewards_card_link": "Посмотреть награды",
+      "scroll_to_top": "Прокрутить вверх"
     },
     "services": {
       "title": "Наши услуги",
@@ -704,6 +713,7 @@
       "select_date_first": "Сначала выберите дату",
       "slot_express": "Экспресс +20 %",
       "slot_unavailable": "Недоступно",
+      "express_surcharge_label": "Экспресс-слот (+20 %)",
       "cancel_policy_title": "Условия отмены",
       "cancel_policy_tier1_when": "До принятия уборщиком",
       "cancel_policy_tier1_value": "Бесплатно",
@@ -735,7 +745,14 @@
       "special_instructions_placeholder": "Есть особые пожелания? (напр., уделить внимание кухне, средства для аллергиков...)",
       "entry_instructions_label": "Инструкции по доступу",
       "entry_instructions_placeholder": "Как попасть к Вам? (напр., домофон, ключ под ковриком...)",
-      "summary": "Итого",
+      "summary": {
+        "totals_title": "Итого",
+        "subtotal": "Промежуточный итог",
+        "promo_discount": "Промокод (-{{code}})",
+        "membership_discount": "Скидка Cleansia Plus",
+        "tier_discount": "Скидка за лояльность",
+        "tier_discount_min_not_met": "Скидка за лояльность действует для заказов от {{amount}}"
+      },
       "summary_section_title": "Проверьте Ваш заказ",
       "summary_services": "Услуги",
       "summary_packages": "Пакеты",
@@ -743,6 +760,8 @@
       "summary_rooms_count": "{{rooms}} комнат, {{bathrooms}} ванных",
       "summary_address": "Адрес",
       "summary_datetime": "Дата и время",
+      "summary_extras": "Дополнения",
+      "extras_subtitle": "Выберите дополнения, которые хотите добавить. Цена обновляется в реальном времени.",
       "summary_payment": "Оплата",
       "summary_contact": "Контакт",
       "summary_instructions": "Инструкции",
@@ -814,11 +833,6 @@
         "error_already_referred": "Вы уже приняли реферальное приглашение",
         "error_inactive": "Этот реферальный код больше неактивен",
         "error_generic": "Не удалось проверить код. Вы можете продолжить."
-      },
-      "summary": {
-        "totals_title": "Итого",
-        "subtotal": "Промежуточный итог",
-        "promo_discount": "Промокод (-{{code}})"
       }
     },
     "orders": {
@@ -870,6 +884,9 @@
       "packages": "Пакеты",
       "services": "Услуги",
       "total": "Итого",
+      "discount_tier": "Скидка за лояльность применена",
+      "discount_membership": "Скидка Cleansia Plus применена",
+      "discount_promo": "Промокод применён",
       "timeline": "Хронология",
       "notes": "Примечания",
       "special_instructions": "Особые пожелания",
@@ -1295,8 +1312,8 @@
     "perks": {
       "welcome_badge": "Добро пожаловать в награды Cleansia",
       "discount_5_above_1000": "5% скидка на заказы свыше 1000 CZK",
-      "discount_10": "10% скидка на все заказы",
-      "discount_15": "15% скидка на все заказы",
+      "discount_10": "10% скидка на заказы свыше 1000 CZK",
+      "discount_12": "12% скидка на заказы свыше 1000 CZK",
       "priority_support": "Приоритетная поддержка клиентов",
       "dedicated_pool": "Выделенная команда уборщиков"
     }
@@ -1397,5 +1414,23 @@
     "prefill_dropped_items": "Мы удалили эти позиции из предзаполнения — они больше недоступны: {{items}}",
     "order_detail_make_recurring": "Сделать регулярным",
     "order_detail_make_recurring_plus_required": "Для регулярных расписаний нужна Cleansia Plus."
+  },
+  "enums": {
+    "order_status": {
+      "new": "Новый",
+      "pending": "Ожидает",
+      "confirmed": "Подтверждён",
+      "on_the_way": "В пути",
+      "in_progress": "Выполняется",
+      "completed": "Завершён",
+      "cancelled": "Отменён"
+    },
+    "payment_status": {
+      "pending": "Ожидает оплаты",
+      "paid": "Оплачено",
+      "failed": "Не удалось",
+      "refunded": "Возвращено",
+      "disputed": "Спорный"
+    }
   }
 }

@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.FeatureFlags;
 using Cleansia.Core.AppServices.Features.FeatureFlags.DTOs;
+using Cleansia.Core.Domain.Repositories;
 using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
 using MediatR;
@@ -10,7 +11,7 @@ namespace Cleansia.Web.Admin.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class AdminFeatureFlagController(IMediator mediator) : ApiController(mediator)
+public class AdminFeatureFlagController(IMediator mediator, ITenantProvider tenantProvider) : ApiController(mediator)
 {
     [HttpGet]
     [Permission(Policy.CanViewFeatureFlags)]
@@ -49,10 +50,11 @@ public class AdminFeatureFlagController(IMediator mediator) : ApiController(medi
     }
 
     [HttpGet("check")]
-    [Permission(Policy.CanCheckFeatureFlag)]
+    [Permission(Policy.CanViewFeatureFlags)]
     [ProducesResponseType(typeof(CheckFeatureFlag.Response), StatusCodes.Status200OK)]
-    public async Task<IActionResult> Check([FromQuery] string featureName, [FromQuery] string? countryId, [FromQuery] string? tenantId, CancellationToken cancellationToken)
+    public async Task<IActionResult> Check([FromQuery] string featureName, [FromQuery] string? countryId, CancellationToken cancellationToken)
     {
+        var tenantId = tenantProvider.GetCurrentTenantId();
         var result = await Mediator.Send(new CheckFeatureFlag.Query(featureName, countryId, tenantId), cancellationToken);
         return HandleResult<CheckFeatureFlag.Response>(result);
     }

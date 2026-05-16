@@ -3,6 +3,7 @@ import {
   Component,
   HostListener,
   inject,
+  input,
   PLATFORM_ID,
   signal,
 } from '@angular/core';
@@ -14,16 +15,7 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <button
-      class="scroll-top-btn"
-      [class.visible]="visible()"
-      (click)="scrollToTop()"
-      aria-label="Scroll to top"
-    >
-      <i class="pi pi-arrow-up"></i>
-    </button>
-  `,
+  templateUrl: './cleansia-scroll-top.component.html',
   styles: `
     .scroll-top-btn {
       position: fixed;
@@ -72,6 +64,7 @@ import { CommonModule } from '@angular/common';
 export class CleansiaScrollTopComponent {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   readonly visible = signal(false);
+  readonly ariaLabel = input<string>('Scroll to top');
 
   @HostListener('window:scroll')
   onScroll(): void {

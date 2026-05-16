@@ -7,14 +7,17 @@ namespace Cleansia.Core.AppServices.Features.SavedAddresses;
 
 public class GetSavedAddresses
 {
-    public record Query(string UserId) : IQuery<IReadOnlyList<SavedAddressDto>>;
+    public record Query : IQuery<IReadOnlyList<SavedAddressDto>>;
 
-    public class Handler(ISavedAddressRepository savedAddressRepository)
+    public class Handler(
+        ISavedAddressRepository savedAddressRepository,
+        IUserSessionProvider userSessionProvider)
         : IQueryHandler<Query, IReadOnlyList<SavedAddressDto>>
     {
         public async Task<BusinessResult<IReadOnlyList<SavedAddressDto>>> Handle(Query query, CancellationToken cancellationToken)
         {
-            var items = await savedAddressRepository.GetByUserAsync(query.UserId, cancellationToken);
+            var userId = userSessionProvider.GetUserId()!;
+            var items = await savedAddressRepository.GetByUserAsync(userId, cancellationToken);
             var dtos = items
                 .Where(s => s.Address != null)
                 .Select(s => new SavedAddressDto(

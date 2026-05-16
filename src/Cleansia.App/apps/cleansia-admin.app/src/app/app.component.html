@@ -1,6 +1,6 @@
 <cleansia-dev-banner [bugReportUrl]="bugReportUrl" />
 <div class="app-layout" [attr.data-sidebar-collapsed]="sidebarCollapsed()">
-  @if (isLoggedIn) {
+  @if (isLoggedIn()) {
   <cleansia-sidebar-menu
     [menuItems]="sidebarMenuItems"
     [(mobileExpanded)]="mobileSidebarExpanded"
@@ -8,7 +8,7 @@
   />
   }
 
-  @if (isLoggedIn && isMobile()) {
+  @if (isLoggedIn() && isMobile()) {
   <div class="mobile-toolbar">
     <button
       type="button"
@@ -26,7 +26,7 @@
   </div>
   }
 
-  <main class="main-content" [ngClass]="{ 'main-content__margin': isLoggedIn, 'main-content__with-toolbar': isLoggedIn && isMobile() }">
+  <main class="main-content" [ngClass]="{ 'main-content__margin': isLoggedIn(), 'main-content__with-toolbar': isLoggedIn() && isMobile() }">
     <router-outlet></router-outlet>
   </main>
 

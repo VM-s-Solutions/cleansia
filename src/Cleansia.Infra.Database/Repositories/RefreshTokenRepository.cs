@@ -50,7 +50,9 @@ public class RefreshTokenRepository(CleansiaDbContext context)
         // Revoked tokens: delete when their revocation is older than the cutoff.
         // Never-revoked-but-expired tokens: delete when their expiry is older than the cutoff.
         // We keep recently-revoked tokens to preserve rotation-theft detection history.
+        // Bypasses the tenant filter — system job, no JWT context.
         return context.RefreshTokens
+            .IgnoreQueryFilters()
             .Where(t =>
                 (t.RevokedAt != null && t.RevokedAt <= olderThan) ||
                 (t.RevokedAt == null && t.ExpiresAt <= olderThan))

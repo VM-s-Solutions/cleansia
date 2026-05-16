@@ -9,25 +9,14 @@ import {
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonRoute } from '@cleansia/services';
-import {
-  BehaviorSubject,
-  Observable,
-  catchError,
-  filter,
-  switchMap,
-  take,
-  throwError,
-} from 'rxjs';
+import { Observable, catchError, switchMap, throwError } from 'rxjs';
 import { PartnerAuthService } from '../services/partner-auth.service';
-
-// Module-scoped single-flight state for refresh calls. If many requests 401 at
-// once, only one refresh fires; the rest wait for its result then retry.
-let isRefreshing = false;
-const refreshedToken$ = new BehaviorSubject<string | null>(null);
+import { PartnerRefreshCoordinator } from './refresh-coordinator';
 
 export const PartnerErrorInterceptorFn: HttpInterceptorFn = (req, next) => {
   const authService = inject(PartnerAuthService);
   const router = inject(Router);
+  const coordinator = inject(PartnerRefreshCoordinator);
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
@@ -46,7 +35,7 @@ export const PartnerErrorInterceptorFn: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
 
-      return handle401(req, next, authService, router);
+      return handle401(req, next, authService, router, coordinator);
     })
   );
 };
@@ -55,28 +44,24 @@ function handle401(
   req: HttpRequest<unknown>,
   next: HttpHandlerFn,
   authService: PartnerAuthService,
-  router: Router
+  router: Router,
+  coordinator: PartnerRefreshCoordinator,
 ): Observable<HttpEvent<unknown>> {
-  if (isRefreshing) {
-    return refreshedToken$.pipe(
-      filter((token): token is string => token !== null),
-      take(1),
-      switchMap((token) => next(req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })))
-    );
+  if (coordinator.isInFlight()) {
+    // Wait for the in-flight refresh; the rotated auth cookie carries the
+    // new credentials, so the replay just sends the request as-is.
+    return coordinator.waitForRefresh().pipe(switchMap(() => next(req)));
   }
 
-  isRefreshing = true;
-  refreshedToken$.next(null);
+  coordinator.begin();
 
   return authService.refreshSession().pipe(
-    switchMap((newToken) => {
-      isRefreshing = false;
-      refreshedToken$.next(newToken);
-      return next(req.clone({ setHeaders: { Authorization: `Bearer ${newToken}` } }));
+    switchMap(() => {
+      coordinator.complete(authService.getCsrfToken() ?? 'ok');
+      return next(req);
     }),
     catchError((refreshError) => {
-      isRefreshing = false;
-      refreshedToken$.next(null);
+      coordinator.fail();
       forceLogout(authService, router);
       return throwError(() => refreshError);
     })

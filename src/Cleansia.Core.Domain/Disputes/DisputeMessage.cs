@@ -33,4 +33,10 @@ public class DisputeMessage : BaseEntity
         IsStaffMessage = isStaffMessage;
         CreatedOn = DateTimeOffset.UtcNow;
     }
+
+    public DisputeMessage Anonymize()
+    {
+        Message = AnonymizationMarker.Value;
+        return this;
+    }
 }

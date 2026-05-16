@@ -30,6 +30,7 @@ import {
 import { adminEffects, adminReducers } from '@cleansia/admin-stores';
 import { CleansiaPreset } from '@cleansia/assets';
 import {
+  AUTH_COOKIE_KEYS,
   COMMON_INTERCEPTORS_FN,
   initializeTranslations,
   JsonTranslationLoader,
@@ -100,6 +101,16 @@ export const appConfig: ApplicationConfig = {
     { provide: Sentry.TraceService, deps: [Router] },
     { provide: LOCALE_ID, useValue: 'en' },
     { provide: ADMINAPIBASEURL, useValue: environment.apiBaseUrl },
+    {
+      provide: AUTH_COOKIE_KEYS,
+      useValue: {
+        token: 'admin_token',
+        refreshToken: 'admin_refresh_token',
+        refreshTokenExp: 'admin_refresh_token_exp',
+        role: 'admin_role',
+        csrfToken: 'admin_csrf',
+      },
+    },
     provideStore(),
     importProvidersFrom(
       BrowserAnimationsModule,

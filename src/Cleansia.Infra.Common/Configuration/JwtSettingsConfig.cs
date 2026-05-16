@@ -13,4 +13,6 @@ public class JwtSettingsConfig(IConfiguration configuration)
     public double RefreshTokenExpDays { get; set; } = 30;
 
     public double RefreshTokenShortExpDays { get; set; } = 1;
+
+    public string Issuer { get; set; } = "cleansia";
 }

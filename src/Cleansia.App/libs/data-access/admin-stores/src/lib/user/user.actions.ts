@@ -1,11 +1,12 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ApiException, SortDefinition } from '@cleansia/admin-services';
-import { UserFilter } from '@cleansia/models';
 import {
-  BlobFileDto,
-  UserListItem,
-  PagedDataOfUserListItem,
-} from '@cleansia/partner-services';
+  AdminUserDetailDto,
+  AdminUserListItem,
+  ApiException,
+  PagedDataOfAdminUserListItem,
+  SortDefinition,
+} from '@cleansia/admin-services';
+import { UserFilter } from '@cleansia/models';
 
 import { createAction, props } from '@ngrx/store';
 
@@ -21,7 +22,7 @@ export const loadUserPaged = createAction(
 );
 export const loadUserPagedSuccess = createAction(
   '[User] Load Paged Success',
-  props<{ page: PagedDataOfUserListItem }>()
+  props<{ page: PagedDataOfAdminUserListItem }>()
 );
 export const loadUserPagedFailure = createAction(
   '[User] Load Paged Failure',
@@ -31,7 +32,7 @@ export const loadUserPagedFailure = createAction(
 export const loadUserCurrent = createAction('[User] Load Current');
 export const loadUserCurrentSuccess = createAction(
   '[User] Load Current Success',
-  props<{ user: UserListItem }>()
+  props<{ user: AdminUserListItem }>()
 );
 export const loadUserCurrentFailure = createAction(
   '[User] Load Current Failure',
@@ -44,7 +45,7 @@ export const loadUserDetail = createAction(
 );
 export const loadUserDetailSuccess = createAction(
   '[User] Load Detail Success',
-  props<{ user: UserListItem }>()
+  props<{ user: AdminUserDetailDto }>()
 );
 export const loadUserDetailFailure = createAction(
   '[User] Load Detail Failure',
@@ -58,8 +59,6 @@ export const updateUserCurrent = createAction(
     firstName: string;
     lastName: string;
     phoneNumber?: string;
-    birthDate?: Date;
-    photo?: BlobFileDto;
   }>()
 );
 export const updateUserCurrentSuccess = createAction(

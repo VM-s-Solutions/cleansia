@@ -33,4 +33,11 @@ public class DisputeEvidence : BaseEntity
         UploadedBy = uploadedBy;
         UploadedOn = DateTimeOffset.UtcNow;
     }
+
+    public DisputeEvidence Anonymize()
+    {
+        FileName = AnonymizationMarker.Value;
+        FilePath = AnonymizationMarker.Value;
+        return this;
+    }
 }

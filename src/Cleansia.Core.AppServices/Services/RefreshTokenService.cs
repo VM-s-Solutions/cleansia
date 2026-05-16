@@ -17,7 +17,7 @@ public class RefreshTokenService(
     // 48 bytes = 384 bits of entropy → 64 base64url chars. Overkill; that's the point.
     private const int TokenByteLength = 48;
 
-    public IssuedRefreshToken Issue(string userId, bool rememberMe, string? deviceLabel = null, string? ipAddress = null)
+    public IssuedRefreshToken Issue(string userId, bool rememberMe, string audience, string? deviceLabel = null, string? ipAddress = null)
     {
         var raw = GenerateRawToken();
         var hash = HashToken(raw);
@@ -29,6 +29,7 @@ public class RefreshTokenService(
             userId: userId,
             tokenHash: hash,
             expiresAt: DateTimeOffset.UtcNow.Add(lifetime),
+            audience: audience,
             deviceLabel: deviceLabel,
             ipAddress: ipAddress);
 
@@ -81,7 +82,9 @@ public class RefreshTokenService(
 
         // Note: Issue() calls repository.Add for the NEW token. We need to get its Id
         // before revoking the old one so we can set ReplacedByTokenId for the forensic chain.
-        var issued = Issue(existing.UserId, rememberMe, deviceLabel, ipAddress);
+        // Audience is preserved across rotation so the new token stays bound to the same host.
+        var audience = existing.Audience ?? string.Empty;
+        var issued = Issue(existing.UserId, rememberMe, audience, deviceLabel, ipAddress);
 
         existing.MarkUsed(DateTimeOffset.UtcNow);
         existing.Revoke("rotated", DateTimeOffset.UtcNow, replacedByTokenId: issued.Record.Id);

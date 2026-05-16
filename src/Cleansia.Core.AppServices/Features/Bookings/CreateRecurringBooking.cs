@@ -9,18 +9,6 @@ using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Features.Bookings;
 
-/// <summary>
-/// Creates a new <see cref="RecurringBookingTemplate"/> for the calling user.
-/// The materializer background job picks it up on its next run and starts
-/// spawning concrete Order rows for each occurrence within the 7-day horizon.
-///
-/// Wire shape mirrors the regular CreateOrder where possible (rooms, bathrooms,
-/// service/package ids, payment type) so the customer UI can reuse most of its
-/// booking-form state when promoting a one-off to a recurring schedule.
-///
-/// Frequency / DayOfWeek / TimeOfDay determine the recurrence; StartsOn anchors
-/// the first occurrence; EndsOn is optional (null = indefinite).
-/// </summary>
 public class CreateRecurringBooking
 {
     public record Command(
@@ -34,15 +22,12 @@ public class CreateRecurringBooking
         IReadOnlyList<string> SelectedPackageIds,
         int PaymentType,
         DateTime StartsOn,
-        DateTime? EndsOn = null,
-        string UserId = "") : ICommand<RecurringBookingTemplateDto>;
+        DateTime? EndsOn = null) : ICommand<RecurringBookingTemplateDto>;
 
     public class Validator : AbstractValidator<Command>
     {
         public Validator()
         {
-            RuleFor(x => x.UserId).NotEmpty().WithMessage(BusinessErrorMessage.Required);
-
             RuleFor(x => x.Frequency)
                 .Must(f => Enum.IsDefined(typeof(RecurrenceFrequency), f))
                 .WithMessage(BusinessErrorMessage.InvalidEnumValue);
@@ -85,14 +70,13 @@ public class CreateRecurringBooking
 
     public class Handler(
         IRecurringBookingTemplateRepository templateRepository,
-        ISavedAddressRepository savedAddressRepository) : ICommandHandler<Command, RecurringBookingTemplateDto>
+        ISavedAddressRepository savedAddressRepository,
+        IUserSessionProvider userSessionProvider) : ICommandHandler<Command, RecurringBookingTemplateDto>
     {
         public async Task<BusinessResult<RecurringBookingTemplateDto>> Handle(Command command, CancellationToken cancellationToken)
         {
-            // Ownership check: the picked SavedAddressId must belong to the
-            // calling user. Done here (not in Validator) because it depends
-            // on the JWT-enriched UserId.
-            var addresses = await savedAddressRepository.GetByUserAsync(command.UserId, cancellationToken);
+            var userId = userSessionProvider.GetUserId()!;
+            var addresses = await savedAddressRepository.GetByUserAsync(userId, cancellationToken);
             var address = addresses.FirstOrDefault(a => a.Id == command.SavedAddressId);
             if (address?.Address == null)
             {
@@ -102,7 +86,7 @@ public class CreateRecurringBooking
             }
 
             var template = RecurringBookingTemplate.Create(
-                userId: command.UserId,
+                userId: userId,
                 frequency: (RecurrenceFrequency)command.Frequency,
                 dayOfWeek: (System.DayOfWeek)command.DayOfWeek,
                 timeOfDay: TimeOnly.Parse(command.TimeOfDay),

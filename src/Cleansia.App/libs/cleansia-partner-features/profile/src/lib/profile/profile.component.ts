@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import {
   CleansiaButtonComponent,
@@ -37,6 +37,7 @@ import { ProfileDocumentsFacade } from './profile-documents.facade';
   ],
   templateUrl: './profile.component.html',
   providers: [ProfileDocumentsFacade, ProfileFacade],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProfileComponent implements OnInit {
   protected readonly facade = inject(ProfileFacade);

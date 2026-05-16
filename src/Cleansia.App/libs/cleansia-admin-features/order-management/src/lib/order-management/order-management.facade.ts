@@ -6,9 +6,10 @@ import {
   PaymentStatus,
   SortDefinition,
 } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 export interface OrderFilterParams {
   orderStatuses?: OrderStatus[];
@@ -21,12 +22,10 @@ export interface OrderFilterParams {
 }
 
 @Injectable()
-export class OrderManagementFacade {
+export class OrderManagementFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
-
-  private destroy$ = new Subject<void>();
 
   readonly orders = signal<OrderListItem[]>([]);
   readonly loading = signal<boolean>(false);
@@ -136,7 +135,7 @@ export class OrderManagementFacade {
         this.currentLimit()
       )
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
@@ -172,10 +171,5 @@ export class OrderManagementFacade {
     this.currentFilter.set(null);
     this.currentOffset.set(0);
     this.loadOrders();
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

@@ -32,6 +32,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
     private readonly ICountryConfigurationRepository _countryConfigurationRepository;
     private readonly IPdfService _pdfService;
     private readonly IBlobContainerClientFactory _blobContainerClientFactory;
+    private readonly ITenantProvider _tenantProvider;
 
     public PayPeriodBackgroundService(
         IPayPeriodRepository payPeriodRepository,
@@ -47,7 +48,8 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         ICountryInvoiceConfigRepository countryInvoiceConfigRepository,
         ICountryConfigurationRepository countryConfigurationRepository,
         IPdfService pdfService,
-        IBlobContainerClientFactory blobContainerClientFactory)
+        IBlobContainerClientFactory blobContainerClientFactory,
+        ITenantProvider tenantProvider)
     {
         _payPeriodRepository = payPeriodRepository;
         _employeeRepository = employeeRepository;
@@ -63,6 +65,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         _countryConfigurationRepository = countryConfigurationRepository;
         _pdfService = pdfService;
         _blobContainerClientFactory = blobContainerClientFactory;
+        _tenantProvider = tenantProvider;
     }
 
     public async Task CloseExpiredPeriodsAndOpenNewAsync(CancellationToken cancellationToken = default)
@@ -73,9 +76,12 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
 
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
-            // Find all open pay periods that have ended
+            // System job — no JWT context. Use IgnoreQueryFilters to see rows
+            // across all tenants; group by tenant and set the override per
+            // tenant before mutating so new PayPeriod / EmployeeInvoice rows
+            // are stamped with the correct TenantId.
             var expiredPeriods = await _payPeriodRepository
-                .GetQueryable()
+                .GetQueryableIgnoringTenant()
                 .Where(p => p.Status == PayPeriodStatus.Open && p.EndDate < today)
                 .ToListAsync(cancellationToken);
 
@@ -87,53 +93,62 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
 
             _logger.LogInformation("Found {Count} expired pay periods to close", expiredPeriods.Count);
 
-            foreach (var period in expiredPeriods)
+            foreach (var tenantGroup in expiredPeriods.GroupBy(p => p.TenantId ?? string.Empty))
             {
-                try
+                // Reset before each iteration so a non-empty override from the
+                // previous group doesn't leak into a single-tenant (empty key)
+                // group that follows it.
+                _tenantProvider.ClearTenantOverride();
+                if (!string.IsNullOrEmpty(tenantGroup.Key))
                 {
-                    // Close the expired period (auto-closed by system)
-                    period.Close("System", "Automatically closed by background job");
-                    _logger.LogInformation(
-                        "Closed pay period {PeriodId} ({StartDate} - {EndDate})",
-                        period.Id,
-                        period.StartDate.ToString("yyyy-MM-dd"),
-                        period.EndDate.ToString("yyyy-MM-dd"));
+                    _tenantProvider.SetTenantOverride(tenantGroup.Key);
+                }
 
-                    // Send email notifications to all active employees
-                    await SendPeriodClosedEmailsAsync(period, cancellationToken);
-
-                    // Check if we need to create a new period
-                    var hasActivePeriod = await _payPeriodRepository
-                        .GetQueryable()
-                        .AnyAsync(p => p.Status == PayPeriodStatus.Open, cancellationToken);
-
-                    if (!hasActivePeriod)
+                foreach (var period in tenantGroup)
+                {
+                    try
                     {
-                        // Create new period starting the day after the closed period ended
-                        var newStartDate = period.EndDate.AddDays(1);
-                        var newEndDate = newStartDate.AddMonths(1).AddDays(-1); // One month period
-
-                        var newPeriod = PayPeriod.Create(newStartDate, newEndDate);
-                        _payPeriodRepository.Add(newPeriod);
-
+                        period.Close("System", "Automatically closed by background job");
                         _logger.LogInformation(
-                            "Created new pay period {PeriodId} ({StartDate} - {EndDate})",
-                            newPeriod.Id,
-                            newPeriod.StartDate.ToString("yyyy-MM-dd"),
-                            newPeriod.EndDate.ToString("yyyy-MM-dd"));
+                            "Closed pay period {PeriodId} ({StartDate} - {EndDate})",
+                            period.Id,
+                            period.StartDate.ToString("yyyy-MM-dd"),
+                            period.EndDate.ToString("yyyy-MM-dd"));
+
+                        await SendPeriodClosedEmailsAsync(period, cancellationToken);
+
+                        // Within the current tenant — check if any open period exists.
+                        var hasActivePeriod = await _payPeriodRepository
+                            .GetQueryable()
+                            .AnyAsync(p => p.Status == PayPeriodStatus.Open, cancellationToken);
+
+                        if (!hasActivePeriod)
+                        {
+                            var newStartDate = period.EndDate.AddDays(1);
+                            var newEndDate = newStartDate.AddMonths(1).AddDays(-1);
+
+                            var newPeriod = PayPeriod.Create(newStartDate, newEndDate);
+                            _payPeriodRepository.Add(newPeriod);
+
+                            _logger.LogInformation(
+                                "Created new pay period {PeriodId} ({StartDate} - {EndDate})",
+                                newPeriod.Id,
+                                newPeriod.StartDate.ToString("yyyy-MM-dd"),
+                                newPeriod.EndDate.ToString("yyyy-MM-dd"));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(
+                            ex,
+                            "Error processing pay period {PeriodId}",
+                            period.Id);
                     }
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(
-                        ex,
-                        "Error processing pay period {PeriodId}",
-                        period.Id);
-                }
-            }
 
-            // Commit all changes to database
-            await _unitOfWork.CommitAsync(cancellationToken);
+                // Commit per-tenant so new rows inherit the right TenantId.
+                await _unitOfWork.CommitAsync(cancellationToken);
+            }
 
             _logger.LogInformation("Pay period auto-close job completed successfully");
         }
@@ -174,9 +189,8 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
                     }
 
                     var employeeName = $"{employee.User.FirstName} {employee.User.LastName}";
-                    var languageCode = employee.User.PreferredLanguageCode ?? "en";
+                    var languageCode = employee.User.PreferredLanguageCode ?? Constants.Language.English;
 
-                    // Generate invoice and PDF for employee
                     byte[]? invoicePdfBytes = null;
                     string? invoiceFileName = null;
 
@@ -205,7 +219,6 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
                             ex,
                             "Failed to generate invoice for employee {EmployeeId}, will send email without invoice",
                             employee.Id);
-                        // Continue to send email without invoice
                     }
 
                     await _emailService.SendPeriodClosedEmailAsync(
@@ -232,7 +245,6 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
                         "Failed to send period closed email to employee {EmployeeId} ({Email})",
                         employee.Id,
                         employee.User?.Email ?? "unknown");
-                    // Continue processing other employees even if one fails
                 }
             }
 
@@ -251,19 +263,14 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         string languageCode,
         CancellationToken cancellationToken)
     {
-        // Check if employee has unpaid order pays for this period
-        var orderPays = await _orderEmployeePayRepository
-            .GetByEmployeeId(employee.Id)
-            .Where(p => p.PayPeriodId == period.Id && p.EmployeeInvoiceId == null)
-            .Include(p => p.Order)
-            .ToListAsync(cancellationToken);
+        var orderPays = await _orderEmployeePayRepository.GetUnassignedForEmployeePeriodAsync(
+            employee.Id, period.Id, cancellationToken);
 
         if (!orderPays.Any())
         {
             return null;
         }
 
-        // Check if invoice already exists for this employee and period
         var existingInvoice = await _employeeInvoiceRepository
             .GetQueryable()
             .FirstOrDefaultAsync(i => i.EmployeeId == employee.Id && i.PayPeriodId == period.Id, cancellationToken);
@@ -277,16 +284,13 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
             return null;
         }
 
-        // Calculate invoice totals
         var subTotal = orderPays.Sum(p => p.BasePay + p.ExtrasPay + p.ExpensesPay);
         var bonusAmount = orderPays.Sum(p => p.BonusPay);
         var deductionAmount = orderPays.Sum(p => p.DeductionPay);
 
-        // Get currency
         var currency = await _currencyRepository.GetByCodeAsync(employee.PreferredCurrencyCode ?? string.Empty, cancellationToken) ??
                        await _currencyRepository.GetDefaultAsync(cancellationToken);
 
-        // Create invoice
         var invoice = EmployeeInvoice.Create(
             employee.Id,
             period.Id,
@@ -298,15 +302,13 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
 
         _employeeInvoiceRepository.Add(invoice);
 
-        // Assign order pays to invoice
         foreach (var orderPay in orderPays)
         {
             orderPay.AssignToInvoice(invoice.Id);
         }
 
-        // Get language for template
         var language = await _languageRepository.GetByCodeAsync(languageCode, cancellationToken) ??
-                       await _languageRepository.GetByCodeAsync("en", cancellationToken);
+                       await _languageRepository.GetByCodeAsync(Constants.Language.English, cancellationToken);
 
         if (language == null)
         {
@@ -314,7 +316,6 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
             return null;
         }
 
-        // Generate PDF with error handling
         try
         {
             var pdfBytes = await GenerateInvoicePdfAsync(invoice, employee, currency, orderPays, language.Code, cancellationToken);
@@ -324,10 +325,9 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
                 throw new InvalidOperationException("PDF generation returned empty result");
             }
 
-            // Upload PDF to blob storage
             var pdfBlobUrl = await UploadInvoicePdfAsync(invoice, employee, pdfBytes, cancellationToken);
             invoice.SetPdfBlobUrl(pdfBlobUrl);
-            invoice.ClearPdfGenerationError(); // Clear any previous errors
+            invoice.ClearPdfGenerationError();
 
             var fileName = $"{invoice.InvoiceNumber}.pdf";
             return (pdfBytes, fileName);
@@ -349,7 +349,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         EmployeeInvoice invoice,
         Employee employee,
         Currency? currency,
-        List<OrderEmployeePay> orderPays,
+        IReadOnlyList<OrderEmployeePay> orderPays,
         string languageCode,
         CancellationToken cancellationToken)
     {
@@ -370,7 +370,6 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
             }
             var countryContext = await GetCountryInvoiceContextAsync(countryId, cancellationToken);
 
-            // Get date format from country configuration
             var dateFormat = "dd.MM.yyyy";
             if (!string.IsNullOrEmpty(countryId))
             {

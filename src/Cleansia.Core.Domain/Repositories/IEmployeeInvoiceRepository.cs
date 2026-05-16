@@ -1,5 +1,4 @@
 using Cleansia.Core.Domain.EmployeePayroll;
-using Cleansia.Core.Domain.Enums;
 
 namespace Cleansia.Core.Domain.Repositories;
 
@@ -9,11 +8,11 @@ public interface IEmployeeInvoiceRepository : IRepository<EmployeeInvoice, strin
 
     Task<EmployeeInvoice?> GetByVariableSymbolAsync(string variableSymbol, CancellationToken cancellationToken);
 
-    IQueryable<EmployeeInvoice> GetByEmployeeId(string employeeId);
-
-    IQueryable<EmployeeInvoice> GetByStatus(EmployeeInvoiceStatus status);
-
-    IQueryable<EmployeeInvoice> GetByPayPeriodId(string payPeriodId);
+    /// <summary>
+    /// All invoices belonging to an employee, projected to read-only list.
+    /// Used by the GDPR export to bundle the employee's invoice history.
+    /// </summary>
+    Task<IReadOnlyList<EmployeeInvoice>> GetByEmployeeIdAsync(string employeeId, CancellationToken cancellationToken);
 
     Task<EmployeeInvoice?> GetByEmployeeAndPayPeriodAsync(string employeeId, string payPeriodId, CancellationToken cancellationToken);
 
@@ -22,14 +21,24 @@ public interface IEmployeeInvoiceRepository : IRepository<EmployeeInvoice, strin
     Task<EmployeeInvoice?> GetLatestInvoiceAsync(string employeeId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Gets invoices for an employee within a date range.
-    /// Used for earnings analytics.
+    /// True iff every invoice in the given pay period is Paid. Used by the
+    /// admin "close pay period" validator — closing is refused while any
+    /// invoice is still outstanding.
     /// </summary>
-    IQueryable<EmployeeInvoice> GetInvoicesByDateRange(string employeeId, DateTime startDate, DateTime endDate);
+    Task<bool> AllInvoicesPaidInPeriodAsync(string payPeriodId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Gets all invoices within a date range.
-    /// Used for admin payroll reports.
+    /// Invoices for an employee whose <c>GeneratedAt</c> falls in the given
+    /// date range. Used by per-employee earnings analytics and the
+    /// dashboard productivity widget.
     /// </summary>
-    IQueryable<EmployeeInvoice> GetAllInvoicesByDateRange(DateTime startDate, DateTime endDate);
+    Task<IReadOnlyList<EmployeeInvoice>> GetByEmployeeAndDateRangeAsync(
+        string employeeId, DateTime startDate, DateTime endDate, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// All invoices whose <c>GeneratedAt</c> falls in the given date range.
+    /// Used by admin payroll report.
+    /// </summary>
+    Task<IReadOnlyList<EmployeeInvoice>> GetAllByDateRangeAsync(
+        DateTime startDate, DateTime endDate, CancellationToken cancellationToken);
 }

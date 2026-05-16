@@ -61,19 +61,19 @@ export interface CleansiaTableColumn {
   header: string;
   sortable?: boolean;
   pipe?: 'date' | 'number' | 'currency';
-  pipeArgs?: any[];
+  pipeArgs?: unknown[];
   width?: string;
   class?: string;
   headerClass?: string;
 }
 
-export interface CleansiaTableAction {
+export interface CleansiaTableAction<T = unknown> {
   label: string;
   icon?: string;
   class?: string;
-  action: (item: any) => void;
-  visible?: (item: any) => boolean;
-  disabled?: (item: any) => boolean;
+  action: (item: T) => void;
+  visible?: (item: T) => boolean;
+  disabled?: (item: T) => boolean;
 }
 
 export interface TableColumnAction<T = any> {

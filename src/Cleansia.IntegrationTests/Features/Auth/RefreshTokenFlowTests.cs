@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
 using MediatR;
@@ -117,6 +118,7 @@ public class RefreshTokenFlowTests(PostgresContainerFixture fixture) : BaseInteg
                     userId: user.Id,
                     tokenHash: hash,
                     expiresAt: DateTimeOffset.UtcNow.AddMinutes(-5),
+                    audience: JwtAudiences.Customer,
                     deviceLabel: null,
                     ipAddress: null);
                 expiredToken.Created("test", DateTimeOffset.UtcNow.AddDays(-31));
@@ -161,6 +163,53 @@ public class RefreshTokenFlowTests(PostgresContainerFixture fixture) : BaseInteg
                 var tokens = await context.RefreshTokens.ToListAsync();
                 Assert.Single(tokens);
                 Assert.Equal("logout", tokens[0].RevokedReason);
+            });
+    }
+
+    [Fact]
+    public async Task RefreshToken_AudienceMismatch_IsRejected()
+    {
+        await TestMethod(
+            arrange: SeedConfirmedUser,
+            act: async provider =>
+            {
+                var mediator = provider.GetRequiredService<IMediator>();
+                var loginResult = await Login(mediator);
+                var refreshToken = loginResult.Value.RefreshToken!;
+
+                return await mediator.Send(new RefreshTokenCmd.Command(
+                    Token: refreshToken,
+                    RequiredAudience: JwtAudiences.Admin));
+            },
+            assert: (CleansiaDbContext _, BusinessResult<JwtTokenResponse> result) =>
+            {
+                Assert.False(result.IsSuccess);
+                Assert.NotNull(result.Error);
+                Assert.Equal(BusinessErrorMessage.InvalidRefreshToken, result.Error!.Message);
+                return Task.CompletedTask;
+            });
+    }
+
+    [Fact]
+    public async Task RefreshToken_AudiencePreservedAcrossRotation()
+    {
+        await TestMethod(
+            arrange: SeedConfirmedUser,
+            act: async provider =>
+            {
+                var mediator = provider.GetRequiredService<IMediator>();
+                var loginResult = await Login(mediator);
+                var firstRefresh = loginResult.Value.RefreshToken!;
+                return await mediator.Send(new RefreshTokenCmd.Command(
+                    Token: firstRefresh,
+                    RequiredAudience: JwtAudiences.Customer));
+            },
+            assert: async (CleansiaDbContext context, BusinessResult<JwtTokenResponse> result) =>
+            {
+                Assert.True(result.IsSuccess);
+                var tokens = await context.RefreshTokens.OrderBy(t => t.CreatedOn).ToListAsync();
+                Assert.Equal(2, tokens.Count);
+                Assert.All(tokens, t => Assert.Equal(JwtAudiences.Customer, t.Audience));
             });
     }
 

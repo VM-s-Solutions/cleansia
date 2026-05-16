@@ -14,7 +14,11 @@ public class GetLanguageOverview
     {
         public async Task<IEnumerable<LanguageListItem>> Handle(Request request, CancellationToken cancellationToken)
         {
-            return await languageRepository.GetAll().Select(language => language.MapToDto()).ToListAsync(cancellationToken);
+            // Customer-facing — hide languages the admin has deactivated.
+            return await languageRepository.GetAll()
+                .Where(l => l.IsActive)
+                .Select(language => language.MapToDto())
+                .ToListAsync(cancellationToken);
         }
     }
 }

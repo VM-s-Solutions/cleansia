@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { OrderStatus, OrderStatusTrackDto } from '@cleansia/admin-services';
 import {
@@ -27,6 +27,7 @@ import { OrderDetailFacade } from './order-detail.facade';
   ],
   templateUrl: './order-detail.component.html',
   providers: [OrderDetailFacade],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OrderDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);

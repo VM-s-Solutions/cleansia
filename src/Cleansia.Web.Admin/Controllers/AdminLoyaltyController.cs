@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Loyalty.Admin;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
@@ -23,9 +22,7 @@ public class AdminLoyaltyController(IMediator mediator) : ApiController(mediator
         [FromBody] GrantPointsManually.Command command,
         CancellationToken cancellationToken)
     {
-        var actorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-        var enriched = command with { ActorId = actorId };
-        var result = await Mediator.Send(enriched, cancellationToken);
+        var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<GrantPointsManually.Response>(result);
     }
 
@@ -39,9 +36,7 @@ public class AdminLoyaltyController(IMediator mediator) : ApiController(mediator
         [FromBody] RevokePointsManually.Command command,
         CancellationToken cancellationToken)
     {
-        var actorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-        var enriched = command with { ActorId = actorId };
-        var result = await Mediator.Send(enriched, cancellationToken);
+        var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<RevokePointsManually.Response>(result);
     }
 

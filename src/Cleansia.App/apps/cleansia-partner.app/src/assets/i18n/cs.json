@@ -153,7 +153,8 @@
       "review_notes": "Poznámky ke kontrole",
       "drop_files_here": "Přetáhněte soubory sem",
       "or_click_to_browse": "nebo klikněte pro výběr",
-      "select_document_type_error": "Před nahráním vyberte typ dokumentu pro každý soubor."
+      "select_document_type_error": "Před nahráním vyberte typ dokumentu pro každý soubor.",
+      "full_name": "Celé jméno"
     },
     "dashboard": {
       "title": "Nástěnka",
@@ -347,6 +348,7 @@
       "rooms": "Pokoje",
       "bathrooms": "Koupelny",
       "estimated_time": "Odhadovaný čas",
+      "estimated_time_minutes": "{{minutes}} minut",
       "selected_package": "Vybraný balíček",
       "selected_packages": "Vybrané balíčky",
       "included_services": "Zahrnuté služby",
@@ -726,6 +728,9 @@
     "refresh": "Obnovit",
     "common": "Obecné",
     "close": "Zavřít",
+    "alt": {
+      "photo": "Fotografie"
+    },
     "rows_per_page": "Řádků na stránku",
     "of": "z",
     "page": "Stránka {{page}}",
@@ -942,8 +947,24 @@
       "user_not_authenticated": "Uživatel není přihlášen"
     },
     "validation": {
-      "registration_number": {
-        "invalid_format": "Neplatný formát IČO"
+      "invalid_password": "Neplatné heslo",
+      "invalid_date": "Neplatné datum",
+      "date_must_be_in_past": "Datum musí být v minulosti",
+      "invalid_age": "Neplatný věk",
+      "invalid_phone_number": "Neplatný formát telefonního čísla",
+      "invalid_national_id": "Neplatný formát čísla občanského průkazu",
+      "invalid_tax_id": "Neplatný formát IČO",
+      "invalid_iban": "Neplatný formát IBAN",
+      "invalid_zip_code": "Neplatný formát PSČ",
+      "must_be_positive": "Hodnota musí být kladná",
+      "invalid_availability_format": "Neplatný formát dostupnosti. Dny musí být platné názvy dnů nebo data (yyyy-MM-dd) a časové rozsahy musí mít začátek před koncem.",
+      "page_must_be_positive": "Stránka musí být větší než 0",
+      "page_size_must_be_positive": "Velikost stránky musí být větší než 0",
+      "page_size_exceeded": "Velikost stránky nesmí překročit 100",
+      "invalid_contract_status": "Neplatná hodnota stavu smlouvy",
+      "file": {
+        "max_size": "Soubor \"{{fileName}}\" překračuje maximální velikost {{maxSize}}MB",
+        "invalid_type": "Soubor \"{{fileName}}\" má nepovolený typ. Povolené: {{acceptedTypes}}"
       }
     },
     "currency": {
@@ -994,7 +1015,8 @@
         "required": "Fotografie po úklidu jsou povinné pro dokončení objednávky"
       },
       "payment_gateway_unavailable": "Platební brána není k dispozici",
-      "creation_failed": "Nepodařilo se vytvořit objednávku"
+      "creation_failed": "Nepodařilo se vytvořit objednávku",
+      "time_conflict": "Tento termín se překrývá s jinou objednávkou ve vašem rozvrhu"
     },
     "user": {
       "email_confirmed": "E-mail je již potvrzen",
@@ -1110,27 +1132,6 @@
       "cannot_deactivate_self": "Nemůžete deaktivovat svůj vlastní účet",
       "cannot_delete_self": "Nemůžete smazat svůj vlastní účet"
     },
-    "validation": {
-      "invalid_password": "Neplatné heslo",
-      "invalid_date": "Neplatné datum",
-      "date_must_be_in_past": "Datum musí být v minulosti",
-      "invalid_age": "Neplatný věk",
-      "invalid_phone_number": "Neplatný formát telefonního čísla",
-      "invalid_national_id": "Neplatný formát čísla občanského průkazu",
-      "invalid_tax_id": "Neplatný formát IČO",
-      "invalid_iban": "Neplatný formát IBAN",
-      "invalid_zip_code": "Neplatný formát PSČ",
-      "must_be_positive": "Hodnota musí být kladná",
-      "invalid_availability_format": "Neplatný formát dostupnosti. Dny musí být platné názvy dnů nebo data (yyyy-MM-dd) a časové rozsahy musí mít začátek před koncem.",
-      "page_must_be_positive": "Stránka musí být větší než 0",
-      "page_size_must_be_positive": "Velikost stránky musí být větší než 0",
-      "page_size_exceeded": "Velikost stránky nesmí překročit 100",
-      "invalid_contract_status": "Neplatná hodnota stavu smlouvy",
-      "file": {
-        "max_size": "Soubor \"{{fileName}}\" překračuje maximální velikost {{maxSize}}MB",
-        "invalid_type": "Soubor \"{{fileName}}\" má nepovolený typ. Povolené: {{acceptedTypes}}"
-      }
-    },
     "service": {
       "not_found": "Služba nenalezena",
       "in_use": "Službu nelze smazat, protože je aktuálně používána",
@@ -1178,7 +1179,8 @@
       "in_progress": "Probíhá",
       "completed": "Dokončeno",
       "cancelled": "Zrušeno",
-      "new": "Nová"
+      "new": "Nová",
+      "on_the_way": "Na cestě"
     },
     "payment_status": {
       "pending": "Čeká",
@@ -1325,6 +1327,20 @@
         "password_min_length": "Alespoň 8 znaků",
         "passwords_match": "Hesla se shodují"
       }
+    },
+    "refresh_token_reused": "Vaše relace byla použita jinde. Přihlaste se prosím znovu."
+  },
+  "gdpr": {
+    "deletion_already_pending": "Žádost o smazání už probíhá.",
+    "deletion_blocked_by_order": "Účet nelze smazat, dokud máte aktivní objednávku.",
+    "deletion_blocked_by_invoice": "Účet nelze smazat, dokud máte nevyřízenou fakturu."
+  },
+  "order": {
+    "review": {
+      "already_exists": "Tuto objednávku jste už hodnotili."
     }
+  },
+  "recurring_booking": {
+    "not_found": "Tato opakovaná objednávka už neexistuje."
   }
 }

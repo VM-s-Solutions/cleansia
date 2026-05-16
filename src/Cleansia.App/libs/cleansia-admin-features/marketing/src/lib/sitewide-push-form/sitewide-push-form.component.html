@@ -1,0 +1,50 @@
+<div class="cleansia-sitewide-push">
+  <div class="cleansia-sitewide-push__container page-wrapper">
+    <cleansia-title [title]="'pages.sitewide_push.title' | translate" />
+    <p class="cleansia-sitewide-push__subtitle">
+      {{ 'pages.sitewide_push.subtitle' | translate }}
+    </p>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="cleansia-sitewide-push__form">
+      <cleansia-section [title]="'pages.sitewide_push.titles_section' | translate">
+        <div class="form-grid">
+          @for (locale of ['En', 'Cs', 'Sk', 'Uk', 'Ru']; track locale) {
+            <div class="form-field">
+              <cleansia-text-input
+                [label]="'pages.sitewide_push.locale.' + locale.toLowerCase() + '_title' | translate"
+                [formControlName]="'title' + locale"
+                [required]="true"
+              />
+            </div>
+          }
+        </div>
+      </cleansia-section>
+
+      <cleansia-section [title]="'pages.sitewide_push.bodies_section' | translate">
+        <div class="form-grid form-grid--bodies">
+          @for (locale of ['En', 'Cs', 'Sk', 'Uk', 'Ru']; track locale) {
+            <div class="form-field">
+              <cleansia-textarea
+                [label]="'pages.sitewide_push.locale.' + locale.toLowerCase() + '_body' | translate"
+                [formControlName]="'body' + locale"
+                [required]="true"
+                [rows]="3"
+              />
+            </div>
+          }
+        </div>
+      </cleansia-section>
+
+      <div class="form-actions">
+        <cleansia-button
+          type="submit"
+          [label]="'pages.sitewide_push.send' | translate"
+          icon="pi pi-send"
+          severity="primary"
+          [loading]="submitting()"
+          [disabled]="submitting()"
+        />
+      </div>
+    </form>
+  </div>
+</div>

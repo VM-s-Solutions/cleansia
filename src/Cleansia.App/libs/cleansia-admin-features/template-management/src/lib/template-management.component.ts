@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { CleansiaAdminRoute } from '@cleansia/services';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -24,6 +24,7 @@ interface TemplateTab {
     CleansiaTitleComponent,
   ],
   templateUrl: './template-management.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TemplateManagementComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);

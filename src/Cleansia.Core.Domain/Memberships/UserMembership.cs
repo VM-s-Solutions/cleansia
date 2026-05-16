@@ -52,6 +52,24 @@ public class UserMembership : Auditable, ITenantEntity
     public DateTime? CancelledAt { get; private set; }
 
     /// <summary>
+    /// When the "your subscription renews soon" reminder push was dispatched
+    /// for the current billing period. Reset to null whenever the period
+    /// rolls over (in <see cref="UpdateFromStripeWebhook"/> / <see cref="ApplyPlanSwap"/>)
+    /// so the sweep re-arms for the next period. The sweep filters by null
+    /// inside a window of [now+2d, now+4d] to avoid double-firing.
+    /// </summary>
+    public DateTime? RenewalReminderSentAt { get; private set; }
+
+    /// <summary>
+    /// When the "your cancellation takes effect soon" reminder push was
+    /// dispatched. Set once per cancellation request — cleared by
+    /// <see cref="ApplyPlanSwap"/> because a plan swap implicitly retracts
+    /// the pending cancellation. The sweep filters by null + CancelledAt
+    /// != null inside [now, now+2d].
+    /// </summary>
+    public DateTime? CancellationReminderSentAt { get; private set; }
+
+    /// <summary>
     /// True when the membership is currently providing benefits — Active status
     /// AND we're still inside the paid period. Computed; do not persist. Used
     /// by the pricing pipeline + cancellation policy resolver to decide whether
@@ -102,8 +120,37 @@ public class UserMembership : Auditable, ITenantEntity
             "paused" => MembershipStatus.Paused,
             _ => MembershipStatus.Cancelled,
         };
+        // Detect period rollover so the renewal reminder re-arms for the
+        // new billing period. Stripe sends a period-rolled webhook on each
+        // renewal, which moves CurrentPeriodEnd forward; that's our cue
+        // to clear the per-period idempotency stamp.
+        if (currentPeriodEnd != CurrentPeriodEnd)
+        {
+            RenewalReminderSentAt = null;
+        }
         CurrentPeriodStart = currentPeriodStart;
         CurrentPeriodEnd = currentPeriodEnd;
+        return this;
+    }
+
+    /// <summary>
+    /// Stamp the renewal-reminder dispatch time. Idempotency for the
+    /// <c>membership.expiring_soon</c> sweep — see
+    /// <see cref="RenewalReminderSentAt"/>.
+    /// </summary>
+    public UserMembership MarkRenewalReminderSent(DateTime sentAtUtc)
+    {
+        RenewalReminderSentAt ??= sentAtUtc;
+        return this;
+    }
+
+    /// <summary>
+    /// Stamp the cancellation-effective reminder dispatch time. Idempotency
+    /// for the <c>membership.cancellation_effective</c> sweep.
+    /// </summary>
+    public UserMembership MarkCancellationReminderSent(DateTime sentAtUtc)
+    {
+        CancellationReminderSentAt ??= sentAtUtc;
         return this;
     }
 
@@ -135,6 +182,11 @@ public class UserMembership : Auditable, ITenantEntity
         // A swap clears any pending cancellation — the user just confirmed
         // they want to keep paying (just on a different cadence).
         CancelledAt = null;
+        // Re-arm reminder stamps: the new period needs a fresh renewal
+        // reminder, and the cancellation reminder is moot now that the
+        // cancellation was retracted.
+        RenewalReminderSentAt = null;
+        CancellationReminderSentAt = null;
         return this;
     }
 }

@@ -1,4 +1,4 @@
-﻿using Cleansia.Core.Clients.Abstractions.Stripe;
+using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Stripe;
@@ -11,7 +11,7 @@ public class StripeClient(IStripeConfig config) : IStripeClient
 {
     public async Task<string> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken)
     {
-        var unitAmount = (long)(order.TotalPrice * 100);  // Adjust for minor units
+        var unitAmount = (long)(order.TotalPrice * 100);
 
         var options = new SessionCreateOptions
         {
@@ -38,8 +38,9 @@ public class StripeClient(IStripeConfig config) : IStripeClient
             Metadata = new Dictionary<string, string> { { "OrderId", order.Id } }
         };
 
+        var requestOptions = new RequestOptions { IdempotencyKey = $"checkout-{order.Id}" };
         var service = new SessionService(new global::Stripe.StripeClient(config.SecretKey));
-        var session = await service.CreateAsync(options, cancellationToken: cancellationToken);
+        var session = await service.CreateAsync(options, requestOptions, cancellationToken);
 
         return session.Url;
     }
@@ -48,7 +49,6 @@ public class StripeClient(IStripeConfig config) : IStripeClient
     {
         var client = new global::Stripe.StripeClient(config.SecretKey);
 
-        // Look up the checkout session to find the underlying PaymentIntent, which is what we can refund.
         var sessionService = new SessionService(client);
         var session = await sessionService.GetAsync(stripeSessionId, cancellationToken: cancellationToken);
 
@@ -62,13 +62,19 @@ public class StripeClient(IStripeConfig config) : IStripeClient
         var refundOptions = new global::Stripe.RefundCreateOptions
         {
             PaymentIntent = session.PaymentIntentId,
-            Amount = (long)(amount * 100), // Stripe uses minor units
+            Amount = (long)(amount * 100),
             Reason = global::Stripe.RefundReasons.RequestedByCustomer,
         };
-        await refundService.CreateAsync(refundOptions, cancellationToken: cancellationToken);
+        // Include the amount in the key so partial + later top-up refunds against
+        // the same session get distinct keys. Identical re-requests still
+        // collide and Stripe returns the original refund (the desired idempotency).
+        var amountCents = (long)(amount * 100);
+        var requestOptions = new RequestOptions { IdempotencyKey = $"refund-{stripeSessionId}-{amountCents}" };
+        await refundService.CreateAsync(refundOptions, requestOptions, cancellationToken);
     }
 
     public async Task<string> CreateCustomerAsync(
+        string userId,
         string email,
         string fullName,
         string? phone,
@@ -80,9 +86,14 @@ public class StripeClient(IStripeConfig config) : IStripeClient
             Email = email,
             Name = fullName,
             Phone = phone,
-            Metadata = new Dictionary<string, string> { { "source", "cleansia" } },
+            Metadata = new Dictionary<string, string>
+            {
+                { "source", "cleansia" },
+                { "userId", userId },
+            },
         };
-        var customer = await service.CreateAsync(options, cancellationToken: cancellationToken);
+        var requestOptions = new RequestOptions { IdempotencyKey = $"customer-{userId}" };
+        var customer = await service.CreateAsync(options, requestOptions, cancellationToken);
         return customer.Id;
     }
 
@@ -100,14 +111,7 @@ public class StripeClient(IStripeConfig config) : IStripeClient
             Amount = (long)(amount * 100),
             Currency = currency.ToLowerInvariant(),
             Customer = stripeCustomerId,
-            // Save the card for future bookings (and future Plus subscription).
-            // off_session is what Stripe wants for "we may charge this card later
-            // without the user being present" — required for SCA exemption when
-            // the user has authenticated this payment.
             SetupFutureUsage = "off_session",
-            // Stripe selects the right method (cards, Google Pay, Apple Pay, etc.)
-            // based on what's enabled in the account + what the device supports.
-            // Required for proper 3DS / SCA challenge handling.
             AutomaticPaymentMethods = new PaymentIntentAutomaticPaymentMethodsOptions
             {
                 Enabled = true,
@@ -118,8 +122,26 @@ public class StripeClient(IStripeConfig config) : IStripeClient
                 { "DisplayOrderNumber", displayOrderNumber },
             },
         };
-        var intent = await service.CreateAsync(options, cancellationToken: cancellationToken);
+        // Include amount in the key so a customer who edits the order
+        // (extras/services change → amount differs) can re-open PaymentSheet
+        // without Stripe rejecting on idempotency-replay-with-different-params.
+        // Same-amount retries still collide and Stripe returns the original
+        // intent (the desired idempotent behavior).
+        var amountCents = (long)(amount * 100);
+        var requestOptions = new RequestOptions { IdempotencyKey = $"pi-{orderId}-{amountCents}" };
+        var intent = await service.CreateAsync(options, requestOptions, cancellationToken);
         return new PaymentIntentResult(intent.Id, intent.ClientSecret);
+    }
+
+    public async Task CancelPaymentIntentAsync(
+        string paymentIntentId,
+        CancellationToken cancellationToken)
+    {
+        var service = new PaymentIntentService(new global::Stripe.StripeClient(config.SecretKey));
+        // No options → uses the default `requested_by_customer` cancellation
+        // reason. Stripe accepts cancel on requires_payment_method,
+        // requires_confirmation, requires_action, processing, requires_capture.
+        await service.CancelAsync(paymentIntentId, cancellationToken: cancellationToken);
     }
 
     public async Task<string> CreateEphemeralKeyAsync(
@@ -127,10 +149,6 @@ public class StripeClient(IStripeConfig config) : IStripeClient
         CancellationToken cancellationToken)
     {
         var service = new EphemeralKeyService(new global::Stripe.StripeClient(config.SecretKey));
-        // The StripeVersion must match the version the mobile Stripe SDK
-        // uses. The mobile team must keep stripe-android in sync; this version
-        // pins what the server commits to. If you bump stripe-android, update
-        // this string to the version printed in PaymentConfiguration.getInstance().
         var options = new EphemeralKeyCreateOptions
         {
             Customer = stripeCustomerId,
@@ -148,10 +166,6 @@ public class StripeClient(IStripeConfig config) : IStripeClient
         var options = new SetupIntentCreateOptions
         {
             Customer = stripeCustomerId,
-            // off_session usage so the saved payment method can be charged
-            // automatically by future subscription invoices without the user
-            // present. SCA exemption applies once the user has authenticated
-            // the SetupIntent itself.
             Usage = "off_session",
             AutomaticPaymentMethods = new SetupIntentAutomaticPaymentMethodsOptions
             {
@@ -166,6 +180,7 @@ public class StripeClient(IStripeConfig config) : IStripeClient
         string stripeCustomerId,
         string stripePriceId,
         int trialPeriodDays,
+        string idempotencyAttemptId,
         CancellationToken cancellationToken)
     {
         var service = new SubscriptionService(new global::Stripe.StripeClient(config.SecretKey));
@@ -176,10 +191,6 @@ public class StripeClient(IStripeConfig config) : IStripeClient
             [
                 new SubscriptionItemOptions { Price = stripePriceId },
             ],
-            // Prefer the customer's default payment method (set during the
-            // SetupIntent confirm step). If none exists, Stripe returns
-            // requires_action and the subscription stays incomplete; we treat
-            // that as a failure at the caller.
             PaymentBehavior = "default_incomplete",
             PaymentSettings = new SubscriptionPaymentSettingsOptions
             {
@@ -187,16 +198,15 @@ public class StripeClient(IStripeConfig config) : IStripeClient
             },
             Expand = ["latest_invoice.payment_intent"],
         };
-        // Stripe rejects trial_period_days = 0 as invalid; only set when > 0.
         if (trialPeriodDays > 0)
         {
             options.TrialPeriodDays = trialPeriodDays;
         }
-        var subscription = await service.CreateAsync(options, cancellationToken: cancellationToken);
-        // Stripe.net 50.x moved per-item period bounds onto SubscriptionItem.
-        // For our single-item Plus subscription, the first item's bounds are
-        // the subscription's bounds. If the API ever returns zero items
-        // (shouldn't happen on create), fall back to UtcNow + month.
+        // attemptId scopes the idempotency to a single user-initiated attempt,
+        // so re-subscribing to the same plan after cancellation creates a new
+        // subscription instead of returning the canceled one.
+        var requestOptions = new RequestOptions { IdempotencyKey = $"sub-{stripeCustomerId}-{stripePriceId}-{idempotencyAttemptId}" };
+        var subscription = await service.CreateAsync(options, requestOptions, cancellationToken);
         var firstItem = subscription.Items?.Data?.FirstOrDefault();
         var periodStart = firstItem?.CurrentPeriodStart ?? DateTime.UtcNow;
         var periodEnd = firstItem?.CurrentPeriodEnd ?? DateTime.UtcNow.AddMonths(1);
@@ -209,14 +219,12 @@ public class StripeClient(IStripeConfig config) : IStripeClient
     public async Task<SubscriptionResult> SwapSubscriptionPriceAsync(
         string stripeSubscriptionId,
         string newStripePriceId,
+        string idempotencyAttemptId,
         CancellationToken cancellationToken)
     {
         var client = new global::Stripe.StripeClient(config.SecretKey);
         var service = new SubscriptionService(client);
 
-        // Need the existing item id so we can replace the price on the same
-        // subscription item in-place. Stripe rejects "remove old + add new"
-        // when only one item exists — has to be a swap.
         var existing = await service.GetAsync(stripeSubscriptionId, cancellationToken: cancellationToken);
         var existingItemId = existing.Items?.Data?.FirstOrDefault()?.Id
             ?? throw new InvalidOperationException(
@@ -232,12 +240,12 @@ public class StripeClient(IStripeConfig config) : IStripeClient
                     Price = newStripePriceId,
                 },
             ],
-            // Bill the proration immediately so the swap doesn't sit unbilled
-            // until the next renewal. Stripe debits/credits the difference
-            // against the customer's default payment method.
             ProrationBehavior = "always_invoice",
         };
-        var swapped = await service.UpdateAsync(stripeSubscriptionId, options, cancellationToken: cancellationToken);
+        // attemptId allows a user to swap A→B→A→B and have each swap reach
+        // Stripe instead of replaying the first one's response.
+        var requestOptions = new RequestOptions { IdempotencyKey = $"swap-{stripeSubscriptionId}-{newStripePriceId}-{idempotencyAttemptId}" };
+        var swapped = await service.UpdateAsync(stripeSubscriptionId, options, requestOptions, cancellationToken);
         var firstItem = swapped.Items?.Data?.FirstOrDefault();
         var periodStart = firstItem?.CurrentPeriodStart ?? DateTime.UtcNow;
         var periodEnd = firstItem?.CurrentPeriodEnd ?? DateTime.UtcNow.AddMonths(1);
@@ -253,7 +261,8 @@ public class StripeClient(IStripeConfig config) : IStripeClient
     {
         var service = new SubscriptionService(new global::Stripe.StripeClient(config.SecretKey));
         var options = new SubscriptionUpdateOptions { CancelAtPeriodEnd = true };
-        await service.UpdateAsync(stripeSubscriptionId, options, cancellationToken: cancellationToken);
+        var requestOptions = new RequestOptions { IdempotencyKey = $"cancel-{stripeSubscriptionId}" };
+        await service.UpdateAsync(stripeSubscriptionId, options, requestOptions, cancellationToken);
     }
 
     public async Task<string> CreateMembershipCheckoutSessionAsync(
@@ -264,13 +273,9 @@ public class StripeClient(IStripeConfig config) : IStripeClient
         int trialPeriodDays,
         string successUrl,
         string cancelUrl,
+        string idempotencyAttemptId,
         CancellationToken cancellationToken)
     {
-        // Subscription-mode Checkout differs from payment-mode in two ways:
-        // (1) Mode = "subscription", (2) line items reference an existing Price
-        // id (not inline PriceData) so Stripe can attach recurring billing.
-        // Customer subscription metadata is what the webhook reads to resolve
-        // the local UserMembership row.
         var subscriptionData = new SessionSubscriptionDataOptions
         {
             Metadata = new Dictionary<string, string>
@@ -300,8 +305,12 @@ public class StripeClient(IStripeConfig config) : IStripeClient
             CancelUrl = cancelUrl,
             SubscriptionData = subscriptionData,
         };
+        // attemptId scopes idempotency to a single open-checkout attempt;
+        // re-opening checkout after abandoning produces a fresh Session URL
+        // instead of replaying the original (potentially expired) one.
+        var requestOptions = new RequestOptions { IdempotencyKey = $"mship-checkout-{userId}-{stripePriceId}-{idempotencyAttemptId}" };
         var service = new SessionService(new global::Stripe.StripeClient(config.SecretKey));
-        var session = await service.CreateAsync(options, cancellationToken: cancellationToken);
+        var session = await service.CreateAsync(options, requestOptions, cancellationToken);
         return session.Url;
     }
 }

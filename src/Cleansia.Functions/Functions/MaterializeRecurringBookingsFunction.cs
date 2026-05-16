@@ -16,7 +16,7 @@ public class MaterializeRecurringBookingsFunction(
     ILogger<MaterializeRecurringBookingsFunction> logger)
 {
     [Function("MaterializeRecurringBookings")]
-    public async Task Run([TimerTrigger("0 0 2 * * *")] TimerInfo timer, CancellationToken ct)
+    public async Task Run([TimerTrigger("0 */2 * * * *")] TimerInfo timer, CancellationToken ct)
     {
         logger.LogInformation("MaterializeRecurringBookings timer triggered at {Time}", DateTime.UtcNow);
         var result = await mediator.Send(new MaterializeRecurringBookings.Command(HorizonDays: 7), ct);

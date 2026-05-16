@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, OnDestroy, PLATFORM_ID, signal, AfterViewInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, OnInit, OnDestroy, PLATFORM_ID, signal, AfterViewInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
 import {
   FormControl,
@@ -16,23 +17,18 @@ import {
   CleansiaTelephoneComponent,
   CleansiaCalendarComponent,
   CleansiaSelectComponent,
-  ICleansiaSelectOption,
 } from '@cleansia/components';
 import type { MapboxAddressSuggestion } from '@cleansia/services';
 import {
   AddSavedAddressCommand,
-  CustomerClient,
   SavedAddressDto,
   UpdateSavedAddressCommand,
 } from '@cleansia/customer-services';
-import { SavedAddressStore } from '@cleansia/customer-stores';
 import {
   ChangePasswordCommand,
-  GetCurrentUserQuery,
   UpdateCurrentUserCommand,
-  UserListItem,
 } from '@cleansia/partner-services';
-import { SnackbarService, ThemeService } from '@cleansia/services';
+import { ThemeService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { InputTextModule } from 'primeng/inputtext';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -40,6 +36,7 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { DialogModule } from 'primeng/dialog';
 import { RewardsCardComponent } from '@cleansia-customer/rewards';
 import { PROFILE_SECTIONS, SectionDef, setupScrollSpy } from './profile.helpers';
+import { ProfileFacade } from './profile.facade';
 
 @Component({
   selector: 'cleansia-customer-profile',
@@ -61,29 +58,31 @@ import { PROFILE_SECTIONS, SectionDef, setupScrollSpy } from './profile.helpers'
     CleansiaAddressAutocompleteComponent,
     RewardsCardComponent,
   ],
+  providers: [ProfileFacade],
   templateUrl: './profile.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
-  private readonly customerClient = inject(CustomerClient);
   private readonly translate = inject(TranslateService);
-  private readonly snackbar = inject(SnackbarService);
   private readonly themeService = inject(ThemeService);
-  private readonly savedAddressStore = inject(SavedAddressStore);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly facade = inject(ProfileFacade);
+  private readonly destroyRef = inject(DestroyRef);
   readonly router = inject(Router);
 
-  user = signal<UserListItem | null>(null);
-  loading = signal(true);
-  saving = signal(false);
+  // Re-expose facade signals so the existing template bindings keep working.
+  readonly user = this.facade.user;
+  readonly loading = this.facade.loading;
+  readonly saving = this.facade.saving;
+  readonly addresses = this.facade.addresses;
+  readonly addressesLoading = this.facade.addressesLoading;
+  readonly countryOptions = this.facade.countryOptions;
 
   activeSection = signal('personal');
   sections: SectionDef[] = PROFILE_SECTIONS;
 
-  readonly addresses = this.savedAddressStore.addresses;
-  readonly addressesLoading = this.savedAddressStore.loading;
   showAddressDialog = signal(false);
   editingAddressId = signal<string | null>(null);
-  countryOptions = signal<ICleansiaSelectOption[]>([]);
 
   addressForm = new FormGroup({
     label: new FormControl<string>('', {
@@ -171,14 +170,14 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnInit(): void {
     this.loadProfile();
-    if (!this.savedAddressStore.loaded()) {
-      void this.savedAddressStore.refresh();
-    }
-    this.loadCountries();
+    this.facade.refreshSavedAddresses();
+    this.facade.loadCountries();
     if (this.isBrowser) {
       window.addEventListener('scroll', this.onScroll);
     }
-    this.passwordForm.controls.newPassword.valueChanges.subscribe(v => this.newPasswordValue.set(v || ''));
+    this.passwordForm.controls.newPassword.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(v => this.newPasswordValue.set(v || ''));
   }
 
   ngAfterViewInit(): void {
@@ -210,33 +209,21 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   loadProfile(): void {
-    this.loading.set(true);
-    this.customerClient.userClient
-      .getCurrent(new GetCurrentUserQuery())
-      .subscribe({
-        next: (user) => {
-          this.user.set(user);
-          this.profileForm.patchValue({
-            firstName: user.firstName || '',
-            lastName: user.lastName || '',
-            phoneNumber: user.phoneNumber || '',
-            birthDate: user.birthDate ? new Date(user.birthDate) : null,
-          });
-          this.loading.set(false);
-        },
-        error: () => {
-          this.loading.set(false);
-        },
+    this.facade.loadProfile((user) => {
+      this.profileForm.patchValue({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        phoneNumber: user.phoneNumber || '',
+        birthDate: user.birthDate ? new Date(user.birthDate) : null,
       });
+    });
   }
 
   saveProfile(): void {
     if (this.profileForm.invalid) return;
-    this.saving.set(true);
 
-    const user = this.user();
     const cmd = new UpdateCurrentUserCommand({
-      id: user?.id,
+      id: undefined,
       firstName: this.profileForm.value.firstName || undefined,
       lastName: this.profileForm.value.lastName || undefined,
       phoneNumber: this.profileForm.value.phoneNumber || undefined,
@@ -245,26 +232,11 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
       photo: undefined as any,
     });
 
-    this.customerClient.userClient.updateCurrentUser(cmd).subscribe({
-      next: () => {
-        this.saving.set(false);
-        this.snackbar.showSuccess(
-          this.translate.instant('pages.profile.save_success')
-        );
-        this.loadProfile();
-      },
-      error: () => {
-        this.saving.set(false);
-        this.snackbar.showError(
-          this.translate.instant('pages.profile.save_error')
-        );
-      },
-    });
+    this.facade.saveProfile(cmd, () => this.loadProfile());
   }
 
   changePassword(): void {
     if (this.passwordForm.invalid || this.passwordMismatch) return;
-    this.saving.set(true);
 
     const cmd = new ChangePasswordCommand({
       email: this.user()?.email,
@@ -272,21 +244,7 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
       newPassword: this.passwordForm.value.newPassword || undefined,
     });
 
-    this.customerClient.userClient.changePassword(cmd).subscribe({
-      next: () => {
-        this.saving.set(false);
-        this.snackbar.showSuccess(
-          this.translate.instant('pages.profile.save_success')
-        );
-        this.passwordForm.reset();
-      },
-      error: () => {
-        this.saving.set(false);
-        this.snackbar.showError(
-          this.translate.instant('pages.profile.save_error')
-        );
-      },
-    });
+    this.facade.changePassword(cmd, () => this.passwordForm.reset());
   }
 
   get passwordMismatch(): boolean {
@@ -358,9 +316,7 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onAddressSearchFailed(): void {
-    this.snackbar.showError(
-      this.translate.instant('address_picker.search_failed')
-    );
+    this.facade.showAddressSearchFailed();
   }
 
   private closeAddressDialog(): void {
@@ -377,9 +333,7 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Mapbox pick is mandatory — street is only populated by onAddressPicked.
     if (!v.street) {
-      this.snackbar.showError(
-        this.translate.instant('api.address.mapbox_coords_required')
-      );
+      this.facade.showCoordsRequired();
       return;
     }
 
@@ -388,16 +342,14 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
     const lat = this.pickedLatitude();
     const lng = this.pickedLongitude();
     if (lat === undefined || lng === undefined) {
-      this.snackbar.showError(
-        this.translate.instant('api.address.mapbox_coords_required')
-      );
+      this.facade.showCoordsRequired();
       return;
     }
 
     const editingId = this.editingAddressId();
 
     if (editingId) {
-      const result = await this.savedAddressStore.update(
+      const ok = await this.facade.updateSavedAddress(
         new UpdateSavedAddressCommand({
           savedAddressId: editingId,
           label: v.label,
@@ -407,17 +359,13 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
           countryId: v.country || undefined,
           latitude: lat,
           longitude: lng,
-          userId: undefined,
-        })
+        }),
       );
-      if (result) {
-        this.snackbar.showSuccess(
-          this.translate.instant('pages.profile.address_saved')
-        );
+      if (ok) {
         this.closeAddressDialog();
       }
     } else {
-      const result = await this.savedAddressStore.add(
+      const ok = await this.facade.addSavedAddress(
         new AddSavedAddressCommand({
           label: v.label,
           street: v.street,
@@ -427,34 +375,12 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
           setAsDefault: v.isDefault,
           latitude: lat,
           longitude: lng,
-          userId: undefined,
-        })
+        }),
       );
-      if (result) {
-        this.snackbar.showSuccess(
-          this.translate.instant('pages.profile.address_saved')
-        );
+      if (ok) {
         this.closeAddressDialog();
       }
     }
-  }
-
-  private loadCountries(): void {
-    this.customerClient.countryClient.getOverview().subscribe({
-      next: (countries) => {
-        const currentLang = this.translate.currentLang;
-        const options: ICleansiaSelectOption[] = (countries ?? []).map((country) => {
-          const translation = country.translations?.[currentLang]?.name;
-          const name = translation ?? country.name ?? '';
-          const iso = country.isoCode ?? '';
-          return {
-            label: iso ? `${name} (${iso})` : name,
-            value: country.id!,
-          };
-        });
-        this.countryOptions.set(options);
-      },
-    });
   }
 
   private defaultCountryId(): string {
@@ -466,16 +392,11 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   async deleteAddress(id: string): Promise<void> {
-    const ok = await this.savedAddressStore.delete(id);
-    if (ok) {
-      this.snackbar.showSuccess(
-        this.translate.instant('pages.profile.address_deleted')
-      );
-    }
+    await this.facade.deleteSavedAddress(id);
   }
 
   async setDefaultAddress(id: string): Promise<void> {
-    await this.savedAddressStore.setDefault(id);
+    await this.facade.setDefaultSavedAddress(id);
   }
 
   // Preferences

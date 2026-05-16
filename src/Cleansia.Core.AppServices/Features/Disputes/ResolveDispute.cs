@@ -36,33 +36,26 @@ public class ResolveDispute
         string ResolutionNotes
     ) : ICommand;
 
-    public class Handler : ICommandHandler<Command>
+    public class Handler(
+        IDisputeRepository disputeRepository,
+        IUserSessionProvider userSessionProvider) : ICommandHandler<Command>
     {
-        private readonly IDisputeRepository _disputeRepository;
-
-        public Handler(IDisputeRepository disputeRepository)
-        {
-            _disputeRepository = disputeRepository;
-        }
-
         public async Task<BusinessResult> Handle(Command request, CancellationToken cancellationToken)
         {
-            var dispute = await _disputeRepository.GetDisputeWithDetailsAsync(request.DisputeId);
+            var dispute = await disputeRepository.GetDisputeWithDetailsAsync(request.DisputeId);
 
             if (dispute == null)
             {
                 return BusinessResult.Failure(new Error(nameof(request.DisputeId), BusinessErrorMessage.DisputeNotFound));
             }
 
-            // For now, use the dispute's user ID as the resolver
-            // TODO: Once user session provider has GetUserId, use that instead
+            var actorId = userSessionProvider.GetUserId() ?? string.Empty;
             dispute.Resolve(
-                resolvedBy: dispute.UserId,
+                resolvedBy: actorId,
                 refundAmount: request.RefundAmount,
                 resolutionNotes: request.ResolutionNotes
             );
 
-            // EF Core tracks changes automatically
             return BusinessResult.Success();
         }
     }

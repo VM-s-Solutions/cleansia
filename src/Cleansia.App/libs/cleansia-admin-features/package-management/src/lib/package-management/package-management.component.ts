@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   Component,
   computed,
   inject,
@@ -25,6 +26,8 @@ import {
   TableAction,
   PaginationState,
 } from '@cleansia/components';
+import { Policy } from '@cleansia/services';
+import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -46,14 +49,17 @@ import { getPackageTableDefinition } from './package-management.models';
     CleansiaSectionComponent,
     ReactiveFormsModule,
     ConfirmDialogModule,
+    CleansiaPermissionDirective,
   ],
   templateUrl: './package-management.component.html',
   providers: [PackageManagementFacade, ConfirmationService],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PackageManagementComponent implements AfterViewInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   protected readonly facade = inject(PackageManagementFacade);
+  protected readonly Policy = Policy;
   private readonly translate = inject(TranslateService);
   private readonly confirmationService = inject(ConfirmationService);
 

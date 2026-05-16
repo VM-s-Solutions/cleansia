@@ -4,9 +4,10 @@ using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
 using Cleansia.Core.AppServices.Extensions;
+using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using System.IdentityModel.Tokens.Jwt;
-using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 
 namespace Cleansia.Core.AppServices.Services;
@@ -14,13 +15,12 @@ namespace Cleansia.Core.AppServices.Services;
 public class TokenService(
     IJwtSettings jwtSettings,
     IRefreshTokenService refreshTokenService,
+    IEmployeeRepository employeeRepository,
     IRequestMetadataProvider requestMetadata)
     : ITokenService
 {
-    public JwtTokenResponse GenerateToken(User user, bool rememberMe)
+    public async Task<JwtTokenResponse> GenerateTokenAsync(User user, bool rememberMe, string audience, CancellationToken cancellationToken = default)
     {
-        // Unconfirmed users get an empty response — frontend routes to the email-verify flow.
-        // Don't issue either access or refresh token; user can't do anything meaningful yet.
         if (!user.IsEmailConfirmed)
         {
             return new JwtTokenResponse(
@@ -28,10 +28,12 @@ public class TokenService(
                 IsEmailConfirmed: false);
         }
 
-        var accessToken = GenerateAccessToken(user);
+        var employeeId = await ResolveEmployeeIdAsync(user, cancellationToken);
+        var accessToken = GenerateAccessToken(user, employeeId, audience);
         var refresh = refreshTokenService.Issue(
             userId: user.Id,
             rememberMe: rememberMe,
+            audience: audience,
             deviceLabel: requestMetadata.DeviceLabel,
             ipAddress: requestMetadata.IpAddress);
 
@@ -41,17 +43,30 @@ public class TokenService(
             UserId: user.Id,
             Email: user.Email,
             RefreshToken: refresh.RawToken,
-            RefreshTokenExpiresAt: refresh.Record.ExpiresAt);
+            RefreshTokenExpiresAt: refresh.Record.ExpiresAt,
+            Role: user.Profile.ToString());
     }
 
-    private string GenerateAccessToken(User user)
+    private async Task<string?> ResolveEmployeeIdAsync(User user, CancellationToken cancellationToken)
+    {
+        if (user.Profile != UserProfile.Employee)
+        {
+            return null;
+        }
+        var employee = await employeeRepository.GetByUserEmailAsync(user.Email, cancellationToken);
+        return employee?.Id;
+    }
+
+    private string GenerateAccessToken(User user, string? employeeId, string audience)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret));
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(user.SetClaims()),
+            Issuer = jwtSettings.Issuer,
+            Audience = audience,
+            Subject = new ClaimsIdentity(user.SetClaims(employeeId)),
             Expires = DateTime.UtcNow.AddMinutes(jwtSettings.AccessTokenExpMinutes),
             SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
         };

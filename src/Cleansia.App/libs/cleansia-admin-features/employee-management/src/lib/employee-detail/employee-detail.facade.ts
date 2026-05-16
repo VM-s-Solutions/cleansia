@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import {
   AdminClient,
+  AdminEmployeeDetail,
   AdminUpdateEmployeeAvailabilityRequest,
   AdminUpdateEmployeeCommand,
   BulkCreateEmployeePayConfigsCommand,
@@ -13,10 +14,11 @@ import {
   UpdatePayConfigCommand,
 } from '@cleansia/admin-services';
 import { ICleansiaSelectOption } from '@cleansia/components';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 import {
   RejectDialogComponent,
   RejectDialogData,
@@ -25,16 +27,14 @@ import {
 import { EmployeeDocumentsFacade } from './employee-documents.facade';
 
 @Injectable()
-export class EmployeeDetailFacade {
+export class EmployeeDetailFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly dialogService = inject(DialogService);
   private readonly docsFacade = inject(EmployeeDocumentsFacade);
 
-  private destroy$ = new Subject<void>();
-
-  readonly employee = signal<any>(null);
+  readonly employee = signal<AdminEmployeeDetail | null>(null);
   readonly loading = signal<boolean>(false);
   readonly editingAvailability = signal<boolean>(false);
   readonly savingAvailability = signal<boolean>(false);
@@ -58,7 +58,7 @@ export class EmployeeDetailFacade {
     this.adminClient.adminEmployeeClient
       .details(employeeId)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
@@ -77,7 +77,7 @@ export class EmployeeDetailFacade {
     }
     this.adminClient.adminCountryClient
       .getOverview()
-      .pipe(takeUntil(this.destroy$), catchError(() => of([])))
+      .pipe(takeUntil(this.destroyed$), catchError(() => of([])))
       .subscribe((countries) => {
         const currentLang = this.translate.currentLang;
         const options: ICleansiaSelectOption[] = (countries ?? []).map((country) => {
@@ -100,7 +100,7 @@ export class EmployeeDetailFacade {
     this.adminClient.adminEmployeeClient
       .approve(employeeId, undefined)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((response) => {
@@ -123,7 +123,7 @@ export class EmployeeDetailFacade {
     this.adminClient.adminEmployeeClient
       .reject(employeeId, request)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((response) => {
@@ -186,7 +186,7 @@ export class EmployeeDetailFacade {
     this.adminClient.adminEmployeeClient
       .updateAvailability(employeeId, request)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => {
           this.snackbarService.showError(
             this.translate.instant(
@@ -219,12 +219,12 @@ export class EmployeeDetailFacade {
   }
 
   updateEmployee(data: Record<string, any>): void {
-    const employeeId = this.employee()?.id;
-    if (!employeeId) return;
+    const employee = this.employee();
+    const employeeId = employee?.id;
+    if (!employee || !employeeId) return;
 
     this.savingEmployee.set(true);
 
-    const employee = this.employee();
     const command = new AdminUpdateEmployeeCommand({
       employeeId,
       firstName: data['firstName'] ?? employee.firstName,
@@ -252,7 +252,7 @@ export class EmployeeDetailFacade {
     this.adminClient.adminEmployeeClient
       .update(employeeId, command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => {
           this.snackbarService.showError(
             this.translate.instant(
@@ -294,7 +294,7 @@ export class EmployeeDetailFacade {
     this.adminClient.adminPayConfigClient
       .employeeSummary(employeeId)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loadingPayConfigs.set(false))
       )
@@ -321,7 +321,7 @@ export class EmployeeDetailFacade {
     this.adminClient.adminPayConfigClient
       .bulkCreateForEmployee(command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => {
           this.snackbarService.showError(
             this.translate.instant('pages.employee_detail.messages.pay_config_save_error')
@@ -373,7 +373,7 @@ export class EmployeeDetailFacade {
     this.adminClient.adminPayConfigClient
       .update(payConfigId, command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => {
           this.snackbarService.showError(
             this.translate.instant('pages.employee_detail.messages.pay_config_save_error')
@@ -397,28 +397,28 @@ export class EmployeeDetailFacade {
 
     this.adminClient.adminServiceClient
       .getPaged(undefined, undefined, 0, 100)
-      .pipe(takeUntil(this.destroy$), catchError(() => of(null)))
+      .pipe(takeUntil(this.destroyed$), catchError(() => of(null)))
       .subscribe((result) => {
         this.services.set(
-          (result?.data ?? []).map((s: any) => ({ label: s.name ?? '', value: s.id! }))
+          (result?.data ?? []).map((s) => ({ label: s.name ?? '', value: s.id! }))
         );
       });
 
     this.adminClient.adminPackageClient
       .getPaged(undefined, undefined, 0, 100)
-      .pipe(takeUntil(this.destroy$), catchError(() => of(null)))
+      .pipe(takeUntil(this.destroyed$), catchError(() => of(null)))
       .subscribe((result) => {
         this.packages.set(
-          (result?.data ?? []).map((p: any) => ({ label: p.name ?? '', value: p.id! }))
+          (result?.data ?? []).map((p) => ({ label: p.name ?? '', value: p.id! }))
         );
       });
 
     this.adminClient.adminCurrencyClient
       .getOverview()
-      .pipe(takeUntil(this.destroy$), catchError(() => of([])))
+      .pipe(takeUntil(this.destroyed$), catchError(() => of([])))
       .subscribe((currencies) => {
         this.currencies.set(
-          (currencies ?? []).map((c: any) => ({ label: c.code ?? '', value: c.id! }))
+          (currencies ?? []).map((c) => ({ label: c.code ?? '', value: c.id! }))
         );
       });
   }
@@ -446,7 +446,7 @@ export class EmployeeDetailFacade {
     this.adminClient.adminPayConfigClient
       .create(command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => {
           this.snackbarService.showError(
             this.translate.instant('pages.employee_detail.messages.pay_config_save_error')
@@ -473,7 +473,7 @@ export class EmployeeDetailFacade {
     this.adminClient.adminPayConfigClient
       .delete(payConfigId)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => {
           this.snackbarService.showError(
             this.translate.instant('pages.employee_detail.messages.pay_config_delete_error')
@@ -507,10 +507,5 @@ export class EmployeeDetailFacade {
     if (!date) return '-';
     const dateObj = date instanceof Date ? date : new Date(date);
     return dateObj.toLocaleString('en-GB');
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

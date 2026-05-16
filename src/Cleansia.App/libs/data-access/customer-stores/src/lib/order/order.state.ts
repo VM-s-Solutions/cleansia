@@ -1,4 +1,4 @@
-import { OrderItem, OrderListItem } from '@cleansia/partner-services';
+import { OrderItem, OrderListItem } from '@cleansia/customer-services';
 
 export const CUSTOMER_ORDER_FEATURE_KEY = 'customerOrder';
 

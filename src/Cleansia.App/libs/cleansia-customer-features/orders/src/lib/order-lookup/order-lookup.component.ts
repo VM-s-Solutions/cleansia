@@ -1,5 +1,4 @@
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -14,16 +13,14 @@ import {
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import {
-  CUSTOMER_API_BASE_URL,
-  CustomerOrderClient,
-} from '@cleansia/customer-services';
-import {
   CleansiaCustomerRoute,
-  GuestOrderService,
   SnackbarService,
 } from '@cleansia/services';
+import { GuestOrderService } from '../track-order/guest-order.service';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { takeUntil } from 'rxjs';
 import { GuestOrderLookupCacheService } from './guest-order-lookup-cache.service';
+import { TrackOrderFacade } from '../track-order/track-order.facade';
 
 /**
  * Guest order lookup entry form.
@@ -45,19 +42,16 @@ import { GuestOrderLookupCacheService } from './guest-order-lookup-cache.service
     CleansiaTitleComponent,
   ],
   templateUrl: './order-lookup.component.html',
+  providers: [TrackOrderFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OrderLookupComponent {
-  private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
   private readonly snackbar = inject(SnackbarService);
   private readonly guestOrderService = inject(GuestOrderService);
   private readonly cache = inject(GuestOrderLookupCacheService);
-  private readonly orderClient = new CustomerOrderClient(
-    this.http,
-    inject(CUSTOMER_API_BASE_URL, { optional: true }) ?? 'http://localhost:5003'
-  );
+  private readonly facade = inject(TrackOrderFacade);
 
   readonly confirmationCode = signal('');
   readonly email = signal('');
@@ -72,33 +66,36 @@ export class OrderLookupComponent {
     this.loading.set(true);
     this.notFound.set(false);
 
-    this.orderClient.lookup(code, email).subscribe({
-      next: (order) => {
-        this.loading.set(false);
-        if (!order || !order.id) {
-          this.notFound.set(true);
-          return;
-        }
-        // Persist for "Recent Orders" on /track-order and for refresh-safe re-lookup.
-        this.guestOrderService.save(order.id, email);
-        this.cache.set(order.id, order, email);
-        this.router.navigate([
-          '/' + CleansiaCustomerRoute.ORDERS,
-          'lookup',
-          order.id,
-        ]);
-      },
-      error: (err: { status?: number }) => {
-        this.loading.set(false);
-        // Lookup returns 400 when no match; treat as not-found inline.
-        if (err?.status === 400 || err?.status === 404) {
-          this.notFound.set(true);
-        } else {
-          this.snackbar.showError(
-            this.translate.instant('pages.order_lookup.error')
-          );
-        }
-      },
-    });
+    this.facade
+      .lookup(code, email)
+      .pipe(takeUntil(this.facade.destroyed$))
+      .subscribe({
+        next: (order) => {
+          this.loading.set(false);
+          if (!order || !order.id) {
+            this.notFound.set(true);
+            return;
+          }
+          // Persist for "Recent Orders" on /track-order and for refresh-safe re-lookup.
+          this.guestOrderService.save(order.id, email);
+          this.cache.set(order.id, order, email);
+          this.router.navigate([
+            '/' + CleansiaCustomerRoute.ORDERS,
+            'lookup',
+            order.id,
+          ]);
+        },
+        error: (err: { status?: number }) => {
+          this.loading.set(false);
+          // Lookup returns 400 when no match; treat as not-found inline.
+          if (err?.status === 400 || err?.status === 404) {
+            this.notFound.set(true);
+          } else {
+            this.snackbar.showError(
+              this.translate.instant('pages.order_lookup.error')
+            );
+          }
+        },
+      });
   }
 }

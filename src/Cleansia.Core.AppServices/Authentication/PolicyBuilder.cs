@@ -188,6 +188,9 @@ public static class PolicyBuilder
 
         // Admin Referrals
         [Policy.CanViewReferrals] = PhysicalPolicy.AdminOnly,
+
+        // Marketing (sitewide push)
+        [Policy.CanSendSitewidePromo] = PhysicalPolicy.AdminOnly,
     };
 
     public static string ToPhysicalPolicy(this string permission) =>

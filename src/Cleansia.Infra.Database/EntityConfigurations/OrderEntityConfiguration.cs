@@ -77,6 +77,20 @@ public class OrderEntityConfiguration : AuditableEntityConfiguration<Order, stri
             .HasMaxLength(26)
             .IsRequired(false);
 
+        // Recurring booking provenance. Plain id without a hard FK so deleting
+        // a template doesn't cascade-orphan the spawned orders. Indexed because
+        // the materializer queries by template to find already-spawned occurrences.
+        builder.Property(o => o.RecurringTemplateId)
+            .HasMaxLength(26)
+            .IsRequired(false);
+        builder.HasIndex(o => o.RecurringTemplateId);
+
+        // Stamped by the 24h-ahead reminder sweep. Indexed alongside
+        // RecurringTemplateId so the sweep's "find Pending recurring orders
+        // due in the next 24h that haven't been reminded yet" query stays cheap.
+        builder.Property(o => o.RecurringReminderSentAt)
+            .IsRequired(false);
+
         builder.Property(o => o.Extras)
             .HasConversion(new JsonValueConverter<IReadOnlyDictionary<string, bool>>())
             .Metadata

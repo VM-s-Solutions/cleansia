@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, forwardRef, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, forwardRef, input, output, signal } from '@angular/core';
 import { FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { ErrorPipe } from '@cleansia/pipes';
 import { FloatLabelModule } from 'primeng/floatlabel';
@@ -24,13 +24,14 @@ import { CleansiaBaseFormInputComponent } from '../cleansia-base-form';
       multi: true,
     },
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaTextInputComponent extends CleansiaBaseFormInputComponent {
   id = input<string>(this.getDefaultLabelId());
   dataType = input<'text' | 'password' | 'email' | 'number'>('text');
   floatVariant = input<'over' | 'in' | 'on'>('on');
 
-  valueChanges = output<any>();
+  valueChanges = output<string>();
 
   passwordVisible = signal(false);
   effectiveType = computed(() =>
@@ -43,7 +44,8 @@ export class CleansiaTextInputComponent extends CleansiaBaseFormInputComponent {
 
   innerValue = '';
 
-  override writeValue(value: string): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  override writeValue(value: any): void {
     this.innerValue = value ?? '';
   }
 

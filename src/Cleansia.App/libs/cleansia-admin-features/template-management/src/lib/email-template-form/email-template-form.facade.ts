@@ -6,22 +6,21 @@ import {
   SendTestEmailCommand,
   UpdateEmailTemplateCommand,
 } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 export interface EmailTemplateFormData {
   value: string;
 }
 
 @Injectable()
-export class EmailTemplateFormFacade {
+export class EmailTemplateFormFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
-
-  private destroy$ = new Subject<void>();
 
   readonly template = signal<EmailTemplateTranslationDetailDto | null>(null);
   readonly loading = signal<boolean>(false);
@@ -34,7 +33,7 @@ export class EmailTemplateFormFacade {
     this.adminClient.adminEmailTemplateClient
       .details(templateId)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
@@ -54,7 +53,7 @@ export class EmailTemplateFormFacade {
     this.adminClient.adminEmailTemplateClient
       .update(templateId, command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
@@ -79,7 +78,7 @@ export class EmailTemplateFormFacade {
     this.adminClient.adminEmailTemplateClient
       .sendTest(templateId, command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.sendingTestEmail.set(false))
       )
@@ -96,10 +95,5 @@ export class EmailTemplateFormFacade {
 
   navigateBack(): void {
     this.router.navigate([CleansiaAdminRoute.TEMPLATE_MANAGEMENT, 'email-templates']);
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

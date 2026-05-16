@@ -30,6 +30,7 @@ import {
 } from '@cleansia/customer-services';
 import { customerEffects, customerReducers } from '@cleansia/customer-stores';
 import {
+  AUTH_COOKIE_KEYS,
   COMMON_INTERCEPTORS_FN,
   initializeTranslations,
   JsonTranslationLoader,
@@ -93,6 +94,16 @@ export const appConfig: ApplicationConfig = {
     { provide: LOCALE_ID, useValue: 'en' },
     { provide: CUSTOMER_API_BASE_URL, useValue: environment.apiBaseUrl },
     { provide: MAPBOX_ACCESS_TOKEN, useValue: environment.mapboxToken ?? '' },
+    {
+      provide: AUTH_COOKIE_KEYS,
+      useValue: {
+        token: 'customer_token',
+        refreshToken: 'customer_refresh_token',
+        refreshTokenExp: 'customer_refresh_exp',
+        role: 'customer_role',
+        csrfToken: 'customer_csrf',
+      },
+    },
     provideStore(),
     importProvidersFrom(
       BrowserAnimationsModule,

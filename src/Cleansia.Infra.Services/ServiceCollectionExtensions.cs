@@ -12,7 +12,6 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<ITemplateEngine, HandlebarsTemplateEngine>();
 
-        // PDF layout builders
         services.AddSingleton<IReceiptLayoutBuilder, DefaultReceiptLayoutBuilder>();
         services.AddSingleton<IInvoiceLayoutBuilder, DefaultInvoiceLayoutBuilder>();
         services.AddSingleton<LayoutBuilderFactory>();

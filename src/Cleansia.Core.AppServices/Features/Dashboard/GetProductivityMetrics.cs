@@ -37,10 +37,8 @@ public class GetProductivityMetrics
                 completedSpec.SatisfiedBy(), cancellationToken);
 
             var completedOrders = await orderRepository
-                .GetCompletedOrdersByDateRange(request.EmployeeId, currentMonthStart, currentMonthEnd)
-                .ToListAsync(cancellationToken);
+                .GetCompletedOrdersByDateRangeAsync(request.EmployeeId, currentMonthStart, currentMonthEnd, cancellationToken);
 
-            // Calculate real metrics from actual order data
             var averageCompletionTimeMinutes = CalculateAverageActualCompletionTime(completedOrders);
             var onTimeCompletionRate = CalculateOnTimeCompletionRate(completedOrders);
             var completionPercentage = CalculateCompletionPercentage(ordersCompleted, DashboardConstants.DefaultMonthlyOrdersTarget);
@@ -62,7 +60,7 @@ public class GetProductivityMetrics
         /// Calculates the average actual completion time from orders that have ActualCompletionTime recorded.
         /// Falls back to estimated time if no actual times are available.
         /// </summary>
-        private static double CalculateAverageActualCompletionTime(List<Order> completedOrders)
+        private static double CalculateAverageActualCompletionTime(IReadOnlyList<Order> completedOrders)
         {
             if (completedOrders.Count == 0)
                 return 0;
@@ -82,7 +80,7 @@ public class GetProductivityMetrics
         /// Calculates the percentage of orders completed within or under the estimated time.
         /// An order is "on time" if ActualCompletionTime is less than or equal to EstimatedTime.
         /// </summary>
-        private static double CalculateOnTimeCompletionRate(List<Order> completedOrders)
+        private static double CalculateOnTimeCompletionRate(IReadOnlyList<Order> completedOrders)
         {
             if (completedOrders.Count == 0)
                 return 100.0; // Default to 100% if no orders
@@ -111,12 +109,10 @@ public class GetProductivityMetrics
         {
             var allTimeEnd = DateTime.UtcNow;
             var allOrders = await orderRepository
-                .GetCompletedOrdersByDateRange(employeeId, DashboardConstants.AllTimeStartDate, allTimeEnd)
-                .ToListAsync(cancellationToken);
+                .GetCompletedOrdersByDateRangeAsync(employeeId, DashboardConstants.AllTimeStartDate, allTimeEnd, cancellationToken);
 
             var invoices = await employeeInvoiceRepository
-                .GetInvoicesByDateRange(employeeId, DashboardConstants.AllTimeStartDate, allTimeEnd)
-                .ToListAsync(cancellationToken);
+                .GetByEmployeeAndDateRangeAsync(employeeId, DashboardConstants.AllTimeStartDate, allTimeEnd, cancellationToken);
 
             var highestEarningMonth = invoices
                 .GroupBy(i => (i.GeneratedAt.Year, i.GeneratedAt.Month))
@@ -136,7 +132,6 @@ public class GetProductivityMetrics
                 .OrderByDescending(m => m.Count)
                 .FirstOrDefault();
 
-            // Calculate best efficiency score from historical data
             var bestEfficiencyScore = CalculateBestHistoricalEfficiencyScore(allOrders);
 
             return new PersonalBests(
@@ -152,7 +147,7 @@ public class GetProductivityMetrics
         /// <summary>
         /// Calculates the best monthly on-time completion rate from all historical orders.
         /// </summary>
-        private static double CalculateBestHistoricalEfficiencyScore(List<Order> allOrders)
+        private static double CalculateBestHistoricalEfficiencyScore(IReadOnlyList<Order> allOrders)
         {
             if (allOrders.Count == 0)
                 return 0;

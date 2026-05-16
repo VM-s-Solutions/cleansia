@@ -134,7 +134,7 @@ public class BlobContainerClient : IBlobContainerClient
     {
         if (_createContainerIfNotExists)
         {
-            await _container.CreateIfNotExistsAsync(PublicAccessType.BlobContainer, cancellationToken: cancellationToken);
+            await _container.CreateIfNotExistsAsync(PublicAccessType.None, cancellationToken: cancellationToken);
         }
     }
 }

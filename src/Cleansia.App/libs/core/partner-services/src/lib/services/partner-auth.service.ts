@@ -1,16 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { JwtToken } from '@cleansia/models';
-import { CommonRoute, LocalStorageKey, Role } from '@cleansia/services';
+import { AUTH_COOKIE_KEYS, CommonRoute, LocalStorageKey, Role } from '@cleansia/services';
 import {
-  extractCookieValue,
   getLocalStorageValueByKeyAsJSON,
-  removeCookieValue,
-  setCookieValue,
   setLocalStorageValueByKey,
 } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
-import { jwtDecode } from 'jwt-decode';
 import { BehaviorSubject, Observable, catchError, map, of, tap } from 'rxjs';
 import { PartnerClient } from '../client/base-client';
 import {
@@ -23,6 +18,7 @@ import {
   RegisterCommand,
   RegisterEmployeeCommand,
   ResendConfirmationEmailCommand,
+  UserProfile,
 } from '../client/partner-client';
 
 @Injectable({
@@ -32,6 +28,7 @@ export class PartnerAuthService {
   private readonly partnerClient = inject(PartnerClient);
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
+  private readonly cookieKeys = inject(AUTH_COOKIE_KEYS);
 
   readonly isLoggedIn$ = new BehaviorSubject<boolean>(this.isLoggedIn());
   readonly isLoggedInAction$: Observable<boolean> = this.isLoggedIn$.pipe(
@@ -57,7 +54,8 @@ export class PartnerAuthService {
     email: string,
     password: string,
     firstName: string,
-    lastName: string
+    lastName: string,
+    referralCode?: string
   ): Observable<boolean> {
     return this.partnerClient.authClient.register(
       new RegisterCommand({
@@ -66,6 +64,7 @@ export class PartnerAuthService {
         firstName,
         lastName,
         language: this.translate.currentLang || this.translate.getDefaultLang(),
+        referralCode,
       })
     );
   }
@@ -130,12 +129,10 @@ export class PartnerAuthService {
   }
 
   logout(): Observable<boolean> {
-    const refreshToken = this.getRefreshToken();
-    const serverCall = refreshToken
-      ? this.partnerClient.authClient
-          .logout(new LogoutCommand({ token: refreshToken }))
-          .pipe(catchError(() => of(false)))
-      : of(true);
+    // Refresh token is in the HttpOnly cookie — server reads from cookie.
+    const serverCall = this.partnerClient.authClient
+      .logout(new LogoutCommand({ token: '' }))
+      .pipe(catchError(() => of(false)));
 
     return serverCall.pipe(
       tap(() => {
@@ -146,51 +143,56 @@ export class PartnerAuthService {
     );
   }
 
-  refreshSession(): Observable<string> {
-    const refreshToken = this.getRefreshToken();
-    if (!refreshToken) {
-      throw new Error('No refresh token available');
-    }
+  refreshSession(): Observable<boolean> {
+    // Backend partner controller enriches the command with the host audience
+    // and required profile, so we send placeholders here that satisfy the
+    // generated TS contract. The refresh token itself is in the cookie.
     return this.partnerClient.authClient
-      .refreshToken(new RefreshTokenCommand({ token: refreshToken }))
+      .refreshToken(
+        new RefreshTokenCommand({
+          token: '',
+          requiredProfile: UserProfile.Employee,
+          requiredAudience: undefined,
+        })
+      )
       .pipe(
         tap((authResult) => this.setSession(authResult)),
-        map((authResult) => authResult.token!)
+        map(() => true)
       );
   }
 
   isLoggedIn(): boolean {
-    const expiration = this.getExpiration();
-    return expiration ? Date.now() < expiration.getTime() : false;
+    // Session is "alive" when we have a CSRF token (proves a session was
+    // issued) and the persisted refresh-token exp is in the future.
+    if (!this.getCsrfToken()) return false;
+    return this.hasValidRefreshToken();
   }
 
   isLoggedOut(): boolean {
     return !this.isLoggedIn();
   }
 
-  getToken(): string | null {
-    return this.getCookieToken();
-  }
-
-  getRefreshToken(): string | null {
-    return extractCookieValue(LocalStorageKey.REFRESH_TOKEN);
+  /** CSRF token from the most recent login/refresh response (double-submit pair
+   *  with the HttpOnly auth cookie). Read by the interceptor for X-CSRF-Token. */
+  getCsrfToken(): string | null {
+    return typeof localStorage === 'undefined'
+      ? null
+      : localStorage.getItem(this.cookieKeys.csrfToken);
   }
 
   hasValidRefreshToken(): boolean {
-    if (!this.getRefreshToken()) return false;
-    const expStr = localStorage.getItem(LocalStorageKey.REFRESH_TOKEN_EXP);
+    if (typeof localStorage === 'undefined') return false;
+    const expStr = localStorage.getItem(this.cookieKeys.refreshTokenExp);
     if (!expStr) return false;
     return Date.now() < new Date(expStr).getTime();
   }
 
+  /** Role attached to the most recent login/refresh response. Source-of-truth
+   *  remains server-side; this is a UI hint for permission gating. */
   getRole(): string | null {
-    const token: string | null = this.getToken();
-    if (!token) {
-      return null;
-    }
-
-    const decodedToken: JwtToken = jwtDecode(token);
-    return decodedToken.role;
+    return typeof localStorage === 'undefined'
+      ? null
+      : localStorage.getItem(this.cookieKeys.role);
   }
 
   isAdminOrEditor(): boolean {
@@ -220,61 +222,32 @@ export class PartnerAuthService {
   }
 
   removeSession(): void {
-    this.removeCookieSession();
-    removeCookieValue(LocalStorageKey.REFRESH_TOKEN);
-    localStorage.removeItem(LocalStorageKey.REFRESH_TOKEN_EXP);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(this.cookieKeys.refreshTokenExp);
+      localStorage.removeItem(this.cookieKeys.csrfToken);
+      localStorage.removeItem(this.cookieKeys.role);
+    }
     this.isLoggedIn$.next(false);
   }
 
   setSession(authResult: JwtTokenResponse): void {
-    this.setCookieSession(authResult.token!);
-
-    if (authResult.refreshToken) {
-      setCookieValue(LocalStorageKey.REFRESH_TOKEN, authResult.refreshToken);
+    // Auth + refresh tokens land as HttpOnly cookies via Set-Cookie; we only
+    // persist the JS-readable companions (role, csrf, refresh exp).
+    const role = (authResult as unknown as { role?: string }).role;
+    if (role) {
+      setLocalStorageValueByKey(this.cookieKeys.role, role);
     }
     if (authResult.refreshTokenExpiresAt) {
       localStorage.setItem(
-        LocalStorageKey.REFRESH_TOKEN_EXP,
+        this.cookieKeys.refreshTokenExp,
         authResult.refreshTokenExpiresAt.toISOString()
       );
+    }
+    if (authResult.csrfToken) {
+      localStorage.setItem(this.cookieKeys.csrfToken, authResult.csrfToken);
     }
 
     this.isLoggedIn$.next(true);
     this.setWarningDialogStatus(false);
-  }
-
-  private getExpiration(): Date | null {
-    return this.getCookieExpiration();
-  }
-
-  private removeCookieSession(): void {
-    removeCookieValue(LocalStorageKey.TOKEN);
-  }
-
-  private getCookieToken(): string | null {
-    return extractCookieValue(LocalStorageKey.TOKEN);
-  }
-
-  private getCookieExpiration(): Date | null {
-    const token = this.getCookieToken();
-    if (!token) {
-      return null;
-    }
-
-    const { exp } = jwtDecode(token);
-    return exp ? new Date(exp * 1000) : null;
-  }
-
-  /**
-   * Replaces the current JWT token with a new one (e.g., after profile upgrade).
-   */
-  updateToken(token: string): void {
-    this.setCookieSession(token);
-  }
-
-  private setCookieSession(token: string): void {
-    const decodedToken: JwtToken = jwtDecode(token);
-    setCookieValue(LocalStorageKey.TOKEN, token);
-    setLocalStorageValueByKey(LocalStorageKey.ROLE, decodedToken.role);
   }
 }

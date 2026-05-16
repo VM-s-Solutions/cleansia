@@ -108,6 +108,9 @@
       "@cleansia/admin-features/loyalty-referrals": [
         "libs/cleansia-admin-features/loyalty-referrals/src/index.ts"
       ],
+      "@cleansia/admin-features/marketing": [
+        "libs/cleansia-admin-features/marketing/src/index.ts"
+      ],
       "@cleansia-customer/checkout": [
         "libs/cleansia-customer-features/checkout/src/index.ts"
       ],

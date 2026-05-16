@@ -1,5 +1,4 @@
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -11,22 +10,22 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { CleansiaButtonComponent } from '@cleansia/components';
 import {
-  CUSTOMER_API_BASE_URL,
-  CustomerOrderClient,
-  LookupOrderBatchOrderLookupItem,
-  LookupOrderBatchQuery,
-  LookupOrderResponse,
-} from '@cleansia/customer-services';
-import { OrderStatus, PaymentStatus } from '@cleansia/partner-services';
-import {
-  CleansiaCustomerRoute,
-  GuestOrderService,
-} from '@cleansia/services';
+  OrderStatusIconPipe,
+  OrderStatusLabelPipe,
+  OrderStatusSeverityPipe,
+  PaymentStatusLabelPipe,
+  PaymentStatusSeverityPipe,
+} from '@cleansia/pipes';
+import { LookupOrderResponse } from '@cleansia/customer-services';
+import { CleansiaCustomerRoute } from '@cleansia/services';
+import { GuestOrderService } from '../track-order/guest-order.service';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TagModule } from 'primeng/tag';
 import { TimelineModule } from 'primeng/timeline';
+import { takeUntil } from 'rxjs';
 import { GuestOrderLookupCacheService } from './guest-order-lookup-cache.service';
+import { TrackOrderFacade } from '../track-order/track-order.facade';
 
 /**
  * Read-only guest detail view for /orders/lookup/:orderId.
@@ -53,21 +52,23 @@ import { GuestOrderLookupCacheService } from './guest-order-lookup-cache.service
     SkeletonModule,
     TimelineModule,
     CleansiaButtonComponent,
+    OrderStatusSeverityPipe,
+    OrderStatusLabelPipe,
+    PaymentStatusSeverityPipe,
+    PaymentStatusLabelPipe,
+    OrderStatusIconPipe,
   ],
   templateUrl: './guest-order-detail.component.html',
+  providers: [TrackOrderFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GuestOrderDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly http = inject(HttpClient);
   private readonly translate = inject(TranslateService);
   private readonly guestOrderService = inject(GuestOrderService);
   private readonly cache = inject(GuestOrderLookupCacheService);
-  private readonly orderClient = new CustomerOrderClient(
-    this.http,
-    inject(CUSTOMER_API_BASE_URL, { optional: true }) ?? 'http://localhost:5003'
-  );
+  private readonly facade = inject(TrackOrderFacade);
 
   readonly order = signal<LookupOrderResponse | null>(null);
   readonly loading = signal(true);
@@ -98,17 +99,9 @@ export class GuestOrderDetailComponent implements OnInit {
       return;
     }
 
-    this.orderClient
-      .lookupBatch(
-        new LookupOrderBatchQuery({
-          items: [
-            new LookupOrderBatchOrderLookupItem({
-              orderId: match.orderId,
-              email: match.email,
-            }),
-          ],
-        })
-      )
+    this.facade
+      .lookupBatch([{ orderId: match.orderId, email: match.email }])
+      .pipe(takeUntil(this.facade.destroyed$))
       .subscribe({
         next: (result) => {
           const found = result.orders?.find((o) => o.id === orderId) ?? null;
@@ -137,62 +130,13 @@ export class GuestOrderDetailComponent implements OnInit {
     this.router.navigate(['/' + CleansiaCustomerRoute.ORDERS, 'lookup']);
   }
 
-  getOrderStatusSeverity(status: { value?: number }): string {
-    switch (status?.value) {
-      case OrderStatus.Pending:
-        return 'warn';
-      case OrderStatus.Confirmed:
-        return 'info';
-      case OrderStatus.InProgress:
-        return 'info';
-      case OrderStatus.Completed:
-        return 'success';
-      case OrderStatus.Cancelled:
-        return 'danger';
-      default:
-        return 'info';
-    }
-  }
-
-  getPaymentStatusSeverity(status: { value?: number }): string {
-    switch (status?.value) {
-      case PaymentStatus.Pending:
-        return 'warn';
-      case PaymentStatus.Paid:
-        return 'success';
-      case PaymentStatus.Failed:
-        return 'danger';
-      case PaymentStatus.Refunded:
-        return 'info';
-      case PaymentStatus.Disputed:
-        return 'danger';
-      default:
-        return 'info';
-    }
-  }
-
-  getStatusIcon(value: number): string {
-    switch (value) {
-      case OrderStatus.Pending:
-        return 'pi pi-clock';
-      case OrderStatus.Confirmed:
-        return 'pi pi-check';
-      case OrderStatus.InProgress:
-        return 'pi pi-spin pi-spinner';
-      case OrderStatus.Completed:
-        return 'pi pi-check-circle';
-      case OrderStatus.Cancelled:
-        return 'pi pi-times-circle';
-      default:
-        return 'pi pi-circle';
-    }
-  }
-
   private getLocale(): string {
     const localeMap: Record<string, string> = {
       cs: 'cs-CZ',
       en: 'en-US',
-      pl: 'pl-PL',
+      sk: 'sk-SK',
+      uk: 'uk-UA',
+      ru: 'ru-RU',
     };
     return localeMap[this.translate.currentLang] || 'en-US';
   }

@@ -26,7 +26,7 @@ import {
   takeUntil,
   tap,
 } from 'rxjs';
-import { ProfileFormFactory } from './profile.models';
+import { ProfileFormData, ProfileFormFactory } from './profile.models';
 import { ProfileDocumentsFacade } from './profile-documents.facade';
 
 @Injectable()
@@ -175,7 +175,7 @@ export class ProfileFacade extends UnsubscribeControlDirective {
             return of(null);
           }
 
-          const formData = FormUtils.getFormValueWithDefaults(this.formGroup);
+          const formData = FormUtils.getFormValueWithDefaults<ProfileFormData>(this.formGroup);
           const clientBlobFiles = (transformationResult.data || []).map(
             (dto) => {
               const clientDto = new BlobFileDto();

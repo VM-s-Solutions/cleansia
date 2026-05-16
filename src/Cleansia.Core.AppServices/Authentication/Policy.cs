@@ -215,4 +215,7 @@ public class Policy
 
     // Admin Referrals
     public const string CanViewReferrals = nameof(CanViewReferrals); // Admin
+
+    // Marketing (sitewide push)
+    public const string CanSendSitewidePromo = nameof(CanSendSitewidePromo); // Admin
 }

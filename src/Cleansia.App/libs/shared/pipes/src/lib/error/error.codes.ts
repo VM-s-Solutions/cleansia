@@ -1,5 +1,10 @@
 import { TranslateService } from '@ngx-translate/core';
 
+// Value type stays `any` so concrete handlers can declare their own
+// payload shape ({ requiredLength: number }, { min: number }, etc.) and
+// still be assignable into the lookup map — `unknown` would block that
+// bivariant assignment.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ErrorCodesFn = (translate: TranslateService, value?: any) => string;
 
 export const ErrorCodesFns: { [key: string]: ErrorCodesFn } = {

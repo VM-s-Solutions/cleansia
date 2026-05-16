@@ -8,7 +8,6 @@ import {
   CleansiaButtonComponent,
   CleansiaCodeInputComponent,
   CleansiaDynamicBackgroundComponent,
-  CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { selectCustomerLoading } from '@cleansia/customer-stores';
@@ -28,7 +27,6 @@ import { ConfirmEmailFacade } from './confirm-email.facade';
     CleansiaButtonComponent,
     CleansiaBrandNameComponent,
     CleansiaCodeInputComponent,
-    CleansiaTextInputComponent,
     CleansiaDynamicBackgroundComponent,
   ],
   providers: [ConfirmEmailFacade],

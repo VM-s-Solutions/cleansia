@@ -4497,11 +4497,6 @@ export class LanguageClient implements ILanguageClient {
 
 export interface IOrderClient {
     /**
-     * @param body (optional) 
-     * @return OK
-     */
-    createOrder(body?: CreateOrderCommand | undefined): Observable<CreateOrderResponse>;
-    /**
      * @param id (optional) 
      * @param isActive (optional) 
      * @param customerName (optional) 
@@ -4544,6 +4539,11 @@ export interface IOrderClient {
      * @param body (optional) 
      * @return OK
      */
+    notifyOnTheWay(body?: NotifyOnTheWayCommand | undefined): Observable<NotifyOnTheWayResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
     completeOrder(body?: CompleteOrderCommand | undefined): Observable<CompleteOrderResponse>;
     /**
      * @param orderId (optional) 
@@ -4567,10 +4567,9 @@ export interface IOrderClient {
     getPhotos(orderId?: string | undefined): Observable<GetOrderPhotosResponse>;
     /**
      * @param photoId (optional) 
-     * @param employeeId (optional) 
      * @return OK
      */
-    deletePhoto(photoId?: string | undefined, employeeId?: string | undefined): Observable<DeleteOrderPhotoResponse>;
+    deletePhoto(photoId?: string | undefined): Observable<DeleteOrderPhotoResponse>;
     /**
      * @param body (optional) 
      * @return OK
@@ -4594,69 +4593,6 @@ export class OrderClient implements IOrderClient {
     constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(APIBASEURL) baseUrl?: string) {
         this.http = http;
         this.baseUrl = baseUrl ?? "";
-    }
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    createOrder(body?: CreateOrderCommand | undefined): Observable<CreateOrderResponse> {
-        let url = this.baseUrl + "/api/Order/CreateOrder";
-        url = url.replace(/[?&]$/, "");
-
-        const content = JSON.stringify(body);
-
-        let options : any = {
-            body: content,
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processCreateOrder(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processCreateOrder(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<CreateOrderResponse>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<CreateOrderResponse>;
-        }));
-    }
-
-    protected processCreateOrder(response: HttpResponseBase): Observable<CreateOrderResponse> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = CreateOrderResponse.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result400: any = null;
-            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, ResponseText, Headers, result400);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
     }
 
     /**
@@ -5036,6 +4972,83 @@ export class OrderClient implements IOrderClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = StartOrderResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    notifyOnTheWay(body?: NotifyOnTheWayCommand | undefined): Observable<NotifyOnTheWayResponse> {
+        let url = this.baseUrl + "/api/Order/NotifyOnTheWay";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processNotifyOnTheWay(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processNotifyOnTheWay(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<NotifyOnTheWayResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<NotifyOnTheWayResponse>;
+        }));
+    }
+
+    protected processNotifyOnTheWay(response: HttpResponseBase): Observable<NotifyOnTheWayResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = NotifyOnTheWayResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -5458,19 +5471,14 @@ export class OrderClient implements IOrderClient {
 
     /**
      * @param photoId (optional) 
-     * @param employeeId (optional) 
      * @return OK
      */
-    deletePhoto(photoId?: string | undefined, employeeId?: string | undefined): Observable<DeleteOrderPhotoResponse> {
+    deletePhoto(photoId?: string | undefined): Observable<DeleteOrderPhotoResponse> {
         let url = this.baseUrl + "/api/Order/DeletePhoto?";
         if (photoId === null)
             throw new globalThis.Error("The parameter 'photoId' cannot be null.");
         else if (photoId !== undefined)
             url += "PhotoId=" + encodeURIComponent("" + photoId) + "&";
-        if (employeeId === null)
-            throw new globalThis.Error("The parameter 'employeeId' cannot be null.");
-        else if (employeeId !== undefined)
-            url += "EmployeeId=" + encodeURIComponent("" + employeeId) + "&";
         url = url.replace(/[?&]$/, "");
 
         let options : any = {
@@ -6249,11 +6257,6 @@ export class PayConfigClient implements IPayConfigClient {
 
 export interface IPaymentClient {
     /**
-     * @param body (optional) 
-     * @return OK
-     */
-    createOrder(body?: CreateOrderCommand | undefined): Observable<CreateOrderResponse>;
-    /**
      * @return OK
      */
     webhook(): Observable<string>;
@@ -6270,69 +6273,6 @@ export class PaymentClient implements IPaymentClient {
     constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(APIBASEURL) baseUrl?: string) {
         this.http = http;
         this.baseUrl = baseUrl ?? "";
-    }
-
-    /**
-     * @param body (optional) 
-     * @return OK
-     */
-    createOrder(body?: CreateOrderCommand | undefined): Observable<CreateOrderResponse> {
-        let url = this.baseUrl + "/api/Payment/CreateOrder";
-        url = url.replace(/[?&]$/, "");
-
-        const content = JSON.stringify(body);
-
-        let options : any = {
-            body: content,
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
-            return this.processCreateOrder(response);
-        })).pipe(ObservableCatch((response: any) => {
-            if (response instanceof HttpResponseBase) {
-                try {
-                    return this.processCreateOrder(response as any);
-                } catch (e) {
-                    return ObservableThrow(e) as any as Observable<CreateOrderResponse>;
-                }
-            } else
-                return ObservableThrow(response) as any as Observable<CreateOrderResponse>;
-        }));
-    }
-
-    protected processCreateOrder(response: HttpResponseBase): Observable<CreateOrderResponse> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result200: any = null;
-            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = CreateOrderResponse.fromJS(resultData200);
-            return ObservableOf(result200);
-            }));
-        } else if (status === 400) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            let result400: any = null;
-            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result400 = ProblemDetails.fromJS(resultData400);
-            return throwException("Bad Request", status, ResponseText, Headers, result400);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
-            }));
-        }
-        return ObservableOf(null as any);
     }
 
     /**
@@ -7126,7 +7066,7 @@ export interface IUserClient {
      * @param query (optional) 
      * @return OK
      */
-    getCurrent(query?: GetCurrentUserQuery | undefined): Observable<UserListItem>;
+    getCurrent(query?: GetCurrentUserQuery | undefined): Observable<MyProfileDto>;
     /**
      * @param body (optional) 
      * @return OK
@@ -7370,7 +7310,7 @@ export class UserClient implements IUserClient {
      * @param query (optional) 
      * @return OK
      */
-    getCurrent(query?: GetCurrentUserQuery | undefined): Observable<UserListItem> {
+    getCurrent(query?: GetCurrentUserQuery | undefined): Observable<MyProfileDto> {
         let url = this.baseUrl + "/api/User/GetCurrent?";
         if (query === null)
             throw new globalThis.Error("The parameter 'query' cannot be null.");
@@ -7393,14 +7333,14 @@ export class UserClient implements IUserClient {
                 try {
                     return this.processGetCurrent(response as any);
                 } catch (e) {
-                    return ObservableThrow(e) as any as Observable<UserListItem>;
+                    return ObservableThrow(e) as any as Observable<MyProfileDto>;
                 }
             } else
-                return ObservableThrow(response) as any as Observable<UserListItem>;
+                return ObservableThrow(response) as any as Observable<MyProfileDto>;
         }));
     }
 
-    protected processGetCurrent(response: HttpResponseBase): Observable<UserListItem> {
+    protected processGetCurrent(response: HttpResponseBase): Observable<MyProfileDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -7411,7 +7351,7 @@ export class UserClient implements IUserClient {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            result200 = UserListItem.fromJS(resultData200);
+            result200 = MyProfileDto.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 401) {
@@ -7661,7 +7601,6 @@ export interface IAddDisputeMessageCommand {
 
 export class AddOrderNoteCommand implements IAddOrderNoteCommand {
     orderId!: string | undefined;
-    employeeId!: string | undefined;
     content!: string | undefined;
 
     constructor(data?: IAddOrderNoteCommand) {
@@ -7676,7 +7615,6 @@ export class AddOrderNoteCommand implements IAddOrderNoteCommand {
     init(Data?: any) {
         if (Data) {
             this.orderId = Data["orderId"];
-            this.employeeId = Data["employeeId"];
             this.content = Data["content"];
         }
     }
@@ -7691,7 +7629,6 @@ export class AddOrderNoteCommand implements IAddOrderNoteCommand {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["orderId"] = this.orderId;
-        data["employeeId"] = this.employeeId;
         data["content"] = this.content;
         return data;
     }
@@ -7699,7 +7636,6 @@ export class AddOrderNoteCommand implements IAddOrderNoteCommand {
 
 export interface IAddOrderNoteCommand {
     orderId: string | undefined;
-    employeeId: string | undefined;
     content: string | undefined;
 }
 
@@ -7745,58 +7681,6 @@ export interface IAddOrderNoteResponse {
     noteId: string | undefined;
     content: string | undefined;
     createdAt: Date;
-}
-
-export class AddressDto implements IAddressDto {
-    street!: string | undefined;
-    city!: string | undefined;
-    zipCode!: string | undefined;
-    countryId!: string | undefined;
-    state!: string | undefined;
-
-    constructor(data?: IAddressDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.street = Data["street"];
-            this.city = Data["city"];
-            this.zipCode = Data["zipCode"];
-            this.countryId = Data["countryId"];
-            this.state = Data["state"];
-        }
-    }
-
-    static fromJS(data: any): AddressDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new AddressDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["street"] = this.street;
-        data["city"] = this.city;
-        data["zipCode"] = this.zipCode;
-        data["countryId"] = this.countryId;
-        data["state"] = this.state;
-        return data;
-    }
-}
-
-export interface IAddressDto {
-    street: string | undefined;
-    city: string | undefined;
-    zipCode: string | undefined;
-    countryId: string | undefined;
-    state: string | undefined;
 }
 
 export class AdminEmployeeListItem implements IAdminEmployeeListItem {
@@ -7873,6 +7757,14 @@ export interface IAdminEmployeeListItem {
     nationalityName: string | undefined;
     createdAt: Date;
     isProfileComplete: boolean;
+}
+
+export enum AppliedDiscountSource {
+    None = 0,
+    Tier = 1,
+    Membership = 2,
+    Promo = 3,
+    Combined = 4,
 }
 
 export class ApproveEmployeeResponse implements IApproveEmployeeResponse {
@@ -7996,7 +7888,6 @@ export class AssignedEmployeeDto implements IAssignedEmployeeDto {
     employeeId!: string | undefined;
     fullName!: string | undefined;
     phoneNumber!: string | undefined;
-    email!: string | undefined;
 
     constructor(data?: IAssignedEmployeeDto) {
         if (data) {
@@ -8013,7 +7904,6 @@ export class AssignedEmployeeDto implements IAssignedEmployeeDto {
             this.employeeId = Data["employeeId"];
             this.fullName = Data["fullName"];
             this.phoneNumber = Data["phoneNumber"];
-            this.email = Data["email"];
         }
     }
 
@@ -8030,7 +7920,6 @@ export class AssignedEmployeeDto implements IAssignedEmployeeDto {
         data["employeeId"] = this.employeeId;
         data["fullName"] = this.fullName;
         data["phoneNumber"] = this.phoneNumber;
-        data["email"] = this.email;
         return data;
     }
 }
@@ -8040,7 +7929,6 @@ export interface IAssignedEmployeeDto {
     employeeId: string | undefined;
     fullName: string | undefined;
     phoneNumber: string | undefined;
-    email: string | undefined;
 }
 
 export class BlobFileDto implements IBlobFileDto {
@@ -8166,7 +8054,6 @@ export interface ICalculateOrderPayResponse {
 export class CancelInvoiceCommand implements ICancelInvoiceCommand {
     invoiceId!: string | undefined;
     reason!: string | undefined;
-    cancelledBy!: string | undefined;
 
     constructor(data?: ICancelInvoiceCommand) {
         if (data) {
@@ -8181,7 +8068,6 @@ export class CancelInvoiceCommand implements ICancelInvoiceCommand {
         if (Data) {
             this.invoiceId = Data["invoiceId"];
             this.reason = Data["reason"];
-            this.cancelledBy = Data["cancelledBy"];
         }
     }
 
@@ -8196,7 +8082,6 @@ export class CancelInvoiceCommand implements ICancelInvoiceCommand {
         data = typeof data === 'object' ? data : {};
         data["invoiceId"] = this.invoiceId;
         data["reason"] = this.reason;
-        data["cancelledBy"] = this.cancelledBy;
         return data;
     }
 }
@@ -8204,7 +8089,6 @@ export class CancelInvoiceCommand implements ICancelInvoiceCommand {
 export interface ICancelInvoiceCommand {
     invoiceId: string | undefined;
     reason: string | undefined;
-    cancelledBy: string | undefined;
 }
 
 export class CancelInvoiceResponse implements ICancelInvoiceResponse {
@@ -8583,7 +8467,6 @@ export interface ICode {
 
 export class CompleteOrderCommand implements ICompleteOrderCommand {
     orderId!: string | undefined;
-    employeeId!: string | undefined;
     actualCompletionTimeMinutes!: number;
     completionNotes!: string | undefined;
 
@@ -8599,7 +8482,6 @@ export class CompleteOrderCommand implements ICompleteOrderCommand {
     init(Data?: any) {
         if (Data) {
             this.orderId = Data["orderId"];
-            this.employeeId = Data["employeeId"];
             this.actualCompletionTimeMinutes = Data["actualCompletionTimeMinutes"];
             this.completionNotes = Data["completionNotes"];
         }
@@ -8615,7 +8497,6 @@ export class CompleteOrderCommand implements ICompleteOrderCommand {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["orderId"] = this.orderId;
-        data["employeeId"] = this.employeeId;
         data["actualCompletionTimeMinutes"] = this.actualCompletionTimeMinutes;
         data["completionNotes"] = this.completionNotes;
         return data;
@@ -8624,7 +8505,6 @@ export class CompleteOrderCommand implements ICompleteOrderCommand {
 
 export interface ICompleteOrderCommand {
     orderId: string | undefined;
-    employeeId: string | undefined;
     actualCompletionTimeMinutes: number;
     completionNotes: string | undefined;
 }
@@ -8788,7 +8668,6 @@ export class CreateDisputeCommand implements ICreateDisputeCommand {
     orderId!: string | undefined;
     reason!: DisputeReason;
     description!: string | undefined;
-    userId!: string | undefined;
 
     constructor(data?: ICreateDisputeCommand) {
         if (data) {
@@ -8804,7 +8683,6 @@ export class CreateDisputeCommand implements ICreateDisputeCommand {
             this.orderId = Data["orderId"];
             this.reason = Data["reason"];
             this.description = Data["description"];
-            this.userId = Data["userId"];
         }
     }
 
@@ -8820,7 +8698,6 @@ export class CreateDisputeCommand implements ICreateDisputeCommand {
         data["orderId"] = this.orderId;
         data["reason"] = this.reason;
         data["description"] = this.description;
-        data["userId"] = this.userId;
         return data;
     }
 }
@@ -8829,127 +8706,6 @@ export interface ICreateDisputeCommand {
     orderId: string | undefined;
     reason: DisputeReason;
     description: string | undefined;
-    userId: string | undefined;
-}
-
-export class CreateOrderCommand implements ICreateOrderCommand {
-    customerName!: string | undefined;
-    customerEmail!: string | undefined;
-    customerPhone!: string | undefined;
-    customerAddress!: AddressDto;
-    savedAddressId!: string | undefined;
-    selectedPackageIds!: string[] | undefined;
-    selectedServiceIds!: string[] | undefined;
-    rooms!: number;
-    bathrooms!: number;
-    extras!: { [key: string]: boolean; } | undefined;
-    cleaningDate!: Date;
-    paymentType!: PaymentType;
-    currencyId!: string | undefined;
-    totalPrice!: number;
-    language!: string | undefined;
-
-    constructor(data?: ICreateOrderCommand) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.customerName = Data["customerName"];
-            this.customerEmail = Data["customerEmail"];
-            this.customerPhone = Data["customerPhone"];
-            this.customerAddress = Data["customerAddress"] ? AddressDto.fromJS(Data["customerAddress"]) : undefined as any;
-            this.savedAddressId = Data["savedAddressId"];
-            if (Array.isArray(Data["selectedPackageIds"])) {
-                this.selectedPackageIds = [] as any;
-                for (let item of Data["selectedPackageIds"])
-                    this.selectedPackageIds!.push(item);
-            }
-            if (Array.isArray(Data["selectedServiceIds"])) {
-                this.selectedServiceIds = [] as any;
-                for (let item of Data["selectedServiceIds"])
-                    this.selectedServiceIds!.push(item);
-            }
-            this.rooms = Data["rooms"];
-            this.bathrooms = Data["bathrooms"];
-            if (Data["extras"]) {
-                this.extras = {} as any;
-                for (let key in Data["extras"]) {
-                    if (Data["extras"].hasOwnProperty(key))
-                        (this.extras as any)![key] = Data["extras"][key];
-                }
-            }
-            this.cleaningDate = Data["cleaningDate"] ? new Date(Data["cleaningDate"].toString()) : undefined as any;
-            this.paymentType = Data["paymentType"];
-            this.currencyId = Data["currencyId"];
-            this.totalPrice = Data["totalPrice"];
-            this.language = Data["language"];
-        }
-    }
-
-    static fromJS(data: any): CreateOrderCommand {
-        data = typeof data === 'object' ? data : {};
-        let result = new CreateOrderCommand();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["customerName"] = this.customerName;
-        data["customerEmail"] = this.customerEmail;
-        data["customerPhone"] = this.customerPhone;
-        data["customerAddress"] = this.customerAddress ? this.customerAddress.toJSON() : undefined as any;
-        data["savedAddressId"] = this.savedAddressId;
-        if (Array.isArray(this.selectedPackageIds)) {
-            data["selectedPackageIds"] = [];
-            for (let item of this.selectedPackageIds)
-                data["selectedPackageIds"].push(item);
-        }
-        if (Array.isArray(this.selectedServiceIds)) {
-            data["selectedServiceIds"] = [];
-            for (let item of this.selectedServiceIds)
-                data["selectedServiceIds"].push(item);
-        }
-        data["rooms"] = this.rooms;
-        data["bathrooms"] = this.bathrooms;
-        if (this.extras) {
-            data["extras"] = {};
-            for (let key in this.extras) {
-                if (this.extras.hasOwnProperty(key))
-                    (data["extras"] as any)[key] = (this.extras as any)[key];
-            }
-        }
-        data["cleaningDate"] = this.cleaningDate ? this.cleaningDate.toISOString() : undefined as any;
-        data["paymentType"] = this.paymentType;
-        data["currencyId"] = this.currencyId;
-        data["totalPrice"] = this.totalPrice;
-        data["language"] = this.language;
-        return data;
-    }
-}
-
-export interface ICreateOrderCommand {
-    customerName: string | undefined;
-    customerEmail: string | undefined;
-    customerPhone: string | undefined;
-    customerAddress: AddressDto;
-    savedAddressId: string | undefined;
-    selectedPackageIds: string[] | undefined;
-    selectedServiceIds: string[] | undefined;
-    rooms: number;
-    bathrooms: number;
-    extras: { [key: string]: boolean; } | undefined;
-    cleaningDate: Date;
-    paymentType: PaymentType;
-    currencyId: string | undefined;
-    totalPrice: number;
-    language: string | undefined;
 }
 
 export class CreateOrderResponse implements ICreateOrderResponse {
@@ -9628,7 +9384,6 @@ export class DisputeDetails implements IDisputeDetails {
     id!: string | undefined;
     orderId!: string | undefined;
     displayOrderNumber!: string | undefined;
-    userId!: string | undefined;
     customerName!: string | undefined;
     customerEmail!: string | undefined;
     reason!: Code;
@@ -9636,15 +9391,11 @@ export class DisputeDetails implements IDisputeDetails {
     status!: Code;
     resolutionNotes!: string | undefined;
     refundAmount!: number | undefined;
-    resolvedBy!: string | undefined;
     resolvedOn!: Date | undefined;
-    stripeDisputeId!: string | undefined;
     messages!: DisputeMessageDto[] | undefined;
     evidence!: DisputeEvidenceDto[] | undefined;
     createdOn!: Date;
-    createdBy!: string | undefined;
     updatedOn!: Date | undefined;
-    updatedBy!: string | undefined;
 
     constructor(data?: IDisputeDetails) {
         if (data) {
@@ -9660,7 +9411,6 @@ export class DisputeDetails implements IDisputeDetails {
             this.id = Data["id"];
             this.orderId = Data["orderId"];
             this.displayOrderNumber = Data["displayOrderNumber"];
-            this.userId = Data["userId"];
             this.customerName = Data["customerName"];
             this.customerEmail = Data["customerEmail"];
             this.reason = Data["reason"] ? Code.fromJS(Data["reason"]) : undefined as any;
@@ -9668,9 +9418,7 @@ export class DisputeDetails implements IDisputeDetails {
             this.status = Data["status"] ? Code.fromJS(Data["status"]) : undefined as any;
             this.resolutionNotes = Data["resolutionNotes"];
             this.refundAmount = Data["refundAmount"];
-            this.resolvedBy = Data["resolvedBy"];
             this.resolvedOn = Data["resolvedOn"] ? new Date(Data["resolvedOn"].toString()) : undefined as any;
-            this.stripeDisputeId = Data["stripeDisputeId"];
             if (Array.isArray(Data["messages"])) {
                 this.messages = [] as any;
                 for (let item of Data["messages"])
@@ -9682,9 +9430,7 @@ export class DisputeDetails implements IDisputeDetails {
                     this.evidence!.push(DisputeEvidenceDto.fromJS(item));
             }
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
-            this.createdBy = Data["createdBy"];
             this.updatedOn = Data["updatedOn"] ? new Date(Data["updatedOn"].toString()) : undefined as any;
-            this.updatedBy = Data["updatedBy"];
         }
     }
 
@@ -9700,7 +9446,6 @@ export class DisputeDetails implements IDisputeDetails {
         data["id"] = this.id;
         data["orderId"] = this.orderId;
         data["displayOrderNumber"] = this.displayOrderNumber;
-        data["userId"] = this.userId;
         data["customerName"] = this.customerName;
         data["customerEmail"] = this.customerEmail;
         data["reason"] = this.reason ? this.reason.toJSON() : undefined as any;
@@ -9708,9 +9453,7 @@ export class DisputeDetails implements IDisputeDetails {
         data["status"] = this.status ? this.status.toJSON() : undefined as any;
         data["resolutionNotes"] = this.resolutionNotes;
         data["refundAmount"] = this.refundAmount;
-        data["resolvedBy"] = this.resolvedBy;
         data["resolvedOn"] = this.resolvedOn ? this.resolvedOn.toISOString() : undefined as any;
-        data["stripeDisputeId"] = this.stripeDisputeId;
         if (Array.isArray(this.messages)) {
             data["messages"] = [];
             for (let item of this.messages)
@@ -9722,9 +9465,7 @@ export class DisputeDetails implements IDisputeDetails {
                 data["evidence"].push(item ? item.toJSON() : undefined as any);
         }
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
-        data["createdBy"] = this.createdBy;
         data["updatedOn"] = this.updatedOn ? this.updatedOn.toISOString() : undefined as any;
-        data["updatedBy"] = this.updatedBy;
         return data;
     }
 }
@@ -9733,7 +9474,6 @@ export interface IDisputeDetails {
     id: string | undefined;
     orderId: string | undefined;
     displayOrderNumber: string | undefined;
-    userId: string | undefined;
     customerName: string | undefined;
     customerEmail: string | undefined;
     reason: Code;
@@ -9741,21 +9481,18 @@ export interface IDisputeDetails {
     status: Code;
     resolutionNotes: string | undefined;
     refundAmount: number | undefined;
-    resolvedBy: string | undefined;
     resolvedOn: Date | undefined;
-    stripeDisputeId: string | undefined;
     messages: DisputeMessageDto[] | undefined;
     evidence: DisputeEvidenceDto[] | undefined;
     createdOn: Date;
-    createdBy: string | undefined;
     updatedOn: Date | undefined;
-    updatedBy: string | undefined;
 }
 
 export class DisputeEvidenceDto implements IDisputeEvidenceDto {
     id!: string | undefined;
     fileName!: string | undefined;
     filePath!: string | undefined;
+    blobUrl!: string | undefined;
     uploadedBy!: string | undefined;
     uploadedOn!: Date;
 
@@ -9773,6 +9510,7 @@ export class DisputeEvidenceDto implements IDisputeEvidenceDto {
             this.id = Data["id"];
             this.fileName = Data["fileName"];
             this.filePath = Data["filePath"];
+            this.blobUrl = Data["blobUrl"];
             this.uploadedBy = Data["uploadedBy"];
             this.uploadedOn = Data["uploadedOn"] ? new Date(Data["uploadedOn"].toString()) : undefined as any;
         }
@@ -9790,6 +9528,7 @@ export class DisputeEvidenceDto implements IDisputeEvidenceDto {
         data["id"] = this.id;
         data["fileName"] = this.fileName;
         data["filePath"] = this.filePath;
+        data["blobUrl"] = this.blobUrl;
         data["uploadedBy"] = this.uploadedBy;
         data["uploadedOn"] = this.uploadedOn ? this.uploadedOn.toISOString() : undefined as any;
         return data;
@@ -9800,6 +9539,7 @@ export interface IDisputeEvidenceDto {
     id: string | undefined;
     fileName: string | undefined;
     filePath: string | undefined;
+    blobUrl: string | undefined;
     uploadedBy: string | undefined;
     uploadedOn: Date;
 }
@@ -11648,8 +11388,6 @@ export interface IGoogleAuthCommand {
 
 export class GrantConsentCommand implements IGrantConsentCommand {
     consentType!: ConsentType;
-    ipAddress!: string | undefined;
-    userAgent!: string | undefined;
 
     constructor(data?: IGrantConsentCommand) {
         if (data) {
@@ -11663,8 +11401,6 @@ export class GrantConsentCommand implements IGrantConsentCommand {
     init(Data?: any) {
         if (Data) {
             this.consentType = Data["consentType"];
-            this.ipAddress = Data["ipAddress"];
-            this.userAgent = Data["userAgent"];
         }
     }
 
@@ -11678,16 +11414,12 @@ export class GrantConsentCommand implements IGrantConsentCommand {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["consentType"] = this.consentType;
-        data["ipAddress"] = this.ipAddress;
-        data["userAgent"] = this.userAgent;
         return data;
     }
 }
 
 export interface IGrantConsentCommand {
     consentType: ConsentType;
-    ipAddress: string | undefined;
-    userAgent: string | undefined;
 }
 
 export class HealthCheckResponse implements IHealthCheckResponse {
@@ -11798,6 +11530,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
     email!: string | undefined;
     refreshToken!: string | undefined;
     refreshTokenExpiresAt!: Date | undefined;
+    csrfToken!: string | undefined;
 
     constructor(data?: IJwtTokenResponse) {
         if (data) {
@@ -11817,6 +11550,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
             this.email = Data["email"];
             this.refreshToken = Data["refreshToken"];
             this.refreshTokenExpiresAt = Data["refreshTokenExpiresAt"] ? new Date(Data["refreshTokenExpiresAt"].toString()) : undefined as any;
+            this.csrfToken = Data["csrfToken"];
         }
     }
 
@@ -11836,6 +11570,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
         data["email"] = this.email;
         data["refreshToken"] = this.refreshToken;
         data["refreshTokenExpiresAt"] = this.refreshTokenExpiresAt ? this.refreshTokenExpiresAt.toISOString() : undefined as any;
+        data["csrfToken"] = this.csrfToken;
         return data;
     }
 }
@@ -11848,6 +11583,7 @@ export interface IJwtTokenResponse {
     email: string | undefined;
     refreshToken: string | undefined;
     refreshTokenExpiresAt: Date | undefined;
+    csrfToken: string | undefined;
 }
 
 export class LanguageListItem implements ILanguageListItem {
@@ -12056,6 +11792,158 @@ export interface IMonthlyEarning {
     month: number;
     amount: number;
     monthName: string | undefined;
+}
+
+export class MyProfileDto implements IMyProfileDto {
+    email!: string | undefined;
+    firstName!: string | undefined;
+    lastName!: string | undefined;
+    phoneNumber!: string | undefined;
+    profile!: Code;
+    authenticationType!: Code;
+    isEmailConfirmed!: boolean;
+    birthDate!: Date | undefined;
+    profilePhoto!: BlobFileDto;
+    preferredLanguageCode!: string | undefined;
+    preferredLanguageName!: string | undefined;
+
+    constructor(data?: IMyProfileDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.email = Data["email"];
+            this.firstName = Data["firstName"];
+            this.lastName = Data["lastName"];
+            this.phoneNumber = Data["phoneNumber"];
+            this.profile = Data["profile"] ? Code.fromJS(Data["profile"]) : undefined as any;
+            this.authenticationType = Data["authenticationType"] ? Code.fromJS(Data["authenticationType"]) : undefined as any;
+            this.isEmailConfirmed = Data["isEmailConfirmed"];
+            this.birthDate = Data["birthDate"] ? new Date(Data["birthDate"].toString()) : undefined as any;
+            this.profilePhoto = Data["profilePhoto"] ? BlobFileDto.fromJS(Data["profilePhoto"]) : undefined as any;
+            this.preferredLanguageCode = Data["preferredLanguageCode"];
+            this.preferredLanguageName = Data["preferredLanguageName"];
+        }
+    }
+
+    static fromJS(data: any): MyProfileDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new MyProfileDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["email"] = this.email;
+        data["firstName"] = this.firstName;
+        data["lastName"] = this.lastName;
+        data["phoneNumber"] = this.phoneNumber;
+        data["profile"] = this.profile ? this.profile.toJSON() : undefined as any;
+        data["authenticationType"] = this.authenticationType ? this.authenticationType.toJSON() : undefined as any;
+        data["isEmailConfirmed"] = this.isEmailConfirmed;
+        data["birthDate"] = this.birthDate ? formatDate(this.birthDate) : undefined as any;
+        data["profilePhoto"] = this.profilePhoto ? this.profilePhoto.toJSON() : undefined as any;
+        data["preferredLanguageCode"] = this.preferredLanguageCode;
+        data["preferredLanguageName"] = this.preferredLanguageName;
+        return data;
+    }
+}
+
+export interface IMyProfileDto {
+    email: string | undefined;
+    firstName: string | undefined;
+    lastName: string | undefined;
+    phoneNumber: string | undefined;
+    profile: Code;
+    authenticationType: Code;
+    isEmailConfirmed: boolean;
+    birthDate: Date | undefined;
+    profilePhoto: BlobFileDto;
+    preferredLanguageCode: string | undefined;
+    preferredLanguageName: string | undefined;
+}
+
+export class NotifyOnTheWayCommand implements INotifyOnTheWayCommand {
+    orderId!: string | undefined;
+
+    constructor(data?: INotifyOnTheWayCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+        }
+    }
+
+    static fromJS(data: any): NotifyOnTheWayCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new NotifyOnTheWayCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        return data;
+    }
+}
+
+export interface INotifyOnTheWayCommand {
+    orderId: string | undefined;
+}
+
+export class NotifyOnTheWayResponse implements INotifyOnTheWayResponse {
+    orderId!: string | undefined;
+    newStatus!: OrderStatus;
+
+    constructor(data?: INotifyOnTheWayResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.newStatus = Data["newStatus"];
+        }
+    }
+
+    static fromJS(data: any): NotifyOnTheWayResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new NotifyOnTheWayResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        data["newStatus"] = this.newStatus;
+        return data;
+    }
+}
+
+export interface INotifyOnTheWayResponse {
+    orderId: string | undefined;
+    newStatus: OrderStatus;
 }
 
 export class OpenPayPeriodCommand implements IOpenPayPeriodCommand {
@@ -12432,15 +12320,20 @@ export class OrderItem implements IOrderItem {
     paymentType!: Code;
     paymentStatus!: Code;
     totalPrice!: number;
+    originalSubtotal!: number;
+    appliedDiscountSource!: AppliedDiscountSource;
+    tierDiscountAmount!: number | undefined;
+    membershipDiscountAmount!: number | undefined;
+    promoDiscountAmount!: number | undefined;
     estimatedTime!: number;
     actualCompletionTime!: number | undefined;
     completionNotes!: string | undefined;
     orderStatus!: Code;
     confirmationCode!: string | undefined;
-    stripeSessionId!: string | undefined;
     notes!: string | undefined;
     specialInstructions!: string | undefined;
     accessInstructions!: string | undefined;
+    recurringTemplateId!: string | undefined;
     selectedPackages!: PackageDetails[] | undefined;
     currency!: CurrencyDetailDto;
     selectedServices!: ServiceDetails[] | undefined;
@@ -12483,15 +12376,20 @@ export class OrderItem implements IOrderItem {
             this.paymentType = Data["paymentType"] ? Code.fromJS(Data["paymentType"]) : undefined as any;
             this.paymentStatus = Data["paymentStatus"] ? Code.fromJS(Data["paymentStatus"]) : undefined as any;
             this.totalPrice = Data["totalPrice"];
+            this.originalSubtotal = Data["originalSubtotal"];
+            this.appliedDiscountSource = Data["appliedDiscountSource"];
+            this.tierDiscountAmount = Data["tierDiscountAmount"];
+            this.membershipDiscountAmount = Data["membershipDiscountAmount"];
+            this.promoDiscountAmount = Data["promoDiscountAmount"];
             this.estimatedTime = Data["estimatedTime"];
             this.actualCompletionTime = Data["actualCompletionTime"];
             this.completionNotes = Data["completionNotes"];
             this.orderStatus = Data["orderStatus"] ? Code.fromJS(Data["orderStatus"]) : undefined as any;
             this.confirmationCode = Data["confirmationCode"];
-            this.stripeSessionId = Data["stripeSessionId"];
             this.notes = Data["notes"];
             this.specialInstructions = Data["specialInstructions"];
             this.accessInstructions = Data["accessInstructions"];
+            this.recurringTemplateId = Data["recurringTemplateId"];
             if (Array.isArray(Data["selectedPackages"])) {
                 this.selectedPackages = [] as any;
                 for (let item of Data["selectedPackages"])
@@ -12558,15 +12456,20 @@ export class OrderItem implements IOrderItem {
         data["paymentType"] = this.paymentType ? this.paymentType.toJSON() : undefined as any;
         data["paymentStatus"] = this.paymentStatus ? this.paymentStatus.toJSON() : undefined as any;
         data["totalPrice"] = this.totalPrice;
+        data["originalSubtotal"] = this.originalSubtotal;
+        data["appliedDiscountSource"] = this.appliedDiscountSource;
+        data["tierDiscountAmount"] = this.tierDiscountAmount;
+        data["membershipDiscountAmount"] = this.membershipDiscountAmount;
+        data["promoDiscountAmount"] = this.promoDiscountAmount;
         data["estimatedTime"] = this.estimatedTime;
         data["actualCompletionTime"] = this.actualCompletionTime;
         data["completionNotes"] = this.completionNotes;
         data["orderStatus"] = this.orderStatus ? this.orderStatus.toJSON() : undefined as any;
         data["confirmationCode"] = this.confirmationCode;
-        data["stripeSessionId"] = this.stripeSessionId;
         data["notes"] = this.notes;
         data["specialInstructions"] = this.specialInstructions;
         data["accessInstructions"] = this.accessInstructions;
+        data["recurringTemplateId"] = this.recurringTemplateId;
         if (Array.isArray(this.selectedPackages)) {
             data["selectedPackages"] = [];
             for (let item of this.selectedPackages)
@@ -12620,15 +12523,20 @@ export interface IOrderItem {
     paymentType: Code;
     paymentStatus: Code;
     totalPrice: number;
+    originalSubtotal: number;
+    appliedDiscountSource: AppliedDiscountSource;
+    tierDiscountAmount: number | undefined;
+    membershipDiscountAmount: number | undefined;
+    promoDiscountAmount: number | undefined;
     estimatedTime: number;
     actualCompletionTime: number | undefined;
     completionNotes: string | undefined;
     orderStatus: Code;
     confirmationCode: string | undefined;
-    stripeSessionId: string | undefined;
     notes: string | undefined;
     specialInstructions: string | undefined;
     accessInstructions: string | undefined;
+    recurringTemplateId: string | undefined;
     selectedPackages: PackageDetails[] | undefined;
     currency: CurrencyDetailDto;
     selectedServices: ServiceDetails[] | undefined;
@@ -12656,10 +12564,14 @@ export class OrderListItem implements IOrderListItem {
     paymentType!: Code;
     paymentStatus!: Code;
     totalPrice!: number;
+    originalSubtotal!: number;
+    appliedDiscountSource!: AppliedDiscountSource;
+    tierDiscountAmount!: number | undefined;
+    membershipDiscountAmount!: number | undefined;
+    promoDiscountAmount!: number | undefined;
     estimatedTime!: number;
     orderStatus!: Code;
     confirmationCode!: string | undefined;
-    stripeSessionId!: string | undefined;
     selectedPackages!: PackageListItem[] | undefined;
     currencyId!: string | undefined;
     currency!: CurrencyListItem;
@@ -12701,10 +12613,14 @@ export class OrderListItem implements IOrderListItem {
             this.paymentType = Data["paymentType"] ? Code.fromJS(Data["paymentType"]) : undefined as any;
             this.paymentStatus = Data["paymentStatus"] ? Code.fromJS(Data["paymentStatus"]) : undefined as any;
             this.totalPrice = Data["totalPrice"];
+            this.originalSubtotal = Data["originalSubtotal"];
+            this.appliedDiscountSource = Data["appliedDiscountSource"];
+            this.tierDiscountAmount = Data["tierDiscountAmount"];
+            this.membershipDiscountAmount = Data["membershipDiscountAmount"];
+            this.promoDiscountAmount = Data["promoDiscountAmount"];
             this.estimatedTime = Data["estimatedTime"];
             this.orderStatus = Data["orderStatus"] ? Code.fromJS(Data["orderStatus"]) : undefined as any;
             this.confirmationCode = Data["confirmationCode"];
-            this.stripeSessionId = Data["stripeSessionId"];
             if (Array.isArray(Data["selectedPackages"])) {
                 this.selectedPackages = [] as any;
                 for (let item of Data["selectedPackages"])
@@ -12758,10 +12674,14 @@ export class OrderListItem implements IOrderListItem {
         data["paymentType"] = this.paymentType ? this.paymentType.toJSON() : undefined as any;
         data["paymentStatus"] = this.paymentStatus ? this.paymentStatus.toJSON() : undefined as any;
         data["totalPrice"] = this.totalPrice;
+        data["originalSubtotal"] = this.originalSubtotal;
+        data["appliedDiscountSource"] = this.appliedDiscountSource;
+        data["tierDiscountAmount"] = this.tierDiscountAmount;
+        data["membershipDiscountAmount"] = this.membershipDiscountAmount;
+        data["promoDiscountAmount"] = this.promoDiscountAmount;
         data["estimatedTime"] = this.estimatedTime;
         data["orderStatus"] = this.orderStatus ? this.orderStatus.toJSON() : undefined as any;
         data["confirmationCode"] = this.confirmationCode;
-        data["stripeSessionId"] = this.stripeSessionId;
         if (Array.isArray(this.selectedPackages)) {
             data["selectedPackages"] = [];
             for (let item of this.selectedPackages)
@@ -12802,10 +12722,14 @@ export interface IOrderListItem {
     paymentType: Code;
     paymentStatus: Code;
     totalPrice: number;
+    originalSubtotal: number;
+    appliedDiscountSource: AppliedDiscountSource;
+    tierDiscountAmount: number | undefined;
+    membershipDiscountAmount: number | undefined;
+    promoDiscountAmount: number | undefined;
     estimatedTime: number;
     orderStatus: Code;
     confirmationCode: string | undefined;
-    stripeSessionId: string | undefined;
     selectedPackages: PackageListItem[] | undefined;
     currencyId: string | undefined;
     currency: CurrencyListItem;
@@ -12869,7 +12793,6 @@ export interface IOrderNoteDto {
 export class OrderReviewDto implements IOrderReviewDto {
     id!: string | undefined;
     orderId!: string | undefined;
-    userId!: string | undefined;
     rating!: number;
     comment!: string | undefined;
     createdOn!: Date;
@@ -12888,7 +12811,6 @@ export class OrderReviewDto implements IOrderReviewDto {
         if (Data) {
             this.id = Data["id"];
             this.orderId = Data["orderId"];
-            this.userId = Data["userId"];
             this.rating = Data["rating"];
             this.comment = Data["comment"];
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
@@ -12907,7 +12829,6 @@ export class OrderReviewDto implements IOrderReviewDto {
         data = typeof data === 'object' ? data : {};
         data["id"] = this.id;
         data["orderId"] = this.orderId;
-        data["userId"] = this.userId;
         data["rating"] = this.rating;
         data["comment"] = this.comment;
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
@@ -12919,7 +12840,6 @@ export class OrderReviewDto implements IOrderReviewDto {
 export interface IOrderReviewDto {
     id: string | undefined;
     orderId: string | undefined;
-    userId: string | undefined;
     rating: number;
     comment: string | undefined;
     createdOn: Date;
@@ -12930,9 +12850,10 @@ export enum OrderStatus {
     New = 0,
     Pending = 1,
     Confirmed = 2,
-    InProgress = 3,
-    Completed = 4,
-    Cancelled = 5,
+    OnTheWay = 3,
+    InProgress = 4,
+    Completed = 5,
+    Cancelled = 6,
 }
 
 export class OrderStatusTrackDto implements IOrderStatusTrackDto {
@@ -13981,6 +13902,8 @@ export interface IProductivityMetricsDto {
 
 export class RefreshTokenCommand implements IRefreshTokenCommand {
     token!: string | undefined;
+    requiredProfile!: UserProfile;
+    requiredAudience!: string | undefined;
 
     constructor(data?: IRefreshTokenCommand) {
         if (data) {
@@ -13994,6 +13917,8 @@ export class RefreshTokenCommand implements IRefreshTokenCommand {
     init(Data?: any) {
         if (Data) {
             this.token = Data["token"];
+            this.requiredProfile = Data["requiredProfile"];
+            this.requiredAudience = Data["requiredAudience"];
         }
     }
 
@@ -14007,12 +13932,16 @@ export class RefreshTokenCommand implements IRefreshTokenCommand {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["token"] = this.token;
+        data["requiredProfile"] = this.requiredProfile;
+        data["requiredAudience"] = this.requiredAudience;
         return data;
     }
 }
 
 export interface IRefreshTokenCommand {
     token: string | undefined;
+    requiredProfile: UserProfile;
+    requiredAudience: string | undefined;
 }
 
 export class RegenerateInvoicePdfCommand implements IRegenerateInvoicePdfCommand {
@@ -14149,6 +14078,7 @@ export class RegisterCommand implements IRegisterCommand {
     firstName!: string | undefined;
     lastName!: string | undefined;
     language!: string | undefined;
+    referralCode!: string | undefined;
 
     constructor(data?: IRegisterCommand) {
         if (data) {
@@ -14166,6 +14096,7 @@ export class RegisterCommand implements IRegisterCommand {
             this.firstName = Data["firstName"];
             this.lastName = Data["lastName"];
             this.language = Data["language"];
+            this.referralCode = Data["referralCode"];
         }
     }
 
@@ -14183,6 +14114,7 @@ export class RegisterCommand implements IRegisterCommand {
         data["firstName"] = this.firstName;
         data["lastName"] = this.lastName;
         data["language"] = this.language;
+        data["referralCode"] = this.referralCode;
         return data;
     }
 }
@@ -14193,6 +14125,7 @@ export interface IRegisterCommand {
     firstName: string | undefined;
     lastName: string | undefined;
     language: string | undefined;
+    referralCode: string | undefined;
 }
 
 export class RegistrationCompletionStatus implements IRegistrationCompletionStatus {
@@ -14337,7 +14270,6 @@ export interface IRejectEmployeeResponse {
 
 export class ReportOrderIssueCommand implements IReportOrderIssueCommand {
     orderId!: string | undefined;
-    employeeId!: string | undefined;
     description!: string | undefined;
 
     constructor(data?: IReportOrderIssueCommand) {
@@ -14352,7 +14284,6 @@ export class ReportOrderIssueCommand implements IReportOrderIssueCommand {
     init(Data?: any) {
         if (Data) {
             this.orderId = Data["orderId"];
-            this.employeeId = Data["employeeId"];
             this.description = Data["description"];
         }
     }
@@ -14367,7 +14298,6 @@ export class ReportOrderIssueCommand implements IReportOrderIssueCommand {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["orderId"] = this.orderId;
-        data["employeeId"] = this.employeeId;
         data["description"] = this.description;
         return data;
     }
@@ -14375,7 +14305,6 @@ export class ReportOrderIssueCommand implements IReportOrderIssueCommand {
 
 export interface IReportOrderIssueCommand {
     orderId: string | undefined;
-    employeeId: string | undefined;
     description: string | undefined;
 }
 
@@ -14737,7 +14666,6 @@ export interface ISaveMyDocumentsSavedDocument {
 
 export class SaveOrderPhotosCommand implements ISaveOrderPhotosCommand {
     orderId!: string | undefined;
-    employeeId!: string | undefined;
     photos!: SaveOrderPhotosPhotoToSave[] | undefined;
 
     constructor(data?: ISaveOrderPhotosCommand) {
@@ -14752,7 +14680,6 @@ export class SaveOrderPhotosCommand implements ISaveOrderPhotosCommand {
     init(Data?: any) {
         if (Data) {
             this.orderId = Data["orderId"];
-            this.employeeId = Data["employeeId"];
             if (Array.isArray(Data["photos"])) {
                 this.photos = [] as any;
                 for (let item of Data["photos"])
@@ -14771,7 +14698,6 @@ export class SaveOrderPhotosCommand implements ISaveOrderPhotosCommand {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["orderId"] = this.orderId;
-        data["employeeId"] = this.employeeId;
         if (Array.isArray(this.photos)) {
             data["photos"] = [];
             for (let item of this.photos)
@@ -14783,7 +14709,6 @@ export class SaveOrderPhotosCommand implements ISaveOrderPhotosCommand {
 
 export interface ISaveOrderPhotosCommand {
     orderId: string | undefined;
-    employeeId: string | undefined;
     photos: SaveOrderPhotosPhotoToSave[] | undefined;
 }
 
@@ -15190,7 +15115,6 @@ export enum SortDirection {
 
 export class StartOrderCommand implements IStartOrderCommand {
     orderId!: string | undefined;
-    employeeId!: string | undefined;
 
     constructor(data?: IStartOrderCommand) {
         if (data) {
@@ -15204,7 +15128,6 @@ export class StartOrderCommand implements IStartOrderCommand {
     init(Data?: any) {
         if (Data) {
             this.orderId = Data["orderId"];
-            this.employeeId = Data["employeeId"];
         }
     }
 
@@ -15218,14 +15141,12 @@ export class StartOrderCommand implements IStartOrderCommand {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["orderId"] = this.orderId;
-        data["employeeId"] = this.employeeId;
         return data;
     }
 }
 
 export interface IStartOrderCommand {
     orderId: string | undefined;
-    employeeId: string | undefined;
 }
 
 export class StartOrderResponse implements IStartOrderResponse {
@@ -15270,7 +15191,6 @@ export interface IStartOrderResponse {
 
 export class TakeOrderCommand implements ITakeOrderCommand {
     orderId!: string | undefined;
-    employeeId!: string | undefined;
 
     constructor(data?: ITakeOrderCommand) {
         if (data) {
@@ -15284,7 +15204,6 @@ export class TakeOrderCommand implements ITakeOrderCommand {
     init(Data?: any) {
         if (Data) {
             this.orderId = Data["orderId"];
-            this.employeeId = Data["employeeId"];
         }
     }
 
@@ -15298,14 +15217,12 @@ export class TakeOrderCommand implements ITakeOrderCommand {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["orderId"] = this.orderId;
-        data["employeeId"] = this.employeeId;
         return data;
     }
 }
 
 export interface ITakeOrderCommand {
     orderId: string | undefined;
-    employeeId: string | undefined;
 }
 
 export class TakeOrderResponse implements ITakeOrderResponse {
@@ -16018,7 +15935,6 @@ export interface IUpdatePayPeriodResponse {
 
 export class UploadOrderPhotoCommand implements IUploadOrderPhotoCommand {
     orderId!: string | undefined;
-    employeeId!: string | undefined;
     photoType!: PhotoType;
     fileName!: string | undefined;
     contentType!: string | undefined;
@@ -16037,7 +15953,6 @@ export class UploadOrderPhotoCommand implements IUploadOrderPhotoCommand {
     init(Data?: any) {
         if (Data) {
             this.orderId = Data["orderId"];
-            this.employeeId = Data["employeeId"];
             this.photoType = Data["photoType"];
             this.fileName = Data["fileName"];
             this.contentType = Data["contentType"];
@@ -16056,7 +15971,6 @@ export class UploadOrderPhotoCommand implements IUploadOrderPhotoCommand {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["orderId"] = this.orderId;
-        data["employeeId"] = this.employeeId;
         data["photoType"] = this.photoType;
         data["fileName"] = this.fileName;
         data["contentType"] = this.contentType;
@@ -16068,7 +15982,6 @@ export class UploadOrderPhotoCommand implements IUploadOrderPhotoCommand {
 
 export interface IUploadOrderPhotoCommand {
     orderId: string | undefined;
-    employeeId: string | undefined;
     photoType: PhotoType;
     fileName: string | undefined;
     contentType: string | undefined;
@@ -16191,7 +16104,6 @@ export class UserItem implements IUserItem {
     authenticationType!: Code;
     isEmailConfirmed!: boolean;
     birthDate!: Date | undefined;
-    orders!: OrderListItem[] | undefined;
     profilePhoto!: BlobFileDto;
     preferredLanguageCode!: string | undefined;
     preferredLanguageName!: string | undefined;
@@ -16217,11 +16129,6 @@ export class UserItem implements IUserItem {
             this.authenticationType = Data["authenticationType"] ? Code.fromJS(Data["authenticationType"]) : undefined as any;
             this.isEmailConfirmed = Data["isEmailConfirmed"];
             this.birthDate = Data["birthDate"] ? new Date(Data["birthDate"].toString()) : undefined as any;
-            if (Array.isArray(Data["orders"])) {
-                this.orders = [] as any;
-                for (let item of Data["orders"])
-                    this.orders!.push(OrderListItem.fromJS(item));
-            }
             this.profilePhoto = Data["profilePhoto"] ? BlobFileDto.fromJS(Data["profilePhoto"]) : undefined as any;
             this.preferredLanguageCode = Data["preferredLanguageCode"];
             this.preferredLanguageName = Data["preferredLanguageName"];
@@ -16247,11 +16154,6 @@ export class UserItem implements IUserItem {
         data["authenticationType"] = this.authenticationType ? this.authenticationType.toJSON() : undefined as any;
         data["isEmailConfirmed"] = this.isEmailConfirmed;
         data["birthDate"] = this.birthDate ? formatDate(this.birthDate) : undefined as any;
-        if (Array.isArray(this.orders)) {
-            data["orders"] = [];
-            for (let item of this.orders)
-                data["orders"].push(item ? item.toJSON() : undefined as any);
-        }
         data["profilePhoto"] = this.profilePhoto ? this.profilePhoto.toJSON() : undefined as any;
         data["preferredLanguageCode"] = this.preferredLanguageCode;
         data["preferredLanguageName"] = this.preferredLanguageName;
@@ -16270,7 +16172,6 @@ export interface IUserItem {
     authenticationType: Code;
     isEmailConfirmed: boolean;
     birthDate: Date | undefined;
-    orders: OrderListItem[] | undefined;
     profilePhoto: BlobFileDto;
     preferredLanguageCode: string | undefined;
     preferredLanguageName: string | undefined;
@@ -16354,6 +16255,12 @@ export interface IUserListItem {
     profilePhoto: BlobFileDto;
     preferredLanguageCode: string | undefined;
     preferredLanguageName: string | undefined;
+}
+
+export enum UserProfile {
+    Customer = 1,
+    Employee = 2,
+    Administrator = 100,
 }
 
 export class WeeklyOrderCount implements IWeeklyOrderCount {

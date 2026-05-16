@@ -1,4 +1,4 @@
-import { PackageListItem, ServiceListItem } from '@cleansia/partner-services';
+import { PackageListItem, ServiceListItem } from '@cleansia/customer-services';
 
 export const CUSTOMER_CATALOG_FEATURE_KEY = 'customerCatalog';
 

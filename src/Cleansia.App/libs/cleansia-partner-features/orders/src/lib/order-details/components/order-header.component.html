@@ -1,0 +1,40 @@
+<div class="cleansia-order-details__status-banner">
+  <!-- Top row: order number + statuses -->
+  <div class="order-header-top">
+    <span class="order-header-number">{{ orderNumber() }}</span>
+    <div class="order-header-badges">
+      <span [class]="getOrderStatusClass(orderStatus())">
+        {{ orderStatusLabel() }}
+      </span>
+      <span [class]="getPaymentStatusClass(paymentStatus())">
+        {{ paymentStatusLabel() }}
+      </span>
+    </div>
+  </div>
+  <!-- Meta row -->
+  <div class="order-header-meta">
+    <span class="order-header-meta__item">
+      <i class="pi pi-calendar"></i>
+      {{ createdOn() }}
+    </span>
+    @if (confirmationCode()) {
+    <span class="order-header-meta__item">
+      <i class="pi pi-key"></i>
+      {{ confirmationCode() }}
+    </span>
+    }
+  </div>
+  <!-- Actions row -->
+  <div class="order-header-actions">
+    <button type="button" class="order-header-action-btn" (click)="onPrint.emit()">
+      <i class="pi pi-print"></i>
+      <span>{{ 'pages.order_details.print' | translate }}</span>
+    </button>
+    @if (hasInvoice()) {
+    <button type="button" class="order-header-action-btn" (click)="onDownloadInvoice.emit()">
+      <i class="pi pi-download"></i>
+      <span>{{ 'pages.order_details.download_invoice' | translate }}</span>
+    </button>
+    }
+  </div>
+</div>

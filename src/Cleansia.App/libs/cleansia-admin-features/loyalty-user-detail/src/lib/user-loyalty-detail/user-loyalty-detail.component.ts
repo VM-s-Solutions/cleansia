@@ -25,6 +25,8 @@ import {
   PaginationState,
   TableColumn,
 } from '@cleansia/components';
+import { CleansiaPermissionDirective } from '@cleansia/directives';
+import { Policy } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Subject, takeUntil } from 'rxjs';
 import {
@@ -47,6 +49,7 @@ import { UserLoyaltyDetailFacade } from './user-loyalty-detail.facade';
     CleansiaTableComponent,
     CleansiaTitleComponent,
     GrantPointsDialogComponent,
+    CleansiaPermissionDirective,
   ],
   templateUrl: './user-loyalty-detail.component.html',
   providers: [UserLoyaltyDetailFacade],
@@ -58,6 +61,7 @@ export class UserLoyaltyDetailComponent
   private readonly router = inject(Router);
   private readonly translate = inject(TranslateService);
   protected readonly facade = inject(UserLoyaltyDetailFacade);
+  protected readonly Policy = Policy;
 
   private readonly destroy$ = new Subject<void>();
 

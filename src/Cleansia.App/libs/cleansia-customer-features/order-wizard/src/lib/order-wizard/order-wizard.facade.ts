@@ -8,10 +8,11 @@ import {
   CustomerAddress,
   CustomerAuthService,
   CustomerClient,
+  ExtraListItem,
   QuoteOrderCommand,
   QuoteOrderResponse,
   ValidatePromoCodeCommand,
-  ValidateReferralCommand,
+  ValidateReferralQuery,
 } from '@cleansia/customer-services';
 import {
   loadCustomerPackages,
@@ -27,17 +28,21 @@ import {
   PaymentType,
   ServiceListItem,
 } from '@cleansia/partner-services';
-import { CleansiaCustomerRoute, GuestOrderService, SnackbarService } from '@cleansia/services';
+import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
+import { GuestOrderService } from '@cleansia-customer/orders';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, debounceTime, distinctUntilChanged, filter, firstValueFrom, of, switchMap, tap } from 'rxjs';
 import {
+  EXPRESS_SURCHARGE_RATE,
   ORDER_WIZARD_INITIAL_DATA,
   OrderWizardFormData,
   PromoCodeUiState,
   RebookParams,
   ReferralUiState,
+  STANDARD_LEAD_TIME_HOURS,
+  EXPRESS_LEAD_TIME_HOURS,
 } from './order-wizard.models';
 
 /**
@@ -47,9 +52,16 @@ import {
 interface QuoteInputs {
   selectedServiceIds: string[];
   selectedPackageIds: string[];
+  // Slugs of catalog extras the user toggled on (sorted for stable
+  // distinctUntilChanged hashing). Empty when the user hasn't toggled
+  // anything in the extras section.
+  selectedExtraSlugs: string[];
   rooms: number;
   bathrooms: number;
   currencyId: string | null;
+  // ISO-8601 UTC of the chosen slot — drives the express-surcharge check
+  // server-side. Null until the user picks a slot.
+  cleaningDate: string | null;
 }
 
 @Injectable()
@@ -63,6 +75,7 @@ export class OrderWizardFacade {
   private readonly guestOrderService = inject(GuestOrderService);
   private readonly savedAddressStore = inject(SavedAddressStore);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly destroyRef = inject(DestroyRef);
 
   isAuthenticated = signal(false);
 
@@ -73,6 +86,11 @@ export class OrderWizardFacade {
     initialValue: [] as PackageListItem[],
   });
   countries = signal<CountryListItem[]>([]);
+  // Anonymous catalog of bookable extras. Loaded once when the facade
+  // initialises; rendered as a toggle list on the summary step. Best-effort:
+  // if the call fails the wizard still works, the extras section just stays
+  // empty (same approach the mobile app uses).
+  extras = signal<ExtraListItem[]>([]);
   readonly savedAddresses = this.savedAddressStore.addresses;
   readonly selectedSavedAddressId = signal<string | null>(null);
 
@@ -149,21 +167,93 @@ export class OrderWizardFacade {
   private readonly lastQuotedInputs = signal<QuoteInputs | null>(null);
 
   /**
-   * Display total — server quote when available, else 0. Templates that
-   * previously read `totalPrice()` should keep working without code changes;
-   * downstream code that needs the actual quote object should read `quote()`.
+   * Server-quoted base total — does NOT include the express surcharge. Use
+   * [displayedTotalPrice] for what the user sees in the summary.
    */
   totalPrice = computed(() => this.quote()?.totalPrice ?? 0);
+
+  /**
+   * True when the currently-selected (date, time) falls inside the 2–4h lead
+   * window. The backend's QuoteOrder endpoint does NOT know about the cleaning
+   * date/time, so the express surcharge is applied client-side here. Backend
+   * mirrors the same `EXPRESS_SURCHARGE_RATE = 0.20` in `BookingPolicy.cs`
+   * and grosses up at CreateOrder time — keep those two constants in sync.
+   */
+  readonly isExpressSlot = computed(() => {
+    const data = this.formData();
+    if (!data.cleaningDate || !data.cleaningTime) return false;
+    const [h, m] = data.cleaningTime.split(':').map(Number);
+    if (Number.isNaN(h) || Number.isNaN(m)) return false;
+    const slot = new Date(data.cleaningDate);
+    slot.setHours(h, m, 0, 0);
+    const hoursAhead = (slot.getTime() - Date.now()) / (1000 * 60 * 60);
+    return hoursAhead >= EXPRESS_LEAD_TIME_HOURS && hoursAhead < STANDARD_LEAD_TIME_HOURS;
+  });
+
+  /**
+   * 20% surcharge amount (CZK), or 0 when the slot isn't express. Computed
+   * against the POST-discount subtotal so the surcharge tracks what the user
+   * actually pays. Mirrors backend CreateOrder.Handler order: discount on raw,
+   * then surcharge on the discounted price.
+   */
+  readonly expressSurcharge = computed(() => {
+    if (!this.isExpressSlot()) return 0;
+    const discounted = Math.max(0, this.totalPrice() - this.effectiveDiscount());
+    return discounted * EXPRESS_SURCHARGE_RATE;
+  });
+
+  /**
+   * Final price the user pays — raw subtotal minus best-of-three discount,
+   * plus express surcharge on the discounted total. Sidebar + summary both
+   * render this so they always agree.
+   */
+  readonly displayedTotalPrice = computed(() => {
+    const discounted = Math.max(0, this.totalPrice() - this.effectiveDiscount());
+    return discounted + this.expressSurcharge();
+  });
 
   /** Inputs that affect the server quote. Sorted ids so the snapshot is stable. */
   private readonly quoteInputs = computed<QuoteInputs>(() => {
     const data = this.formData();
+    // extras is a slug → boolean map; pull just the slugs that are `true`
+    // and sort them so the snapshot is stable under reorder.
+    const selectedExtraSlugs = Object.entries(data.extras)
+      .filter(([, on]) => on)
+      .map(([slug]) => slug)
+      .sort();
+    // Compose the actual slot moment for the quote. `data.cleaningDate` is
+    // the day-only Date the user picked from the calendar; `data.cleaningTime`
+    // is the local-clock hour ("14:00"). Building the slot the same way
+    // submit() does keeps the backend's express-surcharge check consistent
+    // between /Quote and /Create — otherwise the quote sees midnight (no
+    // surcharge) but Create sees the real slot (surcharge applies) and the
+    // PriceMatchesAsync validator rejects with order.total_price.not_match.
+    let cleaningDateIso: string | null = null;
+    if (data.cleaningDate && data.cleaningTime) {
+      const [h, m] = data.cleaningTime.split(':').map(Number);
+      if (!Number.isNaN(h) && !Number.isNaN(m)) {
+        const slot = new Date(
+          data.cleaningDate.getFullYear(),
+          data.cleaningDate.getMonth(),
+          data.cleaningDate.getDate(),
+          h,
+          m,
+          0,
+          0,
+        );
+        cleaningDateIso = slot.toISOString();
+      }
+    }
     return {
       selectedServiceIds: [...data.selectedServiceIds].sort(),
       selectedPackageIds: [...data.selectedPackageIds].sort(),
+      selectedExtraSlugs,
       rooms: data.rooms,
       bathrooms: data.bathrooms,
       currencyId: null, // backend default until a currency picker ships
+      // Backend computes the surcharge from this; null skips the surcharge
+      // check (initial Step 1 quote before the user has chosen a slot).
+      cleaningDate: cleaningDateIso,
     };
   });
 
@@ -182,7 +272,6 @@ export class OrderWizardFacade {
     // on the server and the client picks up the debounce loop after hydrate.
     if (!this.isBrowser) return;
 
-    const destroyRef = inject(DestroyRef);
     toObservable(this.quoteInputs)
       .pipe(
         debounceTime(400),
@@ -206,6 +295,8 @@ export class OrderWizardFacade {
                 rooms: inputs.rooms,
                 bathrooms: inputs.bathrooms,
                 currencyId: inputs.currencyId ?? undefined,
+                selectedExtraSlugs: inputs.selectedExtraSlugs,
+                cleaningDate: inputs.cleaningDate ? new Date(inputs.cleaningDate) : undefined,
               }),
             )
             .pipe(
@@ -221,7 +312,7 @@ export class OrderWizardFacade {
               }),
             ),
         ),
-        takeUntilDestroyed(destroyRef),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe(() => this.quoting.set(false));
   }
@@ -249,6 +340,8 @@ export class OrderWizardFacade {
             rooms: inputs.rooms,
             bathrooms: inputs.bathrooms,
             currencyId: inputs.currencyId ?? undefined,
+            selectedExtraSlugs: inputs.selectedExtraSlugs,
+            cleaningDate: inputs.cleaningDate ? new Date(inputs.cleaningDate) : undefined,
           }),
         ),
       );
@@ -287,13 +380,59 @@ export class OrderWizardFacade {
   referralState = signal<ReferralUiState>({ kind: 'idle' });
 
   /**
-   * Effective discount preview for the summary line. Returns 0 unless the
-   * promo state is `valid`. When tier discounts ship client-side later, fold
-   * `max(tier, promo)` here per the loyalty Phase B spec ("best-wins").
+   * Server-resolved tier discount preview from the live quote (anonymous quotes return 0).
+   */
+  tierDiscount = computed(() => this.quote()?.tierDiscountAmount ?? 0);
+
+  /**
+   * Server-resolved Cleansia Plus membership discount preview from the live quote.
+   */
+  membershipDiscount = computed(() => this.quote()?.membershipDiscountAmount ?? 0);
+
+  /**
+   * Floor at which the tier discount kicks in (e.g. Silver = 1000 CZK). Used to
+   * render a "needs orders above X" hint when the customer's tier discount didn't
+   * apply because the subtotal is below it.
+   */
+  tierDiscountMinOrderAmount = computed(
+    () => this.quote()?.tierDiscountMinOrderAmount ?? null,
+  );
+
+  /**
+   * Promo discount the user just applied via the dialog (client-side validation).
    */
   effectivePromoDiscount = computed(() => {
     const state = this.promoCodeState();
     return state.kind === 'valid' ? state.discount : 0;
+  });
+
+  /**
+   * LOY-003 — effective discount displayed to the user. Plus + tier are
+   * additive (server already returns both amounts on the same quote,
+   * capped at 12% combined). Promo replaces the combined pair when larger.
+   * Mirrors backend `OrderFactory.ResolveLoy003Discount`.
+   */
+  effectiveDiscount = computed(() => {
+    const combined = this.membershipDiscount() + this.tierDiscount();
+    return Math.max(combined, this.effectivePromoDiscount());
+  });
+
+  /**
+   * Which discount source(s) apply right now. `'combined'` appears when
+   * both Plus and tier are non-zero and the promo (if any) is smaller —
+   * the sidebar then renders both labels stacked. Single-source kinds
+   * render a single row as before.
+   */
+  appliedDiscountKind = computed<'none' | 'membership' | 'tier' | 'combined' | 'promo'>(() => {
+    const m = this.membershipDiscount();
+    const t = this.tierDiscount();
+    const p = this.effectivePromoDiscount();
+    const combined = m + t;
+    if (combined === 0 && p === 0) return 'none';
+    if (p > combined) return 'promo';
+    if (m > 0 && t > 0) return 'combined';
+    if (m > 0) return 'membership';
+    return 'tier';
   });
 
   setPromoCode(value: string): void {
@@ -319,14 +458,17 @@ export class OrderWizardFacade {
       return { kind: 'idle' };
     }
     this.promoCodeState.set({ kind: 'validating' });
-    const subtotal = this.totalPrice() ?? 0;
+    // Validate against the price the user is actually charged — backend's
+    // CreateOrder.Handler resolves promo discounts against `finalTotalPrice`
+    // (post-express-surcharge), so a bare-subtotal validation could fail a
+    // min-order threshold that would otherwise pass on the real charge.
+    const subtotal = this.displayedTotalPrice() ?? 0;
     try {
       const resp = await firstValueFrom(
         this.customerClient.promoCodeClient.validate(
           new ValidatePromoCodeCommand({
             code: normalized,
             orderSubtotal: subtotal,
-            userId: undefined,
           }),
         ),
       );
@@ -363,9 +505,8 @@ export class OrderWizardFacade {
     try {
       const resp = await firstValueFrom(
         this.customerClient.referralClient.validate(
-          new ValidateReferralCommand({
+          new ValidateReferralQuery({
             code: normalized,
-            acceptingUserId: undefined,
           }),
         ),
       );
@@ -399,7 +540,7 @@ export class OrderWizardFacade {
   initialize(): void {
     this.store.dispatch(loadCustomerServices());
     this.store.dispatch(loadCustomerPackages());
-    this.customerClient.countryClient.getOverview().subscribe({
+    this.customerClient.countryClient.getOverview().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (countries) => {
         this.countries.set(countries);
         // Auto-select first country if address has no country set
@@ -413,6 +554,11 @@ export class OrderWizardFacade {
         }
       },
     });
+    // Best-effort load — empty catalog just hides the extras section.
+    this.customerClient.extraClient.getOverview().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (extras) => this.extras.set([...extras].sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))),
+      error: () => this.extras.set([]),
+    });
 
     const loggedIn = this.authService.isLoggedIn();
     this.isAuthenticated.set(loggedIn);
@@ -421,7 +567,7 @@ export class OrderWizardFacade {
       if (!this.savedAddressStore.loaded()) {
         this.savedAddressStore.refresh();
       }
-      this.customerClient.userClient.getCurrent().subscribe({
+      this.customerClient.userClient.getCurrent().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (user) => {
           this.updateFormData({
             customerFirstName: user.firstName ?? '',
@@ -461,6 +607,22 @@ export class OrderWizardFacade {
 
   updateFormData(partial: Partial<OrderWizardFormData>): void {
     this.formData.update((current) => ({ ...current, ...partial }));
+  }
+
+  /**
+   * Toggle a catalog extra by slug. Selected slugs go into the
+   * `extras: Record<slug, boolean>` form field; the quote watcher debounces
+   * and refreshes the price as soon as the snapshot stabilises.
+   */
+  toggleExtra(slug: string): void {
+    const current = this.formData().extras;
+    const next = { ...current };
+    if (current[slug]) {
+      delete next[slug];
+    } else {
+      next[slug] = true;
+    }
+    this.updateFormData({ extras: next });
   }
 
   updateAddressFromForm(next: AddressDto): void {
@@ -644,7 +806,6 @@ export class OrderWizardFacade {
       setAsDefault: false,
       latitude: lat,
       longitude: lng,
-      userId: undefined,
     });
     const result = await this.savedAddressStore.add(command);
     if (result?.id) {
@@ -683,12 +844,20 @@ export class OrderWizardFacade {
 
     const selectedDate = new Date(data.cleaningDate);
     const [hours, minutes] = data.cleaningTime.split(':').map(Number);
-    const cleaningDate = new Date(Date.UTC(
+    // Build the slot in the user's LOCAL timezone — `cleaningTime` is the
+    // local-clock hour the customer picked ("14:00 Prague"). Using
+    // `Date.UTC(...)` would treat 14:00 as 14:00Z, which lands at 16:00 Prague
+    // in summer and silently shifts the slot 1–2 hours into the future. The
+    // backend then computes `(cleaningUtc - nowUtc).TotalHours` against the
+    // wrong instant and may decide the slot is no longer in the 2–4h express
+    // window — surcharge gets skipped, customer pays the bare price even
+    // though the time-slot picker said "Express +20%".
+    const cleaningDate = new Date(
       selectedDate.getFullYear(),
       selectedDate.getMonth(),
       selectedDate.getDate(),
-      hours, minutes, 0, 0
-    ));
+      hours, minutes, 0, 0,
+    );
 
     const savedId = this.selectedSavedAddressId();
     // Only forward the promo code when the live validation says it's good.
@@ -724,11 +893,16 @@ export class OrderWizardFacade {
       cleaningDate: cleaningDate,
       paymentType: data.paymentType,
       currencyId: quoted.currencyId,
+      // Send the bare server-quoted total (no client-applied surcharge).
+      // `CreateOrder.PriceMatchesAsync` validates against the same calculator
+      // result (`result.TotalPrice == command.TotalPrice`) — exact decimal
+      // match. The handler then grosses up itself when the slot is express.
+      // We avoid sending a JS-multiplied surcharged value because Number×1.2
+      // drifts on prices like 1234.56 (→ 1481.4720000000002), which would
+      // fail the strict-equality grossed-up branch of the validator.
+      // Display-side, the user already sees the surcharge in `displayedTotalPrice`.
       totalPrice: quoted.totalPrice,
       language: this.translate.currentLang || this.translate.getDefaultLang(),
-      // Backend enriches from JWT NameIdentifier when authenticated; guest
-      // checkout sends empty and the handler skips ownership checks.
-      userId: undefined,
       promoCode: promoCodeToSend,
       referralCode: referralCodeToSend,
       // Future Cleansia Plus perk — customer-requested cleaner. Web wizard
@@ -739,7 +913,7 @@ export class OrderWizardFacade {
     });
 
     if (data.paymentType === PaymentType.Card) {
-      this.customerClient.paymentClient.createOrder(command).subscribe({
+      this.customerClient.paymentClient.createOrder(command).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (response) => {
           this.submitting.set(false);
           if (response.id) {
@@ -761,7 +935,7 @@ export class OrderWizardFacade {
         },
       });
     } else {
-      this.customerClient.orderClient.createOrder(command).subscribe({
+      this.customerClient.orderClient.createOrder(command).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (response) => {
           this.submitting.set(false);
           if (response.id) {

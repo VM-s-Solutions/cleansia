@@ -1,6 +1,9 @@
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Loyalty;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -16,6 +19,7 @@ public sealed class LoyaltyService(
     ILoyaltyAccountRepository loyaltyAccountRepository,
     ILoyaltyTierConfigRepository loyaltyTierConfigRepository,
     ILoyaltyTransactionRepository loyaltyTransactionRepository,
+    IQueueClient queueClient,
     ILogger<LoyaltyService> logger) : ILoyaltyService
 {
     private const string SystemActor = "system";
@@ -56,7 +60,40 @@ public sealed class LoyaltyService(
         }
 
         var account = await loyaltyAccountRepository.EnsureForUserAsync(order.UserId, cancellationToken);
+        var previousTier = account.CurrentTier;
         account.GrantPoints(pointsEarned, LoyaltyEarnSource.OrderCompleted, orderId, SystemActor);
+
+        // TASK-011a — fire `loyalty.tier_upgrade` when this grant promotes
+        // the user. Detection is by snapshot (previousTier captured pre-grant,
+        // post-grant compared) so domain stays free of notification concerns.
+        // Only fires on UPGRADE — a revoke that demotes is silent (handled
+        // by the cancellation push if relevant).
+        if (account.CurrentTier > previousTier)
+        {
+            try
+            {
+                await queueClient.SendAsync(
+                    QueueNames.NotificationsDispatch,
+                    new SendPushNotificationMessage(
+                        UserId: order.UserId,
+                        EventKey: NotificationEventCatalog.LoyaltyTierUpgrade,
+                        Args: new Dictionary<string, string>
+                        {
+                            ["tier"] = account.CurrentTier.ToString(),
+                        },
+                        TenantId: order.TenantId),
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                // Loyalty grant already happened — don't roll it back over a
+                // queue hiccup. Push is fail-soft; the user still sees the
+                // new tier on their next app open via the Rewards screen.
+                logger.LogWarning(ex,
+                    "Failed to enqueue tier_upgrade push for user {UserId} (tier {PrevTier} → {NewTier})",
+                    order.UserId, previousTier, account.CurrentTier);
+            }
+        }
     }
 
     public async Task RevokeForCancelledOrderAsync(string orderId, CancellationToken cancellationToken)

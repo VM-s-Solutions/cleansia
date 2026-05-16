@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Extensions;
 using Cleansia.Core.AppServices.Features.Auth.Validators;
@@ -75,20 +76,27 @@ public class AdminLogin
 
     internal class Handler(
         ITokenService tokenService,
-        IUserRepository userRepository)
+        IUserRepository userRepository,
+        IHostAudienceProvider hostAudience)
         : ICommandHandler<Command, JwtTokenResponse>
     {
         public async Task<BusinessResult<JwtTokenResponse>> Handle(Command command, CancellationToken cancellationToken)
         {
             var user = await userRepository.GetByEmailAsync(command.Email, cancellationToken);
 
-            if (user!.Profile != UserProfile.Administrator)
+            if (user is null || !user.IsActive)
+            {
+                return BusinessResult.Failure<JwtTokenResponse>(
+                    new Error(nameof(Command.Email), BusinessErrorMessage.InvalidPassword));
+            }
+
+            if (user.Profile != UserProfile.Administrator)
             {
                 return BusinessResult.Failure<JwtTokenResponse>(
                     new Error("AdminLogin", BusinessErrorMessage.InsufficientPrivileges));
             }
 
-            var tokenResponse = tokenService.GenerateToken(user, command.RememberMe);
+            var tokenResponse = await tokenService.GenerateTokenAsync(user, command.RememberMe, hostAudience.Audience, cancellationToken);
 
             return BusinessResult.Success(tokenResponse with { HasAdminAccess = true });
         }

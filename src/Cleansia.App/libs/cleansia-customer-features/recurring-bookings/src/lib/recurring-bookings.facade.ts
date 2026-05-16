@@ -234,12 +234,7 @@ export class RecurringBookingsFacade {
 
     this.submitting.set(true);
     try {
-      // userId is enriched server-side from the JWT in the controller — the
-      // NSwag interface marks it required but the wire payload accepts
-      // undefined and the handler overwrites it. Same pattern is used in
-      // mobile / by other web feature commands.
       const command = new CreateRecurringBookingCommand({
-        userId: undefined as unknown as string,
         frequency: d.frequency as unknown as number,
         dayOfWeek: d.dayOfWeek,
         timeOfDay: d.timeOfDay,
@@ -277,7 +272,6 @@ export class RecurringBookingsFacade {
     this.mutatingId.set(template.id);
     try {
       const command = new SetRecurringBookingActiveCommand({
-        userId: undefined as unknown as string,
         templateId: template.id,
         isActive: !template.isActive,
       });
@@ -302,7 +296,6 @@ export class RecurringBookingsFacade {
     this.mutatingId.set(templateId);
     try {
       const command = new DeleteRecurringBookingCommand({
-        userId: undefined as unknown as string,
         templateId,
       });
       await firstValueFrom(this.client.delete(command));

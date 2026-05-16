@@ -197,14 +197,15 @@ public class User : Auditable, ITenantEntity
 
     public User Anonymize()
     {
-        FirstName = "[DELETED]";
-        LastName = "[DELETED]";
+        FirstName = AnonymizationMarker.Value;
+        LastName = AnonymizationMarker.Value;
         Email = $"deleted_{Id}@anonymized.local";
         PhoneNumber = null;
         BirthDate = null;
         GoogleId = null;
         Password = null;
         ProfilePhotoName = null;
+        PreferredLanguageCode = null;
         ResetPasswordCode = null;
         ResetPasswordCodeExpiresAt = null;
         ConfirmationCode = null;

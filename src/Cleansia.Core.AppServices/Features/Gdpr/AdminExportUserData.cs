@@ -1,10 +1,10 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Gdpr.DTOs;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
-using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Gdpr;
 
@@ -24,81 +24,32 @@ public static class AdminExportUserData
     }
 
     internal class Handler(
-        IUserRepository userRepository,
         IUserSessionProvider userSessionProvider,
-        IOrderRepository orderRepository,
-        IEmployeeDocumentRepository employeeDocumentRepository,
-        IEmployeeInvoiceRepository employeeInvoiceRepository,
-        IUserConsentRepository userConsentRepository,
+        IGdprExportService gdprExportService,
         IGdprRequestRepository gdprRequestRepository)
         : IQueryHandler<Query, GdprExportDto>
     {
         public async Task<BusinessResult<GdprExportDto>> Handle(Query request, CancellationToken cancellationToken)
         {
             var adminEmail = userSessionProvider.GetUserEmail() ?? "admin";
+            var exportedBy = $"admin:{adminEmail}";
 
-            var user = await userRepository.GetQueryable()
-                .Include(u => u.Employee).ThenInclude(e => e!.Address)
-                .AsNoTracking()
-                .FirstAsync(u => u.Id == request.UserId, cancellationToken);
-
-            var profile = new GdprExportProfileDto(
-                user.Id, user.FirstName, user.LastName, user.Email,
-                user.PhoneNumber, user.BirthDate, user.PreferredLanguageCode, user.CreatedOn);
-
-            GdprExportAddressDto? address = null;
-            if (user.Employee?.Address is { } addr)
-                address = new GdprExportAddressDto(addr.Street, addr.City, addr.ZipCode, addr.State, addr.CountryId);
-
-            GdprExportEmployeeDto? employee = null;
-            if (user.Employee is { } emp)
-                employee = new GdprExportEmployeeDto(
-                    emp.Id,
-                    emp.EntityType, emp.RegistrationNumber, emp.VatNumber, emp.LegalEntityName,
-                    emp.IBAN, emp.PassportId, emp.NationalityId,
-                    emp.EmergencyContactName, emp.EmergencyContactPhone,
-                    emp.PreferredCurrencyCode, emp.AverageRating, emp.ContractStatus, emp.CreatedOn);
-
-            var orders = await orderRepository.GetFiltered(o => o.UserId == request.UserId)
-                .AsNoTracking()
-                .Select(o => new GdprExportOrderDto(
-                    o.Id, o.DisplayOrderNumber, o.CustomerName, o.CustomerEmail,
-                    o.OrderStatusHistory.OrderByDescending(s => s.CreatedOn).First().Status,
-                    o.TotalPrice, o.CleaningDateTime, o.CreatedOn))
-                .ToListAsync(cancellationToken);
-
-            var documents = new List<GdprExportDocumentDto>();
-            if (user.Employee is not null)
-            {
-                var docs = await employeeDocumentRepository.GetByEmployeeIdAsync(user.Employee.Id, true, cancellationToken);
-                documents = docs.Select(d => new GdprExportDocumentDto(
-                    d.Id, d.FileName, d.DocumentType.ToString(), d.CreatedOn)).ToList();
-            }
-
-            var invoices = new List<GdprExportInvoiceDto>();
-            if (user.Employee is not null)
-            {
-                invoices = await employeeInvoiceRepository.GetByEmployeeId(user.Employee.Id)
-                    .AsNoTracking()
-                    .Select(i => new GdprExportInvoiceDto(
-                        i.Id, i.InvoiceNumber, i.TotalAmount, i.Status, i.CreatedOn))
-                    .ToListAsync(cancellationToken);
-            }
-
-            var consents = await userConsentRepository.GetByUserIdAsync(request.UserId, cancellationToken);
-            var consentDtos = consents.Select(c => new GdprExportConsentDto(
-                c.Id, c.ConsentType, c.IsGranted, c.GrantedAt, c.WithdrawnAt)).ToList();
-
-            var metadata = new GdprExportMetadataDto(
-                DateTimeOffset.UtcNow, $"admin:{adminEmail}", "JSON");
-
+            // Same audit-row-first pattern as ExportUserData — the request must
+            // be logged even if the build throws (GDPR Article 30).
             var auditEntry = Core.Domain.Users.GdprRequest.Create(request.UserId, "Export");
-            auditEntry.MarkCompleted(adminEmail);
             gdprRequestRepository.Add(auditEntry);
 
-            return BusinessResult.Success(new GdprExportDto(
-                profile, address, employee, orders,
-                documents, invoices, consentDtos, metadata));
+            try
+            {
+                var export = await gdprExportService.BuildAsync(request.UserId, exportedBy, cancellationToken);
+                auditEntry.MarkCompleted(adminEmail);
+                return BusinessResult.Success(export);
+            }
+            catch
+            {
+                auditEntry.MarkFailed("Export build threw — see logs.");
+                throw;
+            }
         }
     }
 }

@@ -42,10 +42,11 @@ public class Register
                 .SetValidator(new LanguageValidator(languageRepository));
         }
 
-        private Task<bool> UserWithEmailNotExistsAsync(string email, CancellationToken cancellationToken) =>
-            _userRepository.GetByEmailAsync(email, cancellationToken)
-                .ContinueWith(t => t.Result is null || (t.Result is not null && !t.Result.IsEmailConfirmed),
-                    cancellationToken);
+        private async Task<bool> UserWithEmailNotExistsAsync(string email, CancellationToken cancellationToken)
+        {
+            var user = await _userRepository.GetByEmailAsync(email, cancellationToken);
+            return user is null || !user.IsEmailConfirmed;
+        }
     }
 
     public record Command(

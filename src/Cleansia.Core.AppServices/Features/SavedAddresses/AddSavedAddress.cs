@@ -19,8 +19,7 @@ public class AddSavedAddress
         string? CountryId,
         bool SetAsDefault,
         double Latitude,
-        double Longitude,
-        string UserId = ""
+        double Longitude
     ) : ICommand<SavedAddressDto>;
 
     public class Validator : AbstractValidator<Command>
@@ -83,11 +82,13 @@ public class AddSavedAddress
     public class Handler(
         IAddressRepository addressRepository,
         ISavedAddressRepository savedAddressRepository,
-        ICountryRepository countryRepository
+        ICountryRepository countryRepository,
+        IUserSessionProvider userSessionProvider
     ) : ICommandHandler<Command, SavedAddressDto>
     {
         public async Task<BusinessResult<SavedAddressDto>> Handle(Command command, CancellationToken cancellationToken)
         {
+            var userId = userSessionProvider.GetUserId()!;
             var countryId = command.CountryId;
             if (string.IsNullOrEmpty(countryId))
             {
@@ -97,21 +98,13 @@ public class AddSavedAddress
                     ?? throw new InvalidOperationException("No countries configured");
             }
 
-            // Reuse an existing Address record if the same street/city/zip/country already exists.
-            // Mapbox-supplied coordinates are mandatory at the Validator layer, so we always pass them through.
             var address = await addressRepository.GetAddressAsync(
                 command.Street, command.City, command.ZipCode, countryId, cancellationToken)
                 ?? Address.Create(command.Street, command.City, command.ZipCode, countryId, null, command.Latitude, command.Longitude);
 
-            // Hard-reject duplicates: a user shouldn't have two SavedAddress rows
-            // pointing at the same Address (street/city/zip/country tuple). When
-            // the existing Address row was reused above, we can detect a clash by
-            // matching AddressId; for brand-new Addresses, there's nothing to
-            // collide with so we skip the check. Validation belongs here (not in
-            // the Validator) because we need the resolved AddressId.
             if (!string.IsNullOrEmpty(address.Id))
             {
-                var existing = await savedAddressRepository.GetByUserAsync(command.UserId, cancellationToken);
+                var existing = await savedAddressRepository.GetByUserAsync(userId, cancellationToken);
                 if (existing.Any(s => s.AddressId == address.Id))
                 {
                     return BusinessResult.Failure<SavedAddressDto>(new Error(
@@ -125,14 +118,13 @@ public class AddSavedAddress
                 addressRepository.Add(address);
             }
 
-            // If user wants this as default, clear the old one first.
             if (command.SetAsDefault)
             {
-                await savedAddressRepository.ClearDefaultForUserAsync(command.UserId, cancellationToken);
+                await savedAddressRepository.ClearDefaultForUserAsync(userId, cancellationToken);
             }
 
             var saved = SavedAddress.Create(
-                userId: command.UserId,
+                userId: userId,
                 addressId: address.Id,
                 label: command.Label,
                 isDefault: command.SetAsDefault);

@@ -1,33 +1,14 @@
 using System.Text.Json;
 using Cleansia.Core.AppServices.Abstractions;
-using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
-using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Features.Loyalty;
 
-/// <summary>
-/// Snapshot of the calling customer's loyalty account: current tier,
-/// progress toward next tier, applicable discount %, and the perks list
-/// rendered on the Rewards tab. Tier names are intentionally NOT
-/// translated server-side — the client maps the enum to an i18n key
-/// like <c>loyalty.tier.bronze_cleaner</c>.
-/// </summary>
 public class GetMyLoyalty
 {
-    public class Validator : AbstractValidator<Query>
-    {
-        public Validator()
-        {
-            RuleFor(x => x.UserId)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required);
-        }
-    }
-
-    public record Query(string UserId = "") : IQuery<Response>;
+    public record Query : IQuery<Response>;
 
     public record Response(
         LoyaltyTier CurrentTier,
@@ -44,12 +25,13 @@ public class GetMyLoyalty
 
     public class Handler(
         ILoyaltyAccountRepository loyaltyAccountRepository,
-        ILoyaltyTierConfigRepository loyaltyTierConfigRepository) : IQueryHandler<Query, Response>
+        ILoyaltyTierConfigRepository loyaltyTierConfigRepository,
+        IUserSessionProvider userSessionProvider) : IQueryHandler<Query, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Query request, CancellationToken cancellationToken)
         {
-            // Lazy-create on first read so existing users don't need a backfill.
-            var account = await loyaltyAccountRepository.EnsureForUserAsync(request.UserId, cancellationToken);
+            var userId = userSessionProvider.GetUserId()!;
+            var account = await loyaltyAccountRepository.EnsureForUserAsync(userId, cancellationToken);
 
             var allConfigs = await loyaltyTierConfigRepository.GetAllForTenantAsync(cancellationToken);
             var currentConfig = allConfigs.FirstOrDefault(c => c.Tier == account.CurrentTier);

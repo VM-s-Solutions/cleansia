@@ -54,9 +54,12 @@ public class CreatePayPeriod
                 .WithMessage(BusinessErrorMessage.MaxLength);
         }
 
-        private Task<bool> BeNoOverlappingPeriodAsync(Command command, CancellationToken cancellationToken) =>
-            _payPeriodRepository.HasOverlappingPeriodAsync(command.StartDate, command.EndDate, null, cancellationToken)
-                .ContinueWith(t => !t.Result, cancellationToken);
+        private async Task<bool> BeNoOverlappingPeriodAsync(Command command, CancellationToken cancellationToken)
+        {
+            var hasOverlap = await _payPeriodRepository.HasOverlappingPeriodAsync(
+                command.StartDate, command.EndDate, null, cancellationToken);
+            return !hasOverlap;
+        }
     }
 
     public class Handler(

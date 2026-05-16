@@ -13,16 +13,11 @@ namespace Cleansia.Core.AppServices.Features.Auth;
 /// </summary>
 public class Logout
 {
-    public class Validator : AbstractValidator<Command>
-    {
-        public Validator()
-        {
-            RuleFor(c => c.Token)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .WithErrorCode(nameof(Command.Token));
-        }
-    }
+    // Validator intentionally has no rules: web clients now send an empty
+    // body and the controller fills `Token` from the HttpOnly cookie. If
+    // the cookie is also missing (already-expired session) the handler
+    // treats it as a no-op success — logout is idempotent.
+    public class Validator : AbstractValidator<Command> { }
 
     public record Command(string Token) : ICommand<bool>;
 
@@ -31,7 +26,10 @@ public class Logout
     {
         public async Task<BusinessResult<bool>> Handle(Command command, CancellationToken cancellationToken)
         {
-            await refreshTokenService.RevokeAsync(command.Token, reason: "logout", cancellationToken);
+            if (!string.IsNullOrEmpty(command.Token))
+            {
+                await refreshTokenService.RevokeAsync(command.Token, reason: "logout", cancellationToken);
+            }
             return BusinessResult.Success(true);
         }
     }

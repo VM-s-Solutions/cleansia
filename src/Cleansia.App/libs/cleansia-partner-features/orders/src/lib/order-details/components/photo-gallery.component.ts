@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import {
+  ChangeDetectionStrategy,
   Component,
   computed,
   effect,
@@ -14,7 +15,7 @@ export interface GalleryPhoto {
   id?: string;
   url: string;
   fileName?: string;
-  capturedAt?: any;
+  capturedAt?: Date | string;
   capturedByEmployeeName?: string;
   isStaged?: boolean;
 }
@@ -23,130 +24,8 @@ export interface GalleryPhoto {
   selector: 'photo-gallery',
   standalone: true,
   imports: [CommonModule, TranslatePipe, CleansiaButtonComponent],
-  template: `
-    @if (isOpen()) {
-    <div class="photo-gallery" (click)="onBackdropClick($event)">
-      <div class="photo-gallery__container">
-        <!-- Header -->
-        <div class="photo-gallery__header">
-          <div class="photo-gallery__info">
-            <span class="photo-gallery__counter">
-              {{ currentIndex() + 1 }} / {{ photos().length }}
-            </span>
-            @if (currentPhoto().fileName) {
-            <span class="photo-gallery__filename">{{
-              currentPhoto().fileName
-            }}</span>
-            } @if (currentPhoto().isStaged) {
-            <span class="photo-gallery__staged-badge">{{
-              'pages.order_details.staged' | translate
-            }}</span>
-            }
-          </div>
-          <button
-            type="button"
-            class="photo-gallery__close"
-            (click)="close()"
-            [title]="'global.actions.close' | translate"
-          >
-            <i class="pi pi-times"></i>
-          </button>
-        </div>
-
-        <!-- Main Image -->
-        <div class="photo-gallery__content">
-          <button
-            type="button"
-            class="photo-gallery__nav photo-gallery__nav--prev"
-            [disabled]="!canNavigatePrev()"
-            (click)="navigatePrev(); $event.stopPropagation()"
-            [title]="'global.actions.previous' | translate"
-          >
-            <i class="pi pi-chevron-left"></i>
-          </button>
-
-          <div class="photo-gallery__image-container">
-            <img
-              [src]="currentPhoto().url"
-              [alt]="currentPhoto().fileName || 'Photo'"
-              class="photo-gallery__image"
-              (click)="$event.stopPropagation()"
-            />
-          </div>
-
-          <button
-            type="button"
-            class="photo-gallery__nav photo-gallery__nav--next"
-            [disabled]="!canNavigateNext()"
-            (click)="navigateNext(); $event.stopPropagation()"
-            [title]="'global.actions.next' | translate"
-          >
-            <i class="pi pi-chevron-right"></i>
-          </button>
-        </div>
-
-        <!-- Photo Info & Actions -->
-        <div class="photo-gallery__footer">
-          <div class="photo-gallery__details">
-            @if (currentPhoto().capturedAt) {
-            <div class="photo-gallery__detail">
-              <i class="pi pi-clock"></i>
-              <span>{{ formatDate(currentPhoto().capturedAt) }}</span>
-            </div>
-            } @if (currentPhoto().capturedByEmployeeName) {
-            <div class="photo-gallery__detail">
-              <i class="pi pi-user"></i>
-              <span>{{ currentPhoto().capturedByEmployeeName }}</span>
-            </div>
-            }
-          </div>
-
-          <div class="photo-gallery__actions">
-            @if (canDelete() && !currentPhoto().isStaged) {
-            <cleansia-button
-              [buttonType]="'button'"
-              [style]="'raised-button'"
-              [title]="'global.actions.delete' | translate"
-              [icon]="'pi pi-trash'"
-              [disabled]="deleting()"
-              (clickFn)="onDeleteClick(); $event.stopPropagation()"
-            />
-            } @if (currentPhoto().isStaged) {
-            <cleansia-button
-              [buttonType]="'button'"
-              [style]="'raised-button'"
-              [title]="'global.actions.remove' | translate"
-              [icon]="'pi pi-times'"
-              (clickFn)="onRemoveStagedClick(); $event.stopPropagation()"
-            />
-            }
-          </div>
-        </div>
-
-        <!-- Thumbnail Strip -->
-        @if (photos().length > 1) {
-        <div class="photo-gallery__thumbnails">
-          @for (photo of photos(); track $index) {
-          <div
-            class="photo-gallery__thumbnail"
-            [class.photo-gallery__thumbnail--active]="$index === currentIndex()"
-            [class.photo-gallery__thumbnail--staged]="photo.isStaged"
-            (click)="navigateToIndex($index); $event.stopPropagation()"
-          >
-            <img [src]="photo.url" [alt]="photo.fileName || 'Thumbnail'" />
-            @if (photo.isStaged) {
-            <div class="photo-gallery__thumbnail-badge">
-              {{ 'pages.order_details.staged' | translate }}
-            </div>
-            }
-          </div>
-          }
-        </div>
-        }
-      </div>
-    </div>
-    }
-  `,
+  templateUrl: './photo-gallery.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PhotoGalleryComponent {
   readonly photos = input.required<GalleryPhoto[]>();
@@ -258,7 +137,7 @@ export class PhotoGalleryComponent {
     }
   }
 
-  formatDate(date: any): string {
+  formatDate(date: Date | string | undefined): string {
     if (!date) return '';
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     return dateObj.toLocaleString('en-GB');

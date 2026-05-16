@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Loyalty;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
@@ -21,8 +20,7 @@ public class LoyaltyController(IMediator mediator) : CustomerApiController(media
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetMy(CancellationToken cancellationToken)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-        var result = await Mediator.Send(new GetMyLoyalty.Query(userId), cancellationToken);
+        var result = await Mediator.Send(new GetMyLoyalty.Query(), cancellationToken);
         return HandleResult<GetMyLoyalty.Response>(result);
     }
 
@@ -37,8 +35,7 @@ public class LoyaltyController(IMediator mediator) : CustomerApiController(media
         [FromQuery] int limit = 20,
         CancellationToken cancellationToken = default)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-        return await Mediator.Send(new GetLoyaltyActivity.Query(userId, offset, limit), cancellationToken);
+        return await Mediator.Send(new GetLoyaltyActivity.Query(offset, limit), cancellationToken);
     }
 
     [HttpGet("GetTiers")]

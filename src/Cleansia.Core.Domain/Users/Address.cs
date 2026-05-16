@@ -54,10 +54,10 @@ public class Address : Auditable, ITenantEntity
 
     public Address Anonymize()
     {
-        Street = "[DELETED]";
-        City = "[DELETED]";
-        ZipCode = "[DELETED]";
-        State = "[DELETED]";
+        Street = AnonymizationMarker.Value;
+        City = AnonymizationMarker.Value;
+        ZipCode = AnonymizationMarker.Value;
+        State = AnonymizationMarker.Value;
         Latitude = null;
         Longitude = null;
         return this;

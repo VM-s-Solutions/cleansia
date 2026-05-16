@@ -13,19 +13,16 @@ public class JsonValueComparer<T>() : ValueComparer<T>((l, r) => CompareValues(l
 {
     private static bool CompareValues(T? left, T? right)
     {
-        // If both are null, they are equal
         if (left == null && right == null)
         {
             return true;
         }
 
-        // If only one is null, they are not equal
         if (left == null || right == null)
         {
             return false;
         }
 
-        // Check if either left or right is a collection
         if (left is not IEnumerable || right is not IEnumerable)
         {
             return left.Equals(right);

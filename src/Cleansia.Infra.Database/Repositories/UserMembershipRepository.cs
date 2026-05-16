@@ -23,7 +23,11 @@ public class UserMembershipRepository(CleansiaDbContext context)
 
     public Task<UserMembership?> GetByStripeSubscriptionIdAsync(string stripeSubscriptionId, CancellationToken cancellationToken)
     {
+        // Cross-tenant by design: webhook lookup. Caller (HandleSubscriptionEvent)
+        // sets ITenantProvider.SetTenantOverride(membership.TenantId) before any
+        // mutation so child rows inherit the right tenant.
         return GetDbSet()
+            .IgnoreQueryFilters()
             .Include(m => m.MembershipPlan)
             .FirstOrDefaultAsync(m => m.StripeSubscriptionId == stripeSubscriptionId, cancellationToken);
     }

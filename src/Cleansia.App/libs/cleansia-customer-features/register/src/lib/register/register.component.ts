@@ -153,7 +153,7 @@ export class RegisterComponent implements AfterViewInit {
 
     google.accounts.id.initialize({
       client_id: '354682423254-boe1nlnb1dbd3m6a013d3nkpo2e9bgiq.apps.googleusercontent.com',
-      callback: (response: any) => {
+      callback: (response: { credential: string }) => {
         this.zone.run(() => this.facade.googleRegister(response.credential));
       },
     });

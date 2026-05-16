@@ -21,6 +21,17 @@ export const MAPBOX_ACCESS_TOKEN = new InjectionToken<string>(
   'MAPBOX_ACCESS_TOKEN'
 );
 
+/**
+ * ISO 3166-1 alpha-2 country codes (lowercase) used to limit Mapbox
+ * geocoding results. Apps can override per-deployment via
+ * `provide(MAPBOX_COUNTRY_WHITELIST, { useValue: [...] })`. The factory
+ * default `['cz', 'sk']` matches the platform's current launch markets.
+ */
+export const MAPBOX_COUNTRY_WHITELIST = new InjectionToken<string[]>(
+  'MAPBOX_COUNTRY_WHITELIST',
+  { factory: () => ['cz', 'sk'] }
+);
+
 /** A normalised suggestion shape consumed by the address autocomplete UI. */
 export interface MapboxAddressSuggestion {
   /** Full formatted line, e.g. "Vinohradská 12, 120 00 Praha, Česko". */
@@ -59,7 +70,7 @@ interface MapboxResponse {
  * Forward geocoding via Mapbox Geocoding v5 (text-only, no map widget).
  *
  * Parity with the mobile `ReverseGeocodingService.forwardGeocode`:
- *   - country=cz,sk
+ *   - country=<MAPBOX_COUNTRY_WHITELIST> (defaults to `cz,sk`)
  *   - types=address,postcode
  *   - autocomplete=true
  *   - limit=5
@@ -73,6 +84,7 @@ export class MapboxAutocompleteService {
   private readonly http = inject(HttpClient);
   private readonly translate = inject(TranslateService);
   private readonly accessToken = inject(MAPBOX_ACCESS_TOKEN, { optional: true }) ?? '';
+  private readonly countryWhitelist = inject(MAPBOX_COUNTRY_WHITELIST);
 
   private static readonly ENDPOINT =
     'https://api.mapbox.com/geocoding/v5/mapbox.places';
@@ -103,7 +115,7 @@ export class MapboxAutocompleteService {
     const params = new HttpParams()
       .set('access_token', this.accessToken)
       .set('autocomplete', 'true')
-      .set('country', 'cz,sk')
+      .set('country', this.countryWhitelist.join(','))
       .set('types', 'address,postcode')
       .set('limit', '5')
       .set('language', this.languageForRequest());

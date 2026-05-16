@@ -14,7 +14,9 @@ public class GetCountryOverview
     {
         public async Task<IEnumerable<CountryListItem>> Handle(Request request, CancellationToken cancellationToken)
         {
+            // Customer-facing — hide countries the admin has deactivated.
             return await countryRepository.GetAll()
+                .Where(c => c.IsActive)
                 .OrderBy(c => c.Name)
                 .Select(c => c.MapToDto())
                 .ToListAsync(cancellationToken);

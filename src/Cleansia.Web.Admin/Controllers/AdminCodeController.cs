@@ -9,10 +9,10 @@ namespace Cleansia.Web.Admin.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 public class AdminCodeController(IMediator mediator) : ApiController(mediator)
 {
     [HttpGet("GetOverview")]
-    [AllowAnonymous]
     [ProducesResponseType(typeof(IEnumerable<Code>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

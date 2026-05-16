@@ -1,10 +1,11 @@
 using Cleansia.Core.AppServices.Abstractions;
-using Cleansia.Core.AppServices.Features.Addresses.DTOs;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Bookings;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
-using MediatR;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
@@ -26,12 +27,24 @@ public class MaterializeRecurringBookings
 {
     public record Command(int HorizonDays = 7) : ICommand<Response>;
 
+    public class Validator : AbstractValidator<Command>
+    {
+        public Validator()
+        {
+            RuleFor(x => x.HorizonDays).InclusiveBetween(1, 30);
+        }
+    }
+
     public record Response(int OrdersCreated, int TemplatesProcessed);
 
     public class Handler(
         IRecurringBookingTemplateRepository templateRepository,
         ISavedAddressRepository savedAddressRepository,
-        IMediator mediator,
+        IAddressRepository addressRepository,
+        ICurrencyRepository currencyRepository,
+        IOrderPricingCalculator pricingCalculator,
+        IOrderFactory orderFactory,
+        ITenantProvider tenantProvider,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -39,102 +52,96 @@ public class MaterializeRecurringBookings
             var now = DateTime.UtcNow;
             var horizon = now.AddDays(command.HorizonDays);
 
-            var activeTemplates = await templateRepository.GetQueryable()
+            var activeTemplates = await templateRepository.GetQueryableIgnoringTenant()
                 .Include(t => t.User)
                 .Where(t => t.IsActive
                     && t.StartsOn <= horizon
                     && (t.EndsOn == null || t.EndsOn > now))
                 .ToListAsync(cancellationToken);
 
-            int ordersCreated = 0;
+            // Default currency once per sweep — every template uses it. Templates
+            // don't carry a currency today (single-market launch), but if multi-
+            // currency lands, switch this to per-template lookup.
+            var defaultCurrency = await currencyRepository.GetDefaultAsync(cancellationToken)
+                ?? throw new InvalidOperationException("No default currency configured");
 
+            var ordersCreated = 0;
             foreach (var template in activeTemplates)
             {
-                try
+                tenantProvider.ClearTenantOverride();
+                if (!string.IsNullOrEmpty(template.TenantId))
                 {
-                    var occurrences = ComputeOccurrences(template, now, horizon).ToList();
-                    if (occurrences.Count == 0)
-                    {
-                        continue;
-                    }
-
-                    // Resolve the saved address once per template — same address
-                    // is reused across all occurrences this batch. We use the
-                    // user-scoped fetch so the inline Address navigation comes
-                    // along (base GetByIdAsync doesn't Include).
-                    var userAddresses = await savedAddressRepository
-                        .GetByUserAsync(template.UserId, cancellationToken);
-                    var savedAddress = userAddresses
-                        .FirstOrDefault(a => a.Id == template.SavedAddressId);
-                    if (savedAddress?.Address == null)
-                    {
-                        logger.LogWarning(
-                            "Template {TemplateId} references missing saved address {AddressId}; skipping",
-                            template.Id, template.SavedAddressId);
-                        continue;
-                    }
-
-                    foreach (var occurrence in occurrences)
-                    {
-                        // Recurring orders inherit the user's snapshot. Price
-                        // is computed by CreateOrder's pricing pipeline at
-                        // materialization time so members get the right
-                        // discount for that period.
-                        // Note: TotalPrice = 0 below means "let the validator
-                        // re-quote and accept whatever the pricing calculator
-                        // returns" — but the current validator requires the
-                        // total to match exactly. For now we resolve via the
-                        // pricing calculator. TODO when the materializer is
-                        // wired into a recurring-booking UX, decide whether to:
-                        //  (a) materialize as drafts the user must confirm,
-                        //  (b) auto-charge from saved card on file (requires
-                        //      stored payment method + SCA exemption),
-                        //  (c) something else. Today this code path doesn't
-                        //      execute because no templates exist.
-                        var addressDto = new AddressDto(
-                            savedAddress.Address.Street,
-                            savedAddress.Address.City,
-                            savedAddress.Address.ZipCode,
-                            savedAddress.Address.CountryId,
-                            savedAddress.Address.State);
-
-                        var createCommand = new CreateOrder.Command(
-                            CustomerName: $"{template.User.FirstName} {template.User.LastName}".Trim(),
-                            CustomerEmail: template.User.Email,
-                            CustomerPhone: template.User.PhoneNumber ?? string.Empty,
-                            CustomerAddress: addressDto,
-                            SavedAddressId: template.SavedAddressId,
-                            SelectedPackageIds: template.SelectedPackageIds,
-                            SelectedServiceIds: template.SelectedServiceIds,
-                            Rooms: template.Rooms,
-                            Bathrooms: template.Bathrooms,
-                            Extras: new Dictionary<string, bool>(),
-                            CleaningDate: occurrence,
-                            PaymentType: template.PaymentType,
-                            CurrencyId: null,
-                            TotalPrice: 0m,
-                            UserId: template.UserId);
-
-                        var result = await mediator.Send(createCommand, cancellationToken);
-                        if (result.IsSuccess)
-                        {
-                            ordersCreated++;
-                            template.MarkMaterializedFor(occurrence);
-                        }
-                        else
-                        {
-                            logger.LogWarning(
-                                "Template {TemplateId} occurrence {Occurrence} failed: {Error}",
-                                template.Id, occurrence, result.Error?.Message);
-                        }
-                    }
+                    tenantProvider.SetTenantOverride(template.TenantId);
                 }
-                catch (Exception ex)
+
+                var occurrences = ComputeOccurrences(template, now, horizon).ToList();
+                if (occurrences.Count == 0)
                 {
-                    // One template failing should not kill the sweep — log and continue.
-                    logger.LogError(ex,
-                        "Materialization failed for template {TemplateId}; continuing with next",
-                        template.Id);
+                    continue;
+                }
+
+                // Resolve the template's address once, fail-soft per-template.
+                var saved = await savedAddressRepository.GetByIdAsync(template.SavedAddressId, cancellationToken);
+                if (saved == null)
+                {
+                    logger.LogWarning(
+                        "Template {TemplateId} references missing SavedAddress {SavedAddressId}; skipping",
+                        template.Id, template.SavedAddressId);
+                    continue;
+                }
+                var address = saved.Address
+                    ?? await addressRepository.GetByIdAsync(saved.AddressId, cancellationToken);
+                if (address == null)
+                {
+                    logger.LogWarning(
+                        "SavedAddress {SavedAddressId} references missing Address {AddressId}; skipping template {TemplateId}",
+                        saved.Id, saved.AddressId, template.Id);
+                    continue;
+                }
+
+                // Recurring orders are scheduled days/weeks in advance,
+                // so the express surcharge never applies — pass null
+                // CleaningDate to skip the surcharge check. Extras aren't
+                // part of the recurring template today; pass empty.
+                var rawSubtotalResult = await pricingCalculator.CalculateAsync(
+                    template.SelectedServiceIds,
+                    template.SelectedPackageIds,
+                    Array.Empty<string>(),
+                    template.Rooms,
+                    template.Bathrooms,
+                    defaultCurrency.Id,
+                    cleaningDateUtc: null,
+                    cancellationToken);
+
+                var customerName = string.Join(" ",
+                    new[] { template.User.FirstName, template.User.LastName }
+                        .Where(s => !string.IsNullOrWhiteSpace(s)));
+
+                foreach (var occurrence in occurrences)
+                {
+                    var input = new CreateOrderInput(
+                        UserId: template.UserId,
+                        CustomerName: customerName,
+                        CustomerEmail: template.User.Email,
+                        CustomerPhone: template.User.PhoneNumber ?? string.Empty,
+                        Address: address,
+                        Rooms: template.Rooms,
+                        Bathrooms: template.Bathrooms,
+                        Extras: new(),
+                        CleaningDate: occurrence,
+                        PaymentType: template.PaymentType,
+                        Currency: defaultCurrency,
+                        SelectedServiceIds: template.SelectedServiceIds,
+                        SelectedPackageIds: template.SelectedPackageIds,
+                        RawSubtotal: rawSubtotalResult.TotalPrice,
+                        PromoDiscountAmount: 0m,
+                        PromoCodeId: null,
+                        PreferredEmployeeId: null,
+                        RecurringTemplateId: template.Id);
+
+                    await orderFactory.CreateAsync(input, cancellationToken);
+                    template.MarkMaterializedFor(occurrence);
+                    ordersCreated++;
                 }
             }
 

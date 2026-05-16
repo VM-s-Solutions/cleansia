@@ -22,8 +22,7 @@ public class GetPayrollReport
         public async Task<BusinessResult<PayrollReportDto>> Handle(Query request, CancellationToken cancellationToken)
         {
             var invoices = await employeeInvoiceRepository
-                .GetAllInvoicesByDateRange(request.Filter.StartDate, request.Filter.EndDate)
-                .ToListAsync(cancellationToken);
+                .GetAllByDateRangeAsync(request.Filter.StartDate, request.Filter.EndDate, cancellationToken);
 
             var totalPayroll = invoices.Sum(i => i.TotalAmount);
             var totalInvoices = invoices.Count;

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   CleansiaButtonComponent,
@@ -26,6 +26,7 @@ import { getOrderPaysTableDefinition } from './invoice-detail.models';
   ],
   templateUrl: './invoice-detail.component.html',
   providers: [InvoiceDetailFacade],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InvoiceDetailComponent implements OnInit {
   protected readonly facade = inject(InvoiceDetailFacade);

@@ -7,15 +7,13 @@ using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Features.Referrals;
 
-/// <summary>
-/// Pre-submit validation called from the signup form (anonymous, with empty
-/// AcceptingUserId) and from the booking-time late-acceptance link (with
-/// the JWT-derived AcceptingUserId). Returns the inviter's first name so
-/// the UI can render "Code from Jana — you'll get 150 bonus points".
-/// </summary>
+// Read-only validation of a referral code at sign-up time. Does not mutate
+// state — the lazy-create commit for the *referrer's* own code happens
+// separately in `EnsureCodeForUserAsync`. Modelled as IQuery so the CQRS
+// surface accurately reflects "no writes".
 public class ValidateReferral
 {
-    public class Validator : AbstractValidator<Command>
+    public class Validator : AbstractValidator<Query>
     {
         public Validator()
         {
@@ -28,11 +26,7 @@ public class ValidateReferral
         }
     }
 
-    public record Command(
-        string Code,
-        // Enriched server-side from the JWT in the controller — empty when
-        // called anonymously from the signup form.
-        string AcceptingUserId = "") : ICommand<Response>;
+    public record Query(string Code) : IQuery<Response>;
 
     public record Response(
         bool IsValid,
@@ -41,12 +35,14 @@ public class ValidateReferral
 
     public class Handler(
         IReferralService referralService,
-        IUserRepository userRepository) : ICommandHandler<Command, Response>
+        IUserRepository userRepository,
+        IUserSessionProvider userSessionProvider) : IQueryHandler<Query, Response>
     {
-        public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
+        public async Task<BusinessResult<Response>> Handle(Query command, CancellationToken cancellationToken)
         {
+            var acceptingUserId = userSessionProvider.GetUserId() ?? string.Empty;
             var validation = await referralService.ValidateAsync(
-                command.Code, command.AcceptingUserId, cancellationToken);
+                command.Code, acceptingUserId, cancellationToken);
 
             string? referrerFirstName = null;
             if (validation.IsValid && !string.IsNullOrEmpty(validation.ReferrerUserId))

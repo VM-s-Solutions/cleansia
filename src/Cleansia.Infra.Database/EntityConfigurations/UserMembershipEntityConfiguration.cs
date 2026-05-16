@@ -35,6 +35,9 @@ public class UserMembershipEntityConfiguration : AuditableEntityConfiguration<Us
 
         builder.Property(m => m.CancelledAt);
 
+        builder.Property(m => m.RenewalReminderSentAt);
+        builder.Property(m => m.CancellationReminderSentAt);
+
         // FK to User. Restrict delete: Stripe subscription must be cancelled
         // before the user can be deleted, otherwise we'd lose the audit trail.
         builder.HasOne(m => m.User)

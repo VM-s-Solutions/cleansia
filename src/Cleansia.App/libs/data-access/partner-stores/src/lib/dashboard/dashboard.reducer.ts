@@ -1,4 +1,5 @@
 import {
+  ApiException,
   DashboardStatsDto,
   EarningsAnalyticsDto,
   OrderAnalyticsDto,
@@ -29,12 +30,12 @@ export interface DashboardState {
     productivityMetrics: boolean;
   };
   error: {
-    stats: any | null;
-    upcomingOrders: any | null;
-    earningsAnalytics: any | null;
-    timeAnalytics: any | null;
-    orderAnalytics: any | null;
-    productivityMetrics: any | null;
+    stats: ApiException | null;
+    upcomingOrders: ApiException | null;
+    earningsAnalytics: ApiException | null;
+    timeAnalytics: ApiException | null;
+    orderAnalytics: ApiException | null;
+    productivityMetrics: ApiException | null;
   };
 }
 

@@ -9,39 +9,30 @@ using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
 
 namespace Cleansia.Core.AppServices.Features.Memberships;
 
-/// <summary>
-/// Mark the user's active membership for cancellation at the end of the
-/// current billing period. Stripe keeps benefits flowing until period end,
-/// then fires <c>customer.subscription.deleted</c> which the webhook handler
-/// transitions to <see cref="Cleansia.Core.Domain.Memberships.MembershipStatus.Cancelled"/>.
-/// </summary>
 public class CancelMembershipSubscription
 {
-    public record Command(string UserId = "") : ICommand<Response>;
-
-    public record Response(string MembershipId, DateTime EffectiveEndDate);
+    public record Command : ICommand<Response>;
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator()
-        {
-            RuleFor(x => x.UserId)
-                .NotEmpty().WithMessage(BusinessErrorMessage.Required);
-        }
     }
+
+    public record Response(DateTime EffectiveEndDate);
 
     public class Handler(
         IUserMembershipRepository userMembershipRepository,
+        IUserSessionProvider userSessionProvider,
         IStripeClient stripeClient,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var membership = await userMembershipRepository.GetActiveForUserAsync(command.UserId, cancellationToken);
+            var userId = userSessionProvider.GetUserId()!;
+            var membership = await userMembershipRepository.GetActiveForUserAsync(userId, cancellationToken);
             if (membership == null)
             {
                 return BusinessResult.Failure<Response>(new Error(
-                    nameof(command.UserId), BusinessErrorMessage.MembershipNotFound));
+                    nameof(Command), BusinessErrorMessage.MembershipNotFound));
             }
 
             await stripeClient.CancelSubscriptionAtPeriodEndAsync(
@@ -50,12 +41,10 @@ public class CancelMembershipSubscription
             membership.MarkCancellationRequested();
 
             logger.LogInformation(
-                "User {UserId} requested cancellation of membership {MembershipId}; effective {EndDate}",
-                command.UserId, membership.Id, membership.CurrentPeriodEnd);
+                "Cancellation requested for membership {MembershipId}; effective {EndDate}",
+                membership.Id, membership.CurrentPeriodEnd);
 
-            return BusinessResult.Success(new Response(
-                MembershipId: membership.Id,
-                EffectiveEndDate: membership.CurrentPeriodEnd));
+            return BusinessResult.Success(new Response(membership.CurrentPeriodEnd));
         }
     }
 }

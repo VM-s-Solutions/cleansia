@@ -5,7 +5,7 @@ import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   CustomerAuthService,
   CustomerClient,
-  ValidateReferralCommand,
+  ValidateReferralQuery,
 } from '@cleansia/customer-services';
 import { JwtTokenResponse } from '@cleansia/partner-services';
 import { loadCustomerUser } from '@cleansia/customer-stores';
@@ -63,9 +63,8 @@ export class RegisterFacade extends UnsubscribeControlDirective {
     try {
       const resp = await firstValueFrom(
         this.customerClient.referralClient.validate(
-          new ValidateReferralCommand({
+          new ValidateReferralQuery({
             code: normalized,
-            acceptingUserId: undefined,
           }),
         ),
       );

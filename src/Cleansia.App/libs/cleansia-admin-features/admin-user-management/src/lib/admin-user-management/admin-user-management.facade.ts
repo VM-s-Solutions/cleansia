@@ -5,9 +5,10 @@ import {
   AdminUserListItem,
   SortDefinition,
 } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 export interface AdminUserFilterParams {
   searchTerm?: string;
@@ -15,13 +16,11 @@ export interface AdminUserFilterParams {
 }
 
 @Injectable()
-export class AdminUserManagementFacade {
+export class AdminUserManagementFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
-
-  private destroy$ = new Subject<void>();
 
   readonly users = signal<AdminUserListItem[]>([]);
   readonly loading = signal<boolean>(false);
@@ -46,7 +45,7 @@ export class AdminUserManagementFacade {
         this.currentLimit()
       )
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
@@ -100,7 +99,7 @@ export class AdminUserManagementFacade {
     this.adminClient.adminUserClient
       .deactivate(user.id)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((response) => {
@@ -121,7 +120,7 @@ export class AdminUserManagementFacade {
     this.adminClient.adminUserClient
       .activate(user.id)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((response) => {
@@ -142,10 +141,5 @@ export class AdminUserManagementFacade {
     } else {
       this.activateUser(user);
     }
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

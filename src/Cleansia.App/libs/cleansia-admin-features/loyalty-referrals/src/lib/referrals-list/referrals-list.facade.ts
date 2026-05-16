@@ -4,7 +4,8 @@ import {
   AdminReferralListItem,
   ReferralStatus,
 } from '@cleansia/admin-services';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 export type ReferralStatusFilter = 'all' | 'accepted' | 'qualified' | 'expired';
 
@@ -15,10 +16,8 @@ export interface ReferralFilterParams {
 }
 
 @Injectable()
-export class ReferralsListFacade {
+export class ReferralsListFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
-
-  private destroy$ = new Subject<void>();
 
   readonly referrals = signal<AdminReferralListItem[]>([]);
   readonly loading = signal<boolean>(false);
@@ -43,7 +42,7 @@ export class ReferralsListFacade {
         this.currentLimit()
       )
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
@@ -97,10 +96,5 @@ export class ReferralsListFacade {
       default:
         return undefined;
     }
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

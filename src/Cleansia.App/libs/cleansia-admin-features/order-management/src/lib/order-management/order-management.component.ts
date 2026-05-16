@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   computed,
@@ -76,6 +77,7 @@ import {
   ],
   templateUrl: './order-management.component.html',
   providers: [OrderManagementFacade],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OrderManagementComponent implements AfterViewInit, OnDestroy {
   private readonly cd = inject(ChangeDetectorRef);

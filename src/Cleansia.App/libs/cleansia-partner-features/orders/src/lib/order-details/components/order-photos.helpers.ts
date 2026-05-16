@@ -44,7 +44,7 @@ export function validatePhotoFile(file: File): FileValidationResult {
   return { valid: true };
 }
 
-export function formatPhotoDate(date: any): string {
+export function formatPhotoDate(date: Date | string | undefined): string {
   if (!date) return '';
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   return dateObj.toLocaleString('en-GB');

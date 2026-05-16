@@ -83,7 +83,6 @@ public class OrderEmployeePayEntityConfiguration : AuditableEntityConfiguration<
             .IsRequired(false)
             .OnDelete(DeleteBehavior.SetNull);
 
-        // Indexes
         builder.HasIndex(e => e.OrderId);
         builder.HasIndex(e => e.EmployeeId);
         builder.HasIndex(e => e.PayPeriodId);

@@ -11,11 +11,12 @@ import {
   FileValidationErrorService,
   SnackbarService,
 } from '@cleansia/services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { checkEmployeeCurrent } from '@cleansia/partner-stores';
 import { FileTransformationUtils } from '@cleansia/utils';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
-import { catchError, of } from 'rxjs';
+import { catchError, of, takeUntil } from 'rxjs';
 
 export interface StagedDocument {
   file: BlobFileDto;
@@ -47,7 +48,7 @@ export interface DocumentsState {
 }
 
 @Injectable()
-export class ProfileDocumentsFacade {
+export class ProfileDocumentsFacade extends UnsubscribeControlDirective {
   private readonly partnerClient = inject(PartnerClient);
   private readonly translate = inject(TranslateService);
   private readonly snackbarService = inject(SnackbarService);
@@ -282,7 +283,10 @@ export class ProfileDocumentsFacade {
   downloadEmployeeDocument(documentId: string, fileName: string): void {
     this.partnerClient.employeeClient
       .downloadMyDocument(documentId)
-      .pipe(catchError(() => of(null)))
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of(null))
+      )
       .subscribe((response) => {
         if (response && response.data) {
           // Create a blob from the byte array

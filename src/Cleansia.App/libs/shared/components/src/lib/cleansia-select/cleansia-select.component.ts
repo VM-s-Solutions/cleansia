@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, forwardRef, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, forwardRef, input, output } from '@angular/core';
 import { FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { ErrorPipe } from '@cleansia/pipes';
 import { FloatLabelModule } from 'primeng/floatlabel';
@@ -25,6 +25,7 @@ import { ICleansiaSelectOption } from './cleansia-select.models';
       multi: true,
     },
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaSelectComponent extends CleansiaBaseFormInputComponent {
   id = input<string>(this.getDefaultLabelId());
@@ -35,15 +36,20 @@ export class CleansiaSelectComponent extends CleansiaBaseFormInputComponent {
   filterBy = input<string>('label');
   appendTo = input<'body' | null>(null);
 
+  // TODO(W6.2): Tightening valueChanges to a stricter generic cascades
+  // into many consumer template fixes (e.g. DocumentType, OrderStatus).
+  // Left as `any` until consumers migrate; innerValue/writeValue tightened.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   valueChanges = output<any>();
 
-  innerValue: any = null;
+  innerValue: unknown = null;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   override writeValue(value: any): void {
     this.innerValue = value ?? null;
   }
 
-  handleChange(event: any): void {
+  handleChange(event: { value: unknown }): void {
     const value = event.value;
     this.innerValue = value;
     this.onChange(value);

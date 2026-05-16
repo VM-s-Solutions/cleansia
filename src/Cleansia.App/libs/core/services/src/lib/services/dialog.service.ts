@@ -47,7 +47,7 @@ export class DialogService {
   confirmTranslated(
     messageKey: string,
     headerKey?: string,
-    messageParams?: Record<string, any>
+    messageParams?: Record<string, unknown>
   ): Observable<boolean> {
     return this.confirm({
       message: this.translate.instant(messageKey, messageParams),

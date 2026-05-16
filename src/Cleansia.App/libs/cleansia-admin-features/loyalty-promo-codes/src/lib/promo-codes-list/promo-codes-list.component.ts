@@ -20,6 +20,8 @@ import {
   TableAction,
   TableColumn,
 } from '@cleansia/components';
+import { Policy } from '@cleansia/services';
+import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -46,6 +48,7 @@ import { getPromoCodeTableDefinition } from './promo-codes-list.models';
     CleansiaTextInputComponent,
     CleansiaTitleComponent,
     ConfirmDialogModule,
+    CleansiaPermissionDirective,
   ],
   templateUrl: './promo-codes-list.component.html',
   providers: [PromoCodesListFacade, ConfirmationService],
@@ -55,6 +58,7 @@ export class PromoCodesListComponent implements AfterViewInit, OnDestroy {
   private readonly translate = inject(TranslateService);
   private readonly confirmationService = inject(ConfirmationService);
   protected readonly facade = inject(PromoCodesListFacade);
+  protected readonly Policy = Policy;
 
   private readonly destroy$ = new Subject<void>();
 

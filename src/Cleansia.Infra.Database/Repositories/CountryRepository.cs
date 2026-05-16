@@ -18,19 +18,15 @@ public class CountryRepository(CleansiaDbContext context) : BaseRepository<Count
 
     public async Task<bool> IsInUseAsync(string countryId, CancellationToken cancellationToken)
     {
-        // Check if country is used by Addresses (via Employee)
         if (await Context.Employees.AnyAsync(e => e.Address != null && e.Address.CountryId == countryId, cancellationToken))
             return true;
 
-        // Check if country is used by CompanyInfo
         if (await Context.CompanyInfo.AnyAsync(c => c.CountryId == countryId, cancellationToken))
             return true;
 
-        // Check if country is used by CountryInvoiceConfigs
         if (await Context.CountryInvoiceConfigs.AnyAsync(c => c.CountryId == countryId, cancellationToken))
             return true;
 
-        // Check if country is used by EmployeeInvoices
         if (await Context.EmployeeInvoices.AnyAsync(e => e.CountryId == countryId, cancellationToken))
             return true;
 

@@ -45,6 +45,7 @@
           }
         </div>
         <cleansia-button
+          *cleansiaPermission="Policy.CanCreateLanguage"
           [label]="'pages.language_management.create_language' | translate"
           icon="pi pi-plus"
           (onClick)="createLanguage()"

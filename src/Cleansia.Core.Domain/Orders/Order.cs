@@ -89,6 +89,8 @@ public class Order : Auditable, ITenantEntity
 
     public string StripeSessionId { get; private set; } = string.Empty;
 
+    public string? StripePaymentIntentId { get; private set; }
+
     public string? Notes { get; private set; }
 
     public string? SpecialInstructions { get; private set; }
@@ -182,6 +184,23 @@ public class Order : Auditable, ITenantEntity
     [MaxLength(26)]
     public string? PreferredEmployeeId { get; private set; }
 
+    /// <summary>
+    /// FK back to the <see cref="Bookings.RecurringBookingTemplate"/> that spawned
+    /// this order. Null for one-off orders. Set by the materializer; lets the
+    /// confirm-recurring flow find the originating template for things like
+    /// cancellation cascade decisions and analytics.
+    /// </summary>
+    [MaxLength(26)]
+    public string? RecurringTemplateId { get; private set; }
+
+    /// <summary>
+    /// Timestamp when the 24h-ahead "confirm your recurring booking" push was
+    /// dispatched for this order. Used by the reminder sweep to avoid sending
+    /// the same push twice if the sweep runs multiple times within the 24h
+    /// window. Null until the sweep fires; never cleared after that.
+    /// </summary>
+    public DateTime? RecurringReminderSentAt { get; private set; }
+
     public IDictionary<string, bool> _extras = new Dictionary<string, bool>();
     public IReadOnlyDictionary<string, bool> Extras => _extras.AsReadOnly();
 
@@ -234,7 +253,10 @@ public class Order : Auditable, ITenantEntity
         string? membershipPlanIdAtPurchase = null,
         // Optional customer-requested cleaner. Used as a matching hint;
         // silent fallback to normal matching if unavailable.
-        string? preferredEmployeeId = null) => new()
+        string? preferredEmployeeId = null,
+        // Set by the recurring-bookings materializer to link the spawned
+        // Pending order back to its template. Null for one-off orders.
+        string? recurringTemplateId = null) => new()
         {
             CustomerName = customerName,
             CustomerEmail = customerEmail,
@@ -256,12 +278,25 @@ public class Order : Auditable, ITenantEntity
             MembershipDiscountAmount = membershipDiscountAmount is > 0 ? membershipDiscountAmount : null,
             MembershipPlanIdAtPurchase = string.IsNullOrEmpty(membershipPlanIdAtPurchase) ? null : membershipPlanIdAtPurchase,
             PreferredEmployeeId = string.IsNullOrEmpty(preferredEmployeeId) ? null : preferredEmployeeId,
+            RecurringTemplateId = string.IsNullOrEmpty(recurringTemplateId) ? null : recurringTemplateId,
         };
 
     public Order AddSelectedServices(IEnumerable<OrderService> selectedServices)
     {
         _selectedServices = selectedServices.ToList();
 
+        return this;
+    }
+
+    /// <summary>
+    /// Stamp the timestamp when the 24h-ahead recurring-booking reminder push
+    /// was dispatched. Idempotent — calling twice keeps the first stamp;
+    /// the sweep filters by <c>RecurringReminderSentAt == null</c> so it
+    /// shouldn't reach this method twice anyway.
+    /// </summary>
+    public Order MarkRecurringReminderSent(DateTime sentAtUtc)
+    {
+        RecurringReminderSentAt ??= sentAtUtc;
         return this;
     }
 
@@ -282,6 +317,12 @@ public class Order : Auditable, ITenantEntity
     {
         PaymentStatus = paymentStatus;
 
+        return this;
+    }
+
+    public Order AssignStripePaymentIntentId(string paymentIntentId)
+    {
+        StripePaymentIntentId = paymentIntentId;
         return this;
     }
 
@@ -438,9 +479,30 @@ public class Order : Auditable, ITenantEntity
 
     public Order AnonymizeCustomerData()
     {
-        CustomerName = "[DELETED]";
-        CustomerEmail = "[DELETED]";
-        CustomerPhone = "[DELETED]";
+        CustomerName = AnonymizationMarker.Value;
+        CustomerEmail = AnonymizationMarker.Value;
+        CustomerPhone = AnonymizationMarker.Value;
+        UserId = null;
+        PromoCodeId = null;
+        MembershipPlanIdAtPurchase = null;
+        PreferredEmployeeId = null;
+        RecurringTemplateId = null;
+        Notes = null;
+        SpecialInstructions = null;
+        AccessInstructions = null;
+        CompletionNotes = null;
+        foreach (var review in Reviews)
+        {
+            review.Anonymize();
+        }
+        foreach (var note in _notes)
+        {
+            note.Anonymize();
+        }
+        foreach (var issue in _issues)
+        {
+            issue.Anonymize();
+        }
         return this;
     }
 }

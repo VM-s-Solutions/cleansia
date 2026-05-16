@@ -8,7 +8,8 @@ import {
 } from '@cleansia/customer-services';
 import { JwtTokenResponse } from '@cleansia/partner-services';
 import { loadCustomerUser, selectCustomerLoading } from '@cleansia/customer-stores';
-import { CleansiaCustomerRoute, GuestOrderService, SnackbarService } from '@cleansia/services';
+import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
+import { GuestOrderService } from '@cleansia-customer/orders';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { takeUntil } from 'rxjs';

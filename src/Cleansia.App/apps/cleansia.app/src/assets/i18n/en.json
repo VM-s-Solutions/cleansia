@@ -84,6 +84,7 @@
   },
   "global": {
     "loading": "Loading...",
+    "scroll_to_top": "Scroll to top",
     "messages": {
       "success": "Success",
       "error": "Error",
@@ -208,7 +209,8 @@
       "submit": "Send Reset Link",
       "success": "Password reset link sent! Check your email.",
       "back_to_login": "Back to login"
-    }
+    },
+    "refresh_token_reused": "Your session was used elsewhere. Please sign in again."
   },
   "services": {
     "title": "Our Services",
@@ -271,6 +273,9 @@
       "payment": "Payment Method",
       "total": "Total",
       "confirm": "Confirm & Pay"
+    },
+    "review": {
+      "already_exists": "You've already reviewed this order."
     }
   },
   "orders": {
@@ -387,7 +392,10 @@
       "withdrawn": "Withdrawn",
       "grant": "Grant",
       "withdraw": "Withdraw"
-    }
+    },
+    "deletion_already_pending": "A deletion request is already in progress.",
+    "deletion_blocked_by_order": "We can't delete your account while you have an active order.",
+    "deletion_blocked_by_invoice": "We can't delete your account while you have a pending invoice."
   },
   "pages": {
     "home": {
@@ -624,7 +632,8 @@
       "export_data": "Export Data",
       "export_data_desc": "Download a copy of all your personal data",
       "rewards_card_title": "Rewards",
-      "rewards_card_link": "View rewards"
+      "rewards_card_link": "View rewards",
+      "scroll_to_top": "Scroll to top"
     },
     "services": {
       "title": "Our Services",
@@ -704,6 +713,7 @@
       "select_date_first": "Please select a date first",
       "slot_express": "Express +20%",
       "slot_unavailable": "Unavailable",
+      "express_surcharge_label": "Express slot (+20%)",
       "payment_method": "Payment Method",
       "payment_section_title": "How Would You Like to Pay?",
       "pay_by_card": "Pay by Card",
@@ -725,7 +735,14 @@
       "special_instructions_placeholder": "Any special requests? (e.g., focus on kitchen, pet-friendly products...)",
       "entry_instructions_label": "Entry Instructions",
       "entry_instructions_placeholder": "How should we access your property? (e.g., doorbell, key under mat...)",
-      "summary": "Summary",
+      "summary": {
+        "totals_title": "Total",
+        "subtotal": "Subtotal",
+        "promo_discount": "Promo (-{{code}})",
+        "membership_discount": "Cleansia Plus discount",
+        "tier_discount": "Loyalty tier discount",
+        "tier_discount_min_not_met": "Loyalty discount applies on orders above {{amount}}"
+      },
       "summary_section_title": "Review Your Order",
       "summary_services": "Services",
       "summary_packages": "Packages",
@@ -733,6 +750,8 @@
       "summary_rooms_count": "{{rooms}} rooms, {{bathrooms}} bathrooms",
       "summary_address": "Address",
       "summary_datetime": "Date & Time",
+      "summary_extras": "Add extras",
+      "extras_subtitle": "Toggle the add-ons you'd like. Prices update live.",
       "summary_payment": "Payment",
       "summary_contact": "Contact",
       "summary_instructions": "Instructions",
@@ -814,11 +833,6 @@
         "error_already_referred": "You've already accepted a referral",
         "error_inactive": "This referral code is no longer active",
         "error_generic": "Couldn't validate code. You can still continue."
-      },
-      "summary": {
-        "totals_title": "Total",
-        "subtotal": "Subtotal",
-        "promo_discount": "Promo (-{{code}})"
       }
     },
     "orders": {
@@ -870,6 +884,9 @@
       "packages": "Packages",
       "services": "Services",
       "total": "Total",
+      "discount_tier": "Loyalty discount applied",
+      "discount_membership": "Cleansia Plus discount applied",
+      "discount_promo": "Promo code applied",
       "timeline": "Timeline",
       "notes": "Notes",
       "special_instructions": "Special Instructions",
@@ -1295,8 +1312,8 @@
     "perks": {
       "welcome_badge": "Welcome to Cleansia rewards",
       "discount_5_above_1000": "5% off bookings over 1000 CZK",
-      "discount_10": "10% off all bookings",
-      "discount_15": "15% off all bookings",
+      "discount_10": "10% off bookings over 1000 CZK",
+      "discount_12": "12% off bookings over 1000 CZK",
       "priority_support": "Priority customer support",
       "dedicated_pool": "Dedicated cleaner pool"
     }
@@ -1397,5 +1414,23 @@
     "prefill_dropped_items": "We removed these from your prefill — they're no longer available: {{items}}",
     "order_detail_make_recurring": "Make this recurring",
     "order_detail_make_recurring_plus_required": "Cleansia Plus required to set up recurring schedules."
+  },
+  "enums": {
+    "order_status": {
+      "new": "New",
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "on_the_way": "On the way",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "payment_status": {
+      "pending": "Pending",
+      "paid": "Paid",
+      "failed": "Failed",
+      "refunded": "Refunded",
+      "disputed": "Disputed"
+    }
   }
 }

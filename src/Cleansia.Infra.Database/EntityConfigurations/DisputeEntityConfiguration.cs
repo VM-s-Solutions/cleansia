@@ -42,7 +42,6 @@ public class DisputeEntityConfiguration : AuditableEntityConfiguration<Dispute, 
         builder.Property(d => d.StripeDisputeId)
             .HasMaxLength(100);
 
-        // Relationships
         builder.HasOne(d => d.Order)
             .WithMany()
             .HasForeignKey(d => d.OrderId)
@@ -63,7 +62,6 @@ public class DisputeEntityConfiguration : AuditableEntityConfiguration<Dispute, 
             .HasForeignKey(e => e.DisputeId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Indexes
         builder.HasIndex(d => d.OrderId);
         builder.HasIndex(d => d.UserId);
         builder.HasIndex(d => d.Status);

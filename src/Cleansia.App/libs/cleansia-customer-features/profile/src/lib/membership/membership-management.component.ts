@@ -2,27 +2,18 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   OnInit,
   computed,
   inject,
-  signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { CleansiaButtonComponent } from '@cleansia/components';
-import {
-  CustomerClient,
-  GetMembershipPlansResponse,
-  GetMyMembershipResponse,
-  SwapMembershipPlanCommand,
-} from '@cleansia/customer-services';
-import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
+import { CleansiaCustomerRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
 import { SkeletonModule } from 'primeng/skeleton';
-import { catchError, of } from 'rxjs';
+import { MembershipFacade } from './membership.facade';
 
 @Component({
   selector: 'cleansia-customer-membership-management',
@@ -36,25 +27,21 @@ import { catchError, of } from 'rxjs';
     ConfirmDialogModule,
     CleansiaButtonComponent,
   ],
-  providers: [ConfirmationService],
+  providers: [ConfirmationService, MembershipFacade],
   templateUrl: './membership-management.component.html',
 })
 export class MembershipManagementComponent implements OnInit {
-  // Always go through CustomerClient — direct injection of MembershipClient
-  // hits NSwag's empty-string default baseUrl and bypasses CUSTOMER_API_BASE_URL.
-  private readonly customerClient = inject(CustomerClient);
-  private readonly client = this.customerClient.membershipClient;
-  private readonly snackbar = inject(SnackbarService);
+  private readonly facade = inject(MembershipFacade);
   private readonly translate = inject(TranslateService);
   private readonly confirmService = inject(ConfirmationService);
-  private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
 
-  loading = signal(true);
-  cancelling = signal(false);
-  switching = signal(false);
-  membership = signal<GetMyMembershipResponse | null>(null);
-  plans = signal<GetMembershipPlansResponse[]>([]);
+  // Re-expose facade signals so existing template bindings keep working.
+  readonly loading = this.facade.loading;
+  readonly cancelling = this.facade.cancelling;
+  readonly switching = this.facade.switching;
+  readonly membership = this.facade.membership;
+  readonly plans = this.facade.plans;
 
   /** Yearly plan (if any) — drives the "Switch to annual" CTA visibility. */
   readonly yearlyPlan = computed(() =>
@@ -77,36 +64,11 @@ export class MembershipManagementComponent implements OnInit {
 
   ngOnInit(): void {
     this.refresh();
-    this.loadPlans();
+    this.facade.loadPlans();
   }
 
   refresh(): void {
-    this.loading.set(true);
-    this.client
-      .getMine()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (response) => {
-          this.membership.set(response);
-          this.loading.set(false);
-        },
-        error: (err) => {
-          this.snackbar.showApiError(err, 'membership.not_found');
-          this.loading.set(false);
-        },
-      });
-  }
-
-  private loadPlans(): void {
-    // Anonymous-friendly endpoint — no auth required, but interceptor adds
-    // bearer if present. Failing silently is fine; the switch CTA just won't show.
-    this.client
-      .getPlans()
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        catchError(() => of<GetMembershipPlansResponse[]>([])),
-      )
-      .subscribe((plans) => this.plans.set(plans));
+    this.facade.refresh();
   }
 
   /** Top-level CTA for non-subscribers — sends them to the marketing page. */
@@ -122,7 +84,7 @@ export class MembershipManagementComponent implements OnInit {
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: this.translate.instant('pages.membership.cancel_dialog_confirm'),
       rejectLabel: this.translate.instant('common.back'),
-      accept: () => this.cancel(),
+      accept: () => this.facade.cancel(),
     });
   }
 
@@ -142,50 +104,8 @@ export class MembershipManagementComponent implements OnInit {
       icon: 'pi pi-arrow-up-right',
       acceptLabel: this.translate.instant('pages.membership.switch_dialog_confirm'),
       rejectLabel: this.translate.instant('common.back'),
-      accept: () => this.swapToAnnual(yearly.code!),
+      accept: () => this.facade.swapPlan(yearly.code!),
     });
-  }
-
-  private swapToAnnual(planCode: string): void {
-    this.switching.set(true);
-    const command = new SwapMembershipPlanCommand({
-      newPlanCode: planCode,
-      // UserId is enriched server-side from JWT; field is required on the
-      // generated DTO so we send empty.
-      userId: '',
-    });
-    this.client
-      .swapPlan(command)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.switching.set(false);
-          this.snackbar.showSuccessTranslated('pages.membership.switch_success');
-          this.refresh();
-        },
-        error: (err) => {
-          this.switching.set(false);
-          this.snackbar.showApiError(err, 'membership.swap_same_plan');
-        },
-      });
-  }
-
-  private cancel(): void {
-    this.cancelling.set(true);
-    this.client
-      .cancel()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.cancelling.set(false);
-          this.snackbar.showSuccessTranslated('pages.membership.cancel_success');
-          this.refresh();
-        },
-        error: (err) => {
-          this.cancelling.set(false);
-          this.snackbar.showApiError(err, 'membership.not_found');
-        },
-      });
   }
 
   formatCzk(amount: number): string {

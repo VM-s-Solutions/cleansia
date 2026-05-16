@@ -35,4 +35,12 @@ public class OrderReview : Auditable, ITenantEntity
         Comment = comment;
         return this;
     }
+
+    public OrderReview Anonymize()
+    {
+        var suffix = Id.Length > 16 ? Id[..16] : Id;
+        UserId = $"[DEL]_{suffix}";
+        Comment = null;
+        return this;
+    }
 }

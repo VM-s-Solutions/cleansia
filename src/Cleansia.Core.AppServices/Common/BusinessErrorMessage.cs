@@ -92,7 +92,6 @@ public static class BusinessErrorMessage
     public const string OrderNotCompleted = "order.not_completed";
     public const string ReviewAlreadyExists = "order.review.already_exists";
     public const string ReviewRatingInvalid = "order.review.rating_invalid";
-    public const string OrderNotOwnedByUser = "order.not_owned_by_user";
 
     // User
     public const string EmailConfirmed = "user.email_confirmed";
@@ -276,6 +275,8 @@ public static class BusinessErrorMessage
     public const string GdprExportFailed = "gdpr.export_failed";
     public const string GdprDeletionFailed = "gdpr.deletion_failed";
     public const string GdprDeletionAlreadyPending = "gdpr.deletion_already_pending";
+    public const string GdprDeletionBlockedByOrder = "gdpr.deletion_blocked_by_order";
+    public const string GdprDeletionBlockedByInvoice = "gdpr.deletion_blocked_by_invoice";
     public const string ConsentNotFound = "gdpr.consent_not_found";
     public const string ConsentAlreadyGranted = "gdpr.consent_already_granted";
 

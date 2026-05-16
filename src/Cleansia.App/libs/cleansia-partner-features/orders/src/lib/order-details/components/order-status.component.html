@@ -1,0 +1,31 @@
+<cleansia-section [title]="'pages.order_details.order_status' | translate">
+  <div class="cleansia-order-details__grid" [formGroup]="formGroup()">
+    <div class="cleansia-order-details__field">
+      <cleansia-select
+        [label]="'pages.order_details.order_status' | translate"
+        [floatVariant]="'on'"
+        formControlName="orderStatus"
+        [options]="statusOptions()"
+        [disabled]="true"
+      />
+    </div>
+    <div class="cleansia-order-details__field">
+      <cleansia-select
+        [label]="'pages.order_details.payment_status' | translate"
+        [floatVariant]="'on'"
+        formControlName="paymentStatus"
+        [options]="paymentStatusOptions()"
+        [disabled]="true"
+      />
+    </div>
+    <div class="cleansia-order-details__field">
+      <cleansia-text-input
+        [label]="'pages.order_details.confirmation_code' | translate"
+        [floatVariant]="'on'"
+        formControlName="confirmationCode"
+        dataType="text"
+        [disabled]="true"
+      />
+    </div>
+  </div>
+</cleansia-section>

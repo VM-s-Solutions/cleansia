@@ -38,20 +38,55 @@ public class EmployeePayConfigRepository(CleansiaDbContext context) : BaseReposi
             .FirstOrDefaultAsync(c => c.EmployeeId == employeeId && c.PackageId == packageId, cancellationToken);
     }
 
-    public IQueryable<EmployeePayConfig> GetAllConfigs()
+    public async Task<IReadOnlyList<EmployeePayConfig>> GetByEmployeeIdAsync(string employeeId, CancellationToken cancellationToken)
     {
-        return GetDbSet()
-            .Include(c => c.Service)
-            .Include(c => c.Package)
-            .Include(c => c.Currency);
-    }
-
-    public IQueryable<EmployeePayConfig> GetByEmployeeId(string employeeId)
-    {
-        return GetDbSet()
+        return await GetDbSet()
             .Where(c => c.EmployeeId == employeeId)
             .Include(c => c.Service)
             .Include(c => c.Package)
-            .Include(c => c.Currency);
+            .Include(c => c.Currency)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<EmployeePayConfig>> GetServiceConfigsForOrderAsync(
+        IEnumerable<string> serviceIds, string employeeId, CancellationToken cancellationToken)
+    {
+        var ids = serviceIds.Distinct().ToList();
+        return await GetDbSet()
+            .Include(c => c.Service)
+            .Include(c => c.Package)
+            .Include(c => c.Currency)
+            .Where(c => c.ServiceId != null && ids.Contains(c.ServiceId)
+                && (c.EmployeeId == null || c.EmployeeId == employeeId))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<EmployeePayConfig>> GetPackageConfigsForOrderAsync(
+        IEnumerable<string> packageIds, string employeeId, CancellationToken cancellationToken)
+    {
+        var ids = packageIds.Distinct().ToList();
+        return await GetDbSet()
+            .Include(c => c.Service)
+            .Include(c => c.Package)
+            .Include(c => c.Currency)
+            .Where(c => c.PackageId != null && ids.Contains(c.PackageId)
+                && (c.EmployeeId == null || c.EmployeeId == employeeId))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<bool> HasConfigForOrderAsync(
+        IEnumerable<string> serviceIds,
+        IEnumerable<string> packageIds,
+        string employeeId,
+        CancellationToken cancellationToken)
+    {
+        var sIds = serviceIds.Distinct().ToList();
+        var pIds = packageIds.Distinct().ToList();
+        return await GetDbSet()
+            .AnyAsync(c =>
+                (c.EmployeeId == null || c.EmployeeId == employeeId) &&
+                ((c.ServiceId != null && sIds.Contains(c.ServiceId)) ||
+                 (c.PackageId != null && pIds.Contains(c.PackageId))),
+                cancellationToken);
     }
 }

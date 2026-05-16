@@ -1,0 +1,89 @@
+<footer class="cl-footer">
+  @if (showNewsletter()) {
+    <div class="cl-newsletter-wrap">
+      <div class="cl-newsletter">
+        <div class="cl-newsletter__mascot">
+          <img src="assets/images/mascot/mascot-ready.png" alt="Cleaning mascot" loading="lazy" />
+        </div>
+        <div class="cl-newsletter__content">
+          <h3>{{ 'pages.home.footer.newsletter_title' | translate }}</h3>
+          <p>{{ 'pages.home.footer.newsletter_subtitle' | translate }}</p>
+          <form class="cl-newsletter__form" #newsletterForm="ngForm" (ngSubmit)="submitRequest(newsletterForm)">
+            <div class="cl-newsletter__input">
+              <i class="pi pi-envelope"></i>
+              <input
+                type="email"
+                name="email"
+                ngModel
+                [placeholder]="'pages.home.footer.newsletter_placeholder' | translate"
+                required
+              />
+            </div>
+            <button type="submit" pButton [label]="'pages.home.footer.newsletter_button' | translate" class="p-button-rounded cl-btn-primary"></button>
+          </form>
+          <small class="cl-newsletter__note">
+            {{ 'pages.home.footer.unsubscribe_note' | translate }}
+            <a routerLink="/privacy">{{ 'pages.home.footer.privacy_link_text' | translate }}</a>
+          </small>
+        </div>
+      </div>
+    </div>
+  }
+
+  <div class="cl-footer__body">
+    <div class="cl-footer__columns">
+      <div class="cl-footer__brand">
+        <div class="cl-footer__brand-logo">
+          <cleansia-brand-name />
+        </div>
+        <p class="cl-footer__brand-desc">{{ 'pages.home.footer.description' | translate }}</p>
+        <div class="cl-footer__socials">
+          <a href="https://instagram.com/cleansia.cz" aria-label="Instagram" target="_blank" rel="noopener noreferrer"><i class="pi pi-instagram"></i></a>
+          <a href="https://facebook.com/cleansia" aria-label="Facebook" target="_blank" rel="noopener noreferrer"><i class="pi pi-facebook"></i></a>
+        </div>
+      </div>
+      <div class="cl-footer__col">
+        <h4>{{ 'pages.home.footer.company' | translate }}</h4>
+        <ul>
+          <li><a routerLink="/">{{ 'nav.home' | translate }}</a></li>
+          <li><a routerLink="/services">{{ 'nav.services' | translate }}</a></li>
+          <li><a routerLink="/order">{{ 'nav.book_now' | translate }}</a></li>
+        </ul>
+      </div>
+      <div class="cl-footer__col">
+        <h4>{{ 'pages.home.footer.support' | translate }}</h4>
+        <ul>
+          @if (isAnonymous()) {
+            <li><a routerLink="/orders/lookup">{{ 'pages.order_lookup.entry_link' | translate }}</a></li>
+          }
+          <li><a routerLink="/gdpr">{{ 'pages.home.footer.gdpr_link' | translate }}</a></li>
+          <li><a routerLink="/terms">{{ 'pages.home.footer.terms_link' | translate }}</a></li>
+        </ul>
+      </div>
+      <div class="cl-footer__col">
+        <h4>{{ 'pages.home.footer.contacts' | translate }}</h4>
+        <div class="cl-footer__col__actions">
+          <div class="cl-footer__contact">
+            <i class="pi pi-phone"></i>
+            <a href="tel:+420739788108">+420 739 788 108</a>
+          </div>
+          <div class="cl-footer__contact">
+            <i class="pi pi-envelope"></i>
+            <a href="mailto:info@cleansia.cz">info&#64;cleansia.cz</a>
+          </div>
+          <div class="cl-footer__contact">
+            <i class="pi pi-map-marker"></i>
+            <span>{{ 'pages.home.footer.address' | translate }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cl-footer__bottom">
+      <span>&copy; {{ currentYear }} Cleansia s.r.o. {{ 'footer.rights' | translate }}</span>
+      <div class="cl-footer__bottom-links">
+        <a routerLink="/privacy">{{ 'footer.privacy' | translate }}</a>
+        <a routerLink="/terms">{{ 'footer.terms' | translate }}</a>
+      </div>
+    </div>
+  </div>
+</footer>

@@ -10,10 +10,11 @@ import {
   SortDefinition,
   SortDirection,
 } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 import {
   RejectDialogComponent,
   RejectDialogData,
@@ -21,13 +22,11 @@ import {
 } from '../components';
 
 @Injectable()
-export class EmployeeDocumentsFacade {
+export class EmployeeDocumentsFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly dialogService = inject(DialogService);
-
-  private destroy$ = new Subject<void>();
 
   readonly documents = signal<EmployeeDocumentItem[]>([]);
   readonly documentsLoading = signal<boolean>(false);
@@ -57,7 +56,7 @@ export class EmployeeDocumentsFacade {
     this.adminClient.adminEmployeeDocumentClient
       .getPaged(request)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.documentsLoading.set(false))
       )
@@ -72,7 +71,7 @@ export class EmployeeDocumentsFacade {
     this.adminClient.adminEmployeeDocumentClient
       .approve(documentId)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((response) => {
@@ -98,7 +97,7 @@ export class EmployeeDocumentsFacade {
     this.adminClient.adminEmployeeDocumentClient
       .reject(documentId, command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((response) => {
@@ -184,7 +183,7 @@ export class EmployeeDocumentsFacade {
     return this.adminClient.adminEmployeeDocumentClient
       .download(documentId)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null))
       );
   }
@@ -343,10 +342,5 @@ export class EmployeeDocumentsFacade {
           'pages.employee_detail.document_types.unknown'
         );
     }
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

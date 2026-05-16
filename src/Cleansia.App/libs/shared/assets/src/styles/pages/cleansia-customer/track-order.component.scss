@@ -296,9 +296,12 @@ $font-heading: 'Poppins', sans-serif;
 
   &__order-card-footer {
     display: flex;
-    justify-content: flex-end;
-    padding-top: 0.5rem;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding-top: 0.75rem;
     border-top: 1px solid $border;
+    flex-wrap: wrap;
   }
 
   &__order-card-total {

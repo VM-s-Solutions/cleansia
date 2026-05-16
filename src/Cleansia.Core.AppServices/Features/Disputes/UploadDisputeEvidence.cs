@@ -11,7 +11,7 @@ namespace Cleansia.Core.AppServices.Features.Disputes;
 
 public class UploadDisputeEvidence
 {
-    private const long MaxFileSizeBytes = 10 * 1024 * 1024; // 10 MB
+    private const long MaxFileSizeBytes = 10 * 1024 * 1024;
 
     private static readonly string[] AllowedContentTypes =
     {
@@ -26,8 +26,7 @@ public class UploadDisputeEvidence
         string DisputeId,
         string FileName,
         string ContentType,
-        byte[] FileData,
-        string UserId = "") : ICommand<Response>;
+        byte[] FileData) : ICommand<Response>;
 
     public record Response(
         string EvidenceId,
@@ -45,10 +44,6 @@ public class UploadDisputeEvidence
                 .WithMessage(BusinessErrorMessage.Required)
                 .MustAsync(disputeRepository.ExistsAsync)
                 .WithMessage(BusinessErrorMessage.DisputeNotFound);
-
-            RuleFor(x => x.UserId)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required);
 
             RuleFor(x => x.FileName)
                 .Cascade(CascadeMode.Stop)
@@ -75,10 +70,12 @@ public class UploadDisputeEvidence
 
     public class Handler(
         IDisputeRepository disputeRepository,
+        IUserSessionProvider userSessionProvider,
         IBlobContainerClientFactory blobClientFactory) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
+            var userId = userSessionProvider.GetUserId()!;
             var dispute = await disputeRepository.GetQueryable()
                 .FirstOrDefaultAsync(d => d.Id == command.DisputeId, cancellationToken);
 
@@ -88,7 +85,7 @@ public class UploadDisputeEvidence
                     new Error(nameof(command.DisputeId), BusinessErrorMessage.DisputeNotFound));
             }
 
-            if (dispute.UserId != command.UserId)
+            if (dispute.UserId != userId)
             {
                 return BusinessResult.Failure<Response>(
                     new Error(nameof(command.DisputeId), BusinessErrorMessage.DisputeNotOwnedByUser));
@@ -104,9 +101,8 @@ public class UploadDisputeEvidence
                 .Build();
             await blobClient.UploadAsync(blobName, stream, metadata, cancellationToken);
 
-            dispute.AddEvidence(command.FileName, blobName, command.UserId);
+            dispute.AddEvidence(command.FileName, blobName, userId);
 
-            // Re-resolve the just-added evidence so we can return its id and timestamp.
             var addedEvidence = dispute.Evidence.LastOrDefault(e => e.FilePath == blobName);
 
             string? blobUrl = null;
@@ -116,7 +112,6 @@ public class UploadDisputeEvidence
             }
             catch
             {
-                // Swallow — UI handles null gracefully.
             }
 
             return BusinessResult.Success(new Response(

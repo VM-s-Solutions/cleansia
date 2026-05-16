@@ -7,18 +7,10 @@ using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
+using StripeException = Stripe.StripeException;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
-/// <summary>
-/// Mobile PaymentSheet entry point: given an existing card-payable order in
-/// Pending status, returns the Stripe PaymentIntent client_secret + ephemeral
-/// key + customer id that the mobile SDK needs to confirm payment.
-///
-/// Lazily provisions a Stripe Customer on the user's first card payment and
-/// persists the id back to <see cref="Cleansia.Core.Domain.Users.User.StripeCustomerId"/>
-/// so subsequent bookings reuse it (enabling saved cards in PaymentSheet).
-/// </summary>
 public class CreatePaymentIntent
 {
     public record Command(string OrderId) : ICommand<Response>;
@@ -31,72 +23,77 @@ public class CreatePaymentIntent
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator()
+        private readonly IOrderRepository _orderRepository;
+        private readonly IUserSessionProvider _userSessionProvider;
+
+        public Validator(
+            IOrderRepository orderRepository,
+            IUserSessionProvider userSessionProvider)
         {
+            _orderRepository = orderRepository;
+            _userSessionProvider = userSessionProvider;
+
+            // Returning OrderNotFound for non-owners is deliberate — it
+            // prevents enumeration of which order ids exist for other users.
             RuleFor(x => x.OrderId)
+                .Cascade(CascadeMode.Stop)
                 .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required);
+                .WithMessage(BusinessErrorMessage.Required)
+                .MustAsync(BeOwnedByCallerAsync)
+                .WithMessage(BusinessErrorMessage.OrderNotFound)
+                .MustAsync(BeCardPaymentAsync)
+                .WithMessage(BusinessErrorMessage.InvalidEnumValue)
+                .MustAsync(NotAlreadyPaidAsync)
+                .WithMessage("order.payment.already_paid");
+        }
+
+        private async Task<bool> BeOwnedByCallerAsync(string orderId, CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId();
+            if (string.IsNullOrEmpty(userId)) return false;
+            var order = await _orderRepository.GetByIdAsync(orderId, cancellationToken);
+            return order != null && order.UserId == userId;
+        }
+
+        private async Task<bool> BeCardPaymentAsync(string orderId, CancellationToken cancellationToken)
+        {
+            var order = await _orderRepository.GetByIdAsync(orderId, cancellationToken);
+            return order != null && order.PaymentType == PaymentType.Card;
+        }
+
+        private async Task<bool> NotAlreadyPaidAsync(string orderId, CancellationToken cancellationToken)
+        {
+            var order = await _orderRepository.GetByIdAsync(orderId, cancellationToken);
+            return order != null && order.PaymentStatus != PaymentStatus.Paid;
         }
     }
 
     public class Handler(
         IOrderRepository orderRepository,
         IUserRepository userRepository,
+        IUserSessionProvider userSessionProvider,
         IStripeClient stripeClient,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var order = await orderRepository.GetByIdAsync(command.OrderId, cancellationToken);
-            if (order == null)
-            {
-                return BusinessResult.Failure<Response>(new Error(
-                    nameof(command.OrderId),
-                    BusinessErrorMessage.OrderNotFound));
-            }
+            // Ownership + payment-type + not-paid enforced by Validator.
+            var order = (await orderRepository.GetByIdAsync(command.OrderId, cancellationToken))!;
+            var sessionUserId = userSessionProvider.GetUserId()!;
 
-            // Card-only path. Cash orders never get a PaymentIntent — they
-            // settle off-platform and the order's PaymentStatus moves manually.
-            if (order.PaymentType != PaymentType.Card)
-            {
-                return BusinessResult.Failure<Response>(new Error(
-                    nameof(order.PaymentType),
-                    BusinessErrorMessage.InvalidEnumValue));
-            }
-
-            // Already paid → no-op. Returning success would double-charge if
-            // the client retries; failing surfaces the right error in the UI.
-            if (order.PaymentStatus == PaymentStatus.Paid)
-            {
-                return BusinessResult.Failure<Response>(new Error(
-                    nameof(order.PaymentStatus),
-                    "order.payment.already_paid"));
-            }
-
-            // Owner check. PaymentIntent is created against the user's Stripe
-            // customer, so we can't issue one for guest orders. (Guest checkout
-            // path uses Checkout Session, not PaymentSheet.)
-            if (string.IsNullOrEmpty(order.UserId))
-            {
-                return BusinessResult.Failure<Response>(new Error(
-                    nameof(order.UserId),
-                    BusinessErrorMessage.Required));
-            }
-
-            var user = await userRepository.GetByIdAsync(order.UserId, cancellationToken);
+            var user = await userRepository.GetByIdAsync(sessionUserId, cancellationToken);
             if (user == null)
             {
                 return BusinessResult.Failure<Response>(new Error(
-                    nameof(order.UserId),
+                    nameof(command.OrderId),
                     BusinessErrorMessage.UserNotFound));
             }
 
-            // Lazy Stripe Customer creation. Cash-only users never reach this
-            // code path so they never get a Stripe customer record.
             var stripeCustomerId = user.StripeCustomerId;
             if (string.IsNullOrEmpty(stripeCustomerId))
             {
                 stripeCustomerId = await stripeClient.CreateCustomerAsync(
+                    user.Id,
                     user.Email,
                     $"{user.FirstName} {user.LastName}".Trim(),
                     user.PhoneNumber,
@@ -115,9 +112,43 @@ public class CreatePaymentIntent
                 displayOrderNumber: order.DisplayOrderNumber,
                 cancellationToken: cancellationToken);
 
-            // Ephemeral key is consumed once by PaymentSheet to surface saved
-            // cards. Lifetime is ~10 minutes; generate fresh per request rather
-            // than caching server-side.
+            if (string.IsNullOrEmpty(order.StripePaymentIntentId))
+            {
+                order.AssignStripePaymentIntentId(intent.Id);
+            }
+            else if (order.StripePaymentIntentId != intent.Id)
+            {
+                // Amount changed (typically: customer edited extras after
+                // first PaymentSheet open). Stripe's idempotency key includes
+                // the cents amount, so a different amount → different intent.
+                // We must cancel the OLD intent so the customer can't end up
+                // paying both — best-effort, log on failure (stale intent
+                // will eventually be garbage-collected by Stripe but until
+                // then it's a double-charge risk).
+                var oldIntentId = order.StripePaymentIntentId;
+                try
+                {
+                    await stripeClient.CancelPaymentIntentAsync(oldIntentId, cancellationToken);
+                    logger.LogInformation(
+                        "Cancelled stale PaymentIntent {OldIntentId} for order {OrderId}; new intent is {NewIntentId}",
+                        oldIntentId, order.Id, intent.Id);
+                }
+                catch (StripeException ex)
+                {
+                    // If the old intent is already succeeded, cancel throws.
+                    // That's the dangerous case — customer may have just paid
+                    // the old intent and we're about to hand them a new one.
+                    // Refuse to proceed; webhook reconciliation will catch up.
+                    logger.LogError(ex,
+                        "Failed to cancel stale PaymentIntent {OldIntentId} for order {OrderId}; refusing to mint a new intent to avoid double-charge",
+                        oldIntentId, order.Id);
+                    return BusinessResult.Failure<Response>(new Error(
+                        nameof(order.PaymentType),
+                        BusinessErrorMessage.PaymentGatewayUnavailable));
+                }
+                order.AssignStripePaymentIntentId(intent.Id);
+            }
+
             var ephemeralKey = await stripeClient.CreateEphemeralKeyAsync(
                 stripeCustomerId, cancellationToken);
 

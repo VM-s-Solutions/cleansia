@@ -11,4 +11,8 @@ public interface IUserSessionProvider
     Claim? GetTypedUserClaim(string claimType);
 
     string? GetUserEmail();
+
+    string? GetUserId();
+
+    string? GetEmployeeId();
 }

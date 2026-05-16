@@ -1,0 +1,14 @@
+<div class="cleansia-dashboard-skeleton">
+  <!-- Stat Cards -->
+  <div class="skeleton-stats">
+    @for (i of [1, 2, 3, 4]; track i) {
+      <div class="skeleton-stat-card">
+        <p-skeleton shape="circle" size="3rem" />
+        <div class="skeleton-stat-content">
+          <p-skeleton width="80px" height="0.875rem" />
+          <p-skeleton width="60px" height="1.5rem" />
+        </div>
+      </div>
+    }
+  </div>
+</div>

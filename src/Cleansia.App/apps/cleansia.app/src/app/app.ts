@@ -3,10 +3,10 @@ import { isPlatformBrowser } from '@angular/common';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import {
   CleansiaCookieConsentComponent,
-  CleansiaCustomerFooterComponent,
-  CleansiaCustomerNavbarComponent,
   CleansiaDevBannerComponent,
 } from '@cleansia/components';
+import { CleansiaCustomerFooterComponent } from './components/footer/customer-footer.component';
+import { CleansiaCustomerNavbarComponent } from './components/navbar/customer-navbar.component';
 import { ConsentSyncService } from '@cleansia/customer-services';
 import { environment } from '../environments/environment';
 import { PageTitleService } from '@cleansia/services';

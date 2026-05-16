@@ -3,9 +3,10 @@ import { UserFilter } from '@cleansia/models';
 import {
   ApiException,
   BlobFileDto,
-  SortDefinition,
-  UserListItem,
+  MyProfileDto,
   PagedDataOfUserListItem,
+  SortDefinition,
+  UserItem,
 } from '@cleansia/partner-services';
 
 import { createAction, props } from '@ngrx/store';
@@ -32,7 +33,7 @@ export const loadUserPagedFailure = createAction(
 export const loadUserCurrent = createAction('[User] Load Current');
 export const loadUserCurrentSuccess = createAction(
   '[User] Load Current Success',
-  props<{ user: UserListItem }>()
+  props<{ user: MyProfileDto }>()
 );
 export const loadUserCurrentFailure = createAction(
   '[User] Load Current Failure',
@@ -45,7 +46,7 @@ export const loadUserDetail = createAction(
 );
 export const loadUserDetailSuccess = createAction(
   '[User] Load Detail Success',
-  props<{ user: UserListItem }>()
+  props<{ user: UserItem }>()
 );
 export const loadUserDetailFailure = createAction(
   '[User] Load Detail Failure',

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import {
   CleansiaBrandNameComponent,
@@ -26,6 +26,7 @@ import { AdminLoginFacade } from './admin-login.facade';
   ],
   templateUrl: './admin-login.component.html',
   providers: [AdminLoginFacade],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminLoginComponent {
   protected readonly facade = inject(AdminLoginFacade);

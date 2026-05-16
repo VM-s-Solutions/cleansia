@@ -37,9 +37,11 @@ public class ResendConfirmationEmail
                 .SetValidator(new LanguageValidator(languageRepository));
         }
 
-        private Task<bool> HasUnconfirmedEmailAsync(string email, CancellationToken cancellationToken) => _userRepository
-            .GetByEmailAsync(email, cancellationToken)
-            .ContinueWith(userTask => userTask.Result?.IsEmailConfirmed == false, cancellationToken);
+        private async Task<bool> HasUnconfirmedEmailAsync(string email, CancellationToken cancellationToken)
+        {
+            var user = await _userRepository.GetByEmailAsync(email, cancellationToken);
+            return user?.IsEmailConfirmed == false;
+        }
     }
 
     public record Command(string Email, string Language) : ICommand<bool>;

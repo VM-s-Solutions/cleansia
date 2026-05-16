@@ -38,11 +38,32 @@ public class Constants
         public const string SubscriptionUpdated = "customer.subscription.updated";
         public const string SubscriptionDeleted = "customer.subscription.deleted";
         public const string InvoicePaymentFailed = "invoice.payment_failed";
+
+        public static bool IsOrderEvent(string eventType) =>
+            eventType is CompletedSession
+                      or ExpiredSession
+                      or PaymentIntentSucceeded
+                      or PaymentIntentPaymentFailed
+                      or PaymentIntentCanceled;
+
+        public static bool IsSubscriptionEvent(string eventType) =>
+            eventType is SubscriptionCreated
+                      or SubscriptionUpdated
+                      or SubscriptionDeleted
+                      or InvoicePaymentFailed;
     }
 
     public class Language
     {
         public const string English = "en";
+    }
+
+    public class Currency
+    {
+        // CZK is the platform's primary fiat — fallback when an order/receipt
+        // didn't capture a currency record. Multi-currency is supported via
+        // the Currency entity; this is just the safety-net string default.
+        public const string Czk = "CZK";
     }
 
     public class ReceiptNumberFormat

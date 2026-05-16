@@ -65,4 +65,11 @@ public class UserRepository(CleansiaDbContext context)
             .Where(user => user.IsEmailConfirmed)
             .Where(user => emails.Contains(user.Email));
     }
+
+    public Task<User?> GetByIdIgnoringTenantAsync(string id, CancellationToken cancellationToken = default)
+    {
+        return GetDbSet()
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+    }
 }

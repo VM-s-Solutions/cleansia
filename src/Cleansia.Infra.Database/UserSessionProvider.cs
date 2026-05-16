@@ -25,4 +25,16 @@ public class UserSessionProvider(IHttpContextAccessor httpContextAccessor) : IUs
     {
         return GetTypedUserClaim(ClaimTypes.Email)?.Value;
     }
+
+    public string? GetUserId()
+    {
+        return GetTypedUserClaim(ClaimTypes.NameIdentifier)?.Value;
+    }
+
+    public string? GetEmployeeId()
+    {
+        return GetTypedUserClaim(EmployeeIdClaimType)?.Value;
+    }
+
+    public const string EmployeeIdClaimType = "employee_id";
 }

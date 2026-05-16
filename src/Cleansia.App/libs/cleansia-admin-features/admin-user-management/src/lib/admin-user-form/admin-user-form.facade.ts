@@ -8,9 +8,10 @@ import {
   UpdateAdminUserCommand,
   UpdateAdminUserResponse,
 } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 export interface AdminUserFormData {
   email: string;
@@ -21,13 +22,11 @@ export interface AdminUserFormData {
 }
 
 @Injectable()
-export class AdminUserFormFacade {
+export class AdminUserFormFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
-
-  private destroy$ = new Subject<void>();
 
   readonly user = signal<AdminUserDetailDto | null>(null);
   readonly loading = signal<boolean>(false);
@@ -39,7 +38,7 @@ export class AdminUserFormFacade {
     this.adminClient.adminUserClient
       .details(userId)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
@@ -66,7 +65,7 @@ export class AdminUserFormFacade {
     this.adminClient.adminUserClient
       .create(command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
@@ -95,7 +94,7 @@ export class AdminUserFormFacade {
     this.adminClient.adminUserClient
       .update(userId, command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
@@ -113,10 +112,5 @@ export class AdminUserFormFacade {
 
   navigateBack(): void {
     this.router.navigate([CleansiaAdminRoute.ADMIN_USER_MANAGEMENT]);
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Production: HTTPS only (default Android 9+ behaviour).
+  Debug:     allow cleartext to emulator-host aliases so we can talk to the local
+             Customer Mobile API running on http://localhost:5004 (emulator sees host as 10.0.2.2).
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Allow cleartext HTTP only for local dev endpoints. Emulator hits the host
+         via 10.0.2.2; real-device testing via the dev machine's LAN IP. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <!-- Private LAN ranges — broaden if you test from a physical device on the same Wi-Fi. -->
+        <domain includeSubdomains="true">192.168.1.1</domain>
+    </domain-config>
+</network-security-config>

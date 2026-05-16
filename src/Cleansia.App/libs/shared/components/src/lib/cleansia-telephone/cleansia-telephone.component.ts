@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import {
+  ChangeDetectionStrategy,
   Component,
   ElementRef,
   HostListener,
@@ -32,6 +33,7 @@ import { CleansiaBaseFormInputComponent } from '../cleansia-base-form';
       multi: true,
     },
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaTelephoneComponent
   extends CleansiaBaseFormInputComponent

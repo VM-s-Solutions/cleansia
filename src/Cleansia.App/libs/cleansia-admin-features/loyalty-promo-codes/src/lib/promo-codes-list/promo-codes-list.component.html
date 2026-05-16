@@ -6,6 +6,7 @@
       </div>
       <div class="header-actions">
         <cleansia-button
+          *cleansiaPermission="Policy.CanCreatePromoCode"
           [label]="'pages.promo_codes.new_button' | translate"
           icon="pi pi-plus"
           (onClick)="createPromoCode()"

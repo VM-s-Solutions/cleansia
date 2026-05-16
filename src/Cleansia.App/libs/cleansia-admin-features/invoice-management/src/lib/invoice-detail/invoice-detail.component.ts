@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   EmployeeInvoiceStatus,
@@ -14,7 +14,8 @@ import {
   TableColumn,
   TableAction,
 } from '@cleansia/components';
-import { CleansiaAdminRoute } from '@cleansia/services';
+import { CleansiaAdminRoute, Policy } from '@cleansia/services';
+import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
@@ -34,9 +35,11 @@ import { getOrderPaysTableDefinition } from './invoice-detail.models';
     CleansiaSectionComponent,
     CleansiaTableComponent,
     ToastModule,
+    CleansiaPermissionDirective,
   ],
   templateUrl: './invoice-detail.component.html',
   providers: [InvoiceDetailFacade, DialogService],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InvoiceDetailComponent implements OnInit, OnDestroy {
   protected readonly facade = inject(InvoiceDetailFacade);
@@ -45,6 +48,7 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
   private readonly translate = inject(TranslateService);
 
   readonly EmployeeInvoiceStatus = EmployeeInvoiceStatus;
+  protected readonly Policy = Policy;
 
   columns!: TableColumn<OrderEmployeePayDto>[];
   actions!: TableAction<OrderEmployeePayDto>[];

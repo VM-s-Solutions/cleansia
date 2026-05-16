@@ -1,25 +1,22 @@
 import {
   HttpErrorResponse,
+  HttpEvent,
+  HttpHandlerFn,
   HttpInterceptorFn,
   HttpRequest,
-  HttpHandlerFn,
-  HttpEvent,
   HttpStatusCode,
 } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { BehaviorSubject, Observable, catchError, filter, switchMap, take, throwError } from 'rxjs';
+import { Observable, catchError, switchMap, throwError } from 'rxjs';
+import { CleansiaCustomerRoute } from '@cleansia/services';
 import { CustomerAuthService } from '../services';
-
-// Module-scoped single-flight state for refresh calls. If 10 requests 401 at
-// once, only one actual refresh call fires; the other 9 wait for its result
-// then retry with the new token.
-let isRefreshing = false;
-const refreshedToken$ = new BehaviorSubject<string | null>(null);
+import { CustomerRefreshCoordinator } from './refresh-coordinator';
 
 export const CustomerErrorInterceptorFn: HttpInterceptorFn = (req, next) => {
   const authService = inject(CustomerAuthService);
   const router = inject(Router);
+  const coordinator = inject(CustomerRefreshCoordinator);
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
@@ -40,7 +37,7 @@ export const CustomerErrorInterceptorFn: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
 
-      return handle401(req, next, authService, router);
+      return handle401(req, next, authService, router, coordinator);
     })
   );
 };
@@ -49,29 +46,27 @@ function handle401(
   req: HttpRequest<unknown>,
   next: HttpHandlerFn,
   authService: CustomerAuthService,
-  router: Router
+  router: Router,
+  coordinator: CustomerRefreshCoordinator
 ): Observable<HttpEvent<unknown>> {
-  if (isRefreshing) {
-    // Another refresh is in flight; wait for its result then retry our request.
-    return refreshedToken$.pipe(
-      filter((token): token is string => token !== null),
-      take(1),
-      switchMap((token) => next(req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })))
-    );
+  if (coordinator.isInFlight()) {
+    // Another refresh is in flight; wait for its result then replay our
+    // request. The rotated auth cookie carries the new credentials — no
+    // header swap needed.
+    return coordinator.waitForRefresh().pipe(switchMap(() => next(req)));
   }
 
-  isRefreshing = true;
-  refreshedToken$.next(null);
+  coordinator.begin();
 
   return authService.refreshSession().pipe(
-    switchMap((newToken) => {
-      isRefreshing = false;
-      refreshedToken$.next(newToken);
-      return next(req.clone({ setHeaders: { Authorization: `Bearer ${newToken}` } }));
+    switchMap(() => {
+      // Pass the CSRF token forward to wake any other queued waiters.
+      // (Value doesn't matter, just signals "refresh succeeded".)
+      coordinator.complete(authService.getCsrfToken() ?? 'ok');
+      return next(req);
     }),
     catchError((refreshError) => {
-      isRefreshing = false;
-      refreshedToken$.next(null);
+      coordinator.fail();
       forceLogout(authService, router);
       return throwError(() => refreshError);
     })
@@ -81,6 +76,6 @@ function handle401(
 function forceLogout(authService: CustomerAuthService, router: Router): void {
   if (authService.isLoggedIn() || authService.hasValidRefreshToken()) {
     authService.removeSession();
-    router.navigate(['login']);
+    router.navigate(['/' + CleansiaCustomerRoute.LOGIN]);
   }
 }

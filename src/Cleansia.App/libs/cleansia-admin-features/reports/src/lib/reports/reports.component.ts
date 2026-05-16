@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import {
@@ -11,6 +11,14 @@ import {
   CleansiaTitleComponent,
   TableColumn,
 } from '@cleansia/components';
+import {
+  EmployeePayrollSummary,
+  MonthlyPayroll,
+  PayrollByStatus,
+  RevenueByPackage,
+  RevenueByPaymentType,
+  RevenueByService,
+} from '@cleansia/admin-services';
 import { TranslateService } from '@ngx-translate/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
@@ -42,6 +50,7 @@ import { ReportsFacade, ReportType } from './reports.facade';
   ],
   templateUrl: './reports.component.html',
   providers: [ReportsFacade],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ReportsComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
@@ -71,14 +80,14 @@ export class ReportsComponent implements OnInit {
   activeFilterCount = computed(() => this.hasActiveFilters() ? 1 : 0);
 
   // Revenue Tables
-  revenueByServiceColumns: TableColumn[] = [];
-  revenueByPackageColumns: TableColumn[] = [];
-  revenueByPaymentTypeColumns: TableColumn[] = [];
+  revenueByServiceColumns: TableColumn<RevenueByService>[] = [];
+  revenueByPackageColumns: TableColumn<RevenueByPackage>[] = [];
+  revenueByPaymentTypeColumns: TableColumn<RevenueByPaymentType>[] = [];
 
   // Payroll Tables
-  employeeSummariesColumns: TableColumn[] = [];
-  payrollByStatusColumns: TableColumn[] = [];
-  monthlyPayrollColumns: TableColumn[] = [];
+  employeeSummariesColumns: TableColumn<EmployeePayrollSummary>[] = [];
+  payrollByStatusColumns: TableColumn<PayrollByStatus>[] = [];
+  monthlyPayrollColumns: TableColumn<MonthlyPayroll>[] = [];
 
   ngOnInit(): void {
     this.rebuildTableDefinitions();
@@ -111,7 +120,7 @@ export class ReportsComponent implements OnInit {
         id: 'totalRevenue',
         field: 'totalRevenue',
         header: this.translate.instant('pages.reports.total_revenue'),
-        getValue: (row: any) => this.facade.formatCurrency(row?.totalRevenue),
+        getValue: (row) => this.facade.formatCurrency(row?.totalRevenue),
       },
     ];
 
@@ -130,7 +139,7 @@ export class ReportsComponent implements OnInit {
         id: 'totalRevenue',
         field: 'totalRevenue',
         header: this.translate.instant('pages.reports.total_revenue'),
-        getValue: (row: any) => this.facade.formatCurrency(row?.totalRevenue),
+        getValue: (row) => this.facade.formatCurrency(row?.totalRevenue),
       },
     ];
 
@@ -149,7 +158,7 @@ export class ReportsComponent implements OnInit {
         id: 'totalRevenue',
         field: 'totalRevenue',
         header: this.translate.instant('pages.reports.total_revenue'),
-        getValue: (row: any) => this.facade.formatCurrency(row?.totalRevenue),
+        getValue: (row) => this.facade.formatCurrency(row?.totalRevenue),
       },
     ];
 
@@ -174,25 +183,25 @@ export class ReportsComponent implements OnInit {
         id: 'subTotal',
         field: 'subTotal',
         header: this.translate.instant('pages.reports.subtotal'),
-        getValue: (row: any) => this.facade.formatCurrency(row?.subTotal),
+        getValue: (row) => this.facade.formatCurrency(row?.subTotal),
       },
       {
         id: 'bonusAmount',
         field: 'bonusAmount',
         header: this.translate.instant('pages.reports.bonus'),
-        getValue: (row: any) => this.facade.formatCurrency(row?.bonusAmount),
+        getValue: (row) => this.facade.formatCurrency(row?.bonusAmount),
       },
       {
         id: 'deductionAmount',
         field: 'deductionAmount',
         header: this.translate.instant('pages.reports.deductions'),
-        getValue: (row: any) => this.facade.formatCurrency(row?.deductionAmount),
+        getValue: (row) => this.facade.formatCurrency(row?.deductionAmount),
       },
       {
         id: 'totalAmount',
         field: 'totalAmount',
         header: this.translate.instant('pages.reports.total_amount'),
-        getValue: (row: any) => this.facade.formatCurrency(row?.totalAmount),
+        getValue: (row) => this.facade.formatCurrency(row?.totalAmount),
       },
     ];
 
@@ -211,7 +220,7 @@ export class ReportsComponent implements OnInit {
         id: 'totalAmount',
         field: 'totalAmount',
         header: this.translate.instant('pages.reports.total_amount'),
-        getValue: (row: any) => this.facade.formatCurrency(row?.totalAmount),
+        getValue: (row) => this.facade.formatCurrency(row?.totalAmount),
       },
     ];
 
@@ -220,7 +229,7 @@ export class ReportsComponent implements OnInit {
         id: 'month',
         field: 'monthName',
         header: this.translate.instant('pages.reports.month'),
-        getValue: (row: any) => `${row?.monthName} ${row?.year}`,
+        getValue: (row) => `${row?.monthName} ${row?.year}`,
       },
       {
         id: 'invoiceCount',
@@ -231,7 +240,7 @@ export class ReportsComponent implements OnInit {
         id: 'totalAmount',
         field: 'totalAmount',
         header: this.translate.instant('pages.reports.total_amount'),
-        getValue: (row: any) => this.facade.formatCurrency(row?.totalAmount),
+        getValue: (row) => this.facade.formatCurrency(row?.totalAmount),
       },
     ];
   }

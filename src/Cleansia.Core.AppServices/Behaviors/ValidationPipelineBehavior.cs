@@ -1,11 +1,13 @@
 ﻿using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Behaviors;
 
 public class ValidationPipelineBehavior<TRequest, TResponse>
-    (IEnumerable<IValidator<TRequest>> validators)
+    (IEnumerable<IValidator<TRequest>> validators,
+     ILogger<ValidationPipelineBehavior<TRequest, TResponse>> logger)
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
     where TResponse : BusinessResult
@@ -17,6 +19,19 @@ public class ValidationPipelineBehavior<TRequest, TResponse>
     {
         if (!validators.Any())
         {
+            var requestType = typeof(TRequest);
+            if (requestType.Name == "Command" || requestType.DeclaringType?.Name.EndsWith("Command") == true)
+            {
+#if DEBUG
+                throw new InvalidOperationException(
+                    $"Command {requestType.FullName} has no FluentValidation validator. " +
+                    "Add one (even an empty AbstractValidator<Command>) or rename to Query.");
+#else
+                logger.LogCritical(
+                    "Command {RequestType} has no FluentValidation validator — pipeline failed open. " +
+                    "Add a validator immediately.", requestType.FullName);
+#endif
+            }
             return await next(cancellationToken);
         }
 

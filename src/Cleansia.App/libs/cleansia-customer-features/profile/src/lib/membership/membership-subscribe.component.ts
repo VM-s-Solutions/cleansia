@@ -2,23 +2,16 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   OnInit,
   computed,
   inject,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { CleansiaButtonComponent } from '@cleansia/components';
-import {
-  CreateMembershipCheckoutSessionCommand,
-  CustomerClient,
-  GetMembershipPlansResponse,
-} from '@cleansia/customer-services';
-import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
+import { CleansiaCustomerRoute } from '@cleansia/services';
 import { TranslatePipe } from '@ngx-translate/core';
-import { catchError, of } from 'rxjs';
+import { MembershipFacade } from './membership.facade';
 
 /**
  * Marketing + start-checkout page for Cleansia Plus on the web. Lists the
@@ -32,19 +25,17 @@ import { catchError, of } from 'rxjs';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, TranslatePipe, CleansiaButtonComponent],
+  providers: [MembershipFacade],
   templateUrl: './membership-subscribe.component.html',
 })
 export class MembershipSubscribeComponent implements OnInit {
-  // Always go through CustomerClient — direct injection of MembershipClient
-  // hits NSwag's empty-string default baseUrl and bypasses CUSTOMER_API_BASE_URL.
-  private readonly customerClient = inject(CustomerClient);
-  private readonly client = this.customerClient.membershipClient;
-  private readonly snackbar = inject(SnackbarService);
-  private readonly destroyRef = inject(DestroyRef);
+  private readonly facade = inject(MembershipFacade);
   private readonly router = inject(Router);
 
-  submitting = signal(false);
-  plans = signal<GetMembershipPlansResponse[]>([]);
+  // Re-expose facade signals so existing template bindings keep working.
+  readonly submitting = this.facade.submitting;
+  readonly plans = this.facade.plans;
+
   selectedCode = signal<string>('PLUS_MONTHLY');
 
   /** Currently selected plan; null while plans are loading. */
@@ -53,24 +44,13 @@ export class MembershipSubscribeComponent implements OnInit {
   );
 
   ngOnInit(): void {
-    this.loadPlans();
-  }
-
-  private loadPlans(): void {
-    this.client
-      .getPlans()
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        catchError(() => of<GetMembershipPlansResponse[]>([])),
-      )
-      .subscribe((plans) => {
-        this.plans.set(plans);
-        // Default to the first Monthly plan; falls back to the first
-        // available plan if monthly isn't seeded.
-        const monthly = plans.find((p) => p.billingInterval === 1);
-        if (monthly && monthly.code) this.selectedCode.set(monthly.code);
-        else if (plans.length > 0 && plans[0].code) this.selectedCode.set(plans[0].code);
-      });
+    this.facade.loadPlans((plans) => {
+      // Default to the first Monthly plan; falls back to the first
+      // available plan if monthly isn't seeded.
+      const monthly = plans.find((p) => p.billingInterval === 1);
+      if (monthly && monthly.code) this.selectedCode.set(monthly.code);
+      else if (plans.length > 0 && plans[0].code) this.selectedCode.set(plans[0].code);
+    });
   }
 
   selectPlan(code: string | undefined): void {
@@ -83,7 +63,6 @@ export class MembershipSubscribeComponent implements OnInit {
     if (this.submitting()) return;
     const planCode = this.selectedCode();
     if (!planCode) return;
-    this.submitting.set(true);
 
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     // Land on the celebration page after Stripe confirms — replaces the
@@ -93,32 +72,7 @@ export class MembershipSubscribeComponent implements OnInit {
     const successUrl = `${origin}/${CleansiaCustomerRoute.MEMBERSHIP}/welcome`;
     const cancelUrl = `${origin}/${CleansiaCustomerRoute.MEMBERSHIP}/subscribe`;
 
-    const command = new CreateMembershipCheckoutSessionCommand({
-      planCode,
-      successUrl,
-      cancelUrl,
-      // UserId is enriched server-side from the JWT; the wire field is
-      // required by the generated DTO so we send an empty string here.
-      userId: '',
-    });
-
-    this.client
-      .createCheckoutSession(command)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (response) => {
-          if (response?.checkoutUrl && typeof window !== 'undefined') {
-            window.location.href = response.checkoutUrl;
-          } else {
-            this.submitting.set(false);
-            this.snackbar.showErrorTranslated('membership.stripe_customer_required');
-          }
-        },
-        error: (err) => {
-          this.submitting.set(false);
-          this.snackbar.showApiError(err, 'membership.stripe_customer_required');
-        },
-      });
+    this.facade.createCheckoutSession(planCode, successUrl, cancelUrl);
   }
 
   goBack(): void {

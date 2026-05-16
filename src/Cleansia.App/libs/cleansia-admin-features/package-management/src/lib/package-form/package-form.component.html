@@ -72,7 +72,7 @@
       </cleansia-section>
 
       <cleansia-section [title]="'pages.package_form.translations' | translate">
-        <p-tabs [value]="facade.languages()[0]?.code || ''">
+        <p-tabs [value]="facade.languages()[0].code || ''">
           <p-tablist>
             @for (lang of facade.languages(); track lang.code) {
             <p-tab [value]="lang.code">{{ lang.name }}</p-tab>

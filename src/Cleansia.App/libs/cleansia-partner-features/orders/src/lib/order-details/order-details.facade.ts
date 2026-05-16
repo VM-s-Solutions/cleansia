@@ -4,6 +4,7 @@ import {
   AddOrderNoteCommand,
   CompleteOrderCommand,
   OrderItem,
+  OrderStatus,
   PartnerClient,
   ReportOrderIssueCommand,
   StartOrderCommand,
@@ -142,8 +143,8 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
       });
   }
 
-  startOrder(orderId: string, employeeId: string): void {
-    if (!orderId || !employeeId) {
+  startOrder(orderId: string): void {
+    if (!orderId) {
       this.snackbarService.showErrorTranslated(
         'global.messages.orders.invalid_request'
       );
@@ -153,7 +154,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
     this.loading.set(true);
 
     this.partnerClient.orderClient
-      .startOrder(new StartOrderCommand({ orderId, employeeId }))
+      .startOrder(new StartOrderCommand({ orderId }))
       .pipe(
         takeUntil(this.destroyed$),
         tap(() => {
@@ -169,8 +170,8 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
       .subscribe();
   }
 
-  takeOrder(orderId: string, employeeId: string): void {
-    if (!orderId || !employeeId) {
+  takeOrder(orderId: string): void {
+    if (!orderId) {
       this.snackbarService.showErrorTranslated(
         'global.messages.orders.invalid_request'
       );
@@ -180,7 +181,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
     this.loading.set(true);
 
     this.partnerClient.orderClient
-      .takeOrder(new TakeOrderCommand({ orderId, employeeId }))
+      .takeOrder(new TakeOrderCommand({ orderId }))
       .pipe(
         takeUntil(this.destroyed$),
         tap(() => {
@@ -213,7 +214,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
     }
 
     // Calculate actual minutes from InProgress status start to now
-    const inProgressEntry = order.statusHistory?.find(h => h.status.value === 3);
+    const inProgressEntry = order.statusHistory?.find(h => h.status.value === OrderStatus.InProgress);
     let actualMinutes = 0;
     if (inProgressEntry) {
       const start = new Date(inProgressEntry.createdOn);
@@ -239,7 +240,6 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
     this.store.dispatch(
       OrderActions.completeOrder({
         orderId: order.id!,
-        employeeId,
         actualCompletionTimeMinutes: actualMinutes,
         completionNotes: '',
       })
@@ -248,9 +248,8 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
 
   openReportIssueDialog(): void {
     const order = this.orderDetails();
-    const employeeId = this.currentEmployeeId();
 
-    if (!order || !employeeId) {
+    if (!order) {
       this.snackbarService.showErrorTranslated(
         'global.messages.orders.invalid_request'
       );
@@ -274,7 +273,6 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
         this.partnerClient.orderClient
           .reportIssue(new ReportOrderIssueCommand({
             orderId: order.id,
-            employeeId,
             description: result.description,
           }))
           .pipe(
@@ -295,9 +293,8 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
 
   openAddNoteDialog(): void {
     const order = this.orderDetails();
-    const employeeId = this.currentEmployeeId();
 
-    if (!order || !employeeId) {
+    if (!order) {
       this.snackbarService.showErrorTranslated(
         'global.messages.orders.invalid_request'
       );
@@ -321,7 +318,6 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
         this.partnerClient.orderClient
           .addNote(new AddOrderNoteCommand({
             orderId: order.id,
-            employeeId,
             content: result.content,
           }))
           .pipe(

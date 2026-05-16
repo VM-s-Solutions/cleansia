@@ -28,29 +28,22 @@ public class UpdateDisputeStatus
         DisputeStatus NewStatus
     ) : ICommand;
 
-    public class Handler : ICommandHandler<Command>
+    public class Handler(
+        IDisputeRepository disputeRepository,
+        IUserSessionProvider userSessionProvider) : ICommandHandler<Command>
     {
-        private readonly IDisputeRepository _disputeRepository;
-
-        public Handler(IDisputeRepository disputeRepository)
-        {
-            _disputeRepository = disputeRepository;
-        }
-
         public async Task<BusinessResult> Handle(Command request, CancellationToken cancellationToken)
         {
-            var dispute = await _disputeRepository.GetByIdAsync(request.DisputeId, cancellationToken);
+            var dispute = await disputeRepository.GetByIdAsync(request.DisputeId, cancellationToken);
 
             if (dispute == null)
             {
                 return BusinessResult.Failure(new Error(nameof(request.DisputeId), BusinessErrorMessage.DisputeNotFound));
             }
 
-            // For now, use the dispute's user ID as the updater
-            // TODO: Once user session provider has GetUserId, use that instead
-            dispute.UpdateStatus(request.NewStatus, dispute.UserId);
+            var actorId = userSessionProvider.GetUserId() ?? string.Empty;
+            dispute.UpdateStatus(request.NewStatus, actorId);
 
-            // EF Core tracks changes automatically
             return BusinessResult.Success();
         }
     }

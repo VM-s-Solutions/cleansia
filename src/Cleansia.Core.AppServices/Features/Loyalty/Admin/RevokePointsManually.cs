@@ -8,18 +8,12 @@ using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Features.Loyalty.Admin;
 
-/// <summary>
-/// Admin manual loyalty revocation — the negative-points mirror of
-/// <see cref="GrantPointsManually"/>. No-op when the user has no loyalty
-/// account (nothing to take away).
-/// </summary>
 public class RevokePointsManually
 {
     public record Command(
         string UserId,
         int Points,
-        string Reason,
-        string ActorId = "") : ICommand<Response>;
+        string Reason) : ICommand<Response>;
 
     public record Response(string UserId, int Points);
 
@@ -50,16 +44,19 @@ public class RevokePointsManually
         }
     }
 
-    public class Handler(ILoyaltyService loyaltyService) : ICommandHandler<Command, Response>
+    public class Handler(
+        ILoyaltyService loyaltyService,
+        IUserSessionProvider userSessionProvider) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
+            var actorId = userSessionProvider.GetUserId() ?? string.Empty;
             await loyaltyService.RevokePointsManuallyAsync(
                 userId: command.UserId,
                 points: command.Points,
                 source: LoyaltyEarnSource.ManualGrant,
                 orderId: null,
-                actorId: command.ActorId,
+                actorId: actorId,
                 cancellationToken: cancellationToken);
 
             return BusinessResult.Success(new Response(command.UserId, command.Points));

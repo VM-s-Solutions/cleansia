@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -25,7 +24,7 @@ public static class UnregisterDevice
     {
         public async Task<BusinessResult<Response>> Handle(Command request, CancellationToken cancellationToken)
         {
-            var userId = userSessionProvider.GetTypedUserClaim(ClaimTypes.NameIdentifier)?.Value
+            var userId = userSessionProvider.GetUserId()
                          ?? throw new UnauthorizedAccessException("User ID not found in claims.");
 
             var device = await deviceRepository.GetByUserAndDeviceIdAsync(userId, request.DeviceId, cancellationToken);

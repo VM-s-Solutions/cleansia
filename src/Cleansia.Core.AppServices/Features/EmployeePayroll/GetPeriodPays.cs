@@ -1,7 +1,10 @@
+using System.Security.Claims;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Features.EmployeePayroll.DTOs;
 using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -39,17 +42,26 @@ public class GetPeriodPays
         IEmployeeRepository employeeRepository,
         IPayPeriodRepository payPeriodRepository,
         IEmployeeInvoiceRepository employeeInvoiceRepository,
-        IOrderEmployeePayRepository orderEmployeePayRepository)
+        IOrderEmployeePayRepository orderEmployeePayRepository,
+        IOrderAccessService orderAccessService,
+        IUserSessionProvider userSessionProvider)
         : IQueryHandler<Query, PeriodPaySummaryDto>
     {
         public async Task<BusinessResult<PeriodPaySummaryDto>> Handle(Query query, CancellationToken cancellationToken)
         {
+            var role = userSessionProvider.GetTypedUserClaim(ClaimTypes.Role)?.Value;
+            if (role != UserProfile.Administrator.ToString())
+            {
+                var callerEmployeeId = await orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+                if (string.IsNullOrEmpty(callerEmployeeId) || callerEmployeeId != query.EmployeeId)
+                {
+                    return BusinessResult.Failure<PeriodPaySummaryDto>(new Error(
+                        nameof(query.EmployeeId), BusinessErrorMessage.EmployeeNotFound));
+                }
+            }
+
             var orderPays = await orderEmployeePayRepository
-                .GetByEmployeeId(query.EmployeeId)
-                .Where(p => p.PayPeriodId == query.PayPeriodId)
-                .Include(p => p.Order)
-                .Include(p => p.PayPeriod)
-                .ToListAsync(cancellationToken);
+                .GetByEmployeeAndPeriodAsync(query.EmployeeId, query.PayPeriodId, cancellationToken);
 
             var employee = await employeeRepository.GetByIdAsync(query.EmployeeId, cancellationToken);
             var payPeriod = await payPeriodRepository.GetByIdAsync(query.PayPeriodId, cancellationToken);

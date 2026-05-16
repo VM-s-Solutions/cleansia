@@ -103,7 +103,6 @@ public class AdminUpdateEmployee
             if (employee is null)
                 return BusinessResult.Failure<Response>(new Error(nameof(command.EmployeeId), BusinessErrorMessage.NotFound));
 
-            // Update user info
             if (!string.IsNullOrWhiteSpace(command.FirstName) || !string.IsNullOrWhiteSpace(command.LastName))
             {
                 employee.User!.Update(

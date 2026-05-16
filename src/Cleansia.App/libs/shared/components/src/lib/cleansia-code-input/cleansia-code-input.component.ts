@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import {
+  ChangeDetectionStrategy,
   Component,
   ElementRef,
   EventEmitter,
@@ -22,26 +23,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
       multi: true,
     },
   ],
-  template: `
-    <div class="cleansia-code-input">
-      @for (digit of digits; track $index) {
-      <input
-        #digitInput
-        type="text"
-        inputmode="numeric"
-        maxlength="1"
-        class="cleansia-code-input__digit"
-        [class.cleansia-code-input__digit--filled]="digit !== ''"
-        [value]="digit"
-        (input)="onDigitInput($event, $index)"
-        (keydown)="onKeyDown($event, $index)"
-        (paste)="onPaste($event)"
-        (focus)="onFocus($index)"
-        autocomplete="one-time-code"
-      />
-      }
-    </div>
-  `,
+  templateUrl: './cleansia-code-input.component.html',
   styles: [
     `
       .cleansia-code-input {
@@ -85,6 +67,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
       }
     `,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaCodeInputComponent implements ControlValueAccessor {
   @ViewChildren('digitInput') digitInputs!: QueryList<

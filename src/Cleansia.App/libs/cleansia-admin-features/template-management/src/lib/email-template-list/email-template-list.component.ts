@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnDestroy, OnInit, TemplateRef, inject, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, TemplateRef, inject, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Subject, takeUntil } from 'rxjs';
@@ -25,6 +25,7 @@ import { getEmailTypeTableDefinition } from './email-template-list.models';
   ],
   providers: [EmailTemplateListFacade],
   templateUrl: './email-template-list.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EmailTemplateListComponent implements OnInit, OnDestroy {
   private readonly cd = inject(ChangeDetectorRef);

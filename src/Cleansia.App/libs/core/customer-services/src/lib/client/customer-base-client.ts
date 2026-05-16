@@ -18,7 +18,11 @@ import {
 } from '@cleansia/partner-services';
 import {
   AuthClient as CustomerAuthClient,
+  ConsentsClient,
+  ExtraClient,
   IAuthClient as ICustomerAuthClient,
+  IConsentsClient,
+  IExtraClient,
   ILoyaltyClient,
   IMembershipClient,
   IOrderClient as ICustomerOrderClient,
@@ -51,6 +55,10 @@ interface ICustomerClient {
   paymentClient: IPaymentClient;
   serviceClient: IServiceClient;
   gdprClient: IGdprClient;
+  // NSwag groups by route segment, so the `/api/v1/Gdpr/consents/withdraw`
+  // endpoint lives on `ConsentsClient` rather than `GdprClient`. Exposed
+  // here so consumers can route Withdraw through the configured base URL.
+  consentsClient: IConsentsClient;
   disputeClient: IDisputeClient;
   savedAddressClient: ISavedAddressClient;
   loyaltyClient: ILoyaltyClient;
@@ -58,6 +66,7 @@ interface ICustomerClient {
   referralClient: IReferralClient;
   membershipClient: IMembershipClient;
   recurringBookingClient: IRecurringBookingClient;
+  extraClient: IExtraClient;
 }
 
 @Injectable({
@@ -99,6 +108,10 @@ export class CustomerClient implements ICustomerClient {
     this.apiBaseUrl
   );
   gdprClient: IGdprClient = new GdprClient(this.httpClient, this.apiBaseUrl);
+  consentsClient: IConsentsClient = new ConsentsClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
   disputeClient: IDisputeClient = new DisputeClient(
     this.httpClient,
     this.apiBaseUrl
@@ -132,4 +145,7 @@ export class CustomerClient implements ICustomerClient {
     this.httpClient,
     this.apiBaseUrl
   );
+  // Booking add-ons catalog (inside-oven, etc.) — exposed via the configured
+  // base URL so it joins the same per-app routing as everything else above.
+  extraClient: IExtraClient = new ExtraClient(this.httpClient, this.apiBaseUrl);
 }

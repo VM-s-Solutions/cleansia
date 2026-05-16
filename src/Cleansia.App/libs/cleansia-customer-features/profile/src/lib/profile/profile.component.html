@@ -335,10 +335,14 @@
               {{ 'pages.profile.pref_theme' | translate }}
             </div>
             <div class="customer-profile__pref-control">
-              <button class="customer-profile__theme-btn" (click)="toggleTheme()">
-                <i [class]="isDarkMode() ? 'pi pi-sun' : 'pi pi-moon'"></i>
-                {{ isDarkMode() ? ('pages.profile.theme_light' | translate) : ('pages.profile.theme_dark' | translate) }}
-              </button>
+              <cleansia-button
+                className="customer-profile__theme-btn"
+                [label]="(isDarkMode() ? 'pages.profile.theme_light' : 'pages.profile.theme_dark') | translate"
+                [icon]="isDarkMode() ? 'pi pi-sun' : 'pi pi-moon'"
+                [severity]="'secondary'"
+                [outlined]="true"
+                (onClick)="toggleTheme()"
+              />
             </div>
           </div>
 
@@ -407,7 +411,7 @@
 
   <!-- Scroll to Top Button -->
   @if (showScrollTop()) {
-  <button class="customer-profile__scroll-top" (click)="scrollToTop()" aria-label="Scroll to top">
+  <button class="customer-profile__scroll-top" (click)="scrollToTop()" [attr.aria-label]="'pages.profile.scroll_to_top' | translate">
     <i class="pi pi-arrow-up"></i>
   </button>
   }

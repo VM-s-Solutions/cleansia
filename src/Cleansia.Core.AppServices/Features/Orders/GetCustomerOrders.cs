@@ -26,27 +26,24 @@ public class GetCustomerOrders
     {
         public async Task<PagedData<OrderListItem>> Handle(Request request, CancellationToken cancellationToken)
         {
-            // Always scope to the current authenticated user's email
-            var userEmail = userSessionProvider.GetUserEmail();
+            var userId = userSessionProvider.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return new List<OrderListItem>().MapToDto(0, request);
+            }
 
             var specification = OrderSpecification.Create(
-                request.Filter?.Id,
-                request.Filter?.IsActive,
-                request.Filter?.CustomerName,
-                customerEmail: userEmail, // Force filter to current user
-                request.Filter?.CustomerPhone,
-                request.Filter?.DisplayOrderNumber,
-                employeeId: null,
-                request.Filter?.CleaningDateFrom,
-                request.Filter?.CleaningDateTo,
-                request.Filter?.PaymentStatuses,
-                request.Filter?.PaymentTypes,
-                request.Filter?.MinTotalPrice,
-                request.Filter?.MaxTotalPrice,
-                request.Filter?.OrderStatuses,
-                hasAvailableSpots: null,
-                isUnassigned: null,
-                excludeEmployeeId: null);
+                id: request.Filter?.Id,
+                isActive: request.Filter?.IsActive,
+                displayOrderNumber: request.Filter?.DisplayOrderNumber,
+                cleaningDateFrom: request.Filter?.CleaningDateFrom,
+                cleaningDateTo: request.Filter?.CleaningDateTo,
+                paymentStatuses: request.Filter?.PaymentStatuses,
+                paymentTypes: request.Filter?.PaymentTypes,
+                minTotalPrice: request.Filter?.MinTotalPrice,
+                maxTotalPrice: request.Filter?.MaxTotalPrice,
+                orderStatuses: request.Filter?.OrderStatuses,
+                userId: userId);
 
             var filter = specification.SatisfiedBy();
 

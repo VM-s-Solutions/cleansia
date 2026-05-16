@@ -79,6 +79,7 @@
       "loyalty_tiers": "Věrnostní úrovně",
       "loyalty_user_detail": "Věrnost uživatele",
       "loyalty_referrals": "Doporučení",
+      "sitewide_push": "Hromadné oznámení",
       "not_found": "Stránka nenalezena"
     }
   },
@@ -153,7 +154,7 @@
     "next_page": "Další stránka",
     "actions": {
       "login": "Přihlásit se",
-      "pay_configs": "Pay Configs",
+      "pay_configs": "Konfigurace mezd",
       "logout": "Odhlásit se",
       "back": "Zpět",
       "save": "Uložit",
@@ -215,6 +216,8 @@
     "loyalty_promo_codes": "Promo kódy",
     "loyalty_tiers": "Úrovně",
     "loyalty_referrals": "Doporučení",
+    "marketing": "Marketing",
+    "marketing_sitewide_push": "Hromadné oznámení",
     "logout": "Odhlásit se"
   },
   "pages": {
@@ -402,6 +405,7 @@
         "rejected": "Zamítnuto",
         "unknown": "Neznámý"
       },
+      "grade": "Hodnost",
       "document_types": {
         "identity_card": "Občanský průkaz",
         "passport": "Pas",
@@ -433,7 +437,6 @@
       "packages_configured": "Balíčky",
       "bulk_apply_grade": "Použít šablonu hodnosti",
       "bulk_apply_grade_hint": "Vyberte hodnost a měnu pro automatické vytvoření platových konfigurací pro všechny služby a balíčky. Sazby se vypočítávají ze základní ceny pomocí násobitelů hodností (Junior 0.5x, Medior 0.75x, Senior 1.0x).",
-      "grade": "Hodnost",
       "overwrite_existing": "Přepsat existující konfigurace",
       "apply_to_all": "Použít na vše",
       "services": "Služby",
@@ -470,6 +473,7 @@
       "order_status": {
         "pending": "Čekající",
         "confirmed": "Potvrzeno",
+        "on_the_way": "Na cestě",
         "in_progress": "Probíhá",
         "completed": "Dokončeno",
         "cancelled": "Zrušeno",
@@ -1504,6 +1508,30 @@
       "not_yet": "—",
       "empty": "Zatím žádná doporučení",
       "loading": "Načítání..."
+    },
+    "sitewide_push": {
+      "title": "Hromadné oznámení",
+      "subtitle": "Odeslat jednorázové marketingové oznámení všem zákazníkům, kteří přijímají marketingová sdělení. Doručování probíhá asynchronně; očekávejte doručení v řádu minut.",
+      "titles_section": "Titulek oznámení (podle jazyka)",
+      "bodies_section": "Text oznámení (podle jazyka)",
+      "locale": {
+        "en_title": "Anglický titulek",
+        "cs_title": "Český titulek",
+        "sk_title": "Slovenský titulek",
+        "uk_title": "Ukrajinský titulek",
+        "ru_title": "Ruský titulek",
+        "en_body": "Anglický text",
+        "cs_body": "Český text",
+        "sk_body": "Slovenský text",
+        "uk_body": "Ukrajinský text",
+        "ru_body": "Ruský text"
+      },
+      "send": "Odeslat všem odběratelům",
+      "confirm_title": "Odeslat hromadné oznámení?",
+      "confirm_send": "Tímto se zařadí oznámení do fronty pro každého zákazníka, který odebírá marketingová sdělení. Po zařazení nelze odeslání zastavit.",
+      "validation_error": "Vyplňte prosím všechna jazyková pole před odesláním.",
+      "send_success": "Hromadné oznámení zařazeno do fronty. Doručování běží na pozadí.",
+      "send_error": "Nepodařilo se zařadit oznámení. Zkontrolujte vstup a zkuste to znovu."
     }
   },
   "employees": {
@@ -2124,7 +2152,8 @@
       "remember_me": "Zapamatovat si mě",
       "forgot_password": "Zapomenuté heslo?",
       "dont_have_account": "Nemáte účet?"
-    }
+    },
+    "refresh_token_reused": "Vaše relace byla použita jinde. Přihlaste se prosím znovu."
   },
   "fiscal_failures": {
     "title": "Fiskální selhání",
@@ -2155,5 +2184,18 @@
       "retry_scheduled": "Opakování naplánováno",
       "acknowledged": "Fiskální selhání potvrzeno"
     }
+  },
+  "gdpr": {
+    "deletion_already_pending": "Žádost o smazání už probíhá.",
+    "deletion_blocked_by_order": "Účet nelze smazat, dokud máte aktivní objednávku.",
+    "deletion_blocked_by_invoice": "Účet nelze smazat, dokud máte nevyřízenou fakturu."
+  },
+  "order": {
+    "review": {
+      "already_exists": "Tuto objednávku jste už hodnotili."
+    }
+  },
+  "recurring_booking": {
+    "not_found": "Tato opakovaná objednávka už neexistuje."
   }
 }

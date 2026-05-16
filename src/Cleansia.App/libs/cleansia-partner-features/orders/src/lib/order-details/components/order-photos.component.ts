@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import {
+  ChangeDetectionStrategy,
   Component,
   computed,
   effect,
@@ -12,20 +13,14 @@ import {
   CleansiaButtonComponent,
   CleansiaSectionComponent,
 } from '@cleansia/components';
-import {
-  GetOrderPhotosResponse,
-  PartnerClient,
-  PhotoType,
-  SaveOrderPhotosCommand,
-} from '@cleansia/partner-services';
-import { DialogService, SnackbarService } from '@cleansia/services';
+import { PhotoType } from '@cleansia/partner-services';
+import { SnackbarService } from '@cleansia/services';
 import { TranslatePipe } from '@ngx-translate/core';
-import { finalize, tap } from 'rxjs';
+import { OrderPhotosFacade } from './order-photos.facade';
 import { PhotoGalleryComponent } from './photo-gallery.component';
 import {
   StagedPhoto,
   buildGalleryPhotos,
-  buildPhotosToSave,
   calculateStagedIndex,
   createStagedPhoto,
   filterPhotosByType,
@@ -46,10 +41,11 @@ import {
   ],
   templateUrl: './order-photos.component.html',
   styleUrls: ['./order-photos.component.scss'],
+  providers: [OrderPhotosFacade],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OrderPhotosComponent {
-  private readonly partnerClient = inject(PartnerClient);
-  private readonly dialogService = inject(DialogService);
+  protected readonly facade = inject(OrderPhotosFacade);
   private readonly snackbarService = inject(SnackbarService);
 
   readonly gallery = viewChild<PhotoGalleryComponent>('gallery');
@@ -59,11 +55,12 @@ export class OrderPhotosComponent {
   readonly canUpload = input<boolean>(true);
   readonly canDelete = input<boolean>(true);
 
-  readonly photosData = signal<GetOrderPhotosResponse | null>(null);
   readonly stagedPhotos = signal<StagedPhoto[]>([]);
-  readonly loading = signal(false);
-  readonly saving = signal(false);
-  readonly deleting = signal<string | null>(null);
+
+  readonly photosData = this.facade.photosData;
+  readonly loading = this.facade.loading;
+  readonly saving = this.facade.saving;
+  readonly deleting = this.facade.deleting;
 
   readonly beforePhotos = computed(() =>
     filterPhotosByType(this.photosData(), PhotoType.Before)
@@ -91,24 +88,9 @@ export class OrderPhotosComponent {
     effect(() => {
       const orderId = this.orderId();
       if (orderId) {
-        this.loadPhotos();
+        this.facade.loadPhotos(orderId);
       }
     });
-  }
-
-  loadPhotos(): void {
-    const orderId = this.orderId();
-    if (!orderId) return;
-
-    this.loading.set(true);
-
-    this.partnerClient.orderClient
-      .getPhotos(orderId)
-      .pipe(
-        tap((response) => this.photosData.set(response)),
-        finalize(() => this.loading.set(false))
-      )
-      .subscribe();
   }
 
   onFilesSelected(event: Event, photoType: PhotoType): void {
@@ -157,60 +139,12 @@ export class OrderPhotosComponent {
 
   savePhotos(): void {
     const orderId = this.orderId();
-    const employeeId = this.employeeId();
     const staged = this.stagedPhotos();
-
-    if (!orderId || !employeeId || staged.length === 0) return;
-
-    this.saving.set(true);
-
-    const photosToSave = buildPhotosToSave(staged);
-
-    this.partnerClient.orderClient
-      .savePhotos(
-        new SaveOrderPhotosCommand({
-          orderId,
-          employeeId,
-          photos: photosToSave,
-        })
-      )
-      .pipe(
-        tap(() => {
-          this.snackbarService.showSuccessTranslated(
-            'global.messages.orders.photos_saved'
-          );
-          this.stagedPhotos.set([]);
-          this.loadPhotos();
-        }),
-        finalize(() => this.saving.set(false))
-      )
-      .subscribe();
+    this.facade.savePhotos(orderId, staged, () => this.stagedPhotos.set([]));
   }
 
   deletePhoto(photoId: string): void {
-    const employeeId = this.employeeId();
-    if (!employeeId) return;
-
-    this.dialogService
-      .confirmTranslated('pages.order_details.delete_photo_confirm')
-      .subscribe((confirmed) => {
-        if (!confirmed) return;
-
-        this.deleting.set(photoId);
-
-        this.partnerClient.orderClient
-          .deletePhoto(photoId, employeeId)
-          .pipe(
-            tap(() => {
-              this.snackbarService.showSuccessTranslated(
-                'global.messages.orders.photo_deleted'
-              );
-              this.loadPhotos();
-            }),
-            finalize(() => this.deleting.set(null))
-          )
-          .subscribe();
-      });
+    this.facade.deletePhoto(this.orderId(), photoId);
   }
 
   openGallery(index: number): void {
@@ -234,7 +168,7 @@ export class OrderPhotosComponent {
     window.open(url, '_blank');
   }
 
-  formatDate(date: any): string {
+  formatDate(date: Date | string | undefined): string {
     return formatPhotoDate(date);
   }
 }

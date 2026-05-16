@@ -166,6 +166,14 @@ export function getAvailableOrdersTableDefinition(
         tooltip: 'pages.orders.take_order',
         color: 'success',
         onClick: (row: OrderListItem) => defs.onTakeOrder(row),
+        visible: (row: OrderListItem) => {
+          const status = row.orderStatus?.value;
+          const isTakeable =
+            status === OrderStatus.New ||
+            status === OrderStatus.Pending ||
+            status === OrderStatus.Confirmed;
+          return isTakeable && (row.availableSpots ?? 0) > 0;
+        },
       },
     ],
   };
@@ -173,6 +181,7 @@ export function getAvailableOrdersTableDefinition(
 
 export function getMyOrdersTableDefinition(
   defs: {
+    onStartOrder: (row: OrderListItem) => void;
     onCompleteOrder: (row: OrderListItem) => void;
   },
   statusTemplate?: TemplateRef<OrderListItem>,
@@ -248,6 +257,16 @@ export function getMyOrdersTableDefinition(
       },
     ],
     actions: [
+      {
+        icon: 'pi pi-play',
+        tooltip: 'pages.orders.start_order',
+        color: 'primary',
+        onClick: (row: OrderListItem) => defs.onStartOrder(row),
+        visible: (row: OrderListItem) => {
+          const v = row.orderStatus?.value;
+          return v === OrderStatus.Confirmed || v === OrderStatus.OnTheWay;
+        },
+      },
       {
         icon: 'pi pi-check-circle',
         tooltip: 'pages.orders.complete_order.title',

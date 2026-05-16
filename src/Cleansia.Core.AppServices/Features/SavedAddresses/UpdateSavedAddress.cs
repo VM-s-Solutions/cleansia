@@ -19,17 +19,30 @@ public class UpdateSavedAddress
         string ZipCode,
         string? CountryId,
         double Latitude,
-        double Longitude,
-        string UserId = ""
+        double Longitude
     ) : ICommand<SavedAddressDto>;
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator(ICountryRepository countryRepository)
+        private readonly ISavedAddressRepository _savedAddressRepository;
+        private readonly IUserSessionProvider _userSessionProvider;
+
+        public Validator(
+            ICountryRepository countryRepository,
+            ISavedAddressRepository savedAddressRepository,
+            IUserSessionProvider userSessionProvider)
         {
+            _savedAddressRepository = savedAddressRepository;
+            _userSessionProvider = userSessionProvider;
+
             RuleFor(x => x.SavedAddressId)
+                .Cascade(CascadeMode.Stop)
                 .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required);
+                .WithMessage(BusinessErrorMessage.Required)
+                .MustAsync(ExistsAsync)
+                .WithMessage(BusinessErrorMessage.NotFound)
+                .MustAsync(BeOwnedByCallerAsync)
+                .WithMessage(BusinessErrorMessage.AddressNotOwnedByUser);
 
             RuleFor(x => x.Label)
                 .Cascade(CascadeMode.Stop)
@@ -82,6 +95,19 @@ public class UpdateSavedAddress
                     .WithMessage(BusinessErrorMessage.NotExistingCountryWithId);
             });
         }
+
+        private async Task<bool> ExistsAsync(string id, CancellationToken cancellationToken)
+        {
+            return await _savedAddressRepository.GetByIdAsync(id, cancellationToken) != null;
+        }
+
+        private async Task<bool> BeOwnedByCallerAsync(string id, CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId();
+            if (string.IsNullOrEmpty(userId)) return false;
+            var saved = await _savedAddressRepository.GetByIdAsync(id, cancellationToken);
+            return saved != null && saved.UserId == userId;
+        }
     }
 
     public class Handler(
@@ -92,20 +118,8 @@ public class UpdateSavedAddress
     {
         public async Task<BusinessResult<SavedAddressDto>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var saved = await savedAddressRepository.GetByIdAsync(command.SavedAddressId, cancellationToken);
-            if (saved == null)
-            {
-                return BusinessResult.Failure<SavedAddressDto>(new Error(
-                    nameof(command.SavedAddressId),
-                    BusinessErrorMessage.NotFound));
-            }
-
-            if (!string.IsNullOrEmpty(command.UserId) && saved.UserId != command.UserId)
-            {
-                return BusinessResult.Failure<SavedAddressDto>(new Error(
-                    nameof(command.UserId),
-                    BusinessErrorMessage.AddressNotOwnedByUser));
-            }
+            // Existence + ownership enforced by Validator.
+            var saved = (await savedAddressRepository.GetByIdAsync(command.SavedAddressId, cancellationToken))!;
 
             var countryId = command.CountryId;
             if (string.IsNullOrEmpty(countryId))
@@ -116,9 +130,6 @@ public class UpdateSavedAddress
                     ?? throw new InvalidOperationException("No countries configured");
             }
 
-            // Reuse an existing Address that matches the edited fields, otherwise create a new one.
-            // We never mutate an existing Address row — other users/orders may depend on it.
-            // Mapbox-supplied coordinates are mandatory at the Validator layer, so we always pass them through.
             var address = await addressRepository.GetAddressAsync(
                 command.Street, command.City, command.ZipCode, countryId, cancellationToken);
 

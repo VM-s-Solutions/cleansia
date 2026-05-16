@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, forwardRef, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, forwardRef, input, output } from '@angular/core';
 import { FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { ErrorPipe } from '@cleansia/pipes';
 import { FloatLabelModule } from 'primeng/floatlabel';
@@ -25,6 +25,7 @@ import { ICleansiaSelectOption } from '../cleansia-select/cleansia-select.models
       multi: true,
     },
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaMultiselectComponent extends CleansiaBaseFormInputComponent {
   id = input<string>(this.getDefaultLabelId());
@@ -37,15 +38,16 @@ export class CleansiaMultiselectComponent extends CleansiaBaseFormInputComponent
   maxSelectedLabels = input<number>(3);
   appendTo = input<'body' | null>(null);
 
-  valueChanges = output<any>();
+  valueChanges = output<unknown[]>();
 
-  innerValue: any[] = [];
+  innerValue: unknown[] = [];
 
-  override writeValue(value: any[]): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  override writeValue(value: any): void {
     this.innerValue = value ?? [];
   }
 
-  handleChange(event: any): void {
+  handleChange(event: { value: unknown[] }): void {
     const value = event.value;
     this.innerValue = value ?? [];
     this.onChange(value);

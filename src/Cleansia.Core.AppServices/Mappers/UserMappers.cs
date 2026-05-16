@@ -24,6 +24,24 @@ public static class UserMappers
                 PreferredLanguageName: user.PreferredLanguage?.Name);
     }
 
+    public static MyProfileDto? MapToMyProfileDto(this User? user)
+    {
+        return user is null
+            ? null
+            : new MyProfileDto(
+                Email: user.Email,
+                FirstName: user.FirstName,
+                LastName: user.LastName,
+                PhoneNumber: user.PhoneNumber,
+                Profile: user.Profile.MapToCode(),
+                AuthenticationType: user.AuthenticationType.MapToCode(),
+                IsEmailConfirmed: user.IsEmailConfirmed,
+                BirthDate: user.BirthDate,
+                ProfilePhoto: user.ProfilePhotoName?.MapToDto(),
+                PreferredLanguageCode: user.PreferredLanguageCode,
+                PreferredLanguageName: user.PreferredLanguage?.Name);
+    }
+
     public static UserItem? MapToDetailDto(this User? user)
     {
         return user is null
@@ -37,7 +55,6 @@ public static class UserMappers
                 AuthenticationType: user.AuthenticationType.MapToCode(),
                 IsEmailConfirmed: user.IsEmailConfirmed,
                 BirthDate: user.BirthDate,
-                Orders: [], // TODO: user.Orders.Select(x => x.MapToDto())!
                 ProfilePhoto: user.ProfilePhotoName?.MapToDto(),
                 PreferredLanguageCode: user.PreferredLanguageCode,
                 PreferredLanguageName: user.PreferredLanguage?.Name,

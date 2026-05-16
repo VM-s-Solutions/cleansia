@@ -1,6 +1,8 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Fiscal.Abstractions;
@@ -15,6 +17,7 @@ public class GenerateReceiptFunction(
     IEmailService emailService,
     ICountryConfigurationRepository countryConfigurationRepository,
     IUnitOfWork unitOfWork,
+    ITenantProvider tenantProvider,
     ILogger<GenerateReceiptFunction> logger)
 {
     [Function("GenerateReceipt")]
@@ -30,16 +33,36 @@ public class GenerateReceiptFunction(
                 new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
                 ?? throw new InvalidOperationException($"Failed to deserialize GenerateReceiptMessage: {messageText}");
 
+            if (string.IsNullOrEmpty(message.OrderId) || !UlidPattern.IsMatch(message.OrderId))
+            {
+                logger.LogWarning("Discarding receipt message with invalid OrderId format: {OrderId}", message.OrderId);
+                return;
+            }
+
             logger.LogInformation("Processing receipt generation for order {OrderId}", message.OrderId);
 
-            var order = await orderRepository.GetByIdAsync(message.OrderId, ct);
+            // Queue trigger — no JWT context. Look up cross-tenant by trusted
+            // OrderId, then set tenant override so OrderReceipt and other
+            // child writes inherit the right TenantId.
+            var order = await orderRepository.GetByIdIgnoringTenantAsync(message.OrderId, ct);
             if (order is null)
             {
                 logger.LogWarning("Order {OrderId} not found, will retry via queue visibility timeout", message.OrderId);
                 throw new InvalidOperationException($"Order {message.OrderId} not found");
             }
 
-            // Idempotency: skip if receipt already exists
+            if (!string.IsNullOrEmpty(order.TenantId))
+            {
+                tenantProvider.SetTenantOverride(order.TenantId);
+            }
+
+            if (order.PaymentType != PaymentType.Cash && order.PaymentStatus != PaymentStatus.Paid)
+            {
+                logger.LogWarning("Discarding receipt message for order {OrderId}: not eligible (PaymentType={Type}, PaymentStatus={Status})",
+                    message.OrderId, order.PaymentType, order.PaymentStatus);
+                return;
+            }
+
             if (order.Receipt is not null)
             {
                 logger.LogInformation("Receipt already exists for order {OrderId}, skipping", message.OrderId);
@@ -84,6 +107,8 @@ public class GenerateReceiptFunction(
             throw; // Re-throw so Azure Functions retries via queue
         }
     }
+
+    private static readonly Regex UlidPattern = new("^[0-9A-HJKMNP-TV-Z]{26}$", RegexOptions.Compiled);
 
     private async Task<FiscalEnforcementMode> ResolveEnforcementModeAsync(
         Cleansia.Core.Domain.Orders.Order order,

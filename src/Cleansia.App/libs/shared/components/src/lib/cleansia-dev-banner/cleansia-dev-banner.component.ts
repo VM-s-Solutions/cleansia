@@ -1,27 +1,11 @@
-import { Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'cleansia-dev-banner',
   standalone: true,
   imports: [CommonModule],
-  template: `
-    @if (bugReportUrl) {
-      <div class="cleansia-dev-banner">
-        <span class="cleansia-dev-banner__env">DEV</span>
-        <span class="cleansia-dev-banner__text">Testing environment</span>
-        <a
-          class="cleansia-dev-banner__link"
-          [href]="bugReportUrl"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <i class="pi pi-file-excel"></i>
-          Report a Bug
-        </a>
-      </div>
-    }
-  `,
+  templateUrl: './cleansia-dev-banner.component.html',
   styles: `
     .cleansia-dev-banner {
       display: flex;
@@ -68,6 +52,7 @@ import { CommonModule } from '@angular/common';
       font-size: 0.85rem;
     }
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaDevBannerComponent {
   @Input() bugReportUrl: string | undefined;

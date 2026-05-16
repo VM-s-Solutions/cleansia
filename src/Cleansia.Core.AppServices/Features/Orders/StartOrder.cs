@@ -1,20 +1,23 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
 public class StartOrder
 {
-    public record Command(
-        string OrderId,
-        string EmployeeId) : ICommand<Response>;
+    public record Command(string OrderId) : ICommand<Response>;
 
     public record Response(
         string OrderId,
@@ -23,14 +26,14 @@ public class StartOrder
     public class Validator : AbstractValidator<Command>
     {
         private readonly IOrderRepository _orderRepository;
-        private readonly IEmployeeRepository _employeeRepository;
+        private readonly IOrderAccessService _orderAccessService;
 
         public Validator(
             IOrderRepository orderRepository,
-            IEmployeeRepository employeeRepository)
+            IOrderAccessService orderAccessService)
         {
             _orderRepository = orderRepository;
-            _employeeRepository = employeeRepository;
+            _orderAccessService = orderAccessService;
 
             RuleFor(x => x.OrderId)
                 .Cascade(CascadeMode.Stop)
@@ -41,34 +44,12 @@ public class StartOrder
                 .MustAsync(OrderIsConfirmedAsync)
                 .WithMessage(BusinessErrorMessage.OrderNotConfirmed);
 
-            RuleFor(x => x.EmployeeId)
-                .Cascade(CascadeMode.Stop)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(_employeeRepository.ExistsAsync)
-                .WithMessage(BusinessErrorMessage.EmployeeNotFound);
-
             RuleFor(x => x)
+                .Cascade(CascadeMode.Stop)
                 .MustAsync(EmployeeIsAssignedToOrderAsync)
-                .WithMessage(BusinessErrorMessage.EmployeeNotAssignedToOrder);
-
-            RuleFor(x => x.EmployeeId)
+                .WithMessage(BusinessErrorMessage.EmployeeNotAssignedToOrder)
                 .MustAsync(EmployeeHasNoOrderInProgressAsync)
                 .WithMessage(BusinessErrorMessage.EmployeeAlreadyHasOrderInProgress);
-        }
-
-        private async Task<bool> EmployeeHasNoOrderInProgressAsync(string employeeId, CancellationToken cancellationToken)
-        {
-            var hasInProgressOrder = await _orderRepository
-                .GetQueryable()
-                .Include(o => o.OrderStatusHistory)
-                .Include(o => o.AssignedEmployees)
-                .Where(o => o.AssignedEmployees.Any(ae => ae.EmployeeId == employeeId))
-                .AnyAsync(o => o.OrderStatusHistory
-                    .OrderByDescending(h => h.CreatedOn)
-                    .FirstOrDefault()!.Status == OrderStatus.InProgress, cancellationToken);
-
-            return !hasInProgressOrder;
         }
 
         private async Task<bool> OrderIsConfirmedAsync(string orderId, CancellationToken cancellationToken)
@@ -84,23 +65,45 @@ public class StartOrder
                 .OrderByDescending(osh => osh.CreatedOn)
                 .FirstOrDefault()?.Status;
 
-            return currentStatus == OrderStatus.Confirmed;
+            return currentStatus is OrderStatus.Confirmed or OrderStatus.OnTheWay;
         }
 
         private async Task<bool> EmployeeIsAssignedToOrderAsync(Command command, CancellationToken cancellationToken)
         {
+            var employeeId = await _orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+            if (string.IsNullOrEmpty(employeeId)) return false;
+
             var order = await _orderRepository
                 .GetQueryable()
                 .Include(o => o.AssignedEmployees)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
-            return order?.AssignedEmployees.Any(oe => oe.EmployeeId == command.EmployeeId) ?? false;
+            return order?.AssignedEmployees.Any(oe => oe.EmployeeId == employeeId) ?? false;
+        }
+
+        private async Task<bool> EmployeeHasNoOrderInProgressAsync(Command command, CancellationToken cancellationToken)
+        {
+            var employeeId = await _orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+            if (string.IsNullOrEmpty(employeeId)) return false;
+
+            var hasInProgressOrder = await _orderRepository
+                .GetQueryable()
+                .Include(o => o.OrderStatusHistory)
+                .Include(o => o.AssignedEmployees)
+                .Where(o => o.AssignedEmployees.Any(ae => ae.EmployeeId == employeeId))
+                .AnyAsync(o => o.OrderStatusHistory
+                    .OrderByDescending(h => h.CreatedOn)
+                    .FirstOrDefault()!.Status == OrderStatus.InProgress, cancellationToken);
+
+            return !hasInProgressOrder;
         }
     }
 
     public class Handler(
         IOrderRepository orderRepository,
-        IEmailService emailService)
+        IEmailService emailService,
+        IQueueClient queueClient,
+        ILogger<Handler> logger)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -118,14 +121,32 @@ public class StartOrder
             var statusTrack = OrderStatusTrack.Create(OrderStatus.InProgress, order);
             order.AddOrderStatus(statusTrack);
 
-            // Send status update email
             try
             {
-                var languageCode = order.User?.PreferredLanguageCode ?? "en";
+                var languageCode = order.User?.PreferredLanguageCode ?? Constants.Language.English;
                 await emailService.SendOrderStatusUpdateEmailAsync(
                     order.CustomerEmail, order, "Started", languageCode, cancellationToken);
             }
-            catch { /* Don't fail order start if email fails */ }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to send order Started email for order {OrderId}", order.Id);
+            }
+
+            if (!string.IsNullOrEmpty(order.UserId))
+            {
+                await queueClient.SendAsync(
+                    QueueNames.NotificationsDispatch,
+                    new SendPushNotificationMessage(
+                        UserId: order.UserId,
+                        EventKey: NotificationEventCatalog.OrderInProgress,
+                        Args: new Dictionary<string, string>
+                        {
+                            ["orderId"] = order.Id,
+                            ["orderNumber"] = order.DisplayOrderNumber,
+                        },
+                        TenantId: order.TenantId),
+                    cancellationToken);
+            }
 
             return BusinessResult.Success(new Response(
                 OrderId: order.Id,

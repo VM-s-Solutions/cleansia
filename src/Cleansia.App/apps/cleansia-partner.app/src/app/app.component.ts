@@ -1,14 +1,15 @@
 import { NgClass } from '@angular/common';
-import { Component, HostListener, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import {
   CleansiaCookieConsentComponent,
   CleansiaDevBannerComponent,
   CleansiaLanguageSwitcherComponent,
-  CleansiaRegistrationLockComponent,
   CleansiaSidebarMenuComponent,
   SidebarMenuItem,
 } from '@cleansia/components';
+import { CleansiaRegistrationLockComponent } from './components/registration-lock/registration-lock.component';
 import {
   PartnerAuthService,
   RegistrationCompletionService,
@@ -49,6 +50,7 @@ import {
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent implements OnInit, OnDestroy {
   private readonly store = inject(Store);
@@ -118,9 +120,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  get isLoggedIn(): boolean {
-    return this.authService.isLoggedIn();
-  }
+  readonly isLoggedIn = toSignal(this.authService.isLoggedIn$, { initialValue: false });
 
   @HostListener('window:resize')
   onResize() {
@@ -180,7 +180,9 @@ export class AppComponent implements OnInit, OnDestroy {
         this.dialogService
           .confirmTranslated('global.dialog.confirm_logout', 'global.dialog.confirm')
           .subscribe((confirmed) => {
-            if (confirmed) this.authService.logout();
+            if (confirmed) {
+              this.authService.logout().pipe(takeUntil(this.destroy$)).subscribe();
+            }
           });
       },
     },

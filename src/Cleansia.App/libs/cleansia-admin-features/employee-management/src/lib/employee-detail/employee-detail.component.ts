@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Code, EmployeeDocumentItem, EmployeeEntityType, TimeRange } from '@cleansia/admin-services';
@@ -16,7 +17,8 @@ import {
   CleansiaTitleComponent,
   ICleansiaSelectOption,
 } from '@cleansia/components';
-import { CleansiaAdminRoute } from '@cleansia/services';
+import { CleansiaAdminRoute, Policy } from '@cleansia/services';
+import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { CheckboxModule } from 'primeng/checkbox';
@@ -46,9 +48,11 @@ import { EmployeeDocumentsSectionComponent } from './employee-documents-section.
     CheckboxModule,
     ToastModule,
     EmployeeDocumentsSectionComponent,
+    CleansiaPermissionDirective,
   ],
   templateUrl: './employee-detail.component.html',
   providers: [EmployeeDocumentsFacade, EmployeeDetailFacade, DialogService],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EmployeeDetailComponent implements OnInit, OnDestroy {
   protected readonly facade = inject(EmployeeDetailFacade);
@@ -57,6 +61,9 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly store = inject(Store);
   private readonly translate = inject(TranslateService);
+  private readonly destroyRef = inject(DestroyRef);
+
+  protected readonly Policy = Policy;
 
   readonly daysOfWeek = signal<Code[]>([]);
   availabilityValue: { [key: string]: TimeRange[] } = {};
@@ -127,9 +134,18 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
   });
 
   readonly gradeOptions: ICleansiaSelectOption[] = [
-    { label: 'Junior (0.5x)', value: 'junior' },
-    { label: 'Medior (0.75x)', value: 'medior' },
-    { label: 'Senior (1.0x)', value: 'senior' },
+    {
+      label: this.translate.instant('pages.employee_detail.grade.junior'),
+      value: 'junior',
+    },
+    {
+      label: this.translate.instant('pages.employee_detail.grade.medior'),
+      value: 'medior',
+    },
+    {
+      label: this.translate.instant('pages.employee_detail.grade.senior'),
+      value: 'senior',
+    },
   ];
 
   ngOnInit(): void {
@@ -142,13 +158,18 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
       this.router.navigate([CleansiaAdminRoute.EMPLOYEE_MANAGEMENT]);
     }
 
-    this.store.select(selectDayOfWeekCodes).subscribe((codes: Code[]) => {
-      this.daysOfWeek.set(codes);
-    });
+    this.store
+      .select(selectDayOfWeekCodes)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((codes: Code[]) => {
+        this.daysOfWeek.set(codes);
+      });
 
-    this.editForm.controls.entityType.valueChanges.subscribe((value) => {
-      this.isLegalEntity.set(value === EmployeeEntityType.LegalEntity);
-    });
+    this.editForm.controls.entityType.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((value) => {
+        this.isLegalEntity.set(value === EmployeeEntityType.LegalEntity);
+      });
   }
 
   ngOnDestroy(): void {
@@ -160,7 +181,7 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
     this.router.navigate([CleansiaAdminRoute.EMPLOYEE_MANAGEMENT]);
   }
 
-  getContractStatusClass(status: string): string {
+  getContractStatusClass(status: string | undefined): string {
     const statusName = status?.toLowerCase().replace(/\s+/g, '-') || 'pending';
     return `contract-status-badge status-${statusName}`;
   }

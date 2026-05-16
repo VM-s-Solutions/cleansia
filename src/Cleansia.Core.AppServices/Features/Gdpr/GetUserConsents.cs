@@ -11,21 +11,15 @@ public static class GetUserConsents
     public record Query : IQuery<List<UserConsentDto>>;
 
     internal class Handler(
-        IUserRepository userRepository,
         IUserSessionProvider userSessionProvider,
         IUserConsentRepository userConsentRepository)
         : IQueryHandler<Query, List<UserConsentDto>>
     {
         public async Task<BusinessResult<List<UserConsentDto>>> Handle(Query request, CancellationToken cancellationToken)
         {
-            var email = userSessionProvider.GetUserEmail();
-            var user = await userRepository.GetByEmailAsync(email!, cancellationToken);
-
-            if (user is null)
-                return BusinessResult.Failure<List<UserConsentDto>>(new Error(
-                    BusinessErrorMessage.NotExistingUserWithEmail, "User not found"));
-
-            var consents = await userConsentRepository.GetByUserIdAsync(user.Id, cancellationToken);
+            // userId is non-null past the controller's [Permission] gate.
+            var userId = userSessionProvider.GetUserId()!;
+            var consents = await userConsentRepository.GetByUserIdAsync(userId, cancellationToken);
             var dtos = consents.Select(c => new UserConsentDto(
                 c.Id, c.ConsentType, c.IsGranted,
                 c.GrantedAt, c.WithdrawnAt, c.CreatedOn)).ToList();

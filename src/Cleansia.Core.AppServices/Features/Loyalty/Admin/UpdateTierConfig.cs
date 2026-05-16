@@ -76,11 +76,14 @@ public class UpdateTierConfig
         }
     }
 
-    public class Handler(ILoyaltyTierConfigRepository tierConfigRepository)
+    public class Handler(
+        ILoyaltyTierConfigRepository tierConfigRepository,
+        IUserSessionProvider userSessionProvider)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
+            var actorId = userSessionProvider.GetUserId() ?? string.Empty;
             var entity = await tierConfigRepository.GetByIdAsync(command.TierConfigId, cancellationToken);
 
             entity!.Update(
@@ -88,7 +91,7 @@ public class UpdateTierConfig
                 discountPercent: command.DiscountPercent,
                 minimumOrderAmountForDiscount: command.MinimumOrderAmountForDiscount,
                 perksJson: command.PerksJson,
-                actorId: string.Empty);
+                actorId: actorId);
 
             return BusinessResult.Success(new Response(entity.Id));
         }

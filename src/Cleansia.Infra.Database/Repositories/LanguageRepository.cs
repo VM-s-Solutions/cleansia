@@ -29,19 +29,15 @@ public class LanguageRepository(CleansiaDbContext context) : BaseRepository<Lang
         if (await Context.Users.AnyAsync(u => u.PreferredLanguageCode == language.Code, cancellationToken))
             return true;
 
-        // Check if language is used by EmailTranslations
         if (await Context.EmailTranslations.AnyAsync(e => e.LanguageId == languageId, cancellationToken))
             return true;
 
-        // Check if language is used by EmailTemplateTranslations
         if (await Context.EmailTemplateTranslations.AnyAsync(e => e.LanguageId == languageId, cancellationToken))
             return true;
 
-        // Check if language is used by OrderReceipts
         if (await Context.OrderReceipts.AnyAsync(o => o.LanguageId == languageId, cancellationToken))
             return true;
 
-        // Check if language is used by EmployeeInvoices
         if (await Context.EmployeeInvoices.AnyAsync(e => e.LanguageId == languageId, cancellationToken))
             return true;
 

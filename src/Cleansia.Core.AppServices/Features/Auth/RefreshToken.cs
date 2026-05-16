@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Extensions;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using FluentValidation;
@@ -15,10 +16,6 @@ using Cleansia.Infra.Common.Validations;
 
 namespace Cleansia.Core.AppServices.Features.Auth;
 
-/// <summary>
-/// Rotates a refresh token. Called when the access token expires (15 min).
-/// Anonymous endpoint — the refresh token IS the credential.
-/// </summary>
 public class RefreshToken
 {
     public class Validator : AbstractValidator<Command>
@@ -32,11 +29,12 @@ public class RefreshToken
         }
     }
 
-    public record Command(string Token) : ICommand<JwtTokenResponse>;
+    public record Command(string Token, UserProfile? RequiredProfile = null, string? RequiredAudience = null) : ICommand<JwtTokenResponse>;
 
     internal class Handler(
         IRefreshTokenService refreshTokenService,
         IUserRepository userRepository,
+        IEmployeeRepository employeeRepository,
         IRequestMetadataProvider requestMetadata,
         IJwtSettings jwtSettings)
         : ICommandHandler<Command, JwtTokenResponse>
@@ -60,6 +58,13 @@ public class RefreshToken
                 return BusinessResult.Failure<JwtTokenResponse>(new Error(nameof(Command.Token), errorKey));
             }
 
+            if (!string.IsNullOrEmpty(command.RequiredAudience)
+                && issued.Record.Audience != command.RequiredAudience)
+            {
+                return BusinessResult.Failure<JwtTokenResponse>(
+                    new Error(nameof(Command.Token), BusinessErrorMessage.InvalidRefreshToken));
+            }
+
             var user = await userRepository.GetByIdAsync(issued.Record.UserId, cancellationToken);
             if (user is null || !user.IsActive)
             {
@@ -67,7 +72,21 @@ public class RefreshToken
                     new Error(nameof(Command.Token), BusinessErrorMessage.InvalidRefreshToken));
             }
 
-            var accessToken = GenerateAccessToken(user, jwtSettings);
+            if (command.RequiredProfile.HasValue && user.Profile != command.RequiredProfile.Value)
+            {
+                return BusinessResult.Failure<JwtTokenResponse>(
+                    new Error(nameof(Command.Token), BusinessErrorMessage.InvalidRefreshToken));
+            }
+
+            string? employeeId = null;
+            if (user.Profile == UserProfile.Employee)
+            {
+                var employee = await employeeRepository.GetByUserEmailAsync(user.Email, cancellationToken);
+                employeeId = employee?.Id;
+            }
+
+            var audience = issued.Record.Audience ?? string.Empty;
+            var accessToken = GenerateAccessToken(user, employeeId, audience, jwtSettings);
 
             return BusinessResult.Success(new JwtTokenResponse(
                 Token: accessToken,
@@ -75,16 +94,19 @@ public class RefreshToken
                 UserId: user.Id,
                 Email: user.Email,
                 RefreshToken: issued.RawToken,
-                RefreshTokenExpiresAt: issued.Record.ExpiresAt));
+                RefreshTokenExpiresAt: issued.Record.ExpiresAt,
+                Role: user.Profile.ToString()));
         }
 
-        private static string GenerateAccessToken(User user, IJwtSettings jwtSettings)
+        private static string GenerateAccessToken(User user, string? employeeId, string audience, IJwtSettings jwtSettings)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret));
             var descriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(user.SetClaims()),
+                Issuer = jwtSettings.Issuer,
+                Audience = audience,
+                Subject = new ClaimsIdentity(user.SetClaims(employeeId)),
                 Expires = DateTime.UtcNow.AddMinutes(jwtSettings.AccessTokenExpMinutes),
                 SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
             };

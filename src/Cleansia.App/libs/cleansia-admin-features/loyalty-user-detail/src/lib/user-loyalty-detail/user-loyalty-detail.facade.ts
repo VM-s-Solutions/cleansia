@@ -7,9 +7,10 @@ import {
   GrantPointsManuallyCommand,
   RevokePointsManuallyCommand,
 } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 export interface ManualPointsInput {
   points: number;
@@ -17,13 +18,11 @@ export interface ManualPointsInput {
 }
 
 @Injectable()
-export class UserLoyaltyDetailFacade {
+export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
-
-  private destroy$ = new Subject<void>();
 
   readonly account = signal<GetUserLoyaltyAccountResponse | null>(null);
   readonly accountLoading = signal<boolean>(false);
@@ -44,7 +43,7 @@ export class UserLoyaltyDetailFacade {
     this.adminClient.adminLoyaltyClient
       .userAccount(userId)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.accountLoading.set(false))
       )
@@ -63,7 +62,7 @@ export class UserLoyaltyDetailFacade {
     this.adminClient.adminLoyaltyClient
       .userActivity(userId, offset, limit)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.activityLoading.set(false))
       )
@@ -98,14 +97,12 @@ export class UserLoyaltyDetailFacade {
       userId: this.currentUserId,
       points: input.points,
       reason: input.reason,
-      // ActorId is enriched server-side from the JWT.
-      actorId: undefined,
     });
 
     this.adminClient.adminLoyaltyClient
       .grantPoints(command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => {
           this.snackbarService.showError(
             this.translate.instant(
@@ -137,13 +134,12 @@ export class UserLoyaltyDetailFacade {
       userId: this.currentUserId,
       points: input.points,
       reason: input.reason,
-      actorId: undefined,
     });
 
     this.adminClient.adminLoyaltyClient
       .revokePoints(command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => {
           this.snackbarService.showError(
             this.translate.instant(
@@ -169,10 +165,5 @@ export class UserLoyaltyDetailFacade {
 
   navigateBack(): void {
     this.router.navigate(['/admin-user-management']);
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

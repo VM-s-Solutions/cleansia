@@ -30,7 +30,6 @@ public class DisputeMessageEntityConfiguration : BaseEntityConfiguration<Dispute
         builder.Property(dm => dm.CreatedOn)
             .IsRequired();
 
-        // Relationship
         builder.HasOne(dm => dm.Dispute)
             .WithMany(d => d.Messages)
             .HasForeignKey(dm => dm.DisputeId)
@@ -41,7 +40,6 @@ public class DisputeMessageEntityConfiguration : BaseEntityConfiguration<Dispute
             .HasForeignKey(dm => dm.AuthorId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Indexes
         builder.HasIndex(dm => dm.DisputeId);
         builder.HasIndex(dm => dm.CreatedOn);
     }

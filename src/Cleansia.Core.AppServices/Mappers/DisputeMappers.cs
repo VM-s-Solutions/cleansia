@@ -31,7 +31,6 @@ public static class DisputeMappers
             Id: dispute.Id,
             OrderId: dispute.OrderId,
             DisplayOrderNumber: dispute.Order?.DisplayOrderNumber ?? "",
-            UserId: dispute.UserId,
             CustomerName: dispute.User?.FirstName + " " + dispute.User?.LastName ?? "",
             CustomerEmail: dispute.User?.Email ?? "",
             Reason: dispute.Reason.MapToCode(),
@@ -39,15 +38,11 @@ public static class DisputeMappers
             Status: dispute.Status.MapToCode(),
             ResolutionNotes: dispute.ResolutionNotes,
             RefundAmount: dispute.RefundAmount,
-            ResolvedBy: dispute.ResolvedBy,
             ResolvedOn: dispute.ResolvedOn,
-            StripeDisputeId: dispute.StripeDisputeId,
             Messages: dispute.Messages.Select(m => m.MapToDto()).ToList(),
             Evidence: dispute.Evidence.Select(e => e.MapToDto(evidenceBlobClient)).ToList(),
             CreatedOn: dispute.CreatedOn,
-            CreatedBy: dispute.CreatedBy,
-            UpdatedOn: dispute.UpdatedOn,
-            UpdatedBy: dispute.UpdatedBy
+            UpdatedOn: dispute.UpdatedOn
         );
     }
 

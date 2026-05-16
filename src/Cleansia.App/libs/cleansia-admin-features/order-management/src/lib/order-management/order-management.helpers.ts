@@ -11,6 +11,7 @@ const ORDER_STATUS_TRANSLATION_MAP: Record<OrderStatus, string> = {
   [OrderStatus.New]: 'pages.order_management.order_status.new',
   [OrderStatus.Pending]: 'pages.order_management.order_status.pending',
   [OrderStatus.Confirmed]: 'pages.order_management.order_status.confirmed',
+  [OrderStatus.OnTheWay]: 'pages.order_management.order_status.on_the_way',
   [OrderStatus.InProgress]: 'pages.order_management.order_status.in_progress',
   [OrderStatus.Completed]: 'pages.order_management.order_status.completed',
   [OrderStatus.Cancelled]: 'pages.order_management.order_status.cancelled',
@@ -29,7 +30,8 @@ export function getOrderStatusLabel(
   translate: TranslateService
 ): string {
   if (!order.orderStatus?.value) return '';
-  const key = ORDER_STATUS_TRANSLATION_MAP[order.orderStatus.value as OrderStatus];
+  const key =
+    ORDER_STATUS_TRANSLATION_MAP[order.orderStatus.value as OrderStatus];
   return key ? translate.instant(key) : order.orderStatus?.name || '';
 }
 
@@ -38,7 +40,8 @@ export function getPaymentStatusLabel(
   translate: TranslateService
 ): string {
   if (!order.paymentStatus?.value) return '';
-  const key = PAYMENT_STATUS_TRANSLATION_MAP[order.paymentStatus.value as PaymentStatus];
+  const key =
+    PAYMENT_STATUS_TRANSLATION_MAP[order.paymentStatus.value as PaymentStatus];
   return key ? translate.instant(key) : order.paymentStatus?.name || '';
 }
 
@@ -56,12 +59,10 @@ export function buildOrderStatusOptions(
 export function buildPaymentStatusOptions(
   translate: TranslateService
 ): { label: string; value: PaymentStatus }[] {
-  return Object.entries(PAYMENT_STATUS_TRANSLATION_MAP).map(
-    ([value, key]) => ({
-      label: translate.instant(key),
-      value: value as unknown as PaymentStatus,
-    })
-  );
+  return Object.entries(PAYMENT_STATUS_TRANSLATION_MAP).map(([value, key]) => ({
+    label: translate.instant(key),
+    value: value as unknown as PaymentStatus,
+  }));
 }
 
 // --- Filter chip helpers ---
@@ -113,9 +114,7 @@ export function buildFilterChips(
       .join(', ');
     chips.push({
       key: 'paymentStatus',
-      label: translate.instant(
-        'pages.order_management.filters.payment_status'
-      ),
+      label: translate.instant('pages.order_management.filters.payment_status'),
       value: statusLabels,
     });
   }
@@ -200,9 +199,7 @@ export const FILTER_FORM_DEFAULTS = {
 
 // --- Filter chip removal helper ---
 
-export function getFilterPatchForChipRemoval(
-  key: string
-): Record<string, any> {
+export function getFilterPatchForChipRemoval(key: string): Record<string, any> {
   switch (key) {
     case 'orderStatus':
       return { orderStatus: [] };

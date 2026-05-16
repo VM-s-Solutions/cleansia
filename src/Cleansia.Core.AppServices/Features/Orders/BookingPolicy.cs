@@ -40,8 +40,6 @@ public static class BookingPolicy
     public const int FirstWindowHour = 8;
     public const int LastWindowHour = 20;
 
-    // ── Cancellation tiers ──
-
     /// <summary>Cancellations earlier than this many hours before the cleaning are free.</summary>
     public const int FreeCancellationHours = 24;
 
@@ -65,8 +63,6 @@ public static class BookingPolicy
 
     /// <summary>Refund + credit issued when cleaner cancels or no-shows.</summary>
     public const decimal NoShowCreditCzk = 500m;
-
-    // ── Helpers ──
 
     /// <summary>True if the given start time requires express surcharge (2–4h lead).</summary>
     public static bool RequiresExpressSurcharge(DateTime cleaningUtc, DateTime nowUtc)

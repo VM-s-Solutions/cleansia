@@ -1,3 +1,4 @@
+using System.Net;
 using HandlebarsDotNet;
 
 namespace Cleansia.Infra.Services.Templates;
@@ -30,7 +31,7 @@ public class HandlebarsTemplateEngine : ITemplateEngine
             }
 
             var amount = Convert.ToDecimal(parameters[0]);
-            var currency = parameters[1]?.ToString() ?? "";
+            var currency = WebUtility.HtmlEncode(parameters[1]?.ToString() ?? "");
             writer.WriteSafeString($"{amount:N2} {currency}");
         });
 
@@ -49,7 +50,7 @@ public class HandlebarsTemplateEngine : ITemplateEngine
             }
             else
             {
-                writer.WriteSafeString(parameters[0]?.ToString() ?? "");
+                writer.WriteSafeString(WebUtility.HtmlEncode(parameters[0]?.ToString() ?? ""));
             }
         });
 
@@ -68,7 +69,7 @@ public class HandlebarsTemplateEngine : ITemplateEngine
             }
             else
             {
-                writer.WriteSafeString(parameters[0]?.ToString() ?? "");
+                writer.WriteSafeString(WebUtility.HtmlEncode(parameters[0]?.ToString() ?? ""));
             }
         });
 

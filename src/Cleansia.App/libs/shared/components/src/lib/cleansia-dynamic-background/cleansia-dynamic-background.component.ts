@@ -1,5 +1,5 @@
 import { NgStyle } from '@angular/common';
-import { Component, input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, OnInit } from '@angular/core';
 
 interface FloatingIcon {
   iconClass: string;
@@ -12,6 +12,7 @@ interface FloatingIcon {
   templateUrl: './cleansia-dynamic-background.component.html',
   standalone: true,
   imports: [NgStyle],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaDynamicBackgroundComponent implements OnInit {
   showIcons = input(true);

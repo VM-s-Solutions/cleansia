@@ -1,5 +1,6 @@
 import { TranslateService } from '@ngx-translate/core';
 import { toSnakeCase } from '@cleansia/utils';
+import { AssignedEmployeeDto, OrderStatus } from '@cleansia/partner-services';
 
 // --- Formatting helpers ---
 
@@ -71,6 +72,10 @@ const STATUS_CLASS_MAP: Record<number, string> = {
   3: 'status-inprogress',
   4: 'status-completed',
   5: 'status-cancelled',
+  // OnTheWay = 6 — between Confirmed and InProgress in workflow but appended
+  // numerically. See backend OrderStatus.cs for why the value isn't slotted
+  // between 2 and 3.
+  6: 'status-ontheway',
 };
 
 const STATUS_ICON_MAP: Record<number, string> = {
@@ -79,6 +84,7 @@ const STATUS_ICON_MAP: Record<number, string> = {
   3: 'pi pi-spinner',
   4: 'pi pi-check-circle',
   5: 'pi pi-times-circle',
+  6: 'pi pi-send',
 };
 
 export function getStatusHistoryClass(statusValue: number | undefined): string {
@@ -93,60 +99,61 @@ export function getStatusHistoryIcon(statusValue: number | undefined): string {
 // --- Order state helpers ---
 
 export function isEmployeeAssigned(
-  assignedEmployees: any[] | undefined,
+  assignedEmployees: AssignedEmployeeDto[] | undefined,
   employeeId: string
 ): boolean {
-  return assignedEmployees?.some((e) => e.employeeId === employeeId) ?? false;
+  return assignedEmployees?.some((e) => e?.employeeId === employeeId) ?? false;
 }
 
 export function canTakeOrder(
   orderStatusValue: number,
-  assignedEmployees: any[] | undefined,
+  assignedEmployees: AssignedEmployeeDto[] | undefined,
   employeeId: string
 ): boolean {
-  const isPendingOrConfirmed = orderStatusValue === 1 || orderStatusValue === 2;
+  const isPendingOrConfirmed = orderStatusValue === OrderStatus.Pending || orderStatusValue === OrderStatus.Confirmed;
   return isPendingOrConfirmed && !isEmployeeAssigned(assignedEmployees, employeeId);
 }
 
 export function canStartOrder(
   orderStatusValue: number,
-  assignedEmployees: any[] | undefined,
+  assignedEmployees: AssignedEmployeeDto[] | undefined,
   employeeId: string
 ): boolean {
-  return orderStatusValue === 2 && isEmployeeAssigned(assignedEmployees, employeeId);
+  const isReadyToStart = orderStatusValue === OrderStatus.Confirmed || orderStatusValue === OrderStatus.OnTheWay;
+  return isReadyToStart && isEmployeeAssigned(assignedEmployees, employeeId);
 }
 
 export function canCompleteOrder(
   orderStatusValue: number,
-  assignedEmployees: any[] | undefined,
+  assignedEmployees: AssignedEmployeeDto[] | undefined,
   employeeId: string
 ): boolean {
-  return orderStatusValue === 3 && isEmployeeAssigned(assignedEmployees, employeeId);
+  return orderStatusValue === OrderStatus.InProgress && isEmployeeAssigned(assignedEmployees, employeeId);
 }
 
 export function canManagePhotos(
   orderStatusValue: number,
-  assignedEmployees: any[] | undefined,
+  assignedEmployees: AssignedEmployeeDto[] | undefined,
   employeeId: string
 ): boolean {
-  const isInProgressOrCompleted = orderStatusValue === 3 || orderStatusValue === 4;
+  const isInProgressOrCompleted = orderStatusValue === OrderStatus.InProgress || orderStatusValue === OrderStatus.Completed;
   return isInProgressOrCompleted && isEmployeeAssigned(assignedEmployees, employeeId);
 }
 
 export function canUploadPhotos(
   orderStatusValue: number,
-  assignedEmployees: any[] | undefined,
+  assignedEmployees: AssignedEmployeeDto[] | undefined,
   employeeId: string
 ): boolean {
-  return orderStatusValue === 3 && isEmployeeAssigned(assignedEmployees, employeeId);
+  return orderStatusValue === OrderStatus.InProgress && isEmployeeAssigned(assignedEmployees, employeeId);
 }
 
 export function computeElapsedTime(
   orderStatusValue: number,
   statusHistory: { status: { value: number }; createdOn: string | Date }[] | undefined
 ): { hours: number; minutes: number } | null {
-  if (orderStatusValue !== 3) return null;
-  const startEntry = statusHistory?.find((h) => h.status.value === 3);
+  if (orderStatusValue !== OrderStatus.InProgress) return null;
+  const startEntry = statusHistory?.find((h) => h.status.value === OrderStatus.InProgress);
   if (!startEntry) return null;
   const start = new Date(startEntry.createdOn);
   const elapsed = Math.floor((Date.now() - start.getTime()) / 60000);
@@ -154,7 +161,7 @@ export function computeElapsedTime(
 }
 
 export function buildCurrencyOptions(
-  currency: any | undefined
+  currency: { name?: string; code?: string } | null | undefined
 ): { label: string; value: string }[] {
   if (!currency) return [];
   const display = `${currency.name} (${currency.code})`;

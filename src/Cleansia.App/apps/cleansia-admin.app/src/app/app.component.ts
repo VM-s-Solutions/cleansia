@@ -1,5 +1,6 @@
 import { isPlatformBrowser, NgClass } from '@angular/common';
-import { Component, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterModule } from '@angular/router';
 import { AdminAuthService } from '@cleansia/admin-services';
 import { loadAdminCodes } from '@cleansia/admin-stores';
@@ -31,6 +32,7 @@ import { ToastModule } from 'primeng/toast';
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent implements OnInit {
   private readonly store = inject(Store);
@@ -60,9 +62,7 @@ export class AppComponent implements OnInit {
     }
   }
 
-  get isLoggedIn(): boolean {
-    return this.authService.isLoggedIn();
-  }
+  readonly isLoggedIn = toSignal(this.authService.isLoggedIn$, { initialValue: false });
 
   isMobile(): boolean {
     return this.mobileSignal();
@@ -118,13 +118,24 @@ export class AppComponent implements OnInit {
       ],
     },
     {
+      label: 'sidebar.marketing',
+      icon: 'pi pi-megaphone',
+      children: [
+        {
+          label: 'sidebar.marketing_sitewide_push',
+          icon: 'pi pi-send',
+          route: '/marketing/sitewide-push',
+        },
+      ],
+    },
+    {
       label: 'sidebar.logout',
       icon: 'pi pi-sign-out',
       onClickFn: () => {
         this.dialogService
           .confirmTranslated('global.dialog.confirm_logout', 'global.dialog.confirm')
           .subscribe((confirmed) => {
-            if (confirmed) this.authService.logout();
+            if (confirmed) this.authService.logout().subscribe();
           });
       },
     },

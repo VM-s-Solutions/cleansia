@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -30,6 +30,7 @@ import { checkIfPasswordsValid, PasswordCheck } from './forgot-password.models';
     CleansiaTitleComponent,
   ],
   providers: [ForgotPasswordFacade],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ForgotPasswordComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);

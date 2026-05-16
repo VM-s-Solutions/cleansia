@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ErrorPipe } from '@cleansia/pipes';
 import { CheckboxModule } from 'primeng/checkbox';
@@ -10,6 +10,7 @@ import { CleansiaBaseFormInputComponent } from '../cleansia-base-form';
   templateUrl: './cleansia-checkbox.component.html',
   standalone: true,
   imports: [ErrorPipe, CommonModule, CheckboxModule, FormsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaCheckboxComponent extends CleansiaBaseFormInputComponent {
   binary = input<boolean>(true); // Default to binary mode

@@ -30,9 +30,11 @@ import {
 } from '@cleansia/partner-services';
 import { partnerEffects, partnerReducers } from '@cleansia/partner-stores';
 import {
+  AUTH_COOKIE_KEYS,
   COMMON_INTERCEPTORS_FN,
   initializeTranslations,
   JsonTranslationLoader,
+  MAPBOX_ACCESS_TOKEN,
 } from '@cleansia/services';
 import { EffectsModule } from '@ngrx/effects';
 import { provideStore, StoreModule } from '@ngrx/store';
@@ -87,6 +89,17 @@ export const appConfig: ApplicationConfig = {
     { provide: Sentry.TraceService, deps: [Router] },
     { provide: LOCALE_ID, useValue: 'en' },
     { provide: APIBASEURL, useValue: environment.apiBaseUrl },
+    { provide: MAPBOX_ACCESS_TOKEN, useValue: environment.mapboxToken ?? '' },
+    {
+      provide: AUTH_COOKIE_KEYS,
+      useValue: {
+        token: 'partner_token',
+        refreshToken: 'partner_refresh_token',
+        refreshTokenExp: 'partner_refresh_token_exp',
+        role: 'partner_role',
+        csrfToken: 'partner_csrf',
+      },
+    },
     provideStore(),
     importProvidersFrom(
       BrowserAnimationsModule,

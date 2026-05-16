@@ -27,6 +27,22 @@ public class AdminServiceController(IMediator mediator) : ApiController(mediator
         return Ok(result);
     }
 
+    /// <summary>
+    /// All service categories, sorted by DisplayOrder. Drives the category
+    /// picker in the admin Service create/edit form. Same shape as the
+    /// customer-facing categories that ship inside ServiceListItem.
+    /// </summary>
+    [HttpGet("categories")]
+    [Permission(Policy.CanViewServices)]
+    [ProducesResponseType(typeof(IEnumerable<CategoryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetCategories(CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new GetServiceCategories.Request(), cancellationToken);
+        return Ok(result);
+    }
+
     [HttpGet("details/{serviceId}")]
     [Permission(Policy.CanViewServices)]
     [ProducesResponseType(typeof(AdminServiceDetailDto), StatusCodes.Status200OK)]

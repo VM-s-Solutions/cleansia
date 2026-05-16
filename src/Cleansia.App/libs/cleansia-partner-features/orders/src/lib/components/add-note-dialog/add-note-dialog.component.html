@@ -1,0 +1,31 @@
+<div class="add-note-dialog">
+  <div class="add-note-dialog__header">
+    <i class="pi pi-file-edit add-note-dialog__icon"></i>
+    <h3>{{ 'pages.order_details.add_note' | translate }}</h3>
+  </div>
+  <div class="add-note-dialog__body">
+    <label class="add-note-dialog__label">
+      {{ 'pages.order_details.note_content' | translate }}
+    </label>
+    <textarea
+      pInputTextarea
+      [(ngModel)]="content"
+      [rows]="5"
+      [placeholder]="'pages.order_details.note_content_placeholder' | translate"
+      class="add-note-dialog__textarea"
+    ></textarea>
+  </div>
+  <div class="add-note-dialog__footer">
+    <p-button
+      [label]="'global.actions.cancel' | translate"
+      severity="secondary"
+      [outlined]="true"
+      (onClick)="onCancel()"
+    />
+    <p-button
+      [label]="'global.actions.save' | translate"
+      [disabled]="!content.trim()"
+      (onClick)="onSave()"
+    />
+  </div>
+</div>

@@ -1,0 +1,279 @@
+<!-- Top Navigation Bar -->
+<div class="customer-navbar surface-overlay shadow-2 fixed top-0 left-0 w-full" style="z-index: 100" [class.customer-navbar--hidden]="navbarHidden()">
+  <div
+    class="customer-navbar__inner flex align-items-center justify-content-between px-4 lg:px-6 h-full"
+  >
+    <!-- Logo (desktop) -->
+    <div class="customer-navbar__left hidden md:flex align-items-center">
+      <cleansia-brand-name [defaultRoute]="''" [showName]="!isMobile()" />
+    </div>
+    <!-- Logo (mobile) -->
+    <div class="md:hidden">
+      <cleansia-brand-name [defaultRoute]="''" [showName]="true" />
+    </div>
+
+    <!-- Desktop nav links -->
+    <nav class="customer-navbar__center hidden md:flex align-items-center justify-content-center gap-4">
+      <a class="customer-navbar__link" (click)="navigateTo('/')">
+        {{ 'nav.home' | translate }}
+      </a>
+      <a class="customer-navbar__link" (click)="navigateTo('/services')">
+        {{ 'nav.services' | translate }}
+      </a>
+      @if (isLoggedIn()) {
+        <a class="customer-navbar__link" (click)="navigateTo('/orders')">
+          {{ 'nav.my_orders' | translate }}
+        </a>
+      } @else {
+        <a class="customer-navbar__link" (click)="navigateTo('/track-order')">
+          {{ 'nav.track_order' | translate }}
+        </a>
+      }
+      <a class="customer-navbar__link" (click)="navigateTo('/order')">
+        {{ 'nav.book_now' | translate }}
+      </a>
+    </nav>
+
+    <!-- Desktop right section -->
+    <div class="customer-navbar__right hidden md:flex align-items-center justify-content-end gap-2">
+      <!-- Settings -->
+      <div class="relative">
+        <button
+          class="customer-navbar__icon-btn"
+          (click)="toggleSettingsMenu($event)"
+          aria-label="Settings"
+        >
+          <i class="pi pi-cog"></i>
+        </button>
+
+        <div class="customer-navbar__dropdown customer-navbar__settings-dropdown"
+             [class.customer-navbar__dropdown--visible]="settingsMenuOpen()">
+          <div class="customer-navbar__settings-header">{{ 'nav.settings' | translate }}</div>
+          <div class="customer-navbar__settings-row">
+            <span class="customer-navbar__settings-label">
+              <i class="pi pi-palette"></i>
+              {{ (isDarkMode() ? 'nav.theme_light' : 'nav.theme_dark') | translate }}
+            </span>
+            <button class="customer-navbar__theme-toggle" (click)="toggleTheme()">
+              <i [class]="isDarkMode() ? 'pi pi-sun' : 'pi pi-moon'"></i>
+              {{ (isDarkMode() ? 'nav.theme_light' : 'nav.theme_dark') | translate }}
+            </button>
+          </div>
+          <div class="customer-navbar__dropdown-divider"></div>
+          <div class="customer-navbar__settings-row">
+            <span class="customer-navbar__settings-label">
+              <i class="pi pi-globe"></i>
+              {{ 'nav.language' | translate }}
+            </span>
+            <cleansia-language-switcher />
+          </div>
+        </div>
+      </div>
+
+      <!-- User menu -->
+      <div class="relative">
+        <button
+          class="customer-navbar__icon-btn"
+          (click)="toggleUserMenu($event)"
+          aria-label="User menu"
+        >
+          @if (isLoggedIn() && userInitials()) {
+            <p-avatar
+              [label]="userInitials()!"
+              shape="circle"
+              size="normal"
+              styleClass="customer-navbar__avatar"
+            />
+          } @else {
+            <i class="pi pi-user text-xl"></i>
+          }
+        </button>
+
+        <!-- User dropdown (always in DOM, visibility via CSS) -->
+        <div class="customer-navbar__dropdown customer-navbar__user-dropdown"
+             [class.customer-navbar__dropdown--visible]="userMenuOpen()">
+          @if (isLoggedIn()) {
+            <!-- User info card -->
+            <div class="customer-navbar__user-card">
+              <div class="customer-navbar__user-avatar">
+                {{ userInitials() || '?' }}
+              </div>
+              <div class="customer-navbar__user-info">
+                @if (userDisplayName(); as name) {
+                  <div class="customer-navbar__user-name">{{ name }}</div>
+                }
+                @if (userEmail(); as email) {
+                  <div class="customer-navbar__user-email">
+                    {{ email }}
+                    @if (isEmailConfirmed()) {
+                      <span class="customer-navbar__verified-badge" title="{{ 'nav.email_verified' | translate }}">
+                        <i class="pi pi-verified"></i>
+                      </span>
+                    } @else {
+                      <span class="customer-navbar__unverified-badge" title="{{ 'nav.email_not_verified' | translate }}">
+                        <i class="pi pi-exclamation-circle"></i>
+                      </span>
+                    }
+                  </div>
+                }
+                @if (userProfileType(); as profileType) {
+                  <div class="customer-navbar__user-role">{{ profileType }}</div>
+                }
+              </div>
+            </div>
+            <!-- Account section -->
+            <div class="customer-navbar__section-label">{{ 'nav.section_account' | translate }}</div>
+            <div class="customer-navbar__user-links">
+              <a class="customer-navbar__dropdown-item" (click)="navigateTo('/profile')">
+                <span class="customer-navbar__dropdown-icon"><i class="pi pi-user"></i></span>
+                {{ 'nav.profile' | translate }}
+              </a>
+            </div>
+            <!-- Activity section -->
+            <div class="customer-navbar__section-label">{{ 'nav.section_activity' | translate }}</div>
+            <div class="customer-navbar__user-links">
+              <a class="customer-navbar__dropdown-item" (click)="navigateTo('/orders')">
+                <span class="customer-navbar__dropdown-icon"><i class="pi pi-list"></i></span>
+                {{ 'nav.my_orders' | translate }}
+              </a>
+              <a class="customer-navbar__dropdown-item" (click)="navigateTo('/disputes')">
+                <span class="customer-navbar__dropdown-icon"><i class="pi pi-exclamation-triangle"></i></span>
+                {{ 'nav.my_disputes' | translate }}
+              </a>
+              <a class="customer-navbar__dropdown-item" (click)="navigateTo('/rewards')">
+                <span class="customer-navbar__dropdown-icon"><i class="pi pi-star"></i></span>
+                {{ 'nav.my_rewards' | translate }}
+              </a>
+              <a class="customer-navbar__dropdown-item" (click)="navigateTo('/membership')">
+                <span class="customer-navbar__dropdown-icon"><i class="pi pi-bookmark-fill"></i></span>
+                {{ 'nav.cleansia_plus' | translate }}
+              </a>
+            </div>
+            <div class="customer-navbar__dropdown-divider"></div>
+            <a class="customer-navbar__dropdown-item customer-navbar__dropdown-item--danger" (click)="logout()">
+              <span class="customer-navbar__dropdown-icon" style="background: var(--red-50, #fef2f2); color: var(--red-500, #ef4444);">
+                <i class="pi pi-sign-out"></i>
+              </span>
+              {{ 'nav.logout' | translate }}
+            </a>
+          } @else {
+            <a class="customer-navbar__dropdown-item" (click)="navigateTo('/login')">
+              <span class="customer-navbar__dropdown-icon"><i class="pi pi-sign-in"></i></span>
+              {{ 'nav.login' | translate }}
+            </a>
+            <a class="customer-navbar__dropdown-item" (click)="navigateTo('/register')">
+              <span class="customer-navbar__dropdown-icon"><i class="pi pi-user-plus"></i></span>
+              {{ 'nav.register' | translate }}
+            </a>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile hamburger -->
+    <div class="md:hidden flex align-items-center">
+      <button
+        pButton
+        type="button"
+        [icon]="mobileMenuOpen() ? 'pi pi-times' : 'pi pi-bars'"
+        class="p-button-rounded p-button-text p-button-secondary"
+        (click)="toggleMobileMenu()"
+        aria-label="Toggle menu"
+      ></button>
+    </div>
+  </div>
+
+  <!-- Navigation progress bar -->
+  @if (navigating()) {
+    <div class="customer-navbar__progress">
+      <div class="customer-navbar__progress-bar"></div>
+    </div>
+  }
+</div>
+
+<!-- Mobile dropdown menu -->
+@if (mobileMenuOpen() && isMobile()) {
+  <div
+    class="customer-navbar__mobile-menu surface-overlay shadow-2 fixed left-0 right-0 z-4 p-4 flex flex-column gap-3"
+  >
+    <a class="customer-navbar__mobile-link" (click)="navigateTo('/')">
+      <i class="pi pi-home mr-2"></i>
+      {{ 'nav.home' | translate }}
+    </a>
+    <a class="customer-navbar__mobile-link" (click)="navigateTo('/services')">
+      <i class="pi pi-list mr-2"></i>
+      {{ 'nav.services' | translate }}
+    </a>
+    @if (isLoggedIn()) {
+      <a class="customer-navbar__mobile-link" (click)="navigateTo('/orders')">
+        <i class="pi pi-shopping-bag mr-2"></i>
+        {{ 'nav.my_orders' | translate }}
+      </a>
+    } @else {
+      <a class="customer-navbar__mobile-link" (click)="navigateTo('/track-order')">
+        <i class="pi pi-search mr-2"></i>
+        {{ 'nav.track_order' | translate }}
+      </a>
+    }
+    <a class="customer-navbar__mobile-link" (click)="navigateTo('/order')">
+      <i class="pi pi-calendar-plus mr-2"></i>
+      {{ 'nav.book_now' | translate }}
+    </a>
+
+    <div class="border-top-1 border-300 mt-2 pt-3 flex flex-column gap-3">
+      <div class="customer-navbar__mobile-link flex align-items-center justify-content-between" style="cursor: default">
+        <span class="flex align-items-center">
+          <i [class]="isDarkMode() ? 'pi pi-moon mr-2' : 'pi pi-sun mr-2'"></i>
+          {{ (isDarkMode() ? 'nav.theme_dark' : 'nav.theme_light') | translate }}
+        </span>
+        <p-toggleswitch [ngModel]="isDarkMode()" (onChange)="toggleTheme()" />
+      </div>
+
+      <div class="customer-navbar__mobile-link flex align-items-center justify-content-between" style="cursor: default">
+        <span class="flex align-items-center">
+          <i class="pi pi-globe mr-2"></i>
+          {{ 'nav.language' | translate }}
+        </span>
+        <cleansia-language-switcher />
+      </div>
+
+      @if (isLoggedIn()) {
+        @if (userDisplayName(); as name) {
+          <div class="flex align-items-center gap-2 p-2 text-700 font-medium">
+            <i class="pi pi-user"></i>
+            <span>{{ name }}</span>
+          </div>
+        }
+        <a class="customer-navbar__mobile-link" (click)="navigateTo('/profile')">
+          <i class="pi pi-user mr-2"></i>
+          {{ 'nav.profile' | translate }}
+        </a>
+        <a class="customer-navbar__mobile-link" (click)="navigateTo('/disputes')">
+          <i class="pi pi-exclamation-triangle mr-2"></i>
+          {{ 'nav.my_disputes' | translate }}
+        </a>
+        <a class="customer-navbar__mobile-link" (click)="navigateTo('/rewards')">
+          <i class="pi pi-star mr-2"></i>
+          {{ 'nav.my_rewards' | translate }}
+        </a>
+        <a class="customer-navbar__mobile-link" (click)="navigateTo('/membership')">
+          <i class="pi pi-bookmark-fill mr-2"></i>
+          {{ 'nav.cleansia_plus' | translate }}
+        </a>
+        <a class="customer-navbar__mobile-link" (click)="logout()">
+          <i class="pi pi-sign-out mr-2"></i>
+          {{ 'nav.logout' | translate }}
+        </a>
+      } @else {
+        <a class="customer-navbar__mobile-link" (click)="navigateTo('/login')">
+          <i class="pi pi-sign-in mr-2"></i>
+          {{ 'nav.login' | translate }}
+        </a>
+        <a class="customer-navbar__mobile-link" (click)="navigateTo('/register')">
+          <i class="pi pi-user-plus mr-2"></i>
+          {{ 'nav.register' | translate }}
+        </a>
+      }
+    </div>
+  </div>
+}

@@ -72,6 +72,14 @@
       "email_templates": "Шаблони електронних листів",
       "email_template_translations": "Переклади шаблонів електронних листів",
       "fiscal_failures": "Фіскальні збої",
+      "promo_codes": "Промо-коди",
+      "promo_code_create": "Створити промо-код",
+      "promo_code_edit": "Редагувати промо-код",
+      "promo_code_detail": "Деталі промо-коду",
+      "loyalty_tiers": "Рівні лояльності",
+      "loyalty_user_detail": "Лояльність користувача",
+      "loyalty_referrals": "Реферали",
+      "sitewide_push": "Розсилка push",
       "not_found": "Сторінку не знайдено"
     }
   },
@@ -146,13 +154,14 @@
     "next_page": "Наступна сторінка",
     "actions": {
       "login": "Увійти",
-      "pay_configs": "Pay Configs",
+      "pay_configs": "Конфігурації оплати",
       "logout": "Вийти",
       "back": "Назад",
       "save": "Зберегти",
       "create": "Створити",
       "cancel": "Скасувати",
       "edit": "Редагувати",
+      "view": "Переглянути",
       "delete": "Видалити",
       "add": "Додати",
       "ok": "OK",
@@ -203,6 +212,12 @@
     "templates": "Шаблони",
     "global_rates": "Глобальні ставки",
     "fiscal_failures": "Фіскальні збої",
+    "loyalty": "Програма лояльності",
+    "loyalty_promo_codes": "Промо-коди",
+    "loyalty_tiers": "Рівні",
+    "loyalty_referrals": "Реферали",
+    "marketing": "Маркетинг",
+    "marketing_sitewide_push": "Розсилка push",
     "logout": "Вийти"
   },
   "pages": {
@@ -390,6 +405,7 @@
         "rejected": "Відхилений",
         "unknown": "Невідомий"
       },
+      "grade": "Рівень",
       "document_types": {
         "identity_card": "Посвідчення особи",
         "passport": "Паспорт",
@@ -421,7 +437,6 @@
       "packages_configured": "Пакети",
       "bulk_apply_grade": "Застосувати шаблон рівня",
       "bulk_apply_grade_hint": "Виберіть рівень і валюту, щоб автоматично створити конфігурації оплати для всіх послуг і пакетів. Ставки розраховуються з базової ціни за допомогою множників рівня (Junior 0.5x, Medior 0.75x, Senior 1.0x).",
-      "grade": "Рівень",
       "overwrite_existing": "Перезаписати існуючі конфігурації",
       "apply_to_all": "Застосувати до всіх",
       "services": "Послуги",
@@ -458,6 +473,7 @@
       "order_status": {
         "pending": "Очікує",
         "confirmed": "Підтверджено",
+        "on_the_way": "У дорозі",
         "in_progress": "В процесі",
         "completed": "Завершено",
         "cancelled": "Скасовано",
@@ -667,6 +683,7 @@
       "translations": "Переклади",
       "name": "Назва",
       "description": "Опис",
+      "category": "Категорія",
       "base_price": "Базова ціна (CZK)",
       "per_room_price": "Ціна за кімнату (CZK)",
       "estimated_time": "Орієнтовний час (хвилини)",
@@ -1242,6 +1259,279 @@
         "regenerate_success": "PDF рахунку успішно перегенеровано",
         "regenerate_error": "Не вдалося перегенерувати PDF рахунку"
       }
+    },
+    "promo_codes": {
+      "title": "Промо-коди",
+      "new_button": "Новий код",
+      "search_placeholder": "Пошук за кодом",
+      "status_filter_all": "Усі статуси",
+      "status_filter_active": "Активні",
+      "status_filter_inactive": "Неактивні",
+      "status_filter_expired": "Прострочені",
+      "empty_list": "Промо-кодів ще немає",
+      "unlimited": "Без обмежень",
+      "column": {
+        "code": "Код",
+        "type": "Тип",
+        "discount": "Знижка",
+        "min_order": "Мін. замовлення",
+        "per_user": "На користувача",
+        "global": "Загалом",
+        "validity": "Чинний",
+        "status": "Статус",
+        "actions": "Дії"
+      },
+      "type": {
+        "percent": "Відсоткова",
+        "fixed": "Фіксована"
+      },
+      "validity": {
+        "indefinite": "Без обмежень",
+        "from": "З {{date}}",
+        "until": "До {{date}}",
+        "range": "{{from}} – {{until}}"
+      },
+      "form": {
+        "create_title": "Створити промо-код",
+        "edit_title": "Редагувати промо-код",
+        "submit_create": "Створити код",
+        "submit_update": "Зберегти зміни",
+        "cancel": "Скасувати",
+        "field": {
+          "code": "Код",
+          "code_help": "3–20 символів, лише A-Z 0-9",
+          "type": "Тип знижки",
+          "discount_percent": "Знижка %",
+          "discount_amount": "Сума знижки",
+          "currency": "Валюта",
+          "min_order": "Мінімальна сума замовлення",
+          "max_per_user": "Макс. використань на користувача",
+          "global_max_enabled": "Обмежити загальну кількість використань",
+          "global_max": "Загальний ліміт використань",
+          "valid_from": "Дійсний з",
+          "valid_until": "Дійсний до",
+          "description": "Внутрішні нотатки",
+          "active": "Активний"
+        },
+        "validation": {
+          "code_pattern": "Код має містити 3–20 символів (лише A-Z 0-9)",
+          "code_required": "Код обов'язковий",
+          "percent_range": "Знижка має бути від 1 до 100",
+          "amount_positive": "Сума має бути більшою за 0",
+          "currency_required": "Для фіксованої знижки потрібна валюта",
+          "validity_range": "Дата завершення має бути після дати початку"
+        },
+        "success": {
+          "created": "Промо-код створено",
+          "updated": "Промо-код оновлено",
+          "deactivated": "Промо-код деактивовано"
+        },
+        "error": {
+          "already_exists": "Код з такою назвою вже існує",
+          "generic": "Не вдалося зберегти код. Спробуйте ще раз."
+        }
+      },
+      "detail": {
+        "title": "Деталі промо-коду",
+        "redemptions_title": "Використання",
+        "redemptions_empty": "Використань ще немає",
+        "deactivate_button": "Деактивувати",
+        "deactivate_confirm_title": "Деактивувати цей код?",
+        "deactivate_confirm_body": "Клієнти більше не зможуть скористатися цим кодом. Існуючі використання залишаться.",
+        "deactivate_confirm_yes": "Деактивувати",
+        "deactivate_confirm_cancel": "Залишити активним",
+        "column": {
+          "user": "Користувач",
+          "order": "Замовлення",
+          "applied": "Застосована знижка",
+          "redeemed_on": "Використано"
+        }
+      }
+    },
+    "loyalty_tiers": {
+      "title": "Рівні лояльності",
+      "description": "Налаштуйте пороги, знижки та переваги для кожного рівня. Зміни негайно застосовуються до всіх користувачів.",
+      "perks_count": "{{count}} переваг",
+      "discount_format": "{{percent}}%",
+      "no_min_order": "—",
+      "preview_impact_button": "Переглянути зміни порогів",
+      "column": {
+        "tier": "Рівень",
+        "threshold": "Поріг",
+        "discount": "Знижка",
+        "min_order": "Мін. замовлення",
+        "perks": "Переваги",
+        "actions": "Дії"
+      },
+      "tier": {
+        "BronzeCleaner": "Бронзовий прибиральник",
+        "SilverMopper": "Срібний мопар",
+        "GoldPolisher": "Золотий поліровщик",
+        "PlatinumSparkler": "Платиновий блискавець"
+      },
+      "form": {
+        "title": "Редагувати рівень",
+        "submit": "Зберегти зміни",
+        "cancel": "Скасувати",
+        "success": "Рівень оновлено",
+        "field": {
+          "threshold": "Поріг балів за весь час",
+          "threshold_help": "Користувачі з такою кількістю балів і більше досягають цього рівня.",
+          "discount": "Знижка %",
+          "discount_help": "0 = без знижки.",
+          "min_order": "Мінімальна сума замовлення",
+          "min_order_help": "Залиште порожнім, щоб застосовувати знижку до всіх замовлень.",
+          "perks_json": "Переваги (JSON)",
+          "perks_json_help": "Масив об'єктів з icon і labelKey. Приклад: [{\"icon\":\"badge\",\"labelKey\":\"loyalty.perks.welcome_badge\"}]"
+        },
+        "validation": {
+          "threshold_min": "Поріг має бути 0 або більше",
+          "discount_range": "Знижка має бути між 0 і 100",
+          "min_order_min": "Мінімальне замовлення має бути 0 або більше",
+          "perks_json_invalid": "Переваги мають бути валідним JSON"
+        },
+        "error": {
+          "generic": "Не вдалося зберегти рівень. Спробуйте ще раз."
+        }
+      },
+      "preview": {
+        "title": "Перегляд змін порогів",
+        "description": "Налаштуйте пороги нижче та перегляньте, скільки користувачів буде перекласифіковано.",
+        "preview_button": "Переглянути",
+        "preview_results_title": "Перегляд впливу",
+        "result_row": "{{tier}}: {{currentCount}} → {{newCount}} ({{delta}})",
+        "apply_button": "Застосувати зміни",
+        "cancel_button": "Скасувати",
+        "applying": "Застосування змін...",
+        "success": "Пороги оновлено",
+        "error": {
+          "preview": "Не вдалося переглянути вплив",
+          "apply": "Деякі пороги не вдалося зберегти"
+        }
+      }
+    },
+    "loyalty_user_detail": {
+      "title": "Лояльність користувача",
+      "title_for_user": "Лояльність для {{email}}",
+      "loading": "Завантаження облікового запису...",
+      "back": "Назад до користувача",
+      "view_link": "Переглянути лояльність",
+      "tier_label": "Поточний рівень",
+      "lifetime_points": "Загальні бали",
+      "completed_bookings_label": "Завершені прибирання",
+      "completed_bookings": "{{count}} завершених прибирань",
+      "tier_achieved_label": "Рівень досягнуто",
+      "tier_achieved_on": "Рівень досягнуто {{date}}",
+      "next_tier_label": "Прогрес",
+      "points_to_next_tier": "{{count}} балів до {{tier}}",
+      "max_tier_reached": "Найвищий рівень досягнуто",
+      "tier": {
+        "BronzeCleaner": "Бронзовий прибиральник",
+        "SilverMopper": "Срібний мийник",
+        "GoldPolisher": "Золотий полірувальник",
+        "PlatinumSparkler": "Платиновий сяйник"
+      },
+      "actions": {
+        "grant": "Нарахувати бали",
+        "revoke": "Списати бали"
+      },
+      "activity": {
+        "title": "Журнал активності",
+        "empty": "Немає активності",
+        "column": {
+          "date": "Дата",
+          "type": "Тип",
+          "points": "Бали",
+          "source": "Джерело",
+          "order": "Замовлення"
+        },
+        "type": {
+          "Earn": "Нараховано",
+          "Revoke": "Списано"
+        },
+        "source": {
+          "OrderCompleted": "Замовлення виконано",
+          "OrderCancelled": "Замовлення скасовано",
+          "Referral": "Реферальний бонус",
+          "ManualGrant": "Ручне коригування"
+        }
+      },
+      "grant_dialog": {
+        "title_grant": "Нарахувати бали",
+        "title_revoke": "Списати бали",
+        "field": {
+          "points": "Бали",
+          "reason": "Причина",
+          "reason_help": "Видно в журналі аудиту."
+        },
+        "validation": {
+          "points_min": "Мінімум 1 бал",
+          "points_max": "Максимум 100 000 балів",
+          "reason_required": "Причина обов'язкова",
+          "reason_max": "Причина має бути не більше 500 символів"
+        },
+        "submit_grant": "Нарахувати",
+        "submit_revoke": "Списати",
+        "cancel": "Скасувати",
+        "success_grant": "Бали нараховано",
+        "success_revoke": "Бали списано",
+        "error": {
+          "generic": "Не вдалося оновити бали"
+        }
+      }
+    },
+    "loyalty_referrals": {
+      "title": "Реферали",
+      "description": "Уся активність рефералів клієнтів. Лише для перегляду.",
+      "filter": {
+        "status_all": "Усі статуси",
+        "status_accepted": "Прийнято",
+        "status_qualified": "Кваліфіковано",
+        "status_expired": "Прострочено",
+        "date_from": "Від",
+        "date_to": "До"
+      },
+      "column": {
+        "referrer": "Реферер",
+        "referred": "Запрошений",
+        "status": "Статус",
+        "accepted_on": "Прийнято",
+        "qualified_on": "Кваліфіковано",
+        "points_awarded": "Нараховано балів"
+      },
+      "status": {
+        "Accepted": "Прийнято",
+        "Qualified": "Кваліфіковано",
+        "Expired": "Прострочено"
+      },
+      "points_format": "{{referrer}} / {{referred}}",
+      "not_yet": "—",
+      "empty": "Поки що немає рефералів",
+      "loading": "Завантаження..."
+    },
+    "sitewide_push": {
+      "title": "Розсилка push",
+      "subtitle": "Надішліть разову маркетингову push-нотифікацію всім клієнтам, які підписалися на маркетинг. Доставлення виконується асинхронно; зазвичай протягом кількох хвилин.",
+      "titles_section": "Заголовок (за мовою)",
+      "bodies_section": "Текст (за мовою)",
+      "locale": {
+        "en_title": "Англійський заголовок",
+        "cs_title": "Чеський заголовок",
+        "sk_title": "Словацький заголовок",
+        "uk_title": "Український заголовок",
+        "ru_title": "Російський заголовок",
+        "en_body": "Англійський текст",
+        "cs_body": "Чеський текст",
+        "sk_body": "Словацький текст",
+        "uk_body": "Український текст",
+        "ru_body": "Російський текст"
+      },
+      "send": "Надіслати всім підписникам",
+      "confirm_title": "Надіслати розсилку?",
+      "confirm_send": "Push-нотифікація буде поставлена в чергу для кожного клієнта, який підписався на маркетинг. Після постановки в чергу зупинити надсилання неможливо.",
+      "validation_error": "Перед надсиланням заповніть усі мовні поля.",
+      "send_success": "Розсилка поставлена в чергу. Доставлення триває у фоновому режимі.",
+      "send_error": "Не вдалося поставити розсилку в чергу. Перевірте вхідні дані та повторіть спробу."
     }
   },
   "employees": {
@@ -1862,7 +2152,8 @@
       "remember_me": "Запам'ятати мене",
       "forgot_password": "Забули пароль?",
       "dont_have_account": "Немає облікового запису?"
-    }
+    },
+    "refresh_token_reused": "Сесію використано в іншому місці. Увійдіть, будь ласка, знову."
   },
   "fiscal_failures": {
     "title": "Фіскальні збої",
@@ -1893,5 +2184,18 @@
       "retry_scheduled": "Повтор заплановано",
       "acknowledged": "Фіскальний збій підтверджено"
     }
+  },
+  "gdpr": {
+    "deletion_already_pending": "Запит на видалення вже опрацьовується.",
+    "deletion_blocked_by_order": "Не можемо видалити обліковий запис, поки у вас є активне замовлення.",
+    "deletion_blocked_by_invoice": "Не можемо видалити обліковий запис, поки є непогашений рахунок."
+  },
+  "order": {
+    "review": {
+      "already_exists": "Ви вже залишили відгук про це замовлення."
+    }
+  },
+  "recurring_booking": {
+    "not_found": "Цього регулярного замовлення більше не існує."
   }
 }

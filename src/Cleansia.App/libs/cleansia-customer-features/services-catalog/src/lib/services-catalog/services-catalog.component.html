@@ -154,13 +154,15 @@
     </div>
     } @if (hasMorePackages()) {
     <div class="services-catalog__view-all-actions">
-      <button
-        class="services-catalog__view-all-btn"
-        (click)="toggleShowAllPackages()"
-      >
-        {{ 'pages.services.view_all_packages' | translate }}
-        <i class="pi pi-arrow-down"></i>
-      </button>
+      <cleansia-button
+        className="services-catalog__view-all-btn"
+        [label]="'pages.services.view_all_packages' | translate"
+        icon="pi pi-arrow-down"
+        iconPosition="right"
+        [severity]="'secondary'"
+        [outlined]="true"
+        (onClick)="toggleShowAllPackages()"
+      />
     </div>
     }
   </section>
@@ -216,9 +218,13 @@
               </div>
               }
             </div>
-            <button class="services-catalog__service-cta" (click)="bookService(service)">
-              {{ 'pages.services.book_now' | translate }}
-            </button>
+            <cleansia-button
+              className="services-catalog__service-cta"
+              [label]="'pages.services.book_now' | translate"
+              [severity]="'primary'"
+              (onClick)="bookService(service)"
+            />
+
           </div>
         </div>
       </div>
@@ -250,13 +256,15 @@
     </div>
     } @if (hasMoreServices()) {
     <div class="services-catalog__view-all-actions">
-      <button
-        class="services-catalog__view-all-btn"
-        (click)="toggleShowAllServices()"
-      >
-        {{ 'pages.services.view_all_services' | translate }}
-        <i class="pi pi-arrow-down"></i>
-      </button>
+      <cleansia-button
+        className="services-catalog__view-all-btn"
+        [label]="'pages.services.view_all_services' | translate"
+        icon="pi pi-arrow-down"
+        iconPosition="right"
+        [severity]="'secondary'"
+        [outlined]="true"
+        (onClick)="toggleShowAllServices()"
+      />
     </div>
     }
   </section>
@@ -286,11 +294,16 @@
     <p class="services-catalog__cta-subtitle">
       {{ 'pages.services.cta_subtitle' | translate }}
     </p>
-    <button class="services-catalog__cta-button" (click)="bookNow()">
-      {{ 'pages.services.cta_button' | translate }}
-      <i class="pi pi-arrow-right"></i>
-    </button>
+    <cleansia-button
+      className="services-catalog__cta-button"
+      [label]="'pages.services.cta_button' | translate"
+      icon="pi pi-arrow-right"
+      iconPosition="right"
+      [severity]="'primary'"
+      (onClick)="bookNow()"
+    />
+
   </div>
   } }
 </div>
-<cleansia-scroll-top />
+<cleansia-scroll-top [ariaLabel]="'global.scroll_to_top' | translate" />

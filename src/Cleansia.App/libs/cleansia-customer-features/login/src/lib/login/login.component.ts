@@ -70,17 +70,24 @@ export class LoginComponent implements AfterViewInit {
 
     google.accounts.id.initialize({
       client_id: '354682423254-boe1nlnb1dbd3m6a013d3nkpo2e9bgiq.apps.googleusercontent.com',
-      callback: (response: any) => {
+      callback: (response: { credential: string }) => {
         this.zone.run(() => this.facade.googleLogin(response.credential));
       },
     });
 
     const btnEl = this.googleBtnRef()?.nativeElement;
     if (btnEl) {
+      // GSI's `width` rejects percentage strings ("Provided button width is
+      // invalid: 100%") — it wants an integer pixel value, max 400. Measure
+      // the container at render time; clamp so we don't blow past GSI's cap.
+      // Falls back to 400 (the max) if the container has no width yet, which
+      // can happen if the parent is display:none on first paint.
+      const measured = (btnEl as HTMLElement).clientWidth;
+      const width = Math.min(measured > 0 ? measured : 400, 400);
       google.accounts.id.renderButton(btnEl, {
         theme: 'outline',
         size: 'large',
-        width: '100%',
+        width,
         text: 'continue_with',
         shape: 'rectangular',
       });

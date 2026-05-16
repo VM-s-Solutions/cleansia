@@ -29,8 +29,7 @@ public class GetOrderAnalytics
         public async Task<OrderAnalyticsDto> Handle(Query request, CancellationToken cancellationToken)
         {
             var orders = await orderRepository
-                .GetEmployeeOrdersByDateRange(request.EmployeeId, request.StartDate, request.EndDate)
-                .ToListAsync(cancellationToken);
+                .GetEmployeeOrdersByDateRangeAsync(request.EmployeeId, request.StartDate, request.EndDate, cancellationToken);
 
             var statusDistribution = orders
                 .GroupBy(o => o.GetCurrentOrderStatus().ToString())

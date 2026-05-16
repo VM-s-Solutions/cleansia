@@ -1,3 +1,4 @@
+using Cleansia.Infra.Services.Geocoding;
 using Cleansia.Infra.Services.Pdf;
 using Cleansia.Infra.Services.Pdf.Layouts;
 using Cleansia.Infra.Services.Templates;
@@ -11,11 +12,16 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<ITemplateEngine, HandlebarsTemplateEngine>();
 
-        // PDF layout builders
         services.AddSingleton<IReceiptLayoutBuilder, DefaultReceiptLayoutBuilder>();
         services.AddSingleton<IInvoiceLayoutBuilder, DefaultInvoiceLayoutBuilder>();
         services.AddSingleton<LayoutBuilderFactory>();
         services.AddScoped<IPdfService, QuestPdfService>();
+
+        services.AddHttpClient("Mapbox", c =>
+        {
+            c.Timeout = TimeSpan.FromSeconds(5);
+        });
+        services.AddScoped<IGeocodingService, MapboxGeocodingService>();
 
         return services;
     }

@@ -1,0 +1,106 @@
+<div class="cleansia-user-loyalty-detail">
+  <div class="cleansia-user-loyalty-detail__container page-wrapper">
+    <div class="cleansia-user-loyalty-detail__header">
+      <cleansia-button
+        [label]="'pages.loyalty_user_detail.back' | translate"
+        icon="pi pi-arrow-left"
+        [outlined]="true"
+        (onClick)="onBack()"
+      />
+      <cleansia-title [title]="headerTitle()" />
+    </div>
+
+    @if (facade.accountLoading() && !facade.account()) {
+      <cleansia-loader />
+    } @else if (facade.account()) {
+      @let acc = facade.account()!;
+
+      <!-- Tier snapshot -->
+      <cleansia-section [title]="tierName()">
+        <div class="user-loyalty-detail__snapshot">
+          <div
+            class="user-loyalty-detail__tier-badge"
+            [attr.data-tier]="tierAccent(acc.currentTier)"
+          >
+            <i class="pi pi-star-fill"></i>
+            <span class="user-loyalty-detail__tier-name">{{ tierName() }}</span>
+          </div>
+
+          <div class="user-loyalty-detail__metrics">
+            <div class="user-loyalty-detail__metric">
+              <span class="metric-label">
+                {{ 'pages.loyalty_user_detail.lifetime_points' | translate }}
+              </span>
+              <span class="metric-value metric-value--big">
+                {{ acc.lifetimePoints }}
+              </span>
+            </div>
+            <div class="user-loyalty-detail__metric">
+              <span class="metric-label">
+                {{ 'pages.loyalty_user_detail.completed_bookings_label' | translate }}
+              </span>
+              <span class="metric-value">{{ completedBookingsLabel() }}</span>
+            </div>
+            <div class="user-loyalty-detail__metric">
+              <span class="metric-label">
+                {{ 'pages.loyalty_user_detail.tier_achieved_label' | translate }}
+              </span>
+              <span class="metric-value">{{ tierAchievedLabel() }}</span>
+            </div>
+            <div class="user-loyalty-detail__metric">
+              <span class="metric-label">
+                {{ 'pages.loyalty_user_detail.next_tier_label' | translate }}
+              </span>
+              <span class="metric-value">{{ pointsToNextLabel() }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="user-loyalty-detail__actions">
+          <cleansia-button
+            *cleansiaPermission="Policy.CanGrantLoyaltyPoints"
+            [label]="'pages.loyalty_user_detail.actions.grant' | translate"
+            icon="pi pi-plus-circle"
+            severity="success"
+            (onClick)="openGrant()"
+          />
+          <cleansia-button
+            *cleansiaPermission="Policy.CanGrantLoyaltyPoints"
+            [label]="'pages.loyalty_user_detail.actions.revoke' | translate"
+            icon="pi pi-minus-circle"
+            severity="danger"
+            [outlined]="true"
+            (onClick)="openRevoke()"
+          />
+        </div>
+      </cleansia-section>
+
+      <!-- Activity log -->
+      <cleansia-section
+        [title]="'pages.loyalty_user_detail.activity.title' | translate"
+      >
+        <cleansia-table
+          [data]="facade.activity()"
+          [columns]="activityColumns"
+          [config]="{
+            paginator: true,
+            rows: 20,
+            lazy: true,
+            totalRecords: facade.activityTotal(),
+            emptyMessage: 'pages.loyalty_user_detail.activity.empty'
+          }"
+          [loading]="facade.activityLoading()"
+          (pageChange)="onActivityPageChange($event)"
+        />
+      </cleansia-section>
+    }
+  </div>
+</div>
+
+<cleansia-admin-grant-points-dialog
+  [visible]="dialogVisible()"
+  [mode]="dialogMode()"
+  [submitting]="facade.submitting()"
+  (visibleChange)="onDialogVisibleChange($event)"
+  (submitForm)="onDialogSubmit($event)"
+/>

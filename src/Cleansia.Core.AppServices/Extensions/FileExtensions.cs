@@ -1,4 +1,5 @@
-﻿using Cleansia.Core.Domain.Company;
+﻿using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Users;
@@ -8,7 +9,6 @@ namespace Cleansia.Core.AppServices.Extensions;
 
 public static class FileExtensions
 {
-
     /// <summary>
     /// Extracts the Base64 content by removing any data URI prefix if present.
     /// </summary>
@@ -26,7 +26,7 @@ public static class FileExtensions
     }
 
     public static InvoicePdfData CreatePdfData(this EmployeeInvoice invoice, Employee employee, Currency? currency,
-        List<OrderEmployeePay> orderPays, CountryInvoiceContext? countryContext, CompanyInfo companyInfo,
+        IReadOnlyList<OrderEmployeePay> orderPays, CountryInvoiceContext? countryContext, CompanyInfo companyInfo,
         string dateFormat = "dd.MM.yyyy")
     {
         return new InvoicePdfData
@@ -47,7 +47,7 @@ public static class FileExtensions
             DeductionAmount = invoice.DeductionAmount,
             VatAmount = 0,
             TotalAmount = invoice.TotalAmount,
-            CurrencyCode = currency?.Code ?? "CZK",
+            CurrencyCode = currency?.Code ?? Constants.Currency.Czk,
             CurrencySymbol = currency?.Symbol ?? "Kč",
             Orders = orderPays.Select(op => new OrderLineItem
             {

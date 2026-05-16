@@ -27,7 +27,6 @@ styles/
 │   ├── cleansia-sidebar-menu.component.scss
 │   ├── cleansia-table.component.scss
 │   ├── cleansia-telephone.component.scss
-│   ├── cleansia-time-picker.component.scss
 │   └── cleansia-title.component.scss
 ├── pages/                   # Page-specific styles
 │   └── cleansia-partner/    # Partner portal pages
@@ -157,7 +156,6 @@ All component SCSS files have been migrated from their original component direct
 - cleansia-sidebar-menu
 - cleansia-table
 - cleansia-telephone
-- cleansia-time-picker
 - cleansia-title
 
 ### Pages Migrated (8 total)

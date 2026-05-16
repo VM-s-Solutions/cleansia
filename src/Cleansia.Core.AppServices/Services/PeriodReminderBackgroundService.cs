@@ -1,4 +1,6 @@
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -30,10 +32,7 @@ public class PeriodReminderBackgroundService : IPeriodReminderBackgroundService
         {
             _logger.LogInformation("Starting period end reminder job at {Time}", DateTime.UtcNow);
 
-            // Check for periods ending in 3 days
             await SendRemindersForPeriodsEndingInAsync(3, cancellationToken);
-
-            // Check for periods ending in 1 day
             await SendRemindersForPeriodsEndingInAsync(1, cancellationToken);
 
             _logger.LogInformation("Period end reminder job completed successfully at {Time}", DateTime.UtcNow);
@@ -47,8 +46,13 @@ public class PeriodReminderBackgroundService : IPeriodReminderBackgroundService
 
     private async Task SendRemindersForPeriodsEndingInAsync(int daysRemaining, CancellationToken cancellationToken)
     {
+        // System job — no JWT context. Use IgnoreQueryFilters so the sweep
+        // sees rows across all tenants. Pure read + email send — no DB writes.
+        var targetDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(daysRemaining));
         var upcomingPeriods = await _payPeriodRepository
-            .GetActivePeriodsEndingInDaysAsync(daysRemaining, cancellationToken);
+            .GetQueryableIgnoringTenant()
+            .Where(p => p.EndDate == targetDate && p.Status == PayPeriodStatus.Open)
+            .ToListAsync(cancellationToken);
 
         if (!upcomingPeriods.Any())
         {
@@ -69,7 +73,16 @@ public class PeriodReminderBackgroundService : IPeriodReminderBackgroundService
         int daysRemaining,
         CancellationToken cancellationToken)
     {
-        var activeEmployees = await _employeeRepository.GetAllActiveWithUserAsync(cancellationToken);
+        // Notify only employees in the same tenant as the period.
+        var tenantId = period.TenantId;
+        var activeEmployees = await _employeeRepository
+            .GetQueryableIgnoringTenant()
+            .Include(e => e.User)
+                .ThenInclude(u => u!.PreferredLanguage)
+            .Where(e => e.User != null
+                && e.ContractStatus != ContractStatus.Terminated
+                && e.TenantId == tenantId)
+            .ToListAsync(cancellationToken);
 
         _logger.LogInformation(
             "Sending reminders for period {PeriodLabel} ending on {EndDate} to {EmployeeCount} employees",
@@ -88,7 +101,7 @@ public class PeriodReminderBackgroundService : IPeriodReminderBackgroundService
                 }
 
                 var employeeName = $"{employee.User.FirstName} {employee.User.LastName}";
-                var languageCode = employee.User.PreferredLanguageCode ?? "en";
+                var languageCode = employee.User.PreferredLanguageCode ?? Constants.Language.English;
 
                 await _emailService.SendPeriodEndReminderEmailAsync(
                     employee.User.Email,
@@ -112,7 +125,6 @@ public class PeriodReminderBackgroundService : IPeriodReminderBackgroundService
                     ex,
                     "Failed to send period end reminder to employee {EmployeeId}",
                     employee.Id);
-                // Continue with other employees even if one fails
             }
         }
     }

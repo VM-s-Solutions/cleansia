@@ -1,0 +1,19 @@
+<cleansia-section [title]="'pages.profile.emergency_contact' | translate">
+  <div class="cleansia-profile__fields" [formGroup]="facade.formGroup">
+    <div class="cleansia-profile__field">
+      <cleansia-text-input
+        [label]="'pages.profile.emergency_name' | translate"
+        [floatVariant]="'on'"
+        formControlName="emergencyName"
+        dataType="text"
+      />
+    </div>
+    <div class="cleansia-profile__field">
+      <cleansia-telephone
+        [label]="'pages.profile.emergency_phone' | translate"
+        [floatVariant]="'on'"
+        formControlName="emergencyPhone"
+      />
+    </div>
+  </div>
+</cleansia-section>

@@ -40,6 +40,20 @@
 
   &__date { color: var(--text-color-secondary); font-size: 0.875rem; }
 
+  &__mascot-row {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+  }
+
+  &__mascot {
+    max-width: 180px;
+    width: 100%;
+    height: auto;
+    display: block;
+    background: transparent;
+  }
+
   &__section {
     margin-bottom: 2rem;
 

@@ -50,10 +50,9 @@ public class SendTestEmail
                 return BusinessResult.Failure<Response>(new Error(nameof(command.EmailTemplateId), BusinessErrorMessage.EmailTemplateNotFound));
             }
 
-            var languageCode = template.Language?.Code ?? "en";
+            var languageCode = template.Language?.Code ?? Constants.Language.English;
             string messageId;
 
-            // Send test email based on email type with sample data
             switch (template.EmailType)
             {
                 case EmailType.ConfirmationEmail:
@@ -75,8 +74,6 @@ public class SendTestEmail
                     break;
 
                 case EmailType.OrderReceipt:
-                    // For order receipt, we need to create a mock order
-                    // Since we can't easily create a mock Order entity, we'll use a simplified approach
                     messageId = await emailService.SendTestOrderReceiptEmailAsync(
                         command.RecipientEmail,
                         "Test Customer",

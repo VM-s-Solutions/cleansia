@@ -1,0 +1,641 @@
+// Cleansia customer Rewards page styles. Mirrors the visual language of
+// the Disputes / Profile pages (centered card layout, soft hero gradient,
+// rounded surfaces) and adds per-tier colour accents for the hero and
+// tier-ladder rows.
+
+$primary: #0284c7;
+$primary-lighter: #f0f9ff;
+$font-heading: 'Poppins', sans-serif;
+
+// Per-tier accents — used by both the hero and the tier ladder rows.
+$tier-bronze-from: #b45309;
+$tier-bronze-to: #f59e0b;
+$tier-silver-from: #64748b;
+$tier-silver-to: #cbd5e1;
+$tier-gold-from: #d97706;
+$tier-gold-to: #fde047;
+$tier-platinum-from: #475569;
+$tier-platinum-to: #94a3b8;
+
+@mixin tier-gradient($from, $to) {
+  background: linear-gradient(135deg, $from 0%, $to 100%);
+  color: #fff;
+}
+
+.customer-rewards {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 1.5rem 3rem;
+
+  // ─── HERO ───
+  &__hero {
+    text-align: center;
+    padding: 3rem 1rem 2.5rem;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(180deg, $primary-lighter 0%, transparent 100%);
+    border-radius: 0 0 2rem 2rem;
+  }
+
+  &__hero-title {
+    font-family: $font-heading;
+    font-size: clamp(1.8rem, 4vw, 2.75rem);
+    font-weight: 700;
+    background: linear-gradient(135deg, #0c4a6e 0%, $primary 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin: 0 !important;
+  }
+
+  &__actions-bar {
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 1rem;
+  }
+
+  // ─── HERO CARD ───
+  &__hero-card {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.5rem;
+    border-radius: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+
+    &--bronze {
+      @include tier-gradient($tier-bronze-from, $tier-bronze-to);
+    }
+    &--silver {
+      @include tier-gradient($tier-silver-from, $tier-silver-to);
+    }
+    &--gold {
+      @include tier-gradient($tier-gold-from, $tier-gold-to);
+    }
+    &--platinum {
+      @include tier-gradient($tier-platinum-from, $tier-platinum-to);
+    }
+  }
+
+  &__hero-badge {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    i {
+      font-size: 1.75rem;
+      color: #fff;
+    }
+  }
+
+  &__hero-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__tier-name {
+    font-family: $font-heading;
+    font-weight: 700;
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+  }
+
+  &__hero-points {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+
+    strong {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+    span {
+      font-size: 0.95rem;
+      opacity: 0.9;
+    }
+  }
+
+  &__hero-meta {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    opacity: 0.9;
+  }
+
+  // ─── PROGRESS CARD ───
+  &__progress-card {
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: 1rem;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  &__progress-label {
+    font-size: 0.95rem;
+    color: var(--text-color-secondary);
+    margin-bottom: 0.75rem;
+  }
+
+  &__progress-bar {
+    height: 0.75rem;
+  }
+
+  &__progress-max {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: $primary;
+
+    i {
+      font-size: 1.25rem;
+    }
+  }
+
+  // ─── SECTIONS ───
+  &__section {
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  &__section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  &__section-title {
+    font-family: $font-heading;
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin: 0 0 1rem;
+  }
+
+  &__link {
+    color: $primary;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  // ─── PERKS ───
+  &__perk-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  &__perk {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__perk-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: $primary-lighter;
+    color: $primary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  &__perk-label {
+    font-size: 0.95rem;
+  }
+
+  // ─── TIER LADDER ───
+  &__tier-ladder {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  &__tier-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--surface-border);
+    border-radius: 0.875rem;
+    background: var(--surface-ground);
+    transition: all 0.18s ease;
+
+    &--current {
+      border-color: $primary;
+      box-shadow: 0 0 0 1px $primary;
+    }
+
+    &--locked {
+      opacity: 0.6;
+    }
+  }
+
+  &__tier-row-left {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    min-width: 0;
+  }
+
+  &__tier-row-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    i {
+      color: #fff;
+      font-size: 1rem;
+    }
+  }
+
+  &__tier-row--bronze .customer-rewards__tier-row-badge {
+    @include tier-gradient($tier-bronze-from, $tier-bronze-to);
+  }
+  &__tier-row--silver .customer-rewards__tier-row-badge {
+    @include tier-gradient($tier-silver-from, $tier-silver-to);
+  }
+  &__tier-row--gold .customer-rewards__tier-row-badge {
+    @include tier-gradient($tier-gold-from, $tier-gold-to);
+  }
+  &__tier-row--platinum .customer-rewards__tier-row-badge {
+    @include tier-gradient($tier-platinum-from, $tier-platinum-to);
+  }
+
+  &__tier-row-name {
+    font-weight: 700;
+    font-size: 1rem;
+  }
+
+  &__tier-row-threshold {
+    font-size: 0.85rem;
+    color: var(--text-color-secondary);
+  }
+
+  &__tier-row-discount {
+    font-size: 0.85rem;
+    color: var(--text-color-secondary);
+    margin-top: 0.15rem;
+  }
+
+  // ─── REFERRAL CARD ───
+  // Sits between the tier ladder and recent-activity sections. Mirrors the
+  // section card chrome but adds a primary-tinted inner card so the code itself
+  // reads as the focal point.
+  &__referral {
+    // Tighter top spacing — the section title carries enough emphasis on its own.
+    padding-bottom: 1.5rem;
+  }
+
+  &__referral-subtitle {
+    font-size: 0.9rem;
+    color: var(--text-color-secondary);
+    margin: 0 0 1rem;
+    line-height: 1.4;
+  }
+
+  &__referral-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem 1.25rem;
+    border: 1px solid rgba(2, 132, 199, 0.18);
+    border-radius: 1rem;
+    background: linear-gradient(180deg, $primary-lighter 0%, transparent 100%);
+  }
+
+  &__referral-code {
+    font-family: 'Courier New', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    color: $primary;
+    padding: 0.5rem 1rem;
+    border-radius: 0.75rem;
+    background: var(--surface-card);
+    border: 1px dashed rgba(2, 132, 199, 0.4);
+  }
+
+  &__referral-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+
+  &__referral-stats {
+    font-size: 0.85rem;
+    color: var(--text-color-secondary);
+    text-align: center;
+  }
+
+  // ─── ACTIVITY ───
+  &__activity-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__activity-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface-ground);
+    border-radius: 0.75rem;
+  }
+
+  &__activity-points {
+    font-weight: 700;
+    min-width: 3.5rem;
+    text-align: right;
+
+    &--positive {
+      color: #16a34a;
+    }
+    &--negative {
+      color: #dc2626;
+    }
+  }
+
+  &__activity-text {
+    font-size: 0.92rem;
+    color: var(--text-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__activity-date {
+    font-size: 0.8rem;
+    color: var(--text-color-secondary);
+    white-space: nowrap;
+  }
+
+  // ─── EMPTY / ERROR ───
+  &__empty,
+  &__error {
+    text-align: center;
+    padding: 2.5rem 1.5rem;
+    color: var(--text-color-secondary);
+
+    i {
+      font-size: 2.25rem;
+      color: $primary;
+      margin-bottom: 0.75rem;
+    }
+
+    p {
+      margin: 0.5rem 0 1rem;
+    }
+  }
+}
+
+:root.dark-mode {
+  .customer-rewards {
+    &__hero {
+      background: linear-gradient(
+        180deg,
+        rgba(56, 189, 248, 0.04) 0%,
+        transparent 100%
+      );
+    }
+    &__hero-title {
+      background: linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+    &__progress-card,
+    &__section {
+      background: #1e293b;
+      border-color: #334155;
+    }
+    &__progress-label,
+    &__perk-label,
+    &__tier-row-threshold,
+    &__tier-row-discount {
+      color: #94a3b8;
+    }
+    &__perk-icon {
+      background: rgba(56, 189, 248, 0.12);
+      color: #7dd3fc;
+    }
+    &__tier-row {
+      background: #172033;
+      border-color: #334155;
+    }
+    &__tier-row--current {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 1px #38bdf8;
+    }
+    &__tier-row-name {
+      color: #e2e8f0;
+    }
+    &__section-title {
+      color: #e2e8f0;
+    }
+
+    // Hero card — softened tier gradients for dark mode
+    &__hero-card--bronze {
+      background: linear-gradient(
+        135deg,
+        #78350f 0%,
+        rgba(180, 83, 9, 0.8) 100%
+      );
+      color: #fff;
+    }
+    &__hero-card--silver {
+      background: linear-gradient(135deg, #475569 0%, #94a3b8 100%);
+      color: #fff;
+    }
+    &__hero-card--gold {
+      background: linear-gradient(135deg, #92400e 0%, #ca8a04 100%);
+      color: #fff;
+    }
+    &__hero-card--platinum {
+      background: linear-gradient(135deg, #334155 0%, #64748b 100%);
+      color: #fff;
+    }
+
+    // Tier-row badges — match the hero softened palette
+    &__tier-row--bronze .customer-rewards__tier-row-badge {
+      background: linear-gradient(
+        135deg,
+        #78350f 0%,
+        rgba(180, 83, 9, 0.8) 100%
+      );
+      color: #fff;
+    }
+    &__tier-row--silver .customer-rewards__tier-row-badge {
+      background: linear-gradient(135deg, #475569 0%, #94a3b8 100%);
+      color: #fff;
+    }
+    &__tier-row--gold .customer-rewards__tier-row-badge {
+      background: linear-gradient(135deg, #92400e 0%, #ca8a04 100%);
+      color: #fff;
+    }
+    &__tier-row--platinum .customer-rewards__tier-row-badge {
+      background: linear-gradient(135deg, #334155 0%, #64748b 100%);
+      color: #fff;
+    }
+
+    // Referral card — dark surface, readable code colour
+    &__referral-card {
+      background: linear-gradient(
+        180deg,
+        rgba(56, 189, 248, 0.06) 0%,
+        transparent 100%
+      );
+      border-color: rgba(56, 189, 248, 0.2);
+    }
+    &__referral-code {
+      background: #1e293b;
+      color: #7dd3fc;
+      border-color: rgba(56, 189, 248, 0.35);
+    }
+    &__referral-subtitle,
+    &__referral-stats {
+      color: #94a3b8;
+    }
+  }
+}
+
+// ─── PROFILE-PAGE ENTRY CARD ───
+.customer-rewards-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  border-radius: 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
+  background: var(--surface-card);
+
+  &--bronze {
+    @include tier-gradient($tier-bronze-from, $tier-bronze-to);
+  }
+  &--silver {
+    @include tier-gradient($tier-silver-from, $tier-silver-to);
+  }
+  &--gold {
+    @include tier-gradient($tier-gold-from, $tier-gold-to);
+  }
+  &--platinum {
+    @include tier-gradient($tier-platinum-from, $tier-platinum-to);
+  }
+
+  &__badge {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    i {
+      color: #fff;
+      font-size: 1.25rem;
+    }
+  }
+
+  &__body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__title {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    opacity: 0.85;
+    margin-bottom: 0.15rem;
+  }
+
+  &__tier {
+    font-family: $font-heading;
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 0.2rem;
+  }
+
+  &__points {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+
+    strong {
+      font-size: 1.4rem;
+      font-weight: 800;
+    }
+
+    span {
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+  }
+
+  &__points-label {
+    font-size: 0.85rem !important;
+  }
+
+  &__link {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.5rem 0.85rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    text-decoration: none;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
+}
+
+.customer-profile__rewards-slot {
+  max-width: 1100px;
+  margin: 0 auto 1.5rem;
+}

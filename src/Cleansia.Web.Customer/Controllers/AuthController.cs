@@ -1,5 +1,8 @@
+using Cleansia.Config.Authentication;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Infra.Common.Configuration.Interfaces;
+using Cleansia.Infra.Common.Validations;
 using Cleansia.Web.Customer.Abstractions;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -11,7 +14,10 @@ namespace Cleansia.Web.Customer.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 [EnableRateLimiting("auth")]
-public class AuthController(IMediator mediator) : CustomerApiController(mediator)
+public class AuthController(
+    IMediator mediator,
+    AuthCookieWriter cookieWriter,
+    AuthCookieConfig cookieConfig) : CustomerApiController(mediator)
 {
     [AllowAnonymous]
     [HttpPost("Register")]
@@ -34,7 +40,7 @@ public class AuthController(IMediator mediator) : CustomerApiController(mediator
     {
         var result = await Mediator.Send(command);
 
-        return HandleResult<JwtTokenResponse>(result);
+        return HandleTokenIssuingResult(result);
     }
 
     [AllowAnonymous]
@@ -46,7 +52,7 @@ public class AuthController(IMediator mediator) : CustomerApiController(mediator
     {
         var result = await Mediator.Send(command);
 
-        return HandleResult<JwtTokenResponse>(result);
+        return HandleTokenIssuingResult(result);
     }
 
     [AllowAnonymous]
@@ -57,7 +63,7 @@ public class AuthController(IMediator mediator) : CustomerApiController(mediator
     {
         var result = await Mediator.Send(command, cancellationToken);
 
-        return HandleResult<JwtTokenResponse>(result);
+        return HandleTokenIssuingResult(result);
     }
 
     [AllowAnonymous]
@@ -69,5 +75,49 @@ public class AuthController(IMediator mediator) : CustomerApiController(mediator
         var result = await Mediator.Send(command, cancellationToken);
 
         return HandleResult<bool>(result);
+    }
+
+    [AllowAnonymous]
+    [HttpPost("RefreshToken")]
+    [ProducesResponseType(typeof(JwtTokenResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshToken.Command command, CancellationToken cancellationToken)
+    {
+        // Refresh token lives in the HttpOnly cookie now — the body field is
+        // accepted for back-compat but the cookie wins when present.
+        var token = cookieWriter.ReadRefreshTokenFromCookie(HttpContext, cookieConfig) ?? command.Token;
+        var enriched = command with { Token = token, RequiredAudience = JwtAudiences.Customer };
+        var result = await Mediator.Send(enriched, cancellationToken);
+        return HandleTokenIssuingResult(result);
+    }
+
+    [Authorize]
+    [HttpPost("Logout")]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Logout([FromBody] Logout.Command command, CancellationToken cancellationToken)
+    {
+        // Same cookie-first read as refresh — Logout no longer requires the
+        // client to know the refresh token; the cookie carries it.
+        var token = cookieWriter.ReadRefreshTokenFromCookie(HttpContext, cookieConfig) ?? command.Token;
+        var enriched = command with { Token = token };
+        var result = await Mediator.Send(enriched, cancellationToken);
+        // Always clear the cookies on logout, even when the server-side
+        // revoke failed — the user pressed sign-out, they expect to be out.
+        cookieWriter.ClearCookies(HttpContext, cookieConfig);
+        return HandleResult<bool>(result);
+    }
+
+    // Augment successful token-issuing results with the HttpOnly cookies +
+    // the CSRF token before serializing. Failures fall through unchanged.
+    private IActionResult HandleTokenIssuingResult(BusinessResult<JwtTokenResponse> result)
+    {
+        if (result.IsSuccess && result.Value != null)
+        {
+            var augmented = cookieWriter.ApplyCookies(HttpContext, result.Value, cookieConfig);
+            return HandleResult<JwtTokenResponse>(BusinessResult.Success(augmented));
+        }
+        return HandleResult<JwtTokenResponse>(result);
     }
 }

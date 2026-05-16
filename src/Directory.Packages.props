@@ -2,6 +2,9 @@
 
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- Lets a <PackageVersion> entry pin transitive deps without each csproj needing
+         a direct <PackageReference>. Used to force OpenTelemetry.Api >= 1.15.3 (CVE fix). -->
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
 
   <ItemGroup Label="EF Core + Npgsql">
@@ -47,7 +50,8 @@
   <ItemGroup Label="Azure / External Services">
     <PackageVersion Include="Azure.Identity" Version="1.17.1" />
     <PackageVersion Include="Azure.Storage.Blobs" Version="12.27.0" />
-    <PackageVersion Include="Azure.Storage.Queues" Version="12.22.0" />
+    <PackageVersion Include="Azure.Storage.Queues" Version="12.24.0" />
+    <PackageVersion Include="FirebaseAdmin" Version="3.4.0" />
     <PackageVersion Include="SendGrid" Version="9.29.3" />
     <PackageVersion Include="Stripe.net" Version="50.4.0" />
   </ItemGroup>
@@ -68,17 +72,22 @@
   </ItemGroup>
 
   <ItemGroup Label="OpenTelemetry">
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.0" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
+    <!-- Pin transitive OpenTelemetry.Api to a non-vulnerable version (GHSA-g94r-2vxg-569j fixed in 1.15.3).
+         The Instrumentation.* packages above don't ship a 1.15.3 yet, but their constraint is ">=", so
+         this pin overrides the resolved version of the transitive Api dep. -->
+    <PackageVersion Include="OpenTelemetry.Api" Version="1.15.3" />
   </ItemGroup>
 
   <ItemGroup Label="Testing">
     <PackageVersion Include="coverlet.collector" Version="8.0.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
     <PackageVersion Include="Microsoft.TestPlatform.TestHost" Version="18.3.0" />
+    <PackageVersion Include="MockQueryable.Moq" Version="7.0.3" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Respawn" Version="7.0.0" />
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.10.0" />

@@ -1,34 +1,76 @@
-﻿using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
 using Cleansia.Core.AppServices.Extensions;
+using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using System.IdentityModel.Tokens.Jwt;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 
 namespace Cleansia.Core.AppServices.Services;
 
-public class TokenService(IJwtSettings jwtSettings) : ITokenService
+public class TokenService(
+    IJwtSettings jwtSettings,
+    IRefreshTokenService refreshTokenService,
+    IEmployeeRepository employeeRepository,
+    IRequestMetadataProvider requestMetadata)
+    : ITokenService
 {
-    public JwtTokenResponse GenerateToken(User user, bool rememberMe)
+    public async Task<JwtTokenResponse> GenerateTokenAsync(User user, bool rememberMe, string audience, CancellationToken cancellationToken = default)
+    {
+        if (!user.IsEmailConfirmed)
+        {
+            return new JwtTokenResponse(
+                Token: string.Empty,
+                IsEmailConfirmed: false);
+        }
+
+        var employeeId = await ResolveEmployeeIdAsync(user, cancellationToken);
+        var accessToken = GenerateAccessToken(user, employeeId, audience);
+        var refresh = refreshTokenService.Issue(
+            userId: user.Id,
+            rememberMe: rememberMe,
+            audience: audience,
+            deviceLabel: requestMetadata.DeviceLabel,
+            ipAddress: requestMetadata.IpAddress);
+
+        return new JwtTokenResponse(
+            Token: accessToken,
+            IsEmailConfirmed: true,
+            UserId: user.Id,
+            Email: user.Email,
+            RefreshToken: refresh.RawToken,
+            RefreshTokenExpiresAt: refresh.Record.ExpiresAt,
+            Role: user.Profile.ToString());
+    }
+
+    private async Task<string?> ResolveEmployeeIdAsync(User user, CancellationToken cancellationToken)
+    {
+        if (user.Profile != UserProfile.Employee)
+        {
+            return null;
+        }
+        var employee = await employeeRepository.GetByUserEmailAsync(user.Email, cancellationToken);
+        return employee?.Id;
+    }
+
+    private string GenerateAccessToken(User user, string? employeeId, string audience)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret));
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(user.SetClaims()),
-            Expires = DateTime.UtcNow.AddHours(rememberMe
-                ? jwtSettings.CookieTokenExpHours
-                : jwtSettings.DefaultTokenExpHours),
+            Issuer = jwtSettings.Issuer,
+            Audience = audience,
+            Subject = new ClaimsIdentity(user.SetClaims(employeeId)),
+            Expires = DateTime.UtcNow.AddMinutes(jwtSettings.AccessTokenExpMinutes),
             SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
         };
         var token = tokenHandler.CreateToken(tokenDescriptor);
-
-        return new JwtTokenResponse(
-            Token: user.IsEmailConfirmed ? tokenHandler.WriteToken(token) : string.Empty,
-            IsEmailConfirmed: user.IsEmailConfirmed);
+        return tokenHandler.WriteToken(token);
     }
 }

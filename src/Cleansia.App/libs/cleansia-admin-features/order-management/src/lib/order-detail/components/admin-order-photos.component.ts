@@ -1,29 +1,24 @@
 import { CommonModule } from '@angular/common';
 import {
+  ChangeDetectionStrategy,
   Component,
   computed,
   effect,
   inject,
   input,
-  signal,
   viewChild,
 } from '@angular/core';
-import {
-  AdminClient,
-  GetOrderPhotosResponse,
-  PhotoType,
-} from '@cleansia/admin-services';
+import { PhotoType } from '@cleansia/admin-services';
 import {
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
 } from '@cleansia/components';
-import { SnackbarService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { finalize, tap } from 'rxjs';
 import {
   AdminPhotoGalleryComponent,
   GalleryPhoto,
 } from './admin-photo-gallery.component';
+import { AdminOrderPhotosFacade } from './admin-order-photos.facade';
 
 @Component({
   selector: 'admin-order-photos',
@@ -36,18 +31,19 @@ import {
     AdminPhotoGalleryComponent,
   ],
   templateUrl: './admin-order-photos.component.html',
+  providers: [AdminOrderPhotosFacade],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminOrderPhotosComponent {
-  private readonly adminClient = inject(AdminClient);
-  private readonly snackbarService = inject(SnackbarService);
+  protected readonly facade = inject(AdminOrderPhotosFacade);
   private readonly translate = inject(TranslateService);
 
   readonly gallery = viewChild<AdminPhotoGalleryComponent>('gallery');
 
   readonly orderId = input.required<string>();
 
-  readonly photosData = signal<GetOrderPhotosResponse | null>(null);
-  readonly loading = signal(false);
+  readonly photosData = this.facade.photosData;
+  readonly loading = this.facade.loading;
 
   readonly beforePhotos = computed(() => {
     return (
@@ -81,31 +77,9 @@ export class AdminOrderPhotosComponent {
     effect(() => {
       const orderId = this.orderId();
       if (orderId) {
-        this.loadPhotos();
+        this.facade.loadPhotos(orderId);
       }
     });
-  }
-
-  loadPhotos(): void {
-    const orderId = this.orderId();
-    if (!orderId) return;
-
-    this.loading.set(true);
-
-    this.adminClient.adminOrderClient
-      .photos(orderId)
-      .pipe(
-        tap((response) => this.photosData.set(response)),
-        finalize(() => this.loading.set(false))
-      )
-      .subscribe({
-        error: (error) => {
-          console.error('Error loading photos:', error);
-          this.snackbarService.showError(
-            this.translate.instant('pages.order_detail.messages.photos_error')
-          );
-        },
-      });
   }
 
   openGallery(index: number): void {
@@ -115,6 +89,6 @@ export class AdminOrderPhotosComponent {
   formatDate(date: Date | null | undefined): string {
     if (!date) return '';
     const dateObj = date instanceof Date ? date : new Date(date);
-    return dateObj.toLocaleString('en-GB');
+    return dateObj.toLocaleString(this.translate.currentLang || 'en-GB');
   }
 }

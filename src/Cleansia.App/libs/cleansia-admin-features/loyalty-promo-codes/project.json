@@ -1,0 +1,9 @@
+{
+  "name": "loyalty-promo-codes",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/cleansia-admin-features/loyalty-promo-codes/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": [],
+  "targets": {}
+}

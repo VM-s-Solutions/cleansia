@@ -13,6 +13,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Infra.Common.Configuration.Interfaces;
 
 namespace Cleansia.Web.Admin.Extensions;
 
@@ -20,6 +21,8 @@ public static class ServiceExtensions
 {
     public static void AddServices(this IServiceCollection services, IConfiguration configuration, IHostEnvironment env)
     {
+        services.AddSingleton<IHostAudienceProvider>(new HostAudienceProvider(JwtAudiences.Admin));
+
         services
             .AddHttpContextAccessor()
             .AddCoreBindings(configuration, env)
@@ -89,26 +92,21 @@ public static class ServiceExtensions
     /// </summary>
     private static string GetSchemaId(Type type)
     {
-        // Get the base name, handling nested types (e.g., RegisterEmployee+Command -> RegisterEmployee_Command)
         var baseName = GetBaseTypeName(type);
 
-        // For non-generic types, return the base name
         if (!type.IsGenericType)
         {
             return baseName;
         }
 
-        // For generic types like PagedData<UserListItem>, create a clean name
         var genericTypeName = baseName;
 
-        // Remove the backtick and number (e.g., "PagedData`1" -> "PagedData")
         var backtickIndex = genericTypeName.IndexOf('`');
         if (backtickIndex > 0)
         {
             genericTypeName = genericTypeName[..backtickIndex];
         }
 
-        // Get the generic type arguments and create a clean name
         var genericArgs = type.GetGenericArguments();
         var argNames = string.Join("_", genericArgs.Select(GetSchemaId));
 
@@ -126,12 +124,12 @@ public static class ServiceExtensions
             return type.Name;
         }
 
-        // For nested types, include the declaring type name
         return $"{GetBaseTypeName(type.DeclaringType)}_{type.Name}";
     }
     public static IServiceCollection AddJwt(this IServiceCollection services, IConfiguration configuration)
     {
         var secret = Encoding.UTF8.GetBytes(configuration["JwtSettings:Secret"]!);
+        var issuer = configuration["JwtSettings:Issuer"] ?? "cleansia";
 
         services.AddAuthentication(options =>
         {
@@ -142,8 +140,10 @@ public static class ServiceExtensions
         {
             options.TokenValidationParameters = new TokenValidationParameters
             {
-                ValidateIssuer = false,
-                ValidateAudience = false,
+                ValidateIssuer = true,
+                ValidIssuer = issuer,
+                ValidateAudience = true,
+                ValidAudience = JwtAudiences.Admin,
                 ValidateIssuerSigningKey = true,
                 ValidateActor = false,
                 ValidateLifetime = true,
@@ -153,6 +153,17 @@ public static class ServiceExtensions
             options.Events = new JwtBearerEvents()
             {
                 OnAuthenticationFailed = context => Task.CompletedTask,
+                // Cookie fallback for the admin web SPA. See the Customer
+                // host's matching comment for the migration rationale.
+                OnMessageReceived = context =>
+                {
+                    if (string.IsNullOrEmpty(context.Token)
+                        && context.Request.Cookies.TryGetValue("admin_token", out var fromCookie))
+                    {
+                        context.Token = fromCookie;
+                    }
+                    return Task.CompletedTask;
+                },
                 OnTokenValidated = context =>
                 {
                     if (context.Principal?.Identity is not ClaimsIdentity claimsIdentity)
@@ -181,7 +192,7 @@ public static class ServiceExtensions
                 .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
                 .Build())
             .AddPolicy("AdminOnly", policy => policy
-                .RequireRole(UserRole.Admin)); // Define a named policy for clarity
+                .RequireRole(UserRole.Admin));
 
         return services;
     }
@@ -189,32 +200,23 @@ public static class ServiceExtensions
     public static IServiceCollection AddUserAuthorization(this IServiceCollection services)
     {
         services.AddAuthorizationBuilder()
-            // 1. Authenticated users
             .AddPolicy(PhysicalPolicy.Authenticated,
                 p => p.RequireAuthenticatedUser())
-
-            // 2. Employee or Administrator
             .AddPolicy(PhysicalPolicy.EmployeeOrAdmin,
                 p => p.RequireRole(
                     UserProfile.Employee.ToString(),
                     UserProfile.Administrator.ToString()))
-
-            // 3. Administrator only
             .AddPolicy(PhysicalPolicy.AdminOnly,
                 p => p.RequireRole(UserProfile.Administrator.ToString()))
-
-            // 4. Owner OR Employee/Admin
             .AddPolicy(PhysicalPolicy.OwnerOrElevated, p =>
                 p.RequireAssertion(ctx =>
                 {
                     var user = ctx.User;
 
-                    // fast-path: elevated role
                     if (user.IsInRole(UserProfile.Administrator.ToString()) ||
                         user.IsInRole(UserProfile.Employee.ToString()))
                         return true;
 
-                    // owner check: compare sub claim with route id
                     var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                     if (ctx.Resource is HttpContext http &&
                         http.Request.RouteValues.TryGetValue("id", out var routeId))

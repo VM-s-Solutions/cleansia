@@ -8,10 +8,11 @@ import {
   MarkInvoicePaidCommand,
   RegenerateInvoicePdfCommand,
 } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 import {
   RejectDialogComponent,
   RejectDialogData,
@@ -19,13 +20,11 @@ import {
 } from '../../../../employee-management/src/lib/components';
 
 @Injectable()
-export class InvoiceDetailFacade {
+export class InvoiceDetailFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly dialogService = inject(DialogService);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
-
-  private destroy$ = new Subject<void>();
 
   readonly invoice = signal<EmployeeInvoiceDetailDto | null>(null);
   readonly loading = signal<boolean>(false);
@@ -37,7 +36,7 @@ export class InvoiceDetailFacade {
     this.adminClient.adminInvoiceClient
       .details(invoiceId)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
@@ -62,7 +61,7 @@ export class InvoiceDetailFacade {
     this.adminClient.adminInvoiceClient
       .approve(command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.actionLoading.set(false))
       )
@@ -93,7 +92,7 @@ export class InvoiceDetailFacade {
     this.adminClient.adminInvoiceClient
       .markPaid(command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.actionLoading.set(false))
       )
@@ -148,13 +147,12 @@ export class InvoiceDetailFacade {
     const command = new CancelInvoiceCommand({
       invoiceId: inv.id,
       reason,
-      cancelledBy: 'Admin',
     });
 
     this.adminClient.adminInvoiceClient
       .cancel(command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.actionLoading.set(false))
       )
@@ -177,7 +175,7 @@ export class InvoiceDetailFacade {
     this.adminClient.adminInvoiceClient
       .download(inv.id)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((response) => {
@@ -208,7 +206,7 @@ export class InvoiceDetailFacade {
     this.adminClient.adminInvoiceClient
       .regeneratePdf(command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.actionLoading.set(false))
       )
@@ -297,10 +295,5 @@ export class InvoiceDetailFacade {
 
   canDownload(): boolean {
     return !!this.invoice()?.pdfBlobName;
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

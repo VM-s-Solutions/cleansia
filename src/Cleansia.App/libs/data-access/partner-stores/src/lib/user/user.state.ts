@@ -1,11 +1,16 @@
 import { Page } from '@cleansia/models';
-import { UserListItem } from '@cleansia/partner-services';
+import {
+  MyProfileDto,
+  UserItem,
+  UserListItem,
+} from '@cleansia/partner-services';
 
 export const USER_FEATURE_KEY = 'user';
 
 export interface UserState {
   page: Page<UserListItem>;
-  userDetail?: UserListItem;
+  userDetail?: UserItem;
+  currentUser?: MyProfileDto;
 
   loading: Record<string, boolean>;
   error: Record<string, string | null>;

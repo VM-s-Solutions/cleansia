@@ -1,11 +1,12 @@
 import { Page } from '@cleansia/models';
-import { UserListItem } from '@cleansia/partner-services';
+import { AdminUserDetailDto, AdminUserListItem } from '@cleansia/admin-services';
 
 export const USER_FEATURE_KEY = 'user';
 
 export interface UserState {
-  page: Page<UserListItem>;
-  userDetail?: UserListItem;
+  page: Page<AdminUserListItem>;
+  userDetail?: AdminUserDetailDto;
+  currentUser?: AdminUserListItem;
 
   loading: Record<string, boolean>;
   error: Record<string, string | null>;
@@ -14,6 +15,7 @@ export interface UserState {
 export const userInitialState: UserState = {
   page: Page.create(),
   userDetail: undefined,
+  currentUser: undefined,
   loading: {},
   error: {},
 };

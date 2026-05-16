@@ -88,6 +88,43 @@
         </div>
         }
       </div>
+      <div class="cleansia-register__referral">
+        <div
+          class="cleansia-register__code-row"
+          tabindex="0"
+          role="button"
+          (click)="openReferralDialog()"
+          (keydown.enter)="openReferralDialog()"
+        >
+          <div class="cleansia-register__code-row-icon">
+            <i class="pi pi-users"></i>
+          </div>
+          <div class="cleansia-register__code-row-content">
+            <div class="cleansia-register__code-row-label">
+              {{ 'auth.register.referral.row_title' | translate }}
+            </div>
+            @if (facade.referralState().kind === 'valid') {
+              <div class="cleansia-register__code-row-applied">
+                {{ 'auth.register.referral.row_applied' | translate: { code: facade.referralCode() } }}
+              </div>
+            }
+          </div>
+          <div class="cleansia-register__code-row-action">
+            @if (facade.referralState().kind === 'valid') {
+              <button
+                type="button"
+                class="cleansia-register__code-row-clear"
+                [attr.aria-label]="'auth.register.referral.dialog_cancel' | translate"
+                (click)="clearReferral($event)"
+              >
+                <i class="pi pi-times"></i>
+              </button>
+            } @else {
+              <i class="pi pi-chevron-right"></i>
+            }
+          </div>
+        </div>
+      </div>
       <div class="cleansia-register__terms">
         <cleansia-checkbox
           [title]="'auth.register.terms_agreement' | translate"
@@ -121,4 +158,23 @@
       </div>
     </form>
   </div>
+
+  <!-- Referral code dialog — Wolt-style. Apply hits backend once; bad codes
+       never block submit. -->
+  <cleansia-code-input-dialog
+    [visible]="referralDialogVisible()"
+    (visibleChange)="onReferralDialogVisible($event)"
+    [initialCode]="facade.referralCode()"
+    [state]="referralDialogState()"
+    titleKey="auth.register.referral.dialog_title"
+    inputLabelKey="auth.register.referral.row_title"
+    helperKey="auth.register.referral.dialog_helper"
+    cancelKey="auth.register.referral.dialog_cancel"
+    applyKey="auth.register.referral.dialog_apply"
+    doneKey="auth.register.referral.dialog_done"
+    validatingKey="auth.register.referral.dialog_validating"
+    (applyClicked)="applyReferral($event)"
+    (done)="closeReferralDialog()"
+    (cancelled)="closeReferralDialog()"
+  />
 </cleansia-dynamic-background>

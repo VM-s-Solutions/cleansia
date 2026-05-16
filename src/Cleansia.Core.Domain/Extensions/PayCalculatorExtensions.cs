@@ -10,21 +10,14 @@ public static class PayCalculatorExtensions
         Order order)
     {
         var basePay = config.BasePay;
-        var extrasPay = (order.Rooms * config.ExtraPerRoom) + (order.Bathrooms * config.ExtraPerBathroom);
+        var extraRooms = Math.Max(0, order.Rooms - 1);
+        var extrasPay = (extraRooms * config.ExtraPerRoom) + (order.Bathrooms * config.ExtraPerBathroom);
         var expensesPay = (order.TravelDistance ?? 0) * config.DistanceRatePerKm;
         var totalPay = basePay + extrasPay + expensesPay;
 
-        if (config.MinimumPay > 0 && totalPay < config.MinimumPay)
-        {
-            totalPay = config.MinimumPay;
-        }
+        totalPay = ApplyMinMaxClamp(totalPay, config.MinimumPay, config.MaximumPay);
 
-        if (config.MaximumPay > 0 && totalPay > config.MaximumPay)
-        {
-            totalPay = config.MaximumPay;
-        }
-
-        var breakdown = BuildPayBreakdown(basePay, order.Rooms, config.ExtraPerRoom, order.Bathrooms, config.ExtraPerBathroom, order.TravelDistance ?? 0, config.DistanceRatePerKm);
+        var breakdown = BuildPayBreakdown(basePay, extraRooms, config.ExtraPerRoom, order.Bathrooms, config.ExtraPerBathroom, order.TravelDistance ?? 0, config.DistanceRatePerKm);
 
         return (basePay, extrasPay, expensesPay, totalPay, breakdown);
     }
@@ -39,39 +32,60 @@ public static class PayCalculatorExtensions
         var extrasPay = 0m;
         var expensesPay = 0m;
 
+        var extraRooms = Math.Max(0, order.Rooms - 1);
+
         foreach (var config in configList)
         {
             basePay += config.BasePay;
-
-            var extraRooms = Math.Max(0, order.Rooms - 1);
             extrasPay += config.ExtraPerRoom * extraRooms;
-
             extrasPay += config.ExtraPerBathroom * order.Bathrooms;
-
             expensesPay += config.DistanceRatePerKm * (order.TravelDistance ?? 0m);
         }
 
         var totalPay = basePay + extrasPay + expensesPay;
 
-        var primaryConfig = configList.First();
-        if (primaryConfig.MinimumPay > 0 && totalPay < primaryConfig.MinimumPay)
-        {
-            totalPay = primaryConfig.MinimumPay;
-        }
+        var minimumFloor = configList
+            .Where(c => c.MinimumPay > 0)
+            .Select(c => c.MinimumPay)
+            .DefaultIfEmpty(0m)
+            .Max();
 
-        if (primaryConfig.MaximumPay > 0 && totalPay > primaryConfig.MaximumPay)
-        {
-            totalPay = primaryConfig.MaximumPay;
-        }
+        var maximumCeiling = configList
+            .Where(c => c.MaximumPay > 0)
+            .Select(c => c.MaximumPay)
+            .DefaultIfEmpty(0m)
+            .Min();
+
+        totalPay = ApplyMinMaxClamp(totalPay, minimumFloor, maximumCeiling);
 
         var breakdown = $"Base: {basePay:F2}, Extras: {extrasPay:F2}, Expenses: {expensesPay:F2}";
 
         return (basePay, extrasPay, expensesPay, totalPay, breakdown);
     }
 
+    private static decimal ApplyMinMaxClamp(decimal totalPay, decimal minimumPay, decimal maximumPay)
+    {
+        if (minimumPay > 0 && maximumPay > 0 && minimumPay > maximumPay)
+        {
+            throw new InvalidOperationException(
+                $"Inconsistent pay config: MinimumPay ({minimumPay}) cannot exceed MaximumPay ({maximumPay}). " +
+                "Validators must reject this combination at write time.");
+        }
+
+        if (minimumPay > 0 && totalPay < minimumPay)
+        {
+            totalPay = minimumPay;
+        }
+        if (maximumPay > 0 && totalPay > maximumPay)
+        {
+            totalPay = maximumPay;
+        }
+        return totalPay;
+    }
+
     private static string BuildPayBreakdown(
         decimal basePay,
-        int rooms,
+        int extraRooms,
         decimal perRoom,
         int bathrooms,
         decimal perBathroom,
@@ -83,9 +97,9 @@ public static class PayCalculatorExtensions
             $"Base: {basePay:F2}"
         };
 
-        if (rooms > 0 && perRoom > 0)
+        if (extraRooms > 0 && perRoom > 0)
         {
-            parts.Add($"Rooms({rooms}): {rooms * perRoom:F2}");
+            parts.Add($"Rooms({extraRooms}): {extraRooms * perRoom:F2}");
         }
 
         if (bathrooms > 0 && perBathroom > 0)

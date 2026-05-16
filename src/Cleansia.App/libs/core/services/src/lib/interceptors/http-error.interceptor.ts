@@ -21,7 +21,7 @@ export const HttpErrorInterceptorFn: HttpInterceptorFn = (req, next) => {
           );
         } else {
           if (error.error instanceof Blob) {
-            parseBlobToJson(error.error)
+            parseBlobToJson<{ errors?: Record<string, string> }>(error.error)
               .then((parserErrorResponse) => {
                 const errorKey = parserErrorResponse.errors
                   ? getObjectValues(parserErrorResponse.errors)[0]

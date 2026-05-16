@@ -1,9 +1,9 @@
-import { UserListItem } from '@cleansia/partner-services';
+import { MyProfileDto } from '@cleansia/customer-services';
 
 export const CUSTOMER_USER_FEATURE_KEY = 'customerUser';
 
 export interface CustomerUserState {
-  currentUser?: UserListItem;
+  currentUser?: MyProfileDto;
   loading: Record<string, boolean>;
   error: Record<string, string | null>;
 }

@@ -9,18 +9,17 @@ import {
   SendTestEmailByTypeCommand,
   UpdateEmailTemplateCommand,
 } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 @Injectable()
-export class EmailTypeDetailFacade {
+export class EmailTypeDetailFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
-
-  private destroy$ = new Subject<void>();
 
   readonly emailTypeDetail = signal<EmailTypeDetailDto | null>(null);
   readonly loading = signal<boolean>(false);
@@ -45,7 +44,7 @@ export class EmailTypeDetailFacade {
     this.adminClient.adminEmailTemplateClient
       .typeDetails(emailType)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
@@ -79,7 +78,7 @@ export class EmailTypeDetailFacade {
     this.adminClient.adminEmailTemplateClient
       .update(templateId, command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => {
           this.saving.set(false);
@@ -113,7 +112,7 @@ export class EmailTypeDetailFacade {
     this.adminClient.emailTemplateTypesClient
       .sendTest(emailType, command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.sendingTestEmail.set(false))
       )
@@ -150,7 +149,7 @@ export class EmailTypeDetailFacade {
     this.adminClient.adminEmailTemplateClient
       .create(command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => {
           this.creating.set(false);
@@ -180,7 +179,7 @@ export class EmailTypeDetailFacade {
     this.adminClient.adminEmailTemplateClient
       .delete(emailTemplateId)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => {
           this.deleting.set(false);
@@ -204,10 +203,5 @@ export class EmailTypeDetailFacade {
     this.router.navigate([CleansiaAdminRoute.TEMPLATE_MANAGEMENT], {
       fragment: 'email-templates',
     });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

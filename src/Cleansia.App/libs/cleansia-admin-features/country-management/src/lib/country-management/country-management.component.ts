@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   inject,
@@ -18,6 +19,8 @@ import {
   TableColumn,
   TableAction,
 } from '@cleansia/components';
+import { Policy } from '@cleansia/services';
+import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -40,13 +43,16 @@ import {
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     ConfirmDialogModule,
+    CleansiaPermissionDirective,
   ],
   templateUrl: './country-management.component.html',
   providers: [CountryManagementFacade, ConfirmationService],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CountryManagementComponent implements AfterViewInit, OnDestroy {
   private readonly cd = inject(ChangeDetectorRef);
   protected readonly facade = inject(CountryManagementFacade);
+  protected readonly Policy = Policy;
   private readonly translate = inject(TranslateService);
   private readonly confirmationService = inject(ConfirmationService);
 

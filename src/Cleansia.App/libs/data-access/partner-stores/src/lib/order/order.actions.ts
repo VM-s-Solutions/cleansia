@@ -7,10 +7,12 @@ import {
 } from '@cleansia/partner-services';
 
 import { createAction, props } from '@ngrx/store';
+import { OrderListKey } from './order.state';
 
 export const loadOrderPaged = createAction(
   '[Order] Load Paged',
   props<{
+    listKey?: OrderListKey;
     filter?: OrderFilter;
     isActive?: boolean;
     sort?: SortDefinition[];
@@ -20,11 +22,11 @@ export const loadOrderPaged = createAction(
 );
 export const loadOrderPagedSuccess = createAction(
   '[Order] Load Paged Success',
-  props<{ page: PagedDataOfOrderListItem }>()
+  props<{ listKey: OrderListKey; page: PagedDataOfOrderListItem }>()
 );
 export const loadOrderPagedFailure = createAction(
   '[Order] Load Paged Failure',
-  props<{ error: ApiException }>()
+  props<{ listKey: OrderListKey; error: ApiException }>()
 );
 
 export const loadOrderDetail = createAction(
@@ -46,7 +48,6 @@ export const completeOrder = createAction(
   '[Order] Complete Order',
   props<{
     orderId: string;
-    employeeId: string;
     actualCompletionTimeMinutes: number;
     completionNotes: string;
   }>()

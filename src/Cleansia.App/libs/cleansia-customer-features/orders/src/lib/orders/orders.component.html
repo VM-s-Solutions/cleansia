@@ -166,7 +166,7 @@
     [class.order-card--upcoming]="isUpcoming(order)"
     (click)="viewOrder(order)"
   >
-    <div class="order-card__status-bar" [class]="'order-card__status-bar--' + getOrderStatusSeverity(order.orderStatus)"></div>
+    <div class="order-card__status-bar" [class]="'order-card__status-bar--' + (order.orderStatus | orderStatusSeverity)"></div>
     <div class="order-card__body">
       <div class="flex align-items-center gap-4 flex-1">
         <div class="order-card__icon">
@@ -177,8 +177,8 @@
           <div class="flex align-items-center gap-2 mb-1">
             <span class="order-card__number">#{{ order.displayOrderNumber }}</span>
             <p-tag
-              [value]="order.orderStatus?.name || ''"
-              [severity]="getOrderStatusSeverity(order.orderStatus)"
+              [value]="order.orderStatus | orderStatusLabel"
+              [severity]="order.orderStatus | orderStatusSeverity"
               styleClass="text-xs"
             />
           </div>
@@ -201,12 +201,12 @@
             <i
               class="pi"
               [ngClass]="
-                getPaymentStatusSeverity(order.paymentStatus) === 'success'
+                (order.paymentStatus | paymentStatusSeverity) === 'success'
                   ? 'pi-check-circle text-green-500'
                   : 'pi-clock text-orange-500'
               "
             ></i>
-            {{ order.paymentStatus?.name || '' }}
+            {{ order.paymentStatus?.name || '' }}<!-- payment status uses raw .name (no translation pipe yet) -->
           </span>
         </div>
 

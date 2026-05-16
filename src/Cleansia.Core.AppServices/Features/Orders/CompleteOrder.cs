@@ -1,14 +1,17 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
@@ -16,7 +19,6 @@ public class CompleteOrder
 {
     public record Command(
         string OrderId,
-        string EmployeeId,
         int ActualCompletionTimeMinutes,
         string? CompletionNotes = null) : ICommand<Response>;
 
@@ -30,15 +32,18 @@ public class CompleteOrder
         private readonly IOrderRepository _orderRepository;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IOrderPhotoRepository _orderPhotoRepository;
+        private readonly IOrderAccessService _orderAccessService;
 
         public Validator(
             IOrderRepository orderRepository,
             IEmployeeRepository employeeRepository,
-            IOrderPhotoRepository orderPhotoRepository)
+            IOrderPhotoRepository orderPhotoRepository,
+            IOrderAccessService orderAccessService)
         {
             _orderRepository = orderRepository;
             _employeeRepository = employeeRepository;
             _orderPhotoRepository = orderPhotoRepository;
+            _orderAccessService = orderAccessService;
 
             RuleFor(x => x.OrderId)
                 .Cascade(CascadeMode.Stop)
@@ -51,24 +56,18 @@ public class CompleteOrder
                 .MustAsync(HasAfterPhotosAsync)
                 .WithMessage(BusinessErrorMessage.AfterPhotosRequired);
 
-            RuleFor(x => x.EmployeeId)
-                .Cascade(CascadeMode.Stop)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(employeeRepository.ExistsAsync)
-                .WithMessage(BusinessErrorMessage.EmployeeNotFound)
-                .MustAsync(HasCompletedProfileAsync)
-                .WithMessage(BusinessErrorMessage.EmployeeProfileIncomplete)
-                .MustAsync(HasUploadedDocumentsAsync)
-                .WithMessage(BusinessErrorMessage.EmployeeDocumentsMissing);
-
             RuleFor(x => x.ActualCompletionTimeMinutes)
                 .GreaterThan(0)
                 .WithMessage(BusinessErrorMessage.ActualTimeMustBePositive);
 
             RuleFor(x => x)
+                .Cascade(CascadeMode.Stop)
                 .MustAsync(EmployeeIsAssignedToOrderAsync)
-                .WithMessage(BusinessErrorMessage.EmployeeNotAssignedToOrder);
+                .WithMessage(BusinessErrorMessage.EmployeeNotAssignedToOrder)
+                .MustAsync(HasCompletedProfileAsync)
+                .WithMessage(BusinessErrorMessage.EmployeeProfileIncomplete)
+                .MustAsync(HasUploadedDocumentsAsync)
+                .WithMessage(BusinessErrorMessage.EmployeeDocumentsMissing);
 
             When(x => !string.IsNullOrEmpty(x.CompletionNotes), () =>
             {
@@ -96,40 +95,43 @@ public class CompleteOrder
 
         private async Task<bool> EmployeeIsAssignedToOrderAsync(Command command, CancellationToken cancellationToken)
         {
+            var employeeId = await _orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+            if (string.IsNullOrEmpty(employeeId)) return false;
+
             var order = await _orderRepository
                 .GetQueryable()
                 .Include(o => o.AssignedEmployees)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
-            return order?.AssignedEmployees.Any(oe => oe.EmployeeId == command.EmployeeId) ?? false;
+            return order?.AssignedEmployees.Any(oe => oe.EmployeeId == employeeId) ?? false;
         }
 
-        private async Task<bool> HasCompletedProfileAsync(string employeeId, CancellationToken cancellationToken)
+        private async Task<bool> HasCompletedProfileAsync(Command command, CancellationToken cancellationToken)
         {
+            var employeeId = await _orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+            if (string.IsNullOrEmpty(employeeId)) return false;
+
             var employee = await _employeeRepository
                 .GetQueryable()
                 .Include(e => e.Address)
                 .FirstOrDefaultAsync(e => e.Id == employeeId, cancellationToken);
 
-            if (employee == null) return false;
-
-            return employee.Address is not null &&
-                   employee.Availability.Any();
+            return employee?.Address is not null && (employee?.Availability.Any() ?? false);
         }
 
-        private async Task<bool> HasUploadedDocumentsAsync(string employeeId, CancellationToken cancellationToken)
+        private async Task<bool> HasUploadedDocumentsAsync(Command command, CancellationToken cancellationToken)
         {
+            var employeeId = await _orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+            if (string.IsNullOrEmpty(employeeId)) return false;
+
             var employee = await _employeeRepository.GetByIdAsync(employeeId, cancellationToken);
-
-            if (employee == null) return false;
-
-            return employee.ContractStatus != Domain.Enums.ContractStatus.Pending;
+            return employee?.ContractStatus != ContractStatus.Pending;
         }
 
         private async Task<bool> HasAfterPhotosAsync(string orderId, CancellationToken cancellationToken)
         {
             var photoCount = await _orderPhotoRepository
-                .GetPhotoCountByOrderIdAndTypeAsync(orderId, Domain.Enums.PhotoType.After, cancellationToken);
+                .GetPhotoCountByOrderIdAndTypeAsync(orderId, PhotoType.After, cancellationToken);
 
             return photoCount > 0;
         }
@@ -138,7 +140,10 @@ public class CompleteOrder
     public class Handler(
         IOrderRepository orderRepository,
         IQueueClient queueClient,
-        IEmailService emailService)
+        IEmailService emailService,
+        ILoyaltyService loyaltyService,
+        IReferralService referralService,
+        ILogger<Handler> logger)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -164,22 +169,45 @@ public class CompleteOrder
             var completedStatusTrack = OrderStatusTrack.Create(OrderStatus.Completed, order);
             order.AddOrderStatus(completedStatusTrack);
 
-            // Enqueue receipt generation as a background job (skip if one already exists)
             if (order.Receipt is null)
             {
-                var languageCode = order.User?.PreferredLanguageCode ?? "en";
+                var languageCode = order.User?.PreferredLanguageCode ?? Constants.Language.English;
                 await queueClient.SendAsync(QueueNames.GenerateReceipt,
                     new GenerateReceiptMessage(order.Id, languageCode), cancellationToken);
             }
 
-            // Send status update email
+            // Push notification for the customer's "All done!" toast.
+            // Skip for guest orders (no UserId → no device).
+            if (!string.IsNullOrEmpty(order.UserId))
+            {
+                await queueClient.SendAsync(
+                    QueueNames.NotificationsDispatch,
+                    new SendPushNotificationMessage(
+                        UserId: order.UserId,
+                        EventKey: NotificationEventCatalog.OrderCompleted,
+                        Args: new Dictionary<string, string>
+                        {
+                            ["orderId"] = order.Id,
+                            ["orderNumber"] = order.DisplayOrderNumber,
+                        },
+                        TenantId: order.TenantId),
+                    cancellationToken);
+            }
+
             try
             {
-                var languageCode = order.User?.PreferredLanguageCode ?? "en";
+                var languageCode = order.User?.PreferredLanguageCode ?? Constants.Language.English;
                 await emailService.SendOrderStatusUpdateEmailAsync(
                     order.CustomerEmail, order, "Completed", languageCode, cancellationToken);
             }
-            catch { /* Don't fail the order completion if email fails */ }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to send order Completed email for order {OrderId}", order.Id);
+            }
+
+            await loyaltyService.GrantForCompletedOrderAsync(order.Id, cancellationToken);
+
+            await referralService.ProcessOrderCompletedAsync(order.Id, order.UserId, cancellationToken);
 
             return BusinessResult.Success(new Response(
                 OrderId: order.Id,

@@ -1,0 +1,83 @@
+<section class="membership-management">
+  @if (loading()) {
+    <p-skeleton height="180px" styleClass="rounded-2xl"></p-skeleton>
+  } @else if (membership()) {
+    @let m = membership()!;
+    @if (m.hasMembership) {
+      <article class="active-card" [class.is-ending]="m.cancelRequested">
+        <header>
+          <span class="badge">
+            @if (m.cancelRequested) {
+              {{ 'pages.membership.ending_badge' | translate }}
+            } @else {
+              {{ 'pages.membership.plus_badge' | translate }}
+            }
+          </span>
+          <h2>{{ m.planName ?? ('pages.membership.plan_default_name' | translate) }}</h2>
+        </header>
+        <p class="status">
+          @if (m.cancelRequested) {
+            {{ 'pages.membership.cancelled_until' | translate: { date: (m.currentPeriodEnd | date) } }}
+          } @else {
+            {{ 'pages.membership.renews_on' | translate: { date: (m.currentPeriodEnd | date) } }}
+          }
+        </p>
+        <ul class="perks">
+          @if (m.discountPercentage) {
+            <li>{{ 'pages.membership.perk_discount' | translate: { percent: m.discountPercentage } }}</li>
+          }
+          @if (m.freeCancellationWindowHours) {
+            <li>{{ 'pages.membership.perk_cancel_window' | translate: { hours: m.freeCancellationWindowHours } }}</li>
+          }
+          @if (m.allowsExpressUpgrade) {
+            <li>{{ 'pages.membership.perk_express' | translate }}</li>
+          }
+        </ul>
+        @if (showSwitchCta(); as showSwitch) {
+          @let yp = yearlyPlan()!;
+          <cleansia-button
+            [label]="'pages.membership.switch_to_annual_cta' | translate: { percent: (yp.savingsPercentVsMonthly | number: '1.0-0') }"
+            [loading]="switching()"
+            [disabled]="switching()"
+            (click)="confirmSwitchToAnnual()"
+          ></cleansia-button>
+        }
+        @if (!m.cancelRequested) {
+          <cleansia-button
+            severity="danger"
+            [outlined]="true"
+            [label]="'pages.membership.cancel_action' | translate"
+            [loading]="cancelling()"
+            [disabled]="cancelling()"
+            (click)="confirmCancel()"
+          ></cleansia-button>
+        }
+      </article>
+
+      <!-- Plus-only: recurring-bookings entry link. Sits beside the management
+           card so members can jump straight into managing their schedules. -->
+      <a class="recurring-link" [routerLink]="['recurring']">
+        <i class="pi pi-calendar-clock recurring-link-icon" aria-hidden="true"></i>
+        <div class="recurring-link-text">
+          <strong>{{ 'recurring_booking.membership_section_link_title' | translate }}</strong>
+          <span>{{ 'recurring_booking.membership_section_link_subtitle' | translate }}</span>
+        </div>
+        <i class="pi pi-chevron-right recurring-link-chevron" aria-hidden="true"></i>
+      </a>
+    } @else {
+      <article class="inactive-card" (click)="goToSubscribe()">
+        <header>
+          <span class="badge">{{ 'pages.membership.try_plus_badge' | translate }}</span>
+          <h2>{{ 'pages.membership.inactive_title' | translate }}</h2>
+        </header>
+        <p>{{ 'pages.membership.inactive_subtitle' | translate }}</p>
+        <cleansia-button
+          [label]="'pages.membership.subscribe_action' | translate"
+          (click)="goToSubscribe()"
+        ></cleansia-button>
+      </article>
+    }
+  }
+</section>
+
+<p-confirmDialog></p-confirmDialog>

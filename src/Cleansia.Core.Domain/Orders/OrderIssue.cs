@@ -36,4 +36,10 @@ public class OrderIssue : Auditable, ITenantEntity
         ResolvedAt = DateTimeOffset.UtcNow;
         return this;
     }
+
+    public OrderIssue Anonymize()
+    {
+        Description = AnonymizationMarker.Value;
+        return this;
+    }
 }

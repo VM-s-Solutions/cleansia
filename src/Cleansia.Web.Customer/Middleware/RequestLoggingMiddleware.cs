@@ -1,17 +1,21 @@
 using System.Diagnostics;
 using System.Security.Claims;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Cleansia.Web.Customer.Middleware;
 
-public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggingMiddleware> logger)
+public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggingMiddleware> logger)
 {
+    private const string Redacted = "\"***REDACTED***\"";
+    private const int RequestBodyLimit = 1000;
+    private const int ResponseBodyLimit = 500;
+
     private readonly RequestDelegate _next = next;
     private readonly ILogger<RequestLoggingMiddleware> _logger = logger;
 
     public async Task InvokeAsync(HttpContext context)
     {
-        // Skip logging for health checks and static files
         if (ShouldSkipLogging(context.Request.Path))
         {
             await _next(context);
@@ -21,10 +25,8 @@ public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggi
         var stopwatch = Stopwatch.StartNew();
         var requestId = Guid.NewGuid().ToString();
 
-        // Log request
         await LogRequestAsync(context, requestId);
 
-        // Capture response
         var originalBodyStream = context.Response.Body;
         using var responseBody = new MemoryStream();
         context.Response.Body = responseBody;
@@ -34,12 +36,24 @@ public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggi
             await _next(context);
 
             stopwatch.Stop();
-
-            // Log response
             await LogResponseAsync(context, requestId, stopwatch.ElapsedMilliseconds);
-
-            // Copy response back to original stream
             await responseBody.CopyToAsync(originalBodyStream);
+        }
+        catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+        {
+            // Client disconnect (mobile app navigated away mid-request, browser tab
+            // closed, etc.). Pre-fix this fell into the generic Exception branch
+            // and produced LogError → Sentry alert per occurrence — a single user
+            // bouncing between tabs could generate dozens of false-positive errors.
+            // Information-level so it's still inspectable in structured logs without
+            // pretending it's an error worth waking someone for.
+            stopwatch.Stop();
+            _logger.LogInformation(
+                "[{RequestId}] Request cancelled by client | Duration: {Duration}ms | Path: {Path}",
+                requestId,
+                stopwatch.ElapsedMilliseconds,
+                context.Request.Path);
+            throw;
         }
         catch (Exception ex)
         {
@@ -59,7 +73,10 @@ public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggi
         var userId = context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "Anonymous";
         var userEmail = context.User?.FindFirst(ClaimTypes.Email)?.Value ?? "N/A";
 
-        var requestBody = await ReadRequestBodyAsync(request);
+        var rawBody = await ReadRequestBodyAsync(request);
+        var safeBody = IsSensitivePath(request.Path)
+            ? "[suppressed: sensitive endpoint]"
+            : RedactSensitiveFields(rawBody);
 
         _logger.LogInformation(
             "[{RequestId}] {Method} {Path}{QueryString} | User: {UserId} ({UserEmail}) | IP: {IP} | Body: {Body}",
@@ -70,7 +87,7 @@ public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggi
             userId,
             userEmail,
             context.Connection.RemoteIpAddress?.ToString() ?? "Unknown",
-            string.IsNullOrEmpty(requestBody) ? "N/A" : requestBody
+            string.IsNullOrEmpty(safeBody) ? "N/A" : safeBody
         );
     }
 
@@ -79,7 +96,10 @@ public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggi
         var response = context.Response;
         var userId = context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "Anonymous";
 
-        var responseBody = await ReadResponseBodyAsync(response);
+        var rawBody = await ReadResponseBodyAsync(response);
+        var safeBody = IsSensitivePath(context.Request.Path)
+            ? "[suppressed: sensitive endpoint]"
+            : RedactSensitiveFields(TruncateBody(rawBody, ResponseBodyLimit));
 
         var logLevel = response.StatusCode >= 500 ? LogLevel.Error :
                       response.StatusCode >= 400 ? LogLevel.Warning :
@@ -94,7 +114,7 @@ public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggi
             response.StatusCode,
             durationMs,
             userId,
-            string.IsNullOrEmpty(responseBody) ? "N/A" : TruncateBody(responseBody, 500)
+            string.IsNullOrEmpty(safeBody) ? "N/A" : safeBody
         );
     }
 
@@ -126,7 +146,7 @@ public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggi
 
         request.Body.Position = 0;
 
-        return TruncateBody(body, 1000);
+        return TruncateBody(body, RequestBodyLimit);
     }
 
     private static async Task<string> ReadResponseBodyAsync(HttpResponse response)
@@ -151,6 +171,18 @@ public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggi
         return body.Substring(0, maxLength) + "... (truncated)";
     }
 
+    private static string RedactSensitiveFields(string body)
+    {
+        if (string.IsNullOrEmpty(body)) return body;
+        return SensitiveFieldRegex().Replace(body, m => $"\"{m.Groups[1].Value}\":{Redacted}");
+    }
+
+    private static bool IsSensitivePath(PathString path)
+    {
+        var pathValue = path.Value?.ToLowerInvariant() ?? string.Empty;
+        return pathValue.Contains("/auth/") || pathValue.Contains("/login") || pathValue.Contains("password");
+    }
+
     private static bool ShouldSkipLogging(PathString path)
     {
         var pathValue = path.Value?.ToLower() ?? string.Empty;
@@ -160,6 +192,11 @@ public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggi
                pathValue.Contains(".js") ||
                pathValue.Contains(".css") ||
                pathValue.Contains(".map") ||
-               pathValue.Contains("/hangfire");
+               pathValue.Contains("/hangfire") ||
+               pathValue.Contains("/payment/webhook");
     }
+
+    [GeneratedRegex("\"(password|currentPassword|newPassword|confirmPassword|token|refreshToken|accessToken|clientSecret|apiKey|base64Content|fileData|fileBase64)\"\\s*:\\s*(\"(?:[^\"\\\\]|\\\\.)*\"|null)",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled)]
+    private static partial Regex SensitiveFieldRegex();
 }

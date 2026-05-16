@@ -8,6 +8,7 @@ namespace Cleansia.Core.Domain.Specifications;
 
 public class OrderSpecification : BaseSpecification<string?>, ISpecification<Order>
 {
+    public string? UserId { get; set; }
     public string? CustomerName { get; set; }
     public string? CustomerEmail { get; set; }
     public string? CustomerPhone { get; set; }
@@ -36,6 +37,11 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
         if (IsActive.HasValue)
         {
             specification &= new DirectSpecification<Order>(x => x.IsActive == IsActive.Value);
+        }
+
+        if (!string.IsNullOrEmpty(UserId))
+        {
+            specification &= new DirectSpecification<Order>(x => x.UserId == UserId);
         }
 
         if (!string.IsNullOrEmpty(CustomerName))
@@ -121,11 +127,13 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
         string? employeeId = null, DateTime? cleaningDateFrom = null,
         DateTime? cleaningDateTo = null, IEnumerable<PaymentStatus>? paymentStatuses = null, IEnumerable<PaymentType>? paymentTypes = null,
         decimal? minTotalPrice = null, decimal? maxTotalPrice = null, IEnumerable<OrderStatus>? orderStatuses = null,
-        bool? hasAvailableSpots = null, bool? isUnassigned = null, string? excludeEmployeeId = null) =>
+        bool? hasAvailableSpots = null, bool? isUnassigned = null, string? excludeEmployeeId = null,
+        string? userId = null) =>
         new()
         {
             Id = id,
             IsActive = isActive,
+            UserId = userId,
             CustomerName = customerName,
             CustomerEmail = customerEmail,
             CustomerPhone = customerPhone,

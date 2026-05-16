@@ -14,7 +14,15 @@ public class GetServiceOverview
     {
         public async Task<IEnumerable<ServiceListItem>> Handle(Request request, CancellationToken cancellationToken)
         {
-            return await serviceRepository.GetAll().Select(service => service.MapToDto()).ToListAsync(cancellationToken);
+            // Customer-facing — only return services the admin has marked
+            // IsActive. Deactivated services are admin-only state and must
+            // not appear in the booking wizard catalog.
+            var services = await serviceRepository.GetAll()
+                .Where(s => s.IsActive)
+                .Include(s => s.Category)
+                .ToListAsync(cancellationToken);
+
+            return services.Select(service => service.MapToDto());
         }
     }
 }

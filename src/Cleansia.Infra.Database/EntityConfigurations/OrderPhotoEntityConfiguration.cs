@@ -44,7 +44,6 @@ public class OrderPhotoEntityConfiguration : AuditableEntityConfiguration<OrderP
         builder.Property(p => p.Notes)
             .HasMaxLength(500);
 
-        // Relationships
         builder.HasOne(p => p.Order)
             .WithMany(o => o.Photos)
             .HasForeignKey(p => p.OrderId)
@@ -55,7 +54,6 @@ public class OrderPhotoEntityConfiguration : AuditableEntityConfiguration<OrderP
             .HasForeignKey(p => p.CapturedByEmployeeId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Indexes
         builder.HasIndex(p => p.OrderId)
             .HasDatabaseName("IX_OrderPhotos_OrderId");
 

@@ -9,20 +9,36 @@ import {
   IGdprClient,
   ILanguageClient,
   IPackageClient,
-  IPaymentClient,
   IServiceClient,
   IUserClient,
   LanguageClient,
   PackageClient,
-  PaymentClient,
   ServiceClient,
   UserClient,
 } from '@cleansia/partner-services';
 import {
   AuthClient as CustomerAuthClient,
+  ConsentsClient,
+  ExtraClient,
   IAuthClient as ICustomerAuthClient,
+  IConsentsClient,
+  IExtraClient,
+  ILoyaltyClient,
+  IMembershipClient,
   IOrderClient as ICustomerOrderClient,
+  IPaymentClient,
+  IPromoCodeClient,
+  IRecurringBookingClient,
+  IReferralClient,
+  ISavedAddressClient,
+  LoyaltyClient,
+  MembershipClient,
   OrderClient as CustomerOrderClient,
+  PaymentClient,
+  PromoCodeClient,
+  RecurringBookingClient,
+  ReferralClient,
+  SavedAddressClient,
 } from './customer-client';
 
 export const CUSTOMER_API_BASE_URL = new InjectionToken<string>(
@@ -39,7 +55,18 @@ interface ICustomerClient {
   paymentClient: IPaymentClient;
   serviceClient: IServiceClient;
   gdprClient: IGdprClient;
+  // NSwag groups by route segment, so the `/api/v1/Gdpr/consents/withdraw`
+  // endpoint lives on `ConsentsClient` rather than `GdprClient`. Exposed
+  // here so consumers can route Withdraw through the configured base URL.
+  consentsClient: IConsentsClient;
   disputeClient: IDisputeClient;
+  savedAddressClient: ISavedAddressClient;
+  loyaltyClient: ILoyaltyClient;
+  promoCodeClient: IPromoCodeClient;
+  referralClient: IReferralClient;
+  membershipClient: IMembershipClient;
+  recurringBookingClient: IRecurringBookingClient;
+  extraClient: IExtraClient;
 }
 
 @Injectable({
@@ -81,8 +108,44 @@ export class CustomerClient implements ICustomerClient {
     this.apiBaseUrl
   );
   gdprClient: IGdprClient = new GdprClient(this.httpClient, this.apiBaseUrl);
+  consentsClient: IConsentsClient = new ConsentsClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
   disputeClient: IDisputeClient = new DisputeClient(
     this.httpClient,
     this.apiBaseUrl
   );
+  savedAddressClient: ISavedAddressClient = new SavedAddressClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  loyaltyClient: ILoyaltyClient = new LoyaltyClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  promoCodeClient: IPromoCodeClient = new PromoCodeClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  referralClient: IReferralClient = new ReferralClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  // Plus subscription management. Previously consumers were injecting
+  // `MembershipClient` directly, which uses NSwag's empty-string default
+  // baseUrl — requests fell through to the SPA's own origin and returned
+  // the index.html / 404 page. Always go through this wrapper so the
+  // configured CUSTOMER_API_BASE_URL is honoured.
+  membershipClient: IMembershipClient = new MembershipClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  recurringBookingClient: IRecurringBookingClient = new RecurringBookingClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  // Booking add-ons catalog (inside-oven, etc.) — exposed via the configured
+  // base URL so it joins the same per-app routing as everything else above.
+  extraClient: IExtraClient = new ExtraClient(this.httpClient, this.apiBaseUrl);
 }

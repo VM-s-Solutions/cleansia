@@ -27,8 +27,7 @@ public class GetTimeAnalytics
         public async Task<TimeAnalyticsDto> Handle(Query request, CancellationToken cancellationToken)
         {
             var orders = await orderRepository
-                .GetCompletedOrdersByDateRange(request.EmployeeId, request.StartDate, request.EndDate)
-                .ToListAsync(cancellationToken);
+                .GetCompletedOrdersByDateRangeAsync(request.EmployeeId, request.StartDate, request.EndDate, cancellationToken);
 
             var dailyBreakdown = orders
                 .GroupBy(o => o.CleaningDateTime.Date)
@@ -55,7 +54,6 @@ public class GetTimeAnalytics
 
             var totalOrders = orders.Count;
 
-            // Calculate real metrics from actual completion times
             var (totalMinutesWorked, averageMinutesPerOrder) = CalculateActualTimeMetrics(orders);
             var efficiencyRate = CalculateEfficiencyRate(orders);
 
@@ -73,7 +71,7 @@ public class GetTimeAnalytics
         /// <summary>
         /// Calculates total and average time metrics using actual completion times when available.
         /// </summary>
-        private static (int TotalMinutes, int AverageMinutes) CalculateActualTimeMetrics(List<Order> orders)
+        private static (int TotalMinutes, int AverageMinutes) CalculateActualTimeMetrics(IReadOnlyList<Order> orders)
         {
             if (orders.Count == 0)
                 return (0, 0);
@@ -99,7 +97,7 @@ public class GetTimeAnalytics
         /// A rate above 100% means completing faster than estimated.
         /// A rate below 100% means taking longer than estimated.
         /// </summary>
-        private static double CalculateEfficiencyRate(List<Order> orders)
+        private static double CalculateEfficiencyRate(IReadOnlyList<Order> orders)
         {
             var ordersWithActualTime = orders
                 .Where(o => o.ActualCompletionTime.HasValue && o.ActualCompletionTime.Value > 0)

@@ -21,36 +21,45 @@ public class Address : Auditable, ITenantEntity
     [MaxLength(100)]
     public string? State { get; private set; }
 
+    public double? Latitude { get; private set; }
+    public double? Longitude { get; private set; }
+
     public string CountryId { get; private set; }
     public Country? Country { get; private set; }
 
-    public static Address Create(string street, string city, string zipCode, string countryId, string? state = null) =>
+    public static Address Create(string street, string city, string zipCode, string countryId, string? state = null, double? latitude = null, double? longitude = null) =>
         new()
         {
             Street = street,
             City = city,
             ZipCode = zipCode,
             State = state,
-            CountryId = countryId
+            CountryId = countryId,
+            Latitude = latitude,
+            Longitude = longitude
         };
 
-    public Address Update(string street, string city, string zipCode, string countryId, string? state = null)
+    public Address Update(string street, string city, string zipCode, string countryId, string? state = null, double? latitude = null, double? longitude = null)
     {
         Street = street;
         City = city;
         ZipCode = zipCode;
         State = state;
         CountryId = countryId;
+        Latitude = latitude;
+        Longitude = longitude;
 
         return this;
     }
 
     public Address Anonymize()
     {
-        Street = "[DELETED]";
-        City = "[DELETED]";
-        ZipCode = "[DELETED]";
-        State = "[DELETED]";
+        Street = AnonymizationMarker.Value;
+        City = AnonymizationMarker.Value;
+        ZipCode = AnonymizationMarker.Value;
+        State = AnonymizationMarker.Value;
+        Latitude = null;
+        Longitude = null;
         return this;
     }
 }

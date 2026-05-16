@@ -1,0 +1,630 @@
+// Cleansia Plus subscribe + management page styles. Mirrors the mobile
+// SubscribePlusScreen redesign — dark hero, trial-first price hierarchy,
+// social-proof tile, perks as cards, sticky CTA.
+
+$primary: #0284c7;
+$primary-light: #38bdf8;
+$primary-dark: #082f49;
+$slate-900: #0f172a;
+$font-heading: 'Poppins', sans-serif;
+
+.membership-subscribe {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 0 9rem; // bottom space for sticky CTA
+
+  // ─── Hero (dark, trial-first) ───
+  &__hero {
+    background: linear-gradient(180deg, $primary-dark 0%, $slate-900 100%);
+    color: #fff;
+    padding: 2rem 1.5rem 2rem;
+    border-radius: 0 0 1.5rem 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  &__brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin: 1rem 0 1.5rem;
+
+    &-name {
+      font-family: $font-heading;
+      font-size: clamp(2rem, 6vw, 2.75rem);
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.02em;
+    }
+
+    &-badge {
+      display: inline-block;
+      background: $primary-light;
+      color: $slate-900;
+      font-weight: 800;
+      font-size: 1.1rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 0.65rem;
+      letter-spacing: 0.05em;
+    }
+  }
+
+  &__headline {
+    font-family: $font-heading;
+    font-size: clamp(1.5rem, 4vw, 2.25rem);
+    font-weight: 700;
+    text-align: center;
+    margin: 0 0 1.25rem;
+    line-height: 1.2;
+  }
+
+  &__price-trial {
+    font-family: $font-heading;
+    font-size: clamp(2.25rem, 7vw, 3rem);
+    font-weight: 800;
+    text-align: center;
+    margin: 0;
+    line-height: 1.1;
+  }
+
+  &__price-then {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: line-through;
+    margin: 0.4rem 0 0;
+    font-size: 1rem;
+  }
+
+  &__price-regular {
+    font-family: $font-heading;
+    font-size: clamp(2rem, 6vw, 2.5rem);
+    font-weight: 800;
+    text-align: center;
+    margin: 0;
+  }
+
+  // ─── Plan switcher (in hero) ───
+  &__plan-switcher {
+    display: flex;
+    gap: 0.25rem;
+    margin: 1.25rem auto 0;
+    background: rgba(255, 255, 255, 0.10);
+    padding: 0.25rem;
+    border-radius: 1.75rem;
+    max-width: 360px;
+  }
+
+  &__plan-option {
+    flex: 1;
+    background: transparent;
+    color: #fff;
+    border: none;
+    padding: 0.85rem 1rem;
+    border-radius: 1.5rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+
+    &--selected {
+      background: $primary-light;
+      color: $slate-900;
+    }
+
+    &-savings {
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+  }
+
+  // ─── Social-proof tile ───
+  &__social-proof {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    margin: 0 1.25rem 1.5rem;
+    padding: 1rem 1.125rem;
+    background: rgba(56, 189, 248, 0.12);
+    border-radius: 1rem;
+
+    &-icon {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: rgba(56, 189, 248, 0.20);
+      color: $primary;
+      font-size: 1.25rem;
+    }
+
+    &-headline {
+      font-weight: 700;
+      color: $primary;
+      margin: 0;
+      font-size: 0.95rem;
+    }
+
+    &-sub {
+      color: var(--text-color-secondary, #64748b);
+      margin: 2px 0 0;
+      font-size: 0.85rem;
+    }
+  }
+
+  // ─── Perks ───
+  &__perks-title {
+    font-family: $font-heading;
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 0 1.25rem 0.875rem;
+  }
+
+  &__perks {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    margin: 0 1.25rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__perk {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.875rem;
+    padding: 1rem;
+    background: var(--surface-card, #fff);
+    border-radius: 1rem;
+
+    &-icon {
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: rgba(56, 189, 248, 0.12);
+      color: $primary;
+      font-size: 1.35rem;
+    }
+
+    &-title {
+      font-weight: 700;
+      margin: 0 0 0.25rem;
+      font-size: 0.95rem;
+    }
+
+    &-desc {
+      color: var(--text-color-secondary, #64748b);
+      margin: 0;
+      font-size: 0.875rem;
+      line-height: 1.45;
+    }
+  }
+
+  // ─── Sticky CTA ───
+  &__sticky-cta {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: var(--surface-card, #fff);
+    border-top: 1px solid var(--surface-border, #e2e8f0);
+    padding: 1rem 1.25rem calc(1rem + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.06);
+
+    cleansia-button {
+      display: block;
+    }
+  }
+
+  &__cta-disclosure {
+    text-align: center;
+    color: var(--text-color-secondary, #64748b);
+    margin: 0.625rem 0 0;
+    font-size: 0.8rem;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Post-purchase celebration page (membership/welcome)
+// Lives in this file because it's logically part of the membership flow.
+// ─────────────────────────────────────────────────────────────────────
+.membership-welcome {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 3rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 4rem);
+
+  .celebration-card {
+    background: linear-gradient(180deg, rgba(2, 132, 199, 0.06) 0%, #fff 60%);
+    border: 1px solid rgba(2, 132, 199, 0.18);
+    border-radius: 1.5rem;
+    padding: 2.5rem 1.75rem;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(2, 132, 199, 0.12);
+      color: #0284c7;
+      font-weight: 700;
+      font-size: 0.75rem;
+      letter-spacing: 0.06em;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      margin-bottom: 1rem;
+
+      i { font-size: 0.7rem; }
+    }
+
+    h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: clamp(1.5rem, 5vw, 2rem);
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0 0 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .lead {
+      color: #64748b;
+      font-size: 1rem;
+      margin: 0 0 1.5rem;
+    }
+
+    .perk-list {
+      list-style: none;
+      margin: 0 0 1.75rem;
+      padding: 0;
+      text-align: left;
+      display: grid;
+      gap: 0.75rem;
+
+      li {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 0.875rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.875rem;
+        color: #0f172a;
+        font-weight: 500;
+
+        i {
+          width: 2rem;
+          height: 2rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(2, 132, 199, 0.12);
+          color: #0284c7;
+          border-radius: 50%;
+          font-size: 0.95rem;
+          flex-shrink: 0;
+        }
+      }
+    }
+
+    .actions {
+      display: grid;
+      gap: 0.625rem;
+
+      .secondary-link {
+        text-align: center;
+        color: #0284c7;
+        font-weight: 600;
+        text-decoration: none;
+        padding: 0.5rem;
+
+        &:hover { text-decoration: underline; }
+      }
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Membership management page (`/membership`) — handles three states:
+//   - skeleton (loading)
+//   - active-card (Plus subscriber, with optional cancellation-requested)
+//   - inactive-card (non-subscriber CTA)
+// ─────────────────────────────────────────────────────────────────────
+.membership-management {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 4rem;
+
+  // Active subscription card — premium gold treatment with gradient strip,
+  // perks pills, and switch/cancel CTAs. Mirrors the mobile redesign.
+  .active-card {
+    background: #fff;
+    border: 1px solid rgba(217, 119, 6, 0.35);
+    border-radius: 1.25rem;
+    overflow: hidden;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+
+    > header {
+      background: linear-gradient(
+        90deg,
+        rgba(217, 119, 6, 0.22) 0%,
+        rgba(217, 119, 6, 0.06) 100%
+      );
+      padding: 1.25rem 1.25rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+
+      .badge {
+        align-self: flex-start;
+        background: rgba(217, 119, 6, 0.15);
+        color: #d97706;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        padding: 0.25rem 0.625rem;
+        border-radius: 0.5rem;
+      }
+
+      h2 {
+        font-family: $font-heading;
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: $slate-900;
+        margin: 0;
+        letter-spacing: -0.01em;
+      }
+    }
+
+    // Apply consistent body padding to every direct child EXCEPT the header
+    // (which paints its own gradient and brings its own padding). Using a
+    // single combined rule with !important to defeat any global resets from
+    // PrimeNG / Angular component encapsulation that might be winning on
+    // specificity.
+    > .status,
+    > .perks,
+    > cleansia-button {
+      padding-left: 1.75rem !important;
+      padding-right: 1.75rem !important;
+    }
+
+    .status {
+      padding-top: 1.25rem;
+      color: #64748b;
+      font-size: 0.95rem;
+      margin: 0;
+      font-weight: 500;
+    }
+
+    .perks {
+      list-style: none;
+      // Vertical breathing room between the renewal/cancellation status line
+      // and the perk pills. Using !important + explicit margin-top to defeat
+      // browser <ul> margin-block defaults and any global resets.
+      margin: 1.5rem 0 0 !important;
+      margin-top: 1.5rem !important;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.625rem;
+
+      li {
+        background: rgba(217, 119, 6, 0.10);
+        color: #0f172a;
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 0.45rem 0.85rem;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+      }
+    }
+
+    cleansia-button {
+      display: block;
+      padding-top: 1rem;
+    }
+
+    // Bottom breathing room for the card. Targets whichever element is
+    // last — perks pills, the switch-to-annual button, or the cancel
+    // button — so the rounded card border isn't flush against content.
+    > *:last-child {
+      padding-bottom: 1.5rem !important;
+    }
+  }
+
+  // Inactive (non-subscriber) marketing card — clickable, primary-tinted.
+  .inactive-card {
+    background: linear-gradient(
+      135deg,
+      rgba(2, 132, 199, 0.10) 0%,
+      rgba(2, 132, 199, 0.02) 100%
+    );
+    border: 1px solid rgba(2, 132, 199, 0.35);
+    border-radius: 1.25rem;
+    padding: 1.5rem 1.5rem 1.25rem;
+    cursor: pointer;
+    transition: all 0.18s ease;
+
+    &:hover {
+      border-color: $primary;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.12);
+    }
+
+    > header {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 0.625rem;
+
+      .badge {
+        align-self: flex-start;
+        background: $primary;
+        color: #fff;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        padding: 0.25rem 0.625rem;
+        border-radius: 0.5rem;
+      }
+
+      h2 {
+        font-family: $font-heading;
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: $slate-900;
+        margin: 0;
+        letter-spacing: -0.01em;
+      }
+    }
+
+    p {
+      color: #64748b;
+      margin: 0 0 1.25rem;
+      font-size: 0.95rem;
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Active card — cancellation-requested variant. Same scaffold, red palette
+// instead of gold so the user reads "this is winding down" at a glance.
+// Toggled via `[class.is-ending]="m.cancelRequested"` on the article.
+// ─────────────────────────────────────────────────────────────────────
+.membership-management .active-card.is-ending {
+  border-color: rgba(185, 28, 28, 0.35);
+
+  > header {
+    background: linear-gradient(
+      90deg,
+      rgba(185, 28, 28, 0.20) 0%,
+      rgba(185, 28, 28, 0.05) 100%
+    );
+
+    .badge {
+      background: rgba(185, 28, 28, 0.15);
+      color: #b91c1c;
+    }
+  }
+
+  .perks li {
+    background: rgba(185, 28, 28, 0.10);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Dark theme overrides — applied via :root.dark-mode (project convention).
+// Keeps gold + red accents on dark surfaces; flips card backgrounds and
+// neutral text colors for readability.
+// ─────────────────────────────────────────────────────────────────────
+:root.dark-mode {
+  .membership-management {
+    .active-card {
+      background: #1e293b;
+      border-color: rgba(217, 119, 6, 0.45);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+
+      > header h2 {
+        color: #f1f5f9;
+      }
+
+      .status {
+        color: #94a3b8;
+      }
+
+      .perks li {
+        background: rgba(217, 119, 6, 0.18);
+        color: #f1f5f9;
+      }
+
+      &.is-ending {
+        border-color: rgba(248, 113, 113, 0.45);
+
+        > header {
+          background: linear-gradient(
+            90deg,
+            rgba(248, 113, 113, 0.22) 0%,
+            rgba(248, 113, 113, 0.06) 100%
+          );
+
+          .badge {
+            background: rgba(248, 113, 113, 0.20);
+            color: #fca5a5;
+          }
+        }
+
+        .perks li {
+          background: rgba(248, 113, 113, 0.15);
+        }
+      }
+    }
+
+    .inactive-card {
+      background: linear-gradient(
+        135deg,
+        rgba(56, 189, 248, 0.14) 0%,
+        rgba(56, 189, 248, 0.03) 100%
+      );
+      border-color: rgba(56, 189, 248, 0.45);
+
+      > header h2 {
+        color: #f1f5f9;
+      }
+      > header .badge {
+        background: $primary-light;
+        color: $slate-900;
+      }
+      p {
+        color: #94a3b8;
+      }
+    }
+  }
+
+  // Subscribe page (existing) — only need overrides for the few elements
+  // outside the dark hero (which is already dark-on-dark by design).
+  .membership-subscribe {
+    .perks-tile,
+    .social-proof,
+    .perk-card,
+    .plan-toggle {
+      background: #1e293b !important;
+      border-color: #334155 !important;
+      color: #f1f5f9 !important;
+    }
+  }
+
+  // Welcome page — celebration card on dark background.
+  .membership-welcome {
+    .celebration-card {
+      background: linear-gradient(
+        180deg,
+        rgba(2, 132, 199, 0.18) 0%,
+        #1e293b 60%
+      );
+      border-color: rgba(2, 132, 199, 0.45);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+
+      h1 { color: #f1f5f9; }
+      .lead { color: #94a3b8; }
+
+      .perk-list li {
+        background: rgba(15, 23, 42, 0.4);
+        border-color: #334155;
+        color: #f1f5f9;
+      }
+    }
+  }
+}

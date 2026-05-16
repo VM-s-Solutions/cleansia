@@ -519,3 +519,5 @@ app.*.symbols
 firebase_options.dart
 
 .claude
+src/cleansia_customer_android/gradle.properties
+src/Cleansia.App/apps/cleansia.app/src/environments/environment.ts

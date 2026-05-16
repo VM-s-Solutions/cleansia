@@ -1,26 +1,11 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { Skeleton } from 'primeng/skeleton';
 
 @Component({
   selector: 'cleansia-dashboard-skeleton',
   standalone: true,
   imports: [Skeleton],
-  template: `
-    <div class="cleansia-dashboard-skeleton">
-      <!-- Stat Cards -->
-      <div class="skeleton-stats">
-        @for (i of [1, 2, 3, 4]; track i) {
-          <div class="skeleton-stat-card">
-            <p-skeleton shape="circle" size="3rem" />
-            <div class="skeleton-stat-content">
-              <p-skeleton width="80px" height="0.875rem" />
-              <p-skeleton width="60px" height="1.5rem" />
-            </div>
-          </div>
-        }
-      </div>
-    </div>
-  `,
+  templateUrl: './cleansia-dashboard-skeleton.component.html',
   styles: `
     .cleansia-dashboard-skeleton {
       display: flex;
@@ -50,5 +35,6 @@ import { Skeleton } from 'primeng/skeleton';
       .skeleton-stats { grid-template-columns: repeat(2, 1fr); }
     }
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaDashboardSkeletonComponent {}

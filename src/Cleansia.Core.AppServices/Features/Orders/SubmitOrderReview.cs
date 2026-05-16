@@ -16,8 +16,7 @@ public class SubmitOrderReview
     public record Command(
         string OrderId,
         int Rating,
-        string? Comment,
-        string UserId = ""
+        string? Comment
     ) : ICommand<OrderReviewDto>;
 
     public class Validator : AbstractValidator<Command>
@@ -62,18 +61,13 @@ public class SubmitOrderReview
                     new Error(nameof(command.OrderId), BusinessErrorMessage.OrderNotFound));
             }
 
-            var currentUserId = userSessionProvider.GetTypedUserClaim(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            var currentEmail = userSessionProvider.GetUserEmail();
-            var isOwner = (!string.IsNullOrEmpty(currentUserId) && order.UserId == currentUserId)
-                       || (!string.IsNullOrEmpty(currentEmail) && order.CustomerEmail == currentEmail);
-
-            if (!isOwner)
+            var userId = userSessionProvider.GetUserId();
+            if (string.IsNullOrEmpty(userId) || order.UserId != userId)
             {
                 return BusinessResult.Failure<OrderReviewDto>(
-                    new Error(nameof(command.OrderId), BusinessErrorMessage.OrderNotOwnedByUser));
+                    new Error(nameof(command.OrderId), BusinessErrorMessage.OrderNotFound));
             }
 
-            // Verify order is completed
             var currentStatus = order.GetCurrentOrderStatus();
             if (currentStatus != OrderStatus.Completed)
             {
@@ -81,10 +75,7 @@ public class SubmitOrderReview
                     new Error(nameof(command.OrderId), BusinessErrorMessage.OrderNotCompleted));
             }
 
-            var reviewUserId = currentUserId ?? order.UserId ?? "";
-
-            // Check if review already exists — update it
-            var existingReview = order.Reviews.FirstOrDefault(r => r.UserId == reviewUserId);
+            var existingReview = order.Reviews.FirstOrDefault(r => r.UserId == userId);
             if (existingReview != null)
             {
                 existingReview.Update(command.Rating, command.Comment);
@@ -92,8 +83,7 @@ public class SubmitOrderReview
                 return BusinessResult.Success(existingReview.MapToDto());
             }
 
-            // Create new review
-            var review = OrderReview.Create(command.OrderId, reviewUserId, command.Rating, command.Comment);
+            var review = OrderReview.Create(command.OrderId, userId, command.Rating, command.Comment);
             order.AddReview(review);
 
             await RecalculateEmployeeRatings(order, cancellationToken);
@@ -108,7 +98,6 @@ public class SubmitOrderReview
                 var employee = await employeeRepository.GetByIdAsync(assignedEmployee.EmployeeId, cancellationToken);
                 if (employee == null) continue;
 
-                // Query all reviews across all orders assigned to this employee
                 var allReviews = await orderRepository
                     .GetQueryable()
                     .Where(o => o.AssignedEmployees.Any(ae => ae.EmployeeId == employee.Id))

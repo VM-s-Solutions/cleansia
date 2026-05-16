@@ -14,38 +14,39 @@
     @if (facade.loading()) {
     <cleansia-loader />
     } @else if (facade.employee()) {
+    @let employee = facade.employee()!;
     <div class="cleansia-employee-detail__content">
       <!-- Profile Status Banner -->
       <div
         class="cleansia-employee-detail__status-banner"
         [ngClass]="
-          facade.employee().isProfileComplete
+          employee.isProfileComplete
             ? 'status-complete'
             : 'status-incomplete'
         "
       >
         <i
           [class]="
-            facade.employee().isProfileComplete
+            employee.isProfileComplete
               ? 'pi pi-check-circle'
               : 'pi pi-exclamation-triangle'
           "
         ></i>
         <span>
           {{
-            (facade.employee().isProfileComplete
+            (employee.isProfileComplete
               ? 'pages.employee_detail.profile_complete'
               : 'pages.employee_detail.profile_incomplete'
             ) | translate
           }}
         </span>
-        @if (!facade.employee().isProfileComplete &&
-        facade.employee().missingFields?.length > 0) {
+        @if (!employee.isProfileComplete &&
+        (employee.missingFields?.length ?? 0) > 0) {
         <div class="missing-fields">
           <strong
             >{{ 'pages.employee_detail.missing_fields' | translate }}:</strong
           >
-          {{ facade.employee().missingFields.join(', ') }}
+          {{ employee.missingFields?.join(', ') }}
         </div>
         }
       </div>
@@ -62,10 +63,10 @@
               >
               <span
                 [class]="
-                  getContractStatusClass(facade.employee().contractStatus)
+                  getContractStatusClass(employee.contractStatus)
                 "
               >
-                {{ facade.employee().contractStatus }}
+                {{ employee.contractStatus }}
               </span>
             </div>
             <div class="rating-info">
@@ -73,7 +74,7 @@
                 >{{ 'pages.employee_detail.average_rating' | translate }}:</span
               >
               <span class="value">{{
-                facade.employee().averageRating?.toFixed(1) || '0.0'
+                employee.averageRating?.toFixed(1) || '0.0'
               }}</span>
               <i class="pi pi-star-fill"></i>
             </div>
@@ -84,19 +85,21 @@
                 }}:</span
               >
               <span class="value">{{
-                facade.employee().complaintsCount || 0
+                employee.complaintsCount || 0
               }}</span>
             </div>
           </div>
           @if (facade.canApproveOrReject()) {
           <div class="contract-actions-row">
             <cleansia-button
+              *cleansiaPermission="Policy.CanApproveEmployee"
               [label]="'pages.employee_detail.actions.approve_employee' | translate"
               icon="pi pi-check"
               severity="success"
               (onClick)="facade.approveEmployee()"
             />
             <cleansia-button
+              *cleansiaPermission="Policy.CanRejectEmployee"
               [label]="'pages.employee_detail.actions.reject_employee' | translate"
               icon="pi pi-times"
               severity="danger"
@@ -132,7 +135,7 @@
           </div>
           <div class="info-item">
             <span class="label">{{ 'pages.employee_detail.email' | translate }}:</span>
-            <span class="value">{{ facade.employee().email || '-' }}</span>
+            <span class="value">{{ employee.email || '-' }}</span>
           </div>
           <div class="info-item">
             <cleansia-telephone
@@ -150,7 +153,7 @@
           </div>
           <div class="info-item">
             <span class="label">{{ 'pages.employee_detail.created_at' | translate }}:</span>
-            <span class="value">{{ formatDateTime(facade.employee().createdAt) }}</span>
+            <span class="value">{{ formatDateTime(employee.createdAt) }}</span>
           </div>
         </div>
         <div class="section-edit-actions" style="display: flex; gap: 0.5rem; margin-top: 1rem;">
@@ -180,26 +183,26 @@
             <span class="label"
               >{{ 'pages.employee_detail.first_name' | translate }}:</span
             >
-            <span class="value">{{ facade.employee().firstName || '-' }}</span>
+            <span class="value">{{ employee.firstName || '-' }}</span>
           </div>
           <div class="info-item">
             <span class="label"
               >{{ 'pages.employee_detail.last_name' | translate }}:</span
             >
-            <span class="value">{{ facade.employee().lastName || '-' }}</span>
+            <span class="value">{{ employee.lastName || '-' }}</span>
           </div>
           <div class="info-item">
             <span class="label"
               >{{ 'pages.employee_detail.email' | translate }}:</span
             >
-            <span class="value">{{ facade.employee().email || '-' }}</span>
+            <span class="value">{{ employee.email || '-' }}</span>
           </div>
           <div class="info-item">
             <span class="label"
               >{{ 'pages.employee_detail.phone' | translate }}:</span
             >
             <span class="value">{{
-              facade.employee().phoneNumber || '-'
+              employee.phoneNumber || '-'
             }}</span>
           </div>
           <div class="info-item">
@@ -207,7 +210,7 @@
               >{{ 'pages.employee_detail.birth_date' | translate }}:</span
             >
             <span class="value">{{
-              formatDate(facade.employee().birthDate)
+              formatDate(employee.birthDate)
             }}</span>
           </div>
           <div class="info-item">
@@ -215,7 +218,7 @@
               >{{ 'pages.employee_detail.created_at' | translate }}:</span
             >
             <span class="value">{{
-              formatDateTime(facade.employee().createdAt)
+              formatDateTime(employee.createdAt)
             }}</span>
           </div>
         </div>
@@ -289,26 +292,26 @@
             <span class="label"
               >{{ 'pages.employee_detail.street' | translate }}:</span
             >
-            <span class="value">{{ facade.employee().street || '-' }}</span>
+            <span class="value">{{ employee.street || '-' }}</span>
           </div>
           <div class="info-item">
             <span class="label"
               >{{ 'pages.employee_detail.city' | translate }}:</span
             >
-            <span class="value">{{ facade.employee().city || '-' }}</span>
+            <span class="value">{{ employee.city || '-' }}</span>
           </div>
           <div class="info-item">
             <span class="label"
               >{{ 'pages.employee_detail.zip_code' | translate }}:</span
             >
-            <span class="value">{{ facade.employee().zipCode || '-' }}</span>
+            <span class="value">{{ employee.zipCode || '-' }}</span>
           </div>
           <div class="info-item">
             <span class="label"
               >{{ 'pages.employee_detail.country' | translate }}:</span
             >
             <span class="value">{{
-              facade.employee().countryName || '-'
+              employee.countryName || '-'
             }}</span>
           </div>
         </div>
@@ -409,21 +412,21 @@
               >{{ 'pages.employee_detail.nationality' | translate }}:</span
             >
             <span class="value">{{
-              facade.employee().nationalityName || '-'
+              employee.nationalityName || '-'
             }}</span>
           </div>
           <div class="info-item">
             <span class="label"
               >{{ 'pages.employee_detail.passport_id' | translate }}:</span
             >
-            <span class="value">{{ facade.employee().passportId || '-' }}</span>
+            <span class="value">{{ employee.passportId || '-' }}</span>
           </div>
           <div class="info-item">
             <span class="label"
               >{{ 'pages.employee_detail.entity_type' | translate }}:</span
             >
             <span class="value">{{
-              facade.employee().entityType === 2
+              employee.entityType === 2
                 ? ('pages.employee_detail.entity_type_legal_entity' | translate)
                 : ('pages.employee_detail.entity_type_natural_person' | translate)
             }}</span>
@@ -432,27 +435,27 @@
             <span class="label"
               >{{ 'pages.employee_detail.registration_number' | translate }}:</span
             >
-            <span class="value">{{ facade.employee().registrationNumber || '-' }}</span>
+            <span class="value">{{ employee.registrationNumber || '-' }}</span>
           </div>
           <div class="info-item">
             <span class="label"
               >{{ 'pages.employee_detail.vat_number' | translate }}:</span
             >
-            <span class="value">{{ facade.employee().vatNumber || '-' }}</span>
+            <span class="value">{{ employee.vatNumber || '-' }}</span>
           </div>
-          @if (facade.employee().entityType === 2) {
+          @if (employee.entityType === 2) {
             <div class="info-item">
               <span class="label"
                 >{{ 'pages.employee_detail.legal_entity_name' | translate }}:</span
               >
-              <span class="value">{{ facade.employee().legalEntityName || '-' }}</span>
+              <span class="value">{{ employee.legalEntityName || '-' }}</span>
             </div>
           }
           <div class="info-item">
             <span class="label"
               >{{ 'pages.employee_detail.iban' | translate }}:</span
             >
-            <span class="value">{{ facade.employee().iban || '-' }}</span>
+            <span class="value">{{ employee.iban || '-' }}</span>
           </div>
         </div>
         }
@@ -508,7 +511,7 @@
               >{{ 'pages.employee_detail.emergency_name' | translate }}:</span
             >
             <span class="value">{{
-              facade.employee().emergencyContactName || '-'
+              employee.emergencyContactName || '-'
             }}</span>
           </div>
           <div class="info-item">
@@ -516,7 +519,7 @@
               >{{ 'pages.employee_detail.emergency_phone' | translate }}:</span
             >
             <span class="value">{{
-              facade.employee().emergencyContactPhone || '-'
+              employee.emergencyContactPhone || '-'
             }}</span>
           </div>
         </div>
@@ -553,17 +556,17 @@
             (onClick)="onEditAvailability()"
           />
         </div>
-        @if (facade.employee().availability) {
+        @if (employee.availability) {
         <div class="availability-grid">
           @for (day of daysOfWeek(); track day.value) {
           <div class="availability-day">
             <span class="day-name"
               >{{ 'pages.employee_detail.' + day.name | translate }}:</span
             >
-            @if (facade.employee().availability[day.name!] &&
-            facade.employee().availability[day.name!].length > 0) {
+            @if (employee.availability[day.name!] &&
+            employee.availability[day.name!].length > 0) {
             <div class="time-ranges">
-              @for (range of facade.employee().availability[day.name!]; track
+              @for (range of employee.availability[day.name!]; track
               $index) {
               <span class="time-range">{{
                 formatTimeRange(range.start, range.end)
@@ -711,8 +714,8 @@
       </cleansia-section>
 
       <!-- Approval/Rejection History -->
-      @if (facade.employee().approvedAt || facade.employee().rejectedAt) { @if
-      (facade.employee().approvedAt) {
+      @if (employee.approvedAt || employee.rejectedAt) { @if
+      (employee.approvedAt) {
       <cleansia-section
         [title]="'pages.employee_detail.approval_info' | translate"
       >
@@ -722,20 +725,20 @@
               >{{ 'pages.employee_detail.approved_at' | translate }}:</span
             >
             <span class="value">{{
-              formatDateTime(facade.employee().approvedAt)
+              formatDateTime(employee.approvedAt)
             }}</span>
           </div>
-          @if (facade.employee().approvalNotes) {
+          @if (employee.approvalNotes) {
           <div class="info-item full-width">
             <span class="label"
               >{{ 'pages.employee_detail.approval_notes' | translate }}:</span
             >
-            <span class="value">{{ facade.employee().approvalNotes }}</span>
+            <span class="value">{{ employee.approvalNotes }}</span>
           </div>
           }
         </div>
       </cleansia-section>
-      } @if (facade.employee().rejectedAt) {
+      } @if (employee.rejectedAt) {
       <cleansia-section
         [title]="'pages.employee_detail.rejection_info' | translate"
       >
@@ -745,15 +748,15 @@
               >{{ 'pages.employee_detail.rejected_at' | translate }}:</span
             >
             <span class="value">{{
-              formatDateTime(facade.employee().rejectedAt)
+              formatDateTime(employee.rejectedAt)
             }}</span>
           </div>
-          @if (facade.employee().rejectionReason) {
+          @if (employee.rejectionReason) {
           <div class="info-item full-width">
             <span class="label"
               >{{ 'pages.employee_detail.rejection_reason' | translate }}:</span
             >
-            <span class="value">{{ facade.employee().rejectionReason }}</span>
+            <span class="value">{{ employee.rejectionReason }}</span>
           </div>
           }
         </div>
@@ -762,7 +765,7 @@
 
       <cleansia-employee-documents-section
         [facade]="docsFacade"
-        [employeeId]="facade.employee()?.id"
+        [employeeId]="employee?.id"
         (rejectDocument)="onRejectDocument($event)"
       />
     </div>

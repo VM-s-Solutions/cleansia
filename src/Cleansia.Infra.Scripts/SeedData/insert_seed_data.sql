@@ -208,68 +208,103 @@ VALUES
   (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'RON', 'lei', 'Romanian Leu', 0.20),
   (generate_ulid()::TEXT, true, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'BGN', 'лв', 'Bulgarian Lev', 0.080);
 
--- 6. SERVICES
+-- 6. SERVICE CATEGORIES
+-- Slugs are the client-facing stable identifier (mobile maps them to icons/colors).
+-- Keep slugs immutable once seeded; rename Name freely via admin.
+INSERT INTO public."ServiceCategories" (
+  "Id", "IsActive", "CreatedBy", "CreatedOn",
+  "UpdatedBy", "UpdatedOn", "DeactivatedBy",
+  "DeactivatedOn", "Slug", "Name", "Description", "DisplayOrder", "Translations"
+)
+VALUES
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   'home', 'Home', 'Everyday home cleaning services', 10,
+   '{"en": {"Name": "Home", "Description": "Everyday home cleaning services"}, "cs": {"Name": "Domácnost", "Description": "Každodenní úklid domácnosti"}, "sk": {"Name": "Domácnosť", "Description": "Každodenné upratovanie domácnosti"}, "uk": {"Name": "Дім", "Description": "Щоденне прибирання будинку"}, "ru": {"Name": "Дом", "Description": "Ежедневная уборка дома"}}'),
+
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   'deep', 'Deep clean', 'Thorough and specialized cleaning', 20,
+   '{"en": {"Name": "Deep clean", "Description": "Thorough and specialized cleaning"}, "cs": {"Name": "Hloubkový úklid", "Description": "Důkladné a specializované čištění"}, "sk": {"Name": "Hĺbkové čistenie", "Description": "Dôkladné a špecializované čistenie"}, "uk": {"Name": "Глибоке прибирання", "Description": "Ретельне та спеціалізоване прибирання"}, "ru": {"Name": "Глубокая уборка", "Description": "Тщательная и специализированная уборка"}}'),
+
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   'laundry', 'Laundry', 'Washing, ironing, and linen care', 30,
+   '{"en": {"Name": "Laundry", "Description": "Washing, ironing, and linen care"}, "cs": {"Name": "Praní", "Description": "Praní, žehlení a péče o prádlo"}, "sk": {"Name": "Pranie", "Description": "Pranie, žehlenie a starostlivosť o bielizeň"}, "uk": {"Name": "Прання", "Description": "Прання, прасування та догляд за білизною"}, "ru": {"Name": "Стирка", "Description": "Стирка, глажка и уход за бельём"}}'),
+
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   'pet', 'Pet', 'Services tailored for pet owners', 40,
+   '{"en": {"Name": "Pet", "Description": "Services tailored for pet owners"}, "cs": {"Name": "Mazlíčci", "Description": "Služby pro majitele domácích mazlíčků"}, "sk": {"Name": "Domáce zvieratá", "Description": "Služby pre majiteľov domácich miláčikov"}, "uk": {"Name": "Тварини", "Description": "Послуги для власників домашніх тварин"}, "ru": {"Name": "Питомцы", "Description": "Услуги для владельцев домашних животных"}}');
+
+-- 7. SERVICES
 INSERT INTO public."Services" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy",
   "DeactivatedOn", "Name", "Description",
-  "BasePrice", "PerRoomPrice", "EstimatedTime", "Translations"
+  "BasePrice", "PerRoomPrice", "EstimatedTime", "CategoryId", "Translations"
 )
 VALUES
   -- Basic Cleaning Services
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'General Cleaning', 'Standard cleaning of all rooms including dusting, vacuuming, and sanitizing',
    500.00, 150.00, 120,
+   (SELECT "Id" FROM public."ServiceCategories" WHERE "Slug" = 'home'),
    '{"en": {"Name": "General Cleaning", "Description": "Standard cleaning of all rooms including dusting, vacuuming, and sanitizing"}, "cs": {"Name": "Obecný úklid", "Description": "Standardní úklid všech místností včetně otírání prachu, vysávání a dezinfekce"}, "ru": {"Name": "Общая уборка", "Description": "Стандартная уборка всех комнат включая протирание пыли, пылесос и дезинфекцию"}}'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Deep Cleaning', 'Thorough cleaning including baseboards, inside appliances, and detailed sanitization',
    800.00, 250.00, 180,
+   (SELECT "Id" FROM public."ServiceCategories" WHERE "Slug" = 'deep'),
    '{"en": {"Name": "Deep Cleaning", "Description": "Thorough cleaning including baseboards, inside appliances, and detailed sanitization"}, "cs": {"Name": "Hloubkový úklid", "Description": "Důkladný úklid včetně lišt, vnitřků spotřebičů a detailní dezinfekce"}, "ru": {"Name": "Глубокая уборка", "Description": "Тщательная уборка включая плинтуса, внутри бытовой техники и детальная дезинфекция"}}'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Bathroom Cleaning', 'Specialized bathroom cleaning with tile scrubbing and grout cleaning',
    300.00, 0.00, 45,
+   (SELECT "Id" FROM public."ServiceCategories" WHERE "Slug" = 'home'),
    '{"en": {"Name": "Bathroom Cleaning", "Description": "Specialized bathroom cleaning with tile scrubbing and grout cleaning"}, "cs": {"Name": "Úklid koupelny", "Description": "Specializovaný úklid koupelny s drhnáním dlaždic a čištěním spár"}, "ru": {"Name": "Уборка ванной", "Description": "Специализированная уборка ванной с чисткой плитки и швов"}}'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Kitchen Deep Clean', 'Comprehensive kitchen cleaning including oven, refrigerator, and cabinets',
    400.00, 0.00, 90,
+   (SELECT "Id" FROM public."ServiceCategories" WHERE "Slug" = 'deep'),
    '{"en": {"Name": "Kitchen Deep Clean", "Description": "Comprehensive kitchen cleaning including oven, refrigerator, and cabinets"}, "cs": {"Name": "Hloubkový úklid kuchyně", "Description": "Komplexní úklid kuchyně včetně trouby, lednice a skříněk"}, "ru": {"Name": "Глубокая уборка кухни", "Description": "Комплексная уборка кухни включая духовку, холодильник и шкафы"}}'),
 
   -- Specialized Services
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Window Cleaning', 'Interior and exterior window cleaning with streak-free finish',
    200.00, 50.00, 60,
+   (SELECT "Id" FROM public."ServiceCategories" WHERE "Slug" = 'home'),
    '{"en": {"Name": "Window Cleaning", "Description": "Interior and exterior window cleaning with streak-free finish"}, "cs": {"Name": "Mytí oken", "Description": "Mytí oken zevnitř i zvenčí bez šmouh"}, "ru": {"Name": "Мытье окон", "Description": "Мытье окон изнутри и снаружи без разводов"}}'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Carpet Cleaning', 'Professional carpet steam cleaning and stain removal',
    350.00, 100.00, 90,
+   (SELECT "Id" FROM public."ServiceCategories" WHERE "Slug" = 'home'),
    '{"en": {"Name": "Carpet Cleaning", "Description": "Professional carpet steam cleaning and stain removal"}, "cs": {"Name": "Čištění koberců", "Description": "Profesionální parní čištění koberců a odstraňování skvrn"}, "ru": {"Name": "Чистка ковров", "Description": "Профессиональная паровая чистка ковров и удаление пятен"}}'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Upholstery Cleaning', 'Deep cleaning of sofas, chairs, and fabric furniture',
    450.00, 0.00, 75,
+   (SELECT "Id" FROM public."ServiceCategories" WHERE "Slug" = 'home'),
    '{"en": {"Name": "Upholstery Cleaning", "Description": "Deep cleaning of sofas, chairs, and fabric furniture"}, "cs": {"Name": "Čištění čalounění", "Description": "Hloubkové čištění sedaček, židlí a látkového nábytku"}, "ru": {"Name": "Чистка обивки", "Description": "Глубокая чистка диванов, кресел и тканевой мебели"}}'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Post-Construction Cleanup', 'Specialized cleaning after renovation or construction work',
    1200.00, 300.00, 240,
+   (SELECT "Id" FROM public."ServiceCategories" WHERE "Slug" = 'deep'),
    '{"en": {"Name": "Post-Construction Cleanup", "Description": "Specialized cleaning after renovation or construction work"}, "cs": {"Name": "Úklid po rekonstrukci", "Description": "Specializovaný úklid po rekonstrukci nebo stavebních pracích"}, "ru": {"Name": "Уборка после ремонта", "Description": "Специализированная уборка после ремонта или строительных работ"}}'),
 
   -- Premium Services
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Move-in/Move-out Cleaning', 'Complete cleaning for moving in or out of property',
    1000.00, 200.00, 180,
+   (SELECT "Id" FROM public."ServiceCategories" WHERE "Slug" = 'deep'),
    '{"en": {"Name": "Move-in/Move-out Cleaning", "Description": "Complete cleaning for moving in or out of property"}, "cs": {"Name": "Úklid při stěhování", "Description": "Kompletní úklid při nastěhování nebo vystěhování z nemovitosti"}, "ru": {"Name": "Уборка при переезде", "Description": "Полная уборка при въезде или выезде из недвижимости"}}'),
 
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
    'Eco-Friendly Cleaning', 'Green cleaning using only eco-friendly and non-toxic products',
    600.00, 180.00, 135,
+   (SELECT "Id" FROM public."ServiceCategories" WHERE "Slug" = 'home'),
    '{"en": {"Name": "Eco-Friendly Cleaning", "Description": "Green cleaning using only eco-friendly and non-toxic products"}, "cs": {"Name": "Ekologický úklid", "Description": "Zelený úklid používající pouze ekologické a netoxické produkty"}, "ru": {"Name": "Экологическая уборка", "Description": "Зеленая уборка с использованием только экологически чистых и нетоксичных продуктов"}}');
 
--- 7. PACKAGES
+-- 8. PACKAGES
 INSERT INTO public."Packages" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy",
@@ -319,7 +354,7 @@ VALUES
    3499.00,
    '{"en": {"Name": "Luxury Full Service", "Description": "Premium package with all services included"}, "cs": {"Name": "Luxusní kompletní služba", "Description": "Prémiový balíček se všemi zahrnutými službami"}, "ru": {"Name": "Роскошный полный сервис", "Description": "Премиум пакет со всеми включенными услугами"}}');
 
--- 8. USERS AND EMPLOYEES
+-- 9. USERS AND EMPLOYEES
 INSERT INTO public."Users" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy",
@@ -370,7 +405,7 @@ VALUES
    '$2a$11$LGWjlgYDdH1Zso.FvdZbkebhVtKj39L1HYN0GlbE3rRYcZw5I9RQ6', -- Password: Test123!
    'Lenka', 'Marková', 'lenka.markova@cleansia.cz', '+420012345678', '1994-05-19', 2, 1, true, 'cs');
 
--- 9. CARTS (Create carts with UserId after users exist)
+-- 10. CARTS (Create carts with UserId after users exist)
 INSERT INTO public."Carts" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn", "UserId"
@@ -456,7 +491,7 @@ VALUES
    '{"Monday":[{"Start":"09:30:00","End":"17:30:00"}],"Tuesday":[{"Start":"09:30:00","End":"17:30:00"}],"Wednesday":[{"Start":"09:30:00","End":"17:30:00"}],"Thursday":[{"Start":"09:30:00","End":"17:30:00"}],"Friday":[{"Start":"09:30:00","End":"17:30:00"}],"Sunday":[{"Start":"12:00:00","End":"16:00:00"}]}',
    (SELECT "Id" FROM public."Users" WHERE "Email" = 'lenka.markova@cleansia.cz'), 'CZK');
 
--- 10. ADDRESSES
+-- 11. ADDRESSES
 INSERT INTO public."Addresses" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy",
@@ -518,7 +553,7 @@ VALUES
    'Waltrovka 258', 'Prague', '15000', 'Prague',
    (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE'));
 
--- 11. ORDERS AND RELATED DATA
+-- 12. ORDERS AND RELATED DATA
 -- First insert package services relationships
 INSERT INTO public."PackageServices" (
   "Id", "IsActive", "PackageId", "ServiceId"
@@ -1125,7 +1160,7 @@ VALUES
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '3 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0018' LIMIT 1)),
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '2 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0018' LIMIT 1));
 
--- 12. PAY PERIODS
+-- 13. PAY PERIODS
 -- Creating monthly pay periods for the last 3 months and upcoming month
 INSERT INTO public."PayPeriods" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
@@ -1163,7 +1198,7 @@ VALUES
    NULL, NULL, NULL,
    'March 2026 period - Upcoming');
 
--- 13. EMPLOYEE PAY CONFIG
+-- 14. EMPLOYEE PAY CONFIG
 -- INSERT EMPLOYEE PAY CONFIG
 -- Setting up pay configurations for each employee for different service/package combinations
 INSERT INTO public."EmployeePayConfigs" (
@@ -1248,7 +1283,7 @@ VALUES
    (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1),
    'Eco-friendly package with premium rate');
 
--- 14. ORDER EMPLOYEE PAY
+-- 15. ORDER EMPLOYEE PAY
 -- INSERT ORDER EMPLOYEE PAY
 -- Creating pay records for completed orders
 INSERT INTO public."OrderEmployeePays" (
@@ -1313,7 +1348,7 @@ VALUES
    '{"basePay": 350, "roomExtras": 160, "bathroomExtras": 80, "travelExpenses": 45, "repeatClientBonus": 80}',
    true);
 
--- 15. EMPLOYEE INVOICES
+-- 16. EMPLOYEE INVOICES
 -- INSERT EMPLOYEE INVOICES
 -- Creating invoices for employees based on their completed work
 INSERT INTO public."EmployeeInvoices" (
@@ -2191,6 +2226,145 @@ WHERE "UserId" IN (
 -- ============================================================
 -- Dispute seed data has been moved to insert_disputes.sql
 -- Run that script separately after this one to populate disputes
+
+-- ============================================================
+-- LOYALTY TIER CONFIGS (Phase A defaults)
+-- ============================================================
+-- Idempotent inserts: each row is keyed by Tier so re-runs are safe.
+-- TenantId NULL = single-tenant default (matches existing seed entries).
+-- DiscountPercent stored as a fraction in [0, 1] (e.g. 0.05 = 5%).
+INSERT INTO public."LoyaltyTierConfigs" (
+    "Id", "IsActive", "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn",
+    "DeactivatedBy", "DeactivatedOn", "TenantId",
+    "Tier", "LifetimePointsThreshold", "DiscountPercent",
+    "MinimumOrderAmountForDiscount", "PerksJson"
+)
+SELECT '01LTYBRONZE000000000000000', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, NULL,
+    1, 0, 0.0000, NULL,
+    '[{"icon":"badge","labelKey":"loyalty.perks.welcome_badge"}]'
+WHERE NOT EXISTS (SELECT 1 FROM public."LoyaltyTierConfigs" WHERE "Tier" = 1 AND "TenantId" IS NULL);
+
+INSERT INTO public."LoyaltyTierConfigs" (
+    "Id", "IsActive", "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn",
+    "DeactivatedBy", "DeactivatedOn", "TenantId",
+    "Tier", "LifetimePointsThreshold", "DiscountPercent",
+    "MinimumOrderAmountForDiscount", "PerksJson"
+)
+SELECT '01LTYSILVER000000000000000', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, NULL,
+    2, 500, 0.0500, 1000.00,
+    '[{"icon":"badge","labelKey":"loyalty.perks.welcome_badge"},{"icon":"percent","labelKey":"loyalty.perks.discount_5_above_1000"}]'
+WHERE NOT EXISTS (SELECT 1 FROM public."LoyaltyTierConfigs" WHERE "Tier" = 2 AND "TenantId" IS NULL);
+
+INSERT INTO public."LoyaltyTierConfigs" (
+    "Id", "IsActive", "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn",
+    "DeactivatedBy", "DeactivatedOn", "TenantId",
+    "Tier", "LifetimePointsThreshold", "DiscountPercent",
+    "MinimumOrderAmountForDiscount", "PerksJson"
+)
+SELECT '01LTYGOLD0000000000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, NULL,
+    3, 2000, 0.1000, NULL,
+    '[{"icon":"badge","labelKey":"loyalty.perks.welcome_badge"},{"icon":"percent","labelKey":"loyalty.perks.discount_10"},{"icon":"support","labelKey":"loyalty.perks.priority_support"}]'
+WHERE NOT EXISTS (SELECT 1 FROM public."LoyaltyTierConfigs" WHERE "Tier" = 3 AND "TenantId" IS NULL);
+
+INSERT INTO public."LoyaltyTierConfigs" (
+    "Id", "IsActive", "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn",
+    "DeactivatedBy", "DeactivatedOn", "TenantId",
+    "Tier", "LifetimePointsThreshold", "DiscountPercent",
+    "MinimumOrderAmountForDiscount", "PerksJson"
+)
+SELECT '01LTYPLATINUM0000000000000', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, NULL,
+    4, 5000, 0.1500, NULL,
+    '[{"icon":"badge","labelKey":"loyalty.perks.welcome_badge"},{"icon":"percent","labelKey":"loyalty.perks.discount_15"},{"icon":"support","labelKey":"loyalty.perks.priority_support"},{"icon":"star","labelKey":"loyalty.perks.dedicated_pool"}]'
+WHERE NOT EXISTS (SELECT 1 FROM public."LoyaltyTierConfigs" WHERE "Tier" = 4 AND "TenantId" IS NULL);
+
+-- ============================================================
+-- PROMO CODES (Phase B seed)
+-- ============================================================
+-- Idempotent inserts keyed on Code (which is unique per tenant).
+-- Type: 1 = PercentDiscount (uses DiscountPercent), 2 = FixedDiscount (uses DiscountAmount + CurrencyId).
+-- DiscountPercent stored as fraction in [0, 1] — backend renders as percentage.
+-- All single-tenant defaults (TenantId NULL).
+
+-- WELCOME15 — 15% off first booking, no minimum, single-use per user.
+INSERT INTO public."PromoCodes" (
+    "Id", "IsActive", "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn",
+    "DeactivatedBy", "DeactivatedOn", "TenantId",
+    "Code", "Type", "DiscountPercent", "DiscountAmount", "CurrencyId",
+    "MinimumOrderAmount", "MaxRedemptionsPerUser", "GlobalMaxRedemptions",
+    "CurrentRedemptionsCount", "ValidFrom", "ValidUntil", "Description"
+)
+SELECT '01PROMOWELCOME150000000000', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, NULL,
+    'WELCOME15', 1, 0.1500, NULL, NULL,
+    NULL, 1, NULL,
+    0, NULL, NULL, 'Welcome offer — 15% off the first booking. Single-use per user.'
+WHERE NOT EXISTS (SELECT 1 FROM public."PromoCodes" WHERE "Code" = 'WELCOME15' AND "TenantId" IS NULL);
+
+-- SPRING20 — 20% off bookings >= 1500 CZK, single-use per user.
+INSERT INTO public."PromoCodes" (
+    "Id", "IsActive", "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn",
+    "DeactivatedBy", "DeactivatedOn", "TenantId",
+    "Code", "Type", "DiscountPercent", "DiscountAmount", "CurrencyId",
+    "MinimumOrderAmount", "MaxRedemptionsPerUser", "GlobalMaxRedemptions",
+    "CurrentRedemptionsCount", "ValidFrom", "ValidUntil", "Description"
+)
+SELECT '01PROMOSPRING20000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, NULL,
+    'SPRING20', 1, 0.2000, NULL, NULL,
+    1500.00, 1, NULL,
+    0, NULL, NULL, 'Seasonal — 20% off bookings of 1500 CZK or more.'
+WHERE NOT EXISTS (SELECT 1 FROM public."PromoCodes" WHERE "Code" = 'SPRING20' AND "TenantId" IS NULL);
+
+-- LOYAL10 — 10% off bookings >= 800 CZK, repeatable up to 5 times per user.
+-- Useful for return-customer marketing pushes.
+INSERT INTO public."PromoCodes" (
+    "Id", "IsActive", "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn",
+    "DeactivatedBy", "DeactivatedOn", "TenantId",
+    "Code", "Type", "DiscountPercent", "DiscountAmount", "CurrencyId",
+    "MinimumOrderAmount", "MaxRedemptionsPerUser", "GlobalMaxRedemptions",
+    "CurrentRedemptionsCount", "ValidFrom", "ValidUntil", "Description"
+)
+SELECT '01PROMOLOYAL100000000000B', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, NULL,
+    'LOYAL10', 1, 0.1000, NULL, NULL,
+    800.00, 5, NULL,
+    0, NULL, NULL, 'Return-customer offer — 10% off bookings of 800 CZK or more, up to 5 uses per user.'
+WHERE NOT EXISTS (SELECT 1 FROM public."PromoCodes" WHERE "Code" = 'LOYAL10' AND "TenantId" IS NULL);
+
+-- ─── Cleansia Plus membership plans ───
+-- Two plans: monthly + yearly. Yearly is priced at ~15% discount per month.
+-- StripePriceId values are placeholders — replace with the actual Price ids
+-- from the Stripe dashboard before deploying. The monthly→yearly upgrade
+-- path (SwapMembershipPlan command) reads BillingInterval to know which
+-- plan is the "upgrade target".
+-- TrialPeriodDays is 14 on both; Stripe only honors the trial on the user's
+-- first subscription per customer id, so resubscribers don't get another
+-- free 14 days.
+
+-- PLUS_MONTHLY — 199 Kč/month
+INSERT INTO public."MembershipPlans" (
+    "Id", "IsActive", "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn",
+    "DeactivatedBy", "DeactivatedOn", "TenantId",
+    "Code", "Name", "MonthlyPriceCzk", "StripePriceId",
+    "DiscountPercentage", "FreeCancellationWindowHours", "AllowsExpressUpgrade",
+    "BillingInterval", "TrialPeriodDays"
+)
+SELECT '01PLUSMONTHLY00000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, NULL,
+    'PLUS_MONTHLY', 'Cleansia Plus (Monthly)', 199.00, 'price_1TSiJ83KjMqxM0RBVaiKAF6r',
+    5.00, 4, true,
+    1, 14
+WHERE NOT EXISTS (SELECT 1 FROM public."MembershipPlans" WHERE "Code" = 'PLUS_MONTHLY' AND "TenantId" IS NULL);
+
+-- PLUS_YEARLY — 2030 Kč/year (≈169 Kč/month, 15% off vs monthly).
+INSERT INTO public."MembershipPlans" (
+    "Id", "IsActive", "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn",
+    "DeactivatedBy", "DeactivatedOn", "TenantId",
+    "Code", "Name", "MonthlyPriceCzk", "StripePriceId",
+    "DiscountPercentage", "FreeCancellationWindowHours", "AllowsExpressUpgrade",
+    "BillingInterval", "TrialPeriodDays"
+)
+SELECT '01PLUSYEARLY000000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, NULL,
+    'PLUS_YEARLY', 'Cleansia Plus (Annual)', 2030.00, 'price_1TSiJ83KjMqxM0RBrfMWdjrF',
+    5.00, 4, true,
+    2, 14
+WHERE NOT EXISTS (SELECT 1 FROM public."MembershipPlans" WHERE "Code" = 'PLUS_YEARLY' AND "TenantId" IS NULL);
 
 -- Constraints are checked at COMMIT when using SET CONSTRAINTS ALL DEFERRED
 

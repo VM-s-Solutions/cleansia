@@ -1,0 +1,37 @@
+.cleansia-gdpr {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+
+  &__card {
+    width: 100%;
+    max-width: 1200px;
+  }
+  &__subtitle {
+    color: var(--text-color-secondary);
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+  }
+  &__section {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--surface-border, #e5e7eb);
+    &:last-of-type {
+      border-bottom: none;
+    }
+    h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      color: var(--text-color);
+    }
+    p {
+      color: var(--text-color-secondary);
+      line-height: 1.75;
+      margin: 0;
+    }
+  }
+  &__actions {
+    margin-top: 2rem;
+  }
+}

@@ -20,9 +20,10 @@ public class ServiceMockFactory
         public decimal PerRoomPrice { get; set; }
     }
 
-    public static Service Generate(ServicePartial? mergeFrom = null)
+    public static Service Generate(ServicePartial? mergeFrom = null, string categoryId = "test-category-id")
     {
         var service = Service.Create(
+            categoryId: categoryId,
             name: "Service1",
             description: "There is some service that we provide",
             basePrice: 1000.0M,

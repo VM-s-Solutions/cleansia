@@ -1,9 +1,10 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, effect, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, OnInit } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CleansiaPartnerRoute } from '@cleansia/services';
+import { OrderItem, OrderStatus } from '@cleansia/partner-services';
 import {
   CleansiaButtonComponent,
   CleansiaDetailSkeletonComponent,
@@ -66,6 +67,7 @@ import {
   ],
   templateUrl: './order-details.component.html',
   providers: [OrderDetailsFacade, DialogService],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OrderDetailsComponent implements OnInit {
   protected readonly facade = inject(OrderDetailsFacade);
@@ -154,7 +156,7 @@ export class OrderDetailsComponent implements OnInit {
 
   protected readonly hasInvoice = computed(() => !!this.orderDetails()?.receiptNumber);
 
-  protected readonly isInProgress = computed(() => this.orderDetails()?.orderStatus.value === 3);
+  protected readonly isInProgress = computed(() => this.orderDetails()?.orderStatus.value === OrderStatus.InProgress);
 
   protected readonly elapsedTime = computed(() => {
     const order = this.orderDetails();
@@ -220,17 +222,15 @@ export class OrderDetailsComponent implements OnInit {
 
   protected takeOrder(): void {
     const orderId = this.orderDetails()?.id;
-    const employeeId = this.currentEmployeeId();
-    if (orderId && employeeId) {
-      this.facade.takeOrder(orderId, employeeId);
+    if (orderId) {
+      this.facade.takeOrder(orderId);
     }
   }
 
   protected startOrder(): void {
     const orderId = this.orderDetails()?.id;
-    const employeeId = this.currentEmployeeId();
-    if (orderId && employeeId) {
-      this.facade.startOrder(orderId, employeeId);
+    if (orderId) {
+      this.facade.startOrder(orderId);
     }
   }
 
@@ -284,7 +284,8 @@ export class OrderDetailsComponent implements OnInit {
     });
   }
 
-  private updateFormWithOrderDetails(orderDetails: any): void {
+  private updateFormWithOrderDetails(orderDetails: OrderItem): void {
+    const primaryEmployee = orderDetails.assignedEmployees?.[0];
     this.formGroup.patchValue({
       orderStatus: orderDetails.orderStatus.name,
       paymentStatus: orderDetails.paymentStatus.name,
@@ -292,16 +293,24 @@ export class OrderDetailsComponent implements OnInit {
       customerName: orderDetails.customerName,
       customerEmail: orderDetails.customerEmail,
       customerPhone: orderDetails.customerPhone,
-      address: formatAddress(orderDetails.address),
+      address: formatAddress({
+        street: orderDetails.address.street ?? '',
+        city: orderDetails.address.city ?? '',
+        zipCode: orderDetails.address.zipCode ?? '',
+        country: orderDetails.address.country ?? '',
+      }),
       cleaningDateTime: formatDateTime(orderDetails.cleaningDateTime),
       rooms: orderDetails.rooms?.toString(),
       bathrooms: orderDetails.bathrooms?.toString(),
-      estimatedTime: `${orderDetails.estimatedTime} minutes`,
+      estimatedTime: this.translateService.instant(
+        'pages.order_details.estimated_time_minutes',
+        { minutes: orderDetails.estimatedTime }
+      ),
       paymentType: orderDetails.paymentType.name,
-      totalPrice: formatCurrency(orderDetails.totalPrice, orderDetails.currency.symbol),
+      totalPrice: formatCurrency(orderDetails.totalPrice, orderDetails.currency.symbol ?? ''),
       currency: `${orderDetails.currency.name} (${orderDetails.currency.code})`,
-      assignedEmployeeName: orderDetails.assignedEmployeeName || '',
-      assignedEmployeePhone: orderDetails.assignedEmployeePhone || '',
+      assignedEmployeeName: primaryEmployee?.fullName ?? '',
+      assignedEmployeePhone: primaryEmployee?.phoneNumber ?? '',
       notes: orderDetails.notes || '',
       specialInstructions: orderDetails.specialInstructions || '',
       accessInstructions: orderDetails.accessInstructions || '',

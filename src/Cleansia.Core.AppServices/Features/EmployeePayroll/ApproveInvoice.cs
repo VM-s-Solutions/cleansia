@@ -40,9 +40,11 @@ public class ApproveInvoice
                 .WithMessage(BusinessErrorMessage.MaxLength);
         }
 
-        private Task<bool> BePendingStatusAsync(string invoiceId, CancellationToken cancellationToken) =>
-            _invoiceRepository.GetByIdAsync(invoiceId, cancellationToken)
-                .ContinueWith(t => t.Result!.Status == EmployeeInvoiceStatus.Pending, cancellationToken);
+        private async Task<bool> BePendingStatusAsync(string invoiceId, CancellationToken cancellationToken)
+        {
+            var invoice = await _invoiceRepository.GetByIdAsync(invoiceId, cancellationToken);
+            return invoice!.Status == EmployeeInvoiceStatus.Pending;
+        }
     }
 
     public class Handler(

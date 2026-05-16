@@ -196,4 +196,10 @@ public class OrderEmployeePay : Auditable, ITenantEntity
         PayBreakdown = breakdown;
         return this;
     }
+
+    public OrderEmployeePay Anonymize()
+    {
+        Notes = Notes is null ? null : AnonymizationMarker.Value;
+        return this;
+    }
 }

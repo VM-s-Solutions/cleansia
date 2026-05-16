@@ -45,7 +45,6 @@ public class PayPeriodEntityConfiguration : AuditableEntityConfiguration<PayPeri
             .HasForeignKey(i => i.PayPeriodId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Indexes
         builder.HasIndex(e => e.Status);
         builder.HasIndex(e => new { e.StartDate, e.EndDate });
         builder.HasIndex(e => e.StartDate);

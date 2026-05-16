@@ -52,7 +52,6 @@ public static class PayCalculator
         return orderPays.Sum(p => p.TotalPay);
     }
 
-    // Bi-Weekly Period Aggregation Methods
     public static decimal CalculatePeriodTotal(IEnumerable<OrderEmployeePay> orderPays)
     {
         if (orderPays == null)
@@ -263,7 +262,6 @@ public static class PayCalculator
     private static bool IsHoliday(DateTime date)
     {
         // TODO: Implement actual holiday check based on country
-        // For now, return false
         return false;
     }
 }

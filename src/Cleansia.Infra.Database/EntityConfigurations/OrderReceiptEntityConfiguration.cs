@@ -43,7 +43,6 @@ public class OrderReceiptEntityConfiguration : AuditableEntityConfiguration<Orde
         builder.HasIndex(r => new { r.OrderId, r.LanguageId })
             .HasDatabaseName("IX_OrderReceipts_Order_Language");
 
-        // Fiscal retry fields
         builder.Property(r => r.FiscalProviderKey).HasMaxLength(50);
         builder.Property(r => r.FiscalCode).HasMaxLength(255);
         builder.Property(r => r.FiscalError).HasMaxLength(1000);

@@ -22,7 +22,7 @@ var adminApi = builder.AddProject<Projects.Cleansia_Web_Admin>("admin-api")
     .WithReference(queues)
     .WaitFor(cleansiaDb);
 
-var mobileApi = builder.AddProject<Projects.Cleansia_Web_Mobile>("mobile-api")
+var partnerMobileApi = builder.AddProject<Projects.Cleansia_Web_Mobile_Partner>("partner-mobile-api")
     .WithEndpoint("http", e => { e.Port = 5002; e.IsProxied = false; })
     .WithReference(cleansiaDb)
     .WithReference(queues)
@@ -30,6 +30,17 @@ var mobileApi = builder.AddProject<Projects.Cleansia_Web_Mobile>("mobile-api")
 
 var customerApi = builder.AddProject<Projects.Cleansia_Web_Customer>("customer-api")
     .WithEndpoint("http", e => { e.Port = 5003; e.IsProxied = false; })
+    .WithReference(cleansiaDb)
+    .WithReference(queues)
+    .WaitFor(cleansiaDb);
+
+// Dedicated host for the customer mobile app (Android, future iOS). Mirrors
+// the partner-Mobile host shape: body-token JWT, no cookies, no CSRF — native
+// clients can't read HttpOnly cookies that the Customer Web host (5003) uses
+// after the booking-extras/HttpOnly migration. Issues tokens with
+// JwtAudiences.Customer so the same user pool/audience as the web side.
+var customerMobileApi = builder.AddProject<Projects.Cleansia_Web_Mobile_Customer>("customer-mobile-api")
+    .WithEndpoint("http", e => { e.Port = 5004; e.IsProxied = false; })
     .WithReference(cleansiaDb)
     .WithReference(queues)
     .WaitFor(cleansiaDb);

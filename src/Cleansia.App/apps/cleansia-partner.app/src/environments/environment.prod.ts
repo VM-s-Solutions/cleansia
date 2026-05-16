@@ -10,4 +10,5 @@ export const environment = {
   isDevelopment: false,
   sentryDsn: '',
   bugReportUrl: '',
+  mapboxToken: '',
 };

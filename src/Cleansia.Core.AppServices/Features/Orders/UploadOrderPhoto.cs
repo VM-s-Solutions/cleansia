@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Blobs.Abstractions.Extensions;
@@ -15,7 +16,6 @@ public class UploadOrderPhoto
 {
     public record Command(
         string OrderId,
-        string EmployeeId,
         PhotoType PhotoType,
         string FileName,
         string ContentType,
@@ -30,10 +30,10 @@ public class UploadOrderPhoto
 
     public class Validator : AbstractValidator<Command>
     {
-        private const long MaxFileSizeBytes = 10 * 1024 * 1024; // 10 MB
+        private const long MaxFileSizeBytes = 10 * 1024 * 1024;
         private static readonly string[] AllowedContentTypes = { "image/jpeg", "image/jpg", "image/png", "image/webp" };
 
-        public Validator(IOrderRepository orderRepository, IEmployeeRepository employeeRepository)
+        public Validator(IOrderRepository orderRepository)
         {
             RuleFor(x => x.OrderId)
                 .Cascade(CascadeMode.Stop)
@@ -41,17 +41,6 @@ public class UploadOrderPhoto
                 .WithMessage(BusinessErrorMessage.Required)
                 .MustAsync(orderRepository.ExistsAsync)
                 .WithMessage(BusinessErrorMessage.OrderNotFound);
-
-            RuleFor(x => x.EmployeeId)
-                .Cascade(CascadeMode.Stop)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(employeeRepository.ExistsAsync)
-                .WithMessage(BusinessErrorMessage.EmployeeNotFound);
-
-            RuleFor(x => x)
-                .MustAsync(EmployeeIsAssignedToOrderAsync)
-                .WithMessage(BusinessErrorMessage.EmployeeNotAssignedToOrder);
 
             RuleFor(x => x.FileName)
                 .NotEmpty()
@@ -71,22 +60,23 @@ public class UploadOrderPhoto
                 .Must(data => data.Length <= MaxFileSizeBytes)
                 .WithMessage(BusinessErrorMessage.FileSizeExceeded);
         }
-
-        private async Task<bool> EmployeeIsAssignedToOrderAsync(Command command, CancellationToken cancellationToken)
-        {
-            // Implementation will check if employee is assigned to the order
-            return true; // Placeholder - will be implemented in handler
-        }
     }
 
     public class Handler(
         IOrderRepository orderRepository,
         IOrderPhotoRepository photoRepository,
+        IOrderAccessService orderAccessService,
         IBlobContainerClientFactory blobClientFactory) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            // Verify order exists and employee is assigned
+            var employeeId = await orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+            if (string.IsNullOrEmpty(employeeId))
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.OrderId), BusinessErrorMessage.EmployeeNotAssignedToOrder));
+            }
+
             var order = await orderRepository
                 .GetQueryable()
                 .Include(o => o.AssignedEmployees)
@@ -97,17 +87,15 @@ public class UploadOrderPhoto
                 return BusinessResult.Failure<Response>(new Error(nameof(command.OrderId), BusinessErrorMessage.OrderNotFound));
             }
 
-            if (!order.AssignedEmployees.Any(oe => oe.EmployeeId == command.EmployeeId))
+            if (!order.AssignedEmployees.Any(oe => oe.EmployeeId == employeeId))
             {
-                return BusinessResult.Failure<Response>(new Error(nameof(command.EmployeeId), BusinessErrorMessage.EmployeeNotAssignedToOrder));
+                return BusinessResult.Failure<Response>(new Error(nameof(command.OrderId), BusinessErrorMessage.EmployeeNotAssignedToOrder));
             }
 
-            // Generate unique filename with timestamp
             var fileExtension = Path.GetExtension(command.FileName);
             var uniqueFileName = $"{command.OrderId}_{command.PhotoType}_{DateTime.UtcNow:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N")[..8]}{fileExtension}";
             var blobName = $"{DateTime.UtcNow.Year}/{command.OrderId}/{uniqueFileName}";
 
-            // Upload to blob storage
             var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.OrderPhotos);
             using var stream = new MemoryStream(command.FileData);
             var metadata = Metadata.CreateBuilder()
@@ -117,7 +105,6 @@ public class UploadOrderPhoto
 
             var blobUrl = blobClient.GetBlobUri(blobName).ToString();
 
-            // Create photo entity
             var photo = OrderPhoto.Create(
                 orderId: command.OrderId,
                 photoType: command.PhotoType,
@@ -126,7 +113,7 @@ public class UploadOrderPhoto
                 originalFileName: command.FileName,
                 fileSizeBytes: command.FileData.Length,
                 contentType: command.ContentType,
-                capturedByEmployeeId: command.EmployeeId,
+                capturedByEmployeeId: employeeId,
                 notes: command.Notes);
 
             photoRepository.Add(photo);

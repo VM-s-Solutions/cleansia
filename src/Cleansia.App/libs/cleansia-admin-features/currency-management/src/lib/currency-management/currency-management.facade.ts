@@ -1,18 +1,17 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AdminClient, CurrencyListItem } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 @Injectable()
-export class CurrencyManagementFacade {
+export class CurrencyManagementFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
-
-  private destroy$ = new Subject<void>();
 
   readonly currencies = signal<CurrencyListItem[]>([]);
   readonly loading = signal<boolean>(false);
@@ -24,7 +23,7 @@ export class CurrencyManagementFacade {
     this.adminClient.adminCurrencyClient
       .getOverview()
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of([])),
         finalize(() => this.loading.set(false))
       )
@@ -52,7 +51,7 @@ export class CurrencyManagementFacade {
     this.adminClient.adminCurrencyClient
       .delete(currency.id)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((response: unknown) => {
@@ -65,10 +64,5 @@ export class CurrencyManagementFacade {
           this.loadCurrencies();
         }
       });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

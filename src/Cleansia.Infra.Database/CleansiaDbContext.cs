@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using System.Security.Claims;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.Configuration;
@@ -10,6 +9,11 @@ using Cleansia.Core.Domain.Emails;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.InvoiceTemplates;
+using Cleansia.Core.Domain.Bookings;
+using Cleansia.Core.Domain.Loyalty;
+using Cleansia.Core.Domain.Memberships;
+using Cleansia.Core.Domain.Payments;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Receipts;
@@ -56,8 +60,8 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
 
     public async Task CommitAsync(CancellationToken cancellationToken)
     {
-        var fullUserName = userSessionProvider.GetTypedUserClaim(ClaimTypes.Name)?.Value;
-        var stateUser = string.IsNullOrWhiteSpace(fullUserName) ? "System" : fullUserName;
+        var actorId = userSessionProvider.GetUserId();
+        var stateUser = string.IsNullOrWhiteSpace(actorId) ? "System" : actorId;
         var currentTime = DateTime.UtcNow;
         var currentTenantId = tenantProvider?.GetCurrentTenantId();
 
@@ -121,7 +125,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
                 typeof(CleansiaDbContext).GetField(nameof(tenantProvider),
                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!);
 
-            // tenantProvider == null (for migrations/design-time)
+            // tenantProvider == null (migrations/design-time only)
             var providerNullCheck = Expression.Equal(
                 tenantProviderField,
                 Expression.Constant(null, typeof(ITenantProvider)));
@@ -131,18 +135,42 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
                 tenantProviderField,
                 typeof(ITenantProvider).GetMethod(nameof(ITenantProvider.GetCurrentTenantId))!);
 
-            // currentTenantId == null (no tenant context = show all)
-            var tenantIdNullCheck = Expression.Equal(
+            // currentTenantId == null  (single-tenant / unauthenticated mode)
+            var currentTenantNullCheck = Expression.Equal(
                 currentTenantCall,
                 Expression.Constant(null, typeof(string)));
 
-            // e.TenantId == currentTenantId
+            // e.TenantId == null
+            var entityTenantNullCheck = Expression.Equal(
+                tenantIdProperty,
+                Expression.Constant(null, typeof(string)));
+
+            // Single-tenant mode: callers without a tenant claim should see
+            // entities that were also created without one. SQL's
+            // `null == null` is NULL (not true), which would otherwise hide
+            // every row in single-tenant deployments and in queue/webhook
+            // contexts where the user's TenantId happens to also be null.
+            var singleTenantMatch = Expression.AndAlso(
+                currentTenantNullCheck,
+                entityTenantNullCheck);
+
+            // e.TenantId == currentTenantId  (multi-tenant happy path)
             var tenantMatch = Expression.Equal(tenantIdProperty, currentTenantCall);
 
-            // Final: tenantProvider == null || currentTenantId == null || e.TenantId == currentTenantId
+            // Final: tenantProvider == null
+            //     || (currentTenantId == null && e.TenantId == null)
+            //     || e.TenantId == currentTenantId.
+            //
+            // The middle clause is what makes single-tenant mode work — without
+            // it, null/null is filtered out and queue functions / unauthenticated
+            // reads return zero rows even when the entity matches.
+            //
+            // Background jobs that need to read across tenants must still call
+            // ITenantProvider.SetTenantOverride() (or use IgnoreQueryFilters)
+            // before reading other tenants' data.
             var body = Expression.OrElse(
                 providerNullCheck,
-                Expression.OrElse(tenantIdNullCheck, tenantMatch));
+                Expression.OrElse(singleTenantMatch, tenantMatch));
 
             var filter = Expression.Lambda(body, parameter);
 
@@ -150,17 +178,19 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
         }
     }
 
-    // Entities
-
     public virtual DbSet<Country> Countries { get; set; }
     public virtual DbSet<Address> Addresses { get; set; }
+    public virtual DbSet<SavedAddress> SavedAddresses { get; set; }
     public virtual DbSet<Employee> Employees { get; set; }
     public virtual DbSet<EmployeeDocument> EmployeeDocuments { get; set; }
     public virtual DbSet<User> Users { get; set; }
+    public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
     public virtual DbSet<Cart> Carts { get; set; }
     public virtual DbSet<CartServiceItem> CartServiceItems { get; set; }
     public virtual DbSet<CartPackageItem> CartPackageItems { get; set; }
     public virtual DbSet<Service> Services { get; set; }
+    public virtual DbSet<ServiceCategory> ServiceCategories { get; set; }
+    public virtual DbSet<Extra> Extras { get; set; }
     public virtual DbSet<Package> Packages { get; set; }
     public virtual DbSet<Currency> Currencies { get; set; }
     public virtual DbSet<Language> Languages { get; set; }
@@ -191,6 +221,16 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<FeatureFlag> FeatureFlags { get; set; }
     public virtual DbSet<UserConsent> UserConsents { get; set; }
     public virtual DbSet<GdprRequest> GdprRequests { get; set; }
-
-    // Views
+    public virtual DbSet<LoyaltyAccount> LoyaltyAccounts { get; set; }
+    public virtual DbSet<LoyaltyTransaction> LoyaltyTransactions { get; set; }
+    public virtual DbSet<LoyaltyTierConfig> LoyaltyTierConfigs { get; set; }
+    public virtual DbSet<PromoCode> PromoCodes { get; set; }
+    public virtual DbSet<PromoCodeRedemption> PromoCodeRedemptions { get; set; }
+    public virtual DbSet<ReferralCode> ReferralCodes { get; set; }
+    public virtual DbSet<Referral> Referrals { get; set; }
+    public virtual DbSet<MembershipPlan> MembershipPlans { get; set; }
+    public virtual DbSet<UserMembership> UserMemberships { get; set; }
+    public virtual DbSet<RecurringBookingTemplate> RecurringBookingTemplates { get; set; }
+    public virtual DbSet<UserNotificationPreferences> UserNotificationPreferences { get; set; }
+    public virtual DbSet<ProcessedStripeEvent> ProcessedStripeEvents { get; set; }
 }

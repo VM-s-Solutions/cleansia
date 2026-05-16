@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import {
   AdminClient,
   AdminServiceDetailDto,
+  CategoryDto,
   CreateServiceCommand,
   CreateServiceResponse,
   CreateServiceTranslationInput,
@@ -10,9 +11,10 @@ import {
   UpdateServiceCommand,
   UpdateServiceResponse,
 } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 export interface LanguageOption {
   code: string;
@@ -25,22 +27,28 @@ export interface ServiceFormData {
   basePrice: number;
   perRoomPrice: number;
   estimatedTime: number;
+  /** Category id from the picker — required by the backend validator. */
+  categoryId: string;
   translations: { [key: string]: { name: string; description: string } };
 }
 
+export interface CategoryOption {
+  id: string;
+  name: string;
+}
+
 @Injectable()
-export class ServiceFormFacade {
+export class ServiceFormFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
 
-  private destroy$ = new Subject<void>();
-
   readonly service = signal<AdminServiceDetailDto | null>(null);
   readonly loading = signal<boolean>(false);
   readonly saving = signal<boolean>(false);
   readonly languages = signal<LanguageOption[]>([]);
+  readonly categories = signal<CategoryOption[]>([]);
 
   loadService(serviceId: string): void {
     this.loading.set(true);
@@ -48,7 +56,7 @@ export class ServiceFormFacade {
     this.adminClient.adminServiceClient
       .details(serviceId)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
@@ -65,7 +73,7 @@ export class ServiceFormFacade {
     this.adminClient.adminLanguageClient
       .getOverview()
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of([] as LanguageListItem[]))
       )
       .subscribe((languages: LanguageListItem[]) => {
@@ -77,6 +85,28 @@ export class ServiceFormFacade {
               code: lang.code!,
               name: lang.name!,
             }))
+        );
+      });
+  }
+
+  /**
+   * Fetch service categories for the form's category picker. Required for
+   * create — backend validator rejects services with a missing categoryId.
+   * Falls back to empty list on failure (form will block save).
+   */
+  loadCategories(): void {
+    this.adminClient.adminServiceClient
+      .categories()
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of([] as CategoryDto[]))
+      )
+      .subscribe((categories: CategoryDto[]) => {
+        this.categories.set(
+          categories
+            .filter((c): c is CategoryDto & { id: string; name: string } =>
+              Boolean(c.id) && Boolean(c.name))
+            .map((c) => ({ id: c.id!, name: c.name! }))
         );
       });
   }
@@ -101,12 +131,13 @@ export class ServiceFormFacade {
       perRoomPrice: data.perRoomPrice,
       estimatedTime: data.estimatedTime,
       translations,
+      categoryId: data.categoryId,
     });
 
     this.adminClient.adminServiceClient
       .create(command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
@@ -141,12 +172,13 @@ export class ServiceFormFacade {
       perRoomPrice: data.perRoomPrice,
       estimatedTime: data.estimatedTime,
       translations,
+      categoryId: data.categoryId,
     });
 
     this.adminClient.adminServiceClient
       .update(serviceId, command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
@@ -162,10 +194,5 @@ export class ServiceFormFacade {
 
   navigateBack(): void {
     this.router.navigate([CleansiaAdminRoute.SERVICE_MANAGEMENT]);
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

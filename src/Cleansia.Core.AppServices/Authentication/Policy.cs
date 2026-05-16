@@ -26,6 +26,20 @@ public class Policy
     public const string CanReportOrderIssue = nameof(CanReportOrderIssue); // Employee
     public const string CanSubmitOrderReview = nameof(CanSubmitOrderReview); // Customer
     public const string CanViewOrderReview = nameof(CanViewOrderReview); // Authenticated (All roles)
+    public const string CanCancelOrder = nameof(CanCancelOrder); // Customer (own orders)
+
+    // Saved addresses (Customer)
+    public const string CanManageSavedAddresses = nameof(CanManageSavedAddresses); // Customer
+
+    // Memberships / Cleansia Plus (Customer) — covers subscribe, cancel,
+    // and "what's my Plus status?" reads. Same role gate as saved addresses.
+    public const string CanManageMembership = nameof(CanManageMembership); // Customer
+
+    // Recurring booking templates (Customer) — Plus perk; same role gate.
+    // Backend doesn't enforce Plus here, just the customer role: the picker
+    // is hidden in the UI for non-Plus, but the endpoint accepts any customer
+    // so admin support tools can manage any user's templates if needed.
+    public const string CanManageRecurringBookings = nameof(CanManageRecurringBookings); // Customer
 
     // User
     public const string CanViewPagedUser = nameof(CanViewPagedUser); // Admin + Employee
@@ -85,6 +99,7 @@ public class Policy
     public const string CanRespondToDispute = nameof(CanRespondToDispute); // Admin (Only admins can respond/add messages)
     public const string CanResolveDispute = nameof(CanResolveDispute); // Admin (Only admins can resolve disputes)
     public const string CanUpdateDisputeStatus = nameof(CanUpdateDisputeStatus); // Admin (Only admins can update status)
+    public const string CanUploadDisputeEvidence = nameof(CanUploadDisputeEvidence); // Customer (Customers can upload evidence to their own disputes)
 
     // Reports
     public const string CanViewRevenueReport = nameof(CanViewRevenueReport); // Admin
@@ -174,4 +189,33 @@ public class Policy
     public const string CanAdminDeleteUserAccount = nameof(CanAdminDeleteUserAccount); // Admin
     public const string CanAdminViewUserConsents = nameof(CanAdminViewUserConsents); // Admin
     public const string CanViewGdprRequests = nameof(CanViewGdprRequests); // Admin
+
+    // Loyalty
+    public const string CanViewMyLoyalty = nameof(CanViewMyLoyalty); // Customer (own loyalty account)
+
+    // Promo codes
+    public const string CanRedeemPromoCode = nameof(CanRedeemPromoCode); // Customer
+
+    // Referrals
+    public const string CanViewMyReferral = nameof(CanViewMyReferral); // Customer (own referral code + invitees)
+
+    // Admin Promo Codes
+    public const string CanViewPromoCodes = nameof(CanViewPromoCodes); // Admin
+    public const string CanCreatePromoCode = nameof(CanCreatePromoCode); // Admin
+    public const string CanUpdatePromoCode = nameof(CanUpdatePromoCode); // Admin
+    public const string CanDeactivatePromoCode = nameof(CanDeactivatePromoCode); // Admin
+
+    // Admin Loyalty Tier Configs
+    public const string CanViewLoyaltyTierConfigs = nameof(CanViewLoyaltyTierConfigs); // Admin
+    public const string CanUpdateLoyaltyTierConfig = nameof(CanUpdateLoyaltyTierConfig); // Admin
+
+    // Admin Loyalty (manual grants + user inspection)
+    public const string CanGrantLoyaltyPoints = nameof(CanGrantLoyaltyPoints); // Admin
+    public const string CanViewUserLoyalty = nameof(CanViewUserLoyalty); // Admin
+
+    // Admin Referrals
+    public const string CanViewReferrals = nameof(CanViewReferrals); // Admin
+
+    // Marketing (sitewide push)
+    public const string CanSendSitewidePromo = nameof(CanSendSitewidePromo); // Admin
 }

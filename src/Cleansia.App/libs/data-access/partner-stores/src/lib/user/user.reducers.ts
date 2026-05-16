@@ -38,7 +38,7 @@ export const userReducer = createReducer(
 
   on(UserActions.loadUserCurrent, (state) => setFlag(state, 'current', true)),
   on(UserActions.loadUserCurrentSuccess, (state, { user }) =>
-    setFlag({ ...state, userDetail: user }, 'current', false),
+    setFlag({ ...state, currentUser: user }, 'current', false),
   ),
   on(UserActions.loadUserCurrentFailure, (state, { error }) =>
     setFlag(state, 'current', false, error.message),

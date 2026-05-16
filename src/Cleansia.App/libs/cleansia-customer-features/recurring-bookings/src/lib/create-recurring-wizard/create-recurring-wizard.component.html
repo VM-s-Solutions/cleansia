@@ -1,0 +1,322 @@
+<section class="create-recurring-wizard">
+  <header class="wizard-header">
+    <h1>{{ 'recurring_booking.create_title' | translate }}</h1>
+    <p>{{ 'recurring_booking.create_subtitle' | translate }}</p>
+  </header>
+
+  <!-- Step indicator strip -->
+  <ol class="step-indicator" role="list">
+    @for (step of [1, 2, 3]; track step) {
+      <li
+        class="step-dot"
+        [class.done]="step < facade.activeStep()"
+        [class.current]="step === facade.activeStep()"
+        [class.future]="step > facade.activeStep()"
+        (click)="goToStep(step)"
+      >
+        @if (step < facade.activeStep()) {
+          <i class="pi pi-check" aria-hidden="true"></i>
+        } @else {
+          <span>{{ step }}</span>
+        }
+      </li>
+    }
+  </ol>
+
+  <!-- Live summary banner — restates choices in plain language -->
+  <aside class="summary-banner">
+    <i class="pi pi-calendar-clock" aria-hidden="true"></i>
+    <span>{{ summarySentence() }}</span>
+  </aside>
+
+  <!-- Step 1: When -->
+  @if (facade.activeStep() === 1) {
+    <article class="wizard-step">
+      <h2>{{ 'recurring_booking.step_when_title' | translate }}</h2>
+
+      <!-- Frequency cards -->
+      <fieldset class="frequency-grid">
+        <legend>{{ 'recurring_booking.frequency_label' | translate }}</legend>
+        @for (opt of FREQUENCY_OPTIONS; track trackByValue($index, opt)) {
+          <button
+            type="button"
+            class="frequency-card"
+            [class.selected]="facade.formData().frequency === opt.value"
+            (click)="selectFrequency(opt.value)"
+          >
+            <div class="freq-text">
+              <div class="freq-row">
+                <span class="freq-label">{{ opt.labelKey | translate }}</span>
+                @if (opt.badgeKey) {
+                  <span class="freq-badge">{{ opt.badgeKey | translate }}</span>
+                }
+              </div>
+              <span class="freq-subline">{{ opt.sublineKey | translate }}</span>
+            </div>
+            @if (facade.formData().frequency === opt.value) {
+              <i class="pi pi-check-circle" aria-hidden="true"></i>
+            }
+          </button>
+        }
+      </fieldset>
+
+      <!-- Day-of-week chips -->
+      <fieldset class="day-chips">
+        <legend>{{ 'recurring_booking.day_label' | translate }}</legend>
+        <div class="day-chip-row">
+          @for (chip of DAY_OF_WEEK_CHIPS; track chip.value; let i = $index) {
+            <!-- Visual gap between Fri (i=4) and Sat (i=5) to group weekend -->
+            @if (chip.isWeekend && i === 5) {
+              <span class="weekend-gap" aria-hidden="true"></span>
+            }
+            <button
+              type="button"
+              class="day-chip"
+              [class.selected]="facade.formData().dayOfWeek === chip.value"
+              [class.weekend]="chip.isWeekend"
+              [attr.aria-label]="chip.fullKey | translate"
+              (click)="selectDay(chip.value)"
+            >
+              {{ chip.shortKey | translate }}
+            </button>
+          }
+        </div>
+      </fieldset>
+
+      <!-- Time-of-day grouped slots -->
+      <fieldset class="time-groups">
+        <legend>{{ 'recurring_booking.time_label' | translate }}</legend>
+        @for (group of TIME_PERIOD_GROUPS; track group.labelKey) {
+          <div class="time-group">
+            <h4>
+              <i [class]="group.iconClass" aria-hidden="true"></i>
+              {{ group.labelKey | translate }}
+            </h4>
+            <div class="time-slot-row">
+              @for (slot of group.slots; track slot) {
+                <button
+                  type="button"
+                  class="time-slot"
+                  [class.selected]="facade.formData().timeOfDay === slot"
+                  (click)="selectTime(slot)"
+                >
+                  {{ slot }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </fieldset>
+    </article>
+  }
+
+  <!-- Step 2: What -->
+  @if (facade.activeStep() === 2) {
+    <article class="wizard-step">
+      <h2>{{ 'recurring_booking.step_what_title' | translate }}</h2>
+
+      @if (facade.packages().length === 0 && facade.services().length === 0) {
+        <p class="loading-note">{{ 'recurring_booking.services_loading' | translate }}</p>
+      } @else {
+        @if (facade.packages().length > 0) {
+          <fieldset class="catalog-section">
+            <legend>{{ 'recurring_booking.section_packages' | translate }}</legend>
+            @for (pkg of facade.packages(); track pkg.id) {
+              @if (pkg.id) {
+                <button
+                  type="button"
+                  class="catalog-card"
+                  [class.selected]="isPackageSelected(pkg.id)"
+                  (click)="togglePackage(pkg.id)"
+                >
+                  <div class="catalog-text">
+                    <span class="catalog-title">{{ pkg.name }}</span>
+                    @if (pkg.description) {
+                      <span class="catalog-desc">{{ pkg.description }}</span>
+                    }
+                    @if (pkg.includedServices && pkg.includedServices.length > 0) {
+                      <div class="catalog-includes">
+                        <span class="includes-label">
+                          {{ 'recurring_booking.package_includes' | translate }}
+                        </span>
+                        <ul>
+                          @for (svc of pkg.includedServices; track svc.name) {
+                            <li>{{ svc.name }}</li>
+                          }
+                        </ul>
+                      </div>
+                    }
+                  </div>
+                  @if (isPackageSelected(pkg.id)) {
+                    <i class="pi pi-check-circle catalog-check" aria-hidden="true"></i>
+                  }
+                </button>
+              }
+            }
+          </fieldset>
+        }
+
+        @if (facade.services().length > 0) {
+          <fieldset class="catalog-section">
+            <legend>{{ 'recurring_booking.section_services' | translate }}</legend>
+            @for (svc of facade.services(); track svc.id) {
+              @if (svc.id) {
+                <button
+                  type="button"
+                  class="catalog-card"
+                  [class.selected]="isServiceSelected(svc.id)"
+                  (click)="toggleService(svc.id)"
+                >
+                  <div class="catalog-text">
+                    <span class="catalog-title">{{ svc.name }}</span>
+                    @if (svc.description) {
+                      <span class="catalog-desc">{{ svc.description }}</span>
+                    }
+                  </div>
+                  @if (isServiceSelected(svc.id)) {
+                    <i class="pi pi-check-circle catalog-check" aria-hidden="true"></i>
+                  }
+                </button>
+              }
+            }
+          </fieldset>
+        }
+
+        <div class="stepper-row">
+          <fieldset class="stepper-field">
+            <legend>{{ 'recurring_booking.rooms_label' | translate }}</legend>
+            <div class="stepper">
+              <button type="button" (click)="decrementRooms()" [disabled]="facade.formData().rooms <= 0">
+                <i class="pi pi-minus" aria-hidden="true"></i>
+              </button>
+              <span>{{ facade.formData().rooms }}</span>
+              <button type="button" (click)="incrementRooms()">
+                <i class="pi pi-plus" aria-hidden="true"></i>
+              </button>
+            </div>
+          </fieldset>
+          <fieldset class="stepper-field">
+            <legend>{{ 'recurring_booking.bathrooms_label' | translate }}</legend>
+            <div class="stepper">
+              <button type="button" (click)="decrementBathrooms()" [disabled]="facade.formData().bathrooms <= 0">
+                <i class="pi pi-minus" aria-hidden="true"></i>
+              </button>
+              <span>{{ facade.formData().bathrooms }}</span>
+              <button type="button" (click)="incrementBathrooms()">
+                <i class="pi pi-plus" aria-hidden="true"></i>
+              </button>
+            </div>
+          </fieldset>
+        </div>
+      }
+    </article>
+  }
+
+  <!-- Step 3: Where & Pay -->
+  @if (facade.activeStep() === 3) {
+    <article class="wizard-step">
+      <h2>{{ 'recurring_booking.step_where_pay_title' | translate }}</h2>
+
+      <!-- Saved address picker -->
+      <fieldset class="address-picker">
+        <legend>{{ 'recurring_booking.address_label' | translate }}</legend>
+        @if (facade.savedAddresses().length === 0) {
+          <p class="address-empty">
+            {{ 'recurring_booking.address_empty' | translate }}
+          </p>
+        } @else {
+          @for (addr of facade.savedAddresses(); track addr.id) {
+            @if (addr.id) {
+              <button
+                type="button"
+                class="address-card"
+                [class.selected]="facade.formData().savedAddressId === addr.id"
+                (click)="selectAddress(addr.id)"
+              >
+                <div class="address-text">
+                  <span class="address-label">
+                    {{ addr.label || (addr.street + ', ' + addr.city) }}
+                  </span>
+                  <span class="address-line">
+                    {{ addr.street }}, {{ addr.city }} {{ addr.zipCode }}
+                  </span>
+                </div>
+                @if (addr.isDefault) {
+                  <span class="default-badge">
+                    {{ 'recurring_booking.address_default' | translate }}
+                  </span>
+                }
+              </button>
+            }
+          }
+        }
+      </fieldset>
+
+      <!-- Payment type -->
+      <fieldset class="payment-grid">
+        <legend>{{ 'recurring_booking.payment_label' | translate }}</legend>
+        <button
+          type="button"
+          class="payment-card"
+          [class.selected]="facade.formData().paymentType === 1"
+          (click)="selectPayment(1)"
+        >
+          <i class="pi pi-money-bill payment-icon" aria-hidden="true"></i>
+          <span>{{ 'recurring_booking.pay_cash' | translate }}</span>
+        </button>
+        <button
+          type="button"
+          class="payment-card"
+          [class.selected]="facade.formData().paymentType === 2"
+          (click)="selectPayment(2)"
+        >
+          <i class="pi pi-credit-card payment-icon" aria-hidden="true"></i>
+          <span>{{ 'recurring_booking.pay_card' | translate }}</span>
+        </button>
+      </fieldset>
+
+      <!-- Starts on date picker -->
+      <fieldset class="starts-on">
+        <legend>{{ 'recurring_booking.starts_on_label' | translate }}</legend>
+        <p-datepicker
+          [ngModel]="facade.formData().startsOn"
+          (ngModelChange)="onStartsOnChange($event)"
+          [minDate]="minStartsOn"
+          [showIcon]="true"
+          [readonlyInput]="true"
+          appendTo="body"
+        ></p-datepicker>
+      </fieldset>
+    </article>
+  }
+
+  <!-- Sticky bottom action row -->
+  <footer class="wizard-actions">
+    <cleansia-button
+      severity="secondary"
+      [outlined]="true"
+      [label]="
+        (facade.activeStep() === 1
+          ? 'global.cancel'
+          : 'recurring_booking.action_back'
+        ) | translate
+      "
+      (click)="onBack()"
+    ></cleansia-button>
+    <cleansia-button
+      [label]="
+        (facade.activeStep() < 3
+          ? 'recurring_booking.action_next'
+          : 'recurring_booking.action_create'
+        ) | translate
+      "
+      [disabled]="
+        facade.activeStep() < 3
+          ? !facade.canAdvance()
+          : !facade.canSubmit() || facade.submitting()
+      "
+      [loading]="facade.submitting()"
+      (click)="onNext()"
+    ></cleansia-button>
+  </footer>
+</section>

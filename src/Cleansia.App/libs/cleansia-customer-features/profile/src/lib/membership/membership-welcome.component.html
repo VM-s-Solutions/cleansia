@@ -1,0 +1,41 @@
+<section class="membership-welcome">
+  <div class="celebration-card">
+    <div class="badge">
+      <i class="pi pi-star-fill" aria-hidden="true"></i>
+      <span>{{ 'pages.membership.welcome_badge' | translate }}</span>
+    </div>
+
+    <h1>{{ 'pages.membership.welcome_title' | translate }}</h1>
+    <p class="lead">{{ 'pages.membership.welcome_subtitle' | translate }}</p>
+
+    <ul class="perk-list">
+      <li>
+        <i class="pi pi-percentage" aria-hidden="true"></i>
+        <span>{{ 'pages.membership.welcome_perk_discount' | translate }}</span>
+      </li>
+      <li>
+        <i class="pi pi-replay" aria-hidden="true"></i>
+        <span>{{ 'pages.membership.welcome_perk_recurring' | translate }}</span>
+      </li>
+      <li>
+        <i class="pi pi-times-circle" aria-hidden="true"></i>
+        <span>{{ 'pages.membership.welcome_perk_cancellation' | translate }}</span>
+      </li>
+      <li>
+        <i class="pi pi-bolt" aria-hidden="true"></i>
+        <span>{{ 'pages.membership.welcome_perk_express' | translate }}</span>
+      </li>
+    </ul>
+
+    <div class="actions">
+      <cleansia-button
+        [label]="'pages.membership.welcome_cta_setup_recurring' | translate"
+        icon="pi pi-calendar-plus"
+        (click)="goToSetupRecurring()"
+      ></cleansia-button>
+      <a class="secondary-link" [routerLink]="['/' + routes.MEMBERSHIP]">
+        {{ 'pages.membership.welcome_cta_back' | translate }}
+      </a>
+    </div>
+  </div>
+</section>

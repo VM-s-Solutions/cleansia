@@ -3,6 +3,7 @@ using Cleansia.Web.Customer.Abstractions;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Customer.Controllers;
 
@@ -11,6 +12,7 @@ namespace Cleansia.Web.Customer.Controllers;
 public class FeatureFlagController(IMediator mediator) : CustomerApiController(mediator)
 {
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     [HttpGet("check")]
     [ProducesResponseType(typeof(CheckFeatureFlag.Response), StatusCodes.Status200OK)]
     public async Task<IActionResult> Check([FromQuery] string featureName, [FromQuery] string? countryId, CancellationToken cancellationToken)

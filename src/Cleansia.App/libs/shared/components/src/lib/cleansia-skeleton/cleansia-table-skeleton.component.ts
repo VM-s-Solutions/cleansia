@@ -1,46 +1,11 @@
-import { Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { Skeleton } from 'primeng/skeleton';
 
 @Component({
   selector: 'cleansia-table-skeleton',
   standalone: true,
   imports: [Skeleton],
-  template: `
-    <div class="cleansia-table-skeleton">
-      <!-- Title area -->
-      <div class="skeleton-title-area">
-        <p-skeleton width="200px" height="2rem" />
-        <p-skeleton width="300px" height="1rem" />
-      </div>
-
-      <!-- Filter bar -->
-      <div class="skeleton-filter-bar">
-        <p-skeleton width="120px" height="2.5rem" borderRadius="6px" />
-      </div>
-
-      <!-- Table Header -->
-      <div
-        class="skeleton-table-header"
-        [style.grid-template-columns]="gridColumns()"
-      >
-        @for (i of columnArray(); track i) {
-        <p-skeleton width="100%" height="1rem" />
-        }
-      </div>
-
-      <!-- Table Rows -->
-      @for (row of [1, 2, 3, 4, 5, 6]; track row) {
-      <div
-        class="skeleton-table-row"
-        [style.grid-template-columns]="gridColumns()"
-      >
-        @for (col of columnArray(); track col) {
-        <p-skeleton width="100%" height="1rem" />
-        }
-      </div>
-      }
-    </div>
-  `,
+  templateUrl: './cleansia-table-skeleton.component.html',
   styles: `
     .cleansia-table-skeleton {
       display: flex;
@@ -76,6 +41,7 @@ import { Skeleton } from 'primeng/skeleton';
       border-radius: 0 0 8px 8px;
     }
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaTableSkeletonComponent {
   columns = input(5);

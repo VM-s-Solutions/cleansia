@@ -1,10 +1,12 @@
+using System.Security.Claims;
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Blobs.Abstractions;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
-using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.EmployeePayroll;
 
@@ -29,6 +31,8 @@ public class DownloadInvoice
 
     internal class Handler(
         IEmployeeInvoiceRepository invoiceRepository,
+        IOrderAccessService orderAccessService,
+        IUserSessionProvider userSessionProvider,
         IBlobContainerClientFactory clientFactory)
         : IQueryHandler<Query, Response>
     {
@@ -40,6 +44,17 @@ public class DownloadInvoice
             {
                 return BusinessResult.Failure<Response>(
                     new Error(BusinessErrorMessage.InvoiceNotFound, "Invoice or PDF not found"));
+            }
+
+            var role = userSessionProvider.GetTypedUserClaim(ClaimTypes.Role)?.Value;
+            if (role != UserProfile.Administrator.ToString())
+            {
+                var employeeId = await orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+                if (string.IsNullOrEmpty(employeeId) || invoice.EmployeeId != employeeId)
+                {
+                    return BusinessResult.Failure<Response>(
+                        new Error(BusinessErrorMessage.InvoiceNotFound, "Invoice or PDF not found"));
+                }
             }
 
             var blobClient = clientFactory.GetBlobContainerClient(Constants.BlobContainers.GeneratedInvoices);

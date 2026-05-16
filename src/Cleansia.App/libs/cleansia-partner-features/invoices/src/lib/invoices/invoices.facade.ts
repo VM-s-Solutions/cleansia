@@ -1,4 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { AbstractControl } from '@angular/forms';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   EmployeeInvoiceDto,
@@ -8,7 +9,8 @@ import {
   SortDefinition,
 } from '@cleansia/partner-services';
 import { SnackbarService } from '@cleansia/services';
-import { catchError, of, takeUntil } from 'rxjs';
+import { TranslateService } from '@ngx-translate/core';
+import { catchError, debounceTime, distinctUntilChanged, of, takeUntil } from 'rxjs';
 
 export interface EmployeeInvoice {
   id: string;
@@ -44,6 +46,7 @@ export interface EmployeeInvoice {
 export class InvoicesFacade extends UnsubscribeControlDirective {
   private readonly snackbarService = inject(SnackbarService);
   private readonly partnerClient = inject(PartnerClient);
+  private readonly translate = inject(TranslateService);
 
   // Signals for reactive data
   invoices = signal<EmployeeInvoice[]>([]);
@@ -235,5 +238,29 @@ export class InvoicesFacade extends UnsubscribeControlDirective {
           );
         }
       });
+  }
+
+  /**
+   * Wire form valueChanges and language change subscriptions.
+   * Component lifecycle invokes this once; cleanup is handled by the
+   * facade's destroyed$ Subject (UnsubscribeControlDirective).
+   */
+  bindFormChanges(
+    formCtrl: AbstractControl,
+    onFormChangeImmediate: () => void,
+    onFormChangeDebounced: () => void,
+    onLangChange: () => void
+  ): void {
+    formCtrl.valueChanges
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe(() => onFormChangeImmediate());
+
+    formCtrl.valueChanges
+      .pipe(debounceTime(500), distinctUntilChanged(), takeUntil(this.destroyed$))
+      .subscribe(() => onFormChangeDebounced());
+
+    this.translate.onLangChange
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe(() => onLangChange());
   }
 }

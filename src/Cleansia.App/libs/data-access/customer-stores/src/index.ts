@@ -4,3 +4,4 @@ export * from './lib/user';
 export * from './lib/catalog';
 export * from './lib/order';
 export * from './lib/dispute';
+export * from './lib/saved-addresses';

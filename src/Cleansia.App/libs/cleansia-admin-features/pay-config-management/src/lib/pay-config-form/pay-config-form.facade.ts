@@ -1,9 +1,10 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AdminClient } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 import {
   AdminPayConfigService,
   CreatePayConfigCommand,
@@ -40,14 +41,12 @@ export interface PayConfigFormData {
 }
 
 @Injectable()
-export class PayConfigFormFacade {
+export class PayConfigFormFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly payConfigService = inject(AdminPayConfigService);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
-
-  private destroy$ = new Subject<void>();
 
   readonly payConfig = signal<PayConfigListItem | null>(null);
   readonly loading = signal<boolean>(false);
@@ -62,7 +61,7 @@ export class PayConfigFormFacade {
     this.payConfigService
       .getById(payConfigId)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
@@ -79,15 +78,15 @@ export class PayConfigFormFacade {
     this.adminClient.adminServiceClient
       .getPaged(undefined, undefined, 0, 100)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((response) => {
         if (response?.data) {
           this.services.set(
             response.data
-              .filter((s: any) => s.id && s.name)
-              .map((s: any) => ({ id: s.id!, name: s.name! }))
+              .filter((s) => s.id && s.name)
+              .map((s) => ({ id: s.id!, name: s.name! }))
           );
         }
       });
@@ -97,15 +96,15 @@ export class PayConfigFormFacade {
     this.adminClient.adminPackageClient
       .getPaged(undefined, undefined, 0, 100)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
-      .subscribe((response: any) => {
+      .subscribe((response) => {
         if (response?.data) {
           this.packages.set(
             response.data
-              .filter((p: any) => p.id && p.name)
-              .map((p: any) => ({ id: p.id!, name: p.name! }))
+              .filter((p) => p.id && p.name)
+              .map((p) => ({ id: p.id!, name: p.name! }))
           );
         }
       });
@@ -115,15 +114,15 @@ export class PayConfigFormFacade {
     this.adminClient.adminCurrencyClient
       .getOverview()
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of([]))
       )
-      .subscribe((currencies: any[]) => {
+      .subscribe((currencies) => {
         if (currencies) {
           this.currencies.set(
             currencies
-              .filter((c: any) => c.id && c.code)
-              .map((c: any) => ({ id: c.id!, code: c.code! }))
+              .filter((c) => c.id && c.code)
+              .map((c) => ({ id: c.id!, code: c.code! }))
           );
         }
       });
@@ -148,7 +147,7 @@ export class PayConfigFormFacade {
     this.payConfigService
       .create(command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
@@ -179,7 +178,7 @@ export class PayConfigFormFacade {
     this.payConfigService
       .update(payConfigId, command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
@@ -195,10 +194,5 @@ export class PayConfigFormFacade {
 
   navigateBack(): void {
     this.router.navigate([CleansiaAdminRoute.PAY_CONFIG_MANAGEMENT]);
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

@@ -13,27 +13,14 @@ public class CreateDispute
 {
     public class Validator : AbstractValidator<Command>
     {
-        private readonly IOrderRepository _orderRepository;
-        private readonly IUserRepository _userRepository;
-
-        public Validator(IOrderRepository orderRepository, IUserRepository userRepository)
+        public Validator(IOrderRepository orderRepository)
         {
-            _orderRepository = orderRepository;
-            _userRepository = userRepository;
-
             RuleFor(x => x.OrderId)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(_orderRepository.ExistsAsync)
+                .MustAsync(orderRepository.ExistsAsync)
                 .WithMessage(BusinessErrorMessage.OrderNotFound);
-
-            RuleFor(x => x.UserId)
-                .Cascade(CascadeMode.Stop)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(_userRepository.ExistsAsync)
-                .WithMessage(BusinessErrorMessage.UserNotFound);
 
             RuleFor(x => x.Reason)
                 .IsInEnum()
@@ -53,26 +40,19 @@ public class CreateDispute
     public record Command(
         string OrderId,
         DisputeReason Reason,
-        string Description,
-        string UserId = ""
+        string Description
     ) : ICommand<string>;
 
-    public class Handler : ICommandHandler<Command, string>
+    public class Handler(
+        IDisputeRepository disputeRepository,
+        IUserSessionProvider userSessionProvider) : ICommandHandler<Command, string>
     {
-        private readonly IDisputeRepository _disputeRepository;
-
-        public Handler(IDisputeRepository disputeRepository)
-        {
-            _disputeRepository = disputeRepository;
-        }
-
         public async Task<BusinessResult<string>> Handle(Command request, CancellationToken cancellationToken)
         {
-            // Check if dispute already exists for this order
-            var existingDispute = await _disputeRepository
-                .GetDisputesByOrderId(request.OrderId)
-                .Where(d => d.Status != DisputeStatus.Closed)
-                .FirstOrDefaultAsync(cancellationToken);
+            var userId = userSessionProvider.GetUserId()!;
+
+            var existingDispute = await disputeRepository.GetOpenDisputeForOrderAsync(
+                request.OrderId, cancellationToken);
 
             if (existingDispute != null)
             {
@@ -81,13 +61,13 @@ public class CreateDispute
 
             var dispute = new Dispute(
                 orderId: request.OrderId,
-                userId: request.UserId,
+                userId: userId,
                 reason: request.Reason,
                 description: request.Description,
-                createdBy: request.UserId
+                createdBy: userId
             );
 
-            _disputeRepository.Add(dispute);
+            disputeRepository.Add(dispute);
 
             return BusinessResult.Success(dispute.Id);
         }

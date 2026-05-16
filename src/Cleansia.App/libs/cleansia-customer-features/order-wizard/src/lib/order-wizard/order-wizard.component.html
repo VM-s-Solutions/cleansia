@@ -65,8 +65,57 @@
             <i class="pi pi-list"></i>
             {{ 'pages.order.services_section_title' | translate }}
           </h2>
+
+          <!-- Category filter chips: only render when there's more than one
+               category to choose from. Mobile parity (Wave 2). -->
+          @if (facade.categories().length > 1) {
+          <div class="order-wizard__filter-row">
+            <span class="order-wizard__filter-label">
+              {{ 'pages.order.filter_label' | translate }}
+            </span>
+            <div class="order-wizard__filter-chips">
+              <button
+                type="button"
+                class="order-wizard__filter-chip"
+                [class.order-wizard__filter-chip--selected]="facade.selectedCategorySlug() === null"
+                (click)="facade.setCategory(null)"
+              >
+                <i class="pi pi-th-large"></i>
+                {{ 'pages.order.filter_all' | translate }}
+              </button>
+              @for (cat of facade.categories(); track cat.slug) {
+              <button
+                type="button"
+                class="order-wizard__filter-chip"
+                [class.order-wizard__filter-chip--selected]="facade.selectedCategorySlug() === cat.slug"
+                (click)="onCategoryChipClick(cat.slug ?? null)"
+              >
+                {{ getCategoryName(cat) }}
+              </button>
+              }
+            </div>
+          </div>
+          @if (facade.selectedCategorySlug() !== null) {
+          <div class="order-wizard__filter-active">
+            <i class="pi pi-filter-fill"></i>
+            <span>
+              {{ 'pages.order.filtering_active' | translate }}
+              <strong>{{ activeCategoryName() }}</strong>
+            </span>
+            <button
+              type="button"
+              class="order-wizard__filter-clear"
+              (click)="facade.setCategory(null)"
+            >
+              <i class="pi pi-times"></i>
+              {{ 'pages.order.filter_clear' | translate }}
+            </button>
+          </div>
+          }
+          }
+
           <div class="order-wizard__card-grid">
-            @for (service of facade.services(); track service.id) {
+            @for (service of facade.filteredServices(); track service.id) {
             <div
               class="order-wizard__selection-card"
               [class.order-wizard__selection-card--selected]="isServiceSelected(service.id!)"
@@ -94,43 +143,6 @@
                   {{ 'pages.services.per_room' | translate }}
                 </span>
                 }
-              </div>
-            </div>
-            }
-          </div>
-        </div>
-        }
-
-        <!-- Packages Section -->
-        @if (facade.packages().length > 0) {
-        <div class="order-wizard__section">
-          <h2 class="order-wizard__section-title">
-            <i class="pi pi-box"></i>
-            {{ 'pages.order.packages_section_title' | translate }}
-          </h2>
-          <div class="order-wizard__card-grid">
-            @for (pkg of facade.packages(); track pkg.id) {
-            <div
-              class="order-wizard__selection-card"
-              [class.order-wizard__selection-card--selected]="isPackageSelected(pkg.id!)"
-              (click)="togglePackage(pkg.id!)"
-            >
-              @if (isPackageSelected(pkg.id!)) {
-              <div class="order-wizard__selection-check">
-                <i class="pi pi-check"></i>
-              </div>
-              }
-              <div class="order-wizard__selection-icon">
-                <i class="pi pi-star"></i>
-              </div>
-              <h3 class="order-wizard__selection-name">
-                {{ getTranslation(pkg, 'name') }}
-              </h3>
-              <p class="order-wizard__selection-desc">
-                {{ getTranslation(pkg, 'description') }}
-              </p>
-              <div class="order-wizard__selection-price">
-                {{ formatPrice(pkg.price) }}
               </div>
             </div>
             }
@@ -193,6 +205,53 @@
             </div>
           </div>
         </div>
+
+        <!-- Packages Section -->
+        @if (facade.packages().length > 0) {
+        <div class="order-wizard__section">
+          <h2 class="order-wizard__section-title">
+            <i class="pi pi-box"></i>
+            {{ 'pages.order.packages_section_title' | translate }}
+          </h2>
+          <div class="order-wizard__card-grid">
+            @for (pkg of facade.packages(); track pkg.id) {
+            <div
+              class="order-wizard__selection-card"
+              [class.order-wizard__selection-card--selected]="isPackageSelected(pkg.id!)"
+              (click)="togglePackage(pkg.id!)"
+            >
+              @if (isPackageSelected(pkg.id!)) {
+              <div class="order-wizard__selection-check">
+                <i class="pi pi-check"></i>
+              </div>
+              }
+              <div class="order-wizard__selection-icon">
+                <i class="pi pi-star"></i>
+              </div>
+              <h3 class="order-wizard__selection-name">
+                {{ getTranslation(pkg, 'name') }}
+              </h3>
+              <p class="order-wizard__selection-desc">
+                {{ getTranslation(pkg, 'description') }}
+              </p>
+              @if (pkg.includedServices && pkg.includedServices.length > 0) {
+              <ul class="order-wizard__selection-included">
+                @for (svc of pkg.includedServices; track svc.name) {
+                <li>
+                  <i class="pi pi-check"></i>
+                  {{ getTranslation(svc, 'name') }}
+                </li>
+                }
+              </ul>
+              }
+              <div class="order-wizard__selection-price">
+                {{ formatPrice(pkg.price) }}
+              </div>
+            </div>
+            }
+          </div>
+        </div>
+        }
       </div>
       }
 
@@ -276,14 +335,15 @@
             <div
               class="order-wizard__saved-address"
               [class.order-wizard__saved-address--selected]="isAddressSelected(addr)"
-              (click)="facade.selectSavedAddress(addr.id)"
+              (click)="addr.id && facade.selectSavedAddress(addr.id)"
             >
               <div class="order-wizard__saved-address-radio">
                 <i [class]="isAddressSelected(addr) ? 'pi pi-circle-fill' : 'pi pi-circle'"></i>
               </div>
               <div class="order-wizard__saved-address-info">
-                <strong>{{ addr.street }}</strong>
-                <span>{{ addr.city }}, {{ addr.zip }}</span>
+                <strong class="order-wizard__saved-address-label">{{ addr.label }}</strong>
+                <span>{{ addr.street }}</span>
+                <span>{{ addr.city }}, {{ addr.zipCode }}</span>
                 @if (addr.isDefault) {
                 <span class="order-wizard__saved-address-badge">{{ 'pages.order.saved_address_default' | translate }}</span>
                 }
@@ -308,42 +368,25 @@
           @if (!facade.isAuthenticated() || isCustomAddress() || facade.savedAddresses().length === 0) {
           <div class="order-wizard__form-grid">
             <div class="order-wizard__field order-wizard__field--full">
-              <label>{{ 'pages.order.street' | translate }}</label>
-              <input
-                pInputText
-                [ngModel]="facade.formData().address.street"
-                (ngModelChange)="updateAddressField('street', $event)"
-                (blur)="markTouched('street')"
-                [class.ng-invalid]="fieldError('street')"
+              <cleansia-address-autocomplete
+                [initialQuery]="facade.formData().address.street ?? ''"
+                (picked)="onAddressPicked($event)"
+                (searchFailed)="onAddressSearchFailed()"
               />
-              @if (fieldError('street')) {
-              <small class="order-wizard__field-error">{{ fieldError('street') }}</small>
-              }
             </div>
-            <div class="order-wizard__field">
-              <label>{{ 'pages.order.city' | translate }}</label>
-              <input
-                pInputText
-                [ngModel]="facade.formData().address.city"
-                (ngModelChange)="updateAddressField('city', $event)"
-                (blur)="markTouched('city')"
-                [class.ng-invalid]="fieldError('city')"
-              />
-              @if (fieldError('city')) {
-              <small class="order-wizard__field-error">{{ fieldError('city') }}</small>
-              }
-            </div>
-            <div class="order-wizard__field">
-              <label>{{ 'pages.order.zip_code' | translate }}</label>
-              <input
-                pInputText
-                [ngModel]="facade.formData().address.zipCode"
-                (ngModelChange)="updateAddressField('zipCode', $event)"
-                (blur)="markTouched('zipCode')"
-                [class.ng-invalid]="fieldError('zipCode')"
-              />
-              @if (fieldError('zipCode')) {
-              <small class="order-wizard__field-error">{{ fieldError('zipCode') }}</small>
+            <div class="order-wizard__field order-wizard__field--full">
+              @if (facade.formData().address.street) {
+                <div class="order-wizard__address-resolved">
+                  <i class="pi pi-map-marker"></i>
+                  <div>
+                    <strong>{{ facade.formData().address.street }}</strong>
+                    <span>{{ facade.formData().address.city }}, {{ facade.formData().address.zipCode }}</span>
+                  </div>
+                </div>
+              } @else {
+                <p class="order-wizard__address-hint">
+                  {{ 'pages.order.address_pick_required' | translate }}
+                </p>
               }
             </div>
             <!-- Country is hardcoded to CZ — auto-selected in facade -->
@@ -351,12 +394,27 @@
             <div class="order-wizard__field order-wizard__field--full order-wizard__save-address">
               <p-checkbox
                 [ngModel]="saveNewAddress()"
-                (ngModelChange)="saveNewAddress.set($event)"
+                (ngModelChange)="toggleSaveNewAddress($event)"
                 [binary]="true"
                 inputId="saveAddress"
               />
               <label for="saveAddress">{{ 'pages.order.save_address' | translate }}</label>
             </div>
+            @if (saveNewAddress()) {
+            <div class="order-wizard__field order-wizard__field--full">
+              <label>{{ 'pages.order.address_label' | translate }}</label>
+              <input
+                pInputText
+                [ngModel]="newAddressLabel()"
+                (ngModelChange)="newAddressLabel.set($event); labelError.set(null)"
+                [placeholder]="'pages.order.address_label_placeholder' | translate"
+                [class.ng-invalid]="!!labelError()"
+              />
+              @if (labelError()) {
+              <small class="order-wizard__field-error">{{ labelError() }}</small>
+              }
+            </div>
+            }
             }
           </div>
           }
@@ -419,12 +477,45 @@
                 <button
                   class="order-wizard__time-slot"
                   [class.order-wizard__time-slot--selected]="isTimeSelected(opt.value)"
-                  [disabled]="!isDateSelected()"
+                  [class.order-wizard__time-slot--express]="opt.availability === 'express'"
+                  [class.order-wizard__time-slot--unavailable]="opt.availability === 'unavailable'"
+                  [disabled]="!isDateSelected() || opt.availability === 'unavailable'"
                   (click)="selectTime(opt.value)"
                 >
-                  {{ opt.label }}
+                  <span class="order-wizard__time-slot-label">{{ opt.label }}</span>
+                  @if (opt.availability === 'express') {
+                    <span class="order-wizard__time-slot-tag order-wizard__time-slot-tag--express">
+                      {{ 'pages.order.slot_express' | translate }}
+                    </span>
+                  } @else if (opt.availability === 'unavailable') {
+                    <span class="order-wizard__time-slot-tag order-wizard__time-slot-tag--unavailable">
+                      {{ 'pages.order.slot_unavailable' | translate }}
+                    </span>
+                  }
                 </button>
                 }
+              </div>
+              <div class="order-wizard__cancel-policy-inline">
+                <h3 class="order-wizard__cancel-policy-inline-title">
+                  <i class="pi pi-clock"></i>
+                  {{ 'pages.order.cancel_policy_title' | translate }}
+                </h3>
+                <div class="order-wizard__cancel-policy-row">
+                  <span>{{ 'pages.order.cancel_policy_tier1_when' | translate }}</span>
+                  <strong class="order-wizard__cancel-policy-free">{{ 'pages.order.cancel_policy_tier1_value' | translate }}</strong>
+                </div>
+                <div class="order-wizard__cancel-policy-row">
+                  <span>{{ 'pages.order.cancel_policy_tier2_when' | translate }}</span>
+                  <strong class="order-wizard__cancel-policy-free">{{ 'pages.order.cancel_policy_tier2_value' | translate }}</strong>
+                </div>
+                <div class="order-wizard__cancel-policy-row">
+                  <span>{{ 'pages.order.cancel_policy_tier3_when' | translate }}</span>
+                  <strong class="order-wizard__cancel-policy-mid">{{ 'pages.order.cancel_policy_tier3_value' | translate }}</strong>
+                </div>
+                <div class="order-wizard__cancel-policy-row">
+                  <span>{{ 'pages.order.cancel_policy_tier4_when' | translate }}</span>
+                  <strong class="order-wizard__cancel-policy-full">{{ 'pages.order.cancel_policy_tier4_value' | translate }}</strong>
+                </div>
               </div>
             </div>
           </div>
@@ -536,7 +627,7 @@
           [severity]="'primary'"
           [style]="'raised-button'"
           [loading]="facade.submitting()"
-          (clickFn)="facade.submitOrder()"
+          (clickFn)="onPlaceOrder()"
         />
         }
       </div>
@@ -549,7 +640,7 @@
           {{ 'pages.order.price_total' | translate }}
         </h3>
         <div class="order-wizard__sidebar-price">
-          {{ formatPrice(facade.totalPrice()) }}
+          {{ formatPrice(facade.displayedTotalPrice()) }}
         </div>
 
         <!-- Sidebar breakdown -->
@@ -571,6 +662,43 @@
             <span>{{ formatPrice(service.basePrice) }} + {{ formatPrice(service.perRoomPrice) }} × {{ facade.formData().rooms + facade.formData().bathrooms }} {{ 'pages.order_detail.rooms' | translate }}</span>
           </div>
           }
+          }
+          @switch (facade.appliedDiscountKind()) {
+            @case ('membership') {
+              <div class="order-wizard__sidebar-item order-wizard__sidebar-item--discount">
+                <span>{{ 'pages.order.summary.membership_discount' | translate }}</span>
+                <span>− {{ formatPrice(facade.membershipDiscount()) }}</span>
+              </div>
+            }
+            @case ('tier') {
+              <div class="order-wizard__sidebar-item order-wizard__sidebar-item--discount">
+                <span>{{ 'pages.order.summary.tier_discount' | translate }}</span>
+                <span>− {{ formatPrice(facade.tierDiscount()) }}</span>
+              </div>
+            }
+            @case ('combined') {
+              <!-- LOY-003 — Plus + tier additive, render both rows so the user sees each source. -->
+              <div class="order-wizard__sidebar-item order-wizard__sidebar-item--discount">
+                <span>{{ 'pages.order.summary.membership_discount' | translate }}</span>
+                <span>− {{ formatPrice(facade.membershipDiscount()) }}</span>
+              </div>
+              <div class="order-wizard__sidebar-item order-wizard__sidebar-item--discount">
+                <span>{{ 'pages.order.summary.tier_discount' | translate }}</span>
+                <span>− {{ formatPrice(facade.tierDiscount()) }}</span>
+              </div>
+            }
+            @case ('promo') {
+              <div class="order-wizard__sidebar-item order-wizard__sidebar-item--discount">
+                <span>{{ 'pages.order.summary.promo_discount' | translate: { code: facade.promoCode().trim().toUpperCase() } }}</span>
+                <span>− {{ formatPrice(facade.effectivePromoDiscount()) }}</span>
+              </div>
+            }
+          }
+          @if (facade.isExpressSlot()) {
+          <div class="order-wizard__sidebar-item order-wizard__sidebar-item--express">
+            <span>{{ 'pages.order.express_surcharge_label' | translate }}</span>
+            <span>+ {{ formatPrice(facade.expressSurcharge()) }}</span>
+          </div>
           }
         </div>
         }
@@ -597,7 +725,7 @@
       </div>
       <div class="order-wizard__mobile-price-right">
         <div class="order-wizard__mobile-price-value">
-          {{ formatPrice(facade.totalPrice()) }}
+          {{ formatPrice(facade.displayedTotalPrice()) }}
         </div>
         <i class="pi order-wizard__mobile-price-chevron"
           [class.pi-chevron-up]="!mobileBreakdownExpanded()"
@@ -624,10 +752,47 @@
       </div>
       }
       }
+      @switch (facade.appliedDiscountKind()) {
+        @case ('membership') {
+          <div class="order-wizard__mobile-price-item order-wizard__mobile-price-item--discount">
+            <span>{{ 'pages.order.summary.membership_discount' | translate }}</span>
+            <span>− {{ formatPrice(facade.membershipDiscount()) }}</span>
+          </div>
+        }
+        @case ('tier') {
+          <div class="order-wizard__mobile-price-item order-wizard__mobile-price-item--discount">
+            <span>{{ 'pages.order.summary.tier_discount' | translate }}</span>
+            <span>− {{ formatPrice(facade.tierDiscount()) }}</span>
+          </div>
+        }
+        @case ('combined') {
+          <!-- LOY-003 — Plus + tier additive, render both rows. -->
+          <div class="order-wizard__mobile-price-item order-wizard__mobile-price-item--discount">
+            <span>{{ 'pages.order.summary.membership_discount' | translate }}</span>
+            <span>− {{ formatPrice(facade.membershipDiscount()) }}</span>
+          </div>
+          <div class="order-wizard__mobile-price-item order-wizard__mobile-price-item--discount">
+            <span>{{ 'pages.order.summary.tier_discount' | translate }}</span>
+            <span>− {{ formatPrice(facade.tierDiscount()) }}</span>
+          </div>
+        }
+        @case ('promo') {
+          <div class="order-wizard__mobile-price-item order-wizard__mobile-price-item--discount">
+            <span>{{ 'pages.order.summary.promo_discount' | translate: { code: facade.promoCode().trim().toUpperCase() } }}</span>
+            <span>− {{ formatPrice(facade.effectivePromoDiscount()) }}</span>
+          </div>
+        }
+      }
+      @if (facade.isExpressSlot()) {
+      <div class="order-wizard__mobile-price-item order-wizard__mobile-price-item--express">
+        <span>{{ 'pages.order.express_surcharge_label' | translate }}</span>
+        <span>+ {{ formatPrice(facade.expressSurcharge()) }}</span>
+      </div>
+      }
     </div>
   </div>
 </div>
-<cleansia-scroll-top />
+<cleansia-scroll-top [ariaLabel]="'global.scroll_to_top' | translate" />
 
 <!-- Rebook Warning Dialog -->
 <p-dialog

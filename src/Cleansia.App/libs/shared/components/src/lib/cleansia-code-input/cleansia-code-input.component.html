@@ -1,0 +1,18 @@
+<div class="cleansia-code-input">
+  @for (digit of digits; track $index) {
+  <input
+    #digitInput
+    type="text"
+    inputmode="numeric"
+    maxlength="1"
+    class="cleansia-code-input__digit"
+    [class.cleansia-code-input__digit--filled]="digit !== ''"
+    [value]="digit"
+    (input)="onDigitInput($event, $index)"
+    (keydown)="onKeyDown($event, $index)"
+    (paste)="onPaste($event)"
+    (focus)="onFocus($index)"
+    autocomplete="one-time-code"
+  />
+  }
+</div>

@@ -1,6 +1,6 @@
 import { createReducer, on } from '@ngrx/store';
 import * as OrderActions from './order.actions';
-import { orderInitialState, OrderState } from './order.state';
+import { orderInitialState, OrderListKey, OrderState } from './order.state';
 
 const setFlag = (
   state: OrderState,
@@ -13,27 +13,34 @@ const setFlag = (
   error: { ...state.error, [key]: error ?? null },
 });
 
+const loadingKeyFor = (listKey: OrderListKey) => `paged:${listKey}`;
+
 export const orderReducer = createReducer(
   orderInitialState,
 
-  on(OrderActions.loadOrderPaged, (state) => setFlag(state, 'paged', true)),
-  on(OrderActions.loadOrderPagedSuccess, (state, { page }) =>
+  on(OrderActions.loadOrderPaged, (state, { listKey }) =>
+    setFlag(state, loadingKeyFor(listKey ?? 'paged'), true),
+  ),
+  on(OrderActions.loadOrderPagedSuccess, (state, { listKey, page }) =>
     setFlag(
       {
         ...state,
-        page: state.page.updateDataAndTotalAndPageNumberAndPageSize(
-          page.data!,
-          page.total,
-          page.pageNumber,
-          page.pageSize,
-        ),
+        pages: {
+          ...state.pages,
+          [listKey]: state.pages[listKey].updateDataAndTotalAndPageNumberAndPageSize(
+            page.data!,
+            page.total,
+            page.pageNumber,
+            page.pageSize,
+          ),
+        },
       },
-      'paged',
+      loadingKeyFor(listKey),
       false,
     ),
   ),
-  on(OrderActions.loadOrderPagedFailure, (state, { error }) =>
-    setFlag(state, 'paged', false, error.message),
+  on(OrderActions.loadOrderPagedFailure, (state, { listKey, error }) =>
+    setFlag(state, loadingKeyFor(listKey), false, error.message),
   ),
 
   on(OrderActions.loadOrderDetail, (state) => setFlag(state, 'detail', true)),

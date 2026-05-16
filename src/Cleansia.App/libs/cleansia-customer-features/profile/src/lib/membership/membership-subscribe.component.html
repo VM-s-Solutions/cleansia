@@ -1,0 +1,145 @@
+<section class="membership-subscribe">
+  <!-- ─── Hero (dark, trial-first) ─── -->
+  <header class="membership-subscribe__hero">
+    <div class="membership-subscribe__brand">
+      <span class="membership-subscribe__brand-name">Cleansia</span>
+      <span class="membership-subscribe__brand-badge">PLUS</span>
+    </div>
+
+    <h1 class="membership-subscribe__headline">
+      {{ 'pages.membership.hero_headline' | translate }}
+    </h1>
+
+    @if (selectedPlan(); as plan) {
+      @if (plan.trialPeriodDays > 0) {
+        <p class="membership-subscribe__price-trial">
+          {{ 'pages.membership.hero_trial_price' | translate: { days: plan.trialPeriodDays } }}
+        </p>
+        <p class="membership-subscribe__price-then">
+          @if (plan.billingInterval === 2) {
+            {{ 'pages.membership.hero_then_price_year' | translate: { price: formatCzk(plan.price) } }}
+          } @else {
+            {{ 'pages.membership.hero_then_price' | translate: { price: formatCzk(plan.price) } }}
+          }
+        </p>
+      } @else {
+        <p class="membership-subscribe__price-regular">
+          @if (plan.billingInterval === 2) {
+            {{ 'pages.membership.plan_per_year' | translate: { year: formatCzk(plan.price) } }}
+          } @else {
+            {{ 'pages.membership.plan_per_month' | translate: { month: formatCzk(plan.price) } }}
+          }
+        </p>
+      }
+    }
+
+    @if (plans().length >= 2) {
+      <div class="membership-subscribe__plan-switcher" role="tablist">
+        @for (p of plans(); track p.code) {
+          <button
+            type="button"
+            role="tab"
+            class="membership-subscribe__plan-option"
+            [class.membership-subscribe__plan-option--selected]="p.code === selectedCode()"
+            (click)="selectPlan(p.code)"
+          >
+            <span>
+              @if (p.billingInterval === 2) {
+                {{ 'pages.membership.plan_annual' | translate }}
+              } @else {
+                {{ 'pages.membership.plan_monthly' | translate }}
+              }
+            </span>
+            @if (p.savingsPercentVsMonthly > 0) {
+              <span class="membership-subscribe__plan-option-savings">
+                {{ 'pages.membership.plan_savings_badge' | translate: { percent: (p.savingsPercentVsMonthly | number: '1.0-0') } }}
+              </span>
+            }
+          </button>
+        }
+      </div>
+    }
+  </header>
+
+  <!-- ─── Social proof ─── -->
+  <div class="membership-subscribe__social-proof">
+    <div class="membership-subscribe__social-proof-icon">
+      <i class="pi pi-chart-line"></i>
+    </div>
+    <div>
+      <p class="membership-subscribe__social-proof-headline">
+        {{ 'pages.membership.social_proof_headline' | translate }}
+      </p>
+      <p class="membership-subscribe__social-proof-sub">
+        {{ 'pages.membership.social_proof_sub' | translate }}
+      </p>
+    </div>
+  </div>
+
+  <!-- ─── Perks (re-ordered: economic value first) ─── -->
+  <h2 class="membership-subscribe__perks-title">
+    {{ 'pages.membership.perks_section_title' | translate }}
+  </h2>
+
+  <ul class="membership-subscribe__perks">
+    <li class="membership-subscribe__perk">
+      <span class="membership-subscribe__perk-icon"><i class="pi pi-percentage"></i></span>
+      <div>
+        <h3 class="membership-subscribe__perk-title">{{ 'pages.membership.benefit_discount_title' | translate }}</h3>
+        <p class="membership-subscribe__perk-desc">{{ 'pages.membership.benefit_discount_body' | translate }}</p>
+      </div>
+    </li>
+    <li class="membership-subscribe__perk">
+      <span class="membership-subscribe__perk-icon"><i class="pi pi-clock"></i></span>
+      <div>
+        <h3 class="membership-subscribe__perk-title">{{ 'pages.membership.benefit_cancel_title' | translate }}</h3>
+        <p class="membership-subscribe__perk-desc">{{ 'pages.membership.benefit_cancel_body' | translate }}</p>
+      </div>
+    </li>
+    <li class="membership-subscribe__perk">
+      <span class="membership-subscribe__perk-icon"><i class="pi pi-user"></i></span>
+      <div>
+        <h3 class="membership-subscribe__perk-title">{{ 'pages.membership.benefit_favorite_title' | translate }}</h3>
+        <p class="membership-subscribe__perk-desc">{{ 'pages.membership.benefit_favorite_body' | translate }}</p>
+      </div>
+    </li>
+    <li class="membership-subscribe__perk">
+      <span class="membership-subscribe__perk-icon"><i class="pi pi-replay"></i></span>
+      <div>
+        <h3 class="membership-subscribe__perk-title">{{ 'pages.membership.benefit_recurring_title' | translate }}</h3>
+        <p class="membership-subscribe__perk-desc">{{ 'pages.membership.benefit_recurring_body' | translate }}</p>
+      </div>
+    </li>
+    <li class="membership-subscribe__perk">
+      <span class="membership-subscribe__perk-icon"><i class="pi pi-bolt"></i></span>
+      <div>
+        <h3 class="membership-subscribe__perk-title">{{ 'pages.membership.benefit_express_title' | translate }}</h3>
+        <p class="membership-subscribe__perk-desc">{{ 'pages.membership.benefit_express_body' | translate }}</p>
+      </div>
+    </li>
+  </ul>
+
+  <!-- ─── Sticky CTA ─── -->
+  <footer class="membership-subscribe__sticky-cta">
+    @if (selectedPlan(); as plan) {
+      <cleansia-button
+        icon="pi pi-bookmark-fill"
+        [label]="(plan.trialPeriodDays > 0 ? 'pages.membership.cta_start_trial' : 'pages.membership.cta_subscribe') | translate"
+        [loading]="submitting()"
+        [disabled]="submitting()"
+        (click)="startCheckout()"
+      ></cleansia-button>
+      <p class="membership-subscribe__cta-disclosure">
+        @if (plan.trialPeriodDays > 0) {
+          @if (plan.billingInterval === 2) {
+            {{ 'pages.membership.cta_disclosure_trial_year' | translate: { price: formatCzk(plan.price) } }}
+          } @else {
+            {{ 'pages.membership.cta_disclosure_trial' | translate: { price: formatCzk(plan.price) } }}
+          }
+        } @else {
+          {{ 'pages.membership.subscribe_footnote' | translate }}
+        }
+      </p>
+    }
+  </footer>
+</section>

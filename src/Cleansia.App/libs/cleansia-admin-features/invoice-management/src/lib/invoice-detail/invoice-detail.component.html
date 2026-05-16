@@ -46,6 +46,7 @@
         <div class="cleansia-invoice-detail__actions">
           @if (facade.canApprove()) {
           <cleansia-button
+            *cleansiaPermission="Policy.CanApproveInvoice"
             [label]="'pages.invoice_detail.actions.approve' | translate"
             icon="pi pi-check"
             severity="success"
@@ -54,6 +55,7 @@
           />
           } @if (facade.canMarkPaid()) {
           <cleansia-button
+            *cleansiaPermission="Policy.CanMarkInvoicePaid"
             [label]="'pages.invoice_detail.actions.mark_paid' | translate"
             icon="pi pi-money-bill"
             severity="success"
@@ -62,6 +64,7 @@
           />
           } @if (facade.canCancel()) {
           <cleansia-button
+            *cleansiaPermission="Policy.CanCancelInvoice"
             [label]="'pages.invoice_detail.actions.cancel' | translate"
             icon="pi pi-times"
             severity="danger"

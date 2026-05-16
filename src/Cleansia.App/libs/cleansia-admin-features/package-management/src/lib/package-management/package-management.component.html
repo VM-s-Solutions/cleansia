@@ -45,6 +45,7 @@
           }
         </div>
         <cleansia-button
+          *cleansiaPermission="Policy.CanCreatePackage"
           [label]="'pages.package_management.create_package' | translate"
           icon="pi pi-plus"
           (onClick)="createPackage()"

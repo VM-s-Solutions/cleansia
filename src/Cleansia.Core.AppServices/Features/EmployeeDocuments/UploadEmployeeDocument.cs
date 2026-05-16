@@ -111,7 +111,6 @@ public class UploadEmployeeDocument
             EmployeeDocument document;
             if (existingDocument is not null)
             {
-                // Create new version of existing document
                 document = EmployeeDocument.CreateNewVersion(
                     previousVersion: existingDocument,
                     fileName: request.FileName,

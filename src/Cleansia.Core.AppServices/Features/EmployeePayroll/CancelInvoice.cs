@@ -11,8 +11,7 @@ public class CancelInvoice
 {
     public record Command(
         string InvoiceId,
-        string Reason,
-        string CancelledBy) : ICommand<Response>;
+        string Reason) : ICommand<Response>;
 
     public record Response(string InvoiceId);
 
@@ -38,11 +37,6 @@ public class CancelInvoice
                 .MaximumLength(1000)
                 .WithMessage(BusinessErrorMessage.MaxLengthExceeded);
 
-            RuleFor(x => x.CancelledBy)
-                .Cascade(CascadeMode.Stop)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required);
-
             RuleFor(x => x)
                 .MustAsync(InvoiceNotPaidAsync)
                 .WithMessage(BusinessErrorMessage.CannotCancelPaidInvoice);
@@ -65,11 +59,14 @@ public class CancelInvoice
         }
     }
 
-    public class Handler(IEmployeeInvoiceRepository invoiceRepository)
+    public class Handler(
+        IEmployeeInvoiceRepository invoiceRepository,
+        IUserSessionProvider userSessionProvider)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
+            var actorId = userSessionProvider.GetUserId() ?? string.Empty;
             var invoice = await invoiceRepository.GetByIdAsync(command.InvoiceId, cancellationToken);
 
             if (invoice == null)
@@ -81,7 +78,7 @@ public class CancelInvoice
 
             try
             {
-                invoice.Cancel(command.Reason, command.CancelledBy);
+                invoice.Cancel(command.Reason, actorId);
             }
             catch (InvalidOperationException ex)
             {

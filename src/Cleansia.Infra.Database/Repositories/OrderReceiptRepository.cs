@@ -51,7 +51,13 @@ public class OrderReceiptRepository(CleansiaDbContext context)
         int take,
         CancellationToken cancellationToken)
     {
+        // System-job query — bypasses tenant filter so the timer can pick up
+        // failed receipts across all tenants. Caller MUST set
+        // ITenantProvider.SetTenantOverride(receipt.TenantId) per row before
+        // any subsequent mutation so child writes (status updates, emails)
+        // inherit the right tenant.
         return await GetDbSet()
+            .IgnoreQueryFilters()
             .Include(r => r.Language)
             .Where(r => r.FiscalRegistrationFailed
                 && r.FiscalNextRetryAt != null

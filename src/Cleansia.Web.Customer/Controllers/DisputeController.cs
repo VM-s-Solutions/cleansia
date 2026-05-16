@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Disputes;
 using Cleansia.Core.AppServices.Features.Disputes.DTOs;
@@ -22,9 +21,7 @@ public class DisputeController(IMediator mediator) : CustomerApiController(media
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> CreateDispute([FromBody] CreateDispute.Command command, CancellationToken cancellationToken)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-        var enrichedCommand = command with { UserId = userId };
-        var result = await Mediator.Send(enrichedCommand, cancellationToken);
+        var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<string>(result);
     }
 
@@ -62,5 +59,36 @@ public class DisputeController(IMediator mediator) : CustomerApiController(media
     {
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<object>(result);
+    }
+
+    [HttpPost("UploadEvidence")]
+    [Permission(Policy.CanUploadDisputeEvidence)]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(UploadDisputeEvidence.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> UploadEvidence(
+        [FromForm] string disputeId,
+        IFormFile file,
+        CancellationToken cancellationToken)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(new ProblemDetails { Title = "File is required." });
+        }
+
+        using var ms = new MemoryStream();
+        await file.CopyToAsync(ms, cancellationToken);
+
+        var command = new UploadDisputeEvidence.Command(
+            DisputeId: disputeId,
+            FileName: file.FileName,
+            ContentType: file.ContentType,
+            FileData: ms.ToArray()
+        );
+
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<UploadDisputeEvidence.Response>(result);
     }
 }

@@ -4,6 +4,7 @@ import {
   EmployeeEntityType,
   EmployeeItem,
   UpdateEmployeeCommand,
+  UpdateEmployeeTimeRangeDto,
 } from '@cleansia/partner-services';
 import { CustomValidators } from '@cleansia/services';
 import { FileTransformationUtils } from '@cleansia/utils';
@@ -16,6 +17,31 @@ export interface TimeRange {
 export interface DayAvailability {
   day: string;
   timeRanges: TimeRange[];
+}
+
+export interface ProfileFormData {
+  employeeId?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  dateOfBirth?: Date | string | null;
+  street?: string;
+  city?: string;
+  zipCode?: string;
+  state?: string;
+  countryId?: string;
+  nationalityId?: string;
+  passportId?: string;
+  entityType?: EmployeeEntityType;
+  registrationNumber?: string;
+  vatNumber?: string;
+  legalEntityName?: string;
+  iban?: string;
+  emergencyName?: string;
+  emergencyPhone?: string;
+  availability?: Record<string, TimeRange[]>;
+  consent?: boolean;
 }
 
 export const DAYS_OF_WEEK = [
@@ -118,7 +144,7 @@ export class ProfileFormFactory {
     });
   }
 
-  static mapEmployeeToFormData(employee: EmployeeItem): any {
+  static mapEmployeeToFormData(employee: EmployeeItem): ProfileFormData {
     return {
       employeeId: employee.id || undefined,
       firstName: employee.firstName || undefined,
@@ -174,16 +200,36 @@ export class ProfileFormFactory {
   }
 
   static createUpdateCommand(
-    formData: any,
+    formData: ProfileFormData,
     documents: BlobFileDto[]
   ): UpdateEmployeeCommand {
+    const birthDate =
+      formData.dateOfBirth instanceof Date
+        ? formData.dateOfBirth
+        : formData.dateOfBirth
+          ? new Date(formData.dateOfBirth)
+          : new Date();
+
+    const availability: { [key: string]: UpdateEmployeeTimeRangeDto[] } | undefined =
+      formData.availability
+        ? Object.fromEntries(
+            Object.entries(formData.availability).map(([day, ranges]) => [
+              day,
+              ranges.map(
+                (r) =>
+                  new UpdateEmployeeTimeRangeDto({ start: r.start, end: r.end })
+              ),
+            ])
+          )
+        : undefined;
+
     return new UpdateEmployeeCommand({
       employeeId: formData.employeeId,
       firstName: formData.firstName,
       lastName: formData.lastName,
       email: formData.email,
       phone: formData.phone,
-      birthDate: formData.dateOfBirth,
+      birthDate,
       street: formData.street,
       city: formData.city,
       zipCode: formData.zipCode,
@@ -202,8 +248,8 @@ export class ProfileFormFactory {
       emergencyName: formData.emergencyName,
       emergencyPhone: formData.emergencyPhone,
       documents,
-      availability: formData.availability,
-      consent: formData.consent,
+      availability,
+      consent: formData.consent ?? false,
     });
   }
 

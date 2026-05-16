@@ -29,23 +29,6 @@ public class PayPeriodRepository(CleansiaDbContext context) : BaseRepository<Pay
             .AnyAsync(cancellationToken);
     }
 
-    public IQueryable<PayPeriod> GetPeriodsByStatus(PayPeriodStatus status)
-    {
-        return GetDbSet()
-            .Where(p => p.Status == status)
-            .OrderByDescending(p => p.StartDate);
-    }
-
-    public IQueryable<PayPeriod> GetPeriodsForYear(int year)
-    {
-        var yearStart = new DateOnly(year, 1, 1);
-        var yearEnd = new DateOnly(year, 12, 31);
-
-        return GetDbSet()
-            .Where(p => p.StartDate >= yearStart && p.EndDate <= yearEnd)
-            .OrderBy(p => p.StartDate);
-    }
-
     public Task<bool> HasOverlappingPeriodAsync(DateOnly startDate, DateOnly endDate, string? excludeId, CancellationToken cancellationToken)
     {
         var query = GetDbSet()

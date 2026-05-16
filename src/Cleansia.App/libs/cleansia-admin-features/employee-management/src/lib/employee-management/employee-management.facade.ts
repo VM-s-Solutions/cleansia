@@ -6,10 +6,11 @@ import {
   RejectEmployeeRequest,
   SortDefinition,
 } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 import {
   RejectDialogComponent,
   RejectDialogData,
@@ -23,13 +24,11 @@ export interface EmployeeFilterParams {
 }
 
 @Injectable()
-export class EmployeeManagementFacade {
+export class EmployeeManagementFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly dialogService = inject(DialogService);
   private readonly translate = inject(TranslateService);
-
-  private destroy$ = new Subject<void>();
 
   readonly employees = signal<AdminEmployeeListItem[]>([]);
   readonly loading = signal<boolean>(false);
@@ -89,7 +88,7 @@ export class EmployeeManagementFacade {
         this.currentLimit()
       )
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
@@ -132,7 +131,7 @@ export class EmployeeManagementFacade {
     this.adminClient.adminEmployeeClient
       .approve(employeeId, undefined)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((response) => {
@@ -152,7 +151,7 @@ export class EmployeeManagementFacade {
     this.adminClient.adminEmployeeClient
       .reject(employeeId, request)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((response) => {
@@ -193,10 +192,5 @@ export class EmployeeManagementFacade {
         this.rejectEmployee(employee.id!, result.reason);
       }
     });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

@@ -2,7 +2,7 @@ import {
   ApiException,
   DisputeDetails,
   DisputeListItem,
-} from '@cleansia/partner-services';
+} from '@cleansia/customer-services';
 import { createAction, props } from '@ngrx/store';
 
 export const loadCustomerDisputes = createAction(

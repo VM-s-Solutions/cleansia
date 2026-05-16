@@ -19,15 +19,25 @@ public record OrderItem(
     Code PaymentType,
     Code PaymentStatus,
     decimal TotalPrice,
+    decimal OriginalSubtotal,
+    AppliedDiscountSource AppliedDiscountSource,
+    decimal? TierDiscountAmount,
+    decimal? MembershipDiscountAmount,
+    decimal? PromoDiscountAmount,
     int EstimatedTime,
     int? ActualCompletionTime,
     string? CompletionNotes,
     Code OrderStatus,
     string ConfirmationCode,
-    string? StripeSessionId,
     string? Notes,
     string? SpecialInstructions,
     string? AccessInstructions,
+    /// <summary>
+    /// FK back to the recurring booking template that spawned this order.
+    /// Null for one-off orders. Mobile uses this + <c>PaymentStatus.Pending</c>
+    /// to show the "Confirm and pay" CTA on the Order Detail screen.
+    /// </summary>
+    string? RecurringTemplateId,
     IEnumerable<PackageDetails> SelectedPackages,
     CurrencyDetailDto Currency,
     IEnumerable<ServiceDetails> SelectedServices,

@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
@@ -6,6 +6,7 @@ import { TranslatePipe } from '@ngx-translate/core';
   templateUrl: './cleansia-title.component.html',
   standalone: true,
   imports: [TranslatePipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaTitleComponent {
   title = input.required<string>();

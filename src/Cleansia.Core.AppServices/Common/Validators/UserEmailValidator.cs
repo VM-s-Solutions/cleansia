@@ -22,13 +22,15 @@ public class UserEmailValidator<TRequest> : AbstractValidator<TRequest>
             .WithMessage(BusinessErrorMessage.NotExistingUserWithEmail);
     }
 
-    protected Task<bool> UserWithEmailExistsAsync(TRequest request, CancellationToken cancellationToken)
+    protected async Task<bool> UserWithEmailExistsAsync(TRequest request, CancellationToken cancellationToken)
     {
         var userEmailClaim = _userSessionProvider.GetUserEmail();
-        return userEmailClaim is null
-            ? Task.FromResult(false)
-            : _userRepository.GetByEmailAsync(userEmailClaim, cancellationToken)
-                .ContinueWith(t => t.Result?.IsEmailConfirmed ?? false, cancellationToken);
+        if (userEmailClaim is null)
+        {
+            return false;
+        }
+        var user = await _userRepository.GetByEmailAsync(userEmailClaim, cancellationToken);
+        return user?.IsEmailConfirmed ?? false;
     }
 }
 

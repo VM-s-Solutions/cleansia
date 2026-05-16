@@ -31,13 +31,11 @@ public class DisputeEvidenceEntityConfiguration : BaseEntityConfiguration<Disput
         builder.Property(de => de.UploadedOn)
             .IsRequired();
 
-        // Relationship
         builder.HasOne(de => de.Dispute)
             .WithMany(d => d.Evidence)
             .HasForeignKey(de => de.DisputeId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Indexes
         builder.HasIndex(de => de.DisputeId);
         builder.HasIndex(de => de.UploadedOn);
     }

@@ -11,4 +11,5 @@ export const environment = {
   sentryDsn: '',
   bugReportUrl:
     'https://docs.google.com/spreadsheets/d/1k4IbmrKPkZo79D4pDzukjUjQqY-ipnXqkUSSFoHtfFg/edit?usp=sharing',
+  mapboxToken: '',
 };

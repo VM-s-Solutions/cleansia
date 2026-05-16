@@ -87,6 +87,10 @@ public static class Extensions
             options.AutoSessionTracking = true;
             options.TracesSampleRate = 0.2;
             options.UseOpenTelemetry();
+            // Drop client-disconnect noise — RequestLoggingMiddleware re-throws
+            // OperationCanceledException for normal cancellation; without this
+            // filter Sentry captures every navigation-cancelled request.
+            options.SetBeforeSend((evt, _) => evt.Exception is OperationCanceledException ? null : evt);
         });
 
         return webBuilder;

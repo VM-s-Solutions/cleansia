@@ -1,0 +1,94 @@
+plugins {
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
+}
+
+android {
+    namespace = "cz.cleansia.core"
+    compileSdk = 35
+
+    defaultConfig {
+        minSdk = 26
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles("consumer-rules.pro")
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+        isCoreLibraryDesugaringEnabled = true
+    }
+
+    kotlin {
+        jvmToolchain(21)
+    }
+
+    buildFeatures {
+        compose = true
+        buildConfig = false
+    }
+}
+
+dependencies {
+    // Java 21 core library desugaring — both apps already enable it; the library
+    // module needs the same so its public surface compiles against the same
+    // bytecode shape.
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
+
+    // AndroidX core / Compose — :core provides shared UI primitives + theme
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(platform(libs.compose.bom))
+    implementation(libs.compose.ui)
+    implementation(libs.compose.ui.graphics)
+    implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.material.icons)
+    implementation(libs.compose.foundation)
+    // Google Fonts provider — Type.kt references it for Poppins + Nunito.
+    implementation(libs.compose.ui.text.google.fonts)
+
+    // Hilt — :core declares @Module entries (e.g. TokenStore provider) that
+    // both apps' SingletonComponent picks up.
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+
+    // Networking — TokenStore / AuthInterceptor / AuthAuthenticator + NetworkCall
+    // helper live here.
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.kotlinx.serialization)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging)
+
+    // Serialization — IntEnumSerializers + JSON config
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.coroutines.android)
+    // OrderFormatters uses kotlinx-datetime for Instant/LocalDateTime.
+    implementation(libs.kotlinx.datetime)
+
+    // Persistence — TokenStore uses EncryptedSharedPreferences; preferences DataStore
+    // is the future-proof option some shared utilities may consume.
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.security.crypto)
+
+    // Sentry — OkHttp event listener + SentryUserTracker. Customer wires both
+    // up; partner doesn't run Sentry yet but the deps are harmless (no-op
+    // when the SDK isn't initialized).
+    implementation(libs.sentry.android)
+    implementation(libs.sentry.okhttp)
+}

@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   computed,
@@ -28,6 +29,8 @@ import {
   TableAction,
   PaginationState,
 } from '@cleansia/components';
+import { PermissionService, Policy } from '@cleansia/services';
+import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -49,17 +52,21 @@ import { getAdminUserTableDefinition } from './admin-user-management.models';
     CleansiaSectionComponent,
     ReactiveFormsModule,
     ConfirmDialogModule,
+    CleansiaPermissionDirective,
   ],
   templateUrl: './admin-user-management.component.html',
   providers: [AdminUserManagementFacade, ConfirmationService],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminUserManagementComponent implements AfterViewInit, OnDestroy {
   private readonly cd = inject(ChangeDetectorRef);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   protected readonly facade = inject(AdminUserManagementFacade);
+  protected readonly Policy = Policy;
   private readonly translate = inject(TranslateService);
   private readonly confirmationService = inject(ConfirmationService);
+  private readonly permissions = inject(PermissionService);
 
   statusTemplate = viewChild<TemplateRef<any>>('statusTemplate');
 
@@ -114,8 +121,10 @@ export class AdminUserManagementComponent implements AfterViewInit, OnDestroy {
       {
         onEdit: this.editUser.bind(this),
         onToggleStatus: this.confirmToggleStatus.bind(this),
+        onViewLoyalty: this.viewLoyalty.bind(this),
       },
       this.translate,
+      this.permissions,
       this.statusTemplate()
     );
     this.userColumns = tableDef.columns;
@@ -189,6 +198,13 @@ export class AdminUserManagementComponent implements AfterViewInit, OnDestroy {
 
   editUser(user: AdminUserListItem): void {
     this.facade.navigateToEditUser(user);
+  }
+
+  viewLoyalty(user: AdminUserListItem): void {
+    if (!user.id) return;
+    this.router.navigate(['/loyalty/users', user.id], {
+      queryParams: user.email ? { email: user.email } : undefined,
+    });
   }
 
   confirmToggleStatus(user: AdminUserListItem): void {

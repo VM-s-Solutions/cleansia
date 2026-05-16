@@ -55,7 +55,6 @@ public class GetAllEmployees
                 .Include(e => e.Nationality)
                 .AsNoTracking();
 
-            // Filter by contract status if provided
             if (!string.IsNullOrEmpty(query.ContractStatus) &&
                 Enum.TryParse<Core.Domain.Enums.ContractStatus>(query.ContractStatus, out var status))
             {

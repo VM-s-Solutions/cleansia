@@ -133,6 +133,46 @@ export const appRoutes: Route[] = [
       ),
   },
   {
+    path: 'loyalty/promos',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/loyalty-promo-codes').then(
+        (m) => m.promoCodesRoutes
+      ),
+  },
+  {
+    path: 'loyalty/tiers',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/loyalty-tier-configs').then(
+        (m) => m.loyaltyTiersRoutes
+      ),
+  },
+  {
+    path: 'loyalty/users',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/loyalty-user-detail').then(
+        (m) => m.loyaltyUserRoutes
+      ),
+  },
+  {
+    path: 'loyalty/referrals',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/loyalty-referrals').then(
+        (m) => m.loyaltyReferralsRoutes
+      ),
+  },
+  {
+    path: 'marketing',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/marketing').then(
+        (m) => m.marketingRoutes
+      ),
+  },
+  {
     path: 'unauthorized',
     loadComponent: () =>
       import('./unauthorized/unauthorized.component').then(

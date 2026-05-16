@@ -5,9 +5,10 @@ import {
   EmployeeInvoiceStatus,
   SortDefinition,
 } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 export interface InvoiceFilterParams {
   statuses?: EmployeeInvoiceStatus[];
@@ -16,12 +17,10 @@ export interface InvoiceFilterParams {
 }
 
 @Injectable()
-export class InvoiceManagementFacade {
+export class InvoiceManagementFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
-
-  private destroy$ = new Subject<void>();
 
   readonly invoices = signal<EmployeeInvoiceDto[]>([]);
   readonly loading = signal<boolean>(false);
@@ -91,7 +90,7 @@ export class InvoiceManagementFacade {
         this.currentLimit()
       )
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
@@ -135,7 +134,7 @@ export class InvoiceManagementFacade {
     this.adminClient.adminInvoiceClient
       .download(invoice.id)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((response) => {
@@ -182,10 +181,5 @@ export class InvoiceManagementFacade {
       default:
         return '';
     }
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

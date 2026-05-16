@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { TemplateRef } from '@angular/core';
 
 export type StroytorgFilterType =
@@ -10,33 +9,35 @@ export type StroytorgFilterType =
   | 'multiselect'
   | 'checkbox-select';
 
-export interface IStroytorgFilterOption {
+export interface IStroytorgFilterOption<T = unknown> {
   label: string;
-  value: any;
+  value: T;
 }
 
-export class StroytorgFilterOption implements IStroytorgFilterOption {
+export class StroytorgFilterOption<T = unknown>
+  implements IStroytorgFilterOption<T>
+{
   label: string;
-  value: any;
+  value: T;
 
-  constructor(data: IStroytorgFilterOption) {
+  constructor(data: IStroytorgFilterOption<T>) {
     this.label = data.label;
     this.value = data.value;
   }
 }
 
-export interface FilterDefinition {
+export interface FilterDefinition<T = unknown> {
   type: StroytorgFilterType;
   name: string;
   title: string;
   description?: string;
-  initialValue?: any;
+  initialValue?: T;
   options?: StroytorgFilterOption[];
   rangeMinValue?: number;
   rangeMaxValue?: number;
   rangeStep?: number;
   twoSidesRange?: boolean;
-  template?: TemplateRef<any>;
+  template?: TemplateRef<unknown>;
 }
 
 export interface IBaseFilter {
@@ -59,9 +60,10 @@ export class BaseFilter implements IBaseFilter {
   }
 
   resetFilter(): void {
+    const self = this as unknown as Record<string, unknown>;
     Object.keys(this).forEach((key) => {
       if (key !== 'isFilterChanged') {
-        (this as any)[key] = undefined;
+        self[key] = undefined;
       }
     });
   }

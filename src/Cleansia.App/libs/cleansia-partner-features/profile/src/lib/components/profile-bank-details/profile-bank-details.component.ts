@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import {
   CleansiaSectionComponent,
@@ -16,18 +16,8 @@ import { ProfileFacade } from '../../profile/profile.facade';
     CleansiaSectionComponent,
     CleansiaTextInputComponent,
   ],
-  template: `
-    <cleansia-section [title]="'pages.profile.bank_details' | translate">
-      <div class="cleansia-profile__field cleansia-profile__field--full" [formGroup]="facade.formGroup">
-        <cleansia-text-input
-          [label]="'pages.profile.iban' | translate"
-          [floatVariant]="'on'"
-          formControlName="iban"
-          dataType="text"
-        />
-      </div>
-    </cleansia-section>
-  `,
+  templateUrl: './profile-bank-details.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProfileBankDetailsComponent {
   @Input({ required: true }) facade!: ProfileFacade;

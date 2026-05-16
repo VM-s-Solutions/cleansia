@@ -182,7 +182,7 @@
           ? 'pages.order_details.assigned_employees'
           : 'pages.order_details.assigned_employee') | translate"
       >
-        @for (employee of orderDetails()!.assignedEmployees!; track employee.employeeId) {
+        @for (employee of orderDetails()!.assignedEmployees!; track employee.id) {
         <div class="cleansia-order-details__grid cleansia-order-details__employee-row">
           <div class="cleansia-order-details__field">
             <label class="cleansia-order-details__label">{{ 'pages.order_details.employee_name' | translate }}</label>
@@ -192,12 +192,6 @@
           <div class="cleansia-order-details__field">
             <label class="cleansia-order-details__label">{{ 'pages.order_details.employee_phone' | translate }}</label>
             <span class="cleansia-order-details__value">{{ employee.phoneNumber }}</span>
-          </div>
-          }
-          @if (employee.email) {
-          <div class="cleansia-order-details__field">
-            <label class="cleansia-order-details__label">{{ 'pages.order_details.employee_email' | translate }}</label>
-            <span class="cleansia-order-details__value">{{ employee.email }}</span>
           </div>
           }
         </div>

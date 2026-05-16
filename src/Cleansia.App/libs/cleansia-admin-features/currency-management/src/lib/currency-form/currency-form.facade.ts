@@ -6,9 +6,10 @@ import {
   CurrencyDetailDto,
   UpdateCurrencyCommand,
 } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 export interface CurrencyFormData {
   code: string;
@@ -18,13 +19,11 @@ export interface CurrencyFormData {
 }
 
 @Injectable()
-export class CurrencyFormFacade {
+export class CurrencyFormFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
-
-  private destroy$ = new Subject<void>();
 
   readonly currency = signal<CurrencyDetailDto | null>(null);
   readonly loading = signal<boolean>(false);
@@ -36,7 +35,7 @@ export class CurrencyFormFacade {
     this.adminClient.adminCurrencyClient
       .details(currencyId)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => {
           this.router.navigate([CleansiaAdminRoute.CURRENCY_MANAGEMENT]);
           return of(null);
@@ -63,7 +62,7 @@ export class CurrencyFormFacade {
     this.adminClient.adminCurrencyClient
       .create(command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
@@ -91,7 +90,7 @@ export class CurrencyFormFacade {
     this.adminClient.adminCurrencyClient
       .update(currencyId, command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
@@ -107,10 +106,5 @@ export class CurrencyFormFacade {
 
   navigateBack(): void {
     this.router.navigate([CleansiaAdminRoute.CURRENCY_MANAGEMENT]);
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import {
@@ -31,6 +31,7 @@ import { LoginFacade } from './login.facade';
     CleansiaDynamicBackgroundComponent,
   ],
   providers: [LoginFacade],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginComponent {
   protected readonly facade = inject(LoginFacade);

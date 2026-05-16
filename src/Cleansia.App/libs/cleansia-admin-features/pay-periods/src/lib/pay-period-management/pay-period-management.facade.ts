@@ -6,18 +6,17 @@ import {
   PayPeriodStatus,
   SortDefinition,
 } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 import { PayPeriodFilterParams } from './pay-period-management.models';
 
 @Injectable()
-export class PayPeriodManagementFacade {
+export class PayPeriodManagementFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
-
-  private destroy$ = new Subject<void>();
 
   readonly payPeriods = signal<PayPeriodDto[]>([]);
   readonly loading = signal<boolean>(false);
@@ -57,7 +56,7 @@ export class PayPeriodManagementFacade {
         this.currentLimit()
       )
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
@@ -104,7 +103,7 @@ export class PayPeriodManagementFacade {
     this.adminClient.adminPayPeriodClient
       .close(command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((response) => {
@@ -115,10 +114,5 @@ export class PayPeriodManagementFacade {
           this.loadPayPeriods();
         }
       });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

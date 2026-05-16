@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, effect, inject, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, effect, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -37,6 +37,7 @@ interface TemplateVariable {
   ],
   providers: [EmailTemplateFormFacade],
   templateUrl: './email-template-form.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EmailTemplateFormComponent implements OnInit, OnDestroy {
   readonly facade = inject(EmailTemplateFormFacade);

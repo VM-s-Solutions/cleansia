@@ -6,9 +6,10 @@ import {
   DeleteCompanyInfoResponse,
   SortDefinition,
 } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 export interface CompanyInfoFilterParams {
   searchTerm?: string;
@@ -16,13 +17,11 @@ export interface CompanyInfoFilterParams {
 }
 
 @Injectable()
-export class CompanyInfoListFacade {
+export class CompanyInfoListFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
-
-  private destroy$ = new Subject<void>();
 
   readonly companyInfos = signal<CompanyInfoListItem[]>([]);
   readonly loading = signal<boolean>(false);
@@ -47,7 +46,7 @@ export class CompanyInfoListFacade {
         this.currentLimit()
       )
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
@@ -101,7 +100,7 @@ export class CompanyInfoListFacade {
     this.adminClient.adminCompanyClient
       .delete(companyInfo.id)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((response: DeleteCompanyInfoResponse | null) => {
@@ -112,10 +111,5 @@ export class CompanyInfoListFacade {
           this.loadCompanyInfos();
         }
       });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

@@ -24,8 +24,9 @@ export class OrderEffects {
   loadPaged$ = createEffect(() =>
     this.actions$.pipe(
       ofType(OrderActions.loadOrderPaged),
-      mergeMap((req) =>
-        this.partnerClient.orderClient
+      mergeMap((req) => {
+        const listKey = req.listKey ?? 'paged';
+        return this.partnerClient.orderClient
           .getPaged(
             req.filter?.id,
             req.isActive,
@@ -49,12 +50,12 @@ export class OrderEffects {
             req.limit
           )
           .pipe(
-            map((page) => OrderActions.loadOrderPagedSuccess({ page })),
+            map((page) => OrderActions.loadOrderPagedSuccess({ listKey, page })),
             catchError((error) =>
-              of(OrderActions.loadOrderPagedFailure({ error }))
+              of(OrderActions.loadOrderPagedFailure({ listKey, error }))
             )
-          )
-      )
+          );
+      })
     )
   );
 
@@ -78,7 +79,6 @@ export class OrderEffects {
       mergeMap(
         ({
           orderId,
-          employeeId,
           actualCompletionTimeMinutes,
           completionNotes,
         }) =>
@@ -86,7 +86,6 @@ export class OrderEffects {
             .completeOrder(
               new CompleteOrderCommand({
                 orderId,
-                employeeId,
                 actualCompletionTimeMinutes,
                 completionNotes,
               })

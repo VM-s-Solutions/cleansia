@@ -116,18 +116,15 @@ public class SaveMyDocuments
                     continue;
                 }
 
-                // Generate unique filename
                 var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
                 var randomGuid = Guid.NewGuid().ToString("N")[..8];
                 var fileExtension = Path.GetExtension(doc.File.FileName);
                 var uniqueFileName = $"{employee.Id}_{doc.DocumentType}_{timestamp}_{randomGuid}{fileExtension}";
                 var fullBlobPath = $"{employeeDocumentsPath}/{uniqueFileName}";
 
-                // Extract base64 data and determine content type
                 var base64Data = doc.File.Base64Content.ExtractBase64Data();
                 var contentType = doc.File.ContentType ?? DetermineContentType(fileExtension, base64Data);
 
-                // Upload to blob storage
                 await using var stream = new MemoryStream(Convert.FromBase64String(base64Data));
 
                 var metadata = MetadataExtensions.CreateDocumentMetadata(
@@ -147,7 +144,6 @@ public class SaveMyDocuments
                 EmployeeDocument employeeDocument;
                 if (existingDocument is not null)
                 {
-                    // Create new version
                     employeeDocument = EmployeeDocument.CreateNewVersion(
                         previousVersion: existingDocument,
                         fileName: doc.File.FileName,
@@ -195,7 +191,6 @@ public class SaveMyDocuments
 
         private static string DetermineContentType(string fileExtension, string base64Data)
         {
-            // Try to determine from file extension first
             var contentType = fileExtension.ToLowerInvariant() switch
             {
                 ".pdf" => "application/pdf",

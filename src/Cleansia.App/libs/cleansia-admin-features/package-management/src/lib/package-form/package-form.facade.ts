@@ -11,9 +11,10 @@ import {
   UpdatePackageCommand,
   UpdatePackageResponse,
 } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 export interface LanguageOption {
   code: string;
@@ -29,13 +30,11 @@ export interface PackageFormData {
 }
 
 @Injectable()
-export class PackageFormFacade {
+export class PackageFormFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
-
-  private destroy$ = new Subject<void>();
 
   readonly pkg = signal<AdminPackageDetailDto | null>(null);
   readonly loading = signal<boolean>(false);
@@ -49,7 +48,7 @@ export class PackageFormFacade {
     this.adminClient.adminPackageClient
       .details(packageId)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loading.set(false))
       )
@@ -66,7 +65,7 @@ export class PackageFormFacade {
     this.adminClient.adminLanguageClient
       .getOverview()
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of([] as LanguageListItem[]))
       )
       .subscribe((languages: LanguageListItem[]) => {
@@ -91,7 +90,7 @@ export class PackageFormFacade {
         1000 // limit - Load all services for selection
       )
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null))
       )
       .subscribe((response) => {
@@ -125,7 +124,7 @@ export class PackageFormFacade {
     this.adminClient.adminPackageClient
       .create(command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
@@ -164,7 +163,7 @@ export class PackageFormFacade {
     this.adminClient.adminPackageClient
       .update(packageId, command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
@@ -180,10 +179,5 @@ export class PackageFormFacade {
 
   navigateBack(): void {
     this.router.navigate([CleansiaAdminRoute.PACKAGE_MANAGEMENT]);
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

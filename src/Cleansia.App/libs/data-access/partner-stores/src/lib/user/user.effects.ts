@@ -3,7 +3,6 @@ import {
   BlobFileDto,
   PartnerClient,
   UpdateCurrentUserCommand,
-  UserListItem,
 } from '@cleansia/partner-services';
 import { SnackbarService } from '@cleansia/services';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
@@ -53,9 +52,7 @@ export class UserEffects {
       ofType(UserActions.loadUserCurrent),
       mergeMap(() =>
         this.partnerClient.userClient.getCurrent().pipe(
-          map((user: UserListItem) =>
-            UserActions.loadUserCurrentSuccess({ user })
-          ),
+          map((user) => UserActions.loadUserCurrentSuccess({ user })),
           catchError((error) =>
             of(UserActions.loadUserCurrentFailure({ error }))
           )

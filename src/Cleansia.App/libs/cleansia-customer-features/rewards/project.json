@@ -1,0 +1,19 @@
+{
+  "name": "cleansia-customer-rewards",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/cleansia-customer-features/rewards/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": ["scope:customer", "type:feature"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/cleansia-customer-features/rewards/jest.config.ts",
+        "tsConfig": "libs/cleansia-customer-features/rewards/tsconfig.spec.json"
+      }
+    },
+    "lint": { "executor": "@nx/eslint:lint" }
+  }
+}

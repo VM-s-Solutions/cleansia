@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   Component,
   computed,
   inject,
@@ -9,7 +10,8 @@ import {
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { CleansiaAdminRoute } from '@cleansia/services';
+import { CleansiaAdminRoute, Policy } from '@cleansia/services';
+import { CleansiaPermissionDirective } from '@cleansia/directives';
 import {
   ServiceListItem,
   SortDefinition,
@@ -47,14 +49,17 @@ import { getServiceTableDefinition } from './service-management.models';
     CleansiaSectionComponent,
     ReactiveFormsModule,
     ConfirmDialogModule,
+    CleansiaPermissionDirective,
   ],
   templateUrl: './service-management.component.html',
   providers: [ServiceManagementFacade, ConfirmationService],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ServiceManagementComponent implements AfterViewInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   protected readonly facade = inject(ServiceManagementFacade);
+  protected readonly Policy = Policy;
   private readonly translate = inject(TranslateService);
   private readonly confirmationService = inject(ConfirmationService);
 

@@ -1,5 +1,5 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { Component, computed, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   CleansiaButtonComponent,
@@ -10,11 +10,12 @@ import {
   selectCustomerOrdersTotal,
   selectCustomerOrderLoading,
 } from '@cleansia/customer-stores';
+import { OrderListItem } from '@cleansia/partner-services';
 import {
-  OrderListItem,
-  OrderStatus,
-  PaymentStatus,
-} from '@cleansia/partner-services';
+  OrderStatusLabelPipe,
+  OrderStatusSeverityPipe,
+  PaymentStatusSeverityPipe,
+} from '@cleansia/pipes';
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -35,8 +36,12 @@ import { PaginatorModule, PaginatorState } from 'primeng/paginator';
     SkeletonModule,
     CleansiaButtonComponent,
     PaginatorModule,
+    OrderStatusSeverityPipe,
+    OrderStatusLabelPipe,
+    PaymentStatusSeverityPipe,
   ],
   templateUrl: './orders.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OrdersComponent implements OnInit {
   private readonly store = inject(Store);
@@ -120,42 +125,14 @@ export class OrdersComponent implements OnInit {
     return new Date(order.cleaningDateTime) >= new Date();
   }
 
-  getOrderStatusSeverity(status: { value?: number }): string {
-    switch (status?.value) {
-      case OrderStatus.Pending:
-        return 'warn';
-      case OrderStatus.Confirmed:
-        return 'info';
-      case OrderStatus.InProgress:
-        return 'info';
-      case OrderStatus.Completed:
-        return 'success';
-      case OrderStatus.Cancelled:
-        return 'danger';
-      default:
-        return 'info';
-    }
-  }
-
-  getPaymentStatusSeverity(status: { value?: number }): string {
-    switch (status?.value) {
-      case PaymentStatus.Pending:
-        return 'warn';
-      case PaymentStatus.Paid:
-        return 'success';
-      case PaymentStatus.Failed:
-        return 'danger';
-      case PaymentStatus.Refunded:
-        return 'info';
-      case PaymentStatus.Disputed:
-        return 'danger';
-      default:
-        return 'info';
-    }
-  }
-
   private getLocale(): string {
-    const localeMap: Record<string, string> = { cs: 'cs-CZ', en: 'en-US', pl: 'pl-PL' };
+    const localeMap: Record<string, string> = {
+      cs: 'cs-CZ',
+      en: 'en-US',
+      sk: 'sk-SK',
+      uk: 'uk-UA',
+      ru: 'ru-RU',
+    };
     return localeMap[this.translate.currentLang] || 'en-US';
   }
 

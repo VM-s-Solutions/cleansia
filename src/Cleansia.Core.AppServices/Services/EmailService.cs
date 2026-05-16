@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Emails;
 using Cleansia.Core.Domain.Enums;
@@ -46,7 +47,7 @@ public sealed class EmailService : IEmailService
         string email,
         string fullUserName,
         string code,
-        string languageCode = "en",
+        string languageCode = Constants.Language.English,
         CancellationToken ct = default)
     {
         var translations = await emailTemplateTranslationRepository
@@ -77,7 +78,7 @@ public sealed class EmailService : IEmailService
         Order order,
         byte[]? pdfBytes = null,
         string fileName = "receipt.pdf",
-        string languageCode = "en",
+        string languageCode = Constants.Language.English,
         CancellationToken ct = default)
     {
         var translations = await emailTemplateTranslationRepository
@@ -113,7 +114,7 @@ public sealed class EmailService : IEmailService
         string orderNumber,
         string orderDate,
         string totalAmount,
-        string languageCode = "en",
+        string languageCode = Constants.Language.English,
         CancellationToken ct = default)
     {
         var translations = await emailTemplateTranslationRepository
@@ -175,7 +176,7 @@ public sealed class EmailService : IEmailService
         DateOnly endDate,
         DateTime closedAt,
         string periodLabel,
-        string languageCode = "en",
+        string languageCode = Constants.Language.English,
         byte[]? invoicePdfBytes = null,
         string? invoiceFileName = null,
         CancellationToken ct = default)
@@ -194,7 +195,6 @@ public sealed class EmailService : IEmailService
 
         var subject = translations.GetValueOrDefault("Subject", "Pay Period Closed");
 
-        // If invoice PDF is provided, send with attachment; otherwise send without
         if (invoicePdfBytes != null && !string.IsNullOrWhiteSpace(invoiceFileName))
         {
             return await SendTemplatedWithAttachmentAsync(
@@ -224,7 +224,7 @@ public sealed class EmailService : IEmailService
         DateOnly endDate,
         int daysRemaining,
         string periodLabel,
-        string languageCode = "en",
+        string languageCode = Constants.Language.English,
         CancellationToken ct = default)
     {
         var translations = await emailTemplateTranslationRepository
@@ -257,7 +257,7 @@ public sealed class EmailService : IEmailService
         string email,
         Order order,
         string newStatus,
-        string languageCode = "en",
+        string languageCode = Constants.Language.English,
         CancellationToken ct = default)
     {
         var translations = await emailTemplateTranslationRepository
@@ -396,7 +396,6 @@ public sealed class EmailService : IEmailService
 
         msg.Personalizations[0].Subject = subject;
 
-        // Add PDF attachment if provided
         if (pdfBytes != null && pdfBytes.Length > 0)
         {
             var base64Content = Convert.ToBase64String(pdfBytes);

@@ -24,7 +24,7 @@ export function getOrderStatusClass(order: OrderListItem): string {
 // --- Translation helpers ---
 
 export function getTranslatedPaymentStatus(
-  paymentStatus: any,
+  paymentStatus: { name?: string } | null | undefined,
   translate: TranslateService
 ): string {
   if (!paymentStatus?.name) return '';
@@ -33,7 +33,7 @@ export function getTranslatedPaymentStatus(
 }
 
 export function getTranslatedOrderStatus(
-  orderStatus: any,
+  orderStatus: { name?: string } | null | undefined,
   translate: TranslateService
 ): string {
   if (!orderStatus?.name) return '';
@@ -49,6 +49,7 @@ export function buildOrderStatusOptions(
   return [
     { label: translate.instant('enums.order_status.pending'), value: OrderStatus.Pending },
     { label: translate.instant('enums.order_status.confirmed'), value: OrderStatus.Confirmed },
+    { label: translate.instant('enums.order_status.on_the_way'), value: OrderStatus.OnTheWay },
     { label: translate.instant('enums.order_status.in_progress'), value: OrderStatus.InProgress },
     { label: translate.instant('enums.order_status.completed'), value: OrderStatus.Completed },
     { label: translate.instant('enums.order_status.cancelled'), value: OrderStatus.Cancelled },

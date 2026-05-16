@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="cleansia_primary">#0284C7</color>
+    <color name="cleansia_background_light">#F8FAFC</color>
+    <color name="cleansia_background_dark">#0F172A</color>
+    <color name="ic_launcher_background">#0284C7</color>
+    <!-- Sky-600, same gradient start used by the Compose splash below -->
+    <color name="splash_background">#0284C7</color>
+</resources>

@@ -1,0 +1,61 @@
+<div class="customer-rewards customer-rewards--activity">
+  <div class="customer-rewards__hero">
+    <h1 class="customer-rewards__hero-title">
+      {{ 'pages.rewards.activity_title' | translate }}
+    </h1>
+  </div>
+
+  <div class="customer-rewards__actions-bar">
+    <cleansia-button
+      [title]="'global.actions.go_back' | translate"
+      [severity]="'secondary'"
+      [icon]="'pi pi-arrow-left'"
+      [iconPosition]="'left'"
+      (clickFn)="back()"
+    />
+  </div>
+
+  @if (facade.activityLoading()) {
+    <div class="flex flex-column gap-2">
+      @for (i of [1,2,3,4,5,6]; track i) {
+        <p-skeleton width="100%" height="3rem" borderRadius="12px" />
+      }
+    </div>
+  } @else if (facade.activityList().length === 0) {
+    <div class="customer-rewards__empty">
+      <i class="pi pi-inbox"></i>
+      <p>{{ 'pages.rewards.empty_activity' | translate }}</p>
+    </div>
+  } @else {
+    <ul class="customer-rewards__activity-list">
+      @for (item of facade.activityList(); track $index) {
+        <li class="customer-rewards__activity-row">
+          <span
+            class="customer-rewards__activity-points"
+            [class.customer-rewards__activity-points--positive]="item.points > 0"
+            [class.customer-rewards__activity-points--negative]="item.points < 0"
+          >
+            {{ signedPoints(item.points) }}
+          </span>
+          @if (txLabel(item); as tx) {
+            <span class="customer-rewards__activity-text">
+              {{ tx.key | translate: tx.params }}
+            </span>
+          }
+          <span class="customer-rewards__activity-date">{{ formatDate(item.occurredOn) }}</span>
+        </li>
+      }
+    </ul>
+
+    @if (facade.totalActivity() > rows) {
+      <p-paginator
+        class="mt-4"
+        [first]="first"
+        [rows]="rows"
+        [totalRecords]="facade.totalActivity()"
+        [rowsPerPageOptions]="[10, 20, 50]"
+        (onPageChange)="onPageChange($event)"
+      />
+    }
+  }
+</div>

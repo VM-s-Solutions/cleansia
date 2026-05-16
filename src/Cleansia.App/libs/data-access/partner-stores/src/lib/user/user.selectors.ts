@@ -13,6 +13,10 @@ export const selectUserDetail = createSelector(
   selectUserState,
   (s) => s.userDetail,
 );
+export const selectCurrentUser = createSelector(
+  selectUserState,
+  (s) => s.currentUser,
+);
 
 export const selectUserLoading = (key: string) =>
   createSelector(selectUserState, (s) => s.loading[key] ?? false);

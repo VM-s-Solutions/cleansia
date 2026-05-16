@@ -21,9 +21,11 @@ import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
+  CleansiaSelectComponent,
   CleansiaTextareaComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
+  ICleansiaSelectOption,
 } from '@cleansia/components';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
@@ -46,6 +48,7 @@ import { ServiceFormData, ServiceFormFacade } from './service-form.facade';
     CleansiaTextareaComponent,
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
+    CleansiaSelectComponent,
     CleansiaTitleComponent,
   ],
   templateUrl: './service-form.component.html',
@@ -68,12 +71,18 @@ export class ServiceFormComponent implements OnInit, OnDestroy {
       : this.translate.instant('pages.service_form.create_title')
   );
 
+  /** Map facade.categories() into the select-component's option shape. */
+  readonly categoryOptions = computed<ICleansiaSelectOption[]>(() =>
+    this.facade.categories().map((c) => ({ label: c.name, value: c.id }))
+  );
+
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(100)]],
     description: ['', [Validators.maxLength(500)]],
     basePrice: [0, [Validators.required, Validators.min(0)]],
     perRoomPrice: [0, [Validators.required, Validators.min(0)]],
     estimatedTime: [0, [Validators.required, Validators.min(0)]],
+    categoryId: ['', [Validators.required]],
     translations: this.fb.group({}),
   });
 
@@ -98,6 +107,7 @@ export class ServiceFormComponent implements OnInit, OnDestroy {
     }
 
     this.facade.loadLanguages();
+    this.facade.loadCategories();
 
     if (this.isEditMode()) {
       const serviceId = this.route.snapshot.paramMap.get('serviceId');
@@ -191,6 +201,7 @@ export class ServiceFormComponent implements OnInit, OnDestroy {
       basePrice: formValue.basePrice,
       perRoomPrice: formValue.perRoomPrice,
       estimatedTime: formValue.estimatedTime,
+      categoryId: formValue.categoryId,
       translations,
     };
 

@@ -58,9 +58,8 @@ public class GenerateInvoice
                 cancellationToken);
 
         private Task<bool> NoUnpaidOrderPaysExist(Command command, CancellationToken cancellationToken) =>
-            _orderEmployeePayRepository.GetByEmployeeId(command.EmployeeId)
-                .Where(p => p.PayPeriodId == command.PayPeriodId && p.EmployeeInvoiceId == null)
-                .AnyAsync(cancellationToken);
+            _orderEmployeePayRepository.HasUnassignedForEmployeePeriodAsync(
+                command.EmployeeId, command.PayPeriodId, cancellationToken);
     }
 
     public class Handler(
@@ -72,10 +71,8 @@ public class GenerateInvoice
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var orderPays = await orderEmployeePayRepository
-                .GetByEmployeeId(command.EmployeeId)
-                .Where(p => p.PayPeriodId == command.PayPeriodId && p.EmployeeInvoiceId == null)
-                .ToListAsync(cancellationToken);
+            var orderPays = await orderEmployeePayRepository.GetUnassignedForEmployeePeriodAsync(
+                command.EmployeeId, command.PayPeriodId, cancellationToken);
 
             var employee = await employeeRepository.GetByIdAsync(command.EmployeeId, cancellationToken);
 

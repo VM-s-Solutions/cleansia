@@ -414,25 +414,13 @@ $font-heading: 'Poppins', sans-serif;
     }
   }
 
+  // ─── BUTTON HOSTS ───
+  // These class names land on the `cleansia-button` host element, not on the
+  // inner `<p-button>`, so styling background/border/color here only created
+  // a phantom outer ring around the actual button. Visual treatment is fully
+  // delegated to PrimeNG via [severity]/[outlined] props on the button itself.
   &__service-cta {
-    background: none;
-    border: 1.5px solid $primary;
-    color: $primary;
-    font-family: $font-heading;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    padding: 0.5rem 1.25rem;
-    border-radius: 0.625rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
     white-space: nowrap;
-
-    &:hover {
-      background: $primary;
-      color: #ffffff;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba($primary, 0.3);
-    }
   }
 
   // ─── TEASER + VIEW ALL ───
@@ -489,36 +477,11 @@ $font-heading: 'Poppins', sans-serif;
     margin-bottom: 2rem;
   }
 
+  // Same delegation: visual treatment lives on the inner `<p-button>` via
+  // PrimeNG props. Removing the wrapper-level border eliminates the cyan
+  // double-ring that was visible around the "view all" buttons.
   &__view-all-btn {
     display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: none;
-    border: 1.5px solid $primary;
-    color: $primary;
-    font-family: $font-heading;
-    font-size: 0.9rem;
-    font-weight: 600;
-    padding: 0.625rem 1.75rem;
-    border-radius: 2rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-
-    &:hover {
-      background: $primary;
-      color: #ffffff;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba($primary, 0.3);
-    }
-
-    i {
-      font-size: 0.85rem;
-      transition: transform 0.3s ease;
-    }
-
-    &:hover i {
-      transform: translateY(2px);
-    }
   }
 
   // ─── CTA BANNER ───
@@ -551,26 +514,11 @@ $font-heading: 'Poppins', sans-serif;
     line-height: 1.7;
   }
 
+  // Same delegation: PrimeNG owns the fill/shadow/hover styling on the
+  // primary CTA button. Wrapper only controls inline-flex layout so the
+  // icon-arrow text still aligns inside the host.
   &__cta-button {
     display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: $primary;
-    color: #ffffff;
-    font-family: $font-heading;
-    font-size: 1rem;
-    font-weight: 700;
-    padding: 0.875rem 2rem;
-    border: none;
-    border-radius: 2rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 14px rgba($primary, 0.3);
-
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba($primary, 0.4);
-    }
   }
 
   // ─── EMPTY STATE ───
@@ -841,34 +789,15 @@ $font-heading: 'Poppins', sans-serif;
       }
     }
 
-    &__service-cta {
-      border-color: #38bdf8;
-      color: #38bdf8;
-
-      &:hover {
-        background: #38bdf8;
-        color: #0c4a6e;
-      }
-    }
-
-    &__view-all-btn {
-      border-color: #38bdf8;
-      color: #38bdf8;
-
-      &:hover {
-        background: #38bdf8;
-        color: #0c4a6e;
-      }
-    }
-
+    // Dark-mode visual treatment lives on the inner `<p-button>` via PrimeNG
+    // theme tokens; wrapper-level dark styles produced a phantom cyan ring
+    // around the actual button. Removed for the same reason as the base
+    // host-level styles above.
     &__cta-banner {
       background: linear-gradient(180deg, var(--surface-ground) 0%, rgba(56, 189, 248, 0.06) 100%);
     }
 
-    &__cta-button {
-      background: #38bdf8;
-      color: #0c4a6e;
-    }
+    // CTA button host: same delegation rule, PrimeNG handles the fill.
 
     &__sort-chip--active {
       background: rgba(56, 189, 248, 0.1);

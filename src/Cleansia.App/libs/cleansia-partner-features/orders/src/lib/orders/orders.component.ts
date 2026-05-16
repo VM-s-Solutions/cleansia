@@ -1,10 +1,10 @@
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   computed,
   inject,
-  OnDestroy,
   signal,
   TemplateRef,
   viewChild,
@@ -34,7 +34,6 @@ import { CleansiaPartnerRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { TabsModule } from 'primeng/tabs';
-import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 import { OrdersFacade } from './orders.facade';
 import {
   getAvailableOrdersTableDefinition,
@@ -72,8 +71,9 @@ import {
   ],
   templateUrl: './orders.component.html',
   providers: [OrdersFacade, DialogService],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class OrdersComponent implements AfterViewInit, OnDestroy {
+export class OrdersComponent implements AfterViewInit {
   private readonly router = inject(Router);
   private readonly cd = inject(ChangeDetectorRef);
   private readonly fb = inject(FormBuilder);
@@ -92,9 +92,13 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
 
   private lastSortField: string | null = null;
   private lastSortOrder: number | null = null;
-  private destroy$ = new Subject<void>();
 
-  // Search form
+  // Filter options — derived first so the form below can build a control per option.
+  orderStatusOptions: ICleansiaSelectOption[] = buildOrderStatusOptions(this.translate);
+  paymentStatusOptions: ICleansiaSelectOption[] = buildPaymentStatusOptions(this.translate);
+
+  // Search form. Status checkboxes are built from the option lists so adding
+  // an enum value doesn't require also declaring a matching FormControl.
   searchForm = this.fb.group({
     customerName: [''],
     customerEmail: ['', [Validators.email]],
@@ -103,22 +107,13 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
     paymentStatuses: [[] as number[]],
     cleaningDateFrom: [null as Date | null],
     cleaningDateTo: [null as Date | null],
-    orderStatus_0: [false],
-    orderStatus_1: [false],
-    orderStatus_2: [false],
-    orderStatus_3: [false],
-    orderStatus_4: [false],
-    orderStatus_5: [false],
-    paymentStatus_0: [false],
-    paymentStatus_1: [false],
-    paymentStatus_2: [false],
-    paymentStatus_3: [false],
-    paymentStatus_4: [false],
+    ...Object.fromEntries(
+      this.orderStatusOptions.map((o) => [`orderStatus_${o.value}`, [false]]),
+    ),
+    ...Object.fromEntries(
+      this.paymentStatusOptions.map((o) => [`paymentStatus_${o.value}`, [false]]),
+    ),
   });
-
-  // Filter options
-  orderStatusOptions: ICleansiaSelectOption[] = buildOrderStatusOptions(this.translate);
-  paymentStatusOptions: ICleansiaSelectOption[] = buildPaymentStatusOptions(this.translate);
   orderStatusMultiOptions = this.orderStatusOptions;
   paymentStatusMultiOptions = this.paymentStatusOptions;
 
@@ -160,25 +155,16 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
     this.rebuildFilterOptions();
     this.cd.detectChanges();
 
-    this.searchForm.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.filterFormVersion.update(v => v + 1);
-      });
-
-    this.searchForm.valueChanges
-      .pipe(debounceTime(500), distinctUntilChanged(), takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.applyFilters();
-      });
-
-    this.translate.onLangChange
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
+    this.facade.bindFormChanges(
+      this.searchForm,
+      () => this.filterFormVersion.update((v) => v + 1),
+      () => this.applyFilters(),
+      () => {
         this.rebuildTableDefinitions();
         this.rebuildFilterOptions();
         this.cd.detectChanges();
-      });
+      }
+    );
   }
 
   private rebuildTableDefinitions(): void {
@@ -191,7 +177,10 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
     this.availableOrdersActions = availableDef.actions;
 
     const myOrdersDef = getMyOrdersTableDefinition(
-      { onCompleteOrder: this.completeOrder.bind(this) },
+      {
+        onStartOrder: (row) => this.facade.startOrder(row.id!),
+        onCompleteOrder: this.completeOrder.bind(this),
+      },
       this.statusTemplate(),
       this.orderStatusTemplate()
     );
@@ -204,11 +193,6 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
     this.paymentStatusOptions = buildPaymentStatusOptions(this.translate);
     this.orderStatusMultiOptions = this.orderStatusOptions;
     this.paymentStatusMultiOptions = this.paymentStatusOptions;
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 
   onAvailableSortChange(event: { field: string; order: number }): void {
@@ -265,11 +249,11 @@ export class OrdersComponent implements AfterViewInit, OnDestroy {
     return getOrderStatusClass(order);
   }
 
-  getTranslatedPaymentStatus(paymentStatus: any): string {
+  getTranslatedPaymentStatus(paymentStatus: { name?: string } | null | undefined): string {
     return getTranslatedPaymentStatus(paymentStatus, this.translate);
   }
 
-  getTranslatedOrderStatus(orderStatus: any): string {
+  getTranslatedOrderStatus(orderStatus: { name?: string } | null | undefined): string {
     return getTranslatedOrderStatus(orderStatus, this.translate);
   }
 

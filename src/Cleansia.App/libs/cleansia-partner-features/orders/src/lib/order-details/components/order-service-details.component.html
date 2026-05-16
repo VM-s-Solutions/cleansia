@@ -1,0 +1,40 @@
+<cleansia-section [title]="'pages.order_details.service_details' | translate">
+  <div class="cleansia-order-details__grid" [formGroup]="formGroup()">
+    <div class="cleansia-order-details__field">
+      <cleansia-text-input
+        [label]="'pages.order_details.cleaning_date' | translate"
+        [floatVariant]="'on'"
+        formControlName="cleaningDateTime"
+        dataType="text"
+        [disabled]="true"
+      />
+    </div>
+    <div class="cleansia-order-details__field">
+      <cleansia-text-input
+        [label]="'pages.order_details.rooms' | translate"
+        [floatVariant]="'on'"
+        formControlName="rooms"
+        dataType="text"
+        [disabled]="true"
+      />
+    </div>
+    <div class="cleansia-order-details__field">
+      <cleansia-text-input
+        [label]="'pages.order_details.bathrooms' | translate"
+        [floatVariant]="'on'"
+        formControlName="bathrooms"
+        dataType="text"
+        [disabled]="true"
+      />
+    </div>
+    <div class="cleansia-order-details__field">
+      <cleansia-text-input
+        [label]="'pages.order_details.estimated_time' | translate"
+        [floatVariant]="'on'"
+        formControlName="estimatedTime"
+        dataType="text"
+        [disabled]="true"
+      />
+    </div>
+  </div>
+</cleansia-section>

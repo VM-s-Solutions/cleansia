@@ -47,4 +47,14 @@ public interface IRepository<TEntity, in TKey> : IUnitOfWork
     void DeactivateRange(IEnumerable<TEntity> entities);
 
     IQueryable<TEntity> GetQueryable();
+
+    /// <summary>
+    /// Bypasses the tenant query filter. ONLY for system-level jobs
+    /// (Azure Functions, BackgroundServices, Stripe webhooks) that have no JWT
+    /// and need to enumerate or look up rows across all tenants. Callers that
+    /// MUTATE rows MUST set <see cref="ITenantProvider.SetTenantOverride"/> from
+    /// the loaded entity's TenantId before the change is persisted, so child
+    /// rows inherit the right tenant.
+    /// </summary>
+    IQueryable<TEntity> GetQueryableIgnoringTenant();
 }

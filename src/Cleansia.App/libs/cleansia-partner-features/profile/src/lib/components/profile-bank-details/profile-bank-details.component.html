@@ -1,0 +1,10 @@
+<cleansia-section [title]="'pages.profile.bank_details' | translate">
+  <div class="cleansia-profile__field cleansia-profile__field--full" [formGroup]="facade.formGroup">
+    <cleansia-text-input
+      [label]="'pages.profile.iban' | translate"
+      [floatVariant]="'on'"
+      formControlName="iban"
+      dataType="text"
+    />
+  </div>
+</cleansia-section>

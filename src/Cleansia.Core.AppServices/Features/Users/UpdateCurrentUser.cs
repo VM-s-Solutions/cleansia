@@ -63,16 +63,19 @@ public class UpdateCurrentUser
                 .When(command => !string.IsNullOrWhiteSpace(command.Photo?.Base64Content));
         }
 
-        private Task<bool> AllowedToUpdateUser(Command command, CancellationToken cancellationToken)
+        private async Task<bool> AllowedToUpdateUser(Command command, CancellationToken cancellationToken)
         {
             var currentUserEmail = _userSessionProvider.GetUserEmail();
-            return _userRepository.GetByEmailAsync(currentUserEmail ?? string.Empty, cancellationToken)
-                .ContinueWith(t => t.Result?.Id == command.Id, cancellationToken);
+            var user = await _userRepository.GetByEmailAsync(currentUserEmail ?? string.Empty, cancellationToken);
+            return user?.Id == command.Id;
         }
 
-        private Task<bool> UserWithPhoneNumberNotExistsAsync(Command command, string phoneNumber,
-            CancellationToken cancellationToken) => _userRepository.GetByPhoneNumberAsync(phoneNumber, cancellationToken)
-            .ContinueWith(t => t.Result?.Id is null || t.Result?.Id == command.Id, cancellationToken);
+        private async Task<bool> UserWithPhoneNumberNotExistsAsync(Command command, string phoneNumber,
+            CancellationToken cancellationToken)
+        {
+            var user = await _userRepository.GetByPhoneNumberAsync(phoneNumber, cancellationToken);
+            return user?.Id is null || user.Id == command.Id;
+        }
 
         private static bool BeAValidDate(DateOnly? date)
         {
@@ -110,8 +113,8 @@ public class UpdateCurrentUser
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var user = await userRepository.GetByIdAsync(command.Id, cancellationToken);
-            var userOrders = await orderRepository.GetOrdersByPhoneNumber(user!.PhoneNumber ?? string.Empty)
-                .ToListAsync(cancellationToken: cancellationToken);
+            var userOrders = await orderRepository.GetOrdersByPhoneNumberAsync(
+                user!.PhoneNumber ?? string.Empty, cancellationToken);
 
             await UpdateProfilePhoto(user, command, cancellationToken);
             UpdateUserAndOrders(user, userOrders, command);
@@ -157,7 +160,7 @@ public class UpdateCurrentUser
             await client.UploadAsync(fileName, stream, Metadata.CacheMetadata, cancellationToken);
         }
 
-        private static void UpdateUserAndOrders(User user, List<Order> userOrders, Command command)
+        private static void UpdateUserAndOrders(User user, IReadOnlyList<Order> userOrders, Command command)
         {
             foreach (var order in userOrders)
             {

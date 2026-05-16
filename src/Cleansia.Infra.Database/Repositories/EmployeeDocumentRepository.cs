@@ -40,7 +40,6 @@ public class EmployeeDocumentRepository(CleansiaDbContext context) : BaseReposit
         var versions = new List<EmployeeDocument> { document };
         var currentDoc = document;
 
-        // Traverse backwards through version history
         while (currentDoc.PreviousVersionId != null)
         {
             currentDoc = await GetDbSet()

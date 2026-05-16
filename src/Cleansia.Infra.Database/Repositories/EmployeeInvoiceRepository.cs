@@ -27,32 +27,14 @@ public class EmployeeInvoiceRepository(CleansiaDbContext context) : BaseReposito
             .FirstOrDefaultAsync(i => i.VariableSymbol == variableSymbol, cancellationToken);
     }
 
-    public IQueryable<EmployeeInvoice> GetByEmployeeId(string employeeId)
+    public async Task<IReadOnlyList<EmployeeInvoice>> GetByEmployeeIdAsync(string employeeId, CancellationToken cancellationToken)
     {
-        return GetDbSet()
+        return await GetDbSet()
             .Include(i => i.PayPeriod)
             .Include(i => i.Currency)
             .Where(i => i.EmployeeId == employeeId)
-            .OrderByDescending(i => i.GeneratedAt);
-    }
-
-    public IQueryable<EmployeeInvoice> GetByStatus(EmployeeInvoiceStatus status)
-    {
-        return GetDbSet()
-            .Include(i => i.Employee)
-            .Include(i => i.PayPeriod)
-            .Include(i => i.Currency)
-            .Where(i => i.Status == status)
-            .OrderBy(i => i.GeneratedAt);
-    }
-
-    public IQueryable<EmployeeInvoice> GetByPayPeriodId(string payPeriodId)
-    {
-        return GetDbSet()
-            .Include(i => i.Employee)
-            .Include(i => i.Currency)
-            .Where(i => i.PayPeriodId == payPeriodId)
-            .OrderBy(i => i.Employee.User!.LastName);
+            .OrderByDescending(i => i.GeneratedAt)
+            .ToListAsync(cancellationToken);
     }
 
     public Task<EmployeeInvoice?> GetByEmployeeAndPayPeriodAsync(string employeeId, string payPeriodId, CancellationToken cancellationToken)
@@ -79,16 +61,42 @@ public class EmployeeInvoiceRepository(CleansiaDbContext context) : BaseReposito
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    public IQueryable<EmployeeInvoice> GetInvoicesByDateRange(string employeeId, DateTime startDate, DateTime endDate)
+    public async Task<bool> AllInvoicesPaidInPeriodAsync(string payPeriodId, CancellationToken cancellationToken)
     {
-        return GetDbSet()
+        // Inverse: returns true iff zero unpaid invoices exist for the period.
+        // Caller is ClosePayPeriod.Validator — period close is refused while
+        // any invoice is still outstanding (Pending/Generated/Approved/etc).
+        var hasUnpaid = await GetDbSet()
+            .AnyAsync(i => i.PayPeriodId == payPeriodId && i.Status != EmployeeInvoiceStatus.Paid, cancellationToken);
+        return !hasUnpaid;
+    }
+
+    public async Task<IReadOnlyList<EmployeeInvoice>> GetByEmployeeAndDateRangeAsync(
+        string employeeId, DateTime startDate, DateTime endDate, CancellationToken cancellationToken)
+    {
+        return await GetDbSet()
             .Include(i => i.PayPeriod)
             .Include(i => i.Currency)
             .Include(i => i.OrderPays)
             .Where(i => i.EmployeeId == employeeId &&
                        i.GeneratedAt >= startDate &&
                        i.GeneratedAt <= endDate)
-            .OrderBy(i => i.GeneratedAt);
+            .OrderBy(i => i.GeneratedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<EmployeeInvoice>> GetAllByDateRangeAsync(
+        DateTime startDate, DateTime endDate, CancellationToken cancellationToken)
+    {
+        return await GetDbSet()
+            .Include(i => i.Employee)
+                .ThenInclude(e => e.User)
+            .Include(i => i.PayPeriod)
+            .Include(i => i.Currency)
+            .Where(i => i.GeneratedAt >= startDate &&
+                       i.GeneratedAt <= endDate)
+            .OrderBy(i => i.GeneratedAt)
+            .ToListAsync(cancellationToken);
     }
 
     public override Task<EmployeeInvoice?> GetByIdAsync(string id, CancellationToken cancellationToken)
@@ -99,17 +107,5 @@ public class EmployeeInvoiceRepository(CleansiaDbContext context) : BaseReposito
             .Include(i => i.PayPeriod)
             .Include(i => i.OrderPays)
             .FirstOrDefaultAsync(i => i.Id == id, cancellationToken);
-    }
-
-    public IQueryable<EmployeeInvoice> GetAllInvoicesByDateRange(DateTime startDate, DateTime endDate)
-    {
-        return GetDbSet()
-            .Include(i => i.Employee)
-                .ThenInclude(e => e.User)
-            .Include(i => i.PayPeriod)
-            .Include(i => i.Currency)
-            .Where(i => i.GeneratedAt >= startDate &&
-                       i.GeneratedAt <= endDate)
-            .OrderBy(i => i.GeneratedAt);
     }
 }

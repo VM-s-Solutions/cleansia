@@ -28,7 +28,7 @@
             <span
               [class]="facade.getOrderStatusClass(facade.order()?.orderStatus)"
             >
-              {{ facade.order()?.orderStatus?.name }}
+              {{ facade.getOrderStatusLabel(facade.order()?.orderStatus) }}
             </span>
             <span
               [class]="
@@ -298,12 +298,6 @@
               >{{ 'pages.order_detail.employee_phone' | translate }}:</span
             >
             <span class="value">{{ employee.phoneNumber || '-' }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label"
-              >{{ 'pages.order_detail.employee_email' | translate }}:</span
-            >
-            <span class="value">{{ employee.email || '-' }}</span>
           </div>
         </div>
         }

@@ -17,6 +17,7 @@ public class DeviceConfiguration : AuditableEntityConfiguration<Device, string>
         builder.Property(d => d.DeviceToken).IsRequired().HasMaxLength(512);
         builder.Property(d => d.DeviceId).IsRequired().HasMaxLength(256);
         builder.Property(d => d.LastActiveAt).IsRequired();
+        builder.Property(d => d.NotificationsEnabled).IsRequired().HasDefaultValue(true);
 
         builder.HasIndex(d => d.DeviceId).IsUnique();
         builder.HasIndex(d => d.UserId);

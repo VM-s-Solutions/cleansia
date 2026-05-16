@@ -7,41 +7,20 @@ namespace Cleansia.Infra.Database.Repositories;
 
 public class DisputeRepository(CleansiaDbContext context) : BaseRepository<Dispute>(context), IDisputeRepository
 {
-    public IQueryable<Dispute> GetDisputesByOrderId(string orderId)
+    public async Task<IReadOnlyList<Dispute>> GetDisputesByUserIdAsync(string userId, CancellationToken cancellationToken)
     {
-        return GetDbSet()
-            .Where(d => d.OrderId == orderId)
-            .Include(d => d.Messages)
-            .Include(d => d.Evidence);
-    }
-
-    public IQueryable<Dispute> GetDisputesByUserId(string userId)
-    {
-        return GetDbSet()
+        return await GetDbSet()
             .Where(d => d.UserId == userId)
-            .Include(d => d.Order)
-            .Include(d => d.Messages)
-            .Include(d => d.Evidence);
-    }
-
-    public IQueryable<Dispute> GetDisputesByStatus(DisputeStatus status)
-    {
-        return GetDbSet()
-            .Where(d => d.Status == status)
-            .Include(d => d.Order)
-            .Include(d => d.User)
-            .Include(d => d.Messages)
-            .Include(d => d.Evidence);
-    }
-
-    public IQueryable<Dispute> GetDisputesWithDetails()
-    {
-        return GetDbSet()
-            .Include(d => d.Order)
-            .Include(d => d.User)
             .Include(d => d.Messages)
             .Include(d => d.Evidence)
-            .AsSplitQuery();
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<Dispute?> GetOpenDisputeForOrderAsync(string orderId, CancellationToken cancellationToken)
+    {
+        return GetDbSet()
+            .Where(d => d.OrderId == orderId && d.Status != DisputeStatus.Closed)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public Task<Dispute?> GetDisputeWithDetailsAsync(string disputeId)
@@ -50,6 +29,7 @@ public class DisputeRepository(CleansiaDbContext context) : BaseRepository<Dispu
             .Include(d => d.Order)
             .Include(d => d.User)
             .Include(d => d.Messages)
+                .ThenInclude(m => m.Author)
             .Include(d => d.Evidence)
             .AsSplitQuery()
             .FirstOrDefaultAsync(d => d.Id == disputeId);
@@ -61,6 +41,7 @@ public class DisputeRepository(CleansiaDbContext context) : BaseRepository<Dispu
             .Include(d => d.Order)
             .Include(d => d.User)
             .Include(d => d.Messages)
+                .ThenInclude(m => m.Author)
             .Include(d => d.Evidence)
             .AsSplitQuery()
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);

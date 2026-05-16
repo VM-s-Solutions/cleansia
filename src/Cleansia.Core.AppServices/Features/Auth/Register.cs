@@ -8,6 +8,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
+using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Features.Auth;
 
@@ -41,10 +42,11 @@ public class Register
                 .SetValidator(new LanguageValidator(languageRepository));
         }
 
-        private Task<bool> UserWithEmailNotExistsAsync(string email, CancellationToken cancellationToken) =>
-            _userRepository.GetByEmailAsync(email, cancellationToken)
-                .ContinueWith(t => t.Result is null || (t.Result is not null && !t.Result.IsEmailConfirmed),
-                    cancellationToken);
+        private async Task<bool> UserWithEmailNotExistsAsync(string email, CancellationToken cancellationToken)
+        {
+            var user = await _userRepository.GetByEmailAsync(email, cancellationToken);
+            return user is null || !user.IsEmailConfirmed;
+        }
     }
 
     public record Command(
@@ -52,13 +54,19 @@ public class Register
         string Password,
         string FirstName,
         string LastName,
-        string Language)
+        string Language,
+        // Optional referral code entered by the customer at signup. Empty
+        // when the user signed up directly. Validated + accepted server-side
+        // after the user is created — bad codes do NOT block registration.
+        string? ReferralCode = null)
         : ICommand<bool>;
 
     internal class Handler(
         IEmailService emailService,
         ICartRepository cartRepository,
-        IUserRepository userRepository)
+        IUserRepository userRepository,
+        IReferralService referralService,
+        ILogger<Handler> logger)
         : ICommandHandler<Command, bool>
     {
         public async Task<BusinessResult<bool>> Handle(Command command, CancellationToken cancellationToken)
@@ -79,6 +87,30 @@ public class Register
             var userName = $"{userEntity.FirstName} {userEntity.LastName}";
 
             await emailService.SendEmailConfirmationAsync(userEntity.Email, userName, userEntity.ConfirmationCode!, command.Language, cancellationToken);
+
+            // Referral acceptance is fail-soft: a bad code (typo, expired,
+            // self-referral) must NOT block account creation. The user can
+            // re-enter at first booking via CreateOrder's late-acceptance.
+            if (!string.IsNullOrWhiteSpace(command.ReferralCode))
+            {
+                try
+                {
+                    var acceptResult = await referralService.AcceptAsync(
+                        command.ReferralCode, userEntity.Id, cancellationToken);
+                    if (!acceptResult.IsAccepted)
+                    {
+                        logger.LogInformation(
+                            "Referral code {Code} not accepted for new user {UserId}: {Error}",
+                            command.ReferralCode, userEntity.Id, acceptResult.Error);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex,
+                        "Failed to accept referral code {Code} for user {UserId}",
+                        command.ReferralCode, userEntity.Id);
+                }
+            }
 
             return BusinessResult.Success(true);
         }

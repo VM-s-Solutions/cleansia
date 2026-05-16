@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Shared.DTOs.Files;
 using Cleansia.Core.Blobs.Abstractions;
@@ -16,7 +17,6 @@ public class SaveOrderPhotos
 {
     public record Command(
         string OrderId,
-        string EmployeeId,
         IEnumerable<PhotoToSave> Photos) : ICommand<Response>;
 
     public record PhotoToSave(
@@ -34,10 +34,9 @@ public class SaveOrderPhotos
 
     public class Validator : AbstractValidator<Command>
     {
-        private const long MaxFileSizeBytes = 10 * 1024 * 1024; // 10 MB
-        private static readonly string[] AllowedContentTypes = { "image/jpeg", "image/jpg", "image/png", "image/webp" };
+        private const long MaxFileSizeBytes = 10 * 1024 * 1024;
 
-        public Validator(IOrderRepository orderRepository, IEmployeeRepository employeeRepository)
+        public Validator(IOrderRepository orderRepository)
         {
             RuleFor(x => x.OrderId)
                 .Cascade(CascadeMode.Stop)
@@ -45,17 +44,6 @@ public class SaveOrderPhotos
                 .WithMessage(BusinessErrorMessage.Required)
                 .MustAsync(orderRepository.ExistsAsync)
                 .WithMessage(BusinessErrorMessage.OrderNotFound);
-
-            RuleFor(x => x.EmployeeId)
-                .Cascade(CascadeMode.Stop)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(employeeRepository.ExistsAsync)
-                .WithMessage(BusinessErrorMessage.EmployeeNotFound);
-
-            RuleFor(x => x)
-                .MustAsync(EmployeeIsAssignedToOrderAsync)
-                .WithMessage(BusinessErrorMessage.EmployeeNotAssignedToOrder);
 
             RuleFor(x => x.Photos)
                 .NotEmpty()
@@ -81,24 +69,25 @@ public class SaveOrderPhotos
         {
             if (string.IsNullOrEmpty(base64)) return 0;
             var data = base64.Contains(',') ? base64.Split(',')[1] : base64;
-            return (long)(data.Length * 0.75); // Base64 is 4/3 of original size
-        }
-
-        private async Task<bool> EmployeeIsAssignedToOrderAsync(Command command, CancellationToken cancellationToken)
-        {
-            // Will be checked in handler
-            return true;
+            return (long)(data.Length * 0.75);
         }
     }
 
     public class Handler(
         IOrderRepository orderRepository,
         IOrderPhotoRepository photoRepository,
+        IOrderAccessService orderAccessService,
         IBlobContainerClientFactory blobClientFactory) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            // Verify order exists and employee is assigned
+            var employeeId = await orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+            if (string.IsNullOrEmpty(employeeId))
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.OrderId), BusinessErrorMessage.EmployeeNotAssignedToOrder));
+            }
+
             var order = await orderRepository
                 .GetQueryable()
                 .Include(o => o.AssignedEmployees)
@@ -109,12 +98,11 @@ public class SaveOrderPhotos
                 return BusinessResult.Failure<Response>(new Error(nameof(command.OrderId), BusinessErrorMessage.OrderNotFound));
             }
 
-            if (!order.AssignedEmployees.Any(oe => oe.EmployeeId == command.EmployeeId))
+            if (!order.AssignedEmployees.Any(oe => oe.EmployeeId == employeeId))
             {
-                return BusinessResult.Failure<Response>(new Error(nameof(command.EmployeeId), BusinessErrorMessage.EmployeeNotAssignedToOrder));
+                return BusinessResult.Failure<Response>(new Error(nameof(command.OrderId), BusinessErrorMessage.EmployeeNotAssignedToOrder));
             }
 
-            // Upload all photos in batch
             var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.OrderPhotos);
             var savedPhotos = new List<SavedPhoto>();
 
@@ -122,20 +110,16 @@ public class SaveOrderPhotos
             {
                 var file = photoToSave.File;
 
-                // Extract base64 data (remove data:image/xxx;base64, prefix if present)
                 var base64Data = file.Base64Content!.Contains(',')
                     ? file.Base64Content.Split(',')[1]
                     : file.Base64Content;
 
-                // Determine content type
                 var contentType = DetermineContentType(file.FileName!, file.Base64Content);
 
-                // Generate unique filename
                 var fileExtension = Path.GetExtension(file.FileName);
                 var uniqueFileName = $"{command.OrderId}_{photoToSave.PhotoType}_{DateTime.UtcNow:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N")[..8]}{fileExtension}";
                 var blobName = $"{DateTime.UtcNow.Year}/{command.OrderId}/{uniqueFileName}";
 
-                // Upload to blob storage
                 using var stream = new MemoryStream(Convert.FromBase64String(base64Data));
                 var metadata = Metadata.CreateBuilder()
                     .WithMetadata(MetadataName.ContentType, contentType)
@@ -144,7 +128,6 @@ public class SaveOrderPhotos
 
                 var blobUrl = blobClient.GetBlobUri(blobName).ToString();
 
-                // Create photo entity
                 var photo = OrderPhoto.Create(
                     orderId: command.OrderId,
                     photoType: photoToSave.PhotoType,
@@ -153,7 +136,7 @@ public class SaveOrderPhotos
                     originalFileName: file.FileName,
                     fileSizeBytes: stream.Length,
                     contentType: contentType,
-                    capturedByEmployeeId: command.EmployeeId,
+                    capturedByEmployeeId: employeeId,
                     notes: photoToSave.Notes);
 
                 photoRepository.Add(photo);
@@ -170,7 +153,6 @@ public class SaveOrderPhotos
 
         private static string DetermineContentType(string fileName, string? base64Content)
         {
-            // Try to extract from base64 prefix
             if (!string.IsNullOrEmpty(base64Content) && base64Content.StartsWith("data:"))
             {
                 var contentType = base64Content.Split(';')[0].Replace("data:", "");
@@ -178,7 +160,6 @@ public class SaveOrderPhotos
                     return contentType;
             }
 
-            // Fallback to file extension
             var extension = Path.GetExtension(fileName).ToLowerInvariant();
             return extension switch
             {

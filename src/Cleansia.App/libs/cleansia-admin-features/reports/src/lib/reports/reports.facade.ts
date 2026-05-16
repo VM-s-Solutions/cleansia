@@ -4,9 +4,10 @@ import {
   RevenueReportDto,
   PayrollReportDto,
 } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 export type ReportType = 'revenue' | 'payroll';
 
@@ -16,12 +17,10 @@ export interface DateRangeFilter {
 }
 
 @Injectable()
-export class ReportsFacade {
+export class ReportsFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
-
-  private destroy$ = new Subject<void>();
 
   readonly revenueReport = signal<RevenueReportDto | null>(null);
   readonly payrollReport = signal<PayrollReportDto | null>(null);
@@ -57,7 +56,7 @@ export class ReportsFacade {
     this.adminClient.adminReportClient
       .revenue(startDate, endDate)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loadingRevenue.set(false))
       )
@@ -75,7 +74,7 @@ export class ReportsFacade {
     this.adminClient.adminReportClient
       .payroll(startDate, endDate)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.loadingPayroll.set(false))
       )
@@ -135,10 +134,5 @@ export class ReportsFacade {
     if (value === undefined || value === null) return '0%';
     const sign = value >= 0 ? '+' : '';
     return `${sign}${value.toFixed(1)}%`;
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

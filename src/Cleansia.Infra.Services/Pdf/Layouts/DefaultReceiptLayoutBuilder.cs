@@ -44,36 +44,29 @@ public class DefaultReceiptLayoutBuilder : IReceiptLayoutBuilder
     {
         container.Column(col =>
         {
-            // Document title
             col.Item().Element(c => c.DocumentTitle("Receipt"));
 
-            // Customer & Company info
             col.Item().Element(c => BuildInfoSection(c, data));
 
-            // Order details (cleaning date, rooms, etc.)
             if (data.CleaningDate != null || data.Rooms != null || data.Bathrooms != null)
             {
                 col.Item().Element(c => c.SectionTitle("Order Details"));
                 col.Item().Element(c => BuildOrderDetails(c, data));
             }
 
-            // Services & Packages table
             col.Item().Element(c => c.SectionTitle("Services & Packages"));
             col.Item().Element(c => BuildItemsTable(c, data));
 
-            // Extras
             if (data.Extras.Count > 0)
             {
                 col.Item().Element(c => BuildExtrasSection(c, data));
             }
 
-            // Summary
             col.Item().PaddingTop(CleansiaPdfTheme.SectionSpacing).Element(c => BuildSummary(c, data));
 
-            // Payment status
             col.Item().Element(c => BuildPaymentInfo(c, data));
 
-            // Fiscal registration (rendered only when the receipt was registered with a fiscal authority)
+            // Fiscal registration block is only rendered when the receipt was registered with a fiscal authority.
             if (!string.IsNullOrWhiteSpace(data.FiscalCode))
             {
                 col.Item().Element(c => BuildFiscalInfo(c, data));

@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   computed,
@@ -60,6 +61,7 @@ import {
   ],
   templateUrl: './pay-period-management.component.html',
   providers: [PayPeriodManagementFacade, DialogService],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PayPeriodManagementComponent implements AfterViewInit, OnDestroy {
   private readonly cd = inject(ChangeDetectorRef);

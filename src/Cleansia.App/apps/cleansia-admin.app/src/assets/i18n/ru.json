@@ -72,6 +72,14 @@
       "email_templates": "Шаблоны электронных писем",
       "email_template_translations": "Переводы шаблонов электронных писем",
       "fiscal_failures": "Фискальные сбои",
+      "promo_codes": "Промо-коды",
+      "promo_code_create": "Создать промо-код",
+      "promo_code_edit": "Редактировать промо-код",
+      "promo_code_detail": "Детали промо-кода",
+      "loyalty_tiers": "Уровни лояльности",
+      "loyalty_user_detail": "Лояльность пользователя",
+      "loyalty_referrals": "Рефералы",
+      "sitewide_push": "Массовая рассылка",
       "not_found": "Страница не найдена"
     }
   },
@@ -146,13 +154,14 @@
     "next_page": "Следующая страница",
     "actions": {
       "login": "Войти",
-      "pay_configs": "Pay Configs",
+      "pay_configs": "Конфигурации оплаты",
       "logout": "Выйти",
       "back": "Назад",
       "save": "Сохранить",
       "create": "Создать",
       "cancel": "Отменить",
       "edit": "Редактировать",
+      "view": "Просмотреть",
       "delete": "Удалить",
       "add": "Добавить",
       "ok": "OK",
@@ -203,6 +212,12 @@
     "templates": "Шаблоны",
     "global_rates": "Глобальные ставки",
     "fiscal_failures": "Фискальные сбои",
+    "loyalty": "Программа лояльности",
+    "loyalty_promo_codes": "Промо-коды",
+    "loyalty_tiers": "Уровни",
+    "loyalty_referrals": "Рефералы",
+    "marketing": "Маркетинг",
+    "marketing_sitewide_push": "Массовая рассылка",
     "logout": "Выйти"
   },
   "pages": {
@@ -390,6 +405,7 @@
         "rejected": "Отклонён",
         "unknown": "Неизвестен"
       },
+      "grade": "Уровень",
       "document_types": {
         "identity_card": "Удостоверение личности",
         "passport": "Паспорт",
@@ -421,7 +437,6 @@
       "packages_configured": "Пакеты",
       "bulk_apply_grade": "Применить шаблон уровня",
       "bulk_apply_grade_hint": "Выберите уровень и валюту, чтобы автоматически создать конфигурации оплаты для всех услуг и пакетов. Ставки рассчитываются из базовой цены с помощью множителей уровня (Junior 0.5x, Medior 0.75x, Senior 1.0x).",
-      "grade": "Уровень",
       "overwrite_existing": "Перезаписать существующие конфигурации",
       "apply_to_all": "Применить ко всем",
       "services": "Услуги",
@@ -458,6 +473,7 @@
       "order_status": {
         "pending": "Ожидает",
         "confirmed": "Подтверждён",
+        "on_the_way": "В пути",
         "in_progress": "В процессе",
         "completed": "Завершён",
         "cancelled": "Отменён",
@@ -667,6 +683,7 @@
       "translations": "Переводы",
       "name": "Название",
       "description": "Описание",
+      "category": "Категория",
       "base_price": "Базовая цена (CZK)",
       "per_room_price": "Цена за комнату (CZK)",
       "estimated_time": "Расчётное время (минуты)",
@@ -1242,6 +1259,279 @@
         "regenerate_success": "PDF счёта успешно перегенерирован",
         "regenerate_error": "Не удалось перегенерировать PDF счёта"
       }
+    },
+    "promo_codes": {
+      "title": "Промо-коды",
+      "new_button": "Новый код",
+      "search_placeholder": "Поиск по коду",
+      "status_filter_all": "Все статусы",
+      "status_filter_active": "Активные",
+      "status_filter_inactive": "Неактивные",
+      "status_filter_expired": "Просроченные",
+      "empty_list": "Промо-кодов пока нет",
+      "unlimited": "Без ограничений",
+      "column": {
+        "code": "Код",
+        "type": "Тип",
+        "discount": "Скидка",
+        "min_order": "Мин. заказ",
+        "per_user": "На пользователя",
+        "global": "Всего",
+        "validity": "Действует",
+        "status": "Статус",
+        "actions": "Действия"
+      },
+      "type": {
+        "percent": "Процентная",
+        "fixed": "Фиксированная"
+      },
+      "validity": {
+        "indefinite": "Без ограничений",
+        "from": "С {{date}}",
+        "until": "До {{date}}",
+        "range": "{{from}} – {{until}}"
+      },
+      "form": {
+        "create_title": "Создать промо-код",
+        "edit_title": "Редактировать промо-код",
+        "submit_create": "Создать код",
+        "submit_update": "Сохранить изменения",
+        "cancel": "Отмена",
+        "field": {
+          "code": "Код",
+          "code_help": "3–20 символов, только A-Z 0-9",
+          "type": "Тип скидки",
+          "discount_percent": "Скидка %",
+          "discount_amount": "Сумма скидки",
+          "currency": "Валюта",
+          "min_order": "Минимальная сумма заказа",
+          "max_per_user": "Макс. использований на пользователя",
+          "global_max_enabled": "Ограничить общее количество использований",
+          "global_max": "Общий лимит использований",
+          "valid_from": "Действует с",
+          "valid_until": "Действует до",
+          "description": "Внутренние заметки",
+          "active": "Активен"
+        },
+        "validation": {
+          "code_pattern": "Код должен содержать 3–20 символов (только A-Z 0-9)",
+          "code_required": "Код обязателен",
+          "percent_range": "Скидка должна быть от 1 до 100",
+          "amount_positive": "Сумма должна быть больше 0",
+          "currency_required": "Для фиксированной скидки требуется валюта",
+          "validity_range": "Дата окончания должна быть после даты начала"
+        },
+        "success": {
+          "created": "Промо-код создан",
+          "updated": "Промо-код обновлён",
+          "deactivated": "Промо-код деактивирован"
+        },
+        "error": {
+          "already_exists": "Код с таким именем уже существует",
+          "generic": "Не удалось сохранить код. Попробуйте ещё раз."
+        }
+      },
+      "detail": {
+        "title": "Детали промо-кода",
+        "redemptions_title": "Использования",
+        "redemptions_empty": "Использований пока нет",
+        "deactivate_button": "Деактивировать",
+        "deactivate_confirm_title": "Деактивировать этот код?",
+        "deactivate_confirm_body": "Клиенты больше не смогут использовать этот код. Существующие использования сохранятся.",
+        "deactivate_confirm_yes": "Деактивировать",
+        "deactivate_confirm_cancel": "Оставить активным",
+        "column": {
+          "user": "Пользователь",
+          "order": "Заказ",
+          "applied": "Применённая скидка",
+          "redeemed_on": "Использовано"
+        }
+      }
+    },
+    "loyalty_tiers": {
+      "title": "Уровни лояльности",
+      "description": "Настройте пороги, скидки и привилегии для каждого уровня. Изменения применяются немедленно ко всем пользователям.",
+      "perks_count": "{{count}} привилегий",
+      "discount_format": "{{percent}}%",
+      "no_min_order": "—",
+      "preview_impact_button": "Предпросмотр изменений порогов",
+      "column": {
+        "tier": "Уровень",
+        "threshold": "Порог",
+        "discount": "Скидка",
+        "min_order": "Мин. заказ",
+        "perks": "Привилегии",
+        "actions": "Действия"
+      },
+      "tier": {
+        "BronzeCleaner": "Бронзовый уборщик",
+        "SilverMopper": "Серебряный мопер",
+        "GoldPolisher": "Золотой полировщик",
+        "PlatinumSparkler": "Платиновый блистающий"
+      },
+      "form": {
+        "title": "Редактировать уровень",
+        "submit": "Сохранить изменения",
+        "cancel": "Отмена",
+        "success": "Уровень обновлён",
+        "field": {
+          "threshold": "Порог накопленных баллов",
+          "threshold_help": "Пользователи с этим количеством баллов и более достигают этого уровня.",
+          "discount": "Скидка %",
+          "discount_help": "0 = без скидки.",
+          "min_order": "Минимальная сумма заказа",
+          "min_order_help": "Оставьте пустым, чтобы применять скидку ко всем заказам.",
+          "perks_json": "Привилегии (JSON)",
+          "perks_json_help": "Массив объектов с icon и labelKey. Пример: [{\"icon\":\"badge\",\"labelKey\":\"loyalty.perks.welcome_badge\"}]"
+        },
+        "validation": {
+          "threshold_min": "Порог должен быть 0 или больше",
+          "discount_range": "Скидка должна быть между 0 и 100",
+          "min_order_min": "Минимальный заказ должен быть 0 или больше",
+          "perks_json_invalid": "Привилегии должны быть валидным JSON"
+        },
+        "error": {
+          "generic": "Не удалось сохранить уровень. Попробуйте ещё раз."
+        }
+      },
+      "preview": {
+        "title": "Предпросмотр изменений порогов",
+        "description": "Настройте пороги ниже и просмотрите, сколько пользователей будет переклассифицировано.",
+        "preview_button": "Предпросмотр",
+        "preview_results_title": "Предпросмотр влияния",
+        "result_row": "{{tier}}: {{currentCount}} → {{newCount}} ({{delta}})",
+        "apply_button": "Применить изменения",
+        "cancel_button": "Отмена",
+        "applying": "Применение изменений...",
+        "success": "Пороги обновлены",
+        "error": {
+          "preview": "Не удалось предпросмотреть влияние",
+          "apply": "Некоторые пороги не удалось сохранить"
+        }
+      }
+    },
+    "loyalty_user_detail": {
+      "title": "Лояльность пользователя",
+      "title_for_user": "Лояльность для {{email}}",
+      "loading": "Загрузка аккаунта...",
+      "back": "Назад к пользователю",
+      "view_link": "Просмотр лояльности",
+      "tier_label": "Текущий уровень",
+      "lifetime_points": "Всего баллов",
+      "completed_bookings_label": "Завершённые уборки",
+      "completed_bookings": "{{count}} завершённых уборок",
+      "tier_achieved_label": "Уровень достигнут",
+      "tier_achieved_on": "Уровень достигнут {{date}}",
+      "next_tier_label": "Прогресс",
+      "points_to_next_tier": "{{count}} баллов до {{tier}}",
+      "max_tier_reached": "Максимальный уровень достигнут",
+      "tier": {
+        "BronzeCleaner": "Бронзовый уборщик",
+        "SilverMopper": "Серебряный мойщик",
+        "GoldPolisher": "Золотой полировщик",
+        "PlatinumSparkler": "Платиновый сияющий"
+      },
+      "actions": {
+        "grant": "Начислить баллы",
+        "revoke": "Списать баллы"
+      },
+      "activity": {
+        "title": "Журнал активности",
+        "empty": "Нет активности",
+        "column": {
+          "date": "Дата",
+          "type": "Тип",
+          "points": "Баллы",
+          "source": "Источник",
+          "order": "Заказ"
+        },
+        "type": {
+          "Earn": "Начислено",
+          "Revoke": "Списано"
+        },
+        "source": {
+          "OrderCompleted": "Заказ выполнен",
+          "OrderCancelled": "Заказ отменён",
+          "Referral": "Реферальный бонус",
+          "ManualGrant": "Ручная корректировка"
+        }
+      },
+      "grant_dialog": {
+        "title_grant": "Начислить баллы",
+        "title_revoke": "Списать баллы",
+        "field": {
+          "points": "Баллы",
+          "reason": "Причина",
+          "reason_help": "Видно в журнале аудита."
+        },
+        "validation": {
+          "points_min": "Минимум 1 балл",
+          "points_max": "Максимум 100 000 баллов",
+          "reason_required": "Причина обязательна",
+          "reason_max": "Причина должна быть не более 500 символов"
+        },
+        "submit_grant": "Начислить",
+        "submit_revoke": "Списать",
+        "cancel": "Отмена",
+        "success_grant": "Баллы начислены",
+        "success_revoke": "Баллы списаны",
+        "error": {
+          "generic": "Не удалось обновить баллы"
+        }
+      }
+    },
+    "loyalty_referrals": {
+      "title": "Рефералы",
+      "description": "Вся активность по рефералам клиентов. Только для просмотра.",
+      "filter": {
+        "status_all": "Все статусы",
+        "status_accepted": "Принято",
+        "status_qualified": "Квалифицировано",
+        "status_expired": "Истекло",
+        "date_from": "С",
+        "date_to": "По"
+      },
+      "column": {
+        "referrer": "Реферер",
+        "referred": "Приглашённый",
+        "status": "Статус",
+        "accepted_on": "Принято",
+        "qualified_on": "Квалифицировано",
+        "points_awarded": "Начислено баллов"
+      },
+      "status": {
+        "Accepted": "Принято",
+        "Qualified": "Квалифицировано",
+        "Expired": "Истекло"
+      },
+      "points_format": "{{referrer}} / {{referred}}",
+      "not_yet": "—",
+      "empty": "Пока нет рефералов",
+      "loading": "Загрузка..."
+    },
+    "sitewide_push": {
+      "title": "Массовая рассылка",
+      "subtitle": "Отправить разовое маркетинговое push-уведомление всем клиентам, подписавшимся на маркетинг. Доставка асинхронная; обычно в течение нескольких минут.",
+      "titles_section": "Заголовок уведомления (по языку)",
+      "bodies_section": "Текст уведомления (по языку)",
+      "locale": {
+        "en_title": "Английский заголовок",
+        "cs_title": "Чешский заголовок",
+        "sk_title": "Словацкий заголовок",
+        "uk_title": "Украинский заголовок",
+        "ru_title": "Русский заголовок",
+        "en_body": "Английский текст",
+        "cs_body": "Чешский текст",
+        "sk_body": "Словацкий текст",
+        "uk_body": "Украинский текст",
+        "ru_body": "Русский текст"
+      },
+      "send": "Отправить всем подписчикам",
+      "confirm_title": "Отправить массовую рассылку?",
+      "confirm_send": "Уведомление будет поставлено в очередь для каждого клиента, подписавшегося на маркетинг. После постановки в очередь отменить отправку нельзя.",
+      "validation_error": "Перед отправкой заполните все языковые поля.",
+      "send_success": "Рассылка поставлена в очередь. Доставка выполняется в фоновом режиме.",
+      "send_error": "Не удалось поставить рассылку в очередь. Проверьте ввод и попробуйте ещё раз."
     }
   },
   "employees": {
@@ -1862,7 +2152,8 @@
       "remember_me": "Запомнить меня",
       "forgot_password": "Забыли пароль?",
       "dont_have_account": "Нет учётной записи?"
-    }
+    },
+    "refresh_token_reused": "Сессия использована в другом месте. Войдите, пожалуйста, заново."
   },
   "fiscal_failures": {
     "title": "Фискальные сбои",
@@ -1893,5 +2184,18 @@
       "retry_scheduled": "Повтор запланирован",
       "acknowledged": "Фискальный сбой подтверждён"
     }
+  },
+  "gdpr": {
+    "deletion_already_pending": "Запрос на удаление уже в обработке.",
+    "deletion_blocked_by_order": "Удалить аккаунт нельзя, пока есть активный заказ.",
+    "deletion_blocked_by_invoice": "Удалить аккаунт нельзя, пока есть неоплаченный счёт."
+  },
+  "order": {
+    "review": {
+      "already_exists": "Вы уже оставили отзыв по этому заказу."
+    }
+  },
+  "recurring_booking": {
+    "not_found": "Этого повторяющегося заказа больше не существует."
   }
 }

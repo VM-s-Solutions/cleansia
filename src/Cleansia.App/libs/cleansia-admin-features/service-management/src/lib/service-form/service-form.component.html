@@ -29,6 +29,15 @@
             />
           </div>
 
+          <div class="form-field">
+            <cleansia-select
+              [label]="'pages.service_form.category' | translate"
+              formControlName="categoryId"
+              [options]="categoryOptions()"
+              [required]="true"
+            />
+          </div>
+
           <div class="form-field full-width">
             <cleansia-textarea
               [label]="'pages.service_form.description' | translate"
@@ -71,7 +80,7 @@
       </cleansia-section>
 
       <cleansia-section [title]="'pages.service_form.translations' | translate">
-        <p-tabs [value]="facade.languages()[0]?.code || ''">
+        <p-tabs [value]="facade.languages()[0].code || ''">
           <p-tablist>
             @for (lang of facade.languages(); track lang.code) {
             <p-tab [value]="lang.code">{{ lang.name }}</p-tab>

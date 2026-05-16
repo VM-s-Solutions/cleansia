@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 import { ButtonModule, ButtonSeverity } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
@@ -58,6 +58,7 @@ export type ButtonSize = 'small' | 'medium' | 'large';
   standalone: true,
   imports: [CommonModule, ButtonModule, TranslateModule, TooltipModule],
   templateUrl: './cleansia-button.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaButtonComponent {
   buttonType = input<'button' | 'submit' | 'reset'>('button');

@@ -72,8 +72,7 @@ public class BulkCreateEmployeePayConfigs
             var packages = await packageRepository.GetAll().ToListAsync(cancellationToken);
 
             var existingConfigs = await payConfigRepository
-                .GetByEmployeeId(command.EmployeeId)
-                .ToListAsync(cancellationToken);
+                .GetByEmployeeIdAsync(command.EmployeeId, cancellationToken);
 
             var existingServiceIds = existingConfigs
                 .Where(c => c.ServiceId != null)

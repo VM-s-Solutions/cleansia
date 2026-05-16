@@ -47,15 +47,16 @@ public class ClosePayPeriod
                 .WithMessage(BusinessErrorMessage.MaxLength);
         }
 
-        private Task<bool> BeOpenStatusAsync(string payPeriodId, CancellationToken cancellationToken) =>
-            _payPeriodRepository.GetByIdAsync(payPeriodId, cancellationToken)
-                .ContinueWith(t => t.Result!.Status == PayPeriodStatus.Open, cancellationToken);
+        private async Task<bool> BeOpenStatusAsync(string payPeriodId, CancellationToken cancellationToken)
+        {
+            var period = await _payPeriodRepository.GetByIdAsync(payPeriodId, cancellationToken);
+            return period!.Status == PayPeriodStatus.Open;
+        }
 
-        private Task<bool> BeNoUnpaidInvoicesAsync(string payPeriodId, CancellationToken cancellationToken) =>
-            _invoiceRepository.GetByPayPeriodId(payPeriodId)
-                .Where(i => i.Status != EmployeeInvoiceStatus.Paid)
-                .CountAsync(cancellationToken)
-                .ContinueWith(t => t.Result == 0, cancellationToken);
+        private Task<bool> BeNoUnpaidInvoicesAsync(string payPeriodId, CancellationToken cancellationToken)
+        {
+            return _invoiceRepository.AllInvoicesPaidInPeriodAsync(payPeriodId, cancellationToken);
+        }
     }
 
     public class Handler(

@@ -1,0 +1,61 @@
+<div class="cleansia-referrals-list">
+  <div class="cleansia-referrals-list__container page-wrapper">
+    <div class="cleansia-referrals-list__header">
+      <div class="header-content">
+        <cleansia-title [title]="'pages.loyalty_referrals.title' | translate" />
+        <p class="cleansia-referrals-list__description">
+          {{ 'pages.loyalty_referrals.description' | translate }}
+        </p>
+      </div>
+    </div>
+
+    <cleansia-section>
+      <form [formGroup]="filterForm" class="filter-form">
+        <div class="filter-row">
+          <cleansia-select
+            formControlName="status"
+            [options]="translatedStatusOptions"
+            [showClear]="false"
+          />
+          <cleansia-calendar
+            formControlName="dateFrom"
+            [placeholder]="'pages.loyalty_referrals.filter.date_from' | translate"
+          />
+          <cleansia-calendar
+            formControlName="dateTo"
+            [placeholder]="'pages.loyalty_referrals.filter.date_to' | translate"
+          />
+        </div>
+      </form>
+
+      @if (facade.initialLoading()) {
+        <cleansia-loader />
+      } @else {
+        <cleansia-table
+          [data]="facade.referrals()"
+          [columns]="referralColumns"
+          [config]="{
+            paginator: true,
+            rows: 20,
+            lazy: true,
+            totalRecords: facade.totalRecords(),
+            emptyMessage: 'pages.loyalty_referrals.empty'
+          }"
+          [loading]="facade.loading()"
+          (pageChange)="onPageChange($event)"
+        />
+      }
+    </cleansia-section>
+  </div>
+</div>
+
+<ng-template #statusTemplate let-row>
+  <p-tag
+    [value]="statusLabel(row.status)"
+    [severity]="statusSeverity(row.status)"
+  />
+</ng-template>
+
+<ng-template #pointsTemplate let-row>
+  <span>{{ formatPointsAwarded(row) }}</span>
+</ng-template>

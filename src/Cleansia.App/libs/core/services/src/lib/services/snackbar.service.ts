@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, InjectionToken, inject } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { MessageService } from 'primeng/api';
 
@@ -10,12 +10,55 @@ interface ApiErrorResult {
   errors?: Record<string, string[]>;
 }
 
+/**
+ * Map of normalized API error keys (lowercase, alpha-only) to translation keys.
+ * Apps can `provide(SNACKBAR_ERROR_MAPPINGS, { useValue: { ... } })` in their
+ * `app.config.ts` to extend the built-in defaults with app-specific keys.
+ */
+export interface SnackbarErrorMappings {
+  [errorKey: string]: string;
+}
+
+/**
+ * Optional injection token for app-specific snackbar error -> translation-key
+ * mappings. Built-in defaults (see `DEFAULT_SNACKBAR_ERROR_MAPPINGS`) are
+ * always applied; provided values are merged on top and override defaults
+ * on key collision.
+ */
+export const SNACKBAR_ERROR_MAPPINGS = new InjectionToken<SnackbarErrorMappings>(
+  'SNACKBAR_ERROR_MAPPINGS'
+);
+
+/**
+ * Built-in fallback mappings shipped with the core service. Covers the
+ * cross-app order/validation errors. Apps add app-specific keys via
+ * `SNACKBAR_ERROR_MAPPINGS`.
+ */
+export const DEFAULT_SNACKBAR_ERROR_MAPPINGS: SnackbarErrorMappings = {
+  afterphotosrequired: 'api.order.after_photos.required',
+  afterphotosrequiredtocomplete: 'api.order.after_photos.required',
+  ordernotinprogress: 'api.order.not_in_progress',
+  ordernotconfirmed: 'api.order.not_confirmed',
+  employeenotassigned: 'api.order.employee_not_assigned',
+  employeealreadyassigned: 'api.order.employee_already_assigned',
+  noavailablespots: 'api.order.no_available_spots',
+  orderalreadyassigned: 'api.order.already_assigned',
+  completionnotesrequired: 'api.order.completion_notes.required',
+  actualtimemustbepositive: 'api.order.actual_time.positive',
+  validationregistrationnumberinvalidformat:
+    'api.validation.registration_number.invalid_format',
+};
+
 @Injectable({
   providedIn: 'root',
 })
 export class SnackbarService {
   private readonly messageService = inject(MessageService);
   private readonly translate = inject(TranslateService);
+  private readonly errorMappings: SnackbarErrorMappings = {
+    ...DEFAULT_SNACKBAR_ERROR_MAPPINGS,
+    ...(inject(SNACKBAR_ERROR_MAPPINGS, { optional: true }) ?? {}),
+  };
 
   showSuccess(message: string, duration?: number): void {
     this.showSnackbar(message, true, duration);
@@ -120,29 +163,13 @@ export class SnackbarService {
    * This is a best-effort conversion for common patterns.
    */
   private convertToTranslationKey(errorMessage: string): string {
-    // Common error message mappings
-    const knownMappings: Record<string, string> = {
-      afterphotosrequired: 'api.order.after_photos.required',
-      afterphotosrequiredtocomplete: 'api.order.after_photos.required',
-      ordernotinprogress: 'api.order.not_in_progress',
-      ordernotconfirmed: 'api.order.not_confirmed',
-      employeenotassigned: 'api.order.employee_not_assigned',
-      employeealreadyassigned: 'api.order.employee_already_assigned',
-      noavailablespots: 'api.order.no_available_spots',
-      orderalreadyassigned: 'api.order.already_assigned',
-      completionnotesrequired: 'api.order.completion_notes.required',
-      actualtimemustbepositive: 'api.order.actual_time.positive',
-      validationregistrationnumberinvalidformat:
-        'api.validation.registration_number.invalid_format',
-    };
-
     // Normalize the error message for lookup
     const normalizedMessage = errorMessage
       .toLowerCase()
       .replace(/[^a-z]/g, '');
 
-    if (knownMappings[normalizedMessage]) {
-      return knownMappings[normalizedMessage];
+    if (this.errorMappings[normalizedMessage]) {
+      return this.errorMappings[normalizedMessage];
     }
 
     // Return the original message as a key (won't translate but won't break)

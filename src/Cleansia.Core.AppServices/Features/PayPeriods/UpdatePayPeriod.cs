@@ -65,13 +65,18 @@ public class UpdatePayPeriod
                 .WithMessage(BusinessErrorMessage.MaxLength);
         }
 
-        private Task<bool> BeOpenStatusAsync(string payPeriodId, CancellationToken cancellationToken) =>
-            _payPeriodRepository.GetByIdAsync(payPeriodId, cancellationToken)
-                .ContinueWith(t => t.Result!.Status == PayPeriodStatus.Open, cancellationToken);
+        private async Task<bool> BeOpenStatusAsync(string payPeriodId, CancellationToken cancellationToken)
+        {
+            var period = await _payPeriodRepository.GetByIdAsync(payPeriodId, cancellationToken);
+            return period!.Status == PayPeriodStatus.Open;
+        }
 
-        private Task<bool> BeNoOverlappingPeriodAsync(Command command, CancellationToken cancellationToken) =>
-            _payPeriodRepository.HasOverlappingPeriodAsync(command.StartDate, command.EndDate, command.PayPeriodId, cancellationToken)
-                .ContinueWith(t => !t.Result, cancellationToken);
+        private async Task<bool> BeNoOverlappingPeriodAsync(Command command, CancellationToken cancellationToken)
+        {
+            var hasOverlap = await _payPeriodRepository.HasOverlappingPeriodAsync(
+                command.StartDate, command.EndDate, command.PayPeriodId, cancellationToken);
+            return !hasOverlap;
+        }
     }
 
     public class Handler(

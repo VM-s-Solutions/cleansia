@@ -250,11 +250,131 @@ $font-heading: 'Poppins', sans-serif;
     margin: -1rem 0 1.5rem !important;
   }
 
+  // ─── CATEGORY FILTER (Services step) ───
+  &__filter-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: -0.75rem 0 1rem;
+    flex-wrap: wrap;
+  }
+
+  &__filter-label {
+    font-size: 0.85rem;
+    color: $text-muted;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  &__filter-chips {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.25rem;
+
+    &::-webkit-scrollbar {
+      height: 4px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: rgba($primary, 0.2);
+      border-radius: 2px;
+    }
+  }
+
+  &__filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.95rem;
+    border-radius: 999px;
+    border: 1.5px solid $border;
+    background: $white;
+    color: $text-body;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+
+    i {
+      font-size: 0.8rem;
+    }
+
+    &:hover {
+      border-color: $primary-accent;
+      color: $primary-dark;
+    }
+
+    &--selected {
+      background: $primary;
+      border-color: $primary;
+      color: $white;
+
+      &:hover {
+        background: $primary-dark;
+        border-color: $primary-dark;
+        color: $white;
+      }
+    }
+  }
+
+  &__filter-active {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 1rem;
+    padding: 0.5rem 0.85rem;
+    border-radius: 0.6rem;
+    background: $primary-lighter;
+    color: $text-heading;
+    font-size: 0.85rem;
+
+    > i {
+      color: $primary;
+      font-size: 0.85rem;
+    }
+
+    strong {
+      color: $primary-dark;
+    }
+  }
+
+  &__filter-clear {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-left: 0.4rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid rgba($primary, 0.25);
+    background: $white;
+    color: $primary;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    i {
+      font-size: 0.7rem;
+    }
+
+    &:hover {
+      background: $primary;
+      color: $white;
+      border-color: $primary;
+    }
+  }
+
   // ─── SELECTION CARDS (Services & Packages) ───
   &__card-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 1rem;
+    align-items: stretch;
   }
 
   &__selection-card {
@@ -269,6 +389,7 @@ $font-heading: 'Poppins', sans-serif;
     cursor: pointer;
     transition: all 0.25s ease;
     background: $white;
+    height: 100%;
 
     &:hover {
       border-color: $primary-accent;
@@ -331,7 +452,30 @@ $font-heading: 'Poppins', sans-serif;
     color: $text-muted;
     line-height: 1.45;
     margin: 0 0 0.625rem !important;
+  }
+
+  &__selection-included {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0 1rem;
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.4rem;
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: $text-muted;
+
+      i {
+        color: $green;
+        font-size: 0.75rem;
+      }
+    }
   }
 
   &__selection-price {
@@ -339,6 +483,7 @@ $font-heading: 'Poppins', sans-serif;
     font-size: 1.1rem;
     font-weight: 700;
     color: $primary;
+    margin-top: auto;
   }
 
   &__selection-per-room {
@@ -474,6 +619,11 @@ $font-heading: 'Poppins', sans-serif;
     }
   }
 
+  &__saved-address-label {
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+  }
+
   &__saved-address-badge {
     display: inline-block;
     padding: 0.1rem 0.5rem;
@@ -509,6 +659,56 @@ $font-heading: 'Poppins', sans-serif;
       color: $text-body !important;
       font-size: 0.85rem !important;
     }
+  }
+
+  // Read-only display of the address resolved from the Mapbox autocomplete.
+  // Mirrors saved-address-info layout so a "fresh pick" card looks consistent
+  // with the saved-address radio cards above it. Editable inputs were removed
+  // to force users through the geocoder (lat/lng must be captured server-side).
+  &__address-resolved {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid $border;
+    border-radius: 0.75rem;
+    background: $primary-lighter;
+
+    > i {
+      color: $primary;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    > div {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      min-width: 0;
+    }
+
+    strong {
+      font-family: $font-heading;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: $text-heading;
+    }
+
+    span {
+      font-size: 0.8rem;
+      color: $text-muted;
+    }
+  }
+
+  &__address-hint {
+    margin: 0 !important;
+    padding: 0.85rem 1rem;
+    border: 1px dashed $border;
+    border-radius: 0.75rem;
+    background: $bg-alt;
+    color: $text-muted;
+    font-size: 0.85rem;
+    font-style: italic;
   }
 
   // ─── FORM GRID ───
@@ -594,13 +794,28 @@ $font-heading: 'Poppins', sans-serif;
     cursor: pointer;
     text-align: center;
     transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
 
-    &:hover {
+    // Only apply hover when the button is actually interactable — not disabled.
+    &:hover:not(:disabled) {
       border-color: $primary-accent;
       background: $primary-lighter;
     }
 
-    &--selected {
+    // Native :disabled covers both "no date picked yet" and "slot unavailable" cases.
+    // Keep the visual affordance loud: low opacity + not-allowed cursor.
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+      background: transparent;
+    }
+
+    // Selected state only applies when enabled — a disabled selected slot is impossible
+    // in practice but the guard prevents a weird-looking in-between visual.
+    &--selected:not(:disabled) {
       background: $primary;
       border-color: $primary;
       color: $white;
@@ -612,6 +827,35 @@ $font-heading: 'Poppins', sans-serif;
         border-color: $primary-dark;
         color: $white;
       }
+    }
+
+    // Express slot — orange accent (unselected, enabled).
+    &--express:not(&--selected):not(:disabled) {
+      border-color: #ea580c;
+      color: #ea580c;
+
+      &:hover {
+        background: rgba(234, 88, 12, 0.08);
+        border-color: #ea580c;
+      }
+    }
+  }
+
+  &__time-slot-label {
+    font-weight: 600;
+  }
+
+  &__time-slot-tag {
+    font-size: 0.7rem;
+    font-weight: 500;
+    line-height: 1;
+
+    &--express {
+      color: #ea580c;
+    }
+
+    &--unavailable {
+      color: $text-muted;
     }
   }
 
@@ -777,9 +1021,168 @@ $font-heading: 'Poppins', sans-serif;
     }
   }
 
+  // Cancellation policy — row structure mirrors summary-row; the trailing value
+  // gets a status-colored pill so the 3 tiers read at a glance (green / amber / red).
+  &__cancel-policy-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.55rem 0;
+    color: $text-body;
+    font-size: 0.9rem;
+
+    & + & {
+      border-top: 1px solid rgba($border, 0.5);
+    }
+
+    strong {
+      font-family: $font-heading;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.2rem 0.55rem;
+      border-radius: 1rem;
+    }
+  }
+
+  &__cancel-policy-free {
+    background: rgba(22, 163, 74, 0.12);
+    color: #16a34a;
+  }
+
+  &__cancel-policy-mid {
+    background: rgba(217, 119, 6, 0.14);
+    color: #d97706;
+  }
+
+  &__cancel-policy-full {
+    background: rgba(220, 38, 38, 0.12);
+    color: #dc2626;
+  }
+
+  // Inline cancellation policy on date/time tab — small card sitting under the
+  // time grid so customers see the full tiered breakdown before picking a slot.
+  &__cancel-policy-inline {
+    margin-top: 1rem;
+    padding: 0.85rem 1rem;
+    background: $white;
+    border: 1px solid $border;
+    border-radius: 0.65rem;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  }
+
+  &__cancel-policy-inline-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 0.35rem;
+    font-family: $font-heading;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: $text-heading;
+
+    i {
+      color: $primary;
+      font-size: 1rem;
+    }
+  }
+
   &__summary-row-price {
     font-weight: 600;
     color: $primary;
+  }
+
+  // ─── CODE ROW (promo / referral entries on summary step) ───
+  // Wolt-style click-to-open row. Tap → opens modal dialog → backend call on
+  // Apply only. The applied chip + clear-X live on the right side.
+  &__code-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    border: 1px solid $border;
+    border-radius: 12px;
+    background: $white;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    margin-bottom: 0.75rem;
+
+    &:hover,
+    &:focus-visible {
+      background: $primary-lighter;
+      border-color: $primary;
+      box-shadow: $shadow-card;
+      outline: none;
+    }
+
+    &-icon {
+      color: $primary;
+      font-size: 1.125rem;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    &-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    &-label {
+      font-weight: 600;
+      color: $text-dark;
+    }
+
+    &-applied {
+      font-size: 0.85rem;
+      color: $text-muted;
+      margin-top: 2px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    &-action {
+      color: $text-muted;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    &-clear {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: $text-muted;
+      padding: 0.375rem;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease, color 0.15s ease;
+
+      &:hover {
+        background: rgba(220, 38, 38, 0.1);
+        color: #dc2626;
+      }
+    }
+  }
+
+  // ─── TOTALS ROWS ───
+  &__summary-row--discount {
+    color: $green;
+  }
+
+  &__summary-row-price--discount {
+    color: $green !important;
+  }
+
+  &__summary-row--total {
+    font-size: 1rem;
+    font-weight: 700;
+    border-top: 2px solid $border !important;
+    padding-top: 0.75rem !important;
+    margin-top: 0.25rem;
+
+    .order-wizard__summary-row-price {
+      font-size: 1.1rem;
+    }
   }
 
   // ─── ACTIONS ───
@@ -845,6 +1248,34 @@ $font-heading: 'Poppins', sans-serif;
     span:last-child {
       font-weight: 600;
       color: $text-heading;
+    }
+
+    // Express surcharge line — visually distinguished so users notice the
+    // 20% bump before checkout. Border-top separates it from the per-line
+    // service breakdown above.
+    &--express {
+      margin-top: 0.5rem;
+      padding-top: 0.6rem;
+      border-top: 1px dashed $border;
+      color: $primary-accent;
+
+      span:last-child {
+        color: $primary-accent;
+      }
+    }
+
+    // Active discount line — green so the saving stands out. Same dashed
+    // separator as the express row so the breakdown reads cleanly when both
+    // apply simultaneously.
+    &--discount {
+      margin-top: 0.5rem;
+      padding-top: 0.6rem;
+      border-top: 1px dashed $border;
+      color: $green;
+
+      span:last-child {
+        color: $green;
+      }
     }
   }
 
@@ -946,6 +1377,22 @@ $font-heading: 'Poppins', sans-serif;
     justify-content: space-between;
     font-size: 0.85rem;
     color: $text-body;
+
+    &--express {
+      margin-top: 0.4rem;
+      padding-top: 0.5rem;
+      border-top: 1px dashed $border;
+      color: $primary-accent;
+      font-weight: 600;
+    }
+
+    &--discount {
+      margin-top: 0.4rem;
+      padding-top: 0.5rem;
+      border-top: 1px dashed $border;
+      color: $green;
+      font-weight: 600;
+    }
   }
 
   &__mobile-price-detail {
@@ -1157,6 +1604,49 @@ $font-heading: 'Poppins', sans-serif;
       border-color: #334155;
     }
 
+    &__filter-chip {
+      background: #172033;
+      border-color: #334155;
+      color: #cbd5e1;
+
+      &:hover {
+        border-color: #38bdf8;
+        color: #7dd3fc;
+      }
+
+      &--selected {
+        background: #38bdf8;
+        border-color: #38bdf8;
+        color: #0c1119;
+
+        &:hover {
+          background: #7dd3fc;
+          border-color: #7dd3fc;
+          color: #0c1119;
+        }
+      }
+    }
+
+    &__filter-label {
+      color: #94a3b8;
+    }
+
+    &__filter-active {
+      background: rgba(56, 189, 248, 0.1);
+      color: #cbd5e1;
+
+      > i,
+      strong {
+        color: #7dd3fc;
+      }
+    }
+
+    &__filter-clear {
+      background: #172033;
+      border-color: rgba(56, 189, 248, 0.3);
+      color: #7dd3fc;
+    }
+
     &__stepper-icon {
       background: #1e293b;
       border-color: #475569;
@@ -1213,6 +1703,30 @@ $font-heading: 'Poppins', sans-serif;
       color: #38bdf8;
     }
 
+    // Dark mirrors of the inline-address read-only display + empty-state hint.
+    &__address-resolved {
+      background: rgba(56, 189, 248, 0.06);
+      border-color: #334155;
+
+      > i {
+        color: #7dd3fc;
+      }
+
+      strong {
+        color: #e2e8f0;
+      }
+
+      span {
+        color: #94a3b8;
+      }
+    }
+
+    &__address-hint {
+      background: #172033;
+      border-color: #334155;
+      color: #94a3b8;
+    }
+
     &__selection-card {
       background: #1e293b;
       border-color: #334155;
@@ -1243,6 +1757,14 @@ $font-heading: 'Poppins', sans-serif;
     &__hero-subtitle,
     &__section-note {
       color: #94a3b8;
+    }
+
+    &__selection-included li {
+      color: #94a3b8;
+
+      i {
+        color: #4ade80;
+      }
     }
 
     &__counter-controls {
@@ -1338,6 +1860,42 @@ $font-heading: 'Poppins', sans-serif;
       color: #cbd5e1;
     }
 
+    // Cancellation policy — same label tint as summary-row; bump pill backgrounds
+    // since the translucent fills used in light mode disappear on the dark card.
+    &__cancel-policy-row {
+      color: #cbd5e1;
+    }
+
+    &__cancel-policy-free {
+      background: rgba(34, 197, 94, 0.18);
+      color: #4ade80;
+    }
+
+    &__cancel-policy-mid {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+    }
+
+    &__cancel-policy-full {
+      background: rgba(239, 68, 68, 0.18);
+      color: #f87171;
+    }
+
+    // Dark mirror for the date/time inline policy card.
+    &__cancel-policy-inline {
+      background: #1e293b;
+      border-color: #334155;
+      box-shadow: none;
+    }
+
+    &__cancel-policy-inline-title {
+      color: #e2e8f0;
+
+      i {
+        color: #38bdf8;
+      }
+    }
+
     &__sidebar-card {
       background: #1e293b;
       border-color: #334155;
@@ -1394,6 +1952,36 @@ $font-heading: 'Poppins', sans-serif;
 
       .order-wizard__stepper-label {
         color: #86efac;
+      }
+    }
+
+    &__code-row {
+      background: #172033;
+      border-color: #334155;
+
+      &:hover,
+      &:focus-visible {
+        background: rgba(56, 189, 248, 0.06);
+        border-color: #38bdf8;
+      }
+
+      &-icon {
+        color: #7dd3fc;
+      }
+
+      &-label {
+        color: #e2e8f0;
+      }
+
+      &-applied,
+      &-action,
+      &-clear {
+        color: #94a3b8;
+      }
+
+      &-clear:hover {
+        background: rgba(248, 113, 113, 0.15);
+        color: #f87171;
       }
     }
   }

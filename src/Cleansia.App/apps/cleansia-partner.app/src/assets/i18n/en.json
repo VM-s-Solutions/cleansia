@@ -181,7 +181,16 @@
         "average": "Average Monthly",
         "growth": "Growth",
         "chart_label": "Monthly Earnings",
-        "no_data": "No earnings data available"
+        "no_data": "No earnings data available",
+        "base_pay": "Base pay",
+        "bonus": "Bonus",
+        "breakdown": "Earnings breakdown",
+        "deductions": "Deductions",
+        "expenses_pay": "Expenses",
+        "extras_pay": "Extras",
+        "highest_month": "Highest month",
+        "lowest_month": "Lowest month",
+        "monthly_trend": "Monthly trend"
       },
       "time_analytics": {
         "title": "Time & Productivity Analytics",
@@ -192,7 +201,11 @@
         "by_service": "Time by Service Type",
         "week": "Week {{number}}",
         "chart_label": "Time Worked",
-        "no_data": "No time tracking data available"
+        "no_data": "No time tracking data available",
+        "avg_time": "Average time",
+        "order_count": "Order count",
+        "service_name": "Service name",
+        "total_time": "Total time"
       },
       "order_analytics": {
         "title": "Order Analytics",
@@ -205,7 +218,9 @@
         "order_count": "orders",
         "week": "Week {{number}}",
         "chart_label": "Orders",
-        "no_data": "No order data available"
+        "no_data": "No order data available",
+        "revenue": "Revenue",
+        "service_name": "Service name"
       },
       "productivity_metrics": {
         "title": "Productivity Metrics",
@@ -219,7 +234,8 @@
         "most_orders_day": "Most Orders in a Day",
         "most_orders_month": "Most Orders in a Month",
         "best_efficiency": "Best Efficiency",
-        "no_data": "No productivity data available"
+        "no_data": "No productivity data available",
+        "on_time": "On time"
       },
       "date_range": {
         "this_month": "This Month",
@@ -310,7 +326,9 @@
         "filter_active": "active",
         "filters_active": "active",
         "clear_all": "Clear all"
-      }
+      },
+      "no_logs": "No time logs to display",
+      "save_log": "Save log"
     },
     "order_details": {
       "title": "Order Details",
@@ -330,6 +348,7 @@
       "rooms": "Rooms",
       "bathrooms": "Bathrooms",
       "estimated_time": "Estimated Time",
+      "estimated_time_minutes": "{{minutes}} minutes",
       "selected_package": "Selected Package",
       "selected_packages": "Selected Packages",
       "included_services": "Included Services",
@@ -709,6 +728,9 @@
     "refresh": "Refresh",
     "common": "Common",
     "close": "Close",
+    "alt": {
+      "photo": "Photo"
+    },
     "rows_per_page": "Rows per page",
     "of": "of",
     "page": "Page {{page}}",
@@ -925,8 +947,24 @@
       "user_not_authenticated": "User not authenticated"
     },
     "validation": {
-      "registration_number": {
-        "invalid_format": "Invalid registration number format (IČO)"
+      "invalid_password": "Invalid password",
+      "invalid_date": "Invalid date",
+      "date_must_be_in_past": "Date must be in the past",
+      "invalid_age": "Invalid age",
+      "invalid_phone_number": "Invalid phone number format",
+      "invalid_national_id": "Invalid national ID format",
+      "invalid_tax_id": "Invalid tax ID format",
+      "invalid_iban": "Invalid IBAN format",
+      "invalid_zip_code": "Invalid zip code format",
+      "must_be_positive": "Value must be positive",
+      "invalid_availability_format": "Invalid availability format. Days must be valid day names or dates (yyyy-MM-dd), and time ranges must have start before end.",
+      "page_must_be_positive": "Page must be greater than 0",
+      "page_size_must_be_positive": "Page size must be greater than 0",
+      "page_size_exceeded": "Page size cannot exceed 100",
+      "invalid_contract_status": "Invalid contract status value",
+      "file": {
+        "max_size": "File \"{{fileName}}\" exceeds maximum size of {{maxSize}}MB",
+        "invalid_type": "File \"{{fileName}}\" type is not allowed. Accepted: {{acceptedTypes}}"
       }
     },
     "currency": {
@@ -977,7 +1015,8 @@
         "required": "After photos are required to complete the order"
       },
       "payment_gateway_unavailable": "Payment gateway is unavailable",
-      "creation_failed": "Failed to create order"
+      "creation_failed": "Failed to create order",
+      "time_conflict": "This time conflicts with another booking on your schedule"
     },
     "user": {
       "email_confirmed": "Email is already confirmed",
@@ -1093,27 +1132,6 @@
       "cannot_deactivate_self": "You cannot deactivate your own account",
       "cannot_delete_self": "You cannot delete your own account"
     },
-    "validation": {
-      "invalid_password": "Invalid password",
-      "invalid_date": "Invalid date",
-      "date_must_be_in_past": "Date must be in the past",
-      "invalid_age": "Invalid age",
-      "invalid_phone_number": "Invalid phone number format",
-      "invalid_national_id": "Invalid national ID format",
-      "invalid_tax_id": "Invalid tax ID format",
-      "invalid_iban": "Invalid IBAN format",
-      "invalid_zip_code": "Invalid zip code format",
-      "must_be_positive": "Value must be positive",
-      "invalid_availability_format": "Invalid availability format. Days must be valid day names or dates (yyyy-MM-dd), and time ranges must have start before end.",
-      "page_must_be_positive": "Page must be greater than 0",
-      "page_size_must_be_positive": "Page size must be greater than 0",
-      "page_size_exceeded": "Page size cannot exceed 100",
-      "invalid_contract_status": "Invalid contract status value",
-      "file": {
-        "max_size": "File \"{{fileName}}\" exceeds maximum size of {{maxSize}}MB",
-        "invalid_type": "File \"{{fileName}}\" type is not allowed. Accepted: {{acceptedTypes}}"
-      }
-    },
     "service": {
       "not_found": "Service not found",
       "in_use": "Cannot delete service because it is currently in use",
@@ -1161,7 +1179,8 @@
       "in_progress": "In Progress",
       "completed": "Completed",
       "cancelled": "Cancelled",
-      "new": "New"
+      "new": "New",
+      "on_the_way": "On the way"
     },
     "payment_status": {
       "pending": "Pending",
@@ -1308,6 +1327,20 @@
         "password_min_length": "At least 8 characters",
         "passwords_match": "Passwords match"
       }
+    },
+    "refresh_token_reused": "Your session was used elsewhere. Please sign in again."
+  },
+  "gdpr": {
+    "deletion_already_pending": "A deletion request is already in progress.",
+    "deletion_blocked_by_order": "We can't delete your account while you have an active order.",
+    "deletion_blocked_by_invoice": "We can't delete your account while you have a pending invoice."
+  },
+  "order": {
+    "review": {
+      "already_exists": "You've already reviewed this order."
     }
+  },
+  "recurring_booking": {
+    "not_found": "That recurring booking no longer exists."
   }
 }

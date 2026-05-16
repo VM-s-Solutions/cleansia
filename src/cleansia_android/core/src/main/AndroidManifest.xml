@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- :core is a library module; the consuming app declares its own application,
+         activities, services, etc. We list shared permissions only when the
+         library code requires them; everything else is left to the app manifests. -->
+</manifest>

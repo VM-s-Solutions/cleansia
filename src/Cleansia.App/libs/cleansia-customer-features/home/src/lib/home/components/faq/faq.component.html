@@ -11,10 +11,13 @@
       </div>
       <div class="cl-faq-layout__right animate-on-scroll delay-1">
         <p-accordion>
-          @for (faq of faqs; track faq.question) {
-          <p-accordion-tab [header]="faq.question | translate">
-            <p class="cl-faq__answer">{{ faq.answer | translate }}</p>
-          </p-accordion-tab>
+          @for (faq of faqs; track faq.question; let i = $index) {
+          <p-accordion-panel [value]="i">
+            <p-accordion-header>{{ faq.question | translate }}</p-accordion-header>
+            <p-accordion-content>
+              <p class="cl-faq__answer">{{ faq.answer | translate }}</p>
+            </p-accordion-content>
+          </p-accordion-panel>
           }
         </p-accordion>
       </div>

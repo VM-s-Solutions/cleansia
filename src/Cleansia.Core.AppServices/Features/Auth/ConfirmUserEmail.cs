@@ -1,4 +1,5 @@
 ﻿using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
@@ -56,14 +57,15 @@ public class ConfirmUserEmail
 
     public class Handler(
         ITokenService tokenService,
-        IUserRepository userRepository) : ICommandHandler<Command, JwtTokenResponse>
+        IUserRepository userRepository,
+        IHostAudienceProvider hostAudience) : ICommandHandler<Command, JwtTokenResponse>
     {
         public async Task<BusinessResult<JwtTokenResponse>> Handle(Command command, CancellationToken cancellationToken)
         {
             var user = await userRepository.GetByConfirmationCodeAsync(command.Code, cancellationToken);
             user!.ConfirmEmail();
 
-            return BusinessResult.Success(tokenService.GenerateToken(user, rememberMe: true));
+            return BusinessResult.Success(await tokenService.GenerateTokenAsync(user, rememberMe: true, hostAudience.Audience, cancellationToken));
         }
     }
 }

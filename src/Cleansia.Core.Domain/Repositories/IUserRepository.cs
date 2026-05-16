@@ -13,4 +13,12 @@ public interface IUserRepository : IRepository<User, string>
     IQueryable<User> GetUnconfirmedUsersOlderThan(DateTime cutoffDate);
     Task<bool> ExistsWithPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken);
     IQueryable<User> GetConfirmedUsersWithEmails(IEnumerable<string> emails);
+
+    /// <summary>
+    /// Cross-tenant lookup by user id. Use only from system-level triggers
+    /// (Stripe webhook, Azure Function) that have no tenant context. Caller
+    /// MUST set <see cref="ITenantProvider.SetTenantOverride"/> with
+    /// <c>user.TenantId</c> before mutating any tenant-scoped row.
+    /// </summary>
+    Task<User?> GetByIdIgnoringTenantAsync(string id, CancellationToken cancellationToken = default);
 }

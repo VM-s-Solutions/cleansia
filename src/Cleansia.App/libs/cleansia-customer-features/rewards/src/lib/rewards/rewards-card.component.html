@@ -1,0 +1,28 @@
+<div class="customer-rewards-card" [class]="facade.account() ? 'customer-rewards-card--' + facade.tierAccent(facade.account()!.currentTier) : ''">
+  @if (facade.loading() && !facade.account()) {
+    <p-skeleton width="100%" height="6rem" borderRadius="16px" />
+  } @else if (facade.account()) {
+    <div class="customer-rewards-card__badge">
+      <i class="pi pi-star-fill"></i>
+    </div>
+    <div class="customer-rewards-card__body">
+      <div class="customer-rewards-card__title">
+        {{ 'pages.profile.rewards_card_title' | translate }}
+      </div>
+      <div class="customer-rewards-card__tier">
+        {{ ('pages.rewards.tier.' + facade.tierKey(facade.account()!.currentTier)) | translate }}
+      </div>
+      <div class="customer-rewards-card__points">
+        <strong>{{ facade.account()!.lifetimePoints }}</strong>
+        <span>{{ 'pages.rewards.points_unit' | translate }}</span>
+        <span class="customer-rewards-card__points-label">
+          · {{ 'pages.rewards.lifetime_points' | translate }}
+        </span>
+      </div>
+    </div>
+    <a class="customer-rewards-card__link" routerLink="/rewards">
+      {{ 'pages.profile.rewards_card_link' | translate }}
+      <i class="pi pi-arrow-right"></i>
+    </a>
+  }
+</div>

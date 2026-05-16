@@ -8,4 +8,6 @@ export const environment = {
   isDevelopment: false,
   sentryDsn: '',
   bugReportUrl: '',
+  // MANUAL_STEP: paste the production Mapbox public access token here.
+  mapboxToken: '',
 };

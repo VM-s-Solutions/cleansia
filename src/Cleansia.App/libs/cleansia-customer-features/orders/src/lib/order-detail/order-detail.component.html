@@ -56,17 +56,37 @@
         </div>
       </div>
 
+      <!-- Live mascot — only when cleaner is on-site (InProgress). Loops
+           continuously while status holds, vanishes when it transitions to
+           Completed/Cancelled. WebM keeps full alpha on any background. -->
+      @if (isInProgress()) {
+        <div class="order-detail__mascot-row">
+          <video
+            class="order-detail__mascot"
+            autoplay
+            muted
+            playsinline
+            loop
+            disablePictureInPicture
+            preload="auto"
+            aria-hidden="true"
+          >
+            <source src="assets/videos/mascot-cleaning-in-progress.webm" type="video/webm" />
+          </video>
+        </div>
+      }
+
       <!-- Status -->
       <div class="order-detail__section">
         <h3>{{ 'pages.order_detail.status' | translate }}</h3>
         <div class="order-detail__status-row">
           <div>
             <span>{{ 'pages.order_detail.order_status' | translate }}:</span>
-            <p-tag [value]="order()!.orderStatus.name || ''" [severity]="getOrderStatusSeverity(order()!.orderStatus)" />
+            <p-tag [value]="order()!.orderStatus | orderStatusLabel" [severity]="order()!.orderStatus | orderStatusSeverity" />
           </div>
           <div>
             <span>{{ 'pages.order_detail.payment_status' | translate }}:</span>
-            <p-tag [value]="order()!.paymentStatus.name || ''" [severity]="getPaymentStatusSeverity(order()!.paymentStatus)" />
+            <p-tag [value]="order()!.paymentStatus | paymentStatusLabel" [severity]="order()!.paymentStatus | paymentStatusSeverity" />
           </div>
           <div>
             <span>{{ 'pages.order_detail.payment_type' | translate }}:</span>
@@ -131,11 +151,54 @@
         </div>
       }
 
-      <!-- Total -->
+      <!-- Total + applied-discount chip when one of the three discount sources fired. -->
       <div class="order-detail__total">
         <span>{{ 'pages.order_detail.total' | translate }}</span>
-        <strong>{{ formatPrice(order()!.totalPrice) }}</strong>
+        <span class="order-detail__total-amount">
+          @if (
+            order()!.appliedDiscountSource &&
+            order()!.appliedDiscountSource !== 0 &&
+            order()!.originalSubtotal > order()!.totalPrice
+          ) {
+            <span class="order-detail__original-price">{{ formatPrice(order()!.originalSubtotal) }}</span>
+          }
+          <strong>{{ formatPrice(order()!.totalPrice) }}</strong>
+        </span>
       </div>
+      @if (
+        order()!.appliedDiscountSource &&
+        order()!.appliedDiscountSource !== 0 &&
+        order()!.originalSubtotal > order()!.totalPrice
+      ) {
+        <div class="order-detail__discount-chip">
+          @switch (order()!.appliedDiscountSource) {
+            @case (1) { <span>{{ 'pages.order_detail.discount_tier' | translate }}</span> }
+            @case (2) { <span>{{ 'pages.order_detail.discount_membership' | translate }}</span> }
+            @case (3) { <span>{{ 'pages.order_detail.discount_promo' | translate }}</span> }
+            @case (4) {
+              <!-- LOY-003 — Combined: render both Plus and tier labels. -->
+              <span>{{ 'pages.order_detail.discount_membership' | translate }}</span>
+              <span class="order-detail__discount-chip-separator">·</span>
+              <span>{{ 'pages.order_detail.discount_tier' | translate }}</span>
+            }
+          }
+        </div>
+      }
+
+      <!-- Make this recurring — Path B entry. Always visible on Completed
+           orders; non-Plus users get routed to /membership/subscribe via the
+           click handler so they don't fill out a wizard they can't save. -->
+      @if (isCompleted()) {
+        <div class="order-detail__section order-detail__make-recurring">
+          <cleansia-button
+            severity="secondary"
+            [outlined]="true"
+            icon="pi pi-calendar-plus"
+            [label]="'recurring_booking.order_detail_make_recurring' | translate"
+            (click)="makeRecurring()"
+          ></cleansia-button>
+        </div>
+      }
 
       <!-- Rating / Review -->
       @if (isCompleted()) {
@@ -194,13 +257,13 @@
           <p-timeline [value]="order()!.statusHistory!" layout="vertical">
             <ng-template #content let-event>
               <div class="order-detail__timeline-event">
-                <strong>{{ event.status?.name }}</strong>
+                <strong>{{ event.status | orderStatusLabel }}</strong>
                 <small>{{ formatDate(event.createdOn) }}</small>
               </div>
             </ng-template>
             <ng-template #marker let-event>
               <span class="order-detail__timeline-marker">
-                <i [class]="getStatusIcon(event.status?.value)"></i>
+                <i [class]="event.status?.value | orderStatusIcon"></i>
               </span>
             </ng-template>
           </p-timeline>

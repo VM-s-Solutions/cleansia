@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, forwardRef, input, output, OnInit, ViewChild, ElementRef, inject } from '@angular/core';
-import { NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, forwardRef, input, output, OnInit, ViewChild, ElementRef, inject } from '@angular/core';
+import { NG_VALUE_ACCESSOR, ValidationErrors } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ErrorPipe } from '@cleansia/pipes';
 import { ButtonModule } from 'primeng/button';
@@ -24,6 +24,7 @@ export interface FileItem {
       multi: true,
     },
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaFileComponent extends CleansiaBaseFormInputComponent implements OnInit {
   @ViewChild('fileInput', { static: true }) fileInput!: ElementRef<HTMLInputElement>;
@@ -89,7 +90,7 @@ export class CleansiaFileComponent extends CleansiaBaseFormInputComponent implem
 
   private processFiles(files: File[]): void {
     const validFiles: File[] = [];
-    const allValidationErrors: { [key: string]: any } = {};
+    const allValidationErrors: ValidationErrors = {};
 
     for (const file of files) {
       const validation = this.validateFile(file);
@@ -119,8 +120,8 @@ export class CleansiaFileComponent extends CleansiaBaseFormInputComponent implem
     this.updateFormControl();
   }
 
-  private validateFile(file: File): { isValid: boolean; validationErrors: { [key: string]: any } } {
-    const validationErrors: { [key: string]: any } = {};
+  private validateFile(file: File): { isValid: boolean; validationErrors: ValidationErrors } {
+    const validationErrors: ValidationErrors = {};
 
     // Validate file size
     if (file.size > this.maxFileSize()) {
@@ -203,7 +204,7 @@ export class CleansiaFileComponent extends CleansiaBaseFormInputComponent implem
     }
   }
 
-  private setValidationErrors(validationErrors: { [key: string]: any }): void {
+  private setValidationErrors(validationErrors: ValidationErrors): void {
     if (this.formControl) {
       const currentErrors = this.formControl.errors || {};
       // Remove any existing file validation errors

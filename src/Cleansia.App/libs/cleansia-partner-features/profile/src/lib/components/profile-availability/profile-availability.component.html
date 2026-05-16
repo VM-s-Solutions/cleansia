@@ -1,0 +1,8 @@
+<cleansia-section [title]="'pages.profile.availability' | translate">
+  <p class="cleansia-profile__description">
+    {{ 'pages.profile.availability_description' | translate }}
+  </p>
+  <div [formGroup]="facade.formGroup">
+    <cleansia-availability formControlName="availability" />
+  </div>
+</cleansia-section>

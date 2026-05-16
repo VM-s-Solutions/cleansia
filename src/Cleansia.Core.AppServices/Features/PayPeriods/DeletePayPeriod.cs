@@ -41,15 +41,19 @@ public class DeletePayPeriod
                 .WithMessage(BusinessErrorMessage.HasOrderPays);
         }
 
-        private Task<bool> BeOpenStatusAsync(string payPeriodId, CancellationToken cancellationToken) =>
-            _payPeriodRepository.GetByIdAsync(payPeriodId, cancellationToken)
-                .ContinueWith(t => t.Result!.Status == PayPeriodStatus.Open, cancellationToken);
+        private async Task<bool> BeOpenStatusAsync(string payPeriodId, CancellationToken cancellationToken)
+        {
+            var period = await _payPeriodRepository.GetByIdAsync(payPeriodId, cancellationToken);
+            return period!.Status == PayPeriodStatus.Open;
+        }
 
-        private Task<bool> BeNoOrderPaysAsync(string payPeriodId, CancellationToken cancellationToken) =>
-            _orderEmployeePayRepository.GetAll()
+        private async Task<bool> BeNoOrderPaysAsync(string payPeriodId, CancellationToken cancellationToken)
+        {
+            var count = await _orderEmployeePayRepository.GetAll()
                 .Where(op => op.PayPeriodId == payPeriodId)
-                .CountAsync(cancellationToken)
-                .ContinueWith(t => t.Result == 0, cancellationToken);
+                .CountAsync(cancellationToken);
+            return count == 0;
+        }
     }
 
     public class Handler(

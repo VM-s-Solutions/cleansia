@@ -1,5 +1,6 @@
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   Component,
   ElementRef,
   inject,
@@ -14,6 +15,7 @@ import {
 } from '@cleansia/customer-stores';
 import { Store } from '@ngrx/store';
 import { CleansiaScrollTopComponent } from '@cleansia/components';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { FloatingBgComponent } from './components/floating-bg/floating-bg.component';
 import { HeroComponent } from './components/hero/hero.component';
@@ -42,7 +44,9 @@ import { CtaComponent } from './components/cta/cta.component';
     FaqComponent,
     CtaComponent,
     CleansiaScrollTopComponent,
+    TranslatePipe,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly el = inject(ElementRef);

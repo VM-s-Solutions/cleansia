@@ -1,3 +1,4 @@
+export * from './lib/auth';
 export * from './lib/enums';
 export * from './lib/interceptors';
 export * from './lib/services';

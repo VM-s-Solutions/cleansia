@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
@@ -38,14 +37,42 @@ public class OrderController(IMediator mediator) : CustomerApiController(mediato
     }
 
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     [HttpPost("CreateOrder")]
     [ProducesResponseType(typeof(CreateOrder.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrder.Command command)
     {
         var result = await Mediator.Send(command);
-
         return HandleResult<CreateOrder.Response>(result);
+    }
+
+    [AllowAnonymous]
+    [EnableRateLimiting("auth")]
+    [HttpPost("Quote")]
+    [ProducesResponseType(typeof(QuoteOrder.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Quote([FromBody] QuoteOrder.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<QuoteOrder.Response>(result);
+    }
+
+    /// <summary>
+    /// Customer-driven confirmation of a Pending recurring-template Order.
+    /// Cash returns success immediately (order flips to Confirmed + Paid).
+    /// Card returns a Stripe PaymentIntent + ephemeral key so the mobile
+    /// PaymentSheet can collect payment.
+    /// </summary>
+    [Authorize]
+    [HttpPost("ConfirmRecurring")]
+    [ProducesResponseType(typeof(ConfirmRecurringOrder.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ConfirmRecurring([FromBody] ConfirmRecurringOrder.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<ConfirmRecurringOrder.Response>(result);
     }
 
     [HttpGet("GetMyOrders")]
@@ -120,9 +147,7 @@ public class OrderController(IMediator mediator) : CustomerApiController(mediato
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> SubmitReview([FromBody] SubmitOrderReview.Command command, CancellationToken cancellationToken)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-        var enrichedCommand = command with { UserId = userId };
-        var result = await Mediator.Send(enrichedCommand, cancellationToken);
+        var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<OrderReviewDto>(result);
     }
 
@@ -136,5 +161,28 @@ public class OrderController(IMediator mediator) : CustomerApiController(mediato
     {
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<ReportOrderIssue.Response>(result);
+    }
+
+    [HttpPost("Cancel")]
+    [Permission(Policy.CanCancelOrder)]
+    [ProducesResponseType(typeof(CancelOrder.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> CancelOrder([FromBody] CancelOrder.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<CancelOrder.Response>(result);
+    }
+
+    [HttpGet("MyServingCleaners")]
+    [Permission(Policy.CanViewPagedUserOrder)]
+    [ProducesResponseType(typeof(IReadOnlyList<GetMyServingCleaners.Response>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> MyServingCleaners(CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new GetMyServingCleaners.Query(), cancellationToken);
+        return HandleResult<IReadOnlyList<GetMyServingCleaners.Response>>(result);
     }
 }

@@ -21,29 +21,60 @@ public class OrderEmployeePayRepository(CleansiaDbContext context) : BaseReposit
         return GetDbSet().AnyAsync(p => p.OrderId == orderId && p.EmployeeId == employeeId, cancellationToken);
     }
 
-    public IQueryable<OrderEmployeePay> GetByEmployeeId(string employeeId)
+    public async Task<IReadOnlyList<OrderEmployeePay>> GetUnassignedForEmployeePeriodAsync(
+        string employeeId, string payPeriodId, CancellationToken cancellationToken)
     {
-        return GetDbSet()
+        return await GetDbSet()
             .Include(p => p.Order)
             .Include(p => p.PayPeriod)
-            .Include(p => p.EmployeeInvoice)
-            .Where(p => p.EmployeeId == employeeId);
+            .Where(p => p.EmployeeId == employeeId
+                && p.PayPeriodId == payPeriodId
+                && p.EmployeeInvoiceId == null)
+            .ToListAsync(cancellationToken);
     }
 
-    public IQueryable<OrderEmployeePay> GetByInvoiceId(string invoiceId)
+    public Task<bool> HasUnassignedForEmployeePeriodAsync(
+        string employeeId, string payPeriodId, CancellationToken cancellationToken)
     {
         return GetDbSet()
+            .AnyAsync(p => p.EmployeeId == employeeId
+                && p.PayPeriodId == payPeriodId
+                && p.EmployeeInvoiceId == null, cancellationToken);
+    }
+
+    public Task<decimal> SumPendingEarningsAsync(string employeeId, CancellationToken cancellationToken)
+    {
+        return GetDbSet()
+            .Where(p => p.EmployeeId == employeeId && p.EmployeeInvoiceId == null)
+            .SumAsync(p => p.TotalPay, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<OrderEmployeePay>> GetByEmployeeAndPeriodAsync(
+        string employeeId, string payPeriodId, CancellationToken cancellationToken)
+    {
+        return await GetDbSet()
+            .Include(p => p.Order)
+            .Include(p => p.PayPeriod)
+            .Where(p => p.EmployeeId == employeeId && p.PayPeriodId == payPeriodId)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<OrderEmployeePay>> GetByInvoiceIdAsync(
+        string invoiceId, CancellationToken cancellationToken)
+    {
+        return await GetDbSet()
             .Include(p => p.Order)
             .Include(p => p.Employee)
-            .Where(p => p.EmployeeInvoiceId == invoiceId);
+            .Where(p => p.EmployeeInvoiceId == invoiceId)
+            .ToListAsync(cancellationToken);
     }
 
-    public IQueryable<OrderEmployeePay> GetUnassignedPays(string employeeId)
+    public async Task<IReadOnlyList<OrderEmployeePay>> GetByEmployeeIdAsync(
+        string employeeId, CancellationToken cancellationToken)
     {
-        return GetDbSet()
-            .Include(p => p.Order)
-            .Include(p => p.PayPeriod)
-            .Where(p => p.EmployeeId == employeeId && p.EmployeeInvoiceId == null);
+        return await GetDbSet()
+            .Where(p => p.EmployeeId == employeeId)
+            .ToListAsync(cancellationToken);
     }
 
     public Task<bool> PayExistsForOrderAsync(string orderId, string employeeId, CancellationToken cancellationToken)

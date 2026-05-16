@@ -176,7 +176,6 @@ public class Employee : Auditable, ITenantEntity
         ApprovedAt = DateTimeOffset.UtcNow;
         ApprovalNotes = notes;
 
-        // Clear rejection data if previously rejected
         RejectionReason = null;
         RejectedByUserId = null;
         RejectedAt = null;
@@ -191,7 +190,6 @@ public class Employee : Auditable, ITenantEntity
         RejectedAt = DateTimeOffset.UtcNow;
         RejectionReason = reason;
 
-        // Clear approval data if previously approved
         ApprovalNotes = null;
         ApprovedByUserId = null;
         ApprovedAt = null;
@@ -201,11 +199,11 @@ public class Employee : Auditable, ITenantEntity
 
     public Employee Anonymize()
     {
-        RegistrationNumber = "[DELETED]";
+        RegistrationNumber = AnonymizationMarker.Value;
         VatNumber = null;
         LegalEntityName = null;
-        IBAN = "[DELETED]";
-        PassportId = "[DELETED]";
+        IBAN = AnonymizationMarker.Value;
+        PassportId = AnonymizationMarker.Value;
         EmergencyContactName = null;
         EmergencyContactPhone = null;
         return this;

@@ -1,58 +1,11 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { Skeleton } from 'primeng/skeleton';
 
 @Component({
   selector: 'cleansia-form-skeleton',
   standalone: true,
   imports: [Skeleton],
-  template: `
-    <div class="cleansia-profile">
-      <div class="cleansia-form-skeleton page-wrapper">
-        <!-- Title -->
-        <div class="skeleton-header">
-          <p-skeleton width="180px" height="2rem" />
-          <p-skeleton width="320px" height="1rem" styleClass="mt-2" />
-        </div>
-
-        <!-- Section 1: Personal Info -->
-        <div class="skeleton-section">
-          <p-skeleton width="160px" height="1.25rem" />
-          <div class="skeleton-fields-grid">
-            @for (i of [1, 2, 3]; track i) {
-            <p-skeleton width="100%" height="3rem" borderRadius="6px" />
-            }
-            <div class="skeleton-field-full">
-              <p-skeleton width="100%" height="3rem" borderRadius="6px" />
-            </div>
-            @for (i of [1, 2, 3, 4, 5, 6]; track i) {
-            <p-skeleton width="100%" height="3rem" borderRadius="6px" />
-            }
-          </div>
-        </div>
-
-        <!-- Section 2: Bank Details -->
-        <div class="skeleton-section">
-          <p-skeleton width="140px" height="1.25rem" />
-          <div class="skeleton-field-full">
-            <p-skeleton width="100%" height="3rem" borderRadius="6px" />
-          </div>
-        </div>
-
-        <!-- Section 3: Emergency Contact -->
-        <div class="skeleton-section">
-          <p-skeleton width="180px" height="1.25rem" />
-          <div class="skeleton-fields-grid">
-            @for (i of [1, 2]; track i) {
-            <p-skeleton width="100%" height="3rem" borderRadius="6px" />
-            }
-          </div>
-        </div>
-
-        <!-- Submit Button -->
-        <p-skeleton width="120px" height="2.75rem" borderRadius="6px" />
-      </div>
-    </div>
-  `,
+  templateUrl: './cleansia-form-skeleton.component.html',
   styles: `
     .cleansia-form-skeleton {
       display: flex;
@@ -93,5 +46,6 @@ import { Skeleton } from 'primeng/skeleton';
       .cleansia-form-skeleton { padding: 0.75rem; }
     }
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaFormSkeletonComponent {}

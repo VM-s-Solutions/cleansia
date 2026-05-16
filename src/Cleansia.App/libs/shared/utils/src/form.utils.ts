@@ -53,8 +53,8 @@ export class FormUtils {
   /**
    * Gets all validation errors from a form group
    */
-  static getAllFormErrors(formGroup: FormGroup): { [key: string]: any } {
-    const formErrors: { [key: string]: any } = {};
+  static getAllFormErrors(formGroup: FormGroup): Record<string, unknown> {
+    const formErrors: Record<string, unknown> = {};
 
     Object.keys(formGroup.controls).forEach((key) => {
       const control = formGroup.get(key);
@@ -97,12 +97,16 @@ export class FormUtils {
   /**
    * Patches form values safely (only patches existing controls)
    */
-  static safePatchValue(formGroup: FormGroup, values: any): void {
-    const patchObject: any = {};
+  static safePatchValue<T extends object>(
+    formGroup: FormGroup,
+    values: T
+  ): void {
+    const patchObject: Record<string, unknown> = {};
+    const valuesRecord = values as Record<string, unknown>;
 
-    Object.keys(values).forEach((key) => {
-      if (formGroup.get(key) && values[key] !== undefined) {
-        patchObject[key] = values[key];
+    Object.keys(valuesRecord).forEach((key) => {
+      if (formGroup.get(key) && valuesRecord[key] !== undefined) {
+        patchObject[key] = valuesRecord[key];
       }
     });
 
@@ -112,16 +116,18 @@ export class FormUtils {
   /**
    * Gets form value with null/undefined values converted to empty strings
    */
-  static getFormValueWithDefaults(formGroup: FormGroup): any {
-    const formValue = formGroup.value;
-    const cleanedValue: any = {};
+  static getFormValueWithDefaults<T = Record<string, unknown>>(
+    formGroup: FormGroup
+  ): T {
+    const formValue = formGroup.value as Record<string, unknown>;
+    const cleanedValue: Record<string, unknown> = {};
 
     Object.keys(formValue).forEach((key) => {
       const value = formValue[key];
       cleanedValue[key] = value ?? '';
     });
 
-    return cleanedValue;
+    return cleanedValue as T;
   }
 
   /**
@@ -156,14 +162,14 @@ export class FormUtils {
    */
   static validateControl(control: AbstractControl | null): {
     isValid: boolean;
-    errors: any;
+    errors: Record<string, unknown> | null;
     errorCount: number;
   } {
     if (!control) {
       return { isValid: true, errors: null, errorCount: 0 };
     }
 
-    const errors = control.errors;
+    const errors = control.errors as Record<string, unknown> | null;
     return {
       isValid: !errors,
       errors,
@@ -174,11 +180,13 @@ export class FormUtils {
   /**
    * Gets form submission data with cleaned values
    */
-  static getSubmissionData(formGroup: FormGroup): any {
-    const formValue = this.getFormValueWithDefaults(formGroup);
+  static getSubmissionData<T = Record<string, unknown>>(formGroup: FormGroup): T {
+    const formValue = this.getFormValueWithDefaults<Record<string, unknown>>(
+      formGroup
+    );
 
     // Remove empty strings and null values for optional fields
-    const submissionData: any = {};
+    const submissionData: Record<string, unknown> = {};
     Object.keys(formValue).forEach((key) => {
       const value = formValue[key];
       if (value !== '' && value !== null && value !== undefined) {
@@ -186,6 +194,6 @@ export class FormUtils {
       }
     });
 
-    return submissionData;
+    return submissionData as T;
   }
 }

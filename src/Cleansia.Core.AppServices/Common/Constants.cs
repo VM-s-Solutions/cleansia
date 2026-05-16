@@ -10,6 +10,7 @@ public class Constants
         public const string GeneratedInvoices = "generated-invoices";
         public const string GeneratedReceipts = "generated-receipts";
         public const string OrderPhotos = "order-photos";
+        public const string DisputeEvidence = "dispute-evidence";
     }
 
     public class VirtualDirectories
@@ -21,11 +22,48 @@ public class Constants
     {
         public const string CompletedSession = "checkout.session.completed";
         public const string ExpiredSession = "checkout.session.expired";
+
+        // PaymentIntent flow used by mobile PaymentSheet. Web's Checkout
+        // Session flow remains in parallel; both event families flow through
+        // the same webhook endpoint and are dispatched by Type.
+        public const string PaymentIntentSucceeded = "payment_intent.succeeded";
+        public const string PaymentIntentPaymentFailed = "payment_intent.payment_failed";
+        public const string PaymentIntentCanceled = "payment_intent.canceled";
+
+        // Subscription lifecycle for Cleansia Plus. Stripe is the source of
+        // truth — local UserMembership rows are mirrors that webhook handlers
+        // keep in sync. We act on these four; trialing / paused / etc. fold
+        // into UpdateFromStripeWebhook's status-string switch.
+        public const string SubscriptionCreated = "customer.subscription.created";
+        public const string SubscriptionUpdated = "customer.subscription.updated";
+        public const string SubscriptionDeleted = "customer.subscription.deleted";
+        public const string InvoicePaymentFailed = "invoice.payment_failed";
+
+        public static bool IsOrderEvent(string eventType) =>
+            eventType is CompletedSession
+                      or ExpiredSession
+                      or PaymentIntentSucceeded
+                      or PaymentIntentPaymentFailed
+                      or PaymentIntentCanceled;
+
+        public static bool IsSubscriptionEvent(string eventType) =>
+            eventType is SubscriptionCreated
+                      or SubscriptionUpdated
+                      or SubscriptionDeleted
+                      or InvoicePaymentFailed;
     }
 
     public class Language
     {
         public const string English = "en";
+    }
+
+    public class Currency
+    {
+        // CZK is the platform's primary fiat — fallback when an order/receipt
+        // didn't capture a currency record. Multi-currency is supported via
+        // the Currency entity; this is just the safety-net string default.
+        public const string Czk = "CZK";
     }
 
     public class ReceiptNumberFormat

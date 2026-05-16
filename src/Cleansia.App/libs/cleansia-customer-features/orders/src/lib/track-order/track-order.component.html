@@ -37,8 +37,8 @@
             <span class="track-order__order-card-date">{{ formatDate(order.createdOn) }}</span>
           </div>
           <div class="track-order__order-card-badges">
-            <p-tag [value]="order.orderStatus.name || ''" [severity]="getOrderStatusSeverity(order.orderStatus)" />
-            <p-tag [value]="order.paymentStatus.name || ''" [severity]="getPaymentStatusSeverity(order.paymentStatus)" />
+            <p-tag [value]="order.orderStatus | orderStatusLabel" [severity]="order.orderStatus | orderStatusSeverity" />
+            <p-tag [value]="order.paymentStatus | paymentStatusLabel" [severity]="order.paymentStatus | paymentStatusSeverity" />
           </div>
         </div>
 
@@ -73,6 +73,12 @@
           <span class="track-order__order-card-total">
             {{ formatPriceFor(order, order.totalPrice) }}
           </span>
+          <cleansia-button
+            [title]="'pages.track_order.view_details' | translate"
+            [severity]="'secondary'"
+            [icon]="'pi pi-arrow-right'"
+            (clickFn)="viewDetails(order.id!)"
+          />
         </div>
 
         <!-- Timeline -->
@@ -81,13 +87,13 @@
             <p-timeline [value]="order.statusHistory" layout="vertical">
               <ng-template #content let-event>
                 <div class="track-order__timeline-event">
-                  <strong>{{ event.status?.name }}</strong>
+                  <strong>{{ event.status | orderStatusLabel }}</strong>
                   <small>{{ formatDate(event.createdOn) }}</small>
                 </div>
               </ng-template>
               <ng-template #marker let-event>
                 <span class="track-order__timeline-marker">
-                  <i [class]="getStatusIcon(event.status?.value)"></i>
+                  <i [class]="event.status?.value | orderStatusIcon"></i>
                 </span>
               </ng-template>
             </p-timeline>
@@ -168,8 +174,8 @@
             <span class="track-order__order-card-date">{{ formatDate(order.createdOn) }}</span>
           </div>
           <div class="track-order__order-card-badges">
-            <p-tag [value]="order.orderStatus.name || ''" [severity]="getOrderStatusSeverity(order.orderStatus)" />
-            <p-tag [value]="order.paymentStatus.name || ''" [severity]="getPaymentStatusSeverity(order.paymentStatus)" />
+            <p-tag [value]="order.orderStatus | orderStatusLabel" [severity]="order.orderStatus | orderStatusSeverity" />
+            <p-tag [value]="order.paymentStatus | paymentStatusLabel" [severity]="order.paymentStatus | paymentStatusSeverity" />
           </div>
         </div>
 
@@ -205,4 +211,4 @@
     </div>
   }
 </div>
-<cleansia-scroll-top />
+<cleansia-scroll-top [ariaLabel]="'global.scroll_to_top' | translate" />

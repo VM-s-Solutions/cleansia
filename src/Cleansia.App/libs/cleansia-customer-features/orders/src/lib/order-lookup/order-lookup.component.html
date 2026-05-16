@@ -1,0 +1,52 @@
+<div class="track-order">
+  <cleansia-title [title]="'pages.order_lookup.title' | translate" />
+
+  <div class="track-order__form-card">
+    <div class="track-order__form">
+      <div class="track-order__field">
+        <label>{{ 'pages.order_lookup.confirmation_code' | translate }}</label>
+        <div class="track-order__input-wrap">
+          <i class="pi pi-tag"></i>
+          <input
+            type="text"
+            [ngModel]="confirmationCode()"
+            (ngModelChange)="confirmationCode.set($event)"
+            (keyup.enter)="submit()"
+            autocomplete="off"
+          />
+        </div>
+      </div>
+      <div class="track-order__field">
+        <label>{{ 'pages.order_lookup.email' | translate }}</label>
+        <div class="track-order__input-wrap">
+          <i class="pi pi-envelope"></i>
+          <input
+            type="email"
+            [ngModel]="email()"
+            (ngModelChange)="email.set($event)"
+            (keyup.enter)="submit()"
+            autocomplete="email"
+          />
+        </div>
+      </div>
+      <cleansia-button
+        [title]="'pages.order_lookup.submit' | translate"
+        [severity]="'primary'"
+        [icon]="'pi pi-search'"
+        [loading]="loading()"
+        [disabled]="!confirmationCode().trim() || !email().trim()"
+        (clickFn)="submit()"
+      />
+    </div>
+  </div>
+
+  @if (notFound()) {
+    <div class="track-order__error">
+      <i class="pi pi-info-circle"></i>
+      <div>
+        <p>{{ 'pages.order_lookup.not_found' | translate }}</p>
+      </div>
+    </div>
+  }
+</div>
+<cleansia-scroll-top [ariaLabel]="'global.scroll_to_top' | translate" />

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit, Signal, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, OnInit, Signal, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   CleansiaButtonComponent,
@@ -61,6 +61,7 @@ interface DocumentGroup {
     Skeleton,
   ],
   templateUrl: './profile-documents.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProfileDocumentsComponent implements OnInit {
   @Input({ required: true }) facade!: ProfileDocumentsFacade;

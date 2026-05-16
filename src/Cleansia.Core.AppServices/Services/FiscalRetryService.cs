@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
@@ -13,6 +14,7 @@ public sealed class FiscalRetryService(
     IReceiptService receiptService,
     IEmailService emailService,
     IUnitOfWork unitOfWork,
+    ITenantProvider tenantProvider,
     ILogger<FiscalRetryService> logger)
     : IFiscalRetryService
 {
@@ -21,6 +23,9 @@ public sealed class FiscalRetryService(
 
     public async Task<int> ProcessDueRetriesAsync(CancellationToken cancellationToken)
     {
+        // System job — no JWT context. The repo bypasses tenant filter for
+        // GetDueForRetryAsync; we must set the override per receipt before
+        // mutating so child writes inherit the right tenant.
         var receipts = await receiptRepository.GetDueForRetryAsync(DateTime.UtcNow, BatchSize, cancellationToken);
         if (receipts.Count == 0)
         {
@@ -34,7 +39,15 @@ public sealed class FiscalRetryService(
         {
             try
             {
-                var order = await orderRepository.GetByIdAsync(receipt.OrderId, cancellationToken);
+                // Reset before each receipt so an override from the previous
+                // multi-tenant receipt doesn't leak into a single-tenant one.
+                tenantProvider.ClearTenantOverride();
+                if (!string.IsNullOrEmpty(receipt.TenantId))
+                {
+                    tenantProvider.SetTenantOverride(receipt.TenantId);
+                }
+
+                var order = await orderRepository.GetByIdIgnoringTenantAsync(receipt.OrderId, cancellationToken);
                 if (order == null)
                 {
                     logger.LogWarning(
@@ -53,7 +66,7 @@ public sealed class FiscalRetryService(
                     if (enforcementMode is FiscalEnforcementMode.BlockingOnline or FiscalEnforcementMode.BlockingWithOfflineCache)
                     {
                         var pdfBytes = await receiptService.DownloadReceiptPdfAsync(receipt, cancellationToken);
-                        var languageCode = receipt.Language?.Code ?? "en";
+                        var languageCode = receipt.Language?.Code ?? Constants.Language.English;
                         var messageId = await emailService.SendOrderReceiptEmailAsync(
                             order.CustomerEmail, order, pdfBytes, receipt.FileName, languageCode, cancellationToken);
                         receipt.MarkEmailSent(messageId);

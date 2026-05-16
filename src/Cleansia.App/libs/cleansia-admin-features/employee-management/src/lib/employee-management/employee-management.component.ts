@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   computed,
@@ -69,6 +70,7 @@ import { getEmployeeTableDefinition } from './employee-management.models';
   ],
   templateUrl: './employee-management.component.html',
   providers: [EmployeeManagementFacade, DialogService],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EmployeeManagementComponent implements AfterViewInit, OnDestroy {
   private readonly cd = inject(ChangeDetectorRef);

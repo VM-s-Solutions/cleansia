@@ -1,130 +1,215 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, Input } from '@angular/core';
-import { PackageListItem, PaymentType, ServiceListItem } from '@cleansia/partner-services';
+import { ChangeDetectionStrategy, Component, computed, inject, Input, OnInit, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { CustomerClient } from '@cleansia/customer-services';
+import { PaymentType } from '@cleansia/partner-services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { catchError, of } from 'rxjs';
+import { InputTextModule } from 'primeng/inputtext';
+import {
+  CleansiaCodeInputDialogComponent,
+  CodeDialogResult,
+} from '@cleansia/components';
 import { OrderWizardFacade } from '../order-wizard.facade';
-import { formatPrice, getItemTranslation } from '../order-wizard.models';
+import { formatPrice, getItemTranslation, PromoCodeUiState, ReferralUiState } from '../order-wizard.models';
+
+/**
+ * Map the backend's PromoCodeError enum (string) to a localized i18n key.
+ * Unknown / null error codes fall back to a generic "couldn't validate" key.
+ */
+const PROMO_ERROR_KEYS: Record<string, string> = {
+  NotFound: 'pages.order.promo.error_not_found',
+  Inactive: 'pages.order.promo.error_inactive',
+  Expired: 'pages.order.promo.error_expired',
+  NotYetValid: 'pages.order.promo.error_not_yet_valid',
+  GlobalLimitReached: 'pages.order.promo.error_global_limit',
+  PerUserLimitReached: 'pages.order.promo.error_used',
+  BelowMinimumOrderAmount: 'pages.order.promo.error_min_order',
+  CurrencyMismatch: 'pages.order.promo.error_currency',
+};
+
+/**
+ * Map the backend's ReferralValidationError enum (string) to a localized i18n key.
+ * Same fallback shape as the promo errorKey helper.
+ */
+const REFERRAL_ERROR_KEYS: Record<string, string> = {
+  NotFound: 'pages.order.referral.error_not_found',
+  SelfReferral: 'pages.order.referral.error_self_referral',
+  AlreadyReferred: 'pages.order.referral.error_already_referred',
+  Inactive: 'pages.order.referral.error_inactive',
+};
 
 @Component({
   selector: 'cleansia-wizard-summary-step',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, TranslatePipe],
-  template: `
-    <div class="order-wizard__step">
-      <div class="order-wizard__section">
-        <h2 class="order-wizard__section-title">
-          <i class="pi pi-check-circle"></i>
-          {{ 'pages.order.summary_section_title' | translate }}
-        </h2>
-
-        @if (selectedServices().length > 0) {
-          <ng-container
-            *ngTemplateOutlet="summaryCard; context: {
-              icon: 'pi-list',
-              titleKey: 'pages.order.summary_services',
-              editStep: 0,
-              rows: serviceRows()
-            }"
-          />
-        }
-
-        @if (selectedPackages().length > 0) {
-          <ng-container
-            *ngTemplateOutlet="summaryCard; context: {
-              icon: 'pi-box',
-              titleKey: 'pages.order.summary_packages',
-              editStep: 0,
-              rows: packageRows()
-            }"
-          />
-        }
-
-        <ng-container
-          *ngTemplateOutlet="summaryCard; context: {
-            icon: 'pi-building',
-            titleKey: 'pages.order.summary_property',
-            editStep: 0,
-            rows: propertyRows()
-          }"
-        />
-
-        <ng-container
-          *ngTemplateOutlet="summaryCard; context: {
-            icon: 'pi-map-marker',
-            titleKey: 'pages.order.summary_address',
-            editStep: 1,
-            rows: addressRows()
-          }"
-        />
-
-        <ng-container
-          *ngTemplateOutlet="summaryCard; context: {
-            icon: 'pi-calendar',
-            titleKey: 'pages.order.summary_datetime',
-            editStep: 2,
-            rows: dateTimeRows()
-          }"
-        />
-
-        <ng-container
-          *ngTemplateOutlet="summaryCard; context: {
-            icon: 'pi-credit-card',
-            titleKey: 'pages.order.summary_payment',
-            editStep: 3,
-            rows: paymentRows()
-          }"
-        />
-
-        <ng-container
-          *ngTemplateOutlet="summaryCard; context: {
-            icon: 'pi-user',
-            titleKey: 'pages.order.summary_contact',
-            editStep: 1,
-            rows: contactRows()
-          }"
-        />
-
-        @if (facade.formData().specialInstructions || facade.formData().entryInstructions) {
-          <ng-container
-            *ngTemplateOutlet="summaryCard; context: {
-              icon: 'pi-comment',
-              titleKey: 'pages.order.summary_instructions',
-              editStep: 3,
-              rows: instructionRows()
-            }"
-          />
-        }
-      </div>
-    </div>
-
-    <ng-template #summaryCard let-icon="icon" let-titleKey="titleKey" let-editStep="editStep" let-rows="rows">
-      <div class="order-wizard__summary-card">
-        <div class="order-wizard__summary-card-header">
-          <div class="order-wizard__summary-card-icon"><i class="pi {{ icon }}"></i></div>
-          <h3>{{ titleKey | translate }}</h3>
-          <button class="order-wizard__summary-edit" (click)="facade.goToStep(editStep)">
-            {{ 'pages.order.summary_edit' | translate }}
-          </button>
-        </div>
-        <div class="order-wizard__summary-card-body">
-          @for (row of rows; track $index) {
-            <div class="order-wizard__summary-row">
-              <span>{{ row.label }}</span>
-              @if (row.value) {
-                <span class="order-wizard__summary-row-price">{{ row.value }}</span>
-              }
-            </div>
-          }
-        </div>
-      </div>
-    </ng-template>
-  `,
+  imports: [CommonModule, FormsModule, InputTextModule, TranslatePipe, CleansiaCodeInputDialogComponent],
+  templateUrl: './wizard-summary-step.component.html',
 })
-export class WizardSummaryStepComponent {
+export class WizardSummaryStepComponent implements OnInit {
   @Input({ required: true }) facade!: OrderWizardFacade;
   private readonly translate = inject(TranslateService);
+  // Always go through CustomerClient — direct injection of MembershipClient
+  // hits NSwag's empty-string default baseUrl and bypasses CUSTOMER_API_BASE_URL.
+  private readonly customerClient = inject(CustomerClient);
   protected readonly PaymentType = PaymentType;
+  protected readonly formatPriceFn = formatPrice;
+
+  /**
+   * Hours in the user's free-cancellation window when they hold an active
+   * Plus membership. Null when not Plus or not yet loaded — template falls
+   * back to the standard 24h tier-1 copy. One-shot fetch on init; the
+   * cancellation card is render-once and doesn't need live updates.
+   */
+  protected readonly plusFreeHours = signal<number | null>(null);
+
+  ngOnInit(): void {
+    // Anonymous users can't hold a Plus membership — skip the call to avoid a
+    // noisy 401 on the booking wizard before sign-in.
+    if (!this.facade.isAuthenticated()) return;
+    this.customerClient.membershipClient
+      .getMine()
+      .pipe(catchError(() => of(null)))
+      .subscribe((response) => {
+        if (response?.hasMembership && response.freeCancellationWindowHours) {
+          this.plusFreeHours.set(response.freeCancellationWindowHours);
+        }
+      });
+  }
+
+  // ─── Dialog visibility ──────────────────────────────────────
+  //
+  // Local-only state; the facade owns the actual code + validation result.
+  // The dialogs read facade signals via `*DialogState` computeds below.
+  protected readonly promoDialogVisible = signal(false);
+  protected readonly referralDialogVisible = signal(false);
+
+  openPromoDialog(): void {
+    this.promoDialogVisible.set(true);
+  }
+
+  openReferralDialog(): void {
+    this.referralDialogVisible.set(true);
+  }
+
+  closePromoDialog(): void {
+    this.promoDialogVisible.set(false);
+  }
+
+  closeReferralDialog(): void {
+    this.referralDialogVisible.set(false);
+  }
+
+  /** Bridge dialog `(visibleChange)` into the local signal — types align cleanly. */
+  onPromoDialogVisible(visible: boolean): void {
+    this.promoDialogVisible.set(visible);
+  }
+
+  onReferralDialogVisible(visible: boolean): void {
+    this.referralDialogVisible.set(visible);
+  }
+
+  /**
+   * Row clear-X handler. stopPropagation so the click doesn't bubble up to
+   * the row's `(click)="openPromoDialog()"` and reopen the dialog we just
+   * cleared from.
+   */
+  clearPromo(event: Event): void {
+    event.stopPropagation();
+    this.facade.clearPromoCode();
+  }
+
+  clearReferral(event: Event): void {
+    event.stopPropagation();
+    this.facade.clearReferralCode();
+  }
+
+  /** Apply tap handler — single backend call, no debounce. */
+  async applyPromo(code: string): Promise<void> {
+    await this.facade.validatePromoCodeNow(code);
+  }
+
+  async applyReferral(code: string): Promise<void> {
+    await this.facade.validateReferralCodeNow(code);
+  }
+
+  /**
+   * Adapt the facade's promo state into the dialog's generic shape, baking in
+   * the localized success / error messages. Computed so it reacts to both the
+   * facade signal and the active translate language.
+   */
+  protected readonly promoDialogState = computed<CodeDialogResult>(() => {
+    const state = this.facade.promoCodeState();
+    return promoStateToDialog(state, this.translate);
+  });
+
+  protected readonly referralDialogState = computed<CodeDialogResult>(() => {
+    const state = this.facade.referralState();
+    return referralStateToDialog(state, this.translate);
+  });
+
+  /** Normalized display form for the summary "Promo (-CODE)" line. */
+  protected readonly promoCodeDisplay = computed(() =>
+    this.facade.promoCode().trim().toUpperCase(),
+  );
+
+  /** Pretty CZK string for the discount amount, used in subtitle + summary row. */
+  protected readonly formattedPromoDiscount = computed(() => {
+    const state = this.facade.promoCodeState();
+    return formatPrice(state.kind === 'valid' ? state.discount : 0);
+  });
+
+  /**
+   * Final price — `displayedTotalPrice` already includes both the best-of-three
+   * discount and the express surcharge (applied AFTER the discount so the
+   * surcharge tracks the discounted price). Mirrors CreateOrder.Handler. Wrapped
+   * in computed because `facade` is an @Input and isn't bound at field-init time.
+   */
+  protected readonly grandTotal = computed(() => this.facade.displayedTotalPrice());
+
+  /**
+   * Render the membership chip when the membership discount wins (or ties promo).
+   * Mutually exclusive with the tier chip — only one renders.
+   */
+  // LOY-003 — Plus and tier are additive on the wire (server already
+  // returns both, capped at 12% combined). Promo replaces the combined
+  // pair when larger. So we show the membership chip whenever Plus has a
+  // non-zero amount AND promo isn't winning over the combined; same logic
+  // for the tier chip. Both can appear simultaneously.
+  protected readonly showMembershipChip = computed(() => {
+    const m = this.facade.membershipDiscount();
+    if (m <= 0) return false;
+    const combined = m + this.facade.tierDiscount();
+    return this.facade.effectivePromoDiscount() <= combined;
+  });
+
+  protected readonly showTierChip = computed(() => {
+    const t = this.facade.tierDiscount();
+    if (t <= 0) return false;
+    const combined = t + this.facade.membershipDiscount();
+    return this.facade.effectivePromoDiscount() <= combined;
+  });
+
+  /** "Loyalty discount needs orders above X" hint when the floor wasn't met. */
+  protected readonly showTierFloorHint = computed(() => {
+    const floor = this.facade.tierDiscountMinOrderAmount();
+    if (floor == null || floor <= 0) return false;
+    if (this.facade.effectiveDiscount() > 0) return false;
+    return this.facade.totalPrice() < floor;
+  });
+
+  protected readonly tierFloorAmount = computed(() => {
+    const floor = this.facade.tierDiscountMinOrderAmount();
+    return floor != null ? formatPrice(floor) : '';
+  });
+
+  protected readonly membershipDiscountFormatted = computed(() =>
+    formatPrice(this.facade.membershipDiscount()),
+  );
+
+  protected readonly tierDiscountFormatted = computed(() =>
+    formatPrice(this.facade.tierDiscount()),
+  );
 
   readonly selectedServices = computed(() => {
     const ids = this.facade.formData().selectedServiceIds;
@@ -195,4 +280,56 @@ export class WizardSummaryStepComponent {
     if (d.entryInstructions) rows.push({ label: d.entryInstructions });
     return rows;
   });
+}
+
+/** Format the localized discount string for the success message. */
+function promoStateToDialog(
+  state: PromoCodeUiState,
+  translate: TranslateService,
+): CodeDialogResult {
+  switch (state.kind) {
+    case 'idle':
+      return { kind: 'idle' };
+    case 'validating':
+      return { kind: 'validating' };
+    case 'valid':
+      return {
+        kind: 'valid',
+        successMessage: translate.instant('pages.order.promo.dialog_success', {
+          amount: formatPrice(state.discount),
+        }),
+      };
+    case 'invalid': {
+      const key =
+        PROMO_ERROR_KEYS[state.error ?? ''] ?? 'pages.order.promo.error_generic';
+      return { kind: 'invalid', errorMessage: translate.instant(key) };
+    }
+  }
+}
+
+function referralStateToDialog(
+  state: ReferralUiState,
+  translate: TranslateService,
+): CodeDialogResult {
+  switch (state.kind) {
+    case 'idle':
+      return { kind: 'idle' };
+    case 'validating':
+      return { kind: 'validating' };
+    case 'valid': {
+      const name = state.referrerFirstName?.trim();
+      const messageKey = name
+        ? 'pages.order.referral.dialog_success_named'
+        : 'pages.order.referral.dialog_success';
+      return {
+        kind: 'valid',
+        successMessage: translate.instant(messageKey, { name: name ?? '' }),
+      };
+    }
+    case 'invalid': {
+      const key =
+        REFERRAL_ERROR_KEYS[state.error ?? ''] ?? 'pages.order.referral.error_generic';
+      return { kind: 'invalid', errorMessage: translate.instant(key) };
+    }
+  }
 }

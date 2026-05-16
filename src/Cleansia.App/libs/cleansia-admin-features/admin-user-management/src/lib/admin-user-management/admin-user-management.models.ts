@@ -1,14 +1,17 @@
 import { TemplateRef } from '@angular/core';
 import { AdminUserListItem } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
+import { PermissionService, Policy } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 
 export function getAdminUserTableDefinition(
   defs: {
     onEdit: (row: AdminUserListItem) => void;
     onToggleStatus: (row: AdminUserListItem) => void;
+    onViewLoyalty: (row: AdminUserListItem) => void;
   },
   translate: TranslateService,
+  permissions: PermissionService,
   statusTemplate?: TemplateRef<AdminUserListItem>
 ): { columns: TableColumn<AdminUserListItem>[]; actions: TableAction<AdminUserListItem>[] } {
   return {
@@ -60,20 +63,30 @@ export function getAdminUserTableDefinition(
         tooltip: translate.instant('pages.admin_user_management.edit_user'),
         color: 'warning',
         onClick: (row: AdminUserListItem) => defs.onEdit(row),
+        visible: () => permissions.hasPolicy(Policy.CanUpdateAdminUser),
+      },
+      {
+        icon: 'pi pi-star',
+        tooltip: translate.instant('pages.loyalty_user_detail.view_link'),
+        color: 'info',
+        onClick: (row: AdminUserListItem) => defs.onViewLoyalty(row),
+        visible: () => permissions.hasPolicy(Policy.CanViewUserLoyalty),
       },
       {
         icon: 'pi pi-ban',
         tooltip: translate.instant('pages.admin_user_management.deactivate_user'),
         color: 'danger',
         onClick: (row: AdminUserListItem) => defs.onToggleStatus(row),
-        visible: (row: AdminUserListItem) => !!row.isActive,
+        visible: (row: AdminUserListItem) =>
+          !!row.isActive && permissions.hasPolicy(Policy.CanDeactivateAdminUser),
       },
       {
         icon: 'pi pi-check-circle',
         tooltip: translate.instant('pages.admin_user_management.activate_user'),
         color: 'success',
         onClick: (row: AdminUserListItem) => defs.onToggleStatus(row),
-        visible: (row: AdminUserListItem) => !row.isActive,
+        visible: (row: AdminUserListItem) =>
+          !row.isActive && permissions.hasPolicy(Policy.CanActivateAdminUser),
       },
     ],
   };

@@ -45,6 +45,7 @@
           }
         </div>
         <cleansia-button
+          *cleansiaPermission="Policy.CanCreateService"
           [label]="'pages.service_management.create_service' | translate"
           icon="pi pi-plus"
           (onClick)="createService()"

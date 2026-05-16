@@ -11,6 +11,14 @@ public class Device : Auditable, ITenantEntity
     public string DeviceId { get; private set; } = default!;
     public DateTimeOffset LastActiveAt { get; private set; }
 
+    /// <summary>
+    /// System-level kill switch driven by the OS notification permission. When
+    /// false, the push dispatcher skips this row entirely — even if the user's
+    /// per-category preferences allow the event. Set on register (user just
+    /// granted permission) and updated when the app reports the OS revoke.
+    /// </summary>
+    public bool NotificationsEnabled { get; private set; } = true;
+
     public virtual User User { get; private set; } = default!;
 
     private Device() { }
@@ -23,7 +31,8 @@ public class Device : Auditable, ITenantEntity
             Platform = platform,
             DeviceToken = deviceToken,
             DeviceId = deviceId,
-            LastActiveAt = DateTimeOffset.UtcNow
+            LastActiveAt = DateTimeOffset.UtcNow,
+            NotificationsEnabled = true
         };
     }
 
@@ -35,6 +44,12 @@ public class Device : Auditable, ITenantEntity
 
     public void UpdateLastActive()
     {
+        LastActiveAt = DateTimeOffset.UtcNow;
+    }
+
+    public void UpdateNotificationsEnabled(bool enabled)
+    {
+        NotificationsEnabled = enabled;
         LastActiveAt = DateTimeOffset.UtcNow;
     }
 }

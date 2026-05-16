@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import {
+  ChangeDetectionStrategy,
   Component,
   computed,
   forwardRef,
@@ -76,6 +77,7 @@ const DAY_INDEX_MAP: Record<number, string> = {
     },
   ],
   templateUrl: './cleansia-availability.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaAvailabilityComponent extends CleansiaBaseFormInputComponent {
   private readonly translate = inject(TranslateService);

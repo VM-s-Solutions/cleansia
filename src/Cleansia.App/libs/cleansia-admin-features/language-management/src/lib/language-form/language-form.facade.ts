@@ -6,9 +6,10 @@ import {
   LanguageDetailDto,
   UpdateLanguageCommand,
 } from '@cleansia/admin-services';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { Subject, catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
 
 export interface LanguageFormData {
   code: string;
@@ -16,13 +17,11 @@ export interface LanguageFormData {
 }
 
 @Injectable()
-export class LanguageFormFacade {
+export class LanguageFormFacade extends UnsubscribeControlDirective {
   private readonly adminClient = inject(AdminClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
-
-  private destroy$ = new Subject<void>();
 
   readonly language = signal<LanguageDetailDto | null>(null);
   readonly loading = signal<boolean>(false);
@@ -34,7 +33,7 @@ export class LanguageFormFacade {
     this.adminClient.adminLanguageClient
       .details(languageId)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => {
           this.router.navigate([CleansiaAdminRoute.LANGUAGE_MANAGEMENT]);
           return of(null);
@@ -59,7 +58,7 @@ export class LanguageFormFacade {
     this.adminClient.adminLanguageClient
       .create(command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
@@ -84,7 +83,7 @@ export class LanguageFormFacade {
     this.adminClient.adminLanguageClient
       .update(languageId, command)
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntil(this.destroyed$),
         catchError(() => of(null)),
         finalize(() => this.saving.set(false))
       )
@@ -100,10 +99,5 @@ export class LanguageFormFacade {
 
   navigateBack(): void {
     this.router.navigate([CleansiaAdminRoute.LANGUAGE_MANAGEMENT]);
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

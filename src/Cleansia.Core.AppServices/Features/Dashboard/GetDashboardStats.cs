@@ -1,11 +1,13 @@
 #nullable enable
+using System.Security.Claims;
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Extensions;
 using Cleansia.Core.AppServices.Features.Dashboard.DTOs;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
-using MediatR;
 
 namespace Cleansia.Core.AppServices.Features.Dashboard;
 
@@ -17,26 +19,29 @@ public class GetDashboardStats
         IOrderRepository orderRepository,
         IEmployeeInvoiceRepository employeeInvoiceRepository,
         IOrderEmployeePayRepository orderEmployeePayRepository,
-        IEmployeeRepository employeeRepository,
+        IOrderAccessService orderAccessService,
         IUserSessionProvider userSessionProvider)
         : IQueryHandler<Query, DashboardStatsDto>
     {
         public async Task<BusinessResult<DashboardStatsDto>> Handle(Query query, CancellationToken cancellationToken)
         {
-            var employeeId = query.EmployeeId;
+            var role = userSessionProvider.GetTypedUserClaim(ClaimTypes.Role)?.Value;
+            string? employeeId;
 
-            // If employeeId is not provided, resolve from JWT session
-            if (string.IsNullOrWhiteSpace(employeeId))
+            if (role == UserProfile.Administrator.ToString())
             {
-                var userEmail = userSessionProvider.GetUserEmail();
-                var employee = await employeeRepository.GetByUserEmailAsync(userEmail!, cancellationToken);
-                if (employee is null)
-                {
-                    return BusinessResult.Failure<DashboardStatsDto>(new Error(
-                        "Employee",
-                        BusinessErrorMessage.EmployeeNotFound));
-                }
-                employeeId = employee.Id;
+                employeeId = query.EmployeeId;
+            }
+            else
+            {
+                employeeId = await orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+            }
+
+            if (string.IsNullOrEmpty(employeeId))
+            {
+                return BusinessResult.Failure<DashboardStatsDto>(new Error(
+                    "Employee",
+                    BusinessErrorMessage.EmployeeNotFound));
             }
 
             var today = DateTime.UtcNow;
@@ -52,9 +57,7 @@ public class GetDashboardStats
             var latestInvoice = await employeeInvoiceRepository.GetLatestInvoiceAsync(
                 employeeId, cancellationToken);
 
-            // Calculate pending earnings from completed orders not yet invoiced
-            var unassignedPays = orderEmployeePayRepository.GetUnassignedPays(employeeId);
-            var pendingEarnings = unassignedPays.Sum(p => p.TotalPay);
+            var pendingEarnings = await orderEmployeePayRepository.SumPendingEarningsAsync(employeeId, cancellationToken);
 
             return new DashboardStatsDto(
                 AvailableOrdersCount: availableOrdersCount,

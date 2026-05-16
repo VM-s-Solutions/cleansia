@@ -11,4 +11,6 @@ export const environment = {
   betaGateUrl: 'http://localhost:5000/gate',
   sentryDsn: '',
   bugReportUrl: '',
+  mapboxToken:
+    'pk.eyJ1IjoiaXRjbGVhbnNpYSIsImEiOiJjbW8zZXJlM3UwaHk1MnNzNDZ5dWtsNDJnIn0.JzKyy5Ii4qjgikVUVDWrnw',
 };

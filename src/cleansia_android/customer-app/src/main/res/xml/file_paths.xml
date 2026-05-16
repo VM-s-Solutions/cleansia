@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Maps to context.cacheDir; OrderRepository writes receipts to cacheDir/receipts/. -->
+    <cache-path name="receipts" path="receipts/" />
+    <!-- Wave 3 Phase D1: dispute evidence blobs (downloaded SAS PDFs) live under
+         cacheDir/dispute-evidence/ so they can be opened via FileProvider with
+         ACTION_VIEW. Image evidence does not need this — it renders inline via Coil. -->
+    <cache-path name="dispute-evidence" path="dispute-evidence/" />
+</paths>

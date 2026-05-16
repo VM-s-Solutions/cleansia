@@ -1,8 +1,8 @@
-import { AbstractControl, ValidatorFn } from '@angular/forms';
+import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 
 export class CustomValidators {
   static minimumAge(minAge: number): ValidatorFn {
-    return (control: AbstractControl): { [key: string]: any } | null => {
+    return (control: AbstractControl): ValidationErrors | null => {
       if (!control.value) {
         return null;
       }
@@ -28,7 +28,7 @@ export class CustomValidators {
   }
 
   static maximumAge(maxAge: number): ValidatorFn {
-    return (control: AbstractControl): { [key: string]: any } | null => {
+    return (control: AbstractControl): ValidationErrors | null => {
       if (!control.value) {
         return null;
       }
@@ -51,7 +51,7 @@ export class CustomValidators {
   }
 
   static phoneNumber(): ValidatorFn {
-    return (control: AbstractControl): { [key: string]: any } | null => {
+    return (control: AbstractControl): ValidationErrors | null => {
       if (!control.value) {
         return null;
       }
@@ -62,7 +62,7 @@ export class CustomValidators {
   }
 
   static iban(): ValidatorFn {
-    return (control: AbstractControl): { [key: string]: any } | null => {
+    return (control: AbstractControl): ValidationErrors | null => {
       if (!control.value) {
         return null;
       }
@@ -76,7 +76,7 @@ export class CustomValidators {
   }
 
   static alphabeticOnly(): ValidatorFn {
-    return (control: AbstractControl): { [key: string]: any } | null => {
+    return (control: AbstractControl): ValidationErrors | null => {
       if (!control.value) {
         return null;
       }
@@ -89,7 +89,7 @@ export class CustomValidators {
   }
 
   static alphanumericOnly(): ValidatorFn {
-    return (control: AbstractControl): { [key: string]: any } | null => {
+    return (control: AbstractControl): ValidationErrors | null => {
       if (!control.value) {
         return null;
       }
@@ -102,7 +102,7 @@ export class CustomValidators {
   }
 
   static zipCode(): ValidatorFn {
-    return (control: AbstractControl): { [key: string]: any } | null => {
+    return (control: AbstractControl): ValidationErrors | null => {
       if (!control.value) {
         return null;
       }
@@ -113,7 +113,7 @@ export class CustomValidators {
   }
 
   static passportId(): ValidatorFn {
-    return (control: AbstractControl): { [key: string]: any } | null => {
+    return (control: AbstractControl): ValidationErrors | null => {
       if (!control.value) {
         return null;
       }
@@ -124,7 +124,7 @@ export class CustomValidators {
   }
 
   static taxId(): ValidatorFn {
-    return (control: AbstractControl): { [key: string]: any } | null => {
+    return (control: AbstractControl): ValidationErrors | null => {
       if (!control.value) {
         return null;
       }
@@ -135,7 +135,7 @@ export class CustomValidators {
   }
 
   static strongPassword(): ValidatorFn {
-    return (control: AbstractControl): { [key: string]: any } | null => {
+    return (control: AbstractControl): ValidationErrors | null => {
       if (!control.value) {
         return null;
       }
@@ -170,7 +170,7 @@ export class CustomValidators {
   }
 
   static confirmPassword(passwordControlName: string): ValidatorFn {
-    return (control: AbstractControl): { [key: string]: any } | null => {
+    return (control: AbstractControl): ValidationErrors | null => {
       if (!control.parent) {
         return null;
       }
@@ -187,7 +187,7 @@ export class CustomValidators {
   }
 
   static noWhitespace(): ValidatorFn {
-    return (control: AbstractControl): { [key: string]: any } | null => {
+    return (control: AbstractControl): ValidationErrors | null => {
       if (!control.value) {
         return null;
       }
@@ -198,7 +198,7 @@ export class CustomValidators {
   }
 
   static url(): ValidatorFn {
-    return (control: AbstractControl): { [key: string]: any } | null => {
+    return (control: AbstractControl): ValidationErrors | null => {
       if (!control.value) {
         return null;
       }
@@ -213,7 +213,7 @@ export class CustomValidators {
   }
 
   static fileRequired(): ValidatorFn {
-    return (control: AbstractControl): { [key: string]: any } | null => {
+    return (control: AbstractControl): ValidationErrors | null => {
       const files = control.value as FileList | File[] | null;
 
       if (
@@ -229,7 +229,7 @@ export class CustomValidators {
   }
 
   static fileType(allowedTypes: string[]): ValidatorFn {
-    return (control: AbstractControl): { [key: string]: any } | null => {
+    return (control: AbstractControl): ValidationErrors | null => {
       const files = control.value as FileList | File[] | null;
 
       if (!files) {
@@ -262,7 +262,7 @@ export class CustomValidators {
   }
 
   static fileSize(maxSizeInMB: number): ValidatorFn {
-    return (control: AbstractControl): { [key: string]: any } | null => {
+    return (control: AbstractControl): ValidationErrors | null => {
       const files = control.value as FileList | File[] | null;
 
       if (!files) {
@@ -290,7 +290,7 @@ export class CustomValidators {
   }
 
   static fileCount(min?: number, max?: number): ValidatorFn {
-    return (control: AbstractControl): { [key: string]: any } | null => {
+    return (control: AbstractControl): ValidationErrors | null => {
       const files = control.value as FileList | File[] | null;
 
       if (!files) {

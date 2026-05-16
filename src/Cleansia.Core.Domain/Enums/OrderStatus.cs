@@ -8,7 +8,8 @@ public enum OrderStatus
     New = 0,
     Pending = 1,
     Confirmed = 2,
-    InProgress = 3,
-    Completed = 4,
-    Cancelled = 5
+    OnTheWay = 3,
+    InProgress = 4,
+    Completed = 5,
+    Cancelled = 6,
 }

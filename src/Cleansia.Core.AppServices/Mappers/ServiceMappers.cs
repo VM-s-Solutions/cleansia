@@ -11,9 +11,21 @@ public static class ServiceMappers
             Id: service.Id,
             Name: service.Name,
             Description: service.Description,
+            Category: service.Category!.MapToDto(),
             BasePrice: service.BasePrice,
             PerRoomPrice: service.PerRoomPrice,
             Translations: service.Translations.ToDictionary());
+    }
+
+    public static CategoryDto MapToDto(this ServiceCategory category)
+    {
+        return new CategoryDto(
+            Id: category.Id,
+            Slug: category.Slug,
+            Name: category.Name,
+            Description: category.Description,
+            DisplayOrder: category.DisplayOrder,
+            Translations: category.Translations.ToDictionary());
     }
 
     public static ServiceDetails MapToDetails(this Service service, string currencyCode)

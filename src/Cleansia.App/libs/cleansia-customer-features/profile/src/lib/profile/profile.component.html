@@ -17,6 +17,12 @@
   </div>
   } @else {
 
+  <!-- Loyalty (Rewards) entry-point card -->
+  <div class="customer-profile__rewards-slot">
+    <cleansia-customer-rewards-card />
+  </div>
+
+
   <!-- Layout: Sidebar + Content -->
   <div class="customer-profile__layout">
     <!-- Sticky Left Sidebar Navigation -->
@@ -251,22 +257,23 @@
             </span>
             }
             <div class="customer-profile__address-info">
+              <div class="customer-profile__address-label">{{ addr.label }}</div>
               <strong>{{ addr.street }}</strong>
-              <span>{{ addr.city }}, {{ addr.zip }}</span>
+              <span>{{ addr.city }}, {{ addr.zipCode }}</span>
               @if (addr.country) {
               <span>{{ addr.country }}</span>
               }
             </div>
             <div class="customer-profile__address-actions">
               @if (!addr.isDefault) {
-              <button class="customer-profile__address-btn" (click)="setDefaultAddress(addr.id)" title="{{ 'pages.profile.set_default' | translate }}">
+              <button class="customer-profile__address-btn" (click)="setDefaultAddress(addr.id!)" title="{{ 'pages.profile.set_default' | translate }}">
                 <i class="pi pi-star"></i>
               </button>
               }
               <button class="customer-profile__address-btn" (click)="openEditAddress(addr)">
                 <i class="pi pi-pencil"></i>
               </button>
-              <button class="customer-profile__address-btn customer-profile__address-btn--danger" (click)="deleteAddress(addr.id)">
+              <button class="customer-profile__address-btn customer-profile__address-btn--danger" (click)="deleteAddress(addr.id!)">
                 <i class="pi pi-trash"></i>
               </button>
             </div>
@@ -328,10 +335,14 @@
               {{ 'pages.profile.pref_theme' | translate }}
             </div>
             <div class="customer-profile__pref-control">
-              <button class="customer-profile__theme-btn" (click)="toggleTheme()">
-                <i [class]="isDarkMode() ? 'pi pi-sun' : 'pi pi-moon'"></i>
-                {{ isDarkMode() ? ('pages.profile.theme_light' | translate) : ('pages.profile.theme_dark' | translate) }}
-              </button>
+              <cleansia-button
+                className="customer-profile__theme-btn"
+                [label]="(isDarkMode() ? 'pages.profile.theme_light' : 'pages.profile.theme_dark') | translate"
+                [icon]="isDarkMode() ? 'pi pi-sun' : 'pi pi-moon'"
+                [severity]="'secondary'"
+                [outlined]="true"
+                (onClick)="toggleTheme()"
+              />
             </div>
           </div>
 
@@ -400,14 +411,14 @@
 
   <!-- Scroll to Top Button -->
   @if (showScrollTop()) {
-  <button class="customer-profile__scroll-top" (click)="scrollToTop()" aria-label="Scroll to top">
+  <button class="customer-profile__scroll-top" (click)="scrollToTop()" [attr.aria-label]="'pages.profile.scroll_to_top' | translate">
     <i class="pi pi-arrow-up"></i>
   </button>
   }
 
   <!-- Address Dialog -->
   <p-dialog
-    [header]="(editingAddress() ? 'pages.profile.edit_address' : 'pages.profile.add_address') | translate"
+    [header]="(editingAddressId() ? 'pages.profile.edit_address' : 'pages.profile.add_address') | translate"
     [(visible)]="showAddressDialog"
     [modal]="true"
     [style]="{ width: '450px' }"
@@ -416,32 +427,32 @@
   >
     <div class="customer-profile__dialog-form" [formGroup]="addressForm">
       <cleansia-text-input
-        formControlName="street"
-        [label]="'pages.profile.address_street' | translate"
+        formControlName="label"
+        [label]="'pages.profile.address_label' | translate"
+        [required]="true"
         floatVariant="on"
         inputSize="full-width"
       />
-      <div class="customer-profile__dialog-row">
-        <cleansia-text-input
-          formControlName="city"
-          [label]="'pages.profile.address_city' | translate"
-          floatVariant="on"
-          inputSize="full-width"
-        />
-        <cleansia-text-input
-          formControlName="zip"
-          [label]="'pages.profile.address_zip' | translate"
-          floatVariant="on"
-          inputSize="full-width"
-        />
-      </div>
-      <cleansia-select
-        formControlName="country"
-        [options]="countryOptions()"
-        [label]="'pages.profile.address_country' | translate"
-        floatVariant="on"
-        [filter]="true"
+      <cleansia-address-autocomplete
+        [initialQuery]="addressForm.controls.street.value"
+        (picked)="onAddressPicked($event)"
+        (searchFailed)="onAddressSearchFailed()"
       />
+      @if (addressForm.value.street) {
+        <div class="customer-profile__dialog-resolved">
+          <div class="customer-profile__dialog-resolved-row">
+            <i class="pi pi-map-marker"></i>
+            <div>
+              <strong>{{ addressForm.value.street }}</strong>
+              <span>{{ addressForm.value.city }}, {{ addressForm.value.zip }}</span>
+            </div>
+          </div>
+        </div>
+      } @else {
+        <p class="customer-profile__dialog-hint">
+          {{ 'pages.profile.address_pick_required' | translate }}
+        </p>
+      }
       <div class="customer-profile__dialog-toggle">
         <label>{{ 'pages.profile.default_address' | translate }}</label>
         <p-toggleSwitch formControlName="isDefault" />

@@ -24,4 +24,10 @@ public class OrderNote : Auditable, ITenantEntity
         EmployeeId = employeeId,
         Content = content
     };
+
+    public OrderNote Anonymize()
+    {
+        Content = AnonymizationMarker.Value;
+        return this;
+    }
 }

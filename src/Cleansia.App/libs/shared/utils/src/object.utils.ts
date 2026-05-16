@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 export function getUniqueValuesFromArrays<T>(array: T[], key: keyof T): T[] {
   const seenIds = new Set<T[keyof T]>();
   const uniqueArray: T[] = [];
@@ -15,17 +13,19 @@ export function getUniqueValuesFromArrays<T>(array: T[], key: keyof T): T[] {
   return uniqueArray;
 }
 
-export function getObjectValues(obj: any): any[] {
+export function getObjectValues<T = unknown>(obj: Record<string, T>): T[] {
   return Object.values(obj);
 }
 
-export async function parseBlobToJson(blob: Blob): Promise<any> {
+export async function parseBlobToJson<T = unknown>(blob: Blob): Promise<T> {
   const text = await blob.text();
-  return JSON.parse(text);
+  return JSON.parse(text) as T;
 }
 
-export function convertEnumToArray(enumObj: any): any[] {
+export function convertEnumToArray<T extends Record<string, string | number>>(
+  enumObj: T
+): Array<T[keyof T]> {
   return Object.keys(enumObj)
     .filter((key) => isNaN(Number(key)))
-    .map((key) => enumObj[key]);
+    .map((key) => enumObj[key as keyof T]);
 }

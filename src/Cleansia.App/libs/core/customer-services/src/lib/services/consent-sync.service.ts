@@ -1,7 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import {
   ConsentType,
-  ConsentsClient,
   GrantConsentCommand,
   WithdrawConsentCommand,
 } from '../client/customer-client';
@@ -17,8 +16,11 @@ import { CookieConsentStatus, CookiePreferences } from '@cleansia/components';
  */
 @Injectable({ providedIn: 'root' })
 export class ConsentSyncService {
+  // Always route through the CustomerClient wrapper so requests honour the
+  // configured CUSTOMER_API_BASE_URL. Direct sub-client injection uses
+  // NSwag's empty-string default baseUrl, which falls through to the SPA's
+  // own origin and returns the index.html / 404 page.
   private readonly customerClient = inject(CustomerClient);
-  private readonly consentsClient = inject(ConsentsClient);
   private readonly authService = inject(CustomerAuthService);
 
   /**
@@ -50,11 +52,9 @@ export class ConsentSyncService {
   }
 
   private grantConsent(consentType: ConsentType): void {
-    const command = new GrantConsentCommand({
-      consentType,
-      ipAddress: undefined,
-      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
-    });
+    // IP + user-agent are populated server-side from the request now
+    // (legal-audit integrity) — client no longer sends them.
+    const command = new GrantConsentCommand({ consentType });
 
     this.customerClient.gdprClient.consentsPost(command).subscribe({
       error: () => { /* silently ignore — consent is saved locally regardless */ },
@@ -66,7 +66,7 @@ export class ConsentSyncService {
       consentType,
     });
 
-    this.consentsClient.withdraw(command).subscribe({
+    this.customerClient.consentsClient.withdraw(command).subscribe({
       error: () => { /* silently ignore */ },
     });
   }

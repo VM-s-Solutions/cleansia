@@ -181,7 +181,16 @@
         "average": "Mesačný priemer",
         "growth": "Rast",
         "chart_label": "Mesačné zárobky",
-        "no_data": "Žiadne údaje o zárobkoch nie sú k dispozícii"
+        "no_data": "Žiadne údaje o zárobkoch nie sú k dispozícii",
+        "base_pay": "Základná mzda",
+        "bonus": "Bonus",
+        "breakdown": "Rozdelenie zárobkov",
+        "deductions": "Zrážky",
+        "expenses_pay": "Náklady",
+        "extras_pay": "Príplatky",
+        "highest_month": "Najvyšší mesiac",
+        "lowest_month": "Najnižší mesiac",
+        "monthly_trend": "Mesačný trend"
       },
       "time_analytics": {
         "title": "Analytika času a produktivity",
@@ -192,7 +201,11 @@
         "by_service": "Čas podľa typu služby",
         "week": "Týždeň {{number}}",
         "chart_label": "Odpracovaný čas",
-        "no_data": "Žiadne údaje o sledovaní času nie sú k dispozícii"
+        "no_data": "Žiadne údaje o sledovaní času nie sú k dispozícii",
+        "avg_time": "Priemerný čas",
+        "order_count": "Počet objednávok",
+        "service_name": "Názov služby",
+        "total_time": "Celkový čas"
       },
       "order_analytics": {
         "title": "Analytika objednávok",
@@ -205,7 +218,9 @@
         "order_count": "objednávok",
         "week": "Týždeň {{number}}",
         "chart_label": "Objednávky",
-        "no_data": "Žiadne údaje o objednávkach nie sú k dispozícii"
+        "no_data": "Žiadne údaje o objednávkach nie sú k dispozícii",
+        "revenue": "Príjem",
+        "service_name": "Názov služby"
       },
       "productivity_metrics": {
         "title": "Metriky produktivity",
@@ -219,7 +234,8 @@
         "most_orders_day": "Najviac objednávok za deň",
         "most_orders_month": "Najviac objednávok za mesiac",
         "best_efficiency": "Najlepšia efektivita",
-        "no_data": "Žiadne údaje o produktivite nie sú k dispozícii"
+        "no_data": "Žiadne údaje o produktivite nie sú k dispozícii",
+        "on_time": "Včas"
       },
       "date_range": {
         "this_month": "Tento mesiac",
@@ -310,7 +326,9 @@
         "filter_active": "aktívny",
         "filters_active": "aktívnych",
         "clear_all": "Vymazať všetko"
-      }
+      },
+      "no_logs": "Žiadne časové záznamy na zobrazenie",
+      "save_log": "Uložiť záznam"
     },
     "order_details": {
       "title": "Detail objednávky",
@@ -330,6 +348,7 @@
       "rooms": "Izby",
       "bathrooms": "Kúpeľne",
       "estimated_time": "Odhadovaný čas",
+      "estimated_time_minutes": "{{minutes}} minút",
       "selected_package": "Vybraný balík",
       "selected_packages": "Vybrané balíky",
       "included_services": "Zahrnuté služby",
@@ -383,7 +402,13 @@
       "employee_notes": "Poznámky zamestnanca",
       "reported_issues": "Nahlásené problémy",
       "resolved": "Vyriešené",
-      "open_issue": "Otvorený"
+      "open_issue": "Otvorený",
+      "add_note": "Pridať poznámku",
+      "assigned_employees": "Pridelení zamestnanci",
+      "elapsed_time": "Uplynulý čas",
+      "employee_email": "E-mail zamestnanca",
+      "report_issue": "Nahlásiť problém",
+      "take_order": "Prevziať objednávku"
     },
     "invoices": {
       "title": "Moje mzdové faktúry",
@@ -703,6 +728,9 @@
     "refresh": "Obnoviť",
     "common": "Všeobecné",
     "close": "Zavrieť",
+    "alt": {
+      "photo": "Fotografia"
+    },
     "rows_per_page": "Riadkov na stránku",
     "of": "z",
     "page": "Stránka {{page}}",
@@ -919,8 +947,24 @@
       "user_not_authenticated": "Používateľ nie je prihlásený"
     },
     "validation": {
-      "registration_number": {
-        "invalid_format": "Neplatný formát IČO"
+      "invalid_password": "Neplatné heslo",
+      "invalid_date": "Neplatný dátum",
+      "date_must_be_in_past": "Dátum musí byť v minulosti",
+      "invalid_age": "Neplatný vek",
+      "invalid_phone_number": "Neplatný formát telefónneho čísla",
+      "invalid_national_id": "Neplatný formát čísla občianskeho preukazu",
+      "invalid_tax_id": "Neplatný formát IČO",
+      "invalid_iban": "Neplatný formát IBAN",
+      "invalid_zip_code": "Neplatný formát PSČ",
+      "must_be_positive": "Hodnota musí byť kladná",
+      "invalid_availability_format": "Neplatný formát dostupnosti. Dni musia byť platné názvy dní alebo dátumy (yyyy-MM-dd) a časové rozsahy musia mať začiatok pred koncom.",
+      "page_must_be_positive": "Stránka musí byť väčšia ako 0",
+      "page_size_must_be_positive": "Veľkosť stránky musí byť väčšia ako 0",
+      "page_size_exceeded": "Veľkosť stránky nesmie prekročiť 100",
+      "invalid_contract_status": "Neplatná hodnota stavu zmluvy",
+      "file": {
+        "max_size": "Súbor \"{{fileName}}\" prekračuje maximálnu veľkosť {{maxSize}} MB",
+        "invalid_type": "Súbor \"{{fileName}}\" má nepovolený typ. Povolené: {{acceptedTypes}}"
       }
     },
     "currency": {
@@ -971,7 +1015,8 @@
         "required": "Fotografie po upratovaní sú povinné na dokončenie objednávky"
       },
       "payment_gateway_unavailable": "Platobná brána nie je k dispozícii",
-      "creation_failed": "Nepodarilo sa vytvoriť objednávku"
+      "creation_failed": "Nepodarilo sa vytvoriť objednávku",
+      "time_conflict": "Tento termín sa prekrýva s inou objednávkou vo vašom rozvrhu"
     },
     "user": {
       "email_confirmed": "E-mail je už potvrdený",
@@ -1087,27 +1132,6 @@
       "cannot_deactivate_self": "Nemôžete deaktivovať vlastný účet",
       "cannot_delete_self": "Nemôžete vymazať vlastný účet"
     },
-    "validation": {
-      "invalid_password": "Neplatné heslo",
-      "invalid_date": "Neplatný dátum",
-      "date_must_be_in_past": "Dátum musí byť v minulosti",
-      "invalid_age": "Neplatný vek",
-      "invalid_phone_number": "Neplatný formát telefónneho čísla",
-      "invalid_national_id": "Neplatný formát čísla občianskeho preukazu",
-      "invalid_tax_id": "Neplatný formát IČO",
-      "invalid_iban": "Neplatný formát IBAN",
-      "invalid_zip_code": "Neplatný formát PSČ",
-      "must_be_positive": "Hodnota musí byť kladná",
-      "invalid_availability_format": "Neplatný formát dostupnosti. Dni musia byť platné názvy dní alebo dátumy (yyyy-MM-dd) a časové rozsahy musia mať začiatok pred koncom.",
-      "page_must_be_positive": "Stránka musí byť väčšia ako 0",
-      "page_size_must_be_positive": "Veľkosť stránky musí byť väčšia ako 0",
-      "page_size_exceeded": "Veľkosť stránky nesmie prekročiť 100",
-      "invalid_contract_status": "Neplatná hodnota stavu zmluvy",
-      "file": {
-        "max_size": "Súbor \"{{fileName}}\" prekračuje maximálnu veľkosť {{maxSize}} MB",
-        "invalid_type": "Súbor \"{{fileName}}\" má nepovolený typ. Povolené: {{acceptedTypes}}"
-      }
-    },
     "service": {
       "not_found": "Služba nenájdená",
       "in_use": "Službu nie je možné vymazať, pretože sa aktuálne používa",
@@ -1155,7 +1179,8 @@
       "in_progress": "Prebieha",
       "completed": "Dokončené",
       "cancelled": "Zrušené",
-      "new": "Nová"
+      "new": "Nová",
+      "on_the_way": "Na ceste"
     },
     "payment_status": {
       "pending": "Čakajúce",
@@ -1302,6 +1327,20 @@
         "password_min_length": "Aspoň 8 znakov",
         "passwords_match": "Heslá sa zhodujú"
       }
+    },
+    "refresh_token_reused": "Vaša relácia bola použitá inde. Prihláste sa, prosím, znova."
+  },
+  "gdpr": {
+    "deletion_already_pending": "Žiadosť o vymazanie už prebieha.",
+    "deletion_blocked_by_order": "Účet nie je možné vymazať, kým máte aktívnu objednávku.",
+    "deletion_blocked_by_invoice": "Účet nie je možné vymazať, kým máte nevybavenú faktúru."
+  },
+  "order": {
+    "review": {
+      "already_exists": "Túto objednávku ste už hodnotili."
     }
+  },
+  "recurring_booking": {
+    "not_found": "Táto opakovaná objednávka už neexistuje."
   }
 }

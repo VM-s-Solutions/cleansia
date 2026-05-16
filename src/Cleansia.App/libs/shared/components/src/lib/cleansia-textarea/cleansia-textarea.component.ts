@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, forwardRef, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, forwardRef, input, output } from '@angular/core';
 import { FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { ErrorPipe } from '@cleansia/pipes';
 import { FloatLabelModule } from 'primeng/floatlabel';
@@ -18,6 +18,7 @@ import { CleansiaBaseFormInputComponent } from '../cleansia-base-form';
       multi: true,
     },
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaTextareaComponent extends CleansiaBaseFormInputComponent {
   id = input<string>(this.getDefaultLabelId());
@@ -26,11 +27,12 @@ export class CleansiaTextareaComponent extends CleansiaBaseFormInputComponent {
   autoResize = input<boolean>(false);
   floatVariant = input<'over' | 'in' | 'on'>('on');
 
-  valueChanges = output<any>();
+  valueChanges = output<string>();
 
   innerValue = '';
 
-  override writeValue(value: string): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  override writeValue(value: any): void {
     this.innerValue = value ?? '';
   }
 

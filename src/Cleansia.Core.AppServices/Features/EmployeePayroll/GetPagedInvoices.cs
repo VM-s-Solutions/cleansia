@@ -1,9 +1,12 @@
 #nullable enable
+using System.Security.Claims;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.EmployeePayroll.DTOs;
 using Cleansia.Core.AppServices.Features.EmployeePayroll.Filters;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Shared.DTOs.RequestModels;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Sorting;
 using Cleansia.Core.Domain.Specifications;
@@ -20,13 +23,27 @@ public class GetPagedInvoices
     }
 
     internal class Handler(
-        IEmployeeInvoiceRepository invoiceRepository)
+        IEmployeeInvoiceRepository invoiceRepository,
+        IOrderAccessService orderAccessService,
+        IUserSessionProvider userSessionProvider)
         : IRequestHandler<Request, PagedData<EmployeeInvoiceDto>>
     {
         public async Task<PagedData<EmployeeInvoiceDto>> Handle(Request request, CancellationToken cancellationToken)
         {
+            var role = userSessionProvider.GetTypedUserClaim(ClaimTypes.Role)?.Value;
+            string? employeeIdFilter = request.Filter?.EmployeeId;
+
+            if (role != UserProfile.Administrator.ToString())
+            {
+                employeeIdFilter = await orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+                if (string.IsNullOrEmpty(employeeIdFilter))
+                {
+                    return new List<EmployeeInvoiceDto>().MapToDto(0, request);
+                }
+            }
+
             var specification = EmployeeInvoiceSpecification.Create(
-                employeeId: request.Filter?.EmployeeId,
+                employeeId: employeeIdFilter,
                 payPeriodId: request.Filter?.PayPeriodId,
                 statuses: request.Filter?.Statuses,
                 invoiceNumber: request.Filter?.InvoiceNumber,

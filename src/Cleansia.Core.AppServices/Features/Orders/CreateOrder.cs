@@ -1,4 +1,4 @@
-﻿using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Addresses.DTOs;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -7,6 +7,7 @@ using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Core.Clients.Abstractions.SendGrid;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -15,6 +16,7 @@ using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using StripeException = Stripe.StripeException;
 using Order = Cleansia.Core.Domain.Orders.Order;
 using OrderService = Cleansia.Core.Domain.Orders.OrderService;
 
@@ -24,18 +26,21 @@ public class CreateOrder
 {
     public class Validator : AbstractValidator<Command>
     {
-        private readonly IPackageRepository _packageRepository;
-        private readonly IServiceRepository _serviceRepository;
-        private readonly ICurrencyRepository _currencyRepository;
+        private readonly IOrderPricingCalculator _pricingCalculator;
+        private readonly IOrderRepository _orderRepository;
+        private readonly IUserSessionProvider _userSessionProvider;
 
         public Validator(
             IPackageRepository packageRepository,
             IServiceRepository serviceRepository,
-            ICurrencyRepository currencyRepository)
+            ICurrencyRepository currencyRepository,
+            IOrderPricingCalculator pricingCalculator,
+            IOrderRepository orderRepository,
+            IUserSessionProvider userSessionProvider)
         {
-            _packageRepository = packageRepository;
-            _serviceRepository = serviceRepository;
-            _currencyRepository = currencyRepository;
+            _pricingCalculator = pricingCalculator;
+            _orderRepository = orderRepository;
+            _userSessionProvider = userSessionProvider;
 
             RuleFor(x => x.PaymentType)
                 .IsInEnum().WithMessage(BusinessErrorMessage.InvalidEnumValue);
@@ -55,7 +60,7 @@ public class CreateOrder
                 .WithMessage(BusinessErrorMessage.Required)
                 .EmailAddress()
                 .WithMessage(BusinessErrorMessage.InvalidEmailFormat)
-                .MaximumLength(50)
+                .MaximumLength(150)
                 .WithMessage(BusinessErrorMessage.MaxLength);
 
             RuleFor(x => x.CustomerPhone)
@@ -65,36 +70,42 @@ public class CreateOrder
                 .MaximumLength(20)
                 .WithMessage(BusinessErrorMessage.MaxLength);
 
-            RuleFor(x => x.CustomerAddress.Street)
-                .Cascade(CascadeMode.Stop)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .MinimumLength(5)
-                .WithMessage(BusinessErrorMessage.MinLength)
-                .MaximumLength(255)
-                .WithMessage(BusinessErrorMessage.MaxLength);
+            When(x => x.CustomerAddress != null, () =>
+            {
+                RuleFor(x => x.CustomerAddress!.Street)
+                    .Cascade(CascadeMode.Stop)
+                    .NotEmpty()
+                    .WithMessage(BusinessErrorMessage.Required)
+                    .MinimumLength(5)
+                    .WithMessage(BusinessErrorMessage.MinLength)
+                    .MaximumLength(255)
+                    .WithMessage(BusinessErrorMessage.MaxLength);
 
-            RuleFor(x => x.CustomerAddress.City)
-                .Cascade(CascadeMode.Stop)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .MinimumLength(2)
-                .WithMessage(BusinessErrorMessage.MinLength)
-                .MaximumLength(100)
-                .WithMessage(BusinessErrorMessage.MaxLength);
+                RuleFor(x => x.CustomerAddress!.City)
+                    .Cascade(CascadeMode.Stop)
+                    .NotEmpty()
+                    .WithMessage(BusinessErrorMessage.Required)
+                    .MinimumLength(2)
+                    .WithMessage(BusinessErrorMessage.MinLength)
+                    .MaximumLength(100)
+                    .WithMessage(BusinessErrorMessage.MaxLength);
 
-            RuleFor(x => x.CustomerAddress.ZipCode)
-                .Cascade(CascadeMode.Stop)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .MinimumLength(3)
-                .WithMessage(BusinessErrorMessage.MinLength)
-                .MaximumLength(20)
-                .WithMessage(BusinessErrorMessage.MaxLength);
+                RuleFor(x => x.CustomerAddress!.ZipCode)
+                    .Cascade(CascadeMode.Stop)
+                    .NotEmpty()
+                    .WithMessage(BusinessErrorMessage.Required)
+                    .MinimumLength(3)
+                    .WithMessage(BusinessErrorMessage.MinLength)
+                    .MaximumLength(20)
+                    .WithMessage(BusinessErrorMessage.MaxLength);
+            });
 
             RuleFor(x => x.CleaningDate)
+                .Cascade(CascadeMode.Stop)
                 .GreaterThan(DateTime.UtcNow)
-                .WithMessage(BusinessErrorMessage.CleaningDateInFuture);
+                .WithMessage(BusinessErrorMessage.CleaningDateInFuture)
+                .Must(cleaningDate => !BookingPolicy.IsBelowMinimumLeadTime(cleaningDate, DateTime.UtcNow))
+                .WithMessage(BusinessErrorMessage.CleaningDateBelowLeadTime);
 
             RuleFor(x => x.TotalPrice)
                 .GreaterThan(0)
@@ -106,6 +117,11 @@ public class CreateOrder
                     .MustAsync(currencyRepository.ExistsAsync)
                     .WithMessage(BusinessErrorMessage.InvalidCurrency);
             });
+
+            RuleFor(x => x)
+                .Must(cmd => (cmd.CustomerAddress != null) ^ (!string.IsNullOrEmpty(cmd.SavedAddressId)))
+                .WithMessage(BusinessErrorMessage.OrderAddressExactlyOneRequired)
+                .WithName(nameof(Command.CustomerAddress));
 
             RuleFor(x => x.SelectedServiceIds)
                 .MustAsync(serviceRepository.ExistWithIdsAsync)
@@ -121,33 +137,63 @@ public class CreateOrder
                 .WithMessage(BusinessErrorMessage.EmptyOrder)
                 .MustAsync(PriceMatchesAsync)
                 .WithMessage(BusinessErrorMessage.TotalPriceNotMatch);
+
+            When(x => !string.IsNullOrEmpty(x.PreferredEmployeeId)
+                && !string.IsNullOrEmpty(_userSessionProvider.GetUserId()), () =>
+            {
+                RuleFor(x => x)
+                    .MustAsync(PreferredEmployeeIsEligibleAsync)
+                    .WithMessage(BusinessErrorMessage.PreferredEmployeeNotEligible)
+                    .WithName(nameof(Command.PreferredEmployeeId));
+            });
         }
+
+        private async Task<bool> PreferredEmployeeIsEligibleAsync(
+            Command command,
+            CancellationToken cancellationToken)
+            => await _orderRepository.UserHasCompletedOrderWithEmployeeAsync(
+                _userSessionProvider.GetUserId()!, command.PreferredEmployeeId!, cancellationToken);
 
         private static bool OrderMustNotBeEmpty(Command command) => command.SelectedPackageIds.Any() ||
                                                                     command.SelectedServiceIds.Any();
 
         private async Task<bool> PriceMatchesAsync(Command command, CancellationToken cancellationToken)
         {
-            decimal? basePrice = 0.0M;
+            // Pass CleaningDate so the calculator folds the express surcharge
+            // in itself — replaces the legacy two-branch "either raw or
+            // grossed-up" comparison we had before extras shipped.
+            var selectedExtraSlugs = SelectedExtraSlugsFrom(command.Extras);
+            var result = await _pricingCalculator.CalculateAsync(
+                command.SelectedServiceIds,
+                command.SelectedPackageIds,
+                selectedExtraSlugs,
+                command.Rooms,
+                command.Bathrooms,
+                command.CurrencyId,
+                command.CleaningDate,
+                cancellationToken);
 
-            var packages = await _packageRepository.GetByIds(command.SelectedPackageIds).ToListAsync(cancellationToken);
-            basePrice += packages.Sum(p => p.Price);
-
-            var services = await _serviceRepository.GetByIds(command.SelectedServiceIds).ToListAsync(cancellationToken);
-            basePrice += services.Sum(s => s?.BasePrice + s?.PerRoomPrice * (command.Rooms + command.Bathrooms));
-
-            var currency = string.IsNullOrEmpty(command.CurrencyId)
-                ? await _currencyRepository.GetDefaultAsync(cancellationToken)
-                : await _currencyRepository.GetByIdAsync(command.CurrencyId, cancellationToken);
-            return basePrice * currency?.ExchangeRate == command.TotalPrice;
+            return result.TotalPrice == command.TotalPrice;
         }
+
+        /// <summary>
+        /// Filter the slug-keyed Extras map down to slugs the client
+        /// actually selected (value=true). Centralised so the validator,
+        /// handler, and pricing calculator stay in lockstep with how the
+        /// field is interpreted.
+        /// </summary>
+        internal static IEnumerable<string> SelectedExtraSlugsFrom(Dictionary<string, bool>? extras)
+            => extras == null
+                ? Array.Empty<string>()
+                : extras.Where(kvp => kvp.Value).Select(kvp => kvp.Key);
     }
 
     public record Command(
         string CustomerName,
         string CustomerEmail,
         string CustomerPhone,
-        AddressDto CustomerAddress,
+        AddressDto? CustomerAddress,
+        string? SavedAddressId,
         IEnumerable<string> SelectedPackageIds,
         IEnumerable<string> SelectedServiceIds,
         int Rooms,
@@ -157,7 +203,10 @@ public class CreateOrder
         PaymentType PaymentType,
         string? CurrencyId,
         decimal TotalPrice,
-        string Language = Constants.Language.English) : ICommand<Response>;
+        string Language = Constants.Language.English,
+        string? PromoCode = null,
+        string? ReferralCode = null,
+        string? PreferredEmployeeId = null) : ICommand<Response>;
 
     public record Response(
         string Id,
@@ -165,147 +214,231 @@ public class CreateOrder
         string? StripeSessionId);
 
     public class Handler(
-        ISendGridConfig sendGridConfig,
-        IOrderRepository orderRepository,
         IAddressRepository addressRepository,
-        IServiceRepository serviceRepository,
-        IPackageRepository packageRepository,
+        ISavedAddressRepository savedAddressRepository,
         ICurrencyRepository currencyRepository,
         ICountryRepository countryRepository,
-        ICompanyInfoRepository companyInfoRepository,
-        ICountryConfigurationRepository countryConfigurationRepository,
-        IVatCalculator vatCalculator,
-        ISendGridClientFactory clientFactory,
         IStripeClientFactory stripeClientFactory,
         IQueueClient queueClient,
+        IPromoCodeService promoCodeService,
+        IReferralService referralService,
+        IReferralRepository referralRepository,
+        IUserSessionProvider userSessionProvider,
+        IOrderPricingCalculator pricingCalculator,
+        IOrderFactory orderFactory,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            // Resolve country — verify provided CountryId exists, or fall back to default
-            var countryId = command.CustomerAddress.CountryId;
-            if (!string.IsNullOrEmpty(countryId) && !await countryRepository.ExistsAsync(countryId, cancellationToken))
+            var userId = userSessionProvider.GetUserId() ?? string.Empty;
+
+            // Late referral acceptance: a returning user who got the link
+            // post-signup re-types it on the booking screen. Single retry,
+            // logged on failure, never blocks the booking.
+            if (!string.IsNullOrWhiteSpace(command.ReferralCode)
+                && !string.IsNullOrEmpty(userId))
             {
-                countryId = null; // Invalid ID, fall back to default
-            }
-            if (string.IsNullOrEmpty(countryId))
-            {
-                var defaultCountry = await countryRepository.GetByIsoCodeAsync("CZE", cancellationToken)
-                    ?? await countryRepository.GetQueryable().FirstOrDefaultAsync(cancellationToken);
-                countryId = defaultCountry?.Id ?? throw new InvalidOperationException("No countries configured in the system");
+                var existingReferral = await referralRepository.GetByReferredUserIdAsync(
+                    userId, cancellationToken);
+                if (existingReferral == null)
+                {
+                    try
+                    {
+                        var acceptResult = await referralService.AcceptAsync(
+                            command.ReferralCode, userId, cancellationToken);
+                        if (!acceptResult.IsAccepted)
+                        {
+                            logger.LogInformation(
+                                "Late referral accept rejected for user {UserId}, code {Code}: {Error}",
+                                userId, command.ReferralCode, acceptResult.Error);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex,
+                            "Failed late-accept referral code {Code} for user {UserId}",
+                            command.ReferralCode, userId);
+                    }
+                }
             }
 
-            var address = await addressRepository.GetAddressAsync(command.CustomerAddress.Street,
-                command.CustomerAddress.City, command.CustomerAddress.ZipCode, countryId,
-                cancellationToken) ?? Address.Create(
-                command.CustomerAddress.Street,
-                command.CustomerAddress.City,
-                command.CustomerAddress.ZipCode,
-                countryId,
-                command.CustomerAddress.State);
+            // Address resolution — saved vs inline. SavedAddressId path enforces
+            // ownership so a user can't book against another user's saved row.
+            var addressResult = await ResolveAddressAsync(command, userId, cancellationToken);
+            if (addressResult.Failure is { } failure)
+            {
+                return BusinessResult.Failure<Response>(failure);
+            }
+            var address = addressResult.Address!;
 
             var currency = string.IsNullOrEmpty(command.CurrencyId)
                 ? await currencyRepository.GetDefaultAsync(cancellationToken)
                 : await currencyRepository.GetByIdAsync(command.CurrencyId, cancellationToken);
 
-            var order = Order.Create(
-                command.CustomerName,
-                command.CustomerEmail,
-                command.CustomerPhone,
-                address,
+            // The calculator now surfaces the broken-out (raw + extras +
+            // surcharge) shape, so OrderFactory can take a raw-pre-surcharge
+            // subtotal and re-apply the surcharge after the discount. Quote
+            // gross is `command.TotalPrice` (price client agreed to); raw
+            // subtotal is total minus the surcharge portion the calculator
+            // computed for this CleaningDate.
+            var selectedExtraSlugs = Validator.SelectedExtraSlugsFrom(command.Extras).ToList();
+            var calc = await pricingCalculator.CalculateAsync(
+                command.SelectedServiceIds,
+                command.SelectedPackageIds,
+                selectedExtraSlugs,
                 command.Rooms,
                 command.Bathrooms,
-                command.Extras,
+                command.CurrencyId,
                 command.CleaningDate,
-                command.PaymentType,
-                command.TotalPrice,
-                currency!.Id,
-                PaymentStatus.Pending);
+                cancellationToken);
+            var rawSubtotal = calc.TotalPrice - calc.ExpressSurchargeAmount;
 
-            order.SetCurrency(currency!);
-
-            var selectedServices = await serviceRepository
-                .GetByIds(command.SelectedServiceIds)
-                .Select(s => OrderService.Create(order, s))
-                .ToListAsync(cancellationToken);
-            var selectedPackages = await packageRepository
-                .GetByIds(command.SelectedPackageIds)
-                .Include(p => p.IncludedServices)
-                    .ThenInclude(s => s.Service)
-                .Select(p => OrderPackage.Create(order, p))
-                .ToListAsync(cancellationToken);
-
-            order.AddSelectedServices(selectedServices);
-            order.AddSelectedPackages(selectedPackages);
-            var estimatedTime = selectedServices.Sum(s => s.Service!.EstimatedTime) +
-                                selectedPackages.Sum(p => p.Package!.IncludedServices.Sum(s => s.Service!.EstimatedTime));
-
-            order.UpdateEstimatedTime(estimatedTime);
-            order.CalculateRequiredEmployees();
-
-            // Compute VAT breakdown so receipts + fiscal integration have accurate figures.
-            // When the company is not a VAT payer, this records net=TotalPrice, vat=0, rate=null.
-            var companyInfo = await companyInfoRepository.GetActiveByCountryAsync(countryId, cancellationToken)
-                              ?? await companyInfoRepository.GetActiveCompanyInfoAsync(cancellationToken);
-            if (companyInfo != null)
+            // Promo preview lives outside the factory because it's a one-off
+            // input (not a stored snapshot like tier/membership) and needs to
+            // be Apply()d after the order persists, not just previewed.
+            decimal promoDiscount = 0m;
+            string? promoCodeId = null;
+            if (!string.IsNullOrEmpty(command.PromoCode) && !string.IsNullOrEmpty(userId))
             {
-                var countryConfig = await countryConfigurationRepository.GetByCountryIdAsync(countryId, cancellationToken);
-                var vatBreakdown = vatCalculator.Calculate(order.TotalPrice, companyInfo, countryConfig);
-                order.SetVatBreakdown(vatBreakdown.NetAmount, vatBreakdown.VatAmount, vatBreakdown.AppliedRate);
-            }
-            else
-            {
-                // No CompanyInfo configured — default to no VAT applied.
-                order.SetVatBreakdown(order.TotalPrice, 0m, null);
+                var preview = await promoCodeService.PreviewAsync(
+                    command.PromoCode, userId, rawSubtotal, currency!.Id, cancellationToken);
+                if (preview.Success)
+                {
+                    promoDiscount = preview.DiscountAmount;
+                    promoCodeId = preview.PromoCodeId;
+                }
             }
 
+            var order = await orderFactory.CreateAsync(new CreateOrderInput(
+                UserId: userId,
+                CustomerName: command.CustomerName,
+                CustomerEmail: command.CustomerEmail,
+                CustomerPhone: command.CustomerPhone,
+                Address: address,
+                Rooms: command.Rooms,
+                Bathrooms: command.Bathrooms,
+                Extras: command.Extras,
+                CleaningDate: command.CleaningDate,
+                PaymentType: command.PaymentType,
+                Currency: currency!,
+                SelectedServiceIds: command.SelectedServiceIds,
+                SelectedPackageIds: command.SelectedPackageIds,
+                RawSubtotal: rawSubtotal,
+                PromoDiscountAmount: promoDiscount,
+                PromoCodeId: promoCodeId,
+                PreferredEmployeeId: command.PreferredEmployeeId,
+                RecurringTemplateId: null), cancellationToken);
+
+            // Stripe + receipt-queue side effects per payment type. Card
+            // failures roll back to a Card-specific error code so the
+            // client can show a "payment provider unavailable" copy.
             string? stripeSessionId = null;
-
             switch (command.PaymentType)
             {
                 case PaymentType.Card:
+                    try
                     {
-                        try
-                        {
-                            var stripeClient = stripeClientFactory.CreateClient();
-                            stripeSessionId = await stripeClient.CreateCheckoutSessionAsync(order, cancellationToken);
-
-                            order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
-                            orderRepository.Add(order);
-                        }
-                        catch (Exception ex)
-                        {
-                            // Log error (in production, use proper logging)
-                            Console.WriteLine($"Stripe checkout session creation failed: {ex.Message}");
-
-                            return BusinessResult.Failure<Response>(new Error(
-                                nameof(PaymentType.Card),
-                                BusinessErrorMessage.PaymentGatewayUnavailable));
-                        }
-                        break;
+                        var stripeClient = stripeClientFactory.CreateClient();
+                        stripeSessionId = await stripeClient.CreateCheckoutSessionAsync(order, cancellationToken);
                     }
+                    catch (StripeException ex)
+                    {
+                        // Narrow catch: only transient/API-level Stripe failures map to
+                        // PaymentGatewayUnavailable. Anything else (DI misconfig, null ref,
+                        // bad order state) should bubble as 500 so we see it, not mask it
+                        // as a "gateway down" message to the user.
+                        logger.LogError(ex, "Stripe checkout session creation failed");
+                        return BusinessResult.Failure<Response>(new Error(
+                            nameof(PaymentType.Card),
+                            BusinessErrorMessage.PaymentGatewayUnavailable));
+                    }
+                    break;
+
                 case PaymentType.Cash:
-                    {
-                        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
+                    await queueClient.SendAsync(QueueNames.GenerateReceipt,
+                        new GenerateReceiptMessage(order.Id, command.Language), cancellationToken);
+                    break;
 
-                        // Add order first so EF can resolve FK when receipt is created
-                        orderRepository.Add(order);
-
-                        // Enqueue receipt generation as a background job
-                        await queueClient.SendAsync(QueueNames.GenerateReceipt,
-                            new GenerateReceiptMessage(order.Id, command.Language), cancellationToken);
-
-                        break;
-                    }
                 default:
                     throw new ArgumentOutOfRangeException(nameof(PaymentType));
             }
 
+            // Promo persistence runs after the order is in the repo so the
+            // promo row gets the order id. Failure logs but doesn't roll back —
+            // the customer already paid and the promo just doesn't get tracked.
+            if (promoDiscount > 0m
+                && !string.IsNullOrEmpty(command.PromoCode)
+                && !string.IsNullOrEmpty(userId))
+            {
+                var applyResult = await promoCodeService.ApplyAsync(
+                    command.PromoCode,
+                    userId,
+                    order.Id,
+                    order.TotalPrice + promoDiscount,
+                    currency!.Id,
+                    cancellationToken);
+                if (!applyResult.Success)
+                {
+                    logger.LogWarning(
+                        "Promo apply failed after order created. OrderId={OrderId}, Code={Code}, Error={Error}",
+                        order.Id, command.PromoCode, applyResult.Error);
+                }
+            }
+
             return BusinessResult.Success(new Response(
-                        Id: order.Id,
-                        ConfirmationCode: order.ConfirmationCode,
-                        StripeSessionId: stripeSessionId));
+                Id: order.Id,
+                ConfirmationCode: order.ConfirmationCode,
+                StripeSessionId: stripeSessionId));
         }
 
+        private async Task<AddressResolution> ResolveAddressAsync(
+            Command command, string userId, CancellationToken cancellationToken)
+        {
+            if (!string.IsNullOrEmpty(command.SavedAddressId))
+            {
+                var saved = await savedAddressRepository.GetByIdAsync(command.SavedAddressId, cancellationToken);
+                if (saved == null)
+                {
+                    return AddressResolution.Fail(new Error(
+                        nameof(command.SavedAddressId), BusinessErrorMessage.NotFound));
+                }
+                if (!string.IsNullOrEmpty(userId) && saved.UserId != userId)
+                {
+                    return AddressResolution.Fail(new Error(
+                        nameof(command.SavedAddressId), BusinessErrorMessage.NotFound));
+                }
+                var resolved = saved.Address
+                    ?? await addressRepository.GetByIdAsync(saved.AddressId, cancellationToken)
+                    ?? throw new InvalidOperationException(
+                        $"SavedAddress {saved.Id} references missing Address {saved.AddressId}");
+                return AddressResolution.Ok(resolved);
+            }
+
+            var inline = command.CustomerAddress!;
+            var resolvedCountryId = inline.CountryId;
+            if (!string.IsNullOrEmpty(resolvedCountryId)
+                && !await countryRepository.ExistsAsync(resolvedCountryId, cancellationToken))
+            {
+                resolvedCountryId = null;
+            }
+            if (string.IsNullOrEmpty(resolvedCountryId))
+            {
+                var defaultCountry = await countryRepository.GetByIsoCodeAsync("CZE", cancellationToken)
+                    ?? await countryRepository.GetQueryable().FirstOrDefaultAsync(cancellationToken);
+                resolvedCountryId = defaultCountry?.Id
+                    ?? throw new InvalidOperationException("No countries configured in the system");
+            }
+
+            var address = await addressRepository.GetAddressAsync(
+                inline.Street, inline.City, inline.ZipCode, resolvedCountryId, cancellationToken)
+                ?? Address.Create(inline.Street, inline.City, inline.ZipCode, resolvedCountryId, inline.State);
+            return AddressResolution.Ok(address);
+        }
+
+        private record AddressResolution(Address? Address, Error? Failure)
+        {
+            public static AddressResolution Ok(Address address) => new(address, null);
+            public static AddressResolution Fail(Error error) => new(null, error);
+        }
     }
 }

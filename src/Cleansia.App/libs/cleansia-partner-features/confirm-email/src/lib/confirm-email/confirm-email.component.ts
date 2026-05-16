@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -9,7 +9,6 @@ import {
   CleansiaCodeInputComponent,
   CleansiaDynamicBackgroundComponent,
   CleansiaLanguageSwitcherComponent,
-  CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { selectLoading } from '@cleansia/partner-stores';
@@ -29,11 +28,11 @@ import { ConfirmEmailFacade } from './confirm-email.facade';
     CleansiaButtonComponent,
     CleansiaBrandNameComponent,
     CleansiaCodeInputComponent,
-    CleansiaTextInputComponent,
     CleansiaLanguageSwitcherComponent,
     CleansiaDynamicBackgroundComponent,
   ],
   providers: [ConfirmEmailFacade],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ConfirmEmailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);

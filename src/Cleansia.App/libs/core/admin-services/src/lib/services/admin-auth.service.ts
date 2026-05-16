@@ -1,19 +1,20 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { JwtToken } from '@cleansia/models';
-import { CleansiaAdminRoute, LocalStorageKey, Role } from '@cleansia/services';
+import { AUTH_COOKIE_KEYS, CleansiaAdminRoute, LocalStorageKey, Role } from '@cleansia/services';
 import {
-  extractCookieValue,
   getLocalStorageValueByKeyAsJSON,
-  removeCookieValue,
-  setCookieValue,
   setLocalStorageValueByKey,
 } from '@cleansia/utils';
-import { jwtDecode } from 'jwt-decode';
-import { BehaviorSubject, Observable, map, of } from 'rxjs';
+import { BehaviorSubject, Observable, catchError, map, of, tap } from 'rxjs';
 import { AdminClient } from '../client/admin-base-client';
-import { AdminLoginCommand, JwtTokenResponse } from '../client/admin-client';
+import {
+  AdminLoginCommand,
+  JwtTokenResponse,
+  LogoutCommand,
+  RefreshTokenCommand,
+  UserProfile,
+} from '../client/admin-client';
 
 @Injectable({
   providedIn: 'root',
@@ -21,6 +22,7 @@ import { AdminLoginCommand, JwtTokenResponse } from '../client/admin-client';
 export class AdminAuthService {
   private readonly adminClient = inject(AdminClient);
   private readonly router = inject(Router);
+  private readonly cookieKeys = inject(AUTH_COOKIE_KEYS);
 
   readonly isLoggedIn$ = new BehaviorSubject<boolean>(this.isLoggedIn());
   readonly isLoggedInAction$: Observable<boolean> = this.isLoggedIn$.pipe(
@@ -43,32 +45,65 @@ export class AdminAuthService {
   }
 
   logout(): Observable<boolean> {
-    this.removeSession();
-    this.router.navigate([`${CleansiaAdminRoute.LOGIN}`]);
-    return of(true);
+    // Refresh token is in the HttpOnly cookie — server reads from cookie.
+    const serverCall = this.adminClient.adminAuthClient
+      .logout(new LogoutCommand({ token: '' }))
+      .pipe(catchError(() => of(false)));
+
+    return serverCall.pipe(
+      tap(() => {
+        this.removeSession();
+        this.router.navigate([`${CleansiaAdminRoute.LOGIN}`]);
+      }),
+      map(() => true)
+    );
+  }
+
+  refreshSession(): Observable<boolean> {
+    return this.adminClient.adminAuthClient
+      .refreshToken(
+        new RefreshTokenCommand({
+          token: '',
+          requiredProfile: UserProfile.Administrator,
+          requiredAudience: undefined,
+        })
+      )
+      .pipe(
+        tap((authResult) => this.setSession(authResult)),
+        map(() => true)
+      );
   }
 
   isLoggedIn(): boolean {
-    const expiration = this.getExpiration();
-    return expiration ? Date.now() < expiration.getTime() : false;
+    if (!this.getCsrfToken()) return false;
+    return this.hasValidRefreshToken();
   }
 
   isLoggedOut(): boolean {
     return !this.isLoggedIn();
   }
 
-  getToken(): string | null {
-    return this.getCookieToken();
+  /** CSRF token from the most recent login/refresh response (double-submit pair
+   *  with the HttpOnly auth cookie). Read by the interceptor for X-CSRF-Token. */
+  getCsrfToken(): string | null {
+    return typeof localStorage === 'undefined'
+      ? null
+      : localStorage.getItem(this.cookieKeys.csrfToken);
   }
 
-  getRole(): string | null {
-    const token: string | null = this.getToken();
-    if (!token) {
-      return null;
-    }
+  hasValidRefreshToken(): boolean {
+    if (typeof localStorage === 'undefined') return false;
+    const expStr = localStorage.getItem(this.cookieKeys.refreshTokenExp);
+    if (!expStr) return false;
+    return Date.now() < new Date(expStr).getTime();
+  }
 
-    const decodedToken: JwtToken = jwtDecode(token);
-    return decodedToken.role;
+  /** Role attached to the most recent login/refresh response. Source-of-truth
+   *  remains server-side; this is a UI hint for permission gating. */
+  getRole(): string | null {
+    return typeof localStorage === 'undefined'
+      ? null
+      : localStorage.getItem(this.cookieKeys.role);
   }
 
   isAdminOrEditor(): boolean {
@@ -98,41 +133,30 @@ export class AdminAuthService {
   }
 
   removeSession(): void {
-    this.removeCookieSession();
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(this.cookieKeys.refreshTokenExp);
+      localStorage.removeItem(this.cookieKeys.csrfToken);
+      localStorage.removeItem(this.cookieKeys.role);
+    }
     this.isLoggedIn$.next(false);
   }
 
   setSession(authResult: JwtTokenResponse): void {
-    this.setCookieSession(authResult.token!);
-    this.isLoggedIn$.next(true);
-    this.setWarningDialogStatus(false);
-  }
-
-  private getExpiration(): Date | null {
-    return this.getCookieExpiration();
-  }
-
-  private removeCookieSession(): void {
-    removeCookieValue(LocalStorageKey.TOKEN);
-  }
-
-  private getCookieToken(): string | null {
-    return extractCookieValue(LocalStorageKey.TOKEN);
-  }
-
-  private getCookieExpiration(): Date | null {
-    const token = this.getCookieToken();
-    if (!token) {
-      return null;
+    const role = (authResult as unknown as { role?: string }).role;
+    if (role) {
+      setLocalStorageValueByKey(this.cookieKeys.role, role);
+    }
+    if (authResult.refreshTokenExpiresAt) {
+      localStorage.setItem(
+        this.cookieKeys.refreshTokenExp,
+        authResult.refreshTokenExpiresAt.toISOString()
+      );
+    }
+    if (authResult.csrfToken) {
+      localStorage.setItem(this.cookieKeys.csrfToken, authResult.csrfToken);
     }
 
-    const { exp } = jwtDecode(token);
-    return exp ? new Date(exp * 1000) : null;
-  }
-
-  private setCookieSession(token: string): void {
-    const decodedToken: JwtToken = jwtDecode(token);
-    setCookieValue(LocalStorageKey.TOKEN, token);
-    setLocalStorageValueByKey(LocalStorageKey.ROLE, decodedToken.role);
+    this.isLoggedIn$.next(true);
+    this.setWarningDialogStatus(false);
   }
 }

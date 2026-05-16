@@ -1,5 +1,6 @@
 import {
   booleanAttribute,
+  ChangeDetectionStrategy,
   Component,
   computed,
   inject,
@@ -27,6 +28,7 @@ import { InputSize } from './cleansia-base-form.models';
 @Component({
   template: '',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaBaseFormInputComponent
   implements ControlValueAccessor, OnInit, OnChanges, OnDestroy

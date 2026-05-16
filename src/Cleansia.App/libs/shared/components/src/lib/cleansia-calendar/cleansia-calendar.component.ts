@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, forwardRef, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, forwardRef, input, output } from '@angular/core';
 import { FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { ErrorPipe } from '@cleansia/pipes';
 import { DatePickerModule } from 'primeng/datepicker';
@@ -24,6 +24,7 @@ import { CleansiaBaseFormInputComponent } from '../cleansia-base-form';
       multi: true,
     },
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaCalendarComponent extends CleansiaBaseFormInputComponent {
   id = input<string>(this.getDefaultLabelId());
@@ -35,15 +36,16 @@ export class CleansiaCalendarComponent extends CleansiaBaseFormInputComponent {
   maxDate = input<Date | null>(null);
   appendTo = input<'body' | null>(null);
 
-  valueChanges = output<any>();
+  valueChanges = output<Date | null>();
 
   innerValue: Date | null = null;
 
-  override writeValue(value: Date | null): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  override writeValue(value: any): void {
     this.innerValue = value ?? null;
   }
 
-  handleChange(event: any): void {
+  handleChange(event: Date | null): void {
     const value = event;
     this.innerValue = value ?? null;
     this.onChange(value);

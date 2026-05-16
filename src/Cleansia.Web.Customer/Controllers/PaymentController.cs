@@ -4,6 +4,7 @@ using Cleansia.Web.Customer.Abstractions;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Customer.Controllers;
 
@@ -12,6 +13,7 @@ namespace Cleansia.Web.Customer.Controllers;
 public class PaymentController(IMediator mediator) : CustomerApiController(mediator)
 {
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     [HttpPost("CreateOrder")]
     [ProducesResponseType(typeof(CreateOrder.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -19,6 +21,23 @@ public class PaymentController(IMediator mediator) : CustomerApiController(media
     {
         var result = await Mediator.Send(command);
         return HandleResult<CreateOrder.Response>(result);
+    }
+
+    /// <summary>
+    /// Mobile PaymentSheet flow: convert an existing card-payable order into
+    /// a Stripe PaymentIntent + ephemeral key. Authenticated only — guest
+    /// checkout uses the web Checkout Session flow.
+    /// </summary>
+    [Authorize]
+    [EnableRateLimiting("auth")]
+    [HttpPost("CreatePaymentIntent")]
+    [ProducesResponseType(typeof(CreatePaymentIntent.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> CreatePaymentIntent([FromBody] CreatePaymentIntent.Command command)
+    {
+        var result = await Mediator.Send(command);
+        return HandleResult<CreatePaymentIntent.Response>(result);
     }
 
     [AllowAnonymous]

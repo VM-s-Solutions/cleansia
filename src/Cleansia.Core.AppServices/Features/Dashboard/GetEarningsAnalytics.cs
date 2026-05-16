@@ -1,8 +1,11 @@
 #nullable enable
+using System.Security.Claims;
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Dashboard.DTOs;
 using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using MediatR;
@@ -19,31 +22,33 @@ public class GetEarningsAnalytics
 
     internal class Handler(
         IEmployeeInvoiceRepository employeeInvoiceRepository,
-        IEmployeeRepository employeeRepository,
+        IOrderAccessService orderAccessService,
         IUserSessionProvider userSessionProvider)
         : IRequestHandler<Query, BusinessResult<EarningsAnalyticsDto>>
     {
         public async Task<BusinessResult<EarningsAnalyticsDto>> Handle(Query request, CancellationToken cancellationToken)
         {
-            var employeeId = request.EmployeeId;
+            var role = userSessionProvider.GetTypedUserClaim(ClaimTypes.Role)?.Value;
+            string? employeeId;
 
-            // If employeeId is not provided, resolve from JWT session
-            if (string.IsNullOrWhiteSpace(employeeId))
+            if (role == UserProfile.Administrator.ToString())
             {
-                var userEmail = userSessionProvider.GetUserEmail();
-                var employee = await employeeRepository.GetByUserEmailAsync(userEmail!, cancellationToken);
-                if (employee is null)
-                {
-                    return BusinessResult.Failure<EarningsAnalyticsDto>(new Error(
-                        "Employee",
-                        BusinessErrorMessage.EmployeeNotFound));
-                }
-                employeeId = employee.Id;
+                employeeId = request.EmployeeId;
+            }
+            else
+            {
+                employeeId = await orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+            }
+
+            if (string.IsNullOrEmpty(employeeId))
+            {
+                return BusinessResult.Failure<EarningsAnalyticsDto>(new Error(
+                    "Employee",
+                    BusinessErrorMessage.EmployeeNotFound));
             }
 
             var invoices = await employeeInvoiceRepository
-                .GetInvoicesByDateRange(employeeId, request.StartDate, request.EndDate)
-                .ToListAsync(cancellationToken);
+                .GetByEmployeeAndDateRangeAsync(employeeId, request.StartDate, request.EndDate, cancellationToken);
 
             var monthlyEarnings = invoices
                 .GroupBy(i => (i.GeneratedAt.Year, i.GeneratedAt.Month))

@@ -6,7 +6,6 @@ using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace Cleansia.Web.Admin.Controllers;
 
@@ -88,8 +87,7 @@ public class AdminUserController(IMediator mediator) : ApiController(mediator)
         string userId,
         CancellationToken cancellationToken)
     {
-        var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-        var result = await Mediator.Send(new DeactivateAdminUser.Command(userId, currentUserId), cancellationToken);
+        var result = await Mediator.Send(new DeactivateAdminUser.Command(userId), cancellationToken);
         return HandleResult<DeactivateAdminUser.Response>(result);
     }
 

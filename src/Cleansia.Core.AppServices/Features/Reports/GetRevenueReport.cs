@@ -21,8 +21,7 @@ public class GetRevenueReport
         public async Task<BusinessResult<RevenueReportDto>> Handle(Query request, CancellationToken cancellationToken)
         {
             var orders = await orderRepository
-                .GetOrdersByDateRange(request.Filter.StartDate, request.Filter.EndDate)
-                .ToListAsync(cancellationToken);
+                .GetOrdersByDateRangeAsync(request.Filter.StartDate, request.Filter.EndDate, cancellationToken);
 
             var totalRevenue = orders.Sum(o => o.TotalPrice);
             var totalOrders = orders.Count;

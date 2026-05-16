@@ -16,6 +16,7 @@
       <div class="filter-chips-inline"></div>
       <div class="header-actions">
         <cleansia-button
+          *cleansiaPermission="Policy.CanCreateCurrency"
           [label]="'pages.currency_management.create_currency' | translate"
           icon="pi pi-plus"
           (onClick)="createCurrency()"

@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Repositories;
@@ -10,15 +11,13 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 
 public class DeleteOrderPhoto
 {
-    public record Command(
-        string PhotoId,
-        string EmployeeId) : ICommand<Response>;
+    public record Command(string PhotoId) : ICommand<Response>;
 
     public record Response(bool Success);
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator(IOrderPhotoRepository photoRepository, IEmployeeRepository employeeRepository)
+        public Validator(IOrderPhotoRepository photoRepository)
         {
             RuleFor(x => x.PhotoId)
                 .Cascade(CascadeMode.Stop)
@@ -26,19 +25,13 @@ public class DeleteOrderPhoto
                 .WithMessage(BusinessErrorMessage.Required)
                 .MustAsync(photoRepository.ExistsAsync)
                 .WithMessage(BusinessErrorMessage.NotFound);
-
-            RuleFor(x => x.EmployeeId)
-                .Cascade(CascadeMode.Stop)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(employeeRepository.ExistsAsync)
-                .WithMessage(BusinessErrorMessage.EmployeeNotFound);
         }
     }
 
     public class Handler(
         IOrderPhotoRepository photoRepository,
         IOrderRepository orderRepository,
+        IOrderAccessService orderAccessService,
         IBlobContainerClientFactory blobClientFactory) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -49,18 +42,22 @@ public class DeleteOrderPhoto
                 return BusinessResult.Failure<Response>(new Error(nameof(command.PhotoId), BusinessErrorMessage.NotFound));
             }
 
-            // Verify employee is assigned to the order
+            var employeeId = await orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+            if (string.IsNullOrEmpty(employeeId))
+            {
+                return BusinessResult.Failure<Response>(new Error(nameof(command.PhotoId), BusinessErrorMessage.EmployeeNotAssignedToOrder));
+            }
+
             var order = await orderRepository
                 .GetQueryable()
                 .Include(o => o.AssignedEmployees)
                 .FirstOrDefaultAsync(o => o.Id == photo.OrderId, cancellationToken);
 
-            if (order == null || !order.AssignedEmployees.Any(oe => oe.EmployeeId == command.EmployeeId))
+            if (order == null || !order.AssignedEmployees.Any(oe => oe.EmployeeId == employeeId))
             {
-                return BusinessResult.Failure<Response>(new Error(nameof(command.EmployeeId), BusinessErrorMessage.EmployeeNotAssignedToOrder));
+                return BusinessResult.Failure<Response>(new Error(nameof(command.PhotoId), BusinessErrorMessage.EmployeeNotAssignedToOrder));
             }
 
-            // Delete from blob storage
             try
             {
                 var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.OrderPhotos);
@@ -69,10 +66,8 @@ public class DeleteOrderPhoto
             }
             catch
             {
-                // Continue even if blob deletion fails - orphaned blobs can be cleaned up later
             }
 
-            // Delete from database
             photoRepository.Remove(photo);
 
             return BusinessResult.Success(new Response(Success: true));
@@ -81,7 +76,7 @@ public class DeleteOrderPhoto
         private static string ExtractBlobNameFromUrl(string blobUrl)
         {
             var uri = new Uri(blobUrl);
-            var segments = uri.Segments.Skip(2); // Skip container name
+            var segments = uri.Segments.Skip(2);
             return string.Join("", segments);
         }
     }

@@ -1,51 +1,11 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { Skeleton } from 'primeng/skeleton';
 
 @Component({
   selector: 'cleansia-detail-skeleton',
   standalone: true,
   imports: [Skeleton],
-  template: `
-    <div class="cleansia-detail-skeleton page-wrapper">
-      <!-- Back button + Title row -->
-      <div class="skeleton-breadcrumb">
-        <p-skeleton shape="circle" size="2rem" />
-        <p-skeleton width="80px" height="1rem" />
-        <p-skeleton width="6px" height="1rem" />
-        <p-skeleton width="120px" height="1rem" />
-      </div>
-
-      <!-- Header card -->
-      <div class="skeleton-header-card">
-        <div class="skeleton-header-top">
-          <p-skeleton width="200px" height="1.75rem" />
-          <div class="skeleton-badges">
-            <p-skeleton width="80px" height="1.5rem" borderRadius="12px" />
-            <p-skeleton width="80px" height="1.5rem" borderRadius="12px" />
-          </div>
-        </div>
-        <div class="skeleton-header-info">
-          <p-skeleton width="160px" height="1rem" />
-          <p-skeleton width="120px" height="1rem" />
-        </div>
-      </div>
-
-      <!-- Info Sections -->
-      @for (section of [1, 2, 3]; track section) {
-        <div class="skeleton-info-section">
-          <p-skeleton width="160px" height="1.25rem" />
-          <div class="skeleton-info-grid">
-            @for (i of [1, 2, 3, 4]; track i) {
-              <div class="skeleton-info-item">
-                <p-skeleton width="80px" height="0.75rem" />
-                <p-skeleton width="100%" height="3rem" borderRadius="6px" />
-              </div>
-            }
-          </div>
-        </div>
-      }
-    </div>
-  `,
+  templateUrl: './cleansia-detail-skeleton.component.html',
   styles: `
     .cleansia-detail-skeleton {
       display: flex;
@@ -103,5 +63,6 @@ import { Skeleton } from 'primeng/skeleton';
       .skeleton-info-grid { grid-template-columns: 1fr; }
     }
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CleansiaDetailSkeletonComponent {}

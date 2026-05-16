@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import {
+  ChangeDetectionStrategy,
   Component,
   computed,
   effect,
@@ -24,6 +25,7 @@ export interface GalleryPhoto {
   standalone: true,
   imports: [CommonModule, TranslatePipe],
   templateUrl: './admin-photo-gallery.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminPhotoGalleryComponent {
   readonly photos = input.required<GalleryPhoto[]>();

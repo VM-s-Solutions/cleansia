@@ -1,5 +1,4 @@
 ﻿#nullable enable
-using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.AppServices.Shared.DTOs.Common;
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
 using Cleansia.Core.AppServices.Shared.DTOs.Files;
@@ -15,7 +14,6 @@ public record UserItem(
     Code AuthenticationType,
     bool IsEmailConfirmed,
     DateOnly? BirthDate,
-    IEnumerable<OrderListItem> Orders,
     BlobFileDto? ProfilePhoto,
     string? PreferredLanguageCode,
     string? PreferredLanguageName,

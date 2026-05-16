@@ -1,5 +1,30 @@
-import { AddressDto, PackageListItem, PaymentType, ServiceListItem } from '@cleansia/partner-services';
+import { AddressDto } from '@cleansia/customer-services';
+import { PackageListItem, PackageServiceSummary, PaymentType, ServiceListItem } from '@cleansia/partner-services';
 import { TranslateService } from '@ngx-translate/core';
+
+/**
+ * Discriminated union representing the live state of promo-code validation in
+ * the booking wizard. The facade owns this signal; the summary step renders
+ * based on `kind`. Backend re-validates server-side at order-create time so
+ * this is purely a UX optimization (instant green-check / red-X feedback).
+ */
+export type PromoCodeUiState =
+  | { kind: 'idle' }
+  | { kind: 'validating' }
+  | { kind: 'valid'; discount: number }
+  | { kind: 'invalid'; error: string | null };
+
+/**
+ * Late-acceptance referral input on the booking summary step. Mirrors the
+ * promo state machine but tracks the inviter's first name (when the backend
+ * is willing to share it) instead of a discount amount. Backend re-validates
+ * at order-create time and a bad code is never a submit blocker.
+ */
+export type ReferralUiState =
+  | { kind: 'idle' }
+  | { kind: 'validating' }
+  | { kind: 'valid'; referrerFirstName: string | null }
+  | { kind: 'invalid'; error: string | null };
 
 export interface RebookParams {
   selectedServiceIds: string[];
@@ -21,12 +46,33 @@ export interface OrderWizardFormData {
   customerEmail: string;
   customerPhone: string;
   address: AddressDto;
+  /**
+   * Lat/lng captured from a Mapbox autocomplete pick (or null if the user
+   * typed manually). Forwarded to the backend only when the customer also
+   * chooses "Save this address" so cleaners get accurate routing.
+   */
+  addressLatitude: number | null;
+  addressLongitude: number | null;
   cleaningDate: Date | null;
   cleaningTime: string;
   paymentType: PaymentType;
   extras: Record<string, boolean>;
   specialInstructions: string;
   entryInstructions: string;
+  /**
+   * Optional promo code entered by the customer at the summary step. The actual
+   * validation state lives on the facade as a signal — this string only carries
+   * the raw user input through the form model so it can be persisted/echoed.
+   * Backend re-validates and applies the discount inside CreateOrder.Handler.
+   */
+  promoCode: string;
+  /**
+   * Optional referral code (late-acceptance path — covers the "forgot to enter
+   * at signup" case). Backend treats this as best-effort: when the user has no
+   * existing Referral row and the code validates, it creates one before order
+   * persistence. Bad codes log a warning server-side and never fail the order.
+   */
+  referralCode: string;
 }
 
 export const ORDER_WIZARD_INITIAL_DATA: OrderWizardFormData = {
@@ -39,12 +85,16 @@ export const ORDER_WIZARD_INITIAL_DATA: OrderWizardFormData = {
   customerEmail: '',
   customerPhone: '',
   address: new AddressDto({ street: '', city: '', zipCode: '', countryId: '', state: '' }),
+  addressLatitude: null,
+  addressLongitude: null,
   cleaningDate: null,
   cleaningTime: '09:00',
   paymentType: PaymentType.Card,
   extras: {},
   specialInstructions: '',
   entryInstructions: '',
+  promoCode: '',
+  referralCode: '',
 };
 
 // ── Validation ──────────────────────────────────────────────
@@ -98,24 +148,66 @@ export function getFieldError(
 }
 
 // ── Time helpers ────────────────────────────────────────────
+//
+// Time slots are 1-hour arrival windows (e.g., 10:00–11:00). Customer picks a
+// window; internally we still schedule on the 30-min grid (target start is the
+// window's start). See Cleansia.Core.AppServices.Features.Orders.BookingPolicy
+// on the backend for the authoritative numbers — keep these in sync.
+
+/** Window duration shown to the customer. Keep in sync with backend BookingPolicy. */
+export const WINDOW_DURATION_MINUTES = 60;
+
+/** Earliest and latest starting hours for bookable windows (inclusive start, exclusive end). */
+export const FIRST_WINDOW_HOUR = 8;
+export const LAST_WINDOW_HOUR = 20;
+
+/** Minimum hours between now and cleaning start for any booking to be accepted. */
+export const EXPRESS_LEAD_TIME_HOURS = 2;
+
+/** Minimum hours for a standard (non-surcharge) booking. Slots between 2–4h lead are "express". */
+export const STANDARD_LEAD_TIME_HOURS = 4;
+
+/** Surcharge applied to base price for express slots (2–4h lead time). */
+export const EXPRESS_SURCHARGE_RATE = 0.20;
+
+export type SlotAvailability = 'available' | 'express' | 'unavailable';
 
 export interface TimeOption {
+  /** Display label — start time only, e.g. "10:00". Matches mobile; hides the window. */
   label: string;
+  /** Canonical value — start time as "HH:mm" (used for backend submission) */
   value: string;
+  /** Whether the slot is bookable, requires express surcharge, or out of range. */
+  availability?: SlotAvailability;
 }
 
+/**
+ * Produce one option per 1-hour window from FIRST_WINDOW_HOUR to LAST_WINDOW_HOUR.
+ * Availability is computed elsewhere based on the selected date + current time.
+ */
 export function generateTimeOptions(): TimeOption[] {
   const options: TimeOption[] = [];
-  for (let h = 7; h <= 20; h++) {
-    const hh = h.toString().padStart(2, '0');
-    options.push({ label: `${hh}:00`, value: `${hh}:00` });
-    if (h < 20) {
-      options.push({ label: `${hh}:30`, value: `${hh}:30` });
-    }
+  for (let h = FIRST_WINDOW_HOUR; h < LAST_WINDOW_HOUR; h++) {
+    const start = `${h.toString().padStart(2, '0')}:00`;
+    // Show only the arrival time (mobile parity). Orders can run longer than
+    // one hour — displaying "10:00 – 11:00" misleads users into thinking the
+    // cleaning ends at 11:00.
+    options.push({
+      label: start,
+      value: start,
+      availability: 'available',
+    });
   }
   return options;
 }
 
+/**
+ * Annotate time options with availability based on the selected date and lead-time rules.
+ *  - Slots starting less than EXPRESS_LEAD_TIME_HOURS away → "unavailable"
+ *  - Slots 2–4h away → "express" (bookable with surcharge)
+ *  - All other future slots → "available"
+ * For future dates (not today), all slots are "available".
+ */
 export function filterTimeOptionsForToday(
   allOptions: TimeOption[],
   selectedDate: Date | null
@@ -128,12 +220,22 @@ export function filterTimeOptionsForToday(
     selectedDate.getMonth() === now.getMonth() &&
     selectedDate.getDate() === now.getDate();
 
-  if (!isToday) return allOptions;
+  if (!isToday) {
+    // Future date — nothing is within lead time.
+    return allOptions.map((opt) => ({ ...opt, availability: 'available' as const }));
+  }
 
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  return allOptions.filter((opt) => {
+  const nowMs = now.getTime();
+  return allOptions.map((opt) => {
     const [h, m] = opt.value.split(':').map(Number);
-    return h * 60 + m > currentMinutes;
+    const slotDate = new Date(selectedDate);
+    slotDate.setHours(h, m, 0, 0);
+    const hoursAhead = (slotDate.getTime() - nowMs) / (1000 * 60 * 60);
+
+    let availability: SlotAvailability = 'available';
+    if (hoursAhead < EXPRESS_LEAD_TIME_HOURS) availability = 'unavailable';
+    else if (hoursAhead < STANDARD_LEAD_TIME_HOURS) availability = 'express';
+    return { ...opt, availability };
   });
 }
 
@@ -152,7 +254,7 @@ export function formatPrice(price: number): string {
 // ── Translation helpers ─────────────────────────────────────
 
 export function getItemTranslation(
-  item: ServiceListItem | PackageListItem,
+  item: ServiceListItem | PackageListItem | PackageServiceSummary,
   field: string,
   translate: TranslateService
 ): string {

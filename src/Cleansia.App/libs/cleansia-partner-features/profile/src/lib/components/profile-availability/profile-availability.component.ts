@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import {
   CleansiaAvailabilityComponent,
@@ -16,16 +16,8 @@ import { ProfileFacade } from '../../profile/profile.facade';
     CleansiaSectionComponent,
     CleansiaAvailabilityComponent,
   ],
-  template: `
-    <cleansia-section [title]="'pages.profile.availability' | translate">
-      <p class="cleansia-profile__description">
-        {{ 'pages.profile.availability_description' | translate }}
-      </p>
-      <div [formGroup]="facade.formGroup">
-        <cleansia-availability formControlName="availability" />
-      </div>
-    </cleansia-section>
-  `,
+  templateUrl: './profile-availability.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProfileAvailabilityComponent {
   @Input({ required: true }) facade!: ProfileFacade;

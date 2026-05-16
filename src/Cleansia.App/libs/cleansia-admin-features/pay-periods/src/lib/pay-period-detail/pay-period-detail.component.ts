@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PayPeriodStatus } from '@cleansia/admin-services';
 import {
@@ -28,6 +28,7 @@ import { PayPeriodDetailFacade } from './pay-period-detail.facade';
   ],
   templateUrl: './pay-period-detail.component.html',
   providers: [PayPeriodDetailFacade, DialogService],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PayPeriodDetailComponent implements OnInit, OnDestroy {
   protected readonly facade = inject(PayPeriodDetailFacade);

@@ -51,8 +51,12 @@ public class CalculateOrderPay
                 .MustAsync(EmployeeIsAssignedToOrderAsync)
                 .WithMessage(BusinessErrorMessage.EmployeeNotAssigned);
 
+            // Negate: Must passes when predicate is true. We want to REJECT
+            // when a pay row already exists for this (OrderId, EmployeeId)
+            // pair — so the predicate must return true when NO row exists.
+            // The repo method returns true when a row exists, hence the !.
             RuleFor(x => x)
-                .MustAsync(ExistsWithOrderIdAndEmployeeIdAsync)
+                .MustAsync(async (cmd, ct) => !await ExistsWithOrderIdAndEmployeeIdAsync(cmd, ct))
                 .WithMessage(BusinessErrorMessage.PayAlreadyCalculated);
 
             RuleFor(x => x)

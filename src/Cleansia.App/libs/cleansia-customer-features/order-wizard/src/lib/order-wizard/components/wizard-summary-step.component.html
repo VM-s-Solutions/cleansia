@@ -95,24 +95,36 @@
         <p class="order-wizard__summary-card-subtitle">
           {{ 'pages.order.extras_subtitle' | translate }}
         </p>
-        @for (extra of facade.extras(); track extra.id) {
-          <label class="order-wizard__extra-row">
-            <input
-              type="checkbox"
-              [checked]="!!facade.formData().extras[extra.slug!]"
-              (change)="facade.toggleExtra(extra.slug!)"
-            />
-            <span class="order-wizard__extra-row-content">
-              <span class="order-wizard__extra-row-name">{{ extra.name }}</span>
-              @if (extra.description) {
-                <span class="order-wizard__extra-row-desc">{{ extra.description }}</span>
-              }
-            </span>
-            <span class="order-wizard__extra-row-price">
-              {{ formatPriceFn(extra.price ?? 0) }}
-            </span>
-          </label>
-        }
+        <div class="order-wizard__extras-grid">
+          @for (extra of facade.extras(); track extra.id) {
+            @let selected = !!facade.formData().extras[extra.slug!];
+            <button
+              type="button"
+              class="order-wizard__extra-card"
+              [class.order-wizard__extra-card--selected]="selected"
+              (click)="facade.toggleExtra(extra.slug!)"
+            >
+              <span class="order-wizard__extra-card-icon" aria-hidden="true">
+                {{ iconForExtraSlug(extra.slug) }}
+              </span>
+              <span class="order-wizard__extra-card-body">
+                <span class="order-wizard__extra-card-name">{{ extra.name }}</span>
+                @if (extra.description) {
+                  <span class="order-wizard__extra-card-desc">{{ extra.description }}</span>
+                }
+              </span>
+              <span class="order-wizard__extra-card-price">
+                {{ formatPriceFn(extra.price ?? 0) }}
+              </span>
+              <span
+                class="order-wizard__extra-card-check"
+                [attr.aria-hidden]="true"
+              >
+                <i class="pi" [class.pi-check]="selected"></i>
+              </span>
+            </button>
+          }
+        </div>
       </div>
     }
 

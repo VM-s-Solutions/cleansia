@@ -23,7 +23,11 @@ public static class PolicyBuilder
         [Policy.CanViewOrderPhotos] = PhysicalPolicy.Authenticated,
         [Policy.CanDeleteOrderPhoto] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanAddOrderNote] = PhysicalPolicy.EmployeeOrAdmin,
+        [Policy.CanUpdateOrderNote] = PhysicalPolicy.EmployeeOrAdmin,
+        [Policy.CanDeleteOrderNote] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanReportOrderIssue] = PhysicalPolicy.Authenticated,
+        [Policy.CanUpdateOrderIssue] = PhysicalPolicy.EmployeeOrAdmin,
+        [Policy.CanDeleteOrderIssue] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanSubmitOrderReview] = PhysicalPolicy.CustomerOnly,
         [Policy.CanViewOrderReview] = PhysicalPolicy.Authenticated,
         [Policy.CanCancelOrder] = PhysicalPolicy.CustomerOnly,
@@ -104,6 +108,10 @@ public static class PolicyBuilder
         [Policy.CanCreateCountry] = PhysicalPolicy.AdminOnly,
         [Policy.CanUpdateCountry] = PhysicalPolicy.AdminOnly,
         [Policy.CanDeleteCountry] = PhysicalPolicy.AdminOnly,
+
+        // Service areas
+        [Policy.CanViewServiceCities] = PhysicalPolicy.AdminOnly,
+        [Policy.CanManageServiceCities] = PhysicalPolicy.AdminOnly,
 
         // Currencies
         [Policy.CanViewCurrencies] = PhysicalPolicy.AdminOnly,

@@ -52,5 +52,14 @@ public class TestUserSessionProvider : IUserSessionProvider
         return GetTypedUserClaim(EmployeeIdClaimType)?.Value;
     }
 
+    public string? GetTimeZoneId() => TimeZoneIdOverride;
+
+    /// <summary>
+    /// Tests that exercise zone-aware dashboard / report code paths
+    /// set this to e.g. "Europe/Prague"; null mirrors a client that
+    /// didn't send the X-Time-Zone header (handlers default to UTC).
+    /// </summary>
+    public string? TimeZoneIdOverride { get; init; }
+
     public const string EmployeeIdClaimType = "employee_id";
 }

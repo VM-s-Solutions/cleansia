@@ -262,6 +262,7 @@
     <string name="order_detail_rooms">Nemovitost</string>
     <string name="order_detail_estimated">Předpokládaný čas</string>
     <string name="order_detail_actual_time">Skutečný čas</string>
+    <string name="order_detail_completed_at">Dokončeno</string>
     <string name="order_detail_services">Rozpis ceny</string>
     <string name="order_detail_total">Celkem</string>
     <string name="order_detail_confirmation">Potvrzovací kód</string>
@@ -620,6 +621,7 @@
     <string name="address_manager_review_title">Potvrdit adresu</string>
     <string name="address_manager_label_hint">Pojmenujte adresu</string>
     <string name="address_manager_confirm">Uložit a pokračovat</string>
+    <string name="address_manager_city_not_serviced">V tomto městě zatím nepůsobíme. Zkuste jinou adresu nebo to zkuste později.</string>
     <string name="address_manager_delete_title">Smazat adresu?</string>
     <string name="address_manager_delete_body">%1$s bude odstraněna z vašich uložených adres.</string>
     <string name="address_manager_select">Vybrat adresu</string>

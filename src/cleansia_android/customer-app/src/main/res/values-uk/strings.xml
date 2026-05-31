@@ -262,6 +262,7 @@
     <string name="order_detail_rooms">Нерухомість</string>
     <string name="order_detail_estimated">Орієнтовний час</string>
     <string name="order_detail_actual_time">Фактичний час</string>
+    <string name="order_detail_completed_at">Завершено</string>
     <string name="order_detail_services">Розбивка ціни</string>
     <string name="order_detail_total">Усього</string>
     <string name="order_detail_confirmation">Код підтвердження</string>
@@ -617,6 +618,7 @@
     <string name="address_manager_review_title">Підтвердити адресу</string>
     <string name="address_manager_label_hint">Назвіть цю адресу</string>
     <string name="address_manager_confirm">Зберегти і продовжити</string>
+    <string name="address_manager_city_not_serviced">Ми наразі не обслуговуємо це місто. Спробуйте іншу адресу або зайдіть пізніше.</string>
     <string name="address_manager_delete_title">Видалити адресу?</string>
     <string name="address_manager_delete_body">%1$s буде видалено зі збережених адрес.</string>
     <string name="address_manager_select">Вибрати адресу</string>

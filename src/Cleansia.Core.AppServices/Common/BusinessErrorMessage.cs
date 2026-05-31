@@ -180,6 +180,13 @@ public static class BusinessErrorMessage
     public const string CountryNotFound = "country.not_found";
     public const string CountryIsoCodeAlreadyExists = "country.iso_code_already_exists";
     public const string CountryInUse = "country.in_use";
+    public const string CountryNotServiced = "country.not_serviced";
+    public const string CountryRequired = "country.required";
+
+    // Service areas
+    public const string ServiceCityNotFound = "service_city.not_found";
+    public const string ServiceCityAlreadyExists = "service_city.already_exists";
+    public const string CityNotServiced = "city.not_serviced";
 
     // Company
     public const string CompanyInfoNotFound = "company.not_found";

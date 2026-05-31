@@ -1,246 +1,143 @@
 package cz.cleansia.partner
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
-import android.view.ViewTreeObserver
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.os.LocaleListCompat
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.stringResource
+import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
-import cz.cleansia.partner.core.storage.PreferencesManager
-import cz.cleansia.partner.core.storage.TokenManager
-import cz.cleansia.partner.navigation.AppNavHost
-import cz.cleansia.partner.navigation.DeepLinkDestination
-import cz.cleansia.partner.navigation.DeepLinkHandler
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation.compose.rememberNavController
+import cz.cleansia.core.snackbar.GlobalSnackbarHost
+import cz.cleansia.partner.core.notifications.NotificationDeepLink
+import cz.cleansia.partner.core.notifications.PushTokenSessionObserver
+import cz.cleansia.partner.core.settings.AppSettings
+import cz.cleansia.partner.core.settings.AppSettingsRepository
+import cz.cleansia.partner.core.settings.ThemePreference
 import cz.cleansia.partner.navigation.NavRoute
-import cz.cleansia.partner.ui.theme.CleansiaTheme
+import cz.cleansia.partner.navigation.PartnerNavHost
+import cz.cleansia.partner.ui.theme.CleansiaPartnerTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+
+/**
+ * App-wide settings exposed via CompositionLocal — any composable can read
+ * the current theme/language without threading a VM through every call site.
+ */
+val LocalAppSettings = staticCompositionLocalOf { AppSettings() }
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
-    @Inject
-    lateinit var tokenManager: TokenManager
+    @Inject lateinit var settingsRepository: AppSettingsRepository
 
-    @Inject
-    lateinit var preferencesManager: PreferencesManager
+    /**
+     * Drives FCM device registration off of (auth-session × FCM-token)
+     * state instead of discrete event hooks. Attached on every cold start;
+     * see the class doc for why this replaces the old login/email-confirm/
+     * onNewToken triggers.
+     */
+    @Inject lateinit var pushTokenSessionObserver: PushTokenSessionObserver
 
-    // Store the deep link destination to pass to the composable
-    private var pendingDeepLink: DeepLinkDestination? = null
+    /**
+     * Notification-tap deep link in typed-route form. Set from the launching
+     * intent in [onCreate] (cold start) and from [onNewIntent] (running app);
+     * consumed by a LaunchedEffect that navigates and clears. Held on the
+     * Activity because onNewIntent fires outside composition.
+     */
+    private val pendingDeepLink = MutableStateFlow<NavRoute?>(null)
+
+    private val requestNotificationPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* ignored */ }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val splashScreen = installSplashScreen()
-
+        installSplashScreen()
         super.onCreate(savedInstanceState)
-
-        // Keep the native splash (gradient background only) visible until Compose content is drawn.
-        // This prevents the brief flash of the app icon before the animated splash starts.
-        var isReady = false
-        splashScreen.setKeepOnScreenCondition { !isReady }
-
         enableEdgeToEdge()
-
-        // Restore saved language on startup
-        restoreSavedLocale()
-
-        // Handle deep link from launch intent
-        if (savedInstanceState == null) {
-            pendingDeepLink = DeepLinkHandler.parseIntent(intent)
-        }
-
+        // Cold-start tap on a notification — resolve before the NavHost composes.
+        pendingDeepLink.value = NotificationDeepLink.resolve(intent)
+        maybeRequestNotificationPermission()
+        // Start observing (session × FCM-token) so the device gets
+        // registered on every cold start with an existing session, not
+        // only on the discrete login/rotation events.
+        pushTokenSessionObserver.attach(lifecycleScope)
         setContent {
-            val themeMode by preferencesManager.theme.collectAsState(initial = "system")
-            val darkTheme = when (themeMode) {
-                "dark" -> true
-                "light" -> false
-                else -> isSystemInDarkTheme()
+            val settings by settingsRepository.settings
+                .collectAsStateWithLifecycle(initialValue = AppSettings())
+
+            val darkTheme = when (settings.theme) {
+                ThemePreference.System -> isSystemInDarkTheme()
+                ThemePreference.Light -> false
+                ThemePreference.Dark -> true
             }
 
-            CleansiaTheme(darkTheme = darkTheme) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    CleansiaApp(
-                        tokenManager = tokenManager,
-                        preferencesManager = preferencesManager,
-                        initialDeepLink = pendingDeepLink
-                    )
-                }
-            }
-        }
-
-        // Dismiss the native splash as soon as the first frame of Compose content is drawn
-        val content = findViewById<android.view.View>(android.R.id.content)
-        content.viewTreeObserver.addOnPreDrawListener(
-            object : ViewTreeObserver.OnPreDrawListener {
-                override fun onPreDraw(): Boolean {
-                    isReady = true
-                    content.viewTreeObserver.removeOnPreDrawListener(this)
-                    return true
-                }
-            }
-        )
-    }
-
-    private fun restoreSavedLocale() {
-        val currentLocale = AppCompatDelegate.getApplicationLocales()
-        val currentTag = if (currentLocale.isEmpty) "" else currentLocale.toLanguageTags()
-
-        runBlocking {
-            val savedLanguage = preferencesManager.language.first()
-            if (currentTag != savedLanguage) {
-                val localeList = LocaleListCompat.forLanguageTags(savedLanguage)
-                AppCompatDelegate.setApplicationLocales(localeList)
-            }
-        }
-    }
-
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        // Handle deep links when app is already running
-        val deepLink = DeepLinkHandler.parseIntent(intent)
-        if (deepLink != null) {
-            pendingDeepLink = deepLink
-            // Recreate the content to handle the new deep link
-            setContent {
-                val themeMode by preferencesManager.theme.collectAsState(initial = "system")
-                val darkTheme = when (themeMode) {
-                    "dark" -> true
-                    "light" -> false
-                    else -> isSystemInDarkTheme()
-                }
-
-                CleansiaTheme(darkTheme = darkTheme) {
+            CompositionLocalProvider(LocalAppSettings provides settings) {
+                CleansiaPartnerTheme(darkTheme = darkTheme) {
                     Surface(
                         modifier = Modifier.fillMaxSize(),
-                        color = MaterialTheme.colorScheme.background
+                        color = MaterialTheme.colorScheme.background,
                     ) {
-                        CleansiaApp(
-                            tokenManager = tokenManager,
-                            preferencesManager = preferencesManager,
-                            initialDeepLink = pendingDeepLink
-                        )
+                        val navController = rememberNavController()
+
+                        // Notification deep links — pendingDeepLink is set by
+                        // onCreate (cold start) + onNewIntent (running app),
+                        // navigated, then cleared. Latest-wins.
+                        val pendingRoute by pendingDeepLink.collectAsStateWithLifecycle()
+                        LaunchedEffect(pendingRoute) {
+                            val route = pendingRoute ?: return@LaunchedEffect
+                            navController.navigate(route)
+                            pendingDeepLink.value = null
+                        }
+
+                        // GlobalSnackbarHost layered on top of the nav host so
+                        // it floats over every screen. Any VM/repo can publish
+                        // via cz.cleansia.core.snackbar.SnackbarController.
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            PartnerNavHost(navController = navController)
+                            GlobalSnackbarHost()
+                        }
                     }
                 }
             }
         }
     }
-}
 
-@Composable
-fun CleansiaApp(
-    tokenManager: TokenManager,
-    preferencesManager: PreferencesManager,
-    initialDeepLink: DeepLinkDestination? = null
-) {
-    var showSplash by remember { mutableStateOf(true) }
-
-    if (showSplash) {
-        cz.cleansia.partner.ui.components.AnimatedSplashScreen(
-            onFinished = { showSplash = false }
-        )
-        return
+    /**
+     * Notification tapped while the app is already running. launchMode is
+     * "singleTop" in the manifest so this fires instead of stacking a fresh
+     * activity. Resolved route flows through [pendingDeepLink] → LaunchedEffect.
+     */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        pendingDeepLink.value = NotificationDeepLink.resolve(intent)
     }
 
-    val isLoggedIn by tokenManager.isLoggedIn.collectAsState(initial = tokenManager.hasToken())
-    val onboardingCompleted by preferencesManager.onboardingCompleted.collectAsState(initial = true)
-    val profileCompleted by preferencesManager.profileCompleted.collectAsState(initial = true)
-
-    // Track if we've already consumed the deep link
-    var consumedDeepLink by remember { mutableStateOf(false) }
-
-    val startDestination: NavRoute = when {
-        // First launch — show onboarding before auth
-        !onboardingCompleted -> NavRoute.Onboarding
-        // User is logged in
-        isLoggedIn -> {
-            if (tokenManager.isEmailConfirmed()) {
-                if (!profileCompleted) {
-                    NavRoute.ProfileCompletion
-                } else {
-                    NavRoute.Main
-                }
-            } else {
-                tokenManager.getUserEmail()?.let { NavRoute.ConfirmEmail(it) } ?: NavRoute.Login
-            }
+    private fun maybeRequestNotificationPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val granted = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.POST_NOTIFICATIONS,
+        ) == PackageManager.PERMISSION_GRANTED
+        if (!granted) {
+            requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
-        // User is not logged in — show login
-        else -> NavRoute.Login
-    }
-
-    // Determine the deep link route if user is logged in and we have a pending deep link
-    val deepLinkRoute: NavRoute? = if (isLoggedIn && tokenManager.isEmailConfirmed() && !consumedDeepLink && initialDeepLink != null) {
-        consumedDeepLink = true
-        DeepLinkHandler.toNavRoute(initialDeepLink)
-    } else {
-        null
-    }
-
-    val userInitials by tokenManager.userInitials.collectAsState(initial = tokenManager.getUserInitials())
-    val focusManager = LocalFocusManager.current
-
-    // Session expired dialog
-    var showSessionExpiredDialog by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        tokenManager.sessionExpiredEvent.collect {
-            showSessionExpiredDialog = true
-        }
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .pointerInput(Unit) {
-                detectTapGestures(onTap = {
-                    focusManager.clearFocus()
-                })
-            }
-    ) {
-        AppNavHost(
-            startDestination = startDestination,
-            userInitials = userInitials,
-            deepLinkRoute = deepLinkRoute,
-            profileCompleted = profileCompleted
-        )
-    }
-
-    if (showSessionExpiredDialog) {
-        AlertDialog(
-            onDismissRequest = { showSessionExpiredDialog = false },
-            title = { Text(stringResource(R.string.session_expired_title)) },
-            text = { Text(stringResource(R.string.session_expired_message)) },
-            confirmButton = {
-                TextButton(onClick = { showSessionExpiredDialog = false }) {
-                    Text(stringResource(R.string.ok))
-                }
-            }
-        )
     }
 }

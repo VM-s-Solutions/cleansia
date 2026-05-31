@@ -13,7 +13,9 @@ public static class AddressMappers
                 Street: address.Street,
                 City: address.City,
                 ZipCode: address.ZipCode,
-                Country: address.Country?.Name!
+                Country: address.Country?.Name!,
+                Latitude: address.Latitude,
+                Longitude: address.Longitude
             );
     }
 }

@@ -4,6 +4,7 @@ import {
   AdminEmployeeDetail,
   AdminUpdateEmployeeAvailabilityRequest,
   AdminUpdateEmployeeCommand,
+  ApproveEmployeeRequest,
   BulkCreateEmployeePayConfigsCommand,
   ContractStatus,
   CreatePayConfigCommand,
@@ -20,6 +21,9 @@ import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 import {
+  ApproveDialogComponent,
+  ApproveDialogData,
+  ApproveDialogResult,
   RejectDialogComponent,
   RejectDialogData,
   RejectDialogResult,
@@ -93,12 +97,13 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
       });
   }
 
-  approveEmployee(): void {
+  approveEmployee(workCountryId: string, notes?: string): void {
     const employeeId = this.employee()?.id;
     if (!employeeId) return;
 
+    const request = new ApproveEmployeeRequest({ workCountryId, notes });
     this.adminClient.adminEmployeeClient
-      .approve(employeeId, undefined)
+      .approve(employeeId, request)
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => of(null))
@@ -113,6 +118,43 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
           this.loadEmployeeDetail(employeeId);
         }
       });
+  }
+
+  openApproveEmployeeDialog(): void {
+    const employee = this.employee();
+    if (!employee?.id) return;
+
+    // Countries are loaded as part of loadEmployeeDetail; if the user
+    // somehow opens this before that completes, kick off the load so
+    // the dropdown isn't empty.
+    if (this.countries().length === 0) {
+      this.loadCountries();
+    }
+
+    const dialogData: ApproveDialogData = {
+      title: this.translate.instant(
+        'pages.employee_detail.approve_employee_dialog.title'
+      ),
+      subtitle: this.translate.instant(
+        'pages.employee_detail.approve_employee_dialog.subtitle'
+      ),
+      countries: this.countries(),
+    };
+
+    const dialogRef = this.dialogService.open(ApproveDialogComponent, {
+      data: dialogData,
+      header: this.translate.instant(
+        'pages.employee_detail.approve_employee_dialog.title'
+      ),
+      width: '500px',
+      modal: true,
+    });
+
+    dialogRef.onClose.subscribe((result: ApproveDialogResult | undefined) => {
+      if (result?.workCountryId) {
+        this.approveEmployee(result.workCountryId, result.notes);
+      }
+    });
   }
 
   rejectEmployee(reason: string): void {

@@ -711,6 +711,26 @@ $font-heading: 'Poppins', sans-serif;
     font-style: italic;
   }
 
+  // Inline rejection banner shown when the picked address is in a city the
+  // company doesn't currently serve. Mirrors what the backend returns on
+  // submit (`city.not_serviced`) but fires earlier so the user can adjust
+  // before filling out the rest of the form.
+  &__address-warning {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-top: 0.5rem;
+    padding: 0.75rem 0.875rem;
+    border-radius: 0.625rem;
+    background: rgba(220, 38, 38, 0.08);
+    color: #b91c1c;
+    font-size: 0.85rem;
+
+    i {
+      font-size: 1rem;
+    }
+  }
+
   // ─── FORM GRID ───
   &__form-grid {
     display: grid;
@@ -1018,6 +1038,149 @@ $font-heading: 'Poppins', sans-serif;
 
     & + & {
       border-top: 1px solid rgba($border, 0.5);
+    }
+  }
+
+  // Extras section — card-per-extra inside the summary tab. Each card is a
+  // tappable <button> with [icon medallion, name+description, price pill,
+  // selection check]. Selected state inverts the card with the brand color
+  // for instant "I've added this" feedback. Mirrors Wolt/Bolt add-on tiles.
+  &__summary-card-subtitle {
+    margin: 0;
+    padding: 0.85rem 1.25rem 0.25rem;
+    color: $text-muted;
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+
+  &__extras-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0.75rem 1.25rem 1.25rem;
+  }
+
+  &__extra-card {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid $border;
+    background: $white;
+    border-radius: 0.85rem;
+    text-align: left;
+    cursor: pointer;
+    transition:
+      background 0.18s ease,
+      border-color 0.18s ease,
+      box-shadow 0.18s ease,
+      transform 0.18s ease;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+
+    &:hover {
+      border-color: rgba($primary, 0.4);
+      box-shadow: 0 4px 14px rgba($primary, 0.08);
+      transform: translateY(-1px);
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary;
+      outline-offset: 2px;
+    }
+
+    &--selected {
+      background: rgba($primary, 0.06);
+      border-color: $primary;
+      box-shadow: 0 4px 14px rgba($primary, 0.12);
+    }
+  }
+
+  &__extra-card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: $primary-lighter;
+    color: $primary;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.15rem;
+    line-height: 1;
+    transition:
+      background 0.18s ease,
+      color 0.18s ease;
+
+    .order-wizard__extra-card--selected & {
+      background: $primary;
+      color: $white;
+    }
+  }
+
+  &__extra-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+  }
+
+  &__extra-card-name {
+    font-family: $font-heading;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: $text-heading;
+    line-height: 1.2;
+  }
+
+  &__extra-card-desc {
+    font-size: 0.8rem;
+    color: $text-muted;
+    line-height: 1.4;
+  }
+
+  &__extra-card-price {
+    font-family: $font-heading;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: $text-heading;
+    background: $bg-alt;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    white-space: nowrap;
+    transition:
+      background 0.18s ease,
+      color 0.18s ease;
+
+    .order-wizard__extra-card--selected & {
+      background: $primary;
+      color: $white;
+    }
+  }
+
+  &__extra-card-check {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid $border;
+    background: $white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: $white;
+    flex-shrink: 0;
+    transition:
+      background 0.18s ease,
+      border-color 0.18s ease;
+
+    i {
+      font-size: 0.65rem;
+      font-weight: 700;
+    }
+
+    .order-wizard__extra-card--selected & {
+      background: $primary;
+      border-color: $primary;
     }
   }
 
@@ -1854,6 +2017,67 @@ $font-heading: 'Poppins', sans-serif;
 
     &__summary-card-icon {
       background: rgba(56, 189, 248, 0.1);
+    }
+
+    // Extras section — dark mirror of the card-per-extra grid.
+    &__summary-card-subtitle {
+      color: #94a3b8;
+    }
+
+    &__extra-card {
+      background: #172033;
+      border-color: #334155;
+      box-shadow: none;
+
+      &:hover {
+        border-color: rgba(56, 189, 248, 0.5);
+        box-shadow: 0 4px 14px rgba(56, 189, 248, 0.12);
+      }
+
+      &--selected {
+        background: rgba(56, 189, 248, 0.1);
+        border-color: #38bdf8;
+        box-shadow: 0 4px 14px rgba(56, 189, 248, 0.18);
+      }
+    }
+
+    &__extra-card-icon {
+      background: rgba(56, 189, 248, 0.12);
+      color: #7dd3fc;
+
+      .order-wizard__extra-card--selected & {
+        background: #38bdf8;
+        color: #0c1119;
+      }
+    }
+
+    &__extra-card-name {
+      color: #e2e8f0;
+    }
+
+    &__extra-card-desc {
+      color: #94a3b8;
+    }
+
+    &__extra-card-price {
+      background: #1e293b;
+      color: #e2e8f0;
+
+      .order-wizard__extra-card--selected & {
+        background: #38bdf8;
+        color: #0c1119;
+      }
+    }
+
+    &__extra-card-check {
+      background: #172033;
+      border-color: #475569;
+
+      .order-wizard__extra-card--selected & {
+        background: #38bdf8;
+        border-color: #38bdf8;
+        color: #0c1119;
+      }
     }
 
     &__summary-row {

@@ -68,6 +68,40 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         _tenantProvider = tenantProvider;
     }
 
+    public async Task EnsureOpenPeriodAsync(CancellationToken cancellationToken = default)
+    {
+        // Cross-tenant scan: pay-calc on a tenant-scoped order should bootstrap
+        // a tenant-scoped PayPeriod for that same tenant. Today the system is
+        // single-tenant in practice (TenantId null), so the simple "any open
+        // period for the active tenant context" check is sufficient. The
+        // multi-tenant flow already loops per tenant in
+        // CloseExpiredPeriodsAndOpenNewAsync; bootstrap inherits the active
+        // tenant override from the caller (queue consumer sets none → null).
+        var hasOpen = await _payPeriodRepository
+            .GetQueryable()
+            .AnyAsync(p => p.Status == PayPeriodStatus.Open, cancellationToken);
+
+        if (hasOpen) return;
+
+        // Pick a monthly window anchored on today. Matches the cadence the
+        // close-and-rollover job uses (newStartDate = previousEndDate + 1,
+        // newEndDate = +1 month -1 day), so once timer-driven rollover kicks
+        // in the seam is invisible.
+        var startDate = DateOnly.FromDateTime(DateTime.UtcNow);
+        var endDate = startDate.AddMonths(1).AddDays(-1);
+
+        var period = PayPeriod.Create(startDate, endDate);
+        _payPeriodRepository.Add(period);
+        await _unitOfWork.CommitAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Auto-seeded Open pay period {PeriodId} ({StartDate} - {EndDate}) " +
+            "because no Open period existed",
+            period.Id,
+            period.StartDate.ToString("yyyy-MM-dd"),
+            period.EndDate.ToString("yyyy-MM-dd"));
+    }
+
     public async Task CloseExpiredPeriodsAndOpenNewAsync(CancellationToken cancellationToken = default)
     {
         try
@@ -85,6 +119,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
                 .Where(p => p.Status == PayPeriodStatus.Open && p.EndDate < today)
                 .ToListAsync(cancellationToken);
 
+            
             if (!expiredPeriods.Any())
             {
                 _logger.LogInformation("No expired pay periods found");

@@ -51,6 +51,9 @@ lottie = "6.6.2"
 desugarJdkLibs = "2.1.4"
 espressoCore = "3.6.1"
 androidxJunit = "1.2.1"
+# Phone-number formatting/validation across all supported regions. Used by
+# the shared CleansiaPhoneInput; partner+customer both need format-as-you-type.
+libphonenumber = "8.13.50"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
@@ -139,6 +142,7 @@ androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref =
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
 lottie-compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottie" }
 desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugarJdkLibs" }
+libphonenumber = { module = "com.googlecode.libphonenumber:libphonenumber", version.ref = "libphonenumber" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

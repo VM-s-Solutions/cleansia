@@ -16,5 +16,6 @@ public static class CountryMappers
         new(
             country.Id,
             country.IsoCode,
-            country.Name);
+            country.Name,
+            country.IsServiced);
 }

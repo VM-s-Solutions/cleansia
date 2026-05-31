@@ -2,7 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CAMERA" />
@@ -10,16 +9,16 @@
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
-        android:name=".CleansiaApp"
+        android:name=".CleansiaPartnerApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
-        android:label="${APP_NAME}"
+        android:label="@string/app_name"
         android:localeConfig="@xml/locales_config"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
@@ -31,7 +30,8 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="${APP_NAME}"
+            android:label="@string/app_name"
+            android:launchMode="singleTop"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|locale|layoutDirection"
             android:theme="@style/Theme.CleansiaPartner.Splash">
             <intent-filter>
@@ -39,7 +39,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Deep Links - App Links (verified) -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -47,7 +46,6 @@
                 <data android:scheme="https" android:host="partner.cleansia.cz" />
             </intent-filter>
 
-            <!-- Deep Links - Custom scheme -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -55,7 +53,6 @@
                 <data android:scheme="cleansia" android:host="partner" />
             </intent-filter>
 
-            <!-- Deep Links - Email confirmation -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -67,21 +64,43 @@
             </intent-filter>
         </activity>
 
+        <!-- FCM message receiver. android:exported="false" — only the system
+             can deliver MESSAGING_EVENT to this service. -->
         <service
-            android:name=".core.notifications.OrderTimerService"
-            android:exported="false"
-            android:foregroundServiceType="specialUse" />
+            android:name=".core.notifications.CleansiaFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
 
-        <!-- Sentry auto-init disabled. Sentry comes in transitively from :core
-             (customer-app uses it; partner doesn't initialise it yet). Without
-             this removal, SentryInitProvider runs on app start and crashes
-             with "DSN is required" because partner has no SENTRY_DSN configured.
-             When partner adopts Sentry, drop this <provider> stanza and add the
-             DSN via buildConfigField the same way customer-app does. -->
+        <!-- Default small icon + channel for any FCM `notification`-type
+             message that bypasses our data-only handler (defensive — our
+             dispatches are data-only). The channel id matches the order-updates
+             channel registered in NotificationChannels. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="cleansia.partner.notification.order_updates" />
+
         <provider
             android:name="io.sentry.android.core.SentryInitProvider"
             android:authorities="${applicationId}.SentryInitProvider"
             tools:node="remove" />
+
+        <!-- FileProvider — exposes cacheDir/invoices/*.pdf to the system
+             viewer when the user taps "Open invoice" on an invoice detail. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>

@@ -44,4 +44,12 @@ public enum NotificationCategory
 
     /// <summary>Recurring booking auto-scheduled and lands in 24h.</summary>
     RecurringScheduled = 11,
+
+    /// <summary>
+    /// Partner-side digest: "N new jobs available near you". Fired by the
+    /// 30-min sweep, NOT per-order, so cleaners aren't pinged for every
+    /// individual booking. Targeted by work country + approved/active +
+    /// not-busy at the digest time.
+    /// </summary>
+    NewJobsAvailable = 12,
 }

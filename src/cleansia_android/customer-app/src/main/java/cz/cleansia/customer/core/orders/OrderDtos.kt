@@ -87,6 +87,15 @@ data class OrderDetailDto(
     val promoDiscountAmount: Double? = null,
     val estimatedTime: Int = 0,
     val actualCompletionTime: Int? = null,
+    /**
+     * ISO-8601 UTC timestamp of when the order was actually marked
+     * Completed (authoritative completion column on the backend,
+     * mirrors the existing CancelledAt pattern). Null while the order
+     * is still open. Previously the customer UI inferred completion
+     * time from `statusHistory` entries; now there's a dedicated
+     * field. Parse at the UI layer.
+     */
+    val completedAt: String? = null,
     val completionNotes: String? = null,
     val orderStatus: CodeDto? = null,
     val confirmationCode: String? = null,

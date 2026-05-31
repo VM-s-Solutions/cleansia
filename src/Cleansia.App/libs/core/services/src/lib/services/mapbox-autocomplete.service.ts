@@ -163,15 +163,22 @@ export class MapboxAutocompleteService {
     else if (baseStreet) street = baseStreet;
     else street = placeName.split(',')[0]?.trim() ?? '';
 
-    let city = '';
+    // Mapbox returns context items in most-specific-first order, so for
+    // Prague the array is [locality.holešovice, place.praha, district.*, …].
+    // The serviced-city list stores the city name (`Praha`), not the
+    // district (`Holešovice`). Always prefer `place` over `locality` —
+    // `locality` is a fallback for results without a place row at all.
+    let cityFromPlace = '';
+    let cityFromLocality = '';
     let zip = '';
     for (const ctx of f.context ?? []) {
       const id = ctx.id ?? '';
       const text = ctx.text ?? '';
       if (id.startsWith('postcode')) zip = text;
-      else if (id.startsWith('place') && !city) city = text;
-      else if (id.startsWith('locality') && !city) city = text;
+      else if (id.startsWith('place') && !cityFromPlace) cityFromPlace = text;
+      else if (id.startsWith('locality') && !cityFromLocality) cityFromLocality = text;
     }
+    const city = cityFromPlace || cityFromLocality;
 
     return {
       placeName,

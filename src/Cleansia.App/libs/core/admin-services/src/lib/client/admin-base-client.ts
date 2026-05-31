@@ -23,6 +23,7 @@ import {
   AdminReportClient,
   AdminServiceClient,
   AdminUserClient,
+  ApiClient,
   IAdminAuthClient,
   IAdminCodeClient,
   IAdminCompanyClient,
@@ -44,6 +45,7 @@ import {
   IAdminReportClient,
   IAdminServiceClient,
   IAdminUserClient,
+  IApiClient,
   ITypesClient,
   TypesClient,
 } from './admin-client';
@@ -71,6 +73,9 @@ interface IAdminClient {
   adminLoyaltyTierClient: IAdminLoyaltyTierClient;
   adminLoyaltyClient: IAdminLoyaltyClient;
   adminReferralClient: IAdminReferralClient;
+  // The kitchen-sink generated client — hosts service-city CRUD + any
+  // future endpoints that don't have their own dedicated controller.
+  apiClient: IApiClient;
 }
 
 @Injectable({
@@ -165,4 +170,5 @@ export class AdminClient implements IAdminClient {
     this.httpClient,
     this.apiBaseUrl
   );
+  apiClient: IApiClient = new ApiClient(this.httpClient, this.apiBaseUrl);
 }

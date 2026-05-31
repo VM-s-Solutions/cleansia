@@ -28,6 +28,50 @@ See [`httponly-cookie-auth-migration.md`](httponly-cookie-auth-migration.md) Ste
 
 ## Open engineering work
 
+### MOB-P-NOTIF — Partner push notifications + in-app notifications feed [CODE DONE, owner-gated on Firebase config + backend dispatch]
+
+**Status (2026-05-29):** All app code shipped and building (`:partner-app:assembleDebug` green). What remains is owner provisioning + a backend dispatch gap — see "Remaining" at the bottom of this entry.
+
+**Shipped:**
+- `core/notifications/`: `CleansiaFirebaseMessagingService` (data-only payloads → local notifications + Room persistence), `NotificationDeepLink` (→ `NavRoute.OrderDetails`), `NotificationChannels`, `PushTokenRepository`, `DeviceApi` wrapper, Hilt module.
+- `core/notifications/db/`: Room `NotificationRecord` + DAO + DB for the feed + unread count.
+- `features/notifications/`: `NotificationsScreen` + VM (newest-first list, tap → order, mark-read on open, MascotEmptyState empty state).
+- Token register on login + email-confirm, unregister on logout (`AuthRepository`, all `runCatching`-wrapped).
+- Bell wired (`DashboardScreen` → `NavRoute.Notifications`) with an unread dot from the Room flow.
+- `MainActivity` resolves deep links on cold start + `onNewIntent`.
+- `build.gradle.kts`: google-services plugin + firebase-messaging BOM + Room deps. `google-services.json` gitignored; placeholder `google-services.sample.json` auto-copied so the build never blocks (real file, when dropped in, is NOT overwritten).
+- Wired event_keys (cleaner's POV, all carry orderId/orderNumber): `order.confirmed`, `order.in_progress`, `order.completed`, `order.cancelled`, `dispute.reply`.
+
+**Remaining (owner / backend — push does NOT work end-to-end until done):**
+1. Drop a real `google-services.json` (Firebase console, project `cleansia` / number 640229436651; register `cz.cleansia.partner` + `cz.cleansia.partner.debug` + SHA-1s) into `partner-app/`.
+2. Confirm the backend FCM dispatcher targets the partner audience (same Firebase project + service account as customer, so likely no new secret).
+3. **Backend dispatch gap:** today every `NotificationEventCatalog` event fans out to `order.UserId` (the customer). Partners receive nothing. Add partner-targeted dispatch sites for the keys the feed expects — at minimum `order.available` (new job) / `order.assigned`, and `invoice.generated` / `payperiod.invoice_generated`. The mobile side already handles these keys; only the backend send is missing.
+
+(Original plan preserved below for reference.)
+
+#### Original plan
+
+**Goal:** make the dashboard bell (already wired to a no-op `onNotificationClick`) open a real notifications feed, and deliver push to partners.
+
+**Blocker / why it's not done yet:** the **partner app has zero Firebase/FCM infrastructure** — no `firebase-messaging` dependency, no `google-services` plugin, no `google-services.json`, no messaging service, no token registration. The push-notifications MVP shipped customer-app only. So "capture incoming FCM locally" is impossible until the FCM stack exists.
+
+**Reference implementation (customer app, copy this):**
+- `customer-app/.../core/notifications/CleansiaFirebaseMessagingService.kt`
+- `customer-app/.../core/notifications/NotificationDeepLink.kt`
+- Customer `build.gradle.kts` (google-services plugin + firebase-messaging dep) + `customer-app/google-services.json`.
+
+**Work breakdown:**
+1. **Owner manual step:** provision a Firebase project entry for `cz.cleansia.partner`, download `google-services.json` into `partner-app/`. Provision the FCM service-account secret for the backend Functions host (same as customer).
+2. Partner `build.gradle.kts`: add `com.google.gms.google-services` plugin + `libs.firebase.messaging`.
+3. Port `CleansiaFirebaseMessagingService` + `NotificationDeepLink` into `partner-app/.../core/notifications/`, mapping deep links to partner `NavRoute.X` types (e.g. `OrderDetails(orderId)`).
+4. Token register/unregister on auth (login → register device, logout → unregister) via the existing `DeviceApi` pattern. Reuse `core/network/NetworkCall.kt` for the repo, not bare try/catch.
+5. AndroidManifest: declare the messaging service + `POST_NOTIFICATIONS` (already present) runtime permission request.
+6. Backend: confirm partner audience is covered by the push dispatch (the Functions `IHostAudienceProvider` / FCM pipeline). Partner-relevant events: order assigned/available, dispute reply, pay-period/invoice generated.
+7. **Notifications feed UI:** Room table (`partner-app` has no Room yet — add `androidx.room` deps) capturing each received `RemoteMessage`; a `NotificationsScreen` listing them (tap → deep-link to order), unread dot on the bell. Wire `onNotificationClick` → `NavRoute.Notifications`.
+   - Alternative to local capture: a backend notifications-history endpoint (survives reinstalls, syncs devices) — separate BE task + NSwag regen.
+
+**Decision recorded (2026-05-29):** owner chose "stand up the full partner FCM stack first" over a UI-only stub. Sequenced as its own task because step 1 is an external provisioning gate that blocks everything downstream.
+
 ### WEB-P-001 — Mapbox autocomplete in partner address forms [DONE]
 
 Shipped this session (env files + provider + profile-personal-info wiring). Promoting to closed; mention here only for the audit trail.

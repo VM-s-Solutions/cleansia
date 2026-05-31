@@ -24,6 +24,14 @@ data class UserAddress(
     val city: String,
     val zipCode: String,
     val country: String = "",
+    /**
+     * ISO-3166 alpha-2 country code (lowercase) captured from Mapbox at pick
+     * time. The booking flow resolves this to a backend country ID via the
+     * ServiceAreaProvider before sending CreateOrder — keeps the persisted
+     * address independent of backend ID churn while still letting us
+     * round-trip the country reliably.
+     */
+    val countryIsoCode: String = "",
     val latitude: Double? = null,
     val longitude: Double? = null,
     val isDefault: Boolean = false,

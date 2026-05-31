@@ -880,6 +880,7 @@
       "rooms": "Кімнати",
       "bathrooms": "Ванні кімнати",
       "estimated_time": "Орієнтовний час",
+      "completed_at": "Завершено",
       "address": "Адреса",
       "packages": "Пакети",
       "services": "Послуги",
@@ -1306,6 +1307,11 @@
     "address": {
       "already_exists": "Ця адреса вже збережена.",
       "mapbox_coords_required": "Виберіть адресу зі списку."
+    },
+    "service_area": {
+      "country_not_serviced": "Ми наразі не працюємо в цій країні.",
+      "country_required": "Виберіть країну.",
+      "city_not_serviced": "Ми наразі не обслуговуємо це місто."
     }
   },
   "loyalty": {

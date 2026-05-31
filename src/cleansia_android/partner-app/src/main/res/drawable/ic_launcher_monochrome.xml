@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Monochrome layer for the adaptive icon (Android 13+ themed icons + system UI).
+
+  Fill colour is irrelevant here — the launcher recolours this drawable with the
+  system's monochrome tint. We draw the same C silhouette as the foreground so
+  notification icons and themed launcher icons stay on-brand and recognisable.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M56,32c-13.25,0 -24,10.75 -24,24s10.75,24 24,24c7.96,0 15.0,-3.88 19.34,-9.85l-7.65,-5.56c-2.65,3.63 -6.95,6.0 -11.69,6.0c-7.95,0 -14.4,-6.45 -14.4,-14.4c0,-7.95 6.45,-14.4 14.4,-14.4c4.74,0 9.04,2.37 11.69,6.0l7.65,-5.56C71.0,35.88 63.96,32 56,32z" />
+</vector>

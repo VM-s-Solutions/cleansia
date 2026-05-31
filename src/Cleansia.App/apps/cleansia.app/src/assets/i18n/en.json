@@ -880,6 +880,7 @@
       "rooms": "Rooms",
       "bathrooms": "Bathrooms",
       "estimated_time": "Estimated Time",
+      "completed_at": "Completed at",
       "address": "Address",
       "packages": "Packages",
       "services": "Services",
@@ -1306,6 +1307,11 @@
     "address": {
       "already_exists": "You already have this address saved.",
       "mapbox_coords_required": "Please pick an address from the suggestions."
+    },
+    "service_area": {
+      "country_not_serviced": "We don't currently operate in this country.",
+      "country_required": "Please select a country.",
+      "city_not_serviced": "We don't currently serve this city."
     }
   },
   "loyalty": {

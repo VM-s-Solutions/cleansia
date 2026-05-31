@@ -264,6 +264,7 @@
     <string name="order_detail_rooms">Property</string>
     <string name="order_detail_estimated">Estimated time</string>
     <string name="order_detail_actual_time">Actual time</string>
+    <string name="order_detail_completed_at">Completed at</string>
     <string name="order_detail_services">Price breakdown</string>
     <string name="order_detail_total">Total</string>
     <string name="order_detail_confirmation">Confirmation code</string>
@@ -627,6 +628,7 @@
     <string name="address_manager_review_title">Confirm address</string>
     <string name="address_manager_label_hint">Label this address</string>
     <string name="address_manager_confirm">Save and continue</string>
+    <string name="address_manager_city_not_serviced">We don\'t currently serve this city. Try a different address or check back later.</string>
     <string name="address_manager_delete_title">Delete address?</string>
     <string name="address_manager_delete_body">%1$s will be removed from your saved addresses.</string>
     <string name="address_manager_select">Select address</string>

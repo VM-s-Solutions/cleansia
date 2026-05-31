@@ -1,0 +1,17 @@
+# Gradle
+.gradle/
+build/
+local.properties
+captures/
+
+# IntelliJ / Android Studio
+*.iml
+.idea/
+.cxx/
+
+# Generated
+**/generated/
+
+# OS
+.DS_Store
+Thumbs.db

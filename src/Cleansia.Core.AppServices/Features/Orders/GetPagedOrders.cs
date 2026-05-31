@@ -4,14 +4,21 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.AppServices.Features.Orders.Filters;
 using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.RequestModels;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Extensions;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Sorting;
 using Cleansia.Core.Domain.Specifications;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
@@ -25,7 +32,11 @@ public class GetPagedOrders
     internal class Handler(
         IOrderRepository orderRepository,
         IOrderAccessService orderAccessService,
-        IUserSessionProvider userSessionProvider)
+        IUserSessionProvider userSessionProvider,
+        IEmployeePayConfigRepository payConfigRepository,
+        IOrderEmployeePayRepository orderEmployeePayRepository,
+        IServiceScopeFactory serviceScopeFactory,
+        ILogger<Handler> logger)
         : IRequestHandler<Request, PagedData<OrderListItem>>
     {
         public async Task<PagedData<OrderListItem>> Handle(Request request, CancellationToken cancellationToken)
@@ -71,6 +82,13 @@ public class GetPagedOrders
             var filter = specification.SatisfiedBy();
 
             var totalItems = await orderRepository.GetCountAsync(filter, cancellationToken);
+            // Includes only what the OrderListItem mapper actually
+            // reads. The previous version pulled Employee+User per
+            // assigned employee, but the mapper only emits the
+            // OrderEmployee row id (line 46 in OrderMappers) — those
+            // two ThenIncludes were paying for ~2 split queries of
+            // wasted columns per page. AssignedEmployees stays so
+            // we can count + emit ids; Employee/User chains gone.
             var orders = await orderRepository
                 .GetPagedSort<OrderSort>(request.Offset, request.Limit, filter, request.Sort.MapToDomain())
                 .Include(o => o.OrderStatusHistory)
@@ -82,37 +100,145 @@ public class GetPagedOrders
                         .ThenInclude(s => s.Category)
                 .Include(o => o.CustomerAddress)
                 .Include(o => o.AssignedEmployees)
-                    .ThenInclude(ae => ae.Employee)
-                        .ThenInclude(e => e!.User)
                 .AsSplitQuery()
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
 
-            var items = orders.Select(order =>
+            // Pay-config lookups for the caller — only when we have an
+            // employee id. For admins the per-row pay is not meaningful so we
+            // leave it null.
+            var serviceIdsAcrossPage = orders
+                .SelectMany(o => o.SelectedServices.Select(s => s.ServiceId))
+                .Distinct()
+                .ToList();
+            var packageIdsAcrossPage = orders
+                .SelectMany(o => o.SelectedPackages.Select(p => p.PackageId))
+                .Distinct()
+                .ToList();
+
+            IReadOnlyList<EmployeePayConfig> serviceConfigsForCaller = Array.Empty<EmployeePayConfig>();
+            IReadOnlyList<EmployeePayConfig> packageConfigsForCaller = Array.Empty<EmployeePayConfig>();
+            IReadOnlyDictionary<string, decimal> existingPayByOrderId =
+                new Dictionary<string, decimal>(0);
+            if (!isAdmin && !string.IsNullOrEmpty(callerEmployeeId) && (serviceIdsAcrossPage.Count > 0 || packageIdsAcrossPage.Count > 0))
+            {
+                serviceConfigsForCaller = await payConfigRepository.GetServiceConfigsForOrderAsync(
+                    serviceIdsAcrossPage, callerEmployeeId, cancellationToken);
+                packageConfigsForCaller = await payConfigRepository.GetPackageConfigsForOrderAsync(
+                    packageIdsAcrossPage, callerEmployeeId, cancellationToken);
+                // Batched per-row pay lookup. One query for the whole
+                // page, two columns, no eager-loaded nav graphs —
+                // replaces the N+1 GetByOrderAndEmployeeAsync loop
+                // below.
+                var orderIds = orders.Select(o => o.Id).ToList();
+                existingPayByOrderId = await orderEmployeePayRepository.GetTotalPayByOrderIdsAsync(
+                    orderIds, callerEmployeeId, cancellationToken);
+            }
+
+            // EstimatedCleanerPay sort runs after we materialize the page —
+            // the pay is computed in-memory, not on the Order column. So the
+            // DB fetch comes back in CreatedOn order, and we re-sort the
+            // resulting list before returning. This means the sort is
+            // per-page, not global; acceptable for the cleaner's Available
+            // tab where pages are typically small and the operator just wants
+            // "highest-paying first within what I'm looking at".
+            var paySort = request.Sort?.FirstOrDefault(s => string.Equals(
+                s.Field, "estimatedCleanerPay", StringComparison.OrdinalIgnoreCase));
+
+            var items = new List<OrderListItem>(orders.Count);
+            foreach (var order in orders)
             {
                 var dto = order.MapToDto();
+
+                if (!isAdmin && !string.IsNullOrEmpty(callerEmployeeId))
+                {
+                    // Pre-fetched dictionary lookup — no DB hit. Falls
+                    // back to the in-memory estimator (uses the
+                    // page-wide pay-config batch) when the cleaner
+                    // doesn't have a booked pay row yet.
+                    decimal? estimatedCleanerPay = existingPayByOrderId.TryGetValue(order.Id, out var booked)
+                        ? booked
+                        : OrderPayEstimator.Estimate(order, callerEmployeeId, serviceConfigsForCaller, packageConfigsForCaller);
+                    dto = dto with { EstimatedCleanerPay = estimatedCleanerPay };
+                }
+
                 if (isAdmin)
                 {
-                    return dto;
+                    items.Add(dto);
+                    continue;
                 }
 
                 var isAssigned = callerEmployeeId != null
                     && order.AssignedEmployees.Any(ae => ae.EmployeeId == callerEmployeeId);
                 if (isAssigned)
                 {
-                    return dto;
+                    items.Add(dto);
+                    continue;
                 }
 
-                return dto with
+                items.Add(dto with
                 {
                     CustomerName = string.Empty,
                     CustomerEmail = string.Empty,
                     CustomerPhone = string.Empty,
                     CustomerAddress = string.Empty,
-                };
-            }).ToList();
+                });
+            }
+
+            // Lazy backfill — fire-and-forget. Anything on this page with a
+            // CustomerAddress but null coords gets geocoded in the background;
+            // next call sees the populated row.
+            var addressIdsToBackfill = orders
+                .Where(o => o.CustomerAddress != null
+                    && o.CustomerAddress.Latitude == null
+                    && o.CustomerAddress.Longitude == null)
+                .Select(o => o.CustomerAddress!.Id)
+                .Distinct()
+                .ToList();
+
+            if (addressIdsToBackfill.Count > 0)
+            {
+                _ = Task.Run(() => BackfillCoordinatesAsync(addressIdsToBackfill), CancellationToken.None);
+            }
+
+            if (paySort != null)
+            {
+                items = paySort.Direction == Cleansia.Core.Domain.Sorting.Common.SortDirection.Ascending
+                    ? items.OrderBy(x => x.EstimatedCleanerPay ?? decimal.MinValue).ToList()
+                    : items.OrderByDescending(x => x.EstimatedCleanerPay ?? decimal.MinValue).ToList();
+            }
 
             return items.MapToDto(totalItems, request);
+        }
+
+        private async Task BackfillCoordinatesAsync(List<string> addressIds)
+        {
+            // Each backfill runs in its own scope — the request scope that
+            // produced this list is long gone by the time the fire-and-forget
+            // Task starts work.
+            try
+            {
+                using var scope = serviceScopeFactory.CreateScope();
+                var scopedAddressRepository = scope.ServiceProvider.GetRequiredService<IAddressRepository>();
+                var scopedGeocoder = scope.ServiceProvider.GetRequiredService<IAddressGeocoder>();
+                var scopedUnitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
+                foreach (var addressId in addressIds)
+                {
+                    var address = await scopedAddressRepository.GetByIdAsync(addressId, CancellationToken.None);
+                    if (address == null || (address.Latitude != null && address.Longitude != null))
+                    {
+                        continue;
+                    }
+                    await scopedGeocoder.PopulateCoordinatesAsync(address, CancellationToken.None);
+                }
+
+                await scopedUnitOfWork.CommitAsync(CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Background address geocoding failed for {Count} addresses", addressIds.Count);
+            }
         }
     }
 }

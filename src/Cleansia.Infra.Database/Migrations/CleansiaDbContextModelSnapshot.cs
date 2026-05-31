@@ -562,9 +562,6 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DeviceId")
-                        .IsUnique();
-
                     b.HasIndex("TenantId");
 
                     b.HasIndex("UserId");
@@ -1522,6 +1519,9 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsServiced")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("IsoCode")
                         .IsRequired()
                         .HasMaxLength(3)
@@ -2412,6 +2412,9 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(true);
 
+                    b.Property<bool>("NewJobsAvailable")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("OrderCancelled")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -2578,6 +2581,9 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(20)");
 
                     b.Property<DateTime>("CleaningDateTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("CompletionNotes")
@@ -3415,6 +3421,66 @@ namespace Cleansia.Infra.Database.Migrations
                     b.ToTable("OrderReceipts", (string)null);
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.ServiceAreas.ServiceCity", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("CountryId")
+                        .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeactivatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("DeactivatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("TenantId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ZipPrefix")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("ZipPrefix");
+
+                    b.HasIndex("CountryId", "Name");
+
+                    b.ToTable("ServiceCities");
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Services.Service", b =>
                 {
                     b.Property<string>("Id")
@@ -3809,6 +3875,9 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<DateTimeOffset?>("LastNewJobsDigestAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("LegalEntityName")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
@@ -3857,9 +3926,14 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<string>("WorkCountryId")
+                        .HasColumnType("character varying(26)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AddressId");
+
+                    b.HasIndex("ContractStatus");
 
                     b.HasIndex("NationalityId");
 
@@ -3867,6 +3941,8 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasIndex("UserId")
                         .IsUnique();
+
+                    b.HasIndex("WorkCountryId");
 
                     b.ToTable("Employees");
                 });
@@ -4853,6 +4929,17 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("Order");
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.ServiceAreas.ServiceCity", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Internationalization.Country", "Country")
+                        .WithMany()
+                        .HasForeignKey("CountryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Country");
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Services.Service", b =>
                 {
                     b.HasOne("Cleansia.Core.Domain.Services.ServiceCategory", "Category")
@@ -4941,11 +5028,18 @@ namespace Cleansia.Infra.Database.Migrations
                         .OnDelete(DeleteBehavior.SetNull)
                         .IsRequired();
 
+                    b.HasOne("Cleansia.Core.Domain.Internationalization.Country", "WorkCountry")
+                        .WithMany()
+                        .HasForeignKey("WorkCountryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Address");
 
                     b.Navigation("Nationality");
 
                     b.Navigation("User");
+
+                    b.Navigation("WorkCountry");
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Users.GdprRequest", b =>

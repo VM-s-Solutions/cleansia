@@ -262,6 +262,7 @@
     <string name="order_detail_rooms">Объект</string>
     <string name="order_detail_estimated">Ожидаемое время</string>
     <string name="order_detail_actual_time">Фактическое время</string>
+    <string name="order_detail_completed_at">Завершено</string>
     <string name="order_detail_services">Расчёт цены</string>
     <string name="order_detail_total">Итого</string>
     <string name="order_detail_confirmation">Код подтверждения</string>
@@ -617,6 +618,7 @@
     <string name="address_manager_review_title">Подтвердить адрес</string>
     <string name="address_manager_label_hint">Назовите этот адрес</string>
     <string name="address_manager_confirm">Сохранить и продолжить</string>
+    <string name="address_manager_city_not_serviced">Мы пока не обслуживаем этот город. Попробуйте другой адрес или зайдите позже.</string>
     <string name="address_manager_delete_title">Удалить адрес?</string>
     <string name="address_manager_delete_body">%1$s будет удалён из ваших сохранённых адресов.</string>
     <string name="address_manager_select">Выбрать адрес</string>

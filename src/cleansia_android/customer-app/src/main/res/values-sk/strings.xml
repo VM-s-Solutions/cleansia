@@ -262,6 +262,7 @@
     <string name="order_detail_rooms">Nehnuteľnosť</string>
     <string name="order_detail_estimated">Predpokladaný čas</string>
     <string name="order_detail_actual_time">Skutočný čas</string>
+    <string name="order_detail_completed_at">Dokončené</string>
     <string name="order_detail_services">Rozpis ceny</string>
     <string name="order_detail_total">Celkom</string>
     <string name="order_detail_confirmation">Potvrdzovací kód</string>
@@ -617,6 +618,7 @@
     <string name="address_manager_review_title">Potvrdiť adresu</string>
     <string name="address_manager_label_hint">Pomenujte adresu</string>
     <string name="address_manager_confirm">Uložiť a pokračovať</string>
+    <string name="address_manager_city_not_serviced">V tomto meste zatiaľ nepôsobíme. Skúste inú adresu alebo to skúste neskôr.</string>
     <string name="address_manager_delete_title">Zmazať adresu?</string>
     <string name="address_manager_delete_body">%1$s bude odstránená z vašich uložených adries.</string>
     <string name="address_manager_select">Vybrať adresu</string>

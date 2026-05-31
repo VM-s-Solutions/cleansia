@@ -38,6 +38,9 @@ public class UserNotificationPreferences : Auditable, ITenantEntity
     public bool DisputeReply { get; private set; } = true;
     public bool RecurringScheduled { get; private set; } = true;
 
+    /// <summary>Partner-side new-jobs digest. Default on for cleaners; harmless for customers (they won't trigger it).</summary>
+    public bool NewJobsAvailable { get; private set; } = true;
+
     private UserNotificationPreferences() { }
 
     public static UserNotificationPreferences CreateDefaults(string userId)
@@ -62,6 +65,7 @@ public class UserNotificationPreferences : Auditable, ITenantEntity
         NotificationCategory.Promo => Promo,
         NotificationCategory.DisputeReply => DisputeReply,
         NotificationCategory.RecurringScheduled => RecurringScheduled,
+        NotificationCategory.NewJobsAvailable => NewJobsAvailable,
         _ => false,
     };
 
@@ -80,6 +84,7 @@ public class UserNotificationPreferences : Auditable, ITenantEntity
             case NotificationCategory.Promo: Promo = enabled; break;
             case NotificationCategory.DisputeReply: DisputeReply = enabled; break;
             case NotificationCategory.RecurringScheduled: RecurringScheduled = enabled; break;
+            case NotificationCategory.NewJobsAvailable: NewJobsAvailable = enabled; break;
         }
     }
 }

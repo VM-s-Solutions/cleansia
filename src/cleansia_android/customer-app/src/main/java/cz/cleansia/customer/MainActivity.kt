@@ -22,8 +22,10 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import cz.cleansia.customer.core.notifications.NotificationDeepLink
+import cz.cleansia.customer.core.notifications.PushTokenSessionObserver
 import cz.cleansia.customer.core.settings.AppSettings
 import cz.cleansia.customer.core.settings.AppSettingsRepository
 import cz.cleansia.customer.core.settings.ThemePreference
@@ -42,6 +44,13 @@ val LocalAppSettings = staticCompositionLocalOf { AppSettings() }
 @AndroidEntryPoint
 class MainActivity : androidx.appcompat.app.AppCompatActivity() {
     @Inject lateinit var settingsRepository: AppSettingsRepository
+
+    /**
+     * Drives FCM device registration off of (auth-session × FCM-token)
+     * state instead of discrete event hooks. Attached on every cold
+     * start; see [PushTokenSessionObserver] for full rationale.
+     */
+    @Inject lateinit var pushTokenSessionObserver: PushTokenSessionObserver
 
     /**
      * Notification-tap deep link, in typed-route form (e.g.
@@ -78,6 +87,10 @@ class MainActivity : androidx.appcompat.app.AppCompatActivity() {
         // the NavHost composes so the LaunchedEffect picks it up immediately.
         pendingDeepLink.value = NotificationDeepLink.resolve(intent)
         maybeRequestNotificationPermission()
+        // Start observing (session × FCM-token) so the device gets
+        // registered on every cold start with an existing session, not
+        // only on discrete login / rotation events.
+        pushTokenSessionObserver.attach(lifecycleScope)
         setContent {
             val settings by settingsRepository.settings
                 .collectAsStateWithLifecycle(initialValue = AppSettings())

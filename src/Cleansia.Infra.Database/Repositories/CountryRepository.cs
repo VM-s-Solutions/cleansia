@@ -32,4 +32,17 @@ public class CountryRepository(CleansiaDbContext context) : BaseRepository<Count
 
         return false;
     }
+
+    public async Task<IReadOnlyList<Country>> GetServicedAsync(CancellationToken cancellationToken)
+    {
+        return await GetDbSet()
+            .Where(c => c.IsServiced && c.IsActive)
+            .OrderBy(c => c.Name)
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<bool> IsServicedAsync(string countryId, CancellationToken cancellationToken)
+    {
+        return GetDbSet().AnyAsync(c => c.Id == countryId && c.IsServiced && c.IsActive, cancellationToken);
+    }
 }

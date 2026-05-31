@@ -14,7 +14,12 @@ public abstract class BaseRepository<TEntity>(CleansiaDbContext context) : IRepo
 
     public virtual Task<bool> ExistsAsync(string id, CancellationToken cancellationToken)
     {
-        return GetDbSet().AnyAsync(entity => entity.Id!.Equals(id), cancellationToken);
+        // `entity.Id.Equals(id)` was failing to translate cleanly under EF
+        // Core 10 + the tenant query filter expression tree on Order — the
+        // call evaluated client-side against an empty set and returned false
+        // even though `GetByIdAsync` (which uses `==`) found the row.
+        // The `==` form translates to a parameterised SQL `=` reliably.
+        return GetDbSet().AnyAsync(entity => entity.Id == id, cancellationToken);
     }
 
     public async Task<bool> ExistWithIdsAsync(IEnumerable<string> ids, CancellationToken cancellationToken)

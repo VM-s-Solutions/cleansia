@@ -131,13 +131,19 @@ export function canCompleteOrder(
   return orderStatusValue === OrderStatus.InProgress && isEmployeeAssigned(assignedEmployees, employeeId);
 }
 
+// Photo section is visible (read or write) when employee is assigned and the order
+// has progressed past acceptance — Confirmed, OnTheWay, InProgress, or Completed.
 export function canManagePhotos(
   orderStatusValue: number,
   assignedEmployees: AssignedEmployeeDto[] | undefined,
   employeeId: string
 ): boolean {
-  const isInProgressOrCompleted = orderStatusValue === OrderStatus.InProgress || orderStatusValue === OrderStatus.Completed;
-  return isInProgressOrCompleted && isEmployeeAssigned(assignedEmployees, employeeId);
+  const isPhotoEligibleStatus =
+    orderStatusValue === OrderStatus.Confirmed ||
+    orderStatusValue === OrderStatus.OnTheWay ||
+    orderStatusValue === OrderStatus.InProgress ||
+    orderStatusValue === OrderStatus.Completed;
+  return isPhotoEligibleStatus && isEmployeeAssigned(assignedEmployees, employeeId);
 }
 
 export function canUploadPhotos(
@@ -146,6 +152,50 @@ export function canUploadPhotos(
   employeeId: string
 ): boolean {
   return orderStatusValue === OrderStatus.InProgress && isEmployeeAssigned(assignedEmployees, employeeId);
+}
+
+// Before photos: allowed during Confirmed or OnTheWay (preparation phase).
+export function canUploadBeforePhotos(
+  orderStatusValue: number,
+  assignedEmployees: AssignedEmployeeDto[] | undefined,
+  employeeId: string
+): boolean {
+  const isPreparationPhase =
+    orderStatusValue === OrderStatus.Confirmed || orderStatusValue === OrderStatus.OnTheWay;
+  return isPreparationPhase && isEmployeeAssigned(assignedEmployees, employeeId);
+}
+
+// After photos: allowed only during InProgress (active work phase).
+export function canUploadAfterPhotos(
+  orderStatusValue: number,
+  assignedEmployees: AssignedEmployeeDto[] | undefined,
+  employeeId: string
+): boolean {
+  return orderStatusValue === OrderStatus.InProgress && isEmployeeAssigned(assignedEmployees, employeeId);
+}
+
+// Notes / issues: allowed for any active order status (Confirmed, OnTheWay, InProgress),
+// gated OUT of Completed and Cancelled.
+export function canAddNoteOrIssue(
+  orderStatusValue: number,
+  assignedEmployees: AssignedEmployeeDto[] | undefined,
+  employeeId: string
+): boolean {
+  const isActive =
+    orderStatusValue === OrderStatus.Confirmed ||
+    orderStatusValue === OrderStatus.OnTheWay ||
+    orderStatusValue === OrderStatus.InProgress;
+  return isActive && isEmployeeAssigned(assignedEmployees, employeeId);
+}
+
+// Completion requires InProgress AND at least one After photo present.
+export function canCompleteOrderWithPhotos(
+  orderStatusValue: number,
+  assignedEmployees: AssignedEmployeeDto[] | undefined,
+  employeeId: string,
+  hasAfterPhotos: boolean
+): boolean {
+  return canCompleteOrder(orderStatusValue, assignedEmployees, employeeId) && hasAfterPhotos;
 }
 
 export function computeElapsedTime(

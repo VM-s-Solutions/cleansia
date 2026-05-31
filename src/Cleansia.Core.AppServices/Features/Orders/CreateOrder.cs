@@ -218,6 +218,7 @@ public class CreateOrder
         ISavedAddressRepository savedAddressRepository,
         ICurrencyRepository currencyRepository,
         ICountryRepository countryRepository,
+        IServiceCityRepository serviceCityRepository,
         IStripeClientFactory stripeClientFactory,
         IQueueClient queueClient,
         IPromoCodeService promoCodeService,
@@ -226,6 +227,7 @@ public class CreateOrder
         IUserSessionProvider userSessionProvider,
         IOrderPricingCalculator pricingCalculator,
         IOrderFactory orderFactory,
+        IAddressGeocoder addressGeocoder,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -270,6 +272,22 @@ public class CreateOrder
                 return BusinessResult.Failure<Response>(failure);
             }
             var address = addressResult.Address!;
+
+            // Customer orders must be in a city we actually serve. Employees
+            // (UpdateEmployee / UpdateAddressInfo) are exempt — they can live
+            // anywhere within a serviced country. The country itself has
+            // already been validated as IsServiced by ResolveAddressAsync.
+            if (!await serviceCityRepository.CityIsServicedAsync(
+                address.CountryId, address.City, cancellationToken))
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(address.City), BusinessErrorMessage.CityNotServiced));
+            }
+
+            if (address.Latitude is null || address.Longitude is null)
+            {
+                await addressGeocoder.PopulateCoordinatesAsync(address, cancellationToken);
+            }
 
             var currency = string.IsNullOrEmpty(command.CurrencyId)
                 ? await currencyRepository.GetDefaultAsync(cancellationToken)
@@ -411,22 +429,44 @@ public class CreateOrder
                     ?? await addressRepository.GetByIdAsync(saved.AddressId, cancellationToken)
                     ?? throw new InvalidOperationException(
                         $"SavedAddress {saved.Id} references missing Address {saved.AddressId}");
+
+                // Edge case: address was saved while the country was
+                // serviced, then admin de-flagged the country. Re-check
+                // serviced status at order-time so stale saved rows can't
+                // bypass the policy.
+                if (!await countryRepository.IsServicedAsync(resolved.CountryId, cancellationToken))
+                {
+                    return AddressResolution.Fail(new Error(
+                        nameof(command.SavedAddressId), BusinessErrorMessage.CountryNotServiced));
+                }
                 return AddressResolution.Ok(resolved);
             }
 
             var inline = command.CustomerAddress!;
             var resolvedCountryId = inline.CountryId;
+
+            // Country must be supplied AND must be one we operate in. Old
+            // behaviour (alphabetically default to "first in catalog") was
+            // the source of the Argentina-for-CZ-addresses bug — silently
+            // picking a wrong default is worse than failing loud.
             if (!string.IsNullOrEmpty(resolvedCountryId)
-                && !await countryRepository.ExistsAsync(resolvedCountryId, cancellationToken))
+                && !await countryRepository.IsServicedAsync(resolvedCountryId, cancellationToken))
             {
-                resolvedCountryId = null;
+                return AddressResolution.Fail(new Error(
+                    nameof(inline.CountryId), BusinessErrorMessage.CountryNotServiced));
             }
             if (string.IsNullOrEmpty(resolvedCountryId))
             {
-                var defaultCountry = await countryRepository.GetByIsoCodeAsync("CZE", cancellationToken)
-                    ?? await countryRepository.GetQueryable().FirstOrDefaultAsync(cancellationToken);
-                resolvedCountryId = defaultCountry?.Id
-                    ?? throw new InvalidOperationException("No countries configured in the system");
+                // No country supplied. Fall back to the single serviced
+                // country if there's exactly one; otherwise require the
+                // client to pick.
+                var servicedCountries = await countryRepository.GetServicedAsync(cancellationToken);
+                if (servicedCountries.Count != 1)
+                {
+                    return AddressResolution.Fail(new Error(
+                        nameof(inline.CountryId), BusinessErrorMessage.CountryRequired));
+                }
+                resolvedCountryId = servicedCountries[0].Id;
             }
 
             var address = await addressRepository.GetAddressAsync(

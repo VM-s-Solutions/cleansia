@@ -65,6 +65,7 @@ import cz.cleansia.customer.ui.format.orderStatusColor
 import cz.cleansia.customer.core.orders.OrderListItemDto
 import cz.cleansia.customer.core.orders.OrderRepositoryEntryPoint
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
+import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.theme.Poppins
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.launch
@@ -159,6 +160,15 @@ fun OrdersTab(
             onRefresh = refresh,
             state = pullState,
             modifier = Modifier.fillMaxSize(),
+            indicator = {
+                SudsRefreshIndicator(
+                    state = pullState,
+                    isRefreshing = loading,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 8.dp),
+                )
+            },
         ) {
             when {
                 loading && !loaded -> OrdersLoading()

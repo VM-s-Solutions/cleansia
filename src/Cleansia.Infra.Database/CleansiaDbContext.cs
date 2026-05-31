@@ -8,6 +8,7 @@ using Cleansia.Core.Domain.Documents;
 using Cleansia.Core.Domain.Emails;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.ServiceAreas;
 using Cleansia.Core.Domain.InvoiceTemplates;
 using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.Loyalty;
@@ -179,6 +180,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     }
 
     public virtual DbSet<Country> Countries { get; set; }
+    public virtual DbSet<ServiceCity> ServiceCities { get; set; }
     public virtual DbSet<Address> Addresses { get; set; }
     public virtual DbSet<SavedAddress> SavedAddresses { get; set; }
     public virtual DbSet<Employee> Employees { get; set; }

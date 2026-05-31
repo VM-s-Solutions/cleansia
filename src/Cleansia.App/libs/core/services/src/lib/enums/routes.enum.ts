@@ -26,6 +26,7 @@ export enum CleansiaAdminRoute {
   ADMIN_USER_MANAGEMENT = 'admin-user-management',
   LANGUAGE_MANAGEMENT = 'language-management',
   COUNTRY_MANAGEMENT = 'country-management',
+  SERVICE_AREA_MANAGEMENT = 'service-area-management',
   CURRENCY_MANAGEMENT = 'currency-management',
   COMPANY_INFO = 'company-info',
   TEMPLATE_MANAGEMENT = 'template-management',

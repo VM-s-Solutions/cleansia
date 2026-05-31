@@ -2,6 +2,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -95,7 +96,9 @@ public class AdminUpdateEmployee
 
     public record Response(string EmployeeId);
 
-    internal class Handler(IEmployeeRepository employeeRepository) : ICommandHandler<Command, Response>
+    internal class Handler(
+        IEmployeeRepository employeeRepository,
+        IAddressGeocoder addressGeocoder) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -133,6 +136,8 @@ public class AdminUpdateEmployee
             {
                 address = employee.Address!;
             }
+
+            await addressGeocoder.PopulateCoordinatesAsync(address, cancellationToken);
 
             // Admin edit is partial — preserve any fields the admin didn't explicitly supply.
             employee.UpdateEmployeeDetails(

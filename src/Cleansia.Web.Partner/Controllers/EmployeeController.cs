@@ -48,43 +48,6 @@ public class EmployeeController(IMediator mediator) : ApiController(mediator)
         return HandleResult<UpdateEmployee.Response>(result);
     }
 
-    [HttpGet]
-    [Permission(Policy.CanViewPagedEmployee)]
-    [ProducesResponseType(typeof(PagedData<AdminEmployeeListItem>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<PagedData<AdminEmployeeListItem>> GetPagedEmployees([FromQuery] GetPagedEmployees.Request request, CancellationToken cancellationToken)
-    {
-        return await Mediator.Send(request, cancellationToken);
-    }
-
-    [HttpPost("{employeeId}/approve")]
-    [Permission(Policy.CanApproveEmployee)]
-    [ProducesResponseType(typeof(ApproveEmployee.Response), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> ApproveEmployee(string employeeId, CancellationToken cancellationToken)
-    {
-        var command = new ApproveEmployee.Command(employeeId);
-        var result = await Mediator.Send(command, cancellationToken);
-        return HandleResult<ApproveEmployee.Response>(result);
-    }
-
-    [HttpPost("{employeeId}/reject")]
-    [Permission(Policy.CanRejectEmployee)]
-    [ProducesResponseType(typeof(RejectEmployee.Response), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> RejectEmployee(string employeeId, [FromBody] RejectEmployee.Request? request, CancellationToken cancellationToken)
-    {
-        var command = new RejectEmployee.Command(employeeId, request?.Reason);
-        var result = await Mediator.Send(command, cancellationToken);
-        return HandleResult<RejectEmployee.Response>(result);
-    }
-
     [HttpPost("SaveMyDocuments")]
     [Permission(Policy.CanUploadEmployeeDocument)]
     [ProducesResponseType(typeof(SaveMyDocuments.Response), StatusCodes.Status200OK)]

@@ -383,6 +383,16 @@
                     <span>{{ facade.formData().address.city }}, {{ facade.formData().address.zipCode }}</span>
                   </div>
                 </div>
+                <!-- Service-area inline warning. Backend re-validates on
+                     submit; this surfaces the same rejection earlier so the
+                     user doesn't fill out the rest of the wizard for a city
+                     we won't service. -->
+                @if (facade.cityServiced() === 'rejected') {
+                  <div class="order-wizard__address-warning" role="alert">
+                    <i class="pi pi-info-circle"></i>
+                    <span>{{ 'api.service_area.city_not_serviced' | translate }}</span>
+                  </div>
+                }
               } @else {
                 <p class="order-wizard__address-hint">
                   {{ 'pages.order.address_pick_required' | translate }}

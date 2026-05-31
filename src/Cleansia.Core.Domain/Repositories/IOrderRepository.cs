@@ -25,6 +25,17 @@ public interface IOrderRepository : IRepository<Order, string>
         string employeeId, DateTime startDate, DateTime endDate, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Lightweight count of orders an employee completed in the
+    /// window [from, to). Filters directly off `Order.CompletedAt`
+    /// and the employee's assignment — does NOT require a matching
+    /// `OrderEmployeePay` row, so the dashboard "today / this week"
+    /// counts reflect the cleaner's actual completion activity even
+    /// before admin payroll has run for that order.
+    /// </summary>
+    Task<int> CountCompletedForEmployeeBetweenAsync(
+        string employeeId, DateTime from, DateTime to, CancellationToken cancellationToken);
+
+    /// <summary>
     /// All orders within a date range. Used by the admin revenue report.
     /// </summary>
     Task<IReadOnlyList<Order>> GetOrdersByDateRangeAsync(
@@ -56,4 +67,12 @@ public interface IOrderRepository : IRepository<Order, string>
     /// any subsequent mutation so child rows inherit the right tenant.
     /// </summary>
     Task<Order?> GetByIdIgnoringTenantAsync(string id, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Average + count of all OrderReview rows attached to orders that had
+    /// this employee assigned. Used by the mobile dashboard's rating tile.
+    /// Returns (null, 0) when the cleaner has never been reviewed.
+    /// </summary>
+    Task<(double? Average, int Count)> GetAverageRatingForEmployeeAsync(
+        string employeeId, CancellationToken cancellationToken);
 }

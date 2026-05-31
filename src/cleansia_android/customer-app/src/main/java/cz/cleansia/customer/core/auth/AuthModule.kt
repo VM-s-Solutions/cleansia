@@ -80,14 +80,33 @@ object AuthModule {
         serverErrorStringRes = R.string.error_generic_server,
     )
 
+    /**
+     * Attaches the device's IANA timezone id to every request as
+     * `X-Time-Zone` (e.g. "Europe/Prague"). Server-side handlers that
+     * do day / week / month math (dashboard counts, revenue reports)
+     * use this to compute boundaries in the user's wall clock instead
+     * of in UTC. Mirrors the partner app's interceptor.
+     */
+    @Provides
+    @Singleton
+    @TimeZoneInterceptorQ
+    fun provideTimeZoneHeaderInterceptor(): okhttp3.Interceptor = okhttp3.Interceptor { chain ->
+        val request = chain.request().newBuilder()
+            .header("X-Time-Zone", java.util.TimeZone.getDefault().id)
+            .build()
+        chain.proceed(request)
+    }
+
     @Provides
     @Singleton
     @NoAuthOkHttp
     fun provideNoAuthOkHttpClient(
         logging: HttpLoggingInterceptor,
         networkErrorInterceptor: NetworkErrorInterceptor,
+        @TimeZoneInterceptorQ timeZoneInterceptor: okhttp3.Interceptor,
     ): OkHttpClient = OkHttpClient.Builder()
         .eventListener(SentryOkHttpEventListener())
+        .addInterceptor(timeZoneInterceptor)
         .addInterceptor(networkErrorInterceptor)
         .addInterceptor(logging)
         .connectTimeout(15, TimeUnit.SECONDS)
@@ -180,9 +199,11 @@ object AuthModule {
         authInterceptor: AuthInterceptor,
         networkErrorInterceptor: NetworkErrorInterceptor,
         authenticator: AuthAuthenticator,
+        @TimeZoneInterceptorQ timeZoneInterceptor: okhttp3.Interceptor,
     ): OkHttpClient = OkHttpClient.Builder()
         .eventListener(SentryOkHttpEventListener())
         .addInterceptor(authInterceptor)
+        .addInterceptor(timeZoneInterceptor)
         .addInterceptor(networkErrorInterceptor)
         .addInterceptor(logging)
         .authenticator(authenticator)
@@ -210,3 +231,4 @@ object AuthModule {
 @Qualifier @Retention(AnnotationRetention.BINARY) annotation class NoAuthOkHttp
 @Qualifier @Retention(AnnotationRetention.BINARY) annotation class AuthRetrofit
 @Qualifier @Retention(AnnotationRetention.BINARY) annotation class NoAuthRetrofit
+@Qualifier @Retention(AnnotationRetention.BINARY) annotation class TimeZoneInterceptorQ

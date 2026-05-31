@@ -659,6 +659,65 @@
         }
       }
     },
+    "/api/Country/GetServiced": {
+      "get": {
+        "tags": [
+          "Country"
+        ],
+        "operationId": "Country_GetServiced",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CountryListItem"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CountryListItem"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CountryListItem"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Device/Register": {
       "post": {
         "tags": [
@@ -5440,6 +5499,54 @@
         }
       }
     },
+    "/api/ServiceCity": {
+      "get": {
+        "tags": [
+          "ServiceCity"
+        ],
+        "operationId": "ServiceCity_GetServiceCities",
+        "parameters": [
+          {
+            "name": "countryId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ServiceCityDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ServiceCityDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ServiceCityDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/User/GetCurrent": {
       "get": {
         "tags": [
@@ -7769,6 +7876,16 @@
           "country": {
             "type": "string",
             "nullable": true
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -7889,6 +8006,11 @@
             "format": "int32",
             "nullable": true
           },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
           "completionNotes": {
             "type": "string",
             "nullable": true
@@ -7976,6 +8098,17 @@
           },
           "review": {
             "$ref": "#/components/schemas/OrderReviewDto"
+          },
+          "estimatedCleanerPay": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "isAssignedToCurrentUser": {
+            "type": "boolean"
+          },
+          "hasAfterPhotos": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -8000,6 +8133,10 @@
             "nullable": true
           },
           "customerAddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "customerAddressApproximate": {
             "type": "string",
             "nullable": true
           },
@@ -8115,6 +8252,21 @@
           },
           "hasAvailableSpots": {
             "type": "boolean"
+          },
+          "estimatedCleanerPay": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "customerAddressLatitude": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "customerAddressLongitude": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -8850,6 +9002,39 @@
         },
         "additionalProperties": false
       },
+      "ServiceCityDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "countryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "countryName": {
+            "type": "string",
+            "nullable": true
+          },
+          "countryIsoCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "zipPrefix": {
+            "type": "string",
+            "nullable": true
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "ServiceDetails": {
         "type": "object",
         "properties": {
@@ -9400,6 +9585,9 @@
     },
     {
       "name": "Service"
+    },
+    {
+      "name": "ServiceCity"
     },
     {
       "name": "User"

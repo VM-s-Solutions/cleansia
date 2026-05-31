@@ -40,40 +40,35 @@ import cz.cleansia.partner.R
 import cz.cleansia.partner.features.auth.viewmodels.RegisterViewModel
 
 /**
- * Partner sign-up screen — visual parity with customer-app's SignUpScreen
- * (mascot → title → first/last name row → email → password + rule list →
- * confirm password + match rule → terms checkbox → register button → footer
- * link). NO Google OAuth (partner doesn't issue Google client IDs). NO
- * referral code row (not applicable to cleaners).
+ * Partner sign-up screen — mascot → title → first/last name row → email →
+ * password + rule list → confirm password + match rule → terms checkbox →
+ * register button → footer link. No Google OAuth, no referral code.
+ *
+ * Success routes back to Login — the user receives a verification email and
+ * signs in there; after the first successful sign-in with unconfirmed email
+ * the Login flow forwards them to ConfirmEmailScreen.
  */
 @Composable
 fun RegisterScreen(
     onNavigateToLogin: () -> Unit,
-    onRegisterSuccess: (email: String) -> Unit,
+    onRegisterSuccess: () -> Unit,
     viewModel: RegisterViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Live password rule evaluation — mirrors customer's SignUpScreen.
     val hasPasswordInput = uiState.password.isNotEmpty()
-    val hasMinLength = uiState.password.length >= 8
-    val hasLetter = uiState.password.any { it.isLetter() }
-    val hasNumber = uiState.password.any { it.isDigit() }
     val hasConfirmInput = uiState.confirmPassword.isNotEmpty()
-    val passwordsMatch = uiState.password.isNotEmpty() && uiState.password == uiState.confirmPassword
 
     val formValid = uiState.firstName.isNotBlank() &&
         uiState.lastName.isNotBlank() &&
         uiState.email.isNotBlank() &&
-        hasMinLength && hasLetter && hasNumber &&
-        passwordsMatch &&
+        uiState.passwordHasMinLength && uiState.passwordHasLetter && uiState.passwordHasNumber &&
+        uiState.passwordsMatch &&
         uiState.acceptTerms
 
     LaunchedEffect(uiState.isRegistrationSuccessful) {
-        if (uiState.isRegistrationSuccessful) {
-            uiState.registeredEmail?.let(onRegisterSuccess)
-        }
+        if (uiState.isRegistrationSuccessful) onRegisterSuccess()
     }
 
     LaunchedEffect(uiState.error) {
@@ -164,9 +159,9 @@ fun RegisterScreen(
 
             PasswordRuleList(
                 rules = listOf(
-                    stringResource(R.string.register_pw_min_length) to hasMinLength,
-                    stringResource(R.string.register_pw_letter) to hasLetter,
-                    stringResource(R.string.register_pw_number) to hasNumber,
+                    stringResource(R.string.register_pw_min_length) to uiState.passwordHasMinLength,
+                    stringResource(R.string.register_pw_letter) to uiState.passwordHasLetter,
+                    stringResource(R.string.register_pw_number) to uiState.passwordHasNumber,
                 ),
                 hasInput = hasPasswordInput,
             )
@@ -184,7 +179,7 @@ fun RegisterScreen(
 
             PasswordRuleList(
                 rules = listOf(
-                    stringResource(R.string.register_pw_match) to passwordsMatch,
+                    stringResource(R.string.register_pw_match) to uiState.passwordsMatch,
                 ),
                 hasInput = hasConfirmInput,
             )

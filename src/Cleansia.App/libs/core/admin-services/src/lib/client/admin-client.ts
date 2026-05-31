@@ -895,6 +895,11 @@ export interface IAdminCountryClient {
      * @return OK
      */
     delete(countryId: string): Observable<DeleteCountryResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    serviced(countryId: string, body?: AdminCountryControllerSetCountryServicedRequest | undefined): Observable<SetCountryServicedResponse>;
 }
 
 @Injectable({
@@ -1279,6 +1284,93 @@ export class AdminCountryClient implements IAdminCountryClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = DeleteCountryResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result404: any = null;
+            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, ResponseText, Headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    serviced(countryId: string, body?: AdminCountryControllerSetCountryServicedRequest | undefined): Observable<SetCountryServicedResponse> {
+        let url = this.baseUrl + "/api/AdminCountry/{countryId}/serviced";
+        if (countryId === undefined || countryId === null)
+            throw new globalThis.Error("The parameter 'countryId' must be defined.");
+        url = url.replace("{countryId}", encodeURIComponent("" + countryId));
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("put", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processServiced(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processServiced(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<SetCountryServicedResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<SetCountryServicedResponse>;
+        }));
+    }
+
+    protected processServiced(response: HttpResponseBase): Observable<SetCountryServicedResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = SetCountryServicedResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -3609,6 +3701,25 @@ export interface IApiClient {
      * @return OK
      */
     adminFiscalFailure(): Observable<FiscalFailureDto[]>;
+    /**
+     * @param countryId (optional) 
+     * @return OK
+     */
+    adminServiceCityGet(countryId?: string | undefined): Observable<ServiceCityDto[]>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    adminServiceCityPost(body?: CreateServiceCityCommand | undefined): Observable<CreateServiceCityResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    adminServiceCityPut(id: string, body?: UpdateServiceCityCommand | undefined): Observable<UpdateServiceCityResponse>;
+    /**
+     * @return OK
+     */
+    adminServiceCityDelete(id: string): Observable<DeleteServiceCityResponse>;
 }
 
 @Injectable({
@@ -3856,6 +3967,273 @@ export class ApiClient implements IApiClient {
             let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result403 = ProblemDetails.fromJS(resultData403);
             return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param countryId (optional) 
+     * @return OK
+     */
+    adminServiceCityGet(countryId?: string | undefined): Observable<ServiceCityDto[]> {
+        let url = this.baseUrl + "/api/AdminServiceCity?";
+        if (countryId === null)
+            throw new globalThis.Error("The parameter 'countryId' cannot be null.");
+        else if (countryId !== undefined)
+            url += "countryId=" + encodeURIComponent("" + countryId) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processAdminServiceCityGet(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processAdminServiceCityGet(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<ServiceCityDto[]>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<ServiceCityDto[]>;
+        }));
+    }
+
+    protected processAdminServiceCityGet(response: HttpResponseBase): Observable<ServiceCityDto[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(ServiceCityDto.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return ObservableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    adminServiceCityPost(body?: CreateServiceCityCommand | undefined): Observable<CreateServiceCityResponse> {
+        let url = this.baseUrl + "/api/AdminServiceCity";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processAdminServiceCityPost(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processAdminServiceCityPost(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<CreateServiceCityResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<CreateServiceCityResponse>;
+        }));
+    }
+
+    protected processAdminServiceCityPost(response: HttpResponseBase): Observable<CreateServiceCityResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = CreateServiceCityResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    adminServiceCityPut(id: string, body?: UpdateServiceCityCommand | undefined): Observable<UpdateServiceCityResponse> {
+        let url = this.baseUrl + "/api/AdminServiceCity/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url = url.replace("{id}", encodeURIComponent("" + id));
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("put", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processAdminServiceCityPut(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processAdminServiceCityPut(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<UpdateServiceCityResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<UpdateServiceCityResponse>;
+        }));
+    }
+
+    protected processAdminServiceCityPut(response: HttpResponseBase): Observable<UpdateServiceCityResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = UpdateServiceCityResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result404: any = null;
+            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, ResponseText, Headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    adminServiceCityDelete(id: string): Observable<DeleteServiceCityResponse> {
+        let url = this.baseUrl + "/api/AdminServiceCity/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url = url.replace("{id}", encodeURIComponent("" + id));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("delete", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processAdminServiceCityDelete(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processAdminServiceCityDelete(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<DeleteServiceCityResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<DeleteServiceCityResponse>;
+        }));
+    }
+
+    protected processAdminServiceCityDelete(response: HttpResponseBase): Observable<DeleteServiceCityResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = DeleteServiceCityResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result404: any = null;
+            let resultData404 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("Not Found", status, ResponseText, Headers, result404);
             }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -6137,6 +6515,101 @@ export class AdminLoyaltyTierClient implements IAdminLoyaltyTierClient {
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = PreviewTierThresholdImpactResponse.fromJS(resultData200);
             return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
+export interface IAdminMarketingClient {
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    sendSitewidePromo(body?: SendSitewidePromoCommand | undefined): Observable<void>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class AdminMarketingClient implements IAdminMarketingClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(ADMINAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    sendSitewidePromo(body?: SendSitewidePromoCommand | undefined): Observable<void> {
+        let url = this.baseUrl + "/api/AdminMarketing/send-sitewide-promo";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processSendSitewidePromo(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processSendSitewidePromo(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<void>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<void>;
+        }));
+    }
+
+    protected processSendSitewidePromo(response: HttpResponseBase): Observable<void> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return ObservableOf(null as any);
             }));
         } else if (status === 400) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -10382,6 +10855,42 @@ export interface IActivateAdminUserResponse {
     id: string | undefined;
 }
 
+export class AdminCountryControllerSetCountryServicedRequest implements IAdminCountryControllerSetCountryServicedRequest {
+    isServiced!: boolean;
+
+    constructor(data?: IAdminCountryControllerSetCountryServicedRequest) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.isServiced = Data["isServiced"];
+        }
+    }
+
+    static fromJS(data: any): AdminCountryControllerSetCountryServicedRequest {
+        data = typeof data === 'object' ? data : {};
+        let result = new AdminCountryControllerSetCountryServicedRequest();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["isServiced"] = this.isServiced;
+        return data;
+    }
+}
+
+export interface IAdminCountryControllerSetCountryServicedRequest {
+    isServiced: boolean;
+}
+
 export class AdminEmployeeDetail implements IAdminEmployeeDetail {
     id!: string | undefined;
     email!: string | undefined;
@@ -11435,6 +11944,7 @@ export interface IApproveDocumentResponse {
 }
 
 export class ApproveEmployeeRequest implements IApproveEmployeeRequest {
+    workCountryId!: string | undefined;
     notes!: string | undefined;
 
     constructor(data?: IApproveEmployeeRequest) {
@@ -11448,6 +11958,7 @@ export class ApproveEmployeeRequest implements IApproveEmployeeRequest {
 
     init(Data?: any) {
         if (Data) {
+            this.workCountryId = Data["workCountryId"];
             this.notes = Data["notes"];
         }
     }
@@ -11461,12 +11972,14 @@ export class ApproveEmployeeRequest implements IApproveEmployeeRequest {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
+        data["workCountryId"] = this.workCountryId;
         data["notes"] = this.notes;
         return data;
     }
 }
 
 export interface IApproveEmployeeRequest {
+    workCountryId: string | undefined;
     notes: string | undefined;
 }
 
@@ -12217,6 +12730,7 @@ export class CountryDetailDto implements ICountryDetailDto {
     id!: string | undefined;
     isoCode!: string | undefined;
     name!: string | undefined;
+    isServiced!: boolean;
 
     constructor(data?: ICountryDetailDto) {
         if (data) {
@@ -12232,6 +12746,7 @@ export class CountryDetailDto implements ICountryDetailDto {
             this.id = Data["id"];
             this.isoCode = Data["isoCode"];
             this.name = Data["name"];
+            this.isServiced = Data["isServiced"];
         }
     }
 
@@ -12247,6 +12762,7 @@ export class CountryDetailDto implements ICountryDetailDto {
         data["id"] = this.id;
         data["isoCode"] = this.isoCode;
         data["name"] = this.name;
+        data["isServiced"] = this.isServiced;
         return data;
     }
 }
@@ -12255,6 +12771,7 @@ export interface ICountryDetailDto {
     id: string | undefined;
     isoCode: string | undefined;
     name: string | undefined;
+    isServiced: boolean;
 }
 
 export class CountryListItem implements ICountryListItem {
@@ -13357,6 +13874,86 @@ export interface ICreatePromoCodeResponse {
     promoCodeId: string | undefined;
 }
 
+export class CreateServiceCityCommand implements ICreateServiceCityCommand {
+    countryId!: string | undefined;
+    name!: string | undefined;
+    zipPrefix!: string | undefined;
+
+    constructor(data?: ICreateServiceCityCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.countryId = Data["countryId"];
+            this.name = Data["name"];
+            this.zipPrefix = Data["zipPrefix"];
+        }
+    }
+
+    static fromJS(data: any): CreateServiceCityCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreateServiceCityCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["countryId"] = this.countryId;
+        data["name"] = this.name;
+        data["zipPrefix"] = this.zipPrefix;
+        return data;
+    }
+}
+
+export interface ICreateServiceCityCommand {
+    countryId: string | undefined;
+    name: string | undefined;
+    zipPrefix: string | undefined;
+}
+
+export class CreateServiceCityResponse implements ICreateServiceCityResponse {
+    id!: string | undefined;
+
+    constructor(data?: ICreateServiceCityResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+        }
+    }
+
+    static fromJS(data: any): CreateServiceCityResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreateServiceCityResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        return data;
+    }
+}
+
+export interface ICreateServiceCityResponse {
+    id: string | undefined;
+}
+
 export class CreateServiceCommand implements ICreateServiceCommand {
     categoryId!: string | undefined;
     name!: string | undefined;
@@ -14019,6 +14616,42 @@ export class DeletePayPeriodResponse implements IDeletePayPeriodResponse {
 
 export interface IDeletePayPeriodResponse {
     payPeriodId: string | undefined;
+}
+
+export class DeleteServiceCityResponse implements IDeleteServiceCityResponse {
+    id!: string | undefined;
+
+    constructor(data?: IDeleteServiceCityResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+        }
+    }
+
+    static fromJS(data: any): DeleteServiceCityResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new DeleteServiceCityResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        return data;
+    }
+}
+
+export interface IDeleteServiceCityResponse {
+    id: string | undefined;
 }
 
 export class DeleteServiceResponse implements IDeleteServiceResponse {
@@ -16595,6 +17228,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
     refreshToken!: string | undefined;
     refreshTokenExpiresAt!: Date | undefined;
     csrfToken!: string | undefined;
+    role!: string | undefined;
 
     constructor(data?: IJwtTokenResponse) {
         if (data) {
@@ -16615,6 +17249,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
             this.refreshToken = Data["refreshToken"];
             this.refreshTokenExpiresAt = Data["refreshTokenExpiresAt"] ? new Date(Data["refreshTokenExpiresAt"].toString()) : undefined as any;
             this.csrfToken = Data["csrfToken"];
+            this.role = Data["role"];
         }
     }
 
@@ -16635,6 +17270,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
         data["refreshToken"] = this.refreshToken;
         data["refreshTokenExpiresAt"] = this.refreshTokenExpiresAt ? this.refreshTokenExpiresAt.toISOString() : undefined as any;
         data["csrfToken"] = this.csrfToken;
+        data["role"] = this.role;
         return data;
     }
 }
@@ -16648,6 +17284,7 @@ export interface IJwtTokenResponse {
     refreshToken: string | undefined;
     refreshTokenExpiresAt: Date | undefined;
     csrfToken: string | undefined;
+    role: string | undefined;
 }
 
 export class LanguageDetailDto implements ILanguageDetailDto {
@@ -17006,6 +17643,8 @@ export class OrderAddress implements IOrderAddress {
     city!: string | undefined;
     zipCode!: string | undefined;
     country!: string | undefined;
+    latitude!: number | undefined;
+    longitude!: number | undefined;
 
     constructor(data?: IOrderAddress) {
         if (data) {
@@ -17022,6 +17661,8 @@ export class OrderAddress implements IOrderAddress {
             this.city = Data["city"];
             this.zipCode = Data["zipCode"];
             this.country = Data["country"];
+            this.latitude = Data["latitude"];
+            this.longitude = Data["longitude"];
         }
     }
 
@@ -17038,6 +17679,8 @@ export class OrderAddress implements IOrderAddress {
         data["city"] = this.city;
         data["zipCode"] = this.zipCode;
         data["country"] = this.country;
+        data["latitude"] = this.latitude;
+        data["longitude"] = this.longitude;
         return data;
     }
 }
@@ -17047,6 +17690,8 @@ export interface IOrderAddress {
     city: string | undefined;
     zipCode: string | undefined;
     country: string | undefined;
+    latitude: number | undefined;
+    longitude: number | undefined;
 }
 
 export class OrderEmployeePayDto implements IOrderEmployeePayDto {
@@ -17222,6 +17867,7 @@ export class OrderItem implements IOrderItem {
     promoDiscountAmount!: number | undefined;
     estimatedTime!: number;
     actualCompletionTime!: number | undefined;
+    completedAt!: Date | undefined;
     completionNotes!: string | undefined;
     orderStatus!: Code;
     confirmationCode!: string | undefined;
@@ -17240,6 +17886,9 @@ export class OrderItem implements IOrderItem {
     orderNotes!: OrderNoteDto[] | undefined;
     orderIssues!: OrderIssueDto[] | undefined;
     review!: OrderReviewDto;
+    estimatedCleanerPay!: number | undefined;
+    isAssignedToCurrentUser!: boolean;
+    hasAfterPhotos!: boolean;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -17278,6 +17927,7 @@ export class OrderItem implements IOrderItem {
             this.promoDiscountAmount = Data["promoDiscountAmount"];
             this.estimatedTime = Data["estimatedTime"];
             this.actualCompletionTime = Data["actualCompletionTime"];
+            this.completedAt = Data["completedAt"] ? new Date(Data["completedAt"].toString()) : undefined as any;
             this.completionNotes = Data["completionNotes"];
             this.orderStatus = Data["orderStatus"] ? Code.fromJS(Data["orderStatus"]) : undefined as any;
             this.confirmationCode = Data["confirmationCode"];
@@ -17320,6 +17970,9 @@ export class OrderItem implements IOrderItem {
                     this.orderIssues!.push(OrderIssueDto.fromJS(item));
             }
             this.review = Data["review"] ? OrderReviewDto.fromJS(Data["review"]) : undefined as any;
+            this.estimatedCleanerPay = Data["estimatedCleanerPay"];
+            this.isAssignedToCurrentUser = Data["isAssignedToCurrentUser"];
+            this.hasAfterPhotos = Data["hasAfterPhotos"];
         }
     }
 
@@ -17358,6 +18011,7 @@ export class OrderItem implements IOrderItem {
         data["promoDiscountAmount"] = this.promoDiscountAmount;
         data["estimatedTime"] = this.estimatedTime;
         data["actualCompletionTime"] = this.actualCompletionTime;
+        data["completedAt"] = this.completedAt ? this.completedAt.toISOString() : undefined as any;
         data["completionNotes"] = this.completionNotes;
         data["orderStatus"] = this.orderStatus ? this.orderStatus.toJSON() : undefined as any;
         data["confirmationCode"] = this.confirmationCode;
@@ -17400,6 +18054,9 @@ export class OrderItem implements IOrderItem {
                 data["orderIssues"].push(item ? item.toJSON() : undefined as any);
         }
         data["review"] = this.review ? this.review.toJSON() : undefined as any;
+        data["estimatedCleanerPay"] = this.estimatedCleanerPay;
+        data["isAssignedToCurrentUser"] = this.isAssignedToCurrentUser;
+        data["hasAfterPhotos"] = this.hasAfterPhotos;
         return data;
     }
 }
@@ -17425,6 +18082,7 @@ export interface IOrderItem {
     promoDiscountAmount: number | undefined;
     estimatedTime: number;
     actualCompletionTime: number | undefined;
+    completedAt: Date | undefined;
     completionNotes: string | undefined;
     orderStatus: Code;
     confirmationCode: string | undefined;
@@ -17443,6 +18101,9 @@ export interface IOrderItem {
     orderNotes: OrderNoteDto[] | undefined;
     orderIssues: OrderIssueDto[] | undefined;
     review: OrderReviewDto;
+    estimatedCleanerPay: number | undefined;
+    isAssignedToCurrentUser: boolean;
+    hasAfterPhotos: boolean;
 }
 
 export class OrderListItem implements IOrderListItem {
@@ -17451,6 +18112,7 @@ export class OrderListItem implements IOrderListItem {
     customerEmail!: string | undefined;
     customerPhone!: string | undefined;
     customerAddress!: string | undefined;
+    customerAddressApproximate!: string | undefined;
     displayOrderNumber!: string | undefined;
     rooms!: number;
     bathrooms!: number;
@@ -17477,6 +18139,9 @@ export class OrderListItem implements IOrderListItem {
     availableSpots!: number;
     assignedEmployeesCount!: number;
     hasAvailableSpots!: boolean;
+    estimatedCleanerPay!: number | undefined;
+    customerAddressLatitude!: number | undefined;
+    customerAddressLongitude!: number | undefined;
 
     constructor(data?: IOrderListItem) {
         if (data) {
@@ -17494,6 +18159,7 @@ export class OrderListItem implements IOrderListItem {
             this.customerEmail = Data["customerEmail"];
             this.customerPhone = Data["customerPhone"];
             this.customerAddress = Data["customerAddress"];
+            this.customerAddressApproximate = Data["customerAddressApproximate"];
             this.displayOrderNumber = Data["displayOrderNumber"];
             this.rooms = Data["rooms"];
             this.bathrooms = Data["bathrooms"];
@@ -17538,6 +18204,9 @@ export class OrderListItem implements IOrderListItem {
             this.availableSpots = Data["availableSpots"];
             this.assignedEmployeesCount = Data["assignedEmployeesCount"];
             this.hasAvailableSpots = Data["hasAvailableSpots"];
+            this.estimatedCleanerPay = Data["estimatedCleanerPay"];
+            this.customerAddressLatitude = Data["customerAddressLatitude"];
+            this.customerAddressLongitude = Data["customerAddressLongitude"];
         }
     }
 
@@ -17555,6 +18224,7 @@ export class OrderListItem implements IOrderListItem {
         data["customerEmail"] = this.customerEmail;
         data["customerPhone"] = this.customerPhone;
         data["customerAddress"] = this.customerAddress;
+        data["customerAddressApproximate"] = this.customerAddressApproximate;
         data["displayOrderNumber"] = this.displayOrderNumber;
         data["rooms"] = this.rooms;
         data["bathrooms"] = this.bathrooms;
@@ -17599,6 +18269,9 @@ export class OrderListItem implements IOrderListItem {
         data["availableSpots"] = this.availableSpots;
         data["assignedEmployeesCount"] = this.assignedEmployeesCount;
         data["hasAvailableSpots"] = this.hasAvailableSpots;
+        data["estimatedCleanerPay"] = this.estimatedCleanerPay;
+        data["customerAddressLatitude"] = this.customerAddressLatitude;
+        data["customerAddressLongitude"] = this.customerAddressLongitude;
         return data;
     }
 }
@@ -17609,6 +18282,7 @@ export interface IOrderListItem {
     customerEmail: string | undefined;
     customerPhone: string | undefined;
     customerAddress: string | undefined;
+    customerAddressApproximate: string | undefined;
     displayOrderNumber: string | undefined;
     rooms: number;
     bathrooms: number;
@@ -17635,6 +18309,9 @@ export interface IOrderListItem {
     availableSpots: number;
     assignedEmployeesCount: number;
     hasAvailableSpots: boolean;
+    estimatedCleanerPay: number | undefined;
+    customerAddressLatitude: number | undefined;
+    customerAddressLongitude: number | undefined;
 }
 
 export class OrderNoteDto implements IOrderNoteDto {
@@ -20258,6 +20935,78 @@ export interface IRevokePointsManuallyResponse {
     points: number;
 }
 
+export class SendSitewidePromoCommand implements ISendSitewidePromoCommand {
+    titleEn!: string | undefined;
+    titleCs!: string | undefined;
+    titleSk!: string | undefined;
+    titleUk!: string | undefined;
+    titleRu!: string | undefined;
+    bodyEn!: string | undefined;
+    bodyCs!: string | undefined;
+    bodySk!: string | undefined;
+    bodyUk!: string | undefined;
+    bodyRu!: string | undefined;
+
+    constructor(data?: ISendSitewidePromoCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.titleEn = Data["titleEn"];
+            this.titleCs = Data["titleCs"];
+            this.titleSk = Data["titleSk"];
+            this.titleUk = Data["titleUk"];
+            this.titleRu = Data["titleRu"];
+            this.bodyEn = Data["bodyEn"];
+            this.bodyCs = Data["bodyCs"];
+            this.bodySk = Data["bodySk"];
+            this.bodyUk = Data["bodyUk"];
+            this.bodyRu = Data["bodyRu"];
+        }
+    }
+
+    static fromJS(data: any): SendSitewidePromoCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new SendSitewidePromoCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["titleEn"] = this.titleEn;
+        data["titleCs"] = this.titleCs;
+        data["titleSk"] = this.titleSk;
+        data["titleUk"] = this.titleUk;
+        data["titleRu"] = this.titleRu;
+        data["bodyEn"] = this.bodyEn;
+        data["bodyCs"] = this.bodyCs;
+        data["bodySk"] = this.bodySk;
+        data["bodyUk"] = this.bodyUk;
+        data["bodyRu"] = this.bodyRu;
+        return data;
+    }
+}
+
+export interface ISendSitewidePromoCommand {
+    titleEn: string | undefined;
+    titleCs: string | undefined;
+    titleSk: string | undefined;
+    titleUk: string | undefined;
+    titleRu: string | undefined;
+    bodyEn: string | undefined;
+    bodyCs: string | undefined;
+    bodySk: string | undefined;
+    bodyUk: string | undefined;
+    bodyRu: string | undefined;
+}
+
 export class SendTestEmailByTypeCommand implements ISendTestEmailByTypeCommand {
     emailType!: EmailType;
     languageCode!: string | undefined;
@@ -20426,6 +21175,66 @@ export interface ISendTestEmailResponse {
     recipientEmail: string | undefined;
 }
 
+export class ServiceCityDto implements IServiceCityDto {
+    id!: string | undefined;
+    countryId!: string | undefined;
+    countryName!: string | undefined;
+    countryIsoCode!: string | undefined;
+    name!: string | undefined;
+    zipPrefix!: string | undefined;
+    isActive!: boolean;
+
+    constructor(data?: IServiceCityDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.countryId = Data["countryId"];
+            this.countryName = Data["countryName"];
+            this.countryIsoCode = Data["countryIsoCode"];
+            this.name = Data["name"];
+            this.zipPrefix = Data["zipPrefix"];
+            this.isActive = Data["isActive"];
+        }
+    }
+
+    static fromJS(data: any): ServiceCityDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new ServiceCityDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["countryId"] = this.countryId;
+        data["countryName"] = this.countryName;
+        data["countryIsoCode"] = this.countryIsoCode;
+        data["name"] = this.name;
+        data["zipPrefix"] = this.zipPrefix;
+        data["isActive"] = this.isActive;
+        return data;
+    }
+}
+
+export interface IServiceCityDto {
+    id: string | undefined;
+    countryId: string | undefined;
+    countryName: string | undefined;
+    countryIsoCode: string | undefined;
+    name: string | undefined;
+    zipPrefix: string | undefined;
+    isActive: boolean;
+}
+
 export class ServiceDetails implements IServiceDetails {
     id!: string | undefined;
     name!: string | undefined;
@@ -20548,6 +21357,46 @@ export interface IServiceListItem {
     basePrice: number;
     perRoomPrice: number;
     translations: { [key: string]: Translation; } | undefined;
+}
+
+export class SetCountryServicedResponse implements ISetCountryServicedResponse {
+    id!: string | undefined;
+    isServiced!: boolean;
+
+    constructor(data?: ISetCountryServicedResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.isServiced = Data["isServiced"];
+        }
+    }
+
+    static fromJS(data: any): SetCountryServicedResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new SetCountryServicedResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["isServiced"] = this.isServiced;
+        return data;
+    }
+}
+
+export interface ISetCountryServicedResponse {
+    id: string | undefined;
+    isServiced: boolean;
 }
 
 export class SortDefinition implements ISortDefinition {
@@ -21709,6 +22558,90 @@ export class UpdatePromoCodeResponse implements IUpdatePromoCodeResponse {
 
 export interface IUpdatePromoCodeResponse {
     promoCodeId: string | undefined;
+}
+
+export class UpdateServiceCityCommand implements IUpdateServiceCityCommand {
+    id!: string | undefined;
+    name!: string | undefined;
+    zipPrefix!: string | undefined;
+    isActive!: boolean;
+
+    constructor(data?: IUpdateServiceCityCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.name = Data["name"];
+            this.zipPrefix = Data["zipPrefix"];
+            this.isActive = Data["isActive"];
+        }
+    }
+
+    static fromJS(data: any): UpdateServiceCityCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateServiceCityCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["name"] = this.name;
+        data["zipPrefix"] = this.zipPrefix;
+        data["isActive"] = this.isActive;
+        return data;
+    }
+}
+
+export interface IUpdateServiceCityCommand {
+    id: string | undefined;
+    name: string | undefined;
+    zipPrefix: string | undefined;
+    isActive: boolean;
+}
+
+export class UpdateServiceCityResponse implements IUpdateServiceCityResponse {
+    id!: string | undefined;
+
+    constructor(data?: IUpdateServiceCityResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+        }
+    }
+
+    static fromJS(data: any): UpdateServiceCityResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateServiceCityResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        return data;
+    }
+}
+
+export interface IUpdateServiceCityResponse {
+    id: string | undefined;
 }
 
 export class UpdateServiceCommand implements IUpdateServiceCommand {

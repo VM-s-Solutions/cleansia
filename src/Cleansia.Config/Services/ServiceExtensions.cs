@@ -22,6 +22,7 @@ public static class ServiceExtensions
         services.AddScoped<IAppConfigurationProvider, AppConfigurationProvider>();
         services.AddScoped<ITaxIdValidator, TaxIdValidator>();
         services.AddScoped<IVatCalculator, VatCalculator>();
+        services.AddScoped<ICurrencyResolutionService, CurrencyResolutionService>();
         services.AddScoped<IOrderPricingCalculator, OrderPricingCalculator>();
         services.AddScoped<IOrderFactory, OrderFactory>();
         services.AddScoped<ILoyaltyService, LoyaltyService>();
@@ -30,6 +31,7 @@ public static class ServiceExtensions
         services.AddScoped<IStripeSubscriptionWebhookHandler, StripeSubscriptionWebhookHandler>();
         services.AddScoped<ICancellationPolicyResolver, CancellationPolicyResolver>();
         services.AddScoped<IOrderAccessService, OrderAccessService>();
+        services.AddScoped<IAddressGeocoder, AddressGeocoder>();
         services.AddScoped<IGdprDeletionService, GdprDeletionService>();
         services.AddScoped<IGdprExportService, GdprExportService>();
         services.AddInfrastructureServices();

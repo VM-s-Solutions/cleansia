@@ -102,8 +102,11 @@ export class ProfileFacade extends UnsubscribeControlDirective {
   }
 
   loadCountries(): void {
+    // Customer profile only ever uses this to render the address country
+    // picker, so use the serviced list — same reasoning as the order
+    // wizard. See planning/active/service-areas.md.
     this.customerClient.countryClient
-      .getOverview()
+      .getServiced()
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
         next: (countries) => {

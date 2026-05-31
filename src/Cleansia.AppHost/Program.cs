@@ -6,7 +6,24 @@ var postgres = builder.AddPostgres("postgres")
 
 var cleansiaDb = postgres.AddDatabase("ConnectionString", databaseName: "Cleansia");
 
-var storage = builder.AddAzureStorage("storage").RunAsEmulator();
+// Azurite emulator with PINNED standard ports (10000 blob, 10001 queue,
+// 10002 table). Pinning is load-bearing: appsettings.json /
+// local.settings.json fall back to `UseDevelopmentStorage=true` which is
+// hard-coded to those ports inside the Azure SDK. Without the pin, Aspire
+// picks random ports and the producer (web hosts) + consumer (Functions
+// queue triggers) end up on different Azurite instances — message goes in,
+// nothing comes out, queue function never fires. This was the recurring
+// "queue function not triggered" bug.
+//
+// Persistent + data volume so queue state survives Aspire restarts; the
+// same container is reused across runs.
+var storage = builder.AddAzureStorage("storage")
+    .RunAsEmulator(emulator => emulator
+        .WithLifetime(ContainerLifetime.Persistent)
+        .WithDataVolume("cleansia-azurite-data")
+        .WithBlobPort(10000)
+        .WithQueuePort(10001)
+        .WithTablePort(10002));
 var queues = storage.AddQueues("QueueStorageConnectionString");
 
 var partnerApi = builder.AddProject<Projects.Cleansia_Web_Partner>("partner-api")

@@ -280,6 +280,30 @@ export class WizardSummaryStepComponent implements OnInit {
     if (d.entryInstructions) rows.push({ label: d.entryInstructions });
     return rows;
   });
+
+  /**
+   * Unicode emoji glyph for a known extra slug — used as the medallion
+   * icon. We use emoji rather than PrimeIcons because PrimeIcons 7 lacks
+   * kitchen / cleaning glyphs (no oven, fridge, iron, etc.). Falls back to
+   * a generic ✨ so future-seeded extras still render without a code
+   * change. Map keys mirror `insert_seed_data.sql` (7b. EXTRAS).
+   */
+  protected iconForExtraSlug(slug: string | null | undefined): string {
+    switch (slug) {
+      case 'inside-oven':
+        return '🔥';
+      case 'inside-fridge':
+        return '❄️';
+      case 'interior-windows':
+        return '🪟';
+      case 'laundry-ironing':
+        return '🧺';
+      case 'pet-hair-supplement':
+        return '🐾';
+      default:
+        return '✨';
+    }
+  }
 }
 
 /** Format the localized discount string for the success message. */

@@ -26,6 +26,7 @@ public record OrderItem(
     decimal? PromoDiscountAmount,
     int EstimatedTime,
     int? ActualCompletionTime,
+    DateTime? CompletedAt,
     string? CompletionNotes,
     Code OrderStatus,
     string ConfirmationCode,
@@ -48,5 +49,30 @@ public record OrderItem(
     string? ReceiptNumber,
     IEnumerable<OrderNoteDto> OrderNotes,
     IEnumerable<OrderIssueDto> OrderIssues,
-    OrderReviewDto? Review
+    OrderReviewDto? Review,
+    /// <summary>
+    /// What the calling employee would earn for this order, in the
+    /// order's currency. Null for non-employee callers (admin /
+    /// customer) and for employees with no matching pay config. Mirrors
+    /// the same field on <c>OrderListItem</c>; the detail screen uses
+    /// it to anchor the hero card's earnings chip without a separate
+    /// network round-trip.
+    /// </summary>
+    decimal? EstimatedCleanerPay,
+    /// <summary>
+    /// True when the calling employee is one of the order's assigned
+    /// cleaners. Drives the partner-mobile detail screen's primary
+    /// action gating (Take button only renders when this is false on
+    /// an Available offer; Notify / Start / Complete only when true).
+    /// Always false for non-employee callers.
+    /// </summary>
+    bool IsAssignedToCurrentUser,
+    /// <summary>
+    /// True when the order has at least one uploaded "after" photo.
+    /// Partner-mobile uses this to gate the Slide-to-complete action
+    /// client-side so the cleaner sees an instant message instead of
+    /// round-tripping to the server's <c>AfterPhotosRequired</c>
+    /// validator. The validator stays on as a safety net.
+    /// </summary>
+    bool HasAfterPhotos
 );

@@ -1,476 +1,200 @@
 package cz.cleansia.partner.features.orders.viewmodels
 
-import android.content.Context
-import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cz.cleansia.partner.api.model.OrderItem
+import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.partner.R
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.core.network.ApiResult
-import cz.cleansia.partner.domain.models.orders.CodeValue
-import cz.cleansia.partner.domain.models.orders.OrderDetail
-import cz.cleansia.partner.domain.models.orders.OrderPhoto
-import cz.cleansia.partner.domain.models.orders.OrderStatus
-import cz.cleansia.partner.domain.models.orders.PhotoType
-import cz.cleansia.partner.core.storage.TokenManager
-import cz.cleansia.partner.domain.repositories.OrdersRepository
-import cz.cleansia.partner.domain.repositories.ProfileRepository
+import cz.cleansia.partner.data.orders.OrdersRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.Instant
 import javax.inject.Inject
 
+/** Per-action progress states so individual buttons can show their own spinners. */
+enum class OrderAction { Take, Start, NotifyOnTheWay, Complete }
+
+/**
+ * Three-way split of the legacy `isLoading` flag so the screen can tell the
+ * difference between the first-ever paint (full-page spinner OK), a
+ * user-initiated pull (chunky PTR indicator OK), and a silent background
+ * refresh after a mutation or ON_RESUME (no visible spinner — content
+ * updates in place once the network responds).
+ *
+ * OrderDetailsScreen has no PullToRefreshBox today, so `isUserRefreshing`
+ * is currently unused by the UI — but it's kept in the contract so a
+ * future pull-to-refresh wrap can drive PTR without further VM changes,
+ * matching the convention used by other Cleansia detail/list screens.
+ */
 data class OrderDetailsUiState(
-    val isLoading: Boolean = false,
-    val isActionLoading: Boolean = false,
-    val isUploadingPhoto: Boolean = false,
-    val isDeletingPhoto: Boolean = false,
+    val isInitialLoad: Boolean = true,
+    val isUserRefreshing: Boolean = false,
+    val isBackgroundRefreshing: Boolean = false,
+    val order: OrderItem? = null,
+    val inFlight: OrderAction? = null,
     val error: String? = null,
-    val actionError: String? = null,
-    val actionSuccess: String? = null,
-    val photoError: String? = null,
-    val photoSuccess: String? = null,
-    val order: OrderDetail? = null,
-    val photos: List<OrderPhoto> = emptyList(),
-    val navigateBack: Boolean = false,
-    // Timer state
-    val elapsedSeconds: Long = 0,
-    val isTimerRunning: Boolean = false,
-    val timerStartedAt: Instant? = null,
-    // Photo validation state
-    val showPhotoValidation: Boolean = false,
-    // Current employee assignment state
-    val isCurrentEmployeeAssigned: Boolean = false,
-    // Whether another order is already in progress (prevents starting this one)
-    val hasOtherOrderInProgress: Boolean = false,
-    // Optimistic UI syncing state
-    val isSyncing: Boolean = false
-) {
-    // Computed properties for before/after photos
-    val beforePhotos: List<OrderPhoto>
-        get() = photos.filter { it.photoType == PhotoType.BEFORE }
-
-    val afterPhotos: List<OrderPhoto>
-        get() = photos.filter { it.photoType == PhotoType.AFTER }
-
-    val hasRequiredPhotos: Boolean
-        get() = beforePhotos.isNotEmpty() && afterPhotos.isNotEmpty()
-}
+    val isCompletedJustNow: Boolean = false,
+)
 
 @HiltViewModel
 class OrderDetailsViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val ordersRepository: OrdersRepository,
-    private val profileRepository: ProfileRepository,
-    private val tokenManager: TokenManager,
-    @ApplicationContext private val appContext: Context,
-    private val errorTranslator: ApiErrorTranslator
+    private val errorTranslator: ApiErrorTranslator,
+    private val snackbar: SnackbarController,
 ) : ViewModel() {
 
-    private val orderId: String = savedStateHandle.get<String>("orderId") ?: ""
+    // Compose Nav 2.8 typed routes expose data-class property names as
+    // SavedStateHandle keys, so this keeps working without a toRoute<>() call.
+    private val orderId: String = savedStateHandle.get<String>("orderId")
+        ?: error("orderId required for OrderDetails route")
 
     private val _uiState = MutableStateFlow(OrderDetailsUiState())
     val uiState: StateFlow<OrderDetailsUiState> = _uiState.asStateFlow()
 
-    private val timerManager = OrderTimerManager(
-        appContext = appContext,
-        scope = viewModelScope,
-        onElapsedUpdate = { elapsed ->
-            _uiState.update { it.copy(elapsedSeconds = elapsed) }
-        },
-        onTimerStateChange = { running, startedAt ->
-            _uiState.update { it.copy(isTimerRunning = running, timerStartedAt = startedAt) }
-        }
-    )
-
-    private val photoManager = OrderPhotoManager(
-        ordersRepository = ordersRepository,
-        errorTranslator = errorTranslator,
-        scope = viewModelScope,
-        stateUpdater = { update -> _uiState.update(update) }
-    )
-
     init {
-        loadOrderDetails()
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        Log.d("OrderDetailsVM", "onCleared() called - NOT stopping service")
-        // Only cancel the local coroutine — do NOT stop the foreground service.
-        // Navigation Compose can clear ViewModels during transition animations,
-        // and stopping the service here would kill the notification prematurely.
-        timerManager.cancel()
-    }
-
-    /**
-     * Check if the current employee is assigned to the order.
-     * Uses tokenManager.getUserId() as primary source (always available after login),
-     * falls back to cached profile ID.
-     */
-    private suspend fun checkEmployeeAssignment(order: OrderDetail): Boolean {
-        val employeeId = tokenManager.getUserId()
-            ?: profileRepository.getCachedProfileSync()?.id
-        if (employeeId.isNullOrBlank()) {
-            Log.w("OrderDetailsVM", "checkAssignment: no employeeId available")
-            return false
-        }
-        val assignedIds = order.assignedEmployees?.map { it.employeeId } ?: emptyList()
-        val isAssigned = assignedIds.contains(employeeId)
-        Log.d("OrderDetailsVM", "checkAssignment: myId=$employeeId assignedIds=$assignedIds isAssigned=$isAssigned")
-        return isAssigned
+        // First paint uses the stale-checked path. The cache is empty on
+        // a cold ViewModel so isStale() returns true and a fetch fires
+        // anyway, but isInitialLoad stays true through that first fetch
+        // so the full-page spinner shows. Warm caches (process kept
+        // alive, repository singleton) will short-circuit to in-place
+        // render instead of flashing the spinner — matches what the
+        // user already saw.
+        ensureFreshOrCachedAsync()
     }
 
     /**
-     * Check if the employee has another order already in progress.
-     * Only relevant when viewing a CONFIRMED order (which could be started).
+     * Background-freshness gate used by init, ON_RESUME, and post-mutation
+     * callbacks (photo upload, note add, etc.). Skips the network entirely
+     * when the per-order cache is still warm (<30s by default) — keeps
+     * sheet state stable and avoids a needless round-trip every time the
+     * cleaner pops back from a sub-screen.
+     *
+     * Loading flag policy:
+     *  - If we've never rendered the order (initial paint), keep
+     *    `isInitialLoad = true` until the fetch returns so the full-page
+     *    spinner stays visible.
+     *  - If we already have an order shown, flip only
+     *    `isBackgroundRefreshing = true` — no PTR indicator, no full-page
+     *    spinner. The detail content stays mounted and the new payload
+     *    swaps in once it arrives.
      */
-    private suspend fun checkHasOtherOrderInProgress(currentOrder: OrderDetail): Boolean {
-        if (currentOrder.status != OrderStatus.CONFIRMED) return false
+    fun ensureFreshOrCachedAsync() {
+        if (!ordersRepository.isOrderStale(orderId)) return
+        viewModelScope.launch { fetch(isUser = false) }
+    }
 
-        return when (val result = ordersRepository.getMyOrders(
-            statuses = listOf(OrderStatus.IN_PROGRESS)
-        )) {
-            is ApiResult.Success -> result.data.orders.any { it.id != orderId }
-            is ApiResult.Error -> false
+    /**
+     * User-initiated refresh. Always fetches regardless of cache age and
+     * drives `isUserRefreshing` so a hypothetical PullToRefreshBox would
+     * show its indicator. The detail screen doesn't currently expose a
+     * pull gesture (BottomSheetScaffold), but keeping the public refresh()
+     * symmetrical with list screens means future UI work doesn't have to
+     * touch the VM.
+     */
+    fun refresh() {
+        viewModelScope.launch { fetch(isUser = true) }
+    }
+
+    /** Lifecycle hook from the screen's ON_RESUME effect. */
+    fun onResume() = ensureFreshOrCachedAsync()
+
+    private suspend fun fetch(isUser: Boolean) {
+        _uiState.update {
+            if (it.order == null) {
+                // No data on screen yet — keep the full-page spinner up.
+                // isUserRefreshing stays false so we don't double-render
+                // PTR over the spinner on a hypothetical pull during cold
+                // load.
+                it.copy(isInitialLoad = true, error = null)
+            } else {
+                it.copy(
+                    isUserRefreshing = isUser,
+                    isBackgroundRefreshing = !isUser,
+                    error = null,
+                )
+            }
+        }
+        when (val result = ordersRepository.getById(orderId)) {
+            is ApiResult.Success -> _uiState.update {
+                it.copy(
+                    isInitialLoad = false,
+                    isUserRefreshing = false,
+                    isBackgroundRefreshing = false,
+                    order = result.data,
+                )
+            }
+            is ApiResult.Error -> {
+                snackbar.showError(errorTranslator.translate(result.error))
+                _uiState.update {
+                    it.copy(
+                        isInitialLoad = false,
+                        isUserRefreshing = false,
+                        isBackgroundRefreshing = false,
+                    )
+                }
+            }
         }
     }
 
-    fun loadOrderDetails() {
-        if (orderId.isBlank()) {
-            _uiState.update { it.copy(error = "Invalid order ID") }
-            return
-        }
+    fun take() = runAction(OrderAction.Take) { ordersRepository.takeOrder(orderId) }
+    fun start() = runAction(OrderAction.Start) { ordersRepository.startOrder(orderId) }
+    fun notifyOnTheWay() = runAction(OrderAction.NotifyOnTheWay) { ordersRepository.notifyOnTheWay(orderId) }
 
+    fun complete(actualMinutes: Int?, notes: String?) = runAction(OrderAction.Complete) {
+        ordersRepository.completeOrder(orderId, actualMinutes, notes)
+    }
+
+    /**
+     * Called by PhotosSection / NotesAndIssuesSection after a successful
+     * mutation. The repository has already invalidated the per-order
+     * staleness watermark for us (on the mutation's success path), so
+     * `ensureFreshOrCachedAsync()` falls through to a silent background
+     * fetch that updates the sheet content without flashing a spinner —
+     * the cleaner just sees the new photo / note appear.
+     */
+    fun onContentMutated() = ensureFreshOrCachedAsync()
+
+    private fun runAction(action: OrderAction, block: suspend () -> ApiResult<Unit>) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-
-            when (val result = ordersRepository.getOrderById(orderId)) {
+            _uiState.update { it.copy(inFlight = action, error = null) }
+            when (val result = block()) {
                 is ApiResult.Success -> {
-                    val order = result.data
-                    val startedAt = timerManager.parseStartedAt(order.startedAt)
-
-                    // Check if current employee is assigned
-                    val isAssigned = checkEmployeeAssignment(order)
-
-                    // Check if another order is already in progress
-                    val hasOtherInProgress = checkHasOtherOrderInProgress(order)
-
+                    // Push the success toast straight onto the global
+                    // snackbar bus — the screen no longer threads
+                    // SnackbarHostState through composables.
+                    if (action == OrderAction.Complete) {
+                        snackbar.showSuccessKey(R.string.order_completed_toast)
+                    }
                     _uiState.update {
                         it.copy(
-                            isLoading = false,
-                            order = order,
-                            timerStartedAt = startedAt,
-                            isCurrentEmployeeAssigned = isAssigned,
-                            hasOtherOrderInProgress = hasOtherInProgress
+                            inFlight = null,
+                            isCompletedJustNow = action == OrderAction.Complete,
                         )
                     }
-
-                    // Start timer if order is in progress
-                    if (order.status == OrderStatus.IN_PROGRESS && startedAt != null) {
-                        timerManager.startTimer(startedAt, order)
-                    }
+                    // Silent refetch: the repository already invalidated
+                    // its staleness watermark on the mutation success
+                    // path, so this falls through to a background fetch
+                    // that swaps the new server state in without flashing
+                    // the full-page spinner. The button's own per-action
+                    // inFlight spinner gave the user feedback already.
+                    fetch(isUser = false)
                 }
                 is ApiResult.Error -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            error = errorTranslator.translateError(result.error)
-                        )
-                    }
+                    snackbar.showError(errorTranslator.translate(result.error))
+                    _uiState.update { it.copy(inFlight = null) }
                 }
             }
         }
     }
 
-    fun startTimerManually() {
-        timerManager.startTimerManually(_uiState.value.order)
-    }
-
-    suspend fun takeOrder(): Boolean {
-        val previousState = _uiState.value
-        val previousOrder = previousState.order ?: run {
-            _uiState.update { it.copy(actionError = "No order loaded") }
-            return false
-        }
-
-        // Optimistic update: set status to CONFIRMED and mark as assigned
-        val newOrderStatus = CodeValue(
-            type = "OrderStatus",
-            name = OrderStatus.CONFIRMED.apiName,
-            value = OrderStatus.CONFIRMED.apiValue,
-        )
-        val updatedOrder = previousOrder.copy(orderStatus = newOrderStatus)
-        _uiState.update {
-            it.copy(
-                order = updatedOrder,
-                isCurrentEmployeeAssigned = true,
-                isSyncing = true,
-                actionError = null
-            )
-        }
-
-        return when (val result = ordersRepository.takeOrder(orderId)) {
-            is ApiResult.Success -> {
-                _uiState.update { it.copy(isSyncing = false) }
-                // Re-fetch order details to get updated state from server
-                loadOrderDetailsAfterAction("Order taken successfully")
-                true
-            }
-            is ApiResult.Error -> {
-                // Rollback to previous state
-                _uiState.update {
-                    it.copy(
-                        order = previousOrder,
-                        isCurrentEmployeeAssigned = previousState.isCurrentEmployeeAssigned,
-                        isSyncing = false,
-                        actionError = errorTranslator.translateError(result.error)
-                    )
-                }
-                false
-            }
-        }
-    }
-
-    /** Optional heads-up between Take and Start; flips status to OnTheWay. */
-    suspend fun notifyOnTheWay(): Boolean {
-        val previousState = _uiState.value
-        val previousOrder = previousState.order ?: run {
-            _uiState.update { it.copy(actionError = "No order loaded") }
-            return false
-        }
-
-        // Optimistic update: status flips to OnTheWay.
-        val newOrderStatus = CodeValue(
-            type = "OrderStatus",
-            name = OrderStatus.ON_THE_WAY.apiName,
-            value = OrderStatus.ON_THE_WAY.apiValue,
-        )
-        val updatedOrder = previousOrder.copy(orderStatus = newOrderStatus)
-        _uiState.update {
-            it.copy(
-                order = updatedOrder,
-                isSyncing = true,
-                actionError = null,
-            )
-        }
-
-        return when (val result = ordersRepository.notifyOnTheWay(orderId)) {
-            is ApiResult.Success -> {
-                _uiState.update { it.copy(isSyncing = false) }
-                // Re-fetch so the OrderStatusHistory timeline includes the new track.
-                loadOrderDetailsAfterAction("Customer notified")
-                true
-            }
-            is ApiResult.Error -> {
-                _uiState.update {
-                    it.copy(
-                        order = previousOrder,
-                        isSyncing = false,
-                        actionError = errorTranslator.translateError(result.error),
-                    )
-                }
-                false
-            }
-        }
-    }
-
-    suspend fun startOrder(): Boolean {
-        val previousState = _uiState.value
-        val previousOrder = previousState.order ?: run {
-            _uiState.update { it.copy(actionError = "No order loaded") }
-            return false
-        }
-
-        // Optimistic update: set status to IN_PROGRESS
-        val newOrderStatus = CodeValue(
-            type = "OrderStatus",
-            name = OrderStatus.IN_PROGRESS.apiName,
-            value = OrderStatus.IN_PROGRESS.apiValue,
-        )
-        val updatedOrder = previousOrder.copy(orderStatus = newOrderStatus)
-        _uiState.update {
-            it.copy(
-                order = updatedOrder,
-                isSyncing = true,
-                actionError = null
-            )
-        }
-
-        return when (val result = ordersRepository.startOrder(orderId)) {
-            is ApiResult.Success -> {
-                _uiState.update { it.copy(isSyncing = false) }
-                // Re-fetch order details to get updated state with startedAt
-                loadOrderDetailsAfterAction("Order started successfully")
-                true
-            }
-            is ApiResult.Error -> {
-                // Rollback to previous state
-                _uiState.update {
-                    it.copy(
-                        order = previousOrder,
-                        isSyncing = false,
-                        actionError = errorTranslator.translateError(result.error)
-                    )
-                }
-                false
-            }
-        }
-    }
-
-    fun showPhotoValidation() {
-        _uiState.update { it.copy(showPhotoValidation = true) }
-    }
-
-    fun clearPhotoValidation() {
-        _uiState.update { it.copy(showPhotoValidation = false) }
-    }
-
-    suspend fun completeOrder(): Boolean {
-        val previousState = _uiState.value
-        val previousOrder = previousState.order ?: run {
-            _uiState.update { it.copy(actionError = "No order loaded") }
-            return false
-        }
-
-        // Auto-calculate actual completion time from the timer
-        val elapsedSeconds = previousState.elapsedSeconds
-        val actualMinutes = ((elapsedSeconds + 59) / 60).toInt().coerceAtLeast(1) // Round up, minimum 1 minute
-
-        // Optimistic update: set status to COMPLETED
-        val newOrderStatus = CodeValue(
-            type = "OrderStatus",
-            name = OrderStatus.COMPLETED.apiName,
-            value = OrderStatus.COMPLETED.apiValue,
-        )
-        val updatedOrder = previousOrder.copy(orderStatus = newOrderStatus)
-        _uiState.update {
-            it.copy(
-                order = updatedOrder,
-                isSyncing = true,
-                actionError = null
-            )
-        }
-
-        return when (val result = ordersRepository.completeOrder(orderId, actualMinutes, null)) {
-            is ApiResult.Success -> {
-                // Stop timer when order is completed
-                timerManager.stopTimer()
-
-                _uiState.update { it.copy(isSyncing = false) }
-                // Re-fetch order details to get updated state
-                loadOrderDetailsAfterAction("Order completed successfully")
-                true
-            }
-            is ApiResult.Error -> {
-                // Rollback to previous state
-                _uiState.update {
-                    it.copy(
-                        order = previousOrder,
-                        isSyncing = false,
-                        actionError = errorTranslator.translateError(result.error)
-                    )
-                }
-                false
-            }
-        }
-    }
-
-    /**
-     * Re-fetch order details after a successful action (take/start/complete).
-     * The action endpoints return simple responses, so we need to fetch the full detail again.
-     */
-    private suspend fun loadOrderDetailsAfterAction(successMessage: String) {
-        when (val result = ordersRepository.getOrderById(orderId)) {
-            is ApiResult.Success -> {
-                val order = result.data
-                val startedAt = timerManager.parseStartedAt(order.startedAt)
-                val isAssigned = checkEmployeeAssignment(order)
-
-                _uiState.update {
-                    it.copy(
-                        isActionLoading = false,
-                        order = order,
-                        actionSuccess = successMessage,
-                        timerStartedAt = startedAt,
-                        isCurrentEmployeeAssigned = isAssigned
-                    )
-                }
-
-                // Start timer if order transitioned to IN_PROGRESS
-                if (order.status == OrderStatus.IN_PROGRESS && startedAt != null) {
-                    timerManager.startTimer(startedAt, order)
-                }
-            }
-            is ApiResult.Error -> {
-                // Action succeeded but re-fetch failed - show success anyway
-                _uiState.update {
-                    it.copy(
-                        isActionLoading = false,
-                        actionSuccess = successMessage
-                    )
-                }
-            }
-        }
-    }
-
-    fun clearError() {
-        _uiState.update { it.copy(error = null, actionError = null) }
-    }
-
-    fun clearActionSuccess() {
-        _uiState.update { it.copy(actionSuccess = null) }
-    }
-
-    fun uploadPhoto(photoData: ByteArray, fileName: String, photoType: PhotoType = PhotoType.BEFORE) {
-        photoManager.uploadPhoto(orderId, photoData, fileName, photoType)
-    }
-
-    fun uploadMultiplePhotos(photosData: List<Pair<ByteArray, String>>, photoType: PhotoType = PhotoType.BEFORE) {
-        photoManager.uploadMultiplePhotos(orderId, photosData, photoType)
-    }
-
-    fun deletePhoto(photoId: String) {
-        photoManager.deletePhoto(orderId, photoId)
-    }
-
-    fun clearPhotoSuccess() {
-        _uiState.update { it.copy(photoSuccess = null) }
-    }
-    fun clearPhotoError() {
-        _uiState.update { it.copy(photoError = null) }
-    }
-
-    fun addNote(content: String) {
-        viewModelScope.launch {
-            when (val result = ordersRepository.addNote(orderId, content)) {
-                is ApiResult.Success -> {
-                    // Re-fetch to get the note with proper ID from backend
-                    loadOrderDetailsAfterAction("Note added successfully")
-                }
-                is ApiResult.Error -> {
-                    _uiState.update { it.copy(actionError = errorTranslator.translateError(result.error)) }
-                }
-            }
-        }
-    }
-
-    fun reportIssue(description: String) {
-        viewModelScope.launch {
-            when (val result = ordersRepository.reportIssue(orderId, description)) {
-                is ApiResult.Success -> {
-                    // Re-fetch to get the issue with proper ID from backend
-                    loadOrderDetailsAfterAction("Issue reported successfully")
-                }
-                is ApiResult.Error -> {
-                    _uiState.update { it.copy(actionError = errorTranslator.translateError(result.error)) }
-                }
-            }
-        }
-    }
+    fun clearError() = _uiState.update { it.copy(error = null) }
+    fun clearCompletedJustNow() = _uiState.update { it.copy(isCompletedJustNow = false) }
 }
+

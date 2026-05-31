@@ -177,18 +177,10 @@ class AuthRepository(
 
         tokenStore.save(tokens)
 
-        // Register the device's current FCM token now that we have an
-        // access token to authenticate the call. Failure is silent
-        // (logged inside PushTokenRepository) — push isn't critical to
-        // an otherwise-successful sign-in, and onNewToken will retry the
-        // next time FCM rotates the token.
-        try {
-            pushTokenRepository.registerCurrentToken()
-        } catch (ce: CancellationException) {
-            throw ce
-        } catch (t: Throwable) {
-            Log.w(TAG, "Push token register failed after login: ${t.message}")
-        }
+        // Device registration is driven by PushTokenSessionObserver,
+        // which reacts to the auth-token flow flipping null→non-null
+        // (which the tokenStore.save above just triggered). No explicit
+        // hook needed here — see PushTokenSessionObserver for rationale.
 
         return AuthResult.Success(tokens)
     }

@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Extensions;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.Files;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Documents;
@@ -75,7 +76,12 @@ public class UpdateEmployee
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
                 .MustAsync(countryRepository.ExistsAsync)
-                .WithMessage(BusinessErrorMessage.NotExistingCountryWithId);
+                .WithMessage(BusinessErrorMessage.NotExistingCountryWithId)
+                // Employees can live anywhere within a serviced country —
+                // commuters from a non-serviced city are allowed, but the
+                // country itself must be one we operate in.
+                .MustAsync(countryRepository.IsServicedAsync)
+                .WithMessage(BusinessErrorMessage.CountryNotServiced);
 
             RuleFor(c => c.Phone)
                 .ValidatePhoneNumber();
@@ -216,12 +222,14 @@ public class UpdateEmployee
         IEmployeeRepository employeeRepository,
         IEmployeeDocumentRepository employeeDocumentRepository,
         IUserSessionProvider userSessionProvider,
-        IBlobContainerClientFactory clientFactory) : ICommandHandler<Command, Response>
+        IBlobContainerClientFactory clientFactory,
+        IAddressGeocoder addressGeocoder) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var employee = await employeeRepository.GetByIdAsync(command.EmployeeId, cancellationToken);
             var address = CreateOrUpdateAddress(employee!, command);
+            await addressGeocoder.PopulateCoordinatesAsync(address, cancellationToken);
 
             await UploadDocuments(employee!, command, cancellationToken);
             var availability = ConvertAvailability(command.Availability);

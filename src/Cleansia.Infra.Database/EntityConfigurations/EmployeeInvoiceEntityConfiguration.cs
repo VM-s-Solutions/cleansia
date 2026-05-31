@@ -86,7 +86,7 @@ public class EmployeeInvoiceEntityConfiguration : AuditableEntityConfiguration<E
         // Relationships - PayPeriod relationship is configured in PayPeriodEntityConfiguration
         builder
             .HasOne(e => e.Employee)
-            .WithMany()
+            .WithMany(emp => emp.Invoices)
             .HasForeignKey(e => e.EmployeeId)
             .OnDelete(DeleteBehavior.Restrict);
 

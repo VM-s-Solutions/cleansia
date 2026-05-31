@@ -67,6 +67,17 @@ public class Order : Auditable, ITenantEntity
 
     public int? ActualCompletionTime { get; private set; }
 
+    /// <summary>
+    /// When the order was actually marked Completed (UTC). Null while
+    /// the order is still open. This is the authoritative completion
+    /// timestamp for dashboards / reports / analytics — previously the
+    /// system inferred it from `OrderStatusHistory` rows or from
+    /// `OrderEmployeePay.CreatedOn`, both of which produced wrong-day
+    /// boundaries and disagreed with each other. Mirrors the existing
+    /// `CancelledAt` pattern.
+    /// </summary>
+    public DateTime? CompletedAt { get; private set; }
+
     [MaxLength(1000)]
     public string? CompletionNotes { get; private set; }
 
@@ -448,9 +459,21 @@ public class Order : Auditable, ITenantEntity
         return this;
     }
 
+    public Order RemoveNote(OrderNote note)
+    {
+        _notes.Remove(note);
+        return this;
+    }
+
     public Order AddIssue(OrderIssue issue)
     {
         _issues.Add(issue);
+        return this;
+    }
+
+    public Order RemoveIssue(OrderIssue issue)
+    {
+        _issues.Remove(issue);
         return this;
     }
 
@@ -474,6 +497,12 @@ public class Order : Auditable, ITenantEntity
 
         ActualCompletionTime = actualCompletionTime;
         CompletionNotes = completionNotes;
+        // Authoritative completion timestamp. Set inside the domain
+        // so it can't drift away from the status mutation that
+        // actually marks the order Completed. Dashboards / reports /
+        // analytics all read this column directly instead of trying
+        // to derive it from OrderStatusHistory / OrderEmployeePay.
+        CompletedAt = DateTime.UtcNow;
         return this;
     }
 

@@ -10,14 +10,16 @@
         (change)="onFilesSelected($event, 1)"
         style="display: none"
       />
+      @if (canUploadBefore()) {
       <cleansia-button
         [buttonType]="'button'"
         [style]="'raised-button'"
         [title]="'pages.order_details.add_before_photos' | translate"
         [icon]="'pi pi-camera'"
-        [disabled]="saving() || !canUpload()"
+        [disabled]="saving() || !canUploadBefore()"
         (clickFn)="beforeFileInput.click()"
       />
+      }
 
       <input
         #afterFileInput
@@ -27,14 +29,16 @@
         (change)="onFilesSelected($event, 2)"
         style="display: none"
       />
+      @if (canUploadAfter()) {
       <cleansia-button
         [buttonType]="'button'"
         [style]="'raised-button'"
         [title]="'pages.order_details.add_after_photos' | translate"
         [icon]="'pi pi-camera'"
-        [disabled]="saving() || !canUpload()"
+        [disabled]="saving() || !canUploadAfter()"
         (clickFn)="afterFileInput.click()"
       />
+      }
     </div>
 
     @if (hasStagedPhotos()) {

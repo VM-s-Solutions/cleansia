@@ -408,7 +408,11 @@
       "employee_notes": "Poznámky zaměstnance",
       "reported_issues": "Nahlášené problémy",
       "resolved": "Vyřešeno",
-      "open_issue": "Otevřený"
+      "open_issue": "Otevřený",
+      "before_photos_gating_error": "Fotografie před úklidem lze nahrát pouze ve stavu Potvrzeno nebo Na cestě",
+      "after_photos_gating_error": "Fotografie po úklidu lze nahrát pouze ve stavu Probíhá",
+      "note_issue_gating_error": "Poznámky a hlášení problémů lze přidávat pouze u aktivních objednávek",
+      "complete_missing_after_photos": "Objednávku nelze dokončit bez fotografií po úklidu"
     },
     "invoices": {
       "title": "Moje mzdové faktury",
@@ -1170,6 +1174,11 @@
         "key_exists": "Překlad s tímto klíčem již existuje",
         "invalid_type": "Neplatný typ e-mailové šablony"
       }
+    },
+    "service_area": {
+      "country_not_serviced": "V této zemi zatím nepůsobíme.",
+      "country_required": "Vyberte zemi.",
+      "city_not_serviced": "V tomto městě zatím nepůsobíme."
     }
   },
   "enums": {

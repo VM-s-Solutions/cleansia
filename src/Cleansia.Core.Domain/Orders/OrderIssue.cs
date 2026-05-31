@@ -37,6 +37,12 @@ public class OrderIssue : Auditable, ITenantEntity
         return this;
     }
 
+    public OrderIssue UpdateDescription(string description)
+    {
+        Description = description;
+        return this;
+    }
+
     public OrderIssue Anonymize()
     {
         Description = AnonymizationMarker.Value;

@@ -91,4 +91,20 @@ dependencies {
     // when the SDK isn't initialized).
     implementation(libs.sentry.android)
     implementation(libs.sentry.okhttp)
+
+    // Location + Mapbox stack — :core hosts LocationService (FusedLocation
+    // wrapper), ReverseGeocodingService (Mapbox Geocoding v5 forward +
+    // reverse), MapStyles. Mapbox deps are `api` because the picker
+    // composables that consumer apps build invoke MapboxMap directly;
+    // making them `api` lets each app import the symbols without
+    // re-declaring the dep. FusedLocation is `api` for the same reason —
+    // consumers (e.g. partner Orders) directly reference UserLocation.
+    api(libs.play.services.location)
+    api(libs.mapbox.maps)
+    api(libs.mapbox.compose)
+
+    // libphonenumber — used by CleansiaPhoneInput for region-aware
+    // format-as-you-type + validation. ~700kB APK cost, replaces any
+    // hand-rolled phone mask.
+    implementation(libs.libphonenumber)
 }

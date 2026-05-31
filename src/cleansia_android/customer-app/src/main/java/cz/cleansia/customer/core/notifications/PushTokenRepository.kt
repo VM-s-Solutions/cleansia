@@ -6,6 +6,7 @@ import android.os.Build
 import android.provider.Settings
 import android.util.Log
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.firebase.messaging.FirebaseMessaging
@@ -13,6 +14,9 @@ import cz.cleansia.core.network.networkCall
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -41,6 +45,18 @@ class PushTokenRepository @Inject constructor(
 ) : cz.cleansia.core.auth.SessionScopedCache {
 
     /**
+     * Latest FCM token observed via either the initial fetch
+     * ([fetchAndCacheCurrentToken]) or the messaging service's onNewToken
+     * callback ([reportRotatedToken]). Null until the first emission.
+     *
+     * Exposed as a hot flow so [PushTokenSessionObserver] can react both
+     * to the initial fetch and to mid-session rotations without juggling
+     * Firebase callbacks itself.
+     */
+    val fcmToken: StateFlow<String?> get() = _fcmToken.asStateFlow()
+    private val _fcmToken = MutableStateFlow<String?>(null)
+
+    /**
      * SessionScopedCache contract — clears the locally-cached "last
      * registered token" so the next user on this handset re-registers
      * fresh on their first login. Does NOT call the network unregister
@@ -56,20 +72,68 @@ class PushTokenRepository @Inject constructor(
     private val deviceId: String by lazy { resolveDeviceId(context) }
 
     /**
-     * Fetch the current FCM token (auto-creating one on first call), then
-     * POST it to the backend. Idempotent — backend upserts on
-     * (UserId, DeviceId). Skips the network round-trip when the token
-     * hasn't changed since the last successful registration.
+     * Asks FCM for the current token and pushes it into [fcmToken]. Called
+     * once by the session observer on cold start — without this the
+     * [fcmToken] flow would stay null until FCM happened to rotate (which
+     * may never happen for the lifetime of an install).
      *
-     * Caller is the auth flow (sign-in success). Safe to call on every
-     * sign-in: if the token hasn't rotated and we already POSTed it,
-     * we no-op locally.
+     * Runs the one-shot Firebase-project migration first so installs that
+     * have a cached token from the previous Firebase project get a fresh
+     * token on this launch instead of waiting weeks for spontaneous FCM
+     * rotation.
      */
-    suspend fun registerCurrentToken() {
-        val token = fetchTokenOrNull() ?: return
-        val lastRegistered = readLastRegisteredToken()
-        if (token == lastRegistered) return
+    suspend fun fetchAndCacheCurrentToken() {
+        runFirebaseProjectMigrationOnce()
+        fetchTokenOrNull()?.let { _fcmToken.value = it }
+    }
 
+    /**
+     * One-shot reset of the FCM token + the local "last registered"
+     * cache. Necessary after a backend FCM-service-account swap that
+     * changes the Firebase project the backend dispatches against:
+     * existing installs cache the token from the OLD project forever
+     * until either an explicit `deleteToken()` or spontaneous rotation,
+     * and our DataStore cache also short-circuits the backend
+     * re-register if the token string hasn't changed.
+     *
+     * Gated by a DataStore key so it runs exactly once per install.
+     * Bumping [MIGRATION_VERSION] forces it to run again on next launch
+     * if we ever do another project swap.
+     */
+    private suspend fun runFirebaseProjectMigrationOnce() {
+        val prefs = context.pushTokenDataStore.data.first()
+        if (prefs[KEY_MIGRATION_VERSION] == MIGRATION_VERSION) return
+        runCatching {
+            suspendCancellableCoroutine { cont ->
+                FirebaseMessaging.getInstance().deleteToken()
+                    .addOnSuccessListener { cont.resume(Unit) }
+                    .addOnFailureListener { cont.resumeWithException(it) }
+            }
+        }.onFailure { Log.w(TAG, "FCM deleteToken during migration failed: ${it.message}") }
+        clearLastRegisteredToken()
+        context.pushTokenDataStore.edit { it[KEY_MIGRATION_VERSION] = MIGRATION_VERSION }
+        Log.i(TAG, "Ran FCM token reset migration v$MIGRATION_VERSION")
+    }
+
+    /**
+     * Called by the messaging service when FCM rotates the token. Updates
+     * the in-memory flow; the session observer notices the change and
+     * re-registers if a session is active. Replaces the previous direct
+     * network call which 401'd when the user wasn't signed in.
+     */
+    fun reportRotatedToken(token: String) {
+        _fcmToken.value = token
+    }
+
+    /**
+     * Register [token] with the backend if it differs from the last
+     * successfully-registered one. Backend upserts on (UserId, DeviceId)
+     * so re-registering the same token is a no-op server-side; the local
+     * cache just saves the round-trip. Driven by [PushTokenSessionObserver]
+     * whenever an auth session is active and a token is available.
+     */
+    suspend fun ensureRegistered(token: String) {
+        if (token == readLastRegisteredToken()) return
         val response = networkCall(TAG) {
             deviceApi.register(
                 RegisterDeviceRequest(
@@ -81,27 +145,6 @@ class PushTokenRepository @Inject constructor(
         }
         if (response?.isSuccessful == true) {
             writeLastRegisteredToken(token)
-        }
-    }
-
-    /**
-     * Forced overwrite of the last-registered token + immediate POST.
-     * Used by the FirebaseMessagingService.onNewToken hook when FCM
-     * rotates the token while the app is running. Bypasses the
-     * "unchanged" short-circuit because the input is the new value.
-     */
-    suspend fun onTokenRotated(newToken: String) {
-        val response = networkCall(TAG) {
-            deviceApi.register(
-                RegisterDeviceRequest(
-                    deviceId = deviceId,
-                    deviceToken = newToken,
-                    platform = "android",
-                ),
-            )
-        }
-        if (response?.isSuccessful == true) {
-            writeLastRegisteredToken(newToken)
         }
     }
 
@@ -165,5 +208,18 @@ class PushTokenRepository @Inject constructor(
     private companion object {
         const val TAG = "PushTokenRepository"
         val KEY_LAST_TOKEN = stringPreferencesKey("last_registered_token")
+
+        // One-shot migrations applied lazily on first call to
+        // fetchAndCacheCurrentToken. Bump MIGRATION_VERSION whenever a
+        // future change requires every install to throw away its cached
+        // FCM token + re-register (e.g. a backend Firebase service-
+        // account / project swap).
+        //  v1 (2026-05-30): backend FCM service account rotated to the
+        //  `cleansia-28fbc` project (was previously a stale `cleansia`
+        //  project that no longer exists). Existing customer-app installs
+        //  had tokens minted by the old project; left alone they would
+        //  keep failing dispatch with SenderIdMismatch indefinitely.
+        const val MIGRATION_VERSION = 1
+        val KEY_MIGRATION_VERSION = intPreferencesKey("fcm_token_migration_version")
     }
 }

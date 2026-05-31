@@ -116,31 +116,65 @@ public class FcmPushDispatcher(
         {
             if (_messaging is not null) return _messaging;
             if (_initAttempted) return null;
-            _initAttempted = true;
-
-            if (string.IsNullOrWhiteSpace(config.ServiceAccountJson))
-            {
-                return null;
-            }
 
             try
             {
-                // Accept base64-encoded JSON (preferred) or raw JSON (legacy).
-                var raw = config.ServiceAccountJson.TrimStart();
-                var json = raw.StartsWith('{')
-                    ? raw
-                    : Encoding.UTF8.GetString(Convert.FromBase64String(config.ServiceAccountJson));
-
-                var app = FirebaseApp.DefaultInstance ?? FirebaseApp.Create(new AppOptions
+                // Two credential sources, in priority order:
+                //  1. FCM:ServiceAccountJson — explicit base64-or-raw JSON of a
+                //     downloaded service-account key. Required for any
+                //     environment where the SDK can't reach user creds (CI,
+                //     prod containers without Workload Identity).
+                //  2. Application Default Credentials — picks up
+                //     %APPDATA%\gcloud\application_default_credentials.json
+                //     (set by `gcloud auth application-default login`) or the
+                //     GOOGLE_APPLICATION_CREDENTIALS env var. Used locally
+                //     because the GCP org policy iam.disableServiceAccountKey-
+                //     Creation blocks downloadable keys on this account.
+                //     ADC requires FCM:ProjectId since user creds aren't
+                //     project-scoped.
+                GoogleCredential credential;
+                string? projectIdOverride = null;
+                if (!string.IsNullOrWhiteSpace(config.ServiceAccountJson))
                 {
-                    Credential = GoogleCredential.FromJson(json),
-                });
+                    var raw = config.ServiceAccountJson.TrimStart();
+                    var json = raw.StartsWith('{')
+                        ? raw
+                        : Encoding.UTF8.GetString(Convert.FromBase64String(config.ServiceAccountJson));
+                    credential = GoogleCredential.FromJson(json);
+                }
+                else
+                {
+                    if (string.IsNullOrWhiteSpace(config.ProjectId))
+                    {
+                        // Config-missing IS terminal — won't change at runtime,
+                        // so latch _initAttempted so we don't spam the warning
+                        // on every dispatch.
+                        _initAttempted = true;
+                        logger.LogWarning(
+                            "FCM dispatcher not initialized: neither FCM:ServiceAccountJson nor " +
+                            "FCM:ProjectId configured. Run `gcloud auth application-default login` " +
+                            "and set FCM:ProjectId user-secret to enable ADC-based dispatch.");
+                        return null;
+                    }
+                    credential = GoogleCredential.GetApplicationDefault();
+                    projectIdOverride = config.ProjectId;
+                }
+
+                var options = new AppOptions { Credential = credential };
+                if (projectIdOverride is not null) options.ProjectId = projectIdOverride;
+
+                var app = FirebaseApp.DefaultInstance ?? FirebaseApp.Create(options);
                 _messaging = FirebaseMessaging.GetMessaging(app);
                 return _messaging;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to initialize Firebase Admin SDK");
+                // Transient — credential refresh can fail on cold start before
+                // the network is fully reachable, or ADC's first OAuth round
+                // trip races with the queue trigger. Leave _initAttempted
+                // false so the NEXT dispatch retries; FCM dispatch is at-most-
+                // once today anyway, and the queue will redeliver.
+                logger.LogError(ex, "Failed to initialize Firebase Admin SDK (will retry on next dispatch)");
                 return null;
             }
         }

@@ -47,6 +47,13 @@ export const DEFAULT_SNACKBAR_ERROR_MAPPINGS: SnackbarErrorMappings = {
   actualtimemustbepositive: 'api.order.actual_time.positive',
   validationregistrationnumberinvalidformat:
     'api.validation.registration_number.invalid_format',
+  // Service-areas: backend rejects address writes when the country/city
+  // isn't part of the service area. The keys below are the normalized form
+  // (lowercase, alphanumeric only) of BusinessErrorMessage constants
+  // 'country.not_serviced', 'country.required', 'city.not_serviced'.
+  countrynotserviced: 'api.service_area.country_not_serviced',
+  countryrequired: 'api.service_area.country_required',
+  citynotserviced: 'api.service_area.city_not_serviced',
 };
 
 @Injectable({

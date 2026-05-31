@@ -543,6 +543,10 @@ export interface ICountryClient {
      * @return OK
      */
     getOverview(): Observable<CountryListItem[]>;
+    /**
+     * @return OK
+     */
+    getServiced(): Observable<CountryListItem[]>;
 }
 
 @Injectable({
@@ -588,6 +592,71 @@ export class CountryClient implements ICountryClient {
     }
 
     protected processGetOverview(response: HttpResponseBase): Observable<CountryListItem[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(CountryListItem.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getServiced(): Observable<CountryListItem[]> {
+        let url = this.baseUrl + "/api/Country/GetServiced";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetServiced(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetServiced(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<CountryListItem[]>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<CountryListItem[]>;
+        }));
+    }
+
+    protected processGetServiced(response: HttpResponseBase): Observable<CountryListItem[]> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -5491,6 +5560,91 @@ export class ServiceClient implements IServiceClient {
     }
 }
 
+export interface IApiClient {
+    /**
+     * @param countryId (optional) 
+     * @return OK
+     */
+    serviceCity(countryId?: string | undefined): Observable<ServiceCityDto[]>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class ApiClient implements IApiClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMERAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @param countryId (optional) 
+     * @return OK
+     */
+    serviceCity(countryId?: string | undefined): Observable<ServiceCityDto[]> {
+        let url = this.baseUrl + "/api/ServiceCity?";
+        if (countryId === null)
+            throw new globalThis.Error("The parameter 'countryId' cannot be null.");
+        else if (countryId !== undefined)
+            url += "countryId=" + encodeURIComponent("" + countryId) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processServiceCity(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processServiceCity(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<ServiceCityDto[]>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<ServiceCityDto[]>;
+        }));
+    }
+
+    protected processServiceCity(response: HttpResponseBase): Observable<ServiceCityDto[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(ServiceCityDto.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return ObservableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
 export interface IUserClient {
     /**
      * @param query (optional) 
@@ -9748,6 +9902,8 @@ export class OrderAddress implements IOrderAddress {
     city!: string | undefined;
     zipCode!: string | undefined;
     country!: string | undefined;
+    latitude!: number | undefined;
+    longitude!: number | undefined;
 
     constructor(data?: IOrderAddress) {
         if (data) {
@@ -9764,6 +9920,8 @@ export class OrderAddress implements IOrderAddress {
             this.city = Data["city"];
             this.zipCode = Data["zipCode"];
             this.country = Data["country"];
+            this.latitude = Data["latitude"];
+            this.longitude = Data["longitude"];
         }
     }
 
@@ -9780,6 +9938,8 @@ export class OrderAddress implements IOrderAddress {
         data["city"] = this.city;
         data["zipCode"] = this.zipCode;
         data["country"] = this.country;
+        data["latitude"] = this.latitude;
+        data["longitude"] = this.longitude;
         return data;
     }
 }
@@ -9789,6 +9949,8 @@ export interface IOrderAddress {
     city: string | undefined;
     zipCode: string | undefined;
     country: string | undefined;
+    latitude: number | undefined;
+    longitude: number | undefined;
 }
 
 export class OrderIssueDto implements IOrderIssueDto {
@@ -9868,6 +10030,7 @@ export class OrderItem implements IOrderItem {
     promoDiscountAmount!: number | undefined;
     estimatedTime!: number;
     actualCompletionTime!: number | undefined;
+    completedAt!: Date | undefined;
     completionNotes!: string | undefined;
     orderStatus!: Code;
     confirmationCode!: string | undefined;
@@ -9886,6 +10049,9 @@ export class OrderItem implements IOrderItem {
     orderNotes!: OrderNoteDto[] | undefined;
     orderIssues!: OrderIssueDto[] | undefined;
     review!: OrderReviewDto;
+    estimatedCleanerPay!: number | undefined;
+    isAssignedToCurrentUser!: boolean;
+    hasAfterPhotos!: boolean;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -9924,6 +10090,7 @@ export class OrderItem implements IOrderItem {
             this.promoDiscountAmount = Data["promoDiscountAmount"];
             this.estimatedTime = Data["estimatedTime"];
             this.actualCompletionTime = Data["actualCompletionTime"];
+            this.completedAt = Data["completedAt"] ? new Date(Data["completedAt"].toString()) : undefined as any;
             this.completionNotes = Data["completionNotes"];
             this.orderStatus = Data["orderStatus"] ? Code.fromJS(Data["orderStatus"]) : undefined as any;
             this.confirmationCode = Data["confirmationCode"];
@@ -9966,6 +10133,9 @@ export class OrderItem implements IOrderItem {
                     this.orderIssues!.push(OrderIssueDto.fromJS(item));
             }
             this.review = Data["review"] ? OrderReviewDto.fromJS(Data["review"]) : undefined as any;
+            this.estimatedCleanerPay = Data["estimatedCleanerPay"];
+            this.isAssignedToCurrentUser = Data["isAssignedToCurrentUser"];
+            this.hasAfterPhotos = Data["hasAfterPhotos"];
         }
     }
 
@@ -10004,6 +10174,7 @@ export class OrderItem implements IOrderItem {
         data["promoDiscountAmount"] = this.promoDiscountAmount;
         data["estimatedTime"] = this.estimatedTime;
         data["actualCompletionTime"] = this.actualCompletionTime;
+        data["completedAt"] = this.completedAt ? this.completedAt.toISOString() : undefined as any;
         data["completionNotes"] = this.completionNotes;
         data["orderStatus"] = this.orderStatus ? this.orderStatus.toJSON() : undefined as any;
         data["confirmationCode"] = this.confirmationCode;
@@ -10046,6 +10217,9 @@ export class OrderItem implements IOrderItem {
                 data["orderIssues"].push(item ? item.toJSON() : undefined as any);
         }
         data["review"] = this.review ? this.review.toJSON() : undefined as any;
+        data["estimatedCleanerPay"] = this.estimatedCleanerPay;
+        data["isAssignedToCurrentUser"] = this.isAssignedToCurrentUser;
+        data["hasAfterPhotos"] = this.hasAfterPhotos;
         return data;
     }
 }
@@ -10071,6 +10245,7 @@ export interface IOrderItem {
     promoDiscountAmount: number | undefined;
     estimatedTime: number;
     actualCompletionTime: number | undefined;
+    completedAt: Date | undefined;
     completionNotes: string | undefined;
     orderStatus: Code;
     confirmationCode: string | undefined;
@@ -10089,6 +10264,9 @@ export interface IOrderItem {
     orderNotes: OrderNoteDto[] | undefined;
     orderIssues: OrderIssueDto[] | undefined;
     review: OrderReviewDto;
+    estimatedCleanerPay: number | undefined;
+    isAssignedToCurrentUser: boolean;
+    hasAfterPhotos: boolean;
 }
 
 export class OrderListItem implements IOrderListItem {
@@ -10097,6 +10275,7 @@ export class OrderListItem implements IOrderListItem {
     customerEmail!: string | undefined;
     customerPhone!: string | undefined;
     customerAddress!: string | undefined;
+    customerAddressApproximate!: string | undefined;
     displayOrderNumber!: string | undefined;
     rooms!: number;
     bathrooms!: number;
@@ -10123,6 +10302,9 @@ export class OrderListItem implements IOrderListItem {
     availableSpots!: number;
     assignedEmployeesCount!: number;
     hasAvailableSpots!: boolean;
+    estimatedCleanerPay!: number | undefined;
+    customerAddressLatitude!: number | undefined;
+    customerAddressLongitude!: number | undefined;
 
     constructor(data?: IOrderListItem) {
         if (data) {
@@ -10140,6 +10322,7 @@ export class OrderListItem implements IOrderListItem {
             this.customerEmail = Data["customerEmail"];
             this.customerPhone = Data["customerPhone"];
             this.customerAddress = Data["customerAddress"];
+            this.customerAddressApproximate = Data["customerAddressApproximate"];
             this.displayOrderNumber = Data["displayOrderNumber"];
             this.rooms = Data["rooms"];
             this.bathrooms = Data["bathrooms"];
@@ -10184,6 +10367,9 @@ export class OrderListItem implements IOrderListItem {
             this.availableSpots = Data["availableSpots"];
             this.assignedEmployeesCount = Data["assignedEmployeesCount"];
             this.hasAvailableSpots = Data["hasAvailableSpots"];
+            this.estimatedCleanerPay = Data["estimatedCleanerPay"];
+            this.customerAddressLatitude = Data["customerAddressLatitude"];
+            this.customerAddressLongitude = Data["customerAddressLongitude"];
         }
     }
 
@@ -10201,6 +10387,7 @@ export class OrderListItem implements IOrderListItem {
         data["customerEmail"] = this.customerEmail;
         data["customerPhone"] = this.customerPhone;
         data["customerAddress"] = this.customerAddress;
+        data["customerAddressApproximate"] = this.customerAddressApproximate;
         data["displayOrderNumber"] = this.displayOrderNumber;
         data["rooms"] = this.rooms;
         data["bathrooms"] = this.bathrooms;
@@ -10245,6 +10432,9 @@ export class OrderListItem implements IOrderListItem {
         data["availableSpots"] = this.availableSpots;
         data["assignedEmployeesCount"] = this.assignedEmployeesCount;
         data["hasAvailableSpots"] = this.hasAvailableSpots;
+        data["estimatedCleanerPay"] = this.estimatedCleanerPay;
+        data["customerAddressLatitude"] = this.customerAddressLatitude;
+        data["customerAddressLongitude"] = this.customerAddressLongitude;
         return data;
     }
 }
@@ -10255,6 +10445,7 @@ export interface IOrderListItem {
     customerEmail: string | undefined;
     customerPhone: string | undefined;
     customerAddress: string | undefined;
+    customerAddressApproximate: string | undefined;
     displayOrderNumber: string | undefined;
     rooms: number;
     bathrooms: number;
@@ -10281,6 +10472,9 @@ export interface IOrderListItem {
     availableSpots: number;
     assignedEmployeesCount: number;
     hasAvailableSpots: boolean;
+    estimatedCleanerPay: number | undefined;
+    customerAddressLatitude: number | undefined;
+    customerAddressLongitude: number | undefined;
 }
 
 export class OrderNoteDto implements IOrderNoteDto {
@@ -11647,6 +11841,66 @@ export interface ISavedAddressDto {
     latitude: number | undefined;
     longitude: number | undefined;
     isDefault: boolean;
+}
+
+export class ServiceCityDto implements IServiceCityDto {
+    id!: string | undefined;
+    countryId!: string | undefined;
+    countryName!: string | undefined;
+    countryIsoCode!: string | undefined;
+    name!: string | undefined;
+    zipPrefix!: string | undefined;
+    isActive!: boolean;
+
+    constructor(data?: IServiceCityDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.countryId = Data["countryId"];
+            this.countryName = Data["countryName"];
+            this.countryIsoCode = Data["countryIsoCode"];
+            this.name = Data["name"];
+            this.zipPrefix = Data["zipPrefix"];
+            this.isActive = Data["isActive"];
+        }
+    }
+
+    static fromJS(data: any): ServiceCityDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new ServiceCityDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["countryId"] = this.countryId;
+        data["countryName"] = this.countryName;
+        data["countryIsoCode"] = this.countryIsoCode;
+        data["name"] = this.name;
+        data["zipPrefix"] = this.zipPrefix;
+        data["isActive"] = this.isActive;
+        return data;
+    }
+}
+
+export interface IServiceCityDto {
+    id: string | undefined;
+    countryId: string | undefined;
+    countryName: string | undefined;
+    countryIsoCode: string | undefined;
+    name: string | undefined;
+    zipPrefix: string | undefined;
+    isActive: boolean;
 }
 
 export class ServiceDetails implements IServiceDetails {

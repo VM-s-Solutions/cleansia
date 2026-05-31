@@ -23,7 +23,11 @@ public class Policy
     public const string CanViewOrderPhotos = nameof(CanViewOrderPhotos); // Authenticated (All roles)
     public const string CanDeleteOrderPhoto = nameof(CanDeleteOrderPhoto); // Employee
     public const string CanAddOrderNote = nameof(CanAddOrderNote); // Employee
+    public const string CanUpdateOrderNote = nameof(CanUpdateOrderNote); // Employee (own notes)
+    public const string CanDeleteOrderNote = nameof(CanDeleteOrderNote); // Employee (own notes)
     public const string CanReportOrderIssue = nameof(CanReportOrderIssue); // Employee
+    public const string CanUpdateOrderIssue = nameof(CanUpdateOrderIssue); // Employee (own issues)
+    public const string CanDeleteOrderIssue = nameof(CanDeleteOrderIssue); // Employee (own issues)
     public const string CanSubmitOrderReview = nameof(CanSubmitOrderReview); // Customer
     public const string CanViewOrderReview = nameof(CanViewOrderReview); // Authenticated (All roles)
     public const string CanCancelOrder = nameof(CanCancelOrder); // Customer (own orders)
@@ -131,6 +135,10 @@ public class Policy
     public const string CanCreateCountry = nameof(CanCreateCountry); // Admin
     public const string CanUpdateCountry = nameof(CanUpdateCountry); // Admin
     public const string CanDeleteCountry = nameof(CanDeleteCountry); // Admin
+
+    // Service areas (cities)
+    public const string CanViewServiceCities = nameof(CanViewServiceCities); // Admin
+    public const string CanManageServiceCities = nameof(CanManageServiceCities); // Admin
 
     // Currencies
     public const string CanViewCurrencies = nameof(CanViewCurrencies); // Admin

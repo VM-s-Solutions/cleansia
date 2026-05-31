@@ -12,7 +12,9 @@ public class ApproveEmployee
 {
     public class Validator : AbstractValidator<Command>
     {
-        public Validator(IEmployeeRepository employeeRepository)
+        public Validator(
+            IEmployeeRepository employeeRepository,
+            ICountryRepository countryRepository)
         {
             RuleFor(x => x.EmployeeId)
                 .Cascade(CascadeMode.Stop)
@@ -44,6 +46,19 @@ public class ApproveEmployee
                 .WithMessage(BusinessErrorMessage.EmployeeProfileIncomplete)
                 .When(x => !string.IsNullOrEmpty(x.EmployeeId));
 
+            // WorkCountryId is the jurisdiction the cleaner is approved
+            // to take jobs in. Drives currency / language / VAT defaults
+            // via CountryConfiguration. Required at approval time so the
+            // resolver has a deterministic answer; must be a country we
+            // actually service or the cleaner couldn't legally work it.
+            RuleFor(x => x.WorkCountryId)
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty().WithMessage(BusinessErrorMessage.CountryRequired)
+                .MustAsync(countryRepository.ExistsAsync)
+                    .WithMessage(BusinessErrorMessage.CountryNotFound)
+                .MustAsync(countryRepository.IsServicedAsync)
+                    .WithMessage(BusinessErrorMessage.CountryNotServiced);
+
             When(x => !string.IsNullOrEmpty(x.Notes), () =>
             {
                 RuleFor(x => x.Notes)
@@ -52,9 +67,9 @@ public class ApproveEmployee
         }
     }
 
-    public record Request(string? Notes);
+    public record Request(string WorkCountryId, string? Notes);
 
-    public record Command(string EmployeeId, string? Notes = null) : ICommand<Response>;
+    public record Command(string EmployeeId, string WorkCountryId, string? Notes = null) : ICommand<Response>;
 
     public record Response(string EmployeeId, DateTimeOffset ApprovedAt);
 
@@ -96,6 +111,7 @@ public class ApproveEmployee
                     BusinessErrorMessage.EmployeeProfileIncomplete));
             }
 
+            employee.AssignWorkCountry(command.WorkCountryId);
             employee.Approve(adminUser.Id, command.Notes);
 
             return BusinessResult.Success(new Response(employee.Id, employee.ApprovedAt!.Value));

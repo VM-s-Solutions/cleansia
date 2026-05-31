@@ -8,6 +8,28 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.openapi.generator)
+    alias(libs.plugins.google.services)
+}
+
+// FCM — owner provisions a real google-services.json from the Firebase
+// console and drops it into partner-app/ (gitignored). The google-services
+// plugin fails the build if the file is missing, so for first-time devs
+// without Firebase access we fall back to the committed placeholder sample.
+// Push silently no-ops at runtime against the placeholder (the messaging
+// service registers but never receives real messages); compileDebugKotlin
+// and assembleDebug both still succeed. Replace with the real config before
+// shipping a release build.
+val googleServicesFile = file("google-services.json")
+if (!googleServicesFile.exists()) {
+    val sample = file("google-services.sample.json")
+    if (sample.exists()) {
+        sample.copyTo(googleServicesFile, overwrite = false)
+        logger.lifecycle(
+            "google-services.json missing — copied placeholder from " +
+                "google-services.sample.json. Replace with real config from " +
+                "the Firebase console before shipping a release build."
+        )
+    }
 }
 
 android {
@@ -22,6 +44,15 @@ android {
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Mapbox public access token — same pattern as customer-app. Reads from
+        // ~/.gradle/gradle.properties (MAPBOX_ACCESS_TOKEN) or CI env. Empty
+        // fallback keeps builds working; map will fail to load with a clear
+        // error at runtime.
+        val mapboxAccessToken = providers.gradleProperty("MAPBOX_ACCESS_TOKEN").orNull
+            ?: System.getenv("MAPBOX_ACCESS_TOKEN")
+                    ?: ""
+        buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"$mapboxAccessToken\"")
     }
 
     buildTypes {
@@ -29,15 +60,16 @@ android {
             isMinifyEnabled = false
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
-            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:5002/api\"")
-            manifestPlaceholders["APP_NAME"] = "Cleansia Dev"
+            // Trailing slash, no `/api` suffix — the generated OpenAPI client's
+            // method paths already start with `api/Auth/Login` etc. NetworkModule
+            // adds the trailing slash if missing, but keep it explicit here for clarity.
+            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:5002/\"")
         }
         create("staging") {
             isMinifyEnabled = true
             applicationIdSuffix = ".staging"
             versionNameSuffix = "-staging"
-            buildConfigField("String", "API_BASE_URL", "\"https://staging-api.cleansia.cz/api\"")
-            manifestPlaceholders["APP_NAME"] = "Cleansia Staging"
+            buildConfigField("String", "API_BASE_URL", "\"https://staging-api.cleansia.cz/\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -47,8 +79,7 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            buildConfigField("String", "API_BASE_URL", "\"https://api.cleansia.cz/api\"")
-            manifestPlaceholders["APP_NAME"] = "Cleansia Partner"
+            buildConfigField("String", "API_BASE_URL", "\"https://api.cleansia.cz/\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -224,27 +255,46 @@ dependencies {
     // Image Loading (Coil 3 — needs the network-okhttp module too, was bundled in Coil 2)
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+    // Animated-image decoder (GIF + animated WebP + animated HEIF on
+    // Android 28+). Required for the InProgress mascot which ships
+    // as an animated WebP from the shared web mascot set.
+    implementation(libs.coil.gif)
 
     // DataStore
     implementation(libs.androidx.datastore.preferences)
 
+    // Location — distance-to-job calc on Orders feed
+    implementation(libs.play.services.location)
+
+    // Mapbox — map preview thumbnail on each offer card
+    implementation(libs.mapbox.maps)
+    implementation(libs.mapbox.compose)
+
     // AppCompat (for locale changes)
     implementation(libs.androidx.appcompat)
-
-    // Security
-    implementation(libs.androidx.security.crypto)
-    implementation(libs.androidx.biometric)
-
-    // Room Database
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
 
     // Splash Screen
     implementation(libs.androidx.splashscreen)
 
-    // Lottie Animation
-    implementation(libs.lottie.compose)
+    // EncryptedSharedPreferences — needed at runtime because :core TokenStore
+    // references it from its compiled class (the dep is `implementation` in
+    // :core so it's not exposed transitively). Deprecated by Google in 2024
+    // but still the canonical secure-prefs solution; see :core TokenStore for
+    // the migration plan.
+    implementation(libs.androidx.security.crypto)
+
+    // Firebase Cloud Messaging — push notifications. The BOM aligns
+    // transitive Firebase versions; we only need the messaging artifact.
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging.ktx)
+
+    // Room — local notifications-feed store. The FCM service writes a record
+    // on every received push; the NotificationsScreen reads them back as a
+    // Flow. Room (not DataStore) because the feed is a growing list with
+    // per-row read-state, queried newest-first.
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 
     // Testing
     testImplementation(libs.junit)

@@ -72,7 +72,7 @@ public class OrderEmployeePayEntityConfiguration : AuditableEntityConfiguration<
 
         builder
             .HasOne(e => e.Employee)
-            .WithMany()
+            .WithMany(emp => emp.OrderPays)
             .HasForeignKey(e => e.EmployeeId)
             .OnDelete(DeleteBehavior.Restrict);
 

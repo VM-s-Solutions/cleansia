@@ -57,6 +57,26 @@ public class EmployeeEntityConfiguration : AuditableEntityConfiguration<Employee
             .HasForeignKey(e => e.NationalityId)
             .OnDelete(DeleteBehavior.NoAction);
 
+        // Work-country FK. One-sided nav (no reverse collection on
+        // Country) — keeps the Country entity surface small and we
+        // don't need to iterate "all employees who work here" from
+        // the Country side. Restrict on delete: a country can't be
+        // hard-deleted while employees are scoped to it; admin would
+        // re-scope them first.
+        builder
+            .HasOne(e => e.WorkCountry)
+            .WithMany()
+            .HasForeignKey(e => e.WorkCountryId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(e => e.WorkCountryId);
+
+        // Index the contract status — the new-jobs digest sweep filters
+        // employees by `ContractStatus ∈ {Approved, Active}` on every
+        // 30-min tick, joined with WorkCountryId. WorkCountryId is already
+        // indexed; an index on ContractStatus too keeps the sweep cheap
+        // even as the employee table grows.
+        builder.HasIndex(e => e.ContractStatus);
+
         builder.Property(s => s.Availability)
             .HasConversion(new JsonValueConverter<IReadOnlyDictionary<string, List<TimeRange>>>())
             .Metadata

@@ -880,6 +880,7 @@
       "rooms": "Pokoje",
       "bathrooms": "Koupelny",
       "estimated_time": "Odhadovaný čas",
+      "completed_at": "Dokončeno",
       "address": "Adresa",
       "packages": "Balíčky",
       "services": "Služby",
@@ -1306,6 +1307,11 @@
     "address": {
       "already_exists": "Tuto adresu už máte uloženou.",
       "mapbox_coords_required": "Vyberte adresu z nabídky."
+    },
+    "service_area": {
+      "country_not_serviced": "V této zemi zatím nepůsobíme.",
+      "country_required": "Vyberte zemi.",
+      "city_not_serviced": "V tomto městě zatím nepůsobíme."
     }
   },
   "loyalty": {

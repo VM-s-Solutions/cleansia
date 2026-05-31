@@ -8,6 +8,14 @@
     <string name="retry">Повторить</string>
     <string name="cancel">Отмена</string>
     <string name="save">Сохранить</string>
+    <string name="save_and_continue">Сохранить и продолжить</string>
+    <!-- Onboarding chain -->
+    <string name="onboarding_step_progress">Шаг %1$d из %2$d</string>
+    <string name="onboarding_header_subtitle">Заполнение профиля</string>
+    <string name="onboarding_step_personal">Личное</string>
+    <string name="onboarding_step_address">Адрес</string>
+    <string name="onboarding_step_identification">Личность</string>
+    <string name="onboarding_step_bank">Банк</string>
     <string name="saving">Сохранение…</string>
     <string name="no_data">Не указано</string>
     <string name="delete">Удалить</string>
@@ -19,6 +27,31 @@
     <string name="login">Войти</string>
     <string name="register">Зарегистрироваться</string>
     <string name="logout">Выйти</string>
+    <string name="profile_group_account">Учётная запись</string>
+    <string name="profile_group_work_legal">Работа и документы</string>
+    <string name="profile_group_schedule">Расписание</string>
+    <string name="profile_group_preferences">Настройки</string>
+    <string name="contract_status_pending">Ожидает одобрения</string>
+    <string name="contract_status_active">Активный</string>
+    <string name="contract_status_terminated">Прекращён</string>
+    <string name="contract_status_approved">Одобрен</string>
+    <string name="contract_status_rejected">Отклонён</string>
+    <string name="language_system">Системный</string>
+    <string name="profile_section_personal">Личные</string>
+    <string name="profile_section_contact">Контакт</string>
+    <string name="email_readonly_helper">Для смены адреса электронной почты обратитесь в поддержку.</string>
+    <string name="earnings_title">Доходы</string>
+    <string name="earnings_current_period">Текущий платёжный период</string>
+    <string name="earnings_estimate_helper">Оценка до закрытия периода</string>
+    <string name="earnings_today">Сегодня</string>
+    <string name="earnings_this_week">Эта неделя</string>
+    <string name="earnings_last_month">Прошлый месяц</string>
+    <string name="earnings_jobs_done_count">Заданий выполнено: %d</string>
+    <string name="earnings_pay_period">Платёжный период</string>
+    <string name="earnings_days_remaining">Осталось %d дней</string>
+    <string name="earnings_next_payout">Следующая выплата</string>
+    <string name="earnings_view_invoices">Просмотреть счета</string>
+    <string name="earnings_view_invoices_subtitle">История выплат и статусы счетов</string>
     <string name="email">Электронная почта</string>
     <string name="password">Пароль</string>
     <string name="confirm_password">Подтвердить пароль</string>
@@ -71,6 +104,47 @@
     <!-- Dashboard -->
     <string name="dashboard">Панель управления</string>
     <string name="dashboard_subtitle">Вот обзор вашей активности</string>
+    <string name="dash_available_now_count">%1$d свободных заказов</string>
+    <string name="dash_available_now_subtitle">Нажмите, чтобы посмотреть и взять</string>
+    <string name="dash_no_jobs_yet_title">Пока нет заказов</string>
+    <string name="dash_no_jobs_yet_subtitle">Проверьте доступные заказы или обновите расписание</string>
+    <string name="dash_todays_schedule">Сегодня</string>
+    <string name="dash_current_period">Текущий период</string>
+    <string name="dash_tap_for_invoices">Нажмите для счетов</string>
+    <string name="dash_completed_this_month">В этом месяце</string>
+    <string name="dash_avg_rating">Рейтинг</string>
+    <string name="dash_vs_last_month">vs прошлого месяца</string>
+    <string name="dash_state_free_today">Сегодня вы свободны</string>
+    <string name="dash_state_one_today">1 заказ сегодня</string>
+    <string name="dash_state_many_today">%1$d заказов сегодня</string>
+    <string name="dash_next_job">Следующий заказ</string>
+    <string name="dash_in_progress">В процессе</string>
+    <string name="dash_on_the_way">В пути</string>
+    <string name="dash_browse_jobs">Просмотр заказов</string>
+    <string name="dash_available_work_label">Доступные заказы</string>
+    <string name="dash_browse_jobs_subtitle">Нажмите, чтобы открыть</string>
+    <string name="dash_open">Открыть</string>
+    <string name="dash_continue">Продолжить</string>
+    <string name="dash_earn_up_to">Заработаете до %1$s</string>
+    <string name="dash_earnings_today">Сегодня</string>
+    <string name="dash_earnings_week">На этой неделе</string>
+    <string name="dash_jobs_done_count">%1$d выполнено</string>
+    <string name="dash_no_completed_yet">Пока нет выполненных заказов</string>
+    <string name="dash_no_jobs_today_short">Сегодня без заказов</string>
+    <string name="dash_earnings_view_details">Подробнее</string>
+    <string name="dash_avg_per_job">Сред./заказ</string>
+    <string name="dash_pay_period_progress">День %1$d из %2$d</string>
+    <string name="dash_next_payout">Следующая выплата: %1$s</string>
+    <string name="dash_last_month_earnings">Заработано</string>
+    <string name="dash_last_month_jobs">Выполнено</string>
+    <string name="dash_last_month_section">Прошлый месяц</string>
+    <string name="dash_rating_count">Из %1$d оценок</string>
+    <string name="dash_no_rating_yet">Пока нет оценок</string>
+    <string name="dash_quick_actions">Быстрые действия</string>
+    <string name="dash_qa_profile">Профиль</string>
+    <string name="dash_qa_pay_history">История выплат</string>
+    <string name="dash_qa_documents">Документы</string>
+    <string name="dash_qa_help">Помощь</string>
     <string name="good_morning">Доброе утро!</string>
     <string name="good_afternoon">Добрый день!</string>
     <string name="good_evening">Добрый вечер!</string>
@@ -170,6 +244,30 @@
     <string name="order_id">Заказ #%1$s</string>
     <string name="customer">Клиент</string>
     <string name="address">Адрес</string>
+    <!-- Address picker (map) -->
+    <string name="address_pick_on_map">Выберите адрес на карте</string>
+    <string name="address_pick_on_map_helper">Нажмите, чтобы открыть карту и поставить булавку.</string>
+    <string name="address_picker_search_hint">Поиск адреса…</string>
+    <string name="address_picker_searching">Поиск…</string>
+    <string name="address_picker_no_results">Ничего не найдено</string>
+    <string name="address_picker_my_location">Моё местоположение</string>
+    <string name="address_picker_location_unavailable">Не удалось определить местоположение. Попробуйте снова или поставьте булавку вручную.</string>
+    <string name="address_picker_location_denied">Для центрирования карты нужно разрешение на геолокацию.</string>
+    <string name="address_picker_drag_to_pick">Двигайте карту, чтобы поставить булавку</string>
+    <string name="address_picker_looking_up">Поиск…</string>
+    <string name="address_picker_confirm">Использовать этот адрес</string>
+    <string name="address_picker_clear">Очистить</string>
+    <!-- Why we need your address -->
+    <string name="address_why_title">Зачем нам ваш адрес</string>
+    <string name="address_why_reason_jobs">Показываем заказы рядом и расстояние от дома</string>
+    <string name="address_why_reason_distance_pay">Рассчитываем оплату за километр в пути</string>
+    <string name="address_why_reason_invoice">Выставляем счета в правильную налоговую юрисдикцию</string>
+    <string name="address_why_privacy">Клиенты никогда не видят ваш домашний адрес — только город, в котором вы.</string>
+    <!-- Service-area indicator -->
+    <string name="address_service_area_checking">Проверяем зону обслуживания…</string>
+    <string name="address_service_area_in_serviced_city">В %1$s мы принимаем заказы</string>
+    <string name="address_service_area_outside_serviced_city">Вы всё равно можете брать заказы в соседних городах, где мы работаем</string>
+    <string name="address_service_area_country_not_serviced">Мы пока не работаем в этой стране</string>
     <string name="navigate">Навигация</string>
     <string name="services">Услуги</string>
     <string name="notes">Заметки</string>
@@ -183,6 +281,7 @@
     <string name="choose_from_gallery">Выбрать из галереи</string>
     <string name="delete_photo">Удалить фото</string>
     <string name="delete_photo_confirm">Вы уверены, что хотите удалить это фото?</string>
+    <string name="photos_none_recorded">Фотографии не записаны</string>
     <string name="estimated_time">Ориентировочное время</string>
     <string name="actual_completion_time">Фактическое время выполнения (мин)</string>
     <string name="completion_notes">Заметки к завершению (необязательно)</string>
@@ -233,6 +332,40 @@
     <string name="sort_amount_high_low">Сумма (по убыванию)</string>
 
     <!-- Order Status -->
+    <string name="status_new">Новый</string>
+    <string name="notify_on_the_way">Сообщить, что в пути</string>
+    <string name="property">Помещение</string>
+    <string name="rooms_count">%1$d комнат</string>
+    <string name="bathrooms_count">%1$d ванных комнат</string>
+    <string name="extras_label">Дополнительно: %1$s</string>
+    <string name="customer_notes_section">Заметки клиента</string>
+    <string name="access_label">Доступ</string>
+    <string name="special_label">Особые инструкции</string>
+    <string name="order_completed_toast">Заказ отмечен как выполненный</string>
+    <string name="before">До</string>
+    <string name="after">После</string>
+    <string name="notes_and_issues">Заметки и проблемы</string>
+    <string name="note_content">Заметка</string>
+    <string name="issue_description">Опишите проблему</string>
+    <string name="note_saved_toast">Заметка добавлена</string>
+    <string name="issue_reported_toast">Проблема отправлена</string>
+    <string name="note_deleted_toast">Заметка удалена</string>
+    <string name="issue_updated_toast">Проблема обновлена</string>
+    <string name="issue_deleted_toast">Проблема удалена</string>
+    <string name="edit_note">Редактировать заметку</string>
+    <string name="edit_issue">Редактировать проблему</string>
+    <string name="delete_note">Удалить заметку</string>
+    <string name="delete_note_confirm">Вы уверены, что хотите удалить эту заметку?</string>
+    <string name="delete_issue_confirm">Вы уверены, что хотите удалить эту проблему?</string>
+    <string name="invoice_status_pending">Ожидает</string>
+    <string name="invoice_status_approved">Утверждён</string>
+    <string name="invoice_status_paid">Оплачен</string>
+    <string name="invoice_status_disputed">Оспорен</string>
+    <string name="invoice_status_rejected">Отклонён</string>
+    <string name="invoice_status_cancelled">Отменён</string>
+    <string name="deduction">Удержание</string>
+    <string name="open_invoice_pdf">Открыть PDF счёта</string>
+    <string name="no_pdf_viewer">На этом устройстве не установлен PDF-просмотрщик.</string>
     <string name="status_pending">Ожидает</string>
     <string name="status_confirmed">Подтвержден</string>
     <string name="status_in_progress">В процессе</string>
@@ -251,6 +384,12 @@
     <string name="invoice_details">Детали счета</string>
     <string name="download_invoice">Скачать счет</string>
     <string name="no_invoices">Счета не найдены</string>
+    <string name="invoices_summary_label">Всего заработано</string>
+    <string name="invoices_summary_count">Всего %1$d счетов</string>
+    <string name="invoice_card_total">Сумма</string>
+    <string name="invoice_card_jobs_count">Заказов: %1$d</string>
+    <string name="invoice_card_paid_on">Оплачено %1$s</string>
+    <string name="invoice_card_generated_on">Создано %1$s</string>
     <string name="invoice_number">Счет #%1$s</string>
     <string name="period">Период</string>
     <string name="issue_date">Дата выставления</string>
@@ -273,6 +412,52 @@
     <string name="bank_details">Банковские реквизиты</string>
     <string name="documents">Документы</string>
     <string name="availability">Доступность</string>
+    <string name="personal">Личное</string>
+    <string name="birth_date">Дата рождения</string>
+    <string name="birth_date_placeholder">Выберите дату</string>
+    <string name="street_address">Улица</string>
+    <string name="emergency_name">Имя экстренного контакта</string>
+    <string name="emergency_phone">Телефон экстренного контакта</string>
+    <string name="state">Штат</string>
+    <string name="state_optional_helper">Опционально — используется только для США / Канады</string>
+    <string name="identification_title">Идентификация</string>
+    <string name="my_documents">Мои документы</string>
+    <string name="documents_summary_view">Просмотр, загрузка или удаление</string>
+    <string name="availability_days_set">Установлено %1$d дней</string>
+    <string name="availability_helper">Включите дни недели, когда вы можете работать, и выберите временной интервал.</string>
+    <!-- Availability v2 -->
+    <string name="availability_quick_setup">Быстрая настройка</string>
+    <string name="availability_weekly_schedule">Недельный график</string>
+    <string name="availability_preset_mon_fri">Пн–Пт 9–17</string>
+    <string name="availability_preset_mon_sat">Пн–Сб 8–16</string>
+    <string name="availability_preset_custom">Свой</string>
+    <string name="availability_apply_to_days">Выберите дни, затем задайте временной интервал.</string>
+    <string name="availability_apply">Применить</string>
+    <string name="availability_start_time">Начало</string>
+    <string name="availability_end_time">Конец</string>
+    <string name="availability_add_slot">Добавить ещё интервал</string>
+    <string name="availability_remove_slot">Удалить интервал</string>
+    <string name="availability_pick_time">Выберите время</string>
+    <string name="availability_no_days_selected">Нажмите на день выше, чтобы настроить часы.</string>
+    <string name="availability_slot_overlap_error">Временные интервалы не должны пересекаться.</string>
+    <string name="add_document">Добавить документ</string>
+    <string name="upload_document">Загрузить документ</string>
+    <string name="document_type">Тип документа</string>
+    <string name="description_optional">Описание (опционально)</string>
+    <string name="no_documents">Документы пока не загружены</string>
+    <string name="document_status_pending">Ожидает проверки</string>
+    <string name="document_status_approved">Подтверждено</string>
+    <string name="document_status_rejected">Отклонено</string>
+    <string name="document_type_identity">Удостоверение личности</string>
+    <string name="document_type_passport">Паспорт</string>
+    <string name="document_type_drivers_license">Водительское удостоверение</string>
+    <string name="document_type_work_permit">Разрешение на работу</string>
+    <string name="document_type_contract">Договор</string>
+    <string name="document_type_certificate">Сертификат</string>
+    <string name="document_type_bank_statement">Банковская выписка</string>
+    <string name="document_type_tax">Налоговый документ</string>
+    <string name="document_type_insurance">Страховой документ</string>
+    <string name="document_type_other">Прочее</string>
     <string name="edit_profile">Редактировать профиль</string>
     <string name="missing_fields">Отсутствуют:</string>
     <string name="date_of_birth">Дата рождения</string>
@@ -280,6 +465,17 @@
     <string name="national_id">Номер удостоверения</string>
     <string name="passport_id">Номер паспорта</string>
     <string name="tax_id">ИНН</string>
+    <!-- Identification & business section -->
+    <string name="identification_header_person">Личность</string>
+    <string name="identification_header_business">Бизнес</string>
+    <string name="entity_type_natural_person">ИП / самозанятый</string>
+    <string name="entity_type_legal_entity">Юридическое лицо</string>
+    <string name="business_country">Страна регистрации</string>
+    <string name="registration_number_label">Регистрационный номер</string>
+    <string name="registration_number_helper">8 цифр для ЧР/СК; формат зависит от выбранной страны.</string>
+    <string name="vat_number_label">Номер плательщика НДС</string>
+    <string name="vat_number_helper">Необязательно — только если вы плательщик НДС.</string>
+    <string name="legal_entity_name_label">Название юридического лица</string>
     <string name="street">Улица</string>
     <string name="city">Город</string>
     <string name="zip_code">Почтовый индекс</string>
@@ -289,8 +485,6 @@
     <string name="account_number">Номер счета</string>
     <string name="iban">IBAN</string>
     <string name="swift_code">SWIFT код</string>
-    <string name="upload_document">Загрузить документ</string>
-    <string name="no_documents">Документы не загружены</string>
 
     <!-- Emergency Contact -->
     <string name="emergency_contact">Экстренный контакт</string>
@@ -326,6 +520,9 @@
     <string name="settings">Настройки</string>
     <string name="language">Язык</string>
     <string name="theme">Тема</string>
+    <string name="theme_system">Как в системе</string>
+    <string name="theme_light">Светлая</string>
+    <string name="theme_dark">Тёмная</string>
     <string name="notifications">Уведомления</string>
     <string name="biometric_login">Биометрический вход</string>
     <string name="biometric_login_desc">Используйте отпечаток пальца или распознавание лица для входа</string>
@@ -412,6 +609,9 @@
 
     <!-- Onboarding -->
     <string name="onboarding_welcome_title">Добро пожаловать в Cleansia Partner</string>
+    <string name="onboarding_welcome_body">Управляйте заказами на уборку, отслеживайте заработок и расширяйте клиентскую базу — всё в одном месте.</string>
+    <string name="onboarding_ready_title">Готовы начать?</string>
+    <string name="onboarding_ready_body">Войдите или создайте аккаунт, чтобы увидеть доступные заказы рядом с вами.</string>
     <string name="onboarding_welcome_desc">Ваше партнерское приложение для управления заказами на уборку и заработком</string>
     <string name="onboarding_orders_title">Управляйте своими заказами</string>
     <string name="onboarding_orders_desc">Просматривайте доступные заказы, принимайте работу и отслеживайте прогресс в реальном времени</string>
@@ -453,18 +653,11 @@
     <string name="schedule_setup">Настройка расписания</string>
     <string name="schedule_setup_desc">Установите дни и время, когда вы доступны для работы.</string>
 
-    <!-- Registration Lock -->
-    <string name="registration_lock_title">Необходимо заполнить профиль</string>
-    <string name="registration_lock_description">Для доступа к этому разделу необходимо заполнить профиль и загрузить необходимые документы.</string>
-    <string name="registration_lock_missing_requirements">Отсутствующие требования:</string>
-    <string name="registration_lock_profile_completion">Заполнить информацию профиля</string>
-    <string name="registration_lock_document_upload">Загрузить необходимые документы</string>
-    <string name="registration_lock_complete_profile">Заполнить профиль</string>
-
     <!-- API Errors -->
     <string name="error_network">Не удалось подключиться к серверу. Проверьте подключение к интернету.</string>
     <string name="error_timeout">Время ожидания подключения истекло. Попробуйте еще раз.</string>
     <string name="error_unauthorized">Сессия истекла. Войдите снова.</string>
+    <string name="error_generic">Что-то пошло не так. Попробуйте ещё раз.</string>
 
     <!-- Session Expiration -->
     <string name="session_expired_title">Сессия истекла</string>
@@ -517,6 +710,10 @@
     <string name="recent_orders">Последние заказы</string>
     <string name="help_support">Помощь &amp; поддержка</string>
     <string name="logout_confirm">Вы уверены, что хотите выйти?</string>
+    <string name="profile_logout_dialog_title">Выйти?</string>
+    <string name="profile_logout_dialog_message">Чтобы продолжить, нужно будет войти снова.</string>
+    <string name="profile_logout_dialog_confirm">Выйти</string>
+    <string name="profile_logout_dialog_cancel">Отмена</string>
     <string name="member_since">Участник с %1$s</string>
     <string name="inactive_account">Неактивный</string>
 
@@ -540,6 +737,22 @@
     <string name="approved">Утвержден</string>
     <string name="paid">Оплачен</string>
     <string name="invoice_notes">Заметки</string>
+    <!-- Invoice Details v2 — redesign cards -->
+    <string name="invoice_hero_total">Общая сумма счёта</string>
+    <string name="invoice_breakdown_section">Разбивка</string>
+    <string name="invoice_period_label">Платежный период</string>
+    <string name="invoice_period_jobs">%1$d заказов</string>
+    <string name="invoice_period_generated">Сформирован</string>
+    <string name="invoice_period_approved">Утвержден</string>
+    <string name="invoice_period_paid">Оплачен</string>
+    <string name="invoice_references_section">Платёжные реквизиты</string>
+    <string name="invoice_field_invoice_number">Номер счёта</string>
+    <string name="invoice_field_variable_symbol">Вариабельный символ</string>
+    <string name="invoice_field_payment_reference">Платежная ссылка</string>
+    <string name="invoice_field_copy">Копировать</string>
+    <string name="invoice_field_copied">Скопировано</string>
+    <string name="invoice_notes_admin">Примечания администратора</string>
+    <string name="invoice_notes_bank">Примечание к банковскому переводу</string>
 
     <!-- Calendar Availability -->
     <string name="previous_month">Предыдущий месяц</string>
@@ -708,4 +921,309 @@
     <string name="offline_mode">Вы офлайн</string>
     <string name="last_updated_ago">Обновлено %1$s назад</string>
     <string name="syncing">Синхронизация…</string>
+
+    <!-- Orders redesign -->
+    <string name="search_orders_hint">Поиск по имени, адресу, № заказа</string>
+    <string name="available_summary">%1$d заказов · до %2$s</string>
+    <string name="no_matching_orders">Нет заказов по запросу</string>
+    <string name="km_away">%1$s км</string>
+    <string name="top_pay">Лучшая оплата</string>
+    <string name="starts_soon">Скоро начало</string>
+    <string name="sort_earnings_high_to_low">Заработок по убыванию</string>
+    <string name="sort_soonest_first">Ближайшие</string>
+    <string name="sort_price_high_to_low">Цена по убыванию</string>
+    <string name="day_today">Сегодня</string>
+    <string name="day_tomorrow">Завтра</string>
+    <string name="day_later">Позже</string>
+    <string name="period_this_week">На этой неделе</string>
+    <string name="period_this_month">В этом месяце</string>
+    <string name="period_last_month">В прошлом месяце</string>
+    <string name="period_all">За всё время</string>
+    <string name="action_on_the_way">В пути</string>
+    <string name="action_start">Начать</string>
+    <string name="action_complete">Завершить</string>
+    <string name="in_progress_now">Сейчас выполняется</string>
+    <string name="complete_now">Завершить</string>
+    <string name="earnings">Заработок</string>
+    <string name="jobs">Заказы</string>
+    <string name="rating">Рейтинг</string>
+    <string name="unscheduled">Без даты</string>
+    <string name="guest">Гость</string>
+    <plurals name="scope_rooms">
+        <item quantity="one">%1$d комната</item>
+        <item quantity="few">%1$d комнаты</item>
+        <item quantity="many">%1$d комнат</item>
+        <item quantity="other">%1$d комнаты</item>
+    </plurals>
+    <plurals name="scope_baths">
+        <item quantity="one">%1$d ванная</item>
+        <item quantity="few">%1$d ванные</item>
+        <item quantity="many">%1$d ванных</item>
+        <item quantity="other">%1$d ванные</item>
+    </plurals>
+    <plurals name="scope_extras">
+        <item quantity="one">+%1$d дополнительно</item>
+        <item quantity="few">+%1$d дополнительно</item>
+        <item quantity="many">+%1$d дополнительно</item>
+        <item quantity="other">+%1$d дополнительно</item>
+    </plurals>
+    <string name="history">История</string>
+    <string name="you_earn">вы заработаете</string>
+    <string name="distance_unknown">Локация неизвестна</string>
+    <string name="slide_to_take">Проведите, чтобы взять заказ</string>
+    <string name="taking_order">Беру заказ…</string>
+    <string name="slide_to_start">Проведите, чтобы начать уборку</string>
+    <string name="starting_order">Начинаю уборку…</string>
+    <string name="slide_to_complete">Проведите, чтобы завершить</string>
+    <string name="completing_order">Завершаю…</string>
+
+    <!-- Backend error-key translations -->
+    <string name="error_key_order_after_photos_required">Перед завершением заказа сделайте хотя бы одну фотографию \"после\".</string>
+    <string name="enable_location_for_distance">Включить геолокацию для расстояния</string>
+
+    <!-- Order details redesign -->
+    <string name="action_call">Позвонить</string>
+    <string name="action_sms">SMS</string>
+    <string name="action_navigate">Маршрут</string>
+    <string name="scope_section_title">Объект и объём</string>
+    <string name="scope_services_label">Услуги и пакеты</string>
+    <string name="scope_extras_label">Дополнения</string>
+    <string name="from_customer_section_title">От клиента</string>
+    <string name="note_general_label">Примечание</string>
+    <string name="note_access_label">Доступ</string>
+    <string name="note_special_label">Особые указания</string>
+    <string name="payment_section_title">Оплата</string>
+    <string name="payment_subtotal">Промежуточный итог</string>
+    <string name="payment_tier_discount">Скидка за лояльность</string>
+    <string name="payment_membership_discount">Скидка Plus</string>
+    <string name="payment_promo_discount">Промо скидка</string>
+    <string name="payment_total">Итого</string>
+    <string name="payment_method_value">Способ: %1$s</string>
+    <string name="payment_status_paid">Оплачено</string>
+    <string name="payment_status_pending">Ожидает</string>
+    <string name="payment_status_failed">Не удалось</string>
+    <string name="status_timeline_section_title">Хронология статуса</string>
+    <string name="order_on_the_way_encouragement">В пути — скоро увидимся!</string>
+
+    <!-- Order details v2 -->
+    <string name="access_section_title">Как попасть внутрь</string>
+    <string name="checklist_section_title">Чек-лист уборки</string>
+    <string name="checklist_progress">%1$d из %2$d выполнено</string>
+    <string name="checklist_locked_hint">Начните работу, чтобы отслеживать прогресс</string>
+    <string name="checklist_services_label">Услуги</string>
+    <string name="checklist_packages_label">Пакеты</string>
+    <string name="checklist_extras_label">Дополнения</string>
+    <string name="checklist_all_done_hint">Всё готово — можно завершить</string>
+    <string name="timer_section_title">Время</string>
+    <string name="timer_elapsed_label">Прошло</string>
+    <string name="timer_estimated_label">Оценка %1$s</string>
+    <string name="timer_ahead">%1$s до графика</string>
+    <string name="timer_over">%1$s сверх оценки</string>
+    <string name="timer_on_track">По графику</string>
+    <string name="duration_hours_minutes">%1$dч %2$dм</string>
+    <string name="duration_minutes_only">%1$dм</string>
+
+    <!-- Tracker hero -->
+    <string name="tracker_subtitle_new">Проведите ниже, чтобы взять заказ</string>
+    <string name="tracker_countdown_starts_in">Начало через %1$s</string>
+    <string name="tracker_subtitle_confirmed_far">Уборка запланирована на %1$s</string>
+    <string name="tracker_subtitle_confirmed_soon">Пора выезжать!</string>
+    <string name="tracker_subtitle_on_the_way_arriving">Прибытие %1$s</string>
+    <string name="tracker_subtitle_on_the_way_action">По прибытии проведите, чтобы начать</string>
+    <string name="tracker_completed_in">Готово за %1$s</string>
+    <string name="tracker_finished_at">Завершено в %1$s</string>
+    <string name="tracker_completed_subtitle">Отличная работа!</string>
+
+    <!-- Short step labels -->
+    <string name="tracker_step_new">Новый</string>
+    <string name="tracker_step_confirmed">Подтв.</string>
+    <string name="tracker_step_on_way">В пути</string>
+    <string name="tracker_step_cleaning">Уборка</string>
+    <string name="tracker_step_done">Готово</string>
+
+    <!-- Hero headlines -->
+    <string name="tracker_headline_new">Новое предложение</string>
+    <string name="tracker_headline_confirmed">Подтверждено</string>
+    <string name="tracker_headline_confirmed_soon">Скоро выезжать</string>
+    <string name="tracker_headline_on_the_way">В пути</string>
+    <string name="tracker_headline_in_progress">Уборка</string>
+    <string name="tracker_headline_done">Готово</string>
+    <string name="tracker_step_counter">Шаг %1$d / %2$d</string>
+
+    <!-- Registration lock -->
+    <string name="registration_lock_title">Завершите настройку, чтобы начать зарабатывать</string>
+    <string name="registration_lock_subtitle">Выполните шаги ниже, чтобы разблокировать заказы.</string>
+    <string name="registration_lock_progress">%1$d из %2$d шагов выполнено</string>
+    <string name="registration_lock_step_complete">Готово</string>
+    <string name="registration_lock_sign_out">Выйти</string>
+    <string name="registration_lock_support_subject">Cleansia partner — заявка отклонена</string>
+    <string name="registration_lock_category_profile">Профиль</string>
+    <string name="registration_lock_category_availability">Доступность</string>
+    <string name="registration_lock_category_documents">Документы</string>
+    <string name="registration_lock_category_approval">Одобрение</string>
+    <string name="registration_lock_action_complete_profile">Заполнить профиль</string>
+    <string name="registration_lock_action_set_availability">Установить недельную доступность</string>
+    <string name="registration_lock_action_upload_documents">Загрузить документы</string>
+    <string name="registration_lock_action_contact_support">Связаться с поддержкой</string>
+    <string name="registration_lock_availability_required">Установите свои недельные рабочие часы.</string>
+    <string name="registration_lock_documents_required">Загрузите свои документы, удостоверяющие личность.</string>
+    <string name="registration_lock_approval_awaiting_review">Заявка рассматривается администратором.</string>
+    <string name="registration_lock_approval_complete_profile_first">Сначала выполните шаги выше — после этого администратор сможет вас одобрить.</string>
+    <string name="registration_lock_approval_rejected">Ваша заявка отклонена. Обратитесь в поддержку за подробностями.</string>
+    <string name="registration_lock_retry">Повторить</string>
+    <string name="registration_lock_error_loading">Не удалось загрузить статус регистрации. Проверьте подключение и попробуйте снова.</string>
+    <string name="registration_lock_pull_to_refresh">Потяните вниз для обновления</string>
+
+    <!-- Profile-field missing detail labels -->
+    <string name="profile_fields_firstName">Имя</string>
+    <string name="profile_fields_lastName">Фамилия</string>
+    <string name="profile_fields_email">Электронная почта</string>
+    <string name="profile_fields_phoneNumber">Номер телефона</string>
+    <string name="profile_fields_birthDate">Дата рождения</string>
+    <string name="profile_fields_street">Улица</string>
+    <string name="profile_fields_city">Город</string>
+    <string name="profile_fields_zipCode">Почтовый индекс</string>
+    <string name="profile_fields_country">Страна</string>
+    <string name="profile_fields_registrationNumber">Регистрационный номер</string>
+    <string name="profile_fields_legalEntityName">Название юридического лица</string>
+    <string name="profile_fields_iban">IBAN</string>
+    <string name="profile_fields_passportId">Паспорт / удостоверение</string>
+    <string name="profile_fields_nationality">Гражданство</string>
+
+    <!-- Backend error-key translations — см. values/strings.xml. -->
+    <string name="error_common_required">Это поле обязательно.</string>
+    <string name="error_common_max_length">Слишком длинное.</string>
+    <string name="error_common_min_length">Слишком короткое.</string>
+    <string name="error_common_invalid_enum_value">Недопустимый выбор.</string>
+
+    <string name="error_auth_google_type_error">Этот аккаунт использует вход через Google. Используйте кнопку Google.</string>
+    <string name="error_auth_internal_type_error">Для этого аккаунта войдите с помощью е-мейла и пароля.</string>
+    <string name="error_auth_invalid_confirmation_code">Этот код недействителен или истёк.</string>
+    <string name="error_auth_invalid_google_token">Не удалось войти через Google. Попробуйте снова.</string>
+    <string name="error_auth_invalid_password_format">Пароль должен содержать не менее 8 символов, буквы и цифры.</string>
+    <string name="error_auth_invalid_reset_token">Эта ссылка для сброса пароля недействительна или истекла.</string>
+    <string name="error_auth_same_reset_password">Выберите пароль, отличный от предыдущего.</string>
+    <string name="error_auth_insufficient_privileges">У вас нет прав на это действие.</string>
+    <string name="error_auth_invalid_refresh_token">Ваша сессия истекла. Войдите снова, пожалуйста.</string>
+    <string name="error_auth_refresh_token_reused">В целях безопасности вы вышли со всех устройств.</string>
+
+    <string name="error_user_email_confirmed">Этот е-мейл уже подтверждён.</string>
+    <string name="error_user_existing_email">Аккаунт с этим е-мейлом уже существует.</string>
+    <string name="error_user_not_existing_email">Аккаунт с этим е-мейлом не найден.</string>
+    <string name="error_user_not_existing_id">Пользователь не найден.</string>
+    <string name="error_user_not_allowed_to_update">Вы не можете редактировать этот профиль.</string>
+    <string name="error_user_existing_phone_number">Этот номер телефона уже используется.</string>
+    <string name="error_user_not_found">Пользователь не найден.</string>
+
+    <string name="error_employee_not_found">Сотрудник не найден.</string>
+    <string name="error_employee_not_existing_email">Сотрудник с этим е-мейлом не найден.</string>
+    <string name="error_employee_not_allowed_to_update">Вы не можете редактировать этого сотрудника.</string>
+    <string name="error_employee_profile_incomplete">Перед приёмом заказов завершите ваш профиль.</string>
+    <string name="error_employee_documents_missing">Отсутствуют обязательные документы. Загрузите их в профиле.</string>
+    <string name="error_employee_already_approved">Этот сотрудник уже одобрен.</string>
+    <string name="error_employee_already_rejected">Этот сотрудник уже отклонён.</string>
+
+    <string name="error_employee_document_not_found">Документ не найден.</string>
+    <string name="error_employee_document_unauthorized">У вас нет доступа к этому документу.</string>
+    <string name="error_employee_document_not_owned">Этот документ вам не принадлежит.</string>
+
+    <string name="error_order_not_found">Заказ не найден.</string>
+    <string name="error_order_already_cancelled">Этот заказ уже отменён.</string>
+    <string name="error_order_already_completed">Этот заказ уже выполнен.</string>
+    <string name="error_order_in_progress_cannot_cancel">Заказ выполняется, его нельзя отменить.</string>
+    <string name="error_order_cancellation_window_closed">Срок отмены истёк.</string>
+    <string name="error_order_empty">Заказ пуст.</string>
+    <string name="error_order_already_assigned">Этот заказ только что взял другой клинер.</string>
+    <string name="error_order_no_available_spots">На этом заказе нет свободных мест.</string>
+    <string name="error_order_weekly_limit_reached">Вы достигли недельного лимита заказов.</string>
+    <string name="error_order_time_conflict">Этот заказ пересекается с другим, который вы уже взяли.</string>
+    <string name="error_order_employee_already_assigned">Вы уже назначены на этот заказ.</string>
+    <string name="error_order_employee_not_assigned">Вы не назначены на этот заказ.</string>
+    <string name="error_order_max_employees_exceeded">На этом заказе уже максимальное количество клинеров.</string>
+    <string name="error_order_preferred_employee_not_eligible">Вы не имеете права принять этот заказ.</string>
+    <string name="error_order_employee_already_has_order_in_progress">У вас уже есть другой заказ в работе. Завершите его перед началом нового.</string>
+
+    <string name="error_order_not_in_progress">Этот заказ не в работе.</string>
+    <string name="error_order_not_confirmed">Этот заказ ещё не подтверждён.</string>
+    <string name="error_order_not_completed">Этот заказ ещё не завершён.</string>
+    <string name="error_order_actual_time_positive">Фактическое время должно быть больше нуля.</string>
+    <string name="error_order_completion_notes_required">Заметки о завершении обязательны.</string>
+    <string name="error_order_completion_notes_too_long">Заметки о завершении слишком длинные.</string>
+    <string name="error_order_after_photos_required">Перед завершением заказа сделайте хотя бы одно фото «после».</string>
+
+    <string name="error_order_note_content_required">Текст заметки обязателен.</string>
+    <string name="error_order_issue_description_required">Описание проблемы обязательно.</string>
+    <string name="error_order_review_already_exists">Для этого заказа уже есть отзыв.</string>
+    <string name="error_order_review_rating_invalid">Оценка должна быть от 1 до 5.</string>
+
+    <string name="error_order_cleaning_date_future">Дата уборки должна быть в будущем.</string>
+    <string name="error_order_cleaning_date_below_lead_time">Это время слишком близко. Выберите более поздний слот.</string>
+    <string name="error_order_total_price_positive">Общая цена должна быть больше нуля.</string>
+    <string name="error_order_total_price_not_match">Цена изменилась. Обновите и попробуйте снова.</string>
+    <string name="error_order_payment_gateway_unavailable">Платёжный сервис временно недоступен.</string>
+    <string name="error_order_creation_failed">Не удалось создать заказ. Попробуйте снова.</string>
+
+    <string name="error_address_not_owned_by_user">У вас нет доступа к этому адресу.</string>
+    <string name="error_address_label_required">Укажите, пожалуйста, название этого адреса.</string>
+    <string name="error_address_already_exists">Этот адрес уже сохранён.</string>
+    <string name="error_address_invalid_length">Адрес слишком короткий или длинный.</string>
+    <string name="error_address_mapbox_coords_required">Выберите, пожалуйста, адрес на карте.</string>
+    <string name="error_order_address_exactly_one_required">Выберите, пожалуйста, адрес.</string>
+
+    <string name="error_file_content_type_doesnt_match">Тип файла не совпадает.</string>
+    <string name="error_file_invalid_file_type">Неподдерживаемый тип файла.</string>
+    <string name="error_file_size_exceeded">Файл слишком большой.</string>
+    <string name="error_file_size_exceeded_10mb">Файл слишком большой (макс. 10 МБ).</string>
+    <string name="error_file_type_not_allowed">Этот тип файла не разрешён.</string>
+    <string name="error_file_count_exceeded">Слишком много файлов.</string>
+    <string name="error_file_count_too_few">Прикрепите, пожалуйста, хотя бы один файл.</string>
+    <string name="error_file_required">Файл обязателен.</string>
+
+    <string name="error_validation_invalid_password">Неверный пароль.</string>
+    <string name="error_validation_invalid_date">Введите, пожалуйста, корректную дату.</string>
+    <string name="error_validation_date_must_be_in_past">Дата должна быть в прошлом.</string>
+    <string name="error_validation_invalid_age">Введите, пожалуйста, корректный возраст.</string>
+    <string name="error_validation_invalid_phone_number">Введите, пожалуйста, корректный номер телефона.</string>
+    <string name="error_validation_invalid_national_id">Введите, пожалуйста, корректный национальный ID.</string>
+    <string name="error_validation_invalid_tax_id">Введите, пожалуйста, корректный налоговый ID.</string>
+    <string name="error_validation_invalid_iban">Введите, пожалуйста, корректный IBAN.</string>
+    <string name="error_validation_invalid_zip_code">Введите, пожалуйста, корректный почтовый индекс.</string>
+    <string name="error_validation_must_be_positive">Должно быть положительное число.</string>
+    <string name="error_validation_invalid_availability_format">Неверный формат доступности.</string>
+
+    <string name="error_email_sending_failed">Не удалось отправить е-мейл. Попробуйте позже.</string>
+    <string name="error_email_invalid_format">Введите, пожалуйста, корректный е-мейл.</string>
+    <string name="error_email_invalid_email">Введите, пожалуйста, корректный е-мейл.</string>
+
+    <string name="error_general_not_found">Не найдено.</string>
+
+    <string name="error_country_not_serviced">В этой стране мы пока не работаем.</string>
+    <string name="error_country_required">Выберите, пожалуйста, страну.</string>
+    <string name="error_city_not_serviced">В этом городе мы пока не работаем.</string>
+    <string name="error_language_not_supported">Этот язык не поддерживается.</string>
+
+    <string name="error_device_invalid_platform">Недействительная платформа устройства.</string>
+
+    <!-- ── Push-уведомления (FCM) ── -->
+    <string name="notifications_empty">Пока нет уведомлений. Обновления заказов появятся здесь.</string>
+
+    <string name="notification_channel_order_updates_name">Обновления заказов</string>
+    <string name="notification_channel_order_updates_desc">Уведомления, когда заказ подтверждён, начат, завершён или отменён.</string>
+    <string name="notification_channel_dispute_reply_name">Ответы поддержки</string>
+    <string name="notification_channel_dispute_reply_desc">Уведомляет, когда поддержка отвечает на вашу жалобу.</string>
+
+    <string name="notification_order_confirmed_title">Заказ подтверждён</string>
+    <string name="notification_order_confirmed_body">Заказ №%1$s подтверждён. Нажмите, чтобы посмотреть детали.</string>
+    <string name="notification_order_in_progress_title">Заказ выполняется</string>
+    <string name="notification_order_in_progress_body">Заказ №%1$s выполняется. Нажмите, чтобы следить за ним.</string>
+    <string name="notification_order_completed_title">Заказ завершён</string>
+    <string name="notification_order_completed_body">Заказ №%1$s завершён. Нажмите, чтобы посмотреть сводку.</string>
+    <string name="notification_order_cancelled_title">Заказ отменён</string>
+    <string name="notification_order_cancelled_body">Заказ №%1$s отменён. Нажмите, чтобы посмотреть детали.</string>
+    <string name="notification_dispute_reply_title">Поддержка ответила</string>
+    <string name="notification_dispute_reply_body">Поддержка ответила на вашу жалобу. Нажмите, чтобы прочитать.</string>
+    <string name="notification_channel_new_jobs_name">Новые доступные заказы</string>
+    <string name="notification_channel_new_jobs_desc">Периодический дайджест новых доступных заказов в вашем регионе.</string>
+    <string name="notification_new_jobs_title">Новые доступные заказы</string>
+    <string name="notification_new_jobs_body">Рядом доступно %1$d новых заказов. Нажмите, чтобы посмотреть.</string>
 </resources>

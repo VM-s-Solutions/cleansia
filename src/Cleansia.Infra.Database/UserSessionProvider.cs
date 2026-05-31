@@ -36,5 +36,18 @@ public class UserSessionProvider(IHttpContextAccessor httpContextAccessor) : IUs
         return GetTypedUserClaim(EmployeeIdClaimType)?.Value;
     }
 
+    public string? GetTimeZoneId()
+    {
+        // Clients (mobile + web) set this header so handlers can do
+        // their day/week math in the user's wall-clock zone. Header
+        // name chosen to mirror the unofficial-but-widespread
+        // X-Timezone convention used by Stripe, Notion, etc. Returns
+        // null if absent or blank — handlers fall back to UTC.
+        var ctx = httpContextAccessor.HttpContext;
+        if (ctx == null) return null;
+        var header = ctx.Request.Headers["X-Time-Zone"].ToString();
+        return string.IsNullOrWhiteSpace(header) ? null : header;
+    }
+
     public const string EmployeeIdClaimType = "employee_id";
 }

@@ -2,6 +2,7 @@
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Users;
 
 namespace Cleansia.Core.AppServices.Mappers;
 
@@ -22,6 +23,7 @@ public static class OrderMappers
             CustomerAddress: order.CustomerAddress != null
                 ? $"{order.CustomerAddress.Street}, {order.CustomerAddress.City}, {order.CustomerAddress.ZipCode}"
                 : "",
+            CustomerAddressApproximate: BuildApproximateAddress(order.CustomerAddress),
             DisplayOrderNumber: order.DisplayOrderNumber,
             Rooms: order.Rooms,
             Bathrooms: order.Bathrooms,
@@ -47,11 +49,26 @@ public static class OrderMappers
             MaxEmployees: order.MaxEmployees,
             AvailableSpots: order.AvailableSpots,
             AssignedEmployeesCount: order.AssignedEmployees.Count,
-            HasAvailableSpots: order.HasAvailableSpots
+            HasAvailableSpots: order.HasAvailableSpots,
+            EstimatedCleanerPay: null,
+            CustomerAddressLatitude: order.CustomerAddress?.Latitude,
+            CustomerAddressLongitude: order.CustomerAddress?.Longitude
         );
     }
 
-    public static OrderItem MapToDetail(this Order order)
+    /// <summary>
+    /// Detail-shape projection of an Order. The two caller-context
+    /// parameters (<paramref name="estimatedCleanerPay"/> and
+    /// <paramref name="isAssignedToCurrentUser"/>) are passed in rather
+    /// than computed here because they require services the mapper
+    /// shouldn't reach for (pay-config repository, current-user
+    /// resolver). Handlers compute them and hand the values in.
+    /// </summary>
+    public static OrderItem MapToDetail(
+        this Order order,
+        decimal? estimatedCleanerPay = null,
+        bool isAssignedToCurrentUser = false,
+        bool hasAfterPhotos = false)
     {
         var (source, applied) = ResolveAppliedDiscount(order);
         return new OrderItem(
@@ -75,6 +92,7 @@ public static class OrderMappers
             PromoDiscountAmount: order.PromoDiscountAmount,
             EstimatedTime: order.EstimatedTime,
             ActualCompletionTime: order.ActualCompletionTime,
+            CompletedAt: order.CompletedAt,
             CompletionNotes: order.CompletionNotes,
             OrderStatus: order.GetCurrentOrderStatus().MapToCode(),
             ConfirmationCode: order.ConfirmationCode,
@@ -92,7 +110,10 @@ public static class OrderMappers
             ReceiptNumber: order.Receipt?.ReceiptNumber,
             OrderNotes: order.OrderNotes.Select(n => n.MapToDto()),
             OrderIssues: order.OrderIssues.Select(i => i.MapToDto()),
-            Review: order.Reviews.FirstOrDefault()?.MapToDto()
+            Review: order.Reviews.FirstOrDefault()?.MapToDto(),
+            EstimatedCleanerPay: estimatedCleanerPay,
+            IsAssignedToCurrentUser: isAssignedToCurrentUser,
+            HasAfterPhotos: hasAfterPhotos
         );
     }
 
@@ -175,5 +196,42 @@ public static class OrderMappers
             (_, > 0m) => (AppliedDiscountSource.Tier, tier),
             _ => (AppliedDiscountSource.None, 0m),
         };
+    }
+
+    /// <summary>
+    /// Coarse location string safe to show to cleaners *before* they accept
+    /// the order — no street name, no house number. Mirrors how Wolt/Bolt
+    /// show pickup areas: enough for the cleaner to evaluate distance/zone,
+    /// none of the PII that would let them dox the customer.
+    ///
+    /// Output examples:
+    ///   - "Praha 4 · 14000"   (Czech city districts encoded in the ZIP prefix)
+    ///   - "Brno · 60200"
+    ///   - "Praha"             (no ZIP → fall back to city only)
+    ///   - ""                  (no address at all)
+    ///
+    /// We deliberately use ZIP prefix not full ZIP because PSČ "14000"
+    /// already identifies the broad district (whole Praha 4); leaving the
+    /// last two digits would narrow it to a specific street group, which
+    /// defeats the privacy intent.
+    /// </summary>
+    private static string BuildApproximateAddress(Address? address)
+    {
+        if (address == null) return string.Empty;
+        var city = address.City?.Trim();
+        if (string.IsNullOrEmpty(city)) return string.Empty;
+
+        var zipPrefix = address.ZipCode?.Trim();
+        if (!string.IsNullOrEmpty(zipPrefix) && zipPrefix.Length >= 3)
+        {
+            // For Czech PSČ (5 digits, no spaces) keep the first 3 — that's
+            // city + district granularity. International ZIPs vary; the
+            // length>=3 check just prevents emitting "1" as a "prefix".
+            var truncated = zipPrefix.Replace(" ", "")
+                .Substring(0, Math.Min(3, zipPrefix.Length));
+            return $"{city} · {truncated}";
+        }
+
+        return city;
     }
 }

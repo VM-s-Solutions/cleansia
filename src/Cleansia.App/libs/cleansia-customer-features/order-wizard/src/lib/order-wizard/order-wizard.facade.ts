@@ -167,6 +167,23 @@ export class OrderWizardFacade {
   private readonly lastQuotedInputs = signal<QuoteInputs | null>(null);
 
   /**
+   * Service-area client-side check. Backend rejects orders in non-served
+   * cities with `city.not_serviced`, but that only fires on submit — the
+   * wizard surfaces an inline warning earlier so the user doesn't waste
+   * time filling out the rest of the form. Backend stays the source of
+   * truth; this is purely UX defense-in-depth.
+   *
+   *  - 'idle'    → no city yet, nothing to check
+   *  - 'pending' → query in flight
+   *  - 'ok'      → city matches a ServiceCity row
+   *  - 'rejected'→ city not served (show banner + disable Next)
+   *  - 'error'   → network failed; treat as pass-through, backend re-checks
+   */
+  readonly cityServiced = signal<'idle' | 'pending' | 'ok' | 'rejected' | 'error'>('idle');
+  /** Internal cache: avoids re-querying when city/country haven't changed. */
+  private lastCityCheckKey = '';
+
+  /**
    * Server-quoted base total — does NOT include the express surcharge. Use
    * [displayedTotalPrice] for what the user sees in the summary.
    */
@@ -274,8 +291,15 @@ export class OrderWizardFacade {
 
     toObservable(this.quoteInputs)
       .pipe(
-        debounceTime(400),
-        distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
+        // 800ms matches the typing-pause UX norm for booking wizards and
+        // keeps us well under the backend's "interactive" rate-limit
+        // (60/min) even if the user rapidly steps rooms / extras. The
+        // earlier 400ms was tuned for an unthrottled endpoint.
+        debounceTime(800),
+        // Cheap structural compare via the same JSON shape we use to
+        // detect stale inputs at submit time — same comparator the
+        // imperative refreshQuoteNow path uses, so the two stay in sync.
+        distinctUntilChanged((a, b) => this.quoteInputsEqual(a, b)),
         tap((inputs) => {
           // Empty selections — clear the quote immediately. No HTTP needed.
           if (this.isEmptyInputs(inputs)) {
@@ -285,6 +309,11 @@ export class OrderWizardFacade {
           }
         }),
         filter((inputs) => !this.isEmptyInputs(inputs)),
+        // Skip when the most recent successful quote already matches the
+        // pending inputs — the form likely changed and reverted within
+        // the debounce window, and re-issuing the same request would
+        // just burn a rate-limit token for an identical answer.
+        filter((inputs) => !this.quoteInputsEqual(inputs, this.lastQuotedInputs())),
         tap(() => this.quoting.set(true)),
         switchMap((inputs) =>
           this.customerClient.orderClient
@@ -540,11 +569,20 @@ export class OrderWizardFacade {
   initialize(): void {
     this.store.dispatch(loadCustomerServices());
     this.store.dispatch(loadCustomerPackages());
-    this.customerClient.countryClient.getOverview().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    // `getServiced` returns only countries the company operates in. The old
+    // `getOverview` call alphabetically returned the full catalog, so the
+    // auto-select-first-country fallback silently picked Argentina for
+    // every CZ booking — the address persisted with CountryId=Argentina and
+    // the backend now (rightly) rejects that. Service-area work in
+    // planning/active/service-areas.md.
+    this.customerClient.countryClient.getServiced().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (countries) => {
         this.countries.set(countries);
-        // Auto-select first country if address has no country set
-        if (countries.length > 0 && !this.formData().address.countryId) {
+        // Auto-select country ONLY when there's exactly one served — otherwise
+        // require the user to pick. With multiple served countries we'd hit
+        // the same silent-default bug if we auto-picked here, just with a
+        // different country.
+        if (countries.length === 1 && !this.formData().address.countryId) {
           this.updateFormData({
             address: new AddressDto({
               ...this.formData().address,
@@ -607,6 +645,54 @@ export class OrderWizardFacade {
 
   updateFormData(partial: Partial<OrderWizardFormData>): void {
     this.formData.update((current) => ({ ...current, ...partial }));
+    // City / country can change via multiple paths (Mapbox pick, manual
+    // edit, saved-address selection). Centralise the service-area check
+    // here so every path triggers it uniformly.
+    if (partial.address !== undefined) {
+      this.refreshCityServicedCheck();
+    }
+  }
+
+  /**
+   * Fire-and-forget service-area lookup. Skips when nothing's changed
+   * (avoids hammering /api/ServiceCity on every keystroke), skips during
+   * SSR, and degrades to 'error' (pass-through) on network failure so a
+   * flaky connection can't strand the user — backend re-validates on
+   * submit anyway.
+   */
+  private refreshCityServicedCheck(): void {
+    if (!this.isBrowser) return;
+    const addr = this.formData().address;
+    const countryId = addr.countryId ?? '';
+    const city = (addr.city ?? '').trim();
+    if (!countryId || !city) {
+      this.cityServiced.set('idle');
+      this.lastCityCheckKey = '';
+      return;
+    }
+    const key = `${countryId}|${city.toLowerCase()}`;
+    if (key === this.lastCityCheckKey) return;
+    this.lastCityCheckKey = key;
+    this.cityServiced.set('pending');
+    this.customerClient.apiClient
+      .serviceCity(countryId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (cities) => {
+          // Stale-response guard: if the user already typed past this
+          // city between the request and the response, drop the result.
+          if (key !== this.lastCityCheckKey) return;
+          const normalized = city.toLowerCase();
+          const match = (cities ?? []).some(
+            (c) => (c.name ?? '').trim().toLowerCase() === normalized
+          );
+          this.cityServiced.set(match ? 'ok' : 'rejected');
+        },
+        error: () => {
+          if (key !== this.lastCityCheckKey) return;
+          this.cityServiced.set('error');
+        },
+      });
   }
 
   /**
@@ -776,7 +862,12 @@ export class OrderWizardFacade {
           this.emailRegex.test(data.customerEmail) &&
           data.customerEmail.length <= 50
         );
-        return addressValid && contactValid && phoneValid;
+        // Block Next when the city-serviced check explicitly rejected.
+        // 'pending' / 'error' / 'idle' all pass through — backend
+        // re-validates on submit; we just don't want to block on a
+        // network failure or a check that hasn't fired yet.
+        const cityOk = this.cityServiced() !== 'rejected';
+        return addressValid && contactValid && phoneValid && cityOk;
       }
       case 2:
         return !!data.cleaningDate;

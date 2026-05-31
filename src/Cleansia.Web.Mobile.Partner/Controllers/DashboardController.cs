@@ -27,6 +27,18 @@ public class DashboardController(IMediator mediator) : MobileApiController(media
         return HandleResult<DashboardStatsDto>(result);
     }
 
+    [HttpGet("GetAvailableJobsPreview")]
+    [Permission(Policy.CanGetCurrentEmployee)]
+    [ProducesResponseType(typeof(AvailableJobsPreviewResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetAvailableJobsPreview([FromQuery] GetAvailableJobsPreview.Query query, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(query, cancellationToken);
+        return HandleResult<AvailableJobsPreviewResponse>(result);
+    }
+
     [HttpGet("GetUpcomingOrders")]
     [Permission(Policy.CanViewPagedOrder)]
     [ProducesResponseType(typeof(PagedData<OrderListItem>), StatusCodes.Status200OK)]

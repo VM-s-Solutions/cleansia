@@ -23,6 +23,12 @@ public static class NotificationEventCatalog
     public const string DisputeReply = "dispute.reply";
     public const string RecurringScheduled = "recurring.scheduled";
 
+    /// <summary>
+    /// Partner-side digest. Args: <c>count</c> (decimal-string count of new
+    /// eligible orders). Body localized client-side ("N new jobs near you").
+    /// </summary>
+    public const string NewJobsAvailable = "order.new_available";
+
     public static NotificationCategory? GetCategoryFor(string eventKey) => eventKey switch
     {
         OrderConfirmed => NotificationCategory.OrderUpdates,
@@ -37,6 +43,7 @@ public static class NotificationEventCatalog
         PromoNewSitewide => NotificationCategory.Promo,
         DisputeReply => NotificationCategory.DisputeReply,
         RecurringScheduled => NotificationCategory.RecurringScheduled,
+        NewJobsAvailable => NotificationCategory.NewJobsAvailable,
         _ => null,
     };
 }

@@ -101,7 +101,11 @@ public class TakeOrder
                 .Include(e => e.Address)
                 .FirstOrDefaultAsync(e => e.Id == employeeId, cancellationToken);
 
-            return employee?.Address is not null && (employee?.Availability.Any() ?? false);
+            // Availability is no longer a gate (the weekly schedule
+            // isn't read by matching/push today). A cleaner can take
+            // orders once they have an address; documents + approval
+            // are still enforced separately.
+            return employee?.Address is not null;
         }
 
         private async Task<bool> HasUploadedDocumentsAsync(Command command, CancellationToken cancellationToken)

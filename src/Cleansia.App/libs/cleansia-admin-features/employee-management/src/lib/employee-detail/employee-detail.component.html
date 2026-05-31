@@ -96,7 +96,7 @@
               [label]="'pages.employee_detail.actions.approve_employee' | translate"
               icon="pi pi-check"
               severity="success"
-              (onClick)="facade.approveEmployee()"
+              (onClick)="facade.openApproveEmployeeDialog()"
             />
             <cleansia-button
               *cleansiaPermission="Policy.CanRejectEmployee"

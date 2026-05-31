@@ -56,6 +56,7 @@
       "countries": "Krajiny",
       "country_create": "Vytvoriť krajinu",
       "country_edit": "Upraviť krajinu",
+      "service_area": "Servisná oblasť",
       "currencies": "Meny",
       "currency_create": "Vytvoriť menu",
       "currency_edit": "Upraviť menu",
@@ -207,6 +208,7 @@
     "admin_users": "Administrátori",
     "languages": "Jazyky",
     "countries": "Krajiny",
+    "service_area": "Servisná oblasť",
     "currencies": "Meny",
     "company_info": "Informácie o spoločnosti",
     "templates": "Šablóny",
@@ -254,6 +256,12 @@
         "active_status": "Stav aktivity",
         "reset": "Obnoviť filtre",
         "clear_all": "Vymazať všetko"
+      },
+      "approve_dialog": {
+        "title": "Schváliť zamestnanca",
+        "subtitle": "Vyberte krajinu, v ktorej je tento upratovač oprávnený pracovať. Určuje predvolenú menu, jazyk a DPH.",
+        "cancel_button": "Zrušiť",
+        "approve_button": "Schváliť zamestnanca"
       },
       "reject_dialog": {
         "title": "Zamietnuť zamestnanca",
@@ -355,6 +363,17 @@
         "reject_document": "Zamietnuť",
         "download_document": "Stiahnuť",
         "preview_document": "Náhľad"
+      },
+      "approve_employee_dialog": {
+        "title": "Schváliť zamestnanca",
+        "subtitle": "Vyberte krajinu, v ktorej je tento upratovač oprávnený pracovať. Určuje predvolenú menu, jazyk a DPH.",
+        "work_country_label": "Pracovná krajina",
+        "work_country_hint": "Vybrať možno len krajiny, v ktorých momentálne poskytujeme služby.",
+        "work_country_required": "Pracovná krajina je povinná",
+        "notes_placeholder": "Voliteľné poznámky k schváleniu...",
+        "notes_hint": "Maximálne 1000 znakov",
+        "cancel_button": "Zrušiť",
+        "approve_button": "Schváliť zamestnanca"
       },
       "reject_employee_dialog": {
         "title": "Zamietnuť zamestnanca",
@@ -512,6 +531,7 @@
       "bathrooms": "Kúpeľne",
       "estimated_time": "Odhadovaný čas",
       "actual_time": "Skutočný čas",
+      "completed_at": "Dokončené",
       "selected_packages": "Vybrané balíčky",
       "selected_services": "Vybrané služby",
       "extras": "Doplnky",
@@ -855,6 +875,53 @@
         "load_error": "Nepodarilo sa načítať krajiny",
         "delete_success": "Krajina bola úspešne odstránená",
         "delete_error": "Nepodarilo sa odstrániť krajinu"
+      }
+    },
+    "service_area_management": {
+      "title": "Servisná oblasť",
+      "description": "Vyberte krajiny, v ktorých pôsobíte, a mestá, ktoré obsluhujete. Tieto voľby riadia všetky výbery adries v zákazníckych aj partnerských aplikáciách.",
+      "tabs": {
+        "countries": "Obsluhované krajiny",
+        "cities": "Obsluhované mestá"
+      },
+      "columns": {
+        "country": "Krajina",
+        "iso_code": "ISO kód",
+        "is_serviced": "Obsluhujeme",
+        "city": "Mesto",
+        "zip_prefix": "PSČ prefix",
+        "is_active": "Stav"
+      },
+      "countries": {
+        "hint": "Pri každej krajine prepnite prepínač, ak v nej pôsobíte. Zákazníci a partneri uvidia v ponukách len obsluhované krajiny."
+      },
+      "cities": {
+        "country_picker": "Vyberte krajinu",
+        "no_serviced_country": "Najprv označte aspoň jednu krajinu ako obsluhovanú.",
+        "empty": "V tejto krajine zatiaľ nie sú žiadne mestá.",
+        "add": "Pridať mesto",
+        "edit": "Upraviť",
+        "delete": "Odstrániť",
+        "edit_header": "Upraviť mesto",
+        "create_header": "Pridať mesto",
+        "delete_header": "Odstrániť mesto",
+        "delete_confirm": "Odstrániť {{ name }} zo servisnej oblasti? Existujúce objednávky to neovplyvní; nové objednávky v tomto meste budú odmietnuté.",
+        "name_label": "Názov mesta",
+        "name_placeholder": "napr. Bratislava, Košice, Žilina",
+        "zip_prefix_label": "PSČ prefix (voliteľné)",
+        "zip_prefix_placeholder": "napr. 1, 11, 11000",
+        "zip_prefix_hint": "Zatiaľ sa nevynucuje — zachytené pre budúcu prísnejšiu validáciu.",
+        "active_label": "Aktívne",
+        "active": "Aktívne",
+        "inactive": "Neaktívne",
+        "save": "Uložiť",
+        "cancel": "Zrušiť"
+      },
+      "messages": {
+        "country_updated": "Stav obsluhy krajiny aktualizovaný",
+        "city_created": "Mesto pridané do servisnej oblasti",
+        "city_updated": "Mesto aktualizované",
+        "city_deleted": "Mesto odstránené zo servisnej oblasti"
       }
     },
     "country_form": {
@@ -2113,6 +2180,11 @@
         "key_exists": "Preklad s týmto kľúčom už existuje",
         "invalid_type": "Neplatný typ e-mailovej šablóny"
       }
+    },
+    "service_area": {
+      "country_not_serviced": "V tejto krajine zatiaľ nepôsobíme.",
+      "country_required": "Vyberte krajinu.",
+      "city_not_serviced": "V tomto meste zatiaľ nepôsobíme."
     }
   },
   "cookies": {

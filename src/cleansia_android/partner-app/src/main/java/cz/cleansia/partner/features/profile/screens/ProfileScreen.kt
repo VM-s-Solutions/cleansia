@@ -1,49 +1,44 @@
 package cz.cleansia.partner.features.profile.screens
 
-import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.Badge
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.ContactPhone
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material.icons.outlined.AccountBalance
+import androidx.compose.material.icons.outlined.Badge
+import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Phone
+import androidx.compose.material.icons.outlined.Place
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.TextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,775 +47,499 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import cz.cleansia.core.ui.components.CleansiaDialog
+import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
-import cz.cleansia.partner.domain.models.profile.Country
-import cz.cleansia.partner.domain.models.profile.DayAvailability
-import cz.cleansia.partner.domain.models.profile.DocumentType
-import cz.cleansia.partner.domain.models.profile.EmployeeDocument
-import cz.cleansia.partner.domain.models.profile.EmployeeProfile
-import cz.cleansia.partner.features.profile.components.UnifiedAvailabilitySection
-import cz.cleansia.partner.domain.models.profile.DateOverride
-import cz.cleansia.partner.features.profile.components.DocumentManagementSection
-import cz.cleansia.partner.features.profile.components.TermsConsentSection
-import cz.cleansia.partner.features.profile.components.sections.ProfileHeaderCard
-import cz.cleansia.partner.features.profile.components.sections.ProfileSectionCard
-import cz.cleansia.partner.features.profile.components.sections.InfoRow
-import cz.cleansia.partner.features.profile.components.sections.MissingFieldsIndicator
-import cz.cleansia.partner.features.profile.components.sections.profileTextFieldColors
-import cz.cleansia.partner.features.profile.components.sections.validationErrorText
-import cz.cleansia.partner.features.profile.viewmodels.ProfileEditFormState
-import cz.cleansia.partner.features.profile.viewmodels.ProfileSection
+import cz.cleansia.partner.api.model.ContractStatus
+import cz.cleansia.partner.api.model.EmployeeItem
+import cz.cleansia.partner.core.settings.LanguagePreference
+import cz.cleansia.partner.core.settings.ThemePreference
+import cz.cleansia.partner.features.main.MainBottomNavInset
 import cz.cleansia.partner.features.profile.viewmodels.ProfileViewModel
-import cz.cleansia.partner.ui.components.CleansiaSnackbarHost
-import cz.cleansia.partner.ui.components.CountryDropdown
-import cz.cleansia.partner.ui.components.ErrorView
-import cz.cleansia.partner.ui.components.GlassBackButton
-import cz.cleansia.partner.ui.components.CleansiaPhoneTextField
-import cz.cleansia.partner.ui.components.IbanVisualTransformation
-import cz.cleansia.partner.features.profile.components.ProfileSkeleton
-import cz.cleansia.partner.ui.components.ScrollToTopFab
-import cz.cleansia.partner.core.utils.DateTimeUtils
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import cz.cleansia.partner.features.settings.viewmodels.SettingsViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    onNavigateBack: (() -> Unit)? = null,
-    onLogout: () -> Unit,
-    viewModel: ProfileViewModel = hiltViewModel()
+    onNavigateBack: () -> Unit,
+    onNavigateToPersonal: () -> Unit,
+    onNavigateToAddress: () -> Unit,
+    onNavigateToIdentification: () -> Unit,
+    onNavigateToBank: () -> Unit,
+    onNavigateToEmergency: () -> Unit,
+    onNavigateToDocuments: () -> Unit,
+    onNavigateToLanguage: () -> Unit,
+    onNavigateToTheme: () -> Unit,
+    onSignedOut: () -> Unit,
+    viewModel: ProfileViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val settings by settingsViewModel.settings.collectAsState()
+    val settingsUi by settingsViewModel.uiState.collectAsState()
+
+    LaunchedEffect(uiState.isSignedOut, settingsUi.isSignedOut) {
+        if (uiState.isSignedOut || settingsUi.isSignedOut) onSignedOut()
+    }
+
+    // Logout confirm — destructive, irreversible from the user's POV (kicks
+    // back to SignIn + clears tokens). The LogoutRow only flips the flag; the
+    // actual `viewModel.signOut()` call fires after the user confirms. Forced
+    // sign-out flows (e.g. token revocation from SettingsViewModel) bypass
+    // this dialog and route straight through `onSignedOut` above.
     var showLogoutDialog by remember { mutableStateOf(false) }
-    val profileListState = rememberLazyListState()
-    val isScrolled by remember {
-        derivedStateOf { profileListState.firstVisibleItemIndex > 0 || profileListState.firstVisibleItemScrollOffset > 0 }
-    }
-    val headerBgColor = if (isScrolled) MaterialTheme.colorScheme.surface else Color.Transparent
 
-    // Handle logout success
-    LaunchedEffect(uiState.logoutSuccess) {
-        if (uiState.logoutSuccess) {
-            onLogout()
-        }
-    }
+    val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
-    // Show error in snackbar
-    LaunchedEffect(uiState.error) {
-        uiState.error?.let { error ->
-            snackbarHostState.showSnackbar(error)
-            viewModel.clearError()
-        }
-    }
-
-    // Show save success
-    LaunchedEffect(uiState.saveSuccess) {
-        if (uiState.saveSuccess) {
-            snackbarHostState.showSnackbar("Profile saved successfully")
-            viewModel.clearSaveSuccess()
-        }
-    }
-
-    // Show upload success
-    LaunchedEffect(uiState.uploadSuccess) {
-        if (uiState.uploadSuccess) {
-            snackbarHostState.showSnackbar("Document uploaded successfully")
-            viewModel.clearUploadSuccess()
-        }
-    }
-
-    // Show photo upload success
-    LaunchedEffect(uiState.photoUploadSuccess) {
-        if (uiState.photoUploadSuccess) {
-            snackbarHostState.showSnackbar("Profile photo updated")
-            viewModel.clearPhotoUploadSuccess()
-        }
-    }
-
-    // Show delete success
-    LaunchedEffect(uiState.deleteSuccess) {
-        if (uiState.deleteSuccess) {
-            snackbarHostState.showSnackbar("Document deleted successfully")
-            viewModel.clearDeleteSuccess()
-        }
-    }
-
-    // Show availability save success
-    LaunchedEffect(uiState.availabilitySaveSuccess) {
-        if (uiState.availabilitySaveSuccess) {
-            snackbarHostState.showSnackbar("Availability saved successfully")
-            viewModel.clearAvailabilitySaveSuccess()
-        }
-    }
-
-    // Logout confirmation dialog
-    if (showLogoutDialog) {
-        AlertDialog(
-            onDismissRequest = { showLogoutDialog = false },
-            title = { Text(stringResource(R.string.logout)) },
-            text = { Text("Are you sure you want to logout?") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showLogoutDialog = false
-                        viewModel.logout()
-                    }
-                ) {
-                    Text(stringResource(R.string.confirm))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showLogoutDialog = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
+    when {
+        uiState.isLoading && uiState.employee == null -> {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator()
             }
-        )
-    }
-
-    Scaffold { _ ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
-            when {
-                uiState.isLoading -> {
-                    ProfileSkeleton(
-                        modifier = Modifier.fillMaxSize()
+        }
+        uiState.employee != null -> {
+            val employee = uiState.employee!!
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
+                contentPadding = PaddingValues(bottom = MainBottomNavInset),
+                verticalArrangement = Arrangement.spacedBy(Spacing.M),
+            ) {
+                item {
+                    ProfileHero(
+                        employee = employee,
+                        contractStatus = uiState.contractStatus,
+                        statusBarTop = statusBarTop,
                     )
                 }
-                uiState.error != null && uiState.profile == null -> {
-                    ErrorView(
-                        message = uiState.error ?: "Unknown error",
-                        onRetry = { viewModel.loadProfile() },
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-                uiState.profile != null -> {
-                    PullToRefreshBox(
-                        isRefreshing = uiState.isRefreshing,
-                        onRefresh = { viewModel.refresh() },
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        ProfileContent(
-                            listState = profileListState,
-                            profile = uiState.profile!!,
-                            countries = uiState.countries,
-                            currentLanguage = viewModel.currentLanguage.collectAsState().value,
-                            profilePhotoUri = uiState.profilePhotoUri,
-                            onPhotoSelected = { uri -> viewModel.setProfilePhotoUri(uri) },
-                            editingSections = uiState.editingSections,
-                            editFormState = uiState.editFormState,
-                            savingSection = uiState.savingSection,
-                            validationErrors = uiState.validationErrors,
-                            onStartEditing = { viewModel.startEditingSection(it) },
-                            onCancelEditing = { viewModel.cancelEditingSection(it) },
-                            onSaveSection = { viewModel.saveSection(it) },
-                            onFirstNameChange = { viewModel.updateFirstName(it) },
-                            onLastNameChange = { viewModel.updateLastName(it) },
-                            onEmailChange = { viewModel.updateEmail(it) },
-                            onPhoneNumberChange = { viewModel.updatePhoneNumber(it) },
-                            onDateOfBirthChange = { viewModel.updateDateOfBirth(it) },
-                            onSelectNationality = { viewModel.selectNationality(it) },
-                            onPassportIdChange = { viewModel.updatePassportId(it) },
-                            onTaxIdChange = { viewModel.updateTaxId(it) },
-                            onStreetChange = { viewModel.updateStreet(it) },
-                            onCityChange = { viewModel.updateCity(it) },
-                            onZipCodeChange = { viewModel.updateZipCode(it) },
-                            onStateChange = { viewModel.updateState(it) },
-                            onSelectCountry = { viewModel.selectCountry(it) },
-                            onIbanChange = { viewModel.updateIban(it) },
-                            onEmergencyContactNameChange = { viewModel.updateEmergencyContactName(it) },
-                            onEmergencyContactPhoneChange = { viewModel.updateEmergencyContactPhone(it) },
-                            documents = uiState.documents,
-                            availability = uiState.availability,
-                            dateOverrides = uiState.dateOverrides,
-                            isSavingAvailability = uiState.isSavingAvailability,
-                            onAvailabilityChange = { viewModel.updateAvailability(it) },
-                            onSaveAvailability = { viewModel.saveAvailability() },
-                            onAddDateOverride = { viewModel.addDateOverride(it) },
-                            onRemoveDateOverride = { viewModel.removeDateOverride(it) },
-                            isUploadingDocument = uiState.isUploadingDocument,
-                            isDeletingDocument = uiState.isDeletingDocument,
-                            onUploadDocument = { data, fileName, docType -> viewModel.uploadDocument(data, fileName, docType) },
-                            onDeleteDocument = { viewModel.deleteDocument(it) },
-                            onDownloadDocument = { id, name -> viewModel.downloadDocument(id, name) }
+                item {
+                    SectionGroup(title = stringResource(R.string.profile_group_account)) {
+                        ProfileSectionRow(
+                            icon = Icons.Outlined.Person,
+                            title = stringResource(R.string.personal),
+                            summary = displayName(employee).ifBlank { stringResource(R.string.no_data) },
+                            onClick = onNavigateToPersonal,
+                        )
+                        RowDivider()
+                        ProfileSectionRow(
+                            icon = Icons.Outlined.Place,
+                            title = stringResource(R.string.address),
+                            summary = displayAddress(employee).ifBlank { stringResource(R.string.no_data) },
+                            onClick = onNavigateToAddress,
+                        )
+                        RowDivider()
+                        ProfileSectionRow(
+                            icon = Icons.Outlined.Phone,
+                            title = stringResource(R.string.emergency_contact),
+                            summary = displayEmergency(employee).ifBlank { stringResource(R.string.no_data) },
+                            onClick = onNavigateToEmergency,
                         )
                     }
                 }
+                item {
+                    SectionGroup(title = stringResource(R.string.profile_group_work_legal)) {
+                        ProfileSectionRow(
+                            icon = Icons.Outlined.Badge,
+                            title = stringResource(R.string.identification_title),
+                            summary = employee.passportId?.takeIf { it.isNotBlank() }
+                                ?: stringResource(R.string.no_data),
+                            onClick = onNavigateToIdentification,
+                        )
+                        RowDivider()
+                        ProfileSectionRow(
+                            icon = Icons.Outlined.AccountBalance,
+                            title = stringResource(R.string.bank_details),
+                            summary = employee.iban?.takeIf { it.isNotBlank() }
+                                ?: stringResource(R.string.no_data),
+                            onClick = onNavigateToBank,
+                        )
+                        RowDivider()
+                        ProfileSectionRow(
+                            icon = Icons.Outlined.Description,
+                            title = stringResource(R.string.my_documents),
+                            summary = stringResource(R.string.documents_summary_view),
+                            onClick = onNavigateToDocuments,
+                        )
+                    }
+                }
+                item {
+                    // Preferences: same row pattern as every other
+                    // section — current value as the at-a-glance
+                    // summary, tap opens a dedicated picker screen.
+                    // Drops the inline dropdown chrome that looked
+                    // out of place vs the rest of the page.
+                    SectionGroup(title = stringResource(R.string.profile_group_preferences)) {
+                        ProfileSectionRow(
+                            icon = Icons.Outlined.Language,
+                            title = stringResource(R.string.language),
+                            summary = languageSummary(settings.language),
+                            onClick = onNavigateToLanguage,
+                        )
+                        RowDivider()
+                        ProfileSectionRow(
+                            icon = Icons.Outlined.DarkMode,
+                            title = stringResource(R.string.theme),
+                            summary = themeSummary(settings.theme),
+                            onClick = onNavigateToTheme,
+                        )
+                    }
+                }
+                item {
+                    LogoutRow(onClick = { showLogoutDialog = true })
+                    Spacer(Modifier.height(Spacing.M))
+                }
             }
-
-            if (onNavigateBack != null) {
-                val headerShape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp)
-                GlassBackButton(
-                    onNavigateBack = onNavigateBack,
-                    title = stringResource(R.string.profile),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(headerShape)
-                        .background(headerBgColor)
+        }
+        else -> {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = stringResource(R.string.error_generic),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-
-            ScrollToTopFab(
-                listState = profileListState,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 16.dp, bottom = 24.dp)
-            )
-
-            CleansiaSnackbarHost(hostState = snackbarHostState)
         }
+    }
+
+    if (showLogoutDialog) {
+        CleansiaDialog(
+            onDismiss = { showLogoutDialog = false },
+            title = stringResource(R.string.profile_logout_dialog_title),
+            message = stringResource(R.string.profile_logout_dialog_message),
+            icon = Icons.AutoMirrored.Outlined.Logout,
+            destructive = true,
+            confirmLabel = stringResource(R.string.profile_logout_dialog_confirm),
+            onConfirm = {
+                showLogoutDialog = false
+                viewModel.signOut()
+            },
+            dismissLabel = stringResource(R.string.profile_logout_dialog_cancel),
+        )
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Compact, flat hero — row layout: circular initials avatar on the
+ * left, name / email / status-chip stacked on the right. No gradient;
+ * sits on `colorScheme.background` like the rest of the page so the
+ * profile reads as one continuous flat surface, not a marketing
+ * banner glued to a list. Status chip vertically center-aligned with
+ * the rest of the right-hand stack.
+ */
 @Composable
-private fun ProfileContent(
-    listState: LazyListState,
-    profile: EmployeeProfile,
-    countries: List<Country>,
-    currentLanguage: String,
-    profilePhotoUri: Uri?,
-    onPhotoSelected: (Uri?) -> Unit,
-    editingSections: Set<ProfileSection>,
-    editFormState: ProfileEditFormState,
-    savingSection: ProfileSection?,
-    validationErrors: Map<String, String>,
-    onStartEditing: (ProfileSection) -> Unit,
-    onCancelEditing: (ProfileSection) -> Unit,
-    onSaveSection: (ProfileSection) -> Unit,
-    onFirstNameChange: (String) -> Unit,
-    onLastNameChange: (String) -> Unit,
-    onEmailChange: (String) -> Unit,
-    onPhoneNumberChange: (String) -> Unit,
-    onDateOfBirthChange: (String) -> Unit,
-    onSelectNationality: (String) -> Unit,
-    onPassportIdChange: (String) -> Unit,
-    onTaxIdChange: (String) -> Unit,
-    onStreetChange: (String) -> Unit,
-    onCityChange: (String) -> Unit,
-    onZipCodeChange: (String) -> Unit,
-    onStateChange: (String) -> Unit,
-    onSelectCountry: (String) -> Unit,
-    onIbanChange: (String) -> Unit,
-    onEmergencyContactNameChange: (String) -> Unit,
-    onEmergencyContactPhoneChange: (String) -> Unit,
-    documents: List<EmployeeDocument>,
-    availability: List<DayAvailability>,
-    dateOverrides: List<DateOverride>,
-    isSavingAvailability: Boolean,
-    onAvailabilityChange: (List<DayAvailability>) -> Unit,
-    onSaveAvailability: () -> Unit,
-    onAddDateOverride: (DateOverride) -> Unit,
-    onRemoveDateOverride: (String) -> Unit,
-    isUploadingDocument: Boolean,
-    isDeletingDocument: Boolean,
-    onUploadDocument: (ByteArray, String, DocumentType) -> Unit,
-    onDeleteDocument: (String) -> Unit,
-    onDownloadDocument: (String, String) -> Unit
+private fun ProfileHero(
+    employee: EmployeeItem,
+    contractStatus: ContractStatus?,
+    statusBarTop: androidx.compose.ui.unit.Dp,
 ) {
-    LazyColumn(
-        state = listState,
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 72.dp, bottom = 32.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+    val initials = remember(employee.firstName, employee.lastName) {
+        initialsOf(employee.firstName, employee.lastName)
+    }
+    Row(
         modifier = Modifier
-            .fillMaxSize()
-            .statusBarsPadding()
+            .fillMaxWidth()
+            .padding(top = statusBarTop + Spacing.M, bottom = Spacing.S)
+            .padding(horizontal = Spacing.M),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Profile Header
-        item {
-            ProfileHeaderCard(
-                profile = profile,
-                profilePhotoUri = profilePhotoUri,
-                onPhotoSelected = onPhotoSelected
+        InitialsAvatar(initials = initials)
+        Spacer(Modifier.width(Spacing.M))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = displayName(employee).ifBlank { stringResource(R.string.no_data) },
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
-        }
-
-        // Personal Info
-        item {
-            val isEditing = editingSections.contains(ProfileSection.PERSONAL)
-            ProfileSectionCard(
-                title = stringResource(R.string.personal_info),
-                icon = Icons.Default.Person,
-                isEditing = isEditing,
-                isSaving = savingSection == ProfileSection.PERSONAL,
-                hasMissingFields = profile.missingPersonalFields.isNotEmpty(),
-                onEditClick = { onStartEditing(ProfileSection.PERSONAL) },
-                onSave = { onSaveSection(ProfileSection.PERSONAL) },
-                onCancel = { onCancelEditing(ProfileSection.PERSONAL) }
-            ) {
-                if (isEditing) {
-                    TextField(
-                        value = editFormState.firstName,
-                        onValueChange = onFirstNameChange,
-                        label = { Text(stringResource(R.string.first_name)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = profileTextFieldColors(),
-                        isError = validationErrors.containsKey("firstName"),
-                        supportingText = validationErrors["firstName"]?.let { key ->
-                            { Text(validationErrorText(key)) }
-                        }
-                    )
-                    TextField(
-                        value = editFormState.lastName,
-                        onValueChange = onLastNameChange,
-                        label = { Text(stringResource(R.string.last_name)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = profileTextFieldColors(),
-                        isError = validationErrors.containsKey("lastName"),
-                        supportingText = validationErrors["lastName"]?.let { key ->
-                            { Text(validationErrorText(key)) }
-                        }
-                    )
-                    TextField(
-                        value = editFormState.email,
-                        onValueChange = onEmailChange,
-                        label = { Text(stringResource(R.string.email)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = profileTextFieldColors(),
-                        isError = validationErrors.containsKey("email"),
-                        supportingText = validationErrors["email"]?.let { key ->
-                            { Text(validationErrorText(key)) }
-                        }
-                    )
-                    CleansiaPhoneTextField(
-                        value = editFormState.phoneNumber,
-                        onValueChange = onPhoneNumberChange,
-                        label = stringResource(R.string.phone_number),
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = profileTextFieldColors(),
-                        isError = validationErrors.containsKey("phoneNumber"),
-                        supportingText = validationErrors["phoneNumber"]?.let { key ->
-                            { Text(validationErrorText(key)) }
-                        }
-                    )
-                    // Date of birth with date picker
-                    var showDatePicker by remember { mutableStateOf(false) }
-                    val initialDateMillis = remember(editFormState.dateOfBirth) {
-                        try {
-                            val parsed = java.time.LocalDate.parse(editFormState.dateOfBirth)
-                            parsed.atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
-                        } catch (e: Exception) { null }
-                    }
-                    val datePickerState = rememberDatePickerState(
-                        initialSelectedDateMillis = initialDateMillis
-                    )
-                    // Sync date picker when form state changes
-                    LaunchedEffect(initialDateMillis) {
-                        initialDateMillis?.let { datePickerState.selectedDateMillis = it }
-                    }
-
-                    TextField(
-                        value = if (editFormState.dateOfBirth.isNotBlank())
-                            DateTimeUtils.formatDate(editFormState.dateOfBirth)
-                        else "",
-                        onValueChange = {},
-                        label = { Text(stringResource(R.string.date_of_birth)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        readOnly = true,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = profileTextFieldColors(),
-                        isError = validationErrors.containsKey("dateOfBirth"),
-                        supportingText = validationErrors["dateOfBirth"]?.let { key ->
-                            { Text(validationErrorText(key)) }
-                        },
-                        trailingIcon = {
-                            IconButton(onClick = { showDatePicker = true }) {
-                                Icon(
-                                    imageVector = Icons.Default.CalendarToday,
-                                    contentDescription = stringResource(R.string.select_date),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        }
-                    )
-
-                    if (showDatePicker) {
-                        DatePickerDialog(
-                            onDismissRequest = { showDatePicker = false },
-                            confirmButton = {
-                                TextButton(
-                                    onClick = {
-                                        datePickerState.selectedDateMillis?.let { millis ->
-                                            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-                                            dateFormat.timeZone = java.util.TimeZone.getTimeZone("UTC")
-                                            onDateOfBirthChange(dateFormat.format(Date(millis)))
-                                        }
-                                        showDatePicker = false
-                                    }
-                                ) {
-                                    Text(stringResource(R.string.confirm))
-                                }
-                            },
-                            dismissButton = {
-                                TextButton(onClick = { showDatePicker = false }) {
-                                    Text(stringResource(R.string.cancel))
-                                }
-                            }
-                        ) {
-                            DatePicker(state = datePickerState)
-                        }
-                    }
-                } else {
-                    MissingFieldsIndicator(profile.missingPersonalFields)
-                    InfoRow(
-                        icon = Icons.Default.Email,
-                        label = stringResource(R.string.email),
-                        value = profile.email
-                    )
-                    if (!profile.phoneNumber.isNullOrBlank()) {
-                        InfoRow(
-                            icon = Icons.Default.Phone,
-                            label = stringResource(R.string.phone),
-                            value = profile.phoneNumber!!
-                        )
-                    }
-                    if (!profile.dateOfBirth.isNullOrBlank()) {
-                        InfoRow(
-                            icon = Icons.Default.Person,
-                            label = stringResource(R.string.date_of_birth),
-                            value = DateTimeUtils.formatDate(profile.dateOfBirth!!)
-                        )
-                    }
-                }
+            employee.email?.takeIf { it.isNotBlank() }?.let { email ->
+                Text(
+                    text = email,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
             }
-        }
-
-        // Identification Info
-        item {
-            val isEditing = editingSections.contains(ProfileSection.IDENTIFICATION)
-            ProfileSectionCard(
-                title = stringResource(R.string.identification_info),
-                icon = Icons.Default.Badge,
-                isEditing = isEditing,
-                isSaving = savingSection == ProfileSection.IDENTIFICATION,
-                hasMissingFields = profile.missingIdentificationFields.isNotEmpty(),
-                onEditClick = { onStartEditing(ProfileSection.IDENTIFICATION) },
-                onSave = { onSaveSection(ProfileSection.IDENTIFICATION) },
-                onCancel = { onCancelEditing(ProfileSection.IDENTIFICATION) }
-            ) {
-                if (isEditing) {
-                    CountryDropdown(
-                        label = stringResource(R.string.nationality),
-                        selectedCountryId = editFormState.nationalityId,
-                        countries = countries,
-                        languageCode = currentLanguage,
-                        onCountrySelected = onSelectNationality,
-                        isError = validationErrors.containsKey("nationalityId"),
-                        errorText = validationErrors["nationalityId"]?.let { validationErrorText(it) },
-                        colors = profileTextFieldColors()
-                    )
-                    TextField(
-                        value = editFormState.passportId,
-                        onValueChange = onPassportIdChange,
-                        label = { Text(stringResource(R.string.passport_id)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = profileTextFieldColors(),
-                        isError = validationErrors.containsKey("passportId"),
-                        supportingText = validationErrors["passportId"]?.let { key ->
-                            { Text(validationErrorText(key)) }
-                        }
-                    )
-                    TextField(
-                        value = editFormState.taxId,
-                        onValueChange = onTaxIdChange,
-                        label = { Text(stringResource(R.string.tax_id)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = profileTextFieldColors(),
-                        isError = validationErrors.containsKey("taxId"),
-                        supportingText = validationErrors["taxId"]?.let { key ->
-                            { Text(validationErrorText(key)) }
-                        }
-                    )
-                } else {
-                    MissingFieldsIndicator(profile.missingIdentificationFields)
-                    val nationalityName = countries.find { it.id == profile.nationalityId }?.getLocalizedName(currentLanguage)
-                    if (!nationalityName.isNullOrBlank()) {
-                        InfoRow(label = stringResource(R.string.nationality), value = nationalityName)
-                    }
-                    if (!profile.passportId.isNullOrBlank()) {
-                        InfoRow(label = stringResource(R.string.passport_id), value = profile.passportId!!)
-                    }
-                    if (!profile.taxId.isNullOrBlank()) {
-                        InfoRow(label = stringResource(R.string.tax_id), value = profile.taxId!!)
-                    }
-                    if (nationalityName.isNullOrBlank() && profile.passportId.isNullOrBlank() && profile.taxId.isNullOrBlank()) {
-                        Text(
-                            text = stringResource(R.string.no_data),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+            if (contractStatus != null) {
+                Spacer(Modifier.height(6.dp))
+                StatusChip(contractStatus)
             }
-        }
-
-        // Address
-        item {
-            val isEditing = editingSections.contains(ProfileSection.ADDRESS)
-            ProfileSectionCard(
-                title = stringResource(R.string.address_info),
-                icon = Icons.Default.LocationOn,
-                isEditing = isEditing,
-                isSaving = savingSection == ProfileSection.ADDRESS,
-                hasMissingFields = profile.missingAddressFields.isNotEmpty(),
-                onEditClick = { onStartEditing(ProfileSection.ADDRESS) },
-                onSave = { onSaveSection(ProfileSection.ADDRESS) },
-                onCancel = { onCancelEditing(ProfileSection.ADDRESS) }
-            ) {
-                if (isEditing) {
-                    TextField(
-                        value = editFormState.street,
-                        onValueChange = onStreetChange,
-                        label = { Text(stringResource(R.string.street)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = profileTextFieldColors(),
-                        isError = validationErrors.containsKey("street"),
-                        supportingText = validationErrors["street"]?.let { key ->
-                            { Text(validationErrorText(key)) }
-                        }
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        TextField(
-                            value = editFormState.city,
-                            onValueChange = onCityChange,
-                            label = { Text(stringResource(R.string.city)) },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                            shape = RoundedCornerShape(12.dp),
-                            colors = profileTextFieldColors(),
-                            isError = validationErrors.containsKey("city"),
-                            supportingText = validationErrors["city"]?.let { key ->
-                                { Text(validationErrorText(key)) }
-                            }
-                        )
-                        TextField(
-                            value = editFormState.zipCode,
-                            onValueChange = onZipCodeChange,
-                            label = { Text(stringResource(R.string.zip_code)) },
-                            modifier = Modifier.weight(0.6f),
-                            singleLine = true,
-                            shape = RoundedCornerShape(12.dp),
-                            colors = profileTextFieldColors(),
-                            isError = validationErrors.containsKey("zipCode"),
-                            supportingText = validationErrors["zipCode"]?.let { key ->
-                                { Text(validationErrorText(key)) }
-                            }
-                        )
-                    }
-                    TextField(
-                        value = editFormState.state,
-                        onValueChange = onStateChange,
-                        label = { Text(stringResource(R.string.state_region)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = profileTextFieldColors()
-                    )
-                    CountryDropdown(
-                        label = stringResource(R.string.country),
-                        selectedCountryId = editFormState.countryId,
-                        countries = countries,
-                        languageCode = currentLanguage,
-                        onCountrySelected = onSelectCountry,
-                        isError = validationErrors.containsKey("countryId"),
-                        errorText = validationErrors["countryId"]?.let { validationErrorText(it) },
-                        colors = profileTextFieldColors()
-                    )
-                } else {
-                    MissingFieldsIndicator(profile.missingAddressFields)
-                    val countryName = countries.find { it.id == profile.countryId }?.getLocalizedName(currentLanguage)
-                    val addressParts = listOfNotNull(profile.street, profile.city, profile.state, profile.zipCode, countryName)
-                        .filter { it.isNotBlank() }
-                    if (addressParts.isNotEmpty()) {
-                        Text(
-                            text = addressParts.joinToString(", "),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    } else {
-                        Text(
-                            text = stringResource(R.string.no_data),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-        }
-
-        // Bank Details
-        item {
-            val isEditing = editingSections.contains(ProfileSection.BANK)
-            ProfileSectionCard(
-                title = stringResource(R.string.bank_details),
-                icon = Icons.Default.AccountBalance,
-                isEditing = isEditing,
-                isSaving = savingSection == ProfileSection.BANK,
-                hasMissingFields = profile.missingBankFields.isNotEmpty(),
-                onEditClick = { onStartEditing(ProfileSection.BANK) },
-                onSave = { onSaveSection(ProfileSection.BANK) },
-                onCancel = { onCancelEditing(ProfileSection.BANK) }
-            ) {
-                if (isEditing) {
-                    TextField(
-                        value = editFormState.iban,
-                        onValueChange = onIbanChange,
-                        label = { Text(stringResource(R.string.iban)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = profileTextFieldColors(),
-                        visualTransformation = IbanVisualTransformation(),
-                        isError = validationErrors.containsKey("iban"),
-                        supportingText = validationErrors["iban"]?.let { key ->
-                            { Text(validationErrorText(key)) }
-                        }
-                    )
-                } else {
-                    MissingFieldsIndicator(profile.missingBankFields)
-                    if (!profile.bankName.isNullOrBlank()) {
-                        InfoRow(label = stringResource(R.string.bank_name), value = profile.bankName!!)
-                    }
-                    if (!profile.accountNumber.isNullOrBlank()) {
-                        InfoRow(label = stringResource(R.string.account_number), value = profile.accountNumber!!)
-                    }
-                    if (!profile.iban.isNullOrBlank()) {
-                        InfoRow(label = stringResource(R.string.iban), value = profile.iban!!)
-                    }
-                    if (!profile.swiftCode.isNullOrBlank()) {
-                        InfoRow(label = stringResource(R.string.swift_code), value = profile.swiftCode!!)
-                    }
-                    if (!profile.hasBankDetails) {
-                        Text(
-                            text = stringResource(R.string.no_data),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-        }
-
-        // Emergency Contact
-        item {
-            val isEditing = editingSections.contains(ProfileSection.EMERGENCY)
-            ProfileSectionCard(
-                title = stringResource(R.string.emergency_contact),
-                icon = Icons.Default.ContactPhone,
-                isEditing = isEditing,
-                isSaving = savingSection == ProfileSection.EMERGENCY,
-                hasMissingFields = profile.missingEmergencyFields.isNotEmpty(),
-                onEditClick = { onStartEditing(ProfileSection.EMERGENCY) },
-                onSave = { onSaveSection(ProfileSection.EMERGENCY) },
-                onCancel = { onCancelEditing(ProfileSection.EMERGENCY) }
-            ) {
-                if (isEditing) {
-                    TextField(
-                        value = editFormState.emergencyContactName,
-                        onValueChange = onEmergencyContactNameChange,
-                        label = { Text(stringResource(R.string.contact_name)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = profileTextFieldColors(),
-                        isError = validationErrors.containsKey("emergencyContactName"),
-                        supportingText = validationErrors["emergencyContactName"]?.let { key ->
-                            { Text(validationErrorText(key)) }
-                        }
-                    )
-                    CleansiaPhoneTextField(
-                        value = editFormState.emergencyContactPhone,
-                        onValueChange = onEmergencyContactPhoneChange,
-                        label = stringResource(R.string.contact_phone),
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = profileTextFieldColors()
-                    )
-                } else {
-                    MissingFieldsIndicator(profile.missingEmergencyFields)
-                    if (!profile.emergencyContactName.isNullOrBlank()) {
-                        InfoRow(label = stringResource(R.string.contact_name), value = profile.emergencyContactName!!)
-                    }
-                    if (!profile.emergencyContactPhone.isNullOrBlank()) {
-                        InfoRow(icon = Icons.Default.Phone, label = stringResource(R.string.contact_phone), value = profile.emergencyContactPhone!!)
-                    }
-                    if (!profile.hasEmergencyContact) {
-                        Text(
-                            text = stringResource(R.string.no_data),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-        }
-
-        // Unified Availability & Calendar Section
-        item {
-            var isEditingAvailability by remember { mutableStateOf(false) }
-
-            UnifiedAvailabilitySection(
-                availability = availability,
-                dateOverrides = dateOverrides,
-                isEditing = isEditingAvailability,
-                isSaving = isSavingAvailability,
-                onEditToggle = { isEditingAvailability = !isEditingAvailability },
-                onSaveAvailability = {
-                    onSaveAvailability()
-                    isEditingAvailability = false
-                },
-                onAvailabilityChange = onAvailabilityChange,
-                onAddDateOverride = onAddDateOverride,
-                onRemoveDateOverride = onRemoveDateOverride
-            )
-        }
-
-        // Documents with management
-        item {
-            DocumentManagementSection(
-                documents = documents,
-                isUploading = isUploadingDocument,
-                isDeleting = isDeletingDocument,
-                onUploadDocument = onUploadDocument,
-                onDeleteDocument = onDeleteDocument,
-                onDownloadDocument = onDownloadDocument
-            )
-        }
-
-        // Terms & Consent Section
-        item {
-            TermsConsentSection(
-                termsAccepted = profile.termsAccepted,
-                termsAcceptedAt = profile.termsAcceptedAt
-            )
-        }
-
-        // Bottom spacing
-        item {
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
+
+/**
+ * Initials avatar — primary-container tint, brand-blue bold text.
+ * Sized to dominate the hero so the profile page reads as the
+ * cleaner's identity at a glance.
+ */
+@Composable
+private fun InitialsAvatar(initials: String) {
+    Box(
+        modifier = Modifier
+            .size(80.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = initials,
+            style = MaterialTheme.typography.headlineSmall.copy(
+                fontWeight = FontWeight.Bold,
+                fontSize = 28.sp,
+            ),
+            color = MaterialTheme.colorScheme.primary,
+        )
+    }
+}
+
+/**
+ * Contract-status chip. Color encodes meaning so the chip is
+ * skim-readable: green for Approved/Active, amber for Pending,
+ * red for Rejected/Terminated. Sits inline with the rest of the
+ * hero text, vertically center-aligned via the parent Row.
+ */
+@Composable
+private fun StatusChip(status: ContractStatus) {
+    val (labelRes, container, content) = when (status) {
+        ContractStatus._1 -> Triple(
+            R.string.contract_status_pending,
+            StatusAmberContainer,
+            StatusAmberContent,
+        )
+        ContractStatus._2 -> Triple(
+            R.string.contract_status_active,
+            StatusGreenContainer,
+            StatusGreenContent,
+        )
+        ContractStatus._3 -> Triple(
+            R.string.contract_status_terminated,
+            MaterialTheme.colorScheme.errorContainer,
+            MaterialTheme.colorScheme.onErrorContainer,
+        )
+        ContractStatus._4 -> Triple(
+            R.string.contract_status_approved,
+            StatusGreenContainer,
+            StatusGreenContent,
+        )
+        ContractStatus._5 -> Triple(
+            R.string.contract_status_rejected,
+            MaterialTheme.colorScheme.errorContainer,
+            MaterialTheme.colorScheme.onErrorContainer,
+        )
+    }
+    Row(
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(container)
+            .padding(horizontal = 10.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // Leading colored dot — same hue as the chip's content color
+        // so the user can scan-read the status even when the chip
+        // is small or the text wraps. Pure indicator chip.
+        Box(
+            modifier = Modifier
+                .size(6.dp)
+                .clip(CircleShape)
+                .background(content),
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text = stringResource(labelRes),
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+            color = content,
+        )
+    }
+}
+
+// Status chip palette — hardcoded because Material doesn't ship a
+// "warning"/"success" container color, and adding them to the theme
+// would touch surfaces unrelated to this chip. Two colors per state:
+// container (background fill) + content (text color), tuned for AA
+// contrast on the chip's tiny labelMedium type.
+private val StatusGreenContainer = Color(0xFFD7F4DC)
+private val StatusGreenContent = Color(0xFF1E6B30)
+private val StatusAmberContainer = Color(0xFFFFE9C2)
+private val StatusAmberContent = Color(0xFF7A4D00)
+
+/**
+ * Flat, titled section card. Uppercase title above, surface-coloured
+ * rounded container below — same recipe as the customer profile's
+ * SettingsSection so the two apps read as one family.
+ */
+@Composable
+private fun SectionGroup(title: String, content: @Composable () -> Unit) {
+    Column(modifier = Modifier.padding(horizontal = Spacing.M)) {
+        Text(
+            text = title.uppercase(),
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = Spacing.XS, bottom = Spacing.XS),
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(18.dp))
+                .background(MaterialTheme.colorScheme.surface),
+        ) {
+            content()
+        }
+    }
+}
+
+@Composable
+private fun RowDivider() {
+    HorizontalDivider(
+        modifier = Modifier.padding(horizontal = Spacing.M),
+        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+    )
+}
+
+/**
+ * Standard navigable row used everywhere on the profile landing:
+ * 32dp circle icon, title + at-a-glance subtitle (e.g. "John Doe"
+ * under Personal info), trailing chevron. Subtitle is intentionally
+ * kept (customer rows are title-only); partner sections carry more
+ * data and the subtitle saves the user a tap to confirm it.
+ */
+@Composable
+private fun ProfileSectionRow(
+    icon: ImageVector,
+    title: String,
+    summary: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(horizontal = Spacing.M, vertical = Spacing.S + 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+        Spacer(Modifier.width(Spacing.M))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = summary,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+            )
+        }
+        Icon(
+            imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/**
+ * Human label for the cleaner's current language preference, shown as
+ * the at-a-glance summary on the Preferences row. "System" defers to
+ * the device locale.
+ */
+@Composable
+private fun languageSummary(language: LanguagePreference): String = when (language) {
+    LanguagePreference.System -> stringResource(R.string.language_system)
+    LanguagePreference.English -> "English"
+    LanguagePreference.Czech -> "Čeština"
+    LanguagePreference.Slovak -> "Slovenčina"
+    LanguagePreference.Ukrainian -> "Українська"
+    LanguagePreference.Russian -> "Русский"
+}
+
+@Composable
+private fun themeSummary(theme: ThemePreference): String = stringResource(
+    when (theme) {
+        ThemePreference.System -> R.string.theme_system
+        ThemePreference.Light -> R.string.theme_light
+        ThemePreference.Dark -> R.string.theme_dark
+    }
+)
+
+@Composable
+private fun LogoutRow(onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.M)
+            .clip(RoundedCornerShape(18.dp))
+            .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f))
+            .clickable { onClick() }
+            .padding(horizontal = Spacing.M, vertical = Spacing.M),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Outlined.Logout,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(20.dp),
+        )
+        Spacer(Modifier.width(Spacing.M))
+        Text(
+            text = stringResource(R.string.logout),
+            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.error,
+        )
+    }
+}
+
+private fun initialsOf(firstName: String?, lastName: String?): String {
+    val first = firstName?.firstOrNull()?.uppercaseChar()
+    val last = lastName?.firstOrNull()?.uppercaseChar()
+    return listOfNotNull(first, last).joinToString("").ifBlank { "?" }
+}
+
+private fun displayName(e: EmployeeItem): String =
+    listOfNotNull(e.firstName?.takeIf { it.isNotBlank() }, e.lastName?.takeIf { it.isNotBlank() })
+        .joinToString(" ")
+
+private fun displayAddress(e: EmployeeItem): String =
+    listOfNotNull(
+        e.street?.takeIf { it.isNotBlank() },
+        e.city?.takeIf { it.isNotBlank() },
+        e.zipCode?.takeIf { it.isNotBlank() },
+    ).joinToString(", ")
+
+private fun displayEmergency(e: EmployeeItem): String =
+    listOfNotNull(
+        e.emergencyContactName?.takeIf { it.isNotBlank() },
+        e.emergencyContactPhone?.takeIf { it.isNotBlank() },
+    ).joinToString(" · ")

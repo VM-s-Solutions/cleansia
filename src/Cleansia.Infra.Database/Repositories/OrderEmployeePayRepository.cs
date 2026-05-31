@@ -16,6 +16,22 @@ public class OrderEmployeePayRepository(CleansiaDbContext context) : BaseReposit
             .FirstOrDefaultAsync(p => p.OrderId == orderId && p.EmployeeId == employeeId, cancellationToken);
     }
 
+    public async Task<IReadOnlyDictionary<string, decimal>> GetTotalPayByOrderIdsAsync(
+        IReadOnlyCollection<string> orderIds, string employeeId, CancellationToken cancellationToken)
+    {
+        if (orderIds.Count == 0)
+        {
+            return new Dictionary<string, decimal>(0);
+        }
+        // Single SELECT, two columns, no Includes — replaces the
+        // per-row loop in GetPagedOrders.
+        var rows = await GetDbSet()
+            .Where(p => p.EmployeeId == employeeId && orderIds.Contains(p.OrderId))
+            .Select(p => new { p.OrderId, p.TotalPay })
+            .ToListAsync(cancellationToken);
+        return rows.ToDictionary(r => r.OrderId, r => r.TotalPay);
+    }
+
     public Task<bool> ExistsWithOrderIdAndEmployeeIdAsync(string orderId, string employeeId, CancellationToken cancellationToken)
     {
         return GetDbSet().AnyAsync(p => p.OrderId == orderId && p.EmployeeId == employeeId, cancellationToken);

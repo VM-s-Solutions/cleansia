@@ -6,6 +6,7 @@ import {
   effect,
   inject,
   input,
+  output,
   signal,
   viewChild,
 } from '@angular/core';
@@ -52,8 +53,12 @@ export class OrderPhotosComponent {
 
   readonly orderId = input.required<string>();
   readonly employeeId = input.required<string>();
-  readonly canUpload = input<boolean>(true);
+  readonly canUploadBefore = input<boolean>(true);
+  readonly canUploadAfter = input<boolean>(true);
   readonly canDelete = input<boolean>(true);
+
+  // Emits true when at least one persisted After photo exists for the order.
+  readonly hasAfterPhotosChange = output<boolean>();
 
   readonly stagedPhotos = signal<StagedPhoto[]>([]);
 
@@ -90,6 +95,11 @@ export class OrderPhotosComponent {
       if (orderId) {
         this.facade.loadPhotos(orderId);
       }
+    });
+
+    // Surface persisted After-photo presence to parent so it can gate the Complete action.
+    effect(() => {
+      this.hasAfterPhotosChange.emit(this.afterPhotos().length > 0);
     });
   }
 

@@ -25,6 +25,12 @@ public class OrderNote : Auditable, ITenantEntity
         Content = content
     };
 
+    public OrderNote UpdateContent(string content)
+    {
+        Content = content;
+        return this;
+    }
+
     public OrderNote Anonymize()
     {
         Content = AnonymizationMarker.Value;

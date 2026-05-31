@@ -12,7 +12,7 @@ namespace Cleansia.Web.Customer.Controllers;
 public class FeatureFlagController(IMediator mediator) : CustomerApiController(mediator)
 {
     [AllowAnonymous]
-    [EnableRateLimiting("auth")]
+    [EnableRateLimiting("interactive")]
     [HttpGet("check")]
     [ProducesResponseType(typeof(CheckFeatureFlag.Response), StatusCodes.Status200OK)]
     public async Task<IActionResult> Check([FromQuery] string featureName, [FromQuery] string? countryId, CancellationToken cancellationToken)

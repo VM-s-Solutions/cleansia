@@ -246,12 +246,36 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
     );
   }
 
+  // Surfaces a translated warning when the partner tries to Complete an order without after photos.
+  warnMissingAfterPhotos(): void {
+    this.snackbarService.showErrorTranslated(
+      'pages.order_details.complete_missing_after_photos'
+    );
+  }
+
+  // Active statuses where notes / issues may be added: Confirmed, OnTheWay, InProgress.
+  private isActiveOrderStatus(orderStatusValue: number): boolean {
+    return (
+      orderStatusValue === OrderStatus.Confirmed ||
+      orderStatusValue === OrderStatus.OnTheWay ||
+      orderStatusValue === OrderStatus.InProgress
+    );
+  }
+
   openReportIssueDialog(): void {
     const order = this.orderDetails();
 
     if (!order) {
       this.snackbarService.showErrorTranslated(
         'global.messages.orders.invalid_request'
+      );
+      return;
+    }
+
+    // Pre-flight status gate: refuse to open the dialog outside of active statuses.
+    if (!this.isActiveOrderStatus(order.orderStatus.value)) {
+      this.snackbarService.showErrorTranslated(
+        'pages.order_details.note_issue_gating_error'
       );
       return;
     }
@@ -297,6 +321,14 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
     if (!order) {
       this.snackbarService.showErrorTranslated(
         'global.messages.orders.invalid_request'
+      );
+      return;
+    }
+
+    // Pre-flight status gate: refuse to open the dialog outside of active statuses.
+    if (!this.isActiveOrderStatus(order.orderStatus.value)) {
+      this.snackbarService.showErrorTranslated(
+        'pages.order_details.note_issue_gating_error'
       );
       return;
     }

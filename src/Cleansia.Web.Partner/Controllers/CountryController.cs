@@ -17,4 +17,12 @@ public class CountryController(IMediator mediator) : ApiController(mediator)
     {
         return await Mediator.Send(new GetCountryOverview.Request(), cancellationToken);
     }
+
+    [HttpGet("GetServiced")]
+    [ProducesResponseType(typeof(IEnumerable<CountryListItem>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IEnumerable<CountryListItem>> GetServiced(CancellationToken cancellationToken)
+    {
+        return await Mediator.Send(new GetServicedCountries.Request(), cancellationToken);
+    }
 }

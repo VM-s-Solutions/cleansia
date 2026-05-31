@@ -31,9 +31,9 @@ public class AdminEmployeeController(IMediator mediator) : ApiController(mediato
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> ApproveEmployee(string employeeId, [FromBody] ApproveEmployee.Request? request, CancellationToken cancellationToken)
+    public async Task<IActionResult> ApproveEmployee(string employeeId, [FromBody] ApproveEmployee.Request request, CancellationToken cancellationToken)
     {
-        var command = new ApproveEmployee.Command(employeeId, request?.Notes);
+        var command = new ApproveEmployee.Command(employeeId, request.WorkCountryId, request.Notes);
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<ApproveEmployee.Response>(result);
     }

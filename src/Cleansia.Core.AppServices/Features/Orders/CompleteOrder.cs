@@ -17,9 +17,17 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 
 public class CompleteOrder
 {
+    /// <summary>
+    /// Complete an order. <see cref="ActualCompletionTimeMinutes"/> is
+    /// optional — when omitted, the handler computes elapsed minutes
+    /// from the InProgress entry in the order's status history. That
+    /// lets the partner-mobile UI complete via a single slide gesture
+    /// (no dialog asking for actual minutes) while the backend still
+    /// records a meaningful duration for analytics + invoicing.
+    /// </summary>
     public record Command(
         string OrderId,
-        int ActualCompletionTimeMinutes,
+        int? ActualCompletionTimeMinutes = null,
         string? CompletionNotes = null) : ICommand<Response>;
 
     public record Response(
@@ -56,9 +64,11 @@ public class CompleteOrder
                 .MustAsync(HasAfterPhotosAsync)
                 .WithMessage(BusinessErrorMessage.AfterPhotosRequired);
 
-            RuleFor(x => x.ActualCompletionTimeMinutes)
-                .GreaterThan(0)
-                .WithMessage(BusinessErrorMessage.ActualTimeMustBePositive);
+            // No length / positivity check on ActualCompletionTimeMinutes:
+            // when the caller doesn't supply it (or sends 0), the handler
+            // derives the value from the InProgress status-history entry.
+            // The validator can't run that derivation cheaply (would need
+            // a second repo round-trip), so it's the handler's job.
 
             RuleFor(x => x)
                 .Cascade(CascadeMode.Stop)
@@ -116,7 +126,8 @@ public class CompleteOrder
                 .Include(e => e.Address)
                 .FirstOrDefaultAsync(e => e.Id == employeeId, cancellationToken);
 
-            return employee?.Address is not null && (employee?.Availability.Any() ?? false);
+            // Availability no longer gates order actions (see TakeOrder).
+            return employee?.Address is not null;
         }
 
         private async Task<bool> HasUploadedDocumentsAsync(Command command, CancellationToken cancellationToken)
@@ -157,6 +168,7 @@ public class CompleteOrder
                 .Include(o => o.Currency)
                 .Include(o => o.Receipt)
                 .Include(o => o.User).ThenInclude(u => u!.PreferredLanguage)
+                .Include(o => o.AssignedEmployees)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             if (order == null)
@@ -164,7 +176,39 @@ public class CompleteOrder
                 return BusinessResult.Failure<Response>(new Error(nameof(command.OrderId), BusinessErrorMessage.OrderNotFound));
             }
 
-            order.CompleteOrder(command.ActualCompletionTimeMinutes, command.CompletionNotes);
+            // Derive actual completion time when the caller doesn't
+            // supply it. Source of truth is the InProgress entry in
+            // OrderStatusHistory — that's when the cleaner tapped
+            // "Slide to start" so `now - that timestamp` is the
+            // genuine work duration. We round up to 1 minute on
+            // very fast (<60s) completions so a Completed order
+            // always has a non-zero ActualCompletionTime for invoice
+            // / analytics math.
+            var actualMinutes = command.ActualCompletionTimeMinutes.GetValueOrDefault();
+            if (actualMinutes <= 0)
+            {
+                var startedAt = order.OrderStatusHistory
+                    .Where(osh => osh.Status == OrderStatus.InProgress)
+                    .OrderBy(osh => osh.CreatedOn)
+                    .Select(osh => (DateTimeOffset?)osh.CreatedOn)
+                    .FirstOrDefault();
+                if (startedAt.HasValue)
+                {
+                    var elapsed = DateTimeOffset.UtcNow - startedAt.Value;
+                    actualMinutes = Math.Max(1, (int)Math.Round(elapsed.TotalMinutes));
+                }
+                else
+                {
+                    // No InProgress entry means the order skipped the
+                    // Start step (admin override?) — fall back to the
+                    // order's estimated time as a sane default. Domain
+                    // validation below will still reject if it ends up
+                    // <=0, but in practice EstimatedTime is always set.
+                    actualMinutes = Math.Max(1, order.EstimatedTime);
+                }
+            }
+
+            order.CompleteOrder(actualMinutes, command.CompletionNotes);
 
             var completedStatusTrack = OrderStatusTrack.Create(OrderStatus.Completed, order);
             order.AddOrderStatus(completedStatusTrack);
@@ -209,10 +253,26 @@ public class CompleteOrder
 
             await referralService.ProcessOrderCompletedAsync(order.Id, order.UserId, cancellationToken);
 
+            // Fan out one CalculateOrderPay per assigned cleaner. Off the
+            // user-facing path so the partner "slide to complete" returns
+            // immediately and pay-calc failures (missing pay config, missing
+            // pay period, validator rejection) don't block completion or
+            // surface as toast errors to the cleaner — the consumer logs and
+            // queue retries handle it. Today AssignedEmployees is always
+            // size 1 (single cleaner per order); the loop is forward-compat
+            // for shared jobs.
+            foreach (var assignment in order.AssignedEmployees)
+            {
+                await queueClient.SendAsync(
+                    QueueNames.CalculateOrderPay,
+                    new CalculateOrderPayMessage(order.Id, assignment.EmployeeId),
+                    cancellationToken);
+            }
+
             return BusinessResult.Success(new Response(
                 OrderId: order.Id,
                 NewStatus: OrderStatus.Completed,
-                ActualCompletionTime: command.ActualCompletionTimeMinutes
+                ActualCompletionTime: actualMinutes
             ));
         }
     }

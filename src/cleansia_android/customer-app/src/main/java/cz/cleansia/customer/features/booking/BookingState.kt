@@ -18,6 +18,15 @@ data class BookingState(
     val street: String = "",
     val city: String = "",
     val zipCode: String = "",
+    /**
+     * ISO-3166 alpha-2 country code (lowercase) captured at address-pick
+     * time from Mapbox's `short_code`. The submit code resolves this to a
+     * backend country ID via ServiceAreaProvider before sending — see
+     * BookingViewModel.submit(). Empty string = no country picked yet
+     * (legacy guest flow); backend's "single serviced country" fallback
+     * still kicks in for the CZ-only case.
+     */
+    val countryIsoCode: String = "",
     // Non-null when the address was picked from the user's saved list; the
     // street/city/zipCode fields still mirror it for display. Null means the
     // address is one-off/inline and the three string fields are authoritative —

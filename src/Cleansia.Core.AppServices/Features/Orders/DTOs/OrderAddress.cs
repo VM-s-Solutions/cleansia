@@ -4,4 +4,6 @@ public record OrderAddress(
     string Street,
     string City,
     string ZipCode,
-    string Country);
+    string Country,
+    double? Latitude,
+    double? Longitude);

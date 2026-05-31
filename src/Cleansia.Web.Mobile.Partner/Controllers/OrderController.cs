@@ -60,6 +60,18 @@ public class OrderController(IMediator mediator) : MobileApiController(mediator)
         return HandleResult<StartOrder.Response>(result);
     }
 
+    [HttpPost("NotifyOnTheWay")]
+    [Permission(Policy.CanStartOrder)]
+    [ProducesResponseType(typeof(NotifyOnTheWay.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> NotifyOnTheWay([FromBody] NotifyOnTheWay.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<NotifyOnTheWay.Response>(result);
+    }
+
     [HttpPost("CompleteOrder")]
     [Permission(Policy.CanCompleteOrder)]
     [ProducesResponseType(typeof(CompleteOrder.Response), StatusCodes.Status200OK)]
@@ -160,5 +172,53 @@ public class OrderController(IMediator mediator) : MobileApiController(mediator)
     {
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<ReportOrderIssue.Response>(result);
+    }
+
+    [HttpPut("UpdateNote")]
+    [Permission(Policy.CanUpdateOrderNote)]
+    [ProducesResponseType(typeof(UpdateOrderNote.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> UpdateNote([FromBody] UpdateOrderNote.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<UpdateOrderNote.Response>(result);
+    }
+
+    [HttpDelete("DeleteNote")]
+    [Permission(Policy.CanDeleteOrderNote)]
+    [ProducesResponseType(typeof(DeleteOrderNote.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> DeleteNote([FromQuery] DeleteOrderNote.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<DeleteOrderNote.Response>(result);
+    }
+
+    [HttpPut("UpdateIssue")]
+    [Permission(Policy.CanUpdateOrderIssue)]
+    [ProducesResponseType(typeof(UpdateOrderIssue.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> UpdateIssue([FromBody] UpdateOrderIssue.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<UpdateOrderIssue.Response>(result);
+    }
+
+    [HttpDelete("DeleteIssue")]
+    [Permission(Policy.CanDeleteOrderIssue)]
+    [ProducesResponseType(typeof(DeleteOrderIssue.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> DeleteIssue([FromQuery] DeleteOrderIssue.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<DeleteOrderIssue.Response>(result);
     }
 }

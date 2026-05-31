@@ -5,6 +5,17 @@ namespace Cleansia.Core.Domain.Repositories;
 public interface IOrderEmployeePayRepository : IRepository<OrderEmployeePay, string>
 {
     Task<OrderEmployeePay?> GetByOrderAndEmployeeAsync(string orderId, string employeeId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Batched "TotalPay per order" lookup for one employee across a
+    /// page of order ids. Returns a dictionary keyed by OrderId.
+    /// Replaces the N+1 loop in <see cref="Features.Orders.GetPagedOrders"/>
+    /// where each row used to call <see cref="GetByOrderAndEmployeeAsync"/>
+    /// separately (and eagerly loaded Order/Employee/PayPeriod/Invoice
+    /// nav graphs it didn't need). One SQL round-trip, two columns.
+    /// </summary>
+    Task<IReadOnlyDictionary<string, decimal>> GetTotalPayByOrderIdsAsync(
+        IReadOnlyCollection<string> orderIds, string employeeId, CancellationToken cancellationToken);
     Task<bool> ExistsWithOrderIdAndEmployeeIdAsync(string orderId, string employeeId, CancellationToken cancellationToken);
 
     /// <summary>

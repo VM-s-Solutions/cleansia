@@ -55,7 +55,7 @@ public class GetOrderPhotos
         public async Task<BusinessResult<Response>> Handle(Query query, CancellationToken cancellationToken)
         {
             var order = await orderRepository.GetByIdAsync(query.OrderId, cancellationToken);
-            if (order == null || !await orderAccessService.CanAccessOrderAsync(order, cancellationToken))
+            if (order == null || !await orderAccessService.CanBrowseOrderAsync(order, cancellationToken))
             {
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(query.OrderId), BusinessErrorMessage.OrderNotFound));
@@ -103,9 +103,26 @@ public class GetOrderPhotos
 
         private static string GenerateSasUrl(IBlobContainerClient blobClient, string blobUrl)
         {
+            // We need to recover the blob name (the path WITHIN the
+            // container) from the stored absolute URL so we can hand
+            // it to GenerateSasUri — which itself prepends the
+            // container path. The previous Skip(1) only worked on the
+            // production Azure URL shape `/<container>/<blob>`; on
+            // Azurite the path is `/<accountName>/<container>/<blob>`
+            // which left the container name in the blob name and
+            // produced doubled paths like
+            // `…/order-photos/order-photos/2026/…` in the SAS URL.
+            //
+            // Locate the container segment by name and take everything
+            // after it. Works for both Azure (`/<container>/…`) and
+            // Azurite (`/<account>/<container>/…`).
             var uri = new Uri(blobUrl);
             var pathSegments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
-            var blobName = string.Join("/", pathSegments.Skip(1));
+            var containerName = Constants.BlobContainers.OrderPhotos;
+            var containerIndex = Array.IndexOf(pathSegments, containerName);
+            var blobName = containerIndex >= 0 && containerIndex + 1 < pathSegments.Length
+                ? string.Join("/", pathSegments.Skip(containerIndex + 1))
+                : string.Join("/", pathSegments.Skip(1)); // legacy fallback
             return blobClient.GenerateSasUri(blobName, TimeSpan.FromHours(1)).ToString();
         }
     }

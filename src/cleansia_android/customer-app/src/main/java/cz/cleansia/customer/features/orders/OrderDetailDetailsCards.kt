@@ -67,6 +67,17 @@ internal fun CleaningDetailsCard(order: OrderDetailDto) {
             },
         )
 
+        // Authoritative completion timestamp — only present on terminal
+        // Completed orders. Reads order.completedAt directly (backend's
+        // dedicated DB column) instead of inferring from statusHistory.
+        if (!order.completedAt.isNullOrBlank()) {
+            Spacer(Modifier.height(6.dp))
+            InfoRow(
+                label = stringResource(R.string.order_detail_completed_at),
+                value = cz.cleansia.core.format.formatOrderDateTime(order.completedAt),
+            )
+        }
+
         // Extras — only those flagged `true` in the map. Skip block entirely if none.
         val activeExtras = order.extras.orEmpty().filter { it.value }.keys.toList()
         if (activeExtras.isNotEmpty()) {

@@ -33,7 +33,19 @@ public abstract class CleansiaStartupBase(IConfiguration configuration, IWebHost
 
     public void ConfigureServices(IServiceCollection services)
     {
-        services.AddControllers();
+        services.AddControllers()
+            .AddJsonOptions(options =>
+            {
+                // Allow incoming JSON to provide numeric properties as
+                // strings (e.g. price `"12.50"` instead of `12.50`).
+                options.JsonSerializerOptions.NumberHandling =
+                    System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString;
+
+                // Tolerant enum deserialization for Kotlin clients —
+                // see [TolerantEnumConverterFactory] for the rationale.
+                options.JsonSerializerOptions.Converters.Add(
+                    new TolerantEnumConverterFactory());
+            });
         services.AddEndpointsApiExplorer();
         AddProjectServices(services);
 
@@ -57,9 +69,24 @@ public abstract class CleansiaStartupBase(IConfiguration configuration, IWebHost
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            // Strict policy for credential / state-changing endpoints
+            // (login, register, password reset, order create/update,
+            // payment). 10/min is intentional — it's a brute-force
+            // defense, not a UX throttle.
             options.AddFixedWindowLimiter("auth", limiterOptions =>
             {
                 limiterOptions.PermitLimit = 10;
+                limiterOptions.Window = TimeSpan.FromMinutes(1);
+                limiterOptions.QueueLimit = 0;
+            });
+            // Loose policy for read-only / idempotent endpoints the UI
+            // calls frequently while the user edits a form (price
+            // quote, feature-flag probe, GDPR view-data). 60/min lets
+            // the wizard re-quote on every meaningful change without
+            // wedging the user behind a 429.
+            options.AddFixedWindowLimiter("interactive", limiterOptions =>
+            {
+                limiterOptions.PermitLimit = 60;
                 limiterOptions.Window = TimeSpan.FromMinutes(1);
                 limiterOptions.QueueLimit = 0;
             });

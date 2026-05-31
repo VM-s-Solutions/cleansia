@@ -2,171 +2,152 @@ package cz.cleansia.partner.features.dashboard.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.partner.api.model.AvailableJobsPreviewResponse
+import cz.cleansia.partner.api.model.DashboardStatsDto
+import cz.cleansia.partner.api.model.OrderListItem
+import cz.cleansia.partner.core.auth.UserProfileStore
 import cz.cleansia.partner.core.network.ApiErrorTranslator
-import cz.cleansia.partner.core.network.ApiResult
-import cz.cleansia.partner.domain.models.dashboard.DashboardStats
-import cz.cleansia.partner.domain.models.dashboard.EarningsSummary
-import cz.cleansia.partner.domain.models.dashboard.UpcomingOrder
-import cz.cleansia.partner.domain.models.profile.AvailabilityUtils
-import cz.cleansia.partner.domain.models.profile.DayAvailability
-import cz.cleansia.partner.domain.models.profile.TimeSlot
-import cz.cleansia.partner.domain.models.profile.TodayWorkingInfo
-import cz.cleansia.partner.core.storage.TokenManager
-import cz.cleansia.partner.domain.repositories.DashboardRepository
+import cz.cleansia.partner.core.notifications.db.NotificationDao
+import cz.cleansia.partner.data.dashboard.DashboardRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.util.Calendar
 import javax.inject.Inject
 
+/**
+ * State the redesigned dashboard reads. Screen derives next-job + today's
+ * jobs from [upcoming]. Backed by the singleton [DashboardRepository]
+ * cache so swiping back to the tab shows data instantly instead of a
+ * spinner; only the genuine first load shows a spinner.
+ *
+ * The two refresh flags exist so the UI can render different affordances
+ * depending on *who* triggered the network round-trip:
+ *  - [isUserRefreshing]: the user pulled-to-refresh — show the chunky
+ *    suds indicator at the top.
+ *  - [isBackgroundRefreshing]: init / ON_RESUME / post-mutation silent-
+ *    stale refresh — render silently; the data swap is its own feedback.
+ * Never both at once. The screen combines the two flags with `stats == null`
+ * to decide between the full-page initial spinner and the no-op silent path.
+ */
 data class DashboardUiState(
-    val isLoading: Boolean = false,
-    val isRefreshing: Boolean = false,
-    val error: String? = null,
-    val stats: DashboardStats? = null,
-    val upcomingOrders: List<UpcomingOrder> = emptyList(),
-    val earnings: EarningsSummary? = null,
-    val greeting: GreetingType = GreetingType.MORNING,
-    val userName: String = "",
-    val todayWorkingInfo: TodayWorkingInfo? = null
+    val isUserRefreshing: Boolean = false,
+    val isBackgroundRefreshing: Boolean = false,
+    val firstName: String? = null,
+    val stats: DashboardStatsDto? = null,
+    val upcoming: List<OrderListItem> = emptyList(),
+    /** Top unclaimed jobs + total potential earnings. Null until first load. */
+    val availableJobsPreview: AvailableJobsPreviewResponse? = null,
 )
 
-enum class GreetingType {
-    MORNING, AFTERNOON, EVENING
-}
+/**
+ * Distinguishes who triggered a [DashboardViewModel] load. Routes through
+ * the two-flag UI state above so the screen renders the right affordance.
+ */
+private enum class RefreshSource { INIT, RESUME, USER_PULL }
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val dashboardRepository: DashboardRepository,
-    private val tokenManager: TokenManager,
-    private val errorTranslator: ApiErrorTranslator
+    private val userProfileStore: UserProfileStore,
+    private val snackbar: SnackbarController,
+    private val errorTranslator: ApiErrorTranslator,
+    notificationDao: NotificationDao,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(DashboardUiState())
-    val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
+    /** Unread push count driving the bell badge. Cleared when the feed opens. */
+    val unreadNotifications: StateFlow<Int> = notificationDao.observeUnreadCount()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = 0,
+        )
+
+    // firstName comes from the cached user profile, not the dashboard
+    // network call — so the greeting renders immediately, independent
+    // of the stats refresh.
+    private val _firstName = MutableStateFlow<String?>(null)
+
+    // Local routing flag so we can tell user-pull refreshes apart from
+    // background ones. The repository tracks a single `refreshing` bit;
+    // here we lift that into the two-flag UI state. Set BEFORE we hand
+    // off to the repository (so the flag is live the moment the snapshot
+    // flips to refreshing=true), cleared in the finally of [load].
+    private val _userPullInFlight = MutableStateFlow(false)
+
+    // UI state is a projection of the repository's cached snapshot
+    // combined with the (locally cached) first name and the user-pull
+    // marker. Because the snapshot is singleton-scoped, it survives tab
+    // swipes and VM recreation — the screen sees cached data immediately
+    // and only a spinner on the genuine first load (stats == null).
+    val uiState: StateFlow<DashboardUiState> =
+        combine(
+            dashboardRepository.snapshot,
+            _firstName,
+            _userPullInFlight,
+        ) { snap, firstName, userPulling ->
+            val refreshing = snap.refreshing
+            DashboardUiState(
+                // Split projection: route the in-flight refresh to exactly
+                // one of the two flags based on who started it. Never both.
+                // PullToRefreshBox.isRefreshing binds to isUserRefreshing
+                // ONLY, so background refreshes don't summon the chunky
+                // suds indicator — the silent-stale contract.
+                isUserRefreshing = refreshing && userPulling,
+                isBackgroundRefreshing = refreshing && !userPulling,
+                firstName = firstName,
+                stats = snap.stats,
+                upcoming = snap.upcoming,
+                availableJobsPreview = snap.availableJobsPreview,
+            )
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = DashboardUiState(),
+        )
 
     init {
-        observeUserName()
-        updateGreeting()
-        loadDashboardData()
-        loadTodayWorkingInfo()
+        viewModelScope.launch { _firstName.value = userProfileStore.current()?.firstName }
+        // INIT path: silent-stale. Loads on genuine cold start, no-ops
+        // when the cache is already warm (VM recreated while the singleton
+        // repo still holds fresh data within the staleness window).
+        load(RefreshSource.INIT)
     }
 
-    private fun observeUserName() {
+    /** Pull-to-refresh — always hits the network, surfaces as [isUserRefreshing]. */
+    fun refresh() = load(RefreshSource.USER_PULL)
+
+    /**
+     * Lifecycle ON_RESUME hook. Routes through the staleness-gated path
+     * so returning to the tab against a warm cache is a no-op (no spinner,
+     * no redundant network call); only a stale cache triggers a silent
+     * background refresh.
+     */
+    fun onResume() = load(RefreshSource.RESUME)
+
+    private fun load(source: RefreshSource) {
         viewModelScope.launch {
-            tokenManager.userFullName.collectLatest { fullName ->
-                val firstName = fullName.split(" ").firstOrNull()?.takeIf { it.isNotBlank() } ?: ""
-                _uiState.update { it.copy(userName = firstName) }
+            val isUserPull = source == RefreshSource.USER_PULL
+            // Set BEFORE the repo flips refreshing=true so the combine()
+            // projection sees the marker on the very first emission.
+            if (isUserPull) _userPullInFlight.value = true
+            try {
+                val employeeId = userProfileStore.current()?.employeeId
+                val error = dashboardRepository.refresh(employeeId, force = isUserPull)
+                if (error != null) {
+                    snackbar.showError(errorTranslator.translate(error))
+                }
+            } finally {
+                // Clear AFTER the snapshot's refreshing=false emission has
+                // propagated. Since we own this flag the order is fine —
+                // the combine() reads both flows and the next emission of
+                // either flips us back to a clean (false, false) state.
+                if (isUserPull) _userPullInFlight.value = false
             }
         }
-    }
-
-    private fun updateGreeting() {
-        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-        val greeting = when {
-            hour < 12 -> GreetingType.MORNING
-            hour < 17 -> GreetingType.AFTERNOON
-            else -> GreetingType.EVENING
-        }
-        _uiState.update { it.copy(greeting = greeting) }
-    }
-
-    fun loadDashboardData() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-
-            // Load all data in parallel for faster loading
-            val statsDeferred = async { dashboardRepository.getDashboardStats() }
-            val ordersDeferred = async { dashboardRepository.getUpcomingOrders() }
-            val earningsDeferred = async { dashboardRepository.getEarnings() }
-
-            val statsResult = statsDeferred.await()
-            val ordersResult = ordersDeferred.await()
-            val earningsResult = earningsDeferred.await()
-
-            val errors = mutableListOf<String>()
-
-            when (statsResult) {
-                is ApiResult.Success -> _uiState.update { it.copy(stats = statsResult.data) }
-                is ApiResult.Error -> errors.add(errorTranslator.translateError(statsResult.error))
-            }
-
-            when (ordersResult) {
-                is ApiResult.Success -> _uiState.update { it.copy(upcomingOrders = ordersResult.data) }
-                is ApiResult.Error -> errors.add(errorTranslator.translateError(ordersResult.error))
-            }
-
-            when (earningsResult) {
-                is ApiResult.Success -> _uiState.update { it.copy(earnings = earningsResult.data) }
-                is ApiResult.Error -> errors.add(errorTranslator.translateError(earningsResult.error))
-            }
-
-            _uiState.update {
-                it.copy(
-                    isLoading = false,
-                    error = if (errors.isNotEmpty() && it.stats == null) errors.first() else null
-                )
-            }
-        }
-    }
-
-    fun refresh() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isRefreshing = true, error = null) }
-
-            updateGreeting()
-
-            // Load all data in parallel
-            val statsDeferred = async { dashboardRepository.getDashboardStats() }
-            val ordersDeferred = async { dashboardRepository.getUpcomingOrders() }
-            val earningsDeferred = async { dashboardRepository.getEarnings() }
-
-            val statsResult = statsDeferred.await()
-            val ordersResult = ordersDeferred.await()
-            val earningsResult = earningsDeferred.await()
-
-            when (statsResult) {
-                is ApiResult.Success -> _uiState.update { it.copy(stats = statsResult.data) }
-                is ApiResult.Error -> _uiState.update { it.copy(error = errorTranslator.translateError(statsResult.error)) }
-            }
-
-            when (ordersResult) {
-                is ApiResult.Success -> _uiState.update { it.copy(upcomingOrders = ordersResult.data) }
-                is ApiResult.Error -> { }
-            }
-
-            when (earningsResult) {
-                is ApiResult.Success -> _uiState.update { it.copy(earnings = earningsResult.data) }
-                is ApiResult.Error -> { }
-            }
-
-            loadTodayWorkingInfo()
-            _uiState.update { it.copy(isRefreshing = false) }
-        }
-    }
-
-    private fun loadTodayWorkingInfo() {
-        // TODO: Load from ProfileRepository when API endpoint is available
-        // For now, compute from mock availability data
-        val mockSchedule = listOf(
-            DayAvailability(Calendar.MONDAY, true, listOf(TimeSlot("09:00", "17:00"))),
-            DayAvailability(Calendar.TUESDAY, true, listOf(TimeSlot("09:00", "17:00"))),
-            DayAvailability(Calendar.WEDNESDAY, true, listOf(TimeSlot("09:00", "17:00"))),
-            DayAvailability(Calendar.THURSDAY, true, listOf(TimeSlot("09:00", "17:00"))),
-            DayAvailability(Calendar.FRIDAY, true, listOf(TimeSlot("09:00", "17:00"))),
-            DayAvailability(Calendar.SATURDAY, false),
-            DayAvailability(Calendar.SUNDAY, false)
-        )
-        val info = AvailabilityUtils.getTodayWorkingInfo(mockSchedule, emptyList())
-        _uiState.update { it.copy(todayWorkingInfo = info) }
-    }
-
-    fun clearError() {
-        _uiState.update { it.copy(error = null) }
     }
 }

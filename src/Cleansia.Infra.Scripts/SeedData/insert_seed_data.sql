@@ -68,59 +68,98 @@ VALUES
   (generate_ulid():: TEXT, true, 'ru', 'Русский');
 
 -- 3. COUNTRIES
+-- IsServiced flips the country into the customer/partner-facing pickers
+-- (driven by Country/GetServiced). Seed only the country we actually
+-- operate in today as serviced; admins can flip the flag on others via
+-- the Service Area page when expanding.
 INSERT INTO public."Countries" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy",
-  "DeactivatedOn", "Name", "IsoCode", "Translations"
+  "DeactivatedOn", "Name", "IsoCode", "Translations", "IsServiced"
 )
 VALUES
   -- Europe
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Czech Republic', 'CZE', '{"en": {"Name": "Czech Republic", "Description": "Central European country"}, "cs": {"Name": "Česká republika", "Description": "Středoevropská země"}, "ru": {"Name": "Чешская Республика", "Description": "Центральноевропейская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Slovakia', 'SVK', '{"en": {"Name": "Slovakia", "Description": "Central European country"}, "cs": {"Name": "Slovensko", "Description": "Středoevropská země"}, "ru": {"Name": "Словакия", "Description": "Центральноевропейская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Poland', 'POL', '{"en": {"Name": "Poland", "Description": "Central European country"}, "cs": {"Name": "Polsko", "Description": "Středoevropská země"}, "ru": {"Name": "Польша", "Description": "Центральноевропейская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Germany', 'DEU', '{"en": {"Name": "Germany", "Description": "Central European country"}, "cs": {"Name": "Německo", "Description": "Středoevropská země"}, "ru": {"Name": "Германия", "Description": "Центральноевропейская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Austria', 'AUT', '{"en": {"Name": "Austria", "Description": "Central European country"}, "cs": {"Name": "Rakousko", "Description": "Středoevropská země"}, "ru": {"Name": "Австрия", "Description": "Центральноевропейская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Hungary', 'HUN', '{"en": {"Name": "Hungary", "Description": "Central European country"}, "cs": {"Name": "Maďarsko", "Description": "Středoevropská země"}, "ru": {"Name": "Венгрия", "Description": "Центральноевропейская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Slovenia', 'SVN', '{"en": {"Name": "Slovenia", "Description": "Central European country"}, "cs": {"Name": "Slovinsko", "Description": "Středoevropská země"}, "ru": {"Name": "Словения", "Description": "Центральноевропейская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Croatia', 'HRV', '{"en": {"Name": "Croatia", "Description": "Southeastern European country"}, "cs": {"Name": "Chorvatsko", "Description": "Jihovýchodní evropská země"}, "ru": {"Name": "Хорватия", "Description": "Юго-восточная европейская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Italy', 'ITA', '{"en": {"Name": "Italy", "Description": "Southern European country"}, "cs": {"Name": "Itálie", "Description": "Jihoevropská země"}, "ru": {"Name": "Италия", "Description": "Южноевропейская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'France', 'FRA', '{"en": {"Name": "France", "Description": "Western European country"}, "cs": {"Name": "Francie", "Description": "Západoevropská země"}, "ru": {"Name": "Франция", "Description": "Западноевропейская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Spain', 'ESP', '{"en": {"Name": "Spain", "Description": "Southwestern European country"}, "cs": {"Name": "Španělsko", "Description": "Jihozápadní evropská země"}, "ru": {"Name": "Испания", "Description": "Юго-западная европейская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Portugal', 'PRT', '{"en": {"Name": "Portugal", "Description": "Southwestern European country"}, "cs": {"Name": "Portugalsko", "Description": "Jihozápadní evropská země"}, "ru": {"Name": "Португалия", "Description": "Юго-западная европейская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Netherlands', 'NLD', '{"en": {"Name": "Netherlands", "Description": "Northwestern European country"}, "cs": {"Name": "Nizozemsko", "Description": "Severozápadní evropská země"}, "ru": {"Name": "Нидерланды", "Description": "Северо-западная европейская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Belgium', 'BEL', '{"en": {"Name": "Belgium", "Description": "Western European country"}, "cs": {"Name": "Belgie", "Description": "Západoevropská země"}, "ru": {"Name": "Бельгия", "Description": "Западноевропейская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Switzerland', 'CHE', '{"en": {"Name": "Switzerland", "Description": "Central European country"}, "cs": {"Name": "Švýcarsko", "Description": "Středoevropská země"}, "ru": {"Name": "Швейцария", "Description": "Центральноевропейская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'United Kingdom', 'GBR', '{"en": {"Name": "United Kingdom", "Description": "Northwestern European country"}, "cs": {"Name": "Velká Británie", "Description": "Severozápadní evropská země"}, "ru": {"Name": "Великобритания", "Description": "Северо-западная европейская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Ireland', 'IRL', '{"en": {"Name": "Ireland", "Description": "Northwestern European country"}, "cs": {"Name": "Irsko", "Description": "Severozápadní evropská země"}, "ru": {"Name": "Ирландия", "Description": "Северо-западная европейская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Denmark', 'DNK', '{"en": {"Name": "Denmark", "Description": "Northern European country"}, "cs": {"Name": "Dánsko", "Description": "Severní evropská země"}, "ru": {"Name": "Дания", "Description": "Северная европейская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Sweden', 'SWE', '{"en": {"Name": "Sweden", "Description": "Northern European country"}, "cs": {"Name": "Švédsko", "Description": "Severní evropská země"}, "ru": {"Name": "Швеция", "Description": "Северная европейская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Norway', 'NOR', '{"en": {"Name": "Norway", "Description": "Northern European country"}, "cs": {"Name": "Norsko", "Description": "Severní evropská země"}, "ru": {"Name": "Норвегия", "Description": "Северная европейская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Finland', 'FIN', '{"en": {"Name": "Finland", "Description": "Northern European country"}, "cs": {"Name": "Finsko", "Description": "Severní evropská země"}, "ru": {"Name": "Финляндия", "Description": "Северная европейская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Estonia', 'EST', '{"en": {"Name": "Estonia", "Description": "Northern European country"}, "cs": {"Name": "Estonsko", "Description": "Severní evropská země"}, "ru": {"Name": "Эстония", "Description": "Северная европейская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Latvia', 'LVA', '{"en": {"Name": "Latvia", "Description": "Northern European country"}, "cs": {"Name": "Lotyšsko", "Description": "Severní evropská země"}, "ru": {"Name": "Латвия", "Description": "Северная европейская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Lithuania', 'LTU', '{"en": {"Name": "Lithuania", "Description": "Northern European country"}, "cs": {"Name": "Litva", "Description": "Severní evropská země"}, "ru": {"Name": "Литва", "Description": "Северная европейская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Romania', 'ROU', '{"en": {"Name": "Romania", "Description": "Southeastern European country"}, "cs": {"Name": "Rumunsko", "Description": "Jihovýchodní evropská země"}, "ru": {"Name": "Румыния", "Description": "Юго-восточная европейская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Bulgaria', 'BGR', '{"en": {"Name": "Bulgaria", "Description": "Southeastern European country"}, "cs": {"Name": "Bulharsko", "Description": "Jihovýchodní evropská země"}, "ru": {"Name": "Болгария", "Description": "Юго-восточная европейская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Greece', 'GRC', '{"en": {"Name": "Greece", "Description": "Southeastern European country"}, "cs": {"Name": "Řecko", "Description": "Jihovýchodní evropská země"}, "ru": {"Name": "Греция", "Description": "Юго-восточная европейская страна"}}'),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Czech Republic', 'CZE', '{"en": {"Name": "Czech Republic", "Description": "Central European country"}, "cs": {"Name": "Česká republika", "Description": "Středoevropská země"}, "ru": {"Name": "Чешская Республика", "Description": "Центральноевропейская страна"}}', true),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Slovakia', 'SVK', '{"en": {"Name": "Slovakia", "Description": "Central European country"}, "cs": {"Name": "Slovensko", "Description": "Středoevropská země"}, "ru": {"Name": "Словакия", "Description": "Центральноевропейская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Poland', 'POL', '{"en": {"Name": "Poland", "Description": "Central European country"}, "cs": {"Name": "Polsko", "Description": "Středoevropská země"}, "ru": {"Name": "Польша", "Description": "Центральноевропейская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Germany', 'DEU', '{"en": {"Name": "Germany", "Description": "Central European country"}, "cs": {"Name": "Německo", "Description": "Středoevropská země"}, "ru": {"Name": "Германия", "Description": "Центральноевропейская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Austria', 'AUT', '{"en": {"Name": "Austria", "Description": "Central European country"}, "cs": {"Name": "Rakousko", "Description": "Středoevropská země"}, "ru": {"Name": "Австрия", "Description": "Центральноевропейская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Hungary', 'HUN', '{"en": {"Name": "Hungary", "Description": "Central European country"}, "cs": {"Name": "Maďarsko", "Description": "Středoevropská země"}, "ru": {"Name": "Венгрия", "Description": "Центральноевропейская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Slovenia', 'SVN', '{"en": {"Name": "Slovenia", "Description": "Central European country"}, "cs": {"Name": "Slovinsko", "Description": "Středoevropská země"}, "ru": {"Name": "Словения", "Description": "Центральноевропейская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Croatia', 'HRV', '{"en": {"Name": "Croatia", "Description": "Southeastern European country"}, "cs": {"Name": "Chorvatsko", "Description": "Jihovýchodní evropská země"}, "ru": {"Name": "Хорватия", "Description": "Юго-восточная европейская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Italy', 'ITA', '{"en": {"Name": "Italy", "Description": "Southern European country"}, "cs": {"Name": "Itálie", "Description": "Jihoevropská země"}, "ru": {"Name": "Италия", "Description": "Южноевропейская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'France', 'FRA', '{"en": {"Name": "France", "Description": "Western European country"}, "cs": {"Name": "Francie", "Description": "Západoevropská země"}, "ru": {"Name": "Франция", "Description": "Западноевропейская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Spain', 'ESP', '{"en": {"Name": "Spain", "Description": "Southwestern European country"}, "cs": {"Name": "Španělsko", "Description": "Jihozápadní evropská země"}, "ru": {"Name": "Испания", "Description": "Юго-западная европейская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Portugal', 'PRT', '{"en": {"Name": "Portugal", "Description": "Southwestern European country"}, "cs": {"Name": "Portugalsko", "Description": "Jihozápadní evropská země"}, "ru": {"Name": "Португалия", "Description": "Юго-западная европейская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Netherlands', 'NLD', '{"en": {"Name": "Netherlands", "Description": "Northwestern European country"}, "cs": {"Name": "Nizozemsko", "Description": "Severozápadní evropská země"}, "ru": {"Name": "Нидерланды", "Description": "Северо-западная европейская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Belgium', 'BEL', '{"en": {"Name": "Belgium", "Description": "Western European country"}, "cs": {"Name": "Belgie", "Description": "Západoevropská země"}, "ru": {"Name": "Бельгия", "Description": "Западноевропейская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Switzerland', 'CHE', '{"en": {"Name": "Switzerland", "Description": "Central European country"}, "cs": {"Name": "Švýcarsko", "Description": "Středoevropská země"}, "ru": {"Name": "Швейцария", "Description": "Центральноевропейская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'United Kingdom', 'GBR', '{"en": {"Name": "United Kingdom", "Description": "Northwestern European country"}, "cs": {"Name": "Velká Británie", "Description": "Severozápadní evropská země"}, "ru": {"Name": "Великобритания", "Description": "Северо-западная европейская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Ireland', 'IRL', '{"en": {"Name": "Ireland", "Description": "Northwestern European country"}, "cs": {"Name": "Irsko", "Description": "Severozápadní evropská země"}, "ru": {"Name": "Ирландия", "Description": "Северо-западная европейская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Denmark', 'DNK', '{"en": {"Name": "Denmark", "Description": "Northern European country"}, "cs": {"Name": "Dánsko", "Description": "Severní evropská země"}, "ru": {"Name": "Дания", "Description": "Северная европейская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Sweden', 'SWE', '{"en": {"Name": "Sweden", "Description": "Northern European country"}, "cs": {"Name": "Švédsko", "Description": "Severní evropská země"}, "ru": {"Name": "Швеция", "Description": "Северная европейская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Norway', 'NOR', '{"en": {"Name": "Norway", "Description": "Northern European country"}, "cs": {"Name": "Norsko", "Description": "Severní evropská země"}, "ru": {"Name": "Норвегия", "Description": "Северная европейская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Finland', 'FIN', '{"en": {"Name": "Finland", "Description": "Northern European country"}, "cs": {"Name": "Finsko", "Description": "Severní evropská země"}, "ru": {"Name": "Финляндия", "Description": "Северная европейская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Estonia', 'EST', '{"en": {"Name": "Estonia", "Description": "Northern European country"}, "cs": {"Name": "Estonsko", "Description": "Severní evropská země"}, "ru": {"Name": "Эстония", "Description": "Северная европейская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Latvia', 'LVA', '{"en": {"Name": "Latvia", "Description": "Northern European country"}, "cs": {"Name": "Lotyšsko", "Description": "Severní evropská země"}, "ru": {"Name": "Латвия", "Description": "Северная европейская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Lithuania', 'LTU', '{"en": {"Name": "Lithuania", "Description": "Northern European country"}, "cs": {"Name": "Litva", "Description": "Severní evropská země"}, "ru": {"Name": "Литва", "Description": "Северная европейская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Romania', 'ROU', '{"en": {"Name": "Romania", "Description": "Southeastern European country"}, "cs": {"Name": "Rumunsko", "Description": "Jihovýchodní evropská země"}, "ru": {"Name": "Румыния", "Description": "Юго-восточная европейская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Bulgaria', 'BGR', '{"en": {"Name": "Bulgaria", "Description": "Southeastern European country"}, "cs": {"Name": "Bulharsko", "Description": "Jihovýchodní evropská země"}, "ru": {"Name": "Болгария", "Description": "Юго-восточная европейская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Greece', 'GRC', '{"en": {"Name": "Greece", "Description": "Southeastern European country"}, "cs": {"Name": "Řecko", "Description": "Jihovýchodní evropská země"}, "ru": {"Name": "Греция", "Description": "Юго-восточная европейская страна"}}', false),
   -- North America
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'United States', 'USA', '{"en": {"Name": "United States", "Description": "North American country"}, "cs": {"Name": "Spojené státy", "Description": "Severoamerická země"}, "ru": {"Name": "Соединенные Штаты", "Description": "Североамериканская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Canada', 'CAN', '{"en": {"Name": "Canada", "Description": "North American country"}, "cs": {"Name": "Kanada", "Description": "Severoamerická země"}, "ru": {"Name": "Канада", "Description": "Североамериканская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Mexico', 'MEX', '{"en": {"Name": "Mexico", "Description": "North American country"}, "cs": {"Name": "Mexiko", "Description": "Severoamerická země"}, "ru": {"Name": "Мексика", "Description": "Североамериканская страна"}}'),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'United States', 'USA', '{"en": {"Name": "United States", "Description": "North American country"}, "cs": {"Name": "Spojené státy", "Description": "Severoamerická země"}, "ru": {"Name": "Соединенные Штаты", "Description": "Североамериканская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Canada', 'CAN', '{"en": {"Name": "Canada", "Description": "North American country"}, "cs": {"Name": "Kanada", "Description": "Severoamerická země"}, "ru": {"Name": "Канада", "Description": "Североамериканская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Mexico', 'MEX', '{"en": {"Name": "Mexico", "Description": "North American country"}, "cs": {"Name": "Mexiko", "Description": "Severoamerická země"}, "ru": {"Name": "Мексика", "Description": "Североамериканская страна"}}', false),
   -- Asia
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Russia', 'RUS', '{"en": {"Name": "Russia", "Description": "Eurasian country"}, "cs": {"Name": "Rusko", "Description": "Euroasijská země"}, "ru": {"Name": "Россия", "Description": "Евразийская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'China', 'CHN', '{"en": {"Name": "China", "Description": "East Asian country"}, "cs": {"Name": "Čína", "Description": "Východoasijská země"}, "ru": {"Name": "Китай", "Description": "Восточноазиатская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Japan', 'JPN', '{"en": {"Name": "Japan", "Description": "East Asian country"}, "cs": {"Name": "Japonsko", "Description": "Východoasijská země"}, "ru": {"Name": "Япония", "Description": "Восточноазиатская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'South Korea', 'KOR', '{"en": {"Name": "South Korea", "Description": "East Asian country"}, "cs": {"Name": "Jižní Korea", "Description": "Východoasijská země"}, "ru": {"Name": "Южная Корея", "Description": "Восточноазиатская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'India', 'IND', '{"en": {"Name": "India", "Description": "South Asian country"}, "cs": {"Name": "Indie", "Description": "Jihoasijská země"}, "ru": {"Name": "Индия", "Description": "Южноазиатская страна"}}'),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Russia', 'RUS', '{"en": {"Name": "Russia", "Description": "Eurasian country"}, "cs": {"Name": "Rusko", "Description": "Euroasijská země"}, "ru": {"Name": "Россия", "Description": "Евразийская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'China', 'CHN', '{"en": {"Name": "China", "Description": "East Asian country"}, "cs": {"Name": "Čína", "Description": "Východoasijská země"}, "ru": {"Name": "Китай", "Description": "Восточноазиатская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Japan', 'JPN', '{"en": {"Name": "Japan", "Description": "East Asian country"}, "cs": {"Name": "Japonsko", "Description": "Východoasijská země"}, "ru": {"Name": "Япония", "Description": "Восточноазиатская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'South Korea', 'KOR', '{"en": {"Name": "South Korea", "Description": "East Asian country"}, "cs": {"Name": "Jižní Korea", "Description": "Východoasijská země"}, "ru": {"Name": "Южная Корея", "Description": "Восточноазиатская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'India', 'IND', '{"en": {"Name": "India", "Description": "South Asian country"}, "cs": {"Name": "Indie", "Description": "Jihoasijská země"}, "ru": {"Name": "Индия", "Description": "Южноазиатская страна"}}', false),
   -- Oceania
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Australia', 'AUS', '{"en": {"Name": "Australia", "Description": "Oceanic country"}, "cs": {"Name": "Austrálie", "Description": "Oceánská země"}, "ru": {"Name": "Австралия", "Description": "Океанская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'New Zealand', 'NZL', '{"en": {"Name": "New Zealand", "Description": "Oceanic country"}, "cs": {"Name": "Nový Zéland", "Description": "Oceánská země"}, "ru": {"Name": "Новая Зеландия", "Description": "Океанская страна"}}'),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Australia', 'AUS', '{"en": {"Name": "Australia", "Description": "Oceanic country"}, "cs": {"Name": "Austrálie", "Description": "Oceánská země"}, "ru": {"Name": "Австралия", "Description": "Океанская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'New Zealand', 'NZL', '{"en": {"Name": "New Zealand", "Description": "Oceanic country"}, "cs": {"Name": "Nový Zéland", "Description": "Oceánská země"}, "ru": {"Name": "Новая Зеландия", "Description": "Океанская страна"}}', false),
   -- South America
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Brazil', 'BRA', '{"en": {"Name": "Brazil", "Description": "South American country"}, "cs": {"Name": "Brazílie", "Description": "Jihoamerická země"}, "ru": {"Name": "Бразилия", "Description": "Южноамериканская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Argentina', 'ARG', '{"en": {"Name": "Argentina", "Description": "South American country"}, "cs": {"Name": "Argentina", "Description": "Jihoamerická země"}, "ru": {"Name": "Аргентина", "Description": "Южноамериканская страна"}}'),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Brazil', 'BRA', '{"en": {"Name": "Brazil", "Description": "South American country"}, "cs": {"Name": "Brazílie", "Description": "Jihoamerická země"}, "ru": {"Name": "Бразилия", "Description": "Южноамериканская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Argentina', 'ARG', '{"en": {"Name": "Argentina", "Description": "South American country"}, "cs": {"Name": "Argentina", "Description": "Jihoamerická země"}, "ru": {"Name": "Аргентина", "Description": "Южноамериканская страна"}}', false),
   -- Africa
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'South Africa', 'ZAF', '{"en": {"Name": "South Africa", "Description": "Southern African country"}, "cs": {"Name": "Jižní Afrika", "Description": "Jihoafrická země"}, "ru": {"Name": "Южная Африка", "Description": "Южноафриканская страна"}}'),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Egypt', 'EGY', '{"en": {"Name": "Egypt", "Description": "North African country"}, "cs": {"Name": "Egypt", "Description": "Severoafrická země"}, "ru": {"Name": "Египет", "Description": "Североафриканская страна"}}');
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'South Africa', 'ZAF', '{"en": {"Name": "South Africa", "Description": "Southern African country"}, "cs": {"Name": "Jižní Afrika", "Description": "Jihoafrická země"}, "ru": {"Name": "Южная Африка", "Description": "Южноафриканская страна"}}', false),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'Egypt', 'EGY', '{"en": {"Name": "Egypt", "Description": "North African country"}, "cs": {"Name": "Egypt", "Description": "Severoafrická země"}, "ru": {"Name": "Египет", "Description": "Североафриканская страна"}}', false);
+
+-- 3b. SERVICE CITIES
+-- Cities the company actually serves within a serviced country. Customer
+-- order creation must pick an address whose city matches one of these
+-- (city-name match, case-insensitive). Employee addresses don't have to
+-- match — cleaners can live anywhere and commute. See
+-- planning/active/service-areas.md.
+--
+-- ZipPrefix is stored from v1 but NOT enforced by the v1 validator (city
+-- name alone). Pre-populating it now means we don't need a backfill the
+-- day enforcement turns on.
+--
+-- Seed list covers the 10 largest Czech cities (the only serviced country
+-- today). Admins extend this via the admin Service Area page.
+INSERT INTO public."ServiceCities" (
+  "Id", "IsActive", "CreatedBy", "CreatedOn",
+  "UpdatedBy", "UpdatedOn", "DeactivatedBy", "DeactivatedOn",
+  "TenantId", "CountryId", "Name", "ZipPrefix"
+)
+SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+       NULL,
+       (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1),
+       city.name, city.zip_prefix
+FROM (VALUES
+  ('Praha',             '1'),
+  ('Brno',              '6'),
+  ('Ostrava',           '7'),
+  ('Plzeň',             '3'),
+  ('Liberec',           '46'),
+  ('Olomouc',           '77'),
+  ('České Budějovice',  '37'),
+  ('Hradec Králové',    '50'),
+  ('Ústí nad Labem',    '40'),
+  ('Pardubice',         '53')
+) AS city(name, zip_prefix);
 
 -- 4. EMAIL TRANSLATIONS
 INSERT INTO public."EmailTranslations" (
@@ -303,6 +342,48 @@ VALUES
    600.00, 180.00, 135,
    (SELECT "Id" FROM public."ServiceCategories" WHERE "Slug" = 'home'),
    '{"en": {"Name": "Eco-Friendly Cleaning", "Description": "Green cleaning using only eco-friendly and non-toxic products"}, "cs": {"Name": "Ekologický úklid", "Description": "Zelený úklid používající pouze ekologické a netoxické produkty"}, "ru": {"Name": "Экологическая уборка", "Description": "Зеленая уборка с использованием только экологически чистых и нетоксичных продуктов"}}');
+
+-- 7b. EXTRAS — booking add-ons (inside-oven, inside-fridge, etc.)
+-- Prices are placeholders per the spec (booking-extras-and-surcharge.md §1a);
+-- PM should sanity-check before production seed. All 5 locales translated
+-- in-line so the GetExtraOverview endpoint serves localized strings out of
+-- the box.
+INSERT INTO public."Extras" (
+  "Id", "IsActive", "CreatedBy", "CreatedOn",
+  "UpdatedBy", "UpdatedOn", "DeactivatedBy",
+  "DeactivatedOn", "Slug", "Name", "Description",
+  "Price", "DisplayOrder", "Translations"
+)
+VALUES
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   'inside-oven', 'Inside oven cleaning',
+   'Degrease, scrub, wipe down — bring the oven back to factory clean.',
+   200.00, 10,
+   '{"en": {"Name": "Inside oven cleaning", "Description": "Degrease, scrub, wipe down — bring the oven back to factory clean."}, "cs": {"Name": "Čištění vnitřku trouby", "Description": "Odmaštění, vydrhnutí, otření — trouba bude jako nová."}, "sk": {"Name": "Čistenie vnútra rúry", "Description": "Odmastenie, vydrhnutie, utretie — rúra bude ako nová."}, "uk": {"Name": "Чистка духовки зсередини", "Description": "Знежирення, миття, протирання — духовка як нова."}, "ru": {"Name": "Чистка духовки изнутри", "Description": "Обезжиривание, оттирание, протирка — духовка как новая."}}'),
+
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   'inside-fridge', 'Inside fridge cleaning',
+   'Empty, clean, wipe down, reassemble. Assumes the fridge has been emptied beforehand.',
+   150.00, 20,
+   '{"en": {"Name": "Inside fridge cleaning", "Description": "Empty, clean, wipe down, reassemble. Assumes the fridge has been emptied beforehand."}, "cs": {"Name": "Čištění vnitřku ledničky", "Description": "Vyprázdnit, vyčistit, otřít, složit zpět. Předpokládá vyprázdněnou ledničku."}, "sk": {"Name": "Čistenie vnútra chladničky", "Description": "Vyprázdniť, vyčistiť, utrieť, zložiť. Predpokladá vyprázdnenú chladničku."}, "uk": {"Name": "Чистка холодильника зсередини", "Description": "Випорожнити, помити, протерти, зібрати назад. Холодильник має бути порожнім."}, "ru": {"Name": "Чистка холодильника изнутри", "Description": "Освободить, помыть, протереть, собрать. Холодильник должен быть опустошён."}}'),
+
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   'interior-windows', 'Interior windows',
+   'Streak-free clean on the inside of the windows (exterior is a separate service).',
+   100.00, 30,
+   '{"en": {"Name": "Interior windows", "Description": "Streak-free clean on the inside of the windows (exterior is a separate service)."}, "cs": {"Name": "Vnitřní okna", "Description": "Mytí oken zevnitř bez šmouh (vnější strana je samostatná služba)."}, "sk": {"Name": "Vnútorné okná", "Description": "Umytie okien zvnútra bez šmúh (vonkajšia strana je samostatná služba)."}, "uk": {"Name": "Внутрішні вікна", "Description": "Прозоре миття вікон зсередини (зовнішня сторона — окрема послуга)."}, "ru": {"Name": "Окна изнутри", "Description": "Прозрачное мытьё окон изнутри (внешняя сторона — отдельная услуга)."}}'),
+
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   'laundry-ironing', 'Laundry & ironing',
+   'Up to one hour of laundry and ironing as part of the visit.',
+   250.00, 40,
+   '{"en": {"Name": "Laundry & ironing", "Description": "Up to one hour of laundry and ironing as part of the visit."}, "cs": {"Name": "Praní a žehlení", "Description": "Až jedna hodina praní a žehlení v rámci úklidu."}, "sk": {"Name": "Pranie a žehlenie", "Description": "Až jedna hodina prania a žehlenia v rámci upratovania."}, "uk": {"Name": "Прання та прасування", "Description": "До однієї години прання та прасування під час візиту."}, "ru": {"Name": "Стирка и глажка", "Description": "До часа стирки и глажки во время уборки."}}'),
+
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+   'pet-hair-supplement', 'Pet hair deep-clean',
+   'Extra effort on pet hair removal for homes with shedding pets.',
+   150.00, 50,
+   '{"en": {"Name": "Pet hair deep-clean", "Description": "Extra effort on pet hair removal for homes with shedding pets."}, "cs": {"Name": "Důkladné odstranění zvířecích chlupů", "Description": "Extra péče o odstranění chlupů v domech s línajícími mazlíčky."}, "sk": {"Name": "Dôkladné odstránenie srsti", "Description": "Extra starostlivosť o odstránenie srsti v domoch s línajúcimi zvieratami."}, "uk": {"Name": "Глибоке прибирання шерсті тварин", "Description": "Додаткові зусилля для прибирання шерсті в домах з тваринами."}, "ru": {"Name": "Глубокая уборка шерсти животных", "Description": "Дополнительные усилия по уборке шерсти в домах с линяющими питомцами."}}');
 
 -- 8. PACKAGES
 INSERT INTO public."Packages" (
@@ -1067,7 +1148,8 @@ VALUES
    (SELECT "Id" FROM public."Employees" WHERE "RegistrationNumber" = '87654322' LIMIT 1));
 
 -- Insert Order Status Tracks (Order history)
--- Status: 1=Pending, 2=Confirmed, 3=InProgress, 4=Completed, 5=Cancelled
+-- Status: 0=New, 1=Pending, 2=Confirmed, 3=OnTheWay, 4=InProgress, 5=Completed, 6=Cancelled
+-- NOTE: seed values below use 1,2,4,5,6 (skipping the optional OnTheWay step).
 INSERT INTO public."OrderStatusHistory" (
   "Id", "IsActive","CreatedBy", "CreatedOn", "Status", "OrderId"
 )
@@ -1075,38 +1157,38 @@ VALUES
   -- Order 1: Pending -> Confirmed -> InProgress -> Completed
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '45 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0001' LIMIT 1)),
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '44 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0001' LIMIT 1)),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '43 days', 3, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0001' LIMIT 1)),
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '43 days', 4, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0001' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '43 days', 5, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0001' LIMIT 1)),
 
   -- Order 2: Pending -> Confirmed -> InProgress -> Completed
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '44 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0002' LIMIT 1)),
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '43 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0002' LIMIT 1)),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '42 days', 3, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0002' LIMIT 1)),
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '42 days', 4, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0002' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '42 days', 5, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0002' LIMIT 1)),
 
   -- Order 3: Pending -> Confirmed -> InProgress -> Completed
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '43 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0003' LIMIT 1)),
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '42 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0003' LIMIT 1)),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '41 days', 3, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0003' LIMIT 1)),
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '41 days', 4, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0003' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '41 days', 5, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0003' LIMIT 1)),
 
   -- Order 4: Pending -> Confirmed -> InProgress -> Completed
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '42 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0004' LIMIT 1)),
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '41 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0004' LIMIT 1)),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '40 days', 3, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0004' LIMIT 1)),
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '40 days', 4, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0004' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '40 days', 5, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0004' LIMIT 1)),
 
   -- Order 5: Pending -> Confirmed -> InProgress -> Completed
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '41 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0005' LIMIT 1)),
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '40 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0005' LIMIT 1)),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '39 days', 3, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0005' LIMIT 1)),
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '39 days', 4, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0005' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '39 days', 5, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0005' LIMIT 1)),
 
   -- Order 6: Pending -> Confirmed -> InProgress -> Completed
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '35 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0006' LIMIT 1)),
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '34 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0006' LIMIT 1)),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '33 days', 3, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0006' LIMIT 1)),
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '33 days', 4, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0006' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '33 days', 5, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0006' LIMIT 1)),
 
   -- Order 7: Pending -> Confirmed
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '5 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0007' LIMIT 1)),
@@ -1126,7 +1208,7 @@ VALUES
   -- Order 11: Pending -> Confirmed -> Cancelled
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '20 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0011' LIMIT 1)),
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '19 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0011' LIMIT 1)),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '18 days', 5, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0011' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '18 days', 6, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0011' LIMIT 1)),
 
   -- Order 12: Pending -> Confirmed
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '2 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0012' LIMIT 1)),
@@ -1135,8 +1217,8 @@ VALUES
   -- Order 13: Pending -> Confirmed -> InProgress -> Completed
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '18 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0013' LIMIT 1)),
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '16 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0013' LIMIT 1)),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '15 days', 3, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0013' LIMIT 1)),
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '15 days', 4, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0013' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '15 days', 5, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0013' LIMIT 1)),
 
   -- Order 14: Pending -> Confirmed -> InProgress
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '2 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0014' LIMIT 1)),
@@ -1145,7 +1227,7 @@ VALUES
 
   -- Order 15: Pending -> Cancelled (with refund)
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '25 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0015' LIMIT 1)),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '23 days', 5, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0015' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '23 days', 6, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0015' LIMIT 1)),
 
   -- Order 16: Pending
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0016' LIMIT 1)),
@@ -1153,8 +1235,8 @@ VALUES
   -- Order 17: Pending -> Confirmed -> InProgress -> Completed
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '32 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0017' LIMIT 1)),
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '31 days', 2, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0017' LIMIT 1)),
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '30 days', 3, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0017' LIMIT 1)),
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '30 days', 4, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0017' LIMIT 1)),
+  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '30 days', 5, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0017' LIMIT 1)),
 
   -- Order 18: Pending -> Confirmed
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP - INTERVAL '3 days', 1, (SELECT "Id" FROM public."Orders" WHERE "DisplayOrderNumber" = 'CLS-2026-0018' LIMIT 1)),
@@ -2273,9 +2355,30 @@ INSERT INTO public."LoyaltyTierConfigs" (
     "MinimumOrderAmountForDiscount", "PerksJson"
 )
 SELECT '01LTYPLATINUM0000000000000', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, NULL,
-    4, 5000, 0.1500, NULL,
-    '[{"icon":"badge","labelKey":"loyalty.perks.welcome_badge"},{"icon":"percent","labelKey":"loyalty.perks.discount_15"},{"icon":"support","labelKey":"loyalty.perks.priority_support"},{"icon":"star","labelKey":"loyalty.perks.dedicated_pool"}]'
+    4, 5000, 0.1200, 1000.00,
+    '[{"icon":"badge","labelKey":"loyalty.perks.welcome_badge"},{"icon":"percent","labelKey":"loyalty.perks.discount_12"},{"icon":"support","labelKey":"loyalty.perks.priority_support"},{"icon":"star","labelKey":"loyalty.perks.dedicated_pool"}]'
 WHERE NOT EXISTS (SELECT 1 FROM public."LoyaltyTierConfigs" WHERE "Tier" = 4 AND "TenantId" IS NULL);
+
+-- LOY-003 — keep the seed in sync with the live tier values. Idempotent
+-- UPDATE so re-running the seed against an existing DB picks up the new
+-- numbers without needing a separate migration script. Bronze stays 0%
+-- but gains the floor (cosmetic — 0% × anything = 0, but keeps the
+-- minimum_order semantics consistent across tiers).
+UPDATE public."LoyaltyTierConfigs"
+   SET "DiscountPercent" = 0.0500,
+       "MinimumOrderAmountForDiscount" = 1000.00
+ WHERE "Tier" = 2 AND "TenantId" IS NULL;
+
+UPDATE public."LoyaltyTierConfigs"
+   SET "DiscountPercent" = 0.1000,
+       "MinimumOrderAmountForDiscount" = 1000.00
+ WHERE "Tier" = 3 AND "TenantId" IS NULL;
+
+UPDATE public."LoyaltyTierConfigs"
+   SET "DiscountPercent" = 0.1200,
+       "MinimumOrderAmountForDiscount" = 1000.00,
+       "PerksJson" = '[{"icon":"badge","labelKey":"loyalty.perks.welcome_badge"},{"icon":"percent","labelKey":"loyalty.perks.discount_12"},{"icon":"support","labelKey":"loyalty.perks.priority_support"},{"icon":"star","labelKey":"loyalty.perks.dedicated_pool"}]'
+ WHERE "Tier" = 4 AND "TenantId" IS NULL;
 
 -- ============================================================
 -- PROMO CODES (Phase B seed)

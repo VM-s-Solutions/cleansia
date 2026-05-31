@@ -44,7 +44,11 @@ class CleansiaFirebaseMessagingService : FirebaseMessagingService() {
         // 401s and PushTokenRepository's `networkCall` swallows it.
         // Either way, the backend will receive the token at next sign-in
         // via PushSessionListener.
-        scope.launch { pushTokenRepository.onTokenRotated(token) }
+        // Push into the repository's hot flow. PushTokenSessionObserver
+        // POSTs to the backend if (and only if) a session is active —
+        // rotations while signed out are buffered and delivered at next
+        // sign-in instead of silently 401ing.
+        pushTokenRepository.reportRotatedToken(token)
     }
 
     override fun onMessageReceived(message: RemoteMessage) {

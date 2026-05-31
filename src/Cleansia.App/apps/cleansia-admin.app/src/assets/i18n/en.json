@@ -56,6 +56,7 @@
       "countries": "Countries",
       "country_create": "Create Country",
       "country_edit": "Edit Country",
+      "service_area": "Service Area",
       "currencies": "Currencies",
       "currency_create": "Create Currency",
       "currency_edit": "Edit Currency",
@@ -207,6 +208,7 @@
     "admin_users": "Admin Users",
     "languages": "Languages",
     "countries": "Countries",
+    "service_area": "Service Area",
     "currencies": "Currencies",
     "company_info": "Company Info",
     "templates": "Templates",
@@ -254,6 +256,12 @@
         "active_status": "Active Status",
         "reset": "Reset Filters",
         "clear_all": "Clear All"
+      },
+      "approve_dialog": {
+        "title": "Approve Employee",
+        "subtitle": "Pick the country this cleaner is approved to work in. This drives their currency, language and VAT defaults.",
+        "cancel_button": "Cancel",
+        "approve_button": "Approve Employee"
       },
       "reject_dialog": {
         "title": "Reject Employee",
@@ -355,6 +363,17 @@
         "reject_document": "Reject",
         "download_document": "Download",
         "preview_document": "Preview"
+      },
+      "approve_employee_dialog": {
+        "title": "Approve Employee",
+        "subtitle": "Pick the country this cleaner is approved to work in. This drives their currency, language and VAT defaults.",
+        "work_country_label": "Work Country",
+        "work_country_hint": "Only countries we currently service are selectable.",
+        "work_country_required": "Work country is required",
+        "notes_placeholder": "Optional approval notes...",
+        "notes_hint": "Maximum 1000 characters",
+        "cancel_button": "Cancel",
+        "approve_button": "Approve Employee"
       },
       "reject_employee_dialog": {
         "title": "Reject Employee",
@@ -512,6 +531,7 @@
       "bathrooms": "Bathrooms",
       "estimated_time": "Estimated Time",
       "actual_time": "Actual Time",
+      "completed_at": "Completed at",
       "selected_packages": "Selected Packages",
       "selected_services": "Selected Services",
       "extras": "Extras",
@@ -855,6 +875,53 @@
         "load_error": "Failed to load countries",
         "delete_success": "Country deleted successfully",
         "delete_error": "Failed to delete country"
+      }
+    },
+    "service_area_management": {
+      "title": "Service Area",
+      "description": "Choose which countries you operate in and which cities you serve. These choices drive every customer and partner address picker.",
+      "tabs": {
+        "countries": "Countries served",
+        "cities": "Cities served"
+      },
+      "columns": {
+        "country": "Country",
+        "iso_code": "ISO code",
+        "is_serviced": "Serviced",
+        "city": "City",
+        "zip_prefix": "ZIP prefix",
+        "is_active": "Status"
+      },
+      "countries": {
+        "hint": "Flip the switch on each country you operate in. Customers and partners will only see serviced countries in their pickers."
+      },
+      "cities": {
+        "country_picker": "Select country",
+        "no_serviced_country": "Mark at least one country as serviced before managing cities.",
+        "empty": "No cities defined for this country yet.",
+        "add": "Add city",
+        "edit": "Edit",
+        "delete": "Delete",
+        "edit_header": "Edit city",
+        "create_header": "Add city",
+        "delete_header": "Delete city",
+        "delete_confirm": "Remove {{ name }} from the service area? Existing orders are unaffected; new orders in this city will be rejected.",
+        "name_label": "City name",
+        "name_placeholder": "e.g., Praha, Brno, Plzeň",
+        "zip_prefix_label": "ZIP prefix (optional)",
+        "zip_prefix_placeholder": "e.g., 1, 11, 11000",
+        "zip_prefix_hint": "Not enforced yet — captured for future stricter validation.",
+        "active_label": "Active",
+        "active": "Active",
+        "inactive": "Inactive",
+        "save": "Save",
+        "cancel": "Cancel"
+      },
+      "messages": {
+        "country_updated": "Country service status updated",
+        "city_created": "City added to service area",
+        "city_updated": "City updated",
+        "city_deleted": "City removed from service area"
       }
     },
     "country_form": {
@@ -2113,6 +2180,11 @@
         "key_exists": "A translation with this key already exists",
         "invalid_type": "Invalid email template type"
       }
+    },
+    "service_area": {
+      "country_not_serviced": "We don't currently operate in this country.",
+      "country_required": "Please select a country.",
+      "city_not_serviced": "We don't currently serve this city."
     }
   },
   "cookies": {

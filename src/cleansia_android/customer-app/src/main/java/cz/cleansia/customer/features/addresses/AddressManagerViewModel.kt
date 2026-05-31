@@ -1,10 +1,11 @@
 package cz.cleansia.customer.features.addresses
 
 import androidx.lifecycle.ViewModel
-import cz.cleansia.customer.core.data.AddressRepository
-import cz.cleansia.customer.core.location.LocationService
-import cz.cleansia.customer.core.location.ReverseGeocodingService
+import cz.cleansia.core.location.LocationService
+import cz.cleansia.core.location.ReverseGeocodingService
+import cz.cleansia.core.servicearea.ServiceAreaProvider
 import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.customer.core.data.AddressRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
@@ -24,5 +25,6 @@ class AddressManagerViewModel @Inject constructor(
     val addressRepository: AddressRepository,
     val locationService: LocationService,
     val reverseGeocodingService: ReverseGeocodingService,
+    val serviceAreaProvider: ServiceAreaProvider,
     val snackbar: SnackbarController,
 ) : ViewModel()

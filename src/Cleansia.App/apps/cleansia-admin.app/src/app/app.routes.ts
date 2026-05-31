@@ -93,6 +93,17 @@ export const appRoutes: Route[] = [
       ),
   },
   {
+    // Shares the country-management lib but is a sibling top-level route —
+    // the two features are conceptually distinct (catalog vs operational
+    // service area), and sidebar finding is easier this way.
+    path: 'service-area-management',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/country-management').then(
+        (m) => m.serviceAreaManagementRoutes
+      ),
+  },
+  {
     path: 'currency-management',
     canActivate: [adminGuard],
     loadChildren: () =>

@@ -60,6 +60,7 @@ import cz.cleansia.customer.core.disputes.DisputeListItemDto
 import cz.cleansia.core.format.formatOrderDateTime
 import cz.cleansia.customer.ui.format.disputeStatusColor
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
+import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.theme.Poppins
 
@@ -198,6 +199,15 @@ private fun LoadedList(
         onRefresh = onRefresh,
         state = pullState,
         modifier = Modifier.fillMaxSize(),
+        indicator = {
+            SudsRefreshIndicator(
+                state = pullState,
+                isRefreshing = isRefreshing,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 8.dp),
+            )
+        },
     ) {
         LazyColumn(
             state = listState,

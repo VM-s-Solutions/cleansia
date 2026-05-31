@@ -58,7 +58,10 @@ export class ProfileFacade extends UnsubscribeControlDirective {
     this.profileLoading.set(true);
 
     const employee$ = this.partnerClient.employeeClient.getCurrentEmployee();
-    const countries$ = this.partnerClient.countryClient.getOverview();
+    // Partner profile only renders the country picker for the cleaner's
+    // home address — they must live in a country we operate in. See
+    // planning/active/service-areas.md (Session 4).
+    const countries$ = this.partnerClient.countryClient.getServiced();
 
     this.profileData$ = combineLatest([employee$, countries$]).pipe(
       tap(([employee, countries]) => {

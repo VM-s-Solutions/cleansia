@@ -12,6 +12,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,6 +42,14 @@ fun CleansiaTextField(
     isPassword: Boolean = false,
     enabled: Boolean = true,
     singleLine: Boolean = true,
+    /**
+     * When true the field draws no background fill — relies on the
+     * surrounding container's color instead. Use inside a FormSection
+     * card (white-on-white would just look like one big fill block);
+     * default false keeps standalone fields filled with surface so
+     * they don't disappear on the page background.
+     */
+    transparentContainer: Boolean = false,
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
     val visual = if (isPassword && !passwordVisible) PasswordVisualTransformation() else VisualTransformation.None
@@ -78,6 +87,12 @@ fun CleansiaTextField(
             unfocusedBorderColor = MaterialTheme.colorScheme.outline,
             focusedLabelColor = MaterialTheme.colorScheme.primary,
             cursorColor = MaterialTheme.colorScheme.primary,
+            focusedContainerColor = if (transparentContainer) Color.Transparent
+            else MaterialTheme.colorScheme.surface,
+            unfocusedContainerColor = if (transparentContainer) Color.Transparent
+            else MaterialTheme.colorScheme.surface,
+            disabledContainerColor = if (transparentContainer) Color.Transparent
+            else MaterialTheme.colorScheme.surface,
         ),
     )
 }

@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -37,7 +37,9 @@ import {
   canStartOrder,
   canCompleteOrder,
   canManagePhotos,
-  canUploadPhotos,
+  canUploadBeforePhotos,
+  canUploadAfterPhotos,
+  canAddNoteOrIssue,
   computeElapsedTime,
   buildCurrencyOptions,
   hasExtras,
@@ -147,11 +149,16 @@ export class OrderDetailsComponent implements OnInit {
     return canStartOrder(order.orderStatus.value, order.assignedEmployees, eid);
   });
 
+  // Tracks whether the child order-photos component currently reports persisted After photos.
+  // Required because Complete action is only valid once at least one After photo exists.
+  protected readonly hasAfterPhotos = signal(false);
+
   protected readonly canCompleteOrder = computed(() => {
     const order = this.orderDetails();
     const eid = this.currentEmployeeId();
     if (!order || !eid) return false;
-    return canCompleteOrder(order.orderStatus.value, order.assignedEmployees, eid);
+    // Per spec: Complete requires InProgress + employee assigned + at least one After photo.
+    return canCompleteOrder(order.orderStatus.value, order.assignedEmployees, eid) && this.hasAfterPhotos();
   });
 
   protected readonly hasInvoice = computed(() => !!this.orderDetails()?.receiptNumber);
@@ -171,11 +178,31 @@ export class OrderDetailsComponent implements OnInit {
     return canManagePhotos(order.orderStatus.value, order.assignedEmployees, eid);
   });
 
-  protected readonly canUploadPhotos = computed((): boolean => {
+  protected readonly canUploadBeforePhotos = computed((): boolean => {
     const order = this.orderDetails();
     const eid = this.currentEmployeeId();
     if (!order || !eid) return false;
-    return canUploadPhotos(order.orderStatus.value, order.assignedEmployees, eid);
+    return canUploadBeforePhotos(order.orderStatus.value, order.assignedEmployees, eid);
+  });
+
+  protected readonly canUploadAfterPhotos = computed((): boolean => {
+    const order = this.orderDetails();
+    const eid = this.currentEmployeeId();
+    if (!order || !eid) return false;
+    return canUploadAfterPhotos(order.orderStatus.value, order.assignedEmployees, eid);
+  });
+
+  // canDelete: only while staff can still mutate photos (Before during prep, After during InProgress).
+  // Photos remain visible once Completed but cannot be removed.
+  protected readonly canDeletePhotos = computed((): boolean => {
+    return this.canUploadBeforePhotos() || this.canUploadAfterPhotos();
+  });
+
+  protected readonly canAddNoteOrIssue = computed((): boolean => {
+    const order = this.orderDetails();
+    const eid = this.currentEmployeeId();
+    if (!order || !eid) return false;
+    return canAddNoteOrIssue(order.orderStatus.value, order.assignedEmployees, eid);
   });
 
   constructor() {
@@ -235,7 +262,15 @@ export class OrderDetailsComponent implements OnInit {
   }
 
   protected completeOrder(): void {
+    if (!this.hasAfterPhotos()) {
+      this.facade.warnMissingAfterPhotos();
+      return;
+    }
     this.facade.completeOrder();
+  }
+
+  protected onAfterPhotosPresenceChange(present: boolean): void {
+    this.hasAfterPhotos.set(present);
   }
 
   protected openReportIssue(): void {

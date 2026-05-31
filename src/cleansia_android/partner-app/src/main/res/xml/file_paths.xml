@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Invoice PDFs are written to cacheDir/invoices/ then handed to the
+         system viewer via FileProvider. Cache dir is auto-cleaned by Android
+         under storage pressure so we never need to manually purge old PDFs. -->
+    <cache-path name="invoices" path="invoices/" />
+</paths>

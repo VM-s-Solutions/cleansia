@@ -16,9 +16,13 @@ public class AzureStorageQueueClient(QueueServiceClient queueServiceClient) : IQ
         var queueClient = queueServiceClient.GetQueueClient(queueName);
         await queueClient.CreateIfNotExistsAsync(cancellationToken: ct);
 
+        // Send the JSON as-is. The QueueServiceClient is configured with
+        // `MessageEncoding = Base64` (see QueueExtensions) so the SDK
+        // base64-encodes on the wire and the Functions queue trigger
+        // base64-decodes on the way in. Doing it both at the application
+        // layer AND letting the SDK do it again was the previous bug
+        // surface — when the encoding setting flips, things break silently.
         var json = JsonSerializer.Serialize(message, JsonOptions);
-        var base64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json));
-
-        await queueClient.SendMessageAsync(base64, cancellationToken: ct);
+        await queueClient.SendMessageAsync(json, cancellationToken: ct);
     }
 }

@@ -90,49 +90,50 @@
       </div>
       }
 
-      <!-- In-Progress Actions: Timer + Complete + Report Issue + Add Note -->
-      @if (isInProgress()) {
-        <!-- Elapsed Time -->
-        @if (elapsedTime()) {
-        <div class="cleansia-order-details__elapsed-time">
-          <i class="pi pi-clock"></i>
-          <span>
-            {{ 'pages.order_details.elapsed_time' | translate }}:
-            @if (elapsedTime()!.hours > 0) {
-              {{ elapsedTime()!.hours }}h
-            }
-            {{ elapsedTime()!.minutes }}m
-          </span>
-        </div>
-        }
-
-        <!-- Action buttons row -->
-        <div class="cleansia-order-details__actions-row">
-          <cleansia-button
-            [title]="'pages.order_details.report_issue' | translate"
-            [icon]="'pi pi-exclamation-triangle'"
-            [outlined]="true"
-            [severity]="'danger'"
-            (clickFn)="openReportIssue()"
-          />
-          <cleansia-button
-            [title]="'pages.order_details.add_note' | translate"
-            [icon]="'pi pi-file-edit'"
-            [outlined]="true"
-            (clickFn)="openAddNote()"
-          />
-          @if (canCompleteOrder()) {
-          <cleansia-button
-            [buttonType]="'button'"
-            [style]="'raised-button'"
-            [title]="'pages.order_details.complete_order' | translate"
-            [icon]="'pi pi-check-circle'"
-            [severity]="'success'"
-            (clickFn)="completeOrder()"
-            [loading]="loading()"
-          />
+      <!-- Elapsed Time (visible only during InProgress) -->
+      @if (isInProgress() && elapsedTime()) {
+      <div class="cleansia-order-details__elapsed-time">
+        <i class="pi pi-clock"></i>
+        <span>
+          {{ 'pages.order_details.elapsed_time' | translate }}:
+          @if (elapsedTime()!.hours > 0) {
+            {{ elapsedTime()!.hours }}h
           }
-        </div>
+          {{ elapsedTime()!.minutes }}m
+        </span>
+      </div>
+      }
+
+      <!-- Action buttons row: Report Issue / Add Note available across active statuses, Complete only in InProgress with after-photos. -->
+      @if (canAddNoteOrIssue() || canCompleteOrder()) {
+      <div class="cleansia-order-details__actions-row">
+        @if (canAddNoteOrIssue()) {
+        <cleansia-button
+          [title]="'pages.order_details.report_issue' | translate"
+          [icon]="'pi pi-exclamation-triangle'"
+          [outlined]="true"
+          [severity]="'danger'"
+          (clickFn)="openReportIssue()"
+        />
+        <cleansia-button
+          [title]="'pages.order_details.add_note' | translate"
+          [icon]="'pi pi-file-edit'"
+          [outlined]="true"
+          (clickFn)="openAddNote()"
+        />
+        }
+        @if (canCompleteOrder()) {
+        <cleansia-button
+          [buttonType]="'button'"
+          [style]="'raised-button'"
+          [title]="'pages.order_details.complete_order' | translate"
+          [icon]="'pi pi-check-circle'"
+          [severity]="'success'"
+          (clickFn)="completeOrder()"
+          [loading]="loading()"
+        />
+        }
+      </div>
       }
 
       <!-- Order Status Section -->
@@ -320,13 +321,15 @@
       </cleansia-section>
       }
 
-      <!-- Order Photos Section - Only visible when employee is assigned and order is in progress or completed -->
-      @if (canManagePhotos()) {
+      <!-- Order Photos Section - Visible when employee is assigned; per-type upload/delete gated. -->
+      @if (canManagePhotos() || canUploadBeforePhotos() || canUploadAfterPhotos()) {
       <order-photos
         [orderId]="orderDetails()!.id!"
         [employeeId]="currentEmployeeId()!"
-        [canUpload]="canUploadPhotos()"
-        [canDelete]="canUploadPhotos()"
+        [canUploadBefore]="canUploadBeforePhotos()"
+        [canUploadAfter]="canUploadAfterPhotos()"
+        [canDelete]="canDeletePhotos()"
+        (hasAfterPhotosChange)="onAfterPhotosPresenceChange($event)"
       />
       }
 

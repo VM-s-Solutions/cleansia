@@ -17,9 +17,11 @@ import {
   UserClient,
 } from '@cleansia/partner-services';
 import {
+  ApiClient,
   AuthClient as CustomerAuthClient,
   ConsentsClient,
   ExtraClient,
+  IApiClient,
   IAuthClient as ICustomerAuthClient,
   IConsentsClient,
   IExtraClient,
@@ -67,6 +69,10 @@ interface ICustomerClient {
   membershipClient: IMembershipClient;
   recurringBookingClient: IRecurringBookingClient;
   extraClient: IExtraClient;
+  // Catch-all generated client. Hosts /api/ServiceCity for the order-wizard
+  // city validator and any other endpoints that don't have a dedicated
+  // controller in the generated wrapper.
+  apiClient: IApiClient;
 }
 
 @Injectable({
@@ -148,4 +154,5 @@ export class CustomerClient implements ICustomerClient {
   // Booking add-ons catalog (inside-oven, etc.) — exposed via the configured
   // base URL so it joins the same per-app routing as everything else above.
   extraClient: IExtraClient = new ExtraClient(this.httpClient, this.apiBaseUrl);
+  apiClient: IApiClient = new ApiClient(this.httpClient, this.apiBaseUrl);
 }

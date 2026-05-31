@@ -47,6 +47,7 @@ import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.MyLocation
@@ -93,10 +94,10 @@ import com.mapbox.maps.extension.compose.style.MapStyle
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.data.AddressRepository
 import cz.cleansia.customer.core.data.UserAddress
-import cz.cleansia.customer.core.location.GeocodedAddress
-import cz.cleansia.customer.core.location.LocationService
-import cz.cleansia.customer.core.location.MapStyles
-import cz.cleansia.customer.core.location.ReverseGeocodingService
+import cz.cleansia.core.location.GeocodedAddress
+import cz.cleansia.core.location.LocationService
+import cz.cleansia.core.location.MapStyles
+import cz.cleansia.core.location.ReverseGeocodingService
 import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.theme.Poppins
@@ -140,6 +141,7 @@ fun AddressManagerScreen(
     val repo = viewModel.addressRepository
     val locationService = viewModel.locationService
     val geocoding = viewModel.reverseGeocodingService
+    val serviceArea = viewModel.serviceAreaProvider
     val snackbar = viewModel.snackbar
     val scope = rememberCoroutineScope()
 
@@ -174,6 +176,7 @@ fun AddressManagerScreen(
         )
         ManagerPane.AddOnMap -> AddOnMapPane(
             geocoding = geocoding,
+            serviceArea = serviceArea,
             locationService = locationService,
             snackbar = snackbar,
             onBack = { pane = ManagerPane.List },
@@ -190,6 +193,7 @@ fun AddressManagerScreen(
             } else {
                 ReviewPane(
                     picked = picked,
+                    serviceArea = serviceArea,
                     onBack = { pane = ManagerPane.AddOnMap },
                     isInSheet = isInSheet,
                     onConfirm = { label, save, setDefault ->
@@ -486,6 +490,7 @@ private fun RenameDialog(
 @Composable
 private fun AddOnMapPane(
     geocoding: ReverseGeocodingService,
+    serviceArea: cz.cleansia.core.servicearea.ServiceAreaProvider,
     locationService: LocationService,
     snackbar: cz.cleansia.core.snackbar.SnackbarController,
     onBack: () -> Unit,
@@ -541,7 +546,7 @@ private fun AddOnMapPane(
         // Initial camera placement — best-effort, no snackbar feedback so we
         // don't yell at the user about location on every map open. The
         // explicit "My Location" button below reports failures.
-        if (locationService.hasLocationPermission()) {
+        if (locationService.hasPermission()) {
             locationService.getCurrentLocation()?.let { loc ->
                 viewportState.setCameraOptions {
                     center(Point.fromLngLat(loc.longitude, loc.latitude)); zoom(DEFAULT_ZOOM)
@@ -565,7 +570,15 @@ private fun AddOnMapPane(
         }
     }
 
-    // Search — debounced forward geocoding.
+    // Pre-fetch the served countries once so the first search after
+    // composition doesn't have to wait on a cold network call. The provider
+    // caches in-memory; subsequent calls are no-ops.
+    LaunchedEffect(Unit) { serviceArea.loadCountries() }
+
+    // Search — debounced forward geocoding, biased to served countries so
+    // the suggestion list can't include addresses we wouldn't be able to
+    // service (e.g. addresses in Argentina silently slipping into Czech
+    // bookings — see planning/active/service-areas.md).
     LaunchedEffect(searchQuery) {
         if (searchQuery.length < 2) {
             searchResults = emptyList()
@@ -574,7 +587,8 @@ private fun AddOnMapPane(
         }
         searching = true
         delay(300)
-        searchResults = geocoding.forwardGeocode(searchQuery)
+        val isoCodes = serviceArea.servicedCountryIsoCodes()
+        searchResults = geocoding.forwardGeocode(searchQuery, isoCodes)
         searching = false
     }
 
@@ -741,7 +755,7 @@ private fun AddOnMapPane(
                 icon = Icons.Outlined.MyLocation,
                 label = stringResource(R.string.address_picker_my_location),
                 onClick = {
-                    if (locationService.hasLocationPermission()) {
+                    if (locationService.hasPermission()) {
                         scope.launch {
                             val loc = locationService.getCurrentLocation()
                             if (loc != null) {
@@ -774,6 +788,7 @@ private fun AddOnMapPane(
 @Composable
 private fun ReviewPane(
     picked: GeocodedAddress,
+    serviceArea: cz.cleansia.core.servicearea.ServiceAreaProvider,
     onBack: () -> Unit,
     isInSheet: Boolean,
     onConfirm: (label: String, save: Boolean, setDefault: Boolean) -> Unit,
@@ -781,6 +796,23 @@ private fun ReviewPane(
     var label by remember { mutableStateOf(picked.city.ifBlank { "Saved" }) }
     var save by remember { mutableStateOf(true) }
     var setDefault by remember { mutableStateOf(false) }
+
+    // City-not-serviced inline validator. State sequence:
+    //  - null  → still resolving (or required input missing)
+    //  - true  → city is served, Confirm enabled
+    //  - false → backend doesn't serve this city, show warning + disable Confirm
+    var cityServiced by remember(picked.countryIsoCode, picked.city) { mutableStateOf<Boolean?>(null) }
+    LaunchedEffect(picked.countryIsoCode, picked.city) {
+        if (picked.countryIsoCode.isBlank() || picked.city.isBlank()) {
+            cityServiced = null
+            return@LaunchedEffect
+        }
+        val countries = serviceArea.loadCountries()
+        val match = countries.firstOrNull {
+            it.isoCode?.lowercase() == picked.countryIsoCode.lowercase()
+        }
+        cityServiced = match?.id?.let { serviceArea.isCityServiced(it, picked.city) } ?: false
+    }
 
     Column(
         modifier = Modifier
@@ -874,11 +906,43 @@ private fun ReviewPane(
                 }
             }
 
+            // City-not-serviced banner — only renders once the lookup completed
+            // AND said "no". Soft check; backend re-validates on submit so a
+            // race condition where data changed after this resolved is still
+            // safe.
+            if (cityServiced == false) {
+                Spacer(Modifier.height(20.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.errorContainer)
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Icon(
+                        Icons.Outlined.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                    )
+                    Text(
+                        text = stringResource(R.string.address_manager_city_not_serviced),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                    )
+                }
+            }
+
             Spacer(Modifier.height(32.dp))
 
             CleansiaPrimaryButton(
                 text = stringResource(R.string.address_manager_confirm),
                 onClick = { onConfirm(label.trim().ifBlank { "Saved" }, save, setDefault) },
+                // Block confirm while the lookup is still pending OR explicitly
+                // failed. Null = still resolving — better to make the user wait
+                // a moment than let them save a city we'll reject server-side.
+                enabled = cityServiced == true,
             )
 
             Spacer(Modifier.height(20.dp))
@@ -1165,6 +1229,7 @@ private fun GeocodedAddress.toUserAddress(label: String, isDefault: Boolean): Us
         city = city,
         zipCode = zipCode,
         country = country,
+        countryIsoCode = countryIsoCode,
         latitude = latitude,
         longitude = longitude,
         isDefault = isDefault,

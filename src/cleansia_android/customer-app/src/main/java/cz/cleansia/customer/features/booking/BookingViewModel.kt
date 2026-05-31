@@ -144,6 +144,12 @@ class BookingViewModel @Inject constructor(
     private val paymentRepository: cz.cleansia.customer.core.payments.PaymentRepository,
     private val tokenStore: TokenStore,
     private val snackbar: SnackbarController,
+    // Service-areas: resolve countryIsoCode → backend CountryId at submit
+    // time so the CreateOrder payload carries a real CountryId rather than
+    // null. The CZ-only path still works without this (backend's
+    // single-serviced-country fallback), but the moment we flag SK as
+    // serviced too the fallback fails and the user would see "country.required".
+    private val serviceAreaProvider: cz.cleansia.core.servicearea.ServiceAreaProvider,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
@@ -376,6 +382,25 @@ class BookingViewModel @Inject constructor(
             // anyway via CreateOrder.PriceMatchesAsync.
             val finalTotal = quoted.totalPrice
 
+            // Resolve the picked address's country ISO code → backend country
+            // ID. Null when:
+            //   - no ISO code captured (legacy flow, address picked before
+            //     we started recording it), OR
+            //   - the ISO doesn't match any serviced country (admin removed
+            //     the country in the time between pick + submit).
+            // In both cases backend's "single serviced country" fallback fills
+            // it in for CZ-only deployments. Once multiple countries are
+            // serviced the fallback fails — that's the trade-off acknowledged
+            // in service-areas.md.
+            val resolvedCountryId: String? = if (s.countryIsoCode.isNotBlank()) {
+                // :core's ServicedCountry.isoCode is already lowercase
+                // (the adapter normalises) — just compare directly.
+                serviceAreaProvider
+                    .loadCountries()
+                    .firstOrNull { it.isoCode == s.countryIsoCode.lowercase() }
+                    ?.id
+            } else null
+
             val createCmd = CreateOrderCommand(
                 customerName = listOfNotNull(user.firstName, user.lastName)
                     .filter { it.isNotBlank() }
@@ -388,6 +413,7 @@ class BookingViewModel @Inject constructor(
                         street = s.street,
                         city = s.city,
                         zipCode = s.zipCode,
+                        countryId = resolvedCountryId,
                     )
                 } else null,
                 savedAddressId = s.savedAddressId,

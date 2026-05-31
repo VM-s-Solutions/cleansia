@@ -1,0 +1,711 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Cleansia Partner</string>
+
+    <!-- Common -->
+    <string name="loading">Завантаження…</string>
+    <string name="error">Помилка</string>
+    <string name="retry">Повторити</string>
+    <string name="cancel">Скасувати</string>
+    <string name="save">Зберегти</string>
+    <string name="saving">Збереження…</string>
+    <string name="no_data">Не вказано</string>
+    <string name="delete">Видалити</string>
+    <string name="see_all">Показати все</string>
+    <string name="confirm">Підтвердити</string>
+    <string name="ok">OK</string>
+
+    <!-- Auth -->
+    <string name="login">Увійти</string>
+    <string name="register">Зареєструватися</string>
+    <string name="logout">Вийти</string>
+    <string name="email">Електронна пошта</string>
+    <string name="password">Пароль</string>
+    <string name="confirm_password">Підтвердити пароль</string>
+    <string name="remember_me">Запам\'ятати мене</string>
+    <string name="forgot_password">Забули пароль?</string>
+    <string name="dont_have_account">Немає облікового запису?</string>
+    <string name="already_have_account">Вже маєте обліковий запис?</string>
+    <string name="sign_in">Увійти</string>
+    <string name="sign_in_here">Увійдіть тут</string>
+    <string name="sign_up_here">Зареєструйтеся тут</string>
+    <string name="welcome_back">З поверненням!</string>
+    <string name="login_subtitle">Увійдіть, щоб продовжити роботу з обліковим записом</string>
+    <string name="create_account">Створити обліковий запис</string>
+    <string name="register_subtitle">Приєднуйтеся до нас та починайте заробляти вже сьогодні</string>
+    <string name="first_name">Ім\'я</string>
+    <string name="last_name">Прізвище</string>
+    <string name="phone">Номер телефону</string>
+    <string name="phone_number">Номер телефону</string>
+    <string name="accept_terms">Я приймаю Умови та положення</string>
+    <string name="accept_terms_prefix">Я приймаю</string>
+    <string name="terms_and_conditions">Умови та положення</string>
+    <string name="back">Назад</string>
+
+    <!-- Password rules -->
+    <string name="register_pw_min_length">Не менше 8 символів</string>
+    <string name="register_pw_letter">Містить літеру</string>
+    <string name="register_pw_number">Містить цифру</string>
+    <string name="register_pw_match">Паролі збігаються</string>
+
+    <!-- Or-divider -->
+    <string name="login_or">АБО</string>
+
+    <!-- Email Confirmation -->
+    <string name="confirm_email">Підтвердити електронну пошту</string>
+    <string name="verify_email">Підтвердіть Вашу електронну пошту</string>
+    <string name="verify_email_subtitle">Ми надіслали код підтвердження на Вашу електронну пошту. Будь ласка, введіть його нижче.</string>
+    <string name="confirm_email_subtitle">Будь ласка, введіть код підтвердження, надісланий на Вашу електронну пошту</string>
+    <string name="confirmation_code">Код підтвердження</string>
+    <string name="verification_code">Код верифікації</string>
+    <string name="resend_code">Надіслати повторно</string>
+    <string name="didnt_receive_code">Не отримали код?</string>
+    <string name="verify">Підтвердити</string>
+
+    <!-- Forgot Password -->
+    <string name="forgot_password_title">Забутий пароль</string>
+    <string name="forgot_password_subtitle">Введіть Вашу електронну адресу, і ми надішлемо Вам посилання для відновлення пароля</string>
+    <string name="send_reset_link">Надіслати посилання для відновлення</string>
+    <string name="back_to_login">Повернутися до входу</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard">Панель керування</string>
+    <string name="dashboard_subtitle">Ось огляд Вашої активності</string>
+    <string name="good_morning">Доброго ранку!</string>
+    <string name="good_afternoon">Доброго дня!</string>
+    <string name="good_evening">Доброго вечора!</string>
+    <string name="good_morning_name">Доброго ранку, %1$s</string>
+    <string name="good_afternoon_name">Доброго дня, %1$s</string>
+    <string name="good_evening_name">Доброго вечора, %1$s</string>
+    <string name="todays_schedule">Розклад на сьогодні</string>
+    <string name="no_orders_today">На сьогодні немає запланованих замовлень</string>
+    <string name="your_performance">Ваша продуктивність</string>
+    <string name="statistics">Статистика</string>
+    <string name="available_orders">Доступні замовлення</string>
+    <string name="my_active_orders">Мої активні замовлення</string>
+    <string name="completed_this_month">Завершено цього місяця</string>
+    <string name="pending_earnings">Очікуваний заробіток</string>
+    <string name="upcoming_orders">Найближчі замовлення</string>
+    <string name="earnings_overview">Огляд заробітку</string>
+    <string name="order_distribution">Розподіл замовлень</string>
+    <string name="no_upcoming_orders">Немає найближчих замовлень</string>
+    <string name="quick_actions">Швидкі дії</string>
+    <string name="browse_orders">Замовлення</string>
+    <string name="view_all">Показати все</string>
+    <string name="this_week">Цього тижня</string>
+    <string name="this_month">Цього місяця</string>
+    <string name="last_month">Минулого місяця</string>
+    <string name="next_up">Наступне</string>
+    <string name="starts_in">Починається через %1$s</string>
+    <string name="today_at">Сьогодні о %1$s</string>
+    <string name="tomorrow_at">Завтра о %1$s</string>
+    <string name="completion_rate">Рівень завершення</string>
+    <string name="completed_vs_total">%1$d з %2$d замовлень</string>
+
+    <!-- Analytics -->
+    <string name="analytics_title">Аналітика</string>
+    <string name="period_comparison">Порівняння періодів</string>
+    <string name="current_period">Поточний період</string>
+    <string name="previous_period">Попередній період</string>
+    <string name="daily_average">Середнє за день</string>
+    <string name="best_day">Найкращий день</string>
+    <string name="worst_day">Найслабший день</string>
+    <string name="earnings_by_day">Заробіток за днями</string>
+    <string name="day_mon">Пн</string>
+    <string name="day_tue">Вт</string>
+    <string name="day_wed">Ср</string>
+    <string name="day_thu">Чт</string>
+    <string name="day_fri">Пт</string>
+    <string name="day_sat">Сб</string>
+    <string name="day_sun">Нд</string>
+
+    <!-- Analytics Extensions -->
+    <string name="order_status_title">Розподіл замовлень</string>
+    <string name="completed_orders">Завершені</string>
+    <string name="in_progress_orders">В процесі</string>
+    <string name="cancelled_orders">Скасовані</string>
+    <string name="pending_orders">Очікують</string>
+    <string name="performance_score">Оцінка продуктивності</string>
+    <string name="customer_rating">Оцінка клієнтів</string>
+    <string name="on_time_rate">Рівень вчасності</string>
+    <string name="avg_response_time">Сер. час відповіді</string>
+    <string name="minutes_short">%1$d хв</string>
+    <string name="monthly_earnings_trend">Місячний тренд заробітку</string>
+    <string name="total_this_year">Усього за цей рік</string>
+    <string name="month_over_month">порівняно з минулим місяцем</string>
+    <string name="revenue_by_service">Дохід за послугами</string>
+    <string name="orders_count">%1$d замовлень</string>
+    <string name="schedule_utilization">Використання розкладу</string>
+    <string name="available_hours_label">Доступно</string>
+    <string name="booked_hours_label">Заброньовано</string>
+    <string name="utilization_rate">Використання</string>
+    <string name="hours_short">%1$.1fг</string>
+    <string name="completion_efficiency">Ефективність завершення</string>
+    <string name="estimated_label">Очікуваний</string>
+    <string name="actual_label">Фактичний</string>
+    <string name="faster_than_estimate">на %1$d%% швидше</string>
+    <string name="slower_than_estimate">на %1$d%% повільніше</string>
+
+    <!-- Orders -->
+    <string name="orders">Замовлення</string>
+    <string name="order_details">Деталі замовлення</string>
+    <string name="active">Активні</string>
+    <string name="available">Доступні</string>
+    <string name="my_orders">Мої замовлення</string>
+    <string name="completed">Завершені</string>
+    <string name="take_order">Взяти замовлення</string>
+    <string name="swipe_to_take">Проведіть, щоб взяти</string>
+    <string name="start_order">Почати замовлення</string>
+    <string name="swipe_to_start">Проведіть, щоб почати</string>
+    <string name="swipe_to_complete">Проведіть, щоб завершити</string>
+    <string name="swipe_to_notify_on_the_way">Проведіть, щоб повідомити „У дорозі"</string>
+    <string name="customer_notified_on_the_way">Клієнта повідомлено · ви в дорозі</string>
+    <string name="waiting_for_other_employees">Вас призначено! Чекаємо підтвердження від інших працівників, щоб замовлення могло розпочатися.</string>
+    <string name="order_started">Розпочато!</string>
+    <string name="complete_order">Завершити замовлення</string>
+    <string name="no_orders_available">Немає доступних замовлень</string>
+    <string name="no_active_orders">Немає активних замовлень</string>
+    <string name="no_completed_orders">Немає завершених замовлень</string>
+    <string name="no_services">Немає послуг</string>
+    <string name="order_id">Замовлення #%1$s</string>
+    <string name="customer">Клієнт</string>
+    <string name="address">Адреса</string>
+    <string name="navigate">Навігація</string>
+    <string name="services">Послуги</string>
+    <string name="notes">Нотатки</string>
+    <string name="total">Усього</string>
+    <string name="scheduled_date">Запланована дата</string>
+    <string name="upload_photos">Завантажити фото</string>
+    <string name="photos">Фото</string>
+    <string name="add_photo">Додати фото</string>
+    <string name="no_photos">Фото не завантажено</string>
+    <string name="take_photo">Зробити фото</string>
+    <string name="choose_from_gallery">Вибрати з галереї</string>
+    <string name="delete_photo">Видалити фото</string>
+    <string name="delete_photo_confirm">Ви впевнені, що хочете видалити це фото?</string>
+    <string name="estimated_time">Орієнтовний час</string>
+    <string name="actual_completion_time">Фактичний час завершення (хв)</string>
+    <string name="completion_notes">Нотатки до завершення (необов\'язково)</string>
+    <string name="rooms">Кімнати</string>
+    <string name="bathrooms">Ванні кімнати</string>
+    <string name="payment_info">Оплата</string>
+    <string name="payment_type">Тип оплати</string>
+    <string name="payment_status_label">Статус оплати</string>
+    <string name="notes_instructions">Нотатки та інструкції</string>
+    <string name="customer_notes">Нотатки клієнта</string>
+    <string name="special_instructions">Спеціальні інструкції</string>
+    <string name="access_instructions">Інструкції з доступу</string>
+    <string name="order_info">Інформація про замовлення</string>
+    <string name="created_on">Створено</string>
+    <string name="updated_on">Оновлено</string>
+    <string name="order_completed_message">Це замовлення завершено</string>
+    <string name="order_cancelled_message">Це замовлення скасовано</string>
+    <string name="sort">Сортувати</string>
+    <string name="filter">Фільтр</string>
+    <string name="filters">Фільтри</string>
+    <string name="reset">Скинути</string>
+    <string name="clear_all">Очистити все</string>
+    <string name="close">Закрити</string>
+    <string name="search">Пошук</string>
+    <string name="search_orders">Пошук замовлень…</string>
+    <string name="search_invoices">Пошук рахунків…</string>
+    <string name="no_results">Нічого не знайдено</string>
+    <string name="coming_soon">Незабаром</string>
+    <string name="coming_soon_desc">Ця функція в розробці та незабаром буде доступна.</string>
+    <string name="search_customer">Пошук за іменем клієнта</string>
+    <string name="search_invoice">Пошук за номером рахунку</string>
+    <string name="order_status_filter">Статус замовлення</string>
+    <string name="payment_status_filter">Статус оплати</string>
+    <string name="invoice_status_filter">Статус рахунку</string>
+    <string name="date_range">Діапазон дат</string>
+    <string name="start_date">Дата початку</string>
+    <string name="end_date">Дата закінчення</string>
+    <string name="select_date">Вибрати дату</string>
+    <string name="all_statuses">Усі статуси</string>
+    <string name="apply">Застосувати</string>
+
+    <!-- Sort Options -->
+    <string name="sort_date_newest">Дата (найновіші)</string>
+    <string name="sort_date_oldest">Дата (найстаріші)</string>
+    <string name="sort_price_low_high">Ціна (від найнижчої)</string>
+    <string name="sort_price_high_low">Ціна (від найвищої)</string>
+    <string name="sort_amount_low_high">Сума (від найменшої)</string>
+    <string name="sort_amount_high_low">Сума (від найбільшої)</string>
+
+    <!-- Order Status -->
+    <string name="status_pending">Очікує</string>
+    <string name="status_confirmed">Підтверджено</string>
+    <string name="status_in_progress">В процесі</string>
+    <string name="status_completed">Завершено</string>
+    <string name="status_cancelled">Скасовано</string>
+    <string name="status_on_the_way">У дорозі</string>
+
+    <!-- Payment Status -->
+    <string name="payment_pending">Очікує оплати</string>
+    <string name="payment_paid">Сплачено</string>
+    <string name="payment_failed">Оплата не вдалася</string>
+    <string name="payment_refunded">Повернено</string>
+
+    <!-- Invoices -->
+    <string name="invoices">Рахунки</string>
+    <string name="invoice_details">Деталі рахунку</string>
+    <string name="download_invoice">Завантажити рахунок</string>
+    <string name="no_invoices">Рахунків не знайдено</string>
+    <string name="invoice_number">Рахунок #%1$s</string>
+    <string name="period">Період</string>
+    <string name="issue_date">Дата виставлення</string>
+    <string name="due_date">Дата оплати</string>
+    <string name="orders_included">Включених замовлень</string>
+
+    <!-- Invoice Status -->
+    <string name="invoice_pending">Очікує</string>
+    <string name="invoice_approved">Затверджено</string>
+    <string name="invoice_paid">Сплачено</string>
+    <string name="invoice_disputed">Оскаржується</string>
+    <string name="invoice_rejected">Відхилено</string>
+    <string name="invoice_cancelled">Скасовано</string>
+
+    <!-- Profile -->
+    <string name="profile">Профіль</string>
+    <string name="personal_info">Особиста інформація</string>
+    <string name="identification_info">Ідентифікація</string>
+    <string name="address_info">Адреса</string>
+    <string name="bank_details">Банківські реквізити</string>
+    <string name="documents">Документи</string>
+    <string name="availability">Доступність</string>
+    <string name="edit_profile">Редагувати профіль</string>
+    <string name="missing_fields">Відсутні:</string>
+    <string name="date_of_birth">Дата народження</string>
+    <string name="nationality">Громадянство</string>
+    <string name="national_id">Номер посвідчення</string>
+    <string name="passport_id">Номер паспорта</string>
+    <string name="tax_id">Ідентифікаційний код</string>
+    <string name="street">Вулиця</string>
+    <string name="city">Місто</string>
+    <string name="zip_code">Поштовий індекс</string>
+    <string name="state_region">Область / Регіон</string>
+    <string name="country">Країна</string>
+    <string name="bank_name">Назва банку</string>
+    <string name="account_number">Номер рахунку</string>
+    <string name="iban">IBAN</string>
+    <string name="swift_code">SWIFT код</string>
+    <string name="upload_document">Завантажити документ</string>
+    <string name="no_documents">Документи не завантажено</string>
+
+    <!-- Emergency Contact -->
+    <string name="emergency_contact">Екстрений контакт</string>
+    <string name="emergency_contact_desc">Людина, з якою ми зможемо зв\'язатися у разі надзвичайної ситуації</string>
+    <string name="contact_name">Ім\'я контакту</string>
+    <string name="relationship">Ступінь спорідненості</string>
+    <string name="contact_phone">Номер телефону</string>
+    <string name="contact_email">Електронна адреса</string>
+
+    <!-- Availability -->
+    <string name="set_availability">Встановити доступність</string>
+    <string name="no_availability_set">Доступність не встановлено</string>
+    <string name="select_time">Вибрати час</string>
+    <string name="date_overrides">Винятки в розкладі</string>
+    <string name="add_date_override">Додати виняток</string>
+    <string name="no_date_overrides">Немає винятків у розкладі</string>
+    <string name="unavailable">Недоступний</string>
+    <string name="custom_hours">Особливі години</string>
+    <string name="select_date_override">Вибрати дату</string>
+    <string name="mark_unavailable">Позначити як недоступний</string>
+    <string name="set_custom_hours">Встановити особливі години</string>
+    <string name="date_override_note">Примітка (необов\'язково)</string>
+
+    <!-- Terms & Consent -->
+    <string name="terms_consent">Умови та згода</string>
+    <string name="terms_accepted">Умови прийнято</string>
+    <string name="terms_not_accepted">Умови не прийнято</string>
+    <string name="terms_accepted_on">Прийнято %1$s</string>
+    <string name="view_terms">Переглянути умови</string>
+    <string name="accept_terms_message">Будь ласка, прочитайте та прийміть наші Умови та положення, щоб продовжити використання додатку.</string>
+
+    <!-- Settings -->
+    <string name="settings">Налаштування</string>
+    <string name="language">Мова</string>
+    <string name="theme">Тема</string>
+    <string name="notifications">Сповіщення</string>
+    <string name="biometric_login">Біометричний вхід</string>
+    <string name="biometric_login_desc">Використовуйте відбиток пальця або розпізнавання обличчя для входу</string>
+    <string name="security">Безпека</string>
+    <string name="app_version">Версія додатку</string>
+
+    <!-- Biometric -->
+    <string name="biometric_prompt_title">Біометричний вхід</string>
+    <string name="biometric_prompt_subtitle">Використовуйте біометричні дані для входу</string>
+    <string name="biometric_prompt_negative">Використати пароль</string>
+    <string name="biometric_not_available">Біометрична автентифікація недоступна на цьому пристрої</string>
+    <string name="biometric_not_enrolled">Біометричні дані не зареєстровані. Будь ласка, налаштуйте відбиток пальця або розпізнавання обличчя в налаштуваннях пристрою.</string>
+    <string name="biometric_auth_failed">Біометрична автентифікація не вдалася</string>
+    <string name="biometric_auth_error">Помилка автентифікації: %1$s</string>
+    <string name="biometric_enabled">Біометричний вхід увімкнено</string>
+    <string name="biometric_disabled">Біометричний вхід вимкнено</string>
+
+    <!-- Document Types -->
+    <string name="doc_id_card">Посвідчення особи</string>
+    <string name="doc_passport">Паспорт</string>
+    <string name="doc_driving_license">Водійське посвідчення</string>
+    <string name="doc_work_permit">Дозвіл на роботу</string>
+    <string name="doc_contract">Договір</string>
+    <string name="doc_certificate">Сертифікат</string>
+    <string name="doc_bank_statement">Банківська виписка</string>
+    <string name="doc_tax_document">Податковий документ</string>
+    <string name="doc_insurance_document">Страховий документ</string>
+    <string name="doc_other">Інше</string>
+
+    <!-- Document Management -->
+    <string name="document_type_label">Тип документа</string>
+    <string name="select_files">Вибрати файли</string>
+    <string name="upload_requirements">PDF, DOC, DOCX, JPG, JPEG, PNG — макс. 10 МБ</string>
+    <string name="delete_document_confirm">Ви впевнені, що хочете видалити \"%1$s\"?</string>
+    <string name="download">Завантажити</string>
+    <string name="pending_documents">Очікують</string>
+    <string name="approved_documents">Затверджені</string>
+    <string name="rejected_documents">Відхилені</string>
+    <string name="expired_documents">Прострочені</string>
+    <string name="review_notes">Примітки до перевірки</string>
+
+    <!-- Help Cards -->
+    <string name="orders_help_title">Як працюють замовлення</string>
+    <string name="orders_help_step1_title">Переглядайте доступні замовлення</string>
+    <string name="orders_help_step1_desc">Перегляньте замовлення, доступні для Вас</string>
+    <string name="orders_help_step2_title">Візьміть замовлення</string>
+    <string name="orders_help_step2_desc">Прийміть замовлення, щоб додати його до свого розкладу</string>
+    <string name="orders_help_step3_title">Почніть замовлення</string>
+    <string name="orders_help_step3_desc">Позначте замовлення як розпочате, коли починаєте роботу</string>
+    <string name="orders_help_step4_title">Завершіть замовлення</string>
+    <string name="orders_help_step4_desc">Позначте як завершене після закінчення та додайте нотатки</string>
+    <string name="invoices_help_title">Про рахунки</string>
+    <string name="invoices_help_desc">Рахунки формуються за завершеними замовленнями. Після затвердження Ви отримаєте оплату відповідно до Вашого платіжного графіку.</string>
+
+    <!-- Validation -->
+    <string name="error_email_required">Електронна пошта обов\'язкова</string>
+    <string name="error_email_invalid">Будь ласка, введіть дійсну електронну адресу</string>
+    <string name="error_password_required">Пароль обов\'язковий</string>
+    <string name="error_password_min_length">Пароль повинен містити щонайменше 8 символів</string>
+    <string name="error_passwords_not_match">Паролі не збігаються</string>
+    <string name="error_first_name_required">Ім\'я обов\'язкове</string>
+    <string name="error_last_name_required">Прізвище обов\'язкове</string>
+    <string name="error_terms_required">Ви повинні прийняти Умови та положення</string>
+
+    <!-- Profile Validation -->
+    <string name="validation_required">Це поле обов\'язкове</string>
+    <string name="validation_max_50">Максимум 50 символів</string>
+    <string name="validation_max_20">Максимум 20 символів</string>
+    <string name="validation_max_100">Максимум 100 символів</string>
+    <string name="validation_date_past">Дата повинна бути в минулому</string>
+    <string name="validation_min_age_18">Вам повинно бути щонайменше 18 років</string>
+    <string name="validation_max_age_120">Недійсна дата народження</string>
+    <string name="validation_invalid_date">Недійсний формат дати</string>
+    <string name="validation_invalid_phone">Недійсний формат номера телефону</string>
+    <string name="validation_invalid_email">Недійсний формат електронної пошти</string>
+    <string name="validation_length_5_20">Повинно бути від 5 до 20 символів</string>
+    <string name="validation_alphanumeric">Дозволені лише літери та цифри</string>
+    <string name="validation_length_5_255">Повинно бути від 5 до 255 символів</string>
+    <string name="validation_length_2_100">Повинно бути від 2 до 100 символів</string>
+    <string name="validation_length_3_20">Повинно бути від 3 до 20 символів</string>
+    <string name="validation_invalid_zip">Недійсний формат поштового індексу</string>
+    <string name="validation_length_15_34">Повинно бути від 15 до 34 символів</string>
+    <string name="validation_invalid_iban">Недійсний формат IBAN</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_welcome_title">Ласкаво просимо до Cleansia Partner</string>
+    <string name="onboarding_welcome_desc">Ваш партнерський додаток для керування замовленнями на прибирання та заробітком</string>
+    <string name="onboarding_orders_title">Керуйте своїми замовленнями</string>
+    <string name="onboarding_orders_desc">Переглядайте доступні замовлення, приймайте роботу та відстежуйте прогрес у реальному часі</string>
+    <string name="onboarding_earnings_title">Відстежуйте свій заробіток</string>
+    <string name="onboarding_earnings_desc">Переглядайте рахунки, відстежуйте платежі та завантажуйте звіти</string>
+    <string name="onboarding_profile_title">Заповніть свій профіль</string>
+    <string name="onboarding_profile_desc">Тримайте свою інформацію в актуальному стані для безперебійної роботи та вчасних виплат</string>
+    <string name="onboarding_get_started">Розпочати</string>
+    <string name="onboarding_next">Далі</string>
+    <string name="onboarding_skip">Пропустити</string>
+    <!-- Onboarding highlights -->
+    <string name="onboarding_highlight_orders">Керування замовленнями</string>
+    <string name="onboarding_highlight_earnings">Відстеження заробітку</string>
+    <string name="onboarding_highlight_schedule">Налаштування розкладу</string>
+    <string name="onboarding_highlight_realtime">Оновлення в реальному часі</string>
+    <string name="onboarding_highlight_location">Перегляд на карті</string>
+    <string name="onboarding_highlight_tracking">Відстеження прогресу</string>
+    <string name="onboarding_highlight_invoices">Рахунки</string>
+    <string name="onboarding_highlight_analytics">Аналітика</string>
+    <string name="onboarding_highlight_reports">Звіти</string>
+    <string name="onboarding_highlight_availability">Доступність</string>
+    <string name="onboarding_highlight_documents">Документи</string>
+    <string name="onboarding_highlight_ratings">Рейтинги</string>
+
+    <!-- Profile Completion -->
+    <string name="complete_your_profile">Заповніть свій профіль</string>
+    <string name="profile_completion_subtitle">Заповніть свої дані, щоб розпочати роботу з Cleansia</string>
+    <string name="step_personal">Особисте</string>
+    <string name="step_address">Адреса</string>
+    <string name="step_bank">Банк</string>
+    <string name="step_schedule">Розклад</string>
+    <string name="profile_next_step">Далі</string>
+    <string name="profile_prev_step">Назад</string>
+    <string name="profile_finish">Завершити</string>
+    <string name="profile_skip_for_now">Пропустити поки що</string>
+    <string name="personal_details">Особисті дані</string>
+    <string name="address_details">Дані адреси</string>
+    <string name="banking_details">Банківські реквізити</string>
+    <string name="schedule_setup">Налаштування розкладу</string>
+    <string name="schedule_setup_desc">Встановіть дні та час, коли Ви доступні для роботи.</string>
+
+    <!-- Registration Lock -->
+    <string name="registration_lock_title">Потрібно заповнити профіль</string>
+    <string name="registration_lock_description">Для доступу до цього розділу потрібно заповнити профіль та завантажити необхідні документи.</string>
+    <string name="registration_lock_missing_requirements">Відсутні вимоги:</string>
+    <string name="registration_lock_profile_completion">Заповнити інформацію профілю</string>
+    <string name="registration_lock_document_upload">Завантажити необхідні документи</string>
+    <string name="registration_lock_complete_profile">Заповнити профіль</string>
+
+    <!-- API Errors -->
+    <string name="error_network">Не вдалося з\'єднатися з сервером. Будь ласка, перевірте підключення до інтернету.</string>
+    <string name="error_timeout">Час очікування з\'єднання вичерпано. Будь ласка, спробуйте ще раз.</string>
+    <string name="error_unauthorized">Сесія закінчилася. Будь ласка, увійдіть знову.</string>
+
+    <!-- Session Expiration -->
+    <string name="session_expired_title">Сесія закінчилася</string>
+    <string name="session_expired_message">Ваша сесія закінчилася. Будь ласка, увійдіть знову, щоб продовжити.</string>
+    <string name="error_not_found">Запитаний ресурс не знайдено.</string>
+    <string name="error_server">Помилка сервера. Будь ласка, спробуйте пізніше.</string>
+    <string name="error_unknown">Виникла непередбачена помилка.</string>
+
+    <!-- Timer -->
+    <string name="timer_minute">хвилина</string>
+    <string name="timer_minutes">хвилин</string>
+    <string name="timer_seconds">секунд</string>
+    <string name="timer_remaining">залишилося</string>
+    <string name="timer_overtime">понад час</string>
+    <string name="timer_cleaning_in_progress">Прибирання триває</string>
+    <string name="timer_time_left">Залишилося часу</string>
+
+    <!-- Order Details - Redesigned -->
+    <string name="quick_info">Швидка інформація</string>
+    <string name="order_workflow">Процес замовлення</string>
+    <string name="step_take_order">Взяти замовлення</string>
+    <string name="step_start_cleaning">Почати прибирання</string>
+    <string name="step_complete">Завершити</string>
+    <string name="current_step">Поточний</string>
+    <string name="step_done">Готово</string>
+    <string name="step_pending">Очікує</string>
+    <string name="view_details">Переглянути деталі</string>
+    <string name="hide_details">Сховати деталі</string>
+    <string name="cleaning_timer">Таймер прибирання</string>
+    <string name="open_in_maps">Відкрити в картах</string>
+    <string name="call_customer">Зателефонувати клієнту</string>
+    <string name="navigate_to_address">Навігація до адреси</string>
+    <string name="report_issue">Проблема</string>
+    <string name="report_issue_desc">Опишіть проблему, яка виникла під час цього сеансу прибирання.</string>
+    <string name="describe_issue">Опишіть проблему</string>
+    <string name="submit">Надіслати</string>
+    <string name="add_note">Нотатка</string>
+    <string name="add_note_desc">Додайте нотатку про цей сеанс прибирання.</string>
+    <string name="your_note">Ваша нотатка</string>
+    <string name="call">Зателефонувати</string>
+    <string name="message">Повідомлення</string>
+    <string name="employee_notes_issues">Нотатки та проблеми</string>
+    <string name="no_notes_or_issues">Поки що немає нотаток чи проблем</string>
+    <string name="issue_resolved">Вирішено</string>
+    <string name="issue_open">Відкрита</string>
+
+    <!-- Account Hub -->
+    <string name="account">Обліковий запис</string>
+    <string name="quick_access">Швидкий доступ</string>
+    <string name="recent_orders">Останні замовлення</string>
+    <string name="help_support">Допомога та підтримка</string>
+    <string name="logout_confirm">Ви впевнені, що хочете вийти?</string>
+    <string name="member_since">Учасник з %1$s</string>
+    <string name="inactive_account">Неактивний</string>
+
+    <!-- Invoice Details - Redesigned -->
+    <string name="invoice_summary">Підсумок</string>
+    <string name="invoice_information">Інформація про рахунок</string>
+    <string name="amount_breakdown">Розбивка суми</string>
+    <string name="status_timeline">Хронологія статусів</string>
+    <string name="employee">Працівник</string>
+    <string name="variable_symbol">Варіативний символ</string>
+    <string name="payment_reference">Платіжне посилання</string>
+    <string name="total_orders">Усього замовлень</string>
+    <string name="pay_period">Платіжний період</string>
+    <string name="paid_date">Дата оплати</string>
+    <string name="subtotal">Проміжний підсумок</string>
+    <string name="bonus">Бонус</string>
+    <string name="deductions">Утримання</string>
+    <string name="admin_notes">Примітки адміністратора</string>
+    <string name="bank_transfer_note">Примітка до банківського переказу</string>
+    <string name="generated">Сформовано</string>
+    <string name="approved">Затверджено</string>
+    <string name="paid">Сплачено</string>
+    <string name="invoice_notes">Нотатки</string>
+
+    <!-- Calendar Availability -->
+    <string name="previous_month">Попередній місяць</string>
+    <string name="next_month">Наступний місяць</string>
+    <string name="legend_working">Робочий</string>
+    <string name="legend_custom">Особливий</string>
+    <string name="legend_off">Вихідний</string>
+    <string name="working_day">Робочий день</string>
+    <string name="day_off">Вихідний</string>
+    <string name="exception_day_off">Виняток - Вихідний</string>
+    <string name="edit_hours">Редагувати години</string>
+    <string name="edit_hours_desc">Налаштуйте робочі години для цього дня.</string>
+    <string name="mark_as_exception">Позначити як виняток</string>
+    <string name="mark_exception_desc">Перевизначити звичайний розклад для цієї дати.</string>
+    <string name="schedule_setup_title">Налаштування розкладу</string>
+    <string name="schedule_setup_sheet_desc">Виберіть Ваші робочі дні та години.</string>
+    <string name="remove_exception">Видалити виняток</string>
+    <string name="add_time_slot">Додати часовий слот</string>
+    <string name="remove">Видалити</string>
+    <string name="weekly_schedule">Тижневий розклад</string>
+    <string name="edit">Редагувати</string>
+
+    <!-- Quick Setup Presets -->
+    <string name="quick_setup">Швидке налаштування</string>
+    <string name="mon_fri_9_5">Пн-Пт 9-17</string>
+    <string name="mon_sat_8_4">Пн-Сб 8-16</string>
+    <string name="custom">Власний</string>
+    <string name="custom_schedule">Власний розклад</string>
+    <string name="working_hours">Робочі години</string>
+    <string name="working_days">Робочі дні</string>
+
+    <!-- Dashboard Working Hours -->
+    <string name="todays_working_hours">Робочі години на сьогодні</string>
+    <string name="day_complete">День завершено</string>
+    <string name="day_off_today">Сьогодні вихідний</string>
+    <string name="off_today">Сьогодні вихідний</string>
+    <string name="remaining_time">Залишилося %1$s</string>
+
+    <!-- Before/After Photos -->
+    <string name="photos_before">До</string>
+    <string name="photos_after">Після</string>
+    <string name="no_before_photos">Поки що немає фото до прибирання</string>
+    <string name="no_after_photos">Поки що немає фото після прибирання</string>
+    <string name="photos_required_warning">Для завершення замовлення потрібні фото до та після прибирання</string>
+    <string name="photos_before_required">Будь ласка, додайте хоча б одне фото до прибирання</string>
+    <string name="photos_after_required">Будь ласка, додайте хоча б одне фото після прибирання</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_timer">Таймер замовлення</string>
+    <string name="notification_channel_timer_desc">Постійне сповіщення з прогресом таймера замовлення</string>
+    <string name="notification_channel_alerts">Сповіщення про замовлення</string>
+    <string name="notification_channel_alerts_desc">Важливі сповіщення про часові обмеження замовлень</string>
+    <string name="notification_order_timer">Замовлення #%1$s</string>
+    <string name="notification_time_remaining">Залишилося %1$d хв</string>
+    <string name="notification_overtime">%1$d хв понад орієнтовний час</string>
+    <string name="notification_caution_title">Час спливає</string>
+    <string name="notification_caution_message">Замовлення #%1$s має приблизно %2$d хв</string>
+    <string name="notification_urgent_title">Майже не залишилося часу!</string>
+    <string name="notification_urgent_message">Замовлення #%1$s має лише %2$d хв</string>
+    <string name="notification_overtime_title">Час перевищено</string>
+    <string name="notification_overtime_message">Замовлення #%1$s перевищило орієнтовний час</string>
+    <string name="notification_caution_subtitle">Залишилося %1$d хв — поспішайте</string>
+    <string name="notification_urgent_subtitle">Лише %1$d хв залишилося!</string>
+    <string name="notification_elapsed">Минуло %1$d хв</string>
+    <string name="notification_elapsed_detailed">Минуло %1$d:%2$02d</string>
+    <string name="notification_estimated">Орієнт. %1$d хв</string>
+    <string name="notification_in_progress">В процесі</string>
+    <string name="notification_overtime_elapsed">+%1$d хв понад час</string>
+    <string name="notification_enable_title">Увімкнути сповіщення</string>
+    <string name="notification_enable_message">Сповіщення вимкнено. Будь ласка, увімкніть їх, щоб отримувати оновлення таймера замовлень та сповіщення.</string>
+    <string name="notification_enable_open_settings">Відкрити налаштування</string>
+
+    <!-- Urgency -->
+    <string name="urgency_overdue">Прострочено</string>
+    <string name="urgency_in_minutes">Через %1$dхв</string>
+    <string name="urgency_in_hours_minutes">Через %1$dг %2$dхв</string>
+    <string name="urgency_in_hours">Через %1$dг</string>
+
+    <!-- API Error Translations -->
+    <!-- Auth -->
+    <string name="api_error_auth_google_type_error">Помилка типу автентифікації Google</string>
+    <string name="api_error_auth_internal_type_error">Внутрішня помилка типу автентифікації</string>
+    <string name="api_error_auth_invalid_confirmation_code">Недійсний код підтвердження</string>
+    <string name="api_error_auth_invalid_google_token">Недійсний токен Google</string>
+    <string name="api_error_auth_invalid_password_format">Недійсний формат пароля</string>
+    <string name="api_error_auth_invalid_reset_token">Недійсний токен відновлення пароля</string>
+    <string name="api_error_auth_same_reset_password">Новий пароль збігається зі старим паролем</string>
+    <string name="api_error_auth_insufficient_privileges">Ви не маєте права виконувати цю дію</string>
+    <!-- Common -->
+    <string name="api_error_common_invalid_enum_value">Недійсне значення</string>
+    <string name="api_error_common_max_length">Перевищено максимальну довжину</string>
+    <string name="api_error_common_required">Це поле обов\'язкове</string>
+    <!-- Email -->
+    <string name="api_error_email_sending_failed">Не вдалося надіслати електронний лист. Будь ласка, спробуйте ще раз.</string>
+    <string name="api_error_email_invalid_format">Недійсний формат електронної пошти</string>
+    <string name="api_error_email_invalid_email">Недійсна адреса електронної пошти</string>
+    <!-- Order -->
+    <string name="api_error_order_cleaning_date_future">Дата прибирання повинна бути в майбутньому</string>
+    <string name="api_error_order_empty">Замовлення не може бути порожнім</string>
+    <string name="api_error_order_not_found">Замовлення не знайдено</string>
+    <string name="api_error_order_already_assigned">Це замовлення вже призначено</string>
+    <string name="api_error_order_no_available_spots">Немає вільних місць для цього замовлення</string>
+    <string name="api_error_order_employee_already_assigned">Ви вже призначені на це замовлення</string>
+    <string name="api_error_order_employee_not_assigned">Ви не призначені на це замовлення</string>
+    <string name="api_error_order_max_employees_exceeded">Перевищено максимальну кількість працівників</string>
+    <string name="api_error_order_not_in_progress">Замовлення не в процесі</string>
+    <string name="api_error_order_not_confirmed">Замовлення не підтверджено</string>
+    <string name="api_error_order_employee_already_has_order_in_progress">У Вас вже є замовлення в процесі</string>
+    <string name="api_error_order_note_content_required">Вміст нотатки обов\'язковий</string>
+    <string name="api_error_order_issue_description_required">Опис проблеми обов\'язковий</string>
+    <!-- User -->
+    <string name="api_error_user_email_confirmed">Електронна пошта вже підтверджена</string>
+    <string name="api_error_user_existing_email">Користувач з такою електронною поштою вже існує</string>
+    <string name="api_error_user_not_existing_email">Користувача з такою електронною поштою не існує</string>
+    <string name="api_error_user_not_existing_id">Користувача не знайдено</string>
+    <string name="api_error_user_not_allowed_to_update">Ви не маєте права оновлювати цього користувача</string>
+    <string name="api_error_user_existing_phone_number">Користувач з таким номером телефону вже існує</string>
+    <string name="api_error_user_not_found">Користувача не знайдено</string>
+    <!-- Employee -->
+    <string name="api_error_employee_not_found">Працівника не знайдено</string>
+    <string name="api_error_employee_not_existing_email">Працівника з такою електронною поштою не існує</string>
+    <string name="api_error_employee_not_allowed_to_update">Ви не маєте права оновлювати цього працівника</string>
+    <string name="api_error_employee_profile_incomplete">Профіль працівника не заповнений</string>
+    <string name="api_error_employee_documents_missing">Відсутні необхідні документи</string>
+    <!-- Employee Documents -->
+    <string name="api_error_employee_document_not_found">Документ не знайдено</string>
+    <string name="api_error_employee_document_unauthorized">Ви не маєте права на доступ до цього документа</string>
+    <string name="api_error_employee_document_not_owned">Цей документ Вам не належить</string>
+    <!-- Validation -->
+    <string name="api_error_validation_invalid_password">Недійсний пароль</string>
+    <string name="api_error_validation_invalid_date">Недійсна дата</string>
+    <string name="api_error_validation_date_must_be_in_past">Дата повинна бути в минулому</string>
+    <string name="api_error_validation_invalid_age">Недійсний вік</string>
+    <string name="api_error_validation_invalid_phone_number">Недійсний формат номера телефону</string>
+    <string name="api_error_validation_invalid_national_id">Недійсний формат посвідчення особи</string>
+    <string name="api_error_validation_invalid_tax_id">Недійсний формат ідентифікаційного коду</string>
+    <string name="api_error_validation_invalid_iban">Недійсний формат IBAN</string>
+    <string name="api_error_validation_invalid_zip_code">Недійсний формат поштового індексу</string>
+    <string name="api_error_validation_must_be_positive">Значення повинно бути додатнім</string>
+    <string name="api_error_validation_invalid_availability_format">Недійсний формат доступності</string>
+    <string name="api_error_validation_page_must_be_positive">Сторінка повинна бути більше 0</string>
+    <string name="api_error_validation_page_size_must_be_positive">Розмір сторінки повинен бути більше 0</string>
+    <string name="api_error_validation_page_size_exceeded">Розмір сторінки не може перевищувати 100</string>
+    <string name="api_error_validation_invalid_contract_status">Недійсний статус договору</string>
+    <!-- File -->
+    <string name="api_error_file_content_type_doesnt_match">Тип файлу не відповідає вмісту</string>
+    <string name="api_error_file_invalid_file_type">Недійсний тип файлу</string>
+    <string name="api_error_file_size_exceeded">Розмір файлу перевищує максимально допустимий ліміт</string>
+    <string name="api_error_file_size_exceeded_10mb">Розмір файлу не повинен перевищувати 10 МБ</string>
+    <string name="api_error_file_type_not_allowed">Тип файлу не дозволений</string>
+    <string name="api_error_file_required">Завантаження файлу обов\'язкове</string>
+    <!-- General -->
+    <string name="api_error_general_not_found">Запитаний ресурс не знайдено</string>
+    <!-- Device -->
+    <string name="api_error_device_invalid_platform">Недійсна платформа</string>
+    <!-- Country -->
+    <string name="api_error_country_not_existing_id">Країну не знайдено</string>
+    <!-- Address -->
+    <string name="api_error_address_invalid_length">Недійсна довжина адреси</string>
+
+    <!-- Tier 3 -->
+    <string name="scroll_to_top">Прокрутити вгору</string>
+    <string name="view_mode_list">Список</string>
+    <string name="view_mode_week">Тижневий вигляд</string>
+    <string name="no_orders_for_day">Немає замовлень на цей день</string>
+    <string name="offline_mode">Ви офлайн</string>
+    <string name="last_updated_ago">Оновлено %1$s тому</string>
+    <string name="syncing">Синхронізація…</string>
+</resources>

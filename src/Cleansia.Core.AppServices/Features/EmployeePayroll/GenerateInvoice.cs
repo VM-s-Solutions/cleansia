@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -64,7 +65,7 @@ public class GenerateInvoice
 
     public class Handler(
         ICurrencyRepository currencyRepository,
-        IEmployeeRepository employeeRepository,
+        ICurrencyResolutionService currencyResolutionService,
         IEmployeeInvoiceRepository invoiceRepository,
         IOrderEmployeePayRepository orderEmployeePayRepository)
         : ICommandHandler<Command, Response>
@@ -74,14 +75,15 @@ public class GenerateInvoice
             var orderPays = await orderEmployeePayRepository.GetUnassignedForEmployeePeriodAsync(
                 command.EmployeeId, command.PayPeriodId, cancellationToken);
 
-            var employee = await employeeRepository.GetByIdAsync(command.EmployeeId, cancellationToken);
-
             var subTotal = orderPays.Sum(p => p.BasePay + p.ExtrasPay + p.ExpensesPay);
             var bonusAmount = orderPays.Sum(p => p.BonusPay);
             var deductionAmount = orderPays.Sum(p => p.DeductionPay);
 
-            var currency = await currencyRepository.GetByCodeAsync(employee!.PreferredCurrencyCode ?? string.Empty, cancellationToken) ??
-                           await currencyRepository.GetDefaultAsync(cancellationToken);
+            var currencyCode = await currencyResolutionService
+                .ResolveCurrencyCodeForEmployeeAsync(command.EmployeeId, cancellationToken);
+            var currency = (currencyCode is not null
+                ? await currencyRepository.GetByCodeAsync(currencyCode, cancellationToken)
+                : null) ?? await currencyRepository.GetDefaultAsync(cancellationToken);
 
             var invoice = EmployeeInvoice.Create(
                 command.EmployeeId,

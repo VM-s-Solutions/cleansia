@@ -408,7 +408,11 @@
       "employee_notes": "Employee Notes",
       "reported_issues": "Reported Issues",
       "resolved": "Resolved",
-      "open_issue": "Open"
+      "open_issue": "Open",
+      "before_photos_gating_error": "Before photos can only be uploaded at Confirmed or On The Way statuses",
+      "after_photos_gating_error": "After photos can only be uploaded during In Progress status",
+      "note_issue_gating_error": "Notes and issues can only be added during active order statuses",
+      "complete_missing_after_photos": "Order cannot be completed without after photos"
     },
     "invoices": {
       "title": "My Payroll Invoices",
@@ -1170,6 +1174,11 @@
         "key_exists": "A translation with this key already exists",
         "invalid_type": "Invalid email template type"
       }
+    },
+    "service_area": {
+      "country_not_serviced": "We don't currently operate in this country.",
+      "country_required": "Please select a country.",
+      "city_not_serviced": "We don't currently serve this city."
     }
   },
   "enums": {

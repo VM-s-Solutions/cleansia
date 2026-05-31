@@ -2,16 +2,21 @@ import { Injectable, inject, signal } from '@angular/core';
 import {
   AdminClient,
   AdminEmployeeListItem,
+  ApproveEmployeeRequest,
   ContractStatus,
   RejectEmployeeRequest,
   SortDefinition,
 } from '@cleansia/admin-services';
+import { ICleansiaSelectOption } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 import {
+  ApproveDialogComponent,
+  ApproveDialogData,
+  ApproveDialogResult,
   RejectDialogComponent,
   RejectDialogData,
   RejectDialogResult,
@@ -34,6 +39,7 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
   readonly loading = signal<boolean>(false);
   readonly initialLoading = signal<boolean>(true);
   readonly totalRecords = signal<number>(0);
+  readonly countries = signal<ICleansiaSelectOption[]>([]);
 
   private currentFilter = signal<EmployeeFilterParams | null>(null);
   private currentOffset = signal<number>(0);
@@ -127,9 +133,10 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
     this.loadEmployees();
   }
 
-  approveEmployee(employeeId: string): void {
+  approveEmployee(employeeId: string, workCountryId: string, notes?: string): void {
+    const request = new ApproveEmployeeRequest({ workCountryId, notes });
     this.adminClient.adminEmployeeClient
-      .approve(employeeId, undefined)
+      .approve(employeeId, request)
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => of(null))
@@ -143,6 +150,65 @@ export class EmployeeManagementFacade extends UnsubscribeControlDirective {
           );
           this.loadEmployees();
         }
+      });
+  }
+
+  openApproveDialog(employee: AdminEmployeeListItem): void {
+    if (!employee.id) return;
+
+    // Lazy-load countries the first time someone opens the dialog from
+    // the list page; thereafter cached on the signal.
+    if (this.countries().length === 0) {
+      this.loadCountries(() => this.showApproveDialog(employee));
+      return;
+    }
+    this.showApproveDialog(employee);
+  }
+
+  private showApproveDialog(employee: AdminEmployeeListItem): void {
+    const dialogData: ApproveDialogData = {
+      title: this.translate.instant(
+        'pages.employee_management.approve_dialog.title'
+      ),
+      subtitle: this.translate.instant(
+        'pages.employee_management.approve_dialog.subtitle'
+      ),
+      countries: this.countries(),
+    };
+
+    const dialogRef = this.dialogService.open(ApproveDialogComponent, {
+      data: dialogData,
+      header: this.translate.instant(
+        'pages.employee_management.approve_dialog.title'
+      ),
+      width: '500px',
+      modal: true,
+    });
+
+    dialogRef.onClose.subscribe((result: ApproveDialogResult | undefined) => {
+      if (result?.workCountryId) {
+        this.approveEmployee(employee.id!, result.workCountryId, result.notes);
+      }
+    });
+  }
+
+  private loadCountries(onDone?: () => void): void {
+    this.adminClient.adminCountryClient
+      .getOverview()
+      .pipe(takeUntil(this.destroyed$), catchError(() => of([])))
+      .subscribe((countries) => {
+        const currentLang = this.translate.currentLang;
+        const options: ICleansiaSelectOption[] = (countries ?? []).map((country) => {
+          const translation = country.translations?.[currentLang]?.name;
+          const name = translation ?? country.name ?? '';
+          const iso = country.isoCode ?? '';
+          return {
+            label: iso ? `${name} (${iso})` : name,
+            value: country.id!,
+          };
+        });
+        this.countries.set(options);
+        onDone?.();
       });
   }
 

@@ -172,6 +172,16 @@
             }}</span>
           </div>
           }
+          @if (facade.order()?.completedAt) {
+          <div class="info-item">
+            <span class="label"
+              >{{ 'pages.order_detail.completed_at' | translate }}:</span
+            >
+            <span class="value">{{
+              facade.formatDateTime(facade.order()?.completedAt)
+            }}</span>
+          </div>
+          }
         </div>
       </cleansia-section>
 

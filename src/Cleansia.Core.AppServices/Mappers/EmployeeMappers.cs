@@ -11,7 +11,13 @@ public static class EmployeeMappers
         return new RegistrationCompletionStatus(
             AreDocumentsUploaded: employee.Documents.Any(d => d.IsActive),
             HasCompletedProfile: employee.IsProfileComplete(),
-            HasSetAvailability: employee.Availability.Any(),
+            // Availability is no longer part of the registration gate.
+            // The field stays on the DTO for API-contract compatibility
+            // (partner-web + the generated mobile client still expect it)
+            // but is always true so it never blocks unlock. The weekly
+            // schedule remains editable by admins and stored on the
+            // Employee for potential future matching/push features.
+            HasSetAvailability: true,
             MissingFields: employee.GetMissingProfileFields(),
             ContractStatus: employee.ContractStatus,
             RejectionReason: employee.RejectionReason);

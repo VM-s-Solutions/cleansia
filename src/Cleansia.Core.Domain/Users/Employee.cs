@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Documents;
+using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
@@ -26,6 +27,25 @@ public class Employee : Auditable, ITenantEntity
 
     public int ComplaintsCount { get; private set; }
 
+    /// <summary>
+    /// Timestamp of the last "new jobs available" digest push delivered to
+    /// this cleaner. Used by the 30-min digest sweep to find newly-eligible
+    /// orders since the cleaner was last notified. Null = never notified
+    /// (cleaner gets all currently-eligible orders on first digest).
+    /// </summary>
+    public DateTimeOffset? LastNewJobsDigestAt { get; private set; }
+
+    /// <summary>
+    /// Called by the digest service after enqueueing a push for this
+    /// cleaner. Single source of truth for the watermark write — keeps the
+    /// "we notified them" decision and the watermark update co-located.
+    /// </summary>
+    public Employee MarkNewJobsDigestSent(DateTimeOffset at)
+    {
+        LastNewJobsDigestAt = at;
+        return this;
+    }
+
     public ContractStatus ContractStatus { get; private set; } = ContractStatus.Pending;
 
     [MaxLength(500)]
@@ -44,6 +64,21 @@ public class Employee : Auditable, ITenantEntity
 
     public string? NationalityId { get; private set; }
     public Country? Nationality { get; private set; }
+
+    /// <summary>
+    /// Country the cleaner is approved to take work in. Drives
+    /// currency / language / VAT / pay-rule defaults via
+    /// <see cref="Configuration.CountryConfiguration"/>. Distinct
+    /// from <see cref="NationalityId"/> (passport) and
+    /// <see cref="Address"/>.CountryId (residency) — an EU contractor
+    /// could be CZ-national, SK-resident, and approved to work in CZ.
+    ///
+    /// Nullable until admin approves the cleaner for a country.
+    /// Currency / language resolution falls back to global defaults
+    /// while null.
+    /// </summary>
+    public string? WorkCountryId { get; private set; }
+    public Country? WorkCountry { get; private set; }
 
     public string? EmergencyContactName { get; private set; }
     public string? EmergencyContactPhone { get; private set; }
@@ -65,6 +100,12 @@ public class Employee : Auditable, ITenantEntity
 
     private ICollection<OrderEmployee> _assignedOrders = [];
     public IReadOnlyCollection<OrderEmployee> AssignedOrders => _assignedOrders.ToList().AsReadOnly();
+
+    private ICollection<OrderEmployeePay> _orderPays = [];
+    public IReadOnlyCollection<OrderEmployeePay> OrderPays => _orderPays.ToList().AsReadOnly();
+
+    private ICollection<EmployeeInvoice> _invoices = [];
+    public IReadOnlyCollection<EmployeeInvoice> Invoices => _invoices.ToList().AsReadOnly();
 
     public static Employee CreateWithUser(User user) => new()
     {
@@ -160,6 +201,22 @@ public class Employee : Auditable, ITenantEntity
     public Employee UpdatePreferredCurrency(string? preferredCurrencyCode)
     {
         PreferredCurrencyCode = preferredCurrencyCode;
+        return this;
+    }
+
+    /// <summary>
+    /// Set the country this cleaner is approved to take work in.
+    /// Called from the admin approval flow when the operator picks
+    /// the work jurisdiction. Currency / language / VAT defaults all
+    /// derive from this via CountryConfiguration.
+    /// </summary>
+    public Employee AssignWorkCountry(string countryId)
+    {
+        if (string.IsNullOrWhiteSpace(countryId))
+        {
+            throw new ArgumentException("Work country id is required", nameof(countryId));
+        }
+        WorkCountryId = countryId;
         return this;
     }
 

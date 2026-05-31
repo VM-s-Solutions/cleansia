@@ -169,7 +169,7 @@ export class EmployeeManagementComponent implements AfterViewInit, OnDestroy {
   }
 
   approveEmployee(employee: AdminEmployeeListItem): void {
-    this.facade.approveEmployee(employee.id!);
+    this.facade.openApproveDialog(employee);
   }
 
   rejectEmployee(employee: AdminEmployeeListItem): void {

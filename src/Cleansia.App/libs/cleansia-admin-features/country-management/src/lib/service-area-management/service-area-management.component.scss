@@ -1,0 +1,119 @@
+.cleansia-service-area-management {
+  &__description {
+    color: var(--text-color-secondary, #6b7280);
+    margin: 4px 0 16px;
+  }
+
+  &__hint {
+    color: var(--text-color-secondary, #6b7280);
+    margin: 12px 0;
+    font-size: 14px;
+  }
+}
+
+.tabs-container {
+  margin-bottom: 16px;
+}
+
+.service-area-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--surface-border, #e5e7eb);
+  }
+
+  th {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-color-secondary, #6b7280);
+    background: var(--surface-50, #f9fafb);
+  }
+
+  .serviced-toggle-col {
+    width: 140px;
+    text-align: center;
+  }
+
+  .actions-col {
+    width: 100px;
+    text-align: right;
+  }
+}
+
+.cities-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.city-action-btn {
+  background: transparent;
+  border: 1px solid var(--surface-border, #e5e7eb);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  margin-left: 6px;
+  color: var(--text-color-secondary, #6b7280);
+
+  &:hover {
+    background: var(--surface-100, #f3f4f6);
+  }
+
+  &--danger:hover {
+    color: var(--red-600, #dc2626);
+    border-color: var(--red-600, #dc2626);
+  }
+}
+
+.badge {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+
+  &.badge-active {
+    background: var(--green-100, #dcfce7);
+    color: var(--green-700, #15803d);
+  }
+
+  &.badge-inactive {
+    background: var(--surface-200, #e5e7eb);
+    color: var(--text-color-secondary, #6b7280);
+  }
+}
+
+.city-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 500;
+
+    input[type='text'] {
+      width: 100%;
+    }
+  }
+
+  .form-hint {
+    color: var(--text-color-secondary, #6b7280);
+    font-weight: 400;
+    font-size: 12px;
+  }
+
+  .inline-toggle {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+  }
+}

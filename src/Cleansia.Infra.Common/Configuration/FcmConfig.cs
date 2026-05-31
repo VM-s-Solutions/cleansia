@@ -7,4 +7,5 @@ public class FcmConfig(IConfiguration configuration)
     : AutoBindConfig(configuration, "FCM"), IFcmConfig
 {
     public string ServiceAccountJson { get; set; } = string.Empty;
+    public string ProjectId { get; set; } = string.Empty;
 }

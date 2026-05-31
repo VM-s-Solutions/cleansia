@@ -34,6 +34,14 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
     public async Task<IReadOnlyList<Order>> GetCompletedOrdersByDateRangeAsync(
         string employeeId, DateTime startDate, DateTime endDate, CancellationToken cancellationToken)
     {
+        // Filter directly off Order.CompletedAt (set inside the
+        // domain at completion). Previous version filtered by
+        // CleaningDateTime range AND inspected the last
+        // OrderStatusHistory row for status=Completed — that meant
+        // an order scheduled for May 20 but completed May 25 would
+        // count as a "May 20 completion" in analytics, which is
+        // wrong. Now "completed in [startDate, endDate]" means
+        // exactly that.
         return await GetDbSet()
             .Include(o => o.AssignedEmployees)
             .Include(o => o.OrderStatusHistory)
@@ -42,13 +50,26 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
             .Include(o => o.SelectedPackages)
                 .ThenInclude(op => op.Package)
             .Where(o => o.AssignedEmployees.Any(e => e.EmployeeId == employeeId) &&
-                       o.OrderStatusHistory.Any() &&
-                       o.OrderStatusHistory.OrderByDescending(h => h.CreatedOn).First().Status == OrderStatus.Completed &&
-                       o.CleaningDateTime >= startDate &&
-                       o.CleaningDateTime <= endDate)
+                       o.CompletedAt >= startDate &&
+                       o.CompletedAt <= endDate)
             .AsSplitQuery()
             .ToListAsync(cancellationToken);
     }
+
+    public Task<int> CountCompletedForEmployeeBetweenAsync(
+        string employeeId, DateTime from, DateTime to, CancellationToken cancellationToken)
+    {
+        // Counts orders the cleaner actually completed in the
+        // window. Half-open interval [from, to) matches the
+        // dashboard caller's day/week math. No Includes —
+        // pure COUNT(*) for the dashboard fast path.
+        return GetDbSet()
+            .Where(o => o.AssignedEmployees.Any(e => e.EmployeeId == employeeId)
+                && o.CompletedAt >= from
+                && o.CompletedAt < to)
+            .CountAsync(cancellationToken);
+    }
+
 
     public override Task<Order?> GetByIdAsync(string id, CancellationToken cancellationToken)
     {
@@ -151,5 +172,22 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
                     .Select(s => s.Status)
                     .FirstOrDefault() == OrderStatus.Completed)
             .AnyAsync(ct);
+    }
+
+    public async Task<(double? Average, int Count)> GetAverageRatingForEmployeeAsync(
+        string employeeId, CancellationToken cancellationToken)
+    {
+        // Flatten reviews from orders this employee was assigned to. We
+        // average across all of them; we don't filter by status because a
+        // customer might review while the order is still "Completed-but-not-
+        // closed" (existing system) and we want that signal too.
+        var ratings = await GetDbSet()
+            .Where(o => o.AssignedEmployees.Any(e => e.EmployeeId == employeeId))
+            .SelectMany(o => o.Reviews)
+            .Select(r => r.Rating)
+            .ToListAsync(cancellationToken);
+
+        if (ratings.Count == 0) return (null, 0);
+        return (ratings.Average(), ratings.Count);
     }
 }

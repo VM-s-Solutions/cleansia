@@ -25,10 +25,20 @@ public class GetRevenueReport
 
             var totalRevenue = orders.Sum(o => o.TotalPrice);
             var totalOrders = orders.Count;
-            var completedOrders = orders.Count(o => o.GetCurrentOrderStatus() == OrderStatus.Completed);
-            var cancelledOrders = orders.Count(o => o.GetCurrentOrderStatus() == OrderStatus.Cancelled);
+            // Use CompletedAt for the completed-orders count rather
+            // than the status-history lookup — both produce the same
+            // answer today, but CompletedAt is the authoritative
+            // column and cheaper (no nav lookup). Same logic for
+            // cancelled via the existing CancelledAt column.
+            var completedOrders = orders.Count(o => o.CompletedAt.HasValue);
+            var cancelledOrders = orders.Count(o => o.CancelledAt.HasValue);
             var averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
+            // Daily revenue stays grouped by CleaningDateTime: this
+            // is the admin's "what did we book each day" view, which
+            // is a scheduling read, not a completion read. The
+            // dashboard/cleaner-side "what did I earn today" path is
+            // the one that uses CompletedAt (see GetDashboardStats).
             var dailyRevenues = orders
                 .GroupBy(o => DateOnly.FromDateTime(o.CleaningDateTime))
                 .Select(g => new DailyRevenue(

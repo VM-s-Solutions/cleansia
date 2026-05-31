@@ -52,6 +52,19 @@
         [loading]="facade.profileSubmitLoading()"
       />
     </div>
+
+    <!-- Logout Section -->
+    <div class="cleansia-profile__actions">
+      <cleansia-button
+        [buttonType]="'button'"
+        [style]="'basic-button'"
+        [severity]="'danger'"
+        [icon]="'pi pi-sign-out'"
+        [title]="'sidebar.logout' | translate"
+        (clickFn)="onLogout()"
+        [disabled]="facade.profileSubmitLoading()"
+      />
+    </div>
   </form>
 </div>
 }

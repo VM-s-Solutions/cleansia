@@ -47,6 +47,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.loyalty.LoyaltyActivityItemDto
+import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.theme.Poppins
 
 /**
@@ -153,6 +154,15 @@ private fun LoadedList(
         onRefresh = onRefresh,
         state = pullState,
         modifier = Modifier.fillMaxSize(),
+        indicator = {
+            SudsRefreshIndicator(
+                state = pullState,
+                isRefreshing = isRefreshing,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 8.dp),
+            )
+        },
     ) {
         LazyColumn(
             state = listState,

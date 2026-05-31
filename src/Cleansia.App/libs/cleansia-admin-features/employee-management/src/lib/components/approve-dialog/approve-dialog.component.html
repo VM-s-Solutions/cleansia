@@ -1,0 +1,59 @@
+<div class="approve-dialog">
+  <form [formGroup]="form" (ngSubmit)="onApprove()">
+    <div class="approve-dialog__header">
+      <h2 class="approve-dialog__title">{{ data.title }}</h2>
+      <p class="approve-dialog__subtitle" *ngIf="data.subtitle">{{ data.subtitle }}</p>
+    </div>
+
+    <div class="approve-dialog__content">
+      <div class="approve-dialog__field">
+        <cleansia-select
+          [options]="data.countries"
+          [label]="'pages.employee_detail.approve_employee_dialog.work_country_label' | translate"
+          [floatVariant]="'on'"
+          [filter]="true"
+          formControlName="workCountryId"
+        />
+        <small class="approve-dialog__hint">
+          {{ 'pages.employee_detail.approve_employee_dialog.work_country_hint' | translate }}
+        </small>
+        <small
+          class="approve-dialog__error"
+          *ngIf="form.controls.workCountryId.touched && form.controls.workCountryId.hasError('required')">
+          {{ 'pages.employee_detail.approve_employee_dialog.work_country_required' | translate }}
+        </small>
+      </div>
+
+      <div class="approve-dialog__field">
+        <cleansia-textarea
+          formControlName="notes"
+          [rows]="3"
+          [placeholder]="'pages.employee_detail.approve_employee_dialog.notes_placeholder' | translate"
+          className="w-full"
+        />
+        <small class="approve-dialog__hint">
+          {{ 'pages.employee_detail.approve_employee_dialog.notes_hint' | translate }}
+        </small>
+      </div>
+    </div>
+
+    <div class="approve-dialog__footer">
+      <cleansia-button
+        buttonType="button"
+        [label]="'pages.employee_detail.approve_employee_dialog.cancel_button' | translate"
+        severity="secondary"
+        className="p-button-text p-button-secondary"
+        (onClick)="onCancel()"
+        [disabled]="loading()"
+      />
+      <cleansia-button
+        buttonType="submit"
+        [label]="'pages.employee_detail.approve_employee_dialog.approve_button' | translate"
+        icon="pi pi-check"
+        severity="success"
+        [disabled]="form.invalid || loading()"
+        [loading]="loading()"
+      />
+    </div>
+  </form>
+</div>

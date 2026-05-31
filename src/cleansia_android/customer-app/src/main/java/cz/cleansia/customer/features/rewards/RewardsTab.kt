@@ -75,6 +75,7 @@ import cz.cleansia.customer.core.referral.ReferralAccountDto
 import cz.cleansia.customer.core.referral.ReferralRepositoryEntryPoint
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.snackbar.SnackbarControllerEntryPoint
+import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.theme.Poppins
 import cz.cleansia.customer.ui.theme.SuccessText
 import dagger.hilt.android.EntryPointAccessors
@@ -173,6 +174,15 @@ fun RewardsTab(
             onRefresh = refresh,
             state = pullState,
             modifier = Modifier.fillMaxSize(),
+            indicator = {
+                SudsRefreshIndicator(
+                    state = pullState,
+                    isRefreshing = loading,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 8.dp),
+                )
+            },
         ) {
             // First-load spinner — only the initial open. Once `loaded` flips
             // we fall through to the cached content so subsequent refreshes

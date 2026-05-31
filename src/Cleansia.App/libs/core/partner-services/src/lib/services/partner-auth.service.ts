@@ -34,7 +34,7 @@ export class PartnerAuthService {
   readonly isLoggedInAction$: Observable<boolean> = this.isLoggedIn$.pipe(
     map((isLoggedIn: boolean) => {
       if (!isLoggedIn) {
-        this.logout();
+        this.logout().subscribe();
       }
       return isLoggedIn;
     })

@@ -272,6 +272,7 @@ private fun SheetContent(
                     street = preferred.street,
                     city = preferred.city,
                     zipCode = preferred.zipCode,
+                    countryIsoCode = preferred.countryIsoCode,
                     savedAddressId = preferred.serverId,
                 )
             }
@@ -352,6 +353,12 @@ private fun SheetContent(
                 street = order.address?.street.orEmpty(),
                 city = order.address?.city.orEmpty(),
                 zipCode = order.address?.zipCode.orEmpty(),
+                // Rebook re-uses the original address. If we matched a saved
+                // address we know its ISO code; otherwise fall back to whatever
+                // was already in state (typically the auto-defaulted served
+                // country code).
+                countryIsoCode = matchedSavedAddress?.countryIsoCode
+                    ?: current.countryIsoCode,
                 savedAddressId = matchedSavedAddress?.serverId,
             )
         }
@@ -652,6 +659,7 @@ private fun SheetContent(
                                 street = picked.street,
                                 city = picked.city,
                                 zipCode = picked.zipCode,
+                                countryIsoCode = picked.countryIsoCode,
                                 savedAddressId = picked.serverId,
                             )
                         }

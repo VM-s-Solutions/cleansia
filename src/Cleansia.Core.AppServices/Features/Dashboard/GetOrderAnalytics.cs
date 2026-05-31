@@ -53,8 +53,12 @@ public class GetOrderAnalytics
                 .ToList();
 
             var totalOrders = orders.Count;
-            var completedOrders = orders.Count(o => o.GetCurrentOrderStatus() == OrderStatus.Completed);
-            var cancelledOrders = orders.Count(o => o.GetCurrentOrderStatus() == OrderStatus.Cancelled);
+            // Authoritative completion / cancellation columns instead
+            // of status-history reads — same answer today, cheaper
+            // and unambiguous (no "is the last history row really
+            // the terminal status?" question).
+            var completedOrders = orders.Count(o => o.CompletedAt.HasValue);
+            var cancelledOrders = orders.Count(o => o.CancelledAt.HasValue);
             var completionRate = CalculateCompletionRate(completedOrders, totalOrders);
 
             return new OrderAnalyticsDto(

@@ -408,7 +408,11 @@
       "elapsed_time": "Uplynulý čas",
       "employee_email": "E-mail zamestnanca",
       "report_issue": "Nahlásiť problém",
-      "take_order": "Prevziať objednávku"
+      "take_order": "Prevziať objednávku",
+      "before_photos_gating_error": "Fotografie pred upratovaním možno nahrať len v stave Potvrdené alebo Na ceste",
+      "after_photos_gating_error": "Fotografie po upratovaní možno nahrať len v stave Prebieha",
+      "note_issue_gating_error": "Poznámky a nahlasovanie problémov možno pridávať len pri aktívnych objednávkach",
+      "complete_missing_after_photos": "Objednávku nemožno dokončiť bez fotografií po upratovaní"
     },
     "invoices": {
       "title": "Moje mzdové faktúry",
@@ -1170,6 +1174,11 @@
         "key_exists": "Preklad s týmto kľúčom už existuje",
         "invalid_type": "Neplatný typ e-mailovej šablóny"
       }
+    },
+    "service_area": {
+      "country_not_serviced": "V tejto krajine zatiaľ nepôsobíme.",
+      "country_required": "Vyberte krajinu.",
+      "city_not_serviced": "V tomto meste zatiaľ nepôsobíme."
     }
   },
   "enums": {

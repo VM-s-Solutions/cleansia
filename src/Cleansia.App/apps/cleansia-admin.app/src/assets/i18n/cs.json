@@ -56,6 +56,7 @@
       "countries": "Země",
       "country_create": "Vytvořit zemi",
       "country_edit": "Upravit zemi",
+      "service_area": "Servisní oblast",
       "currencies": "Měny",
       "currency_create": "Vytvořit měnu",
       "currency_edit": "Upravit měnu",
@@ -207,6 +208,7 @@
     "admin_users": "Administrátoři",
     "languages": "Jazyky",
     "countries": "Země",
+    "service_area": "Servisní oblast",
     "currencies": "Měny",
     "company_info": "Údaje o společnosti",
     "templates": "Šablony",
@@ -254,6 +256,12 @@
         "active_status": "Stav aktivity",
         "reset": "Resetovat filtry",
         "clear_all": "Vymazat vše"
+      },
+      "approve_dialog": {
+        "title": "Schválit zaměstnance",
+        "subtitle": "Vyberte zemi, ve které je tento uklízeč oprávněn pracovat. Určuje výchozí měnu, jazyk a DPH.",
+        "cancel_button": "Zrušit",
+        "approve_button": "Schválit zaměstnance"
       },
       "reject_dialog": {
         "title": "Zamítnout zaměstnance",
@@ -355,6 +363,17 @@
         "reject_document": "Zamítnout",
         "download_document": "Stáhnout",
         "preview_document": "Náhled"
+      },
+      "approve_employee_dialog": {
+        "title": "Schválit zaměstnance",
+        "subtitle": "Vyberte zemi, ve které je tento uklízeč oprávněn pracovat. Určuje výchozí měnu, jazyk a DPH.",
+        "work_country_label": "Pracovní země",
+        "work_country_hint": "Lze vybrat pouze země, ve kterých aktuálně poskytujeme služby.",
+        "work_country_required": "Pracovní země je povinná",
+        "notes_placeholder": "Volitelné poznámky ke schválení...",
+        "notes_hint": "Maximálně 1000 znaků",
+        "cancel_button": "Zrušit",
+        "approve_button": "Schválit zaměstnance"
       },
       "reject_employee_dialog": {
         "title": "Zamítnout zaměstnance",
@@ -512,6 +531,7 @@
       "bathrooms": "Koupelny",
       "estimated_time": "Odhadovaný čas",
       "actual_time": "Skutečný čas",
+      "completed_at": "Dokončeno",
       "selected_packages": "Vybrané balíčky",
       "selected_services": "Vybrané služby",
       "extras": "Doplňky",
@@ -925,6 +945,53 @@
         "load_error": "Nepodařilo se načíst země",
         "delete_success": "Země byla úspěšně smazána",
         "delete_error": "Nepodařilo se smazat zemi"
+      }
+    },
+    "service_area_management": {
+      "title": "Servisní oblast",
+      "description": "Vyberte země, ve kterých působíte, a města, která obsluhujete. Tyto volby řídí všechny výběry adres v zákaznických i partnerských aplikacích.",
+      "tabs": {
+        "countries": "Obsluhované země",
+        "cities": "Obsluhovaná města"
+      },
+      "columns": {
+        "country": "Země",
+        "iso_code": "ISO kód",
+        "is_serviced": "Obsluhujeme",
+        "city": "Město",
+        "zip_prefix": "PSČ prefix",
+        "is_active": "Stav"
+      },
+      "countries": {
+        "hint": "U každé země přepněte přepínač, pokud v ní působíte. Zákazníci a partneři uvidí v nabídkách jen obsluhované země."
+      },
+      "cities": {
+        "country_picker": "Vyberte zemi",
+        "no_serviced_country": "Nejprve označte aspoň jednu zemi jako obsluhovanou.",
+        "empty": "V této zemi zatím nejsou žádná města.",
+        "add": "Přidat město",
+        "edit": "Upravit",
+        "delete": "Smazat",
+        "edit_header": "Upravit město",
+        "create_header": "Přidat město",
+        "delete_header": "Smazat město",
+        "delete_confirm": "Odstranit {{ name }} ze servisní oblasti? Stávající objednávky to neovlivní; nové objednávky v tomto městě budou odmítnuty.",
+        "name_label": "Název města",
+        "name_placeholder": "např. Praha, Brno, Plzeň",
+        "zip_prefix_label": "PSČ prefix (volitelné)",
+        "zip_prefix_placeholder": "např. 1, 11, 11000",
+        "zip_prefix_hint": "Zatím se nevynucuje — zachyceno pro budoucí přísnější validaci.",
+        "active_label": "Aktivní",
+        "active": "Aktivní",
+        "inactive": "Neaktivní",
+        "save": "Uložit",
+        "cancel": "Zrušit"
+      },
+      "messages": {
+        "country_updated": "Stav obsluhy země aktualizován",
+        "city_created": "Město přidáno do servisní oblasti",
+        "city_updated": "Město aktualizováno",
+        "city_deleted": "Město odebráno ze servisní oblasti"
       }
     },
     "country_form": {
@@ -2113,6 +2180,11 @@
         "key_exists": "Překlad s tímto klíčem již existuje",
         "invalid_type": "Neplatný typ e-mailové šablony"
       }
+    },
+    "service_area": {
+      "country_not_serviced": "V této zemi zatím nepůsobíme.",
+      "country_required": "Vyberte zemi.",
+      "city_not_serviced": "V tomto městě zatím nepůsobíme."
     }
   },
   "cookies": {

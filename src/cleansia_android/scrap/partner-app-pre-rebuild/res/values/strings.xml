@@ -1,0 +1,711 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Cleansia Partner</string>
+
+    <!-- Common -->
+    <string name="loading">Loading…</string>
+    <string name="error">Error</string>
+    <string name="retry">Retry</string>
+    <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
+    <string name="saving">Saving…</string>
+    <string name="no_data">Not provided</string>
+    <string name="delete">Delete</string>
+    <string name="see_all">See all</string>
+    <string name="confirm">Confirm</string>
+    <string name="ok">OK</string>
+
+    <!-- Auth -->
+    <string name="login">Sign In</string>
+    <string name="register">Sign Up</string>
+    <string name="logout">Logout</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="remember_me">Remember me</string>
+    <string name="forgot_password">Forgot Password?</string>
+    <string name="dont_have_account">Don\'t have an account?</string>
+    <string name="already_have_account">Already have an account?</string>
+    <string name="sign_in">Sign In</string>
+    <string name="sign_in_here">Sign in here</string>
+    <string name="sign_up_here">Sign up here</string>
+    <string name="welcome_back">Welcome back!</string>
+    <string name="login_subtitle">Sign in to continue to your account</string>
+    <string name="create_account">Create Account</string>
+    <string name="register_subtitle">Join us and start earning today</string>
+    <string name="first_name">First Name</string>
+    <string name="last_name">Last Name</string>
+    <string name="phone">Phone Number</string>
+    <string name="phone_number">Phone Number</string>
+    <string name="accept_terms">I accept the Terms and Conditions</string>
+    <string name="accept_terms_prefix">I accept the</string>
+    <string name="terms_and_conditions">Terms and Conditions</string>
+    <string name="back">Back</string>
+
+    <!-- Password rules — shown live under the Register screen's password fields. -->
+    <string name="register_pw_min_length">At least 8 characters</string>
+    <string name="register_pw_letter">Contains a letter</string>
+    <string name="register_pw_number">Contains a number</string>
+    <string name="register_pw_match">Passwords match</string>
+
+    <!-- Or-divider between email/password sign-in and biometric option. -->
+    <string name="login_or">OR</string>
+
+    <!-- Email Confirmation -->
+    <string name="confirm_email">Confirm Email</string>
+    <string name="verify_email">Verify Your Email</string>
+    <string name="verify_email_subtitle">We\'ve sent a verification code to your email. Please enter it below.</string>
+    <string name="confirm_email_subtitle">Please enter the confirmation code sent to your email</string>
+    <string name="confirmation_code">Confirmation Code</string>
+    <string name="verification_code">Verification Code</string>
+    <string name="resend_code">Resend</string>
+    <string name="didnt_receive_code">Didn\'t receive the code?</string>
+    <string name="verify">Verify</string>
+
+    <!-- Forgot Password -->
+    <string name="forgot_password_title">Forgot Password</string>
+    <string name="forgot_password_subtitle">Enter your email address and we\'ll send you a link to reset your password</string>
+    <string name="send_reset_link">Send Reset Link</string>
+    <string name="back_to_login">Back to Login</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard">Dashboard</string>
+    <string name="dashboard_subtitle">Here\'s your activity overview</string>
+    <string name="good_morning">Good morning!</string>
+    <string name="good_afternoon">Good afternoon!</string>
+    <string name="good_evening">Good evening!</string>
+    <string name="good_morning_name">Good morning, %1$s</string>
+    <string name="good_afternoon_name">Good afternoon, %1$s</string>
+    <string name="good_evening_name">Good evening, %1$s</string>
+    <string name="todays_schedule">Today\'s Schedule</string>
+    <string name="no_orders_today">No orders scheduled for today</string>
+    <string name="your_performance">Your Performance</string>
+    <string name="statistics">Statistics</string>
+    <string name="available_orders">Available Orders</string>
+    <string name="my_active_orders">My Active Orders</string>
+    <string name="completed_this_month">Completed This Month</string>
+    <string name="pending_earnings">Pending Earnings</string>
+    <string name="upcoming_orders">Upcoming Orders</string>
+    <string name="earnings_overview">Earnings Overview</string>
+    <string name="order_distribution">Order Distribution</string>
+    <string name="no_upcoming_orders">No upcoming orders</string>
+    <string name="quick_actions">Quick Actions</string>
+    <string name="browse_orders">Orders</string>
+    <string name="view_all">View All</string>
+    <string name="this_week">This Week</string>
+    <string name="this_month">This Month</string>
+    <string name="last_month">Last Month</string>
+    <string name="next_up">Next Up</string>
+    <string name="starts_in">Starts in %1$s</string>
+    <string name="today_at">Today at %1$s</string>
+    <string name="tomorrow_at">Tomorrow at %1$s</string>
+    <string name="completion_rate">Completion Rate</string>
+    <string name="completed_vs_total">%1$d of %2$d orders</string>
+
+    <!-- Analytics -->
+    <string name="analytics_title">Analytics</string>
+    <string name="period_comparison">Period Comparison</string>
+    <string name="current_period">Current Period</string>
+    <string name="previous_period">Previous Period</string>
+    <string name="daily_average">Daily Avg</string>
+    <string name="best_day">Best Day</string>
+    <string name="worst_day">Lowest Day</string>
+    <string name="earnings_by_day">Earnings by Day</string>
+    <string name="day_mon">Mon</string>
+    <string name="day_tue">Tue</string>
+    <string name="day_wed">Wed</string>
+    <string name="day_thu">Thu</string>
+    <string name="day_fri">Fri</string>
+    <string name="day_sat">Sat</string>
+    <string name="day_sun">Sun</string>
+
+    <!-- Analytics Extensions -->
+    <string name="order_status_title">Order Distribution</string>
+    <string name="completed_orders">Completed</string>
+    <string name="in_progress_orders">In Progress</string>
+    <string name="cancelled_orders">Cancelled</string>
+    <string name="pending_orders">Pending</string>
+    <string name="performance_score">Performance Score</string>
+    <string name="customer_rating">Customer Rating</string>
+    <string name="on_time_rate">On-Time Rate</string>
+    <string name="avg_response_time">Avg Response</string>
+    <string name="minutes_short">%1$d min</string>
+    <string name="monthly_earnings_trend">Monthly Earnings Trend</string>
+    <string name="total_this_year">Total This Year</string>
+    <string name="month_over_month">vs Last Month</string>
+    <string name="revenue_by_service">Revenue by Service</string>
+    <string name="orders_count">%1$d orders</string>
+    <string name="schedule_utilization">Schedule Utilization</string>
+    <string name="available_hours_label">Available</string>
+    <string name="booked_hours_label">Booked</string>
+    <string name="utilization_rate">Utilization</string>
+    <string name="hours_short">%1$.1fh</string>
+    <string name="completion_efficiency">Completion Efficiency</string>
+    <string name="estimated_label">Estimated</string>
+    <string name="actual_label">Actual</string>
+    <string name="faster_than_estimate">%1$d%% faster</string>
+    <string name="slower_than_estimate">%1$d%% slower</string>
+
+    <!-- Orders -->
+    <string name="orders">Orders</string>
+    <string name="order_details">Order Details</string>
+    <string name="active">Active</string>
+    <string name="available">Available</string>
+    <string name="my_orders">My Orders</string>
+    <string name="completed">Completed</string>
+    <string name="take_order">Take Order</string>
+    <string name="swipe_to_take">Swipe to Take</string>
+    <string name="start_order">Start Order</string>
+    <string name="swipe_to_start">Swipe to Start</string>
+    <string name="swipe_to_complete">Swipe to Complete</string>
+    <string name="swipe_to_notify_on_the_way">Swipe to mark on the way</string>
+    <string name="customer_notified_on_the_way">Customer notified · on the way</string>
+    <string name="waiting_for_other_employees">You\'re assigned! Waiting for other employees to confirm before the order can start.</string>
+    <string name="order_started">Started!</string>
+    <string name="complete_order">Complete Order</string>
+    <string name="no_orders_available">No orders available</string>
+    <string name="no_active_orders">No active orders</string>
+    <string name="no_completed_orders">No completed orders</string>
+    <string name="no_services">No services</string>
+    <string name="order_id">Order #%1$s</string>
+    <string name="customer">Customer</string>
+    <string name="address">Address</string>
+    <string name="navigate">Navigate</string>
+    <string name="services">Services</string>
+    <string name="notes">Notes</string>
+    <string name="total">Total</string>
+    <string name="scheduled_date">Scheduled Date</string>
+    <string name="upload_photos">Upload Photos</string>
+    <string name="photos">Photos</string>
+    <string name="add_photo">Add Photo</string>
+    <string name="no_photos">No photos uploaded</string>
+    <string name="take_photo">Take Photo</string>
+    <string name="choose_from_gallery">Choose from Gallery</string>
+    <string name="delete_photo">Delete Photo</string>
+    <string name="delete_photo_confirm">Are you sure you want to delete this photo?</string>
+    <string name="estimated_time">Estimated Time</string>
+    <string name="actual_completion_time">Actual completion time (min)</string>
+    <string name="completion_notes">Completion notes (optional)</string>
+    <string name="rooms">Rooms</string>
+    <string name="bathrooms">Bathrooms</string>
+    <string name="payment_info">Payment</string>
+    <string name="payment_type">Payment Type</string>
+    <string name="payment_status_label">Payment Status</string>
+    <string name="notes_instructions">Notes &amp; Instructions</string>
+    <string name="customer_notes">Customer Notes</string>
+    <string name="special_instructions">Special Instructions</string>
+    <string name="access_instructions">Access Instructions</string>
+    <string name="order_info">Order Info</string>
+    <string name="created_on">Created</string>
+    <string name="updated_on">Updated</string>
+    <string name="order_completed_message">This order has been completed</string>
+    <string name="order_cancelled_message">This order has been cancelled</string>
+    <string name="sort">Sort</string>
+    <string name="filter">Filter</string>
+    <string name="filters">Filters</string>
+    <string name="reset">Reset</string>
+    <string name="clear_all">Clear All</string>
+    <string name="close">Close</string>
+    <string name="search">Search</string>
+    <string name="search_orders">Search orders…</string>
+    <string name="search_invoices">Search invoices…</string>
+    <string name="no_results">No results found</string>
+    <string name="coming_soon">Coming Soon</string>
+    <string name="coming_soon_desc">This feature is under development and will be available soon.</string>
+    <string name="search_customer">Search by customer name</string>
+    <string name="search_invoice">Search by invoice number</string>
+    <string name="order_status_filter">Order Status</string>
+    <string name="payment_status_filter">Payment Status</string>
+    <string name="invoice_status_filter">Invoice Status</string>
+    <string name="date_range">Date Range</string>
+    <string name="start_date">Start Date</string>
+    <string name="end_date">End Date</string>
+    <string name="select_date">Select Date</string>
+    <string name="all_statuses">All Statuses</string>
+    <string name="apply">Apply</string>
+
+    <!-- Sort Options -->
+    <string name="sort_date_newest">Date (Newest)</string>
+    <string name="sort_date_oldest">Date (Oldest)</string>
+    <string name="sort_price_low_high">Price (Low to High)</string>
+    <string name="sort_price_high_low">Price (High to Low)</string>
+    <string name="sort_amount_low_high">Amount (Low to High)</string>
+    <string name="sort_amount_high_low">Amount (High to Low)</string>
+
+    <!-- Order Status -->
+    <string name="status_pending">Pending</string>
+    <string name="status_confirmed">Confirmed</string>
+    <string name="status_in_progress">In Progress</string>
+    <string name="status_completed">Completed</string>
+    <string name="status_cancelled">Cancelled</string>
+    <string name="status_on_the_way">On the way</string>
+
+    <!-- Payment Status -->
+    <string name="payment_pending">Pending</string>
+    <string name="payment_paid">Paid</string>
+    <string name="payment_failed">Failed</string>
+    <string name="payment_refunded">Refunded</string>
+
+    <!-- Invoices -->
+    <string name="invoices">Invoices</string>
+    <string name="invoice_details">Invoice Details</string>
+    <string name="download_invoice">Download Invoice</string>
+    <string name="no_invoices">No invoices found</string>
+    <string name="invoice_number">Invoice #%1$s</string>
+    <string name="period">Period</string>
+    <string name="issue_date">Issue Date</string>
+    <string name="due_date">Due Date</string>
+    <string name="orders_included">Orders Included</string>
+
+    <!-- Invoice Status -->
+    <string name="invoice_pending">Pending</string>
+    <string name="invoice_approved">Approved</string>
+    <string name="invoice_paid">Paid</string>
+    <string name="invoice_disputed">Disputed</string>
+    <string name="invoice_rejected">Rejected</string>
+    <string name="invoice_cancelled">Cancelled</string>
+
+    <!-- Profile -->
+    <string name="profile">Profile</string>
+    <string name="personal_info">Personal Info</string>
+    <string name="identification_info">Identification</string>
+    <string name="address_info">Address</string>
+    <string name="bank_details">Bank Details</string>
+    <string name="documents">Documents</string>
+    <string name="availability">Availability</string>
+    <string name="edit_profile">Edit Profile</string>
+    <string name="missing_fields">Missing:</string>
+    <string name="date_of_birth">Date of Birth</string>
+    <string name="nationality">Nationality</string>
+    <string name="national_id">National ID</string>
+    <string name="passport_id">Passport ID</string>
+    <string name="tax_id">Tax ID</string>
+    <string name="street">Street</string>
+    <string name="city">City</string>
+    <string name="zip_code">ZIP Code</string>
+    <string name="state_region">State / Region</string>
+    <string name="country">Country</string>
+    <string name="bank_name">Bank Name</string>
+    <string name="account_number">Account Number</string>
+    <string name="iban">IBAN</string>
+    <string name="swift_code">SWIFT Code</string>
+    <string name="upload_document">Upload Document</string>
+    <string name="no_documents">No documents uploaded</string>
+
+    <!-- Emergency Contact -->
+    <string name="emergency_contact">Emergency Contact</string>
+    <string name="emergency_contact_desc">Someone we can reach in case of an emergency</string>
+    <string name="contact_name">Contact Name</string>
+    <string name="relationship">Relationship</string>
+    <string name="contact_phone">Phone Number</string>
+    <string name="contact_email">Email Address</string>
+
+    <!-- Availability -->
+    <string name="set_availability">Set Availability</string>
+    <string name="no_availability_set">No availability set</string>
+    <string name="select_time">Select Time</string>
+    <string name="date_overrides">Schedule Exceptions</string>
+    <string name="add_date_override">Add Exception</string>
+    <string name="no_date_overrides">No schedule exceptions set</string>
+    <string name="unavailable">Unavailable</string>
+    <string name="custom_hours">Custom hours</string>
+    <string name="select_date_override">Select date</string>
+    <string name="mark_unavailable">Mark as unavailable</string>
+    <string name="set_custom_hours">Set custom hours</string>
+    <string name="date_override_note">Note (optional)</string>
+
+    <!-- Terms & Consent -->
+    <string name="terms_consent">Terms &amp; Consent</string>
+    <string name="terms_accepted">Terms Accepted</string>
+    <string name="terms_not_accepted">Terms Not Accepted</string>
+    <string name="terms_accepted_on">Accepted on %1$s</string>
+    <string name="view_terms">View Terms</string>
+    <string name="accept_terms_message">Please read and accept our Terms and Conditions to continue using the app.</string>
+
+    <!-- Settings -->
+    <string name="settings">Settings</string>
+    <string name="language">Language</string>
+    <string name="theme">Theme</string>
+    <string name="notifications">Notifications</string>
+    <string name="biometric_login">Biometric Login</string>
+    <string name="biometric_login_desc">Use fingerprint or face recognition to log in</string>
+    <string name="security">Security</string>
+    <string name="app_version">App Version</string>
+
+    <!-- Biometric -->
+    <string name="biometric_prompt_title">Biometric Login</string>
+    <string name="biometric_prompt_subtitle">Use your biometric credential to log in</string>
+    <string name="biometric_prompt_negative">Use Password</string>
+    <string name="biometric_not_available">Biometric authentication not available on this device</string>
+    <string name="biometric_not_enrolled">No biometric credentials enrolled. Please set up fingerprint or face recognition in device settings.</string>
+    <string name="biometric_auth_failed">Biometric authentication failed</string>
+    <string name="biometric_auth_error">Authentication error: %1$s</string>
+    <string name="biometric_enabled">Biometric login enabled</string>
+    <string name="biometric_disabled">Biometric login disabled</string>
+
+    <!-- Document Types -->
+    <string name="doc_id_card">ID Card</string>
+    <string name="doc_passport">Passport</string>
+    <string name="doc_driving_license">Driving License</string>
+    <string name="doc_work_permit">Work Permit</string>
+    <string name="doc_contract">Contract</string>
+    <string name="doc_certificate">Certificate</string>
+    <string name="doc_bank_statement">Bank Statement</string>
+    <string name="doc_tax_document">Tax Document</string>
+    <string name="doc_insurance_document">Insurance Document</string>
+    <string name="doc_other">Other</string>
+
+    <!-- Document Management -->
+    <string name="document_type_label">Document Type</string>
+    <string name="select_files">Select Files</string>
+    <string name="upload_requirements">PDF, DOC, DOCX, JPG, JPEG, PNG — max 10 MB</string>
+    <string name="delete_document_confirm">Are you sure you want to delete \"%1$s\"?</string>
+    <string name="download">Download</string>
+    <string name="pending_documents">Pending</string>
+    <string name="approved_documents">Approved</string>
+    <string name="rejected_documents">Rejected</string>
+    <string name="expired_documents">Expired</string>
+    <string name="review_notes">Review Notes</string>
+
+    <!-- Help Cards -->
+    <string name="orders_help_title">How Orders Work</string>
+    <string name="orders_help_step1_title">Browse Available Orders</string>
+    <string name="orders_help_step1_desc">View orders that are available for you to take</string>
+    <string name="orders_help_step2_title">Take an Order</string>
+    <string name="orders_help_step2_desc">Accept an order to add it to your schedule</string>
+    <string name="orders_help_step3_title">Start the Order</string>
+    <string name="orders_help_step3_desc">Mark the order as started when you begin working</string>
+    <string name="orders_help_step4_title">Complete the Order</string>
+    <string name="orders_help_step4_desc">Mark as complete when finished and add notes</string>
+    <string name="invoices_help_title">Understanding Invoices</string>
+    <string name="invoices_help_desc">Invoices are generated for completed orders. Once approved, you\'ll receive payment according to your payment schedule.</string>
+
+    <!-- Validation -->
+    <string name="error_email_required">Email is required</string>
+    <string name="error_email_invalid">Please enter a valid email</string>
+    <string name="error_password_required">Password is required</string>
+    <string name="error_password_min_length">Password must be at least 8 characters</string>
+    <string name="error_passwords_not_match">Passwords do not match</string>
+    <string name="error_first_name_required">First name is required</string>
+    <string name="error_last_name_required">Last name is required</string>
+    <string name="error_terms_required">You must accept the terms and conditions</string>
+
+    <!-- Profile Validation -->
+    <string name="validation_required">This field is required</string>
+    <string name="validation_max_50">Maximum 50 characters allowed</string>
+    <string name="validation_max_20">Maximum 20 characters allowed</string>
+    <string name="validation_max_100">Maximum 100 characters allowed</string>
+    <string name="validation_date_past">Date must be in the past</string>
+    <string name="validation_min_age_18">You must be at least 18 years old</string>
+    <string name="validation_max_age_120">Invalid date of birth</string>
+    <string name="validation_invalid_date">Invalid date format</string>
+    <string name="validation_invalid_phone">Invalid phone number format</string>
+    <string name="validation_invalid_email">Invalid email format</string>
+    <string name="validation_length_5_20">Must be between 5 and 20 characters</string>
+    <string name="validation_alphanumeric">Only letters and numbers are allowed</string>
+    <string name="validation_length_5_255">Must be between 5 and 255 characters</string>
+    <string name="validation_length_2_100">Must be between 2 and 100 characters</string>
+    <string name="validation_length_3_20">Must be between 3 and 20 characters</string>
+    <string name="validation_invalid_zip">Invalid ZIP code format</string>
+    <string name="validation_length_15_34">Must be between 15 and 34 characters</string>
+    <string name="validation_invalid_iban">Invalid IBAN format</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_welcome_title">Welcome to Cleansia Partner</string>
+    <string name="onboarding_welcome_desc">Your partner app for managing cleaning orders and earnings</string>
+    <string name="onboarding_orders_title">Manage Your Orders</string>
+    <string name="onboarding_orders_desc">Browse available orders, accept jobs, and track your progress in real-time</string>
+    <string name="onboarding_earnings_title">Track Your Earnings</string>
+    <string name="onboarding_earnings_desc">View your invoices, monitor payments, and download reports</string>
+    <string name="onboarding_profile_title">Complete Your Profile</string>
+    <string name="onboarding_profile_desc">Keep your information up to date for smooth operations and timely payments</string>
+    <string name="onboarding_get_started">Get Started</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_skip">Skip</string>
+    <!-- Onboarding highlights -->
+    <string name="onboarding_highlight_orders">Manage Orders</string>
+    <string name="onboarding_highlight_earnings">Track Earnings</string>
+    <string name="onboarding_highlight_schedule">Set Schedule</string>
+    <string name="onboarding_highlight_realtime">Real-time Updates</string>
+    <string name="onboarding_highlight_location">Map View</string>
+    <string name="onboarding_highlight_tracking">Progress Tracking</string>
+    <string name="onboarding_highlight_invoices">Invoices</string>
+    <string name="onboarding_highlight_analytics">Analytics</string>
+    <string name="onboarding_highlight_reports">Reports</string>
+    <string name="onboarding_highlight_availability">Availability</string>
+    <string name="onboarding_highlight_documents">Documents</string>
+    <string name="onboarding_highlight_ratings">Ratings</string>
+
+    <!-- Profile Completion -->
+    <string name="complete_your_profile">Complete Your Profile</string>
+    <string name="profile_completion_subtitle">Fill in your details to get started with Cleansia</string>
+    <string name="step_personal">Personal</string>
+    <string name="step_address">Address</string>
+    <string name="step_bank">Banking</string>
+    <string name="step_schedule">Schedule</string>
+    <string name="profile_next_step">Next</string>
+    <string name="profile_prev_step">Back</string>
+    <string name="profile_finish">Finish</string>
+    <string name="profile_skip_for_now">Skip for now</string>
+    <string name="personal_details">Personal Details</string>
+    <string name="address_details">Address Details</string>
+    <string name="banking_details">Banking Details</string>
+    <string name="schedule_setup">Schedule Setup</string>
+    <string name="schedule_setup_desc">Set the days and times you\'re available to work.</string>
+
+    <!-- Registration Lock -->
+    <string name="registration_lock_title">Profile Completion Required</string>
+    <string name="registration_lock_description">To access this section, you need to complete your profile setup and upload required documents.</string>
+    <string name="registration_lock_missing_requirements">Missing Requirements:</string>
+    <string name="registration_lock_profile_completion">Complete Profile Information</string>
+    <string name="registration_lock_document_upload">Upload Required Documents</string>
+    <string name="registration_lock_complete_profile">Complete Profile</string>
+
+    <!-- API Errors -->
+    <string name="error_network">Unable to connect to server. Please check your internet connection.</string>
+    <string name="error_timeout">Connection timeout. Please try again.</string>
+    <string name="error_unauthorized">Session expired. Please login again.</string>
+
+    <!-- Session Expiration -->
+    <string name="session_expired_title">Session Expired</string>
+    <string name="session_expired_message">Your session has expired. Please sign in again to continue.</string>
+    <string name="error_not_found">The requested resource was not found.</string>
+    <string name="error_server">Server error. Please try again later.</string>
+    <string name="error_unknown">An unexpected error occurred.</string>
+
+    <!-- Timer -->
+    <string name="timer_minute">minute</string>
+    <string name="timer_minutes">minutes</string>
+    <string name="timer_seconds">seconds</string>
+    <string name="timer_remaining">remaining</string>
+    <string name="timer_overtime">overtime</string>
+    <string name="timer_cleaning_in_progress">Cleaning in Progress</string>
+    <string name="timer_time_left">Time Left</string>
+
+    <!-- Order Details - Redesigned -->
+    <string name="quick_info">Quick Info</string>
+    <string name="order_workflow">Order Workflow</string>
+    <string name="step_take_order">Take Order</string>
+    <string name="step_start_cleaning">Start Cleaning</string>
+    <string name="step_complete">Complete</string>
+    <string name="current_step">Current</string>
+    <string name="step_done">Done</string>
+    <string name="step_pending">Pending</string>
+    <string name="view_details">View Details</string>
+    <string name="hide_details">Hide Details</string>
+    <string name="cleaning_timer">Cleaning Timer</string>
+    <string name="open_in_maps">Open in Maps</string>
+    <string name="call_customer">Call Customer</string>
+    <string name="navigate_to_address">Navigate to Address</string>
+    <string name="report_issue">Issue</string>
+    <string name="report_issue_desc">Describe the issue you encountered during this cleaning session.</string>
+    <string name="describe_issue">Describe the issue</string>
+    <string name="submit">Submit</string>
+    <string name="add_note">Note</string>
+    <string name="add_note_desc">Add a note about this cleaning session.</string>
+    <string name="your_note">Your note</string>
+    <string name="call">Call</string>
+    <string name="message">Message</string>
+    <string name="employee_notes_issues">Notes &amp; Issues</string>
+    <string name="no_notes_or_issues">No notes or issues yet</string>
+    <string name="issue_resolved">Resolved</string>
+    <string name="issue_open">Open</string>
+
+    <!-- Account Hub -->
+    <string name="account">Account</string>
+    <string name="quick_access">Quick Access</string>
+    <string name="recent_orders">Recent Orders</string>
+    <string name="help_support">Help &amp; Support</string>
+    <string name="logout_confirm">Are you sure you want to logout?</string>
+    <string name="member_since">Member since %1$s</string>
+    <string name="inactive_account">Inactive</string>
+
+    <!-- Invoice Details - Redesigned -->
+    <string name="invoice_summary">Summary</string>
+    <string name="invoice_information">Invoice Information</string>
+    <string name="amount_breakdown">Amount Breakdown</string>
+    <string name="status_timeline">Status Timeline</string>
+    <string name="employee">Employee</string>
+    <string name="variable_symbol">Variable Symbol</string>
+    <string name="payment_reference">Payment Reference</string>
+    <string name="total_orders">Total Orders</string>
+    <string name="pay_period">Pay Period</string>
+    <string name="paid_date">Paid Date</string>
+    <string name="subtotal">Subtotal</string>
+    <string name="bonus">Bonus</string>
+    <string name="deductions">Deductions</string>
+    <string name="admin_notes">Admin Notes</string>
+    <string name="bank_transfer_note">Bank Transfer Note</string>
+    <string name="generated">Generated</string>
+    <string name="approved">Approved</string>
+    <string name="paid">Paid</string>
+    <string name="invoice_notes">Notes</string>
+
+    <!-- Calendar Availability -->
+    <string name="previous_month">Previous month</string>
+    <string name="next_month">Next month</string>
+    <string name="legend_working">Working</string>
+    <string name="legend_custom">Custom</string>
+    <string name="legend_off">Off</string>
+    <string name="working_day">Working Day</string>
+    <string name="day_off">Day Off</string>
+    <string name="exception_day_off">Exception - Day Off</string>
+    <string name="edit_hours">Edit Hours</string>
+    <string name="edit_hours_desc">Adjust the working hours for this day.</string>
+    <string name="mark_as_exception">Mark as Exception</string>
+    <string name="mark_exception_desc">Override the regular schedule for this date.</string>
+    <string name="schedule_setup_title">Schedule Setup</string>
+    <string name="schedule_setup_sheet_desc">Choose your working days and hours.</string>
+    <string name="remove_exception">Remove Exception</string>
+    <string name="add_time_slot">Add time slot</string>
+    <string name="remove">Remove</string>
+    <string name="weekly_schedule">Weekly Schedule</string>
+    <string name="edit">Edit</string>
+
+    <!-- Quick Setup Presets -->
+    <string name="quick_setup">Quick Setup</string>
+    <string name="mon_fri_9_5">Mon-Fri 9-17</string>
+    <string name="mon_sat_8_4">Mon-Sat 8-16</string>
+    <string name="custom">Custom</string>
+    <string name="custom_schedule">Custom Schedule</string>
+    <string name="working_hours">Working Hours</string>
+    <string name="working_days">Working Days</string>
+
+    <!-- Dashboard Working Hours -->
+    <string name="todays_working_hours">Today\'s Working Hours</string>
+    <string name="day_complete">Day Complete</string>
+    <string name="day_off_today">Day Off Today</string>
+    <string name="off_today">Off Today</string>
+    <string name="remaining_time">%1$s remaining</string>
+
+    <!-- Before/After Photos -->
+    <string name="photos_before">Before</string>
+    <string name="photos_after">After</string>
+    <string name="no_before_photos">No before photos yet</string>
+    <string name="no_after_photos">No after photos yet</string>
+    <string name="photos_required_warning">Before and after photos are required to complete the order</string>
+    <string name="photos_before_required">Please add at least one before photo</string>
+    <string name="photos_after_required">Please add at least one after photo</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_timer">Order Timer</string>
+    <string name="notification_channel_timer_desc">Ongoing notification showing order timer progress</string>
+    <string name="notification_channel_alerts">Order Alerts</string>
+    <string name="notification_channel_alerts_desc">Important alerts about order time limits</string>
+    <string name="notification_order_timer">Order #%1$s</string>
+    <string name="notification_time_remaining">%1$d min remaining</string>
+    <string name="notification_overtime">%1$d min over estimated time</string>
+    <string name="notification_caution_title">Time Running Low</string>
+    <string name="notification_caution_message">Order #%1$s has about %2$d min remaining</string>
+    <string name="notification_urgent_title">Almost Out of Time!</string>
+    <string name="notification_urgent_message">Order #%1$s has only %2$d min left</string>
+    <string name="notification_overtime_title">Time Exceeded</string>
+    <string name="notification_overtime_message">Order #%1$s has exceeded the estimated time</string>
+    <string name="notification_caution_subtitle">%1$d min left — hurry up</string>
+    <string name="notification_urgent_subtitle">Only %1$d min left!</string>
+    <string name="notification_elapsed">%1$d min elapsed</string>
+    <string name="notification_elapsed_detailed">%1$d:%2$02d elapsed</string>
+    <string name="notification_estimated">Est. %1$d min</string>
+    <string name="notification_in_progress">In Progress</string>
+    <string name="notification_overtime_elapsed">+%1$d min overtime</string>
+    <string name="notification_enable_title">Enable Notifications</string>
+    <string name="notification_enable_message">Notifications are disabled. Please enable them to receive order timer updates and alerts.</string>
+    <string name="notification_enable_open_settings">Open Settings</string>
+
+    <!-- Urgency -->
+    <string name="urgency_overdue">Overdue</string>
+    <string name="urgency_in_minutes">In %1$dm</string>
+    <string name="urgency_in_hours_minutes">In %1$dh %2$dm</string>
+    <string name="urgency_in_hours">In %1$dh</string>
+
+    <!-- API Error Translations (backend error keys → localized messages) -->
+    <!-- Auth -->
+    <string name="api_error_auth_google_type_error">Google authentication type error</string>
+    <string name="api_error_auth_internal_type_error">Internal authentication type error</string>
+    <string name="api_error_auth_invalid_confirmation_code">Invalid confirmation code</string>
+    <string name="api_error_auth_invalid_google_token">Invalid Google token</string>
+    <string name="api_error_auth_invalid_password_format">Invalid password format</string>
+    <string name="api_error_auth_invalid_reset_token">Invalid password reset token</string>
+    <string name="api_error_auth_same_reset_password">New password matches the old password</string>
+    <string name="api_error_auth_insufficient_privileges">You are not authorized to perform this action</string>
+    <!-- Common -->
+    <string name="api_error_common_invalid_enum_value">Invalid value</string>
+    <string name="api_error_common_max_length">Maximum length exceeded</string>
+    <string name="api_error_common_required">This field is required</string>
+    <!-- Email -->
+    <string name="api_error_email_sending_failed">Failed to send email. Please try again.</string>
+    <string name="api_error_email_invalid_format">Invalid email format</string>
+    <string name="api_error_email_invalid_email">Invalid email address</string>
+    <!-- Order -->
+    <string name="api_error_order_cleaning_date_future">Cleaning date must be in the future</string>
+    <string name="api_error_order_empty">Order cannot be empty</string>
+    <string name="api_error_order_not_found">Order not found</string>
+    <string name="api_error_order_already_assigned">This order is already assigned</string>
+    <string name="api_error_order_no_available_spots">No available spots for this order</string>
+    <string name="api_error_order_employee_already_assigned">You are already assigned to this order</string>
+    <string name="api_error_order_employee_not_assigned">You are not assigned to this order</string>
+    <string name="api_error_order_max_employees_exceeded">Maximum number of employees exceeded</string>
+    <string name="api_error_order_not_in_progress">Order is not in progress</string>
+    <string name="api_error_order_not_confirmed">Order is not confirmed</string>
+    <string name="api_error_order_employee_already_has_order_in_progress">You already have an order in progress</string>
+    <string name="api_error_order_note_content_required">Note content is required</string>
+    <string name="api_error_order_issue_description_required">Issue description is required</string>
+    <!-- User -->
+    <string name="api_error_user_email_confirmed">Email is already confirmed</string>
+    <string name="api_error_user_existing_email">A user with this email already exists</string>
+    <string name="api_error_user_not_existing_email">User with this email does not exist</string>
+    <string name="api_error_user_not_existing_id">User not found</string>
+    <string name="api_error_user_not_allowed_to_update">You are not allowed to update this user</string>
+    <string name="api_error_user_existing_phone_number">A user with this phone number already exists</string>
+    <string name="api_error_user_not_found">User not found</string>
+    <!-- Employee -->
+    <string name="api_error_employee_not_found">Employee not found</string>
+    <string name="api_error_employee_not_existing_email">Employee with this email does not exist</string>
+    <string name="api_error_employee_not_allowed_to_update">You are not allowed to update this employee</string>
+    <string name="api_error_employee_profile_incomplete">Employee profile is incomplete</string>
+    <string name="api_error_employee_documents_missing">Required documents are missing</string>
+    <!-- Employee Documents -->
+    <string name="api_error_employee_document_not_found">Document not found</string>
+    <string name="api_error_employee_document_unauthorized">You are not authorized to access this document</string>
+    <string name="api_error_employee_document_not_owned">This document does not belong to you</string>
+    <!-- Validation -->
+    <string name="api_error_validation_invalid_password">Invalid password</string>
+    <string name="api_error_validation_invalid_date">Invalid date</string>
+    <string name="api_error_validation_date_must_be_in_past">Date must be in the past</string>
+    <string name="api_error_validation_invalid_age">Invalid age</string>
+    <string name="api_error_validation_invalid_phone_number">Invalid phone number format</string>
+    <string name="api_error_validation_invalid_national_id">Invalid national ID format</string>
+    <string name="api_error_validation_invalid_tax_id">Invalid tax ID format</string>
+    <string name="api_error_validation_invalid_iban">Invalid IBAN format</string>
+    <string name="api_error_validation_invalid_zip_code">Invalid zip code format</string>
+    <string name="api_error_validation_must_be_positive">Value must be positive</string>
+    <string name="api_error_validation_invalid_availability_format">Invalid availability format</string>
+    <string name="api_error_validation_page_must_be_positive">Page must be greater than 0</string>
+    <string name="api_error_validation_page_size_must_be_positive">Page size must be greater than 0</string>
+    <string name="api_error_validation_page_size_exceeded">Page size cannot exceed 100</string>
+    <string name="api_error_validation_invalid_contract_status">Invalid contract status</string>
+    <!-- File -->
+    <string name="api_error_file_content_type_doesnt_match">File type does not match content</string>
+    <string name="api_error_file_invalid_file_type">Invalid file type</string>
+    <string name="api_error_file_size_exceeded">File size exceeds the maximum allowed limit</string>
+    <string name="api_error_file_size_exceeded_10mb">File size must not exceed 10 MB</string>
+    <string name="api_error_file_type_not_allowed">File type is not allowed</string>
+    <string name="api_error_file_required">File upload is required</string>
+    <!-- General -->
+    <string name="api_error_general_not_found">Requested resource not found</string>
+    <!-- Device -->
+    <string name="api_error_device_invalid_platform">Invalid platform</string>
+    <!-- Country -->
+    <string name="api_error_country_not_existing_id">Country not found</string>
+    <!-- Address -->
+    <string name="api_error_address_invalid_length">Invalid address length</string>
+
+    <!-- Tier 3 -->
+    <string name="scroll_to_top">Scroll to top</string>
+    <string name="view_mode_list">List view</string>
+    <string name="view_mode_week">Week view</string>
+    <string name="no_orders_for_day">No orders for this day</string>
+    <string name="offline_mode">You are offline</string>
+    <string name="last_updated_ago">Last updated %1$s</string>
+    <string name="syncing">Syncing…</string>
+</resources>

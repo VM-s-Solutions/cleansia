@@ -7,143 +7,93 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Translates backend API error keys (e.g. "user.not_existing_email") to localized strings.
- * Mirrors the Angular frontend pattern: translate.instant(`api.${errorKey}`)
+ * Translates [ApiError] into user-facing localized strings. Backend often
+ * returns translation keys in the `errors` payload (e.g.
+ * `user.not_existing_email`); we look those up in `string.xml` so the user
+ * sees a localized message instead of the raw key.
  *
- * Backend sends error keys via ProblemDetails `errors` map. The first error value
- * is the translation key. This class maps those keys to Android string resources.
+ * Unknown error keys fall back to the server-supplied message; if the server
+ * gave nothing useful, we use a generic "something went wrong" string so the
+ * UI never shows an empty toast.
  */
 @Singleton
 class ApiErrorTranslator @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
 ) {
-    /**
-     * Maps a backend error key to a localized string.
-     * Returns null if the key is not recognized.
-     */
-    fun translate(errorKey: String): String? {
-        val resId = errorKeyToResId[errorKey] ?: return null
-        return context.getString(resId)
+
+    fun translate(error: ApiError): String = when (error) {
+        is ApiError.Network -> context.getString(R.string.error_network)
+        is ApiError.Server -> context.getString(R.string.error_server)
+        is ApiError.Unauthorized -> context.getString(R.string.error_unauthorized)
+        is ApiError.NotFound -> context.getString(R.string.error_not_found)
+        is ApiError.BadRequest -> translateBadRequest(error)
+        is ApiError.Unknown -> error.message.ifBlank { context.getString(R.string.error_generic) }
     }
 
     /**
-     * Translates an ApiError to a user-friendly localized message.
-     * For BadRequest errors with an errorKey, it tries to translate the key first.
-     * Falls back to the raw message if no translation is found.
+     * Backend returns validation errors as `{ ValidatorName: "domain.key" }`
+     * (sometimes a list). We want to surface the actual error keys to the
+     * cleaner, not the generic ProblemDetails detail line ("A validation
+     * problem occurred."). Order of preference:
+     *
+     *   1. Translate every key from the validation map and join them.
+     *      Multiple validators usually fail together (e.g. "after photos
+     *      required" AND "actual time must be positive") and the cleaner
+     *      needs to see all of them to fix the order.
+     *   2. Fall back to the single [ApiError.BadRequest.errorKey] if no
+     *      structured validation map came through.
+     *   3. Last resort: the server's `detail` line.
+     *
+     * Unknown keys (no `error_key_*` string in resources) render as the
+     * key itself — at least the user sees "order.after_photos.required"
+     * instead of "A validation problem occurred", which is more
+     * actionable until translations get added.
      */
-    fun translateError(error: ApiError): String {
-        return when (error) {
-            is ApiError.BadRequest -> {
-                // Try to translate the error key first
-                error.errorKey?.let { translate(it) }
-                    ?: error.message
+    private fun translateBadRequest(error: ApiError.BadRequest): String {
+        val validationKeys = error.validationErrors
+            ?.values
+            ?.flatten()
+            ?.filter { it.isNotBlank() }
+            ?.distinct()
+            .orEmpty()
+
+        if (validationKeys.isNotEmpty()) {
+            return validationKeys.joinToString(separator = "\n") { key ->
+                lookupKey(key) ?: key
             }
-            is ApiError.Network -> context.getString(R.string.error_network)
-            is ApiError.Unauthorized -> context.getString(R.string.error_unauthorized)
-            is ApiError.NotFound -> error.message
-            is ApiError.Server -> context.getString(R.string.error_server)
-            is ApiError.Unknown -> context.getString(R.string.error_unknown)
         }
+
+        val singleKey = error.errorKey
+        if (!singleKey.isNullOrBlank()) {
+            return lookupKey(singleKey) ?: singleKey
+        }
+        return error.message
     }
 
-    companion object {
-        /**
-         * Mapping of backend error keys to Android string resource IDs.
-         * Keys match the constants in BusinessErrorMessage.cs on the backend.
-         */
-        private val errorKeyToResId: Map<String, Int> = mapOf(
-            // Auth
-            "auth.google_type_error" to R.string.api_error_auth_google_type_error,
-            "auth.internal_type_error" to R.string.api_error_auth_internal_type_error,
-            "auth.invalid_confirmation_code" to R.string.api_error_auth_invalid_confirmation_code,
-            "auth.invalid_google_token" to R.string.api_error_auth_invalid_google_token,
-            "auth.invalid_password_format" to R.string.api_error_auth_invalid_password_format,
-            "auth.invalid_reset_token" to R.string.api_error_auth_invalid_reset_token,
-            "auth.same_reset_password" to R.string.api_error_auth_same_reset_password,
-            "auth.insufficient_privileges" to R.string.api_error_auth_insufficient_privileges,
-
-            // Common
-            "common.invalid_enum_value" to R.string.api_error_common_invalid_enum_value,
-            "common.max_length" to R.string.api_error_common_max_length,
-            "common.required" to R.string.api_error_common_required,
-
-            // Email
-            "email.sending_failed" to R.string.api_error_email_sending_failed,
-            "email.invalid_format" to R.string.api_error_email_invalid_format,
-            "email.invalid_email" to R.string.api_error_email_invalid_email,
-
-            // Order
-            "order.cleaning_date.future" to R.string.api_error_order_cleaning_date_future,
-            "order.empty" to R.string.api_error_order_empty,
-            "order.not_found" to R.string.api_error_order_not_found,
-            "order.already_assigned" to R.string.api_error_order_already_assigned,
-            "order.no_available_spots" to R.string.api_error_order_no_available_spots,
-            "order.employee_already_assigned" to R.string.api_error_order_employee_already_assigned,
-            "order.employee_not_assigned" to R.string.api_error_order_employee_not_assigned,
-            "order.max_employees_exceeded" to R.string.api_error_order_max_employees_exceeded,
-            "order.not_in_progress" to R.string.api_error_order_not_in_progress,
-            "order.not_confirmed" to R.string.api_error_order_not_confirmed,
-            "order.employee_already_has_order_in_progress" to R.string.api_error_order_employee_already_has_order_in_progress,
-            "order.note.content_required" to R.string.api_error_order_note_content_required,
-            "order.issue.description_required" to R.string.api_error_order_issue_description_required,
-
-            // User
-            "user.email_confirmed" to R.string.api_error_user_email_confirmed,
-            "user.existing_email" to R.string.api_error_user_existing_email,
-            "user.not_existing_email" to R.string.api_error_user_not_existing_email,
-            "user.not_existing_id" to R.string.api_error_user_not_existing_id,
-            "user.not_allowed_to_update" to R.string.api_error_user_not_allowed_to_update,
-            "user.existing_phone_number" to R.string.api_error_user_existing_phone_number,
-            "user.not_found" to R.string.api_error_user_not_found,
-
-            // Employee
-            "employee.not_found" to R.string.api_error_employee_not_found,
-            "employee.not_existing_email" to R.string.api_error_employee_not_existing_email,
-            "employee.not_allowed_to_update" to R.string.api_error_employee_not_allowed_to_update,
-            "employee.profile_incomplete" to R.string.api_error_employee_profile_incomplete,
-            "employee.documents_missing" to R.string.api_error_employee_documents_missing,
-
-            // Employee Documents
-            "employee_document.not_found" to R.string.api_error_employee_document_not_found,
-            "employee_document.unauthorized" to R.string.api_error_employee_document_unauthorized,
-            "employee_document.not_owned" to R.string.api_error_employee_document_not_owned,
-
-            // Validation
-            "validation.invalid_password" to R.string.api_error_validation_invalid_password,
-            "validation.invalid_date" to R.string.api_error_validation_invalid_date,
-            "validation.date_must_be_in_past" to R.string.api_error_validation_date_must_be_in_past,
-            "validation.invalid_age" to R.string.api_error_validation_invalid_age,
-            "validation.invalid_phone_number" to R.string.api_error_validation_invalid_phone_number,
-            "validation.invalid_national_id" to R.string.api_error_validation_invalid_national_id,
-            "validation.invalid_tax_id" to R.string.api_error_validation_invalid_tax_id,
-            "validation.invalid_iban" to R.string.api_error_validation_invalid_iban,
-            "validation.invalid_zip_code" to R.string.api_error_validation_invalid_zip_code,
-            "validation.must_be_positive" to R.string.api_error_validation_must_be_positive,
-            "validation.invalid_availability_format" to R.string.api_error_validation_invalid_availability_format,
-            "validation.page_must_be_positive" to R.string.api_error_validation_page_must_be_positive,
-            "validation.page_size_must_be_positive" to R.string.api_error_validation_page_size_must_be_positive,
-            "validation.page_size_exceeded" to R.string.api_error_validation_page_size_exceeded,
-            "validation.invalid_contract_status" to R.string.api_error_validation_invalid_contract_status,
-
-            // File
-            "file.content_type_doesnt_match" to R.string.api_error_file_content_type_doesnt_match,
-            "file.invalid_file_type" to R.string.api_error_file_invalid_file_type,
-            "file.size_exceeded" to R.string.api_error_file_size_exceeded,
-            "file.size_exceeded_10mb" to R.string.api_error_file_size_exceeded_10mb,
-            "file.type_not_allowed" to R.string.api_error_file_type_not_allowed,
-            "file.required" to R.string.api_error_file_required,
-
-            // General
-            "general.not_found" to R.string.api_error_general_not_found,
-
-            // Device
-            "device.invalid_platform" to R.string.api_error_device_invalid_platform,
-
-            // Country
-            "country.not_existing_id" to R.string.api_error_country_not_existing_id,
-
-            // Address
-            "address.invalid_length" to R.string.api_error_address_invalid_length,
+    /**
+     * Looks up a server error key (`user.not_existing_email`,
+     * `auth.invalid_credentials`, etc.) in string resources. Resource ids are
+     * named `error_<dot-replaced-with-underscore>`, e.g.
+     * `error_user_not_existing_email` — same convention as the customer app's
+     * ApiErrorParser so translations can be cross-referenced.
+     *
+     * Falls back to the legacy `error_key_<...>` prefix for any historical
+     * partner entries that haven't been renamed yet — keeps existing
+     * translations working without a flag-day rename.
+     *
+     * Returns null if neither resource exists so the caller can fall back
+     * to the server message.
+     */
+    private fun lookupKey(key: String): String? {
+        val normalized = key.replace('.', '_').replace('-', '_').lowercase()
+        val ids = listOf(
+            "error_$normalized",
+            "error_key_$normalized",
         )
+        for (name in ids) {
+            val id = context.resources.getIdentifier(name, "string", context.packageName)
+            if (id != 0) return context.getString(id)
+        }
+        return null
     }
 }

@@ -44,10 +44,9 @@ import cz.cleansia.partner.features.auth.viewmodels.ConfirmEmailViewModel
 private const val CODE_LENGTH = 6
 
 /**
- * Partner confirm-email screen — visual parity with customer-app's
- * EmailVerifyScreen (back row → mascot → title/subtitle → 6-box CodeInput →
- * primary Verify button → outlined Resend button). Auto-submits the verify
- * call when the user reaches 6 digits via [LaunchedEffect] on code length.
+ * 6-digit email-verification entry. Auto-submits once the user reaches 6
+ * digits via [LaunchedEffect] on code length. Resend re-issues the code with
+ * the user's preferred locale. Back goes to login.
  */
 @Composable
 fun ConfirmEmailScreen(
@@ -59,9 +58,7 @@ fun ConfirmEmailScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(uiState.isConfirmationSuccessful) {
-        if (uiState.isConfirmationSuccessful) {
-            onConfirmationSuccess()
-        }
+        if (uiState.isConfirmationSuccessful) onConfirmationSuccess()
     }
 
     LaunchedEffect(uiState.error) {
@@ -78,8 +75,6 @@ fun ConfirmEmailScreen(
         }
     }
 
-    // Auto-submit when the user types the 6th digit — matches customer's UX
-    // (no need to tap Verify if the code is complete).
     LaunchedEffect(uiState.code) {
         if (uiState.code.length == CODE_LENGTH && !uiState.isLoading) {
             viewModel.confirmEmail()

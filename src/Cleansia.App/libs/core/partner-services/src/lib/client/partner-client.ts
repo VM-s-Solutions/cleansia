@@ -705,6 +705,10 @@ export interface ICountryClient {
      * @return OK
      */
     getOverview(): Observable<CountryListItem[]>;
+    /**
+     * @return OK
+     */
+    getServiced(): Observable<CountryListItem[]>;
 }
 
 @Injectable({
@@ -750,6 +754,71 @@ export class CountryClient implements ICountryClient {
     }
 
     protected processGetOverview(response: HttpResponseBase): Observable<CountryListItem[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(CountryListItem.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getServiced(): Observable<CountryListItem[]> {
+        let url = this.baseUrl + "/api/Country/GetServiced";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetServiced(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetServiced(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<CountryListItem[]>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<CountryListItem[]>;
+        }));
+    }
+
+    protected processGetServiced(response: HttpResponseBase): Observable<CountryListItem[]> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -8467,7 +8536,7 @@ export interface ICode {
 
 export class CompleteOrderCommand implements ICompleteOrderCommand {
     orderId!: string | undefined;
-    actualCompletionTimeMinutes!: number;
+    actualCompletionTimeMinutes!: number | undefined;
     completionNotes!: string | undefined;
 
     constructor(data?: ICompleteOrderCommand) {
@@ -8505,7 +8574,7 @@ export class CompleteOrderCommand implements ICompleteOrderCommand {
 
 export interface ICompleteOrderCommand {
     orderId: string | undefined;
-    actualCompletionTimeMinutes: number;
+    actualCompletionTimeMinutes: number | undefined;
     completionNotes: string | undefined;
 }
 
@@ -9113,7 +9182,17 @@ export class DashboardStatsDto implements IDashboardStatsDto {
     myActiveOrdersCount!: number;
     thisMonthCompletedOrders!: number;
     lastMonthCompletedOrders!: number;
+    todayEarnings!: number;
+    todayCompletedCount!: number;
+    weekEarnings!: number;
+    weekCompletedCount!: number;
+    lastMonthEarnings!: number;
     currentPeriodEarnings!: number;
+    currentPayPeriodStart!: Date | undefined;
+    currentPayPeriodEnd!: Date | undefined;
+    nextPayoutDate!: Date | undefined;
+    averageRating!: number | undefined;
+    ratingCount!: number;
     latestInvoiceStatus!: string | undefined;
 
     constructor(data?: IDashboardStatsDto) {
@@ -9131,7 +9210,17 @@ export class DashboardStatsDto implements IDashboardStatsDto {
             this.myActiveOrdersCount = Data["myActiveOrdersCount"];
             this.thisMonthCompletedOrders = Data["thisMonthCompletedOrders"];
             this.lastMonthCompletedOrders = Data["lastMonthCompletedOrders"];
+            this.todayEarnings = Data["todayEarnings"];
+            this.todayCompletedCount = Data["todayCompletedCount"];
+            this.weekEarnings = Data["weekEarnings"];
+            this.weekCompletedCount = Data["weekCompletedCount"];
+            this.lastMonthEarnings = Data["lastMonthEarnings"];
             this.currentPeriodEarnings = Data["currentPeriodEarnings"];
+            this.currentPayPeriodStart = Data["currentPayPeriodStart"] ? new Date(Data["currentPayPeriodStart"].toString()) : undefined as any;
+            this.currentPayPeriodEnd = Data["currentPayPeriodEnd"] ? new Date(Data["currentPayPeriodEnd"].toString()) : undefined as any;
+            this.nextPayoutDate = Data["nextPayoutDate"] ? new Date(Data["nextPayoutDate"].toString()) : undefined as any;
+            this.averageRating = Data["averageRating"];
+            this.ratingCount = Data["ratingCount"];
             this.latestInvoiceStatus = Data["latestInvoiceStatus"];
         }
     }
@@ -9149,7 +9238,17 @@ export class DashboardStatsDto implements IDashboardStatsDto {
         data["myActiveOrdersCount"] = this.myActiveOrdersCount;
         data["thisMonthCompletedOrders"] = this.thisMonthCompletedOrders;
         data["lastMonthCompletedOrders"] = this.lastMonthCompletedOrders;
+        data["todayEarnings"] = this.todayEarnings;
+        data["todayCompletedCount"] = this.todayCompletedCount;
+        data["weekEarnings"] = this.weekEarnings;
+        data["weekCompletedCount"] = this.weekCompletedCount;
+        data["lastMonthEarnings"] = this.lastMonthEarnings;
         data["currentPeriodEarnings"] = this.currentPeriodEarnings;
+        data["currentPayPeriodStart"] = this.currentPayPeriodStart ? this.currentPayPeriodStart.toISOString() : undefined as any;
+        data["currentPayPeriodEnd"] = this.currentPayPeriodEnd ? this.currentPayPeriodEnd.toISOString() : undefined as any;
+        data["nextPayoutDate"] = this.nextPayoutDate ? this.nextPayoutDate.toISOString() : undefined as any;
+        data["averageRating"] = this.averageRating;
+        data["ratingCount"] = this.ratingCount;
         data["latestInvoiceStatus"] = this.latestInvoiceStatus;
         return data;
     }
@@ -9160,7 +9259,17 @@ export interface IDashboardStatsDto {
     myActiveOrdersCount: number;
     thisMonthCompletedOrders: number;
     lastMonthCompletedOrders: number;
+    todayEarnings: number;
+    todayCompletedCount: number;
+    weekEarnings: number;
+    weekCompletedCount: number;
+    lastMonthEarnings: number;
     currentPeriodEarnings: number;
+    currentPayPeriodStart: Date | undefined;
+    currentPayPeriodEnd: Date | undefined;
+    nextPayoutDate: Date | undefined;
+    averageRating: number | undefined;
+    ratingCount: number;
     latestInvoiceStatus: string | undefined;
 }
 
@@ -11531,6 +11640,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
     refreshToken!: string | undefined;
     refreshTokenExpiresAt!: Date | undefined;
     csrfToken!: string | undefined;
+    role!: string | undefined;
 
     constructor(data?: IJwtTokenResponse) {
         if (data) {
@@ -11551,6 +11661,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
             this.refreshToken = Data["refreshToken"];
             this.refreshTokenExpiresAt = Data["refreshTokenExpiresAt"] ? new Date(Data["refreshTokenExpiresAt"].toString()) : undefined as any;
             this.csrfToken = Data["csrfToken"];
+            this.role = Data["role"];
         }
     }
 
@@ -11571,6 +11682,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
         data["refreshToken"] = this.refreshToken;
         data["refreshTokenExpiresAt"] = this.refreshTokenExpiresAt ? this.refreshTokenExpiresAt.toISOString() : undefined as any;
         data["csrfToken"] = this.csrfToken;
+        data["role"] = this.role;
         return data;
     }
 }
@@ -11584,6 +11696,7 @@ export interface IJwtTokenResponse {
     refreshToken: string | undefined;
     refreshTokenExpiresAt: Date | undefined;
     csrfToken: string | undefined;
+    role: string | undefined;
 }
 
 export class LanguageListItem implements ILanguageListItem {
@@ -12027,6 +12140,8 @@ export class OrderAddress implements IOrderAddress {
     city!: string | undefined;
     zipCode!: string | undefined;
     country!: string | undefined;
+    latitude!: number | undefined;
+    longitude!: number | undefined;
 
     constructor(data?: IOrderAddress) {
         if (data) {
@@ -12043,6 +12158,8 @@ export class OrderAddress implements IOrderAddress {
             this.city = Data["city"];
             this.zipCode = Data["zipCode"];
             this.country = Data["country"];
+            this.latitude = Data["latitude"];
+            this.longitude = Data["longitude"];
         }
     }
 
@@ -12059,6 +12176,8 @@ export class OrderAddress implements IOrderAddress {
         data["city"] = this.city;
         data["zipCode"] = this.zipCode;
         data["country"] = this.country;
+        data["latitude"] = this.latitude;
+        data["longitude"] = this.longitude;
         return data;
     }
 }
@@ -12068,6 +12187,8 @@ export interface IOrderAddress {
     city: string | undefined;
     zipCode: string | undefined;
     country: string | undefined;
+    latitude: number | undefined;
+    longitude: number | undefined;
 }
 
 export class OrderAnalyticsDto implements IOrderAnalyticsDto {
@@ -12327,6 +12448,7 @@ export class OrderItem implements IOrderItem {
     promoDiscountAmount!: number | undefined;
     estimatedTime!: number;
     actualCompletionTime!: number | undefined;
+    completedAt!: Date | undefined;
     completionNotes!: string | undefined;
     orderStatus!: Code;
     confirmationCode!: string | undefined;
@@ -12345,6 +12467,9 @@ export class OrderItem implements IOrderItem {
     orderNotes!: OrderNoteDto[] | undefined;
     orderIssues!: OrderIssueDto[] | undefined;
     review!: OrderReviewDto;
+    estimatedCleanerPay!: number | undefined;
+    isAssignedToCurrentUser!: boolean;
+    hasAfterPhotos!: boolean;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -12383,6 +12508,7 @@ export class OrderItem implements IOrderItem {
             this.promoDiscountAmount = Data["promoDiscountAmount"];
             this.estimatedTime = Data["estimatedTime"];
             this.actualCompletionTime = Data["actualCompletionTime"];
+            this.completedAt = Data["completedAt"] ? new Date(Data["completedAt"].toString()) : undefined as any;
             this.completionNotes = Data["completionNotes"];
             this.orderStatus = Data["orderStatus"] ? Code.fromJS(Data["orderStatus"]) : undefined as any;
             this.confirmationCode = Data["confirmationCode"];
@@ -12425,6 +12551,9 @@ export class OrderItem implements IOrderItem {
                     this.orderIssues!.push(OrderIssueDto.fromJS(item));
             }
             this.review = Data["review"] ? OrderReviewDto.fromJS(Data["review"]) : undefined as any;
+            this.estimatedCleanerPay = Data["estimatedCleanerPay"];
+            this.isAssignedToCurrentUser = Data["isAssignedToCurrentUser"];
+            this.hasAfterPhotos = Data["hasAfterPhotos"];
         }
     }
 
@@ -12463,6 +12592,7 @@ export class OrderItem implements IOrderItem {
         data["promoDiscountAmount"] = this.promoDiscountAmount;
         data["estimatedTime"] = this.estimatedTime;
         data["actualCompletionTime"] = this.actualCompletionTime;
+        data["completedAt"] = this.completedAt ? this.completedAt.toISOString() : undefined as any;
         data["completionNotes"] = this.completionNotes;
         data["orderStatus"] = this.orderStatus ? this.orderStatus.toJSON() : undefined as any;
         data["confirmationCode"] = this.confirmationCode;
@@ -12505,6 +12635,9 @@ export class OrderItem implements IOrderItem {
                 data["orderIssues"].push(item ? item.toJSON() : undefined as any);
         }
         data["review"] = this.review ? this.review.toJSON() : undefined as any;
+        data["estimatedCleanerPay"] = this.estimatedCleanerPay;
+        data["isAssignedToCurrentUser"] = this.isAssignedToCurrentUser;
+        data["hasAfterPhotos"] = this.hasAfterPhotos;
         return data;
     }
 }
@@ -12530,6 +12663,7 @@ export interface IOrderItem {
     promoDiscountAmount: number | undefined;
     estimatedTime: number;
     actualCompletionTime: number | undefined;
+    completedAt: Date | undefined;
     completionNotes: string | undefined;
     orderStatus: Code;
     confirmationCode: string | undefined;
@@ -12548,6 +12682,9 @@ export interface IOrderItem {
     orderNotes: OrderNoteDto[] | undefined;
     orderIssues: OrderIssueDto[] | undefined;
     review: OrderReviewDto;
+    estimatedCleanerPay: number | undefined;
+    isAssignedToCurrentUser: boolean;
+    hasAfterPhotos: boolean;
 }
 
 export class OrderListItem implements IOrderListItem {
@@ -12556,6 +12693,7 @@ export class OrderListItem implements IOrderListItem {
     customerEmail!: string | undefined;
     customerPhone!: string | undefined;
     customerAddress!: string | undefined;
+    customerAddressApproximate!: string | undefined;
     displayOrderNumber!: string | undefined;
     rooms!: number;
     bathrooms!: number;
@@ -12582,6 +12720,9 @@ export class OrderListItem implements IOrderListItem {
     availableSpots!: number;
     assignedEmployeesCount!: number;
     hasAvailableSpots!: boolean;
+    estimatedCleanerPay!: number | undefined;
+    customerAddressLatitude!: number | undefined;
+    customerAddressLongitude!: number | undefined;
 
     constructor(data?: IOrderListItem) {
         if (data) {
@@ -12599,6 +12740,7 @@ export class OrderListItem implements IOrderListItem {
             this.customerEmail = Data["customerEmail"];
             this.customerPhone = Data["customerPhone"];
             this.customerAddress = Data["customerAddress"];
+            this.customerAddressApproximate = Data["customerAddressApproximate"];
             this.displayOrderNumber = Data["displayOrderNumber"];
             this.rooms = Data["rooms"];
             this.bathrooms = Data["bathrooms"];
@@ -12643,6 +12785,9 @@ export class OrderListItem implements IOrderListItem {
             this.availableSpots = Data["availableSpots"];
             this.assignedEmployeesCount = Data["assignedEmployeesCount"];
             this.hasAvailableSpots = Data["hasAvailableSpots"];
+            this.estimatedCleanerPay = Data["estimatedCleanerPay"];
+            this.customerAddressLatitude = Data["customerAddressLatitude"];
+            this.customerAddressLongitude = Data["customerAddressLongitude"];
         }
     }
 
@@ -12660,6 +12805,7 @@ export class OrderListItem implements IOrderListItem {
         data["customerEmail"] = this.customerEmail;
         data["customerPhone"] = this.customerPhone;
         data["customerAddress"] = this.customerAddress;
+        data["customerAddressApproximate"] = this.customerAddressApproximate;
         data["displayOrderNumber"] = this.displayOrderNumber;
         data["rooms"] = this.rooms;
         data["bathrooms"] = this.bathrooms;
@@ -12704,6 +12850,9 @@ export class OrderListItem implements IOrderListItem {
         data["availableSpots"] = this.availableSpots;
         data["assignedEmployeesCount"] = this.assignedEmployeesCount;
         data["hasAvailableSpots"] = this.hasAvailableSpots;
+        data["estimatedCleanerPay"] = this.estimatedCleanerPay;
+        data["customerAddressLatitude"] = this.customerAddressLatitude;
+        data["customerAddressLongitude"] = this.customerAddressLongitude;
         return data;
     }
 }
@@ -12714,6 +12863,7 @@ export interface IOrderListItem {
     customerEmail: string | undefined;
     customerPhone: string | undefined;
     customerAddress: string | undefined;
+    customerAddressApproximate: string | undefined;
     displayOrderNumber: string | undefined;
     rooms: number;
     bathrooms: number;
@@ -12740,6 +12890,9 @@ export interface IOrderListItem {
     availableSpots: number;
     assignedEmployeesCount: number;
     hasAvailableSpots: boolean;
+    estimatedCleanerPay: number | undefined;
+    customerAddressLatitude: number | undefined;
+    customerAddressLongitude: number | undefined;
 }
 
 export class OrderNoteDto implements IOrderNoteDto {

@@ -1,24 +1,12 @@
-using Cleansia.Core.AppServices.Features.DataRetention;
+using Cleansia.Functions.Core.Handlers;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Functions.Functions;
 
-/// <summary>
-/// Nightly cleanup of stale refresh tokens. Runs at 03:30 UTC (30 min after the
-/// main data-retention job so they don't contend for DB connections). Tokens
-/// that are revoked or expired AND older than 90 days are hard-deleted — we
-/// keep recent revoked ones to preserve rotation-theft detection history.
-/// </summary>
-public class RefreshTokenCleanupTimerFunction(
-    IRefreshTokenCleanupService cleanupService,
-    ILogger<RefreshTokenCleanupTimerFunction> logger)
+// T-0121 / ADR-0002 D5 step 1 — thin trigger shell; body lives in RefreshTokenCleanupTimerHandler (Core).
+public class RefreshTokenCleanupTimerFunction(RefreshTokenCleanupTimerHandler handler)
 {
     [Function("RefreshTokenCleanup")]
-    public async Task Run([TimerTrigger("0 30 3 * * *")] TimerInfo timer, CancellationToken ct)
-    {
-        logger.LogInformation("RefreshTokenCleanup timer triggered at {Time}", DateTime.UtcNow);
-        var deleted = await cleanupService.CleanupAsync(cancellationToken: ct);
-        logger.LogInformation("RefreshTokenCleanup completed; deleted {Count} tokens", deleted);
-    }
+    public Task Run([TimerTrigger("0 30 3 * * *")] TimerInfo timer, CancellationToken ct)
+        => handler.HandleAsync(ct);
 }

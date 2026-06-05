@@ -8,4 +8,5 @@ public class PhysicalPolicy
     public const string EmployeeOrAdmin = "EmployeeOrAdmin";  // Employee | Admin
     public const string AdminOnly = "AdminOnly";        // Admin
     public const string OwnerOrElevated = "OwnerOrElevated";  // owner OR (Employee | Admin)
+    public const string Deny = "Deny";              // always 403 — fail-closed sentinel for unmapped permissions
 }

@@ -10,6 +10,7 @@ import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.core.snackbar.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -66,6 +67,18 @@ class MembershipViewModel @Inject constructor(
     /** Plan catalog driving the monthly/yearly switcher on the subscribe page. */
     val plans: StateFlow<List<MembershipPlanDto>> = _plans.asStateFlow()
 
+    /**
+     * Client idempotency token for the CURRENT logical subscribe attempt
+     * (T-0111 / LG-SEC-02). Generated ONCE in [startSubscribe] (Phase-1) and
+     * replayed UNCHANGED on every [confirmSubscribe] (Phase-2) so the backend
+     * collapses retried/double-tapped confirms — PaymentSheet returning
+     * Completed twice, a network retry, or a double-tap surviving [_submitting]
+     * — onto a SINGLE Stripe subscription instead of double-charging. A fresh
+     * subscribe attempt (a new [startSubscribe], e.g. after a cancellation)
+     * generates a NEW token so a genuine re-subscribe is not blocked.
+     */
+    private var subscribeIdempotencyToken: String? = null
+
     init {
         viewModelScope.launch { repository.refresh() }
         viewModelScope.launch { _plans.value = repository.getPlans() }
@@ -83,6 +96,10 @@ class MembershipViewModel @Inject constructor(
     suspend fun startSubscribe(planCode: String): SubscribeOutcome {
         if (_submitting.value) return SubscribeOutcome.Failed
         _submitting.value = true
+        // New logical subscribe attempt → mint a fresh idempotency token. It is
+        // held until the next startSubscribe and replayed on every confirm
+        // (Phase-2) retry for THIS attempt (T-0111 / LG-SEC-02 AC4).
+        subscribeIdempotencyToken = UUID.randomUUID().toString()
         try {
             val resp = repository.subscribePhase1(planCode)
             if (resp == null) {
@@ -111,7 +128,14 @@ class MembershipViewModel @Inject constructor(
     suspend fun confirmSubscribe(planCode: String): SubscribeOutcome {
         _submitting.value = true
         try {
-            val resp = repository.subscribePhase2(planCode)
+            // Replay the SAME token minted at Phase-1. Do NOT regenerate here —
+            // that is what lets the backend collapse a double-tap / network retry /
+            // a second PaymentSheet Completed onto one Stripe subscription. Fall
+            // back to a fresh token only if confirm is somehow reached without a
+            // prior startSubscribe (defensive — should not happen in the UI flow).
+            val token = subscribeIdempotencyToken
+                ?: UUID.randomUUID().toString().also { subscribeIdempotencyToken = it }
+            val resp = repository.subscribePhase2(planCode, token)
             if (resp == null || resp.membershipId.isEmpty()) {
                 snackbar.showError(appContext.getString(R.string.error_generic_network))
                 return SubscribeOutcome.Failed

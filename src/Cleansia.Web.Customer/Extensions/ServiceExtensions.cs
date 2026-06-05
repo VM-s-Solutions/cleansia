@@ -1,18 +1,16 @@
 using System.Security.Claims;
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.OpenApi;
 using System.Text;
 using Cleansia.Config;
-using Cleansia.Core.AppServices.Common;
+using Cleansia.Config.Services;
 using Cleansia.Infra.Database;
 using Cleansia.Web.Customer.Middlewares;
 using Cleansia.Web.Customer.SwaggerSchemaFilters;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Cleansia.Core.AppServices.Authentication;
-using Cleansia.Core.Domain.Enums;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 
 namespace Cleansia.Web.Customer.Extensions;
@@ -30,7 +28,7 @@ public static class ServiceExtensions
             .AddApiVersioningServices()
             .AddSwagger()
             .AddJwt(configuration)
-            .AddUserAuthorization();
+            .AddCleansiaAuthorization(configuration);
     }
 
     public static void MigrateDatabase(this IApplicationBuilder app, IWebHostEnvironment environment)
@@ -191,56 +189,9 @@ public static class ServiceExtensions
             };
         });
 
-        services.AddAuthorizationBuilder()
-            .SetDefaultPolicy(new AuthorizationPolicyBuilder()
-                .RequireAuthenticatedUser()
-                .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
-                .Build())
-            .AddPolicy("AdminOnly", policy => policy
-                .RequireRole(UserRole.Admin));
-
-        return services;
-    }
-
-    public static IServiceCollection AddUserAuthorization(this IServiceCollection services)
-    {
-        services.AddAuthorizationBuilder()
-            .AddPolicy(PhysicalPolicy.Authenticated,
-                p => p.RequireAuthenticatedUser())
-            // Customer = authenticated user that is NOT Employee/Admin (no dedicated role claim).
-            .AddPolicy(PhysicalPolicy.CustomerOnly,
-                p => p.RequireAssertion(ctx =>
-                {
-                    var user = ctx.User;
-                    return user.Identity?.IsAuthenticated == true
-                        && !user.IsInRole(UserProfile.Employee.ToString())
-                        && !user.IsInRole(UserProfile.Administrator.ToString());
-                }))
-            .AddPolicy(PhysicalPolicy.EmployeeOrAdmin,
-                p => p.RequireRole(
-                    UserProfile.Employee.ToString(),
-                    UserProfile.Administrator.ToString()))
-            .AddPolicy(PhysicalPolicy.AdminOnly,
-                p => p.RequireRole(UserProfile.Administrator.ToString()))
-            .AddPolicy(PhysicalPolicy.OwnerOrElevated, p =>
-                p.RequireAssertion(ctx =>
-                {
-                    var user = ctx.User;
-
-                    if (user.IsInRole(UserProfile.Administrator.ToString()) ||
-                        user.IsInRole(UserProfile.Employee.ToString()))
-                        return true;
-
-                    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                    if (ctx.Resource is HttpContext http &&
-                        http.Request.RouteValues.TryGetValue("id", out var routeId))
-                    {
-                        return routeId?.ToString() == sub;
-                    }
-
-                    return false;
-                }));
-
+        // Authorization policies (default policy + all physical policies + the duplicate-free
+        // AdminOnly) are now registered once by the shared AddCleansiaAuthorization (ADR-0001 §D4).
+        // AddJwt keeps ONLY the JWT bearer setup.
         return services;
     }
 }

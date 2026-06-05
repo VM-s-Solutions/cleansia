@@ -100,7 +100,10 @@ public class Policy
     public const string CanCreateDispute = nameof(CanCreateDispute); // Authenticated (Customers can create disputes)
     public const string CanViewDispute = nameof(CanViewDispute); // Authenticated (Users can view their own disputes)
     public const string CanViewDisputeList = nameof(CanViewDisputeList); // Authenticated (Users can view their dispute list)
-    public const string CanRespondToDispute = nameof(CanRespondToDispute); // Admin (Only admins can respond/add messages)
+    // Customer self-reply on their own dispute (IsStaffMessage=false). Split from CanRespondToDispute
+    // per ADR-0001 D2 Note C — the customer path must stay CustomerOnly [OWN-DATA].
+    public const string CanAddDisputeMessage = nameof(CanAddDisputeMessage); // Customer (own dispute)
+    public const string CanRespondToDispute = nameof(CanRespondToDispute); // Admin (staff reply only — IsStaffMessage=true)
     public const string CanResolveDispute = nameof(CanResolveDispute); // Admin (Only admins can resolve disputes)
     public const string CanUpdateDisputeStatus = nameof(CanUpdateDisputeStatus); // Admin (Only admins can update status)
     public const string CanUploadDisputeEvidence = nameof(CanUploadDisputeEvidence); // Customer (Customers can upload evidence to their own disputes)

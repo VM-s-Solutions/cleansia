@@ -1,9 +1,8 @@
-using System.Threading.RateLimiting;
+using Cleansia.Config.RateLimiting;
 using Cleansia.ServiceDefaults;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +22,37 @@ public abstract class CleansiaStartupBase(IConfiguration configuration, IWebHost
     protected abstract Type RequestLoggingMiddlewareType { get; }
 
     protected abstract void AddProjectServices(IServiceCollection services);
+
+    // T-0123 / BSP-5 (AC2) — Swagger fail-closed allow-list. The old gate (`!env.IsProduction()`)
+    // published the full API surface on Staging / QA / Demo and on any mis-set ASPNETCORE_ENVIRONMENT.
+    // Swagger now mounts ONLY in Development; every other env string (Production, Staging, QA, Demo, or
+    // an unrecognized value) fails closed. Development DX is preserved.
+    public static bool SwaggerShouldServe(string environmentName) =>
+        string.Equals(environmentName, Environments.Development, StringComparison.Ordinal);
+
+    // T-0123 / BSP-5 (AC3), ADR-0003 D3 pure-guard pattern (mirrors
+    // RateLimitPolicies.ValidateForwardedHeadersConfig). If Swagger WOULD serve (the Development
+    // branch) but CorsOrigins carries a public `cleansia.cz` origin — i.e. a prod-shaped config running
+    // under a mis-set env string — the host REFUSES TO BOOT, so Swagger can never be exposed on a
+    // production-shaped deployment. No-op otherwise (local origins, no origins, or Swagger off).
+    public static void GuardSwaggerExposure(bool swaggerWouldServe, string[] corsOrigins)
+    {
+        if (!swaggerWouldServe) return;
+
+        var publicOrigin = (corsOrigins ?? [])
+            .FirstOrDefault(o => !string.IsNullOrWhiteSpace(o)
+                && o.Contains("cleansia.cz", StringComparison.OrdinalIgnoreCase));
+
+        if (publicOrigin is not null)
+        {
+            throw new InvalidOperationException(
+                "Swagger would serve (Development branch) but CorsOrigins contains a public origin " +
+                $"('{publicOrigin}'). This is a prod-shaped config under a mis-set ASPNETCORE_ENVIRONMENT. " +
+                "Refusing to boot rather than expose the API surface (T-0123 / BSP-5, ADR-0003 D3). " +
+                "Set ASPNETCORE_ENVIRONMENT correctly (Swagger is Development-only) or remove the public " +
+                "cleansia.cz origin from CorsOrigins.");
+        }
+    }
 
     /// <summary>
     /// Host-specific middleware that runs after authentication but before
@@ -66,31 +96,19 @@ public abstract class CleansiaStartupBase(IConfiguration configuration, IWebHost
             });
         });
 
-        services.AddRateLimiter(options =>
-        {
-            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-            // Strict policy for credential / state-changing endpoints
-            // (login, register, password reset, order create/update,
-            // payment). 10/min is intentional — it's a brute-force
-            // defense, not a UX throttle.
-            options.AddFixedWindowLimiter("auth", limiterOptions =>
-            {
-                limiterOptions.PermitLimit = 10;
-                limiterOptions.Window = TimeSpan.FromMinutes(1);
-                limiterOptions.QueueLimit = 0;
-            });
-            // Loose policy for read-only / idempotent endpoints the UI
-            // calls frequently while the user edits a form (price
-            // quote, feature-flag probe, GDPR view-data). 60/min lets
-            // the wizard re-quote on every meaningful change without
-            // wedging the user behind a 429.
-            options.AddFixedWindowLimiter("interactive", limiterOptions =>
-            {
-                limiterOptions.PermitLimit = 60;
-                limiterOptions.Window = TimeSpan.FromMinutes(1);
-                limiterOptions.QueueLimit = 0;
-            });
-        });
+        // ADR-0003 (ADR-RATELIMIT) — partitioned "auth"/"interactive" policies (per real client IP
+        // for anonymous, per JWT sub for authenticated), the global anonymous cardinality cap, and
+        // the Retry-After/observability rejection behavior. Defined ONCE here for all five hosts;
+        // policy NAMES are preserved so existing [EnableRateLimiting] sites are untouched. See D1/D2/
+        // D6/D7/D8 + the partition-key functions in RateLimitPolicies.
+        RateLimitPolicies.AddCleansiaRateLimiter(services, Configuration);
+
+        // ADR-0003 D3 — establish the real client IP behind the App Service front end (trusted
+        // X-Forwarded-For, config-driven ForwardLimit + narrow KnownNetworks/KnownProxies) and the
+        // FAIL-CLOSED startup guard: in non-Development the host REFUSES TO BOOT on an unset or
+        // over-broad trust config. Without this a per-IP partition collapses to one bucket (the
+        // front-end IP). Must precede UseForwardedHeaders in the pipeline below.
+        RateLimitPolicies.ConfigureForwardedHeaders(services, Configuration, Environment);
 
         services.AddSwaggerGen();
 
@@ -107,7 +125,21 @@ public abstract class CleansiaStartupBase(IConfiguration configuration, IWebHost
             return next();
         });
 
-        if (!env.IsProduction())
+        // ADR-0003 D4 — UseForwardedHeaders at the TOP (before RequestLogging and UseRateLimiter) so
+        // BOTH the audit-log IP and the rate-limiter per-IP partition read the REAL client IP, not
+        // the App Service front-end IP. Trust boundary + fail-closed guard are configured in
+        // ConfigureServices via RateLimitPolicies.ConfigureForwardedHeaders.
+        app.UseForwardedHeaders();
+
+        // T-0123 / BSP-5 — Swagger fail-closed gate (AC2: Development-only allow-list) + the ADR-0003
+        // D3 boot guard (AC3): refuse to boot if Swagger would serve under a prod-shaped CORS config.
+        // Stays at the ADR-0003 pipeline position (EnableBuffering -> UseForwardedHeaders -> [Swagger
+        // if Development] -> RequestLogging ...).
+        var swaggerShouldServe = SwaggerShouldServe(env.EnvironmentName);
+        GuardSwaggerExposure(
+            swaggerShouldServe,
+            Configuration.GetSection("CorsOrigins").Get<string[]>() ?? []);
+        if (swaggerShouldServe)
         {
             app.UseSwagger();
             app.UseSwaggerUI(c =>
@@ -129,11 +161,14 @@ public abstract class CleansiaStartupBase(IConfiguration configuration, IWebHost
         });
         app.UseRouting();
         app.UseCors(CorsPolicyName);
-        app.UseRateLimiter();
+        // ADR-0003 D4 — UseRateLimiter runs AFTER UseAuthentication so HttpContext.User is populated
+        // and the per-`sub` partition branch can fire (anonymous → per-IP, authenticated → per-sub).
         app.UseAuthentication();
+        app.UseRateLimiter();
         // Hook for host-specific middleware that needs HttpContext.User populated
         // but should run before authorization (e.g. CSRF validation on web hosts;
-        // mobile leaves this empty since it has no cookie surface).
+        // mobile leaves this empty since it has no cookie surface). ADR-0003 D4 keeps this CSRF hop
+        // exactly here — after the limiter band, before UseAuthorization (unchanged position).
         UseHostAuthMiddleware(app);
         app.UseAuthorization();
 

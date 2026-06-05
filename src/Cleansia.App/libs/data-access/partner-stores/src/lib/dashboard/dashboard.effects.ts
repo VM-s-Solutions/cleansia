@@ -107,7 +107,7 @@ export class DashboardEffects {
       ofType(DashboardActions.loadTimeAnalytics),
       mergeMap(({ employeeId, startDate, endDate }) =>
         this.partnerClient.dashboardClient
-          .getTimeAnalytics(employeeId, startDate, endDate)
+          .getTimeAnalytics(startDate, endDate, employeeId)
           .pipe(
             map((data) => DashboardActions.loadTimeAnalyticsSuccess({ data })),
             catchError((error) =>
@@ -126,7 +126,7 @@ export class DashboardEffects {
       ofType(DashboardActions.loadOrderAnalytics),
       mergeMap(({ employeeId, startDate, endDate }) =>
         this.partnerClient.dashboardClient
-          .getOrderAnalytics(employeeId, startDate, endDate)
+          .getOrderAnalytics(startDate, endDate, employeeId)
           .pipe(
             map((data) => DashboardActions.loadOrderAnalyticsSuccess({ data })),
             catchError((error) =>

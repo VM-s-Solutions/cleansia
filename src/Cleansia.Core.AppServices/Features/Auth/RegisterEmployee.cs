@@ -66,12 +66,21 @@ public class RegisterEmployee
         public async Task<BusinessResult<bool>> Handle(Command command, CancellationToken cancellationToken)
         {
             var userEntity = await userRepository.GetByEmailAsync(command.Email, cancellationToken);
+            // T-0106 / IDA-SEC-03: email the RAW confirmation token; the entity persists only its hash.
+            // New user -> raw from CreateWithPassword; existing unconfirmed user -> refresh to get a raw
+            // token (the stored ConfirmationCode is a hash and cannot be emailed).
+            string rawConfirmationToken;
             if (userEntity is null)
             {
                 userEntity = User.CreateWithPassword(command.Email, command.Password, command.FirstName, command.LastName, UserProfile.Employee, command.Language);
+                rawConfirmationToken = userEntity.RawConfirmationToken!;
                 userRepository.Add(userEntity);
                 cartRepository.Add(Cart.CreateWithUser(userEntity));
                 employeeRepository.Add(Employee.CreateWithUser(userEntity));
+            }
+            else
+            {
+                rawConfirmationToken = userEntity.UpdateConfirmationCode();
             }
 
             if (userEntity.Employee is null)
@@ -81,7 +90,7 @@ public class RegisterEmployee
 
             var userName = $"{userEntity.FirstName} {userEntity.LastName}";
 
-            await emailService.SendEmailConfirmationAsync(userEntity.Email, userName, userEntity.ConfirmationCode!, command.Language, cancellationToken);
+            await emailService.SendEmailConfirmationAsync(userEntity.Email, userName, rawConfirmationToken, command.Language, cancellationToken);
 
             return BusinessResult.Success(true);
         }

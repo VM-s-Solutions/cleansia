@@ -27,7 +27,15 @@ public class DeactivateAdminUser
                 .MustAsync(async (userId, ct) =>
                     await userRepository.GetAll()
                         .AnyAsync(u => u.Id == userId && u.Profile == UserProfile.Administrator, ct))
-                .WithMessage(BusinessErrorMessage.AdminUserNotFound);
+                .WithMessage(BusinessErrorMessage.AdminUserNotFound)
+                // T-0107 (IDA-SEC-08): never deactivate the last ACTIVE administrator — that would
+                // lock the tenant out of its own admin console with no recovery. Reject when the
+                // target is the only active admin (the active-admin count would drop to 0).
+                .MustAsync(async (userId, ct) =>
+                    await userRepository.GetAll()
+                        .CountAsync(u => u.Profile == UserProfile.Administrator && u.IsActive
+                            && u.Id != userId, ct) > 0)
+                .WithMessage(BusinessErrorMessage.CannotDeactivateLastAdmin);
 
             RuleFor(x => x.UserId)
                 .Must(userId => userId != userSessionProvider.GetUserId())

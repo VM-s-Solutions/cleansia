@@ -16,13 +16,16 @@ public class AzureStorageQueueClient(QueueServiceClient queueServiceClient) : IQ
         var queueClient = queueServiceClient.GetQueueClient(queueName);
         await queueClient.CreateIfNotExistsAsync(cancellationToken: ct);
 
-        // Send the JSON as-is. The QueueServiceClient is configured with
-        // `MessageEncoding = Base64` (see QueueExtensions) so the SDK
-        // base64-encodes on the wire and the Functions queue trigger
-        // base64-decodes on the way in. Doing it both at the application
-        // layer AND letting the SDK do it again was the previous bug
-        // surface — when the encoding setting flips, things break silently.
-        var json = JsonSerializer.Serialize(message, JsonOptions);
+        // A string message is an ALREADY-serialized body (the post-commit dispatch path sends a
+        // pre-serialized QueueEnvelope<T> as PendingMessage.Body — ADR-0002 D1). Send it verbatim;
+        // re-serializing a string would JSON-quote/escape it and corrupt the wire body. Direct
+        // (Bucket-B/C) callers pass a typed message and get serialized here.
+        var json = message is string raw ? raw : JsonSerializer.Serialize(message, JsonOptions);
+
+        // The QueueServiceClient is configured with `MessageEncoding = Base64` (see QueueExtensions)
+        // so the SDK base64-encodes on the wire and the Functions queue trigger base64-decodes on the
+        // way in. Doing it both at the application layer AND letting the SDK do it again was the
+        // previous bug surface — when the encoding setting flips, things break silently.
         await queueClient.SendMessageAsync(json, cancellationToken: ct);
     }
 }

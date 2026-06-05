@@ -24,7 +24,11 @@ public sealed class ReceiptService(
     ILogger<ReceiptService> logger)
     : IReceiptService
 {
-    public async Task<OrderReceipt> GenerateReceiptAsync(Order order, string languageCode, CancellationToken cancellationToken = default)
+    // T-0119 / ADR-0004 D-F4.1 phase 1 — RESERVE. Allocate the sequence + Create + Add the row and
+    // mark it born-retry-eligible for any enforcement mode != None. Does NOT register with the
+    // authority, does NOT generate the PDF, and does NOT commit — the handler owns the claim commit,
+    // which MUST land BEFORE the irreversible external effects in RealizeFiscalAndPdfAsync.
+    public async Task<OrderReceipt> ReserveReceiptAsync(Order order, string languageCode, CancellationToken cancellationToken = default)
     {
         var language = await languageRepository.GetByCodeAsync(languageCode, cancellationToken);
         if (language == null)
@@ -32,7 +36,8 @@ public sealed class ReceiptService(
             throw new InvalidOperationException(BusinessErrorMessage.LanguageNotFound);
         }
 
-        // Try to get company info by customer's country, fallback to any active
+        // Try to get company info by customer's country, fallback to any active. Resolved here too so a
+        // misconfiguration (no active company) fails BEFORE the claim is staged, not after.
         var countryId = order.CustomerAddress?.CountryId;
         var companyInfo = countryId != null
             ? await companyInfoRepository.GetActiveByCountryAsync(countryId, cancellationToken)
@@ -45,6 +50,9 @@ public sealed class ReceiptService(
             throw new InvalidOperationException(BusinessErrorMessage.CompanyInfoNotFound);
         }
 
+        // NOTE (T-0119 scope): GetNextSequenceForYearAsync remains COUNT(*)+1 — the gapless,
+        // monotonic, atomic allocator is the separate FISCAL-SEQ ticket (T-0220). The 23505 backstop
+        // in the handler collapses the rare concurrent collision on either unique index.
         var currentYear = DateTime.UtcNow.Year;
         var sequence = await receiptRepository.GetNextSequenceForYearAsync(currentYear, cancellationToken);
         var receiptNumber = string.Format(Constants.ReceiptNumberFormat.Pattern, currentYear, sequence);
@@ -53,9 +61,39 @@ public sealed class ReceiptService(
         var blobName = $"{currentYear}/{order.DisplayOrderNumber}/{fileName}";
 
         var receipt = OrderReceipt.Create(order.Id, receiptNumber, fileName, blobName, language.Id);
-        receiptRepository.Add(receipt);
 
-        var receiptData = CreateReceiptData(order, receiptNumber, companyInfo);
+        // C-A — the claim is BORN RETRY-ELIGIBLE for any fiscal mode != None. A crash between the claim
+        // commit and the register call leaves FiscalRegistrationFailed == false, FiscalCode == null;
+        // setting FiscalNextRetryAt now (and widening GetDueForRetryAsync) makes that committed-but-
+        // unregistered row sweepable by the retry job. SetFiscalData clears it on a later success.
+        var enforcementMode = await ResolveEnforcementModeAsync(countryId, cancellationToken);
+        if (enforcementMode != FiscalEnforcementMode.None)
+        {
+            receipt.ScheduleImmediateFiscalRetry();
+        }
+
+        receiptRepository.Add(receipt);
+        return receipt;
+    }
+
+    // T-0119 / ADR-0004 D-F4.1 phase 2 — REALIZE the external effects for an already-claimed receipt:
+    // register with the authority (stamp on success / mark failed on failure), then generate + upload
+    // the PDF. Called AFTER the claim commit, so a redelivery is already deduped by the committed row.
+    public async Task RealizeFiscalAndPdfAsync(Order order, OrderReceipt receipt, string languageCode, CancellationToken cancellationToken = default)
+    {
+        var countryId = order.CustomerAddress?.CountryId;
+        var companyInfo = countryId != null
+            ? await companyInfoRepository.GetActiveByCountryAsync(countryId, cancellationToken)
+            : null;
+
+        companyInfo ??= await companyInfoRepository.GetActiveCompanyInfoAsync(cancellationToken);
+
+        if (companyInfo == null)
+        {
+            throw new InvalidOperationException(BusinessErrorMessage.CompanyInfoNotFound);
+        }
+
+        var receiptData = CreateReceiptData(order, receipt.ReceiptNumber, companyInfo);
 
         // Resolve country ISO code + fiscal enforcement mode.
         string? countryCode = null;
@@ -90,9 +128,18 @@ public sealed class ReceiptService(
 
         var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.GeneratedReceipts);
         using var pdfStream = new MemoryStream(pdfBytes);
-        await blobClient.UploadAsync(blobName, pdfStream, cancellationToken: cancellationToken);
+        await blobClient.UploadAsync(receipt.BlobName, pdfStream, cancellationToken: cancellationToken);
+    }
 
-        return receipt;
+    private async Task<FiscalEnforcementMode> ResolveEnforcementModeAsync(string? countryId, CancellationToken cancellationToken)
+    {
+        if (countryId == null)
+        {
+            return FiscalEnforcementMode.None;
+        }
+
+        var countryConfig = await countryConfigurationRepository.GetByCountryIdAsync(countryId, cancellationToken);
+        return countryConfig?.FiscalEnforcementMode ?? FiscalEnforcementMode.None;
     }
 
     private async Task HandleFiscalAsync(

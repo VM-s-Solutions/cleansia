@@ -107,6 +107,10 @@ public static class BusinessErrorMessage
     public const string NotAllowedToUpdateEmployee = "employee.not_allowed_to_update";
     public const string EmployeeProfileIncomplete = "employee.profile_incomplete";
     public const string EmployeeDocumentsMissing = "employee.documents_missing";
+    // T-0109 (EMP-GAP-01): the order-action approval gate. Distinct from
+    // EmployeeDocumentsMissing — a cleaner who is not Approved (rejected,
+    // still pending, or terminated) may not take/start/complete an order.
+    public const string EmployeeNotApproved = "employee.not_approved";
     public const string EmployeeAlreadyApproved = "employee.already_approved";
     public const string EmployeeAlreadyRejected = "employee.already_rejected";
 
@@ -206,6 +210,9 @@ public static class BusinessErrorMessage
     public const string AdminUserEmailExists = "admin_user.email_exists";
     public const string CannotDeactivateSelf = "admin_user.cannot_deactivate_self";
     public const string CannotDeleteSelf = "admin_user.cannot_delete_self";
+    // T-0107 (IDA-SEC-08): availability/authorization guards on the admin destructive flows.
+    public const string CannotDeactivateLastAdmin = "admin_user.cannot_deactivate_last_admin";
+    public const string CannotTargetAdminViaGdprTool = "admin_user.cannot_target_admin_via_gdpr_tool";
 
     // Validation
     public const string InvalidPassword = "validation.invalid_password";

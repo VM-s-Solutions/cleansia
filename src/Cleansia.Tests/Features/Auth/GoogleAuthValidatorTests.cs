@@ -1,25 +1,29 @@
-﻿using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
-using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.TestUtilities.MockDataFactories.Users;
 using Moq;
 
 namespace Cleansia.Tests.Features.Auth;
 
+/// <summary>
+/// T-0105 (IDA-SEC-01): Google ID-token verification now lives in <c>IGoogleTokenVerifier</c> (called
+/// by the handler), so the validator only enforces SHAPE rules and the auth-type guard — it no longer
+/// takes <c>IGoogleConfig</c> and no longer has any <c>IsDevelopment</c> bypass. AC7 reconciles the two
+/// tests that previously depended on that bypass; the required-field / email-format /
+/// <see cref="BusinessErrorMessage.InternalAuthTypeError"/> cases stay green.
+/// </summary>
 public class GoogleAuthValidatorTests
 {
-    private readonly Mock<IGoogleConfig> _googleConfigMock;
     private readonly Mock<IUserRepository> _userRepositoryMock;
     private readonly GoogleAuth.Validator _validator;
 
     public GoogleAuthValidatorTests()
     {
-        _googleConfigMock = new Mock<IGoogleConfig>();
         _userRepositoryMock = new Mock<IUserRepository>();
-        _validator = new GoogleAuth.Validator(_googleConfigMock.Object, _userRepositoryMock.Object);
+        _validator = new GoogleAuth.Validator(_userRepositoryMock.Object);
     }
 
     #region Token Validation Tests
@@ -48,10 +52,12 @@ public class GoogleAuthValidatorTests
         Assert.Equal("Token", error.ErrorCode);
     }
 
+    // AC7 — token verification has LEFT the validator (it now lives in IGoogleTokenVerifier, called by
+    // the handler). The validator's only Token rule is NotEmpty, so a non-empty token produces no Token
+    // error here regardless of any (now-deleted) IsDevelopment flag.
     [Fact]
-    public async Task When_In_Development_Mode_And_Token_Is_Not_Empty_Then_Validation_Passes()
+    public async Task When_Token_Is_Not_Empty_Then_No_Token_Validation_Error()
     {
-        _googleConfigMock.Setup(c => c.IsDevelopment).Returns(true);
         var command = new GoogleAuth.Command("someToken", "googleId", "email@example.com", "First", "Last");
         _userRepositoryMock.Setup(r => r.GetByEmailAsync("email@example.com", It.IsAny<CancellationToken>())).ReturnsAsync((User)null);
 
@@ -178,7 +184,6 @@ public class GoogleAuthValidatorTests
     [Fact]
     public async Task When_All_Fields_Are_Valid_Then_Validation_Passes()
     {
-        _googleConfigMock.Setup(c => c.IsDevelopment).Returns(true);
         var email = "email@example.com";
         _userRepositoryMock.Setup(r => r.GetByEmailAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync((User)null);
         var command = new GoogleAuth.Command("token", "googleId", email, "First", "Last");

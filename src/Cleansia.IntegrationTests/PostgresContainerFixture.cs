@@ -8,12 +8,15 @@ public class PostgresContainerFixture : IAsyncDisposable
 
     public PostgresContainerFixture()
     {
+        // No fixed host-port binding: Testcontainers assigns a random free host port and
+        // GetConnectionString() reports the mapped port the consumers actually use. Pinning
+        // host 5432 caused "address already in use" on CI (and locally) whenever 5432 was
+        // taken — by another test assembly's container, a local Postgres, or the runner's own.
         _container = new PostgreSqlBuilder()
             .WithImage("postgres:latest")
             .WithDatabase("testdb")
             .WithUsername("testuser")
             .WithPassword("testpass")
-            .WithPortBinding(5432, 5432)
             .Build();
         InitializeAsync().GetAwaiter().GetResult();
     }

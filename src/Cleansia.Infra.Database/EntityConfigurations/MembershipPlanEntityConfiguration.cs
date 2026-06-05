@@ -50,9 +50,11 @@ public class MembershipPlanEntityConfiguration : AuditableEntityConfiguration<Me
         builder.Ignore(p => p.MonthlyEquivalentPriceCzk);
 
         // Code is referenced by handler logic ("look up the PLUS_MONTHLY plan").
-        // Tenant-scoped to keep the option open for tenant-specific plan
-        // catalogues, even though we'll likely have a single global Plus plan.
-        builder.HasIndex(p => new { p.TenantId, p.Code })
+        // MembershipPlan is platform config (ADR-0001 Addendum A1 / T-0113): not
+        // tenant-scoped, so Code is unique platform-wide. The previous
+        // (TenantId, Code) composite index is dropped along with the tenant
+        // dimension — anonymous GetPlans no longer collapses to TenantId == null.
+        builder.HasIndex(p => p.Code)
             .IsUnique();
 
         builder.HasIndex(p => p.IsActive);

@@ -21,4 +21,14 @@ public interface ILoyaltyTransactionRepository : IRepository<LoyaltyTransaction,
     /// is replayed.
     /// </summary>
     Task<LoyaltyTransaction?> GetLatestForOrderSourceAsync(string orderId, LoyaltyEarnSource source, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Idempotency lookup for the manual admin grant/revoke path (T-0112 /
+    /// LG-SEC-06 / S7a). Returns the existing ledger row for a client-supplied
+    /// idempotency key, or null if none exists. This is the fast-path read; the
+    /// filtered UNIQUE INDEX on <c>IdempotencyKey</c> is the atomic backstop for
+    /// the concurrent race (a TOCTOU window past this read is closed by the
+    /// 23505 unique-violation collapse in <c>LoyaltyService</c>).
+    /// </summary>
+    Task<LoyaltyTransaction?> GetByIdempotencyKeyAsync(string idempotencyKey, CancellationToken cancellationToken);
 }

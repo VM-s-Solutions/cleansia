@@ -2,6 +2,7 @@
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Orders;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Infra.Common.Attributes;
 using Cleansia.Core.Domain.Internationalization;
@@ -47,9 +48,24 @@ public class User : Auditable, ITenantEntity
 
     public string? ProfilePhotoName { get; private set; }
 
+    /// <summary>
+    /// SHA-256 HASH of the email-confirmation token (never the raw value). T-0106 / IDA-SEC-03:
+    /// the raw token is emailed once via <see cref="RawConfirmationToken"/> and only the hash is
+    /// persisted, so a stolen DB row cannot confirm/log in the account.
+    /// </summary>
     public string? ConfirmationCode { get; private set; }
 
     public DateTimeOffset? ConfirmationCodeExpiresAt { get; private set; }
+
+    /// <summary>
+    /// Transient (NOT persisted) carrier for the RAW confirmation token produced by
+    /// <see cref="CreateWithPassword"/>, so the registration handler can email it. The persisted
+    /// column (<see cref="ConfirmationCode"/>) only ever holds the hash. The token-refresh paths
+    /// (<see cref="UpdateConfirmationCode"/> / <see cref="UpdateResetPasswordToken"/>) instead RETURN
+    /// the raw token directly.
+    /// </summary>
+    [NotMapped]
+    public string? RawConfirmationToken { get; private set; }
 
     public bool IsEmailConfirmed { get; private set; }
 
@@ -85,17 +101,24 @@ public class User : Auditable, ITenantEntity
     public UserMembership? ActiveMembership => _memberships.FirstOrDefault(m => m.IsActive);
 
     public static User CreateWithPassword(string email, string password, string firstName, string lastName, UserProfile profile = UserProfile.Customer, string? languageCode = null)
-        => new()
+    {
+        // T-0106 / IDA-SEC-03: generate a cryptographic raw token, persist only its hash, and surface
+        // the raw value transiently so the registration handler can email it (never persisted/logged).
+        var rawConfirmationToken = SecurityTokens.Generate();
+
+        return new()
         {
             Email = email,
             Password = password,
             FirstName = firstName,
             LastName = lastName,
             PreferredLanguageCode = languageCode ?? "en",
-            ConfirmationCode = Random.Shared.Next(100000, 999999).ToString(),
+            ConfirmationCode = SecurityTokens.Hash(rawConfirmationToken),
+            RawConfirmationToken = rawConfirmationToken,
             ConfirmationCodeExpiresAt = DateTime.UtcNow.AddMinutes(15),
             Profile = profile,
         };
+    }
 
     public static User CreateWithGoogle(string email, string firstName, string lastName, string googleId, string? languageCode = null)
         => new()
@@ -109,11 +132,16 @@ public class User : Auditable, ITenantEntity
             IsEmailConfirmed = true
         };
 
-    public User UpdateResetPasswordToken()
+    /// <summary>
+    /// Generates a fresh cryptographic password-reset token, persists only its hash, and RETURNS the
+    /// RAW token so the caller can email it (T-0106 / IDA-SEC-03). The raw value is never stored.
+    /// </summary>
+    public string UpdateResetPasswordToken()
     {
-        ResetPasswordCode = Random.Shared.Next(100000, 999999).ToString();
+        var rawToken = SecurityTokens.Generate();
+        ResetPasswordCode = SecurityTokens.Hash(rawToken);
         ResetPasswordCodeExpiresAt = DateTime.UtcNow.AddMinutes(15);
-        return this;
+        return rawToken;
     }
 
     public User UpdatePassword(string password)
@@ -156,8 +184,10 @@ public class User : Auditable, ITenantEntity
 
     public User ConfirmEmail()
     {
+        // One-shot: clear the hashed token so a consumed confirmation cannot be replayed (T-0106 AC5).
         ConfirmationCode = null;
         ConfirmationCodeExpiresAt = null;
+        RawConfirmationToken = null;
         IsEmailConfirmed = true;
 
         return this;
@@ -170,12 +200,18 @@ public class User : Auditable, ITenantEntity
         return this;
     }
 
-    public User UpdateConfirmationCode()
+    /// <summary>
+    /// Generates a fresh cryptographic email-confirmation token, persists only its hash, and RETURNS
+    /// the RAW token so the caller can email it (T-0106 / IDA-SEC-03). The raw value is never stored.
+    /// </summary>
+    public string UpdateConfirmationCode()
     {
-        ConfirmationCode = Random.Shared.Next(100000, 999999).ToString();
+        var rawToken = SecurityTokens.Generate();
+        ConfirmationCode = SecurityTokens.Hash(rawToken);
+        RawConfirmationToken = rawToken;
         ConfirmationCodeExpiresAt = DateTime.UtcNow.AddMinutes(15);
 
-        return this;
+        return rawToken;
     }
 
     public User UpdateLanguagePreference(string? languageCode)
@@ -210,6 +246,7 @@ public class User : Auditable, ITenantEntity
         ResetPasswordCodeExpiresAt = null;
         ConfirmationCode = null;
         ConfirmationCodeExpiresAt = null;
+        RawConfirmationToken = null;
         StripeCustomerId = null;
         return this;
     }

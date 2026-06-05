@@ -13,12 +13,24 @@ namespace Cleansia.Tests.Features.Orders;
 public class StartOrderValidatorTests
 {
     private readonly Mock<IOrderRepository> _orderRepository = new();
+    private readonly Mock<IEmployeeRepository> _employeeRepository = new();
     private readonly Mock<IOrderAccessService> _accessService = new();
     private readonly StartOrder.Validator _validator;
 
     public StartOrderValidatorTests()
     {
-        _validator = new StartOrder.Validator(_orderRepository.Object, _accessService.Object);
+        // Default: the caller resolves to an Approved cleaner so the new
+        // approval gate (T-0109) does not interfere with the rules these
+        // cases exercise. Specific cases override as needed.
+        _employeeRepository
+            .Setup(r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string id, CancellationToken _) =>
+                ValidatorTestHelpers.BuildEmployee(id, ContractStatus.Approved, withAddress: true));
+
+        _validator = new StartOrder.Validator(
+            _orderRepository.Object,
+            _employeeRepository.Object,
+            _accessService.Object);
     }
 
     [Fact]

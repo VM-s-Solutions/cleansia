@@ -62,7 +62,7 @@ public class ConfirmRecurringOrder
         IUserRepository userRepository,
         IUserSessionProvider userSessionProvider,
         IStripeClient stripeClient,
-        IQueueClient queueClient,
+        IPendingDispatch pending,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -109,24 +109,31 @@ public class ConfirmRecurringOrder
             order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
             order.UpdatePaymentStatus(PaymentStatus.Paid);
 
-            await queueClient.SendAsync(QueueNames.GenerateReceipt,
-                new GenerateReceiptMessage(order.Id, Constants.Language.English),
-                cancellationToken);
+            pending.Enqueue(
+                QueueNames.GenerateReceipt,
+                new QueueEnvelope<GenerateReceiptMessage>(
+                    MessageKeys.Receipt(order.Id),
+                    order.TenantId,
+                    new GenerateReceiptMessage(order.Id, Constants.Language.English)),
+                MessageKeys.Receipt(order.Id));
 
             if (!string.IsNullOrEmpty(order.UserId))
             {
-                await queueClient.SendAsync(
+                pending.Enqueue(
                     QueueNames.NotificationsDispatch,
-                    new SendPushNotificationMessage(
-                        UserId: order.UserId,
-                        EventKey: NotificationEventCatalog.OrderConfirmed,
-                        Args: new Dictionary<string, string>
-                        {
-                            ["orderId"] = order.Id,
-                            ["orderNumber"] = order.DisplayOrderNumber,
-                        },
-                        TenantId: order.TenantId),
-                    cancellationToken);
+                    new QueueEnvelope<SendPushNotificationMessage>(
+                        MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderConfirmed, order.Id),
+                        order.TenantId,
+                        new SendPushNotificationMessage(
+                            UserId: order.UserId,
+                            EventKey: NotificationEventCatalog.OrderConfirmed,
+                            Args: new Dictionary<string, string>
+                            {
+                                ["orderId"] = order.Id,
+                                ["orderNumber"] = order.DisplayOrderNumber,
+                            },
+                            TenantId: order.TenantId)),
+                    MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderConfirmed, order.Id));
             }
 
             return BusinessResult.Success(new Response(

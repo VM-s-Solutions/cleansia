@@ -1,18 +1,12 @@
-using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Functions.Core.Handlers;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Functions.Functions;
 
-public class PeriodReminderTimerFunction(
-    IPeriodReminderBackgroundService reminderService,
-    ILogger<PeriodReminderTimerFunction> logger)
+// T-0121 / ADR-0002 D5 step 1 — thin trigger shell; body lives in PeriodReminderTimerHandler (Core).
+public class PeriodReminderTimerFunction(PeriodReminderTimerHandler handler)
 {
     [Function("SendPeriodEndReminders")]
-    public async Task Run([TimerTrigger("0 0 9 * * *")] TimerInfo timer, CancellationToken ct)
-    {
-        logger.LogInformation("SendPeriodEndReminders timer triggered at {Time}", DateTime.UtcNow);
-        await reminderService.SendPeriodEndRemindersAsync(ct);
-        logger.LogInformation("SendPeriodEndReminders completed");
-    }
+    public Task Run([TimerTrigger("0 0 9 * * *")] TimerInfo timer, CancellationToken ct)
+        => handler.HandleAsync(ct);
 }

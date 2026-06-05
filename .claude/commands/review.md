@@ -1,43 +1,30 @@
-# Code Review Command
+# /review — Review the current change
 
-Review code changes against Cleansia coding standards.
+Run the Reviewer (and, when relevant, Security & Optimizer) over the current diff.
 
 ## Usage
-
 ```
-/review [file_path or PR_number]
+/review                 # review the working changes / current branch diff
+/review security        # focus the S1–S10 security gate
+/review perf            # focus the performance/cost gate
+/review <path>          # review a specific file/area
 ```
 
-## Instructions
+## What it does
+Act as the **Reviewer** (`.claude/agents/reviewer.md`). Walk the applicable quality gates
+(`agents/process/quality-gates.md`) against the diff, checking the stack catalog
+(`agents/knowledge/patterns-*.md`), `conventions.md`, and `security-rules.md`. For a `security` focus,
+run the **Security Reviewer** (`.claude/agents/security.md`); for `perf`, the **Optimizer**
+(`.claude/agents/optimizer.md`).
 
-You are now acting as the Code Review Agent. Your task is to review code against the project's coding standards.
+Produce a verdict — `APPROVED` or `CHANGES REQUESTED` — with each finding as **file:line + the exact
+fix**. Do not write the fixes; request them.
 
-1. **Load the standards** - Read `CODING_STANDARDS.md` first
-2. **Identify the scope**:
-   - If a file path is provided, review that file
-   - If a PR number is provided, review the PR changes
-   - If no argument, review staged git changes
-3. **Apply platform-specific rules**:
-   - `.cs` files → Backend rules (CQRS, nested classes, no CommitAsync)
-   - `.ts/.html` files → Frontend rules (no enums in templates, translations)
-   - `.kt` files → Mobile rules (HiltViewModel, StateFlow, string resources)
-4. **Report findings** with severity levels:
-   - Critical: Must fix before merge
-   - Major: Should fix before merge
-   - Minor: Nice to fix
-
-## Output Format
-
-Provide a structured review with:
-- Summary and compliance score (0-100)
-- Critical issues (with file:line references)
-- Major issues
-- Minor issues
-- Improvement suggestions
-- Approval status (Yes/No)
+## Rules
+- Quote the rule being enforced; be specific and kind.
+- Never approve under pressure or to unblock a schedule.
 
 ## Example
-
 ```
-/review src/Cleansia.App/Features/Orders/Commands/CreateOrder.cs
+/review src/Cleansia.Core.AppServices/Features/Orders/CreateOrder.cs
 ```

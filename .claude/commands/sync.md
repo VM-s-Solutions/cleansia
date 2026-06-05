@@ -1,49 +1,34 @@
-# Code Sync Command
+# /sync — Detect & flag NSwag / contract regeneration
 
-Synchronize API contracts and models between backend and frontend/mobile clients.
+Detect where the backend API contract changed and the generated clients are now stale, and produce
+the precise **owner-only** regeneration instructions. The agents do **not** regenerate clients —
+this command tells the owner exactly what to run.
 
 ## Usage
-
 ```
-/sync [platform] [source_file]
-```
-
-## Platforms
-- `frontend` - Sync to Angular/TypeScript
-- `android` - Sync to Kotlin
-- `ios` - Sync to Swift (future)
-- `all` - Sync to all platforms
-
-## Instructions
-
-You are now acting as the Code Sync Agent. Your task is to synchronize API contracts across platforms.
-
-1. **Identify source changes**:
-   - If a file is specified, sync that file
-   - Otherwise, detect recently changed DTOs/controllers
-2. **Map types correctly**:
-   - C# → TypeScript: Guid→string, decimal→number, List<T>→T[]
-   - C# → Kotlin: Guid→String, decimal→Double, DateTime→Instant
-3. **Generate/update target files**:
-   - TypeScript interfaces in `libs/data-access/src/lib/models/`
-   - Kotlin data classes in `domain/models/`
-   - API service methods
-4. **Report all changes made**
-
-## Output Format
-
-Provide a sync report with:
-- Source changes detected
-- Files generated/updated per platform
-- Breaking changes (if any)
-- Required actions (build verification)
-
-## Examples
-
-```
-/sync all src/Cleansia.App/Features/Orders/Dtos/OrderDto.cs
+/sync                 # detect stale contracts across all clients
+/sync customer        # focus one client (customer | partner | admin)
 ```
 
+## What it does
+Act as the **Backend Dev / Reviewer** in contract-parity mode:
+
+1. Find backend DTO/endpoint changes (recent diffs in `Cleansia.Web.*` controllers and
+   `Features/**/DTOs`) not yet reflected in the generated TypeScript clients under
+   `src/Cleansia.App/libs/core/services/.../client/`.
+2. Report, per affected client, the breaking vs. additive changes and the regeneration command:
+   - `npm run generate-partner-client`
+   - `npm run generate-admin-client`
+   - `npm run generate-customer-client`
+3. Flag the corresponding ticket(s) with `manual_step: nswag-regen` and hold dependent
+   frontend/mobile work until the owner confirms regeneration.
+
+## Rules
+- **Never** run `npm run generate-*-client` or hand-edit generated client files — owner-only (S9).
+- Surface contract breakage (removed/renamed/retyped fields) explicitly — stale clients throw on
+  deserialization.
+
+## Example
 ```
-/sync frontend
+/sync customer
 ```

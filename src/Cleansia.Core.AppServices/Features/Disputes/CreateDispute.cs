@@ -45,11 +45,26 @@ public class CreateDispute
 
     public class Handler(
         IDisputeRepository disputeRepository,
+        IOrderRepository orderRepository,
         IUserSessionProvider userSessionProvider) : ICommandHandler<Command, string>
     {
         public async Task<BusinessResult<string>> Handle(Command request, CancellationToken cancellationToken)
         {
             var userId = userSessionProvider.GetUserId()!;
+
+            // Inner ownership gate (SEC-DSP-02 / ADR-0001 §D2 [OWN-DATA], S3): the
+            // CanCreateDispute → CustomerOnly policy is the coarse outer gate; this
+            // handler check decides *which* customer's order may be disputed and holds
+            // on any invocation path. Loaded via the tenant-filtered GetByIdAsync (S8 —
+            // never IgnoreQueryFilters). A non-owner gets the not-found business error
+            // (NotFound, not Forbidden) so a missing order and someone else's order are
+            // indistinguishable.
+            var order = await orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
+
+            if (order is null || order.UserId != userId)
+            {
+                return BusinessResult.Failure<string>(new Error(nameof(request.OrderId), BusinessErrorMessage.OrderNotFound));
+            }
 
             var existingDispute = await disputeRepository.GetOpenDisputeForOrderAsync(
                 request.OrderId, cancellationToken);

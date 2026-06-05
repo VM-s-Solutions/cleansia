@@ -1856,6 +1856,101 @@ export class AdminCurrencyClient implements IAdminCurrencyClient {
     }
 }
 
+export interface IAdminDisputeClient {
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    addMessage(body?: AddDisputeMessageCommand | undefined): Observable<void>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class AdminDisputeClient implements IAdminDisputeClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(ADMINAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    addMessage(body?: AddDisputeMessageCommand | undefined): Observable<void> {
+        let url = this.baseUrl + "/api/AdminDispute/AddMessage";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processAddMessage(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processAddMessage(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<void>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<void>;
+        }));
+    }
+
+    protected processAddMessage(response: HttpResponseBase): Observable<void> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return ObservableOf(null as any);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
 export interface IAdminEmailTemplateClient {
     /**
      * @return OK
@@ -10855,6 +10950,50 @@ export interface IActivateAdminUserResponse {
     id: string | undefined;
 }
 
+export class AddDisputeMessageCommand implements IAddDisputeMessageCommand {
+    disputeId!: string | undefined;
+    message!: string | undefined;
+    isStaffMessage!: boolean;
+
+    constructor(data?: IAddDisputeMessageCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.disputeId = Data["disputeId"];
+            this.message = Data["message"];
+            this.isStaffMessage = Data["isStaffMessage"];
+        }
+    }
+
+    static fromJS(data: any): AddDisputeMessageCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new AddDisputeMessageCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["disputeId"] = this.disputeId;
+        data["message"] = this.message;
+        data["isStaffMessage"] = this.isStaffMessage;
+        return data;
+    }
+}
+
+export interface IAddDisputeMessageCommand {
+    disputeId: string | undefined;
+    message: string | undefined;
+    isStaffMessage: boolean;
+}
+
 export class AdminCountryControllerSetCountryServicedRequest implements IAdminCountryControllerSetCountryServicedRequest {
     isServiced!: boolean;
 
@@ -17139,6 +17278,7 @@ export class GrantPointsManuallyCommand implements IGrantPointsManuallyCommand {
     userId!: string | undefined;
     points!: number;
     reason!: string | undefined;
+    requestId!: string | undefined;
 
     constructor(data?: IGrantPointsManuallyCommand) {
         if (data) {
@@ -17154,6 +17294,7 @@ export class GrantPointsManuallyCommand implements IGrantPointsManuallyCommand {
             this.userId = Data["userId"];
             this.points = Data["points"];
             this.reason = Data["reason"];
+            this.requestId = Data["requestId"];
         }
     }
 
@@ -17169,6 +17310,7 @@ export class GrantPointsManuallyCommand implements IGrantPointsManuallyCommand {
         data["userId"] = this.userId;
         data["points"] = this.points;
         data["reason"] = this.reason;
+        data["requestId"] = this.requestId;
         return data;
     }
 }
@@ -17177,6 +17319,7 @@ export interface IGrantPointsManuallyCommand {
     userId: string | undefined;
     points: number;
     reason: string | undefined;
+    requestId: string | undefined;
 }
 
 export class GrantPointsManuallyResponse implements IGrantPointsManuallyResponse {
@@ -20855,6 +20998,7 @@ export class RevokePointsManuallyCommand implements IRevokePointsManuallyCommand
     userId!: string | undefined;
     points!: number;
     reason!: string | undefined;
+    requestId!: string | undefined;
 
     constructor(data?: IRevokePointsManuallyCommand) {
         if (data) {
@@ -20870,6 +21014,7 @@ export class RevokePointsManuallyCommand implements IRevokePointsManuallyCommand
             this.userId = Data["userId"];
             this.points = Data["points"];
             this.reason = Data["reason"];
+            this.requestId = Data["requestId"];
         }
     }
 
@@ -20885,6 +21030,7 @@ export class RevokePointsManuallyCommand implements IRevokePointsManuallyCommand
         data["userId"] = this.userId;
         data["points"] = this.points;
         data["reason"] = this.reason;
+        data["requestId"] = this.requestId;
         return data;
     }
 }
@@ -20893,6 +21039,7 @@ export interface IRevokePointsManuallyCommand {
     userId: string | undefined;
     points: number;
     reason: string | undefined;
+    requestId: string | undefined;
 }
 
 export class RevokePointsManuallyResponse implements IRevokePointsManuallyResponse {

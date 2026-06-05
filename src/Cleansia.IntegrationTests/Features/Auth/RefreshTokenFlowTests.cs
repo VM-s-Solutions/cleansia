@@ -73,6 +73,8 @@ public class RefreshTokenFlowTests(PostgresContainerFixture fixture) : BaseInteg
             {
                 Assert.False(result.IsSuccess);
                 Assert.NotNull(result.Error);
+                // RefreshToken handler uses Error(propertyName, messageKey) — the BusinessErrorMessage
+                // key lands in .Message (not .Code, which is the form field "Token"). See RefreshToken.cs.
                 Assert.Equal(BusinessErrorMessage.RefreshTokenReused, result.Error!.Message);
 
                 var tokens = await context.RefreshTokens.ToListAsync();

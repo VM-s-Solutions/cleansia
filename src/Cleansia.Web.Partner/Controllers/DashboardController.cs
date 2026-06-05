@@ -58,9 +58,10 @@ public class DashboardController(IMediator mediator) : ApiController(mediator)
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<TimeAnalyticsDto> GetTimeAnalytics([FromQuery] GetTimeAnalytics.Query query, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetTimeAnalytics([FromQuery] GetTimeAnalytics.Query query, CancellationToken cancellationToken)
     {
-        return await Mediator.Send(query, cancellationToken);
+        var result = await Mediator.Send(query, cancellationToken);
+        return HandleResult<TimeAnalyticsDto>(result);
     }
 
     [HttpGet("GetOrderAnalytics")]
@@ -69,9 +70,10 @@ public class DashboardController(IMediator mediator) : ApiController(mediator)
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<OrderAnalyticsDto> GetOrderAnalytics([FromQuery] GetOrderAnalytics.Query query, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetOrderAnalytics([FromQuery] GetOrderAnalytics.Query query, CancellationToken cancellationToken)
     {
-        return await Mediator.Send(query, cancellationToken);
+        var result = await Mediator.Send(query, cancellationToken);
+        return HandleResult<OrderAnalyticsDto>(result);
     }
 
     [HttpGet("GetProductivityMetrics")]
@@ -80,8 +82,9 @@ public class DashboardController(IMediator mediator) : ApiController(mediator)
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<ProductivityMetricsDto> GetProductivityMetrics([FromQuery] GetProductivityMetrics.Query query, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetProductivityMetrics([FromQuery] GetProductivityMetrics.Query query, CancellationToken cancellationToken)
     {
-        return await Mediator.Send(query, cancellationToken);
+        var result = await Mediator.Send(query, cancellationToken);
+        return HandleResult<ProductivityMetricsDto>(result);
     }
 }

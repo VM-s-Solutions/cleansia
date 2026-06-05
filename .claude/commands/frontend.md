@@ -1,62 +1,27 @@
-# Frontend Specialist Command
+# /frontend — Direct frontend work (single-shot escape hatch)
 
-Work on Angular frontend tasks following Cleansia coding standards.
+For a small, well-scoped Angular change. For anything cross-layer or non-trivial, use `/team`.
 
 ## Usage
-
 ```
-/frontend [task_description]
+/frontend <describe the UI change>
 ```
 
-## Instructions
+## What it does
+Act as the **Frontend Dev**. Load and follow `.claude/agents/frontend.md`, reading first:
+- `agents/knowledge/patterns-frontend.md` (four-file feature, facades/signals, NgRx, PrimeNG, i18n)
+- `agents/knowledge/conventions.md`
+- `docs/architecture/frontend.md`
 
-You are now acting as the Frontend Specialist Agent. You are an expert in Angular 17+, Nx, NgRx, and PrimeNG.
+Build to standards: OnPush, logic in the facade, `<cleansia-*>`/PrimeNG (no raw controls),
+`TranslatePipe` on every string with keys in all 5 locales, no `any`, enums exposed (never
+string-compared), three data states. If the change needs a backend DTO change, flag
+`manual_step: nswag-regen` and wait — never run `npm run generate-*-client` or edit generated clients.
 
-**CRITICAL RULES - Read CODING_STANDARDS.md first, then follow these:**
-
-1. **Never use enum values in templates**
-   ```html
-   <!-- ✓ CORRECT -->
-   <div *ngIf="status === OrderStatus.Completed">
-
-   <!-- ✗ WRONG -->
-   <div *ngIf="status === 'COMPLETED'">
-   ```
-
-2. **All text must use translations**
-   ```html
-   <!-- ✓ CORRECT -->
-   <button>{{ 'common.save' | translate }}</button>
-
-   <!-- ✗ WRONG -->
-   <button>Save</button>
-   ```
-
-3. **Use Facade pattern for state**
-   ```typescript
-   // Component uses Facade, not direct NgRx
-   private facade = inject(OrdersFacade);
-   orders$ = this.facade.orders$;
-   ```
-
-4. **Standalone components with OnPush**
-   ```typescript
-   @Component({
-     standalone: true,
-     changeDetection: ChangeDetectionStrategy.OnPush,
-   })
-   ```
-
-## Common Tasks
-
-- Create standalone component with OnPush
-- Create Facade for NgRx state
-- Create NgRx state (actions, reducer, effects, selectors)
-- Add translations for new text
-- Create shared UI component
+## Rules
+- Do not commit or push unless the owner asks.
 
 ## Example
-
 ```
-/frontend Create a reusable status badge component with translations
+/frontend Add a reusable status-badge component with translations
 ```

@@ -1,82 +1,25 @@
-# Documentation Command
+# /docs — Update documentation
 
-Update project documentation.
+Bring the VitePress docs, architecture docs, and changelog in sync with shipped behavior.
 
 ## Usage
-
 ```
-/docs [type] [description]
-```
-
-## Types
-
-- `changelog` - Add entry to CHANGELOG.md
-- `api` - Document an API endpoint
-- `feature` - Document a feature
-- `readme` - Update README.md
-- `architecture` - Update architecture docs
-
-## Instructions
-
-You are now acting as the Documentation Agent.
-
-### Changelog Format (Keep a Changelog)
-
-```markdown
-## [Unreleased]
-
-### Added
-- New feature description (#issue)
-
-### Changed
-- Change description
-
-### Fixed
-- Bug fix description (#issue)
+/docs <what shipped / what to document>
 ```
 
-Categories: Added, Changed, Deprecated, Removed, Fixed, Security
+## What it does
+Act as the **Docs** agent (`.claude/agents/docs.md`). Update the relevant `docs/**` page so it
+matches the code now, fold any accepted ADR into the architecture doc it affects, and add a
+changelog entry (Keep a Changelog: Added/Changed/Deprecated/Removed/Fixed/Security). Match the
+existing high-quality doc voice; include the example a reader needs; document what's in the code, not
+aspirations.
 
-### API Documentation Format
+## Rules
+- Describe behavior, never change it.
+- Do not duplicate the internal `agents/knowledge/*` catalog into the public docs.
+- Do not run the VitePress build or deploy — flag it if needed. Do not commit/push unless asked.
 
-```markdown
-## Endpoint Name
-
-Description of what the endpoint does.
-
-**Endpoint:** `POST /api/resource`
-**Authentication:** Bearer token
-
-**Request Body:**
-```json
-{ "field": "value" }
+## Example
 ```
-
-**Response:** `200 OK`
-```json
-{ "result": "value" }
-```
-```
-
-### README Sections
-
-- Features
-- Tech Stack
-- Getting Started
-- Development
-- Testing
-- Deployment
-
-## Examples
-
-```
-/docs changelog Added employee time tracking feature
-```
-
-```
-/docs api Document the POST /api/orders endpoint
-```
-
-```
-/docs readme Add the new time tracking feature to features list
+/docs Document the new per-employee pay override admin tab
 ```

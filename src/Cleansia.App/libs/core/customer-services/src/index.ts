@@ -142,6 +142,9 @@ export {
   CreateOrderResponse,
   DisputeDetails,
   DisputeListItem,
+  DisputeReason,
+  CreateDisputeCommand,
+  AddDisputeMessageCommand,
   PackageListItem,
   ServiceListItem,
 } from './lib/client/customer-client';

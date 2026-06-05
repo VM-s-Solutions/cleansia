@@ -1,4 +1,5 @@
-﻿using Cleansia.Core.Domain.Repositories;
+﻿using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
@@ -37,14 +38,19 @@ public class UserRepository(CleansiaDbContext context)
         return GetDbSet().AnyAsync(user => user.Email == email, cancellationToken);
     }
 
+    // T-0106 / IDA-SEC-03: the confirmation token is stored as a SHA-256 hash, so the incoming RAW
+    // token is hashed and matched against the stored hash. Stays inside the global tenant filter
+    // (no IgnoreQueryFilters) — a hashed token must not match cross-tenant (AC6 / IDA-SEC-10).
     public Task<bool> ExistsWithConfirmationCodeAsync(string token, CancellationToken cancellationToken = default)
     {
-        return GetDbSet().AnyAsync(user => user.ConfirmationCode == token, cancellationToken);
+        var tokenHash = SecurityTokens.Hash(token);
+        return GetDbSet().AnyAsync(user => user.ConfirmationCode == tokenHash, cancellationToken);
     }
 
     public Task<User?> GetByConfirmationCodeAsync(string token, CancellationToken cancellationToken = default)
     {
-        return GetDbSet().FirstOrDefaultAsync(user => user.ConfirmationCode == token, cancellationToken);
+        var tokenHash = SecurityTokens.Hash(token);
+        return GetDbSet().FirstOrDefaultAsync(user => user.ConfirmationCode == tokenHash, cancellationToken);
     }
 
     public IQueryable<User> GetUnconfirmedUsersOlderThan(DateTime cutoffDate)

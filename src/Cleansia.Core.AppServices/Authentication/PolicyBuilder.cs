@@ -1,4 +1,6 @@
-﻿namespace Cleansia.Core.AppServices.Authentication;
+﻿using System.Reflection;
+
+namespace Cleansia.Core.AppServices.Authentication;
 
 public static class PolicyBuilder
 {
@@ -69,11 +71,44 @@ public static class PolicyBuilder
         [Policy.CanRejectEmployeeDocument] = PhysicalPolicy.AdminOnly,
         [Policy.CanDeleteEmployeeDocument] = PhysicalPolicy.EmployeeOrAdmin,
 
+        // Employee Payroll — Invoices (BSP-1: was unmapped → fail-open; now closed)
+        // CanViewPagedInvoices/CanViewPeriodPays gate an employee's OWN pay on the Partner host
+        // (Note A): EmployeeOrAdmin + handler ownership scoping ([OWN-DATA]). AdminOnly would 403
+        // every cleaner from their own invoices.
+        [Policy.CanViewPagedInvoices] = PhysicalPolicy.EmployeeOrAdmin,
+        [Policy.CanViewPeriodPays] = PhysicalPolicy.EmployeeOrAdmin,
+        [Policy.CanCalculateOrderPay] = PhysicalPolicy.AdminOnly,
+        [Policy.CanGenerateInvoice] = PhysicalPolicy.AdminOnly,
+        [Policy.CanApproveInvoice] = PhysicalPolicy.AdminOnly,
+        [Policy.CanMarkInvoicePaid] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCancelInvoice] = PhysicalPolicy.AdminOnly,
+        [Policy.CanClosePayPeriod] = PhysicalPolicy.AdminOnly,
+
+        // Employee Payroll — Pay Periods (BSP-1). Pay periods are global cycles (Note B), so an
+        // employee may list them to locate their own pay; the per-row data is fetched via the
+        // [OWN-DATA] CanViewPeriodPays path. Mutations are admin-only.
+        [Policy.CanViewPayPeriods] = PhysicalPolicy.EmployeeOrAdmin,
+        [Policy.CanViewPayPeriod] = PhysicalPolicy.EmployeeOrAdmin,
+        [Policy.CanCreatePayPeriod] = PhysicalPolicy.AdminOnly,
+        [Policy.CanUpdatePayPeriod] = PhysicalPolicy.AdminOnly,
+        [Policy.CanOpenPayPeriod] = PhysicalPolicy.AdminOnly,
+        [Policy.CanDeletePayPeriod] = PhysicalPolicy.AdminOnly,
+
+        // Employee Payroll — Pay Config (BSP-1). Admin-only configuration surface.
+        [Policy.CanViewPayConfigs] = PhysicalPolicy.AdminOnly,
+        [Policy.CanViewPayConfig] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCreatePayConfig] = PhysicalPolicy.AdminOnly,
+        [Policy.CanUpdatePayConfig] = PhysicalPolicy.AdminOnly,
+        [Policy.CanDeletePayConfig] = PhysicalPolicy.AdminOnly,
+
         // Dispute
         [Policy.CanCreateDispute] = PhysicalPolicy.CustomerOnly,
         [Policy.CanViewDispute] = PhysicalPolicy.CustomerOnly,
         [Policy.CanViewDisputeList] = PhysicalPolicy.CustomerOnly,
-        [Policy.CanRespondToDispute] = PhysicalPolicy.Authenticated,
+        // BSP-6 split (Note C): the customer self-reply path is CustomerOnly [OWN-DATA]; the staff
+        // reply path (CanRespondToDispute) is AdminOnly (was the fail-open Authenticated).
+        [Policy.CanAddDisputeMessage] = PhysicalPolicy.CustomerOnly,
+        [Policy.CanRespondToDispute] = PhysicalPolicy.AdminOnly,
         [Policy.CanResolveDispute] = PhysicalPolicy.AdminOnly,
         [Policy.CanUpdateDisputeStatus] = PhysicalPolicy.AdminOnly,
         [Policy.CanUploadDisputeEvidence] = PhysicalPolicy.CustomerOnly,
@@ -201,6 +236,67 @@ public static class PolicyBuilder
         [Policy.CanSendSitewidePromo] = PhysicalPolicy.AdminOnly,
     };
 
+    /// <summary>
+    /// The single sanctioned place a <see cref="Policy"/> constant may have no <see cref="Map"/>
+    /// entry: it gates ONLY <c>[AllowAnonymous]</c> routes. This set is frozen by ADR-0001 §D1.2 and
+    /// proven exhaustive against the host controllers by verification #1b. Adding a new genuinely
+    /// anonymous permission means adding it here (a reviewable [AllowAnonymous] decision); any other
+    /// new permission must go into <see cref="Map"/> or boot fails via <see cref="AssertComplete"/>.
+    /// </summary>
+    public static readonly IReadOnlySet<string> AnonymousAllowList = new HashSet<string>
+    {
+        Policy.CanViewCodeOverview,
+        Policy.CanPerformGlobalSearch,
+        Policy.CanViewOrderDetailWithOrderNumberAndEmail,
+        Policy.CanCreateOrder,
+        Policy.CanGetOrderStatus,
+        Policy.CanRequestPasswordChange,
+        Policy.CanChangePassword,
+    };
+
+    /// <summary>
+    /// Fail-closed translation: an unmapped permission resolves to the always-deny sentinel, never
+    /// to "any authenticated user". This is the runtime backstop in case <see cref="AssertComplete"/>
+    /// is ever bypassed (ADR-0001 §D1.1).
+    /// </summary>
     public static string ToPhysicalPolicy(this string permission) =>
-        Map.GetValueOrDefault(permission, PhysicalPolicy.Authenticated);
+        Map.GetValueOrDefault(permission, PhysicalPolicy.Deny);
+
+    /// <summary>
+    /// Pure static reflection check (no DI) asserting the permission seam is complete and consistent.
+    /// Run at host startup (and in CI/unit tests) so an unmapped permission can never reach prod —
+    /// a developer who adds a <see cref="Policy"/> constant and forgets to map it gets a boot failure
+    /// listing every gap. Implements ADR-0001 §D1.2 exactly.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when a declared permission is neither mapped nor allow-listed, when the map references
+    /// an unknown permission, or when a permission is both allow-listed and mapped.
+    /// </exception>
+    public static void AssertComplete()
+    {
+        var declared = typeof(Policy)
+            .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
+            .Where(f => f.IsLiteral && !f.IsInitOnly && f.FieldType == typeof(string))
+            .Select(f => (string)f.GetRawConstantValue()!)
+            .ToHashSet();
+
+        var anonymous = AnonymousAllowList;
+
+        var missing = declared.Except(Map.Keys).Except(anonymous).ToList();
+        if (missing.Count > 0)
+            throw new InvalidOperationException(
+                "Authorization map incomplete. Every Policy.* constant must be mapped " +
+                "(or listed in AnonymousAllowList). Missing: " + string.Join(", ", missing));
+
+        var orphans = Map.Keys.Except(declared).ToList();
+        if (orphans.Count > 0)
+            throw new InvalidOperationException(
+                "Authorization map references unknown permissions: " + string.Join(", ", orphans));
+
+        var contradictions = anonymous.Intersect(Map.Keys).ToList();
+        if (contradictions.Count > 0)
+            throw new InvalidOperationException(
+                "Permissions are both in the AnonymousAllowList and the Map: " +
+                string.Join(", ", contradictions));
+    }
 }

@@ -14,6 +14,9 @@ public static class ConfigurationExtensions
         services.AddSingleton<IGoogleConfig, GoogleConfig>();
         services.AddSingleton<IMapboxConfig, MapboxConfig>();
         services.AddSingleton<IFcmConfig, FcmConfig>();
+        // T-0122 (FISCAL-RECON) / ADR-0002 D3.4 — reconciliation-sweep tunables (threshold default 15
+        // min, batch 50), bound from the "FiscalReconciliation" section.
+        services.AddSingleton<IFiscalReconciliationConfig, FiscalReconciliationConfig>();
 
         return services;
     }

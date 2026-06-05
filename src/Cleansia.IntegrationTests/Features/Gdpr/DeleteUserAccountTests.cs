@@ -70,7 +70,7 @@ public class DeleteUserAccountTests(PostgresContainerFixture fixture) : BaseInte
             assert: (CleansiaDbContext _, BusinessResult result) =>
             {
                 Assert.False(result.IsSuccess);
-                Assert.Equal(BusinessErrorMessage.GdprDeletionAlreadyPending, result.Error!.Message);
+                Assert.Equal(BusinessErrorMessage.GdprDeletionAlreadyPending, result.Error!.Code);
                 return Task.CompletedTask;
             });
     }
@@ -95,7 +95,7 @@ public class DeleteUserAccountTests(PostgresContainerFixture fixture) : BaseInte
             assert: (CleansiaDbContext _, BusinessResult result) =>
             {
                 Assert.False(result.IsSuccess);
-                Assert.Equal(BusinessErrorMessage.NotExistingUserWithEmail, result.Error!.Message);
+                Assert.Equal(BusinessErrorMessage.NotExistingUserWithEmail, result.Error!.Code);
                 return Task.CompletedTask;
             });
     }
@@ -106,7 +106,9 @@ public class DeleteUserAccountTests(PostgresContainerFixture fixture) : BaseInte
 
         var country = Country.Create("Czechia", "CZ");
         context.Countries.Add(country);
-        await context.SaveChangesAsync();
+        // CommitAsync (not SaveChangesAsync) so the Auditable audit fields (CreatedBy) get stamped
+        // from the test session — Countries.CreatedBy is NOT NULL and raw SaveChangesAsync skips stamping.
+        await context.CommitAsync(CancellationToken.None);
 
         var consent = UserConsent.Grant(
             TestConstants.TestUserSession.TestUserId,
@@ -117,7 +119,8 @@ public class DeleteUserAccountTests(PostgresContainerFixture fixture) : BaseInte
 
         var address = Address.Create("Domazlicka 18", "Prague", "11000", country.Id);
         context.Addresses.Add(address);
-        await context.SaveChangesAsync();
+        // CommitAsync (not SaveChangesAsync) so Addresses.CreatedBy (NOT NULL) gets audit-stamped.
+        await context.CommitAsync(CancellationToken.None);
 
         var savedAddress = SavedAddress.Create(
             TestConstants.TestUserSession.TestUserId,

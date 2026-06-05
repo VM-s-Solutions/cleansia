@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.Configuration;
+using Cleansia.Core.Domain.DeadLettering;
 using Cleansia.Core.Domain.Devices;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Documents;
@@ -24,6 +25,7 @@ using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Cleansia.Infra.Database;
 
@@ -70,7 +72,16 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
         {
             if (entity.State == EntityState.Added)
             {
-                entity.Entity.Created(stateUser, currentTime);
+                // Only auto-stamp when the entity did NOT already carry an explicit creation audit
+                // (CreatedBy is unset). Domain factories that deliberately set CreatedOn/CreatedBy
+                // up front (e.g. EmployeeDocument/Referral/ReferralCode, backdated/imported rows, and
+                // the FISCAL-RECON tests that seed stale CreatedOn) must keep that value — the previous
+                // unconditional overwrite clobbered it to "now", which (among other things) made every
+                // deliberately-stale seed look fresh.
+                if (string.IsNullOrEmpty(entity.Entity.CreatedBy))
+                {
+                    entity.Entity.Created(stateUser, currentTime);
+                }
 
                 if (entity.Entity is ITenantEntity tenantEntity && string.IsNullOrEmpty(tenantEntity.TenantId))
                 {
@@ -105,7 +116,54 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
         modelBuilder.HasPostgresExtension("citext");
         modelBuilder.HasPostgresExtension("pg_trgm");
 
+        ApplySqliteDateTimeOffsetCompatibility(modelBuilder);
+
         ApplyTenantQueryFilters(modelBuilder);
+    }
+
+    /// <summary>
+    /// T-0122 (FISCAL-RECON) test-provider shim. Production runs on Npgsql, where
+    /// <see cref="DateTimeOffset"/> maps to <c>timestamp with time zone</c> and is fully comparable /
+    /// sortable in SQL. The reconciliation query tests run against the in-memory SQLite provider, which
+    /// has NO native <see cref="DateTimeOffset"/> support — any <c>WHERE CreatedOn &lt;= cutoff</c> or
+    /// <c>ORDER BY CreatedOn</c> throws "could not be translated" / "SQLite does not support
+    /// expressions of type 'DateTimeOffset'". Storing <see cref="DateTimeOffset"/> as an order-preserving
+    /// binary value makes those operators translate identically under SQLite.
+    ///
+    /// <para>Guarded by provider name so it is a strict no-op on Npgsql — production schema and behaviour
+    /// are unchanged; only the SQLite test backend gets the converter.</para>
+    /// </summary>
+    private void ApplySqliteDateTimeOffsetCompatibility(ModelBuilder modelBuilder)
+    {
+        if (Database.ProviderName != "Microsoft.EntityFrameworkCore.Sqlite")
+        {
+            return;
+        }
+
+        // Store as UTC ticks (a long) — strictly monotonic in real time, so SQL comparison and ORDER BY
+        // match prod's timestamptz semantics exactly. (DateTimeOffsetToBinaryConverter is NOT real-time
+        // monotonic — ToBinary() interleaves the offset into the value — so it broke the recon cutoff.)
+        var converter = new ValueConverter<DateTimeOffset, long>(
+            v => v.UtcTicks,
+            v => new DateTimeOffset(v, TimeSpan.Zero));
+        var nullableConverter = new ValueConverter<DateTimeOffset?, long?>(
+            v => v.HasValue ? v.Value.UtcTicks : (long?)null,
+            v => v.HasValue ? new DateTimeOffset(v.Value, TimeSpan.Zero) : (DateTimeOffset?)null);
+
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            foreach (var property in entityType.GetProperties())
+            {
+                if (property.ClrType == typeof(DateTimeOffset))
+                {
+                    property.SetValueConverter(converter);
+                }
+                else if (property.ClrType == typeof(DateTimeOffset?))
+                {
+                    property.SetValueConverter(nullableConverter);
+                }
+            }
+        }
     }
 
     private void ApplyTenantQueryFilters(ModelBuilder modelBuilder)
@@ -235,4 +293,5 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<RecurringBookingTemplate> RecurringBookingTemplates { get; set; }
     public virtual DbSet<UserNotificationPreferences> UserNotificationPreferences { get; set; }
     public virtual DbSet<ProcessedStripeEvent> ProcessedStripeEvents { get; set; }
+    public virtual DbSet<DeadLetter> DeadLetters { get; set; }
 }

@@ -9,9 +9,15 @@ namespace Cleansia.Core.Domain.Memberships;
 /// subscription — the local row is a mirror, with Stripe as the authoritative
 /// source for billing state. Webhooks keep this in sync.
 ///
-/// One user can have at most one active membership at a time (enforced in
-/// handler code, not by a unique index — cancelled+new is allowed and would
-/// violate the index).
+/// One user can have at most one active membership at a time. This invariant
+/// is asserted in handler code (the request path's GetActiveForUserAsync guard
+/// and the webhook's ProvisionFromCreatedEventAsync active-check) AND, since
+/// T-0114 (SEC-W2), backstopped at the database by a FILTERED partial unique
+/// index on (TenantId, UserId) WHERE Status = Active
+/// (UserMembershipEntityConfiguration). The index is filtered to Active so a
+/// cancelled/expired membership plus a new active subscription is still
+/// allowed — a full unique index would wrongly block that legitimate
+/// re-subscribe-after-cancel case.
 /// </summary>
 public class UserMembership : Auditable, ITenantEntity
 {

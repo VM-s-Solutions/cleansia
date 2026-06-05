@@ -22,6 +22,10 @@
 	<ItemGroup>
 		<ProjectReference Include="..\Cleansia.Config\Cleansia.Config.csproj" />
 		<ProjectReference Include="..\Cleansia.Infra.Azure.Storage.Queues\Cleansia.Infra.Azure.Storage.Queues.csproj" />
+		<!-- T-0121 / ADR-0002 D5 step 1 — the testable consumer bodies live here; the
+		     [Function] trigger shells below stay in this Exe so the Worker SDK source-gen
+		     still discovers all 16 triggers, and delegate to the Core handlers. -->
+		<ProjectReference Include="..\Cleansia.Functions.Core\Cleansia.Functions.Core.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

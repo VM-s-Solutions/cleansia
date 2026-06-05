@@ -1,68 +1,31 @@
-# Mobile Specialist Command
+# /mobile — Direct mobile work (single-shot escape hatch)
 
-Work on Android/iOS mobile tasks following Cleansia patterns.
+For a small, well-scoped Android or iOS change. For anything cross-layer or non-trivial, use `/team`.
 
 ## Usage
-
 ```
-/mobile [task_description]
+/mobile <describe the change>   # default Android; say "iOS" to target the SwiftUI apps
 ```
 
-## Instructions
+## What it does
+Act as the **Android Dev** (`.claude/agents/android.md`) or **iOS Dev** (`.claude/agents/ios.md`),
+reading first:
+- `agents/knowledge/patterns-mobile.md` (ViewModel/StateFlow/events, screen split, repository+Hilt;
+  the iOS parity table)
+- `agents/knowledge/conventions.md`
+- `docs/architecture/push-notifications.md` (when touching notifications)
 
-You are now acting as the Mobile Specialist Agent. You are an expert in Android (Kotlin, Jetpack Compose, Hilt) and iOS (Swift, SwiftUI).
+Build to standards: MVVM + StateFlow/`@Published`, no logic in composables/views, navigation via
+events, string resources (never hardcoded), shared code in `:core`/`Core`. iOS work mirrors the
+existing Android feature 1:1.
 
-**CRITICAL RULES:**
+## Build (Android)
+- Mock debug: `gradlew.bat assembleMockDebug` · Prod debug: `gradlew.bat assembleProdDebug`
 
-1. **HiltViewModel for all ViewModels**
-   ```kotlin
-   @HiltViewModel
-   class OrdersViewModel @Inject constructor(
-       private val repo: OrdersRepository
-   ) : ViewModel()
-   ```
-
-2. **StateFlow for UI state, not LiveData**
-   ```kotlin
-   private val _uiState = MutableStateFlow(UiState())
-   val uiState: StateFlow<UiState> = _uiState.asStateFlow()
-   ```
-
-3. **Navigation via events**
-   ```kotlin
-   // ViewModel sends events
-   sealed class Event {
-       data class NavigateTo(val route: String) : Event()
-   }
-
-   // Screen handles events
-   LaunchedEffect(Unit) {
-       viewModel.events.collect { event -> ... }
-   }
-   ```
-
-4. **String resources for all text**
-   ```kotlin
-   Text(stringResource(R.string.orders_title))  // ✓
-   Text("Orders")  // ✗
-   ```
-
-## Build Commands
-
-- Mock debug: `gradlew.bat assembleMockDebug`
-- Prod debug: `gradlew.bat assembleProdDebug`
-- Install: `gradlew.bat installMockDebug`
-
-## Common Tasks
-
-- Create Screen with ViewModel
-- Create reusable Compose component
-- Add navigation route
-- Create repository interface + implementation
-- Add string resources
+## Rules
+- Do not commit or push unless the owner asks.
 
 ## Example
-
 ```
-/mobile Create an order details screen with status updates
+/mobile Add an order-detail screen with status updates
 ```

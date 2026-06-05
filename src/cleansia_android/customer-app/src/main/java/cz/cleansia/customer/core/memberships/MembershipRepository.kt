@@ -63,12 +63,22 @@ class MembershipRepository @Inject constructor(
         }
     }
 
-    suspend fun subscribePhase2(planCode: String): CreateMembershipSubscriptionResponse? {
+    /**
+     * Phase 2 — create the Stripe subscription. [idempotencyToken] is the
+     * SAME token generated once at Phase-1 (see [MembershipViewModel.startSubscribe]);
+     * it must be passed UNCHANGED on every retry so the backend (T-0111 /
+     * LG-SEC-02) collapses concurrent/retried confirms onto one subscription.
+     */
+    suspend fun subscribePhase2(
+        planCode: String,
+        idempotencyToken: String?,
+    ): CreateMembershipSubscriptionResponse? {
         val resp = runWithLog("subscribePhase2") {
             api.subscribe(
                 CreateMembershipSubscriptionRequest(
                     planCode = planCode,
                     paymentMethodConfirmed = true,
+                    idempotencyToken = idempotencyToken,
                 ),
             )
         }

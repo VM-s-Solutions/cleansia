@@ -1,5 +1,6 @@
 ﻿using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Receipts;
 using Cleansia.Core.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -189,5 +190,51 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
 
         if (ratings.Count == 0) return (null, 0);
         return (ratings.Average(), ratings.Count);
+    }
+
+    public async Task<List<Order>> GetReceiptReconciliationCandidatesAsync(
+        DateTime olderThanUtc, int take, CancellationToken cancellationToken)
+    {
+        // T-0122 / ADR-0002 D3.4 + ADR-0004 C-B — the OUTER net for the at-most-once Wave-0 dispatch
+        // gap. System-job read: bypass the tenant filter so the sweep sees every tenant's stale fiscal
+        // work. The caller re-scopes per item (SetTenantOverride) before re-enqueuing (S8).
+        //
+        // Predicate:
+        //   • receipt-eligible (mirrors GenerateReceiptHandler eligibility: Cash OR Paid), AND
+        //   • committed BEFORE the threshold cutoff (CreatedOn <= olderThanUtc) — fresh orders whose
+        //     normal post-commit dispatch may still be on the wire are NOT swept, AND
+        //   • the receipt is not fully realized: Receipt is null (original D3.4) OR Receipt.FiscalCode
+        //     is null (C-B: the claimed-but-unregistered row T-0119 creates).
+        // The "AND enforcementMode != None" half of C-B is resolved per item in the sweep (it needs the
+        // per-country config), not here. Include the Receipt + CustomerAddress so the sweep can resolve
+        // the enforcement mode without a second round-trip.
+        var cutoff = new DateTimeOffset(olderThanUtc, TimeSpan.Zero);
+
+        // ROUND-2 FIX: do NOT filter on the Include'd one-to-one ref nav (o.Receipt.FiscalCode) — EF
+        // emits an untranslatable LeftJoin for that next to the cardinality-altering Include+Take.
+        // Express "not fully realized" as an ANTI-JOIN against the OrderReceipts table: there is NO
+        // fully-registered (FiscalCode != null) receipt for this order. The !Any(...) covers BOTH
+        // "no receipt at all" and "receipt with null FiscalCode" (the C-B widening) in one translatable
+        // predicate.
+        //
+        // The anti-join set is hoisted with IgnoreQueryFilters() so the OrderReceipt tenant query filter
+        // (whose body is an untranslatable tenantProvider.GetCurrentTenantId() call) is NOT re-attached
+        // inside the correlated subquery — and so the cross-tenant system read stays correct: a stale
+        // order in tenant T whose receipt is registered must still be seen as realized, which requires
+        // the subquery to look across tenants too (same as the outer IgnoreQueryFilters). The Include of
+        // Receipt + CustomerAddress stays for LOADing the graph the per-item enforcement-mode resolution
+        // needs — Include for LOAD is fine; the bug was the Include'd nav inside the WHERE.
+        var registeredReceipts = Context.Set<OrderReceipt>().IgnoreQueryFilters();
+
+        return await GetDbSet()
+            .IgnoreQueryFilters()
+            .Include(o => o.Receipt)
+            .Include(o => o.CustomerAddress)
+            .Where(o => (o.PaymentType == PaymentType.Cash || o.PaymentStatus == PaymentStatus.Paid)
+                && o.CreatedOn <= cutoff
+                && !registeredReceipts.Any(r => r.OrderId == o.Id && r.FiscalCode != null))
+            .OrderBy(o => o.CreatedOn)
+            .Take(take)
+            .ToListAsync(cancellationToken);
     }
 }

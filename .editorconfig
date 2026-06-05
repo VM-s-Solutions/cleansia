@@ -1,0 +1,63 @@
+# Root EditorConfig for the Cleansia repository.
+# Scope: the .NET backend (and general repo defaults). The Angular workspace has its own
+# `src/Cleansia.App/.editorconfig` (root=true) which takes precedence there.
+#
+# Severity policy (deliberate, pre-PROD): the rules that map to the team's hard conventions are set
+# to `warning` or `error`. We do NOT flip warnings-as-errors globally yet — a 1000-file codebase with
+# no prior analyzer history would explode. The rollout to `error` + TreatWarningsAsErrors is a tracked
+# ticket (see agents/backlog/audits/consistency-violations.md and the enforcement plan). Until then
+# these surface as build warnings the Reviewer treats as blocking for NEW/changed code.
+
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+end_of_line = crlf
+
+[*.{md,yml,yaml,json}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = off
+
+# ----------------------------------------------------------------------------------------------
+# C# — backend conventions (Cleansia)
+# ----------------------------------------------------------------------------------------------
+[*.cs]
+indent_size = 4
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+csharp_using_directive_placement = outside_namespace:warning
+csharp_style_namespace_declarations = file_scoped:warning   # the codebase uses file-scoped namespaces
+
+# Naming & style the team relies on
+dotnet_style_qualification_for_field = false:suggestion
+dotnet_style_qualification_for_property = false:suggestion
+csharp_prefer_braces = true:warning                          # always brace, even one-liners (matches codebase)
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+dotnet_style_prefer_conditional_expression_over_return = true:suggestion
+
+# Correctness rules that map to the team's hard conventions — surfaced as warnings
+# (CA/IDE ids the Reviewer checks; will be promoted to error in the analyzer-rollout ticket)
+dotnet_diagnostic.CA2007.severity = none                     # ConfigureAwait(false) — not used in ASP.NET; off
+dotnet_diagnostic.CA1062.severity = suggestion               # validate args — validators handle this
+dotnet_diagnostic.IDE0005.severity = warning                 # unused usings — keep imports clean
+dotnet_diagnostic.IDE0044.severity = warning                 # make field readonly
+dotnet_diagnostic.CS8602.severity = warning                  # possible null deref — nullability discipline
+dotnet_diagnostic.CS8618.severity = warning                  # non-nullable not initialized
+# `dynamic` is banned by convention — analyzer can't ban the keyword directly; the consistency
+# check script (agents/tools/check-backend-consistency) and the Reviewer enforce it.
+
+# Async correctness (maps to patterns-backend.md async rules)
+dotnet_diagnostic.CA2012.severity = warning                  # use ValueTasks correctly
+dotnet_diagnostic.VSTHRD002.severity = none                  # (only if analyzer present)
+
+[*.{cs}]
+# enforce trailing newline + no trailing whitespace already set above

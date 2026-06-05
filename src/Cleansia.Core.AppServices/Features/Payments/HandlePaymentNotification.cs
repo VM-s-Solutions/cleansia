@@ -113,7 +113,7 @@ public class HandlePaymentNotification
         IProcessedStripeEventRepository processedStripeEventRepository,
         IStripeSubscriptionWebhookHandler subscriptionWebhookHandler,
         ITenantProvider tenantProvider,
-        IQueueClient queueClient,
+        IPendingDispatch pending,
         ILogger<Handler> logger) : ICommandHandler<Command, string>
     {
         public async Task<BusinessResult<string>> Handle(Command command, CancellationToken cancellationToken)
@@ -238,23 +238,35 @@ public class HandlePaymentNotification
             order.UpdatePaymentStatus(PaymentStatus.Paid);
             order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
 
-            await queueClient.SendAsync(QueueNames.GenerateReceipt,
-                new GenerateReceiptMessage(orderId, language), cancellationToken);
+            // ADR-0002 D1/D5 (the F2 webhook stamp/effect-split fix): record intent. These now fire
+            // only AFTER the ProcessedStripeEvent stamp + state change commit; on a commit-throw
+            // (incl. the parallel-retry 23505) the guard is unreached and nothing is dispatched — so a
+            // Stripe retry can no longer produce a SECOND receipt + push.
+            pending.Enqueue(
+                QueueNames.GenerateReceipt,
+                new QueueEnvelope<GenerateReceiptMessage>(
+                    MessageKeys.Receipt(orderId),
+                    order.TenantId,
+                    new GenerateReceiptMessage(orderId, language)),
+                MessageKeys.Receipt(orderId));
 
             if (!string.IsNullOrEmpty(order.UserId))
             {
-                await queueClient.SendAsync(
+                pending.Enqueue(
                     QueueNames.NotificationsDispatch,
-                    new SendPushNotificationMessage(
-                        UserId: order.UserId,
-                        EventKey: NotificationEventCatalog.OrderConfirmed,
-                        Args: new Dictionary<string, string>
-                        {
-                            ["orderId"] = order.Id,
-                            ["orderNumber"] = order.DisplayOrderNumber,
-                        },
-                        TenantId: order.TenantId),
-                    cancellationToken);
+                    new QueueEnvelope<SendPushNotificationMessage>(
+                        MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderConfirmed, order.Id),
+                        order.TenantId,
+                        new SendPushNotificationMessage(
+                            UserId: order.UserId,
+                            EventKey: NotificationEventCatalog.OrderConfirmed,
+                            Args: new Dictionary<string, string>
+                            {
+                                ["orderId"] = order.Id,
+                                ["orderNumber"] = order.DisplayOrderNumber,
+                            },
+                            TenantId: order.TenantId)),
+                    MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderConfirmed, order.Id));
             }
 
             logger.LogInformation("Successfully processed payment webhook for order {OrderId}", orderId);
@@ -275,18 +287,21 @@ public class HandlePaymentNotification
 
             if (!string.IsNullOrEmpty(order.UserId))
             {
-                await queueClient.SendAsync(
+                pending.Enqueue(
                     QueueNames.NotificationsDispatch,
-                    new SendPushNotificationMessage(
-                        UserId: order.UserId,
-                        EventKey: NotificationEventCatalog.OrderCancelled,
-                        Args: new Dictionary<string, string>
-                        {
-                            ["orderId"] = order.Id,
-                            ["orderNumber"] = order.DisplayOrderNumber,
-                        },
-                        TenantId: order.TenantId),
-                    cancellationToken);
+                    new QueueEnvelope<SendPushNotificationMessage>(
+                        MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderCancelled, order.Id),
+                        order.TenantId,
+                        new SendPushNotificationMessage(
+                            UserId: order.UserId,
+                            EventKey: NotificationEventCatalog.OrderCancelled,
+                            Args: new Dictionary<string, string>
+                            {
+                                ["orderId"] = order.Id,
+                                ["orderNumber"] = order.DisplayOrderNumber,
+                            },
+                            TenantId: order.TenantId)),
+                    MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderCancelled, order.Id));
             }
 
             logger.LogInformation("Cancelled order {OrderId} due to expired Stripe checkout session", orderId);

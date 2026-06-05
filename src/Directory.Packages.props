@@ -10,6 +10,11 @@
   <ItemGroup Label="EF Core + Npgsql">
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.3" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.3" />
+    <!-- SQLite provider — UNIT-TEST ONLY (Cleansia.Tests). Lets T-0113's tenant-correctness tests
+         build a real CleansiaDbContext that exercises OnModelCreating + the global query filter
+         without a Postgres/Docker container (the Postgres Testcontainers harness lives in
+         Cleansia.IntegrationTests). NOT referenced by any production project. -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.3" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.3" />
     <PackageVersion Include="Npgsql" Version="10.0.1" />
@@ -84,6 +89,15 @@
   </ItemGroup>
 
   <ItemGroup Label="Testing">
+    <!-- ASP.NET TestHost — boots a real middleware pipeline in-process (no Docker) so the
+         partitioned rate limiter (ADR-0003 / T-0115) can be exercised through UseForwardedHeaders
+         + UseRateLimiter with synthetic X-Forwarded-For client IPs. Reused by T-0126. -->
+    <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="10.0.0" />
+    <!-- WebApplicationFactory host harness (T-0126 / TC-AUTHZ-0): boots a REAL API host per audience
+         through the full AddJwt + AddCleansiaAuthorization pipeline so the cross-tenant/cross-user
+         write-path rejection tests run end-to-end (the in-process BaseIntegrationTest harness cannot
+         reach the middleware/policy/JWT layer — ADR-0001 §D6). -->
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.0" />
     <PackageVersion Include="coverlet.collector" Version="8.0.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
     <PackageVersion Include="Microsoft.TestPlatform.TestHost" Version="18.3.0" />

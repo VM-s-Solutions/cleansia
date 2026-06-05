@@ -76,8 +76,8 @@ public class CompleteOrder
                 .WithMessage(BusinessErrorMessage.EmployeeNotAssignedToOrder)
                 .MustAsync(HasCompletedProfileAsync)
                 .WithMessage(BusinessErrorMessage.EmployeeProfileIncomplete)
-                .MustAsync(HasUploadedDocumentsAsync)
-                .WithMessage(BusinessErrorMessage.EmployeeDocumentsMissing);
+                .MustAsync(EmployeeIsApprovedAsync)
+                .WithMessage(BusinessErrorMessage.EmployeeNotApproved);
 
             When(x => !string.IsNullOrEmpty(x.CompletionNotes), () =>
             {
@@ -130,13 +130,19 @@ public class CompleteOrder
             return employee?.Address is not null;
         }
 
-        private async Task<bool> HasUploadedDocumentsAsync(Command command, CancellationToken cancellationToken)
+        // T-0109 (EMP-GAP-01): the order-action approval gate. Identical to the
+        // rule in TakeOrder / StartOrder — only an Approved cleaner may complete an
+        // order (no receipt / loyalty / pay fan-out for a non-vetted cleaner). The
+        // employee is server-derived from the caller (S1 server-truth); empty caller
+        // fails closed. Replaces the misnamed HasUploadedDocumentsAsync (which was
+        // only a ContractStatus != Pending check and let rejected cleaners complete).
+        private async Task<bool> EmployeeIsApprovedAsync(Command command, CancellationToken cancellationToken)
         {
             var employeeId = await _orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
             if (string.IsNullOrEmpty(employeeId)) return false;
 
             var employee = await _employeeRepository.GetByIdAsync(employeeId, cancellationToken);
-            return employee?.ContractStatus != ContractStatus.Pending;
+            return employee?.ContractStatus == ContractStatus.Approved;
         }
 
         private async Task<bool> HasAfterPhotosAsync(string orderId, CancellationToken cancellationToken)
@@ -150,7 +156,7 @@ public class CompleteOrder
 
     public class Handler(
         IOrderRepository orderRepository,
-        IQueueClient queueClient,
+        IPendingDispatch pending,
         IEmailService emailService,
         ILoyaltyService loyaltyService,
         IReferralService referralService,
@@ -216,26 +222,34 @@ public class CompleteOrder
             if (order.Receipt is null)
             {
                 var languageCode = order.User?.PreferredLanguageCode ?? Constants.Language.English;
-                await queueClient.SendAsync(QueueNames.GenerateReceipt,
-                    new GenerateReceiptMessage(order.Id, languageCode), cancellationToken);
+                pending.Enqueue(
+                    QueueNames.GenerateReceipt,
+                    new QueueEnvelope<GenerateReceiptMessage>(
+                        MessageKeys.Receipt(order.Id),
+                        order.TenantId,
+                        new GenerateReceiptMessage(order.Id, languageCode)),
+                    MessageKeys.Receipt(order.Id));
             }
 
             // Push notification for the customer's "All done!" toast.
             // Skip for guest orders (no UserId → no device).
             if (!string.IsNullOrEmpty(order.UserId))
             {
-                await queueClient.SendAsync(
+                pending.Enqueue(
                     QueueNames.NotificationsDispatch,
-                    new SendPushNotificationMessage(
-                        UserId: order.UserId,
-                        EventKey: NotificationEventCatalog.OrderCompleted,
-                        Args: new Dictionary<string, string>
-                        {
-                            ["orderId"] = order.Id,
-                            ["orderNumber"] = order.DisplayOrderNumber,
-                        },
-                        TenantId: order.TenantId),
-                    cancellationToken);
+                    new QueueEnvelope<SendPushNotificationMessage>(
+                        MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderCompleted, order.Id),
+                        order.TenantId,
+                        new SendPushNotificationMessage(
+                            UserId: order.UserId,
+                            EventKey: NotificationEventCatalog.OrderCompleted,
+                            Args: new Dictionary<string, string>
+                            {
+                                ["orderId"] = order.Id,
+                                ["orderNumber"] = order.DisplayOrderNumber,
+                            },
+                            TenantId: order.TenantId)),
+                    MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderCompleted, order.Id));
             }
 
             try
@@ -263,10 +277,13 @@ public class CompleteOrder
             // for shared jobs.
             foreach (var assignment in order.AssignedEmployees)
             {
-                await queueClient.SendAsync(
+                pending.Enqueue(
                     QueueNames.CalculateOrderPay,
-                    new CalculateOrderPayMessage(order.Id, assignment.EmployeeId),
-                    cancellationToken);
+                    new QueueEnvelope<CalculateOrderPayMessage>(
+                        MessageKeys.Pay(order.Id, assignment.EmployeeId),
+                        order.TenantId,
+                        new CalculateOrderPayMessage(order.Id, assignment.EmployeeId)),
+                    MessageKeys.Pay(order.Id, assignment.EmployeeId));
             }
 
             return BusinessResult.Success(new Response(

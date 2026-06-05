@@ -9,9 +9,23 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
+  <!--
+    The authorization tests (T-0100 / ADR-0001) need the ASP.NET authorization
+    types (IAuthorizationService, AuthorizationBuilder) and must scan every host's
+    controllers for [Permission]/[AllowAnonymous] usage (allow-list exhaustiveness,
+    verification #1b). Hence the framework reference + the host project references.
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <!-- SQLite in-memory — lets T-0113's tenant-correctness tests spin a real CleansiaDbContext
+         (OnModelCreating + global query filter) without the Postgres Testcontainers harness. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
     <PackageReference Include="MockQueryable.Moq" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
@@ -23,7 +37,17 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Cleansia.Core.AppServices\Cleansia.Core.AppServices.csproj" />
+    <ProjectReference Include="..\Cleansia.Config\Cleansia.Config.csproj" />
+    <!-- T-0121 / ADR-0002 D5 step 1 — the queue-consumer bodies live in this non-Exe library so
+         the dispatch-contract tests (TC-IDEMP-0 / TC-DISPATCH-0 / …) can compile against the real
+         consumer code. The Exe host (Cleansia.Functions) keeps the [Function] trigger shells. -->
+    <ProjectReference Include="..\Cleansia.Functions.Core\Cleansia.Functions.Core.csproj" />
     <ProjectReference Include="..\Cleansia.TestUtilities\Cleansia.TestUtilities.csproj" />
+    <ProjectReference Include="..\Cleansia.Web.Admin\Cleansia.Web.Admin.csproj" />
+    <ProjectReference Include="..\Cleansia.Web.Partner\Cleansia.Web.Partner.csproj" />
+    <ProjectReference Include="..\Cleansia.Web.Customer\Cleansia.Web.Customer.csproj" />
+    <ProjectReference Include="..\Cleansia.Web.Mobile.Partner\Cleansia.Web.Mobile.Partner.csproj" />
+    <ProjectReference Include="..\Cleansia.Web.Mobile.Customer\Cleansia.Web.Mobile.Customer.csproj" />
   </ItemGroup>
 
 </Project>

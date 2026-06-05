@@ -40,7 +40,11 @@ public class PaymentController(IMediator mediator) : CustomerApiController(media
         return HandleResult<CreatePaymentIntent.Response>(result);
     }
 
+    // SEC-W3 (T-0116) — per-source-IP webhook window (independent of "auth"/"interactive").
+    // [AllowAnonymous] preserved: Stripe is unauthenticated; the signature check is the real auth,
+    // the rate limit is the unauthenticated-DoS cap on this side-effecting endpoint (S5).
     [AllowAnonymous]
+    [EnableRateLimiting("webhook")]
     [HttpPost("webhook")]
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]

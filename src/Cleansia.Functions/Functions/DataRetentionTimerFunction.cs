@@ -1,18 +1,12 @@
-using Cleansia.Core.AppServices.Features.DataRetention;
+using Cleansia.Functions.Core.Handlers;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Functions.Functions;
 
-public class DataRetentionTimerFunction(
-    IDataRetentionBackgroundService dataRetentionService,
-    ILogger<DataRetentionTimerFunction> logger)
+// T-0121 / ADR-0002 D5 step 1 — thin trigger shell; body lives in DataRetentionTimerHandler (Core).
+public class DataRetentionTimerFunction(DataRetentionTimerHandler handler)
 {
     [Function("DataRetentionCleanup")]
-    public async Task Run([TimerTrigger("0 0 3 * * 0")] TimerInfo timer, CancellationToken ct)
-    {
-        logger.LogInformation("DataRetentionCleanup timer triggered at {Time}", DateTime.UtcNow);
-        await dataRetentionService.RunAllRetentionTasksAsync(ct);
-        logger.LogInformation("DataRetentionCleanup completed");
-    }
+    public Task Run([TimerTrigger("0 0 3 * * 0")] TimerInfo timer, CancellationToken ct)
+        => handler.HandleAsync(ct);
 }

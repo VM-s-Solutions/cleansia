@@ -1,28 +1,14 @@
-using System.Text.Json;
-using Cleansia.Core.Queue.Abstractions.Messages;
+using Cleansia.Functions.Core.Handlers;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Functions.Functions;
 
-public class GenerateInvoiceFunction(
-    ILogger<GenerateInvoiceFunction> logger)
+// T-0121 / ADR-0002 D5 step 1 — thin trigger shell; body lives in GenerateInvoiceHandler (Core).
+public class GenerateInvoiceFunction(GenerateInvoiceHandler handler)
 {
     [Function("GenerateInvoice")]
     public Task Run(
         [QueueTrigger("generate-invoice", Connection = "QueueStorageConnectionString")] string messageText,
         CancellationToken ct)
-    {
-        var message = JsonSerializer.Deserialize<GenerateInvoiceMessage>(messageText,
-            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
-            ?? throw new InvalidOperationException("Failed to deserialize GenerateInvoiceMessage");
-
-        logger.LogInformation("Invoice generation for employee {EmployeeId} in period {PayPeriodId} — not yet implemented",
-            message.EmployeeId, message.PayPeriodId);
-
-        // TODO: Extract invoice PDF generation from PayPeriodBackgroundService into this function
-        // For now, invoice PDFs are still generated inline within the timer function
-
-        return Task.CompletedTask;
-    }
+        => handler.HandleAsync(messageText, ct);
 }

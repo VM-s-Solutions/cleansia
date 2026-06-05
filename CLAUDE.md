@@ -210,11 +210,32 @@ Pay configs are per service/package (with per-employee overrides in progress —
 | `Service` / `Package` | Cleaning service types and bundles with pricing |
 | `Currency` / `Language` / `Country` | Platform configuration entities |
 
+## Agent Operating System
+
+This project is run by a team of specialized AI sub-agents that coordinate through Git-tracked
+artifacts. **If you are coordinating multi-agent or multi-step work, start here:**
+
+- **`agents/WAY-OF-WORKING.md`** — the human-facing guide to the whole flow (read first).
+- **`agents/README.md`** — the roster and folder map.
+- **`.claude/agents/*.md`** — the 13 agent charters (pm, analyst, architect, backend, db, frontend,
+  android, ios, qa, reviewer, security, optimizer, docs). Invoke via the `Agent` tool with
+  `subagent_type` = the charter's `name`.
+- **`agents/process/*.md`** — ticket lifecycle, quality gates, communication protocol, routing.
+- **`agents/knowledge/*.md`** — the "how we build" catalog (patterns + the S1–S10 security laws +
+  conventions). **Every developer agent reads its stack catalog first.**
+- **`agents/backlog/`** — tickets, stories, ADRs, sprint status, questions, audits, test-plans.
+
+**Primary entry points (slash commands):** `/team <request>` (delegate to the PM end-to-end),
+`/audit [area]` (the codebase audit job), `/plan` + `/execute` (ticketed plan then run), and the
+direct escape hatches `/backend` `/frontend` `/mobile` `/review` `/docs` `/sync` for small single-shot
+work. `/feature` is an alias for `/team`.
+
+The previous `/plan`+`/execute` YAML prompt system is archived under `agents/_legacy/` (its knowledge
+was folded into `agents/knowledge/`).
+
 ## Active Bug/Improvement Tracker
 
-See `planning/active/bugfix-improvements.md` for the full list.
-
-**Completed (v3 + v4):** BUG-1 through BUG-21, IMP-2, IMP-4, CONTENT-1 through CONTENT-4
+The live backlog is `agents/backlog/INDEX.md` (managed by the PM). Notable in-flight / external work:
 
 **In Progress:**
 - **IMP-3**: Per-employee pay config — `EmployeeId` field added to `EmployeePayConfig` entity and EF config. Remaining: migration, backend commands, admin UI tab on employee detail.

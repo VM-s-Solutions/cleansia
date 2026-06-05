@@ -30,6 +30,17 @@ public class LoyaltyTransaction : Auditable, ITenantEntity
     [MaxLength(50)]
     public string? OrderId { get; private set; }
 
+    /// <summary>
+    /// Client-supplied idempotency token (T-0112 / LG-SEC-06 / S7a) for the
+    /// manual admin grant/revoke path. NULL on the order-driven / referral
+    /// paths (which collapse on <c>(OrderId, Source)</c> instead) — preserving
+    /// back-compat. A <b>filtered</b> UNIQUE INDEX on this column (where the
+    /// key is NOT NULL) is the atomic backstop that collapses a double-submit
+    /// of the same admin grant onto exactly one ledger row.
+    /// </summary>
+    [MaxLength(80)]
+    public string? IdempotencyKey { get; private set; }
+
     [MaxLength(500)]
     public string? Description { get; private set; }
 
@@ -45,7 +56,8 @@ public class LoyaltyTransaction : Auditable, ITenantEntity
         int signedPoints,
         LoyaltyEarnSource source,
         string? orderId,
-        string? description = null)
+        string? description = null,
+        string? idempotencyKey = null)
     {
         return new LoyaltyTransaction
         {
@@ -55,6 +67,7 @@ public class LoyaltyTransaction : Auditable, ITenantEntity
             Source = source,
             OrderId = orderId,
             Description = description,
+            IdempotencyKey = idempotencyKey,
             OccurredOn = DateTimeOffset.UtcNow,
         };
     }

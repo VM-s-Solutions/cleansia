@@ -1,187 +1,135 @@
-# Agent System
+# Cleansia Agent Operating System
 
-A token-efficient agent workflow for managing multi-platform projects with Claude Code.
+> A team of specialized AI sub-agents that pick up tasks, analyze them, write user stories,
+> implement across backend / frontend / Android / iOS, test, review, harden, and document —
+> coordinating entirely through Git-tracked artifacts.
 
-## The Problem
+This folder is the **operating system** for the Cleansia engineering team of agents. It is the
+single source of truth for *how the team works*. The agents themselves (their system prompts)
+live in [`.claude/agents/`](../.claude/agents/); everything they read, produce, and coordinate
+through lives here under `agents/`.
 
-Without structure, every Claude Code session burns 50-80% of tokens on codebase exploration. A typical 4-task session uses ~200k tokens when it should use ~50k.
+If you are a human: start with [`WAY-OF-WORKING.md`](./WAY-OF-WORKING.md).
+If you are an agent: read your charter in `.claude/agents/<your-name>.md`, then the process docs
+below, then the ticket you were handed.
 
-## The Solution: Plan then Execute
+---
 
-```
-You (natural language)  →  /plan  →  Task Specs  →  /execute  →  Code changes
-                            ↑                         ↑
-                     Reads CLAUDE.md            Reads specialist
-                     Greps codebase             prompts only
-                     ~20k tokens               ~15k tokens/task
-```
+## The mental model in one paragraph
 
-## Quick Start
+You (the owner) type a request in natural language. The **Orchestrator** (the main Claude Code
+session) hands it to the **PM**, who turns it into one or more **tickets** in
+[`backlog/tickets/`](./backlog/tickets/). Each ticket has a state machine
+(`draft → ready → in_progress → in_review → qa → done`). The PM routes each ticket to the right
+**specialist** (analyst, architect, backend, frontend, android, ios, db). A **reviewer** runs
+**in parallel** with every developer. **Security** and **QA** gate the merge. Nothing is
+verbal — every decision, hand-off, and status change is a file in Git. When the team is blocked,
+it writes a question to [`backlog/questions/open.md`](./backlog/questions/) and surfaces it to you.
 
-### 1. Create CLAUDE.md in your project root
+---
 
-Every project needs a `CLAUDE.md` that describes:
+## Roster
 
-- Tech stack and versions
-- Directory structure
-- Build/run commands
-- Architecture patterns and conventions
-- Key entities and relationships
+The team is defined as **one charter per role** (DRY). The Orchestrator/PM spawns **multiple
+concurrent instances** of the same charter when work fans out — e.g. three `backend` agents on
+three independent features, each with a `reviewer` running alongside. Concurrency is a *runtime*
+decision; the charter is the *definition*.
 
-This is the single source of truth that agents read instead of exploring the entire codebase.
+| Agent | Charter | Owns | One-line role |
+|---|---|---|---|
+| **Orchestrator** | *(the main session)* | routing | Receives your request, invokes the PM, relays status. The only agent you talk to. |
+| **PM** | `pm.md` | `backlog/tickets`, `backlog/status`, ticket state | Owns the backlog & sprint state; sequences work; the only agent that reports progress up. |
+| **Analyst** | `analyst.md` | `backlog/stories`, `questions/open.md` | Turns intent into user stories with Given/When/Then acceptance criteria. |
+| **Architect** | `architect.md` | `backlog/adr`, `knowledge/*`, `knowledge/roles` | Owns Architecture Decision Records, the pattern catalog, and the responsibility map. |
+| **Backend Dev** | `backend.md` | `src/Cleansia.Core.*`, `Cleansia.Web.*`, `Cleansia.Infra.Services`, `Cleansia.Functions` | Implements .NET 10 / CQRS / MediatR features and integrations. |
+| **DB Master** | `db.md` | `src/Cleansia.Infra.Database`, migrations, entity configs | Owns the Postgres schema, EF Core configs, migrations, query filters, indexes, seeds. |
+| **Frontend Dev** | `frontend.md` | `src/Cleansia.App` (apps + libs) | Implements Angular 19 / Nx / NgRx / PrimeNG across the 3 web apps. |
+| **Android Dev** | `android.md` | `src/cleansia_android` | Implements Kotlin / Compose / Hilt across `:core`, `:partner-app`, `:customer-app`. |
+| **iOS Dev** | `ios.md` | `src/cleansia_ios` *(to be created)* | Ports the Android apps to Swift / SwiftUI, sharing the backend contract. |
+| **QA** | `qa.md` | `backlog/test-plans` | Writes test plans, executes against running apps, adds automated tests, reports defects. |
+| **Reviewer** | `reviewer.md` | review verdicts | Gatekeeps every change against the conventions, ADRs, and AC. Runs in parallel with devs. |
+| **Security Reviewer** | `security.md` | `backlog/security` | Audits auth, ownership, PII, tenancy, idempotency, secrets, rate-limits. Gates security-touching work. |
+| **Optimizer** | `optimizer.md` | optimization reports | Hunts performance & cost: N+1s, bundle size, render churn, slow queries, allocations. |
+| **Docs** | `docs.md` | `docs/**`, changelog | Keeps the VitePress site, READMEs, and changelog in sync with shipped behavior. |
 
-### 2. Plan your work
+### Why one charter per role (and not `backend-1`, `backend-2`)
 
-```
-/plan
+A CQRS rule changes once → it changes in one file. Named duplicates drift: `backend-1.md` and
+`backend-2.md` slowly disagree, and the reviewer can't tell which is canonical. We get parallelism
+from **spawning N instances of the one charter at runtime**, not from copying the charter N times.
+Where a role genuinely splits by domain (e.g. Android customer-app vs partner-app), the charter
+documents both surfaces and the PM scopes each instance to one.
 
-Customer app:
-- Optimize Lighthouse performance score (currently 46%)
-- Order confirmation email missing extras details
-- "View Order Status" button redirects to login
+---
 
-Backend:
-- No order status update email being sent
-```
-
-The planner investigates the codebase and outputs precise task specs with exact file paths, line numbers, and change descriptions.
-
-### 3. Execute the plan
-
-```
-/execute TASK-001
-```
-
-Or execute an entire phase:
-
-```
-/execute phase 1
-```
-
-Or execute everything:
-
-```
-/execute all
-```
-
-The executor reads the task spec, applies the specialist's coding standards, makes the exact changes, and verifies the build.
-
-## Slash Commands
-
-| Command     | Purpose                                    | Token Budget        |
-| ----------- | ------------------------------------------ | ------------------- |
-| `/plan`     | Decompose tasks into precise specs         | ~20k                |
-| `/execute`  | Execute one or more task specs             | ~15k per small task |
-| `/backend`  | Direct backend work (skip planning)        | ~30k                |
-| `/frontend` | Direct frontend work (skip planning)       | ~30k                |
-| `/mobile`   | Direct mobile work (skip planning)         | ~30k                |
-| `/review`   | Code review against standards              | ~15k                |
-| `/sync`     | NSwag client regeneration                  | ~5k                 |
-| `/docs`     | Documentation updates                      | ~10k                |
-| `/feature`  | Full-stack feature (legacy - prefer /plan) | ~100k+              |
-
-## When to Use /plan vs Direct Commands
-
-**Use `/plan` when:**
-
-- You have 2+ tasks to do
-- Tasks span multiple apps or layers (backend + frontend)
-- You want to minimize token usage
-- Tasks have dependencies on each other
-
-**Use direct commands (`/backend`, `/frontend`) when:**
-
-- Single, well-defined task
-- You already know exactly what file to change
-- Quick fix that doesn't need investigation
-
-## Directory Structure
+## Folder map
 
 ```
 agents/
-├── README.md                          # This file
-├── config/                            # Agent configuration (YAML)
-│   ├── task-planner.yaml
-│   ├── orchestrator.yaml
-│   ├── backend-specialist.yaml
-│   ├── frontend-specialist.yaml
-│   ├── mobile-specialist.yaml
-│   ├── code-review.yaml
-│   ├── code-sync.yaml
-│   └── docs.yaml
-├── prompts/system/                    # Agent system prompts
-│   ├── task-planner.md               # Core - decomposes tasks into specs
-│   ├── orchestrator.md               # Routes tasks to specialists
-│   ├── backend-specialist.md         # .NET/C#/CQRS conventions
-│   ├── frontend-specialist.md        # Angular/Nx/NgRx conventions
-│   ├── mobile-specialist.md          # Kotlin/Compose conventions
-│   ├── code-review.md                # Quality standards
-│   ├── code-sync.md                  # NSwag/model sync
-│   └── docs.md                       # Documentation standards
-
-.claude/commands/                      # Slash commands (Claude Code)
-├── plan.md                            # /plan - task decomposition
-├── execute.md                         # /execute - run task specs
-├── backend.md                         # /backend - direct backend work
-├── frontend.md                        # /frontend - direct frontend work
-├── mobile.md                          # /mobile - direct mobile work
-├── review.md                          # /review - code review
-├── sync.md                            # /sync - client regeneration
-├── docs.md                            # /docs - documentation
-└── feature.md                         # /feature - full-stack (legacy)
+├── README.md                 # this file — the roster & map
+├── WAY-OF-WORKING.md         # human-facing guide to the whole flow (read this first)
+├── process/
+│   ├── ticket-lifecycle.md   # state machine + Definition of Ready + deliberation stage + parallelism
+│   ├── deliberation.md       # DEFENSE PANELS: author defends story/ADR vs challengers → lead → consensus
+│   ├── documentation.md      # role-owned living docs (analysts/architects/devs) + Mermaid conventions
+│   ├── quality-gates.md      # the 8 gates a change passes before "done"
+│   ├── enforcement.md        # mechanical checks: editorconfig + check-consistency.mjs + CI rollout
+│   ├── communication.md      # artifact-based protocol; escalation; no agent chat
+│   └── routing.md            # how the PM decides which agent gets the work
+├── analysts/                 # analyst living docs: business logic + Mermaid diagrams, per domain
+├── architecture/decisions/   # architect living decision docs (immutable ADRs stay in backlog/adr/)
+├── knowledge/                # the canonical "how we build" catalog (agents read this first)
+│   ├── patterns-backend.md   # CQRS, validators, BusinessResult, repos, mappers (REAL types)
+│   ├── patterns-frontend.md  # facades, signals, NgRx, PrimeNG, i18n (REAL types)
+│   ├── patterns-mobile.md    # Compose, Hilt, MVVM, StateFlow (Android + iOS parity)
+│   ├── consistency.md        # ONE way to do each archetype (paged query, command, list, form, VM)
+│   ├── security-rules.md     # S1–S10 non-negotiable security laws (real-incident derived)
+│   ├── testing.md            # what must be tested + the must-cover list (pay, lifecycle, authz…)
+│   ├── runtime-readiness.md  # observability + graceful degradation when a dependency is down
+│   ├── conventions.md        # naming, file layout, quality bars, owner-only steps
+│   └── roles/                # responsibility map (CRC cards) per aggregate/service
+├── tools/
+│   └── check-consistency.mjs # mechanical checker for the project-specific A/B/C/D/E rules
+├── backlog/
+│   ├── INDEX.md              # the manifest — every ticket, one row, current state
+│   ├── tickets/              # T-NNNN-*.md — one file per unit of work
+│   ├── stories/              # US-<persona>-NNNN-*.md — user stories with AC
+│   ├── adr/                  # NNNN-*.md — immutable architecture decisions
+│   ├── status/               # sprint-N.md — progress reports for the owner
+│   ├── questions/            # open.md / answered.md — the escalation inbox
+│   ├── audits/               # findings from codebase audits (the first real job)
+│   ├── test-plans/           # T-NNNN.md — QA test plans & results
+│   └── security/             # audit checklists & findings
+├── templates/                # ticket / story / adr / audit / test-plan templates
+└── _legacy/                  # the archived old /plan+/execute YAML system (kept for history)
 ```
 
-## Multi-Project Usage
+> **Why `agents/` and not `docs/`?** `docs/` is the *published* VitePress site for the product.
+> The agent backlog churns constantly and is internal machinery — mixing it into the public docs
+> would pollute the site and couple our process to a deploy artifact. The canonical *architecture*
+> knowledge already lives in `docs/architecture/*.md`; our `knowledge/` catalog **references** it
+> rather than duplicating it (one source of truth).
 
-This system works with any project. To add a new project:
+---
 
-1. **Create `CLAUDE.md`** in the project root with the project context
-2. **Copy `.claude/commands/`** to the new project's `.claude/commands/`
-3. **Copy `agents/prompts/system/`** for the relevant specialists
-4. Done. The task planner reads `CLAUDE.md` to understand the project.
+## How an agent is invoked
 
-The specialist prompts (`backend-specialist.md`, `frontend-specialist.md`) contain coding conventions. If the new project uses different conventions, create project-specific variants.
+The Orchestrator or PM invokes a sub-agent via the `Agent` tool with `subagent_type` matching the
+charter's frontmatter `name`. The charter is loaded as that agent's system prompt. The agent then
+reads, in order:
 
-## Token Budget Guide
+1. Its own charter (`.claude/agents/<name>.md`)
+2. The relevant `knowledge/*` catalog for its stack
+3. `CLAUDE.md` (project guardrails)
+4. The ticket it was handed (and any ADRs / stories it links)
 
-| Session Type                          | Expected Tokens | Example                              |
-| ------------------------------------- | --------------- | ------------------------------------ |
-| Plan 4 tasks                          | ~20k            | `/plan` with 4 bullet points         |
-| Execute 1 small task                  | ~15k            | Single file change + build           |
-| Execute 1 medium task                 | ~25k            | Multi-file change + i18n + build     |
-| Execute 1 large task                  | ~40k            | New feature with multiple components |
-| Full session (plan + execute 4 tasks) | ~80-100k        | Typical workday session              |
-| Direct `/backend` small fix           | ~20k            | Single handler change                |
+Communication is **artifact-based** — agents never chat with each other. See
+[`process/communication.md`](./process/communication.md).
 
-## Model Selection
+---
 
-The `/plan` command includes a **Model Recommendations** section telling you which model to use for each phase. Switch before executing:
+## Modifying the team
 
-```
-/model sonnet          # before /execute phase 1
-/model haiku           # before /execute phase 2 (i18n-only)
-/model opus            # before /execute TASK-005 (complex architecture)
-```
-
-| Model      | Cost      | Use For                                                               |
-| ---------- | --------- | --------------------------------------------------------------------- |
-| **Haiku**  | Cheapest  | i18n keys, config edits, single-line fixes, copy-paste tasks          |
-| **Sonnet** | Mid       | 80% of execution tasks — components, handlers, bug fixes, refactors   |
-| **Opus**   | Expensive | **Planning** (`/plan`), complex multi-file architecture, novel design |
-
-**Rule of thumb:**
-
-- **Always plan on Opus** — the planner stays under 20k tokens but its quality determines whether execution wastes tokens or not. A precise Opus plan saves 2-3x its cost in downstream execution.
-- If the task spec is so precise it's basically a diff, **execute on Haiku**.
-- If you need the agent to make judgment calls, **execute on Sonnet**.
-- If the task says "design X from scratch", **execute on Opus**.
-
-## Tips for Minimum Token Usage
-
-1. **Always /plan first** - investigation is cheaper than repeated exploration
-2. **Be specific in your task descriptions** - "fix login redirect after password reset on customer app" beats "fix login"
-3. **Group related tasks** - "Customer app: A, B, C" not three separate sessions
-4. **Use /execute per phase** - don't execute everything at once if phases are independent
-5. **Don't re-plan** - if the plan is good, just execute it
-6. **Keep CLAUDE.md updated** - stale context = wasted tokens re-discovering structure
-7. **Switch models per phase** - use Haiku for i18n, Sonnet for code, Opus only when needed
+Edit a charter or a process doc; the change takes effect on the next invocation. Everything is in
+Git, so every change to *how the team works* is reviewable like code. If you rename a charter, the
+PM is responsible for updating every reference in `process/` and `backlog/`.

@@ -10,7 +10,7 @@ public class GenerateInvoiceHandler(
 {
     public Task HandleAsync(string messageText, CancellationToken ct)
     {
-        // ADR-0002 D2.1a — DUAL-READ at the deploy boundary (PR review #8). FiscalReconciliationService
+        // ADR-0002 D2.1a — DUAL-READ at the deploy boundary. FiscalReconciliationService
         // already enqueues QueueEnvelope<GenerateInvoiceMessage>; without this the payload would nest
         // under "payload" and bind to empty ids the moment this stub is implemented. Added now so the
         // wire contract is correct ahead of the PDF-generation extraction below.

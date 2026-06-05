@@ -34,8 +34,8 @@ public class ConfirmUserEmail
 
         private async Task<bool> ValidateUserTokenAsync(Command command, string code, CancellationToken cancellationToken)
         {
-            // The repository hashes the raw token and matches the stored hash (T-0106 / IDA-SEC-03) —
-            // resolution is by the token's hash alone, scoped to the account that owns it (AC3).
+            // The repository hashes the raw token and matches the stored hash —
+            // resolution is by the token's hash alone, scoped to the account that owns it.
             var user = await _userRepository.GetByConfirmationCodeAsync(command.Code, cancellationToken);
 
             if (user is null)

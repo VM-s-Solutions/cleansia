@@ -15,7 +15,7 @@ public class AdminLoyaltyController(IMediator mediator) : ApiController(mediator
 {
     [HttpPost("grant-points")]
     [Permission(Policy.CanGrantLoyaltyPoints)]
-    // T-0112 (LG-SEC-06 / S5 / ADR-0003): narrow brute-force window on this money-side-effecting
+    // S5 / ADR-0003: narrow brute-force window on this money-side-effecting
     // mutation. Reuses the REGISTERED "auth" policy (10/min, partitioned per JWT sub / client IP —
     // CleansiaStartupBase.AddRateLimiter), the tightest registered window, matching the other
     // side-effecting mutations (password-change, referral validate). Defense-in-depth on top of the
@@ -35,7 +35,7 @@ public class AdminLoyaltyController(IMediator mediator) : ApiController(mediator
 
     [HttpPost("revoke-points")]
     [Permission(Policy.CanGrantLoyaltyPoints)]
-    // T-0112 (LG-SEC-06 / S5 / ADR-0003): narrow brute-force window — REGISTERED "auth" policy
+    // S5 / ADR-0003: narrow brute-force window — REGISTERED "auth" policy
     // (10/min, partitioned). See grant-points above.
     [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(RevokePointsManually.Response), StatusCodes.Status200OK)]

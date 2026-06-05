@@ -27,7 +27,7 @@ namespace Cleansia.Tests.RateLimiting.Harness;
 /// lets a test drive requests with a synthetic connection peer IP, a synthetic X-Forwarded-For
 /// client IP, and an authenticated subject (the <c>X-Test-Sub</c> header).
 ///
-/// This is the shared boot fixture T-0126 (limiter isolation cases) and future host-level authz
+/// This is the shared boot fixture (limiter isolation cases) and future host-level authz
 /// tests need; keep it generic.
 /// </summary>
 public sealed class RateLimiterHostHarness : IAsyncDisposable
@@ -55,7 +55,7 @@ public sealed class RateLimiterHostHarness : IAsyncDisposable
         return new RateLimiterHostHarness(host);
     }
 
-    /// <summary>Builds + starts a host and returns the thrown exception (AC5 boot-guard assertion),
+    /// <summary>Builds + starts a host and returns the thrown exception (the boot-guard assertion),
     /// or null if it booted successfully.</summary>
     public static async Task<Exception?> TryBootThrows(
         IDictionary<string, string?> config,
@@ -145,7 +145,7 @@ public sealed class RateLimiterHostHarness : IAsyncDisposable
                     {
                         endpoints.MapPost("/auth", Ok).RequireRateLimiting("auth");
                         endpoints.MapPost("/interactive", Ok).RequireRateLimiting("interactive");
-                        // SEC-W3 (T-0116) — the genuine "webhook" named policy on the real Stripe
+                        // SEC-W3 — the genuine "webhook" named policy on the real Stripe
                         // webhook route, so the per-IP isolation / independence / Retry-After cases
                         // exercise the production policy through the production pipeline. AllowAnonymous
                         // mirrors the controller (Stripe is unauthenticated); the limiter still applies.

@@ -8,9 +8,8 @@ using Moq;
 namespace Cleansia.Tests.Features.PromoCodes;
 
 /// <summary>
-/// T-0110 (LG-SEC-01) / T-0127 (TC-IDEMP-0) — DB-atomic cap enforcement for promo-code
-/// redemption, written TEST-FIRST (red → green) per knowledge/testing.md (must-cover #3 promo,
-/// #6 idempotency S7).
+/// DB-atomic cap enforcement for promo-code redemption, written TEST-FIRST (red → green)
+/// per knowledge/testing.md (must-cover #3 promo, #6 idempotency S7).
 ///
 /// The race-fix (owner BINDING decision, see ticket) moves both caps off app-layer
 /// check-then-act reads onto atomic DB writes:
@@ -24,7 +23,7 @@ namespace Cleansia.Tests.Features.PromoCodes;
 /// These are LOGIC-LEVEL unit tests: they mock the two atomic repository methods and assert that
 /// the service maps the rows-affected / reservation-result branches to the correct
 /// <see cref="PromoCodeError"/>. The TRUE-PARALLEL DB proof (real unique-index enforcement + the
-/// conditional UPDATE under concurrent writers) is deferred to the integration suite (T-0127) —
+/// conditional UPDATE under concurrent writers) is deferred to the integration suite —
 /// the in-memory unit harness has no real DB and cannot enforce a unique constraint, so faking
 /// genuine parallelism here would be theater. That deferral is flagged in the ticket.
 /// </summary>
@@ -90,7 +89,7 @@ public class PromoCodeServiceRedeemTests
             });
     }
 
-    // ── AC1 — per-user cap is DB-enforced (M=1, already redeemed once) ────────
+    // Per-user cap is DB-enforced (M=1, already redeemed once).
     [Fact]
     public async Task AC1_SecondRedemption_For_OneShot_Code_Returns_PerUserLimitReached()
     {
@@ -111,9 +110,10 @@ public class PromoCodeServiceRedeemTests
         Assert.Equal(0m, result.AppliedDiscount);
     }
 
-    // ── AC2 — concurrent per-user race: the loser maps to PerUserLimitReached ─
+    // Concurrent per-user race: the loser maps to PerUserLimitReached.
     // Logic-level: both callers pass the in-memory fast path; the atomic reservation is the
-    // arbiter — the winner gets a slot row, the loser gets null. (True-parallel DB proof: T-0127.)
+    // arbiter — the winner gets a slot row, the loser gets null. (True-parallel DB proof in the
+    // integration suite.)
     [Fact]
     public async Task AC2_RaceLoser_When_Reservation_Returns_Null_Maps_To_PerUserLimitReached()
     {
@@ -132,12 +132,12 @@ public class PromoCodeServiceRedeemTests
         Assert.Equal(PromoCodeError.PerUserLimitReached, result.Error);
         // The loser must NOT also change-track-add a second row — the reservation is the only writer.
         _redemptions.Verify(r => r.Add(It.IsAny<PromoCodeRedemption>()), Times.Never);
-        // PR review #7 — the global slot reserved above MUST be released, or the global cap leaks one
+        // The global slot reserved above MUST be released, or the global cap leaks one
         // slot per failed per-user reservation.
         _promoCodes.Verify(r => r.DecrementGlobalRedemptionsAsync(CodeId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    // PR review #7 — when the per-user reservation SUCCEEDS, the global slot is consumed and must NOT be
+    // When the per-user reservation SUCCEEDS, the global slot is consumed and must NOT be
     // decremented (no spurious compensation).
     [Fact]
     public async Task Successful_Redemption_Does_Not_Decrement_The_Global_Counter()
@@ -173,7 +173,7 @@ public class PromoCodeServiceRedeemTests
         Assert.Equal(CodeId, result.PromoCodeId);
     }
 
-    // ── AC3 — global cap is atomic (conditional increment affects 0 rows) ─────
+    // Global cap is atomic (conditional increment affects 0 rows).
     [Fact]
     public async Task AC3_GlobalCap_Reached_ConditionalIncrement_Affects_Zero_Rows_Returns_GlobalLimitReached()
     {
@@ -209,7 +209,7 @@ public class PromoCodeServiceRedeemTests
         Assert.Equal(20m, result.AppliedDiscount);
     }
 
-    // ── AC4 — multi-use codes still work (M>1: M succeed, M+1th rejected) ─────
+    // Multi-use codes still work (M>1: M succeed, M+1th rejected).
     [Fact]
     public async Task AC4_MultiUse_Code_Grants_Distinct_Ordinals_For_Each_Of_M_Redemptions()
     {
@@ -247,7 +247,7 @@ public class PromoCodeServiceRedeemTests
         Assert.Equal(PromoCodeError.PerUserLimitReached, overCap.Error);
     }
 
-    // ── AC6 — per-order idempotency unchanged (existing row short-circuits) ───
+    // Per-order idempotency unchanged (existing row short-circuits).
     [Fact]
     public async Task AC6_ExistingOrderRow_ShortCircuits_To_Existing_Result_Without_Reserving()
     {

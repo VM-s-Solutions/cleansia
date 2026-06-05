@@ -7,13 +7,13 @@ using Moq;
 namespace Cleansia.Tests.Controllers;
 
 /// <summary>
-/// T-0102 (SEC-DSP-01) / ADR-0001 §D2 Note C — the per-host command-construction seam (matching the
+/// ADR-0001 §D2 Note C — the per-host command-construction seam (matching the
 /// existing JWT-enrichment idiom <c>command with { ... }</c>). The staff flag is derived by the HOST,
 /// not trusted from the body:
-///   - AC1/AC3: the Customer and Mobile.Customer <c>AddMessage</c> controllers force
+///   - the Customer and Mobile.Customer <c>AddMessage</c> controllers force
 ///     <c>IsStaffMessage = false</c> — a customer can never submit a staff message;
-///   - AC2/AC4: the new Admin <c>AddMessage</c> controller forces <c>IsStaffMessage = true</c>;
-///   - AC4: the Partner host no longer exposes an <c>AddMessage</c> action at all.
+///   - the new Admin <c>AddMessage</c> controller forces <c>IsStaffMessage = true</c>;
+///   - the Partner host no longer exposes an <c>AddMessage</c> action at all.
 /// </summary>
 public class DisputeControllerEnrichmentTests
 {
@@ -77,7 +77,7 @@ public class DisputeControllerEnrichmentTests
     [Fact]
     public void Partner_Host_Has_No_AddMessage_Action()
     {
-        // AC4: the staff AddMessage endpoint is gone from the Partner host — no cleaner posts a
+        // the staff AddMessage endpoint is gone from the Partner host — no cleaner posts a
         // dispute message of any kind on Partner.
         var method = typeof(Cleansia.Web.Partner.Controllers.DisputeController)
             .GetMethod("AddMessage", BindingFlags.Public | BindingFlags.Instance);

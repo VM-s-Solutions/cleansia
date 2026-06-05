@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Cleansia.HostTests.Tests;
 
 /// <summary>
-/// AC5 (SEC-DSP-02, paired fix T-0103) — a customer can only open a dispute on an order they OWN.
+/// A customer can only open a dispute on an order they OWN.
 /// CanCreateDispute is CustomerOnly (coarse gate) + an inner handler ownership check loaded via the
 /// tenant-filtered GetByIdAsync ([OWN-DATA], S3/S8). End-to-end on the Customer host:
 /// <list type="bullet">

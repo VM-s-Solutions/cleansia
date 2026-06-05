@@ -6,10 +6,10 @@ using Moq;
 namespace Cleansia.Tests.Functions;
 
 /// <summary>
-/// TC-POISON-0 (ADR-0002 D3 / verify #8 / T-0120 AC2+AC3+AC7) — every <c>&lt;queue&gt;-poison</c>
+/// ADR-0002 D3 — every <c>&lt;queue&gt;-poison</c>
 /// consumer writes a durable dead-letter record via <see cref="IDeadLetterStore"/> and ACKS WITHOUT
 /// THROWING (so it never re-poisons). The two FISCAL poison consumers (generate-receipt,
-/// generate-invoice) are asserted explicitly (AC3 — they MUST write the durable row carrying at least
+/// generate-invoice) are asserted explicitly (they MUST write the durable row carrying at least
 /// the source queue name + the raw body); the other three are covered for the same no-throw + record
 /// contract.
 ///
@@ -20,7 +20,7 @@ public class PoisonHandlerTests
 {
     private readonly Mock<IDeadLetterStore> _store = new();
 
-    // ── AC3 — the two FISCAL poison consumers MUST record the durable row (source queue + body) ──
+    // ── the two FISCAL poison consumers MUST record the durable row (source queue + body) ──
 
     [Fact]
     public async Task GenerateReceiptPoison_Records_DeadLetter_With_Source_Queue_And_Body_And_Does_Not_Throw()
@@ -51,7 +51,7 @@ public class PoisonHandlerTests
             Times.Once);
     }
 
-    // ── AC2 — the other three poison consumers record + ack (log+alert+store at minimum) ──
+    // ── the other three poison consumers record + ack (log+alert+store at minimum) ──
 
     [Fact]
     public async Task NotificationsDispatchPoison_Records_DeadLetter_And_Does_Not_Throw()
@@ -95,7 +95,7 @@ public class PoisonHandlerTests
             Times.Once);
     }
 
-    // ── AC2 — a poison consumer NEVER re-poisons: even if the store throws, the consumer must NOT
+    // ── a poison consumer NEVER re-poisons: even if the store throws, the consumer must NOT
     //     swallow it into a silent loss... the store owns its own commit/retry, but the poison
     //     consumer's contract is "no throw on a NORMAL record". Here we assert the happy-path no-throw
     //     and the single durable write; store-failure semantics are the store's concern. ──

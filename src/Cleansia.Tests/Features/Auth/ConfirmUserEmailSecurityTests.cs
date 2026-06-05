@@ -14,14 +14,14 @@ using Moq;
 namespace Cleansia.Tests.Features.Auth;
 
 /// <summary>
-/// T-0106 (IDA-SEC-03) — email-confirm flow. Owner-decision (BINDING): confirm lookup is BY THE HASH
-/// OF THE TOKEN ALONE (the 128-bit secret makes this safe and closes AC3 — a token valid for B can't
+/// Email-confirm flow. Owner-decision (BINDING): confirm lookup is BY THE HASH
+/// OF THE TOKEN ALONE (the 128-bit secret makes this safe — a token valid for B can't
 /// confirm A, and a guessed/short code can't match a 128-bit token's hash). The repository hashes the
 /// incoming RAW token and matches <c>user.ConfirmationCode == Hash(raw)</c>.
 ///
-///   - AC3: a token valid for user B does not confirm/log in user A (lookup by hash; the raw token
+///   - a token valid for user B does not confirm/log in user A (lookup by hash; the raw token
 ///     A submits hashes to something the repo only returns for B's hash).
-///   - AC5: an expired token is rejected; a consumed token clears the hashed column (one-shot) and
+///   - an expired token is rejected; a consumed token clears the hashed column (one-shot) and
 ///     cannot confirm again.
 /// Written red -> green (predates the hash-lookup rewrite). The mock repo emulates the production
 /// behavior: it resolves a user ONLY when the lookup arg equals that user's stored hashed column.
@@ -67,7 +67,7 @@ public class ConfirmUserEmailSecurityTests
         return new ConfirmUserEmail.Handler(tokenService.Object, repo, new HostAudienceProvider(HostAudience));
     }
 
-    // AC3 — a token valid for user B does not confirm/log in user A. A submits B's raw token? That
+    // A token valid for user B does not confirm/log in user A. A submits B's raw token? That
     // resolves B (not A). A submits a guessed short code? It hashes to nothing the repo holds -> reject.
     [Fact]
     public async Task Token_Valid_For_Another_Account_Does_Not_Confirm_The_Attacker()
@@ -90,7 +90,7 @@ public class ConfirmUserEmailSecurityTests
         Assert.False(userA.IsEmailConfirmed);   // A is never confirmed by B's token
     }
 
-    // AC5 — expired confirmation token is rejected by the validator.
+    // Expired confirmation token is rejected by the validator.
     [Fact]
     public async Task Expired_Confirmation_Token_Is_Rejected()
     {
@@ -110,7 +110,7 @@ public class ConfirmUserEmailSecurityTests
         Assert.Equal(BusinessErrorMessage.InvalidConfirmationCode, result.Errors[0].ErrorMessage);
     }
 
-    // AC5 — one-shot: a consumed token clears the hashed column and cannot confirm again.
+    // One-shot: a consumed token clears the hashed column and cannot confirm again.
     [Fact]
     public async Task Consumed_Confirmation_Token_Is_Cleared_And_Cannot_Be_Replayed()
     {

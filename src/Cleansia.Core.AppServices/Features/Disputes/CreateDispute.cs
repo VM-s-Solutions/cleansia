@@ -52,7 +52,7 @@ public class CreateDispute
         {
             var userId = userSessionProvider.GetUserId()!;
 
-            // Inner ownership gate (SEC-DSP-02 / ADR-0001 §D2 [OWN-DATA], S3): the
+            // Inner ownership gate (ADR-0001 §D2 [OWN-DATA], S3): the
             // CanCreateDispute → CustomerOnly policy is the coarse outer gate; this
             // handler check decides *which* customer's order may be disputed and holds
             // on any invocation path. Loaded via the tenant-filtered GetByIdAsync (S8 —

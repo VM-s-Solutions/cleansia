@@ -70,7 +70,7 @@ public class CreateAdminUser
     {
         public Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            // T-0108 (IA-1): pass the RAW password — the EF PasswordConverter hashes exactly once on
+            // Pass the RAW password — the EF PasswordConverter hashes exactly once on
             // persist (matching Register.cs / RegisterEmployee.cs). Pre-hashing here caused
             // hash(hash(password)), silently locking new admins out of login.
             var user = User.CreateWithPassword(

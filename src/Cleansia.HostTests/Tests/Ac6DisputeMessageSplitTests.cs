@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Cleansia.HostTests.Tests;
 
 /// <summary>
-/// AC6 (SEC-DSP-01 / Note C / Q-0005, paired fix T-0102) — the dispute message split + server-derived
+/// The dispute message split + server-derived
 /// staff flag:
 /// <list type="number">
 ///   <item>a Customer replying to their OWN dispute (Customer host CanAddDisputeMessage) → 200, and the

@@ -10,7 +10,7 @@ using Moq;
 namespace Cleansia.Tests.Features.Orders;
 
 /// <summary>
-/// T-0109 (EMP-GAP-01): CompleteOrder's "approval" gate was the misnamed
+/// CompleteOrder's "approval" gate was the misnamed
 /// <c>HasUploadedDocumentsAsync</c> (only checked != Pending), so a rejected
 /// cleaner assigned to an InProgress order could complete it (triggering
 /// receipt / loyalty / pay). These cases assert the honest == Approved gate.
@@ -36,9 +36,9 @@ public class CompleteOrderValidatorTests
     }
 
     [Theory]
-    [InlineData(ContractStatus.Rejected)]   // AC3: rejected cleaner cannot complete
-    [InlineData(ContractStatus.Pending)]    // AC4
-    [InlineData(ContractStatus.Terminated)] // AC4
+    [InlineData(ContractStatus.Rejected)]   // rejected cleaner cannot complete
+    [InlineData(ContractStatus.Pending)]
+    [InlineData(ContractStatus.Terminated)]
     public async Task When_Cleaner_Not_Approved_Then_EmployeeNotApproved(ContractStatus status)
     {
         ArrangeCompletableOrder(employeeStatus: status);
@@ -47,14 +47,14 @@ public class CompleteOrderValidatorTests
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.EmployeeNotApproved);
-        // The approval failure must NOT masquerade as documents_missing (AC6).
+        // The approval failure must NOT masquerade as documents_missing.
         Assert.DoesNotContain(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.EmployeeDocumentsMissing);
     }
 
     [Fact]
     public async Task When_Cleaner_Approved_And_All_Rules_Pass_Then_Valid()
     {
-        // AC5: approved + assigned + after photos present + profile complete.
+        // approved + assigned + after photos present + profile complete.
         ArrangeCompletableOrder(employeeStatus: ContractStatus.Approved);
 
         var result = await _validator.ValidateAsync(new CompleteOrder.Command(OrderId));

@@ -11,8 +11,8 @@ using Microsoft.Extensions.Logging;
 namespace Cleansia.Core.AppServices.Services;
 
 /// <summary>
-/// T-0122 (FISCAL-RECON) / ADR-0002 D3.4 + ADR-0004 C-B — the DISPATCH-layer reconciliation sweep.
-/// Wave-0 dispatch (T-0118) is at-most-once: a crash between the commit and the in-memory drain loses
+/// ADR-0002 D3.4 + ADR-0004 C-B — the DISPATCH-layer reconciliation sweep.
+/// Wave-0 dispatch is at-most-once: a crash between the commit and the in-memory drain loses
 /// the send, leaving NO message → no <c>-poison</c> → no alert (the F3 poison floor only catches
 /// enqueued-and-failed-5x). For the two fiscal queues that silent loss is a lost legal/financial
 /// artifact, so this sweep finds committed-but-unrealized fiscal work and RE-ENQUEUES it through the
@@ -23,7 +23,7 @@ namespace Cleansia.Core.AppServices.Services;
 /// calls <see cref="IQueueClient"/> DIRECTLY under the documented Bucket-B carve-out (ADR-0002 D5
 /// Bucket B, reviewer check #1 whitelist) — NOT the request-scoped <c>IPendingDispatch</c>. Each
 /// message is wrapped in the SAME <see cref="QueueEnvelope{T}"/> + frozen <see cref="MessageKeys"/>
-/// T-0118 established so the re-enqueue dedups downstream.</para>
+/// so the re-enqueue dedups downstream.</para>
 ///
 /// <para>Mirrors the batch + tenant-override pattern of <c>FiscalRetryService</c> but is DISTINCT from
 /// it: that is the registration-retry layer (re-register an already-claimed receipt); this is the
@@ -60,7 +60,7 @@ public sealed class FiscalReconciliationService(
             return 0;
         }
 
-        // PR review #23 — memoize the tiny, near-static country→enforcement-mode config for the duration
+        // memoize the tiny, near-static country→enforcement-mode config for the duration
         // of THIS sweep so we don't issue one GetByCountryIdAsync round-trip per candidate (up to
         // batchSize uncached reads, 288x/day). One read per distinct country, reused across the batch.
         var enforcementModeByCountry = new Dictionary<string, FiscalEnforcementMode>(StringComparer.Ordinal);

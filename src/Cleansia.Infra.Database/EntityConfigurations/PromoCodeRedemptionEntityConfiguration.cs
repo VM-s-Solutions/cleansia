@@ -33,7 +33,7 @@ public class PromoCodeRedemptionEntityConfiguration : AuditableEntityConfigurati
         builder.Property(r => r.RedeemedOn)
             .IsRequired();
 
-        // T-0110 — 0-based per-user redemption slot. Backs the per-user unique cap below.
+        // 0-based per-user redemption slot. Backs the per-user unique cap below.
         builder.Property(r => r.SlotOrdinal)
             .IsRequired();
 
@@ -55,7 +55,7 @@ public class PromoCodeRedemptionEntityConfiguration : AuditableEntityConfigurati
             .HasForeignKey(r => r.OrderId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // T-0110 / S8 — tenant-scoped UNIQUE per-user redemption slot. This is the
+        // S8 — tenant-scoped UNIQUE per-user redemption slot. This is the
         // defense-in-depth BACKSTOP for the atomic slot reservation in
         // PromoCodeRedemptionRepository.TryReserveRedemptionSlotAsync: it hard-caps the per-user
         // redemptions at MaxRedemptionsPerUser distinct ordinals while keeping M>1 codes valid
@@ -67,7 +67,7 @@ public class PromoCodeRedemptionEntityConfiguration : AuditableEntityConfigurati
             .IsUnique();
 
         // Idempotency: GetByOrderIdAsync(orderId). Unique because we enforce
-        // one redemption per order in the service layer too. KEEP per T-0110 — collapses
+        // one redemption per order in the service layer too. Collapses
         // same-order double-fire (audit trail) independently of the per-user slot cap.
         builder.HasIndex(r => r.OrderId)
             .IsUnique();

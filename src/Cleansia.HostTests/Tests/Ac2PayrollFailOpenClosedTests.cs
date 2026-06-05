@@ -5,8 +5,8 @@ using Cleansia.HostTests.Infrastructure;
 namespace Cleansia.HostTests.Tests;
 
 /// <summary>
-/// AC2 (BSP-1, paired fix T-0100) — the payroll family is no longer fail-open. The 21 payroll
-/// <c>Policy</c> rows that were unmapped (→ Deny / fail-open before T-0100) now resolve to AdminOnly /
+/// The payroll family is no longer fail-open. The 21 payroll
+/// <c>Policy</c> rows that were unmapped (→ Deny / fail-open) now resolve to AdminOnly /
 /// EmployeeOrAdmin, so a Customer can never reach a payroll endpoint. End-to-end proof through the real
 /// pipeline: a Customer caller is denied on every payroll route — either at the JWT audience boundary
 /// (a genuine cleansia.customer token does not authenticate on the Partner host) or at the [Permission]
@@ -18,7 +18,7 @@ namespace Cleansia.HostTests.Tests;
 public sealed class Ac2PayrollFailOpenClosedTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
 {
     // Read-only payroll endpoints (no request body) spanning the invoice / pay-period / pay-config
-    // families — each maps to an AdminOnly or EmployeeOrAdmin physical policy after T-0100.
+    // families — each maps to an AdminOnly or EmployeeOrAdmin physical policy.
     public static TheoryData<string> PayrollEndpoints =>
     [
         "/api/EmployeePayroll/GetPagedInvoices",   // CanViewPagedInvoices = EmployeeOrAdmin

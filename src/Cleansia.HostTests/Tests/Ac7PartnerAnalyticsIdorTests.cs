@@ -6,10 +6,10 @@ using Cleansia.HostTests.Infrastructure;
 namespace Cleansia.HostTests.Tests;
 
 /// <summary>
-/// AC7 (SEC-EMP-01, paired fix T-0104) — the partner analytics endpoints accept a [FromQuery]
+/// The partner analytics endpoints accept a [FromQuery]
 /// EmployeeId, but a non-admin caller is server-scoped to their OWN employee id; a foreign EmployeeId
 /// is ignored. End-to-end on the Partner Dashboard host: employee E1 (who has NO invoices) supplies
-/// E2's EmployeeId (E2 has a 1000 invoice). With the fix E1 sees their OWN data (TotalEarnings == 0),
+/// E2's EmployeeId (E2 has a 1000 invoice). E1 sees their OWN data (TotalEarnings == 0),
 /// never E2's; the IDOR would have leaked E2's 1000.
 /// </summary>
 public sealed class Ac7PartnerAnalyticsIdorTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)

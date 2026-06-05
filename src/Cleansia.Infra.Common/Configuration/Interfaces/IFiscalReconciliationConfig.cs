@@ -1,7 +1,7 @@
 namespace Cleansia.Infra.Common.Configuration.Interfaces;
 
 /// <summary>
-/// T-0122 (FISCAL-RECON) / ADR-0002 D3.4 — tunables for the dispatch reconciliation sweep. The cadence
+/// ADR-0002 D3.4 — tunables for the dispatch reconciliation sweep. The cadence
 /// + window are a <b>tunable, not a business decision</b> (ADR-0002 §Escalations), so they are read from
 /// configuration (section <c>FiscalReconciliation</c>) rather than hardcoded.
 /// </summary>

@@ -68,8 +68,8 @@ class MembershipViewModel @Inject constructor(
     val plans: StateFlow<List<MembershipPlanDto>> = _plans.asStateFlow()
 
     /**
-     * Client idempotency token for the CURRENT logical subscribe attempt
-     * (T-0111 / LG-SEC-02). Generated ONCE in [startSubscribe] (Phase-1) and
+     * Client idempotency token for the CURRENT logical subscribe attempt.
+     * Generated ONCE in [startSubscribe] (Phase-1) and
      * replayed UNCHANGED on every [confirmSubscribe] (Phase-2) so the backend
      * collapses retried/double-tapped confirms — PaymentSheet returning
      * Completed twice, a network retry, or a double-tap surviving [_submitting]
@@ -98,7 +98,7 @@ class MembershipViewModel @Inject constructor(
         _submitting.value = true
         // New logical subscribe attempt → mint a fresh idempotency token. It is
         // held until the next startSubscribe and replayed on every confirm
-        // (Phase-2) retry for THIS attempt (T-0111 / LG-SEC-02 AC4).
+        // (Phase-2) retry for THIS attempt.
         subscribeIdempotencyToken = UUID.randomUUID().toString()
         try {
             val resp = repository.subscribePhase1(planCode)

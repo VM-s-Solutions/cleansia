@@ -8,14 +8,14 @@ using Microsoft.EntityFrameworkCore.Metadata;
 namespace Cleansia.Tests.Features.Users;
 
 /// <summary>
-/// T-0124 (PERF-IDA-01, folds in PERF-IDA-05) — EF-MODEL-METADATA guard for the identity-lookup
+/// EF-MODEL-METADATA guard for the identity-lookup
 /// indexes on <see cref="User"/>.
 ///
 /// THE HOLE: <c>UserEntityConfiguration</c> configured <c>Email</c>, <c>PhoneNumber</c>,
 /// <c>GoogleId</c>, <c>ConfirmationCode</c> and <c>ResetPasswordCode</c> as properties but declared
 /// ZERO <c>HasIndex</c>, so every identity query in <c>UserRepository</c> (login / register / reset /
 /// confirm / profile-load) did a SEQUENTIAL SCAN of the Users table; cost grows linearly with the user
-/// base. PERF-IDA-05: there was also no DB-level uniqueness on <c>Email</c> — uniqueness was only an
+/// base. There was also no DB-level uniqueness on <c>Email</c> — uniqueness was only an
 /// app-code pre-check (a TOCTOU race).
 ///
 /// THE FIX (asserted here): a UNIQUE index over <c>Email</c> (citext ⇒ case-insensitive unique, closes
@@ -28,7 +28,7 @@ namespace Cleansia.Tests.Features.Users;
 /// model-introspection harness style the membership index tests use. Written TEST-FIRST: RED before the
 /// <c>HasIndex</c> calls exist in <c>UserEntityConfiguration</c>, GREEN once they land.
 ///
-/// Each AC1–AC3 maps to a metadata assertion below. AC4 (no behavioral regression) is covered by the
+/// Each metadata assertion is below. No behavioral regression is covered by the
 /// existing repository / handler tests staying green — no query body is touched by this ticket.
 /// </summary>
 public sealed class UserIdentityLookupIndexTests
@@ -68,7 +68,7 @@ public sealed class UserIdentityLookupIndexTests
         index.Properties.Count == propertyNames.Length
         && index.Properties.Select(p => p.Name).SequenceEqual(propertyNames);
 
-    // ── AC1 (PR review #6, S8) — exactly ONE unique index over (TenantId, Email) ──
+    // Exactly ONE unique index over (TenantId, Email) (S8).
     // Uniqueness is PER-TENANT: User is an ITenantEntity and the app-layer checks run inside the tenant
     // filter, so a global Email unique index let tenant B 500 on tenant A's email (cross-tenant oracle)
     // and barred the same person across tenants. citext keeps the Email component case-insensitive.
@@ -84,8 +84,8 @@ public sealed class UserIdentityLookupIndexTests
         Assert.Single(emailIndexes);
         Assert.True(
             emailIndexes[0].IsUnique,
-            "User email uniqueness must be the COMPOSITE (TenantId, Email) UNIQUE index (PR review #6 / "
-            + "S8): per-tenant uniqueness matches the tenant-filtered app pre-check and closes the "
+            "User email uniqueness must be the COMPOSITE (TenantId, Email) UNIQUE index (S8): "
+            + "per-tenant uniqueness matches the tenant-filtered app pre-check and closes the "
             + "same-tenant register/update TOCTOU race without leaking across tenants.");
 
         // And there must be NO global single-column unique index on Email left behind.
@@ -94,7 +94,6 @@ public sealed class UserIdentityLookupIndexTests
             ix => IsSingleColumnIndexOn(ix, nameof(User.Email)) && ix.IsUnique);
     }
 
-    // ── AC2 — non-unique indexes on the four nullable lookup columns ──
     [Theory]
     [InlineData(nameof(User.PhoneNumber))]
     [InlineData(nameof(User.ConfirmationCode))]
@@ -113,7 +112,7 @@ public sealed class UserIdentityLookupIndexTests
             + "not unique — multiple rows can legitimately share null / the same token shape).");
     }
 
-    // ── AC2 — the nullable lookup columns are FILTERED/PARTIAL (WHERE "Col" IS NOT NULL) ──
+    // The nullable lookup columns are FILTERED/PARTIAL (WHERE "Col" IS NOT NULL).
     [Theory]
     [InlineData(nameof(User.PhoneNumber))]
     [InlineData(nameof(User.ConfirmationCode))]
@@ -134,7 +133,7 @@ public sealed class UserIdentityLookupIndexTests
         Assert.Contains("IS NOT NULL", filter!, StringComparison.OrdinalIgnoreCase);
     }
 
-    // ── AC1/AC3 — the unique Email guarantee is real DB-level metadata, not an app-only pre-check ──
+    // The unique Email guarantee is real DB-level metadata, not an app-only pre-check.
     [Fact]
     public void Email_UniqueIndex_IsTheDbLevelGuarantee_NotJustTheAppPreCheck()
     {
@@ -145,7 +144,7 @@ public sealed class UserIdentityLookupIndexTests
 
         Assert.True(
             emailUnique,
-            "PERF-IDA-05 + PR review #6: a UNIQUE DB index over (TenantId, Email) is the real guarantee — "
+            "A UNIQUE DB index over (TenantId, Email) is the real guarantee — "
             + "the second same-tenant same-email insert must raise a unique violation. The "
             + "ExistsWithEmailAsync app pre-check stays as a fast-path UX message, but it is NOT the "
             + "constraint.");

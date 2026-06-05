@@ -108,7 +108,7 @@ public class TakeOrder
             return employee?.Address is not null;
         }
 
-        // T-0109 (EMP-GAP-01): the order-action approval gate. Only a cleaner the
+        // The order-action approval gate. Only a cleaner the
         // admin has Approved may act on an order — a rejected, still-pending, or
         // terminated cleaner is turned away. The employee is server-derived from
         // the caller (S1 server-truth), never a client field. Empty caller => fail

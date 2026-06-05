@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Cleansia.Tests.Functions;
 
 /// <summary>
-/// TC-POISON-0 (durable half — ADR-0002 D3 / T-0120 AC3) — the <see cref="IDeadLetterStore"/>
+/// TC-POISON-0 (durable half — ADR-0002 D3) — the <see cref="IDeadLetterStore"/>
 /// Wave-0 backing writes a real, durable <see cref="DeadLetter"/> row (source queue + raw body) and
 /// OWNS ITS OWN COMMIT (the poison consumer has no pipeline/UnitOfWork). Spins a REAL
 /// <see cref="CleansiaDbContext"/> over SQLite in-memory so <c>OnModelCreating</c> + the entity config

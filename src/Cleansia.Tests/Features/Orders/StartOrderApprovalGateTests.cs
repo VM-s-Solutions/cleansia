@@ -10,7 +10,7 @@ using Moq;
 namespace Cleansia.Tests.Features.Orders;
 
 /// <summary>
-/// T-0109 (EMP-GAP-01): StartOrder previously had NO ContractStatus gate, so a
+/// StartOrder previously had NO ContractStatus gate, so a
 /// rejected cleaner already assigned to a Confirmed order could start it. These
 /// cases add the same approval gate used by Take / Complete.
 /// </summary>
@@ -33,9 +33,9 @@ public class StartOrderApprovalGateTests
     }
 
     [Theory]
-    [InlineData(ContractStatus.Rejected)]   // AC2: rejected cleaner cannot start
-    [InlineData(ContractStatus.Pending)]    // AC4
-    [InlineData(ContractStatus.Terminated)] // AC4
+    [InlineData(ContractStatus.Rejected)]   // rejected cleaner cannot start
+    [InlineData(ContractStatus.Pending)]
+    [InlineData(ContractStatus.Terminated)]
     public async Task When_Cleaner_Not_Approved_Then_EmployeeNotApproved(ContractStatus status)
     {
         ArrangeStartableOrder(employeeStatus: status);
@@ -49,7 +49,7 @@ public class StartOrderApprovalGateTests
     [Fact]
     public async Task When_Cleaner_Approved_And_All_Rules_Pass_Then_Valid()
     {
-        // AC5: approved + assigned + no in-progress conflict → passes.
+        // approved + assigned + no in-progress conflict → passes.
         ArrangeStartableOrder(employeeStatus: ContractStatus.Approved);
 
         var result = await _validator.ValidateAsync(new StartOrder.Command(OrderId));

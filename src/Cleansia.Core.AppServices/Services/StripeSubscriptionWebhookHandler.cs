@@ -152,7 +152,7 @@ public class StripeSubscriptionWebhookHandler(
             return null;
         }
 
-        // T-0114 (SEC-W2) / ADR-0002 D2 — ASSERT BEFORE ACTING. The web Checkout flow only creates the
+        // SEC-W2 / ADR-0002 D2 — ASSERT BEFORE ACTING. The web Checkout flow only creates the
         // Stripe Session; this webhook is the SOLE creator of the local row, and unlike the request path
         // (CreateMembershipCheckoutSession) it never checked for an existing active membership. So a user
         // who already has one and reaches Stripe again (stale tab / Dashboard / two near-simultaneous
@@ -179,7 +179,7 @@ public class StripeSubscriptionWebhookHandler(
             currentPeriodEnd: periodEnd);
         userMembershipRepository.Add(membership);
 
-        // T-0114 (SEC-W2 / S7a + S7b) — CLOSE the check-then-insert race at the write boundary. The
+        // SEC-W2 / S7a + S7b — CLOSE the check-then-insert race at the write boundary. The
         // GetActiveForUserAsync read above is a fast path, not the guarantee: two webhooks (or a webhook +
         // a confirmed request-path subscribe) can both pass the read before either commits, and the
         // FILTERED UNIQUE INDEX on (TenantId, UserId) WHERE Status=Active then rejects the loser with a
@@ -226,7 +226,7 @@ public class StripeSubscriptionWebhookHandler(
     /// the AppServices layer deliberately carries no hard Npgsql reference, so we read Npgsql's
     /// <c>PostgresException.SqlState</c> reflectively rather than type-binding it. Walks the whole inner
     /// chain because EF may wrap the provider exception more than one level deep. Mirrors
-    /// <c>CreateMembershipSubscription.Handler.IsUniqueViolation</c> (T-0111) / <c>LoyaltyService</c> (T-0112).
+    /// <c>CreateMembershipSubscription.Handler.IsUniqueViolation</c> / <c>LoyaltyService</c>.
     /// </summary>
     private static bool IsUniqueViolation(DbUpdateException exception)
     {

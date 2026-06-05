@@ -11,7 +11,7 @@ namespace Cleansia.Web.Admin.Controllers;
 [ApiController]
 public class AdminDisputeController(IMediator mediator) : ApiController(mediator)
 {
-    // SEC-DSP-01 (ADR-0001 §D2 Note C, Q-0005): staff dispute replies are Admin-only. This is the
+    // ADR-0001 §D2 Note C, Q-0005: staff dispute replies are Admin-only. This is the
     // staff-reply AddMessage endpoint that moved off the Partner host. The staff flag is host-derived
     // (forced to true here), mirroring the JWT-enrichment `command with { ... }` idiom; the handler
     // then re-derives it from the caller's Administrator profile as the inner gate.

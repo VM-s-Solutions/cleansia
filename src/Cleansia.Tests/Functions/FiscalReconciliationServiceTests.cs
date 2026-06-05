@@ -17,8 +17,8 @@ using Moq;
 namespace Cleansia.Tests.Functions;
 
 /// <summary>
-/// T-0122 (FISCAL-RECON) / ADR-0002 D3.4 + ADR-0004 C-B — the DISPATCH-layer reconciliation sweep:
-/// the OUTER net for the at-most-once Wave-0 dispatch gap. Wave-0 dispatch (T-0118) is at-most-once —
+/// ADR-0002 D3.4 + ADR-0004 C-B — the DISPATCH-layer reconciliation sweep:
+/// the OUTER net for the at-most-once Wave-0 dispatch gap. Wave-0 dispatch is at-most-once —
 /// a crash between the commit and the in-memory drain loses the send (NO message → no -poison → no
 /// alert; the F3 poison floor only catches enqueued-and-failed-5x). For the two FISCAL queues that
 /// silent loss is a lost legal/financial artifact, so D3.4 mandates a sweep that finds
@@ -28,7 +28,7 @@ namespace Cleansia.Tests.Functions;
 ///
 /// <para>The sweep is a Bucket-B system-context loop (ADR-0002 D5 Bucket B carve-out), so it calls
 /// <see cref="IQueueClient"/> DIRECTLY (NOT the request-scoped <c>IPendingDispatch</c>), wrapping each
-/// message in the SAME <see cref="QueueEnvelope{T}"/> + frozen <see cref="MessageKeys"/> that T-0118
+/// message in the SAME <see cref="QueueEnvelope{T}"/> + frozen <see cref="MessageKeys"/>
 /// established so the re-enqueue dedups downstream.</para>
 ///
 /// <para>Written TEST-FIRST (RED until <c>FiscalReconciliationService</c> + the two read queries
@@ -106,7 +106,7 @@ public class FiscalReconciliationServiceTests
     private static QueueEnvelope<GenerateInvoiceMessage>? DeserializeInvoiceEnvelope(string body) =>
         JsonSerializer.Deserialize<QueueEnvelope<GenerateInvoiceMessage>>(body, JsonOptions);
 
-    // ── AC1 — receipt recon re-enqueues a stale-missing receipt with the frozen key ──
+    // ── Receipt recon re-enqueues a stale-missing receipt with the frozen key ──
 
     [Fact]
     public async Task AC1_Receipt_Recon_ReEnqueues_Stale_Missing_With_Frozen_Key()
@@ -138,7 +138,7 @@ public class FiscalReconciliationServiceTests
         Assert.Equal(orderId, captured.Payload.OrderId);
     }
 
-    // ── AC1 — the SAME wire body the consumer dual-reads (a QueueEnvelope<GenerateReceiptMessage>) ──
+    // ── The SAME wire body the consumer dual-reads (a QueueEnvelope<GenerateReceiptMessage>) ──
 
     [Fact]
     public async Task AC1_Receipt_ReEnqueue_Wire_Body_Matches_The_Consumer_Envelope_Shape()
@@ -169,7 +169,7 @@ public class FiscalReconciliationServiceTests
         Assert.Equal(orderId, roundTripped.Payload.OrderId);
     }
 
-    // ── AC2 — invoice recon re-enqueues a missing invoice with the frozen key ──
+    // ── Invoice recon re-enqueues a missing invoice with the frozen key ──
 
     [Fact]
     public async Task AC2_Invoice_Recon_ReEnqueues_Missing_With_Frozen_Key()
@@ -202,12 +202,12 @@ public class FiscalReconciliationServiceTests
         Assert.Equal(employeeId, captured.Payload.EmployeeId);
     }
 
-    // ── AC3 — a re-enqueue racing a success → exactly one effect via the consumer guard ──
+    // ── A re-enqueue racing a success → exactly one effect via the consumer guard ──
     //
     // The sweep cannot itself realize the receipt; its only job is to re-enqueue ONE message per
     // OrderId. The "exactly one effect" guarantee comes from the deterministic key + the consumer
     // short-circuit (proven by the GenerateReceiptHandler*IdempotencyTests). Here we pin the sweep's
-    // half of AC3: even if the recon query (racing a just-late dispatch) still returns the order, the
+    // half: even if the recon query (racing a just-late dispatch) still returns the order, the
     // sweep emits exactly ONE re-enqueue carrying the deterministic receipt:{OrderId} key — so two
     // sweeps + the racing dispatch all collapse onto one key downstream (no double-realize).
 
@@ -234,11 +234,11 @@ public class FiscalReconciliationServiceTests
         Assert.Equal(MessageKeys.Receipt(orderId), keys[0]);
     }
 
-    // ── AC4 — the carve-out: the sweep does NOT swallow a "target not found" into an ack. The sweep
-    //         re-enqueues only; the generate-receipt consumer's target-not-found THROW (transient,
-    //         bounded retry) is untouched. We pin that the sweep never acks/short-circuits a queue
-    //         send failure into success — a transient SendAsync fault must NOT be silently dropped as
-    //         "done" (it would mask the silent loss this sweep exists to catch). ──
+    // ── The carve-out: the sweep does NOT swallow a "target not found" into an ack. The sweep
+    //    re-enqueues only; the generate-receipt consumer's target-not-found THROW (transient,
+    //    bounded retry) is untouched. We pin that the sweep never acks/short-circuits a queue
+    //    send failure into success — a transient SendAsync fault must NOT be silently dropped as
+    //    "done" (it would mask the silent loss this sweep exists to catch). ──
 
     [Fact]
     public async Task AC4_Sweep_Does_Not_Mask_A_Transient_ReEnqueue_Failure_As_Done()
@@ -261,7 +261,7 @@ public class FiscalReconciliationServiceTests
         Assert.Equal(0, reEnqueued);
     }
 
-    // ── AC5 — batch-bounded per tick (passes the configured BatchSize as the take cap) ──
+    // ── Batch-bounded per tick (passes the configured BatchSize as the take cap) ──
 
     [Fact]
     public async Task AC5_Sweep_Is_Batch_Bounded_By_Configured_BatchSize()
@@ -287,8 +287,8 @@ public class FiscalReconciliationServiceTests
         Assert.Equal(50, invoiceTake);
     }
 
-    // ── AC5 — twice = once: two back-to-back sweeps re-enqueue the SAME deterministic key both times,
-    //         which the downstream guard collapses to a single effect (no duplicate effect). ──
+    // ── Twice = once: two back-to-back sweeps re-enqueue the SAME deterministic key both times,
+    //    which the downstream guard collapses to a single effect (no duplicate effect). ──
 
     [Fact]
     public async Task AC5_Two_Back_To_Back_Sweeps_ReEnqueue_The_Same_Deterministic_Key()
@@ -317,7 +317,7 @@ public class FiscalReconciliationServiceTests
         Assert.Single(keys.Distinct());
     }
 
-    // ── AC6 — system context: per-item ClearTenantOverride() then SetTenantOverride(item.TenantId) ──
+    // ── System context: per-item ClearTenantOverride() then SetTenantOverride(item.TenantId) ──
 
     [Fact]
     public async Task AC6_Per_Item_Tenant_Override_Is_Set_From_The_Item_Tenant()
@@ -360,7 +360,7 @@ public class FiscalReconciliationServiceTests
         _tenantProvider.Verify(t => t.SetTenantOverride(It.IsAny<string>()), Times.Never);
     }
 
-    // ── AC7 — the threshold is configurable: the cutoff passed to the query is now - ThresholdMinutes ──
+    // ── The threshold is configurable: the cutoff passed to the query is now - ThresholdMinutes ──
 
     [Fact]
     public async Task AC7_Threshold_Cutoff_Honors_Configured_Minutes()

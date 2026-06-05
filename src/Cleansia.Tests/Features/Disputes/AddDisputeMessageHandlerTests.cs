@@ -12,13 +12,13 @@ using Moq;
 namespace Cleansia.Tests.Features.Disputes;
 
 /// <summary>
-/// T-0102 (SEC-DSP-01) / ADR-0001 §D2 Note C, verification #5/#6 — the inner gate of
+/// ADR-0001 §D2 Note C, verification #5/#6 — the inner gate of
 /// <see cref="AddDisputeMessage.Handler"/>.
 ///
 /// The handler is dual-purpose (customer self-reply vs. staff reply). This pins the two security
-/// obligations of the ticket at the layer that holds on every invocation path:
-///   - AC1 [OWN-DATA]: a customer may only message their OWN dispute (ownership check);
-///   - AC3: the staff flag is DERIVED from the caller's profile, never blindly trusted from the
+/// obligations at the layer that holds on every invocation path:
+///   - [OWN-DATA]: a customer may only message their OWN dispute (ownership check);
+///   - the staff flag is DERIVED from the caller's profile, never blindly trusted from the
 ///     command body — a non-admin caller can never produce <c>isStaff=true</c> (so flipping the body
 ///     flag is inert) and the staff→customer push only fires for a genuine admin reply.
 /// Written red → green per knowledge/testing.md (predates the handler hardening).
@@ -64,7 +64,7 @@ public class AddDisputeMessageHandlerTests
         return dispute;
     }
 
-    // ── AC1 — customer self-reply ownership ([OWN-DATA]) ───────────────────
+    // ── customer self-reply ownership ([OWN-DATA]) ───────────────────
 
     [Fact]
     public async Task Customer_Messaging_Own_Dispute_Succeeds_As_Customer_Message()
@@ -102,7 +102,7 @@ public class AddDisputeMessageHandlerTests
         Assert.Equal(BusinessErrorMessage.DisputeNotOwnedByUser, result.Error!.Message);
     }
 
-    // ── AC3 — staff flag is server-derived from profile, never the body ────
+    // ── staff flag is server-derived from profile, never the body ────
 
     [Fact]
     public async Task Customer_Forging_IsStaffMessage_True_Is_Recorded_As_Customer_Message()

@@ -3,9 +3,9 @@ using System.Text.RegularExpressions;
 namespace Cleansia.Tests.Features.Auth;
 
 /// <summary>
-/// T-0106 (IDA-SEC-03) AC6 — the anonymous confirm/reset hashed-token lookups must NOT bypass the
+/// The anonymous confirm/reset hashed-token lookups must NOT bypass the
 /// global tenant filter with <c>IgnoreQueryFilters()</c> (which would let a hashed token match
-/// cross-tenant — see IDA-SEC-10). The repo exposes <c>GetByIdIgnoringTenantAsync</c> for system
+/// cross-tenant). The repo exposes <c>GetByIdIgnoringTenantAsync</c> for system
 /// triggers, but the confirm/reset flows must NOT route through it. This source-level guard pins that
 /// the confirm-lookup methods stay inside the global filter and that only the explicitly-named
 /// cross-tenant method (and the base helper) carry <c>IgnoreQueryFilters</c>.
@@ -31,7 +31,7 @@ public class UserRepositoryTokenLookupTenantTests
     // "IgnoreQueryFilters" can't trip the assertion; only a real invocation counts.
     private const string IgnoreCall = @"\.IgnoreQueryFilters\(";
 
-    // AC6 — the confirm-token lookup methods do not call IgnoreQueryFilters().
+    // The confirm-token lookup methods do not call IgnoreQueryFilters().
     [Fact]
     public void ConfirmationCode_Lookups_Do_Not_Ignore_Tenant_Filter()
     {
@@ -44,7 +44,7 @@ public class UserRepositoryTokenLookupTenantTests
         }
     }
 
-    // AC6 — IgnoreQueryFilters() is only CALLED in the explicitly-named cross-tenant helper, never the
+    // IgnoreQueryFilters() is only CALLED in the explicitly-named cross-tenant helper, never the
     // confirm/reset flows. (GetByIdIgnoringTenantAsync is the sole intentional bypass.)
     [Fact]
     public void IgnoreQueryFilters_Is_Confined_To_The_Named_Cross_Tenant_Method()

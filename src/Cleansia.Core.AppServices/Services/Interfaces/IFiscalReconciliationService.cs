@@ -1,7 +1,7 @@
 namespace Cleansia.Core.AppServices.Services.Interfaces;
 
 /// <summary>
-/// T-0122 (FISCAL-RECON) / ADR-0002 D3.4 + ADR-0004 C-B — the DISPATCH-layer reconciliation sweep: the
+/// ADR-0002 D3.4 + ADR-0004 C-B — the DISPATCH-layer reconciliation sweep: the
 /// OUTER net for the at-most-once Wave-0 dispatch gap. Finds committed-but-unrealized fiscal work (a
 /// receipt-eligible order without a fully-realized receipt; a pay period with an employee lacking an
 /// invoice) older than the configured threshold and RE-ENQUEUES it through the SAME idempotent path so

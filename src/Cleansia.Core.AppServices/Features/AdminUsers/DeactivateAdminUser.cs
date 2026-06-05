@@ -28,7 +28,7 @@ public class DeactivateAdminUser
                     await userRepository.GetAll()
                         .AnyAsync(u => u.Id == userId && u.Profile == UserProfile.Administrator, ct))
                 .WithMessage(BusinessErrorMessage.AdminUserNotFound)
-                // T-0107 (IDA-SEC-08): never deactivate the last ACTIVE administrator — that would
+                // Never deactivate the last ACTIVE administrator — that would
                 // lock the tenant out of its own admin console with no recovery. Reject when the
                 // target is the only active admin (the active-admin count would drop to 0).
                 .MustAsync(async (userId, ct) =>
@@ -52,7 +52,7 @@ public class DeactivateAdminUser
         {
             var actorId = userSessionProvider.GetUserId() ?? string.Empty;
 
-            // PR review #22 (S7a) — ATOMIC last-active-admin guard. The validator's count-then-check is a
+            // S7a — ATOMIC last-active-admin guard. The validator's count-then-check is a
             // fast-path UX message but is NOT race-safe: two concurrent deactivations of the final two
             // admins can both pass the validator under READ COMMITTED and zero out active admins. This
             // single conditional UPDATE deactivates the target ONLY while another ACTIVE admin still

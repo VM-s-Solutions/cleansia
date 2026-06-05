@@ -38,9 +38,9 @@ public class UserRepository(CleansiaDbContext context)
         return GetDbSet().AnyAsync(user => user.Email == email, cancellationToken);
     }
 
-    // T-0106 / IDA-SEC-03: the confirmation token is stored as a SHA-256 hash, so the incoming RAW
+    // The confirmation token is stored as a SHA-256 hash, so the incoming RAW
     // token is hashed and matched against the stored hash. Stays inside the global tenant filter
-    // (no IgnoreQueryFilters) — a hashed token must not match cross-tenant (AC6 / IDA-SEC-10).
+    // (no IgnoreQueryFilters) — a hashed token must not match cross-tenant.
     public Task<bool> ExistsWithConfirmationCodeAsync(string token, CancellationToken cancellationToken = default)
     {
         var tokenHash = SecurityTokens.Hash(token);

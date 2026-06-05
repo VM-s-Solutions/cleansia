@@ -25,7 +25,7 @@ public class PromoCodeRepository(CleansiaDbContext context)
         string promoCodeId,
         CancellationToken cancellationToken)
     {
-        // T-0110 / S7 — atomic conditional increment of the denormalised global counter. This is a
+        // S7 — atomic conditional increment of the denormalised global counter. This is a
         // single SQL UPDATE that bumps CurrentRedemptionsCount only while it is still below the cap
         // (or the cap is null/unlimited), so the global cap is enforced by the database, not by a
         // read-then-increment in the app layer.
@@ -51,7 +51,7 @@ public class PromoCodeRepository(CleansiaDbContext context)
         string promoCodeId,
         CancellationToken cancellationToken)
     {
-        // PR review #7 — compensating decrement. The redeem path reserves the global slot (increment)
+        // Compensating decrement. The redeem path reserves the global slot (increment)
         // BEFORE the per-user slot; when the per-user reservation fails we must release the global slot,
         // or the global cap leaks one slot per failed reservation. Atomic single UPDATE, floored at 0
         // (GREATEST guard) so a concurrent reset can't drive the counter negative. Same deliberate

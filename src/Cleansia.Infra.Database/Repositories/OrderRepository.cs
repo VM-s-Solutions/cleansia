@@ -195,7 +195,7 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
     public async Task<List<Order>> GetReceiptReconciliationCandidatesAsync(
         DateTime olderThanUtc, int take, CancellationToken cancellationToken)
     {
-        // T-0122 / ADR-0002 D3.4 + ADR-0004 C-B — the OUTER net for the at-most-once Wave-0 dispatch
+        // ADR-0002 D3.4 + ADR-0004 C-B — the OUTER net for the at-most-once Wave-0 dispatch
         // gap. System-job read: bypass the tenant filter so the sweep sees every tenant's stale fiscal
         // work. The caller re-scopes per item (SetTenantOverride) before re-enqueuing (S8).
         //
@@ -204,7 +204,7 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         //   • committed BEFORE the threshold cutoff (CreatedOn <= olderThanUtc) — fresh orders whose
         //     normal post-commit dispatch may still be on the wire are NOT swept, AND
         //   • the receipt is not fully realized: Receipt is null (original D3.4) OR Receipt.FiscalCode
-        //     is null (C-B: the claimed-but-unregistered row T-0119 creates).
+        //     is null (C-B: the claimed-but-unregistered row).
         // The "AND enforcementMode != None" half of C-B is resolved per item in the sweep (it needs the
         // per-country config), not here. Include the Receipt + CustomerAddress so the sweep can resolve
         // the enforcement mode without a second round-trip.
@@ -229,7 +229,7 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         return await GetDbSet()
             .IgnoreQueryFilters()
             .Include(o => o.Receipt)
-                // PR review #18 — load Receipt.Language so the recon re-enqueue preserves the receipt's
+                // Load Receipt.Language so the recon re-enqueue preserves the receipt's
                 // locale. Without this ThenInclude the nav was always null and the re-enqueue defaulted
                 // every receipt to English.
                 .ThenInclude(r => r!.Language)

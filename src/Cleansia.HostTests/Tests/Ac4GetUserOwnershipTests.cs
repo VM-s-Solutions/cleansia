@@ -5,7 +5,7 @@ using Cleansia.HostTests.Infrastructure;
 namespace Cleansia.HostTests.Tests;
 
 /// <summary>
-/// AC4 (IDA-SEC-04, paired fix T-0101) — GetUser ownership, BOTH directions. CanViewUserDetail is
+/// GetUser ownership, BOTH directions. CanViewUserDetail is
 /// OwnerOrElevated (ADR-0001 §D3): a non-admin may resolve ONLY their own user id. End-to-end on the
 /// Partner host (UserController.GetById reads the UserId query param the OwnerOrElevated policy keys on,
 /// with the GetUser.Handler ownership check as the inner backstop):

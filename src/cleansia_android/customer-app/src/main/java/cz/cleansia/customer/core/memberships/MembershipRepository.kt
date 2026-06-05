@@ -66,8 +66,8 @@ class MembershipRepository @Inject constructor(
     /**
      * Phase 2 — create the Stripe subscription. [idempotencyToken] is the
      * SAME token generated once at Phase-1 (see [MembershipViewModel.startSubscribe]);
-     * it must be passed UNCHANGED on every retry so the backend (T-0111 /
-     * LG-SEC-02) collapses concurrent/retried confirms onto one subscription.
+     * it must be passed UNCHANGED on every retry so the backend
+     * collapses concurrent/retried confirms onto one subscription.
      */
     suspend fun subscribePhase2(
         planCode: String,

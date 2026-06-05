@@ -12,7 +12,7 @@ using Moq;
 namespace Cleansia.Tests.Features.Auth;
 
 /// <summary>
-/// T-0105 (IDA-SEC-01) / ADR-0001 (ADR-AUTHZ) S1 server-truth-identity, D5 "don't trust client
+/// ADR-0001 (ADR-AUTHZ) S1 server-truth-identity, D5 "don't trust client
 /// identity". The hole: the Google sign-in handler resolved / provisioned the user by the
 /// client-supplied <c>command.Email</c> / <c>command.GoogleId</c> and discarded the verified Google
 /// ID-token payload — an account-takeover surface where an attacker posts a victim's email with any
@@ -21,12 +21,12 @@ namespace Cleansia.Tests.Features.Auth;
 /// The fix moves verification into <see cref="IGoogleTokenVerifier"/> (the single seam that calls
 /// Google) and binds identity from the VERIFIED <see cref="GoogleVerifiedClaims"/> (Subject + Email),
 /// never the request. These handler tests mock the verifier so they assert the binding/branching:
-///   - AC1: a verified <c>claims.Email</c> that differs from <c>command.Email</c> wins — the account
+///   - a verified <c>claims.Email</c> that differs from <c>command.Email</c> wins — the account
 ///     resolved/provisioned is the token's email, never the attacker-claimed one;
-///   - AC2: <see cref="User.CreateWithGoogle"/> binds <c>claims.Subject</c>, never <c>command.GoogleId</c>;
-///   - AC5: a forged/unverifiable token (verifier returns null) fails with
+///   - <see cref="User.CreateWithGoogle"/> binds <c>claims.Subject</c>, never <c>command.GoogleId</c>;
+///   - a forged/unverifiable token (verifier returns null) fails with
 ///     <see cref="BusinessErrorMessage.InvalidGoogleUserToken"/> and creates no <see cref="User"/>/<see cref="Cart"/>;
-///   - AC6: the legitimate flow is preserved (known active user → token; unknown email → provision
+///   - the legitimate flow is preserved (known active user → token; unknown email → provision
 ///     from verified claims).
 /// Written red → green per knowledge/testing.md (predates the handler rewrite).
 /// </summary>
@@ -59,7 +59,7 @@ public class GoogleAuthHandlerTests
     private static GoogleAuth.Command CommandWith(string email, string googleId) =>
         new(Token: "any-token", GoogleId: googleId, Email: email, FirstName: "First", LastName: "Last");
 
-    // AC1 — the email that resolves the account comes from the VERIFIED token, not the request.
+    // The email that resolves the account comes from the VERIFIED token, not the request.
     [Fact]
     public async Task Uses_Verified_Email_Not_Request_Email_When_Provisioning()
     {
@@ -84,7 +84,7 @@ public class GoogleAuthHandlerTests
         _userRepository.Verify(r => r.Add(It.Is<User>(u => u.Email == attackerClaimedEmail)), Times.Never);
     }
 
-    // AC2 — User.CreateWithGoogle binds claims.Subject, never command.GoogleId.
+    // User.CreateWithGoogle binds claims.Subject, never command.GoogleId.
     [Fact]
     public async Task Uses_Verified_Subject_Not_Request_GoogleId_When_Provisioning()
     {
@@ -104,7 +104,7 @@ public class GoogleAuthHandlerTests
         _userRepository.Verify(r => r.Add(It.Is<User>(u => u.GoogleId == attackerClaimedGoogleId)), Times.Never);
     }
 
-    // AC3 / AC4 / AC5 — verifier returns null (forged/unverifiable token, or audience mismatch resolved
+    // Verifier returns null (forged/unverifiable token, or audience mismatch resolved
     // to null inside the verifier) → InvalidGoogleUserToken, no JWT, no User/Cart created.
     [Fact]
     public async Task Forged_Token_Is_Rejected_With_InvalidGoogleUserToken_And_Creates_Nothing()
@@ -125,7 +125,7 @@ public class GoogleAuthHandlerTests
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    // AC6 — legitimate flow: known active Google user signs in → JwtTokenResponse, no new user/cart.
+    // Legitimate flow: known active Google user signs in → JwtTokenResponse, no new user/cart.
     [Fact]
     public async Task Known_Active_User_Gets_Token_Without_Reprovisioning()
     {
@@ -149,7 +149,7 @@ public class GoogleAuthHandlerTests
         _tokenService.Verify(t => t.GenerateTokenAsync(existing, true, HostAudience, It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    // AC6 — legitimate flow: unknown verified email → provision User + Cart from verified claims, token issued.
+    // Legitimate flow: unknown verified email → provision User + Cart from verified claims, token issued.
     [Fact]
     public async Task Unknown_Verified_Email_Provisions_User_And_Cart_From_Claims()
     {
@@ -173,7 +173,7 @@ public class GoogleAuthHandlerTests
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), true, HostAudience, It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    // PR review #4 (S1): the AuthenticationType guard now runs in the HANDLER against the VERIFIED
+    // (S1): the AuthenticationType guard now runs in the HANDLER against the VERIFIED
     // claims.Email (it used to run in the validator against the attacker-controlled command.Email, so a
     // Google login whose verified email collided with an Internal/password account got a JWT for it).
     // An existing Internal-type user with the verified email MUST be rejected — no token, no provisioning.
@@ -202,7 +202,7 @@ public class GoogleAuthHandlerTests
         _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
     }
 
-    // AC6 — inactive existing user is rejected (behavior preserved from the original handler).
+    // Inactive existing user is rejected (behavior preserved from the original handler).
     [Fact]
     public async Task Inactive_Existing_User_Is_Rejected()
     {

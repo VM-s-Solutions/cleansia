@@ -5,7 +5,7 @@ using Cleansia.Core.AppServices.Common;
 namespace Cleansia.HostTests.Tests;
 
 /// <summary>
-/// AC3 (Note A, paired fix T-0100) — an Employee is scoped to their OWN invoices. The payroll
+/// An Employee is scoped to their OWN invoices. The payroll
 /// invoice-read permissions are EmployeeOrAdmin (so a cleaner can see their own pay) + an inner
 /// handler ownership check ([OWN-DATA]): requesting ANOTHER employee's invoice returns the not-found
 /// business error, never the other cleaner's invoice; requesting your own returns it. End-to-end

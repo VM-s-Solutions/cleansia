@@ -84,7 +84,7 @@ public class SendSitewidePromoFanoutHandler(
             // the per-user enqueue carries the localized strings inline — the
             // downstream consumer doesn't need to look up locale again.
             //
-            // PR review #3 (S8): SCOPE THE QUERY TO THE CAMPAIGN'S TENANT. The previous code used
+            // S8: SCOPE THE QUERY TO THE CAMPAIGN'S TENANT. The previous code used
             // GetQueryableIgnoringTenant() on both sides with NO tenant predicate, so SetTenantOverride
             // had zero effect once filters were ignored — one tenant's campaign fanned out to opted-in
             // users of EVERY tenant. We keep IgnoreQueryFilters (the override is not load-bearing) and
@@ -101,10 +101,10 @@ public class SendSitewidePromoFanoutHandler(
                 // Stable order so paged reads don't skip rows.
                 .OrderBy(x => x.UserId);
 
-            // PR review #10: KEYSET (seek) paging instead of Skip(offset). UserId is a unique key, so
+            // KEYSET (seek) paging instead of Skip(offset). UserId is a unique key, so
             // `WHERE UserId > lastUserId` avoids Postgres scanning+discarding `offset` rows per page —
             // the old Skip(offset) was O(N^2) over the doc-stated million-user fan-out.
-            // PR review #9 (accepted): a mid-campaign crash re-runs from the first page on redelivery
+            // (accepted): a mid-campaign crash re-runs from the first page on redelivery
             // (no persisted high-water mark across redeliveries), and per-user pushes carry no dedup key,
             // so a retry RE-NOTIFIES already-processed recipients. Tolerated for a best-effort marketing
             // fan-out; a resumable cursor / push dedup is tracked as a follow-up, not done here.

@@ -71,7 +71,7 @@ public static class PolicyBuilder
         [Policy.CanRejectEmployeeDocument] = PhysicalPolicy.AdminOnly,
         [Policy.CanDeleteEmployeeDocument] = PhysicalPolicy.EmployeeOrAdmin,
 
-        // Employee Payroll — Invoices (BSP-1: was unmapped → fail-open; now closed)
+        // Employee Payroll — Invoices (was unmapped → fail-open; now closed)
         // CanViewPagedInvoices/CanViewPeriodPays gate an employee's OWN pay on the Partner host
         // (Note A): EmployeeOrAdmin + handler ownership scoping ([OWN-DATA]). AdminOnly would 403
         // every cleaner from their own invoices.
@@ -84,7 +84,7 @@ public static class PolicyBuilder
         [Policy.CanCancelInvoice] = PhysicalPolicy.AdminOnly,
         [Policy.CanClosePayPeriod] = PhysicalPolicy.AdminOnly,
 
-        // Employee Payroll — Pay Periods (BSP-1). Pay periods are global cycles (Note B), so an
+        // Employee Payroll — Pay Periods. Pay periods are global cycles (Note B), so an
         // employee may list them to locate their own pay; the per-row data is fetched via the
         // [OWN-DATA] CanViewPeriodPays path. Mutations are admin-only.
         [Policy.CanViewPayPeriods] = PhysicalPolicy.EmployeeOrAdmin,
@@ -94,7 +94,7 @@ public static class PolicyBuilder
         [Policy.CanOpenPayPeriod] = PhysicalPolicy.AdminOnly,
         [Policy.CanDeletePayPeriod] = PhysicalPolicy.AdminOnly,
 
-        // Employee Payroll — Pay Config (BSP-1). Admin-only configuration surface.
+        // Employee Payroll — Pay Config. Admin-only configuration surface.
         [Policy.CanViewPayConfigs] = PhysicalPolicy.AdminOnly,
         [Policy.CanViewPayConfig] = PhysicalPolicy.AdminOnly,
         [Policy.CanCreatePayConfig] = PhysicalPolicy.AdminOnly,
@@ -105,7 +105,7 @@ public static class PolicyBuilder
         [Policy.CanCreateDispute] = PhysicalPolicy.CustomerOnly,
         [Policy.CanViewDispute] = PhysicalPolicy.CustomerOnly,
         [Policy.CanViewDisputeList] = PhysicalPolicy.CustomerOnly,
-        // BSP-6 split (Note C): the customer self-reply path is CustomerOnly [OWN-DATA]; the staff
+        // Dispute reply split (Note C): the customer self-reply path is CustomerOnly [OWN-DATA]; the staff
         // reply path (CanRespondToDispute) is AdminOnly (was the fail-open Authenticated).
         [Policy.CanAddDisputeMessage] = PhysicalPolicy.CustomerOnly,
         [Policy.CanRespondToDispute] = PhysicalPolicy.AdminOnly,

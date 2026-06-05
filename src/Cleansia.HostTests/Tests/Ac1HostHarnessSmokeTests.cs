@@ -5,12 +5,12 @@ using Cleansia.HostTests.Infrastructure;
 namespace Cleansia.HostTests.Tests;
 
 /// <summary>
-/// AC1 — the host harness itself. Proves each of the four API hosts boots through the FULL
+/// The host harness itself. Proves each of the four API hosts boots through the FULL
 /// authentication + authorization pipeline (the host's own AddJwt bearer validation + the shared
 /// AddCleansiaAuthorization policies + the real [Permission] gate), that a per-audience minted JWT
 /// authenticates, that a wrong-audience token is rejected, and that the [Permission] role gate
 /// genuinely enforces. This is the new infra ADR-0001 §D6 / verification #5 requires; it is green
-/// standalone (no fix ticket dependency beyond T-0100's AddCleansiaAuthorization, already landed).
+/// standalone (no fix ticket dependency beyond AddCleansiaAuthorization, already landed).
 /// </summary>
 public sealed class Ac1HostHarnessSmokeTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
 {

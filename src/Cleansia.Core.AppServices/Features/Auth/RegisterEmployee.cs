@@ -66,7 +66,7 @@ public class RegisterEmployee
         public async Task<BusinessResult<bool>> Handle(Command command, CancellationToken cancellationToken)
         {
             var userEntity = await userRepository.GetByEmailAsync(command.Email, cancellationToken);
-            // T-0106 / IDA-SEC-03: email the RAW confirmation token; the entity persists only its hash.
+            // Email the RAW confirmation token; the entity persists only its hash.
             // New user -> raw from CreateWithPassword; existing unconfirmed user -> refresh to get a raw
             // token (the stored ConfirmationCode is a hash and cannot be emailed).
             string rawConfirmationToken;

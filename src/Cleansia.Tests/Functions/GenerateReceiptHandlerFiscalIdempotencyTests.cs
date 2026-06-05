@@ -17,7 +17,7 @@ using Moq;
 namespace Cleansia.Tests.Functions;
 
 /// <summary>
-/// T-0119 (F4) / ADR-0004 — the FISCAL half of receipt idempotency (the email half is T-0118).
+/// ADR-0004 — the FISCAL half of receipt idempotency.
 /// Extends TC-IDEMP-0 with the claim-before-register contract: the durable claim (the committed
 /// <see cref="OrderReceipt"/> row carrying the allocated sequence) MUST commit BEFORE the
 /// irreversible external effect (<see cref="IFiscalService.RegisterReceiptAsync"/>) and the PDF.
@@ -411,7 +411,7 @@ public class GenerateReceiptHandlerFiscalIdempotencyTests
     /// Builds a <see cref="DbUpdateException"/> whose inner exception exposes a public string
     /// <c>SqlState</c> = "23505" (a Postgres unique-violation), mirroring how Npgsql's
     /// <c>PostgresException</c> surfaces it. The handler detects the violation provider-agnostically by
-    /// duck-typing <c>SqlState</c> (the same idiom as T-0111/T-0112/T-0114), so a faux exception with a
+    /// duck-typing <c>SqlState</c>, so a faux exception with a
     /// matching <c>SqlState</c> property is sufficient to exercise the catch on EITHER unique index.
     /// </summary>
     private static DbUpdateException MakeUniqueViolation(string constraintName) =>

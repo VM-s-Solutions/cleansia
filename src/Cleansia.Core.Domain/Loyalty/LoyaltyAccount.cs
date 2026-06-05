@@ -50,7 +50,7 @@ public class LoyaltyAccount : Auditable, ITenantEntity
     /// <summary>
     /// Append an Earn ledger entry and recompute denormalized fields.
     /// Caller passes the positive points value; the ledger row stores it as-is.
-    /// <paramref name="idempotencyKey"/> (T-0112 / S7a) is the client-supplied
+    /// <paramref name="idempotencyKey"/> (S7a) is the client-supplied
     /// token for the manual admin path; null on the order-driven / referral
     /// paths. It is persisted on the ledger row and backed by a filtered unique
     /// index so a double-submit of the same admin grant collapses onto one row.
@@ -78,7 +78,7 @@ public class LoyaltyAccount : Auditable, ITenantEntity
     /// <summary>
     /// Append a Revoke ledger entry (stored as negative points) and recompute
     /// denormalized fields. Caller passes the positive magnitude to revoke.
-    /// <paramref name="idempotencyKey"/> (T-0112 / S7a) is the client-supplied
+    /// <paramref name="idempotencyKey"/> (S7a) is the client-supplied
     /// token for the manual admin path; null on the order-driven path. Backed
     /// by the same filtered unique index so a double-submit collapses to one row.
     /// </summary>

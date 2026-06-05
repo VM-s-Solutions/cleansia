@@ -11,7 +11,7 @@ using Moq;
 namespace Cleansia.Tests.Functions;
 
 /// <summary>
-/// TC-CLASSIFY-0 (ADR-0002 D3.3 / verify #9 / T-0120 AC4) — the failure-classification split on
+/// ADR-0002 D3.3 — the failure-classification split on
 /// <see cref="SendPushNotificationHandler"/>, which previously THREW ON EVERYTHING (a permanent
 /// deserialize/validation failure burned all 5 retries then poison-queued a message that can never
 /// succeed). Post-fix:
@@ -48,7 +48,7 @@ public class SendPushNotificationClassifyTests
             new QueueEnvelope<SendPushNotificationMessage>(messageKey, tenantId, message),
             new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 
-    // ── PR review #1 — ADR-0002 D2.1a envelope DUAL-READ ─────────────────────────────────
+    // ── ADR-0002 D2.1a envelope DUAL-READ ─────────────────────────────────
     // Producers wrap every push in QueueEnvelope<T>; the consumer previously deserialized the BARE
     // type, so UserId/EventKey nested under "payload" bound to null → "Discarding push message with
     // missing UserId" → silent ack. Every transactional push was dropped while CI stayed green
@@ -118,7 +118,7 @@ public class SendPushNotificationClassifyTests
         _tenantProvider.Verify(t => t.SetTenantOverride("TENANT-B"), Times.Once);
     }
 
-    // ── AC4 — PERMANENT failures ACK (no throw) ──────────────────────────────────────────
+    // ── PERMANENT failures ACK (no throw) ──────────────────────────────────────────
 
     [Fact]
     public async Task Malformed_Body_That_Cannot_Deserialize_Acks_Without_Throwing()
@@ -148,7 +148,7 @@ public class SendPushNotificationClassifyTests
             r => r.GetByUserIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    // ── AC4 — INFRA / TRANSIENT faults THROW (so the runtime retries → poison) ────────────
+    // ── INFRA / TRANSIENT faults THROW (so the runtime retries → poison) ────────────
 
     [Fact]
     public async Task Infra_Fault_During_Device_Lookup_Throws_So_Runtime_Retries()

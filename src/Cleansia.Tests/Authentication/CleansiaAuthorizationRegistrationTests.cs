@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Cleansia.Tests.Authentication;
 
 /// <summary>
-/// Verification #2 (T-0100 / ADR-0001 §D4) — the single shared registration is present on every
+/// Verification #2 (ADR-0001 §D4) — the single shared registration is present on every
 /// host AND semantically correct. Because all five hosts now call the identical
 /// <c>AddCleansiaAuthorization</c>, testing that one registration is testing every host's behavior
 /// (this is precisely the consolidation D4 buys). We assert:
@@ -122,7 +122,7 @@ public class CleansiaAuthorizationRegistrationTests
     [Fact]
     public async Task CustomerOnly_Resolves_On_Every_Host_Registration()
     {
-        // BSP-7 / AC9: CustomerOnly is now registered everywhere (it used to be missing on
+        // CustomerOnly is now registered everywhere (it used to be missing on
         // Admin/Partner/Mobile.Partner). Routed onto any host it resolves and denies an admin.
         await using var provider = BuildProvider();
         var policyProvider = provider.GetRequiredService<IAuthorizationPolicyProvider>();

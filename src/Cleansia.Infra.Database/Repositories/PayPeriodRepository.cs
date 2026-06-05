@@ -54,7 +54,7 @@ public class PayPeriodRepository(CleansiaDbContext context) : BaseRepository<Pay
     public async Task<List<InvoiceReconciliationItem>> GetInvoiceReconciliationCandidatesAsync(
         DateTime olderThanUtc, int take, CancellationToken cancellationToken)
     {
-        // T-0122 / ADR-0002 D3.4 — invoice-side dispatch reconciliation. System-job read: bypass the
+        // ADR-0002 D3.4 — invoice-side dispatch reconciliation. System-job read: bypass the
         // tenant filter so the sweep sees stale pay across all tenants; each item carries its TenantId
         // so the sweep can re-scope per item before re-enqueuing.
         //

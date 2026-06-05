@@ -9,20 +9,19 @@ using Moq;
 namespace Cleansia.Tests.Features.Disputes;
 
 /// <summary>
-/// T-0103 / SEC-DSP-02 / ADR-0001 §D2 [OWN-DATA] (finding S3 resource-by-id ownership) — the inner
-/// ownership gate inside <c>CreateDispute.Handler</c>. The <c>CanCreateDispute → CustomerOnly</c>
-/// policy is the coarse outer gate; this handler check is the inner gate that decides *which*
-/// customer's order may be disputed, and holds regardless of host or invocation path (AC4).
-///   - AC1: a customer disputing an order owned by a DIFFERENT user gets the not-found business error
+/// ADR-0001 §D2 [OWN-DATA] (S3 resource-by-id ownership) — the inner ownership gate inside
+/// <c>CreateDispute.Handler</c>. The <c>CanCreateDispute → CustomerOnly</c> policy is the coarse
+/// outer gate; this handler check is the inner gate that decides *which* customer's order may be
+/// disputed, and holds regardless of host or invocation path.
+///   - a customer disputing an order owned by a DIFFERENT user gets the not-found business error
 ///     (<see cref="BusinessErrorMessage.OrderNotFound"/>) — NotFound, not Forbidden — and NOTHING is
 ///     added to the dispute repository;
-///   - AC2: a customer disputing an OrderId that does not exist gets the SAME OrderNotFound (no
+///   - a customer disputing an OrderId that does not exist gets the SAME OrderNotFound (no
 ///     enumeration difference between "missing" and "not yours");
-///   - AC3: a customer disputing an order they OWN, with no open dispute, gets a created Dispute and
+///   - a customer disputing an order they OWN, with no open dispute, gets a created Dispute and
 ///     <c>Success(dispute.Id)</c> — the existing happy path is preserved;
-///   - AC5 regression: the existing <see cref="BusinessErrorMessage.DisputeAlreadyExists"/> pre-check
+///   - regression: the existing <see cref="BusinessErrorMessage.DisputeAlreadyExists"/> pre-check
 ///     still fires for an order that already has an open dispute, with nothing added.
-/// These tests predate the handler fix (red → green) per knowledge/testing.md §TDD and must-cover #5.
 /// </summary>
 public class CreateDisputeHandlerTests
 {

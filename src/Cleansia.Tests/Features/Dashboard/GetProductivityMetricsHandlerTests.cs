@@ -11,15 +11,15 @@ using Moq;
 namespace Cleansia.Tests.Features.Dashboard;
 
 /// <summary>
-/// T-0104 (SEC-EMP-01) / ADR-0001 §D2 [OWN-DATA] — the inner ownership gate inside
+/// ADR-0001 §D2 [OWN-DATA] — the inner ownership gate inside
 /// <see cref="GetProductivityMetrics.Handler"/>, INCLUDING the <c>CalculatePersonalBestsAsync</c>
 /// invoice path that leaks historical EARNINGS. Mirrors the sibling tests:
-///   - AC3: a NON-admin caller's foreign <c>EmployeeId</c> is IGNORED — only the caller's own resolved
+///   - a NON-admin caller's foreign <c>EmployeeId</c> is IGNORED — only the caller's own resolved
 ///     id reaches BOTH the order repository AND
 ///     <see cref="IEmployeeInvoiceRepository.GetByEmployeeAndDateRangeAsync"/> (no foreign historical
 ///     earnings / personal-best months);
-///   - AC4: an Administrator caller's <c>Query.EmployeeId</c> IS honored on both paths;
-///   - AC5: a non-admin with no resolvable employee gets
+///   - an Administrator caller's <c>Query.EmployeeId</c> IS honored on both paths;
+///   - a non-admin with no resolvable employee gets
 ///     <see cref="BusinessErrorMessage.EmployeeNotFound"/> and neither repository is touched.
 /// Written red → green per knowledge/testing.md (predates the handler fix).
 /// </summary>

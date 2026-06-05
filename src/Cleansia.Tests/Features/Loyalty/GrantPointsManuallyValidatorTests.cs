@@ -6,7 +6,7 @@ using Moq;
 namespace Cleansia.Tests.Features.Loyalty;
 
 /// <summary>
-/// T-0112 (LG-SEC-06) AC3 — the manual grant/revoke <c>RequestId</c> (the client-supplied idempotency
+/// The manual grant/revoke <c>RequestId</c> (the client-supplied idempotency
 /// token, S7a) is a REQUIRED, bounded-length field, validated through the EXISTING FluentValidation
 /// validators (which already cover UserId / Points / Reason). Asserts on <see cref="BusinessErrorMessage"/>
 /// constants. Written TEST-FIRST (predates the validator rule). Covers BOTH commands (grant + revoke).
@@ -34,7 +34,7 @@ public class GrantPointsManuallyValidatorTests
         return new RevokePointsManually.Validator(userRepo.Object);
     }
 
-    // ── AC3 (grant) — missing RequestId ⇒ Required ──
+    // ── (grant) — missing RequestId ⇒ Required ──
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -50,7 +50,7 @@ public class GrantPointsManuallyValidatorTests
         Assert.Equal(BusinessErrorMessage.Required, errors[0].ErrorMessage);
     }
 
-    // ── AC3 (grant) — oversized RequestId ⇒ MaxLength ──
+    // ── (grant) — oversized RequestId ⇒ MaxLength ──
     [Fact]
     public async Task Grant_When_RequestId_Oversized_Then_Fails_With_MaxLength()
     {
@@ -65,7 +65,7 @@ public class GrantPointsManuallyValidatorTests
         Assert.Equal(BusinessErrorMessage.MaxLength, errors[0].ErrorMessage);
     }
 
-    // ── AC3 (grant) — valid RequestId ⇒ passes ──
+    // ── (grant) — valid RequestId ⇒ passes ──
     [Fact]
     public async Task Grant_When_RequestId_Valid_Then_Passes_For_RequestId()
     {
@@ -76,7 +76,7 @@ public class GrantPointsManuallyValidatorTests
         Assert.Empty(result.Errors.Where(e => e.PropertyName == nameof(GrantPointsManually.Command.RequestId)));
     }
 
-    // ── AC3 (revoke) — missing RequestId ⇒ Required ──
+    // ── (revoke) — missing RequestId ⇒ Required ──
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -92,7 +92,7 @@ public class GrantPointsManuallyValidatorTests
         Assert.Equal(BusinessErrorMessage.Required, errors[0].ErrorMessage);
     }
 
-    // ── AC3 (revoke) — oversized RequestId ⇒ MaxLength ──
+    // ── (revoke) — oversized RequestId ⇒ MaxLength ──
     [Fact]
     public async Task Revoke_When_RequestId_Oversized_Then_Fails_With_MaxLength()
     {
@@ -107,7 +107,7 @@ public class GrantPointsManuallyValidatorTests
         Assert.Equal(BusinessErrorMessage.MaxLength, errors[0].ErrorMessage);
     }
 
-    // ── AC3 (revoke) — valid RequestId ⇒ passes ──
+    // ── (revoke) — valid RequestId ⇒ passes ──
     [Fact]
     public async Task Revoke_When_RequestId_Valid_Then_Passes_For_RequestId()
     {

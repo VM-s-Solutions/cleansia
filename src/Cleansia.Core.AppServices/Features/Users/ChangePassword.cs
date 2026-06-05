@@ -56,7 +56,7 @@ public class ChangePassword
 
         private async Task<bool> ValidateUserTokenAsync(Command command, CancellationToken cancellationToken)
         {
-            // T-0106 / IDA-SEC-03: lookup is (email, HASH of token). The reset token is stored hashed,
+            // lookup is (email, HASH of token). The reset token is stored hashed,
             // so hash the supplied raw code and compare — no plaintext comparison remains.
             var user = await _userRepository.GetByEmailAsync(command.Email, cancellationToken);
 

@@ -60,7 +60,7 @@ public class UserMembershipEntityConfiguration : AuditableEntityConfiguration<Us
         // CreateOrder. Composite index keeps that O(log n).
         builder.HasIndex(m => new { m.UserId, m.Status });
 
-        // T-0114 (SEC-W2) / ADR-0002 D2 — DB-level backstop for the
+        // ADR-0002 D2 — DB-level backstop for the
         // "at most one ACTIVE membership per user" invariant. The webhook
         // provisioning path (StripeSubscriptionWebhookHandler
         // .ProvisionFromCreatedEventAsync) asserts via GetActiveForUserAsync

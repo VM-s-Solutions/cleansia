@@ -3,18 +3,18 @@ using Cleansia.Core.Domain.EmployeePayroll;
 namespace Cleansia.Tests.Features.EmployeePayroll;
 
 /// <summary>
-/// T-0125 (TC-PAY) — pure-function characterization of
-/// <see cref="EmployeePayConfig.CalculatePay(int,int,decimal)"/> (surface #3). This overload uses its
+/// Pure-function characterization of
+/// <see cref="EmployeePayConfig.CalculatePay(int,int,decimal)"/>. This overload uses its
 /// OWN formula and inline min/max clamp, DISTINCT from <c>PayCalculatorExtensions.CalculatePay</c>:
 /// here <c>rooms</c> and <c>bathrooms</c> are multiplied DIRECTLY (no "first room is in base"
 /// subtraction). The tests pin that exact formula plus the inline clamp.
 ///
-/// Mapping to acceptance criteria:
-///  - AC1 → clamp at min (raw total below MinimumPay).
-///  - AC2 → clamp at max (raw total above MaximumPay).
-///  - AC3 → no clamp when Min == 0 and Max == 0 (the <c>&gt; 0</c> guards, not floor/ceiling of 0).
-///  - AC9 → exact decimal arithmetic.
-/// Construction is via the factory + <c>SetPayLimits</c> (private setters), per the ticket.
+/// What is pinned:
+///  - clamp at min (raw total below MinimumPay).
+///  - clamp at max (raw total above MaximumPay).
+///  - no clamp when Min == 0 and Max == 0 (the <c>&gt; 0</c> guards, not floor/ceiling of 0).
+///  - exact decimal arithmetic.
+/// Construction is via the factory + <c>SetPayLimits</c> (private setters).
 /// </summary>
 public class EmployeePayConfigCalculatePayTests
 {
@@ -79,7 +79,7 @@ public class EmployeePayConfigCalculatePayTests
         Assert.Equal(128.05m, pay);
     }
 
-    // ── AC1 — clamp at min ──
+    // ── clamp at min ──
 
     [Fact]
     public void CalculatePay_Clamps_Up_To_MinimumPay_When_Raw_Below_Min()
@@ -103,7 +103,7 @@ public class EmployeePayConfigCalculatePayTests
         Assert.Equal(120m, pay);
     }
 
-    // ── AC2 — clamp at max ──
+    // ── clamp at max ──
 
     [Fact]
     public void CalculatePay_Clamps_Down_To_MaximumPay_When_Raw_Above_Max()
@@ -140,7 +140,7 @@ public class EmployeePayConfigCalculatePayTests
         Assert.Equal(200m, pay);
     }
 
-    // ── AC3 — no clamp when both limits unset (0 is "unset", not floor/ceiling) ──
+    // ── no clamp when both limits unset (0 is "unset", not floor/ceiling) ──
 
     [Fact]
     public void CalculatePay_No_Limits_Set_Passes_Raw_Through_Even_When_Tiny()

@@ -77,7 +77,7 @@ public static class DomainSeed
         return employee;
     }
 
-    /// <summary>A registration-complete employee that the admin has REJECTED (EMP-GAP-01). Profile +
+    /// <summary>A registration-complete employee that the admin has REJECTED. Profile +
     /// docs are complete; only the contract status differs, isolating the status gate.</summary>
     public static Employee RejectedEmployee(User user, string? tenantId = null)
     {

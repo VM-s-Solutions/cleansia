@@ -31,7 +31,7 @@ public class LoyaltyTransaction : Auditable, ITenantEntity
     public string? OrderId { get; private set; }
 
     /// <summary>
-    /// Client-supplied idempotency token (T-0112 / LG-SEC-06 / S7a) for the
+    /// Client-supplied idempotency token (S7a) for the
     /// manual admin grant/revoke path. NULL on the order-driven / referral
     /// paths (which collapse on <c>(OrderId, Source)</c> instead) — preserving
     /// back-compat. A <b>filtered</b> UNIQUE INDEX on this column (where the

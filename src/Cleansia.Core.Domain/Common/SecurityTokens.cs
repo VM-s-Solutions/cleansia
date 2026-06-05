@@ -4,8 +4,8 @@ using System.Text;
 namespace Cleansia.Core.Domain.Common;
 
 /// <summary>
-/// The single canonical seam for the email-confirmation + password-reset secret tokens
-/// (T-0106 / IDA-SEC-03). Both the domain generators (<see cref="Users.User"/>) and the repository
+/// The single canonical seam for the email-confirmation + password-reset secret tokens.
+/// Both the domain generators (<see cref="Users.User"/>) and the repository
 /// lookup MUST agree on the same generation + hashing algorithm, so it lives in one place.
 ///
 /// Contract (owner-decision, BINDING):

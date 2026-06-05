@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Cleansia.Tests.Functions;
 
 /// <summary>
-/// T-0119 (F4) / ADR-0004 C-A — the born-retry-eligible claim must be SWEPT by the retry job.
+/// ADR-0004 C-A — the born-retry-eligible claim must be SWEPT by the retry job.
 ///
 /// <para>Under claim-before-register, a crash between the claim commit and the authority register
 /// leaves a committed row with <c>FiscalRegistrationFailed == false, FiscalCode == null,
@@ -73,7 +73,7 @@ public sealed class OrderReceiptRepositoryRetryEligibilityTests : IDisposable
     private static OrderReceipt NewReceipt(string orderId, string receiptNumber)
         => OrderReceipt.Create(orderId, receiptNumber, $"{receiptNumber}.pdf", $"2026/{orderId}/{receiptNumber}.pdf", LanguageId);
 
-    // ── AC-F4.4 — the born-retry-eligible claimed-but-unregistered row IS returned (C-A) ──
+    // ── the born-retry-eligible claimed-but-unregistered row IS returned (C-A) ──
 
     [Fact]
     public async Task AC_F4_4_Claimed_But_Unregistered_Row_Is_Returned_By_GetDueForRetry()

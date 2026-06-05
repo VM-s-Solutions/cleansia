@@ -24,7 +24,7 @@ public sealed class ReceiptService(
     ILogger<ReceiptService> logger)
     : IReceiptService
 {
-    // T-0119 / ADR-0004 D-F4.1 phase 1 — RESERVE. Allocate the sequence + Create + Add the row and
+    // ADR-0004 D-F4.1 phase 1 — RESERVE. Allocate the sequence + Create + Add the row and
     // mark it born-retry-eligible for any enforcement mode != None. Does NOT register with the
     // authority, does NOT generate the PDF, and does NOT commit — the handler owns the claim commit,
     // which MUST land BEFORE the irreversible external effects in RealizeFiscalAndPdfAsync.
@@ -50,9 +50,9 @@ public sealed class ReceiptService(
             throw new InvalidOperationException(BusinessErrorMessage.CompanyInfoNotFound);
         }
 
-        // NOTE (T-0119 scope): GetNextSequenceForYearAsync remains COUNT(*)+1 — the gapless,
-        // monotonic, atomic allocator is the separate FISCAL-SEQ ticket (T-0220). The 23505 backstop
-        // in the handler collapses the rare concurrent collision on either unique index.
+        // GetNextSequenceForYearAsync remains COUNT(*)+1 — the gapless, monotonic, atomic allocator
+        // is the separate FISCAL-SEQ ticket. The 23505 backstop in the handler collapses the rare
+        // concurrent collision on either unique index.
         var currentYear = DateTime.UtcNow.Year;
         var sequence = await receiptRepository.GetNextSequenceForYearAsync(currentYear, cancellationToken);
         var receiptNumber = string.Format(Constants.ReceiptNumberFormat.Pattern, currentYear, sequence);
@@ -76,7 +76,7 @@ public sealed class ReceiptService(
         return receipt;
     }
 
-    // T-0119 / ADR-0004 D-F4.1 phase 2 — REALIZE the external effects for an already-claimed receipt:
+    // ADR-0004 D-F4.1 phase 2 — REALIZE the external effects for an already-claimed receipt:
     // register with the authority (stamp on success / mark failed on failure), then generate + upload
     // the PDF. Called AFTER the claim commit, so a redelivery is already deduped by the committed row.
     public async Task RealizeFiscalAndPdfAsync(Order order, OrderReceipt receipt, string languageCode, CancellationToken cancellationToken = default)

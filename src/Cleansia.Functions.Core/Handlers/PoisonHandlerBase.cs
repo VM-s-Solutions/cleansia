@@ -10,7 +10,7 @@ namespace Cleansia.Functions.Core.Handlers;
 /// contract and nothing more:
 ///   1. <see cref="IDeadLetterStore.RecordAsync"/> — persist the durable, admin-visible dead-letter
 ///      row (the recovery/replay source). For the two fiscal queues (generate-receipt,
-///      generate-invoice) this durable row is MANDATORY (AC3).
+///      generate-invoice) this durable row is MANDATORY.
 ///   2. <c>LogError</c> — raises the Sentry/AppInsights alert.
 ///   3. ACK (return, <b>NEVER throw</b>) — acking removes the message from the <c>-poison</c> queue;
 ///      throwing would re-poison it into an endless loop. The durable row is the recovery source.
@@ -18,7 +18,7 @@ namespace Cleansia.Functions.Core.Handlers;
 /// The poison consumer NEVER re-processes the original effect (no receipt/invoice/push/pay re-run) —
 /// it is purely "persist + alert".
 ///
-/// Lives in the testable Core library (the T-0121 / ADR-0002 D5 step 1 pattern); the
+/// Lives in the testable Core library (the ADR-0002 D5 step 1 pattern); the
 /// <c>[QueueTrigger("&lt;queue&gt;-poison")]</c> shells stay in the Exe so the Worker SDK source-gen
 /// discovers them.
 /// </summary>
@@ -31,7 +31,7 @@ public abstract class PoisonHandlerBase(IDeadLetterStore deadLetterStore, ILogge
     public async Task HandleAsync(string body, CancellationToken ct)
     {
         // 1. Durable, admin-visible record (the recovery/replay source). The store owns its own commit.
-        //    PR review #21 — GUARD the persist so a transient DB fault does NOT throw out of this poison
+        //    GUARD the persist so a transient DB fault does NOT throw out of this poison
         //    consumer. The base contract is "never throw / never loop"; an unguarded RecordAsync throw
         //    would fail to ACK and re-poison into an endless <queue>-poison-poison loop. On a persistent
         //    DB failure we still raise the alert (the body is in the Error log) and ACK — accepting the

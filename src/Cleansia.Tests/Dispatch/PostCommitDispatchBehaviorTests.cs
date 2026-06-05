@@ -13,23 +13,23 @@ using Moq;
 namespace Cleansia.Tests.Dispatch;
 
 /// <summary>
-/// TC-DISPATCH-0 (ADR-0002 verify #7 / AC1 + AC2) — the F2/SEC-W1 fix, asserted at the
+/// TC-DISPATCH-0 (ADR-0002 verify #7) — the F2/SEC-W1 fix, asserted at the
 /// pipeline-integration level: <see cref="UnitOfWorkPipelineBehavior{TRequest,TResponse}"/> and
 /// <see cref="PostCommitDispatchBehavior{TRequest,TResponse}"/> wired together (outer = dispatch,
 /// inner = UoW) over a shared scoped <see cref="IPendingDispatch"/> buffer, exercising the three
 /// branches the contract freezes:
 ///   • commit SUCCESS  → buffer drained EXACTLY once, each message dispatched via
-///     <see cref="IQueueClient.SendAsync"/>, STRICTLY AFTER the commit (AC1).
+///     <see cref="IQueueClient.SendAsync"/>, STRICTLY AFTER the commit.
 ///   • commit THROWS    → next() propagates, the dispatch guard is never reached, NO SendAsync,
-///     the buffer is discarded (AC2 — the F2 fix: no message on the wire for a rolled-back write).
-///   • validation FAILS → the handler never runs, the buffer is empty, nothing is dispatched (AC2).
+///     the buffer is discarded (the F2 fix: no message on the wire for a rolled-back write).
+///   • validation FAILS → the handler never runs, the buffer is empty, nothing is dispatched.
 ///
-/// AC8 (verify #4, pipeline-order) asserts the concrete registration order
+/// The pipeline-order assertion checks the concrete registration order
 /// PostCommitDispatch → Validation → UnitOfWork so a future re-swap cannot resurrect F11 or
 /// before-commit dispatch.
 ///
 /// Test-first (RED until PostCommitDispatchBehavior + IPendingDispatch + InMemoryPendingDispatch
-/// exist and the behavior is registered outermost). Pairs with T-0127; merges with the fix.
+/// exist and the behavior is registered outermost).
 /// </summary>
 public class PostCommitDispatchBehaviorTests
 {
@@ -61,7 +61,7 @@ public class PostCommitDispatchBehaviorTests
             CancellationToken.None);
     }
 
-    // ── AC1 — commit success drains exactly once, after the commit ─────────────────────
+    // ── commit success drains exactly once, after the commit ─────────────────────
 
     [Fact]
     public async Task On_Commit_Success_Buffer_Is_Drained_And_Each_Message_Sent_Once_After_Commit()
@@ -99,7 +99,7 @@ public class PostCommitDispatchBehaviorTests
         Assert.True(sendObservedCommitState, "Dispatch (SendAsync) must run STRICTLY AFTER the UoW commit.");
     }
 
-    // ── AC2 — commit throw → no dispatch, buffer discarded (the F2 fix) ─────────────────
+    // ── commit throw → no dispatch, buffer discarded (the F2 fix) ─────────────────
 
     [Fact]
     public async Task On_Commit_Throw_Nothing_Is_Dispatched()
@@ -129,7 +129,7 @@ public class PostCommitDispatchBehaviorTests
         Assert.Single(pending.Drain());
     }
 
-    // ── AC2 — validation failure (handler never ran, empty buffer) → nothing dispatched ─
+    // ── validation failure (handler never ran, empty buffer) → nothing dispatched ─
 
     [Fact]
     public async Task On_Validation_Failure_Nothing_Is_Dispatched()
@@ -149,7 +149,7 @@ public class PostCommitDispatchBehaviorTests
             Times.Never);
     }
 
-    // ── AC2 — committed success but empty buffer (short-circuit) → drains to nothing ────
+    // ── committed success but empty buffer (short-circuit) → drains to nothing ────
 
     [Fact]
     public async Task On_Success_With_Empty_Buffer_No_Dispatch()
@@ -192,7 +192,7 @@ public class PostCommitDispatchBehaviorTests
             Times.Once);
     }
 
-    // ── AC8 / verify #4 — pipeline order: PostCommitDispatch → Validation → UnitOfWork ──
+    // ── verify #4 — pipeline order: PostCommitDispatch → Validation → UnitOfWork ──
 
     [Fact]
     public void PostCommitDispatch_Is_Registered_Outermost_Before_Validation_And_UnitOfWork()

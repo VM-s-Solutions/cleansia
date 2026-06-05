@@ -12,7 +12,7 @@ public interface IPromoCodeRepository : IRepository<PromoCode, string>
 
     /// <summary>
     /// Atomically bump the denormalised global redemption counter, guarded by the global cap, in a
-    /// single conditional SQL UPDATE (T-0110 / S7):
+    /// single conditional SQL UPDATE (S7):
     /// <c>UPDATE PromoCodes SET CurrentRedemptionsCount = CurrentRedemptionsCount + 1
     /// WHERE Id = @id AND (GlobalMaxRedemptions IS NULL OR CurrentRedemptionsCount &lt; GlobalMaxRedemptions)</c>.
     /// Returns <c>true</c> when a row was updated (the slot was reserved), <c>false</c> when 0 rows
@@ -28,7 +28,7 @@ public interface IPromoCodeRepository : IRepository<PromoCode, string>
     Task<bool> TryIncrementGlobalRedemptionsAsync(string promoCodeId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// COMPENSATING decrement for a global slot that was reserved but then not consumed (PR review #7):
+    /// COMPENSATING decrement for a global slot that was reserved but then not consumed:
     /// the redeem path increments the global counter BEFORE reserving the per-user slot, so when the
     /// per-user reservation fails the global slot must be released or <see cref="PromoCode.GlobalMaxRedemptions"/>
     /// permanently shrinks. Atomic single UPDATE, floored at 0; same deliberate "commits outside the UoW

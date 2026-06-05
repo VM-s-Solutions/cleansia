@@ -9,7 +9,7 @@ using Moq;
 namespace Cleansia.Tests.Behaviors;
 
 /// <summary>
-/// T-0117 (F11) / ADR-0002 D4 — the pipeline must NOT commit on a validation failure.
+/// F11 / ADR-0002 D4 — the pipeline must NOT commit on a validation failure.
 ///
 /// Two gates, written test-first (red → green) per <c>knowledge/testing.md</c>:
 ///   • <see cref="Validation_Behavior_Is_Registered_Before_UnitOfWork_Behavior"/> — ADR-0002
@@ -19,10 +19,8 @@ namespace Cleansia.Tests.Behaviors;
 ///   • <see cref="Failing_Command_Does_Not_Commit"/> — ADR-0002 check #10 (F11 regression): a
 ///     <c>*Command</c> whose inner <c>next()</c> returns a failure <see cref="BusinessResult"/> must
 ///     NOT trigger <see cref="IUnitOfWork.CommitAsync"/>. Paired with the happy-path
-///     <see cref="Succeeding_Command_Commits_Exactly_Once"/> (AC3) and the defense-in-depth /
-///     guard cases (AC4).
-///
-/// These cases belong to the paired test ticket T-0127 and merge with the T-0117 fix.
+///     <see cref="Succeeding_Command_Commits_Exactly_Once"/> and the defense-in-depth /
+///     guard cases.
 /// </summary>
 public class UnitOfWorkPipelineBehaviorTests
 {
@@ -40,7 +38,7 @@ public class UnitOfWorkPipelineBehaviorTests
         where TRequest : notnull =>
         new(_unitOfWork.Object);
 
-    // ── AC5(a) / ADR-0002 verify #4 — pipeline order (outer → inner) ───────────────────
+    // ── ADR-0002 verify #4 — pipeline order (outer → inner) ───────────────────
 
     [Fact]
     public void Validation_Behavior_Is_Registered_Before_UnitOfWork_Behavior()
@@ -68,7 +66,7 @@ public class UnitOfWorkPipelineBehaviorTests
             "command never reaches the commit.");
     }
 
-    // ── AC5(b) / AC2 / ADR-0002 verify #10 — F11 regression: no commit on failure ──────
+    // ── ADR-0002 verify #10 — F11 regression: no commit on failure ──────
 
     [Fact]
     public async Task Failing_Command_Does_Not_Commit()
@@ -89,7 +87,7 @@ public class UnitOfWorkPipelineBehaviorTests
         _unitOfWork.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    // ── AC3 — happy path: a succeeding command commits exactly once, after the handler ─
+    // ── happy path: a succeeding command commits exactly once, after the handler ─
 
     [Fact]
     public async Task Succeeding_Command_Commits_Exactly_Once()
@@ -107,7 +105,7 @@ public class UnitOfWorkPipelineBehaviorTests
         _unitOfWork.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    // ── AC4 — defense-in-depth & the IsNotCommand guard ────────────────────────────────
+    // ── defense-in-depth & the IsNotCommand guard ────────────────────────────────
 
     [Fact]
     public async Task Non_Command_Request_Never_Commits()

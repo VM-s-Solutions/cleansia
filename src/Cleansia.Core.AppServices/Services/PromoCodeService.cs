@@ -119,7 +119,7 @@ public sealed class PromoCodeService(
 
         // Cheap in-memory FAST PATH for the per-user cap (the common case). This is NOT the source
         // of truth — it just avoids a DB write when the cap is plainly already used. The atomic
-        // reservation below is the arbiter and closes the check-then-act race (T-0110 / S7).
+        // reservation below is the arbiter and closes the check-then-act race (S7).
         var priorRedemptions = await redemptionRepository.CountForUserAndCodeAsync(
             userId, promoCode.Id, cancellationToken);
         if (priorRedemptions >= promoCode.MaxRedemptionsPerUser)
@@ -165,7 +165,7 @@ public sealed class PromoCodeService(
             userId, promoCode.Id, promoCode.MaxRedemptionsPerUser, orderId, discount, cancellationToken);
         if (redemption == null)
         {
-            // PR review #7 — the global slot was already reserved above; the per-user reservation failed,
+            // The global slot was already reserved above; the per-user reservation failed,
             // so RELEASE the global slot or the global cap leaks one slot per failed reservation (a
             // concurrent same-user redeem would permanently shrink GlobalMaxRedemptions).
             await promoCodeRepository.DecrementGlobalRedemptionsAsync(promoCode.Id, cancellationToken);

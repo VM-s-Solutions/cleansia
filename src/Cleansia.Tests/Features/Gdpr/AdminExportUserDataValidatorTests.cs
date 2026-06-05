@@ -10,8 +10,8 @@ using Moq;
 namespace Cleansia.Tests.Features.Gdpr;
 
 /// <summary>
-/// T-0107 (IDA-SEC-08): the admin GDPR export tool is for customer/employee data-subject
-/// requests only. It must refuse to target an administrator (AC3) with the same
+/// The admin GDPR export tool is for customer/employee data-subject
+/// requests only. It must refuse to target an administrator with the same
 /// "cannot target admin via GDPR tool" code as the delete tool, so
 /// <see cref="IGdprExportService.BuildAsync"/> is never invoked (no GDPR export row completed).
 /// </summary>
@@ -37,7 +37,7 @@ public class AdminExportUserDataValidatorTests
         return user;
     }
 
-    // AC3 — GDPR export refuses an administrator target with the shared "cannot target admin via GDPR tool" code.
+    // GDPR export refuses an administrator target with the shared "cannot target admin via GDPR tool" code.
     [Fact]
     public async Task When_Target_Is_Administrator_Then_Fails_With_CannotTargetAdminViaGdprTool()
     {

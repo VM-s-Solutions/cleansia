@@ -4,7 +4,7 @@ using Cleansia.Core.AppServices.Features.Auth;
 namespace Cleansia.Tests.Features.Auth;
 
 /// <summary>
-/// T-0105 (IDA-SEC-01) + PR review #4/#15: Google ID-token verification lives in
+/// Google ID-token verification lives in
 /// <c>IGoogleTokenVerifier</c> (called by the handler) and the AuthenticationType account-safety guard
 /// now runs IN THE HANDLER against the VERIFIED <c>claims.Email</c> (see
 /// <c>GoogleAuthHandlerTests.Existing_Internal_Account_With_Verified_Email_Is_Rejected...</c>).

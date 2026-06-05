@@ -10,18 +10,18 @@ using Moq;
 namespace Cleansia.Tests.Features.Orders;
 
 /// <summary>
-/// T-0123 / BSP-9 (AC4 + AC5) — the anonymous <see cref="LookupOrderBatch.Handler"/> is the only gate
+/// The anonymous <see cref="LookupOrderBatch.Handler"/> is the only gate
 /// protecting an order's data from an unauthenticated caller (no tenant claim, S3 — the global tenant
 /// filter is bypassed). The per-item shared secret is the (OrderId, Email) pair: the GUID
 /// <c>OrderId</c> is itself a secret the guest only obtains by first proving the
 /// (DisplayOrderNumber, Email) pair through single <see cref="LookupOrder"/> — the batch matches the
 /// SAME pairing as single (email is the gate in both; the GUID is an equal-or-stronger secret than the
 /// human-typed DisplayOrderNumber), so the batch does NOT widen the secret. These cases pin:
-///   - AC4 (a): a batch over the cap (&gt; 10 items) returns nothing (no bulk enumeration);
-///   - AC4 (b): only rows whose (OrderId, Email) matches the supplied per-item secret come back;
-///   - AC4 (harden): a null / empty Email item is DROPPED before <c>.ToLower()</c> — no NRE — and the
+///   - a batch over the cap (&gt; 10 items) returns nothing (no bulk enumeration);
+///   - only rows whose (OrderId, Email) matches the supplied per-item secret come back;
+///   - a null / empty Email item is DROPPED before <c>.ToLower()</c> — no NRE — and the
 ///     valid items in the same batch still resolve;
-///   - AC5: an item with a wrong / absent email for a real order yields NOTHING for that item (the
+///   - an item with a wrong / absent email for a real order yields NOTHING for that item (the
 ///     email-match is the only gate; no anonymous tenant leak).
 /// Written red -> green per knowledge/testing.md (the null-email drop predates the handler fix).
 /// </summary>
@@ -70,7 +70,7 @@ public class LookupOrderBatchSecretTests
     [Fact]
     public async Task Over_Cap_More_Than_Ten_Items_Returns_Nothing()
     {
-        // AC4 (a): a 11-item batch is rejected outright — the handler never enumerates the repo.
+        // a 11-item batch is rejected outright — the handler never enumerates the repo.
         SeedOrders(BuildOrder("ord-1", MatchingEmail));
         var items = Enumerable.Range(1, 11)
             .Select(i => new LookupOrderBatch.OrderLookupItem($"ord-{i}", MatchingEmail))
@@ -86,7 +86,7 @@ public class LookupOrderBatchSecretTests
     [Fact]
     public async Task Matching_OrderId_And_Email_Returns_The_Row()
     {
-        // AC4 (b): the (OrderId, Email) secret pair matches → the row comes back.
+        // the (OrderId, Email) secret pair matches → the row comes back.
         SeedOrders(BuildOrder("ord-1", MatchingEmail));
 
         var result = await CreateHandler().Handle(
@@ -116,7 +116,7 @@ public class LookupOrderBatchSecretTests
     [Fact]
     public async Task Wrong_Email_For_Real_Order_Yields_Nothing_No_Tenant_Leak()
     {
-        // AC5: the order exists, the GUID is correct, but the email does not match → NOTHING.
+        // the order exists, the GUID is correct, but the email does not match → NOTHING.
         // The email-match is the only gate; an anonymous caller who cannot prove the email gets no data.
         SeedOrders(BuildOrder("ord-1", MatchingEmail));
 
@@ -131,7 +131,7 @@ public class LookupOrderBatchSecretTests
     [Fact]
     public async Task Null_Email_Item_Is_Dropped_No_NullReference()
     {
-        // AC4 (harden #1): a null-Email item must be dropped BEFORE i.Email.ToLower() — no NRE.
+        // a null-Email item must be dropped BEFORE i.Email.ToLower() — no NRE.
         // Today line :43 dereferences i.Email unconditionally and throws.
         SeedOrders(BuildOrder("ord-1", MatchingEmail));
 
@@ -146,7 +146,7 @@ public class LookupOrderBatchSecretTests
     [Fact]
     public async Task Empty_Email_Item_Is_Dropped_Valid_Sibling_Still_Resolves()
     {
-        // AC4 (harden #1): an empty-Email item is dropped; a valid item in the SAME batch still resolves.
+        // an empty-Email item is dropped; a valid item in the SAME batch still resolves.
         SeedOrders(
             BuildOrder("ord-1", MatchingEmail),
             BuildOrder("ord-2", "bob@example.com"));

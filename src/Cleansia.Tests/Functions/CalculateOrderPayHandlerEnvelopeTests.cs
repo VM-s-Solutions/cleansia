@@ -12,7 +12,7 @@ using Moq;
 namespace Cleansia.Tests.Functions;
 
 /// <summary>
-/// PR review #2 — ADR-0002 D2.1a envelope DUAL-READ on <see cref="CalculateOrderPayHandler"/>.
+/// ADR-0002 D2.1a envelope DUAL-READ on <see cref="CalculateOrderPayHandler"/>.
 /// CompleteOrder (the only producer) wraps the payload in QueueEnvelope&lt;T&gt;, but the consumer
 /// deserialized the BARE type → OrderId/EmployeeId nested under "payload" came back EMPTY (not null,
 /// so it passed the old `?? throw`) → the validator silently rejected → NO OrderEmployeePay row was

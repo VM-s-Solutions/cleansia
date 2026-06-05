@@ -11,8 +11,8 @@ namespace Cleansia.Core.Domain.Memberships;
 ///
 /// One user can have at most one active membership at a time. This invariant
 /// is asserted in handler code (the request path's GetActiveForUserAsync guard
-/// and the webhook's ProvisionFromCreatedEventAsync active-check) AND, since
-/// T-0114 (SEC-W2), backstopped at the database by a FILTERED partial unique
+/// and the webhook's ProvisionFromCreatedEventAsync active-check) AND
+/// backstopped at the database by a FILTERED partial unique
 /// index on (TenantId, UserId) WHERE Status = Active
 /// (UserMembershipEntityConfiguration). The index is filtered to Active so a
 /// cancelled/expired membership plus a new active subscription is still

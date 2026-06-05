@@ -29,7 +29,7 @@ public class SendPushNotificationHandler(
 {
     public async Task HandleAsync(string messageText, CancellationToken ct)
     {
-        // ── ADR-0002 D3.3 (T-0120 AC4) — failure CLASSIFICATION, phase 1: PERMANENT failures ack ──
+        // ── ADR-0002 D3.3 — failure CLASSIFICATION, phase 1: PERMANENT failures ack ──
         // A malformed / un-deserializable body or a business-rejected message (missing required fields)
         // can NEVER succeed on retry. Previously the single throw-on-everything catch below burned all
         // 5 dequeues and then poison-queued an un-fixable message. Now a permanent failure is logged at
@@ -137,7 +137,7 @@ public class SendPushNotificationHandler(
         }
         catch (Exception ex)
         {
-            // ── ADR-0002 D3.3 (T-0120 AC4) — failure CLASSIFICATION, phase 2: TRANSIENT/INFRA throw ──
+            // ── ADR-0002 D3.3 — failure CLASSIFICATION, phase 2: TRANSIENT/INFRA throw ──
             // Everything reaching here is infra/transient (a DB read fault, the FCM network call, a
             // commit failure) — the body already deserialized and validated above. Re-throw so the
             // Azure Functions queue trigger retries up to maxDequeueCount (host.json = 5) and then

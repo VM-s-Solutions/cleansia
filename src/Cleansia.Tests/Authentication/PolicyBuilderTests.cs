@@ -5,7 +5,7 @@ namespace Cleansia.Tests.Authentication;
 
 /// <summary>
 /// Verification #1 (completeness / AssertComplete) and #3 (no fail-open default) for
-/// T-0100 / ADR-0001 §D1. These are the pure-logic guarantees of the fail-closed seam.
+/// ADR-0001 §D1. These are the pure-logic guarantees of the fail-closed seam.
 /// </summary>
 public class PolicyBuilderTests
 {
@@ -94,7 +94,7 @@ public class PolicyBuilderTests
         // We cannot mutate the private static Map to trigger AssertComplete's throw directly, but we
         // prove the exact set arithmetic AssertComplete uses flags a synthetic "forgot to map"
         // permission. (A real forgotten Policy.* is caught at build time by
-        // Every_Declared_Policy_Constant_Is_Mapped_Or_AllowListed above; AC5's runtime throw is the
+        // Every_Declared_Policy_Constant_Is_Mapped_Or_AllowListed above; the runtime throw is the
         // same predicate applied at startup.)
         var declaredPlusForgotten = DeclaredPolicyConstants();
         declaredPlusForgotten.Add("CanDoSomethingNewlyAddedButUnmapped");

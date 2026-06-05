@@ -7,13 +7,13 @@ using Microsoft.EntityFrameworkCore;
 namespace Cleansia.HostTests.Tests;
 
 /// <summary>
-/// AC8 (EMP-GAP-01, paired fix T-0109) — a cleaner whose ContractStatus is Rejected cannot work an
+/// A cleaner whose ContractStatus is Rejected cannot work an
 /// order. End-to-end on the Partner Order host:
 /// <list type="bullet">
 ///   <item>a Rejected (but otherwise complete) cleaner is turned away on TakeOrder / StartOrder /
 ///   CompleteOrder, and the order's status/assignment is unchanged. (Through the full host the rejected
 ///   cleaner is stopped at the [RequireCompleteProfile] gate, which requires Approved/Active — the
-///   validator's EmployeeIsApprovedAsync check from T-0109 is the inner backstop the handler-level
+///   validator's EmployeeIsApprovedAsync check is the inner backstop the handler-level
 ///   tests cover.)</item>
 ///   <item>an Approved cleaner still succeeds (TakeOrder → 200, assignment recorded, status advanced).</item>
 /// </list>

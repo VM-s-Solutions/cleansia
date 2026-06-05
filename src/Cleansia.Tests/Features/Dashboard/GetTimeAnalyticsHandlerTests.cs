@@ -10,13 +10,13 @@ using Moq;
 namespace Cleansia.Tests.Features.Dashboard;
 
 /// <summary>
-/// T-0104 (SEC-EMP-01) / ADR-0001 §D2 [OWN-DATA] — the inner ownership gate inside
+/// ADR-0001 §D2 [OWN-DATA] — the inner ownership gate inside
 /// <see cref="GetTimeAnalytics.Handler"/>. Mirrors <see cref="GetOrderAnalyticsHandlerTests"/>:
-///   - AC2: a NON-admin caller's foreign <c>EmployeeId</c> is IGNORED — only the caller's own resolved
+///   - a NON-admin caller's foreign <c>EmployeeId</c> is IGNORED — only the caller's own resolved
 ///     id reaches <see cref="IOrderRepository.GetCompletedOrdersByDateRangeAsync"/> (no time-spent /
 ///     efficiency leak);
-///   - AC4: an Administrator caller's <c>Query.EmployeeId</c> IS honored;
-///   - AC5: a non-admin with no resolvable employee gets
+///   - an Administrator caller's <c>Query.EmployeeId</c> IS honored;
+///   - a non-admin with no resolvable employee gets
 ///     <see cref="BusinessErrorMessage.EmployeeNotFound"/>.
 /// Written red → green per knowledge/testing.md (predates the handler fix).
 /// </summary>

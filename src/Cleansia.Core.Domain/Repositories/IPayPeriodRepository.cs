@@ -13,7 +13,7 @@ public interface IPayPeriodRepository : IRepository<PayPeriod, string>
     Task<List<PayPeriod>> GetActivePeriodsEndingInDaysAsync(int daysFromNow, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// T-0122 (FISCAL-RECON) / ADR-0002 D3.4 — invoice-side candidates for the dispatch reconciliation
+    /// ADR-0002 D3.4 — invoice-side candidates for the dispatch reconciliation
     /// sweep: each (PayPeriod, Employee) pairing with committed pay (an <c>OrderEmployeePay</c> row in
     /// the period) but NO <c>EmployeeInvoice</c> for <c>(PayPeriodId, EmployeeId)</c>, where the period
     /// was committed BEFORE <paramref name="olderThanUtc"/>.

@@ -3,7 +3,7 @@ using Microsoft.Azure.Functions.Worker;
 
 namespace Cleansia.Functions.Functions;
 
-// T-0121 / ADR-0002 D5 step 1 — thin trigger shell; body lives in DataRetentionTimerHandler (Core).
+// ADR-0002 D5 step 1 — thin trigger shell; body lives in DataRetentionTimerHandler (Core).
 public class DataRetentionTimerFunction(DataRetentionTimerHandler handler)
 {
     [Function("DataRetentionCleanup")]

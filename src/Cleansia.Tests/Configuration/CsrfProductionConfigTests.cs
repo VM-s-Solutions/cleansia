@@ -17,7 +17,7 @@ using Microsoft.Extensions.Options;
 namespace Cleansia.Tests.Configuration;
 
 /// <summary>
-/// T-0123 / BSP-3 (AC1) — proves the production-posture CSRF flip. The three cookie-auth hosts shipped
+/// Proves the production-posture CSRF flip. The three cookie-auth hosts shipped
 /// <c>"Csrf": { "Enabled": false }</c> in prod, so <see cref="CsrfValidationMiddleware"/> short-circuited
 /// (CsrfValidationMiddleware.cs:48) and every state-changing cookie-auth endpoint was reachable
 /// cross-site on the victim's ambient cookie. This test boots the REAL CSRF wiring
@@ -131,7 +131,7 @@ public class CsrfProductionConfigTests
     [Fact]
     public async Task Control_OldProdPosture_Disabled_Lets_Forged_Request_Through_200()
     {
-        // The pre-fix prod config (Enabled=false). This is the BSP-3 hole the flip closes.
+        // The pre-fix prod config (Enabled=false). This is the hole the flip closes.
         using var host = BuildHost(csrfEnabled: false);
         await host.StartAsync();
         var ctx = await host.GetTestServer().SendAsync(c =>

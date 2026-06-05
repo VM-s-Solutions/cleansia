@@ -20,7 +20,7 @@ public class CreateMembershipSubscription
         /// app generates it ONCE per subscribe attempt (at Phase-1 / startSubscribe) and resends the
         /// SAME value on every Phase-2 confirm retry (double-tapped PaymentSheet, network retry). The
         /// handler derives the Stripe idempotency key from it so a retried/concurrent confirm REPLAYS
-        /// the same Stripe subscription instead of creating a second one (T-0111 / LG-SEC-02). Nullable:
+        /// the same Stripe subscription instead of creating a second one. Nullable:
         /// web and not-yet-updated callers omit it, and the handler derives a deterministic fallback key
         /// from stable inputs (userId + planCode). A genuine re-subscribe after cancellation is a new
         /// logical attempt with a new token, so it is not blocked.
@@ -92,7 +92,7 @@ public class CreateMembershipSubscription
 
             if (command.PaymentMethodConfirmed)
             {
-                // T-0111 (LG-SEC-02) / ADR-0002 idempotent-consumer contract: the Stripe attempt id is
+                // ADR-0002 idempotent-consumer contract: the Stripe attempt id is
                 // DERIVED from the client-supplied idempotency token, NOT a fresh Guid.NewGuid() per call.
                 // The real Stripe key is sub-{customer}-{price}-{attemptId}, so two concurrent/retried
                 // confirms carrying the SAME token hit the SAME Stripe key and Stripe REPLAYS the same
@@ -105,7 +105,7 @@ public class CreateMembershipSubscription
                 var subscription = await stripeClient.CreateSubscriptionAsync(
                     stripeCustomerId, plan.StripePriceId, plan.TrialPeriodDays, attemptId, cancellationToken);
 
-                // Local-row collapse (the T-0110 lesson): with the same Stripe key both concurrent
+                // Local-row collapse: with the same Stripe key both concurrent
                 // confirms receive the SAME subscription.SubscriptionId. The :57 guard ran BEFORE the
                 // Stripe call (a TOCTOU window), so re-check active membership now — the loser sees the
                 // winner's just-created row and returns a deterministic MembershipAlreadyActive instead
@@ -131,7 +131,7 @@ public class CreateMembershipSubscription
                     currentPeriodEnd: subscription.CurrentPeriodEnd);
                 userMembershipRepository.Add(membership);
 
-                // T-0111 (LG-SEC-02) ROUND-2 — CLOSE the concurrent window at the write boundary, don't just
+                // CLOSE the concurrent window at the write boundary, don't just
                 // narrow it. The re-check above only narrows: in the genuine race the LOSER re-checks BEFORE the
                 // WINNER's pipeline CommitAsync has made the winner's row visible, sees null, and Add-s a row that
                 // collides on the StripeSubscriptionId unique index (UserMembershipEntityConfiguration:56-57). If

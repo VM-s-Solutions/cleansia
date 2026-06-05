@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace Cleansia.Tests.Authentication;
 
 /// <summary>
-/// Verification #1b (T-0100 / ADR-0001 §D1.2, AC6) — the AnonymousAllowList is exhaustive.
+/// Verification #1b (ADR-0001 §D1.2) — the AnonymousAllowList is exhaustive.
 ///
 /// It must be neither SHORT (a legit anonymous permission missing → startup AssertComplete bricks
 /// boot) nor LONG (a permission listed as anonymous while it is actually gating a real route via

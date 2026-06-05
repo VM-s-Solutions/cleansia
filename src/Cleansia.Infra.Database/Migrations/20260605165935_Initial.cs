@@ -2613,6 +2613,11 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "CustomerAddressId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Orders_PaymentStatus_CreatedOn",
+                table: "Orders",
+                columns: new[] { "PaymentStatus", "CreatedOn" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Orders_PromoCodeId",
                 table: "Orders",
                 column: "PromoCodeId");
@@ -2956,12 +2961,6 @@ namespace Cleansia.Infra.Database.Migrations
                 filter: "\"ConfirmationCode\" IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Users_Email",
-                table: "Users",
-                column: "Email",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Users_GoogleId",
                 table: "Users",
                 column: "GoogleId",
@@ -2988,6 +2987,12 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_Users_TenantId",
                 table: "Users",
                 column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_TenantId_Email",
+                table: "Users",
+                columns: new[] { "TenantId", "Email" },
+                unique: true);
         }
 
         /// <inheritdoc />

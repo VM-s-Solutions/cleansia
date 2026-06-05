@@ -2837,6 +2837,8 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex("PaymentStatus", "CreatedOn");
+
                     b.ToTable("Orders");
                 });
 
@@ -4355,9 +4357,6 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("ConfirmationCode")
                         .HasFilter("\"ConfirmationCode\" IS NOT NULL");
 
-                    b.HasIndex("Email")
-                        .IsUnique();
-
                     b.HasIndex("GoogleId")
                         .HasFilter("\"GoogleId\" IS NOT NULL");
 
@@ -4370,6 +4369,9 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasFilter("\"ResetPasswordCode\" IS NOT NULL");
 
                     b.HasIndex("TenantId");
+
+                    b.HasIndex("TenantId", "Email")
+                        .IsUnique();
 
                     b.ToTable("Users");
                 });

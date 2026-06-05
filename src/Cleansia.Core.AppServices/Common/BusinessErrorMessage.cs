@@ -106,6 +106,10 @@ public static class BusinessErrorMessage
     public const string NotExistingEmployeeWithEmail = "employee.not_existing_email";
     public const string NotAllowedToUpdateEmployee = "employee.not_allowed_to_update";
     public const string EmployeeProfileIncomplete = "employee.profile_incomplete";
+    // PR review #25 — RETAINED deliberately. No production code emits this any more (order actions now
+    // use EmployeeNotApproved), but it is referenced by negative-assert tests proving it is NOT emitted,
+    // and its "employee.documents_missing" locale key is STILL used by the frontend registration flow —
+    // so the const + its locale keys must NOT be deleted.
     public const string EmployeeDocumentsMissing = "employee.documents_missing";
     // T-0109 (EMP-GAP-01): the order-action approval gate. Distinct from
     // EmployeeDocumentsMissing — a cleaner who is not Approved (rejected,

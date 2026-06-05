@@ -77,7 +77,15 @@ public class UserEntityConfiguration : AuditableEntityConfiguration<User, string
         // case-insensitive (no LOWER()/functional index needed). DB-level uniqueness — not just the
         // ExistsWithEmailAsync app pre-check — is the real guarantee that closes the register/update
         // TOCTOU race (PERF-IDA-05).
-        builder.HasIndex(u => u.Email)
+        //
+        // PR review #6 (S8): the uniqueness scope is (TenantId, Email), NOT global Email. User is an
+        // ITenantEntity and the app-layer checks (ExistsWithEmailAsync / GetByEmailAsync) run inside the
+        // global tenant query filter — so email identity is PER-TENANT. A global unique index let tenant
+        // B's registration 500 on an unhandled 23505 when tenant A already held the email (a cross-tenant
+        // existence oracle) and barred the same person from being a customer in two tenants. The composite
+        // index still closes the same-tenant TOCTOU race the app pre-check can't. citext keeps the Email
+        // component case-insensitive.
+        builder.HasIndex(u => new { u.TenantId, u.Email })
             .IsUnique();
 
         // AC2 — non-unique indexes on the remaining nullable lookup columns. Each is FILTERED/PARTIAL

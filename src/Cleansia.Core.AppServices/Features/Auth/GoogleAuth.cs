@@ -16,39 +16,22 @@ public class GoogleAuth
 {
     public class Validator : BaseAuthValidator<Command>
     {
-        private readonly IUserRepository _userRepository;
-
-        public Validator(IUserRepository userRepository)
+        public Validator()
         {
-            _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
-
-            AddEmailRules(command => command.Email);
+            // Identity (email, subject) and the account-type safety guard are bound from the VERIFIED
+            // Google ID-token in the Handler, never from the client (T-0105 / IDA-SEC-01, S1 + PR
+            // review #4/#15). The validator therefore keeps ONLY shape rules on the fields the handler
+            // actually uses: the token (verified) and the display name (the ID-token may carry no name
+            // claim). command.Email / command.GoogleId are intentionally NOT validated here — they are
+            // client-supplied, the handler ignores them, and validating them gave a false sense of a
+            // guard on the wrong, attacker-controlled email.
             AddFirstNameRules(command => command.FirstName);
             AddLastNameRules(command => command.LastName);
 
-            // Token verification has moved to IGoogleTokenVerifier (called by the Handler) so identity is
-            // bound from the VERIFIED Google ID-token, never the client (T-0105 / IDA-SEC-01, S1). The
-            // validator keeps shape rules only.
             RuleFor(command => command.Token)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
                 .WithErrorCode(nameof(Command.Token));
-
-            RuleFor(command => command.GoogleId)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .WithErrorCode(nameof(Command.GoogleId));
-
-            RuleFor(user => user.Email)
-                .MustAsync(UserAuthenticationTypeIsGoogle)
-                .WithMessage(BusinessErrorMessage.InternalAuthTypeError)
-                .WithErrorCode(nameof(Command.Email));
-        }
-
-        private async Task<bool> UserAuthenticationTypeIsGoogle(string email, CancellationToken cancellationToken)
-        {
-            var user = await _userRepository.GetByEmailAsync(email, cancellationToken);
-            return user is null || user.AuthenticationType == AuthenticationType.Google;
         }
     }
 
@@ -82,6 +65,16 @@ public class GoogleAuth
             var user = await userRepository.GetByEmailAsync(claims.Email, cancellationToken);
             if (user is not null)
             {
+                // PR review #4 (S1): the account-type guard MUST run against the account the handler
+                // actually authenticates — the VERIFIED claims.Email — not the client-supplied
+                // command.Email the validator used to check. Block a Google login from binding into an
+                // existing password (Internal) account that shares this verified email.
+                if (user.AuthenticationType != AuthenticationType.Google)
+                {
+                    return BusinessResult.Failure<JwtTokenResponse>(
+                        new Error(nameof(Command.Email), BusinessErrorMessage.InternalAuthTypeError));
+                }
+
                 if (!user.IsActive)
                 {
                     return BusinessResult.Failure<JwtTokenResponse>(

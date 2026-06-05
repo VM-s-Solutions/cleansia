@@ -173,6 +173,35 @@ public class GoogleAuthHandlerTests
         _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), true, HostAudience, It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    // PR review #4 (S1): the AuthenticationType guard now runs in the HANDLER against the VERIFIED
+    // claims.Email (it used to run in the validator against the attacker-controlled command.Email, so a
+    // Google login whose verified email collided with an Internal/password account got a JWT for it).
+    // An existing Internal-type user with the verified email MUST be rejected — no token, no provisioning.
+    [Fact]
+    public async Task Existing_Internal_Account_With_Verified_Email_Is_Rejected_With_InternalAuthTypeError()
+    {
+        var existing = UserMockFactory.Generate(new UserMockFactory.UserPartial
+        {
+            AuthenticationType = AuthenticationType.Internal
+        });
+        existing.IsActive = true;
+        _verifier
+            .Setup(v => v.VerifyAsync("any-token", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GoogleVerifiedClaims("subject-collide", existing.Email));
+        _userRepository
+            .Setup(r => r.GetByEmailAsync(existing.Email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var result = await CreateHandler().Handle(CommandWith(existing.Email, "any-google-id"), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.InternalAuthTypeError, result.Error!.Message);
+        // No JWT issued for the Internal account, and nothing provisioned.
+        _tokenService.Verify(t => t.GenerateTokenAsync(It.IsAny<User>(), It.IsAny<bool>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _userRepository.Verify(r => r.Add(It.IsAny<User>()), Times.Never);
+        _cartRepository.Verify(r => r.Add(It.IsAny<Cart>()), Times.Never);
+    }
+
     // AC6 — inactive existing user is rejected (behavior preserved from the original handler).
     [Fact]
     public async Task Inactive_Existing_User_Is_Rejected()

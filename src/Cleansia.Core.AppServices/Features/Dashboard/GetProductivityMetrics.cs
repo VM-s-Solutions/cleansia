@@ -27,6 +27,7 @@ public class GetProductivityMetrics
         public string? EmployeeId { get; init; }
     }
 
+    // public (not internal) — the handler tests construct it directly. See GetOrderAnalytics note (#26).
     public class Handler(
         IOrderRepository orderRepository,
         IEmployeeInvoiceRepository employeeInvoiceRepository,

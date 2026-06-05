@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -29,10 +30,21 @@ public class CalculateOrderPayHandler(
 {
     public async Task HandleAsync(string messageText, CancellationToken ct)
     {
-        var message = JsonSerializer.Deserialize<CalculateOrderPayMessage>(
-            messageText,
-            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
-            ?? throw new InvalidOperationException("Failed to deserialize CalculateOrderPayMessage");
+        // ADR-0002 D2.1a — DUAL-READ at the deploy boundary. CompleteOrder wraps the payload in a
+        // QueueEnvelope<T>; bare messages may still be in-flight when this consumer deploys. Read the
+        // envelope first, fall back to the bare body. (Deserializing the bare type against an envelope
+        // yields a NON-null message with empty OrderId/EmployeeId — it passes a null check but the
+        // validator then silently rejects, so no pay row is ever created. The dual-read prevents that.)
+        var message = ReadPayload(messageText)
+            ?? throw new InvalidOperationException($"Failed to deserialize CalculateOrderPayMessage: {messageText}");
+
+        if (string.IsNullOrEmpty(message.OrderId) || string.IsNullOrEmpty(message.EmployeeId))
+        {
+            // Genuinely empty identifiers — permanent, ack (do not poison).
+            logger.LogWarning(
+                "Discarding CalculateOrderPay message with missing OrderId/EmployeeId: {Message}", messageText);
+            return;
+        }
 
         await payPeriodService.EnsureOpenPeriodAsync(ct);
 
@@ -58,6 +70,39 @@ public class CalculateOrderPayHandler(
                 message.OrderId,
                 message.EmployeeId,
                 result.Error?.Message ?? "unknown");
+        }
+    }
+
+    private static readonly JsonSerializerOptions JsonOptions =
+        new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
+    /// <summary>
+    /// ADR-0002 D2.1a dual-read. Returns the <see cref="CalculateOrderPayMessage"/> payload from the
+    /// <see cref="QueueEnvelope{T}"/> wire shape (discriminated by a non-empty OrderId) or the bare
+    /// (pre-envelope) message; <c>null</c> only when neither shape is parseable.
+    /// </summary>
+    private static CalculateOrderPayMessage? ReadPayload(string messageText)
+    {
+        try
+        {
+            var envelope = JsonSerializer.Deserialize<QueueEnvelope<CalculateOrderPayMessage>>(messageText, JsonOptions);
+            if (envelope?.Payload is { OrderId: { Length: > 0 } } payload)
+            {
+                return payload;
+            }
+        }
+        catch (JsonException)
+        {
+            // Fall through to the bare-payload read below.
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<CalculateOrderPayMessage>(messageText, JsonOptions);
+        }
+        catch (JsonException)
+        {
+            return null;
         }
     }
 }

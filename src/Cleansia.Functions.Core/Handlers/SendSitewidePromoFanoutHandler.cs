@@ -84,29 +84,46 @@ public class SendSitewidePromoFanoutHandler(
             // the per-user enqueue carries the localized strings inline — the
             // downstream consumer doesn't need to look up locale again.
             //
-            // Use GetQueryableIgnoringTenant since the global filter is still
-            // applied even with the override, and we want to be explicit about
-            // the cross-tenant scope (the campaign itself is single-tenant via
-            // the override, this just bypasses any stray filter).
+            // PR review #3 (S8): SCOPE THE QUERY TO THE CAMPAIGN'S TENANT. The previous code used
+            // GetQueryableIgnoringTenant() on both sides with NO tenant predicate, so SetTenantOverride
+            // had zero effect once filters were ignored — one tenant's campaign fanned out to opted-in
+            // users of EVERY tenant. We keep IgnoreQueryFilters (the override is not load-bearing) and
+            // add an EXPLICIT TenantId predicate. A null campaign.TenantId means single-tenant mode and
+            // matches the (null) rows for that deployment.
+            var campaignTenantId = campaign.TenantId;
             var query = preferencesRepository.GetQueryableIgnoringTenant()
                 .Where(p => p.Promo)
                 .Join(userRepository.GetQueryableIgnoringTenant(),
                     p => p.UserId,
                     u => u.Id,
                     (p, u) => new { p.UserId, u.PreferredLanguageCode, p.TenantId })
+                .Where(x => x.TenantId == campaignTenantId)
                 // Stable order so paged reads don't skip rows.
                 .OrderBy(x => x.UserId);
 
+            // PR review #10: KEYSET (seek) paging instead of Skip(offset). UserId is a unique key, so
+            // `WHERE UserId > lastUserId` avoids Postgres scanning+discarding `offset` rows per page —
+            // the old Skip(offset) was O(N^2) over the doc-stated million-user fan-out.
+            // PR review #9 (accepted): a mid-campaign crash re-runs from the first page on redelivery
+            // (no persisted high-water mark across redeliveries), and per-user pushes carry no dedup key,
+            // so a retry RE-NOTIFIES already-processed recipients. Tolerated for a best-effort marketing
+            // fan-out; a resumable cursor / push dedup is tracked as a follow-up, not done here.
             var totalEnqueued = 0;
-            var offset = 0;
+            string? lastUserId = null;
             while (true)
             {
-                var page = await query
-                    .Skip(offset)
+                var pageQuery = query.AsQueryable();
+                if (lastUserId is not null)
+                {
+                    pageQuery = pageQuery.Where(x => string.Compare(x.UserId, lastUserId) > 0);
+                }
+
+                var page = await pageQuery
                     .Take(PageSize)
                     .ToListAsync(ct);
 
                 if (page.Count == 0) break;
+                lastUserId = page[^1].UserId;
 
                 foreach (var recipient in page)
                 {
@@ -142,7 +159,6 @@ public class SendSitewidePromoFanoutHandler(
                     }
                 }
 
-                offset += page.Count;
                 if (page.Count < PageSize) break;
             }
 

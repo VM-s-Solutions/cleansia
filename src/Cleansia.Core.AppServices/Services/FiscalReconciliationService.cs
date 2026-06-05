@@ -60,6 +60,11 @@ public sealed class FiscalReconciliationService(
             return 0;
         }
 
+        // PR review #23 — memoize the tiny, near-static country→enforcement-mode config for the duration
+        // of THIS sweep so we don't issue one GetByCountryIdAsync round-trip per candidate (up to
+        // batchSize uncached reads, 288x/day). One read per distinct country, reused across the batch.
+        var enforcementModeByCountry = new Dictionary<string, FiscalEnforcementMode>(StringComparer.Ordinal);
+
         var reEnqueued = 0;
         foreach (var order in candidates)
         {
@@ -77,7 +82,7 @@ public sealed class FiscalReconciliationService(
             // null FiscalCode is the steady state, not a missing artifact.
             if (order.Receipt is not null)
             {
-                var enforcementMode = await ResolveEnforcementModeAsync(order, cancellationToken);
+                var enforcementMode = await ResolveEnforcementModeAsync(order, enforcementModeByCountry, cancellationToken);
                 if (enforcementMode == FiscalEnforcementMode.None)
                 {
                     continue;
@@ -163,7 +168,10 @@ public sealed class FiscalReconciliationService(
         return reEnqueued;
     }
 
-    private async Task<FiscalEnforcementMode> ResolveEnforcementModeAsync(Order order, CancellationToken cancellationToken)
+    private async Task<FiscalEnforcementMode> ResolveEnforcementModeAsync(
+        Order order,
+        Dictionary<string, FiscalEnforcementMode> cache,
+        CancellationToken cancellationToken)
     {
         var countryId = order.CustomerAddress?.CountryId;
         if (countryId == null)
@@ -171,7 +179,14 @@ public sealed class FiscalReconciliationService(
             return FiscalEnforcementMode.None;
         }
 
+        if (cache.TryGetValue(countryId, out var cached))
+        {
+            return cached;
+        }
+
         var countryConfig = await countryConfigurationRepository.GetByCountryIdAsync(countryId, cancellationToken);
-        return countryConfig?.FiscalEnforcementMode ?? FiscalEnforcementMode.None;
+        var mode = countryConfig?.FiscalEnforcementMode ?? FiscalEnforcementMode.None;
+        cache[countryId] = mode;
+        return mode;
     }
 }

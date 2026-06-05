@@ -27,6 +27,10 @@ public class GetOrderAnalytics
         public required DateTime EndDate { get; init; }
     }
 
+    // NOTE: public (not internal) because the handler tests construct it directly. Diverges from the
+    // GetEarningsAnalytics sibling's `internal` — a harmless inconsistency (MediatR resolves either);
+    // PR review #26 proposed unifying to internal, but that breaks the direct-construction tests, so the
+    // test-driven `public` wins.
     public class Handler(
         IOrderRepository orderRepository,
         IOrderAccessService orderAccessService,

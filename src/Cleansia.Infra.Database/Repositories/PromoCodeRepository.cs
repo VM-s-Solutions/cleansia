@@ -47,6 +47,22 @@ public class PromoCodeRepository(CleansiaDbContext context)
         return rowsAffected > 0;
     }
 
+    public async Task DecrementGlobalRedemptionsAsync(
+        string promoCodeId,
+        CancellationToken cancellationToken)
+    {
+        // PR review #7 — compensating decrement. The redeem path reserves the global slot (increment)
+        // BEFORE the per-user slot; when the per-user reservation fails we must release the global slot,
+        // or the global cap leaks one slot per failed reservation. Atomic single UPDATE, floored at 0
+        // (GREATEST guard) so a concurrent reset can't drive the counter negative. Same deliberate
+        // out-of-pipeline auto-commit as the increment — it must land independently of the order commit.
+        await GetQueryable()
+            .Where(c => c.Id == promoCodeId && c.CurrentRedemptionsCount > 0)
+            .ExecuteUpdateAsync(
+                s => s.SetProperty(c => c.CurrentRedemptionsCount, c => c.CurrentRedemptionsCount - 1),
+                cancellationToken);
+    }
+
     public async Task<(IReadOnlyList<PromoCode> Items, int Total)> GetPagedAdminAsync(
         bool? active,
         bool? expired,

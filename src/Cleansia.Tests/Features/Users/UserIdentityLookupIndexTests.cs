@@ -61,22 +61,37 @@ public sealed class UserIdentityLookupIndexTests
     private static bool IsSingleColumnIndexOn(IIndex index, string propertyName) =>
         index.Properties.Count == 1 && index.Properties[0].Name == propertyName;
 
-    // ── AC1 — exactly ONE unique index over Email (citext ⇒ case-insensitive unique) ──
+    /// <summary>
+    /// True when <paramref name="index"/> covers exactly the ordered properties given (a composite index).
+    /// </summary>
+    private static bool IsCompositeIndexOn(IIndex index, params string[] propertyNames) =>
+        index.Properties.Count == propertyNames.Length
+        && index.Properties.Select(p => p.Name).SequenceEqual(propertyNames);
+
+    // ── AC1 (PR review #6, S8) — exactly ONE unique index over (TenantId, Email) ──
+    // Uniqueness is PER-TENANT: User is an ITenantEntity and the app-layer checks run inside the tenant
+    // filter, so a global Email unique index let tenant B 500 on tenant A's email (cross-tenant oracle)
+    // and barred the same person across tenants. citext keeps the Email component case-insensitive.
     [Fact]
-    public void Email_HasExactlyOneUniqueIndex()
+    public void Email_HasExactlyOneTenantScopedUniqueIndex()
     {
         var user = GetUserEntityType();
 
         var emailIndexes = user.GetIndexes()
-            .Where(ix => IsSingleColumnIndexOn(ix, nameof(User.Email)))
+            .Where(ix => IsCompositeIndexOn(ix, nameof(User.TenantId), nameof(User.Email)))
             .ToList();
 
         Assert.Single(emailIndexes);
         Assert.True(
             emailIndexes[0].IsUnique,
-            "User.Email must carry a UNIQUE index (PERF-IDA-05): the citext column makes it natively "
-            + "case-insensitive and the DB-level uniqueness — not just the app pre-check — is what closes "
-            + "the register/update TOCTOU race.");
+            "User email uniqueness must be the COMPOSITE (TenantId, Email) UNIQUE index (PR review #6 / "
+            + "S8): per-tenant uniqueness matches the tenant-filtered app pre-check and closes the "
+            + "same-tenant register/update TOCTOU race without leaking across tenants.");
+
+        // And there must be NO global single-column unique index on Email left behind.
+        Assert.DoesNotContain(
+            user.GetIndexes(),
+            ix => IsSingleColumnIndexOn(ix, nameof(User.Email)) && ix.IsUnique);
     }
 
     // ── AC2 — non-unique indexes on the four nullable lookup columns ──
@@ -126,13 +141,14 @@ public sealed class UserIdentityLookupIndexTests
         var user = GetUserEntityType();
 
         var emailUnique = user.GetIndexes()
-            .Any(ix => IsSingleColumnIndexOn(ix, nameof(User.Email)) && ix.IsUnique);
+            .Any(ix => IsCompositeIndexOn(ix, nameof(User.TenantId), nameof(User.Email)) && ix.IsUnique);
 
         Assert.True(
             emailUnique,
-            "PERF-IDA-05: a UNIQUE DB index over Email is the real guarantee — the second same-email "
-            + "insert must raise a unique violation. The ExistsWithEmailAsync app pre-check stays as a "
-            + "fast-path UX message, but it is NOT the constraint.");
+            "PERF-IDA-05 + PR review #6: a UNIQUE DB index over (TenantId, Email) is the real guarantee — "
+            + "the second same-tenant same-email insert must raise a unique violation. The "
+            + "ExistsWithEmailAsync app pre-check stays as a fast-path UX message, but it is NOT the "
+            + "constraint.");
     }
 
     /// <summary>Mirrors the membership index tests' tenant provider (null ⇒ anonymous / no JWT).</summary>

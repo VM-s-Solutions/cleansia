@@ -132,6 +132,29 @@ public class PromoCodeServiceRedeemTests
         Assert.Equal(PromoCodeError.PerUserLimitReached, result.Error);
         // The loser must NOT also change-track-add a second row — the reservation is the only writer.
         _redemptions.Verify(r => r.Add(It.IsAny<PromoCodeRedemption>()), Times.Never);
+        // PR review #7 — the global slot reserved above MUST be released, or the global cap leaks one
+        // slot per failed per-user reservation.
+        _promoCodes.Verify(r => r.DecrementGlobalRedemptionsAsync(CodeId, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    // PR review #7 — when the per-user reservation SUCCEEDS, the global slot is consumed and must NOT be
+    // decremented (no spurious compensation).
+    [Fact]
+    public async Task Successful_Redemption_Does_Not_Decrement_The_Global_Counter()
+    {
+        ArrangeCode(maxPerUser: 1, globalMax: 100);
+        ArrangeNoExistingOrderRow();
+        ArrangeGlobalIncrementSucceeds();
+        _redemptions
+            .Setup(r => r.TryReserveRedemptionSlotAsync(
+                UserId, CodeId, It.IsAny<int>(), It.IsAny<string>(), It.IsAny<decimal>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(PromoCodeRedemption.CreateReserved(CodeId, UserId, OrderId, 20m, slotOrdinal: 0));
+
+        var result = await CreateService().ApplyAsync(Code, UserId, OrderId, 100m, null, CancellationToken.None);
+
+        Assert.True(result.Success);
+        _promoCodes.Verify(r => r.DecrementGlobalRedemptionsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

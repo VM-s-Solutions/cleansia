@@ -19,7 +19,7 @@ namespace Cleansia.Core.Domain.DeadLettering;
 /// <para>The poison consumer NEVER re-processes the original effect — this row IS the recovery source,
 /// not a retry.</para>
 /// </summary>
-public class DeadLetter : Auditable
+public class DeadLetter : Auditable, ITenantEntity
 {
     /// <summary>
     /// The business queue the message poisoned on (the logical queue name WITHOUT the <c>-poison</c>

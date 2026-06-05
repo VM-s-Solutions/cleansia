@@ -28,6 +28,15 @@ public interface IPromoCodeRepository : IRepository<PromoCode, string>
     Task<bool> TryIncrementGlobalRedemptionsAsync(string promoCodeId, CancellationToken cancellationToken);
 
     /// <summary>
+    /// COMPENSATING decrement for a global slot that was reserved but then not consumed (PR review #7):
+    /// the redeem path increments the global counter BEFORE reserving the per-user slot, so when the
+    /// per-user reservation fails the global slot must be released or <see cref="PromoCode.GlobalMaxRedemptions"/>
+    /// permanently shrinks. Atomic single UPDATE, floored at 0; same deliberate "commits outside the UoW
+    /// pipeline" exception as the increment.
+    /// </summary>
+    Task DecrementGlobalRedemptionsAsync(string promoCodeId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Admin-side paged query — accepts optional flags for active/expired
     /// status and a code search prefix. Returns the materialised page plus
     /// the unfiltered total. Tenant scoping is handled by the EF global

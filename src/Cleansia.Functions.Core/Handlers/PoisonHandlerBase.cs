@@ -31,7 +31,23 @@ public abstract class PoisonHandlerBase(IDeadLetterStore deadLetterStore, ILogge
     public async Task HandleAsync(string body, CancellationToken ct)
     {
         // 1. Durable, admin-visible record (the recovery/replay source). The store owns its own commit.
-        await deadLetterStore.RecordAsync(SourceQueue, body, error: null, ct);
+        //    PR review #21 — GUARD the persist so a transient DB fault does NOT throw out of this poison
+        //    consumer. The base contract is "never throw / never loop"; an unguarded RecordAsync throw
+        //    would fail to ACK and re-poison into an endless <queue>-poison-poison loop. On a persistent
+        //    DB failure we still raise the alert (the body is in the Error log) and ACK — accepting the
+        //    rare lost durable row as the lesser evil vs an infinite poison loop.
+        try
+        {
+            await deadLetterStore.RecordAsync(SourceQueue, body, error: null, ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex,
+                "DEAD-LETTER PERSIST FAILED on {SourceQueue} — alerting and acking to avoid a poison loop. "
+                + "The message body is logged below for manual recovery: {Body}",
+                SourceQueue, body);
+            return;
+        }
 
         // 2. Alert. LogError raises the Sentry/AppInsights alert so a poisoned (especially fiscal)
         //    message is noticed, not silently lost.

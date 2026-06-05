@@ -28,6 +28,7 @@ public class GetTimeAnalytics
         public required DateTime EndDate { get; init; }
     }
 
+    // public (not internal) — the handler tests construct it directly. See GetOrderAnalytics note (#26).
     public class Handler(
         IOrderRepository orderRepository,
         IOrderAccessService orderAccessService,

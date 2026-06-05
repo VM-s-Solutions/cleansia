@@ -229,6 +229,10 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         return await GetDbSet()
             .IgnoreQueryFilters()
             .Include(o => o.Receipt)
+                // PR review #18 — load Receipt.Language so the recon re-enqueue preserves the receipt's
+                // locale. Without this ThenInclude the nav was always null and the re-enqueue defaulted
+                // every receipt to English.
+                .ThenInclude(r => r!.Language)
             .Include(o => o.CustomerAddress)
             .Where(o => (o.PaymentType == PaymentType.Cash || o.PaymentStatus == PaymentStatus.Paid)
                 && o.CreatedOn <= cutoff

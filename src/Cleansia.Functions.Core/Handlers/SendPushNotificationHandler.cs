@@ -3,6 +3,7 @@ using Cleansia.Core.Clients.Abstractions.Fcm;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Microsoft.Extensions.Logging;
 
@@ -33,12 +34,15 @@ public class SendPushNotificationHandler(
         // can NEVER succeed on retry. Previously the single throw-on-everything catch below burned all
         // 5 dequeues and then poison-queued an un-fixable message. Now a permanent failure is logged at
         // Warning and ACKED (return) — it never reaches the infra-touching work nor the transient catch.
+        // ADR-0002 D2.1a — DUAL-READ at the deploy boundary. Producers wrap the payload in a
+        // QueueEnvelope<T> ({"messageKey","tenantId","payload":{...}}); bare messages may still be
+        // in-flight when this consumer deploys. Try the envelope first, fall back to the bare body.
+        // The envelope's TenantId (when present) is authoritative for the override.
         SendPushNotificationMessage? message;
+        string? envelopeTenantId;
         try
         {
-            message = JsonSerializer.Deserialize<SendPushNotificationMessage>(
-                messageText,
-                new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+            (message, envelopeTenantId) = ReadPayload(messageText);
         }
         catch (JsonException ex)
         {
@@ -68,11 +72,13 @@ public class SendPushNotificationHandler(
         try
         {
             // Cross-tenant lookup — the queue trigger has no JWT, so the EF
-            // global filter has no tenant. Set the override from the message
-            // so subsequent reads/writes attach to the right tenant.
-            if (!string.IsNullOrEmpty(message.TenantId))
+            // global filter has no tenant. Set the override from the envelope
+            // (authoritative) or the payload so subsequent reads/writes attach
+            // to the right tenant.
+            var tenantId = !string.IsNullOrEmpty(envelopeTenantId) ? envelopeTenantId : message.TenantId;
+            if (!string.IsNullOrEmpty(tenantId))
             {
-                tenantProvider.SetTenantOverride(message.TenantId);
+                tenantProvider.SetTenantOverride(tenantId);
             }
 
             // Per-user category gating. No prefs row = treat as defaults
@@ -142,5 +148,33 @@ public class SendPushNotificationHandler(
                 messageText);
             throw;
         }
+    }
+
+    private static readonly JsonSerializerOptions JsonOptions =
+        new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
+    /// <summary>
+    /// ADR-0002 D2.1a dual-read. Returns the <see cref="SendPushNotificationMessage"/> payload from
+    /// either the new <see cref="QueueEnvelope{T}"/> wire shape (along with the envelope's TenantId) or
+    /// the bare (pre-envelope) message. The payload is the discriminator: an envelope is only accepted
+    /// when its payload carries a UserId, otherwise we fall back to the bare read. Throws
+    /// <see cref="JsonException"/> only when neither shape is parseable.
+    /// </summary>
+    private static (SendPushNotificationMessage? Message, string? EnvelopeTenantId) ReadPayload(string messageText)
+    {
+        try
+        {
+            var envelope = JsonSerializer.Deserialize<QueueEnvelope<SendPushNotificationMessage>>(messageText, JsonOptions);
+            if (envelope?.Payload is { UserId: not null } payload)
+            {
+                return (payload, envelope.TenantId);
+            }
+        }
+        catch (JsonException)
+        {
+            // Fall through to the bare-payload read below.
+        }
+
+        return (JsonSerializer.Deserialize<SendPushNotificationMessage>(messageText, JsonOptions), null);
     }
 }

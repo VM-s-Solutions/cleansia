@@ -165,6 +165,10 @@ public sealed class PromoCodeService(
             userId, promoCode.Id, promoCode.MaxRedemptionsPerUser, orderId, discount, cancellationToken);
         if (redemption == null)
         {
+            // PR review #7 — the global slot was already reserved above; the per-user reservation failed,
+            // so RELEASE the global slot or the global cap leaks one slot per failed reservation (a
+            // concurrent same-user redeem would permanently shrink GlobalMaxRedemptions).
+            await promoCodeRepository.DecrementGlobalRedemptionsAsync(promoCode.Id, cancellationToken);
             return new PromoCodeApplyResult(false, 0m, null, PromoCodeError.PerUserLimitReached);
         }
 

@@ -4,7 +4,7 @@ using Cleansia.Core.AppServices.Authentication;
 namespace Cleansia.Tests.Authentication;
 
 /// <summary>
-/// Verification #4 (T-0100 / ADR-0001 §D2) — the frozen permission-map snapshot.
+/// Verification #4 (ADR-0001 §D2) — the frozen permission-map snapshot.
 ///
 /// Asserts the live <c>PolicyBuilder.Map</c> (<c>Policy.* → PhysicalPolicy.*</c>) equals the
 /// D2 table exactly. A purely *additive* row updates the expected snapshot below in the same PR;
@@ -68,7 +68,7 @@ public class FrozenPermissionMapTests
         [Policy.CanRejectEmployeeDocument] = PhysicalPolicy.AdminOnly,
         [Policy.CanDeleteEmployeeDocument] = PhysicalPolicy.EmployeeOrAdmin,
 
-        // Payroll — Invoices (BSP-1: added, fail-closed)
+        // Payroll — Invoices (added, fail-closed)
         [Policy.CanViewPagedInvoices] = PhysicalPolicy.EmployeeOrAdmin,  // [OWN-DATA] (Note A)
         [Policy.CanViewPeriodPays] = PhysicalPolicy.EmployeeOrAdmin,     // [OWN-DATA]
         [Policy.CanCalculateOrderPay] = PhysicalPolicy.AdminOnly,
@@ -78,7 +78,7 @@ public class FrozenPermissionMapTests
         [Policy.CanCancelInvoice] = PhysicalPolicy.AdminOnly,
         [Policy.CanClosePayPeriod] = PhysicalPolicy.AdminOnly,
 
-        // Payroll — Pay Periods (BSP-1)
+        // Payroll — Pay Periods
         [Policy.CanViewPayPeriods] = PhysicalPolicy.EmployeeOrAdmin,     // global cycles (Note B)
         [Policy.CanViewPayPeriod] = PhysicalPolicy.EmployeeOrAdmin,      // global cycles (Note B)
         [Policy.CanCreatePayPeriod] = PhysicalPolicy.AdminOnly,
@@ -86,14 +86,14 @@ public class FrozenPermissionMapTests
         [Policy.CanOpenPayPeriod] = PhysicalPolicy.AdminOnly,
         [Policy.CanDeletePayPeriod] = PhysicalPolicy.AdminOnly,
 
-        // Payroll — Pay Config (BSP-1)
+        // Payroll — Pay Config
         [Policy.CanViewPayConfigs] = PhysicalPolicy.AdminOnly,
         [Policy.CanViewPayConfig] = PhysicalPolicy.AdminOnly,
         [Policy.CanCreatePayConfig] = PhysicalPolicy.AdminOnly,
         [Policy.CanUpdatePayConfig] = PhysicalPolicy.AdminOnly,
         [Policy.CanDeletePayConfig] = PhysicalPolicy.AdminOnly,
 
-        // Dispute (BSP-6 split)
+        // Dispute (split)
         [Policy.CanCreateDispute] = PhysicalPolicy.CustomerOnly,
         [Policy.CanViewDispute] = PhysicalPolicy.CustomerOnly,
         [Policy.CanViewDisputeList] = PhysicalPolicy.CustomerOnly,
@@ -254,7 +254,7 @@ public class FrozenPermissionMapTests
     [Fact]
     public void Dispute_Split_Is_Mapped_Per_D2()
     {
-        // BSP-6: the overloaded CanRespondToDispute=Authenticated is gone.
+        // the overloaded CanRespondToDispute=Authenticated is gone.
         Assert.Equal(PhysicalPolicy.AdminOnly, Policy.CanRespondToDispute.ToPhysicalPolicy());
         Assert.Equal(PhysicalPolicy.CustomerOnly, Policy.CanAddDisputeMessage.ToPhysicalPolicy());
     }
@@ -262,7 +262,7 @@ public class FrozenPermissionMapTests
     [Fact]
     public void Entire_Payroll_Family_Is_Mapped_Closed()
     {
-        // BSP-1: none of these may resolve to Authenticated anymore.
+        // none of these may resolve to Authenticated anymore.
         string[] adminOnly =
         {
             Policy.CanCalculateOrderPay, Policy.CanGenerateInvoice, Policy.CanApproveInvoice,

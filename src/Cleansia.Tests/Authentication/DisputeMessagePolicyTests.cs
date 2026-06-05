@@ -10,13 +10,13 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Cleansia.Tests.Authentication;
 
 /// <summary>
-/// T-0102 (SEC-DSP-01) / ADR-0001 §D2 Note C, verification #5 — the dispute-message permission split
+/// ADR-0001 §D2 Note C, verification #5 — the dispute-message permission split
 /// at the policy (outer-gate) layer, resolved through the shared <c>AddCleansiaAuthorization</c>:
-///   - AC2: the staff-reply <see cref="Policy.CanRespondToDispute"/> resolves to AdminOnly — a
+///   - the staff-reply <see cref="Policy.CanRespondToDispute"/> resolves to AdminOnly — a
 ///     non-Admin (Customer or Employee) is denied; an Administrator passes.
-///   - AC1: the customer self-reply <see cref="Policy.CanAddDisputeMessage"/> resolves to CustomerOnly —
+///   - the customer self-reply <see cref="Policy.CanAddDisputeMessage"/> resolves to CustomerOnly —
 ///     a customer passes; an Employee/Admin is denied (the staff path is a separate permission).
-/// This is the buildable tier-1 coverage (ADR-0001 §D6); the HTTP 403/200 cases ride the T-0126 harness.
+/// This is the buildable tier-1 coverage (ADR-0001 §D6); the HTTP 403/200 cases ride a separate harness.
 /// </summary>
 public class DisputeMessagePolicyTests
 {
@@ -48,8 +48,6 @@ public class DisputeMessagePolicyTests
         return new ClaimsPrincipal(new ClaimsIdentity(claims, authenticationType: "Test"));
     }
 
-    // ── AC2 — staff reply is AdminOnly ─────────────────────────────────────
-
     [Theory]
     [InlineData(UserProfile.Customer)]
     [InlineData(UserProfile.Employee)]
@@ -77,8 +75,6 @@ public class DisputeMessagePolicyTests
 
         Assert.True(result.Succeeded);
     }
-
-    // ── AC1 — customer self-reply is CustomerOnly ──────────────────────────
 
     [Fact]
     public async Task Customer_Is_Allowed_The_AddDisputeMessage_Permission()

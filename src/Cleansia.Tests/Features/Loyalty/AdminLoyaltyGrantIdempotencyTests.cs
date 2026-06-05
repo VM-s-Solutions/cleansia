@@ -11,7 +11,7 @@ using Moq;
 namespace Cleansia.Tests.Features.Loyalty;
 
 /// <summary>
-/// T-0112 (LG-SEC-06) / TC-IDEMP-0 (pairs with T-0127) / ADR-0002 idempotent-consumer contract,
+/// ADR-0002 idempotent-consumer contract,
 /// knowledge/testing.md must-cover #6 (idempotency, S7) and S7a/S7b (the atomic-backstop idiom).
 ///
 /// THE HOLE: <see cref="LoyaltyService.GrantPointsManuallyAsync"/> /
@@ -29,7 +29,7 @@ namespace Cleansia.Tests.Features.Loyalty;
 /// mocked <see cref="ILoyaltyTransactionRepository.GetByIdempotencyKeyAsync"/>; the concurrent-race
 /// backstop is modelled by the mocked <c>CommitAsync</c> throwing a 23505 <see cref="DbUpdateException"/>.
 /// The TRUE-PARALLEL DB proof (real filtered unique index under concurrent writers) is deferred to the
-/// integration suite (T-0127) — the in-memory unit harness cannot enforce a unique constraint, so
+/// integration suite — the in-memory unit harness cannot enforce a unique constraint, so
 /// faking genuine parallelism here would be theater. Written RED first (predates the service change).
 /// </summary>
 public class AdminLoyaltyGrantIdempotencyTests
@@ -77,7 +77,7 @@ public class AdminLoyaltyGrantIdempotencyTests
             .ReturnsAsync((LoyaltyTransaction?)null);
     }
 
-    // ── AC1 (grant) — same RequestId submitted twice ⇒ exactly ONE ledger row, points granted ONCE ──
+    // ── (grant) — same RequestId submitted twice ⇒ exactly ONE ledger row, points granted ONCE ──
     [Fact]
     public async Task AC1_Grant_SameRequestId_TwoSubmits_GrantsPointsOnce()
     {
@@ -104,7 +104,7 @@ public class AdminLoyaltyGrantIdempotencyTests
         Assert.Equal(RequestId, account.Transactions.Single().IdempotencyKey);
     }
 
-    // ── AC1 (revoke) — mirror: same RequestId twice ⇒ one negative row, LifetimePoints reduced once ──
+    // ── (revoke) — mirror: same RequestId twice ⇒ one negative row, LifetimePoints reduced once ──
     [Fact]
     public async Task AC1_Revoke_SameRequestId_TwoSubmits_RevokesPointsOnce()
     {
@@ -133,7 +133,7 @@ public class AdminLoyaltyGrantIdempotencyTests
         Assert.Equal(-Points, revokeRow.Points);
     }
 
-    // ── AC2 (grant) — concurrent identical grants: the loser hits the unique index (23505) and
+    // ── (grant) — concurrent identical grants: the loser hits the unique index (23505) and
     //    COLLAPSES (no throw, no second side effect). Models the pre-winner-commit race window. ──
     [Fact]
     public async Task AC2_Grant_Concurrent_SameRequestId_UniqueViolation_Collapses_NoSecondSideEffect()
@@ -163,7 +163,7 @@ public class AdminLoyaltyGrantIdempotencyTests
         _transactionRepository.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    // ── AC2 (revoke) — mirror: concurrent identical revoke loser collapses on the unique index ──
+    // ── (revoke) — mirror: concurrent identical revoke loser collapses on the unique index ──
     [Fact]
     public async Task AC2_Revoke_Concurrent_SameRequestId_UniqueViolation_Collapses_NoThrow()
     {
@@ -186,7 +186,7 @@ public class AdminLoyaltyGrantIdempotencyTests
         _transactionRepository.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    // ── AC1 — fast-path: an EXISTING row for the key short-circuits before any grant/flush ──
+    // ── fast-path: an EXISTING row for the key short-circuits before any grant/flush ──
     [Fact]
     public async Task AC1_Grant_ExistingKeyRow_ShortCircuits_WithoutGrantingOrFlushing()
     {

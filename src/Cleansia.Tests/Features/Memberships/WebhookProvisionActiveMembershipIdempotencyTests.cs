@@ -16,7 +16,7 @@ using AppConstants = Cleansia.Core.AppServices.Common.Constants;
 namespace Cleansia.Tests.Features.Memberships;
 
 /// <summary>
-/// T-0114 (SEC-W2) / TC-IDEMP-0 (pairs with T-0127) / ADR-0002 D2 idempotent-consumer contract
+/// TC-IDEMP-0 / ADR-0002 D2 idempotent-consumer contract
 /// ("every consumer asserts before acting"), knowledge/testing.md must-cover #6 (idempotency, S7) and
 /// S7a/S7b (assert-before-act + the unique-index backstop caught at the right boundary).
 ///
@@ -50,7 +50,7 @@ namespace Cleansia.Tests.Features.Memberships;
 /// These are LOGIC-LEVEL handler unit tests (mocked repositories): the assert is modelled by the mocked
 /// <c>GetActiveForUserAsync</c>; the race-loser 23505 is modelled by the mocked <c>CommitAsync</c> throwing
 /// a <see cref="DbUpdateException"/> whose inner exception duck-types <c>SqlState == "23505"</c>. The DB
-/// backstop itself (AC3 / AC5c) is proven by <see cref="UserMembershipActiveUniqueIndexTests"/> against a
+/// backstop itself is proven by <see cref="UserMembershipActiveUniqueIndexTests"/> against a
 /// real <see cref="CleansiaDbContext"/>. Written RED first (predates the handler change).
 /// </summary>
 public class WebhookProvisionActiveMembershipIdempotencyTests
@@ -150,7 +150,7 @@ public class WebhookProvisionActiveMembershipIdempotencyTests
             currentPeriodStart: DateTime.UtcNow.AddDays(-5),
             currentPeriodEnd: DateTime.UtcNow.AddMonths(1));
 
-    // ── AC1 — already-active user + a new subscription.created ⇒ assert finds the active row, NO 2nd Add ──
+    // ── already-active user + a new subscription.created ⇒ assert finds the active row, NO 2nd Add ──
 
     [Fact]
     public async Task AC1_AlreadyActiveUser_NewSubscriptionCreated_DoesNotAddSecondRow_Reconciles()
@@ -167,7 +167,7 @@ public class WebhookProvisionActiveMembershipIdempotencyTests
         _membershipRepository.Verify(r => r.Add(It.IsAny<UserMembership>()), Times.Never);
     }
 
-    // ── AC2 — clean user (no active membership) ⇒ EXACTLY ONE row created (happy path unchanged) ──
+    // ── clean user (no active membership) ⇒ EXACTLY ONE row created (happy path unchanged) ──
 
     [Fact]
     public async Task AC2_CleanUser_SubscriptionCreated_CreatesExactlyOneRow()
@@ -189,7 +189,7 @@ public class WebhookProvisionActiveMembershipIdempotencyTests
         Assert.Equal(MembershipStatus.Active, added[0].Status);
     }
 
-    // ── AC1 — the assert resolves in the RIGHT tenant scope: tenant override is set before the read ──
+    // ── the assert resolves in the RIGHT tenant scope: tenant override is set before the read ──
 
     [Fact]
     public async Task AC1_ActiveCheck_RunsAfterTenantOverrideIsSet()
@@ -213,7 +213,7 @@ public class WebhookProvisionActiveMembershipIdempotencyTests
         Assert.True(overrideSetBeforeActiveCheck);
     }
 
-    // ── AC1 / S7b — the PRE-WINNER-COMMIT race: assert returns null, Add proceeds, the in-handler flush
+    // ── S7b — the PRE-WINNER-COMMIT race: assert returns null, Add proceeds, the in-handler flush
     //    hits the filtered unique index (23505); the handler MUST collapse to a reconcile no-op, NOT throw
     //    (a throw → 500 → Stripe retry storm). The outer pipeline's final commit is then a safe no-op. ──
 
@@ -258,7 +258,7 @@ public class WebhookProvisionActiveMembershipIdempotencyTests
     /// provider-agnostically by duck-typing the inner exception's public <c>SqlState</c> string against
     /// Postgres code "23505" (the AppServices layer carries no hard Npgsql reference). This fake exposes the
     /// same <c>SqlState == "23505"</c> shape so the catch→reconcile path is exercised without a real
-    /// PostgresException. Mirrors the fakes in T-0111/T-0112's idempotency suites.
+    /// PostgresException.
     /// </summary>
     private sealed class FakePostgresUniqueViolationException : Exception
     {
@@ -267,15 +267,15 @@ public class WebhookProvisionActiveMembershipIdempotencyTests
 }
 
 /// <summary>
-/// T-0114 (SEC-W2) AC3 / AC5c — DB-level proof of the FILTERED UNIQUE INDEX backstop on
+/// DB-level proof of the FILTERED UNIQUE INDEX backstop on
 /// <c>UserMemberships (TenantId, UserId) WHERE Status = Active</c>, exercised against a REAL
 /// <see cref="CleansiaDbContext"/> (so <c>OnModelCreating</c> + the entity config's <c>HasIndex(...)
-/// .IsUnique().HasFilter("\"Status\" = 1")</c> actually run) over SQLite in-memory — the same harness
-/// T-0113 used. SQLite, like Postgres, supports partial (filtered) unique indexes, so the filtered
+/// .IsUnique().HasFilter("\"Status\" = 1")</c> actually run) over SQLite in-memory. SQLite, like Postgres,
+/// supports partial (filtered) unique indexes, so the filtered
 /// semantics are testable here without the Postgres Testcontainers harness.
 ///
-/// If the filtered-index semantics could NOT be exercised in this unit harness, the honest move (per the
-/// T-0112 precedent) would be to defer this case to the T-0127 integration suite rather than fake it. They
+/// If the filtered-index semantics could NOT be exercised in this unit harness, the honest move would be to
+/// defer this case to the integration suite rather than fake it. They
 /// CAN be exercised, so they are proven here.
 /// </summary>
 public sealed class UserMembershipActiveUniqueIndexTests : IDisposable
@@ -328,7 +328,7 @@ public sealed class UserMembershipActiveUniqueIndexTests : IDisposable
             currentPeriodStart: DateTime.UtcNow,
             currentPeriodEnd: DateTime.UtcNow.AddMonths(1));
 
-    // ── AC3 / AC5c — a SECOND Active row for the same (TenantId, UserId) is DB-REJECTED (unique violation) ──
+    // ── a SECOND Active row for the same (TenantId, UserId) is DB-REJECTED (unique violation) ──
 
     [Fact]
     public async Task SecondActiveRow_SameTenantAndUser_IsRejectedByFilteredUniqueIndex()
@@ -350,7 +350,7 @@ public sealed class UserMembershipActiveUniqueIndexTests : IDisposable
         Assert.Contains("UNIQUE", ex.InnerException?.Message ?? ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    // ── AC3 — the index is FILTERED: a Cancelled membership + a NEW Active subscription is PERMITTED ──
+    // ── the index is FILTERED: a Cancelled membership + a NEW Active subscription is PERMITTED ──
 
     [Fact]
     public async Task CancelledRow_PlusNewActiveRow_SameTenantAndUser_IsPermitted()

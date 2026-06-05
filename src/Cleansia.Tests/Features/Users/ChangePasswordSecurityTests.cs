@@ -11,14 +11,14 @@ using Moq;
 namespace Cleansia.Tests.Features.Users;
 
 /// <summary>
-/// T-0106 (IDA-SEC-03) — password-reset flow. Owner-decision (BINDING): reset lookup is by
+/// Password-reset flow. Owner-decision (BINDING): reset lookup is by
 /// (email, HASH of token). The validator loads the user by email and compares
 /// <c>user.ResetPasswordCode == SHA-256(command.Code)</c> (no plaintext compare); expiry is enforced;
 /// the handler clears the hashed column on success (one-shot).
 ///
-///   - AC4: a correct code for the WRONG email fails; a wrong code for the RIGHT email fails; the
+///   - a correct code for the WRONG email fails; a wrong code for the RIGHT email fails; the
 ///     compare is over the hash, never plaintext.
-///   - AC5: an expired reset token is rejected; a consumed token clears the hashed column and cannot
+///   - an expired reset token is rejected; a consumed token clears the hashed column and cannot
 ///     be replayed.
 /// Written red -> green (predates the hash-compare rewrite). New password meets the validator's
 /// policy (>=8 chars, letter + digit) so the token rule is the only thing under test.
@@ -45,7 +45,7 @@ public class ChangePasswordSecurityTests
         return repo;
     }
 
-    // AC4 — correct code, RIGHT email -> passes (the hash matches, expiry live, password differs).
+    // Correct code, RIGHT email -> passes (the hash matches, expiry live, password differs).
     [Fact]
     public async Task Correct_Code_For_Right_Email_Passes()
     {
@@ -58,7 +58,7 @@ public class ChangePasswordSecurityTests
         Assert.True(result.IsValid);
     }
 
-    // AC4 — correct code but WRONG email fails (email binds the lookup).
+    // Correct code but WRONG email fails (email binds the lookup).
     [Fact]
     public async Task Correct_Code_For_Wrong_Email_Fails()
     {
@@ -80,7 +80,7 @@ public class ChangePasswordSecurityTests
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.NotValidResetPasswordToken);
     }
 
-    // AC4 — wrong code, RIGHT email fails (hash mismatch). Proves no plaintext compare survives.
+    // Wrong code, RIGHT email fails (hash mismatch). Proves no plaintext compare survives.
     [Fact]
     public async Task Wrong_Code_For_Right_Email_Fails()
     {
@@ -94,7 +94,7 @@ public class ChangePasswordSecurityTests
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.NotValidResetPasswordToken);
     }
 
-    // AC4 (storage) — the stored reset column is NEVER the raw token a plaintext compare would match.
+    // The stored reset column is NEVER the raw token a plaintext compare would match.
     [Fact]
     public async Task Submitting_The_Stored_Hash_As_The_Code_Does_Not_Pass()
     {
@@ -111,7 +111,6 @@ public class ChangePasswordSecurityTests
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.NotValidResetPasswordToken);
     }
 
-    // AC5 — expired reset token is rejected.
     [Fact]
     public async Task Expired_Reset_Token_Is_Rejected()
     {
@@ -125,7 +124,7 @@ public class ChangePasswordSecurityTests
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.NotValidResetPasswordToken);
     }
 
-    // AC5 — one-shot: the handler clears the hashed reset column on success so it cannot be replayed.
+    // One-shot: the handler clears the hashed reset column on success so it cannot be replayed.
     // ChangePassword.Handler is internal; resolve it via reflection (no compile-time reference).
     [Fact]
     public async Task Handler_Clears_Reset_Token_After_Consumption()

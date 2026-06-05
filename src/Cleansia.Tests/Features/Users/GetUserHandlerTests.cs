@@ -10,9 +10,9 @@ using Moq;
 namespace Cleansia.Tests.Features.Users;
 
 /// <summary>
-/// T-0101 / ADR-0001 §D3 part 3 (finding IDA-SEC-04) — the inner ownership gate inside
+/// ADR-0001 §D3 part 3 — the inner ownership gate inside
 /// <c>GetUser.Handler</c>. The policy is the outer gate; this handler check is the inner gate that
-/// holds regardless of host or invocation path. AC4:
+/// holds regardless of host or invocation path:
 ///   - a NON-admin caller asking for a UserId that is NOT their own sub gets the not-found business
 ///     error (<see cref="BusinessErrorMessage.NotExistingUserWithId"/>) and NOT the other user's PII;
 ///   - an Admin caller, or a caller asking for their OWN UserId, gets the detail.

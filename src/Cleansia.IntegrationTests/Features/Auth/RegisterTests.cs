@@ -52,7 +52,7 @@ public class RegisterTests(PostgresContainerFixture fixture) : BaseIntegrationTe
                 Assert.Equal(Constants.TestUserSession.TestFirstName, user.FirstName);
                 Assert.Equal(Constants.TestUserSession.TestLastName, user.LastName);
                 Assert.False(user.IsEmailConfirmed);
-                // T-0106 / IDA-SEC-03: a token was issued, but the PERSISTED value is the SHA-256 HASH
+                // A token was issued, but the PERSISTED value is the SHA-256 HASH
                 // (64 hex chars) — never the 6-digit plaintext code. The raw token left only in the email.
                 Assert.NotNull(user.ConfirmationCode);
                 Assert.Equal(64, user.ConfirmationCode!.Length);

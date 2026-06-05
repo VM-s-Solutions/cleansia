@@ -57,7 +57,7 @@ public class StartOrder
                 .WithMessage(BusinessErrorMessage.EmployeeAlreadyHasOrderInProgress);
         }
 
-        // T-0109 (EMP-GAP-01): StartOrder previously had NO ContractStatus gate, so
+        // StartOrder previously had NO ContractStatus gate, so
         // a rejected cleaner already assigned to a Confirmed order could start it.
         // Same honest == Approved rule used by TakeOrder / CompleteOrder. Employee is
         // server-derived from the caller (S1 server-truth); empty caller fails closed.

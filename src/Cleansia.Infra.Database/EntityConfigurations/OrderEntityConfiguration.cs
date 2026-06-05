@@ -85,7 +85,7 @@ public class OrderEntityConfiguration : AuditableEntityConfiguration<Order, stri
             .IsRequired(false);
         builder.HasIndex(o => o.RecurringTemplateId);
 
-        // PR review #11 — the fiscal receipt-reconciliation sweep runs 288x/day:
+        // The fiscal receipt-reconciliation sweep runs 288x/day:
         //   WHERE (PaymentType = Cash OR PaymentStatus = Paid) AND CreatedOn <= cutoff ORDER BY CreatedOn
         // over the unboundedly growing Orders table. A (PaymentStatus, CreatedOn) composite serves the
         // Paid arm's equality + the range/sort, turning the seq-scan-plus-full-sort into an index scan.

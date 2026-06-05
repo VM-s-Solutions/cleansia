@@ -5,8 +5,8 @@ using Cleansia.Core.Domain.EmployeePayroll;
 namespace Cleansia.Tests.Features.EmployeePayroll;
 
 /// <summary>
-/// T-0125 (TC-PAY) / IMP-3 — the per-employee override precedence inside
-/// <see cref="CalculateOrderPay.Handler"/>.<c>SelectPreferredConfigs</c> (surface #4, AC5).
+/// The per-employee override precedence inside
+/// <see cref="CalculateOrderPay.Handler"/>.<c>SelectPreferredConfigs</c>.
 ///
 /// The contract: configs are grouped by their target id (ServiceId or PackageId); for each group the
 /// per-employee override (<c>EmployeeId != null</c>) WINS over the per-service/per-package default

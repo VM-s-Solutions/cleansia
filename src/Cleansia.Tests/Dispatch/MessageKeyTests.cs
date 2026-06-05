@@ -3,7 +3,7 @@ using Cleansia.Core.Queue.Abstractions;
 namespace Cleansia.Tests.Dispatch;
 
 /// <summary>
-/// TC-KEY-0 (ADR-0002 verify #6 / AC4) — the deterministic-key property the whole dispatch contract
+/// ADR-0002 verify #6 — the deterministic-key property the whole dispatch contract
 /// rests on. Every producer-side <c>MessageKey</c> follows the frozen D2.1 formula and is a pure
 /// function of its domain inputs: two invocations with the SAME inputs emit the SAME key (no
 /// <c>Guid.NewGuid()</c>/timestamp), so a duplicate enqueue (the Stripe-retry hazard) and a
@@ -15,7 +15,7 @@ namespace Cleansia.Tests.Dispatch;
 ///   calculate-order-pay      → pay:{OrderId}:{EmployeeId}
 ///   generate-invoice         → invoice:{PayPeriodId}:{EmployeeId}
 ///
-/// These cases pair with T-0127 and merge with the T-0118 fix. Written test-first (RED until
+/// Written test-first (RED until
 /// <see cref="MessageKeys"/> exists in Cleansia.Core.Queue.Abstractions).
 /// </summary>
 public class MessageKeyTests

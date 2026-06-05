@@ -75,7 +75,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
                 // Only auto-stamp when the entity did NOT already carry an explicit creation audit
                 // (CreatedBy is unset). Domain factories that deliberately set CreatedOn/CreatedBy
                 // up front (e.g. EmployeeDocument/Referral/ReferralCode, backdated/imported rows, and
-                // the FISCAL-RECON tests that seed stale CreatedOn) must keep that value — the previous
+                // the tests that seed stale CreatedOn) must keep that value — the previous
                 // unconditional overwrite clobbered it to "now", which (among other things) made every
                 // deliberately-stale seed look fresh.
                 if (string.IsNullOrEmpty(entity.Entity.CreatedBy))
@@ -122,7 +122,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     }
 
     /// <summary>
-    /// T-0122 (FISCAL-RECON) test-provider shim. Production runs on Npgsql, where
+    /// Test-provider shim. Production runs on Npgsql, where
     /// <see cref="DateTimeOffset"/> maps to <c>timestamp with time zone</c> and is fully comparable /
     /// sortable in SQL. The reconciliation query tests run against the in-memory SQLite provider, which
     /// has NO native <see cref="DateTimeOffset"/> support — any <c>WHERE CreatedOn &lt;= cutoff</c> or

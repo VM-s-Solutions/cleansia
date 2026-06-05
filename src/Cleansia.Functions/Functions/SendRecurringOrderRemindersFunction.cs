@@ -3,7 +3,7 @@ using Microsoft.Azure.Functions.Worker;
 
 namespace Cleansia.Functions.Functions;
 
-// T-0121 / ADR-0002 D5 step 1 — thin trigger shell; body lives in SendRecurringOrderRemindersHandler (Core).
+// ADR-0002 D5 step 1 — thin trigger shell; body lives in SendRecurringOrderRemindersHandler (Core).
 public class SendRecurringOrderRemindersFunction(SendRecurringOrderRemindersHandler handler)
 {
     [Function("SendRecurringOrderReminders")]

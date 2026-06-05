@@ -10,7 +10,7 @@ using Moq;
 namespace Cleansia.Tests.Features.AdminUsers;
 
 /// <summary>
-/// T-0108 (IA-1): <see cref="CreateAdminUser"/> double-hashed the password — the handler called
+/// (IA-1): <see cref="CreateAdminUser"/> double-hashed the password — the handler called
 /// <see cref="PasswordExtensions.HashAndSaltPassword"/> on the raw password AND the EF write-side
 /// <see cref="PasswordConverter"/> hashes again on persist, so the stored value was
 /// <c>hash(hash(password))</c> and <see cref="PasswordExtensions.VerifyPassword"/> could never match —
@@ -34,7 +34,7 @@ public class CreateAdminUserPasswordHashingTests
     // converter on User.Password). Using the real converter proves the actual stored value.
     private static readonly Func<object?, object?> WriteConversion = new PasswordConverter().ConvertToProvider;
 
-    // AC1 / AC3 — round-trip: an admin created with a raw password, persisted THROUGH the converter,
+    // round-trip: an admin created with a raw password, persisted THROUGH the converter,
     // yields a stored value that VerifyPassword(raw) accepts (hashed exactly once). Guards the negative
     // too: a wrong password verifies false.
     [Fact]
@@ -55,7 +55,7 @@ public class CreateAdminUserPasswordHashingTests
             "A wrong password must not verify against the stored value.");
     }
 
-    // AC2 — the handler stores the RAW password on the entity (the single hash happens in the converter),
+    // the handler stores the RAW password on the entity (the single hash happens in the converter),
     // i.e. the entity's Password is NOT pre-hashed. On the buggy code the stored value is already a
     // "v2$" hash, so this fails (RED); after the fix it equals the raw password (GREEN).
     [Fact]

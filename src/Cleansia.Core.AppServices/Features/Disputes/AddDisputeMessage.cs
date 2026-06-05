@@ -49,7 +49,7 @@ public class AddDisputeMessage
             var userId = userSessionProvider.GetUserId()!;
             var dispute = await disputeRepository.GetDisputeWithDetailsAsync(request.DisputeId);
 
-            // SEC-DSP-01 (ADR-0001 §D2 Note C): the staff flag is DERIVED from the caller's profile,
+            // ADR-0001 §D2 Note C: the staff flag is DERIVED from the caller's profile,
             // never trusted from the request body. A customer-host caller can flip
             // Command.IsStaffMessage, but only a genuine Administrator can author a staff reply
             // (staff dispute replies are Admin-only — Q-0005). The host also constructs the command

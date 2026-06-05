@@ -12,7 +12,7 @@ using Moq;
 namespace Cleansia.Tests.Features.Orders;
 
 /// <summary>
-/// T-0109 (EMP-GAP-01): the order-action gate must let only an
+/// The order-action gate must let only an
 /// <see cref="ContractStatus.Approved"/> cleaner take an order. A cleaner
 /// the admin rejected (or who is still pending / terminated) must be turned
 /// away with <see cref="BusinessErrorMessage.EmployeeNotApproved"/> and no
@@ -37,9 +37,9 @@ public class TakeOrderValidatorTests
     }
 
     [Theory]
-    [InlineData(ContractStatus.Rejected)]   // AC1: rejected cleaner cannot take
-    [InlineData(ContractStatus.Pending)]    // AC4: pending cleaner cannot take
-    [InlineData(ContractStatus.Terminated)] // AC4: terminated cleaner cannot take
+    [InlineData(ContractStatus.Rejected)]   // rejected cleaner cannot take
+    [InlineData(ContractStatus.Pending)]    // pending cleaner cannot take
+    [InlineData(ContractStatus.Terminated)] // terminated cleaner cannot take
     public async Task When_Cleaner_Not_Approved_Then_EmployeeNotApproved(ContractStatus status)
     {
         ArrangeTakeableOrder(employeeStatus: status);
@@ -48,14 +48,14 @@ public class TakeOrderValidatorTests
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.EmployeeNotApproved);
-        // The approval failure must NOT masquerade as documents_missing (AC6).
+        // The approval failure must NOT masquerade as documents_missing.
         Assert.DoesNotContain(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.EmployeeDocumentsMissing);
     }
 
     [Fact]
     public async Task When_Cleaner_Approved_And_All_Rules_Pass_Then_Valid()
     {
-        // AC5: approved cleaner satisfying every existing rule still passes.
+        // approved cleaner satisfying every existing rule still passes.
         ArrangeTakeableOrder(employeeStatus: ContractStatus.Approved);
 
         var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId));

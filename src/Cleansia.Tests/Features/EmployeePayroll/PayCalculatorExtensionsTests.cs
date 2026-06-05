@@ -7,8 +7,8 @@ using Cleansia.Core.Domain.Users;
 namespace Cleansia.Tests.Features.EmployeePayroll;
 
 /// <summary>
-/// T-0125 (TC-PAY) — pure-function characterization of
-/// <see cref="PayCalculatorExtensions"/> (surface #2): <c>CalculatePay(config, order)</c> and
+/// Pure-function characterization of
+/// <see cref="PayCalculatorExtensions"/>: <c>CalculatePay(config, order)</c> and
 /// <c>CalculateAggregatedPay(configs, order)</c>, both routed through the private
 /// <c>ApplyMinMaxClamp</c>.
 ///
@@ -16,11 +16,11 @@ namespace Cleansia.Tests.Features.EmployeePayroll;
 /// room is folded into base — extra rooms = <c>max(0, Rooms − 1)</c> — and expenses are
 /// <c>TravelDistance × DistanceRatePerKm</c> with a <c>null</c> distance treated as 0.
 ///
-/// Mapping to acceptance criteria:
-///  - AC1 → clamp at min.            - AC2 → clamp at max.
-///  - AC3 → no clamp when both unset. - AC4 → Min &gt; Max throws InvalidOperationException.
-///  - AC8 → extras use max(0, Rooms−1) and bathrooms; expenses = distance × rate incl. null→0.
-///  - AC9 → exact decimal.
+/// What is pinned:
+///  - clamp at min.                  - clamp at max.
+///  - no clamp when both unset.       - Min &gt; Max throws InvalidOperationException.
+///  - extras use max(0, Rooms−1) and bathrooms; expenses = distance × rate incl. null→0.
+///  - exact decimal.
 /// </summary>
 public class PayCalculatorExtensionsTests
 {
@@ -44,7 +44,7 @@ public class PayCalculatorExtensionsTests
             distanceRatePerKm: distanceRatePerKm);
 
         // SetPayLimits rejects Max < Min (> 0), so when we need an inconsistent config to drive the
-        // AC4 throw we bypass it via reflection (the clamp guard, not the setter, is under test).
+        // throw we bypass it via reflection (the clamp guard, not the setter, is under test).
         if (minimumPay > 0m && maximumPay > 0m && maximumPay < minimumPay)
         {
             SetLimitsRaw(config, minimumPay, maximumPay);
@@ -89,7 +89,7 @@ public class PayCalculatorExtensionsTests
         return order;
     }
 
-    // ── AC8 — extras = max(0, Rooms−1)×perRoom + Bathrooms×perBathroom; expenses = distance×rate ──
+    // ── extras = max(0, Rooms−1)×perRoom + Bathrooms×perBathroom; expenses = distance×rate ──
 
     [Fact]
     public void CalculatePay_First_Room_Is_In_Base_Extra_Rooms_Use_Rooms_Minus_One()
@@ -158,7 +158,7 @@ public class PayCalculatorExtensionsTests
         Assert.Equal(123.5200m, totalPay);
     }
 
-    // ── AC1 — clamp at min ──
+    // ── clamp at min ──
 
     [Fact]
     public void CalculatePay_Clamps_Up_To_Min_When_Raw_Below()
@@ -172,7 +172,7 @@ public class PayCalculatorExtensionsTests
         Assert.Equal(150m, totalPay);
     }
 
-    // ── AC2 — clamp at max ──
+    // ── clamp at max ──
 
     [Fact]
     public void CalculatePay_Clamps_Down_To_Max_When_Raw_Above()
@@ -186,7 +186,7 @@ public class PayCalculatorExtensionsTests
         Assert.Equal(400m, totalPay);
     }
 
-    // ── AC3 — no clamp when both unset ──
+    // ── no clamp when both unset ──
 
     [Fact]
     public void CalculatePay_No_Limits_Passes_Raw_Through()
@@ -200,7 +200,7 @@ public class PayCalculatorExtensionsTests
         Assert.Equal(140m, totalPay);
     }
 
-    // ── AC4 — inconsistent config (Min > Max, both > 0) throws ──
+    // ── inconsistent config (Min > Max, both > 0) throws ──
 
     [Fact]
     public void CalculatePay_Throws_When_Min_Exceeds_Max()
@@ -211,7 +211,7 @@ public class PayCalculatorExtensionsTests
         Assert.Throws<InvalidOperationException>(() => config.CalculatePay(order));
     }
 
-    // ── CalculateAggregatedPay — IMP-3 multi-config roll-up ──
+    // ── CalculateAggregatedPay — multi-config roll-up ──
 
     [Fact]
     public void CalculateAggregatedPay_Sums_Base_Extras_Expenses_Across_Configs()

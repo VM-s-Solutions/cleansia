@@ -23,14 +23,14 @@ public abstract class CleansiaStartupBase(IConfiguration configuration, IWebHost
 
     protected abstract void AddProjectServices(IServiceCollection services);
 
-    // T-0123 / BSP-5 (AC2) — Swagger fail-closed allow-list. The old gate (`!env.IsProduction()`)
+    // Swagger fail-closed allow-list. The old gate (`!env.IsProduction()`)
     // published the full API surface on Staging / QA / Demo and on any mis-set ASPNETCORE_ENVIRONMENT.
     // Swagger now mounts ONLY in Development; every other env string (Production, Staging, QA, Demo, or
     // an unrecognized value) fails closed. Development DX is preserved.
     public static bool SwaggerShouldServe(string environmentName) =>
         string.Equals(environmentName, Environments.Development, StringComparison.Ordinal);
 
-    // T-0123 / BSP-5 (AC3), ADR-0003 D3 pure-guard pattern (mirrors
+    // ADR-0003 D3 pure-guard pattern (mirrors
     // RateLimitPolicies.ValidateForwardedHeadersConfig). If Swagger WOULD serve (the Development
     // branch) but CorsOrigins carries a public `cleansia.cz` origin — i.e. a prod-shaped config running
     // under a mis-set env string — the host REFUSES TO BOOT, so Swagger can never be exposed on a
@@ -48,7 +48,7 @@ public abstract class CleansiaStartupBase(IConfiguration configuration, IWebHost
             throw new InvalidOperationException(
                 "Swagger would serve (Development branch) but CorsOrigins contains a public origin " +
                 $"('{publicOrigin}'). This is a prod-shaped config under a mis-set ASPNETCORE_ENVIRONMENT. " +
-                "Refusing to boot rather than expose the API surface (T-0123 / BSP-5, ADR-0003 D3). " +
+                "Refusing to boot rather than expose the API surface (ADR-0003 D3). " +
                 "Set ASPNETCORE_ENVIRONMENT correctly (Swagger is Development-only) or remove the public " +
                 "cleansia.cz origin from CorsOrigins.");
         }
@@ -131,8 +131,8 @@ public abstract class CleansiaStartupBase(IConfiguration configuration, IWebHost
         // ConfigureServices via RateLimitPolicies.ConfigureForwardedHeaders.
         app.UseForwardedHeaders();
 
-        // T-0123 / BSP-5 — Swagger fail-closed gate (AC2: Development-only allow-list) + the ADR-0003
-        // D3 boot guard (AC3): refuse to boot if Swagger would serve under a prod-shaped CORS config.
+        // Swagger fail-closed gate (Development-only allow-list) + the ADR-0003
+        // D3 boot guard: refuse to boot if Swagger would serve under a prod-shaped CORS config.
         // Stays at the ADR-0003 pipeline position (EnableBuffering -> UseForwardedHeaders -> [Swagger
         // if Development] -> RequestLogging ...).
         var swaggerShouldServe = SwaggerShouldServe(env.EnvironmentName);

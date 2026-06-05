@@ -33,7 +33,7 @@ public class ConfirmUserEmailTests(PostgresContainerFixture fixture) : BaseInteg
             act: async provider =>
             {
                 var mediator = provider.GetRequiredService<IMediator>();
-                // T-0106 / IDA-SEC-03: submit the RAW token (what the email carries); the stored
+                // Submit the RAW token (what the email carries); the stored
                 // ConfirmationCode is now its SHA-256 hash, and the repository hashes the input to match.
                 var command = new ConfirmUserEmail.Command(user.RawConfirmationToken);
                 return await mediator.Send(command);

@@ -6,8 +6,8 @@ using Moq;
 namespace Cleansia.Tests.Functions;
 
 /// <summary>
-/// T-0122 (FISCAL-RECON) — the testable Core timer-handler body (the <c>[TimerTrigger]</c> shell stays
-/// in the Exe per the T-0121 pattern, sibling to <c>RetryFailedFiscalRegistrations</c>). The handler
+/// The testable Core timer-handler body (the <c>[TimerTrigger]</c> shell stays
+/// in the Exe, sibling to <c>RetryFailedFiscalRegistrations</c>). The handler
 /// just drives the reconciliation sweep service once per tick.
 /// </summary>
 public class FiscalReconciliationTimerHandlerTests

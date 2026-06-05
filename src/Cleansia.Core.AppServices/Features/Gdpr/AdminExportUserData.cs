@@ -18,7 +18,7 @@ public static class AdminExportUserData
     {
         public Validator(IUserRepository userRepository)
         {
-            // T-0107 (IDA-SEC-08): the GDPR export tool is for customer/employee data-subject
+            // The GDPR export tool is for customer/employee data-subject
             // requests only — it must never target an administrator. Cascade.Stop so the existence
             // check runs before the Profile guard and BuildAsync (which marks a completed export
             // row) is never reached on a reject.

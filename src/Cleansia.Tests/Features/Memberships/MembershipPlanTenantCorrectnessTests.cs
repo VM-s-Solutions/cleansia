@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Cleansia.Tests.Features.Memberships;
 
 /// <summary>
-/// T-0113 (LG-SEC-05) / ADR-0001 Addendum A1 — read-parity + write-side-parity behavioural tests.
+/// ADR-0001 Addendum A1 — read-parity + write-side-parity behavioural tests.
 ///
 /// These spin a REAL <see cref="CleansiaDbContext"/> (so <see cref="CleansiaDbContext.OnModelCreating"/>
 /// and the global tenant query filter actually run) over SQLite in-memory — no Postgres/Docker. They
@@ -80,7 +80,7 @@ public sealed class MembershipPlanTenantCorrectnessTests : IDisposable
         await ctx.CommitAsync(CancellationToken.None);
     }
 
-    // ── AC2 — anonymous GetActivePlansAsync returns the SAME active plans as the authenticated flow ──
+    // ── anonymous GetActivePlansAsync returns the SAME active plans as the authenticated flow ──
 
     [Fact]
     public async Task GetActivePlansAsync_Anonymous_ReturnsTheTenantsActivePlans_NoNullTenantCollapse()
@@ -104,7 +104,7 @@ public sealed class MembershipPlanTenantCorrectnessTests : IDisposable
         Assert.Equal(PlanCode, anonymous[0].Code);
     }
 
-    // ── AC6 — GetByCodeAsync resolves the plan regardless of tenant context (write-side parity) ──
+    // ── GetByCodeAsync resolves the plan regardless of tenant context (write-side parity) ──
 
     [Fact]
     public async Task GetByCodeAsync_ResolvesGlobalPlan_RegardlessOfTenantContext()

@@ -6,7 +6,7 @@ namespace Cleansia.Core.AppServices.Services.Interfaces;
 public interface IReceiptService
 {
     /// <summary>
-    /// T-0119 / ADR-0004 D-F4.1 phase 1 — RESERVE the receipt. Allocates the fiscal sequence,
+    /// ADR-0004 D-F4.1 phase 1 — RESERVE the receipt. Allocates the fiscal sequence,
     /// <c>OrderReceipt.Create</c>s the row, <c>Add</c>s it to the repository, and (for any
     /// <c>enforcementMode != None</c>) marks it BORN RETRY-ELIGIBLE so a crash before registration is
     /// recoverable by the retry job (C-A). Does NOT call the fiscal authority, does NOT generate the
@@ -16,7 +16,7 @@ public interface IReceiptService
     Task<OrderReceipt> ReserveReceiptAsync(Order order, string languageCode, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// T-0119 / ADR-0004 D-F4.1 phase 2 — REALIZE the external effects for an already-claimed receipt:
+    /// ADR-0004 D-F4.1 phase 2 — REALIZE the external effects for an already-claimed receipt:
     /// register with the country's fiscal authority (stamping <c>SetFiscalData</c> on success — which
     /// clears the born-retry-eligibility — or <c>MarkFiscalRegistrationFailed</c> on failure), then
     /// generate the PDF and upload it to blob storage. Called AFTER the claim has been committed, so a

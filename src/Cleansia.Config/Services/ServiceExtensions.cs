@@ -56,7 +56,7 @@ public static class ServiceExtensions
                     UserProfile.Administrator.ToString()))
             .AddPolicy(PhysicalPolicy.AdminOnly,
                 p => p.RequireRole(UserProfile.Administrator.ToString()))
-            // OwnerOrElevated (IDA-SEC-04 / ADR-0001 §D3): elevated == Admin ONLY (the old blanket
+            // OwnerOrElevated (ADR-0001 §D3): elevated == Admin ONLY (the old blanket
             // IsInRole(Employee) → true grant was an employee-wide PII IDOR and is removed). A
             // non-admin caller is allowed IFF the requested subject id equals their own sub. The id is
             // read from one canonical helper (route "id" → route "userId" → query "UserId") because the
@@ -116,7 +116,7 @@ public static class ServiceExtensions
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IReceiptService, ReceiptService>();
         services.AddScoped<IFiscalRetryService, FiscalRetryService>();
-        // T-0122 (FISCAL-RECON) / ADR-0002 D3.4 — the dispatch-layer reconciliation sweep (DISTINCT
+        // ADR-0002 D3.4 — the dispatch-layer reconciliation sweep (DISTINCT
         // from the registration-retry FiscalRetryService above; they are not merged).
         services.AddScoped<IFiscalReconciliationService, FiscalReconciliationService>();
         services.AddScoped<IAppConfigurationProvider, AppConfigurationProvider>();

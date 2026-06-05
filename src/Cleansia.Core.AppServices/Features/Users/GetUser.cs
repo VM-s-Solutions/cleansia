@@ -37,7 +37,7 @@ public class GetUser
     {
         public async Task<BusinessResult<UserItem>> Handle(Query query, CancellationToken cancellationToken)
         {
-            // Inner ownership gate (IDA-SEC-04 / ADR-0001 §D3): a non-admin caller may only resolve
+            // Inner ownership gate (ADR-0001 §D3): a non-admin caller may only resolve
             // their own user record. Mirrors GetPeriodPays — a non-owner gets the not-found business
             // error rather than the other user's PII. The policy is the outer gate; this holds on any
             // invocation path.

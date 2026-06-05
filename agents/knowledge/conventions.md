@@ -59,7 +59,8 @@ the Reviewer treats a new deviation as a hard fail. Known existing deviations ar
 - **CancellationToken propagation** through every async IO path (backend).
 - **No dead code.** Delete unreferenced methods/classes; for DB columns, never delete in code —
   flag a migration `manual_step`.
-- **Comments explain WHY, never WHAT.** No `// update the user`. No `// TODO(JIRA-x)` — use a ticket.
+- **Comment discipline — see the dedicated section below.** The default is *no comment*; the code is
+  the documentation.
 
 ## File length & method length (backend, as a smell test, not a hard cap)
 
@@ -76,6 +77,61 @@ handler.
 Extract when the *same* 3+ lines appear in 3+ places **and** genuinely mean the same thing.
 Premature unification is worse than duplication: two methods that look the same but must diverge
 later become a silent bug when "deduplicated". Confirm intent before merging call sites.
+
+## Comments — write almost none
+
+**The default is no comment. The code is the documentation.** Self-documenting code — clear names,
+small methods, real types — replaces the vast majority of comments. A reviewer who sees a comment on
+every few lines treats it as a smell, not as diligence.
+
+**Only comment genuinely non-obvious *critical* logic** — the *why* a reader cannot recover from the
+code itself:
+- a non-obvious ordering/atomicity requirement, a race the code is defending against, or a
+  correctness subtlety (e.g. "this UPDATE is conditional so two callers can't both pass");
+- a deliberate, surprising deviation from the obvious approach, with the reason;
+- a domain/legal/fiscal rule the code encodes but doesn't state (e.g. a rounding or sequence rule).
+
+**Never write:**
+- **WHAT comments** — `// update the user`, `// loop over orders`, `// return the result`. If a line
+  needs a label to be understood, rename the variable/method instead.
+- **Restating the signature** — `// takes an id and returns the user`.
+- **Ticket / review / issue numbers in code** — no `// T-0123`, `// PR review #4`, `// AC2`,
+  `// TODO(JIRA-x)`, `// fix from sprint 3`. These rot into dangling pointers the moment the tracker
+  moves; a future reader cannot resolve them. The *reason* belongs in the comment; the *traceability*
+  belongs in the commit message and the ticket, never in a source comment. (A bare `// TODO:` with a
+  concrete next action and no tracker id is acceptable only as a short-lived marker.)
+- **Section-divider noise** — `// ─── helpers ───`, banners, ASCII art, decorative rules.
+- **Commented-out code** — delete it; git remembers.
+
+When you fix or change a line, **delete any now-stale comment on it** rather than leaving it. A
+comment that no longer matches the code is worse than none.
+
+> Rationale: comments are unversioned-against-the-code duplication. Every comment is a second thing
+> that must be kept true; most add risk (drift) without adding understanding. Spend the effort on the
+> name instead.
+
+## Harvest good patterns back into the catalog
+
+The knowledge catalog (`patterns-*.md`, `consistency.md`) is a **living** document, not a fixed
+input. When, while building, you discover a genuinely better or more-consistent way to do a recurring
+thing — a cleaner idiom, a reusable helper, a safer default that the rest of the codebase would
+benefit from — **don't keep it to yourself in one feature:**
+
+1. **Apply it** in the change you're making.
+2. **Propose it into the catalog** so it becomes the canonical form everyone follows next time:
+   - a *small* clarification/addition to an existing rule (a better example, a sharper "why", a newly
+     observed footgun) → the developer edits the relevant `patterns-*.md` / `consistency.md` entry in
+     the same change, and notes it in the ticket's `## Review` so the Reviewer sanity-checks it.
+   - a *new canonical archetype* or anything that changes "the one way to do X" across the codebase →
+     this is an **Architect** call (it may warrant an ADR and a canonicalization ticket to migrate the
+     existing call sites). Raise it via the ticket; don't unilaterally redefine the standard.
+3. If the new pattern supersedes an old one, mark the old form as a deviation in
+   `consistency.md` (and file the canonicalization follow-up) so the codebase converges instead of
+   carrying both.
+
+The bar: a pattern earns a catalog entry when it would make **future** changes cheaper or the
+codebase **more consistent**, not because it's merely a preference. Reviewer and Architect are the
+guardrails against catalog bloat — the same "earns its place" test as any abstraction.
 
 ## Naming (canonical)
 

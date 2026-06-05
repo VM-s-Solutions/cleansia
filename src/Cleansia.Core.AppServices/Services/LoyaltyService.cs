@@ -205,10 +205,10 @@ public sealed class LoyaltyService(
             }
         }
 
-        // T-0112 (LG-SEC-06 / S7a) — the admin manual path (orderId == null) is keyed on the
+        // S7a — the admin manual path (orderId == null) is keyed on the
         // client-supplied requestId. Fast-path read: if a ledger row already carries this key, the
         // grant already landed (a double-submit / proxy-retry / network-retry) — no-op so points are
-        // not doubled. The OLD ":194-198 intentional duplicates" assumption is REMOVED for this path.
+        // not doubled.
         if (!string.IsNullOrEmpty(requestId))
         {
             var existingByKey = await loyaltyTransactionRepository.GetByIdempotencyKeyAsync(
@@ -260,7 +260,7 @@ public sealed class LoyaltyService(
             }
         }
 
-        // T-0112 (S7a) — admin manual path keyed on requestId. Fast-path collapse on a replay.
+        // S7a — admin manual path keyed on requestId. Fast-path collapse on a replay.
         if (!string.IsNullOrEmpty(requestId))
         {
             var existingByKey = await loyaltyTransactionRepository.GetByIdempotencyKeyAsync(
@@ -291,7 +291,7 @@ public sealed class LoyaltyService(
     }
 
     /// <summary>
-    /// T-0112 (S7b) — deliberate, documented in-service flush of the keyed manual grant/revoke insert so
+    /// S7b — deliberate, documented in-service flush of the keyed manual grant/revoke insert so
     /// a concurrent double-submit that raced past the fast-path read collides on the filtered UNIQUE
     /// INDEX on <c>LoyaltyTransaction.IdempotencyKey</c> HERE, where the 23505 can be caught and
     /// collapsed — not at the <c>UnitOfWorkPipelineBehavior</c> commit (which would surface a raw 500).
@@ -323,7 +323,7 @@ public sealed class LoyaltyService(
     /// loser's insert. Detected provider-agnostically by duck-typing the inner exception's public
     /// <c>SqlState</c> property (the AppServices layer carries no hard Npgsql reference). Walks the whole
     /// inner chain because EF may wrap the provider exception more than one level deep. Mirrors
-    /// <c>CreateMembershipSubscription.Handler.IsUniqueViolation</c> (T-0111).
+    /// <c>CreateMembershipSubscription.Handler.IsUniqueViolation</c>.
     /// </summary>
     private static bool IsUniqueViolation(DbUpdateException exception)
     {

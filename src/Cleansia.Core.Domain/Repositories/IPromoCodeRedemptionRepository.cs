@@ -19,7 +19,7 @@ public interface IPromoCodeRedemptionRepository : IRepository<PromoCodeRedemptio
     /// <summary>
     /// Atomically reserve the next free per-user redemption slot for
     /// <paramref name="userId"/> on <paramref name="promoCodeId"/> AND insert the redemption row in
-    /// one statement (T-0110 / S7). The next 0-based <c>SlotOrdinal</c> is computed in SQL
+    /// one statement (S7). The next 0-based <c>SlotOrdinal</c> is computed in SQL
     /// (<c>COALESCE(MAX(SlotOrdinal) + 1, 0)</c>) under a <c>WHERE … &lt; maxRedemptionsPerUser</c>
     /// guard, so the ordinal is DERIVED from the reservation (never a pre-read count). The insert is
     /// guarded by the <c>(TenantId, PromoCodeId, UserId, SlotOrdinal)</c> unique index as a

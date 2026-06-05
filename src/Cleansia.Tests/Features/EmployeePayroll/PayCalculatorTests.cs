@@ -9,21 +9,20 @@ using Cleansia.TestUtilities.MockDataFactories.Currencies;
 namespace Cleansia.Tests.Features.EmployeePayroll;
 
 /// <summary>
-/// T-0125 (TC-PAY) — pure-function characterization of
-/// <see cref="PayCalculator"/>. This is the money math paid to cleaners and was
-/// previously untested (testing.md must-cover #1, strict-TDD category). These tests pin the
+/// Pure-function characterization of
+/// <see cref="PayCalculator"/>. This is the money math paid to cleaners. These tests pin the
 /// CURRENT behavior of each I/O-free surface with EXACT <c>decimal</c> assertions — no float
-/// tolerance. Where a test would reveal a real defect it is logged for a separate fix ticket
-/// rather than "fixed" here (Out of scope in the ticket); see the run report.
+/// tolerance. Where a test would reveal a real defect it is logged for a separate fix
+/// rather than "fixed" here.
 ///
-/// Mapping to acceptance criteria:
-///  - AC6  → CalculateTotalPay formula + floor-at-0 (bonus/deduction edge cases).
-///  - AC7  → CalculateExtrasPay counts only the <c>true</c> extras.
-///  - AC9  → exact decimal results (fractional km × rate, division).
-///  - AC10 → guarded helpers: CalculateDistancePay / ConvertCurrency / ProratePay /
-///           SplitPayForMultipleEmployees argument validation.
-///  - plus: multi-employee split (sum == total + remainder), proration, currency conversion,
-///          and the Aggregate*/*Total roll-ups.
+/// What is pinned:
+///  - CalculateTotalPay formula + floor-at-0 (bonus/deduction edge cases).
+///  - CalculateExtrasPay counts only the <c>true</c> extras.
+///  - exact decimal results (fractional km × rate, division).
+///  - guarded helpers: CalculateDistancePay / ConvertCurrency / ProratePay /
+///    SplitPayForMultipleEmployees argument validation.
+///  - multi-employee split (sum == total + remainder), proration, currency conversion,
+///    and the Aggregate*/*Total roll-ups.
 /// </summary>
 public class PayCalculatorTests
 {
@@ -42,7 +41,7 @@ public class PayCalculatorTests
             currencyId: "czk",
             paymentStatus: PaymentStatus.Pending);
 
-    // ── AC6 — CalculateTotalPay: base + extras + expenses + bonus − deduction, floored at 0 ──
+    // ── CalculateTotalPay: base + extras + expenses + bonus − deduction, floored at 0 ──
 
     [Fact]
     public void CalculateTotalPay_Sums_All_Components_Minus_Deduction()
@@ -92,7 +91,7 @@ public class PayCalculatorTests
         Assert.Equal(500m, total);
     }
 
-    // ── AC7 — CalculateExtrasPay: count only true-valued extras × rate ──
+    // ── CalculateExtrasPay: count only true-valued extras × rate ──
 
     [Fact]
     public void CalculateExtrasPay_Counts_Only_True_Extras()
@@ -151,7 +150,7 @@ public class PayCalculatorTests
         Assert.Throws<ArgumentNullException>(() => PayCalculator.CalculateExtrasPay(null!, 15m));
     }
 
-    // ── AC10 — CalculateDistancePay (guards + exact math) ──
+    // ── CalculateDistancePay (guards + exact math) ──
 
     [Fact]
     public void CalculateDistancePay_Multiplies_Distance_By_Rate()
@@ -181,7 +180,7 @@ public class PayCalculatorTests
         Assert.Equal("ratePerKm", ex.ParamName);
     }
 
-    // ── AC9 — exact decimal: fractional km × fractional rate, no float drift ──
+    // ── exact decimal: fractional km × fractional rate, no float drift ──
 
     [Fact]
     public void CalculateDistancePay_Fractional_Inputs_Are_Exact_Decimal()

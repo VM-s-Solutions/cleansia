@@ -3,7 +3,7 @@ using Microsoft.Azure.Functions.Worker;
 
 namespace Cleansia.Functions.Functions;
 
-// T-0121 / ADR-0002 D5 step 1 — thin trigger shell; body lives in CalculateOrderPayHandler (Core).
+// ADR-0002 D5 step 1 — thin trigger shell; body lives in CalculateOrderPayHandler (Core).
 public class CalculateOrderPayFunction(CalculateOrderPayHandler handler)
 {
     [Function("CalculateOrderPay")]

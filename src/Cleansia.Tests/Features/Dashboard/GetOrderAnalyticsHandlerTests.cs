@@ -10,18 +10,18 @@ using Moq;
 namespace Cleansia.Tests.Features.Dashboard;
 
 /// <summary>
-/// T-0104 (SEC-EMP-01) / ADR-0001 §D2 [OWN-DATA] — the inner ownership gate inside
+/// ADR-0001 §D2 [OWN-DATA] — the inner ownership gate inside
 /// <see cref="GetOrderAnalytics.Handler"/>. The coarse <c>CanGetCurrentEmployee</c> policy is the
 /// outer gate; this handler check is the inner gate that holds regardless of host or invocation path.
 ///
 /// The hole: the handler trusted <c>Query.EmployeeId</c> verbatim, so any authenticated partner could
 /// read another cleaner's order history by passing the victim's employee id. The fix mirrors the
 /// reference siblings (<c>GetDashboardStats</c> / <c>GetEarningsAnalytics</c>):
-///   - AC1: a NON-admin caller's foreign <c>EmployeeId</c> is IGNORED — the handler resolves the
+///   - a NON-admin caller's foreign <c>EmployeeId</c> is IGNORED — the handler resolves the
 ///     caller's OWN id via <see cref="IOrderAccessService.GetCallerEmployeeIdAsync"/> and only that id
 ///     ever reaches the repository (the victim's data is never read);
-///   - AC4: an Administrator caller's <c>Query.EmployeeId</c> IS honored (admin oversight);
-///   - AC5: a non-admin with no resolvable employee gets the
+///   - an Administrator caller's <c>Query.EmployeeId</c> IS honored (admin oversight);
+///   - a non-admin with no resolvable employee gets the
 ///     <see cref="BusinessErrorMessage.EmployeeNotFound"/> business failure (no leak, no empty-200).
 /// Written red → green per knowledge/testing.md (predates the handler fix).
 /// </summary>

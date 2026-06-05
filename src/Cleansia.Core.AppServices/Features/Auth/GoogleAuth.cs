@@ -19,8 +19,8 @@ public class GoogleAuth
         public Validator()
         {
             // Identity (email, subject) and the account-type safety guard are bound from the VERIFIED
-            // Google ID-token in the Handler, never from the client (T-0105 / IDA-SEC-01, S1 + PR
-            // review #4/#15). The validator therefore keeps ONLY shape rules on the fields the handler
+            // Google ID-token in the Handler, never from the client (S1). The validator therefore keeps
+            // ONLY shape rules on the fields the handler
             // actually uses: the token (verified) and the display name (the ID-token may carry no name
             // claim). command.Email / command.GoogleId are intentionally NOT validated here — they are
             // client-supplied, the handler ignores them, and validating them gave a false sense of a
@@ -65,7 +65,7 @@ public class GoogleAuth
             var user = await userRepository.GetByEmailAsync(claims.Email, cancellationToken);
             if (user is not null)
             {
-                // PR review #4 (S1): the account-type guard MUST run against the account the handler
+                // S1: the account-type guard MUST run against the account the handler
                 // actually authenticates — the VERIFIED claims.Email — not the client-supplied
                 // command.Email the validator used to check. Block a Google login from binding into an
                 // existing password (Internal) account that shares this verified email.

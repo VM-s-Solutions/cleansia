@@ -6,7 +6,7 @@ using Cleansia.Core.Domain.Memberships;
 namespace Cleansia.Tests.Features.Memberships;
 
 /// <summary>
-/// T-0113 (LG-SEC-05) / ADR-0001 Addendum A1 — MANDATORY anti-regression test (AC3 "no footgun").
+/// ADR-0001 Addendum A1 — MANDATORY anti-regression test ("no footgun").
 ///
 /// THE HOLE: <see cref="MembershipPlan"/> implemented <see cref="ITenantEntity"/>, so the EF Core
 /// global tenant query filter applied to it. On the <c>[AllowAnonymous] GetPlans</c> route there is no
@@ -30,12 +30,12 @@ public class MembershipPlanPlatformConfigStructuralTests
     [Fact]
     public void MembershipPlan_IsNot_ITenantEntity_SoItHasNoTenantDimension()
     {
-        // AC3 — the dimension is gone. No TenantId ⇒ nothing for the global filter to collapse on an
+        // the dimension is gone. No TenantId ⇒ nothing for the global filter to collapse on an
         // anonymous read ⇒ no null-tenant slice, no cross-tenant "shared row" leak.
         Assert.False(
             typeof(ITenantEntity).IsAssignableFrom(typeof(MembershipPlan)),
             "MembershipPlan must NOT implement ITenantEntity — it is platform config (ADR-0001 Addendum A1). "
-            + "Re-adding the tenant dimension re-opens the LG-SEC-05 anonymous-read hole and must go through "
+            + "Re-adding the tenant dimension re-opens the anonymous-read hole and must go through "
             + "a deliberate ticket, not slip in unnoticed.");
     }
 
@@ -59,11 +59,11 @@ public class MembershipPlanPlatformConfigStructuralTests
     [Fact]
     public void LoyaltyTierConfig_StaysTenantScoped_NoAnonymousReadPath_AC4()
     {
-        // AC4 — LoyaltyTierConfig is the same shape but has NO anonymous read path, so it stays
+        // LoyaltyTierConfig is the same shape but has NO anonymous read path, so it stays
         // ITenantEntity (untouched by this ticket). This pins that decision: if someone drops the
         // interface from LoyaltyTierConfig too, that is a SEPARATE decision and this test catches it.
         Assert.True(
             typeof(ITenantEntity).IsAssignableFrom(typeof(LoyaltyTierConfig)),
-            "LoyaltyTierConfig must remain ITenantEntity — T-0113 does not touch it (no anonymous read path).");
+            "LoyaltyTierConfig must remain ITenantEntity — it has no anonymous read path, so the platform-config carve-out does not apply.");
     }
 }

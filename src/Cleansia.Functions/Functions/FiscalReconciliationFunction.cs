@@ -3,7 +3,7 @@ using Microsoft.Azure.Functions.Worker;
 
 namespace Cleansia.Functions.Functions;
 
-// T-0122 (FISCAL-RECON) / ADR-0002 D3.4 — thin trigger shell; the testable body lives in
+// ADR-0002 D3.4 — thin trigger shell; the testable body lives in
 // FiscalReconciliationTimerHandler (Core). Sibling to RetryFailedFiscalRegistrationsFunction, but a
 // DISTINCT layer: this re-enqueues the never-dispatched fiscal MESSAGE (the at-most-once Wave-0 gap);
 // the retry function re-registers an already-claimed receipt with the authority.

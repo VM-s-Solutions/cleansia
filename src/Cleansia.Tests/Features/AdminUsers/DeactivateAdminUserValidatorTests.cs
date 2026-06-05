@@ -10,10 +10,10 @@ using Moq;
 namespace Cleansia.Tests.Features.AdminUsers;
 
 /// <summary>
-/// T-0107 (IDA-SEC-08): deactivating an admin user already blocks self-deactivation
+/// Deactivating an admin user already blocks self-deactivation
 /// (<see cref="BusinessErrorMessage.CannotDeactivateSelf"/>); this adds the last-admin guard so the
-/// final ACTIVE administrator cannot be deactivated and lock the tenant out of its admin console (AC4).
-/// AC5 regression: with two or more active admins a non-self, non-last target still passes and the
+/// final ACTIVE administrator cannot be deactivated and lock the tenant out of its admin console.
+/// Regression: with two or more active admins a non-self, non-last target still passes and the
 /// self-guard still fires.
 /// </summary>
 public class DeactivateAdminUserValidatorTests
@@ -39,7 +39,7 @@ public class DeactivateAdminUserValidatorTests
         return user;
     }
 
-    // AC4 — the only active administrator cannot be deactivated.
+    // The only active administrator cannot be deactivated.
     [Fact]
     public async Task When_Target_Is_The_Only_Active_Admin_Then_Fails_With_CannotDeactivateLastAdmin()
     {
@@ -52,7 +52,7 @@ public class DeactivateAdminUserValidatorTests
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.CannotDeactivateLastAdmin);
     }
 
-    // AC4 (boundary) — an inactive sibling admin does NOT count toward the active-admin total, so the
+    // Boundary — an inactive sibling admin does NOT count toward the active-admin total, so the
     // single ACTIVE admin is still treated as the last one.
     [Fact]
     public async Task When_Only_Other_Admin_Is_Inactive_Then_Fails_With_CannotDeactivateLastAdmin()
@@ -67,7 +67,7 @@ public class DeactivateAdminUserValidatorTests
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.CannotDeactivateLastAdmin);
     }
 
-    // AC5 — two or more active admins, target is neither caller nor the last admin → passes.
+    // Two or more active admins, target is neither caller nor the last admin → passes.
     [Fact]
     public async Task When_Two_Active_Admins_And_Target_Not_Self_Then_Valid()
     {
@@ -80,7 +80,7 @@ public class DeactivateAdminUserValidatorTests
         Assert.True(result.IsValid);
     }
 
-    // AC5 (regression) — the existing self-guard still fires even when other active admins exist.
+    // Regression — the existing self-guard still fires even when other active admins exist.
     [Fact]
     public async Task When_Target_Is_Self_Then_Fails_With_CannotDeactivateSelf()
     {

@@ -4,15 +4,15 @@ using Microsoft.Extensions.Hosting;
 namespace Cleansia.Tests.Configuration;
 
 /// <summary>
-/// T-0123 / BSP-5 (AC2 + AC3) — the Swagger fail-closed gate and its ADR-0003 D3 boot guard.
+/// The Swagger fail-closed gate and its ADR-0003 D3 boot guard.
 ///
-/// AC2: Swagger/SwaggerUI must mount ONLY in Development. The old <c>!env.IsProduction()</c> gate
+/// Swagger/SwaggerUI must mount ONLY in Development. The old <c>!env.IsProduction()</c> gate
 /// (CleansiaStartupBase.cs:103) leaked the full API surface on Staging / QA / Demo and on any mis-set
 /// ASPNETCORE_ENVIRONMENT. <see cref="CleansiaStartupBase.SwaggerShouldServe"/> encodes the new
 /// allow-list: true for Development, false for every other env string (Production, Staging, QA, Demo,
 /// or unrecognized).
 ///
-/// AC3: even in the Development branch, if <c>CorsOrigins</c> carries a public <c>cleansia.cz</c>
+/// Even in the Development branch, if <c>CorsOrigins</c> carries a public <c>cleansia.cz</c>
 /// origin (a prod-shaped config running under a mis-set env string), the host must REFUSE TO BOOT.
 /// <see cref="CleansiaStartupBase.GuardSwaggerExposure"/> is the pure D3-style guard (mirrors
 /// <c>RateLimitPolicies.ValidateForwardedHeadersConfig</c>): it throws when Swagger would serve AND a
@@ -21,7 +21,7 @@ namespace Cleansia.Tests.Configuration;
 /// </summary>
 public class SwaggerGateAndBootGuardTests
 {
-    // ---- AC2: the env allow-list (Development only) -------------------------------------------------
+    // ---- the env allow-list (Development only) -------------------------------------------------
 
     [Fact]
     public void Swagger_Serves_In_Development()
@@ -41,7 +41,7 @@ public class SwaggerGateAndBootGuardTests
         Assert.False(CleansiaStartupBase.SwaggerShouldServe(env));
     }
 
-    // ---- AC3: the boot guard ------------------------------------------------------------------------
+    // ---- the boot guard ------------------------------------------------------------------------
 
     [Theory]
     [InlineData("https://cleansia.cz")]

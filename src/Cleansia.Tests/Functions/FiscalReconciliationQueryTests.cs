@@ -14,15 +14,15 @@ using Microsoft.EntityFrameworkCore;
 namespace Cleansia.Tests.Functions;
 
 /// <summary>
-/// T-0122 (FISCAL-RECON) / ADR-0002 D3.4 + ADR-0004 C-B — the two NEW read queries that feed the
+/// ADR-0002 D3.4 + ADR-0004 C-B — the two NEW read queries that feed the
 /// dispatch reconciliation sweep, exercised against a REAL <see cref="CleansiaDbContext"/> over SQLite
 /// (so the model + global tenant query filter materialize; the cross-tenant read uses
 /// <c>IgnoreQueryFilters</c> like <c>GetDueForRetryAsync</c>). No Postgres/Docker.
 ///
 /// <para><b>Receipt predicate (C-B):</b> <c>Paid</c>/<c>Cash</c>-eligible orders OLDER than the
 /// threshold AND (<c>Receipt is null</c> OR <c>Receipt.FiscalCode == null</c>) — the C-B widening
-/// beyond the original D3.4 "no Receipt" to also catch the claimed-but-unregistered rows T-0119
-/// creates. An order WITHIN the threshold (recently committed) is NOT swept.</para>
+/// beyond the original D3.4 "no Receipt" to also catch the claimed-but-unregistered rows.
+/// An order WITHIN the threshold (recently committed) is NOT swept.</para>
 ///
 /// <para><b>Invoice predicate:</b> a <c>PayPeriod</c> with an employee (an <c>OrderEmployeePay</c>
 /// row) who has NO <c>EmployeeInvoice</c> for <c>(PayPeriodId, EmployeeId)</c>, older than the
@@ -97,7 +97,7 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
     private static OrderReceipt NewReceipt(string orderId, string receiptNumber)
         => OrderReceipt.Create(orderId, receiptNumber, $"{receiptNumber}.pdf", $"2026/{orderId}/{receiptNumber}.pdf", LanguageId);
 
-    // ── AC1 (query) — a STALE Paid order with NO receipt is a receipt-recon candidate ──
+    // ── A STALE Paid order with NO receipt is a receipt-recon candidate ──
 
     [Fact]
     public async Task Receipt_Recon_Returns_Stale_Paid_Order_With_No_Receipt()
@@ -120,7 +120,7 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
         Assert.Equal("01HZX9N6M7Q8R9S0T1V2W3X410", due[0].Id);
     }
 
-    // ── AC1 (query) — an order WITHIN the threshold (recently committed) is NOT swept ──
+    // ── An order WITHIN the threshold (recently committed) is NOT swept ──
 
     [Fact]
     public async Task Receipt_Recon_Skips_Fresh_Order_Within_Threshold()
@@ -218,7 +218,7 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
         Assert.Empty(due);
     }
 
-    // ── AC2 (query) — a stale PayPeriod with an employee lacking an EmployeeInvoice is swept ──
+    // ── A stale PayPeriod with an employee lacking an EmployeeInvoice is swept ──
 
     [Fact]
     public async Task Invoice_Recon_Returns_PayPeriod_Employee_Missing_Invoice()

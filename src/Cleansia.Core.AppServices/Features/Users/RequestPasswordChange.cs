@@ -37,7 +37,7 @@ public class RequestPasswordChange
         public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
         {
             var user = await userRepository.GetByEmailAsync(command.Email, cancellationToken);
-            // T-0106 / IDA-SEC-03: email the RAW reset token returned by the generator; the row keeps
+            // email the RAW reset token returned by the generator; the row keeps
             // only the hash (never read the persisted hashed column back into the email).
             var rawResetToken = user!.UpdateResetPasswordToken();
 

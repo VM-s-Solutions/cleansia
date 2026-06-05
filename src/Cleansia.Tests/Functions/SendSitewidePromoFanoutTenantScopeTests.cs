@@ -14,7 +14,7 @@ using Moq;
 namespace Cleansia.Tests.Functions;
 
 /// <summary>
-/// PR review #3 (S8) — the sitewide-promo fan-out MUST stay within the campaign's tenant. The old
+/// (S8) — the sitewide-promo fan-out MUST stay within the campaign's tenant. The old
 /// query used IgnoreQueryFilters() on both sides with NO TenantId predicate, so SetTenantOverride was
 /// a no-op and one tenant's campaign fanned out to opted-in users of EVERY tenant. Exercised against a
 /// REAL <see cref="CleansiaDbContext"/> over SQLite so the join + the new TenantId filter materialize.

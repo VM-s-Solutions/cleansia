@@ -57,7 +57,7 @@ public class DisputeController(IMediator mediator) : CustomerApiController(media
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> AddMessage([FromBody] AddDisputeMessage.Command command, CancellationToken cancellationToken)
     {
-        // SEC-DSP-01: the staff flag is host-derived, not body-supplied. A customer never authors a
+        // The staff flag is host-derived, not body-supplied. A customer never authors a
         // staff message — force IsStaffMessage=false (mirrors the JWT-enrichment `command with` idiom).
         var enriched = command with { IsStaffMessage = false };
         var result = await Mediator.Send(enriched, cancellationToken);

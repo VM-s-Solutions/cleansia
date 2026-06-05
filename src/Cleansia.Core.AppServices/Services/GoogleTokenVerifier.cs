@@ -6,7 +6,7 @@ namespace Cleansia.Core.AppServices.Services;
 
 /// <summary>
 /// The sole adapter over <see cref="GoogleJsonWebSignature.ValidateAsync(string, GoogleJsonWebSignature.ValidationSettings)"/>
-/// (T-0105 / IDA-SEC-01, ADR-0001 S1 server-truth-identity). Verification ALWAYS runs — there is no
+/// (ADR-0001 S1 server-truth-identity). Verification ALWAYS runs — there is no
 /// environment bypass — and the audience is pinned to the configured Google OAuth client id so a token
 /// minted for a different client is rejected. On ANY failure (forged/expired/wrong-audience signature,
 /// or a missing/empty client-id that makes the audience check unsatisfiable) it returns <c>null</c> so
@@ -17,7 +17,7 @@ public class GoogleTokenVerifier(IGoogleConfig googleConfig) : IGoogleTokenVerif
     public async Task<GoogleVerifiedClaims?> VerifyAsync(string token, CancellationToken cancellationToken)
     {
         // Fail closed when no client id is configured: an empty/whitespace audience would otherwise
-        // leave the aud check effectively unconstrained. The owner supplies the real ClientId (IMP-1).
+        // leave the aud check effectively unconstrained.
         if (string.IsNullOrWhiteSpace(googleConfig.ClientId))
         {
             return null;

@@ -54,7 +54,7 @@ public class ResendConfirmationEmail
         {
             var user = await userRepository.GetByEmailAsync(command.Email, cancellationToken);
             var userName = $"{user!.FirstName} {user.LastName}";
-            // T-0106 / IDA-SEC-03: email the RAW token returned by the generator; the row keeps the hash.
+            // Email the RAW token returned by the generator; the row keeps the hash.
             var rawConfirmationToken = user.UpdateConfirmationCode();
 
             await emailService.SendEmailConfirmationAsync(command.Email, userName, rawConfirmationToken, command.Language, cancellationToken);

@@ -34,7 +34,7 @@ public class PromoCodeRedemptionRepository(
         decimal appliedDiscount,
         CancellationToken cancellationToken)
     {
-        // T-0110 / S7 — ATOMIC per-user slot reservation. The next 0-based SlotOrdinal is computed
+        // S7 — ATOMIC per-user slot reservation. The next 0-based SlotOrdinal is computed
         // in SQL as COALESCE(MAX(SlotOrdinal) + 1, 0) over this (tenant, code, user) and the whole
         // INSERT is gated by a HAVING < maxRedemptionsPerUser guard, so:
         //   - the ordinal is DERIVED from the reservation (never a pre-read count — that would let
@@ -50,7 +50,7 @@ public class PromoCodeRedemptionRepository(
         // DB write in the redeem path and is REQUIRED for atomicity — the reservation must land (or
         // be rejected) on its own, not deferred to the order's UoW commit (a unique violation there
         // would roll back the whole paid order, which is worse than the bug; see CreateOrder
-        // fail-soft, T-0110 owner decision). A null result simply logs; the order is untouched.
+        // fail-soft). A null result simply logs; the order is untouched.
         var tenantId = tenantProvider?.GetCurrentTenantId();
         var actorId = userSessionProvider?.GetUserId();
         var createdBy = string.IsNullOrWhiteSpace(actorId) ? SystemActor : actorId!;

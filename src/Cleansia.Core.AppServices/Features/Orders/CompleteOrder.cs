@@ -130,7 +130,7 @@ public class CompleteOrder
             return employee?.Address is not null;
         }
 
-        // T-0109 (EMP-GAP-01): the order-action approval gate. Identical to the
+        // The order-action approval gate. Identical to the
         // rule in TakeOrder / StartOrder — only an Approved cleaner may complete an
         // order (no receipt / loyalty / pay fan-out for a non-vetted cleaner). The
         // employee is server-derived from the caller (S1 server-truth); empty caller

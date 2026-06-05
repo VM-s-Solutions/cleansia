@@ -20,7 +20,7 @@ public class StartOrderValidatorTests
     public StartOrderValidatorTests()
     {
         // Default: the caller resolves to an Approved cleaner so the new
-        // approval gate (T-0109) does not interfere with the rules these
+        // approval gate does not interfere with the rules these
         // cases exercise. Specific cases override as needed.
         _employeeRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))

@@ -11,14 +11,14 @@ using Microsoft.Extensions.Primitives;
 namespace Cleansia.Tests.Authentication;
 
 /// <summary>
-/// T-0101 / ADR-0001 §D3 (finding IDA-SEC-04) — the redefined <see cref="PhysicalPolicy.OwnerOrElevated"/>
+/// ADR-0001 §D3 — the redefined <see cref="PhysicalPolicy.OwnerOrElevated"/>
 /// resolver inside the shared <c>AddCleansiaAuthorization</c>. Proves the IDOR hole is closed at the
 /// policy (outer-gate) layer:
-///   AC1 — elevated == Admin ONLY (the blanket Employee→true over-grant is gone).
-///   AC2 — a non-admin owner (sub == requested id) passes, via route "id", route "userId", OR
-///         query "UserId" (the canonical resolver replacing the RouteValues["id"]-only read); a
-///         non-owner non-admin fails.
-///   AC3 — a non-HttpContext resource fails closed (deny), never an over-grant.
+///   - elevated == Admin ONLY (the blanket Employee→true over-grant is gone).
+///   - a non-admin owner (sub == requested id) passes, via route "id", route "userId", OR
+///     query "UserId" (the canonical resolver replacing the RouteValues["id"]-only read); a
+///     non-owner non-admin fails.
+///   - a non-HttpContext resource fails closed (deny), never an over-grant.
 /// Each test predates the resolver fix (red → green) per knowledge/testing.md.
 /// </summary>
 public class OwnerOrElevatedPolicyTests
@@ -67,8 +67,6 @@ public class OwnerOrElevatedPolicyTests
         return http;
     }
 
-    // ── AC1 — elevated == Admin only ───────────────────────────────────────
-
     [Fact]
     public async Task Employee_Requesting_NotOwn_Id_Fails()
     {
@@ -94,8 +92,6 @@ public class OwnerOrElevatedPolicyTests
 
         Assert.True(result.Succeeded);
     }
-
-    // ── AC2 — owner reads own (all three id sources) ───────────────────────
 
     [Fact]
     public async Task NonAdmin_Owner_Passes_When_Id_In_Route_Id()
@@ -148,8 +144,6 @@ public class OwnerOrElevatedPolicyTests
 
         Assert.False(result.Succeeded);
     }
-
-    // ── AC3 — fail-closed on non-HttpContext resource ──────────────────────
 
     [Fact]
     public async Task NonAdmin_Fails_When_Resource_Is_Not_HttpContext()

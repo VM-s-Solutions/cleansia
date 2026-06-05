@@ -31,7 +31,7 @@ public static class RateLimitPolicies
     public const string AuthPolicy = "auth";
     public const string InteractivePolicy = "interactive";
 
-    // SEC-W3 (T-0116) — the Stripe-webhook per-source-IP window. A SEPARATE, third named policy
+    // SEC-W3 — the Stripe-webhook per-source-IP window. A SEPARATE, third named policy
     // (ADR-0003 D5.2): a 429 to a webhook flood consumes none of the "auth"/"interactive" allowance
     // and vice-versa, because each named policy is its own partition tree.
     public const string WebhookPolicy = "webhook";
@@ -49,9 +49,9 @@ public static class RateLimitPolicies
     private const int DefaultAuthAuthenticatedLimit = 30;
     private const int DefaultInteractiveLimit = 60;
     private const int DefaultAnonGlobalCeiling = 20_000;
-    // SEC-W3 (T-0116) — 60/min per source IP. Generous for a legitimate Stripe egress IP (events are
+    // SEC-W3 — 60/min per source IP. Generous for a legitimate Stripe egress IP (events are
     // batched and re-driven, not flooded), tight enough to cap an anonymous DoS amplifier on the most
-    // sensitive endpoint. Window defaults to the shared 60s; both are config-overridable (AC5/AC6).
+    // sensitive endpoint. Window defaults to the shared 60s; both are config-overridable.
     private const int DefaultWebhookLimit = 60;
     private const int DefaultWebhookWindowSeconds = 60;
 
@@ -73,9 +73,9 @@ public static class RateLimitPolicies
             ? ($"interactive:sub:{sub}", false)
             : ($"interactive:ip:{ClientIp(ctx)}", true);
 
-    /// <summary>SEC-W3 (T-0116) — the webhook is ALWAYS partitioned per SOURCE IP (the Stripe egress
+    /// <summary>SEC-W3 — the webhook is ALWAYS partitioned per SOURCE IP (the Stripe egress
     /// IP), never per <c>sub</c> (Stripe is unauthenticated — <c>[AllowAnonymous]</c> is preserved).
-    /// Reuses the canonical <see cref="ClientIp"/> resolver verbatim (ADR-0003 D2/D5.2). AC6: we
+    /// Reuses the canonical <see cref="ClientIp"/> resolver verbatim (ADR-0003 D2/D5.2). We
     /// THROTTLE EVERY source IP and do NOT hard-reject unknown (non-Stripe-range) IPs — a stale Stripe
     /// allow-list would silently DROP REAL webhooks (lost payments) when Stripe rotates ranges; the
     /// signature check is the real auth, the rate limit is the DoS cap. Any published Stripe range is
@@ -112,7 +112,7 @@ public static class RateLimitPolicies
         var authAuthedLimit = configuration.GetValue<int?>(AuthAuthenticatedLimitKey) ?? DefaultAuthAuthenticatedLimit;
         var interactiveLimit = configuration.GetValue<int?>(InteractiveLimitKey) ?? DefaultInteractiveLimit;
         var anonGlobalCeiling = configuration.GetValue<int?>(AnonGlobalCeilingKey) ?? DefaultAnonGlobalCeiling;
-        // SEC-W3 (T-0116) — webhook permit + window, config-overridable (AC5/AC6).
+        // SEC-W3 — webhook permit + window, config-overridable.
         var webhookLimit = configuration.GetValue<int?>(WebhookLimitKey) ?? DefaultWebhookLimit;
         var webhookWindow = TimeSpan.FromSeconds(
             configuration.GetValue<int?>(WebhookWindowSecondsKey) ?? DefaultWebhookWindowSeconds);
@@ -134,7 +134,7 @@ public static class RateLimitPolicies
                 return FixedWindow(key, interactiveLimit);
             });
 
-            // SEC-W3 (T-0116) — the THIRD named policy, per SOURCE IP, INDEPENDENT of auth/interactive.
+            // SEC-W3 — the THIRD named policy, per SOURCE IP, INDEPENDENT of auth/interactive.
             // Inherits the shared OnRejected / RejectionStatusCode (429) / Retry-After / QueueLimit=0
             // (it is a GetFixedWindowLimiter built by the same FixedWindow helper). A webhook flood to
             // 429 consumes none of the auth/interactive buckets and vice-versa — separate named policy =

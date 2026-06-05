@@ -19,7 +19,7 @@ public static class RateLimitTestConfig
         ["RateLimiting:Auth:AuthenticatedPermitLimit"] = (authAuthenticated ?? 30).ToString(),
         ["RateLimiting:Interactive:PermitLimit"] = (interactive ?? 60).ToString(),
         ["RateLimiting:Anon:GlobalCeiling"] = (anonGlobalCeiling ?? 10_000).ToString(),
-        // SEC-W3 (T-0116) — the per-source-IP webhook window (config-overridable; small for tests).
+        // SEC-W3 — the per-source-IP webhook window (config-overridable; small for tests).
         ["RateLimiting:Webhook:PermitLimit"] = (webhook ?? 60).ToString(),
     };
 }

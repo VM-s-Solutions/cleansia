@@ -39,7 +39,7 @@ var host = new HostBuilder()
         services.AddScoped<IDataRetentionBackgroundService, DataRetentionBackgroundService>();
         services.AddScoped<IRefreshTokenCleanupService, RefreshTokenCleanupService>();
 
-        // T-0121 / ADR-0002 D5 step 1 — the testable consumer bodies live in
+        // ADR-0002 D5 step 1 — the testable consumer bodies live in
         // Cleansia.Functions.Core. The [Function] trigger shells (Functions/*.cs) stay in this
         // Exe so the Worker SDK source-gen still discovers all 16 triggers, and resolve their
         // Core handler via DI. Scoped because the handlers pull scoped repos / IUnitOfWork.
@@ -52,7 +52,7 @@ var host = new HostBuilder()
         services.AddScoped<DataRetentionTimerHandler>();
         services.AddScoped<PeriodReminderTimerHandler>();
         services.AddScoped<RetryFailedFiscalRegistrationsHandler>();
-        // T-0122 (FISCAL-RECON) / ADR-0002 D3.4 — the dispatch reconciliation timer body (sibling to
+        // ADR-0002 D3.4 — the dispatch reconciliation timer body (sibling to
         // RetryFailedFiscalRegistrations; the [TimerTrigger] shell is FiscalReconciliationFunction).
         services.AddScoped<FiscalReconciliationTimerHandler>();
         services.AddScoped<AutoCancelStaleRecurringOrdersHandler>();
@@ -63,7 +63,7 @@ var host = new HostBuilder()
         services.AddScoped<SendRecurringOrderRemindersHandler>();
         services.AddScoped<SendNewJobsDigestTimerHandler>();
 
-        // T-0120 / ADR-0002 D3 (F3) — the per-queue -poison consumers. Each [QueueTrigger]
+        // ADR-0002 D3 (F3) — the per-queue -poison consumers. Each [QueueTrigger]
         // "<queue>-poison" shell (Functions/*PoisonFunction.cs) resolves its Core handler here; the
         // handler records a durable DeadLetter row (IDeadLetterStore) + LogError (alert) + acks. The
         // store itself (IDeadLetterStore) is registered in AddCoreBindings → AddRepositories.

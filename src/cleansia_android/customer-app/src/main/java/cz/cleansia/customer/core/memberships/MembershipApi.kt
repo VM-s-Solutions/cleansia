@@ -29,7 +29,7 @@ class MembershipApi(
             createMembershipSubscriptionCommand = GenCreateMembershipSubscriptionCommand(
                 planCode = body.planCode,
                 paymentMethodConfirmed = body.paymentMethodConfirmed,
-                // T-0111 / LG-SEC-02: forward the client idempotency token so the
+                // forward the client idempotency token so the
                 // backend can derive the Stripe idempotency key from it and collapse
                 // retried/double-tapped confirms onto a single subscription.
                 //

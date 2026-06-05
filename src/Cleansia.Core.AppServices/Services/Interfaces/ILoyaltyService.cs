@@ -43,7 +43,7 @@ public interface ILoyaltyService
     /// referral rewards, manual admin grants). The user's loyalty account is
     /// lazily created if missing.
     /// <para>
-    /// Idempotency (T-0112 / LG-SEC-06 / S7a): the admin manual path supplies a
+    /// Idempotency (S7a): the admin manual path supplies a
     /// REQUIRED client-generated <paramref name="requestId"/> which is persisted
     /// as the ledger row's idempotency key. A double-submit / retry collapses
     /// onto exactly one ledger row via a fast-path lookup-by-key AND the
@@ -66,7 +66,7 @@ public interface ILoyaltyService
     /// Mirror of <see cref="GrantPointsManuallyAsync"/> for admin-driven
     /// revocations. Inserts a negative-points ledger row via
     /// <c>LoyaltyAccount.RevokePoints</c>. No-op when the account doesn't
-    /// exist (nothing to revoke). Idempotency (T-0112 / S7a): keyed on the
+    /// exist (nothing to revoke). Idempotency (S7a): keyed on the
     /// REQUIRED client-generated <paramref name="requestId"/> for the admin
     /// manual path (collapses a retry to one negative row); the order-driven
     /// path passes <c>requestId: null</c> and stays keyed on

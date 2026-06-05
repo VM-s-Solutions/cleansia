@@ -49,7 +49,7 @@ public class User : Auditable, ITenantEntity
     public string? ProfilePhotoName { get; private set; }
 
     /// <summary>
-    /// SHA-256 HASH of the email-confirmation token (never the raw value). T-0106 / IDA-SEC-03:
+    /// SHA-256 HASH of the email-confirmation token (never the raw value):
     /// the raw token is emailed once via <see cref="RawConfirmationToken"/> and only the hash is
     /// persisted, so a stolen DB row cannot confirm/log in the account.
     /// </summary>
@@ -102,7 +102,7 @@ public class User : Auditable, ITenantEntity
 
     public static User CreateWithPassword(string email, string password, string firstName, string lastName, UserProfile profile = UserProfile.Customer, string? languageCode = null)
     {
-        // T-0106 / IDA-SEC-03: generate a cryptographic raw token, persist only its hash, and surface
+        // Generate a cryptographic raw token, persist only its hash, and surface
         // the raw value transiently so the registration handler can email it (never persisted/logged).
         var rawConfirmationToken = SecurityTokens.Generate();
 
@@ -134,7 +134,7 @@ public class User : Auditable, ITenantEntity
 
     /// <summary>
     /// Generates a fresh cryptographic password-reset token, persists only its hash, and RETURNS the
-    /// RAW token so the caller can email it (T-0106 / IDA-SEC-03). The raw value is never stored.
+    /// RAW token so the caller can email it. The raw value is never stored.
     /// </summary>
     public string UpdateResetPasswordToken()
     {
@@ -184,7 +184,7 @@ public class User : Auditable, ITenantEntity
 
     public User ConfirmEmail()
     {
-        // One-shot: clear the hashed token so a consumed confirmation cannot be replayed (T-0106 AC5).
+        // One-shot: clear the hashed token so a consumed confirmation cannot be replayed.
         ConfirmationCode = null;
         ConfirmationCodeExpiresAt = null;
         RawConfirmationToken = null;
@@ -202,7 +202,7 @@ public class User : Auditable, ITenantEntity
 
     /// <summary>
     /// Generates a fresh cryptographic email-confirmation token, persists only its hash, and RETURNS
-    /// the RAW token so the caller can email it (T-0106 / IDA-SEC-03). The raw value is never stored.
+    /// the RAW token so the caller can email it. The raw value is never stored.
     /// </summary>
     public string UpdateConfirmationCode()
     {

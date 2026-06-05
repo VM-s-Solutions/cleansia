@@ -10,9 +10,9 @@ using Moq;
 namespace Cleansia.Tests.Features.Gdpr;
 
 /// <summary>
-/// T-0107 (IDA-SEC-08): the admin GDPR delete tool is for customer/employee data-subject
-/// requests only. It must refuse to target an administrator (AC1) and must refuse self-target
-/// (AC2) — admins are managed exclusively through the AdminUsers feature. The validator must
+/// The admin GDPR delete tool is for customer/employee data-subject
+/// requests only. It must refuse to target an administrator and must refuse self-target
+/// — admins are managed exclusively through the AdminUsers feature. The validator must
 /// reject BEFORE <see cref="IGdprDeletionService.DeleteUserAccountAsync"/> can irreversibly
 /// anonymize the user.
 /// </summary>
@@ -43,7 +43,7 @@ public class AdminDeleteUserAccountValidatorTests
         return user;
     }
 
-    // AC1 — GDPR delete refuses an administrator target with a stable "cannot target admin via GDPR tool" code.
+    // GDPR delete refuses an administrator target with a stable "cannot target admin via GDPR tool" code.
     [Fact]
     public async Task When_Target_Is_Administrator_Then_Fails_With_CannotTargetAdminViaGdprTool()
     {
@@ -56,7 +56,7 @@ public class AdminDeleteUserAccountValidatorTests
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.CannotTargetAdminViaGdprTool);
     }
 
-    // AC2 — GDPR delete refuses a self-target with CannotDeleteSelf.
+    // GDPR delete refuses a self-target with CannotDeleteSelf.
     [Fact]
     public async Task When_Target_Is_Self_Then_Fails_With_CannotDeleteSelf()
     {

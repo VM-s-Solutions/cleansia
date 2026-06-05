@@ -10,7 +10,7 @@ using Moq;
 namespace Cleansia.Tests.Functions;
 
 /// <summary>
-/// T-0121 / ADR-0002 D5 step 1 — the seam smoke test (AC4). This is the RED that proves the
+/// ADR-0002 D5 step 1 — the seam smoke test. This is the RED that proves the
 /// extraction: it cannot compile until <c>Cleansia.Functions.Core</c> exists, exposes a public
 /// <c>GenerateReceiptHandler</c>, and <c>Cleansia.Tests</c> references the library. It constructs
 /// the consumer handler with mocked deps and invokes its body once — proving the queue-consumer

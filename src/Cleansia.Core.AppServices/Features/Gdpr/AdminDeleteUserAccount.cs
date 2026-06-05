@@ -20,7 +20,7 @@ public static class AdminDeleteUserAccount
             IUserRepository userRepository,
             IUserSessionProvider userSessionProvider)
         {
-            // T-0107 (IDA-SEC-08): the GDPR delete tool is for customer/employee data-subject
+            // The GDPR delete tool is for customer/employee data-subject
             // requests only. It must never anonymize an administrator or the caller themselves —
             // admins are managed exclusively through the AdminUsers feature. Cascade.Stop so the
             // existence check runs before the Profile/self guards and DeleteUserAccountAsync is

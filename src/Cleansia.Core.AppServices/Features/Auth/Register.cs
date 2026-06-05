@@ -72,7 +72,7 @@ public class Register
         public async Task<BusinessResult<bool>> Handle(Command command, CancellationToken cancellationToken)
         {
             var userEntity = await userRepository.GetByEmailAsync(command.Email, cancellationToken);
-            // T-0106 / IDA-SEC-03: email the RAW token; the entity persists only its hash. The raw is
+            // Email the RAW token; the entity persists only its hash. The raw is
             // surfaced by CreateWithPassword (transient RawConfirmationToken) and returned by
             // UpdateConfirmationCode — never read back off the persisted (hashed) column.
             string rawConfirmationToken;

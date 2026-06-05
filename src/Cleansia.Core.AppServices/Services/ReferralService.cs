@@ -204,8 +204,8 @@ public sealed class ReferralService(
 
         // Symmetric grant. Each call is idempotent on (orderId, Referral)
         // so a re-invocation here can't double-grant. The referral path keeps
-        // its (orderId, source) key — requestId is null (T-0112: the new
-        // idempotency key is only for the admin manual path).
+        // its (orderId, source) key — requestId is null (the new idempotency
+        // key is only for the admin manual path).
         await loyaltyService.GrantPointsManuallyAsync(
             referral.ReferrerUserId,
             ReferralPolicy.PointsPerSide,

@@ -3,9 +3,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Functions.Core.Handlers;
 
-// T-0122 (FISCAL-RECON) / ADR-0002 D3.4 — the testable timer-handler body for the dispatch
+// ADR-0002 D3.4 — the testable timer-handler body for the dispatch
 // reconciliation sweep. The [TimerTrigger] shell stays in the Exe (sibling to
-// RetryFailedFiscalRegistrations) per the T-0121 pattern; this Core body drives the sweep once per tick
+// RetryFailedFiscalRegistrations); this Core body drives the sweep once per tick
 // so Cleansia.Tests can reference it.
 public class FiscalReconciliationTimerHandler(
     IFiscalReconciliationService reconciliationService,

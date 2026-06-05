@@ -11,7 +11,7 @@ using Moq;
 namespace Cleansia.Tests.Features.Memberships;
 
 /// <summary>
-/// T-0111 (LG-SEC-02) / TC-IDEMP-0 (pairs with T-0127) / ADR-0002 idempotent-consumer contract,
+/// ADR-0002 idempotent-consumer contract,
 /// knowledge/testing.md must-cover #6 (idempotency, S7).
 ///
 /// THE HOLE: <see cref="CreateMembershipSubscription.Handler"/> generated a FRESH
@@ -99,7 +99,7 @@ public class CreateMembershipSubscriptionIdempotencyTests
     private static CreateMembershipSubscription.Command ConfirmedCommand(string? token) =>
         new(PlanCode, PaymentMethodConfirmed: true) { IdempotencyToken = token };
 
-    // ── AC2 — the Stripe idempotency key is DERIVED from the client token, not Guid.NewGuid() ──
+    // ── the Stripe idempotency key is DERIVED from the client token, not Guid.NewGuid() ──
 
     [Fact]
     public async Task SameToken_TwoConfirms_PassSameDerivedAttemptIdToStripe()
@@ -146,11 +146,11 @@ public class CreateMembershipSubscriptionIdempotencyTests
         Assert.True(first.IsSuccess);
         Assert.True(second.IsSuccess);
         Assert.Equal(2, created.Count);
-        // Distinct tokens ⇒ distinct Stripe subscriptions ⇒ distinct local rows (re-subscribe works, AC2).
+        // Distinct tokens ⇒ distinct Stripe subscriptions ⇒ distinct local rows (re-subscribe works).
         Assert.NotEqual(created[0].StripeSubscriptionId, created[1].StripeSubscriptionId);
     }
 
-    // ── AC1 — same token, concurrent confirms: exactly ONE subscription, ONE persisted row ──
+    // ── same token, concurrent confirms: exactly ONE subscription, ONE persisted row ──
 
     [Fact]
     public async Task SameToken_TwoConfirms_PersistExactlyOneSubscription()
@@ -173,7 +173,7 @@ public class CreateMembershipSubscriptionIdempotencyTests
         Assert.Single(created.Select(m => m.StripeSubscriptionId).Distinct());
     }
 
-    // ── AC1 — the loser (re-check sees the now-active membership) gets a deterministic result ──
+    // ── the loser (re-check sees the now-active membership) gets a deterministic result ──
 
     [Fact]
     public async Task SameToken_Loser_RechecksAfterStripe_AndReturnsMembershipAlreadyActive_WithoutSecondAdd()
@@ -204,7 +204,7 @@ public class CreateMembershipSubscriptionIdempotencyTests
         _membershipRepository.Verify(r => r.Add(It.IsAny<UserMembership>()), Times.Once);
     }
 
-    // ── AC1 — ROUND-2: the PRE-WINNER-COMMIT race. The window the round-1 re-check only NARROWED. ──
+    // ── ROUND-2: the PRE-WINNER-COMMIT race. The window the round-1 re-check only NARROWED. ──
     //
     // Round-1's test (SameToken_Loser_RechecksAfterStripe...) ran SERIALIZED: it let the winner run to
     // completion, MANUALLY set active=winnerRow, then ran the loser — i.e. it modelled confirm-AFTER-commit,
@@ -264,7 +264,7 @@ public class CreateMembershipSubscriptionIdempotencyTests
             r => r.GetByStripeSubscriptionIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    // ── AC1 — null/empty token (web / not-yet-updated caller): deterministic fallback key, still collapses ──
+    // ── null/empty token (web / not-yet-updated caller): deterministic fallback key, still collapses ──
 
     [Fact]
     public async Task NullToken_DerivesDeterministicFallbackKey_FromStableInputs()
@@ -291,7 +291,7 @@ public class CreateMembershipSubscriptionIdempotencyTests
         Assert.Equal(capturedAttemptIds[0], capturedAttemptIds[1]);
     }
 
-    // ── AC5 — Phase-1 (PaymentMethodConfirmed == false) unchanged: SetupIntent + ephemeral key, no sub ──
+    // ── Phase-1 (PaymentMethodConfirmed == false) unchanged: SetupIntent + ephemeral key, no sub ──
 
     [Fact]
     public async Task UnconfirmedPhase1_ReturnsSetupIntentAndEphemeralKey_AndCreatesNoSubscription()

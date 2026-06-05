@@ -77,12 +77,12 @@ public interface IOrderRepository : IRepository<Order, string>
         string employeeId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// T-0122 (FISCAL-RECON) / ADR-0002 D3.4 + ADR-0004 C-B — receipt-side candidates for the dispatch
+    /// ADR-0002 D3.4 + ADR-0004 C-B — receipt-side candidates for the dispatch
     /// reconciliation sweep: receipt-eligible orders (the receipt consumer's eligibility:
     /// <c>PaymentType == Cash</c> OR <c>PaymentStatus == Paid</c>) committed BEFORE
     /// <paramref name="olderThanUtc"/> whose receipt has not been fully realized — i.e.
     /// <c>Receipt is null</c> (the original D3.4 predicate) OR <c>Receipt.FiscalCode == null</c> (the
-    /// ADR-0004 C-B widening that catches the claimed-but-unregistered rows T-0119's
+    /// ADR-0004 C-B widening that catches the claimed-but-unregistered rows the
     /// claim-before-register reorder creates).
     ///
     /// <para>System-job read — bypasses the tenant filter (<c>IgnoreQueryFilters</c>) so the timer can

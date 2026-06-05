@@ -16,23 +16,23 @@ using Moq;
 namespace Cleansia.Tests.Functions;
 
 /// <summary>
-/// TC-IDEMP-0 + AC5/AC6 (ADR-0002 D2.1a dual-read + D2.2 claim-first receipt-email close) for the
-/// <c>generate-receipt</c> consumer. Pairs with T-0127; merges with the T-0118 fix. Written
+/// TC-IDEMP-0 (ADR-0002 D2.1a dual-read + D2.2 claim-first receipt-email close) for the
+/// <c>generate-receipt</c> consumer. Written
 /// test-first (RED on the pre-fix handler, which re-sends the email on a redelivery and silently
 /// discards an envelope-wrapped body).
 ///
-/// <para><b>AC7 / TC-IDEMP-0 ("safe to run twice"):</b> invoking the consumer TWICE with the SAME
+/// <para><b>TC-IDEMP-0 ("safe to run twice"):</b> invoking the consumer TWICE with the SAME
 /// <see cref="QueueEnvelope{T}"/> realizes the receipt creation AND the order-receipt email (the
 /// terminal effect) EXACTLY ONCE. The redelivery is short-circuited by the receipt-creation guard,
 /// which is load-bearing precisely because the claim (the committed receipt row) now PRECEDES the
 /// email send (claim-first).</para>
 ///
-/// <para><b>AC5 / D2.1a dual-read:</b> the consumer reads the wire body either as the new
+/// <para><b>D2.1a dual-read:</b> the consumer reads the wire body either as the new
 /// <see cref="QueueEnvelope{T}"/> (camelCase <c>{"messageKey","tenantId","payload":{...}}</c>) OR,
 /// at the deploy boundary, as a bare <see cref="GenerateReceiptMessage"/> — synthesizing the
 /// deterministic key from the payload so in-flight bare messages do not poison.</para>
 ///
-/// <para><b>AC6 / D2.2 claim-first:</b> the email-sent state is committed in a transaction that
+/// <para><b>D2.2 claim-first:</b> the email-sent state is committed in a transaction that
 /// PRECEDES the send, so a crash/redelivery after the send does NOT re-send. The fiscal
 /// "target not found" path stays transient (covered by <see cref="TargetNotFound_Stays_Transient_Throws"/>).</para>
 /// </summary>
@@ -111,7 +111,7 @@ public class GenerateReceiptHandlerIdempotencyTests
             .Setup(r => r.GetByIdIgnoringTenantAsync(OrderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(order);
 
-        // T-0119 / ADR-0004 — receipt creation is now the RESERVE phase (allocate + stage the row).
+        // ADR-0004 — receipt creation is now the RESERVE phase (allocate + stage the row).
         _receiptService
             .Setup(s => s.ReserveReceiptAsync(order, LanguageCode, It.IsAny<CancellationToken>()))
             .ReturnsAsync(receipt);

@@ -29,7 +29,7 @@ public class LoyaltyTransactionEntityConfiguration : AuditableEntityConfiguratio
         builder.Property(t => t.OrderId)
             .HasMaxLength(26);
 
-        // T-0112 (LG-SEC-06 / S7a) — client-supplied idempotency key for the
+        // S7a — client-supplied idempotency key for the
         // manual admin grant/revoke path. Nullable; the filtered unique index
         // below is the atomic backstop that collapses a double-submit.
         builder.Property(t => t.IdempotencyKey)
@@ -59,11 +59,11 @@ public class LoyaltyTransactionEntityConfiguration : AuditableEntityConfiguratio
         // Idempotency lookup: GetLatestForOrderSourceAsync(OrderId, Source)
         builder.HasIndex(t => new { t.OrderId, t.Source });
 
-        // T-0112 (LG-SEC-06 / S7a + S8) — FILTERED, TENANT-SCOPED unique index on
+        // S7a + S8 — FILTERED, TENANT-SCOPED unique index on
         // the manual-grant idempotency key. LoyaltyTransaction is ITenantEntity, so
         // per S8 ("unique indexes on tenant-scoped tables are (TenantId, X), not (X)")
         // the key is unique PER TENANT, not globally — matching PromoCode / ReferralCode
-        // / PromoCodeRedemption (T-0110). The requestId is a CLIENT-generated token, so
+        // / PromoCodeRedemption. The requestId is a CLIENT-generated token, so
         // two different tenants could legitimately produce the same value; a bare global
         // unique index would wrongly collapse tenant B's grant onto tenant A's row
         // (cross-tenant false-positive / leak). The fast-path read GetByIdempotencyKeyAsync

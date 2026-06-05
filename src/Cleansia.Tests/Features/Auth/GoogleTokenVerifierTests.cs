@@ -5,17 +5,17 @@ using Moq;
 namespace Cleansia.Tests.Features.Auth;
 
 /// <summary>
-/// T-0128 AC3 (covers T-0105 / IDA-SEC-01 AC3/AC4/AC7) — the audience-enforcement + dev-bypass-gone
-/// half of the Google claim-binding contract, asserted directly against the production
+/// The audience-enforcement + dev-bypass-gone half of the Google claim-binding contract, asserted
+/// directly against the production
 /// <see cref="GoogleTokenVerifier"/> (the sole seam that calls
 /// <c>GoogleJsonWebSignature.ValidateAsync</c>). The handler-level tests
 /// (<see cref="GoogleAuthHandlerTests"/>) mock <c>IGoogleTokenVerifier</c> and so only prove the
-/// handler fails closed when the verifier returns null (AC5); they cannot prove that verification
+/// handler fails closed when the verifier returns null; they cannot prove that verification
 /// ALWAYS runs (no <c>IsDevelopment</c> short-circuit) nor that the audience is pinned. These cases
 /// close that gap with NO network dependency:
-///   - AC3 (audience enforced / fail-closed): an empty/whitespace <c>ClientId</c> makes the required
+///   - audience enforced / fail-closed: an empty/whitespace <c>ClientId</c> makes the required
 ///     audience unsatisfiable, so the verifier returns <c>null</c> instead of trusting the token.
-///   - AC3 (dev bypass gone): even with a configured client id, a forged/garbage token is rejected
+///   - dev bypass gone: even with a configured client id, a forged/garbage token is rejected
 ///     (returns null) — verification runs unconditionally and there is no environment short-circuit
 ///     that yields claims. A source-contract guard additionally pins that no <c>IsDevelopment</c>
 ///     branch survives in the verifier (mirrors the <c>SecurityTokensTests</c> source-guard idiom).
@@ -33,7 +33,7 @@ public class GoogleTokenVerifierTests
         return new GoogleTokenVerifier(config.Object);
     }
 
-    // AC3 — fail closed when no audience is configured: an empty client id leaves the aud check
+    // Fail closed when no audience is configured: an empty client id leaves the aud check
     // unconstrained, so the verifier MUST reject rather than trust an unverifiable token.
     [Theory]
     [InlineData("")]
@@ -47,7 +47,7 @@ public class GoogleTokenVerifierTests
         Assert.Null(result);
     }
 
-    // AC3 — verification ALWAYS runs (no IsDevelopment bypass): a forged/garbage token is rejected
+    // Verification ALWAYS runs (no IsDevelopment bypass): a forged/garbage token is rejected
     // even when a client id IS configured. The verifier returns null (fail-closed) and never throws,
     // so a caller can never receive claims for an unverifiable token in any environment.
     [Fact]
@@ -60,7 +60,7 @@ public class GoogleTokenVerifierTests
         Assert.Null(result);
     }
 
-    // AC3 — the dev-bypass is GONE: the verifier source carries no IsDevelopment short-circuit.
+    // The dev-bypass is GONE: the verifier source carries no IsDevelopment short-circuit.
     // (Matches the literal invocation idiom of SecurityTokensTests so prose/comments can't trip it —
     // here we assert the IsDevelopment IDENTIFIER does not appear at all in the verifier.)
     [Fact]

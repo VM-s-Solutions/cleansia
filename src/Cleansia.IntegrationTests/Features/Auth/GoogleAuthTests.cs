@@ -18,7 +18,7 @@ public class GoogleAuthTests(PostgresContainerFixture fixture) : BaseIntegration
     public async Task ShouldCreateNewUserAndReturnTokenForValidGoogleAuth()
     {
         await TestMethod(
-            // T-0105 (IDA-SEC-01): the real Google verification seam is the ONLY trusted source of
+            // The real Google verification seam is the ONLY trusted source of
             // identity. There is no IsDevelopment bypass anymore, so the integration test substitutes a
             // stub IGoogleTokenVerifier that yields the VERIFIED claims (email + subject) the handler
             // binds against — exactly the contract the production verifier fulfils for a genuine token.

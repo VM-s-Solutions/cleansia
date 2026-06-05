@@ -29,6 +29,18 @@ class MembershipApi(
             createMembershipSubscriptionCommand = GenCreateMembershipSubscriptionCommand(
                 planCode = body.planCode,
                 paymentMethodConfirmed = body.paymentMethodConfirmed,
+                // T-0111 / LG-SEC-02: forward the client idempotency token so the
+                // backend can derive the Stripe idempotency key from it and collapse
+                // retried/double-tapped confirms onto a single subscription.
+                //
+                // BLOCKED ON nswag-regen (owner-only): the generated
+                // GenCreateMembershipSubscriptionCommand does not yet carry the
+                // `idempotencyToken` field — the backend Command gained it
+                // (CreateMembershipSubscription.Command.IdempotencyToken) but the
+                // mobile client hasn't been regenerated. Once the owner regenerates
+                // the client, uncomment the line below; the token already flows here
+                // from the VM via CreateMembershipSubscriptionRequest.idempotencyToken.
+                // idempotencyToken = body.idempotencyToken,
             ),
         )
         return raw.mapBody { it?.toAppDto() }

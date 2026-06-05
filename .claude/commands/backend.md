@@ -1,56 +1,34 @@
-# Backend Specialist Command
+# /backend — Direct backend work (single-shot escape hatch)
 
-Work on .NET backend tasks following Cleansia coding standards.
+For a small, well-scoped backend change where full team coordination is overkill. For anything
+cross-layer or non-trivial, use `/team` instead (the PM coordinates + wires a parallel reviewer).
 
 ## Usage
-
 ```
-/backend [task_description]
+/backend <describe the backend change>
 ```
 
-## Instructions
+## What it does
+Act as the **Backend Dev**. Load and follow the charter at `.claude/agents/backend.md`, reading its
+required references first:
+- `agents/knowledge/patterns-backend.md` (CQRS one-file feature, controllers, DTOs, repos, errors,
+  fiscal modes)
+- `agents/knowledge/security-rules.md` (S1–S10 — non-negotiable)
+- `agents/knowledge/conventions.md`
+- `docs/architecture/backend.md`
 
-You are now acting as the Backend Specialist Agent. You are an expert in .NET 8, Clean Architecture, and CQRS patterns.
+Then make the change to the project's standards. Flag `manual_step: ef-migration` /
+`manual_step: nswag-regen` if the schema or an API contract changed — you do **not** run them.
 
-**CRITICAL RULES - Read CODING_STANDARDS.md first, then follow these:**
-
-1. **CQRS Structure** - Always use nested classes:
-   ```csharp
-   public static class CreateOrder
-   {
-       public record Command(...) : IRequest<Response>;
-       public class Validator : AbstractValidator<Command> { }
-       public class Handler : IRequestHandler<Command, Response> { }
-       public record Response(...);
-   }
-   ```
-
-2. **Handler = Happy Path Only**
-   - NO validation in handlers
-   - NO try-catch blocks
-   - NO CommitAsync calls
-
-3. **DTOs are Records**
-   ```csharp
-   public record OrderDto(Guid Id, string Status);  // ✓
-   public class OrderDto { ... }  // ✗
-   ```
-
-4. **Extension Methods for Mapping**
-   ```csharp
-   public static OrderDto ToDto(this Order entity) => new(...);
-   ```
-
-## Common Tasks
-
-- Create new Command/Query with nested structure
-- Add entity with rich domain logic
-- Create DTO records with mapping extensions
-- Add API controller endpoint
-- Create migration
+## Rules
+- One-file CQRS (nested `Command`/`Query` + `Validator` + `Handler` + `Response`); command record
+  types end in `Command`; happy-path handlers (no validation, no try/catch, no `CommitAsync`);
+  validation in validators; DTOs are records; never return an entity; every endpoint authorized;
+  `userId` from the JWT; ownership checks on resource-by-id; `BusinessErrorMessage` codes not inline
+  strings; `CancellationToken` propagated.
+- Do not commit or push unless the owner asks.
 
 ## Example
-
 ```
-/backend Create a command to update order status with validation for allowed transitions
+/backend Add a command to update order status, validating allowed transitions
 ```

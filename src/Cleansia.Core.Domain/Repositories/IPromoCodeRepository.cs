@@ -11,6 +11,32 @@ public interface IPromoCodeRepository : IRepository<PromoCode, string>
     Task<PromoCode?> GetByCodeAsync(string code, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Atomically bump the denormalised global redemption counter, guarded by the global cap, in a
+    /// single conditional SQL UPDATE (T-0110 / S7):
+    /// <c>UPDATE PromoCodes SET CurrentRedemptionsCount = CurrentRedemptionsCount + 1
+    /// WHERE Id = @id AND (GlobalMaxRedemptions IS NULL OR CurrentRedemptionsCount &lt; GlobalMaxRedemptions)</c>.
+    /// Returns <c>true</c> when a row was updated (the slot was reserved), <c>false</c> when 0 rows
+    /// were affected (the global cap is already reached). This closes the read-then-increment race
+    /// on the global cap — the database, not an app-layer read, is the arbiter.
+    /// <para>
+    /// DELIBERATE EXCEPTION to the "never commit outside the UnitOfWork pipeline" rule: this issues
+    /// SQL immediately and auto-commits (it is not change-tracked). That is intentional and REQUIRED
+    /// for atomicity; it does not roll back the order — it either reserves the global slot or reports
+    /// the cap is reached.
+    /// </para>
+    /// </summary>
+    Task<bool> TryIncrementGlobalRedemptionsAsync(string promoCodeId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// COMPENSATING decrement for a global slot that was reserved but then not consumed (PR review #7):
+    /// the redeem path increments the global counter BEFORE reserving the per-user slot, so when the
+    /// per-user reservation fails the global slot must be released or <see cref="PromoCode.GlobalMaxRedemptions"/>
+    /// permanently shrinks. Atomic single UPDATE, floored at 0; same deliberate "commits outside the UoW
+    /// pipeline" exception as the increment.
+    /// </summary>
+    Task DecrementGlobalRedemptionsAsync(string promoCodeId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Admin-side paged query — accepts optional flags for active/expired
     /// status and a code search prefix. Returns the materialised page plus
     /// the unfiltered total. Tenant scoping is handled by the EF global

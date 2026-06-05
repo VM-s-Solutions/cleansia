@@ -29,11 +29,21 @@ enum class MembershipStatus(val code: Int) {
  * `paymentMethodConfirmed = false` to receive a SetupIntent. After Stripe
  * SDK confirms the SetupIntent, the second call passes `true` to actually
  * create the subscription.
+ *
+ * [idempotencyToken] is generated ONCE per logical subscribe attempt (in
+ * [cz.cleansia.customer.features.membership.MembershipViewModel.startSubscribe])
+ * and resent unchanged on every Phase-2 confirm retry (PaymentSheet returning
+ * Completed twice, a network retry, or a double-tap that survives the
+ * `_submitting` guard). The backend (T-0111 / LG-SEC-02) derives the Stripe
+ * idempotency key from it so concurrent/retried confirms collapse to a single
+ * Stripe subscription instead of double-charging the customer. A brand-new
+ * subscribe attempt (after a real cancellation) gets a NEW token.
  */
 @Serializable
 data class CreateMembershipSubscriptionRequest(
     val planCode: String,
     val paymentMethodConfirmed: Boolean = false,
+    val idempotencyToken: String? = null,
 )
 
 /**

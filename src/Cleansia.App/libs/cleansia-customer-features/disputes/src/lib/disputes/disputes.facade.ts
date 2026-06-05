@@ -1,7 +1,14 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { CustomerClient } from '@cleansia/customer-services';
+import {
+  CustomerClient,
+  AddDisputeMessageCommand,
+  CreateDisputeCommand,
+  DisputeListItem,
+  DisputeReason,
+  OrderListItem,
+} from '@cleansia/customer-services';
 import {
   loadCustomerDisputes,
   loadCustomerDisputeDetail,
@@ -12,13 +19,6 @@ import {
   selectCustomerDisputeLoading,
   selectCustomerOrders,
 } from '@cleansia/customer-stores';
-import {
-  AddDisputeMessageCommand,
-  CreateDisputeCommand,
-  DisputeListItem,
-  DisputeReason,
-  OrderListItem,
-} from '@cleansia/partner-services';
 import { SnackbarService } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';

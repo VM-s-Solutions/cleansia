@@ -1,15 +1,17 @@
 {
   "permissions": {
     "allow": [
-      "Read(//c/Users/cmisa/Desktop/Mike/Projects/stroytorg/src/Stroytorg.App/libs/stroytorg-components/src/lib/components/stroytorg-table/**)",
-      "Bash(npx nx g:*)",
-      "Bash(psql:*)",
+      "Read(//c/Users/cmisa/Desktop/Mike/Projects/cleansia/**)",
+      "Bash(dotnet build:*)",
+      "Bash(dotnet test:*)",
       "Bash(dotnet --version)",
-      "Bash(dotnet ef:*)",
-      "Bash(dotnet tool:*)",
-      "Bash(dotnet build)",
-      "Bash(findstr:*)",
-      "Bash(npm run build:*)"
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(npx nx lint:*)",
+      "Bash(npx nx test:*)",
+      "Bash(npx nx build:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []

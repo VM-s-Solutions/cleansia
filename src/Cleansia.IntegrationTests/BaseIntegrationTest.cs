@@ -35,6 +35,16 @@ public abstract class BaseIntegrationTest : BaseTransactionalPostgresSqlTest<Cle
 #if DEBUG
             .AddJsonFile("appsettings.IntegrationTests.Development.json")
 #endif
+            // The Fixture is the single source of truth for the test DB connection. Testcontainers
+            // assigns a random host port (no fixed binding — see PostgresContainerFixture), so the
+            // appsettings "ConnectionString" is only a placeholder. Override it here so AddCoreBindings
+            // (AddDbContextBindings reads ConnectionStrings:ConnectionString) builds the test DbContext
+            // against the SAME container that migrations + Respawn use. Without this the DbContext would
+            // connect to whatever else happens to sit on the placeholder's host:port.
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:ConnectionString"] = Fixture.GetConnectionString()
+            })
             .Build();
     }
 

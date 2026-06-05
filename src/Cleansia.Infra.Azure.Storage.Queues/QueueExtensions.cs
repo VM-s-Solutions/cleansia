@@ -24,6 +24,12 @@ public static class QueueExtensions
             new QueueClientOptions { MessageEncoding = QueueMessageEncoding.Base64 }));
         services.AddSingleton<IQueueClient, AzureStorageQueueClient>();
 
+        // ADR-0002 D1 — the post-commit dispatch seam. IPendingDispatch is SCOPED (per request): a
+        // command handler records intent on the request's instance; PostCommitDispatchBehavior drains
+        // it after the commit. Wave-0 backing is the in-memory buffer; Wave-1 (F2-FULL) swaps this
+        // line for a DbContext-backed outbox with NO command-handler call-site churn.
+        services.AddScoped<IPendingDispatch, InMemoryPendingDispatch>();
+
         return services;
     }
 }

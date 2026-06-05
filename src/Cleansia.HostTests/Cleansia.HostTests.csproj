@@ -1,0 +1,74 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    T-0126 (TC-AUTHZ-0) — WebApplicationFactory host-test project.
+
+    This is the host-level authorization harness ADR-0001 §D6 names as T-AUTHZ-0: it boots a REAL API
+    host per audience (Admin / Partner / Customer / Mobile) through the FULL authentication +
+    authorization pipeline (each host's `AddJwt` + the shared `AddCleansiaAuthorization` from T-0100),
+    mints a per-audience JWT signed with the test `JwtSettings:Secret`, and hits a routed controller
+    behind the real `[Permission]` gate end-to-end. The existing in-process `BaseIntegrationTest`
+    harness CANNOT reach that layer (it replaces IUserSessionProvider + invokes handlers directly and
+    never loads the JWT/authz middleware) — hence this separate project.
+
+    Uses Sdk.Web so WebApplicationFactory<Program> can locate each host's content root + entry point.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- WebApplicationFactory needs the FrameworkReference to ASP.NET Core so it can build the host;
+         a plain Microsoft.NET.Sdk test project doesn't pull it in transitively. -->
+    <UseSpecificRuntime>false</UseSpecificRuntime>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Respawn" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <!-- The five API host projects expose `public class Program` (Generic Host) entry points. We boot
+       four of them (one per JWT audience): Admin=cleansia.admin, Partner=cleansia.partner,
+       Customer=cleansia.customer, Mobile.Partner=cleansia.mobile. -->
+  <ItemGroup>
+    <ProjectReference Include="..\Cleansia.Web.Admin\Cleansia.Web.Admin.csproj" />
+    <ProjectReference Include="..\Cleansia.Web.Partner\Cleansia.Web.Partner.csproj" />
+    <ProjectReference Include="..\Cleansia.Web.Customer\Cleansia.Web.Customer.csproj" />
+    <ProjectReference Include="..\Cleansia.Web.Mobile.Partner\Cleansia.Web.Mobile.Partner.csproj" />
+    <ProjectReference Include="..\Cleansia.Core.AppServices\Cleansia.Core.AppServices.csproj" />
+    <ProjectReference Include="..\Cleansia.Core.Domain\Cleansia.Core.Domain.csproj" />
+    <ProjectReference Include="..\Cleansia.Infra.Common\Cleansia.Infra.Common.csproj" />
+    <ProjectReference Include="..\Cleansia.Infra.Database\Cleansia.Infra.Database.csproj" />
+    <ProjectReference Include="..\Cleansia.TestUtilities\Cleansia.TestUtilities.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.HostTests.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

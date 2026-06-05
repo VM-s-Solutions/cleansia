@@ -40,10 +40,18 @@ public interface ILoyaltyService
 
     /// <summary>
     /// Grant a fixed points award outside the order-completion path (e.g.
-    /// referral rewards, manual admin grants). Idempotent on
-    /// (<paramref name="orderId"/>, <paramref name="source"/>): if a prior
-    /// transaction with that key exists, no-op. The user's loyalty account
-    /// is lazily created if missing.
+    /// referral rewards, manual admin grants). The user's loyalty account is
+    /// lazily created if missing.
+    /// <para>
+    /// Idempotency (T-0112 / LG-SEC-06 / S7a): the admin manual path supplies a
+    /// REQUIRED client-generated <paramref name="requestId"/> which is persisted
+    /// as the ledger row's idempotency key. A double-submit / retry collapses
+    /// onto exactly one ledger row via a fast-path lookup-by-key AND the
+    /// filtered unique-index backstop (Postgres 23505 caught and resolved to the
+    /// same success). The order-driven / referral path passes
+    /// <c>requestId: null</c> and remains keyed on
+    /// (<paramref name="orderId"/>, <paramref name="source"/>) as before.
+    /// </para>
     /// </summary>
     Task GrantPointsManuallyAsync(
         string userId,
@@ -51,16 +59,18 @@ public interface ILoyaltyService
         LoyaltyEarnSource source,
         string? orderId,
         string actorId,
+        string? requestId,
         CancellationToken cancellationToken);
 
     /// <summary>
     /// Mirror of <see cref="GrantPointsManuallyAsync"/> for admin-driven
     /// revocations. Inserts a negative-points ledger row via
     /// <c>LoyaltyAccount.RevokePoints</c>. No-op when the account doesn't
-    /// exist (nothing to revoke). Idempotent on
-    /// (<paramref name="orderId"/>, <paramref name="source"/>) when an
-    /// orderId is supplied; admin gifts (no orderId) are treated as
-    /// intentional duplicates and always append.
+    /// exist (nothing to revoke). Idempotency (T-0112 / S7a): keyed on the
+    /// REQUIRED client-generated <paramref name="requestId"/> for the admin
+    /// manual path (collapses a retry to one negative row); the order-driven
+    /// path passes <c>requestId: null</c> and stays keyed on
+    /// (<paramref name="orderId"/>, <paramref name="source"/>).
     /// </summary>
     Task RevokePointsManuallyAsync(
         string userId,
@@ -68,5 +78,6 @@ public interface ILoyaltyService
         LoyaltyEarnSource source,
         string? orderId,
         string actorId,
+        string? requestId,
         CancellationToken cancellationToken);
 }

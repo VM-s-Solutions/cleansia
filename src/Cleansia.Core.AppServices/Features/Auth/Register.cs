@@ -72,21 +72,26 @@ public class Register
         public async Task<BusinessResult<bool>> Handle(Command command, CancellationToken cancellationToken)
         {
             var userEntity = await userRepository.GetByEmailAsync(command.Email, cancellationToken);
+            // T-0106 / IDA-SEC-03: email the RAW token; the entity persists only its hash. The raw is
+            // surfaced by CreateWithPassword (transient RawConfirmationToken) and returned by
+            // UpdateConfirmationCode — never read back off the persisted (hashed) column.
+            string rawConfirmationToken;
             if (userEntity is null)
             {
                 userEntity = User.CreateWithPassword(command.Email, command.Password, command.FirstName, command.LastName, UserProfile.Customer, command.Language);
+                rawConfirmationToken = userEntity.RawConfirmationToken!;
                 userRepository.Add(userEntity);
                 cartRepository.Add(Cart.CreateWithUser(userEntity));
             }
             else
             {
                 // Re-registration: user exists but hasn't confirmed — refresh the code
-                userEntity.UpdateConfirmationCode();
+                rawConfirmationToken = userEntity.UpdateConfirmationCode();
             }
 
             var userName = $"{userEntity.FirstName} {userEntity.LastName}";
 
-            await emailService.SendEmailConfirmationAsync(userEntity.Email, userName, userEntity.ConfirmationCode!, command.Language, cancellationToken);
+            await emailService.SendEmailConfirmationAsync(userEntity.Email, userName, rawConfirmationToken, command.Language, cancellationToken);
 
             // Referral acceptance is fail-soft: a bad code (typo, expired,
             // self-referral) must NOT block account creation. The user can

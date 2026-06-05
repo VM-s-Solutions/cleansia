@@ -1,6 +1,7 @@
 ﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Extensions;
+using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -55,10 +56,13 @@ public class ChangePassword
 
         private async Task<bool> ValidateUserTokenAsync(Command command, CancellationToken cancellationToken)
         {
+            // T-0106 / IDA-SEC-03: lookup is (email, HASH of token). The reset token is stored hashed,
+            // so hash the supplied raw code and compare — no plaintext comparison remains.
             var user = await _userRepository.GetByEmailAsync(command.Email, cancellationToken);
 
             return user is not null &&
-                   user.ResetPasswordCode == command.Code &&
+                   user.ResetPasswordCode is not null &&
+                   user.ResetPasswordCode == SecurityTokens.Hash(command.Code) &&
                    user.ResetPasswordCodeExpiresAt.HasValue &&
                    DateTime.UtcNow < user.ResetPasswordCodeExpiresAt.Value;
         }

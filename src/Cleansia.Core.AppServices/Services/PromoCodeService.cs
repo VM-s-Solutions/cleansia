@@ -15,8 +15,6 @@ public sealed class PromoCodeService(
     IPromoCodeRedemptionRepository redemptionRepository,
     ILogger<PromoCodeService> logger) : IPromoCodeService
 {
-    private const string SystemActor = "system";
-
     public async Task<PromoCodePreviewResult> PreviewAsync(
         string code,
         string userId,
@@ -119,6 +117,9 @@ public sealed class PromoCodeService(
             return new PromoCodeApplyResult(false, 0m, null, PromoCodeError.NotFound);
         }
 
+        // Cheap in-memory FAST PATH for the per-user cap (the common case). This is NOT the source
+        // of truth — it just avoids a DB write when the cap is plainly already used. The atomic
+        // reservation below is the arbiter and closes the check-then-act race (T-0110 / S7).
         var priorRedemptions = await redemptionRepository.CountForUserAndCodeAsync(
             userId, promoCode.Id, cancellationToken);
         if (priorRedemptions >= promoCode.MaxRedemptionsPerUser)
@@ -141,14 +142,39 @@ public sealed class PromoCodeService(
 
         var discount = ComputeDiscount(promoCode, orderSubtotal);
 
-        var redemption = PromoCodeRedemption.Create(promoCode.Id, userId, orderId, discount);
-        redemptionRepository.Add(redemption);
+        // GLOBAL CAP — atomic conditional increment. Replaces the old read-then-IncrementRedemptions
+        // race: a single SQL UPDATE bumps CurrentRedemptionsCount only while it is still under the
+        // cap. 0 rows affected ⇒ the cap is reached ⇒ GlobalLimitReached, and NO redemption row is
+        // reserved. NOTE: this repository call issues SQL immediately and bypasses the UnitOfWork
+        // pipeline (see TryIncrementGlobalRedemptionsAsync) — a knowing, required exception to the
+        // "never commit outside the pipeline" rule. It does not roll back the order.
+        var globalSlotReserved = await promoCodeRepository.TryIncrementGlobalRedemptionsAsync(
+            promoCode.Id, cancellationToken);
+        if (!globalSlotReserved)
+        {
+            return new PromoCodeApplyResult(false, 0m, null, PromoCodeError.GlobalLimitReached);
+        }
 
-        promoCode.IncrementRedemptions(SystemActor);
+        // PER-USER CAP — atomic slot reservation. Reserves the next free 0-based SlotOrdinal AND
+        // inserts the redemption row in one statement, returning the row on success or null when no
+        // slot is available (cap reached, or a race loser observed via the unique-index backstop's
+        // ON CONFLICT DO NOTHING). A null ⇒ PerUserLimitReached — a clean RESULT, never an unhandled
+        // DbUpdateException at the order's commit. This is the ONLY direct DB write in the redeem
+        // path; it too deliberately bypasses the UoW pipeline (required for atomicity).
+        var redemption = await redemptionRepository.TryReserveRedemptionSlotAsync(
+            userId, promoCode.Id, promoCode.MaxRedemptionsPerUser, orderId, discount, cancellationToken);
+        if (redemption == null)
+        {
+            // PR review #7 — the global slot was already reserved above; the per-user reservation failed,
+            // so RELEASE the global slot or the global cap leaks one slot per failed reservation (a
+            // concurrent same-user redeem would permanently shrink GlobalMaxRedemptions).
+            await promoCodeRepository.DecrementGlobalRedemptionsAsync(promoCode.Id, cancellationToken);
+            return new PromoCodeApplyResult(false, 0m, null, PromoCodeError.PerUserLimitReached);
+        }
 
         logger.LogInformation(
-            "Promo code {Code} redeemed by user {UserId} on order {OrderId} for {Discount}.",
-            promoCode.Code, userId, orderId, discount);
+            "Promo code {Code} redeemed by user {UserId} on order {OrderId} for {Discount} (slot {Slot}).",
+            promoCode.Code, userId, orderId, discount, redemption.SlotOrdinal);
 
         return new PromoCodeApplyResult(true, discount, promoCode.Id, null);
     }

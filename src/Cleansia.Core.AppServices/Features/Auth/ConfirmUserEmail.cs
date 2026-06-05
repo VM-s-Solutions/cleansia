@@ -34,18 +34,20 @@ public class ConfirmUserEmail
 
         private async Task<bool> ValidateUserTokenAsync(Command command, string code, CancellationToken cancellationToken)
         {
+            // The repository hashes the raw token and matches the stored hash (T-0106 / IDA-SEC-03) —
+            // resolution is by the token's hash alone, scoped to the account that owns it (AC3).
             var user = await _userRepository.GetByConfirmationCodeAsync(command.Code, cancellationToken);
 
             if (user is null)
             {
-                _logger.LogWarning("Email confirmation failed: no user found with code {Code}", command.Code);
+                // S6: never log the raw (or hashed) token; no user identity to log either.
+                _logger.LogWarning("Email confirmation failed: no account matched the supplied token.");
                 return false;
             }
 
             if (!user.ConfirmationCodeExpiresAt.HasValue || DateTime.UtcNow >= user.ConfirmationCodeExpiresAt.Value)
             {
-                _logger.LogWarning("Email confirmation failed for user {Email}: code expired at {ExpiresAt}, current time {Now}",
-                    user.Email, user.ConfirmationCodeExpiresAt, DateTime.UtcNow);
+                _logger.LogWarning("Email confirmation failed for user {UserId}: token expired.", user.Id);
                 return false;
             }
 

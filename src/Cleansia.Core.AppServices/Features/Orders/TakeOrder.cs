@@ -52,8 +52,8 @@ public class TakeOrder
                 .WithMessage(BusinessErrorMessage.EmployeeNotFound)
                 .MustAsync(HasCompletedProfileAsync)
                 .WithMessage(BusinessErrorMessage.EmployeeProfileIncomplete)
-                .MustAsync(HasUploadedDocumentsAsync)
-                .WithMessage(BusinessErrorMessage.EmployeeDocumentsMissing)
+                .MustAsync(EmployeeIsApprovedAsync)
+                .WithMessage(BusinessErrorMessage.EmployeeNotApproved)
                 .MustAsync(NotAlreadyAssignedToEmployeeAsync)
                 .WithMessage(BusinessErrorMessage.EmployeeAlreadyAssignedToOrder)
                 .MustAsync(NotExceedWeeklyOrderLimitAsync)
@@ -108,13 +108,20 @@ public class TakeOrder
             return employee?.Address is not null;
         }
 
-        private async Task<bool> HasUploadedDocumentsAsync(Command command, CancellationToken cancellationToken)
+        // T-0109 (EMP-GAP-01): the order-action approval gate. Only a cleaner the
+        // admin has Approved may act on an order — a rejected, still-pending, or
+        // terminated cleaner is turned away. The employee is server-derived from
+        // the caller (S1 server-truth), never a client field. Empty caller => fail
+        // closed. This replaces the misnamed HasUploadedDocumentsAsync, whose body
+        // was only a ContractStatus != Pending check (no genuine documents check)
+        // and which let rejected/terminated cleaners through.
+        private async Task<bool> EmployeeIsApprovedAsync(Command command, CancellationToken cancellationToken)
         {
             var employeeId = await _orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
             if (string.IsNullOrEmpty(employeeId)) return false;
 
             var employee = await _employeeRepository.GetByIdAsync(employeeId, cancellationToken);
-            return employee?.ContractStatus != ContractStatus.Pending;
+            return employee?.ContractStatus == ContractStatus.Approved;
         }
 
         private async Task<bool> NotExceedWeeklyOrderLimitAsync(Command command, CancellationToken cancellationToken)
@@ -160,7 +167,7 @@ public class TakeOrder
         IOrderRepository orderRepository,
         IEmployeeRepository employeeRepository,
         IOrderAccessService orderAccessService,
-        IQueueClient queueClient,
+        IPendingDispatch pending,
         IEmailService emailService,
         ILogger<Handler> logger)
         : ICommandHandler<Command, Response>
@@ -192,18 +199,21 @@ public class TakeOrder
 
             if (statusChanged && !string.IsNullOrEmpty(order.UserId))
             {
-                await queueClient.SendAsync(
+                pending.Enqueue(
                     QueueNames.NotificationsDispatch,
-                    new SendPushNotificationMessage(
-                        UserId: order.UserId,
-                        EventKey: NotificationEventCatalog.OrderConfirmed,
-                        Args: new Dictionary<string, string>
-                        {
-                            ["orderId"] = order.Id,
-                            ["orderNumber"] = order.DisplayOrderNumber,
-                        },
-                        TenantId: order.TenantId),
-                    cancellationToken);
+                    new QueueEnvelope<SendPushNotificationMessage>(
+                        MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderConfirmed, order.Id),
+                        order.TenantId,
+                        new SendPushNotificationMessage(
+                            UserId: order.UserId,
+                            EventKey: NotificationEventCatalog.OrderConfirmed,
+                            Args: new Dictionary<string, string>
+                            {
+                                ["orderId"] = order.Id,
+                                ["orderNumber"] = order.DisplayOrderNumber,
+                            },
+                            TenantId: order.TenantId)),
+                    MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderConfirmed, order.Id));
             }
 
             if (statusChanged && !string.IsNullOrEmpty(order.CustomerEmail))

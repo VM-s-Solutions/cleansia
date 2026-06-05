@@ -1,4 +1,4 @@
-﻿using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auth.Validators;
@@ -7,10 +7,8 @@ using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
-using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
-using Google.Apis.Auth;
 
 namespace Cleansia.Core.AppServices.Features.Auth;
 
@@ -18,60 +16,22 @@ public class GoogleAuth
 {
     public class Validator : BaseAuthValidator<Command>
     {
-        private readonly IGoogleConfig _googleConfig;
-        private readonly IUserRepository _userRepository;
-
-        public Validator(IGoogleConfig googleConfig, IUserRepository userRepository)
+        public Validator()
         {
-            _googleConfig = googleConfig ?? throw new ArgumentNullException(nameof(googleConfig));
-            _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
-
-            AddEmailRules(command => command.Email);
+            // Identity (email, subject) and the account-type safety guard are bound from the VERIFIED
+            // Google ID-token in the Handler, never from the client (T-0105 / IDA-SEC-01, S1 + PR
+            // review #4/#15). The validator therefore keeps ONLY shape rules on the fields the handler
+            // actually uses: the token (verified) and the display name (the ID-token may carry no name
+            // claim). command.Email / command.GoogleId are intentionally NOT validated here — they are
+            // client-supplied, the handler ignores them, and validating them gave a false sense of a
+            // guard on the wrong, attacker-controlled email.
             AddFirstNameRules(command => command.FirstName);
             AddLastNameRules(command => command.LastName);
 
             RuleFor(command => command.Token)
-                .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
-                .WithErrorCode(nameof(Command.Token))
-                .MustAsync(ValidateGoogleUserAsync)
-                .WithMessage(BusinessErrorMessage.InvalidGoogleUserToken)
                 .WithErrorCode(nameof(Command.Token));
-
-            RuleFor(command => command.GoogleId)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .WithErrorCode(nameof(Command.GoogleId));
-
-            RuleFor(user => user.Email)
-                .MustAsync(UserAuthenticationTypeIsGoogle)
-                .WithMessage(BusinessErrorMessage.InternalAuthTypeError)
-                .WithErrorCode(nameof(Command.Email));
-        }
-
-        private async Task<bool> UserAuthenticationTypeIsGoogle(string email, CancellationToken cancellationToken)
-        {
-            var user = await _userRepository.GetByEmailAsync(email, cancellationToken);
-            return user is null || user.AuthenticationType == AuthenticationType.Google;
-        }
-
-        private async Task<bool> ValidateGoogleUserAsync(string token, CancellationToken cancellationToken)
-        {
-            try
-            {
-                if (_googleConfig.IsDevelopment)
-                {
-                    return true;
-                }
-
-                await GoogleJsonWebSignature.ValidateAsync(token, new GoogleJsonWebSignature.ValidationSettings());
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
         }
     }
 
@@ -83,7 +43,8 @@ public class GoogleAuth
         string LastName)
         : ICommand<JwtTokenResponse>;
 
-    internal class Handler(
+    public class Handler(
+        IGoogleTokenVerifier googleTokenVerifier,
         ITokenService tokenService,
         ICartRepository cartRepository,
         IUserRepository userRepository,
@@ -92,9 +53,28 @@ public class GoogleAuth
     {
         public async Task<BusinessResult<JwtTokenResponse>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var user = await userRepository.GetByEmailAsync(command.Email, cancellationToken);
+            // S1 server-truth-identity: verify the Google ID-token server-side and bind identity from the
+            // VERIFIED claims (email + subject), never the client-supplied command.Email / command.GoogleId.
+            var claims = await googleTokenVerifier.VerifyAsync(command.Token, cancellationToken);
+            if (claims is null)
+            {
+                return BusinessResult.Failure<JwtTokenResponse>(
+                    new Error(nameof(Command.Token), BusinessErrorMessage.InvalidGoogleUserToken));
+            }
+
+            var user = await userRepository.GetByEmailAsync(claims.Email, cancellationToken);
             if (user is not null)
             {
+                // PR review #4 (S1): the account-type guard MUST run against the account the handler
+                // actually authenticates — the VERIFIED claims.Email — not the client-supplied
+                // command.Email the validator used to check. Block a Google login from binding into an
+                // existing password (Internal) account that shares this verified email.
+                if (user.AuthenticationType != AuthenticationType.Google)
+                {
+                    return BusinessResult.Failure<JwtTokenResponse>(
+                        new Error(nameof(Command.Email), BusinessErrorMessage.InternalAuthTypeError));
+                }
+
                 if (!user.IsActive)
                 {
                     return BusinessResult.Failure<JwtTokenResponse>(
@@ -103,7 +83,9 @@ public class GoogleAuth
                 return BusinessResult.Success(await tokenService.GenerateTokenAsync(user, rememberMe: true, hostAudience.Audience, cancellationToken));
             }
 
-            var userEntity = User.CreateWithGoogle(command.Email, command.FirstName, command.LastName, command.GoogleId);
+            // FirstName / LastName are kept from the command — the Google ID-token may not carry a name
+            // claim, so the client-provided display name is the only available source for those two.
+            var userEntity = User.CreateWithGoogle(claims.Email, command.FirstName, command.LastName, claims.Subject);
 
             userRepository.Add(userEntity);
             cartRepository.Add(Cart.CreateWithUser(userEntity));

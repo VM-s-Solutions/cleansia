@@ -1038,6 +1038,7 @@
       "data_not_available": "Employee data not available",
       "profile_incomplete": "Complete profile information",
       "documents_missing": "Upload required documents",
+      "not_approved": "Your account is not approved to work on orders",
       "already_approved": "Employee has already been approved",
       "already_rejected": "Employee has already been rejected"
     },

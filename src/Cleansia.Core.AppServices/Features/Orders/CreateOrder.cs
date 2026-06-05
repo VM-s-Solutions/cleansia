@@ -220,7 +220,7 @@ public class CreateOrder
         ICountryRepository countryRepository,
         IServiceCityRepository serviceCityRepository,
         IStripeClientFactory stripeClientFactory,
-        IQueueClient queueClient,
+        IPendingDispatch pending,
         IPromoCodeService promoCodeService,
         IReferralService referralService,
         IReferralRepository referralRepository,
@@ -373,8 +373,15 @@ public class CreateOrder
                     break;
 
                 case PaymentType.Cash:
-                    await queueClient.SendAsync(QueueNames.GenerateReceipt,
-                        new GenerateReceiptMessage(order.Id, command.Language), cancellationToken);
+                    // ADR-0002 D1/D5 — record intent; PostCommitDispatchBehavior puts it on the wire
+                    // only after the order row is durably committed (was a before-commit dual-write).
+                    pending.Enqueue(
+                        QueueNames.GenerateReceipt,
+                        new QueueEnvelope<GenerateReceiptMessage>(
+                            MessageKeys.Receipt(order.Id),
+                            order.TenantId,
+                            new GenerateReceiptMessage(order.Id, command.Language)),
+                        MessageKeys.Receipt(order.Id));
                     break;
 
                 default:

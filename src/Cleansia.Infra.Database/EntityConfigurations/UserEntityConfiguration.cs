@@ -37,8 +37,10 @@ public class UserEntityConfiguration : AuditableEntityConfiguration<User, string
         builder.Property(u => u.GoogleId)
             .HasMaxLength(512);
 
+        // T-0106 / IDA-SEC-03: stores a SHA-256 hex hash (64 chars), not a 6-digit code.
+        // (Column length / migration owned by the db agent — kept consistent on the C# side here.)
         builder.Property(u => u.ResetPasswordCode)
-            .HasMaxLength(6);
+            .HasMaxLength(64);
 
         builder.Property(u => u.Profile)
             .HasConversion<int>();
@@ -46,8 +48,10 @@ public class UserEntityConfiguration : AuditableEntityConfiguration<User, string
         builder.Property(u => u.AuthenticationType)
             .HasConversion<int>();
 
+        // T-0106 / IDA-SEC-03: stores a SHA-256 hex hash (64 chars), not a 6-digit code.
+        // (Column length / migration owned by the db agent — kept consistent on the C# side here.)
         builder.Property(u => u.ConfirmationCode)
-            .HasMaxLength(6);
+            .HasMaxLength(64);
 
         builder.Property(u => u.PreferredLanguageCode)
             .HasMaxLength(5)
@@ -66,5 +70,37 @@ public class UserEntityConfiguration : AuditableEntityConfiguration<User, string
             .WithOne(o => o.User)
             .HasForeignKey(o => o.UserId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // T-0124 (PERF-IDA-01 / PERF-IDA-05): index the identity-lookup columns so login / register /
+        // password-reset / email-confirm / profile-load stop sequentially scanning Users.
+        // AC1/AC3 — UNIQUE index on Email. The column is citext, so this index is natively
+        // case-insensitive (no LOWER()/functional index needed). DB-level uniqueness — not just the
+        // ExistsWithEmailAsync app pre-check — is the real guarantee that closes the register/update
+        // TOCTOU race (PERF-IDA-05).
+        //
+        // PR review #6 (S8): the uniqueness scope is (TenantId, Email), NOT global Email. User is an
+        // ITenantEntity and the app-layer checks (ExistsWithEmailAsync / GetByEmailAsync) run inside the
+        // global tenant query filter — so email identity is PER-TENANT. A global unique index let tenant
+        // B's registration 500 on an unhandled 23505 when tenant A already held the email (a cross-tenant
+        // existence oracle) and barred the same person from being a customer in two tenants. The composite
+        // index still closes the same-tenant TOCTOU race the app pre-check can't. citext keeps the Email
+        // component case-insensitive.
+        builder.HasIndex(u => new { u.TenantId, u.Email })
+            .IsUnique();
+
+        // AC2 — non-unique indexes on the remaining nullable lookup columns. Each is FILTERED/PARTIAL
+        // (WHERE "Col" IS NOT NULL, using the real PascalCase Postgres column names) so the (typically
+        // many) null rows are not indexed.
+        builder.HasIndex(u => u.PhoneNumber)
+            .HasFilter("\"PhoneNumber\" IS NOT NULL");
+
+        builder.HasIndex(u => u.ConfirmationCode)
+            .HasFilter("\"ConfirmationCode\" IS NOT NULL");
+
+        builder.HasIndex(u => u.ResetPasswordCode)
+            .HasFilter("\"ResetPasswordCode\" IS NOT NULL");
+
+        builder.HasIndex(u => u.GoogleId)
+            .HasFilter("\"GoogleId\" IS NOT NULL");
     }
 }

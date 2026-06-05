@@ -1,34 +1,31 @@
-﻿using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auth;
-using Cleansia.Core.Domain.Enums;
-using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Domain.Users;
-using Cleansia.Infra.Common.Configuration.Interfaces;
-using Cleansia.TestUtilities.MockDataFactories.Users;
-using Moq;
 
 namespace Cleansia.Tests.Features.Auth;
 
+/// <summary>
+/// T-0105 (IDA-SEC-01) + PR review #4/#15: Google ID-token verification lives in
+/// <c>IGoogleTokenVerifier</c> (called by the handler) and the AuthenticationType account-safety guard
+/// now runs IN THE HANDLER against the VERIFIED <c>claims.Email</c> (see
+/// <c>GoogleAuthHandlerTests.Existing_Internal_Account_With_Verified_Email_Is_Rejected...</c>).
+///
+/// The validator therefore enforces SHAPE rules ONLY, on the fields the handler actually consumes: the
+/// token (NotEmpty) and the display name. It no longer takes <c>IUserRepository</c> and no longer
+/// validates <c>command.Email</c> / <c>command.GoogleId</c> — those are client-supplied and the handler
+/// ignores them, so validating them gave a false sense of a guard on the wrong, unverified email.
+/// </summary>
 public class GoogleAuthValidatorTests
 {
-    private readonly Mock<IGoogleConfig> _googleConfigMock;
-    private readonly Mock<IUserRepository> _userRepositoryMock;
-    private readonly GoogleAuth.Validator _validator;
+    private readonly GoogleAuth.Validator _validator = new();
 
-    public GoogleAuthValidatorTests()
-    {
-        _googleConfigMock = new Mock<IGoogleConfig>();
-        _userRepositoryMock = new Mock<IUserRepository>();
-        _validator = new GoogleAuth.Validator(_googleConfigMock.Object, _userRepositoryMock.Object);
-    }
-
-    #region Token Validation Tests
+    private static GoogleAuth.Command Cmd(string? token, string firstName = "First", string lastName = "Last") =>
+        // GoogleId/Email are no longer validated; pass arbitrary values to prove they don't affect the result.
+        new(Token: token!, GoogleId: "ignored", Email: "ignored", FirstName: firstName, LastName: lastName);
 
     [Fact]
     public async Task When_Token_Is_Null_Then_Validation_Fails_With_Required_Error()
     {
-        var command = new GoogleAuth.Command(null, "googleId", "email@example.com", "First", "Last");
-        var result = await _validator.ValidateAsync(command);
+        var result = await _validator.ValidateAsync(Cmd(null));
 
         Assert.False(result.IsValid);
         var error = result.Errors.Single(e => e.PropertyName == "Token");
@@ -39,8 +36,7 @@ public class GoogleAuthValidatorTests
     [Fact]
     public async Task When_Token_Is_Empty_Then_Validation_Fails_With_Required_Error()
     {
-        var command = new GoogleAuth.Command("", "googleId", "email@example.com", "First", "Last");
-        var result = await _validator.ValidateAsync(command);
+        var result = await _validator.ValidateAsync(Cmd(""));
 
         Assert.False(result.IsValid);
         var error = result.Errors.Single(e => e.PropertyName == "Token");
@@ -49,145 +45,50 @@ public class GoogleAuthValidatorTests
     }
 
     [Fact]
-    public async Task When_In_Development_Mode_And_Token_Is_Not_Empty_Then_Validation_Passes()
+    public async Task When_Token_Is_Not_Empty_Then_No_Token_Validation_Error()
     {
-        _googleConfigMock.Setup(c => c.IsDevelopment).Returns(true);
-        var command = new GoogleAuth.Command("someToken", "googleId", "email@example.com", "First", "Last");
-        _userRepositoryMock.Setup(r => r.GetByEmailAsync("email@example.com", It.IsAny<CancellationToken>())).ReturnsAsync((User)null);
+        var result = await _validator.ValidateAsync(Cmd("someToken"));
 
-        var result = await _validator.ValidateAsync(command);
-
-        var tokenErrors = result.Errors.Where(e => e.PropertyName == "Token").ToList();
-        Assert.Empty(tokenErrors);
-    }
-
-    #endregion
-
-    #region GoogleId Validation Tests
-
-    [Fact]
-    public async Task When_GoogleId_Is_Null_Then_Validation_Fails_With_Required_Error()
-    {
-        var command = new GoogleAuth.Command("token", null, "email@example.com", "First", "Last");
-        var result = await _validator.ValidateAsync(command);
-
-        Assert.False(result.IsValid);
-        var error = result.Errors.First(e => e.PropertyName == "GoogleId");
-        Assert.Equal(BusinessErrorMessage.Required, error.ErrorMessage);
-        Assert.Equal("GoogleId", error.ErrorCode);
+        Assert.Empty(result.Errors.Where(e => e.PropertyName == "Token"));
     }
 
     [Fact]
-    public async Task When_GoogleId_Is_Empty_Then_Validation_Fails_With_Required_Error()
+    public async Task Email_And_GoogleId_Are_Not_Validated_By_The_Validator()
     {
-        var command = new GoogleAuth.Command("token", "", "email@example.com", "First", "Last");
-        var result = await _validator.ValidateAsync(command);
+        // Garbage email + empty GoogleId no longer produce validation errors — identity is the handler's
+        // job against the verified token.
+        var result = await _validator.ValidateAsync(
+            new GoogleAuth.Command(Token: "token", GoogleId: "", Email: "not-an-email", FirstName: "First", LastName: "Last"));
 
-        Assert.False(result.IsValid);
-        var error = result.Errors.First(e => e.PropertyName == "GoogleId");
-        Assert.Equal(BusinessErrorMessage.Required, error.ErrorMessage);
-        Assert.Equal("GoogleId", error.ErrorCode);
+        Assert.Empty(result.Errors.Where(e => e.PropertyName == "Email"));
+        Assert.Empty(result.Errors.Where(e => e.PropertyName == "GoogleId"));
+        Assert.True(result.IsValid);
     }
-
-    #endregion
-
-    #region Email Validation Tests
-
-    [Fact]
-    public async Task When_Email_Is_Associated_With_Non_Google_User_Then_Validation_Fails()
-    {
-        var user = UserMockFactory.Generate(new UserMockFactory.UserPartial { AuthenticationType = AuthenticationType.Internal });
-        _userRepositoryMock.Setup(r => r.GetByEmailAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
-        var command = new GoogleAuth.Command("token", "googleId", user.Email, "First", "Last");
-
-        var result = await _validator.ValidateAsync(command);
-
-        Assert.False(result.IsValid);
-        var error = result.Errors.First(e => e.PropertyName == "Email");
-        Assert.Equal(BusinessErrorMessage.InternalAuthTypeError, error.ErrorMessage);
-        Assert.Equal("Email", error.ErrorCode);
-    }
-
-    [Fact]
-    public async Task When_Email_Is_Not_Associated_With_Any_User_Then_Validation_Passes()
-    {
-        var email = "email@example.com";
-        _userRepositoryMock.Setup(r => r.GetByEmailAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync((User)null);
-        var command = new GoogleAuth.Command("token", "googleId", email, "First", "Last");
-
-        var result = await _validator.ValidateAsync(command);
-
-        var emailErrors = result.Errors.Where(e => e.PropertyName == "Email").ToList();
-        Assert.Empty(emailErrors);
-    }
-
-    [Fact]
-    public async Task When_Email_Is_Associated_With_Google_User_Then_Validation_Passes()
-    {
-        var user = UserMockFactory.Generate(new UserMockFactory.UserPartial { AuthenticationType = AuthenticationType.Google });
-        _userRepositoryMock.Setup(r => r.GetByEmailAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
-        var command = new GoogleAuth.Command("token", "googleId", user.Email, "First", "Last");
-
-        var result = await _validator.ValidateAsync(command);
-
-        var emailErrors = result.Errors.Where(e => e.PropertyName == "Email").ToList();
-        Assert.Empty(emailErrors);
-    }
-
-    [Fact]
-    public async Task When_Email_Is_Invalid_Then_Validation_Fails()
-    {
-        var command = new GoogleAuth.Command("token", "googleId", "invalid_email", "First", "Last");
-        var result = await _validator.ValidateAsync(command);
-
-        Assert.False(result.IsValid);
-        var emailErrors = result.Errors.Where(e => e.PropertyName == "Email").ToList();
-        Assert.NotEmpty(emailErrors);
-    }
-
-    #endregion
-
-    #region Inherited Rules Tests
 
     [Fact]
     public async Task When_FirstName_Is_Empty_Then_Validation_Fails()
     {
-        var command = new GoogleAuth.Command("token", "googleId", "email@example.com", "", "Last");
-        var result = await _validator.ValidateAsync(command);
+        var result = await _validator.ValidateAsync(Cmd("token", firstName: ""));
 
         Assert.False(result.IsValid);
-        var firstNameErrors = result.Errors.Where(e => e.PropertyName == "FirstName").ToList();
-        Assert.NotEmpty(firstNameErrors);
+        Assert.NotEmpty(result.Errors.Where(e => e.PropertyName == "FirstName"));
     }
 
     [Fact]
     public async Task When_LastName_Is_Empty_Then_Validation_Fails()
     {
-        var command = new GoogleAuth.Command("token", "googleId", "email@example.com", "First", "");
-        var result = await _validator.ValidateAsync(command);
+        var result = await _validator.ValidateAsync(Cmd("token", lastName: ""));
 
         Assert.False(result.IsValid);
-        var lastNameErrors = result.Errors.Where(e => e.PropertyName == "LastName").ToList();
-        Assert.NotEmpty(lastNameErrors);
+        Assert.NotEmpty(result.Errors.Where(e => e.PropertyName == "LastName"));
     }
 
-    #endregion
-
-    #region Valid Case Test
-
     [Fact]
-    public async Task When_All_Fields_Are_Valid_Then_Validation_Passes()
+    public async Task When_All_Required_Shape_Fields_Are_Valid_Then_Validation_Passes()
     {
-        _googleConfigMock.Setup(c => c.IsDevelopment).Returns(true);
-        var email = "email@example.com";
-        _userRepositoryMock.Setup(r => r.GetByEmailAsync(email, It.IsAny<CancellationToken>())).ReturnsAsync((User)null);
-        var command = new GoogleAuth.Command("token", "googleId", email, "First", "Last");
-
-        var result = await _validator.ValidateAsync(command);
+        var result = await _validator.ValidateAsync(Cmd("token"));
 
         Assert.True(result.IsValid);
         Assert.Empty(result.Errors);
     }
-
-    #endregion
 }

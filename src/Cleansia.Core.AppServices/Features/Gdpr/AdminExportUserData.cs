@@ -2,9 +2,11 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Gdpr.DTOs;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Gdpr;
 
@@ -12,14 +14,24 @@ public static class AdminExportUserData
 {
     public record Query(string UserId) : IQuery<GdprExportDto>;
 
-    internal class Validator : AbstractValidator<Query>
+    public class Validator : AbstractValidator<Query>
     {
         public Validator(IUserRepository userRepository)
         {
+            // T-0107 (IDA-SEC-08): the GDPR export tool is for customer/employee data-subject
+            // requests only — it must never target an administrator. Cascade.Stop so the existence
+            // check runs before the Profile guard and BuildAsync (which marks a completed export
+            // row) is never reached on a reject.
             RuleFor(q => q.UserId)
+                .Cascade(CascadeMode.Stop)
                 .NotEmpty()
+                .WithMessage(BusinessErrorMessage.Required)
                 .MustAsync(async (id, ct) => await userRepository.ExistsAsync(id, ct))
-                .WithMessage(BusinessErrorMessage.NotExistingUserWithId);
+                .WithMessage(BusinessErrorMessage.NotExistingUserWithId)
+                .MustAsync(async (id, ct) =>
+                    !await userRepository.GetAll()
+                        .AnyAsync(u => u.Id == id && u.Profile == UserProfile.Administrator, ct))
+                .WithMessage(BusinessErrorMessage.CannotTargetAdminViaGdprTool);
         }
     }
 

@@ -1873,7 +1873,9 @@
       "not_found": "Admin user not found",
       "email_exists": "An admin user with this email already exists",
       "cannot_deactivate_self": "You cannot deactivate your own account",
-      "cannot_delete_self": "You cannot delete your own account"
+      "cannot_delete_self": "You cannot delete your own account",
+      "cannot_deactivate_last_admin": "You cannot deactivate the last active administrator",
+      "cannot_target_admin_via_gdpr_tool": "Administrator accounts cannot be targeted by the GDPR data tool"
     },
     "template": {
       "cannot_delete_active": "Cannot delete an active template",
@@ -2123,7 +2125,9 @@
       "not_found": "Admin user not found",
       "email_exists": "An admin user with this email already exists",
       "cannot_deactivate_self": "You cannot deactivate your own account",
-      "cannot_delete_self": "You cannot delete your own account"
+      "cannot_delete_self": "You cannot delete your own account",
+      "cannot_deactivate_last_admin": "You cannot deactivate the last active administrator",
+      "cannot_target_admin_via_gdpr_tool": "Administrator accounts cannot be targeted by the GDPR data tool"
     },
     "validation": {
       "invalid_password": "Invalid password",

@@ -53,7 +53,7 @@ public class CancelOrder
         IStripeClientFactory stripeClientFactory,
         ILoyaltyService loyaltyService,
         ICancellationPolicyResolver cancellationPolicyResolver,
-        IQueueClient queueClient,
+        IPendingDispatch pending,
         ILogger<Handler> logger
     ) : ICommandHandler<Command, Response>
     {
@@ -155,10 +155,14 @@ public class CancelOrder
                 // surface as a Stripe-refund-failed log line.
                 if (refundInitiated && !string.IsNullOrEmpty(order.UserId))
                 {
-                    try
-                    {
-                        await queueClient.SendAsync(
-                            QueueNames.NotificationsDispatch,
+                    // ADR-0002 D1: record intent (in-memory, infallible) — the actual send happens
+                    // post-commit in PostCommitDispatchBehavior and its failures are logged+swallowed
+                    // there, so the previous defensive try/catch around the enqueue is no longer needed.
+                    pending.Enqueue(
+                        QueueNames.NotificationsDispatch,
+                        new QueueEnvelope<SendPushNotificationMessage>(
+                            MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderRefunded, order.Id),
+                            order.TenantId,
                             new SendPushNotificationMessage(
                                 UserId: order.UserId,
                                 EventKey: NotificationEventCatalog.OrderRefunded,
@@ -167,15 +171,8 @@ public class CancelOrder
                                     ["orderId"] = order.Id,
                                     ["orderNumber"] = order.DisplayOrderNumber,
                                 },
-                                TenantId: order.TenantId),
-                            cancellationToken);
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogWarning(ex,
-                            "Failed to enqueue OrderRefunded push for order {OrderId}; refund itself succeeded.",
-                            order.Id);
-                    }
+                                TenantId: order.TenantId)),
+                        MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderRefunded, order.Id));
                 }
             }
 

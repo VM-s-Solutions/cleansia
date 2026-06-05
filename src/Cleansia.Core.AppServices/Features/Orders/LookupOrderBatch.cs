@@ -23,6 +23,15 @@ public class LookupOrderBatch
             if (items.Count == 0 || items.Count > 10)
                 return BusinessResult.Success(new Response([]));
 
+            // BSP-9 harden: drop items with a null/empty OrderId or Email BEFORE the lookup so the
+            // email-match below never dereferences a null (i.Email.ToLower() previously NRE'd on a
+            // null/empty Email). A dropped item simply yields no row — it can never widen the secret.
+            items = items
+                .Where(i => !string.IsNullOrEmpty(i.OrderId) && !string.IsNullOrEmpty(i.Email))
+                .ToList();
+            if (items.Count == 0)
+                return BusinessResult.Success(new Response([]));
+
             var orderIds = items.Select(i => i.OrderId).Distinct().ToList();
 
             var orders = await orderRepository.GetQueryable()
@@ -38,7 +47,13 @@ public class LookupOrderBatch
                 .Where(o => orderIds.Contains(o.Id))
                 .ToListAsync(cancellationToken);
 
-            // Only return orders where the email matches (security check)
+            // Only return orders where the email matches (security check). BSP-9: the per-item secret
+            // is the (OrderId, Email) pair, where OrderId is the internal GUID Order.Id. This is the
+            // SAME secret pairing as single LookupOrder (LookupOrder.cs:51-53) — both gate on a
+            // lower-cased email match; the GUID Id is an equal-or-stronger secret than the human-typed
+            // DisplayOrderNumber the guest first proves through single Lookup to OBTAIN that GUID. The
+            // batch therefore does not widen the secret. Email is normalized identically on both sides
+            // (i.Email and o.CustomerEmail lower-cased), matching single LookupOrder's comparison.
             var lookupSet = items
                 .Select(i => (i.OrderId, Email: i.Email.ToLower()))
                 .ToHashSet();

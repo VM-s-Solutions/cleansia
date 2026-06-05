@@ -1,7 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Enums;
-using Cleansia.Core.Domain.Extensions;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
@@ -71,11 +70,12 @@ public class CreateAdminUser
     {
         public Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var hashedPassword = command.Password.HashAndSaltPassword();
-
+            // T-0108 (IA-1): pass the RAW password — the EF PasswordConverter hashes exactly once on
+            // persist (matching Register.cs / RegisterEmployee.cs). Pre-hashing here caused
+            // hash(hash(password)), silently locking new admins out of login.
             var user = User.CreateWithPassword(
                 email: command.Email,
-                password: hashedPassword,
+                password: command.Password,
                 firstName: command.FirstName,
                 lastName: command.LastName,
                 profile: UserProfile.Administrator);

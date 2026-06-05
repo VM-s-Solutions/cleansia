@@ -21,9 +21,9 @@ public enum BillingInterval
 /// product launches. Adding the actual Plus product is then a single SQL
 /// insert + a Stripe Product/Price registration, no code change.
 /// </summary>
-public class MembershipPlan : Auditable, ITenantEntity
+public class MembershipPlan : Auditable
 {
-    /// <summary>Stable code referenced from code (e.g. <c>PLUS_MONTHLY</c>). Unique per tenant.</summary>
+    /// <summary>Stable code referenced from code (e.g. <c>PLUS_MONTHLY</c>). Unique platform-wide.</summary>
     [Required]
     [MaxLength(50)]
     public string Code { get; private set; } = default!;

@@ -50,15 +50,19 @@ public class LoyaltyAccount : Auditable, ITenantEntity
     /// <summary>
     /// Append an Earn ledger entry and recompute denormalized fields.
     /// Caller passes the positive points value; the ledger row stores it as-is.
+    /// <paramref name="idempotencyKey"/> (T-0112 / S7a) is the client-supplied
+    /// token for the manual admin path; null on the order-driven / referral
+    /// paths. It is persisted on the ledger row and backed by a filtered unique
+    /// index so a double-submit of the same admin grant collapses onto one row.
     /// </summary>
-    public void GrantPoints(int points, LoyaltyEarnSource source, string? orderId, string actorId)
+    public void GrantPoints(int points, LoyaltyEarnSource source, string? orderId, string actorId, string? idempotencyKey = null)
     {
         if (points <= 0)
         {
             return;
         }
 
-        var tx = LoyaltyTransaction.Create(Id, LoyaltyTransactionType.Earn, points, source, orderId);
+        var tx = LoyaltyTransaction.Create(Id, LoyaltyTransactionType.Earn, points, source, orderId, idempotencyKey: idempotencyKey);
         _transactions.Add(tx);
 
         LifetimePoints += points;
@@ -74,15 +78,18 @@ public class LoyaltyAccount : Auditable, ITenantEntity
     /// <summary>
     /// Append a Revoke ledger entry (stored as negative points) and recompute
     /// denormalized fields. Caller passes the positive magnitude to revoke.
+    /// <paramref name="idempotencyKey"/> (T-0112 / S7a) is the client-supplied
+    /// token for the manual admin path; null on the order-driven path. Backed
+    /// by the same filtered unique index so a double-submit collapses to one row.
     /// </summary>
-    public void RevokePoints(int points, LoyaltyEarnSource source, string? orderId, string actorId)
+    public void RevokePoints(int points, LoyaltyEarnSource source, string? orderId, string actorId, string? idempotencyKey = null)
     {
         if (points <= 0)
         {
             return;
         }
 
-        var tx = LoyaltyTransaction.Create(Id, LoyaltyTransactionType.Revoke, -points, source, orderId);
+        var tx = LoyaltyTransaction.Create(Id, LoyaltyTransactionType.Revoke, -points, source, orderId, idempotencyKey: idempotencyKey);
         _transactions.Add(tx);
 
         LifetimePoints = Math.Max(0, LifetimePoints - points);

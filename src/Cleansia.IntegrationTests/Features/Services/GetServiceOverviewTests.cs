@@ -1,4 +1,5 @@
 ﻿using Cleansia.Core.AppServices.Features.Services;
+using Cleansia.Core.Domain.Services;
 using Cleansia.TestUtilities.MockDataFactories.Services;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,14 @@ public class GetServiceOverviewTests(PostgresContainerFixture fixture) : BaseInt
         await TestMethod(
             arrange: async context =>
             {
+                // Services FK to ServiceCategories — seed the parent category the factory references
+                // (categoryId defaults to "test-category-id") before inserting Services, or the insert
+                // violates FK_Services_ServiceCategories_CategoryId.
+                var category = ServiceCategory.Create("test-category", "Test Category", "Seeded for FK");
+                category.Id = "test-category-id";
+                context.Set<ServiceCategory>().Add(category);
+                await context.CommitAsync(CancellationToken.None);
+
                 var service1 = ServiceMockFactory.Generate();
                 var service2 = ServiceMockFactory.Generate(new ServiceMockFactory.ServicePartial { Name = "Name2", Description = "Description2" });
                 context.Services.AddRange(service1, service2);

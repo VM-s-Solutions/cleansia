@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -10,6 +11,7 @@ namespace Cleansia.Core.AppServices.Services;
 
 public class RefreshTokenService(
     IRefreshTokenRepository repository,
+    IUnitOfWork unitOfWork,
     IJwtSettings jwtSettings,
     ILogger<RefreshTokenService> logger)
     : IRefreshTokenService
@@ -54,6 +56,11 @@ public class RefreshTokenService(
         if (existing.RevokedAt is not null && existing.RevokedReason == "rotated")
         {
             var count = await repository.RevokeChainAsync(existing.Id, "security", cancellationToken);
+            // Persist the chain revocation NOW — independently of the caller. The handler turns this
+            // theft signal into a BusinessResult.Failure (401), and UnitOfWorkPipelineBehavior commits
+            // ONLY on success (ADR-0002 D4 / T-0117). Without this explicit commit the security
+            // revocation would be silently rolled back and every stolen-chain token would stay valid.
+            await unitOfWork.CommitAsync(cancellationToken);
             logger.LogWarning(
                 "Refresh token rotation-reuse detected for user {UserId}. Revoked {Count} tokens in the chain.",
                 existing.UserId, count);

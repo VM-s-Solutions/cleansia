@@ -1873,7 +1873,9 @@
       "not_found": "Administrátor nenalezen",
       "email_exists": "Administrátor s tímto e-mailem již existuje",
       "cannot_deactivate_self": "Nemůžete deaktivovat svůj vlastní účet",
-      "cannot_delete_self": "Nemůžete smazat svůj vlastní účet"
+      "cannot_delete_self": "Nemůžete smazat svůj vlastní účet",
+      "cannot_deactivate_last_admin": "Nemůžete deaktivovat posledního aktivního administrátora",
+      "cannot_target_admin_via_gdpr_tool": "Účty administrátorů nelze zpracovat nástrojem GDPR"
     },
     "template": {
       "cannot_delete_active": "Nelze smazat aktivní šablonu",
@@ -2123,7 +2125,9 @@
       "not_found": "Administrátor nenalezen",
       "email_exists": "Administrátor s tímto e-mailem již existuje",
       "cannot_deactivate_self": "Nemůžete deaktivovat svůj vlastní účet",
-      "cannot_delete_self": "Nemůžete smazat svůj vlastní účet"
+      "cannot_delete_self": "Nemůžete smazat svůj vlastní účet",
+      "cannot_deactivate_last_admin": "Nemůžete deaktivovat posledního aktivního administrátora",
+      "cannot_target_admin_via_gdpr_tool": "Účty administrátorů nelze zpracovat nástrojem GDPR"
     },
     "validation": {
       "invalid_password": "Neplatné heslo",

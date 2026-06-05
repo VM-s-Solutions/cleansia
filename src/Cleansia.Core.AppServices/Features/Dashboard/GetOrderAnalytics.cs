@@ -1,8 +1,13 @@
 #nullable enable
+using System.Security.Claims;
+using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Authentication;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Dashboard.DTOs;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Infra.Common.Validations;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
@@ -15,21 +20,49 @@ namespace Cleansia.Core.AppServices.Features.Dashboard;
 /// </summary>
 public class GetOrderAnalytics
 {
-    public class Query : IRequest<OrderAnalyticsDto>
+    public class Query : IQuery<OrderAnalyticsDto>
     {
-        public required string EmployeeId { get; init; }
+        public string? EmployeeId { get; init; }
         public required DateTime StartDate { get; init; }
         public required DateTime EndDate { get; init; }
     }
 
-    internal class Handler(
-        IOrderRepository orderRepository)
-        : IRequestHandler<Query, OrderAnalyticsDto>
+    // NOTE: public (not internal) because the handler tests construct it directly. Diverges from the
+    // GetEarningsAnalytics sibling's `internal` — a harmless inconsistency (MediatR resolves either);
+    // PR review #26 proposed unifying to internal, but that breaks the direct-construction tests, so the
+    // test-driven `public` wins.
+    public class Handler(
+        IOrderRepository orderRepository,
+        IOrderAccessService orderAccessService,
+        IUserSessionProvider userSessionProvider)
+        : IRequestHandler<Query, BusinessResult<OrderAnalyticsDto>>
     {
-        public async Task<OrderAnalyticsDto> Handle(Query request, CancellationToken cancellationToken)
+        public async Task<BusinessResult<OrderAnalyticsDto>> Handle(Query request, CancellationToken cancellationToken)
         {
+            // S1/S3 (ADR-0001 [OWN-DATA]): never trust the client-supplied EmployeeId. Admins keep
+            // oversight over the supplied id; everyone else is scoped to their own resolved employee
+            // id so a partner cannot read another cleaner's analytics by passing a foreign id.
+            var role = userSessionProvider.GetTypedUserClaim(ClaimTypes.Role)?.Value;
+            string? employeeId;
+
+            if (role == UserProfile.Administrator.ToString())
+            {
+                employeeId = request.EmployeeId;
+            }
+            else
+            {
+                employeeId = await orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+            }
+
+            if (string.IsNullOrEmpty(employeeId))
+            {
+                return BusinessResult.Failure<OrderAnalyticsDto>(new Error(
+                    "Employee",
+                    BusinessErrorMessage.EmployeeNotFound));
+            }
+
             var orders = await orderRepository
-                .GetEmployeeOrdersByDateRangeAsync(request.EmployeeId, request.StartDate, request.EndDate, cancellationToken);
+                .GetEmployeeOrdersByDateRangeAsync(employeeId, request.StartDate, request.EndDate, cancellationToken);
 
             var statusDistribution = orders
                 .GroupBy(o => o.GetCurrentOrderStatus().ToString())

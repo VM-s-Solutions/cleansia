@@ -1,10 +1,13 @@
-﻿using Cleansia.Core.AppServices.Features.Auth;
+using Cleansia.Core.AppServices.Features.Auth;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.TestUtilities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Moq;
 
 namespace Cleansia.IntegrationTests.Features.Auth;
 
@@ -15,6 +18,19 @@ public class GoogleAuthTests(PostgresContainerFixture fixture) : BaseIntegration
     public async Task ShouldCreateNewUserAndReturnTokenForValidGoogleAuth()
     {
         await TestMethod(
+            // T-0105 (IDA-SEC-01): the real Google verification seam is the ONLY trusted source of
+            // identity. There is no IsDevelopment bypass anymore, so the integration test substitutes a
+            // stub IGoogleTokenVerifier that yields the VERIFIED claims (email + subject) the handler
+            // binds against — exactly the contract the production verifier fulfils for a genuine token.
+            setup: services =>
+            {
+                var verifier = new Mock<IGoogleTokenVerifier>();
+                verifier
+                    .Setup(v => v.VerifyAsync("valid-test-token", It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new GoogleVerifiedClaims("google123", Constants.TestUserSession.TestUserEmail));
+                services.Replace(ServiceDescriptor.Scoped<IGoogleTokenVerifier>(_ => verifier.Object));
+                return Task.CompletedTask;
+            },
             arrange: async context =>
             {
                 // Seed required language before creating user (FK constraint)

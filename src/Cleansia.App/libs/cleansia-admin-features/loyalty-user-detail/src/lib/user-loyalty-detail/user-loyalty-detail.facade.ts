@@ -97,6 +97,10 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       userId: this.currentUserId,
       points: input.points,
       reason: input.reason,
+      // Client-stable idempotency key (T-0112): one id per submission attempt — a
+      // network-layer retry reuses this same command (same id → server collapses the
+      // duplicate), while a fresh user click generates a new id.
+      requestId: crypto.randomUUID(),
     });
 
     this.adminClient.adminLoyaltyClient
@@ -134,6 +138,8 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
       userId: this.currentUserId,
       points: input.points,
       reason: input.reason,
+      // Client-stable idempotency key (T-0112) — see grantPoints above.
+      requestId: crypto.randomUUID(),
     });
 
     this.adminClient.adminLoyaltyClient

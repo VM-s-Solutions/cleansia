@@ -33,4 +33,11 @@ public class LoyaltyTransactionRepository(CleansiaDbContext context)
             .OrderByDescending(t => t.OccurredOn)
             .FirstOrDefaultAsync(cancellationToken);
     }
+
+    public Task<LoyaltyTransaction?> GetByIdempotencyKeyAsync(
+        string idempotencyKey, CancellationToken cancellationToken)
+    {
+        return GetDbSet()
+            .FirstOrDefaultAsync(t => t.IdempotencyKey == idempotencyKey, cancellationToken);
+    }
 }

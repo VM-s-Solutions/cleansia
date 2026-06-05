@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Configuration.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Stripe;
 
@@ -151,6 +152,25 @@ public class StripeSubscriptionWebhookHandler(
             return null;
         }
 
+        // T-0114 (SEC-W2) / ADR-0002 D2 — ASSERT BEFORE ACTING. The web Checkout flow only creates the
+        // Stripe Session; this webhook is the SOLE creator of the local row, and unlike the request path
+        // (CreateMembershipCheckoutSession) it never checked for an existing active membership. So a user
+        // who already has one and reaches Stripe again (stale tab / Dashboard / two near-simultaneous
+        // checkouts — the request-side guard only blocks session-CREATION, not Stripe-side reality) got a
+        // SECOND active row → double benefits + reconciliation drift. The tenant override is set above
+        // (owningUser.TenantId), so GetActiveForUserAsync resolves in the right tenant scope (S8). If an
+        // active membership already exists, a duplicate provision is an idempotent no-op SUCCESS: log a
+        // reconcile/skip and return the existing row WITHOUT Create/Add. The outer
+        // HandlePaymentNotification handler still stamps the event processed either way.
+        var existingActive = await userMembershipRepository.GetActiveForUserAsync(userId, cancellationToken);
+        if (existingActive != null)
+        {
+            logger.LogWarning(
+                "subscription.created webhook for sub {SubscriptionId} but user {UserId} already has active membership {MembershipId}; skipping duplicate provision (reconcile no-op)",
+                subscriptionId, userId, existingActive.Id);
+            return existingActive;
+        }
+
         var membership = UserMembership.Create(
             userId: userId,
             membershipPlanId: plan.Id,
@@ -159,10 +179,69 @@ public class StripeSubscriptionWebhookHandler(
             currentPeriodEnd: periodEnd);
         userMembershipRepository.Add(membership);
 
+        // T-0114 (SEC-W2 / S7a + S7b) — CLOSE the check-then-insert race at the write boundary. The
+        // GetActiveForUserAsync read above is a fast path, not the guarantee: two webhooks (or a webhook +
+        // a confirmed request-path subscribe) can both pass the read before either commits, and the
+        // FILTERED UNIQUE INDEX on (TenantId, UserId) WHERE Status=Active then rejects the loser with a
+        // Postgres 23505. CRITICAL (S7b): this handler does NOT own its own commit — it runs inside
+        // HandlePaymentNotification.Handle under the UnitOfWorkPipelineBehavior, whose CommitAsync fires
+        // AFTER the handler returns. If we let the violation reach that pipeline commit it surfaces as an
+        // unhandled DbUpdateException → 500, which makes STRIPE RETRY the webhook (amplifying, not fixing).
+        // So FLUSH the insert HERE and own the failure: a 23505 means a concurrent winner already created
+        // the active row — resolve to it and return it as a clean reconcile no-op (no throw). On success
+        // the entity is Unchanged, so the pipeline's final CommitAsync is a safe no-op; on the violation we
+        // returned the winner, and the pipeline commit then has nothing to persist for this row either.
+        try
+        {
+            await userMembershipRepository.CommitAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+        {
+            // Detach the rejected insert so the OUTER pipeline's final CommitAsync (which also carries the
+            // ProcessedStripeEvent stamp Add-ed by HandlePaymentNotification before this handler ran) does
+            // NOT retry the duplicate row and re-raise the same 23505. Remove() on a still-Added entity
+            // detaches it from the change-tracker (nothing was persisted), leaving only the event stamp to
+            // commit. The event is still marked processed — a duplicate provision is an idempotent no-op.
+            userMembershipRepository.Remove(membership);
+
+            var winner = await userMembershipRepository.GetActiveForUserAsync(userId, cancellationToken);
+            logger.LogWarning(
+                "subscription.created webhook for sub {SubscriptionId}, user {UserId} lost the active-membership race (unique-violation); resolved to winning membership {MembershipId} (reconcile no-op)",
+                subscriptionId, userId, winner?.Id);
+            return winner;
+        }
+
         logger.LogInformation(
             "Provisioned UserMembership {MembershipId} for user {UserId} from subscription.created webhook (sub {SubscriptionId})",
             membership.Id, userId, subscriptionId);
 
         return membership;
+    }
+
+    /// <summary>
+    /// True when the <see cref="DbUpdateException"/> was caused by a Postgres unique-constraint violation
+    /// (SQLSTATE 23505) — the filtered (TenantId, UserId) WHERE Status=Active unique index (or the
+    /// StripeSubscriptionId unique index) rejecting a concurrent loser's insert. Detected
+    /// provider-agnostically by duck-typing the inner exception's public <c>SqlState</c> string property:
+    /// the AppServices layer deliberately carries no hard Npgsql reference, so we read Npgsql's
+    /// <c>PostgresException.SqlState</c> reflectively rather than type-binding it. Walks the whole inner
+    /// chain because EF may wrap the provider exception more than one level deep. Mirrors
+    /// <c>CreateMembershipSubscription.Handler.IsUniqueViolation</c> (T-0111) / <c>LoyaltyService</c> (T-0112).
+    /// </summary>
+    private static bool IsUniqueViolation(DbUpdateException exception)
+    {
+        const string UniqueViolation = "23505";
+        for (Exception? inner = exception.InnerException; inner is not null; inner = inner.InnerException)
+        {
+            var sqlState = inner.GetType()
+                .GetProperty("SqlState")?
+                .GetValue(inner) as string;
+            if (sqlState == UniqueViolation)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

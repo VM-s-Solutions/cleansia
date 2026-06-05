@@ -1,8 +1,14 @@
 #nullable enable
+using System.Security.Claims;
+using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Authentication;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Dashboard.DTOs;
 using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Infra.Common.Validations;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
@@ -15,19 +21,45 @@ namespace Cleansia.Core.AppServices.Features.Dashboard;
 /// </summary>
 public class GetTimeAnalytics
 {
-    public class Query : IRequest<TimeAnalyticsDto>
+    public class Query : IQuery<TimeAnalyticsDto>
     {
-        public required string EmployeeId { get; init; }
+        public string? EmployeeId { get; init; }
         public required DateTime StartDate { get; init; }
         public required DateTime EndDate { get; init; }
     }
 
-    internal class Handler(IOrderRepository orderRepository) : IRequestHandler<Query, TimeAnalyticsDto>
+    // public (not internal) — the handler tests construct it directly. See GetOrderAnalytics note (#26).
+    public class Handler(
+        IOrderRepository orderRepository,
+        IOrderAccessService orderAccessService,
+        IUserSessionProvider userSessionProvider)
+        : IRequestHandler<Query, BusinessResult<TimeAnalyticsDto>>
     {
-        public async Task<TimeAnalyticsDto> Handle(Query request, CancellationToken cancellationToken)
+        public async Task<BusinessResult<TimeAnalyticsDto>> Handle(Query request, CancellationToken cancellationToken)
         {
+            // S1/S3 (ADR-0001 [OWN-DATA]): admins keep oversight over the supplied id; everyone else
+            // is scoped to their own resolved employee id (the client-supplied id is never trusted).
+            var role = userSessionProvider.GetTypedUserClaim(ClaimTypes.Role)?.Value;
+            string? employeeId;
+
+            if (role == UserProfile.Administrator.ToString())
+            {
+                employeeId = request.EmployeeId;
+            }
+            else
+            {
+                employeeId = await orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+            }
+
+            if (string.IsNullOrEmpty(employeeId))
+            {
+                return BusinessResult.Failure<TimeAnalyticsDto>(new Error(
+                    "Employee",
+                    BusinessErrorMessage.EmployeeNotFound));
+            }
+
             var orders = await orderRepository
-                .GetCompletedOrdersByDateRangeAsync(request.EmployeeId, request.StartDate, request.EndDate, cancellationToken);
+                .GetCompletedOrdersByDateRangeAsync(employeeId, request.StartDate, request.EndDate, cancellationToken);
 
             var dailyBreakdown = orders
                 .GroupBy(o => o.CleaningDateTime.Date)

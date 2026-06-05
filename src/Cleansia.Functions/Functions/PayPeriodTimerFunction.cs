@@ -1,18 +1,12 @@
-using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Functions.Core.Handlers;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Functions.Functions;
 
-public class PayPeriodTimerFunction(
-    IPayPeriodBackgroundService payPeriodService,
-    ILogger<PayPeriodTimerFunction> logger)
+// T-0121 / ADR-0002 D5 step 1 — thin trigger shell; body lives in PayPeriodTimerHandler (Core).
+public class PayPeriodTimerFunction(PayPeriodTimerHandler handler)
 {
     [Function("CloseExpiredPayPeriods")]
-    public async Task Run([TimerTrigger("0 0 2 * * *")] TimerInfo timer, CancellationToken ct)
-    {
-        logger.LogInformation("CloseExpiredPayPeriods timer triggered at {Time}", DateTime.UtcNow);
-        await payPeriodService.CloseExpiredPeriodsAndOpenNewAsync(ct);
-        logger.LogInformation("CloseExpiredPayPeriods completed");
-    }
+    public Task Run([TimerTrigger("0 0 2 * * *")] TimerInfo timer, CancellationToken ct)
+        => handler.HandleAsync(ct);
 }

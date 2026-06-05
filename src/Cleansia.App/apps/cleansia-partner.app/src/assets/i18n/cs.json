@@ -1038,6 +1038,7 @@
       "data_not_available": "Data zaměstnance nejsou k dispozici",
       "profile_incomplete": "Dokončete informace v profilu",
       "documents_missing": "Nahrajte požadované dokumenty",
+      "not_approved": "Váš účet není schválen pro práci na zakázkách",
       "already_approved": "Zaměstnanec již byl schválen",
       "already_rejected": "Zaměstnanec již byl zamítnut"
     },

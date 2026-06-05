@@ -51,17 +51,10 @@ public class DisputeController(IMediator mediator) : ApiController(mediator)
         return await Mediator.Send(request, cancellationToken);
     }
 
-    [HttpPost("AddMessage")]
-    [Permission(Policy.CanRespondToDispute)]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> AddMessage([FromBody] AddDisputeMessage.Command command, CancellationToken cancellationToken)
-    {
-        var result = await Mediator.Send(command, cancellationToken);
-        return HandleResult<object>(result);
-    }
+    // SEC-DSP-01 (ADR-0001 §D2 Note C, Q-0005): the staff-reply AddMessage endpoint moved OFF the
+    // Partner host to the Admin host (AdminDisputeController, gated CanRespondToDispute=AdminOnly).
+    // No cleaner posts a dispute message of any kind on Partner. The customer self-reply lives on the
+    // Customer/Mobile.Customer hosts under CanAddDisputeMessage.
 
     [HttpPost("Resolve")]
     [Permission(Policy.CanResolveDispute)]

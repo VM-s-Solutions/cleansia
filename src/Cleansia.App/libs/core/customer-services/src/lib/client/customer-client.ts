@@ -6876,6 +6876,7 @@ export interface ICreateMembershipCheckoutSessionResponse {
 export class CreateMembershipSubscriptionCommand implements ICreateMembershipSubscriptionCommand {
     planCode!: string | undefined;
     paymentMethodConfirmed!: boolean;
+    idempotencyToken!: string | undefined;
 
     constructor(data?: ICreateMembershipSubscriptionCommand) {
         if (data) {
@@ -6890,6 +6891,7 @@ export class CreateMembershipSubscriptionCommand implements ICreateMembershipSub
         if (Data) {
             this.planCode = Data["planCode"];
             this.paymentMethodConfirmed = Data["paymentMethodConfirmed"];
+            this.idempotencyToken = Data["idempotencyToken"];
         }
     }
 
@@ -6904,6 +6906,7 @@ export class CreateMembershipSubscriptionCommand implements ICreateMembershipSub
         data = typeof data === 'object' ? data : {};
         data["planCode"] = this.planCode;
         data["paymentMethodConfirmed"] = this.paymentMethodConfirmed;
+        data["idempotencyToken"] = this.idempotencyToken;
         return data;
     }
 }
@@ -6911,6 +6914,7 @@ export class CreateMembershipSubscriptionCommand implements ICreateMembershipSub
 export interface ICreateMembershipSubscriptionCommand {
     planCode: string | undefined;
     paymentMethodConfirmed: boolean;
+    idempotencyToken: string | undefined;
 }
 
 export class CreateMembershipSubscriptionResponse implements ICreateMembershipSubscriptionResponse {

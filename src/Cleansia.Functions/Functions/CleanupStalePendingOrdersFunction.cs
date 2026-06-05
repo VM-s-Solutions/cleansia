@@ -1,37 +1,12 @@
-using Cleansia.Core.AppServices.Features.Orders;
-using MediatR;
+using Cleansia.Functions.Core.Handlers;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Functions.Functions;
 
-/// <summary>
-/// Every 15 minutes, sweep card orders that have been sitting in Pending for
-/// more than an hour and mark them Cancelled. Picks up users who opened
-/// PaymentSheet on mobile and closed it without paying — without this they'd
-/// stay visible to cleaners (matching pool pollution) until Stripe eventually
-/// expires the underlying PaymentIntent ~24h later.
-/// </summary>
-public class CleanupStalePendingOrdersFunction(
-    IMediator mediator,
-    ILogger<CleanupStalePendingOrdersFunction> logger)
+// T-0121 / ADR-0002 D5 step 1 — thin trigger shell; body lives in CleanupStalePendingOrdersHandler (Core).
+public class CleanupStalePendingOrdersFunction(CleanupStalePendingOrdersHandler handler)
 {
     [Function("CleanupStalePendingOrders")]
-    public async Task Run([TimerTrigger("0 */15 * * * *")] TimerInfo timer, CancellationToken ct)
-    {
-        logger.LogInformation("CleanupStalePendingOrders timer triggered at {Time}", DateTime.UtcNow);
-        var result = await mediator.Send(new CleanupStalePendingOrders.Command(OlderThanHours: 1), ct);
-        if (result.IsSuccess && result.Value != null)
-        {
-            logger.LogInformation(
-                "CleanupStalePendingOrders completed; cancelled {Count} orders",
-                result.Value.CancelledCount);
-        }
-        else
-        {
-            logger.LogError(
-                "CleanupStalePendingOrders failed: {Error}",
-                result.Error?.Message ?? "unknown");
-        }
-    }
+    public Task Run([TimerTrigger("0 */15 * * * *")] TimerInfo timer, CancellationToken ct)
+        => handler.HandleAsync(ct);
 }

@@ -1,9 +1,15 @@
 #nullable enable
+using System.Security.Claims;
+using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Authentication;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Extensions;
 using Cleansia.Core.AppServices.Features.Dashboard.DTOs;
 using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Infra.Common.Validations;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,34 +22,60 @@ namespace Cleansia.Core.AppServices.Features.Dashboard;
 /// </summary>
 public class GetProductivityMetrics
 {
-    public class Query : IRequest<ProductivityMetricsDto>
+    public class Query : IQuery<ProductivityMetricsDto>
     {
-        public required string EmployeeId { get; init; }
+        public string? EmployeeId { get; init; }
     }
 
-    internal class Handler(
+    // public (not internal) — the handler tests construct it directly. See GetOrderAnalytics note (#26).
+    public class Handler(
         IOrderRepository orderRepository,
-        IEmployeeInvoiceRepository employeeInvoiceRepository)
-        : IRequestHandler<Query, ProductivityMetricsDto>
+        IEmployeeInvoiceRepository employeeInvoiceRepository,
+        IOrderAccessService orderAccessService,
+        IUserSessionProvider userSessionProvider)
+        : IRequestHandler<Query, BusinessResult<ProductivityMetricsDto>>
     {
-        public async Task<ProductivityMetricsDto> Handle(Query request, CancellationToken cancellationToken)
+        public async Task<BusinessResult<ProductivityMetricsDto>> Handle(Query request, CancellationToken cancellationToken)
         {
+            // S1/S3 (ADR-0001 [OWN-DATA]): admins keep oversight over the supplied id; everyone else
+            // is scoped to their own resolved employee id. The resolved id is threaded through BOTH
+            // the order path AND CalculatePersonalBestsAsync's invoice path so a partner cannot read
+            // another cleaner's historical EARNINGS by passing a foreign id.
+            var role = userSessionProvider.GetTypedUserClaim(ClaimTypes.Role)?.Value;
+            string? employeeId;
+
+            if (role == UserProfile.Administrator.ToString())
+            {
+                employeeId = request.EmployeeId;
+            }
+            else
+            {
+                employeeId = await orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+            }
+
+            if (string.IsNullOrEmpty(employeeId))
+            {
+                return BusinessResult.Failure<ProductivityMetricsDto>(new Error(
+                    "Employee",
+                    BusinessErrorMessage.EmployeeNotFound));
+            }
+
             var today = DateTime.UtcNow;
             var (currentMonthStart, currentMonthEnd) = today.GetCurrentMonthRange();
 
             var completedSpec = DashboardSpecifications.CreateCompletedOrdersSpec(
-                request.EmployeeId, currentMonthStart, currentMonthEnd);
+                employeeId, currentMonthStart, currentMonthEnd);
             var ordersCompleted = await orderRepository.GetCountAsync(
                 completedSpec.SatisfiedBy(), cancellationToken);
 
             var completedOrders = await orderRepository
-                .GetCompletedOrdersByDateRangeAsync(request.EmployeeId, currentMonthStart, currentMonthEnd, cancellationToken);
+                .GetCompletedOrdersByDateRangeAsync(employeeId, currentMonthStart, currentMonthEnd, cancellationToken);
 
             var averageCompletionTimeMinutes = CalculateAverageActualCompletionTime(completedOrders);
             var onTimeCompletionRate = CalculateOnTimeCompletionRate(completedOrders);
             var completionPercentage = CalculateCompletionPercentage(ordersCompleted, DashboardConstants.DefaultMonthlyOrdersTarget);
             var efficiencyScore = CalculateEfficiencyScore(completionPercentage, onTimeCompletionRate);
-            var personalBests = await CalculatePersonalBestsAsync(request.EmployeeId, cancellationToken);
+            var personalBests = await CalculatePersonalBestsAsync(employeeId, cancellationToken);
 
             return new ProductivityMetricsDto(
                 OrdersCompleted: ordersCompleted,

@@ -19,6 +19,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Cleansia.Core.Domain\Cleansia.Core.Domain.csproj" />
+    <!-- ADR-0002 D3 (F3) — DeadLetterStore implements IDeadLetterStore (the internal queue contract). -->
+    <ProjectReference Include="..\Cleansia.Core.Queue.Abstractions\Cleansia.Core.Queue.Abstractions.csproj" />
   </ItemGroup>
 
   <ItemGroup>

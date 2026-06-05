@@ -26,13 +26,16 @@ public class StartOrder
     public class Validator : AbstractValidator<Command>
     {
         private readonly IOrderRepository _orderRepository;
+        private readonly IEmployeeRepository _employeeRepository;
         private readonly IOrderAccessService _orderAccessService;
 
         public Validator(
             IOrderRepository orderRepository,
+            IEmployeeRepository employeeRepository,
             IOrderAccessService orderAccessService)
         {
             _orderRepository = orderRepository;
+            _employeeRepository = employeeRepository;
             _orderAccessService = orderAccessService;
 
             RuleFor(x => x.OrderId)
@@ -46,10 +49,25 @@ public class StartOrder
 
             RuleFor(x => x)
                 .Cascade(CascadeMode.Stop)
+                .MustAsync(EmployeeIsApprovedAsync)
+                .WithMessage(BusinessErrorMessage.EmployeeNotApproved)
                 .MustAsync(EmployeeIsAssignedToOrderAsync)
                 .WithMessage(BusinessErrorMessage.EmployeeNotAssignedToOrder)
                 .MustAsync(EmployeeHasNoOrderInProgressAsync)
                 .WithMessage(BusinessErrorMessage.EmployeeAlreadyHasOrderInProgress);
+        }
+
+        // T-0109 (EMP-GAP-01): StartOrder previously had NO ContractStatus gate, so
+        // a rejected cleaner already assigned to a Confirmed order could start it.
+        // Same honest == Approved rule used by TakeOrder / CompleteOrder. Employee is
+        // server-derived from the caller (S1 server-truth); empty caller fails closed.
+        private async Task<bool> EmployeeIsApprovedAsync(Command command, CancellationToken cancellationToken)
+        {
+            var employeeId = await _orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+            if (string.IsNullOrEmpty(employeeId)) return false;
+
+            var employee = await _employeeRepository.GetByIdAsync(employeeId, cancellationToken);
+            return employee?.ContractStatus == ContractStatus.Approved;
         }
 
         private async Task<bool> OrderIsConfirmedAsync(string orderId, CancellationToken cancellationToken)
@@ -102,7 +120,7 @@ public class StartOrder
     public class Handler(
         IOrderRepository orderRepository,
         IEmailService emailService,
-        IQueueClient queueClient,
+        IPendingDispatch pending,
         ILogger<Handler> logger)
         : ICommandHandler<Command, Response>
     {
@@ -134,18 +152,21 @@ public class StartOrder
 
             if (!string.IsNullOrEmpty(order.UserId))
             {
-                await queueClient.SendAsync(
+                pending.Enqueue(
                     QueueNames.NotificationsDispatch,
-                    new SendPushNotificationMessage(
-                        UserId: order.UserId,
-                        EventKey: NotificationEventCatalog.OrderInProgress,
-                        Args: new Dictionary<string, string>
-                        {
-                            ["orderId"] = order.Id,
-                            ["orderNumber"] = order.DisplayOrderNumber,
-                        },
-                        TenantId: order.TenantId),
-                    cancellationToken);
+                    new QueueEnvelope<SendPushNotificationMessage>(
+                        MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderInProgress, order.Id),
+                        order.TenantId,
+                        new SendPushNotificationMessage(
+                            UserId: order.UserId,
+                            EventKey: NotificationEventCatalog.OrderInProgress,
+                            Args: new Dictionary<string, string>
+                            {
+                                ["orderId"] = order.Id,
+                                ["orderNumber"] = order.DisplayOrderNumber,
+                            },
+                            TenantId: order.TenantId)),
+                    MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderInProgress, order.Id));
             }
 
             return BusinessResult.Success(new Response(

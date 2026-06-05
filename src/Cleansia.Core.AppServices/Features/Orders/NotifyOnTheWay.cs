@@ -86,7 +86,7 @@ public class NotifyOnTheWay
 
     public class Handler(
         IOrderRepository orderRepository,
-        IQueueClient queueClient)
+        IPendingDispatch pending)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -100,18 +100,21 @@ public class NotifyOnTheWay
 
             if (!string.IsNullOrEmpty(order.UserId))
             {
-                await queueClient.SendAsync(
+                pending.Enqueue(
                     QueueNames.NotificationsDispatch,
-                    new SendPushNotificationMessage(
-                        UserId: order.UserId,
-                        EventKey: NotificationEventCatalog.OrderOnTheWay,
-                        Args: new Dictionary<string, string>
-                        {
-                            ["orderId"] = order.Id,
-                            ["orderNumber"] = order.DisplayOrderNumber,
-                        },
-                        TenantId: order.TenantId),
-                    cancellationToken);
+                    new QueueEnvelope<SendPushNotificationMessage>(
+                        MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderOnTheWay, order.Id),
+                        order.TenantId,
+                        new SendPushNotificationMessage(
+                            UserId: order.UserId,
+                            EventKey: NotificationEventCatalog.OrderOnTheWay,
+                            Args: new Dictionary<string, string>
+                            {
+                                ["orderId"] = order.Id,
+                                ["orderNumber"] = order.DisplayOrderNumber,
+                            },
+                            TenantId: order.TenantId)),
+                    MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderOnTheWay, order.Id));
             }
 
             return BusinessResult.Success(new Response(

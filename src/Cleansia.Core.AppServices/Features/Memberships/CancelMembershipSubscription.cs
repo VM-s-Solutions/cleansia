@@ -6,6 +6,7 @@ using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
+using StripeException = Stripe.StripeException;
 
 namespace Cleansia.Core.AppServices.Features.Memberships;
 
@@ -35,8 +36,17 @@ public class CancelMembershipSubscription
                     nameof(Command), BusinessErrorMessage.MembershipNotFound));
             }
 
-            await stripeClient.CancelSubscriptionAtPeriodEndAsync(
-                membership.StripeSubscriptionId, cancellationToken);
+            try
+            {
+                await stripeClient.CancelSubscriptionAtPeriodEndAsync(
+                    membership.StripeSubscriptionId, cancellationToken);
+            }
+            catch (StripeException ex)
+            {
+                logger.LogError(ex, "Stripe subscription cancellation failed for membership {MembershipId}", membership.Id);
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(membership.StripeSubscriptionId), BusinessErrorMessage.PaymentGatewayUnavailable));
+            }
 
             membership.MarkCancellationRequested();
 

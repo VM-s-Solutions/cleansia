@@ -212,6 +212,7 @@ public sealed class ReferralService(
             LoyaltyEarnSource.Referral,
             orderId,
             SystemActor,
+            reason: null,
             requestId: null,
             cancellationToken);
 
@@ -221,6 +222,7 @@ public sealed class ReferralService(
             LoyaltyEarnSource.Referral,
             orderId,
             SystemActor,
+            reason: null,
             requestId: null,
             cancellationToken);
 

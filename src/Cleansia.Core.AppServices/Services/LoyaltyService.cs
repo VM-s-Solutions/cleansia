@@ -19,7 +19,7 @@ public sealed class LoyaltyService(
     ILoyaltyAccountRepository loyaltyAccountRepository,
     ILoyaltyTierConfigRepository loyaltyTierConfigRepository,
     ILoyaltyTransactionRepository loyaltyTransactionRepository,
-    IQueueClient queueClient,
+    IPendingDispatch pendingDispatch,
     ILogger<LoyaltyService> logger) : ILoyaltyService
 {
     private const string SystemActor = "system";
@@ -61,19 +61,26 @@ public sealed class LoyaltyService(
 
         var account = await loyaltyAccountRepository.EnsureForUserAsync(order.UserId, cancellationToken);
         var previousTier = account.CurrentTier;
-        account.GrantPoints(pointsEarned, LoyaltyEarnSource.OrderCompleted, orderId, SystemActor);
+        var thresholds = await ResolveThresholdsAsync(cancellationToken);
+        account.GrantPoints(pointsEarned, LoyaltyEarnSource.OrderCompleted, orderId, SystemActor, thresholds);
 
-        // TASK-011a — fire `loyalty.tier_upgrade` when this grant promotes
-        // the user. Detection is by snapshot (previousTier captured pre-grant,
-        // post-grant compared) so domain stays free of notification concerns.
+        // Fire `loyalty.tier_upgrade` when this grant promotes the user. Detection is by snapshot
+        // (previousTier captured pre-grant, post-grant compared) so the domain stays free of
+        // notification concerns.
         // Only fires on UPGRADE — a revoke that demotes is silent (handled
         // by the cancellation push if relevant).
         if (account.CurrentTier > previousTier)
         {
-            try
-            {
-                await queueClient.SendAsync(
-                    QueueNames.NotificationsDispatch,
+            // The push gates on the caller's (CompleteOrder's) commit: the row is written into the shared
+            // scoped unit of work and reaches the wire only if the grant persists, so a rolled-back grant
+            // never sends a phantom tier-upgrade push.
+            var messageKey = MessageKeys.Push(
+                order.UserId, NotificationEventCatalog.LoyaltyTierUpgrade, orderId);
+            pendingDispatch.Enqueue(
+                QueueNames.NotificationsDispatch,
+                new QueueEnvelope<SendPushNotificationMessage>(
+                    messageKey,
+                    order.TenantId,
                     new SendPushNotificationMessage(
                         UserId: order.UserId,
                         EventKey: NotificationEventCatalog.LoyaltyTierUpgrade,
@@ -81,18 +88,8 @@ public sealed class LoyaltyService(
                         {
                             ["tier"] = account.CurrentTier.ToString(),
                         },
-                        TenantId: order.TenantId),
-                    cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                // Loyalty grant already happened — don't roll it back over a
-                // queue hiccup. Push is fail-soft; the user still sees the
-                // new tier on their next app open via the Rewards screen.
-                logger.LogWarning(ex,
-                    "Failed to enqueue tier_upgrade push for user {UserId} (tier {PrevTier} → {NewTier})",
-                    order.UserId, previousTier, account.CurrentTier);
-            }
+                        TenantId: order.TenantId)),
+                messageKey);
         }
     }
 
@@ -143,7 +140,8 @@ public sealed class LoyaltyService(
             return;
         }
 
-        account.RevokePoints(pointsToRevoke, LoyaltyEarnSource.OrderCancelled, orderId, SystemActor);
+        var thresholds = await ResolveThresholdsAsync(cancellationToken);
+        account.RevokePoints(pointsToRevoke, LoyaltyEarnSource.OrderCancelled, orderId, SystemActor, thresholds);
     }
 
     public async Task<TierDiscountResult> ResolveTierDiscountForOrderAsync(
@@ -184,6 +182,7 @@ public sealed class LoyaltyService(
         LoyaltyEarnSource source,
         string? orderId,
         string actorId,
+        string? reason,
         string? requestId,
         CancellationToken cancellationToken)
     {
@@ -220,7 +219,8 @@ public sealed class LoyaltyService(
         }
 
         var account = await loyaltyAccountRepository.EnsureForUserAsync(userId, cancellationToken);
-        account.GrantPoints(points, source, orderId, actorId, idempotencyKey: requestId);
+        var thresholds = await ResolveThresholdsAsync(cancellationToken);
+        account.GrantPoints(points, source, orderId, actorId, thresholds, description: reason, idempotencyKey: requestId);
 
         // S7a/S7b backstop: the fast-path read above is a TOCTOU optimization, not the guarantee. For
         // the keyed admin path, FLUSH the insert HERE so a concurrent double-submit that raced past the
@@ -241,6 +241,7 @@ public sealed class LoyaltyService(
         LoyaltyEarnSource source,
         string? orderId,
         string actorId,
+        string? reason,
         string? requestId,
         CancellationToken cancellationToken)
     {
@@ -280,7 +281,8 @@ public sealed class LoyaltyService(
             return;
         }
 
-        account.RevokePoints(points, source, orderId, actorId, idempotencyKey: requestId);
+        var thresholds = await ResolveThresholdsAsync(cancellationToken);
+        account.RevokePoints(points, source, orderId, actorId, thresholds, description: reason, idempotencyKey: requestId);
 
         // S7a/S7b backstop (see GrantPointsManuallyAsync): flush the keyed admin revoke so a concurrent
         // double-submit collapses on the filtered unique index instead of double-revoking.
@@ -318,12 +320,26 @@ public sealed class LoyaltyService(
     }
 
     /// <summary>
+    /// Builds the tenant's tier thresholds from the admin-editable <see cref="LoyaltyTierConfig"/> rows
+    /// so tier resolution reads the configured values, not hardcoded literals. A missing tier row maps to
+    /// <see cref="int.MaxValue"/> — unreachable, so resolution degrades to the next tier down rather than
+    /// throwing (Bronze is the threshold-free floor).
+    /// </summary>
+    private async Task<LoyaltyTierThresholds> ResolveThresholdsAsync(CancellationToken cancellationToken)
+    {
+        var configs = await loyaltyTierConfigRepository.GetAllForTenantAsync(cancellationToken);
+        return new LoyaltyTierThresholds(
+            Silver: configs.FirstOrDefault(c => c.Tier == LoyaltyTier.SilverMopper)?.LifetimePointsThreshold ?? int.MaxValue,
+            Gold: configs.FirstOrDefault(c => c.Tier == LoyaltyTier.GoldPolisher)?.LifetimePointsThreshold ?? int.MaxValue,
+            Platinum: configs.FirstOrDefault(c => c.Tier == LoyaltyTier.PlatinumSparkler)?.LifetimePointsThreshold ?? int.MaxValue);
+    }
+
+    /// <summary>
     /// True when the <see cref="DbUpdateException"/> was caused by a Postgres unique-constraint
     /// violation (SQLSTATE 23505) — the filtered IdempotencyKey unique index rejecting a concurrent
     /// loser's insert. Detected provider-agnostically by duck-typing the inner exception's public
     /// <c>SqlState</c> property (the AppServices layer carries no hard Npgsql reference). Walks the whole
-    /// inner chain because EF may wrap the provider exception more than one level deep. Mirrors
-    /// <c>CreateMembershipSubscription.Handler.IsUniqueViolation</c>.
+    /// inner chain because EF may wrap the provider exception more than one level deep.
     /// </summary>
     private static bool IsUniqueViolation(DbUpdateException exception)
     {

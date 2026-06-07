@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
@@ -58,7 +59,8 @@ public class SendMembershipLifecycleNotifications
 
     public class Handler(
         IUserMembershipRepository membershipRepository,
-        IQueueClient queueClient,
+        IPendingDispatch pendingDispatch,
+        IUnitOfWork unitOfWork,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -84,16 +86,22 @@ public class SendMembershipLifecycleNotifications
             {
                 try
                 {
-                    await queueClient.SendAsync(
+                    var messageKey = MessageKeys.Push(
+                        membership.UserId, NotificationEventCatalog.MembershipExpiringSoon, membership.Id);
+                    pendingDispatch.Enqueue(
                         QueueNames.NotificationsDispatch,
-                        new SendPushNotificationMessage(
-                            UserId: membership.UserId,
-                            EventKey: NotificationEventCatalog.MembershipExpiringSoon,
-                            Args: new Dictionary<string, string>(),
-                            TenantId: membership.TenantId),
-                        cancellationToken);
+                        new QueueEnvelope<SendPushNotificationMessage>(
+                            messageKey,
+                            membership.TenantId,
+                            new SendPushNotificationMessage(
+                                UserId: membership.UserId,
+                                EventKey: NotificationEventCatalog.MembershipExpiringSoon,
+                                Args: new Dictionary<string, string>(),
+                                TenantId: membership.TenantId)),
+                        messageKey);
 
                     membership.MarkRenewalReminderSent(now);
+                    await unitOfWork.CommitAsync(cancellationToken);
                     renewalSent++;
                 }
                 catch (Exception ex)
@@ -122,16 +130,22 @@ public class SendMembershipLifecycleNotifications
             {
                 try
                 {
-                    await queueClient.SendAsync(
+                    var messageKey = MessageKeys.Push(
+                        membership.UserId, NotificationEventCatalog.MembershipCancellationEffective, membership.Id);
+                    pendingDispatch.Enqueue(
                         QueueNames.NotificationsDispatch,
-                        new SendPushNotificationMessage(
-                            UserId: membership.UserId,
-                            EventKey: NotificationEventCatalog.MembershipCancellationEffective,
-                            Args: new Dictionary<string, string>(),
-                            TenantId: membership.TenantId),
-                        cancellationToken);
+                        new QueueEnvelope<SendPushNotificationMessage>(
+                            messageKey,
+                            membership.TenantId,
+                            new SendPushNotificationMessage(
+                                UserId: membership.UserId,
+                                EventKey: NotificationEventCatalog.MembershipCancellationEffective,
+                                Args: new Dictionary<string, string>(),
+                                TenantId: membership.TenantId)),
+                        messageKey);
 
                     membership.MarkCancellationReminderSent(now);
+                    await unitOfWork.CommitAsync(cancellationToken);
                     cancellationSent++;
                 }
                 catch (Exception ex)

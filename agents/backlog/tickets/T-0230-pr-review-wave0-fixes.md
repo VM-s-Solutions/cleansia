@@ -1,7 +1,7 @@
 ---
 id: T-0230
 title: Wave-0 PR review fixes — envelope dual-read, S8 tenant scope, GoogleAuth guard, money/perf
-status: in-progress
+status: done
 size: L
 owner: —
 created: 2026-06-05
@@ -33,16 +33,16 @@ ticket tracks fixing them in priority order (all in `feature/wave-0-prod-readine
 
 ## Strongly recommended (same PR)
 - [x] **#6** `User` unique index `Email` → `(TenantId, Email)` (S8). **MANUAL_STEP: ef-migration.**
-- [ ] **#7** `PromoCodeService` — global redemption counter leaks a slot on per-user reservation failure.
-- [ ] **#8** `GenerateInvoiceHandler` — envelope dual-read now (latent; stub today).
+- [x] **#7** `PromoCodeService` — global redemption counter leaks a slot on per-user reservation failure.
+- [x] **#8** `GenerateInvoiceHandler` — envelope dual-read now (latent; stub today).
 
 ## Medium
 - [x] **#9/#10** promo fan-out: keyset (seek) paging instead of Skip(offset); resumability risk
   documented (mid-campaign retry re-notifies — accepted for best-effort marketing, follow-up for a
   persisted cursor / push dedup).
-- [ ] **#11** receipt-reconciliation sweep: add `Orders (PaymentStatus, CreatedOn)` index.
+- [x] **#11** receipt-reconciliation sweep: add `Orders (PaymentStatus, CreatedOn)` index.
   **MANUAL_STEP: ef-migration.**
-- [ ] **#12** `DeadLetter` — align ITenantEntity intent vs docs.
+- [x] **#12** `DeadLetter` — align ITenantEntity intent vs docs.
 
 ## Low / Nit
 - [x] **#15** GoogleAuth validator trimmed (folded into #4).
@@ -64,11 +64,17 @@ ticket tracks fixing them in priority order (all in `feature/wave-0-prod-readine
 - [ ] **#20** receipt claim/realize re-resolve of companyInfo/mode — DEFERRED (bounded background reads).
 - [ ] **#24** `CountryConfigurationRepository` enforcement-mode projection — DEFERRED (paired with #20).
 
-## MANUAL_STEP (owner)
-After the entity-config changes for #6 (+#11 when landed), the EF model no longer matches
-`20260605103318_Initial`. **Owner: regenerate the migration** (`dotnet ef migrations add` then verify
-`dotnet ef database update`) so the `(TenantId, Email)` unique index and the recon index are emitted.
-Claude does NOT run `dotnet ef`.
+## MANUAL_STEP (owner) — DONE
+The owner regenerated the migration (`20260605165935_Initial`) carrying the `(TenantId, Email)` unique
+index and the `(PaymentStatus, CreatedOn)` recon index. Merged in PR #72.
+
+## Deferred follow-ups (Wave 2, non-blocking)
+#16 / #19 / #20 / #24 are intentionally deferred cold-path micro-improvements (see the strike-through
+rationale above). They do NOT block Wave 1; track them as a small Wave-2 polish ticket if/when those
+paths are touched.
 
 ## Status log
-- 2026-06-05 — created from the PR review; #1–#4, #6, #9/#10, #15 done test-first; remainder in progress.
+- 2026-06-05 — created from the PR review; #1–#4, #6, #9/#10, #15 done test-first.
+- 2026-06-05 — all blocking + recommended + medium + low/nit items shipped in PR #72 (+ comment cleanup
+  in #73); owner regenerated the migration. CLOSED as **done**; only the four non-blocking deferred
+  follow-ups (#16/#19/#20/#24) remain, moved to Wave-2 polish.

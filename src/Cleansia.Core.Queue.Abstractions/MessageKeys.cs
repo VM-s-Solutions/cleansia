@@ -1,3 +1,7 @@
+using System.Security.Cryptography;
+using System.Text;
+using Cleansia.Core.Domain.Enums;
+
 namespace Cleansia.Core.Queue.Abstractions;
 
 /// <summary>
@@ -26,4 +30,39 @@ public static class MessageKeys
 
     /// <summary>generate-invoice → <c>invoice:{PayPeriodId}:{EmployeeId}</c> (one invoice per employee per period).</summary>
     public static string Invoice(string payPeriodId, string employeeId) => $"invoice:{payPeriodId}:{employeeId}";
+
+    /// <summary>
+    /// sitewide-promo-fanout → <c>promo:{tenant}:{contentHash}</c>. The fan-out has no inbound dedup, but
+    /// its outbox row still needs a deterministic key: the same admin campaign re-submitted in one request
+    /// collapses onto one row, while two distinct campaigns hash differently. The content of the campaign
+    /// (its per-locale title+body) is the only stable identity an admin-authored send has — there is no
+    /// domain id — so a content hash, not a fresh Guid, is what keeps the key deterministic.
+    /// </summary>
+    public static string SitewidePromo(string? tenantId, string contentSignature) =>
+        $"promo:{tenantId}:{HashCode(contentSignature)}";
+
+    /// <summary>
+    /// send-email → <c>email:{purpose}:{userId}:{codeHash}</c> (one email per user per type per
+    /// generated code). <paramref name="codeHash"/> is the <see cref="HashCode"/> of the generated
+    /// confirmation/reset token, so a reissued token (a genuine resend) yields a distinct key and a new
+    /// email, while a redelivery of the same logical email collapses onto one key. The raw token is
+    /// never put in the key — only its hash.
+    /// </summary>
+    public static string Email(EmailType emailType, string userId, string codeHash) =>
+        $"email:{Purpose(emailType)}:{userId}:{codeHash}";
+
+    /// <summary>
+    /// Deterministic, non-reversible short hash of a raw email token, used as the code segment of the
+    /// send-email key so the secret never appears in a key or a log line. Producer and consumer
+    /// (dual-read key synthesis) compute it the same way.
+    /// </summary>
+    public static string HashCode(string rawCode) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawCode)))[..16].ToLowerInvariant();
+
+    private static string Purpose(EmailType emailType) => emailType switch
+    {
+        EmailType.ConfirmationEmail => "confirmation",
+        EmailType.ResetPassword => "reset",
+        _ => emailType.ToString().ToLowerInvariant(),
+    };
 }

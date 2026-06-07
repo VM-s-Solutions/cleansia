@@ -77,6 +77,7 @@ public class GrantPointsManually
                 source: LoyaltyEarnSource.ManualGrant,
                 orderId: null,
                 actorId: actorId,
+                reason: command.Reason,
                 // S7a: thread the client idempotency token into the service so a retry
                 // collapses onto one ledger row. The service returns the same success either way.
                 requestId: command.RequestId,

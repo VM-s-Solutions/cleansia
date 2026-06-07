@@ -1,11 +1,11 @@
 ---
 id: T-0151
 title: Migrate remaining queue consumers onto Functions.Core
-status: draft
+status: ready
 size: M
-owner: —
+owner: functions
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-06
 depends_on: [T-0121]
 blocks: []
 stories: []
@@ -104,6 +104,11 @@ Source: ADR-0002 D5 (`agents/backlog/adr/0002-outbox-dispatch-contract.md`).
 
 ## Status log
 - 2026-06-01 — draft (created by pm)
+- 2026-06-06 — ready (Batch 1B; dep **T-0121 done ✓**; the Wave-0 Functions tickets are settled. Pure
+  move-and-reference (precondition for the Wave-4 TC-8 sweep). Routed to functions, reviewer in parallel.
+  **Serialization: edits `Cleansia.Functions/Functions/*.cs`** — the same files T-0157's drainer work touches
+  → do NOT run concurrently with T-0157 (the outbox chain). T-0157 is not yet `ready` (held on the T-0156
+  migration), so T-0151 can run now; finish it before T-0157's Functions edits begin).
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

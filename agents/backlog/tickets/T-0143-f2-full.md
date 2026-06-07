@@ -1,8 +1,9 @@
 ﻿---
 id: T-0143
-title: "Full transactional outbox: outbox table + dispatcher + post-commit drain across 5 queues"
+title: "[SPLIT] Full transactional outbox: outbox table + dispatcher + post-commit drain across 5 queues — epic, see children"
 status: draft
 size: L
+split_into: [T-0155, T-0156, T-0157, T-0158]
 owner: â€”
 created: 2026-06-01
 updated: 2026-06-01
@@ -187,7 +188,17 @@ migration, a backend backing swap + drainer, a Functions-host decision, and the 
   run un-split.
 
 ## Status log
-- 2026-06-01 â€” draft (created by pm)
+- 2026-06-01 - draft (created by pm)
+- 2026-06-05 - SPLIT (owner authorized, sprint-3 section 1). This L epic is split into 4 strictly-serial
+  children (a -> b -> c -> d, same dispatch/pipeline surface) and does not run as one ticket:
+  T-0155 (a - outbox-table ADR; answers ADR-0002 D1.3 in-Functions-drainer question + table schema;
+  architect), T-0156 (b - outbox table + EF config + migration flag; db), T-0157 (c - durable
+  IPendingDispatch backing + drainer + host decision; backend+functions; also depends_on T-0118),
+  T-0158 (d - Bucket-B migration onto the per-iteration outbox row; backend; depends_on T-0148 for the
+  shared LoyaltyService.cs edit). The parent depends_on [T-0118, T-0148] now lives on the children that
+  actually need those edges (T-0157 -> T-0118; T-0158 -> T-0148). This epic stays draft as a tracking
+  record; work happens in the children. T-0155 promoted to ready (Batch 1A); T-0156/T-0157/T-0158 stay
+  draft until their predecessor is done.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

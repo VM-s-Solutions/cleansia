@@ -3,13 +3,13 @@ id: T-0145
 title: Error classification (Transient/Permanent/Config) across integration layer
 status: draft
 size: M
-owner: â€”
+owner: —
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-06
 depends_on: [T-0141, T-0144]
 blocks: []
 stories: []
-adrs: []
+adrs: [0005]
 layers: [backend]
 security_touching: false
 manual_steps: []
@@ -96,7 +96,22 @@ This ticket is the **second** Wave-1 integration ticket: it builds the shared cl
   before refactor. Status log must show the redâ†’green order.
 
 ## Status log
-- 2026-06-01 â€” draft (created by pm)
+- 2026-06-01 — draft (created by pm)
+- 2026-06-06 — STAYS draft/blocked (Batch 1B; its ADR gate **ADR-0005 / T-0141 is done ✓**, but it
+  `depends_on: T-0144` which is only just `ready` (not `done`) — and it serializes after T-0144 on the
+  `EmailService.cs`/`StripeClient.cs` cluster anyway. Promote to `ready` once T-0144 is `done`. `owner`/`adrs`
+  metadata fixed (was a mojibake em-dash; `adrs` set to `[0005]`)).
+- 2026-06-07 — implemented test-first by backend. RED first: added unit tests for the three provider
+  mappers (SendGrid `Response`, `StripeException`, FCM `MessagingErrorCode`), the dead-token
+  characterization on `IsDeadFcmToken` (pins the exact `Unregistered`/`InvalidArgument`/`SenderIdMismatch`
+  set), the failure-counter, and the Email/Mapbox boundary behaviors — all failing to compile against
+  the not-yet-existing members (CS0117/CS0103). GREEN: generalised the existing T-0144 classifier with
+  the provider mappers (one taxonomy, not a second), added `IntegrationFailureMetrics`, and wired the
+  four boundaries (Email retries only Transient + meters Permanent/AuthConfig at Error; Mapbox classifies
+  before the null-degrade; FCM outer catch classifies + meters and the per-token pruning now delegates to
+  the shared helper unchanged; Stripe boundary delegates to the shared `FromStripeException` + meters).
+  `dotnet build` (solution) 0 errors/0 warnings; full unit suite 639/639 green (64 integration-namespace
+  tests incl. all the new ones).
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

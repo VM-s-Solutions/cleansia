@@ -1,7 +1,8 @@
 ﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
-using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 
@@ -29,9 +30,9 @@ public class RequestPasswordChange
         string Language = Constants.Language.English)
         : ICommand;
 
-    internal class Handler(
-        IEmailService emailService,
-        IUserRepository userRepository)
+    public class Handler(
+        IUserRepository userRepository,
+        IPendingDispatch pending)
         : ICommandHandler<Command>
     {
         public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
@@ -42,7 +43,7 @@ public class RequestPasswordChange
             var rawResetToken = user!.UpdateResetPasswordToken();
 
             var languageCode = user.PreferredLanguageCode ?? command.Language;
-            await emailService.SendResetPasswordEmailAsync(command.Email, $"{user.LastName} {user.FirstName}", rawResetToken, languageCode, cancellationToken);
+            EmailDispatch.EnqueuePasswordReset(pending, user, $"{user.LastName} {user.FirstName}", rawResetToken, languageCode);
 
             return BusinessResult.Success();
         }

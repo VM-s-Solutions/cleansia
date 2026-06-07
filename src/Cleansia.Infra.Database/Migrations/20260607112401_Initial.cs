@@ -202,6 +202,35 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "OutboxMessages",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    QueueName = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    MessageKey = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    Body = table.Column<string>(type: "text", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    AttemptCount = table.Column<int>(type: "integer", nullable: false),
+                    ClaimedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    ClaimedBy = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
+                    DispatchedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    NextAttemptAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    LastError = table.Column<string>(type: "text", nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OutboxMessages", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Packages",
                 columns: table => new
                 {
@@ -2653,6 +2682,23 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "OrderId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_OutboxMessages_NextAttemptAt_Pending",
+                table: "OutboxMessages",
+                column: "NextAttemptAt",
+                filter: "\"Status\" = 0");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OutboxMessages_QueueName_MessageKey",
+                table: "OutboxMessages",
+                columns: new[] { "QueueName", "MessageKey" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OutboxMessages_TenantId",
+                table: "OutboxMessages",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Packages_TenantId",
                 table: "Packages",
                 column: "TenantId");
@@ -2855,7 +2901,7 @@ namespace Cleansia.Infra.Database.Migrations
                 table: "SavedAddresses",
                 column: "UserId",
                 unique: true,
-                filter: "\"IsDefault\" = true");
+                filter: "\"IsDefault\" = true AND \"IsActive\" = true");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ServiceCategories_TenantId",
@@ -3081,6 +3127,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "OrderStatusHistory");
+
+            migrationBuilder.DropTable(
+                name: "OutboxMessages");
 
             migrationBuilder.DropTable(
                 name: "PackageServices");

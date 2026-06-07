@@ -65,7 +65,7 @@ import cz.cleansia.customer.R
  *     order's detail (Wave 2 has no order picker).
  *
  * Form fields: reason dropdown (7 enum values, 1-indexed) + description
- * textarea (10..2000 chars, counter shown). Submit is gated on both.
+ * textarea bounded by [DisputeFormConstants] (counter shown). Submit is gated on both.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -112,7 +112,7 @@ fun CreateDisputeScreen(
         bottomBar = {
             SubmitFooter(
                 enabled = reasonValue != null &&
-                    description.length in 10..2000 &&
+                    description.length in DisputeFormConstants.DESCRIPTION_MIN_LENGTH..DisputeFormConstants.DESCRIPTION_MAX_LENGTH &&
                     viewModel.orderId != null &&
                     !submitting,
                 submitting = submitting,
@@ -167,7 +167,11 @@ fun CreateDisputeScreen(
             OutlinedTextField(
                 value = description,
                 onValueChange = { next ->
-                    val clipped = if (next.length > 2000) next.substring(0, 2000) else next
+                    val clipped = if (next.length > DisputeFormConstants.DESCRIPTION_MAX_LENGTH) {
+                        next.substring(0, DisputeFormConstants.DESCRIPTION_MAX_LENGTH)
+                    } else {
+                        next
+                    }
                     description = clipped
                     if (!error.isNullOrBlank()) viewModel.clearError()
                 },

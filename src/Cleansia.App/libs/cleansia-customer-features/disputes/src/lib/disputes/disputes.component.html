@@ -151,7 +151,7 @@
         <small class="customer-disputes__field-error">{{ createFieldError('description') }}</small>
         }
         @if (createForm.description) {
-        <small class="customer-disputes__field-count">{{ createForm.description.length }} / 2000</small>
+        <small class="customer-disputes__field-count">{{ createForm.description.length }} / {{ descriptionMaxLength }}</small>
         }
       </div>
     </div>

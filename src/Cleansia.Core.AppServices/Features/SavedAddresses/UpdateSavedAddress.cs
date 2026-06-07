@@ -79,13 +79,15 @@ public class UpdateSavedAddress
                 .WithMessage(BusinessErrorMessage.MaxLength);
 
             RuleFor(x => x.Latitude)
-                .GreaterThanOrEqualTo(-90)
-                .LessThanOrEqualTo(90)
+                .GreaterThanOrEqualTo(GeoBounds.LatMin)
+                .WithMessage(BusinessErrorMessage.MapboxCoordsRequired)
+                .LessThanOrEqualTo(GeoBounds.LatMax)
                 .WithMessage(BusinessErrorMessage.MapboxCoordsRequired);
 
             RuleFor(x => x.Longitude)
-                .GreaterThanOrEqualTo(-180)
-                .LessThanOrEqualTo(180)
+                .GreaterThanOrEqualTo(GeoBounds.LonMin)
+                .WithMessage(BusinessErrorMessage.MapboxCoordsRequired)
+                .LessThanOrEqualTo(GeoBounds.LonMax)
                 .WithMessage(BusinessErrorMessage.MapboxCoordsRequired);
 
             When(x => !string.IsNullOrEmpty(x.CountryId), () =>
@@ -124,7 +126,7 @@ public class UpdateSavedAddress
             var countryId = command.CountryId;
             if (string.IsNullOrEmpty(countryId))
             {
-                var defaultCountry = await countryRepository.GetByIsoCodeAsync("CZE", cancellationToken)
+                var defaultCountry = await countryRepository.GetByIsoCodeAsync(AddressDefaults.FallbackCountryIso, cancellationToken)
                     ?? await countryRepository.GetQueryable().FirstOrDefaultAsync(cancellationToken);
                 countryId = defaultCountry?.Id
                     ?? throw new InvalidOperationException("No countries configured");

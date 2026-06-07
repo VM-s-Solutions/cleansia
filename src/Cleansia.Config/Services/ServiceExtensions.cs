@@ -119,6 +119,9 @@ public static class ServiceExtensions
         // ADR-0002 D3.4 — the dispatch-layer reconciliation sweep (DISTINCT
         // from the registration-retry FiscalRetryService above; they are not merged).
         services.AddScoped<IFiscalReconciliationService, FiscalReconciliationService>();
+        // The single dedicated outbox drainer (claim under a lease → send → mark dispatched). Resolved
+        // by the one timer-triggered drainer host; not run per API/Functions instance.
+        services.AddScoped<IOutboxDrainerService, OutboxDrainerService>();
         services.AddScoped<IAppConfigurationProvider, AppConfigurationProvider>();
         services.AddScoped<ITaxIdValidator, TaxIdValidator>();
         services.AddScoped<IVatCalculator, VatCalculator>();

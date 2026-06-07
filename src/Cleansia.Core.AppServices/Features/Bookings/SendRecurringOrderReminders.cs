@@ -1,8 +1,8 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
-using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
@@ -48,7 +48,8 @@ public class SendRecurringOrderReminders
 
     public class Handler(
         IOrderRepository orderRepository,
-        IQueueClient queueClient,
+        IPendingDispatch pendingDispatch,
+        IUnitOfWork unitOfWork,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -74,27 +75,34 @@ public class SendRecurringOrderReminders
             {
                 try
                 {
-                    await queueClient.SendAsync(
+                    var messageKey = MessageKeys.Push(
+                        order.UserId!, NotificationEventCatalog.RecurringScheduled, order.Id);
+                    pendingDispatch.Enqueue(
                         QueueNames.NotificationsDispatch,
-                        new SendPushNotificationMessage(
-                            UserId: order.UserId!,
-                            EventKey: NotificationEventCatalog.RecurringScheduled,
-                            Args: new Dictionary<string, string>
-                            {
-                                ["orderId"] = order.Id,
-                                ["orderNumber"] = order.DisplayOrderNumber,
-                            },
-                            TenantId: order.TenantId),
-                        cancellationToken);
+                        new QueueEnvelope<SendPushNotificationMessage>(
+                            messageKey,
+                            order.TenantId,
+                            new SendPushNotificationMessage(
+                                UserId: order.UserId!,
+                                EventKey: NotificationEventCatalog.RecurringScheduled,
+                                Args: new Dictionary<string, string>
+                                {
+                                    ["orderId"] = order.Id,
+                                    ["orderNumber"] = order.DisplayOrderNumber,
+                                },
+                                TenantId: order.TenantId)),
+                        messageKey);
 
                     order.MarkRecurringReminderSent(now);
+
+                    // The sent-stamp and the reminder's outbox row commit together, so the row is durable
+                    // iff the stamp is. A failed commit leaves RecurringReminderSentAt null and writes no
+                    // row, so the next sweep retries this order.
+                    await unitOfWork.CommitAsync(cancellationToken);
                     sent++;
                 }
                 catch (Exception ex)
                 {
-                    // Log + skip — a transient queue failure shouldn't kill the
-                    // whole sweep. The order's RecurringReminderSentAt stays null
-                    // so the next sweep will retry.
                     logger.LogWarning(ex,
                         "Failed to enqueue recurring reminder for order {OrderId}",
                         order.Id);

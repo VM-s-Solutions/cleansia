@@ -7,6 +7,7 @@ using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
+using StripeException = Stripe.StripeException;
 
 namespace Cleansia.Core.AppServices.Features.Memberships;
 
@@ -61,12 +62,21 @@ public class CreateMembershipCheckoutSession
             var stripeCustomerId = user.StripeCustomerId;
             if (string.IsNullOrEmpty(stripeCustomerId))
             {
-                stripeCustomerId = await stripeClient.CreateCustomerAsync(
-                    user.Id,
-                    user.Email,
-                    $"{user.FirstName} {user.LastName}".Trim(),
-                    user.PhoneNumber,
-                    cancellationToken);
+                try
+                {
+                    stripeCustomerId = await stripeClient.CreateCustomerAsync(
+                        user.Id,
+                        user.Email,
+                        $"{user.FirstName} {user.LastName}".Trim(),
+                        user.PhoneNumber,
+                        cancellationToken);
+                }
+                catch (StripeException ex)
+                {
+                    logger.LogError(ex, "Stripe customer creation failed for user {UserId} (web checkout flow)", user.Id);
+                    return BusinessResult.Failure<Response>(new Error(
+                        nameof(command.PlanCode), BusinessErrorMessage.PaymentGatewayUnavailable));
+                }
                 user.AssignStripeCustomerId(stripeCustomerId);
                 logger.LogInformation(
                     "Created Stripe customer {StripeCustomerId} for user {UserId} (web checkout flow)",
@@ -77,16 +87,26 @@ public class CreateMembershipCheckoutSession
             // a new Session URL instead of replaying the (potentially expired)
             // original.
             var attemptId = Guid.NewGuid().ToString("N");
-            var url = await stripeClient.CreateMembershipCheckoutSessionAsync(
-                stripeCustomerId: stripeCustomerId,
-                stripePriceId: plan.StripePriceId,
-                userId: user.Id,
-                membershipPlanCode: plan.Code,
-                trialPeriodDays: plan.TrialPeriodDays,
-                successUrl: command.SuccessUrl,
-                cancelUrl: command.CancelUrl,
-                idempotencyAttemptId: attemptId,
-                cancellationToken: cancellationToken);
+            string url;
+            try
+            {
+                url = await stripeClient.CreateMembershipCheckoutSessionAsync(
+                    stripeCustomerId: stripeCustomerId,
+                    stripePriceId: plan.StripePriceId,
+                    userId: user.Id,
+                    membershipPlanCode: plan.Code,
+                    trialPeriodDays: plan.TrialPeriodDays,
+                    successUrl: command.SuccessUrl,
+                    cancelUrl: command.CancelUrl,
+                    idempotencyAttemptId: attemptId,
+                    cancellationToken: cancellationToken);
+            }
+            catch (StripeException ex)
+            {
+                logger.LogError(ex, "Stripe checkout session creation failed for user {UserId} (web checkout flow)", user.Id);
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.PlanCode), BusinessErrorMessage.PaymentGatewayUnavailable));
+            }
 
             return BusinessResult.Success(new Response(url));
         }

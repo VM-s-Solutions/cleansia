@@ -239,8 +239,9 @@ public class CreateMembershipSubscriptionIdempotencyTests
                 "duplicate key value violates unique constraint",
                 new FakePostgresUniqueViolationException()));
 
-        // After the violation the handler resolves the winner by Stripe subscription id. The derived
-        // attempt id (and thus sub id) is identical for the same token, so this is the winner's row.
+        // The winner's row is not visible at the post-Stripe reconcile lookup (still pre-winner-commit), so
+        // that lookup returns null and the loser proceeds to Add + flush; only after the unique violation —
+        // a signal the winner committed first — does the lookup resolve the winner's row.
         var winnerRow = UserMembership.Create(
             userId: UserId,
             membershipPlanId: "plan-1",
@@ -248,7 +249,8 @@ public class CreateMembershipSubscriptionIdempotencyTests
             currentPeriodStart: DateTime.UtcNow,
             currentPeriodEnd: DateTime.UtcNow.AddMonths(1));
         _membershipRepository
-            .Setup(r => r.GetByStripeSubscriptionIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .SetupSequence(r => r.GetByStripeSubscriptionIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserMembership?)null)
             .ReturnsAsync(winnerRow);
 
         // RED before the fix: the handler does not flush/catch, so the DbUpdateException escapes (a throw),
@@ -261,7 +263,7 @@ public class CreateMembershipSubscriptionIdempotencyTests
         // the window was closed at the write boundary, not merely re-checked away.
         Assert.Single(added);
         _membershipRepository.Verify(
-            r => r.GetByStripeSubscriptionIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            r => r.GetByStripeSubscriptionIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 
     // ── null/empty token (web / not-yet-updated caller): deterministic fallback key, still collapses ──

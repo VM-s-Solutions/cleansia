@@ -43,7 +43,7 @@ public class NewJobsDigestService(
     IEmployeeRepository employeeRepository,
     IOrderRepository orderRepository,
     IUserNotificationPreferencesRepository preferencesRepository,
-    IQueueClient queueClient,
+    IPendingDispatch pendingDispatch,
     IUnitOfWork unitOfWork,
     ILogger<NewJobsDigestService> logger) : INewJobsDigestService
 {
@@ -167,18 +167,25 @@ public class NewJobsDigestService(
                     continue;
                 }
 
-                await queueClient.SendAsync(
+                var messageKey = MessageKeys.Push(
+                    cleaner.UserId, NotificationEventCatalog.NewJobsAvailable, sweepStartedAt.UtcDateTime.Ticks.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                pendingDispatch.Enqueue(
                     QueueNames.NotificationsDispatch,
-                    new SendPushNotificationMessage(
-                        UserId: cleaner.UserId,
-                        EventKey: NotificationEventCatalog.NewJobsAvailable,
-                        Args: new Dictionary<string, string>
-                        {
-                            ["count"] = takeable.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                        },
-                        TenantId: cleaner.TenantId),
-                    cancellationToken);
+                    new QueueEnvelope<SendPushNotificationMessage>(
+                        messageKey,
+                        cleaner.TenantId,
+                        new SendPushNotificationMessage(
+                            UserId: cleaner.UserId,
+                            EventKey: NotificationEventCatalog.NewJobsAvailable,
+                            Args: new Dictionary<string, string>
+                            {
+                                ["count"] = takeable.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                            },
+                            TenantId: cleaner.TenantId)),
+                    messageKey);
 
+                // The digest's outbox row commits together with the cleaner's advanced watermark, so the
+                // row is durable iff the watermark moved; the drainer puts it on the wire after the commit.
                 await StampWatermarkAsync(cleaner.EmployeeId, sweepStartedAt, cancellationToken);
                 totalEnqueued++;
             }

@@ -24,11 +24,16 @@ public static class QueueExtensions
             new QueueClientOptions { MessageEncoding = QueueMessageEncoding.Base64 }));
         services.AddSingleton<IQueueClient, AzureStorageQueueClient>();
 
-        // ADR-0002 D1 — the post-commit dispatch seam. IPendingDispatch is SCOPED (per request): a
-        // command handler records intent on the request's instance; PostCommitDispatchBehavior drains
-        // it after the commit. Wave-0 backing is the in-memory buffer; Wave-1 (F2-FULL) swaps this
-        // line for a DbContext-backed outbox with NO command-handler call-site churn.
-        services.AddScoped<IPendingDispatch, InMemoryPendingDispatch>();
+        // The IPendingDispatch seam is SCOPED (per request): a command handler records intent on the
+        // request's instance; PostCommitDispatchBehavior gates it on the commit. The durable backing
+        // (OutboxPendingDispatch — it writes an outbox row into the pipeline's DbContext) is registered
+        // in AddRepositories, which runs after this, because the implementation needs the scoped
+        // DbContext; the command-handler call sites are unchanged either way.
+
+        // The claim-then-act dedup for non-transactional consumer effects with no domain target-state
+        // (the send-email consumer). Singleton so a claim survives redeliveries within the worker
+        // process; Wave-1 swaps the backing for a durable ProcessedMessage row.
+        services.AddSingleton<IIdempotencyGuard, InMemoryIdempotencyGuard>();
 
         return services;
     }

@@ -6,6 +6,7 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 
@@ -56,11 +57,11 @@ public class RegisterEmployee
         string Language)
         : ICommand<bool>;
 
-    internal class Handler(
-        IEmailService emailService,
+    public class Handler(
         ICartRepository cartRepository,
         IUserRepository userRepository,
-        IEmployeeRepository employeeRepository)
+        IEmployeeRepository employeeRepository,
+        IPendingDispatch pending)
         : ICommandHandler<Command, bool>
     {
         public async Task<BusinessResult<bool>> Handle(Command command, CancellationToken cancellationToken)
@@ -90,7 +91,7 @@ public class RegisterEmployee
 
             var userName = $"{userEntity.FirstName} {userEntity.LastName}";
 
-            await emailService.SendEmailConfirmationAsync(userEntity.Email, userName, rawConfirmationToken, command.Language, cancellationToken);
+            EmailDispatch.EnqueueConfirmation(pending, userEntity, userName, rawConfirmationToken, command.Language);
 
             return BusinessResult.Success(true);
         }

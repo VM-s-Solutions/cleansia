@@ -51,9 +51,8 @@ public class DeleteSavedAddress
     {
         public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
         {
-            // Existence + ownership are enforced in the validator.
             var saved = (await savedAddressRepository.GetByIdAsync(command.SavedAddressId, cancellationToken))!;
-            savedAddressRepository.Remove(saved);
+            savedAddressRepository.Deactivate(saved);
             return BusinessResult.Success();
         }
     }

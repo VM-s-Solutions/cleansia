@@ -17,6 +17,10 @@ import { DialogModule } from 'primeng/dialog';
 import { SkeletonModule } from 'primeng/skeleton';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { DisputesFacade } from './disputes.facade';
+import {
+  DISPUTE_DESCRIPTION_MAX_LENGTH,
+  DISPUTE_DESCRIPTION_MIN_LENGTH,
+} from '../dispute.constants';
 
 @Component({
   selector: 'cleansia-customer-disputes',
@@ -52,6 +56,8 @@ export class DisputesComponent implements OnInit {
   readonly orderOptions = this.facade.orderOptions;
   readonly sendingMessage = this.facade.sendingMessage;
 
+  protected readonly descriptionMaxLength = DISPUTE_DESCRIPTION_MAX_LENGTH;
+
   showCreateDialog = signal(false);
   showDetailDialog = signal(false);
   newMessage = signal('');
@@ -74,8 +80,10 @@ export class DisputesComponent implements OnInit {
         return !this.createForm.orderId ? this.translate.instant('global.validation.required') : null;
       case 'description':
         if (!this.createForm.description) return this.translate.instant('global.validation.required');
-        if (this.createForm.description.length < 10) return this.translate.instant('global.validation.minlength', { min: 10 });
-        if (this.createForm.description.length > 2000) return this.translate.instant('global.validation.maxlength', { max: 2000 });
+        if (this.createForm.description.length < DISPUTE_DESCRIPTION_MIN_LENGTH)
+          return this.translate.instant('global.validation.minlength', { min: DISPUTE_DESCRIPTION_MIN_LENGTH });
+        if (this.createForm.description.length > DISPUTE_DESCRIPTION_MAX_LENGTH)
+          return this.translate.instant('global.validation.maxlength', { max: DISPUTE_DESCRIPTION_MAX_LENGTH });
         return null;
       default:
         return null;
@@ -86,8 +94,8 @@ export class DisputesComponent implements OnInit {
     return !!(
       this.createForm.orderId &&
       this.createForm.description &&
-      this.createForm.description.length >= 10 &&
-      this.createForm.description.length <= 2000
+      this.createForm.description.length >= DISPUTE_DESCRIPTION_MIN_LENGTH &&
+      this.createForm.description.length <= DISPUTE_DESCRIPTION_MAX_LENGTH
     );
   }
 

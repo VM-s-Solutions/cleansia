@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Features.Users;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Web.Mobile.Partner.Abstractions;
 using MediatR;
@@ -103,7 +104,7 @@ public class AuthController(IMediator mediator) : MobileApiController(mediator)
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshToken.Command command, CancellationToken cancellationToken)
     {
-        var enriched = command with { RequiredAudience = JwtAudiences.Mobile };
+        var enriched = command with { RequiredProfile = UserProfile.Employee, RequiredAudience = JwtAudiences.Mobile };
         var result = await Mediator.Send(enriched, cancellationToken);
         return HandleResult<JwtTokenResponse>(result);
     }

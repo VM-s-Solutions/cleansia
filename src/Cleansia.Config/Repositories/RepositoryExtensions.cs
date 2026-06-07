@@ -20,6 +20,12 @@ public static class RepositoryExtensions
         // queue/persistence services; resolvable from the Functions host (it calls AddCoreBindings).
         services.AddScoped<IDeadLetterStore, DeadLetterStore>();
 
+        // The durable backing for the IPendingDispatch seam: Enqueue writes an outbox row into the
+        // pipeline's scoped DbContext (replacing the in-memory buffer registered by AddAzureStorageQueues
+        // before this), so a dispatch record exists iff the business state committed. Registered here
+        // because the implementation lives in Cleansia.Infra.Database (it needs the scoped DbContext).
+        services.AddScoped<IPendingDispatch, OutboxPendingDispatch>();
+
         return services.RegisterFromAssemblies([AssemblyReference.Assembly], type => type.GetInterfaces().Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRepository<,>)));
     }
 }

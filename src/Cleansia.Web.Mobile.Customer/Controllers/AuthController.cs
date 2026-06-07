@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Features.Users;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Web.Mobile.Customer.Abstractions;
 using MediatR;
@@ -98,7 +99,7 @@ public class AuthController(IMediator mediator) : CustomerMobileApiController(me
         // this host should refresh only here. Mirrors how the partner Mobile
         // host pins to JwtAudiences.Mobile, and Customer Web pins to
         // JwtAudiences.Customer.
-        var enriched = command with { RequiredAudience = JwtAudiences.Customer };
+        var enriched = command with { RequiredProfile = UserProfile.Customer, RequiredAudience = JwtAudiences.Customer };
         var result = await Mediator.Send(enriched, cancellationToken);
         return HandleResult<JwtTokenResponse>(result);
     }

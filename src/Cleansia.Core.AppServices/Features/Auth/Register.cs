@@ -6,6 +6,8 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
@@ -61,11 +63,11 @@ public class Register
         string? ReferralCode = null)
         : ICommand<bool>;
 
-    internal class Handler(
-        IEmailService emailService,
+    public class Handler(
         ICartRepository cartRepository,
         IUserRepository userRepository,
         IReferralService referralService,
+        IPendingDispatch pending,
         ILogger<Handler> logger)
         : ICommandHandler<Command, bool>
     {
@@ -91,7 +93,7 @@ public class Register
 
             var userName = $"{userEntity.FirstName} {userEntity.LastName}";
 
-            await emailService.SendEmailConfirmationAsync(userEntity.Email, userName, rawConfirmationToken, command.Language, cancellationToken);
+            EmailDispatch.EnqueueConfirmation(pending, userEntity, userName, rawConfirmationToken, command.Language);
 
             // Referral acceptance is fail-soft: a bad code (typo, expired,
             // self-referral) must NOT block account creation. The user can

@@ -8,6 +8,7 @@ using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
+using StripeException = Stripe.StripeException;
 
 namespace Cleansia.Core.AppServices.Features.Memberships;
 
@@ -78,12 +79,21 @@ public class CreateMembershipSubscription
             var stripeCustomerId = user.StripeCustomerId;
             if (string.IsNullOrEmpty(stripeCustomerId))
             {
-                stripeCustomerId = await stripeClient.CreateCustomerAsync(
-                    user.Id,
-                    user.Email,
-                    $"{user.FirstName} {user.LastName}".Trim(),
-                    user.PhoneNumber,
-                    cancellationToken);
+                try
+                {
+                    stripeCustomerId = await stripeClient.CreateCustomerAsync(
+                        user.Id,
+                        user.Email,
+                        $"{user.FirstName} {user.LastName}".Trim(),
+                        user.PhoneNumber,
+                        cancellationToken);
+                }
+                catch (StripeException ex)
+                {
+                    logger.LogError(ex, "Stripe customer creation failed for user {UserId} (subscribe flow)", user.Id);
+                    return BusinessResult.Failure<Response>(new Error(
+                        nameof(command.PlanCode), BusinessErrorMessage.PaymentGatewayUnavailable));
+                }
                 user.AssignStripeCustomerId(stripeCustomerId);
                 logger.LogInformation(
                     "Created Stripe customer {StripeCustomerId} for user {UserId} (subscribe flow)",
@@ -92,27 +102,45 @@ public class CreateMembershipSubscription
 
             if (command.PaymentMethodConfirmed)
             {
-                // ADR-0002 idempotent-consumer contract: the Stripe attempt id is
-                // DERIVED from the client-supplied idempotency token, NOT a fresh Guid.NewGuid() per call.
-                // The real Stripe key is sub-{customer}-{price}-{attemptId}, so two concurrent/retried
-                // confirms carrying the SAME token hit the SAME Stripe key and Stripe REPLAYS the same
-                // subscription instead of creating a second one (the double-charge hole). A genuine
-                // re-subscribe after cancellation carries a NEW token => a new attempt id => a new
-                // subscription, so it is not blocked. When the token is null/empty (web / not-yet-updated
-                // callers), fall back to a DETERMINISTIC key from stable inputs (userId + planCode) so
-                // even those callers' double-taps collapse on one Stripe key — defense in depth.
+                // The attempt id must be deterministic, never a per-call Guid: two concurrent/retried
+                // confirms that share it hit the same Stripe idempotency key, so Stripe replays the one
+                // subscription instead of creating a second billable one. A re-subscribe after
+                // cancellation carries a new token, so it is correctly a new subscription.
                 var attemptId = DeriveStripeAttemptId(command.IdempotencyToken, user.Id, plan.Code);
-                var subscription = await stripeClient.CreateSubscriptionAsync(
-                    stripeCustomerId, plan.StripePriceId, plan.TrialPeriodDays, attemptId, cancellationToken);
+                SubscriptionResult subscription;
+                try
+                {
+                    subscription = await stripeClient.CreateSubscriptionAsync(
+                        stripeCustomerId, plan.StripePriceId, plan.TrialPeriodDays, attemptId, cancellationToken);
+                }
+                catch (StripeException ex)
+                {
+                    logger.LogError(ex, "Stripe subscription creation failed for user {UserId}, plan {PlanCode}", user.Id, plan.Code);
+                    return BusinessResult.Failure<Response>(new Error(
+                        nameof(command.PlanCode), BusinessErrorMessage.PaymentGatewayUnavailable));
+                }
 
-                // Local-row collapse: with the same Stripe key both concurrent
-                // confirms receive the SAME subscription.SubscriptionId. The :57 guard ran BEFORE the
-                // Stripe call (a TOCTOU window), so re-check active membership now — the loser sees the
-                // winner's just-created row and returns a deterministic MembershipAlreadyActive instead
-                // of Add-ing a duplicate that would otherwise hit the unique index on StripeSubscriptionId
-                // and surface as a raw DbUpdateException/500 at the pipeline commit. This handler is a
-                // top-level command (not inside the paid-order txn), so failing only THIS request is
-                // acceptable; the loser gets a clean result.
+                // Reconcile-on-retry: a prior confirm that reached Stripe but failed to commit the local
+                // row leaves the subscription billed with no mirror. The deterministic attempt id makes
+                // Stripe REPLAY the same SubscriptionId on retry, so resolve to any row already tracking it
+                // rather than minting a second mirror for one billable subscription.
+                var existingForSubscription = await userMembershipRepository.GetByStripeSubscriptionIdAsync(
+                    subscription.SubscriptionId, cancellationToken);
+                if (existingForSubscription != null)
+                {
+                    logger.LogInformation(
+                        "Reconciled retried confirm for user {UserId}, plan {PlanCode} to existing membership {MembershipId} (Stripe sub {SubscriptionId})",
+                        user.Id, plan.Code, existingForSubscription.Id, subscription.SubscriptionId);
+                    return BusinessResult.Success(new Response(
+                        MembershipId: existingForSubscription.Id,
+                        SetupIntentClientSecret: string.Empty,
+                        StripeCustomerId: stripeCustomerId,
+                        EphemeralKey: string.Empty));
+                }
+
+                // The pre-Stripe active-membership guard ran before this Stripe call, so re-check now:
+                // a concurrent confirm that won the race has since committed its row, and the loser must
+                // resolve to a deterministic MembershipAlreadyActive rather than add a duplicate.
                 var concurrentWinner = await userMembershipRepository.GetActiveForUserAsync(user.Id, cancellationToken);
                 if (concurrentWinner != null)
                 {
@@ -131,17 +159,12 @@ public class CreateMembershipSubscription
                     currentPeriodEnd: subscription.CurrentPeriodEnd);
                 userMembershipRepository.Add(membership);
 
-                // CLOSE the concurrent window at the write boundary, don't just
-                // narrow it. The re-check above only narrows: in the genuine race the LOSER re-checks BEFORE the
-                // WINNER's pipeline CommitAsync has made the winner's row visible, sees null, and Add-s a row that
-                // collides on the StripeSubscriptionId unique index (UserMembershipEntityConfiguration:56-57). If
-                // we let that collision reach the pipeline's UnitOfWorkPipelineBehavior.CommitAsync it surfaces as
-                // an unhandled DbUpdateException → 500. So FLUSH the insert HERE and own the failure: a Postgres
-                // 23505 unique-violation means the winner committed first — resolve to the winner's row and return
-                // the same deterministic MembershipAlreadyActive the re-check would have. Once this SaveChanges
-                // succeeds the entity is Unchanged, so the pipeline's final CommitAsync is a safe no-op; on the
-                // violation we return a Failure (no throw), and the pipeline commit then has nothing to persist
-                // for this row either. Exactly ONE UserMembership row survives; the loser NEVER sees a 500.
+                // The re-check above still leaves a window where the loser sees null because the winner
+                // has not yet committed. Flush the insert here and own the unique-index collision: a
+                // unique violation means the winner committed first, so resolve to its row and return the
+                // same MembershipAlreadyActive instead of letting a raw DbUpdateException reach the
+                // pipeline commit as a 500. On success the entity is Unchanged, so the pipeline's later
+                // commit is a safe no-op. Exactly one row survives the race.
                 try
                 {
                     await userMembershipRepository.CommitAsync(cancellationToken);
@@ -168,8 +191,19 @@ public class CreateMembershipSubscription
                     EphemeralKey: string.Empty));
             }
 
-            var setupIntent = await stripeClient.CreateSetupIntentAsync(stripeCustomerId, cancellationToken);
-            var ephemeralKey = await stripeClient.CreateEphemeralKeyAsync(stripeCustomerId, cancellationToken);
+            SetupIntentResult setupIntent;
+            string ephemeralKey;
+            try
+            {
+                setupIntent = await stripeClient.CreateSetupIntentAsync(stripeCustomerId, cancellationToken);
+                ephemeralKey = await stripeClient.CreateEphemeralKeyAsync(stripeCustomerId, cancellationToken);
+            }
+            catch (StripeException ex)
+            {
+                logger.LogError(ex, "Stripe setup-intent / ephemeral-key creation failed for user {UserId}", user.Id);
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.PlanCode), BusinessErrorMessage.PaymentGatewayUnavailable));
+            }
 
             return BusinessResult.Success(new Response(
                 MembershipId: string.Empty,

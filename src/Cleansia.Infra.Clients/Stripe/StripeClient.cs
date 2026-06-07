@@ -1,14 +1,39 @@
+using Cleansia.Core.Clients.Abstractions;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Infra.Common.Configuration.Interfaces;
+using Microsoft.Extensions.Logging;
 using Stripe;
 using Stripe.Checkout;
 using IStripeClient = Cleansia.Core.Clients.Abstractions.Stripe.IStripeClient;
 
 namespace Cleansia.Infra.Clients.Stripe;
 
-public class StripeClient(IStripeConfig config) : IStripeClient
+public class StripeClient : IStripeClient
 {
+    private readonly IStripeConfig config;
+    private readonly ILogger logger;
+    private readonly global::Stripe.StripeClient stripe;
+
+    public StripeClient(
+        IStripeConfig config,
+        IHttpClientFactory httpClientFactory,
+        ILogger<StripeClient> logger)
+    {
+        this.config = config;
+        this.logger = logger;
+
+        // Hand the SDK the pooled, factory-managed HttpClient (resilience handler + OTel), built once
+        // and reused by every *Service below, instead of minting its own socket per call.
+        //
+        // maxNetworkRetries: 0 — retry lives at the named client's resilience handler, not in the SDK,
+        // so we don't double-retry. The idempotency keys on each write's RequestOptions keep any
+        // transport-level retry safe.
+        var transport = httpClientFactory.CreateClient(StripeExtensions.HttpClientName);
+        var systemNetHttpClient = new SystemNetHttpClient(transport, maxNetworkRetries: 0);
+        stripe = new global::Stripe.StripeClient(config.SecretKey, httpClient: systemNetHttpClient);
+    }
+
     public async Task<string> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken)
     {
         var unitAmount = (long)(order.TotalPrice * 100);
@@ -39,18 +64,20 @@ public class StripeClient(IStripeConfig config) : IStripeClient
         };
 
         var requestOptions = new RequestOptions { IdempotencyKey = $"checkout-{order.Id}" };
-        var service = new SessionService(new global::Stripe.StripeClient(config.SecretKey));
-        var session = await service.CreateAsync(options, requestOptions, cancellationToken);
+        var service = new SessionService(stripe);
+        var session = await ClassifyAsync(
+            nameof(CreateCheckoutSessionAsync),
+            () => service.CreateAsync(options, requestOptions, cancellationToken));
 
         return session.Url;
     }
 
     public async Task RefundCheckoutSessionAsync(string stripeSessionId, decimal amount, CancellationToken cancellationToken)
     {
-        var client = new global::Stripe.StripeClient(config.SecretKey);
-
-        var sessionService = new SessionService(client);
-        var session = await sessionService.GetAsync(stripeSessionId, cancellationToken: cancellationToken);
+        var sessionService = new SessionService(stripe);
+        var session = await ClassifyAsync(
+            nameof(RefundCheckoutSessionAsync),
+            () => sessionService.GetAsync(stripeSessionId, cancellationToken: cancellationToken));
 
         if (string.IsNullOrEmpty(session.PaymentIntentId))
         {
@@ -58,7 +85,7 @@ public class StripeClient(IStripeConfig config) : IStripeClient
                 $"Checkout session {stripeSessionId} has no PaymentIntent — likely unpaid, nothing to refund.");
         }
 
-        var refundService = new global::Stripe.RefundService(client);
+        var refundService = new global::Stripe.RefundService(stripe);
         var refundOptions = new global::Stripe.RefundCreateOptions
         {
             PaymentIntent = session.PaymentIntentId,
@@ -70,7 +97,9 @@ public class StripeClient(IStripeConfig config) : IStripeClient
         // collide and Stripe returns the original refund (the desired idempotency).
         var amountCents = (long)(amount * 100);
         var requestOptions = new RequestOptions { IdempotencyKey = $"refund-{stripeSessionId}-{amountCents}" };
-        await refundService.CreateAsync(refundOptions, requestOptions, cancellationToken);
+        await ClassifyAsync(
+            nameof(RefundCheckoutSessionAsync),
+            () => refundService.CreateAsync(refundOptions, requestOptions, cancellationToken));
     }
 
     public async Task<string> CreateCustomerAsync(
@@ -80,7 +109,7 @@ public class StripeClient(IStripeConfig config) : IStripeClient
         string? phone,
         CancellationToken cancellationToken)
     {
-        var service = new CustomerService(new global::Stripe.StripeClient(config.SecretKey));
+        var service = new CustomerService(stripe);
         var options = new CustomerCreateOptions
         {
             Email = email,
@@ -93,7 +122,9 @@ public class StripeClient(IStripeConfig config) : IStripeClient
             },
         };
         var requestOptions = new RequestOptions { IdempotencyKey = $"customer-{userId}" };
-        var customer = await service.CreateAsync(options, requestOptions, cancellationToken);
+        var customer = await ClassifyAsync(
+            nameof(CreateCustomerAsync),
+            () => service.CreateAsync(options, requestOptions, cancellationToken));
         return customer.Id;
     }
 
@@ -105,7 +136,7 @@ public class StripeClient(IStripeConfig config) : IStripeClient
         string displayOrderNumber,
         CancellationToken cancellationToken)
     {
-        var service = new PaymentIntentService(new global::Stripe.StripeClient(config.SecretKey));
+        var service = new PaymentIntentService(stripe);
         var options = new PaymentIntentCreateOptions
         {
             Amount = (long)(amount * 100),
@@ -129,7 +160,9 @@ public class StripeClient(IStripeConfig config) : IStripeClient
         // intent (the desired idempotent behavior).
         var amountCents = (long)(amount * 100);
         var requestOptions = new RequestOptions { IdempotencyKey = $"pi-{orderId}-{amountCents}" };
-        var intent = await service.CreateAsync(options, requestOptions, cancellationToken);
+        var intent = await ClassifyAsync(
+            nameof(CreatePaymentIntentAsync),
+            () => service.CreateAsync(options, requestOptions, cancellationToken));
         return new PaymentIntentResult(intent.Id, intent.ClientSecret);
     }
 
@@ -137,24 +170,28 @@ public class StripeClient(IStripeConfig config) : IStripeClient
         string paymentIntentId,
         CancellationToken cancellationToken)
     {
-        var service = new PaymentIntentService(new global::Stripe.StripeClient(config.SecretKey));
+        var service = new PaymentIntentService(stripe);
         // No options → uses the default `requested_by_customer` cancellation
         // reason. Stripe accepts cancel on requires_payment_method,
         // requires_confirmation, requires_action, processing, requires_capture.
-        await service.CancelAsync(paymentIntentId, cancellationToken: cancellationToken);
+        await ClassifyAsync(
+            nameof(CancelPaymentIntentAsync),
+            () => service.CancelAsync(paymentIntentId, cancellationToken: cancellationToken));
     }
 
     public async Task<string> CreateEphemeralKeyAsync(
         string stripeCustomerId,
         CancellationToken cancellationToken)
     {
-        var service = new EphemeralKeyService(new global::Stripe.StripeClient(config.SecretKey));
+        var service = new EphemeralKeyService(stripe);
         var options = new EphemeralKeyCreateOptions
         {
             Customer = stripeCustomerId,
             StripeVersion = "2024-12-18.acacia",
         };
-        var key = await service.CreateAsync(options, cancellationToken: cancellationToken);
+        var key = await ClassifyAsync(
+            nameof(CreateEphemeralKeyAsync),
+            () => service.CreateAsync(options, cancellationToken: cancellationToken));
         return key.Secret;
     }
 
@@ -162,7 +199,7 @@ public class StripeClient(IStripeConfig config) : IStripeClient
         string stripeCustomerId,
         CancellationToken cancellationToken)
     {
-        var service = new SetupIntentService(new global::Stripe.StripeClient(config.SecretKey));
+        var service = new SetupIntentService(stripe);
         var options = new SetupIntentCreateOptions
         {
             Customer = stripeCustomerId,
@@ -172,7 +209,9 @@ public class StripeClient(IStripeConfig config) : IStripeClient
                 Enabled = true,
             },
         };
-        var intent = await service.CreateAsync(options, cancellationToken: cancellationToken);
+        var intent = await ClassifyAsync(
+            nameof(CreateSetupIntentAsync),
+            () => service.CreateAsync(options, cancellationToken: cancellationToken));
         return new SetupIntentResult(intent.Id, intent.ClientSecret);
     }
 
@@ -183,7 +222,7 @@ public class StripeClient(IStripeConfig config) : IStripeClient
         string idempotencyAttemptId,
         CancellationToken cancellationToken)
     {
-        var service = new SubscriptionService(new global::Stripe.StripeClient(config.SecretKey));
+        var service = new SubscriptionService(stripe);
         var options = new SubscriptionCreateOptions
         {
             Customer = stripeCustomerId,
@@ -206,7 +245,9 @@ public class StripeClient(IStripeConfig config) : IStripeClient
         // so re-subscribing to the same plan after cancellation creates a new
         // subscription instead of returning the canceled one.
         var requestOptions = new RequestOptions { IdempotencyKey = $"sub-{stripeCustomerId}-{stripePriceId}-{idempotencyAttemptId}" };
-        var subscription = await service.CreateAsync(options, requestOptions, cancellationToken);
+        var subscription = await ClassifyAsync(
+            nameof(CreateSubscriptionAsync),
+            () => service.CreateAsync(options, requestOptions, cancellationToken));
         var firstItem = subscription.Items?.Data?.FirstOrDefault();
         var periodStart = firstItem?.CurrentPeriodStart ?? DateTime.UtcNow;
         var periodEnd = firstItem?.CurrentPeriodEnd ?? DateTime.UtcNow.AddMonths(1);
@@ -222,10 +263,11 @@ public class StripeClient(IStripeConfig config) : IStripeClient
         string idempotencyAttemptId,
         CancellationToken cancellationToken)
     {
-        var client = new global::Stripe.StripeClient(config.SecretKey);
-        var service = new SubscriptionService(client);
+        var service = new SubscriptionService(stripe);
 
-        var existing = await service.GetAsync(stripeSubscriptionId, cancellationToken: cancellationToken);
+        var existing = await ClassifyAsync(
+            nameof(SwapSubscriptionPriceAsync),
+            () => service.GetAsync(stripeSubscriptionId, cancellationToken: cancellationToken));
         var existingItemId = existing.Items?.Data?.FirstOrDefault()?.Id
             ?? throw new InvalidOperationException(
                 $"Subscription {stripeSubscriptionId} has no items — can't swap price.");
@@ -245,7 +287,9 @@ public class StripeClient(IStripeConfig config) : IStripeClient
         // attemptId allows a user to swap A→B→A→B and have each swap reach
         // Stripe instead of replaying the first one's response.
         var requestOptions = new RequestOptions { IdempotencyKey = $"swap-{stripeSubscriptionId}-{newStripePriceId}-{idempotencyAttemptId}" };
-        var swapped = await service.UpdateAsync(stripeSubscriptionId, options, requestOptions, cancellationToken);
+        var swapped = await ClassifyAsync(
+            nameof(SwapSubscriptionPriceAsync),
+            () => service.UpdateAsync(stripeSubscriptionId, options, requestOptions, cancellationToken));
         var firstItem = swapped.Items?.Data?.FirstOrDefault();
         var periodStart = firstItem?.CurrentPeriodStart ?? DateTime.UtcNow;
         var periodEnd = firstItem?.CurrentPeriodEnd ?? DateTime.UtcNow.AddMonths(1);
@@ -259,10 +303,12 @@ public class StripeClient(IStripeConfig config) : IStripeClient
         string stripeSubscriptionId,
         CancellationToken cancellationToken)
     {
-        var service = new SubscriptionService(new global::Stripe.StripeClient(config.SecretKey));
+        var service = new SubscriptionService(stripe);
         var options = new SubscriptionUpdateOptions { CancelAtPeriodEnd = true };
         var requestOptions = new RequestOptions { IdempotencyKey = $"cancel-{stripeSubscriptionId}" };
-        await service.UpdateAsync(stripeSubscriptionId, options, requestOptions, cancellationToken);
+        await ClassifyAsync(
+            nameof(CancelSubscriptionAtPeriodEndAsync),
+            () => service.UpdateAsync(stripeSubscriptionId, options, requestOptions, cancellationToken));
     }
 
     public async Task<string> CreateMembershipCheckoutSessionAsync(
@@ -309,8 +355,50 @@ public class StripeClient(IStripeConfig config) : IStripeClient
         // re-opening checkout after abandoning produces a fresh Session URL
         // instead of replaying the original (potentially expired) one.
         var requestOptions = new RequestOptions { IdempotencyKey = $"mship-checkout-{userId}-{stripePriceId}-{idempotencyAttemptId}" };
-        var service = new SessionService(new global::Stripe.StripeClient(config.SecretKey));
-        var session = await service.CreateAsync(options, requestOptions, cancellationToken);
+        var service = new SessionService(stripe);
+        var session = await ClassifyAsync(
+            nameof(CreateMembershipCheckoutSessionAsync),
+            () => service.CreateAsync(options, requestOptions, cancellationToken));
         return session.Url;
+    }
+
+    // Classify + meter + log every Stripe failure at the adapter boundary, then re-throw so the
+    // existing caller contracts (callers handle StripeException; the handler shapes the BusinessResult)
+    // are unchanged. This adds observability only; it does not alter the throw/return.
+    private async Task<T> ClassifyAsync<T>(string operation, Func<Task<T>> call)
+    {
+        try
+        {
+            return await call();
+        }
+        catch (StripeException ex)
+        {
+            LogBoundary(operation, IntegrationFailureClassifier.FromStripeException(ex), ex);
+            throw;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or TimeoutException)
+        {
+            LogBoundary(operation, IntegrationFailureClassifier.FromException(ex), ex);
+            throw;
+        }
+    }
+
+    private void LogBoundary(string operation, IntegrationFailureClass failureClass, Exception ex)
+    {
+        IntegrationFailureMetrics.Record(StripeExtensions.HttpClientName, failureClass);
+
+        if (failureClass == IntegrationFailureClass.AuthConfig)
+        {
+            // Our key/config is wrong — an ops incident, not a caller error.
+            logger.LogError(ex,
+                "Stripe {Operation} failed: {FailureClass} (provider config/credentials).",
+                operation, failureClass);
+        }
+        else
+        {
+            logger.LogWarning(ex,
+                "Stripe {Operation} failed: {FailureClass}.",
+                operation, failureClass);
+        }
     }
 }

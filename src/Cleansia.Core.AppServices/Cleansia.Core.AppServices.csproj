@@ -11,7 +11,9 @@
     <PackageReference Include="Google.Apis.Auth" />
     <PackageReference Include="MediatR" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
-    <PackageReference Include="Polly" />
+    <!-- T-0144 / ADR-0005 D1 — EmailService sources the SendGrid SDK's transport from the named
+         "SendGrid" IHttpClientFactory client (standard resilience handler + OTel). -->
+    <PackageReference Include="Microsoft.Extensions.Http" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
   </ItemGroup>
 

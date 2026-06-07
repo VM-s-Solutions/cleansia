@@ -1,3 +1,4 @@
+using System.Linq;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
@@ -9,11 +10,9 @@ using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
 namespace Cleansia.Core.AppServices.Features.Marketing;
 
 /// <summary>
-/// Admin-triggered "send sitewide promo" action. Synchronously enqueues
-/// exactly one fan-out message and returns. The actual per-user dispatch
-/// (paging through users with <c>Promo = true</c>, enqueueing the per-user
-/// notification message) runs inside
-/// <c>SendSitewidePromoFanoutFunction</c>.
+/// Admin-triggered "send sitewide promo" action. Records exactly one fan-out message and returns. The
+/// actual per-user dispatch (paging through users with <c>Promo = true</c>, enqueueing the per-user
+/// notification message) runs inside <c>SendSitewidePromoFanoutFunction</c>.
 ///
 /// Phase B's only event whose body is NOT a fixed mobile-side template.
 /// Admin types per-locale title+body in the UI; mobile receives the
@@ -61,34 +60,45 @@ public static class SendSitewidePromo
     }
 
     public class Handler(
-        IQueueClient queueClient,
+        IPendingDispatch pendingDispatch,
         ITenantProvider tenantProvider) : ICommandHandler<Command>
     {
-        public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
+        private const char FieldSeparator = '\u001f';
+
+        public Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
         {
-            var message = new SendSitewidePromoMessage(
-                TitleByLocale: new Dictionary<string, string>
-                {
-                    ["en"] = command.TitleEn,
-                    ["cs"] = command.TitleCs,
-                    ["sk"] = command.TitleSk,
-                    ["uk"] = command.TitleUk,
-                    ["ru"] = command.TitleRu,
-                },
-                BodyByLocale: new Dictionary<string, string>
-                {
-                    ["en"] = command.BodyEn,
-                    ["cs"] = command.BodyCs,
-                    ["sk"] = command.BodySk,
-                    ["uk"] = command.BodyUk,
-                    ["ru"] = command.BodyRu,
-                },
-                TenantId: tenantProvider.GetCurrentTenantId());
+            var tenantId = tenantProvider.GetCurrentTenantId();
+            var titleByLocale = new Dictionary<string, string>
+            {
+                ["en"] = command.TitleEn,
+                ["cs"] = command.TitleCs,
+                ["sk"] = command.TitleSk,
+                ["uk"] = command.TitleUk,
+                ["ru"] = command.TitleRu,
+            };
+            var bodyByLocale = new Dictionary<string, string>
+            {
+                ["en"] = command.BodyEn,
+                ["cs"] = command.BodyCs,
+                ["sk"] = command.BodySk,
+                ["uk"] = command.BodyUk,
+                ["ru"] = command.BodyRu,
+            };
 
-            await queueClient.SendAsync(
-                QueueNames.SitewidePromoFanout, message, cancellationToken);
+            var message = new SendSitewidePromoMessage(titleByLocale, bodyByLocale, tenantId);
+            var messageKey = MessageKeys.SitewidePromo(tenantId, ContentSignature(titleByLocale, bodyByLocale));
 
-            return BusinessResult.Success();
+            pendingDispatch.Enqueue(
+                QueueNames.SitewidePromoFanout,
+                new QueueEnvelope<SendSitewidePromoMessage>(messageKey, tenantId, message),
+                messageKey);
+
+            return Task.FromResult(BusinessResult.Success());
         }
+
+        private static string ContentSignature(
+            IReadOnlyDictionary<string, string> titleByLocale,
+            IReadOnlyDictionary<string, string> bodyByLocale) =>
+            string.Join(FieldSeparator, titleByLocale.Values.Concat(bodyByLocale.Values));
     }
 }

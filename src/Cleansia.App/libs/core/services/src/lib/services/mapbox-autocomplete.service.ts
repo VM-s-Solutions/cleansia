@@ -16,9 +16,41 @@ import {
  * Mapbox public access token. Provide it from each app's environment.ts.
  * If empty, the autocomplete short-circuits and returns no suggestions —
  * the user can still type the address manually.
+ *
+ * @deprecated the browser must NEVER hold or send the Mapbox
+ * token — a token in a request URL leaks into history/referrer/CDN/APM logs.
+ * The token now lives server-side and is injected by a same-origin proxy
+ * (see {@link MAPBOX_PROXY_PATH}). Whether autocomplete is available is
+ * advertised by the token-free boolean {@link MAPBOX_AUTOCOMPLETE_ENABLED}.
+ * This token is retained only for backward compatibility and is unused by the
+ * service; remove it from app providers once the proxy is wired everywhere.
  */
 export const MAPBOX_ACCESS_TOKEN = new InjectionToken<string>(
   'MAPBOX_ACCESS_TOKEN'
+);
+
+/**
+ * Same-origin proxy path that fronts the Mapbox geocoding endpoint. The proxy
+ * injects the access token server-side and is excluded from URL logging, so the
+ * credential never appears in any browser-visible or third-party URL.
+ *
+ * Defaults to `/api/mapbox/geocode`. The service issues a GET to
+ * `<MAPBOX_PROXY_PATH>?q=…&country=…&types=…&language=…` carrying NO token.
+ */
+export const MAPBOX_PROXY_PATH = new InjectionToken<string>(
+  'MAPBOX_PROXY_PATH',
+  { factory: () => '/api/mapbox/geocode' }
+);
+
+/**
+ * Token-free signal that the autocomplete UI may be shown. Provide it from each
+ * app as `!!environment.mapboxToken` (i.e. "is a token configured for the
+ * server proxy"), so the no-token-hides-UI behavior is preserved without ever
+ * shipping the token to the browser. Defaults to disabled.
+ */
+export const MAPBOX_AUTOCOMPLETE_ENABLED = new InjectionToken<boolean>(
+  'MAPBOX_AUTOCOMPLETE_ENABLED',
+  { factory: () => false }
 );
 
 /**
@@ -67,7 +99,15 @@ interface MapboxResponse {
 }
 
 /**
- * Forward geocoding via Mapbox Geocoding v5 (text-only, no map widget).
+ * Forward geocoding via a same-origin Mapbox proxy (text-only, no map widget).
+ *
+ * The Mapbox access token is NEVER placed in the request URL
+ * or sent by the browser. The Mapbox Geocoding REST endpoints (v5
+ * `mapbox.places` and v6 `search/geocode`) authenticate only via the
+ * `access_token` query parameter and do not honor an `Authorization` header, so
+ * the conforming fix is a thin same-origin proxy ({@link MAPBOX_PROXY_PATH})
+ * that injects the token server-side and is excluded from URL logging. The
+ * browser issues a token-free GET to that proxy.
  *
  * Parity with the mobile `ReverseGeocodingService.forwardGeocode`:
  *   - country=<MAPBOX_COUNTRY_WHITELIST> (defaults to `cz,sk`)
@@ -83,18 +123,21 @@ interface MapboxResponse {
 export class MapboxAutocompleteService {
   private readonly http = inject(HttpClient);
   private readonly translate = inject(TranslateService);
-  private readonly accessToken = inject(MAPBOX_ACCESS_TOKEN, { optional: true }) ?? '';
+  private readonly proxyPath = inject(MAPBOX_PROXY_PATH);
+  private readonly enabled = inject(MAPBOX_AUTOCOMPLETE_ENABLED);
   private readonly countryWhitelist = inject(MAPBOX_COUNTRY_WHITELIST);
 
-  private static readonly ENDPOINT =
-    'https://api.mapbox.com/geocoding/v5/mapbox.places';
   private static readonly DEBOUNCE_MS = 300;
   private static readonly MIN_QUERY_LENGTH = 3;
   private static readonly MAX_QUERY_LENGTH = 120;
 
-  /** True when no token is configured; consumers can hide the suggestions UI. */
+  /**
+   * True when geocoding is available; consumers can hide the suggestions UI.
+   * Driven by a token-free boolean so the no-token-hides-UI behavior is
+   * preserved without ever exposing the token to the browser.
+   */
   get isConfigured(): boolean {
-    return this.accessToken.trim().length > 0;
+    return this.enabled === true;
   }
 
   /**
@@ -107,20 +150,20 @@ export class MapboxAutocompleteService {
     if (!this.isConfigured) return of([]);
     if (trimmed.length < MapboxAutocompleteService.MIN_QUERY_LENGTH) return of([]);
 
-    const encoded = encodeURIComponent(
-      trimmed.slice(0, MapboxAutocompleteService.MAX_QUERY_LENGTH)
-    );
-    const url = `${MapboxAutocompleteService.ENDPOINT}/${encoded}.json`;
+    const q = trimmed.slice(0, MapboxAutocompleteService.MAX_QUERY_LENGTH);
 
+    // NOTE: no `access_token` is ever set here. The same-origin proxy at
+    // `proxyPath` injects the credential server-side. HttpClient encodes the
+    // params, so the query is carried safely without leaking a token.
     const params = new HttpParams()
-      .set('access_token', this.accessToken)
+      .set('q', q)
       .set('autocomplete', 'true')
       .set('country', this.countryWhitelist.join(','))
       .set('types', 'address,postcode')
       .set('limit', '5')
       .set('language', this.languageForRequest());
 
-    return this.http.get<MapboxResponse>(url, { params }).pipe(
+    return this.http.get<MapboxResponse>(this.proxyPath, { params }).pipe(
       switchMap((res) => of(this.parse(res))),
       catchError((err) => throwError(() => err))
     );

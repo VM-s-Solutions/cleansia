@@ -31,7 +31,7 @@ public static class UnregisterDevice
 
             if (device is not null)
             {
-                deviceRepository.Remove(device);
+                deviceRepository.Deactivate(device);
             }
 
             return BusinessResult.Success(new Response(true));

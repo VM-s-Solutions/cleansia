@@ -1,7 +1,7 @@
-using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Web;
+using Cleansia.Core.Clients.Abstractions;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -48,16 +48,28 @@ public class MapboxGeocodingService : IGeocodingService
             url += $"&country={countryIsoCode.ToLowerInvariant()}";
         }
 
+        // Geocoding degrades to null (a missing coordinate never blocks order creation), but the
+        // failure is classified first so an AuthConfig/Permanent fault is an owner-alert signal, not a
+        // routine swallowed Warning.
         try
         {
             var client = _httpClientFactory.CreateClient(HttpClientName);
-            var response = await client.GetFromJsonAsync<MapboxResponse>(url, cancellationToken);
+            using var response = await client.GetAsync(url, cancellationToken);
 
-            var coordinates = response?.Features?.FirstOrDefault()?.Geometry?.Coordinates;
+            if (!response.IsSuccessStatusCode)
+            {
+                return Degrade(IntegrationFailureClassifier.FromHttpStatus((int)response.StatusCode),
+                    city, zipCode, exception: null);
+            }
+
+            var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            var payload = await JsonSerializer.DeserializeAsync<MapboxResponse>(stream, cancellationToken: cancellationToken);
+
+            var coordinates = payload?.Features?.FirstOrDefault()?.Geometry?.Coordinates;
             if (coordinates == null || coordinates.Count < 2)
             {
                 _logger.LogWarning(
-                    "Mapbox geocoding failed for {City}/{ZipCode}; continuing without coordinates.",
+                    "Mapbox geocoding returned no coordinates for {City}/{ZipCode}; continuing without coordinates.",
                     city, zipCode);
                 return null;
             }
@@ -67,11 +79,28 @@ public class MapboxGeocodingService : IGeocodingService
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException or InvalidOperationException)
         {
-            _logger.LogWarning(ex,
-                "Mapbox geocoding failed for {City}/{ZipCode}; continuing without coordinates.",
-                city, zipCode);
-            return null;
+            return Degrade(IntegrationFailureClassifier.FromException(ex), city, zipCode, ex);
         }
+    }
+
+    private GeoCoordinates? Degrade(IntegrationFailureClass failureClass, string city, string zipCode, Exception? exception)
+    {
+        IntegrationFailureMetrics.Record(HttpClientName, failureClass);
+
+        if (failureClass == IntegrationFailureClass.AuthConfig)
+        {
+            _logger.LogError(exception,
+                "Mapbox geocoding failed: {FailureClass} (provider config/credentials) for {City}/{ZipCode}; continuing without coordinates.",
+                failureClass, city, zipCode);
+        }
+        else
+        {
+            _logger.LogWarning(exception,
+                "Mapbox geocoding failed: {FailureClass} for {City}/{ZipCode}; continuing without coordinates.",
+                failureClass, city, zipCode);
+        }
+
+        return null;
     }
 
     private sealed record MapboxResponse(

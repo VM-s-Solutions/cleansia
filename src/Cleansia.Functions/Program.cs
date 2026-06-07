@@ -46,6 +46,7 @@ var host = new HostBuilder()
         services.AddScoped<GenerateReceiptHandler>();
         services.AddScoped<GenerateInvoiceHandler>();
         services.AddScoped<SendPushNotificationHandler>();
+        services.AddScoped<SendEmailHandler>();
         services.AddScoped<CalculateOrderPayHandler>();
         services.AddScoped<SendSitewidePromoFanoutHandler>();
         services.AddScoped<PayPeriodTimerHandler>();
@@ -55,6 +56,10 @@ var host = new HostBuilder()
         // ADR-0002 D3.4 — the dispatch reconciliation timer body (sibling to
         // RetryFailedFiscalRegistrations; the [TimerTrigger] shell is FiscalReconciliationFunction).
         services.AddScoped<FiscalReconciliationTimerHandler>();
+        // The single dedicated outbox drainer body. This host is the ONE place the outbox is drained
+        // (the [TimerTrigger] singleton shell is OutboxDrainerFunction); the host still keeps the
+        // post-commit dispatch behavior so an in-Function command writes a durable row.
+        services.AddScoped<OutboxDrainerTimerHandler>();
         services.AddScoped<AutoCancelStaleRecurringOrdersHandler>();
         services.AddScoped<CleanupStalePendingOrdersHandler>();
         services.AddScoped<MaterializeRecurringBookingsHandler>();
@@ -72,6 +77,7 @@ var host = new HostBuilder()
         services.AddScoped<NotificationsDispatchPoisonHandler>();
         services.AddScoped<SitewidePromoFanoutPoisonHandler>();
         services.AddScoped<CalculateOrderPayPoisonHandler>();
+        services.AddScoped<SendEmailPoisonHandler>();
     })
     .Build();
 

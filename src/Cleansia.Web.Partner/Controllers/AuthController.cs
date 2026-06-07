@@ -1,6 +1,7 @@
 using Cleansia.Config.Authentication;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Web.Partner.Abstractions;
@@ -96,9 +97,9 @@ public class AuthController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshToken.Command command, CancellationToken cancellationToken)
     {
-        // Refresh token lives in the HttpOnly cookie now — body is back-compat only.
+        // Refresh token lives in the HttpOnly cookie now ï¿½ body is back-compat only.
         var token = cookieWriter.ReadRefreshTokenFromCookie(HttpContext, cookieConfig) ?? command.Token;
-        var enriched = command with { Token = token, RequiredAudience = JwtAudiences.Partner };
+        var enriched = command with { Token = token, RequiredProfile = UserProfile.Employee, RequiredAudience = JwtAudiences.Partner };
         var result = await Mediator.Send(enriched, cancellationToken);
         return HandleTokenIssuingResult(result);
     }
@@ -113,7 +114,7 @@ public class AuthController(
         var enriched = command with { Token = token };
         var result = await Mediator.Send(enriched, cancellationToken);
         // Always clear the cookies on logout, even when the server-side
-        // revoke failed — the user pressed sign-out, they expect to be out.
+        // revoke failed ï¿½ the user pressed sign-out, they expect to be out.
         cookieWriter.ClearCookies(HttpContext, cookieConfig);
         return HandleResult<bool>(result);
     }

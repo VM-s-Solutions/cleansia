@@ -20,7 +20,7 @@ public class Dispute : Auditable, ITenantEntity
     public DisputeReason Reason { get; private set; }
 
     [Required]
-    [MaxLength(2000)]
+    [MaxLength(DisputeLimits.DescriptionMax)]
     public string Description { get; private set; }
 
     [Required]

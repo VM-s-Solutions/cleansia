@@ -1,4 +1,4 @@
-﻿using Cleansia.Core.Clients.Abstractions.SendGrid;
+using Cleansia.Core.Clients.Abstractions.SendGrid;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using SendGrid.Helpers.Mail;
@@ -6,13 +6,18 @@ using SendGrid;
 
 namespace Cleansia.Infra.Clients.SendGrid;
 
-public class SendGridClientFactory(ISendGridConfig sendGridConfig) : ISendGridClientFactory
+public class SendGridClientFactory(
+    ISendGridConfig sendGridConfig,
+    IHttpClientFactory httpClientFactory) : ISendGridClientFactory
 {
     public const string EmailNotSentError = "email.sending_failed";
 
     public ISendGridClient CreateClient()
     {
-        return new SendGridClient(sendGridConfig.ApiKey);
+        // ADR-0005 D1 — source the SDK's transport from the pooled, named IHttpClientFactory client
+        // (standard resilience handler + OTel) instead of letting SendGridClient mint its own socket.
+        var transport = httpClientFactory.CreateClient(SendGridExtensions.HttpClientName);
+        return new SendGridClient(transport, sendGridConfig.ApiKey);
     }
 
     public async Task<BusinessResult> SendTemplateEmailAsync(ISendGridClient client, string from, string to, string templateId, object data,

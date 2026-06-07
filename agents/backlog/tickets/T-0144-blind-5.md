@@ -1,15 +1,15 @@
 ---
 id: T-0144
 title: Route Stripe + SendGrid through IHttpClientFactory (resilience + OTel + reuse)
-status: draft
+status: ready
 size: M
-owner: —
+owner: backend
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-06
 depends_on: [T-0141]
-blocks: []
+blocks: [T-0145]
 stories: []
-adrs: [ADR-INTEGRATION]
+adrs: [0005]
 layers: [backend]
 security_touching: false
 manual_steps: []
@@ -113,7 +113,25 @@ HTTP-transport-wiring half for Stripe and SendGrid.
   registration + boundary classification; red → green → refactor).
 
 ## Status log
+- 2026-06-06 — implemented (backend). TEST-FIRST: red tests written first under
+  `src/Cleansia.Tests/Integration/` (`IntegrationFailureClassifierTests`,
+  `IntegrationClientRegistrationTests`, `IntegrationClientRetryBehaviorTests`) — they referenced the
+  not-yet-existing `IntegrationFailureClass`/`IntegrationFailureClassifier` and the not-yet-registered
+  named `Stripe`/`SendGrid` clients → RED → implemented → GREEN (25/25). Stripe (all 11
+  `new global::Stripe.StripeClient(...)` sites) + SendGrid (EmailService 2 sites + SendGridClientFactory)
+  now source their transport from named `IHttpClientFactory` clients with `.AddStandardResilienceHandler()`
+  (mirrors `FiscalServiceCollectionExtensions.cs:54-55`); hand-rolled `EmailService` Polly removed per
+  ADR-0005 D1.2 (folded into the standard handler). Idempotency keys + BusinessResult/throw contracts
+  unchanged (AC4/S7). Seeded the single ADR-0005 D2.1 `IntegrationFailureClass` taxonomy in
+  `Cleansia.Core.Clients.Abstractions` (T-0145 generalises the per-provider mappers onto it; did NOT
+  invent a second classifier). No DB/NSwag change.
 - 2026-06-01 00:00 — draft (created by pm)
+- 2026-06-06 — ready (Batch 1B; gate **ADR-0005 / T-0141 done ✓**; `adrs` corrected from the
+  `ADR-INTEGRATION` placeholder to `0005`. Head of the integration chain — routed to backend, reviewer in
+  parallel. Touches `StripeClient.cs`/`SendGridClientFactory.cs`/`SendGridExtensions.cs` + host
+  `ServiceExtensions.cs` → serialize before **T-0145** (which depends on this) and before Wave-3 T-0205;
+  also the `StripeClient.cs` surface AUD-01b/T-0161 touches — sequence T-0144 first per the TICKET-MAP
+  cluster).
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

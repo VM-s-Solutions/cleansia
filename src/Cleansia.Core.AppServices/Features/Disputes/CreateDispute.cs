@@ -30,9 +30,9 @@ public class CreateDispute
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
-                .MinimumLength(10)
+                .MinimumLength(DisputeLimits.DescriptionMin)
                 .WithMessage(BusinessErrorMessage.MinLength)
-                .MaximumLength(2000)
+                .MaximumLength(DisputeLimits.DescriptionMax)
                 .WithMessage(BusinessErrorMessage.MaxLengthExceeded);
         }
     }

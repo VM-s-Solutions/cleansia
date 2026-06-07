@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Clients.Abstractions;
 using Cleansia.Core.Domain.Emails;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
@@ -7,7 +8,6 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Exceptions;
 using Microsoft.Extensions.Logging;
-using Polly;
 using SendGrid;
 using SendGrid.Helpers.Mail;
 
@@ -15,32 +15,25 @@ namespace Cleansia.Core.AppServices.Services;
 
 public sealed class EmailService : IEmailService
 {
+    // The named IHttpClientFactory client whose pooled, resilience-wrapped handler the SendGrid SDK's
+    // transport is built on. Kept in sync with SendGridExtensions.HttpClientName.
+    private const string SendGridHttpClientName = "SendGrid";
+
     private readonly ISendGridConfig sendGridConfig;
     private readonly ILogger<EmailService> logger;
-    private readonly IAsyncPolicy<Response> policy;
+    private readonly IHttpClientFactory httpClientFactory;
     private readonly IEmailTemplateTranslationRepository emailTemplateTranslationRepository;
 
     public EmailService(
         ISendGridConfig cfg,
         ILogger<EmailService> log,
+        IHttpClientFactory httpClientFactory,
         IEmailTemplateTranslationRepository emailTemplateTranslationRepository)
     {
         sendGridConfig = cfg;
         logger = log;
+        this.httpClientFactory = httpClientFactory;
         this.emailTemplateTranslationRepository = emailTemplateTranslationRepository;
-
-        policy = Policy
-            .HandleResult<Response>(r => !r.IsSuccessStatusCode)
-            .Or<HttpRequestException>()
-            .WaitAndRetryAsync(
-                3,
-                i => TimeSpan.FromMilliseconds(i * 300),
-                (outcome, delay, attempt, _) =>
-                    logger.LogWarning(
-                        "SendGrid attempt {Attempt} failed ({Status}). Retrying in {Delay} ms.",
-                        attempt,
-                        outcome.Result?.StatusCode,
-                        delay.TotalMilliseconds));
     }
 
     public async Task<string> SendResetPasswordEmailAsync(
@@ -345,7 +338,9 @@ public sealed class EmailService : IEmailService
         ArgumentException.ThrowIfNullOrWhiteSpace(templateId);
         ArgumentException.ThrowIfNullOrWhiteSpace(subject);
 
-        var client = new SendGridClient(sendGridConfig.ApiKey);
+        // Hand the SDK the pooled, factory-managed HttpClient (its resilience handler retries Transient
+        // 5xx/408/429 and does NOT retry 401/403/4xx) instead of newing its own socket per send.
+        var client = new SendGridClient(httpClientFactory.CreateClient(SendGridHttpClientName), sendGridConfig.ApiKey);
         var msg = MailHelper.CreateSingleTemplateEmail(
             new EmailAddress(sendGridConfig.AddressFrom, "Cleansia"),
             new EmailAddress(email),
@@ -355,14 +350,11 @@ public sealed class EmailService : IEmailService
         msg.Personalizations[0].Subject = subject;
         logger.LogInformation("Sending {Context}", logContext);
 
-        var response = await policy.ExecuteAsync(
-            async _ => await client.SendEmailAsync(msg, ct), ct);
+        var response = await client.SendEmailAsync(msg, ct);
 
         if (!response.IsSuccessStatusCode)
         {
-            var body = await response.Body.ReadAsStringAsync(ct);
-            logger.LogError("SendGrid returned {StatusCode}: {Body}", (int)response.StatusCode, body);
-            throw new EmailDeliveryException($"Could not deliver email to {email} ({response.StatusCode}).");
+            await ThrowClassifiedAsync(response, email, ct);
         }
 
         var messageId = response.Headers.TryGetValues("X-Message-Id", out var ids)
@@ -387,7 +379,7 @@ public sealed class EmailService : IEmailService
         ArgumentException.ThrowIfNullOrWhiteSpace(templateId);
         ArgumentException.ThrowIfNullOrWhiteSpace(subject);
 
-        var client = new SendGridClient(sendGridConfig.ApiKey);
+        var client = new SendGridClient(httpClientFactory.CreateClient(SendGridHttpClientName), sendGridConfig.ApiKey);
         var msg = MailHelper.CreateSingleTemplateEmail(
             new EmailAddress(sendGridConfig.AddressFrom, "Cleansia"),
             new EmailAddress(email),
@@ -405,14 +397,11 @@ public sealed class EmailService : IEmailService
 
         logger.LogInformation("Sending {Context}", logContext);
 
-        var response = await policy.ExecuteAsync(
-            async _ => await client.SendEmailAsync(msg, ct), ct);
+        var response = await client.SendEmailAsync(msg, ct);
 
         if (!response.IsSuccessStatusCode)
         {
-            var body = await response.Body.ReadAsStringAsync(ct);
-            logger.LogError("SendGrid returned {StatusCode}: {Body}", (int)response.StatusCode, body);
-            throw new EmailDeliveryException($"Could not deliver email to {email} ({response.StatusCode}).");
+            await ThrowClassifiedAsync(response, email, ct);
         }
 
         var messageId = response.Headers.TryGetValues("X-Message-Id", out var ids)
@@ -421,6 +410,24 @@ public sealed class EmailService : IEmailService
 
         logger.LogInformation("Email sent successfully ({MessageId})", messageId);
         return messageId!;
+    }
+
+    // The standard resilience handler has already exhausted any Transient retry by this point, so a
+    // non-success response here is terminal: classify, meter for owner alerting, log once, then throw
+    // the existing EmailDeliveryException to keep the caller contract unchanged.
+    private async Task ThrowClassifiedAsync(Response response, string email, CancellationToken ct)
+    {
+        var status = (int)response.StatusCode;
+        var failureClass = IntegrationFailureClassifier.FromSendGridResponse(response);
+        var body = await response.Body.ReadAsStringAsync(ct);
+
+        IntegrationFailureMetrics.Record(SendGridHttpClientName, failureClass);
+
+        logger.LogError(
+            "SendGrid send failed: {FailureClass} ({StatusCode}). Body: {Body}",
+            failureClass, status, body);
+
+        throw new EmailDeliveryException($"Could not deliver email to {email} ({response.StatusCode}).");
     }
 
     private static object MergeTranslationsWithData<T>(Dictionary<string, string> translations, T runtimeData)

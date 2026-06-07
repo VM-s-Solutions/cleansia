@@ -56,7 +56,7 @@ class CreateDisputeViewModel @Inject constructor(
         }
         // Defensive re-validation — the button is already disabled when these
         // don't hold, but handler guards keep the repo call clean.
-        if (description.length !in 10..2000) return
+        if (description.length !in DisputeFormConstants.DESCRIPTION_MIN_LENGTH..DisputeFormConstants.DESCRIPTION_MAX_LENGTH) return
         if (reason !in 1..7) return
 
         viewModelScope.launch {

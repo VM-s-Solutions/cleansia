@@ -22,6 +22,10 @@
   <ItemGroup>
     <PackageReference Include="coverlet.collector" />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" />
+    <!-- T-0144 / ADR-0005 — the integration-client DI/registration + boundary-retry tests resolve
+         IHttpClientFactory / IHttpMessageHandlerFactory and assert the standard resilience handler is
+         attached to the named Stripe/SendGrid clients. -->
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <!-- SQLite in-memory — lets T-0113's tenant-correctness tests spin a real CleansiaDbContext
          (OnModelCreating + global query filter) without the Postgres Testcontainers harness. -->
@@ -38,6 +42,10 @@
   <ItemGroup>
     <ProjectReference Include="..\Cleansia.Core.AppServices\Cleansia.Core.AppServices.csproj" />
     <ProjectReference Include="..\Cleansia.Config\Cleansia.Config.csproj" />
+    <!-- T-0144 / ADR-0005 — the integration-client registration extensions (AddStripe/AddSendGrid)
+         and the IntegrationFailureClass taxonomy live here / in Core.Clients.Abstractions. -->
+    <ProjectReference Include="..\Cleansia.Infra.Clients\Cleansia.Infra.Clients.csproj" />
+    <ProjectReference Include="..\Cleansia.Core.Clients.Abstractions\Cleansia.Core.Clients.Abstractions.csproj" />
     <!-- T-0121 / ADR-0002 D5 step 1 — the queue-consumer bodies live in this non-Exe library so
          the dispatch-contract tests (TC-IDEMP-0 / TC-DISPATCH-0 / …) can compile against the real
          consumer code. The Exe host (Cleansia.Functions) keeps the [Function] trigger shells. -->

@@ -34,7 +34,8 @@ import {
   COMMON_INTERCEPTORS_FN,
   initializeTranslations,
   JsonTranslationLoader,
-  MAPBOX_ACCESS_TOKEN,
+  MAPBOX_AUTOCOMPLETE_ENABLED,
+  MAPBOX_PROXY_PATH,
 } from '@cleansia/services';
 import { EffectsModule } from '@ngrx/effects';
 import { provideStore, StoreModule } from '@ngrx/store';
@@ -89,7 +90,18 @@ export const appConfig: ApplicationConfig = {
     { provide: Sentry.TraceService, deps: [Router] },
     { provide: LOCALE_ID, useValue: 'en' },
     { provide: APIBASEURL, useValue: environment.apiBaseUrl },
-    { provide: MAPBOX_ACCESS_TOKEN, useValue: environment.mapboxToken ?? '' },
+    // The Mapbox token is NOT shipped to the browser. The
+    // partner app is a SPA, so its same-origin proxy lives on the partner API
+    // (MANUAL_STEP: add the `/api/mapbox/geocode` proxy endpoint server-side —
+    // see ticket). We only advertise (token-free) that geocoding is configured.
+    {
+      provide: MAPBOX_AUTOCOMPLETE_ENABLED,
+      useValue: !!(environment.mapboxToken ?? '').trim(),
+    },
+    {
+      provide: MAPBOX_PROXY_PATH,
+      useValue: `${environment.apiBaseUrl}/api/mapbox/geocode`,
+    },
     {
       provide: AUTH_COOKIE_KEYS,
       useValue: {

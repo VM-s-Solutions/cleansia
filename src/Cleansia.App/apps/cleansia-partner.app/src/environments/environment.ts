@@ -11,6 +11,8 @@ export const environment = {
   betaGateUrl: 'http://localhost:5000/gate',
   sentryDsn: '',
   bugReportUrl: '',
-  mapboxToken:
-    'pk.eyJ1IjoiaXRjbGVhbnNpYSIsImEiOiJjbW8zZXJlM3UwaHk1MnNzNDZ5dWtsNDJnIn0.JzKyy5Ii4qjgikVUVDWrnw',
+  // The Mapbox token must NEVER ship in the browser bundle.
+  // It now lives server-side and is injected by the same-origin proxy. This is
+  // only a token-free "is geocoding configured" flag that toggles the UI.
+  mapboxToken: 'enabled',
 };

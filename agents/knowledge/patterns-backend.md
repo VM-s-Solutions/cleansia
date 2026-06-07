@@ -294,3 +294,23 @@ public class UpdateXxx
 - `CustomerApiController`/`PartnerApiController`/`AdminApiController` + `HandleResult` + `Policy.CanXxx`.
 - `IUserSessionProvider.GetUserId()` for identity (S1). Ownership check in the handler (S3).
 - `manual_step: ef-migration` (schema) and `manual_step: nswag-regen` (DTO/endpoint) — owner-only.
+
+## B8 — the refund money path (ADR-0006 seam + ADR-0009 policy)
+
+A refund is the one side effect with both money and fiscal consequences, so it has a frozen contract:
+- **One seam.** Every Stripe refund goes through `IRefundService.IssueRefundAsync` (ADR-0006). No handler
+  calls `RefundCheckoutSessionAsync` directly; the seam carries the deterministic `RefundKey` and clamps to
+  the refundable ceiling. A refund issued outside the seam, or without the deterministic key, is a
+  B8/S7/ADR-0006 violation.
+- **Policy is caller-side, not in the seam** (ADR-0009). The 14-day soft window (anchored to
+  `Order.CompletedAt`, null→closed, chargeback-exempt, admin-overridable with a recorded reason) and the
+  Stripe-fee bearer (platform absorbs on `RefundReason.ServiceNotRendered`/`DisputeResolution`, deducts only
+  on `AdminDiscretion`) live in a `RefundPolicy` policy class (sibling to `BookingPolicy`) and are checked by
+  the caller. Enforcing the window inside `IRefundService` is an ADR-0009 violation.
+- **Partial allocation = share of the FROZEN `Order.TotalPrice`** (ADR-0009 D2). `Order.TotalPrice` already
+  embeds discount + the express surcharge (`OrderFactory.cs:91-95`); the refund allocator multiplies a
+  line-share by `TotalPrice` and **never re-applies discount/surcharge**. Last refunded line absorbs the
+  sub-cent residual; VAT apportioned by the same ratio (`0` when `AppliedVatRate` is null / non-VAT-payer).
+  A bundled service's gross comes from the `PackageService.PriceWeight` split of `Package.Price`.
+- **Partial loyalty clawback** uses the per-refund-keyed `ILoyaltyService.RevokeForPartialRefundAsync`
+  (cumulative-capped, `UserId==null` skip), **not** the one-shot `RevokeForCancelledOrderAsync` mirror.

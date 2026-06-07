@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Features.Notifications.DTOs;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
+using FluentValidation;
 using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
 
 namespace Cleansia.Core.AppServices.Features.Notifications;
@@ -27,6 +28,10 @@ public static class UpdateNotificationPreferences
         bool Promo,
         bool DisputeReply,
         bool RecurringScheduled) : ICommand<NotificationPreferencesDto>;
+
+    // All fields are bools (every combination is valid); the validator exists because the validation
+    // pipeline requires one for every *Command.
+    public class Validator : AbstractValidator<Command>;
 
     public class Handler(
         IUserNotificationPreferencesRepository repository,

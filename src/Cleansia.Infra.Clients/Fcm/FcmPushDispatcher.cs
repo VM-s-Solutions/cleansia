@@ -1,4 +1,5 @@
 using System.Text;
+using Cleansia.Core.Clients.Abstractions;
 using Cleansia.Core.Clients.Abstractions.Fcm;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using FirebaseAdmin;
@@ -23,6 +24,8 @@ public class FcmPushDispatcher(
     IFcmConfig config,
     ILogger<FcmPushDispatcher> logger) : IPushDispatcher
 {
+    private const string Provider = "Fcm";
+
     private static readonly object InitLock = new();
     private static FirebaseMessaging? _messaging;
     private static bool _initAttempted;
@@ -74,9 +77,11 @@ public class FcmPushDispatcher(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "FCM dispatch failed for event {EventKey} ({TokenCount} tokens)",
-                eventKey, deviceTokens.Count);
-            // Surface as all-failed; caller will not prune (no InvalidTokens).
+            var failureClass = IntegrationFailureClassifier.FromException(ex);
+            IntegrationFailureMetrics.Record(Provider, failureClass);
+            logger.LogError(ex, "FCM dispatch failed: {FailureClass} for event {EventKey} ({TokenCount} tokens)",
+                failureClass, eventKey, deviceTokens.Count);
+            // Surface as all-failed; caller will not prune (no InvalidTokens) and the queue redelivers.
             return new PushDispatchResult(0, deviceTokens.Count, []);
         }
 
@@ -86,16 +91,9 @@ public class FcmPushDispatcher(
             var item = response.Responses[i];
             if (item.IsSuccess) continue;
 
-            // FCM permanent-failure error codes that mean "this token is dead":
-            //   - Unregistered: app uninstalled or token rotated
-            //   - InvalidArgument: malformed token
-            //   - SenderIdMismatch: token belongs to a different Firebase project
-            // All other codes (Unavailable, Internal, etc.) are transient — leave
-            // the row in place; FCM will succeed on a retry from the queue.
-            var code = item.Exception?.MessagingErrorCode;
-            if (code is MessagingErrorCode.Unregistered
-                     or MessagingErrorCode.InvalidArgument
-                     or MessagingErrorCode.SenderIdMismatch)
+            // A dead-token code means the row should be pruned; transient codes leave it in place so
+            // FCM can succeed on a retry from the queue.
+            if (IntegrationFailureClassifier.IsDeadFcmToken(item.Exception?.MessagingErrorCode))
             {
                 invalidTokens.Add(deviceTokens[i]);
             }

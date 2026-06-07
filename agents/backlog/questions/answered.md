@@ -5,6 +5,41 @@ permanent record so a settled decision is never re-litigated.
 
 ---
 
+### Q-W1-1 — Confirm the Wave-0 close before Wave 1 opens
+- Raised by: pm (Wave-1 planning) · Answered: 2026-06-05
+- **Answer (owner): Wave 0 is CLOSED — T-0230 is reconciled to `done`.** Its #7/#8/#11/#12 shipped in
+  PR #72 and the owner's migration `20260605165935_Initial` is in master. Only the non-blocking deferred
+  items #16/#19/#20/#24 remain, moved to **Wave-2 polish**. **T-0230 does NOT gate Wave 1.**
+- **Locked in:** T-0230 status → `done` (owner-reconciled); INDEX.md Wave-1 banner + sprint-3 §0 updated
+  to drop the T-0230/EF-migration gate; Wave 1 is cleared to open.
+
+### Q-W1-2 — Authorize the two Wave-1 L-splits
+- Raised by: pm (Wave-1 planning) · Answered: 2026-06-05
+- **Answer (owner): AUTHORIZED.** Split T-0142 into its 3 proposed children and T-0143 into its 4
+  proposed children (sprint-3 §1). Confirmed the **architect owns the ADR-0002 D1.3 decision** (does the
+  Functions host get the post-commit behavior / drainer / both / neither) inside the T-0155 outbox-table
+  ADR.
+- **Locked in:** T-0142 → children **T-0152/T-0153/T-0154** (a→{b∥c}); T-0143 → children
+  **T-0155/T-0156/T-0157/T-0158** (a→b→c→d, serial; T-0157 depends_on T-0118, T-0158 depends_on T-0148).
+  Parents marked `[SPLIT]` with `split_into:`. ADR children (T-0152, T-0155) promoted to `ready`.
+
+### Q-W1-3 — BLIND-2 (Mapbox token in URL query) — Wave 1 or Wave 2?
+- Raised by: pm (Wave-1 planning) · Answered: 2026-06-05
+- **Answer (owner): FILE IT INTO WAVE 1.** The Mapbox access token exposed in a request URL is a
+  credential/log exposure; fix it in Wave 1.
+- **Locked in:** filed as **T-0159** (`security_touching: true`, `layers: [frontend, config]`,
+  `sprint: 1`), independent within Batch 1B (no ADR dependency). Leak site:
+  `mapbox-autocomplete.service.ts:116` (`access_token` query param). Token rotation flagged as owner
+  `manual_step: rotate-mapbox-token`. Security gate mandatory.
+
+### Q-W1-4 — T-0140 ADR-REFUND timing
+- Raised by: pm (Wave-1 planning) · Answered: 2026-06-05
+- **Answer (owner): author now in Batch 1A** (the default). No Wave-1 code consumer, but cheapest to
+  clear while the architect is engaged so Wave-2 AUD-01 / dispute-management aren't gated later.
+- **Locked in:** T-0140 promoted to `ready` in Batch 1A alongside the other three ADRs.
+
+---
+
 ### Q-0005 — Is a STAFF dispute reply Employee-or-Admin, or Admin-only?
 - Raised by: architect (ADR-0001, lead correction V1) · Answered: 2026-06-01
 - **Answer (owner): ADMIN-ONLY.** Staff `CanRespondToDispute` (`IsStaffMessage=true`) → `AdminOnly`

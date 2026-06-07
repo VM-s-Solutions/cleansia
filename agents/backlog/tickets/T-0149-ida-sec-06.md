@@ -1,11 +1,11 @@
 ---
 id: T-0149
 title: Refresh-token rotation re-checks profile (per host), not only audience
-status: draft
+status: ready
 size: S
-owner: —
+owner: backend
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-06
 depends_on: [T-0100]
 blocks: []
 stories: []
@@ -118,6 +118,20 @@ regen and no migration are needed.
 
 ## Status log
 - 2026-06-01 — draft (created by pm)
+- 2026-06-06 — ready (Batch 1B; dep T-0100 done ✓; four distinct AuthControllers, no serialization cluster
+  collision → fully parallel. Routed to backend; **security gate mandatory** (security_touching — refresh
+  rotation re-checks profile); reviewer + security in parallel).
+- 2026-06-06 — backend in_progress (test-first). RED: wrote per-host controller-enrichment unit tests
+  (`Cleansia.Tests/Controllers/RefreshTokenControllerProfileEnrichmentTests.cs`) + handler-gate unit tests
+  (`Cleansia.Tests/Features/Auth/RefreshTokenProfileGateHandlerTests.cs`) + per-host end-to-end integration
+  tests (`Cleansia.IntegrationTests/Features/Auth/RefreshTokenProfileGateTests.cs`) BEFORE the call-site
+  change. Confirmed red: the 4 non-admin enrichment tests failed (RequiredProfile = null), Admin passed,
+  handler-gate tests passed (gate already exists). GREEN: wired the 4 non-admin call sites to pass
+  `RequiredProfile` (Customer hosts → UserProfile.Customer; Partner hosts → UserProfile.Employee), keeping
+  the existing `RequiredAudience` (Mobile.Partner keeps `JwtAudiences.Mobile` — rename out of scope).
+  Admin (`AdminAuthController.cs`) untouched. Handler (`RefreshToken.cs`) untouched per ticket. Build:
+  `dotnet build src/Cleansia.Api.sln` 0 errors. Tests: 510/510 unit pass; 7/7 new integration pass
+  (AC1–AC4 end-to-end). AC1–AC6 covered.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

@@ -1,15 +1,15 @@
 ---
 id: T-0140
 title: "ADR-REFUND: refund/dispute money path (who issues Stripe refund, where RefundAmount is consumed, chargeback linkage)"
-status: draft
+status: done
 size: M
-owner: —
+owner: architect
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-06
 depends_on: []
-blocks: []
+blocks: [T-0160, T-0161, T-0162, T-0163, T-0164, T-0165]
 stories: []
-adrs: [0001, 0002]
+adrs: [0001, 0002, 0004, 0005, 0006, 0009]
 layers: [architect, backend]
 security_touching: false
 manual_steps: []
@@ -143,6 +143,51 @@ refund).
 
 ## Status log
 - 2026-06-01 — draft (created by pm)
+- 2026-06-05 — ready (Batch 1A promoted; owner approved Wave-1 plan + confirmed Wave-0 closed/Q-W1-1
+  resolved; no deps; routed to architect, reviewer in parallel). Owner answered Q-W1-4: author now.
+- 2026-06-06 — in_review (architect authored **ADR-0006** `0006-refund-dispute-money-path.md`,
+  Status: accepted, via the author→challenger→lead deliberation panel; zero blocking challenges in the
+  embedded trail). One refund seam (`IRefundService`) over cancel+dispute+admin; deterministic
+  `RefundKey = refund:{OrderId}:{purpose}`; `Refund` projection links Order/Receipt/Dispute; chargeback
+  linkage handed to D-06; fiscal corrective-document boundary cites ADR-0004 and escalates **Q-REFUND-01**
+  (per-country corrective doc, gated to DE/AT/ES go-live) + **Q-REFUND-02** (refund-policy windows) to the
+  owner — neither blocks the CZ/SK/PL seam. AC1-AC7 satisfied. Reviewer to reconcile, then PM → done.
+- 2026-06-06 — owner answered Q-REFUND-01 (CONFIRMED) + Q-REFUND-02 (all four) → architect authored the
+  superseding **ADR-0009** `0009-refund-policy.md` (Status: accepted; ADR-0006 stays accepted/immutable).
+  **Numbering: next free ADR is 0009, NOT 0007** (0001-0008 exist; 0007=soft-delete, 0008=outbox-table).
+  ADR-0009 freezes: 14-day SOFT window anchored to `Order.CompletedAt` (null→closed, chargeback-exempt,
+  admin-overridable w/ recorded reason, caller-side `RefundPolicy`, NOT in `IRefundService`);
+  share-of-frozen-`TotalPrice` partial allocation (discount+surcharge already embedded — never re-applied;
+  last line absorbs residual; VAT by same ratio, 0 for non-VAT-payer; seam clamps to refundable ceiling);
+  `PaymentStatus.PartiallyRefunded=6`; `RefundReason{...,ServiceNotRendered}` → platform absorbs Stripe fee
+  on fault (ServiceNotRendered/DisputeResolution), deducts only on goodwill (AdminDiscretion); cancel fee
+  kept distinct; proportional loyalty clawback `floor(refundNet/10)` via NEW keyed
+  `ILoyaltyService.RevokeForPartialRefundAsync` (cancel mirror NOT reusable); and the **per-included-service
+  package-pricing** model (`PackageService.PriceWeight` splits `Package.Price` to give a bundled service a
+  gross — owner override of the panel's whole-package-only v1). Extends ADR-0004 (partial fiscal corrective
+  on `Refund.ReceiptId`, bound to the DE/AT/ES go-live gate). NEW non-blocking **Q-REFUND-03** raised
+  (per-bundle legacy weighting; even-split default ships). Wave-2 build split: **AUD-01a..e** + new
+  **AUD-02p** (package pricing, blocks AUD-01c). adrs frontmatter updated to include 0009.
+- 2026-06-06 — done (reviewer reconciled: AC1-AC7 satisfied by ADR-0006; the superseding ADR-0009 cleanly
+  refines the *policy* questions ADR-0006 deferred — the ADR-0006 **seam** stays immutable/accepted; 0009
+  confirms Q-REFUND-01, resolves all four of Q-REFUND-02, and raises the NEW non-blocking Q-REFUND-03.
+  Lead re-verifications spot-checked against live code: `PaymentStatus` is `Pending=1…Disputed=5` (no
+  `PartiallyRefunded` — 0009 D4 adds `=6`); `PackageService` is `BaseEntity` with only `PackageId`/
+  `ServiceId` (no price column — 0009 D5 fact 8 true); `Package.Price` is a single bundled decimal.
+  `adrs:[0001,0002,0004,0005,0006,0009]` wired. Zero blocking. Both ADRs `accepted`). **The refund BUILD
+  is Wave-2** — folded into ticket files **AUD-01a..e (T-0160..T-0164)** + the new package-pricing epic
+  **AUD-02p (T-0165)**; `blocks` updated to those ids. Q-REFUND-03 recorded as the open question gating
+  AUD-02p's legacy weighting (even-split default ships).
 
 ## Review
-<!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->
+- **reviewer (2026-06-06): APPROVE.** ADR-0006 freezes the money-path contract (one `IRefundService` seam;
+  deterministic `RefundKey = refund:{OrderId}:{purpose}`; `Refund` projection linking Order/Receipt/Dispute;
+  chargeback create-if-absent linkage handed to D-06; fiscal-corrective boundary citing ADR-0004) — AC2-AC6
+  all met, AC1/AC7 (template + consumer/test enumeration) met. ADR-0009 fills the policy: 14-day SOFT
+  window (`RefundPolicy`, caller-side — NOT in the seam, preserving ADR-0006 D2); share-of-frozen-
+  `TotalPrice` allocator (never re-applies discount/surcharge — the load-bearing invariant, verified vs
+  `OrderFactory`); VAT-null guard; `RefundReason.ServiceNotRendered` drives the fee-bearer switch; new
+  keyed `RevokeForPartialRefundAsync` (the cancel mirror correctly rejected as non-reusable); weight-based
+  per-included-service pricing (single source of truth for `Package.Price`). Deliberation trail has zero
+  blocking challenges; one new non-blocking owner question (Q-REFUND-03). **No gaps.**
+- PM reconciled reviewer verdict → `done`.

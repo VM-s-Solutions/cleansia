@@ -1,15 +1,15 @@
 ---
 id: T-0146
 title: "Move registration/password-reset email off the critical path (async/queue)"
-status: draft
+status: ready
 size: M
-owner: —
+owner: backend
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-06
 depends_on: [T-0141, T-0118]
 blocks: []
 stories: []
-adrs: [0002]
+adrs: [0002, 0005]
 layers: [backend, functions]
 security_touching: true
 manual_steps: []
@@ -139,6 +139,40 @@ order path.
 
 ## Status log
 - 2026-06-01 — draft (created by pm)
+- 2026-06-06 — ready (Batch 1B; gate **ADR-0005 / T-0141 done ✓** + dep **T-0118 done ✓**; `adrs` updated to
+  `[0002,0005]` (ADR-0005 D3 governs the async-email contract; ADR-0002 the dispatch seam). Edits the four
+  auth handlers (`Register/RegisterEmployee/ResendConfirmationEmail/RequestPasswordChange`) + adds an email
+  consumer — **file-disjoint from T-0144/T-0145** (different handlers) → may run parallel to the integration
+  chain. Routed to backend → functions; **security gate mandatory** (security_touching — reset-token path);
+  reviewer + security in parallel).
+
+- 2026-06-06 — in_progress (backend + functions). TDD red→green.
+  - RED (test-first): wrote `Cleansia.Tests/Dispatch/EmailMessageKeyTests.cs` (key determinism),
+    `Cleansia.Tests/Features/Auth/RegistrationEmailDispatchTests.cs` (each of the four handlers enqueues
+    the email + no inline email service; language preservation), `Cleansia.Tests/Dispatch/EmailDispatchPipelineTests.cs`
+    (outage→success, commit-throw / validation-fail → nothing dispatched) and
+    `Cleansia.Tests/Functions/SendEmailHandlerTests.cs` (consumer twice→sends once, dual-read envelope+bare,
+    template-by-type + language, malformed→ack / infra→throw). Failed to compile for the right reason —
+    `MessageKeys.Email`/`HashCode`, `QueueNames.SendEmail`, `SendEmailMessage`, `IIdempotencyGuard`,
+    `SendEmailHandler`, and the rebound handler ctors did not exist yet.
+  - GREEN (backend): added `QueueNames.SendEmail`, `MessageKeys.Email`/`HashCode` (deterministic
+    `email:{purpose}:{userId}:{codeHash}`, code-hash never the raw token), `SendEmailMessage`,
+    `IIdempotencyGuard` + in-memory singleton backing (`InMemoryIdempotencyGuard`, registered in
+    `AddAzureStorageQueues`). Replaced the four inline `await IEmailService.Send…Async` calls with
+    `pending.Enqueue(QueueNames.SendEmail, QueueEnvelope<SendEmailMessage>, key)` via a shared
+    `EmailDispatch` helper; dropped the now-unused `IEmailService` from all four handlers (so they
+    cannot send inline) and made the four `Handler` classes public.
+  - GREEN (functions): added `SendEmailHandler` (Functions.Core) — dual-reads envelope/bare, synthesizes
+    the key, claims via `IIdempotencyGuard` before the terminal send, resolves the template by
+    `EmailType`, preserves the message language, classifies malformed→ack vs infra→throw; plus the thin
+    `SendEmailFunction` trigger shell, `SendEmailPoisonHandler` + `SendEmailPoisonFunction`, and DI in
+    `Cleansia.Functions/Program.cs`.
+  - Build: `dotnet build src/Cleansia.Api.sln -c Debug` → Build succeeded, 0 errors.
+  - Tests: the 22 new cases pass; the Auth/Dispatch/Functions/Users/Behaviors areas = 182 passed / 0
+    failed. The 14 unrelated failures in the suite (Memberships Stripe-failure + SavedAddresses
+    soft-delete) are pre-existing concurrent WIP (untracked/modified test files outside this ticket),
+    not regressions from this change.
+  - No EF migration, no NSwag, no new ProcessedMessage/DeadLetter store. Not committed.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

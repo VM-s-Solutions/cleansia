@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Cleansia.Core.Domain\Cleansia.Core.Domain.csproj" />
+  </ItemGroup>
+
 </Project>

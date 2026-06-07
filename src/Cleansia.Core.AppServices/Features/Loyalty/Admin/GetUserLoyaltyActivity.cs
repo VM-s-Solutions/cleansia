@@ -23,6 +23,7 @@ public class GetUserLoyaltyActivity
         LoyaltyEarnSource Source,
         string? OrderId,
         string? OrderDisplayNumber,
+        string? Description,
         DateTimeOffset OccurredOn);
 
     internal class Handler(
@@ -71,6 +72,7 @@ public class GetUserLoyaltyActivity
                     Source: t.Source,
                     OrderId: t.OrderId,
                     OrderDisplayNumber: t.OrderId != null && displayLookup.TryGetValue(t.OrderId, out var d) ? d : null,
+                    Description: t.Description,
                     OccurredOn: t.OccurredOn))
                 .ToList();
 

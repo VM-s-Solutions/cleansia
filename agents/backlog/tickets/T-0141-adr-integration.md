@@ -1,15 +1,15 @@
 ---
 id: T-0141
 title: "ADR-INTEGRATION: IHttpClientFactory + error classification + async-email contract"
-status: draft
+status: done
 size: M
-owner: —
+owner: architect
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-06
 depends_on: []
 blocks: []
 stories: []
-adrs: []
+adrs: [0002, 0005]
 layers: [architect, backend]
 security_touching: false
 manual_steps: []
@@ -138,6 +138,33 @@ The defense-panel "theme 4 — integrations / resilience" is grounded in the rea
 
 ## Status log
 - 2026-06-01 00:00 — draft (created by pm)
+- 2026-06-05 — ready (Batch 1A promoted; owner approved Wave-1 plan + confirmed Wave-0 closed/Q-W1-1
+  resolved; no deps; routed to architect, reviewer in parallel). Gates T-0144/T-0145/T-0146/T-0147 +
+  Wave-2 BLIND-7 — those stay blocked until this ADR is `accepted`.
+- 2026-06-06 — in_review (architect authored **ADR-0005** `0005-integration-resilience-contract.md`,
+  Status: accepted, via deliberation panel; zero blocking). **Filename note:** AC1 named
+  `0004-integration-resilience-contract.md` but `0004` is the accepted fiscal ADR — filed at the real
+  next-free **ADR-0005**; dependents cite ADR-0005. Decisions: D1 pooled named/typed `IHttpClientFactory`
+  + `SocketsHttpHandler.PooledConnectionLifetime` + Polly (timeout/retry/breaker, idempotency-aware) for
+  Stripe/SendGrid/FCM/Mapbox (forbids `new HttpClient`/per-call SDK construction); D2 closed
+  Transient/Permanent/AuthConfig/Timeout taxonomy extending ADR-0002 D3.3 to the integration layer; D3
+  async email off the critical path via the ADR-0002 `IPendingDispatch` seam (Register no longer fails on
+  SendGrid outage); D4 LG-06 narrow-try/catch + BLIND-7 429/Retry-After. AC1-AC6 satisfied; no owner
+  question raised. Reviewer to reconcile vs cited code + ADR-0002, then PM → done + unblock
+  T-0144/145/146/147 + BLIND-7.
+- 2026-06-06 — done (reviewer reconciled: AC1-AC6 satisfied; ADR-0005 accepted, internally consistent,
+  correctly extends ADR-0002 D3.3 — same Transient/Permanent/AuthConfig/Timeout vocabulary across the
+  queue→integration boundary, not a parallel one; filename-deviation 0005-not-0004 explained + dependents
+  re-pointed; Mapbox-token leak correctly held out of scope to T-0159; `adrs:[0002,0005]` wired. Zero
+  blocking. ADR is `accepted`). **Unblocks Batch 1B: T-0144 → T-0145 (serial), T-0146, T-0147** (and
+  Wave-2 BLIND-7/T-0185).
 
 ## Review
-<!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->
+- **reviewer (2026-06-06): APPROVE.** ADR-0005 is decision-complete (D1 pooled `IHttpClientFactory` +
+  `SocketsHttpHandler.PooledConnectionLifetime` + idempotency-aware Polly; D2 closed four-class taxonomy
+  with carrier `IntegrationFailureClass`; D3 async email via the ADR-0002 `IPendingDispatch` seam; D4
+  narrow-try/catch + 429/Retry-After). Each AC is phrased as an observable, test-first assertion
+  (TC-POOL-0/CLASSIFY-INT-0/EMAIL-ASYNC-0/RETRY-IDEMP-0/429-0). Cited code anchors verified accurate.
+  No contradiction with ADR-0002 (cites, does not redefine the dispatch contract). Frontmatter `adrs`
+  correct. **No gaps.**
+- PM reconciled reviewer verdict → `done`.

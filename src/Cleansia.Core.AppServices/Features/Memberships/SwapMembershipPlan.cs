@@ -6,6 +6,7 @@ using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
+using StripeException = Stripe.StripeException;
 
 namespace Cleansia.Core.AppServices.Features.Memberships;
 
@@ -58,11 +59,21 @@ public class SwapMembershipPlan
             // Fresh attempt id so A→B→A→B-style swaps each reach Stripe
             // instead of replaying the first swap's response.
             var attemptId = Guid.NewGuid().ToString("N");
-            var swapped = await stripeClient.SwapSubscriptionPriceAsync(
-                membership.StripeSubscriptionId,
-                newPlan.StripePriceId,
-                attemptId,
-                cancellationToken);
+            SubscriptionResult swapped;
+            try
+            {
+                swapped = await stripeClient.SwapSubscriptionPriceAsync(
+                    membership.StripeSubscriptionId,
+                    newPlan.StripePriceId,
+                    attemptId,
+                    cancellationToken);
+            }
+            catch (StripeException ex)
+            {
+                logger.LogError(ex, "Stripe subscription swap failed for membership {MembershipId}", membership.Id);
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.NewPlanCode), BusinessErrorMessage.PaymentGatewayUnavailable));
+            }
 
             membership.ApplyPlanSwap(
                 newMembershipPlanId: newPlan.Id,

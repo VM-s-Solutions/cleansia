@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 
@@ -47,8 +48,8 @@ public class ResendConfirmationEmail
     public record Command(string Email, string Language) : ICommand<bool>;
 
     public class Handler(
-        IEmailService emailService,
-        IUserRepository userRepository) : ICommandHandler<Command, bool>
+        IUserRepository userRepository,
+        IPendingDispatch pending) : ICommandHandler<Command, bool>
     {
         public async Task<BusinessResult<bool>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -57,7 +58,7 @@ public class ResendConfirmationEmail
             // Email the RAW token returned by the generator; the row keeps the hash.
             var rawConfirmationToken = user.UpdateConfirmationCode();
 
-            await emailService.SendEmailConfirmationAsync(command.Email, userName, rawConfirmationToken, command.Language, cancellationToken);
+            EmailDispatch.EnqueueConfirmation(pending, user, userName, rawConfirmationToken, command.Language);
 
             return BusinessResult.Success(true);
         }

@@ -4,6 +4,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
@@ -48,7 +49,8 @@ public class AutoCancelStaleRecurringOrders
 
     public class Handler(
         IOrderRepository orderRepository,
-        IQueueClient queueClient,
+        IPendingDispatch pendingDispatch,
+        IUnitOfWork unitOfWork,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -84,19 +86,27 @@ public class AutoCancelStaleRecurringOrders
                 {
                     order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, order));
 
-                    await queueClient.SendAsync(
+                    var messageKey = MessageKeys.Push(
+                        order.UserId!, NotificationEventCatalog.OrderCancelled, order.Id);
+                    pendingDispatch.Enqueue(
                         QueueNames.NotificationsDispatch,
-                        new SendPushNotificationMessage(
-                            UserId: order.UserId!,
-                            EventKey: NotificationEventCatalog.OrderCancelled,
-                            Args: new Dictionary<string, string>
-                            {
-                                ["orderId"] = order.Id,
-                                ["orderNumber"] = order.DisplayOrderNumber,
-                            },
-                            TenantId: order.TenantId),
-                        cancellationToken);
+                        new QueueEnvelope<SendPushNotificationMessage>(
+                            messageKey,
+                            order.TenantId,
+                            new SendPushNotificationMessage(
+                                UserId: order.UserId!,
+                                EventKey: NotificationEventCatalog.OrderCancelled,
+                                Args: new Dictionary<string, string>
+                                {
+                                    ["orderId"] = order.Id,
+                                    ["orderNumber"] = order.DisplayOrderNumber,
+                                },
+                                TenantId: order.TenantId)),
+                        messageKey);
 
+                    // The cancellation and its outbox row commit together so the row is durable iff this
+                    // order's state changed; the drainer puts it on the wire after the commit.
+                    await unitOfWork.CommitAsync(cancellationToken);
                     cancelled++;
                 }
                 catch (Exception ex)

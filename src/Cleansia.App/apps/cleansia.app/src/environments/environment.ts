@@ -9,6 +9,9 @@ export const environment = {
     '354682423254-boe1nlnb1dbd3m6a013d3nkpo2e9bgiq.apps.googleusercontent.com',
   sentryDsn: '',
   bugReportUrl: '',
-  mapboxToken:
-    'pk.eyJ1IjoiaXRjbGVhbnNpYSIsImEiOiJjbW8zZXJlM3UwaHk1MnNzNDZ5dWtsNDJnIn0.JzKyy5Ii4qjgikVUVDWrnw',
+  // The Mapbox token must NEVER ship in the browser bundle.
+  // It now lives server-side and is injected by the same-origin proxy
+  // (server.ts, reads process.env.MAPBOX_TOKEN). This is only a token-free
+  // "is geocoding configured" flag that toggles the UI.
+  mapboxToken: 'enabled',
 };

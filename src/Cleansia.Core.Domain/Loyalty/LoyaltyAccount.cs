@@ -50,19 +50,28 @@ public class LoyaltyAccount : Auditable, ITenantEntity
     /// <summary>
     /// Append an Earn ledger entry and recompute denormalized fields.
     /// Caller passes the positive points value; the ledger row stores it as-is.
-    /// <paramref name="idempotencyKey"/> (S7a) is the client-supplied
-    /// token for the manual admin path; null on the order-driven / referral
-    /// paths. It is persisted on the ledger row and backed by a filtered unique
-    /// index so a double-submit of the same admin grant collapses onto one row.
+    /// <paramref name="thresholds"/> are the tenant's configured tier thresholds — the domain holds no
+    /// DB access, so the editable <c>LoyaltyTierConfig</c> is loaded by the caller and passed in.
+    /// <paramref name="description"/> carries the admin justification on the manual path; null on the
+    /// order-driven / referral paths. <paramref name="idempotencyKey"/> is the client-supplied token for
+    /// the manual admin path; null elsewhere. It is persisted on the ledger row and backed by a filtered
+    /// unique index so a double-submit of the same admin grant collapses onto one row.
     /// </summary>
-    public void GrantPoints(int points, LoyaltyEarnSource source, string? orderId, string actorId, string? idempotencyKey = null)
+    public void GrantPoints(
+        int points,
+        LoyaltyEarnSource source,
+        string? orderId,
+        string actorId,
+        LoyaltyTierThresholds thresholds,
+        string? description = null,
+        string? idempotencyKey = null)
     {
         if (points <= 0)
         {
             return;
         }
 
-        var tx = LoyaltyTransaction.Create(Id, LoyaltyTransactionType.Earn, points, source, orderId, idempotencyKey: idempotencyKey);
+        var tx = LoyaltyTransaction.Create(Id, LoyaltyTransactionType.Earn, points, source, orderId, description: description, idempotencyKey: idempotencyKey);
         _transactions.Add(tx);
 
         LifetimePoints += points;
@@ -71,25 +80,30 @@ public class LoyaltyAccount : Auditable, ITenantEntity
             CompletedBookingsCount += 1;
         }
 
-        RecomputeTier();
+        RecomputeTier(thresholds);
         Updated(actorId, DateTimeOffset.UtcNow);
     }
 
     /// <summary>
     /// Append a Revoke ledger entry (stored as negative points) and recompute
     /// denormalized fields. Caller passes the positive magnitude to revoke.
-    /// <paramref name="idempotencyKey"/> (S7a) is the client-supplied
-    /// token for the manual admin path; null on the order-driven path. Backed
-    /// by the same filtered unique index so a double-submit collapses to one row.
+    /// See <see cref="GrantPoints"/> for the threshold/description/idempotency-key contract.
     /// </summary>
-    public void RevokePoints(int points, LoyaltyEarnSource source, string? orderId, string actorId, string? idempotencyKey = null)
+    public void RevokePoints(
+        int points,
+        LoyaltyEarnSource source,
+        string? orderId,
+        string actorId,
+        LoyaltyTierThresholds thresholds,
+        string? description = null,
+        string? idempotencyKey = null)
     {
         if (points <= 0)
         {
             return;
         }
 
-        var tx = LoyaltyTransaction.Create(Id, LoyaltyTransactionType.Revoke, -points, source, orderId, idempotencyKey: idempotencyKey);
+        var tx = LoyaltyTransaction.Create(Id, LoyaltyTransactionType.Revoke, -points, source, orderId, description: description, idempotencyKey: idempotencyKey);
         _transactions.Add(tx);
 
         LifetimePoints = Math.Max(0, LifetimePoints - points);
@@ -98,19 +112,13 @@ public class LoyaltyAccount : Auditable, ITenantEntity
             CompletedBookingsCount = Math.Max(0, CompletedBookingsCount - 1);
         }
 
-        RecomputeTier();
+        RecomputeTier(thresholds);
         Updated(actorId, DateTimeOffset.UtcNow);
     }
 
-    private void RecomputeTier()
+    private void RecomputeTier(LoyaltyTierThresholds thresholds)
     {
-        var newTier = LifetimePoints switch
-        {
-            >= 5000 => LoyaltyTier.PlatinumSparkler,
-            >= 2000 => LoyaltyTier.GoldPolisher,
-            >= 500 => LoyaltyTier.SilverMopper,
-            _ => LoyaltyTier.BronzeCleaner,
-        };
+        var newTier = thresholds.ResolveTier(LifetimePoints);
 
         if (newTier != CurrentTier)
         {

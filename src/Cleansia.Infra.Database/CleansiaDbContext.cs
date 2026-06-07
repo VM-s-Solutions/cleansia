@@ -17,6 +17,7 @@ using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Outbox;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Receipts;
 using Cleansia.Core.Domain.Repositories;
@@ -294,4 +295,5 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<UserNotificationPreferences> UserNotificationPreferences { get; set; }
     public virtual DbSet<ProcessedStripeEvent> ProcessedStripeEvents { get; set; }
     public virtual DbSet<DeadLetter> DeadLetters { get; set; }
+    public virtual DbSet<OutboxMessage> OutboxMessages { get; set; }
 }

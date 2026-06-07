@@ -27,10 +27,12 @@ public class SavedAddressEntityConfiguration : AuditableEntityConfiguration<Save
             .HasForeignKey(s => s.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // A user can only have one default saved address at a time.
-        // Implemented as a filtered unique index (PostgreSQL partial unique index).
+        // A user can only have one ACTIVE default saved address at a time. The filter includes
+        // IsActive because soft-delete (Deactivate) leaves IsDefault unchanged on the removed row —
+        // without the IsActive predicate a deactivated former-default would still occupy the one-default
+        // slot and block choosing a new default.
         builder.HasIndex(s => s.UserId)
-            .HasFilter("\"IsDefault\" = true")
+            .HasFilter("\"IsDefault\" = true AND \"IsActive\" = true")
             .IsUnique()
             .HasDatabaseName("IX_SavedAddresses_UserId_Default_Unique");
 

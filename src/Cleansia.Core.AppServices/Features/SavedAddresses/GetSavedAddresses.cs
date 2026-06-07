@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Features.SavedAddresses.DTOs;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
+using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Features.SavedAddresses;
 
@@ -11,19 +12,32 @@ public class GetSavedAddresses
 
     public class Handler(
         ISavedAddressRepository savedAddressRepository,
-        IUserSessionProvider userSessionProvider)
+        IUserSessionProvider userSessionProvider,
+        ILogger<Handler> logger)
         : IQueryHandler<Query, IReadOnlyList<SavedAddressDto>>
     {
         public async Task<BusinessResult<IReadOnlyList<SavedAddressDto>>> Handle(Query query, CancellationToken cancellationToken)
         {
             var userId = userSessionProvider.GetUserId()!;
             var items = await savedAddressRepository.GetByUserAsync(userId, cancellationToken);
-            var dtos = items
-                .Where(s => s.Address != null)
-                .Select(s => new SavedAddressDto(
+
+            var dtos = new List<SavedAddressDto>(items.Count);
+            foreach (var s in items)
+            {
+                if (s.Address is null)
+                {
+                    // A null shared-Address FK is a data defect; log it so the orphan is observable
+                    // rather than silently disappearing from the user's list.
+                    logger.LogWarning(
+                        "SavedAddress {SavedAddressId} has a null Address (orphaned); excluded from the user list",
+                        s.Id);
+                    continue;
+                }
+
+                dtos.Add(new SavedAddressDto(
                     Id: s.Id,
                     Label: s.Label,
-                    Street: s.Address!.Street,
+                    Street: s.Address.Street,
                     City: s.Address.City,
                     ZipCode: s.Address.ZipCode,
                     State: s.Address.State,
@@ -31,8 +45,8 @@ public class GetSavedAddresses
                     Country: s.Address.Country?.Name,
                     Latitude: s.Address.Latitude,
                     Longitude: s.Address.Longitude,
-                    IsDefault: s.IsDefault))
-                .ToList();
+                    IsDefault: s.IsDefault));
+            }
 
             return BusinessResult.Success<IReadOnlyList<SavedAddressDto>>(dtos);
         }

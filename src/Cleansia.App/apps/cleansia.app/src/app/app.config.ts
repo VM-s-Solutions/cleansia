@@ -34,7 +34,7 @@ import {
   COMMON_INTERCEPTORS_FN,
   initializeTranslations,
   JsonTranslationLoader,
-  MAPBOX_ACCESS_TOKEN,
+  MAPBOX_AUTOCOMPLETE_ENABLED,
 } from '@cleansia/services';
 import { EffectsModule } from '@ngrx/effects';
 import { provideStore, StoreModule } from '@ngrx/store';
@@ -93,7 +93,13 @@ export const appConfig: ApplicationConfig = {
     { provide: Sentry.TraceService, deps: [Router] },
     { provide: LOCALE_ID, useValue: 'en' },
     { provide: CUSTOMER_API_BASE_URL, useValue: environment.apiBaseUrl },
-    { provide: MAPBOX_ACCESS_TOKEN, useValue: environment.mapboxToken ?? '' },
+    // The Mapbox token is NOT shipped to the browser. We only
+    // advertise (token-free) whether geocoding is configured; the same-origin
+    // proxy (server.ts) injects the credential server-side.
+    {
+      provide: MAPBOX_AUTOCOMPLETE_ENABLED,
+      useValue: !!(environment.mapboxToken ?? '').trim(),
+    },
     {
       provide: AUTH_COOKIE_KEYS,
       useValue: {

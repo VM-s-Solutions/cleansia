@@ -59,6 +59,7 @@ public interface ILoyaltyService
         LoyaltyEarnSource source,
         string? orderId,
         string actorId,
+        string? reason,
         string? requestId,
         CancellationToken cancellationToken);
 
@@ -78,6 +79,7 @@ public interface ILoyaltyService
         LoyaltyEarnSource source,
         string? orderId,
         string actorId,
+        string? reason,
         string? requestId,
         CancellationToken cancellationToken);
 }

@@ -11,6 +11,11 @@ public class PackageEntityConfiguration : AuditableEntityConfiguration<Package, 
     {
         base.Configure(builder);
 
+        // Platform config (ADR-0001 Addendum A1): Package is identified by Id only — no
+        // natural key (no Code/Slug), looked up by Id (overview / pricing GetByIds). No unique
+        // index is added: there was none under tenancy and there is no natural-key column to
+        // make unique. Name is display-only and may legitimately repeat.
+
         builder.Property(p => p.Name)
             .IsRequired()
             .HasMaxLength(100);

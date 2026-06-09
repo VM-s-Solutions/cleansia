@@ -15,6 +15,9 @@ public class NoOpFiscalService : IFiscalService
     // Wildcard: resolver uses this as the fallback for unrecognized country codes.
     public string CountryCode => "*";
 
+    // No authority is contacted, so re-running is always a no-op — trivially idempotent.
+    public bool RegisterIsIdempotent => true;
+
     public Task<FiscalResult> RegisterReceiptAsync(
         FiscalReceiptRequest request,
         CancellationToken cancellationToken)

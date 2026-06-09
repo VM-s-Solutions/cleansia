@@ -15,6 +15,7 @@ namespace Cleansia.Core.AppServices.Services;
 public sealed class ReceiptService(
     IPdfService pdfService,
     IOrderReceiptRepository receiptRepository,
+    IFiscalCounterRepository fiscalCounterRepository,
     ILanguageRepository languageRepository,
     ICompanyInfoRepository companyInfoRepository,
     ICountryRepository countryRepository,
@@ -50,11 +51,16 @@ public sealed class ReceiptService(
             throw new InvalidOperationException(BusinessErrorMessage.CompanyInfoNotFound);
         }
 
-        // GetNextSequenceForYearAsync remains COUNT(*)+1 — the gapless, monotonic, atomic allocator
-        // is the separate FISCAL-SEQ ticket. The 23505 backstop in the handler collapses the rare
-        // concurrent collision on either unique index.
+        var enforcementMode = await ResolveEnforcementModeAsync(countryId, cancellationToken);
+
+        // The number comes from the per-issuer gapless counter, NOT a COUNT(*) of receipts. The
+        // allocation runs on the same connection/transaction the caller commits the claim in, so a
+        // committed claim never holds a rolled-back number and a rolled-back claim returns its number
+        // to the pool — a reserved-but-never-signed number stays a documented void, never re-issued.
         var currentYear = DateTime.UtcNow.Year;
-        var sequence = await receiptRepository.GetNextSequenceForYearAsync(currentYear, cancellationToken);
+        var providerKey = await ResolveProviderKeyAsync(countryId, enforcementMode, cancellationToken);
+        var (counterYear, issuerScope) = FiscalSequenceScope.Resolve(providerKey, currentYear);
+        var sequence = await fiscalCounterRepository.AllocateNextAsync(counterYear, issuerScope, cancellationToken);
         var receiptNumber = string.Format(Constants.ReceiptNumberFormat.Pattern, currentYear, sequence);
 
         var fileName = $"receipt_{order.DisplayOrderNumber}_{DateTime.UtcNow:yyyyMMdd}.pdf";
@@ -66,7 +72,6 @@ public sealed class ReceiptService(
         // commit and the register call leaves FiscalRegistrationFailed == false, FiscalCode == null;
         // setting FiscalNextRetryAt now (and widening GetDueForRetryAsync) makes that committed-but-
         // unregistered row sweepable by the retry job. SetFiscalData clears it on a later success.
-        var enforcementMode = await ResolveEnforcementModeAsync(countryId, cancellationToken);
         if (enforcementMode != FiscalEnforcementMode.None)
         {
             receipt.ScheduleImmediateFiscalRetry();
@@ -142,6 +147,21 @@ public sealed class ReceiptService(
         return countryConfig?.FiscalEnforcementMode ?? FiscalEnforcementMode.None;
     }
 
+    // The provider key identifies the fiscal regime, which decides the counter's issuer scope and
+    // year-reset rule. With no fiscal system (None) there is no provider, so the empty key resolves to
+    // the default annually-reset scope — matching CZ's current behaviour.
+    private async Task<string> ResolveProviderKeyAsync(string? countryId, FiscalEnforcementMode enforcementMode, CancellationToken cancellationToken)
+    {
+        if (enforcementMode == FiscalEnforcementMode.None || countryId == null)
+        {
+            return string.Empty;
+        }
+
+        var country = await countryRepository.GetByIdAsync(countryId, cancellationToken);
+        var isoCode = country?.IsoCode ?? "CZ";
+        return fiscalServiceResolver.Resolve(isoCode).ProviderKey;
+    }
+
     private async Task HandleFiscalAsync(
         Order order,
         OrderReceipt receipt,
@@ -159,20 +179,9 @@ public sealed class ReceiptService(
         var isoCode = countryCode ?? "CZ";
         var fiscalService = fiscalServiceResolver.Resolve(isoCode);
 
-        var fiscalRequest = new FiscalReceiptRequest(
-            ReceiptNumber: receipt.ReceiptNumber,
-            IssuedAt: receipt.IssuedAt,
-            TotalAmount: order.TotalPrice,
-            VatAmount: companyInfo.IsVatPayer && order.VatAmount > 0 ? order.VatAmount : null,
-            CurrencyCode: order.Currency?.Code ?? Constants.Currency.Czk,
-            CompanyLegalName: companyInfo.LegalName,
-            CompanyRegistrationNumber: companyInfo.RegistrationNumber,
-            CompanyVatNumber: companyInfo.VatNumber,
-            CustomerName: order.CustomerName,
-            CustomerEmail: order.CustomerEmail,
-            LineItems: BuildFiscalLineItems(order, companyInfo.IsVatPayer ? order.AppliedVatRate : null),
-            PaymentMethod: order.PaymentType.ToString(),
-            CountryCode: isoCode);
+        FiscalGoLiveGate.EnsureRegisterIdempotent(fiscalService, enforcementMode);
+
+        var fiscalRequest = BuildFiscalRequest(order, receipt, companyInfo, isoCode);
 
         try
         {
@@ -206,6 +215,25 @@ public sealed class ReceiptService(
                 receipt.ReceiptNumber, fiscalService.ProviderKey, enforcementMode);
         }
     }
+
+    // The initial register and the recovery re-register MUST build the request the same way so they
+    // carry the same explicit idempotency token (the receipt number) — that is what lets an idempotent
+    // authority collapse a recovery re-register onto the prior entry instead of double-registering.
+    private static FiscalReceiptRequest BuildFiscalRequest(Order order, OrderReceipt receipt, CompanyInfo companyInfo, string isoCode) =>
+        FiscalReceiptRequest.Create(
+            receiptNumber: receipt.ReceiptNumber,
+            issuedAt: receipt.IssuedAt,
+            totalAmount: order.TotalPrice,
+            vatAmount: companyInfo.IsVatPayer && order.VatAmount > 0 ? order.VatAmount : null,
+            currencyCode: order.Currency?.Code ?? Constants.Currency.Czk,
+            companyLegalName: companyInfo.LegalName,
+            companyRegistrationNumber: companyInfo.RegistrationNumber,
+            companyVatNumber: companyInfo.VatNumber,
+            customerName: order.CustomerName,
+            customerEmail: order.CustomerEmail,
+            lineItems: BuildFiscalLineItems(order, companyInfo.IsVatPayer ? order.AppliedVatRate : null),
+            paymentMethod: order.PaymentType.ToString(),
+            countryCode: isoCode);
 
     private static IReadOnlyList<FiscalLineItem> BuildFiscalLineItems(Order order, decimal? vatRate)
     {
@@ -266,20 +294,7 @@ public sealed class ReceiptService(
         var isoCode = countryCode ?? "CZ";
         var fiscalService = fiscalServiceResolver.Resolve(isoCode);
 
-        var fiscalRequest = new FiscalReceiptRequest(
-            ReceiptNumber: receipt.ReceiptNumber,
-            IssuedAt: receipt.IssuedAt,
-            TotalAmount: order.TotalPrice,
-            VatAmount: companyInfo.IsVatPayer && order.VatAmount > 0 ? order.VatAmount : null,
-            CurrencyCode: order.Currency?.Code ?? Constants.Currency.Czk,
-            CompanyLegalName: companyInfo.LegalName,
-            CompanyRegistrationNumber: companyInfo.RegistrationNumber,
-            CompanyVatNumber: companyInfo.VatNumber,
-            CustomerName: order.CustomerName,
-            CustomerEmail: order.CustomerEmail,
-            LineItems: BuildFiscalLineItems(order, companyInfo.IsVatPayer ? order.AppliedVatRate : null),
-            PaymentMethod: order.PaymentType.ToString(),
-            CountryCode: isoCode);
+        var fiscalRequest = BuildFiscalRequest(order, receipt, companyInfo, isoCode);
 
         try
         {

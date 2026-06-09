@@ -13,10 +13,6 @@ public interface IOrderReceiptRepository : IRepository<OrderReceipt, string>
         string orderId,
         CancellationToken cancellationToken);
 
-    Task<int> GetNextSequenceForYearAsync(
-        int year,
-        CancellationToken cancellationToken);
-
     /// <summary>
     /// Returns receipts whose fiscal registration previously failed and are due for a retry
     /// (i.e., <c>FiscalNextRetryAt</c> is in the past). Ordered by oldest-due first.

@@ -64,6 +64,26 @@ Stripe webhook → Order saved → Receipt generated
 
 Legal nuance: in DE TSE and AT RKSV, "delivery" of the receipt is when it reaches the customer. For an online service, that means the email. Holding the email until the signature is obtained is compliant. The customer's order and payment are never blocked — only the receipt email is delayed (typically seconds; worst case minutes).
 
+## Register Idempotency (ADR-0004 go-live gate 2)
+
+The claim-before-register ordering leaves a rare *registered-but-stamp-not-persisted* residual: the authority has the receipt but the local `FiscalCode` was not yet committed, and recovery re-calls `RegisterReceiptAsync` for the same receipt. For a `BlockingOnline` regime a double registration is a compliance incident, so the fiscal contract makes the dedup token explicit and gates blocking regimes on idempotency.
+
+- **Explicit token.** `FiscalReceiptRequest.IdempotencyKey` carries the natural token — the `ReceiptNumber`. The initial register (`ReceiptService.RealizeFiscalAndPdfAsync`) and the recovery re-register (`ReceiptService.RetryFiscalRegistrationAsync`) build the request through the same `FiscalReceiptRequest.Create` factory, so both present the same key for the same receipt.
+- **Provider self-declaration.** `IFiscalService.RegisterIsIdempotent` states whether a repeat call on the same key returns the prior signature/code without burning a new authority entry.
+- **The gate.** `FiscalGoLiveGate.EnsureRegisterIdempotent` runs in the register path and throws `FiscalGoLiveGateException` if a provider whose `RegisterIsIdempotent` is `false` is used under `BlockingOnline` / `BlockingWithOfflineCache`. `AsyncBackground` tolerates a rare extra registration and is not gated.
+
+Per-provider status:
+
+| Provider | Enforcement | Register-idempotent on `ReceiptNumber`? | Basis |
+|---|---|---|---|
+| `NoOpFiscalService` | None | Yes (trivial) | Contacts no authority — re-running is a no-op. |
+| `CzechEet2FiscalService` (CZ EET 2.0) | AsyncBackground | Yes | EET 2.0 re-submission of the same receipt returns the original FIK; the implementation must dedup on the receipt number. |
+| DE TSE | BlockingOnline | Required before go-live | TSE is number-first/then-sign; a repeat sign of the same transaction must return the prior signature. The provider implementation, once added, must declare `RegisterIsIdempotent = true` or the gate blocks production use. |
+| AT RKSV | BlockingOnline | Required before go-live | Per-issuer continuous numbering; re-signing the same receipt number must not mint a new entry. Gated until the implementation declares idempotency. |
+| ES VeriFactu | BlockingOnline | Required before go-live | Per-issuer chained records; a resend with the same record id is deduped. Gated until the implementation declares idempotency. |
+
+DE/AT/ES have no implementation yet (only `NoOpFiscalService` and the CZ stub ship today). The gate guarantees none of them can run under a blocking mode until its `IFiscalService` declares `RegisterIsIdempotent = true`, which closes ADR-0004 go-live gate item (2) in code rather than relying on a checklist.
+
 ## Error Classification
 
 `FiscalErrorKind` drives the retry decision. Transient errors retry automatically; permanent/configuration errors alert an admin and stop.
@@ -100,8 +120,9 @@ After `MaxFiscalRetries = 10` attempts, `FiscalNextRetryAt` is cleared and the r
 
 ### Abstractions (`Cleansia.Core.Fiscal.Abstractions`)
 
-- **`IFiscalService`** — Contract every country implementation satisfies: `Task<FiscalResult> RegisterReceiptAsync(FiscalReceiptRequest, CancellationToken)`.
+- **`IFiscalService`** — Contract every country implementation satisfies: `Task<FiscalResult> RegisterReceiptAsync(FiscalReceiptRequest, CancellationToken)` plus the `RegisterIsIdempotent` capability flag (see Register Idempotency above).
 - **`IFiscalServiceResolver`** — Routes a country ISO code to the right `IFiscalService`.
+- **`FiscalGoLiveGate`** — Enforces that a provider may only run under a blocking enforcement mode if its register is idempotent on the receipt number.
 - **`FiscalResult`** — Carries `IsRegistered`, `FiscalCode`, `RegisteredAt`, `ErrorKind`, `ErrorCode`, `ErrorMessage`. Factories: `Success`, `NotRequired`, `TransientError`, `PermanentError`, `ConfigurationError`, `UnknownError`.
 - **`FiscalEnforcementMode`**, **`FiscalErrorKind`** — Enums described above.
 

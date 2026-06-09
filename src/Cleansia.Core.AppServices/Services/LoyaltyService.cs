@@ -144,6 +144,77 @@ public sealed class LoyaltyService(
         account.RevokePoints(pointsToRevoke, LoyaltyEarnSource.OrderCancelled, orderId, SystemActor, thresholds);
     }
 
+    public async Task RevokeForPartialRefundAsync(
+        string orderId, decimal refundNet, string refundKey, string actorId, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(refundKey))
+        {
+            return;
+        }
+
+        var order = await orderRepository
+            .GetQueryable()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
+
+        if (order == null)
+        {
+            logger.LogWarning("LoyaltyService.PartialRevoke skipped — order {OrderId} not found.", orderId);
+            return;
+        }
+
+        if (string.IsNullOrEmpty(order.UserId))
+        {
+            return;
+        }
+
+        var requested = (int)Math.Floor(refundNet / 10m);
+        if (requested <= 0)
+        {
+            return;
+        }
+
+        // Idempotency on the refund key — a replay of the same partial refund collapses to one revoke.
+        var existingByKey = await loyaltyTransactionRepository.GetByIdempotencyKeyAsync(refundKey, cancellationToken);
+        if (existingByKey != null)
+        {
+            return;
+        }
+
+        var originalEarn = await loyaltyTransactionRepository.GetLatestForOrderSourceAsync(
+            orderId, LoyaltyEarnSource.OrderCompleted, cancellationToken);
+        if (originalEarn == null)
+        {
+            return;
+        }
+
+        // Cap cumulative revocation at the original earn so a near-full set of partial refunds can
+        // never claw back more than was earned.
+        var alreadyRevoked = await loyaltyTransactionRepository.GetRevokedPointsSumForOrderSourceAsync(
+            orderId, LoyaltyEarnSource.OrderPartiallyRefunded, cancellationToken);
+        var headroom = originalEarn.Points - alreadyRevoked;
+        var pointsToRevoke = Math.Min(requested, headroom);
+        if (pointsToRevoke <= 0)
+        {
+            return;
+        }
+
+        var account = await loyaltyAccountRepository.GetByUserIdAsync(order.UserId, cancellationToken);
+        if (account == null)
+        {
+            return;
+        }
+
+        var thresholds = await ResolveThresholdsAsync(cancellationToken);
+        account.RevokePoints(
+            pointsToRevoke, LoyaltyEarnSource.OrderPartiallyRefunded, orderId, actorId, thresholds, idempotencyKey: refundKey);
+
+        // Flush the keyed insert HERE so a concurrent double-submit that raced past the fast-path read
+        // collides on the filtered unique index and collapses, rather than surfacing a raw 500 at the
+        // pipeline commit (mirrors the manual grant/revoke path).
+        await FlushCollapsingUniqueViolationAsync(cancellationToken);
+    }
+
     public async Task<TierDiscountResult> ResolveTierDiscountForOrderAsync(
         string userId, decimal orderTotal, CancellationToken cancellationToken)
     {
@@ -293,14 +364,14 @@ public sealed class LoyaltyService(
     }
 
     /// <summary>
-    /// S7b — deliberate, documented in-service flush of the keyed manual grant/revoke insert so
-    /// a concurrent double-submit that raced past the fast-path read collides on the filtered UNIQUE
-    /// INDEX on <c>LoyaltyTransaction.IdempotencyKey</c> HERE, where the 23505 can be caught and
-    /// collapsed — not at the <c>UnitOfWorkPipelineBehavior</c> commit (which would surface a raw 500).
-    /// On a unique-violation the loser rolls back ITS OWN change-tracker (each request has its own scoped
-    /// DbContext, so this discards only the loser's grant, never the winner's) and returns: the side
-    /// effect lands exactly once and the admin sees the same success. On a clean flush the row is
-    /// persisted and Unchanged, so the pipeline's final commit is a safe no-op.
+    /// Deliberate in-service flush of a keyed loyalty grant/revoke insert (the manual admin path and the
+    /// partial-refund clawback) so a concurrent double-submit that raced past the fast-path read collides
+    /// on the filtered UNIQUE INDEX on <c>LoyaltyTransaction.IdempotencyKey</c> HERE, where the 23505 can
+    /// be caught and collapsed — not at the <c>UnitOfWorkPipelineBehavior</c> commit (which would surface a
+    /// raw 500). On a unique-violation the loser rolls back ITS OWN change-tracker (each request has its own
+    /// scoped DbContext, so this discards only the loser's row, never the winner's) and returns: the side
+    /// effect lands exactly once. On a clean flush the row is persisted and Unchanged, so the pipeline's
+    /// final commit is a safe no-op.
     /// </summary>
     private async Task FlushCollapsingUniqueViolationAsync(CancellationToken cancellationToken)
     {
@@ -315,7 +386,7 @@ public sealed class LoyaltyService(
             // (the caller's handler returns the same Response either way).
             loyaltyTransactionRepository.Rollback();
             logger.LogInformation(
-                "Manual loyalty grant/revoke collapsed on idempotency key (unique-violation) — replay landed exactly once.");
+                "Keyed loyalty grant/revoke collapsed on idempotency key (unique-violation) — replay landed exactly once.");
         }
     }
 

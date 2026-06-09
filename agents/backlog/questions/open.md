@@ -137,8 +137,12 @@ _No open Wave-1 *planning* questions remain._
 - Why it matters: the even-split default is mechanically safe and reversible, but a refund of one bundled
   service from a bundle whose services are unequally valued would refund the wrong amount until the weights
   are corrected. This is a pricing/product call, not an architecture one.
-- Default taken (non-blocking): ship the even-weight backfill (AUD-02p). The owner sets per-bundle weights
-  via the admin package-pricing UI after AUD-02p lands; no per-bundle business weighting is invented in the
-  ADR or the migration.
-- Answer: _(owner fills in — set per-bundle weights in the admin UI post-AUD-02p, or confirm even-split is
-  acceptable for all current bundles)_
+- Default taken (non-blocking): ship the even-weight backfill in **T-0231** (AUD-02p1, the db+backend split
+  child). The owner sets per-bundle weights via the admin package-pricing UI in **T-0232** (AUD-02p2) after
+  T-0231 lands; no per-bundle business weighting is invented in the ADR or the migration.
+- Wave-2 status (2026-06-07): this is the **only open Wave-2 question** (Q-REFUND-01/02 resolved in ADR-0009).
+  It does **not** block starting Wave 2 — T-0231 ships even-split. The owner should, before any DE/AT/ES or
+  high-value-bundle refund goes live, either (a) confirm even-split is acceptable for all current bundles, or
+  (b) set real weights via T-0232. AUD-02p is now split: weighting capability = T-0232, schema/backfill = T-0231.
+- Answer: _(owner fills in — set per-bundle weights via the admin UI in T-0232 post-T-0231, or confirm
+  even-split is acceptable for all current bundles)_

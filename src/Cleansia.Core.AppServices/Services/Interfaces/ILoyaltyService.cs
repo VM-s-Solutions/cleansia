@@ -30,6 +30,25 @@ public interface ILoyaltyService
     Task RevokeForCancelledOrderAsync(string orderId, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Proportional loyalty clawback for a single partial refund: revokes
+    /// <c>floor(refundNet / 10)</c> points — symmetric with the earn
+    /// <c>floor(order.TotalPrice / 10)</c>, on net so the VAT portion isn't clawed back.
+    /// <para>
+    /// Unlike <see cref="RevokeForCancelledOrderAsync"/> (a one-shot full mirror that no-ops on a
+    /// second call), this is keyed per refund: each distinct <paramref name="refundKey"/> revokes,
+    /// and the SAME key revokes at most once (idempotent — fast-path read on the key plus the filtered
+    /// unique-index backstop that collapses a concurrent double-submit). Cumulative revocation across
+    /// an order's partial refunds is capped at the original <c>OrderCompleted</c> earn magnitude, so a
+    /// near-full set of partials can never over-revoke. <c>UserId == null</c> (anonymous/legacy) is a
+    /// no-op, mirroring the earn and full-revoke skips. Keyed on
+    /// <see cref="LoyaltyEarnSource.OrderPartiallyRefunded"/> so it never collides with the cancel
+    /// mirror's <c>(orderId, OrderCancelled)</c> guard.
+    /// </para>
+    /// </summary>
+    Task RevokeForPartialRefundAsync(
+        string orderId, decimal refundNet, string refundKey, string actorId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Compute the tier discount (CZK amount, not %) for a user + total.
     /// Returns (0, null) for anonymous users with no account, (0, tier)
     /// when the tier qualifies but the order is below the per-tier minimum,

@@ -26,7 +26,8 @@ public static class PackageMappers
             Price: package.Price,
             EstimatedTime: package.IncludedServices.Sum(s => s.Service.EstimatedTime),
             CurrencyCode: currencyCode,
-            IncludedServices: package.IncludedServices.Select(s => s.Service.Name)
+            IncludedServices: package.IncludedServices.Select(s => s.Service.Name),
+            IncludedServiceItems: package.IncludedServices.Select(s => new PackageServiceRef(s.Service.Id, s.Service.Name))
         );
     }
 
@@ -41,7 +42,8 @@ public static class PackageMappers
             IncludedServices: package.IncludedServices.Select(ps => new PackageServiceDto(
                 ps.Service!.Id,
                 ps.Service.Name,
-                ps.Service.Description)),
+                ps.Service.Description,
+                ps.PriceWeight)),
             CreatedOn: package.CreatedOn,
             UpdatedOn: package.UpdatedOn);
     }

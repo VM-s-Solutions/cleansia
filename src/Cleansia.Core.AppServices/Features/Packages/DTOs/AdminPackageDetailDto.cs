@@ -15,4 +15,5 @@ public record AdminPackageDetailDto(
 public record PackageServiceDto(
     string Id,
     string Name,
-    string Description);
+    string Description,
+    decimal PriceWeight);

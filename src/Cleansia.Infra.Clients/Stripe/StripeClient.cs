@@ -72,7 +72,8 @@ public class StripeClient : IStripeClient
         return session.Url;
     }
 
-    public async Task RefundCheckoutSessionAsync(string stripeSessionId, decimal amount, CancellationToken cancellationToken)
+    public async Task RefundCheckoutSessionAsync(
+        string stripeSessionId, decimal amount, string idempotencyKey, CancellationToken cancellationToken)
     {
         var sessionService = new SessionService(stripe);
         var session = await ClassifyAsync(
@@ -92,11 +93,9 @@ public class StripeClient : IStripeClient
             Amount = (long)(amount * 100),
             Reason = global::Stripe.RefundReasons.RequestedByCustomer,
         };
-        // Include the amount in the key so partial + later top-up refunds against
-        // the same session get distinct keys. Identical re-requests still
-        // collide and Stripe returns the original refund (the desired idempotency).
-        var amountCents = (long)(amount * 100);
-        var requestOptions = new RequestOptions { IdempotencyKey = $"refund-{stripeSessionId}-{amountCents}" };
+        // The caller's deterministic refund key is the idempotency key (ADR-0006 D3): a retry of the
+        // same logical refund replays Stripe's original refund instead of issuing a second one.
+        var requestOptions = new RequestOptions { IdempotencyKey = idempotencyKey };
         await ClassifyAsync(
             nameof(RefundCheckoutSessionAsync),
             () => refundService.CreateAsync(refundOptions, requestOptions, cancellationToken));

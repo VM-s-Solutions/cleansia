@@ -69,7 +69,46 @@
             />
           </div>
         </div>
+
+        @if (facade.weightRows().length > 0) {
+        <div class="form-grid">
+          <div class="form-field full-width">
+            <span class="form-label">{{
+              'pages.package_form.weights_title' | translate
+            }}</span>
+
+            @for (row of facade.derivedGrosses(); track row.id) {
+            <div class="form-grid weight-row">
+              <div class="form-field">
+                <cleansia-text-input
+                  [id]="'weight-' + row.id"
+                  [label]="row.name"
+                  dataType="number"
+                  [ngModel]="row.weight"
+                  [ngModelOptions]="{ standalone: true }"
+                  (valueChanges)="onWeightChange(row.id, $event)"
+                />
+              </div>
+              <div class="form-field weight-row__gross">
+                <span class="form-label">{{
+                  'pages.package_form.derived_gross' | translate
+                }}</span>
+                <span class="weight-row__gross-value">{{
+                  row.gross | number : '1.2-2'
+                }}</span>
+              </div>
+            </div>
+            }
+          </div>
+        </div>
+        }
       </cleansia-section>
+
+      @if (facade.errorKey()) {
+      <cleansia-section>
+        <p class="form-error">{{ facade.errorKey()! | translate }}</p>
+      </cleansia-section>
+      }
 
       <cleansia-section [title]="'pages.package_form.translations' | translate">
         <p-tabs [value]="facade.languages()[0].code || ''">

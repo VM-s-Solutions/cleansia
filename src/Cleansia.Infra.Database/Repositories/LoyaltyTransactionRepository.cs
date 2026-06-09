@@ -40,4 +40,17 @@ public class LoyaltyTransactionRepository(CleansiaDbContext context)
         return GetDbSet()
             .FirstOrDefaultAsync(t => t.IdempotencyKey == idempotencyKey, cancellationToken);
     }
+
+    public async Task<int> GetRevokedPointsSumForOrderSourceAsync(
+        string orderId, LoyaltyEarnSource source, CancellationToken cancellationToken)
+    {
+        // Revoke rows store Points as a negative delta; negate the SUM to return a positive magnitude.
+        var signedSum = await GetDbSet()
+            .Where(t => t.OrderId == orderId
+                && t.Source == source
+                && t.Type == LoyaltyTransactionType.Revoke)
+            .SumAsync(t => t.Points, cancellationToken);
+
+        return -signedSum;
+    }
 }

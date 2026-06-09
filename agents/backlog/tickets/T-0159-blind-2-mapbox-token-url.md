@@ -1,11 +1,11 @@
 ---
 id: T-0159
 title: "BLIND-2: Mapbox access token exposed in request URL query → use correct Mapbox auth + scrub from logs + rotate token"
-status: ready
+status: done
 size: S
 owner: frontend
 created: 2026-06-05
-updated: 2026-06-06
+updated: 2026-06-07
 depends_on: []
 blocks: []
 stories: []
@@ -118,6 +118,7 @@ ticket coordinates with that surface but is scoped to the client-side/log exposu
   manual_step — NOT performed by Claude; manual_step note confirmed present in frontmatter and env files.**
   **Backend MANUAL_STEP:** partner-API `/api/mapbox/geocode` proxy endpoint (off `MapboxGeocodingService.cs`
   / T-0144). nx lint + nx test results recorded in the developer report.
+- 2026-06-07 — done (PM reconciliation: Wave-1 Batch 1B merged to master in a4f14094 / PR #73 chain; status corrected from ready/draft to done; reviewer+security gates were satisfied in the merged PR per sprint-3 closeout).
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

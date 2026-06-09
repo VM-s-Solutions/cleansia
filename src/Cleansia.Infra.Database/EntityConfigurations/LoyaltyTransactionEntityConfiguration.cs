@@ -29,9 +29,9 @@ public class LoyaltyTransactionEntityConfiguration : AuditableEntityConfiguratio
         builder.Property(t => t.OrderId)
             .HasMaxLength(26);
 
-        // S7a — client-supplied idempotency key for the
-        // manual admin grant/revoke path. Nullable; the filtered unique index
-        // below is the atomic backstop that collapses a double-submit.
+        // Client-supplied idempotency key for the keyed paths (the manual admin grant/revoke and the
+        // per-refund partial clawback, which keys on the refund key). Nullable; the filtered unique index
+        // below is the atomic backstop that collapses a concurrent double-submit.
         builder.Property(t => t.IdempotencyKey)
             .HasMaxLength(80);
 

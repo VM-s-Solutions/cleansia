@@ -1,11 +1,11 @@
 ---
 id: T-0149
 title: Refresh-token rotation re-checks profile (per host), not only audience
-status: ready
+status: done
 size: S
 owner: backend
 created: 2026-06-01
-updated: 2026-06-06
+updated: 2026-06-07
 depends_on: [T-0100]
 blocks: []
 stories: []
@@ -132,6 +132,7 @@ regen and no migration are needed.
   Admin (`AdminAuthController.cs`) untouched. Handler (`RefreshToken.cs`) untouched per ticket. Build:
   `dotnet build src/Cleansia.Api.sln` 0 errors. Tests: 510/510 unit pass; 7/7 new integration pass
   (AC1–AC4 end-to-end). AC1–AC6 covered.
+- 2026-06-07 — done (PM reconciliation: Wave-1 Batch 1B merged to master in a4f14094 / PR #73 chain; status corrected from ready/draft to done; reviewer+security gates were satisfied in the merged PR per sprint-3 closeout).
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

@@ -23,6 +23,8 @@ const PAYMENT_STATUS_TRANSLATION_MAP: Record<PaymentStatus, string> = {
   [PaymentStatus.Failed]: 'pages.order_management.payment_status.failed',
   [PaymentStatus.Refunded]: 'pages.order_management.payment_status.refunded',
   [PaymentStatus.Disputed]: 'pages.order_management.payment_status.disputed',
+  [PaymentStatus.PartiallyRefunded]:
+    'pages.order_management.payment_status.partially_refunded',
 };
 
 export function getOrderStatusLabel(

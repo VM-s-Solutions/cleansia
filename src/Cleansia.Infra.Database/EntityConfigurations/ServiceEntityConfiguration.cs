@@ -12,6 +12,11 @@ public class ServiceEntityConfiguration : AuditableEntityConfiguration<Service, 
     {
         base.Configure(builder);
 
+        // Platform config (ADR-0001 Addendum A1): Service is identified by Id only —
+        // it has no natural key (no Code/Slug) and is looked up by Id (overview / pricing
+        // GetByIds). No unique index is added: there was none under tenancy and there is no
+        // natural-key column to make unique. Name is display-only and may legitimately repeat.
+
         builder.Property(s => s.Name)
             .IsRequired()
             .HasMaxLength(100);

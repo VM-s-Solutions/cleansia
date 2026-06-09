@@ -30,6 +30,7 @@ import {
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
+import { takeUntil } from 'rxjs';
 import { PackageFormData, PackageFormFacade } from './package-form.facade';
 
 @Component({
@@ -106,6 +107,11 @@ export class PackageFormComponent implements OnInit, OnDestroy {
     this.facade.loadLanguages();
     this.facade.loadAvailableServices();
 
+    this.facade.setPrice(Number(this.form.controls.price.value));
+    this.form.controls.price.valueChanges
+      .pipe(takeUntil(this.facade.destroyed$))
+      .subscribe((price) => this.facade.setPrice(Number(price)));
+
     if (this.isEditMode()) {
       const packageId = this.route.snapshot.paramMap.get('packageId');
       if (packageId) {
@@ -142,23 +148,39 @@ export class PackageFormComponent implements OnInit, OnDestroy {
     name?: string;
     description?: string;
     price?: number;
-    includedServices?: { id?: string; name?: string; description?: string }[];
+    includedServices?: {
+      id?: string;
+      name?: string;
+      description?: string;
+      priceWeight?: number;
+    }[];
     translations?: { [key: string]: { name?: string; description?: string } };
   }): void {
     this.form.patchValue({
       name: pkg.name ?? '',
       description: pkg.description ?? '',
       price: pkg.price ?? 0,
-      serviceIds: pkg.includedServices?.map(s => s.id).filter((id): id is string => !!id) ?? [],
+      serviceIds:
+        pkg.includedServices
+          ?.map((s) => s.id)
+          .filter((id): id is string => !!id) ?? [],
     });
+
+    this.facade.setPrice(pkg.price ?? 0);
 
     // Set selected services for multiselect
     if (pkg.includedServices) {
       const availableServices = this.facade.availableServices();
-      const selected = availableServices.filter(s =>
-        pkg.includedServices!.some(is => is.id === s.id)
+      const selected = availableServices.filter((s) =>
+        pkg.includedServices!.some((is) => is.id === s.id)
       );
       this.selectedServices.set(selected);
+      this.facade.syncWeightRows(
+        selected
+          .filter((s): s is ServiceListItem & { id: string } => Boolean(s.id))
+          .map((s) => ({ id: s.id, name: s.name ?? '' })),
+        pkg.includedServices
+      );
     }
 
     if (pkg.translations) {
@@ -178,8 +200,20 @@ export class PackageFormComponent implements OnInit, OnDestroy {
 
   onServiceSelectionChange(selected: ServiceListItem[]): void {
     this.selectedServices.set(selected);
-    const serviceIds = selected.map(s => s.id).filter((id): id is string => !!id);
+    const serviceIds = selected
+      .map((s) => s.id)
+      .filter((id): id is string => !!id);
     this.form.patchValue({ serviceIds });
+    this.facade.syncWeightRows(
+      selected
+        .filter((s): s is ServiceListItem & { id: string } => Boolean(s.id))
+        .map((s) => ({ id: s.id, name: s.name ?? '' })),
+      this.facade.pkg()?.includedServices
+    );
+  }
+
+  onWeightChange(serviceId: string, value: string | number): void {
+    this.facade.setWeight(serviceId, Number(value));
   }
 
   onSave(): void {

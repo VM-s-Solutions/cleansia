@@ -15,7 +15,7 @@ namespace Cleansia.Core.Domain.ServiceAreas;
 /// later under load would require backfilling every production row with no
 /// downtime, so it's cheaper to ship the column unused.
 /// </summary>
-public class ServiceCity : Auditable, ITenantEntity
+public class ServiceCity : Auditable
 {
     [Required]
     [MaxLength(26)]

@@ -7,17 +7,16 @@ namespace Cleansia.Core.Domain.Orders;
 /// <summary>
 /// Add-on cleaning task customers can toggle on top of the base service / package
 /// selection (inside-oven, inside-fridge, interior-windows, etc.). Mirrors
-/// <see cref="Services.ServiceCategory"/>'s shape: stable per-tenant <see cref="Slug"/>
+/// <see cref="Services.ServiceCategory"/>'s shape: stable platform-wide <see cref="Slug"/>
 /// for client lookups, JS-friendly <see cref="Translations"/> dictionary,
 /// soft-delete via <c>IsActive</c> (inherited from BaseEntity).
 ///
 /// MVP pricing model: flat <see cref="Price"/> per selection regardless of
 /// quantity (the spec calls out per-window / per-laundry-hour pricing as a
-/// fast-follow). Stored in the tenant's base currency (CZK for cz);
-/// currency conversion happens in <c>OrderPricingCalculator</c> alongside
-/// services and packages.
+/// fast-follow). Authored in the default currency (CZK); currency conversion
+/// happens in <c>OrderPricingCalculator</c> alongside services and packages.
 /// </summary>
-public class Extra : Auditable, ITenantEntity
+public class Extra : Auditable
 {
     // Stable identifier for clients (mobile icon/label map, analytics, deep-links).
     // Immutable after creation — renaming Name is fine, renaming Slug breaks clients.

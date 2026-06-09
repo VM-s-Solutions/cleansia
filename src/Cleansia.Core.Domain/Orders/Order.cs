@@ -337,6 +337,12 @@ public class Order : Auditable, ITenantEntity
         return this;
     }
 
+    public Order AssignStripeSessionId(string stripeSessionId)
+    {
+        StripeSessionId = stripeSessionId;
+        return this;
+    }
+
     public Order UpdatePhone(string phone)
     {
         CustomerPhone = phone;

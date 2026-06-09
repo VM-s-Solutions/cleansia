@@ -239,14 +239,46 @@ public static class PayCalculator
         return totalPay * (completionPercentage / 100);
     }
 
-    public static decimal SplitPayForMultipleEmployees(decimal totalPay, int employeeCount)
+    public static IReadOnlyList<decimal> SplitPayForMultipleEmployees(
+        decimal totalPay,
+        int employeeCount,
+        int decimalPlaces = 2)
     {
         if (employeeCount <= 0)
         {
             throw new ArgumentException("Employee count must be positive", nameof(employeeCount));
         }
 
-        return totalPay / employeeCount;
+        if (decimalPlaces < 0)
+        {
+            throw new ArgumentException("Decimal places cannot be negative", nameof(decimalPlaces));
+        }
+
+        var minorUnitsPerWhole = Pow10(decimalPlaces);
+        var totalMinorUnits = decimal.Round(totalPay * minorUnitsPerWhole, 0, MidpointRounding.AwayFromZero);
+
+        var baseUnits = decimal.Truncate(totalMinorUnits / employeeCount);
+        var leftoverUnits = (int)(totalMinorUnits - (baseUnits * employeeCount));
+
+        var shares = new decimal[employeeCount];
+        for (var i = 0; i < employeeCount; i++)
+        {
+            var units = baseUnits + (i < leftoverUnits ? 1 : 0);
+            shares[i] = units / minorUnitsPerWhole;
+        }
+
+        return shares;
+    }
+
+    private static decimal Pow10(int exponent)
+    {
+        decimal result = 1m;
+        for (var i = 0; i < exponent; i++)
+        {
+            result *= 10m;
+        }
+
+        return result;
     }
 
     private static bool IsWeekend(DateTime date)

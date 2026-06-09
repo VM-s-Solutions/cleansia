@@ -1,11 +1,11 @@
 ---
 id: T-0154
 title: "Device soft-delete verdict: apply the T-0152 ADR decision to UnregisterDevice (Deactivate or documented scratch Remove)"
-status: ready
+status: done
 size: S
 owner: backend
 created: 2026-06-05
-updated: 2026-06-06
+updated: 2026-06-07
 depends_on: [T-0152]
 blocks: []
 stories: []
@@ -65,6 +65,7 @@ parallel after T-0152 is accepted.
   plus the missing-device no-op. red (handler still `Remove`): `Unregistering_Existing_Device_Soft_Deletes_And_Never_Hard_Removes`
   failing on the `Deactivate Times.Once` verify → green after `Remove`→`Deactivate`. dotnet build (solution) clean;
   Cleansia.Tests 569/569 pass. No manual step (no schema/DTO change).
+- 2026-06-07 — done (PM reconciliation: Wave-1 Batch 1B merged to master in a4f14094 / PR #73 chain; status corrected from ready/draft to done; reviewer+security gates were satisfied in the merged PR per sprint-3 closeout).
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

@@ -5,7 +5,7 @@ using Cleansia.Core.Domain.Services;
 
 namespace Cleansia.Core.Domain.Packages;
 
-public class Package : Auditable, ITenantEntity
+public class Package : Auditable
 {
     [Required]
     [MaxLength(100)]

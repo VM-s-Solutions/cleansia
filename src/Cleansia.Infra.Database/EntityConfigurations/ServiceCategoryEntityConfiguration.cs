@@ -16,7 +16,11 @@ public class ServiceCategoryEntityConfiguration : AuditableEntityConfiguration<S
             .IsRequired()
             .HasMaxLength(50);
 
-        builder.HasIndex(c => new { c.TenantId, c.Slug }).IsUnique();
+        // Platform config (ADR-0001 Addendum A1): Slug is unique platform-wide,
+        // not per tenant — the previous (TenantId, Slug) composite is dropped
+        // along with the tenant dimension so anonymous catalog reads no longer
+        // collapse to the TenantId == null slice.
+        builder.HasIndex(c => c.Slug).IsUnique();
 
         builder.Property(c => c.Name)
             .IsRequired()

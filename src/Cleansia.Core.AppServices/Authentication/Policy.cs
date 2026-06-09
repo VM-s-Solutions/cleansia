@@ -229,4 +229,7 @@ public class Policy
 
     // Marketing (sitewide push)
     public const string CanSendSitewidePromo = nameof(CanSendSitewidePromo); // Admin
+
+    // Refunds (admin-issued partial refund — money-out + privileged)
+    public const string CanIssueRefund = nameof(CanIssueRefund); // Admin
 }

@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Services;
+using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -15,6 +16,7 @@ public class UpdatePackage
         string Description,
         decimal Price,
         List<string>? ServiceIds,
+        Dictionary<string, decimal>? ServiceWeights,
         Dictionary<string, CreateService.TranslationInput>? Translations) : ICommand<Response>;
 
     public record Response(string PackageId);
@@ -52,6 +54,10 @@ public class UpdatePackage
                     return await serviceRepository.ExistWithIdsAsync(serviceIds, ct);
                 })
                 .WithMessage(BusinessErrorMessage.ServiceNotFound);
+
+            RuleFor(x => x.ServiceWeights)
+                .Must(weights => weights == null || weights.Values.All(w => w > 0))
+                .WithMessage(BusinessErrorMessage.PackageInvalidWeight);
         }
     }
 
@@ -87,6 +93,12 @@ public class UpdatePackage
                     if (service != null)
                     {
                         package.AddService(service);
+
+                        var weight = command.ServiceWeights != null && command.ServiceWeights.TryGetValue(serviceId, out var w)
+                            ? w
+                            : PackageService.DefaultPriceWeight;
+
+                        package.IncludedServices.First(ps => ps.ServiceId == serviceId).SetPriceWeight(weight);
                     }
                 }
             }

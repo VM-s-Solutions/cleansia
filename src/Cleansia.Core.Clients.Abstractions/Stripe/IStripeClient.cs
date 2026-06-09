@@ -8,9 +8,16 @@ public interface IStripeClient
 
     /// <summary>
     /// Refund a previously-paid checkout session. Amount is in the session's currency.
-    /// Used by customer cancellation flow when a partial or full refund is owed per policy.
+    /// <para>
+    /// <paramref name="idempotencyKey"/> is passed straight to Stripe as the refund request's
+    /// IdempotencyKey. It MUST be the caller's deterministic refund key (ADR-0006 D3), never a
+    /// per-call Guid/timestamp: the same key replays the same Stripe refund instead of issuing a
+    /// second one, which is what makes the ADR-0005 D1.2 resilience retry safe to auto-retry this
+    /// write at all (an unkeyed write is never auto-retried).
+    /// </para>
     /// </summary>
-    Task RefundCheckoutSessionAsync(string stripeSessionId, decimal amount, CancellationToken cancellationToken);
+    Task RefundCheckoutSessionAsync(
+        string stripeSessionId, decimal amount, string idempotencyKey, CancellationToken cancellationToken);
 
     /// <summary>
     /// Create a new Stripe Customer record for a user who's making their first

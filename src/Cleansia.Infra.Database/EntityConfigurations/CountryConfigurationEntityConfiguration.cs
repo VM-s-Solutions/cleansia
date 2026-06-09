@@ -81,5 +81,11 @@ public class CountryConfigurationEntityConfiguration : AuditableEntityConfigurat
             .IsRequired()
             .HasConversion<int>()
             .HasDefaultValue(Cleansia.Core.Fiscal.Abstractions.FiscalEnforcementMode.None);
+
+        builder.Property(e => e.RefundStripeFeeRate)
+            .HasPrecision(5, 4);
+
+        builder.Property(e => e.RefundStripeFixedFee)
+            .HasPrecision(18, 2);
     }
 }

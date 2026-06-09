@@ -1,11 +1,11 @@
 ---
 id: T-0151
 title: Migrate remaining queue consumers onto Functions.Core
-status: ready
+status: done
 size: M
 owner: functions
 created: 2026-06-01
-updated: 2026-06-06
+updated: 2026-06-07
 depends_on: [T-0121]
 blocks: []
 stories: []
@@ -109,6 +109,7 @@ Source: ADR-0002 D5 (`agents/backlog/adr/0002-outbox-dispatch-contract.md`).
   **Serialization: edits `Cleansia.Functions/Functions/*.cs`** — the same files T-0157's drainer work touches
   → do NOT run concurrently with T-0157 (the outbox chain). T-0157 is not yet `ready` (held on the T-0156
   migration), so T-0151 can run now; finish it before T-0157's Functions edits begin).
+- 2026-06-07 — done (PM reconciliation: Wave-1 Batch 1B merged to master in a4f14094 / PR #73 chain; status corrected from ready/draft to done; reviewer+security gates were satisfied in the merged PR per sprint-3 closeout).
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

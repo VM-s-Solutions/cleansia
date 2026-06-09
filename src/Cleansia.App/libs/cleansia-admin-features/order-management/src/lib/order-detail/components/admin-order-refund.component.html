@@ -1,0 +1,89 @@
+<cleansia-section [title]="'pages.order_management.refund.title' | translate">
+  @if (!isRefundable()) {
+  <p class="refund-unavailable">
+    {{ 'pages.order_management.refund.unavailable' | translate }}
+  </p>
+  } @else if (facade.lines().length === 0) {
+  <p class="refund-empty">
+    {{ 'pages.order_management.refund.no_lines' | translate }}
+  </p>
+  } @else {
+  <div class="refund-form">
+    <div class="refund-lines">
+      <span class="refund-label">
+        {{ 'pages.order_management.refund.select_lines' | translate }}
+      </span>
+
+      @for (line of standaloneLines(); track line.id) {
+      <div class="refund-line">
+        <cleansia-checkbox
+          [label]="line.name"
+          [ngModel]="line.selected"
+          (valueChanges)="onLineToggle(line.id, $event)"
+        />
+        <span class="refund-line__kind">
+          {{
+            'pages.order_management.refund.line_kind.' + line.kind | translate
+          }}
+        </span>
+      </div>
+      }
+
+      @for (group of packageGroups(); track group.packageId) {
+      <div class="refund-group">
+        <div class="refund-group__header">
+          <span class="refund-group__name">{{ group.packageName }}</span>
+          <span class="refund-group__label">
+            {{ 'pages.order_management.refund.package_group' | translate }}
+          </span>
+        </div>
+        @for (line of group.lines; track line.id) {
+        <div class="refund-line refund-line--bundled">
+          <cleansia-checkbox
+            [label]="line.name"
+            [ngModel]="line.selected"
+            (valueChanges)="onLineToggle(line.id, $event)"
+          />
+          <span class="refund-line__kind">
+            {{
+              'pages.order_management.refund.line_kind.' + line.kind | translate
+            }}
+          </span>
+        </div>
+        }
+      </div>
+      }
+    </div>
+
+    <cleansia-select
+      [label]="'pages.order_management.refund.reason' | translate"
+      [options]="reasonOptions()"
+      [ngModel]="facade.reason()"
+      (valueChanges)="onReasonChange($event)"
+      [showClear]="false"
+    />
+
+    <cleansia-textarea
+      [label]="'pages.order_management.refund.override_reason' | translate"
+      [placeholder]="
+        'pages.order_management.refund.override_reason_hint' | translate
+      "
+      [ngModel]="facade.overrideReason()"
+      (valueChanges)="onOverrideReasonChange($event)"
+    />
+
+    @if (facade.errorKey()) {
+    <p class="refund-error">{{ facade.errorKey()! | translate }}</p>
+    }
+
+    <cleansia-button
+      [label]="'pages.order_management.refund.submit' | translate"
+      icon="pi pi-replay"
+      severity="danger"
+      [loading]="facade.submitting()"
+      [disabled]="!facade.canSubmit()"
+      (onClick)="onSubmit()"
+    />
+  </div>
+  }
+</cleansia-section>

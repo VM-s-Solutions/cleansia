@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260607112401_Initial")]
+    [Migration("20260608173246_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -308,6 +308,14 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<decimal?>("ReducedVatRate")
                         .HasPrecision(5, 4)
                         .HasColumnType("numeric(5,4)");
+
+                    b.Property<decimal?>("RefundStripeFeeRate")
+                        .HasPrecision(5, 4)
+                        .HasColumnType("numeric(5,4)");
+
+                    b.Property<decimal?>("RefundStripeFixedFee")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<string>("RegistrationNumberFormat")
                         .HasMaxLength(100)
@@ -2619,10 +2627,10 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TenantId");
-
-                    b.HasIndex("TenantId", "Slug")
+                    b.HasIndex("Slug")
                         .IsUnique();
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("Extras");
                 });
@@ -3415,6 +3423,12 @@ namespace Cleansia.Infra.Database.Migrations
                         .IsRequired()
                         .HasColumnType("character varying(26)");
 
+                    b.Property<decimal>("PriceWeight")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(1m);
+
                     b.Property<string>("ServiceId")
                         .IsRequired()
                         .HasColumnType("character varying(26)");
@@ -3459,6 +3473,165 @@ namespace Cleansia.Infra.Database.Migrations
                         .IsUnique();
 
                     b.ToTable("ProcessedStripeEvents", (string)null);
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Payments.Refund", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTimeOffset?>("ConfirmedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<string>("DeactivatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("DeactivatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DisputeId")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("OrderId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("Reason")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ReceiptId")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("RefundKey")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<int>("Source")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("StripeRefundId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("TenantId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("WindowOverrideReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DisputeId");
+
+                    b.HasIndex("OrderId")
+                        .HasDatabaseName("IX_Refunds_OrderId");
+
+                    b.HasIndex("ReceiptId");
+
+                    b.HasIndex("RefundKey")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Refunds_RefundKey");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("Refunds", (string)null);
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Receipts.FiscalCounter", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeactivatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("DeactivatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("IssuerScope")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("TenantId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTimeOffset?>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Value")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("TenantId", "Year", "IssuerScope")
+                        .IsUnique()
+                        .HasDatabaseName("IX_FiscalCounters_Tenant_Year_IssuerScope");
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("TenantId", "Year", "IssuerScope"), false);
+
+                    b.ToTable("FiscalCounters", (string)null);
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Receipts.OrderReceipt", b =>
@@ -3783,10 +3956,10 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TenantId");
-
-                    b.HasIndex("TenantId", "Slug")
+                    b.HasIndex("Slug")
                         .IsUnique();
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("ServiceCategories");
                 });
@@ -5093,6 +5266,31 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("Package");
 
                     b.Navigation("Service");
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Payments.Refund", b =>
+                {
+                    b.HasOne("Cleansia.Core.Domain.Disputes.Dispute", "Dispute")
+                        .WithMany()
+                        .HasForeignKey("DisputeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Cleansia.Core.Domain.Orders.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Cleansia.Core.Domain.Receipts.OrderReceipt", "Receipt")
+                        .WithMany()
+                        .HasForeignKey("ReceiptId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Dispute");
+
+                    b.Navigation("Order");
+
+                    b.Navigation("Receipt");
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Receipts.OrderReceipt", b =>

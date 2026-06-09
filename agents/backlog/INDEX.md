@@ -10,22 +10,38 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
-> ## 🟢 WAVE 1 OPEN — Batch 1A `done`; Batch 1B promoted to `ready` (2026-06-06)
-> Full sequenced plan: **`status/sprint-3.md`**. **Wave 0 is CLOSED** (Q-W1-1 resolved — T-0230 is
-> `done`, PR #72 + owner migration `20260605165935_Initial` in master; deferred #16/#19/#20/#24 moved to
-> Wave-2 polish). **No T-0230/EF-migration gate remains.**
+> ## ✅ WAVE 1 CLOSED — merged to master (2026-06-07 reconciliation)
+> **Wave 0** = PR #72 (`9a774435`); **Wave 1 Batch 1A** (4 ADRs) + **Batch 1B** (T-0144…T-0159) = merged in
+> `a4f14094` ("Wave-1 Batch 1B — integration resilience, outbox durability, soft-delete, loyalty/membership
+> hardening"). **Local master == origin/master == a4f14094.** The PM reconciled the 14 Batch-1B tickets that
+> still read `ready`/`draft` to **`done`** (status-log line on each); T-0166 hotfix already `done`. All four
+> Wave-1 ADRs (0005/0006+0009/0007/0008) `accepted`.
 >
-> **Batch 1A — the 4 ADRs — are all `done` (2026-06-06).** Reviewer-reconciled, zero blocking: T-0141 →
-> **ADR-0005** (integration), T-0140 → **ADR-0006** (refund seam) + superseding **ADR-0009** (refund
-> policy), T-0152 → **ADR-0007** (soft-delete), T-0155 → **ADR-0008** (outbox table + drainer). All four
-> ADRs `accepted`. **The gate is cleared** — Batch 1B's ADR-gated tickets are now `ready`.
+> ## 🟡 WAVE 2 PLANNED — refund epic + fiscal go-live gates (proposed; awaiting owner sign-off)
+> Full sequenced plan: **`status/sprint-4.md`**. **No new ADR gates Wave 2** — ADR-0006 (seam) + ADR-0009
+> (policy) are `accepted` and freeze every refund decision; the Wave-2 refund tickets are pure BUILD.
 >
-> **Refund decisions folded into the backlog (Wave-2 BUILD).** ADR-0009 resolved Q-REFUND-01 (confirmed)
-> + Q-REFUND-02 (all four) and introduced a NEW package-pricing epic. New Wave-2 ticket files created:
-> **AUD-01a..e = T-0160..T-0164** (refund build) + **AUD-02p = T-0165** (per-included-service package
-> pricing; `PackageService.PriceWeight`; **blocks AUD-01c/T-0162**). The refund BUILD is **Wave-2**; the
-> seam is the Wave-1 decision. **New non-blocking question Q-REFUND-03** (per-bundle legacy weighting —
-> even-split default ships; gates only AUD-02p's business weighting).
+> **Scope (12 tickets, refund foundation = the spine):** **T-0160** entity+enums → **T-0161** seam, **T-0163**
+> loyalty revoke, **T-0231** package PriceWeight (all parallel-ish) → **T-0164** migrate cancel/dispute,
+> **T-0167** admin refund cmd (depends on **T-0231** — AUD-02p→AUD-01c cross-edge) → **T-0168** admin UX,
+> **T-0232** weight UX; plus the independent **T-0220/T-0221** fiscal go-live gates (DE/AT/ES), **T-0219**
+> anon-catalog, **T-0222** pay-split rounding.
+>
+> **L-splits (this pass):** **T-0162** (AUD-01c) → **T-0167** (backend) + **T-0168** (frontend); **T-0165**
+> (AUD-02p) → **T-0231** (db+backend) + **T-0232** (frontend). Parents T-0162/T-0165 are `[SPLIT]` tracking
+> epics. The old `T-0162 depends_on T-0165` edge is now **T-0167 depends_on T-0231**.
+>
+> **Corrected edges:** T-0170 (admin order ops) + T-0173 (admin dispute mgmt) now `depends_on` the refund
+> seam (T-0161) + seam migration (T-0164); both **deferred to Wave 3** (the admin-feature block).
+>
+> **Q-REFUND-03** (non-blocking) remains the one open item — even-split backfill ships in T-0231; owner sets
+> per-bundle weights via T-0232.
+>
+> --- (Wave-1 history below, kept for traceability) ---
+>
+> **Batch 1A — the 4 ADRs — all `done`.** T-0141 → **ADR-0005** (integration), T-0140 → **ADR-0006** (refund
+> seam) + superseding **ADR-0009** (refund policy), T-0152 → **ADR-0007** (soft-delete), T-0155 →
+> **ADR-0008** (outbox table + drainer).
 >
 > **L-splits (Q-W1-2):** T-0142 → T-0152/T-0153/T-0154 (a→{b∥c}); T-0143 → T-0155/T-0156/T-0157/T-0158
 > (a→b→c→d serial). Parents T-0142/T-0143 are `[SPLIT]` epics (tracking only). BLIND-2 = T-0159.
@@ -41,46 +57,58 @@ One row per ticket. Source of truth for "what's the team doing right now".
 | **T-0152** | ADR: soft-delete policy (Deactivate vs Remove) | M | **done ✅** | ADR-0007 | T-0153, T-0154, T-0191 | architect |
 | **T-0155** | ADR: outbox table + in-Functions drainer (ADR-0002 D1.3) | M | **done ✅** | ADR-0008 | T-0156→T-0157→T-0158 | architect |
 
-**Batch 1B — contract/plumbing code. ADR gate cleared → promoted `ready` 2026-06-06 (serial-chain tails stay blocked).**
+**Batch 1B — contract/plumbing code. ALL `done` ✅ (merged in `a4f14094`; PM-reconciled 2026-06-07).**
 
 | ID | Title | Size | Status | depends_on | Layers | sec | manual_step |
 |----|-------|------|--------|-----------|--------|-----|-------------|
-| T-0150 | Centralize CZE/Mapbox-bounds/2000-char constants | S | **ready** | — | backend, frontend, android | no | — |
-| T-0149 | Refresh-token rotation re-checks profile (per host) | S | **ready** | T-0100✓ | backend | **yes** | — |
-| **T-0159** | BLIND-2: Mapbox token in request URL → correct auth + scrub logs + rotate | S | **ready** | — | frontend, config | **yes** | rotate-mapbox-token |
-| T-0144 | Stripe + SendGrid via IHttpClientFactory (ADR-0005) | M | **ready** | T-0141✓ | backend | no | — |
-| T-0146 | Registration/reset email off critical path (async, ADR-0005 D3) | M | **ready** | T-0141✓, T-0118✓ | backend, functions | **yes** | — |
-| T-0147 | Membership commands: provider try/catch + S7 (ADR-0005 D4) | M | **ready** | T-0141✓ | backend | **yes** | — |
-| T-0148 | Tier-threshold config read + persist grant/revoke Reason | M | **ready** | T-0112✓ | backend | no | — |
-| T-0153 | SavedAddress soft-delete + IsActive filters + null-FK + migration (ADR-0007) | M | **ready** | T-0152✓ | backend, db | no | ef-migration |
-| T-0154 | Device soft-delete verdict (UnregisterDevice, ADR-0007) | S | **ready** | T-0152✓ | backend | no | — |
-| T-0156 | Outbox table + EF config + migration flag (ADR-0008) | S | **ready** | T-0155✓ | db | no | ef-migration |
-| T-0151 | Migrate remaining queue consumers onto Functions.Core | M | **ready** | T-0121✓ | functions | no | — |
-| T-0145 | Error classification across integration layer | M | blocked (dep T-0144 not done) | T-0141✓, T-0144 | backend | no | — |
-| T-0157 | Durable IPendingDispatch backing + drainer + host (ADR-0008) | M | blocked (dep T-0156 not done; +owner migration) | T-0156, T-0118✓ | backend, functions | no | — |
-| T-0158 | Bucket-B sweeps migrate onto per-iteration outbox row | M | blocked (deps T-0157, T-0148 not done) | T-0157, T-0148 | backend | no | — |
+| T-0150 | Centralize CZE/Mapbox-bounds/2000-char constants | S | **done ✅** | — | backend, frontend, android | no | — |
+| T-0149 | Refresh-token rotation re-checks profile (per host) | S | **done ✅** | T-0100✓ | backend | **yes** | — |
+| **T-0159** | BLIND-2: Mapbox token in request URL → correct auth + scrub logs + rotate | S | **done ✅** | — | frontend, config | **yes** | rotate-mapbox-token ⚠️ **still outstanding (owner)** |
+| T-0144 | Stripe + SendGrid via IHttpClientFactory (ADR-0005) | M | **done ✅** | T-0141✓ | backend | no | — |
+| T-0146 | Registration/reset email off critical path (async, ADR-0005 D3) | M | **done ✅** | T-0141✓, T-0118✓ | backend, functions | **yes** | — |
+| T-0147 | Membership commands: provider try/catch + S7 (ADR-0005 D4) | M | **done ✅** | T-0141✓ | backend | **yes** | — |
+| T-0148 | Tier-threshold config read + persist grant/revoke Reason | M | **done ✅** | T-0112✓ | backend | no | — |
+| T-0153 | SavedAddress soft-delete + IsActive filters + null-FK + migration (ADR-0007) | M | **done ✅** | T-0152✓ | backend, db | no | ef-migration |
+| T-0154 | Device soft-delete verdict (UnregisterDevice, ADR-0007) | S | **done ✅** | T-0152✓ | backend | no | — |
+| T-0156 | Outbox table + EF config + migration flag (ADR-0008) | S | **done ✅** | T-0155✓ | db | no | ef-migration |
+| T-0151 | Migrate remaining queue consumers onto Functions.Core | M | **done ✅** | T-0121✓ | functions | no | — |
+| T-0145 | Error classification across integration layer | M | **done ✅** | T-0141✓, T-0144✓ | backend | no | — |
+| T-0157 | Durable IPendingDispatch backing + drainer + host (ADR-0008) | M | **done ✅** | T-0156✓, T-0118✓ | backend, functions | no | — |
+| T-0158 | Bucket-B sweeps migrate onto per-iteration outbox row | M | **done ✅** | T-0157✓, T-0148✓ | backend | no | — |
 
-> **Batch-1B ready = 11** (T-0150, T-0149, T-0159, T-0144, T-0146, T-0147, T-0148, T-0153, T-0154, T-0156,
-> T-0151). **Blocked = 3** serial-chain tails (T-0145 after T-0144; T-0157 after T-0156+migration; T-0158
-> after T-0157+T-0148). **Serialization:** T-0144→T-0145 (integration); T-0156→T-0157→T-0158 (outbox,
-> strictly serial); T-0148↔T-0158↔T-0163 (`LoyaltyService.cs`, T-0148 first); T-0151↔T-0157 (Functions
-> files, T-0151 first). Each `ready` ticket gets a reviewer in parallel; security gate on T-0149/T-0146/
-> T-0147/T-0159.
+> **Batch 1B = 14 `done`** (merged `a4f14094`). Reconciled 2026-06-07 from stale `ready`/`draft`. The only
+> residual owner action is **T-0159's `rotate-mapbox-token`** — the code fix shipped (token off the URL) but
+> the exposed token still needs rotating in the Mapbox account (a live exposure until done). Surfaced in
+> `status/sprint-4.md` §3.
 
-**Wave 2 — refund BUILD from ADR-0006/0009 (created 2026-06-06; `draft` until Wave 1 closes):**
+**Wave 2 — refund BUILD from ADR-0006/0009 + fiscal go-live gates + fast-follows (plan: `status/sprint-4.md`; `draft` — awaiting owner sign-off):**
 
 | ID | Title | Size | Status | depends_on | blocks | Layers | sec | manual_step |
 |----|-------|------|--------|-----------|--------|--------|-----|-------------|
-| **T-0160** | AUD-01a: Refund entity + EF + PaymentStatus.PartiallyRefunded + RefundReason enum | M | draft | — | T-0162, T-0164 | backend, db | no | ef-migration |
-| **T-0161** | AUD-01b: IRefundService impl (seam, ceiling, RefundKey) + IStripeClient key param | M | draft | T-0160 | T-0162 | backend, clients | **yes** | nswag-regen |
-| **T-0162** | AUD-01c: Admin partial-refund cmd + allocator + RefundPolicy + PartiallyRefunded + UX | **L→split** | draft | T-0160, T-0161, **T-0165** | — | backend, frontend | **yes** | nswag-regen |
+| **T-0160** | AUD-01a: Refund entity + EF + PaymentStatus.PartiallyRefunded + RefundReason enum | M | draft | — | T-0161, T-0163, T-0164, T-0167 | backend, db | no | ef-migration |
+| **T-0161** | AUD-01b: IRefundService impl (seam, ceiling, RefundKey) + IStripeClient key param | M | draft | T-0160 | T-0164, T-0167, T-0170, T-0173 | backend, clients | **yes** | nswag-regen* |
+| **T-0231** | AUD-02p1 (split of T-0165): PackageService.PriceWeight + even-weight backfill + bundled-gross | M | draft | — | **T-0167**, T-0232 | db, backend | no | ef-migration |
 | **T-0163** | AUD-01d: ILoyaltyService.RevokeForPartialRefundAsync (proportional, keyed) | M | draft | T-0160 | — | backend, db | no | ef-migration |
-| **T-0164** | AUD-01e: Migrate CancelOrder + ResolveDispute onto the seam | M | draft | T-0160, T-0161 | — | backend | **yes** | — |
-| **T-0165** | AUD-02p: PackageService.PriceWeight + even-weight backfill + bundled-gross + admin UX | **L→split** | draft | — | **T-0162** | backend, db, frontend | no | ef-migration, nswag-regen |
+| **T-0164** | AUD-01e: Migrate CancelOrder + ResolveDispute onto the seam | M | draft | T-0160, T-0161 | T-0170, T-0173 | backend | **yes** | — |
+| **T-0167** | AUD-01c1 (split of T-0162): admin partial-refund cmd + allocator + RefundPolicy + PartiallyRefunded | M | draft | T-0160, T-0161, **T-0231** | T-0168, T-0170, T-0173 | backend | **yes** | nswag-regen |
+| **T-0168** | AUD-01c2 (split of T-0162): admin partial-refund UX | M | draft | T-0167 | — | frontend | no | nswag-regen (consumes) |
+| **T-0232** | AUD-02p2 (split of T-0165): admin package-form weight UX | S | draft | T-0231 | — | frontend | no | nswag-regen (consumes) |
+| **T-0220** | FISCAL-SEQ: gapless fiscal sequence allocator (FiscalCounter) — **DE/AT/ES go-live gate** | M | draft | T-0119✓ | — | backend, db | **yes** | ef-migration |
+| **T-0221** | FISCAL-AUTH-IDEMP: per-provider RegisterReceiptAsync idempotency — **DE/AT/ES go-live gate** | M | draft | T-0119✓ | — | backend, clients | **yes** | — |
+| **T-0219** | Anon-catalog entities → platform config (Service/Category/Package/Extra/ServiceCity) | M | draft | T-0100✓, T-0113✓ | — | backend, db | **yes** | ef-migration |
+| **T-0222** | SplitPayForMultipleEmployees — currency-minor-unit split + remainder reconciliation | S | draft | — | — | backend | no | — |
 
-> **AUD-02p (T-0165) blocks AUD-01c (T-0162)** — a bundled service has no gross until `PriceWeight` exists.
-> **Q-REFUND-03** (non-blocking) gates only AUD-02p's per-bundle *business* weighting (even-split default
-> ships). T-0162 and T-0165 are `L` — **split before `ready`.** These are Wave-2; not promoted now.
+> \* T-0161 `nswag-regen` only if a refund **response DTO** surfaces on a client; the admin refund command DTO
+> regen is on **T-0167**.
+>
+> **Split epics (tracking only):** **T-0162** (AUD-01c, `L`) → **T-0167** + **T-0168**; **T-0165** (AUD-02p,
+> `L`) → **T-0231** + **T-0232**. The old `T-0162 depends_on T-0165` edge is now **T-0167 depends_on T-0231**.
+>
+> **Load-bearing cross-edge (DAG over id order): AUD-02p1 (T-0231) → AUD-01c1 (T-0167)** — a bundled service
+> has no gross until `PriceWeight` exists; T-0231 must be `done` before T-0167 goes `ready`.
+> **Q-REFUND-03** (non-blocking) gates only T-0231's per-bundle *business* weighting (even-split default
+> ships; owner sets weights via T-0232). The admin-feature consumers **T-0170/T-0173** now depend on the
+> refund seam + seam migration and are **Wave 3**, not Wave 2.
 
 **Split epics (tracking only — do not run as one ticket):**
 

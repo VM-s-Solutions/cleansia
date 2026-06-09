@@ -1,13 +1,14 @@
 ---
 id: T-0165
-title: "AUD-02p: Per-included-service package pricing — PackageService.PriceWeight + even-weight backfill + bundled-gross derivation + admin weight UX"
+title: "[SPLIT] AUD-02p: Per-included-service package pricing (epic — tracking only; split into T-0231 db+backend / T-0232 admin UX)"
 status: draft
 size: L
 owner: —
 created: 2026-06-06
-updated: 2026-06-06
+updated: 2026-06-07
 depends_on: []
 blocks: [T-0162]
+split_into: [T-0231, T-0232]
 stories: []
 adrs: [0009]
 layers: [backend, db, frontend]
@@ -92,6 +93,9 @@ gross basis exists.
 - 2026-06-06 — draft (created by pm from ADR-0009 D5; NEW package-pricing epic; blocks T-0162;
   L — must be split before ready; Q-REFUND-03 recorded as the non-blocking open question on legacy weighting;
   Wave-2 build)
+- 2026-06-07 — [SPLIT] by pm into **T-0231** (db+backend: `PriceWeight` column + even-weight backfill +
+  bundled-gross derivation) and **T-0232** (frontend: admin package-form weight UX). This parent is now a
+  tracking epic — do NOT run as one ticket. The `blocks: T-0162` edge is carried by T-0231 → T-0167.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

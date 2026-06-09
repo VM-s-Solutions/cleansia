@@ -272,6 +272,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<CountryInvoiceConfig> CountryInvoiceConfigs { get; set; }
     public virtual DbSet<EmailTemplateTranslation> EmailTemplateTranslations { get; set; }
     public virtual DbSet<OrderReceipt> OrderReceipts { get; set; }
+    public virtual DbSet<FiscalCounter> FiscalCounters { get; set; }
     public virtual DbSet<CompanyInfo> CompanyInfo { get; set; }
     public virtual DbSet<Device> Devices { get; set; }
     public virtual DbSet<Dispute> Disputes { get; set; }
@@ -294,6 +295,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<RecurringBookingTemplate> RecurringBookingTemplates { get; set; }
     public virtual DbSet<UserNotificationPreferences> UserNotificationPreferences { get; set; }
     public virtual DbSet<ProcessedStripeEvent> ProcessedStripeEvents { get; set; }
+    public virtual DbSet<Refund> Refunds { get; set; }
     public virtual DbSet<DeadLetter> DeadLetters { get; set; }
     public virtual DbSet<OutboxMessage> OutboxMessages { get; set; }
 }

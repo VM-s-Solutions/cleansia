@@ -31,4 +31,11 @@ public interface ILoyaltyTransactionRepository : IRepository<LoyaltyTransaction,
     /// 23505 unique-violation collapse in <c>LoyaltyService</c>).
     /// </summary>
     Task<LoyaltyTransaction?> GetByIdempotencyKeyAsync(string idempotencyKey, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Sum of points already revoked for an order under a given source, returned as a positive
+    /// magnitude. Used by the partial-refund clawback to cap cumulative revocation at the original
+    /// earn — a near-full set of partial refunds can never over-revoke.
+    /// </summary>
+    Task<int> GetRevokedPointsSumForOrderSourceAsync(string orderId, LoyaltyEarnSource source, CancellationToken cancellationToken);
 }

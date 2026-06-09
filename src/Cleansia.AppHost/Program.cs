@@ -1,6 +1,12 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-var postgres = builder.AddPostgres("postgres")
+// Stable password (from user-secrets / env: Parameters:postgres-password), NOT generated per run.
+// The container is Persistent, so its password is baked in at first creation and never updated on
+// later starts; a per-run generated password would drift from the existing container and fail auth
+// (28P01). Pinning keeps the handed-out password identical to the baked-in one across restarts.
+var postgresPassword = builder.AddParameter("postgres-password", secret: true);
+
+var postgres = builder.AddPostgres("postgres", password: postgresPassword)
     .WithLifetime(ContainerLifetime.Persistent)
     .WithEndpoint("tcp", e => { e.Port = 5432; e.TargetPort = 5432; e.IsProxied = false; });
 

@@ -1,7 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
-using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
@@ -11,8 +10,6 @@ using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using StripeException = Stripe.StripeException;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
@@ -50,11 +47,10 @@ public class CancelOrder
     public class Handler(
         IOrderRepository orderRepository,
         IUserSessionProvider userSessionProvider,
-        IStripeClientFactory stripeClientFactory,
+        IRefundService refundService,
         ILoyaltyService loyaltyService,
         ICancellationPolicyResolver cancellationPolicyResolver,
-        IPendingDispatch pending,
-        ILogger<Handler> logger
+        IPendingDispatch pending
     ) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -132,32 +128,15 @@ public class CancelOrder
                 && refundAmount > 0m
                 && !string.IsNullOrEmpty(order.StripeSessionId))
             {
-                // Refund try: narrow to StripeException so non-Stripe failures
-                // (DI misconfig, null ref) bubble. Refund failure is non-blocking
-                // for the cancel itself — the customer's order is still cancelled;
-                // the refund just needs manual follow-up.
-                try
-                {
-                    var stripe = stripeClientFactory.CreateClient();
-                    await stripe.RefundCheckoutSessionAsync(order.StripeSessionId, refundAmount, cancellationToken);
-                    order.UpdatePaymentStatus(PaymentStatus.Refunded);
-                    refundInitiated = true;
-                }
-                catch (StripeException ex)
-                {
-                    logger.LogError(ex,
-                        "Stripe refund failed for order {OrderId}. Manual refund may be required.",
-                        order.Id);
-                }
+                var refund = await refundService.IssueRefundAsync(
+                    new RefundRequest(order.Id, refundAmount, RefundReason.CustomerCancellation, userId),
+                    cancellationToken);
+                refundInitiated = refund.IsSuccess;
 
-                // Notify only if refund actually went through. Push send is in its
-                // own try so a transient queue failure doesn't undo the refund or
-                // surface as a Stripe-refund-failed log line.
                 if (refundInitiated && !string.IsNullOrEmpty(order.UserId))
                 {
-                    // ADR-0002 D1: record intent (in-memory, infallible) — the actual send happens
-                    // post-commit in PostCommitDispatchBehavior and its failures are logged+swallowed
-                    // there, so the previous defensive try/catch around the enqueue is no longer needed.
+                    // ADR-0002: record intent (in-memory, infallible) — the actual send happens
+                    // post-commit in PostCommitDispatchBehavior and its failures are logged+swallowed there.
                     pending.Enqueue(
                         QueueNames.NotificationsDispatch,
                         new QueueEnvelope<SendPushNotificationMessage>(

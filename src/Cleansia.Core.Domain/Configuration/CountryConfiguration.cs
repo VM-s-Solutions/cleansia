@@ -70,6 +70,20 @@ public class CountryConfiguration : Auditable
     /// </summary>
     public FiscalEnforcementMode FiscalEnforcementMode { get; private set; } = FiscalEnforcementMode.None;
 
+    /// <summary>
+    /// Per-country Stripe refund-fee rate as a percent (e.g. 1.4 means 1.4%). Null when no figure is
+    /// pinned for the country yet — the partial-refund handler then treats the fee as 0 (the platform
+    /// absorbs it; ADR-0009 D3). The fee <em>bearer</em> rule stays in <c>RefundPolicy</c>; this is only
+    /// the fee <em>amount</em>.
+    /// </summary>
+    public decimal? RefundStripeFeeRate { get; private set; }
+
+    /// <summary>
+    /// Per-country fixed Stripe refund fee in currency units (e.g. 6 means 6 CZK). Null → fee 0, same as
+    /// <see cref="RefundStripeFeeRate"/>.
+    /// </summary>
+    public decimal? RefundStripeFixedFee { get; private set; }
+
     public static CountryConfiguration Create(
         string countryId,
         string defaultCurrencyCode,
@@ -113,6 +127,13 @@ public class CountryConfiguration : Auditable
     {
         StandardVatRate = standardRate;
         ReducedVatRate = reducedRate;
+        return this;
+    }
+
+    public CountryConfiguration UpdateRefundStripeFee(decimal? rate, decimal? fixedFee)
+    {
+        RefundStripeFeeRate = rate;
+        RefundStripeFixedFee = fixedFee;
         return this;
     }
 

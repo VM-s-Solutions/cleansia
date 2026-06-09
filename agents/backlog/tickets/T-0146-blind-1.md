@@ -1,11 +1,11 @@
 ---
 id: T-0146
 title: "Move registration/password-reset email off the critical path (async/queue)"
-status: ready
+status: done
 size: M
 owner: backend
 created: 2026-06-01
-updated: 2026-06-06
+updated: 2026-06-07
 depends_on: [T-0141, T-0118]
 blocks: []
 stories: []
@@ -173,6 +173,7 @@ order path.
     soft-delete) are pre-existing concurrent WIP (untracked/modified test files outside this ticket),
     not regressions from this change.
   - No EF migration, no NSwag, no new ProcessedMessage/DeadLetter store. Not committed.
+- 2026-06-07 — done (PM reconciliation: Wave-1 Batch 1B merged to master in a4f14094 / PR #73 chain; status corrected from ready/draft to done; reviewer+security gates were satisfied in the merged PR per sprint-3 closeout).
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

@@ -4,6 +4,7 @@ using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Receipts;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Fiscal.Abstractions;
@@ -97,26 +98,34 @@ public class GenerateReceiptHandler(
             // ordering inversion that makes the irreversible external effect at-most-once: after this
             // commit every redelivery short-circuits on `order.Receipt is not null` above, so the
             // sequence is never re-burned and the authority is never re-registered. A crash BEFORE this
-            // commit leaves no row and no external effect, so re-running phase 1 is safe.
-            var receipt = await receiptService.ReserveReceiptAsync(order, message.LanguageCode, ct);
+            // commit leaves no row and no external effect, so re-running phase 1 is safe. The reserve
+            // (which allocates the gapless fiscal number) and the claim commit share ONE explicit
+            // transaction, so a successfully-claimed number is never rolled back relative to its row and
+            // a rolled-back claim returns the number to the pool without shifting the next allocation.
+            OrderReceipt receipt;
+            await using (var claimTransaction = await unitOfWork.BeginTransactionAsync(ct))
+            {
+                receipt = await receiptService.ReserveReceiptAsync(order, message.LanguageCode, ct);
 
-            try
-            {
-                await unitOfWork.CommitAsync(ct);
-            }
-            catch (DbUpdateException ex) when (IsUniqueViolation(ex))
-            {
-                // ADR-0004 D-F4.1(b) — DB backstop. Two concurrent first-deliveries can both pass the
-                // guard above and both attempt this claim commit. The existing unique index makes the
-                // loser throw PG 23505 — on EITHER IX_OrderReceipts_OrderId OR (because the allocator is
-                // still COUNT(*)+1) IX_OrderReceipts_ReceiptNumber. Treat that as
-                // ALREADY-CLAIMED and collapse to an ACK: the winner owns the single row, the single
-                // register, and the single email; the loser must NOT throw (no poison loop). Genuine
-                // infra faults are NOT unique-violations, so they still bubble out of the outer catch.
-                logger.LogInformation(ex,
-                    "Concurrent receipt claim collapsed for order {OrderId} (unique-violation 23505) — already claimed, ack",
-                    message.OrderId);
-                return;
+                try
+                {
+                    await unitOfWork.CommitAsync(ct);
+                    await claimTransaction.CommitAsync(ct);
+                }
+                catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+                {
+                    // ADR-0004 D-F4.1(b) — DB backstop. Two concurrent first-deliveries can both pass the
+                    // guard above and both attempt this claim commit. A unique index makes the loser throw
+                    // PG 23505 — on EITHER IX_OrderReceipts_OrderId OR IX_OrderReceipts_ReceiptNumber.
+                    // Treat that as ALREADY-CLAIMED and collapse to an ACK: the winner owns the single
+                    // row, the single register, and the single email; the loser must NOT throw (no poison
+                    // loop) and its rolled-back transaction returns the allocated number to the pool.
+                    // Genuine infra faults are NOT unique-violations, so they still bubble out.
+                    logger.LogInformation(ex,
+                        "Concurrent receipt claim collapsed for order {OrderId} (unique-violation 23505) — already claimed, ack",
+                        message.OrderId);
+                    return;
+                }
             }
 
             // ── ADR-0004 D-F4.1 phase 2 — REALIZE the external effects for the now-durable claim ──

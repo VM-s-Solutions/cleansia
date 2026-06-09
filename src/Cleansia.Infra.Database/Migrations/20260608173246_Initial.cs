@@ -135,6 +135,28 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "FiscalCounters",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    Year = table.Column<int>(type: "integer", nullable: false),
+                    IssuerScope = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Value = table.Column<long>(type: "bigint", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FiscalCounters", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Languages",
                 columns: table => new
                 {
@@ -440,6 +462,8 @@ namespace Cleansia.Infra.Database.Migrations
                     DefaultPaymentGateway = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     LegalRequirementsJson = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: true),
                     FiscalEnforcementMode = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
+                    RefundStripeFeeRate = table.Column<decimal>(type: "numeric(5,4)", precision: 5, scale: 4, nullable: true),
+                    RefundStripeFixedFee = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
@@ -1213,6 +1237,7 @@ namespace Cleansia.Infra.Database.Migrations
                     Id = table.Column<string>(type: "text", nullable: false),
                     PackageId = table.Column<string>(type: "character varying(26)", nullable: false),
                     ServiceId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    PriceWeight = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 1m),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
@@ -2034,6 +2059,55 @@ namespace Cleansia.Infra.Database.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "Refunds",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    OrderId = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    ReceiptId = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    DisputeId = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    Amount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    Currency = table.Column<string>(type: "character varying(3)", maxLength: 3, nullable: false),
+                    RefundKey = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false),
+                    Reason = table.Column<int>(type: "integer", nullable: false),
+                    StripeRefundId = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    Source = table.Column<int>(type: "integer", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    ConfirmedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    WindowOverrideReason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Refunds", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Refunds_Disputes_DisputeId",
+                        column: x => x.DisputeId,
+                        principalTable: "Disputes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Refunds_OrderReceipts_ReceiptId",
+                        column: x => x.ReceiptId,
+                        principalTable: "OrderReceipts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Refunds_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_Addresses_CountryId",
                 table: "Addresses",
@@ -2388,15 +2462,15 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "WorkCountryId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Extras_Slug",
+                table: "Extras",
+                column: "Slug",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Extras_TenantId",
                 table: "Extras",
                 column: "TenantId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Extras_TenantId_Slug",
-                table: "Extras",
-                columns: new[] { "TenantId", "Slug" },
-                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_FeatureFlags_Name_Scope_ScopeValue",
@@ -2407,6 +2481,18 @@ namespace Cleansia.Infra.Database.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_FeatureFlags_TenantId",
                 table: "FeatureFlags",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FiscalCounters_Tenant_Year_IssuerScope",
+                table: "FiscalCounters",
+                columns: new[] { "TenantId", "Year", "IssuerScope" },
+                unique: true)
+                .Annotation("Npgsql:NullsDistinct", false);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FiscalCounters_TenantId",
+                table: "FiscalCounters",
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
@@ -2887,6 +2973,32 @@ namespace Cleansia.Infra.Database.Migrations
                 columns: new[] { "UserId", "RevokedAt" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Refunds_DisputeId",
+                table: "Refunds",
+                column: "DisputeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Refunds_OrderId",
+                table: "Refunds",
+                column: "OrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Refunds_ReceiptId",
+                table: "Refunds",
+                column: "ReceiptId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Refunds_RefundKey",
+                table: "Refunds",
+                column: "RefundKey",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Refunds_TenantId",
+                table: "Refunds",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_SavedAddresses_AddressId",
                 table: "SavedAddresses",
                 column: "AddressId");
@@ -2904,15 +3016,15 @@ namespace Cleansia.Infra.Database.Migrations
                 filter: "\"IsDefault\" = true AND \"IsActive\" = true");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ServiceCategories_Slug",
+                table: "ServiceCategories",
+                column: "Slug",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ServiceCategories_TenantId",
                 table: "ServiceCategories",
                 column: "TenantId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ServiceCategories_TenantId_Slug",
-                table: "ServiceCategories",
-                columns: new[] { "TenantId", "Slug" },
-                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_ServiceCities_CountryId_Name",
@@ -3090,6 +3202,9 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "FeatureFlags");
 
             migrationBuilder.DropTable(
+                name: "FiscalCounters");
+
+            migrationBuilder.DropTable(
                 name: "GdprRequests");
 
             migrationBuilder.DropTable(
@@ -3115,9 +3230,6 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "OrderPhotos");
-
-            migrationBuilder.DropTable(
-                name: "OrderReceipts");
 
             migrationBuilder.DropTable(
                 name: "OrderReviews");
@@ -3150,6 +3262,9 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "RefreshTokens");
 
             migrationBuilder.DropTable(
+                name: "Refunds");
+
+            migrationBuilder.DropTable(
                 name: "SavedAddresses");
 
             migrationBuilder.DropTable(
@@ -3171,9 +3286,6 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "Carts");
 
             migrationBuilder.DropTable(
-                name: "Disputes");
-
-            migrationBuilder.DropTable(
                 name: "LoyaltyAccounts");
 
             migrationBuilder.DropTable(
@@ -3189,10 +3301,13 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "ReferralCodes");
 
             migrationBuilder.DropTable(
-                name: "MembershipPlans");
+                name: "Disputes");
 
             migrationBuilder.DropTable(
-                name: "Orders");
+                name: "OrderReceipts");
+
+            migrationBuilder.DropTable(
+                name: "MembershipPlans");
 
             migrationBuilder.DropTable(
                 name: "Employees");
@@ -3204,19 +3319,22 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "ServiceCategories");
 
             migrationBuilder.DropTable(
-                name: "PromoCodes");
+                name: "Orders");
 
             migrationBuilder.DropTable(
                 name: "Addresses");
 
             migrationBuilder.DropTable(
+                name: "PromoCodes");
+
+            migrationBuilder.DropTable(
                 name: "Users");
 
             migrationBuilder.DropTable(
-                name: "Currencies");
+                name: "Countries");
 
             migrationBuilder.DropTable(
-                name: "Countries");
+                name: "Currencies");
 
             migrationBuilder.DropTable(
                 name: "Languages");

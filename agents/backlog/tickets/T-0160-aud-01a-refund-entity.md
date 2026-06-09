@@ -7,7 +7,7 @@ owner: —
 created: 2026-06-06
 updated: 2026-06-06
 depends_on: []
-blocks: [T-0162, T-0164]
+blocks: [T-0161, T-0163, T-0164, T-0167]
 stories: []
 adrs: [0006, 0009]
 layers: [backend, db]
@@ -75,6 +75,27 @@ ADR anchors (verified 2026-06-06):
 
 ## Status log
 - 2026-06-06 — draft (created by pm from ADR-0009 follow-up AUD-01a; gated on T-0140 done ✓; Wave-2 build)
+- 2026-06-07 — db: schema foundation landed test-first. `RefundReason` (4 values), `RefundSource`
+  (AppRefund|Chargeback), `RefundStatus` (Pending|Succeeded|Failed) enums; `PaymentStatus.PartiallyRefunded = 6`
+  appended (1..5 wire values unchanged); `Refund : Auditable, ITenantEntity` entity + `RefundEntityConfiguration`
+  (unique `IX_Refunds_RefundKey`, non-null FK→Order, nullable FKs→Receipt/Dispute); `DbSet<Refund> Refunds`
+  registered; auto-applied via `ApplyConfigurationsFromAssembly` and auto-tenant-scoped by the global filter.
+  Tests: `RefundEnumValueTests` (AC1/AC2) + `RefundModelMetadataTests` (AC3/AC4, SQLite-backed real model) — 13 pass.
+  `dotnet build` clean. No business logic (no IRefundService / Stripe / command / loyalty / CancelOrder migration).
+
+  **MANUAL_STEP: ef-migration (owner — Claude does not run `dotnet ef`).** Generate one migration covering:
+  - **New table `Refunds`** with columns: `Id` (PK, varchar(26)), `TenantId` (varchar(26), null, indexed),
+    `CreatedBy`/`CreatedOn` (non-null), `UpdatedBy`/`UpdatedOn`/`DeactivatedBy`/`DeactivatedOn` (null),
+    `IsActive` (bool), `OrderId` (varchar(50), non-null), `ReceiptId` (varchar(50), null),
+    `DisputeId` (varchar(50), null), `Amount` (numeric(18,2)), `Currency` (varchar(3), non-null),
+    `RefundKey` (varchar(120), non-null), `Reason` (int), `StripeRefundId` (varchar(255), null),
+    `Source` (int), `Status` (int), `ConfirmedOn` (timestamptz, null).
+  - **Indexes:** UNIQUE `IX_Refunds_RefundKey`; `IX_Refunds_OrderId`; `IX_Refunds_TenantId` (base config).
+  - **FKs:** `OrderId`→`Orders` (Restrict, non-null); `ReceiptId`→`OrderReceipts` (Restrict, null);
+    `DisputeId`→`Disputes` (Restrict, null).
+  - **PaymentStatus**: no DDL — `PartiallyRefunded = 6` is an additive enum value stored as int; no column change.
+  Per ADR-0009 D4 this folds with AUD-01d's `LoyaltyEarnSource.OrderPartiallyRefunded` migration if sequenced
+  together; flag separately if not. Hold AUD-01b/c/d until the owner confirms the migration is applied.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

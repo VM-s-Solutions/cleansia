@@ -16,10 +16,11 @@ public class ExtraEntityConfiguration : AuditableEntityConfiguration<Extra, stri
             .IsRequired()
             .HasMaxLength(50);
 
-        // (TenantId, Slug) uniqueness — the customer overview endpoint
-        // looks up extras by slug, so duplicates in one tenant would
-        // surface non-deterministic results.
-        builder.HasIndex(e => new { e.TenantId, e.Slug }).IsUnique();
+        // Platform config (ADR-0001 Addendum A1): Slug is unique platform-wide.
+        // The anonymous overview and the pricing path look extras up by slug, so a
+        // duplicate would surface non-deterministic results. The previous
+        // (TenantId, Slug) composite is dropped with the tenant dimension.
+        builder.HasIndex(e => e.Slug).IsUnique();
 
         builder.Property(e => e.Name)
             .IsRequired()

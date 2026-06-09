@@ -239,6 +239,7 @@ public static class BusinessErrorMessage
     // Package
     public const string PackageNotFound = "package.not_found";
     public const string PackageInUse = "package.in_use";
+    public const string PackageInvalidWeight = "package.invalid_weight";
 
     // Common Validation
     public const string MustBePositive = "validation.must_be_positive";
@@ -288,6 +289,14 @@ public static class BusinessErrorMessage
     // Payment
     public const string JsonPayloadRequired = "payment.json_payload_required";
     public const string StripeSignatureRequired = "payment.stripe_signature_required";
+
+    // Refund
+    public const string RefundFailed = "refund.failed";
+    public const string RefundNothingRefundable = "refund.nothing_refundable";
+    public const string RefundOrderNotRefundable = "refund.order_not_refundable";
+    public const string RefundLinesRequired = "refund.lines_required";
+    public const string RefundLineInvalid = "refund.line_invalid";
+    public const string RefundOverrideReasonRequired = "refund.override_reason_required";
 
     // GDPR
     public const string GdprExportFailed = "gdpr.export_failed";

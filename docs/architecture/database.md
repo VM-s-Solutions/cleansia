@@ -200,6 +200,45 @@ This allows flexible pricing where a "Basic Clean" might cost 500 CZK base + 100
 | `Package` | Bundled services at a discount |
 | `PayPeriod` | Employee payment tracking periods |
 | `EmployeeDocument` | Uploaded employee documents (contracts, IDs) |
+| `OrderReceipt` | Generated receipt per order, including fiscal-registration state |
+| `FiscalCounter` | Per-issuer gapless fiscal sequence counter (see below) |
+
+## Fiscal Sequence Allocation
+
+DE TSE, AT RKSV, and ES VeriFactu legally require a **gapless, monotonic, per-issuer** fiscal
+sequence. The receipt number is allocated from the `FiscalCounter` table, never by counting receipt
+rows.
+
+`FiscalCounter` is tenant-scoped (`ITenantEntity`) and keyed by the unique index
+`(TenantId, Year, IssuerScope)` — declared `NULLS NOT DISTINCT` so a single-tenant (null `TenantId`)
+deployment collapses onto one counter row per `(Year, IssuerScope)`. `FiscalCounterRepository
+.AllocateNextAsync` performs a single atomic
+`INSERT … ON CONFLICT (…) DO UPDATE SET Value = Value + 1 RETURNING Value`. Postgres row-locks the
+conflicting tuple, so N concurrent allocations for one scope return N distinct contiguous numbers.
+
+The allocation runs on the receipt consumer's open transaction — the same one that commits the
+phase-1 receipt claim — so a committed claim never holds a rolled-back number, and a rolled-back or
+voided claim returns its number to the pool **without shifting** the next allocation. A
+reserved-but-never-signed number on a *committed* claim is a documented gap (void); it is never
+re-allocated.
+
+### IssuerScope mapping per regime
+
+`IssuerScope` binds gaplessness to the legal counting unit, and the `Year` key encodes the
+annual-reset rule. Both are resolved from the fiscal provider key by `FiscalSequenceScope.Resolve`.
+
+| Regime | Provider key | IssuerScope | Year key | Annual reset |
+|--------|--------------|-------------|----------|--------------|
+| CZ EET 2.0 | `cz-eet2` | provider key | calendar year | Yes |
+| SK eKasa | `sk-ekasa` | provider key | calendar year | Yes |
+| DE TSE | `de-tss-*` | provider key (TSE identity; provider+device once multi-TSE config lands) | `NoAnnualResetYear` (0) | No |
+| AT RKSV / ES VeriFactu | per issuer | provider key | `NoAnnualResetYear` (0) | No |
+| No fiscal system (CZ today) | — | `DEFAULT` | calendar year | Yes |
+
+DE TSE's transaction counter is **not** assumed to reset at the year boundary; such regimes key on
+`NoAnnualResetYear` so the same counter row keeps incrementing across years. The displayed receipt
+number still embeds the calendar year for readability; only the sequence *value* comes from the
+continuous counter.
 
 ## Entity Relationships
 

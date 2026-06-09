@@ -7,7 +7,7 @@ namespace Cleansia.Core.AppServices.Features.Extras.DTOs;
 /// <c>ExtraController.GetOverview</c> endpoint and consumed by the booking
 /// wizard (web + mobile) to render the extras toggle list.
 ///
-/// <see cref="Slug"/> is the stable per-tenant identifier the client uses
+/// <see cref="Slug"/> is the stable platform-wide identifier the client uses
 /// for icon/copy lookups; <see cref="Translations"/> mirrors the same
 /// fallback-then-localize pattern the services/packages overview uses.
 /// </summary>

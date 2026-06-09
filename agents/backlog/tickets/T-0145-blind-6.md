@@ -1,11 +1,11 @@
 ﻿---
 id: T-0145
 title: Error classification (Transient/Permanent/Config) across integration layer
-status: draft
+status: done
 size: M
 owner: —
 created: 2026-06-01
-updated: 2026-06-06
+updated: 2026-06-07
 depends_on: [T-0141, T-0144]
 blocks: []
 stories: []
@@ -112,6 +112,7 @@ This ticket is the **second** Wave-1 integration ticket: it builds the shared cl
   the shared helper unchanged; Stripe boundary delegates to the shared `FromStripeException` + meters).
   `dotnet build` (solution) 0 errors/0 warnings; full unit suite 639/639 green (64 integration-namespace
   tests incl. all the new ones).
+- 2026-06-07 — done (PM reconciliation: Wave-1 Batch 1B merged to master in a4f14094 / PR #73 chain; status corrected from ready/draft to done; reviewer+security gates were satisfied in the merged PR per sprint-3 closeout).
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

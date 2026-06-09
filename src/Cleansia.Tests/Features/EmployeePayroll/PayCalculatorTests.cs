@@ -21,8 +21,9 @@ namespace Cleansia.Tests.Features.EmployeePayroll;
 ///  - exact decimal results (fractional km × rate, division).
 ///  - guarded helpers: CalculateDistancePay / ConvertCurrency / ProratePay /
 ///    SplitPayForMultipleEmployees argument validation.
-///  - multi-employee split (sum == total + remainder), proration, currency conversion,
-///    and the Aggregate*/*Total roll-ups.
+///  - multi-employee split: shares are rounded to the currency minor unit and the last share
+///    takes the remainder so the shares sum back to the total EXACTLY; proration; currency
+///    conversion; and the Aggregate*/*Total roll-ups.
 /// </summary>
 public class PayCalculatorTests
 {
@@ -232,66 +233,117 @@ public class PayCalculatorTests
         Assert.Equal("completionPercentage", ex.ParamName);
     }
 
-    // ── Multi-employee split: sum of splits == total, remainder handling ──
+    // ── Multi-employee split: shares are minor-unit-rounded and sum back to the total EXACTLY ──
+    //
+    // Contract (largest-remainder): the total is divided in whole minor units (2 dp for CZK/EUR); the
+    // leftover minor units are handed out one each to the earliest shares. The shares always sum to the
+    // input total to the minor unit, and none drifts more than one minor unit from the even share — so
+    // no employee is paid a cent short or long.
 
     [Fact]
-    public void SplitPayForMultipleEmployees_Even_Split_Is_Exact()
+    public void SplitPayForMultipleEmployees_Even_Split_Gives_Each_Employee_The_Same_Share()
     {
-        var share = PayCalculator.SplitPayForMultipleEmployees(totalPay: 300m, employeeCount: 3);
+        var shares = PayCalculator.SplitPayForMultipleEmployees(totalPay: 300m, employeeCount: 3);
 
-        Assert.Equal(100m, share);
+        Assert.Equal(new[] { 100m, 100m, 100m }, shares);
+        Assert.Equal(300m, shares.Sum());
     }
 
     [Fact]
     public void SplitPayForMultipleEmployees_Single_Employee_Gets_Whole_Total()
     {
-        Assert.Equal(250.50m, PayCalculator.SplitPayForMultipleEmployees(250.50m, 1));
+        var shares = PayCalculator.SplitPayForMultipleEmployees(250.50m, 1);
+
+        Assert.Equal(new[] { 250.50m }, shares);
+        Assert.Equal(250.50m, shares.Sum());
     }
 
     [Fact]
-    public void SplitPayForMultipleEmployees_Uneven_Split_Is_A_Pure_Decimal_Divide_No_Remainder_Reconciliation()
+    public void SplitPayForMultipleEmployees_Uneven_Split_Rounds_To_Cents_And_Distributes_The_Remainder()
     {
-        // The method does a plain `totalPay / employeeCount` with NO rounding to cents and NO
-        // remainder redistribution. For 50/3 the share is decimal's full-precision quotient and the
-        // three shares sum back to 50.000000000000000000000000001 — a sub-cent OVER by 1 unit at the
-        // 27th decimal place. This pins the current behavior: remainder reconciliation (if any) is the
-        // caller's job, not the calculator's. (See run report — flagged for a rounding-policy follow-up.)
-        const decimal total = 50m;
-        const int count = 3;
+        var shares = PayCalculator.SplitPayForMultipleEmployees(totalPay: 50m, employeeCount: 3);
 
-        var share = PayCalculator.SplitPayForMultipleEmployees(total, count);
-
-        // Exact decimal quotient — no rounding to 2 dp.
-        Assert.Equal(50m / 3m, share);
-        Assert.Equal(16.666666666666666666666666667m, share);
-
-        // Sum of the equal shares is NOT exactly the total — it drifts by a sub-cent epsilon.
-        var summed = share * count;
-        Assert.NotEqual(total, summed);
-        Assert.Equal(50.000000000000000000000000001m, summed);
-        Assert.Equal(-0.000000000000000000000000001m, total - summed);
+        Assert.Equal(new[] { 16.67m, 16.67m, 16.66m }, shares);
+        Assert.Equal(50m, shares.Sum());
     }
 
     [Fact]
-    public void SplitPayForMultipleEmployees_Three_Way_Of_Hundred_Happens_To_Round_Trip_Exactly()
+    public void SplitPayForMultipleEmployees_Three_Way_Of_Hundred_Sums_Back_To_The_Total_Exactly()
     {
-        // Contrast case: 100/3 is the one where decimal's 28-significant-digit scaling makes the three
-        // shares sum back to EXACTLY 100. The round-trip is value-dependent (50/3 above does not), which
-        // is itself the reason a real cents-based split policy belongs in the caller, not here.
-        var share = PayCalculator.SplitPayForMultipleEmployees(100m, 3);
+        var shares = PayCalculator.SplitPayForMultipleEmployees(100m, 3);
 
-        Assert.Equal(100m / 3m, share);
-        Assert.Equal(100m, share * 3);
+        Assert.Equal(new[] { 33.34m, 33.33m, 33.33m }, shares);
+        Assert.Equal(100m, shares.Sum());
     }
 
     [Fact]
-    public void SplitPayForMultipleEmployees_Two_Way_Of_Odd_Cents_Is_Exact_Decimal()
+    public void SplitPayForMultipleEmployees_Six_Way_Of_Hundred_Keeps_Every_Share_Within_One_Minor_Unit()
     {
-        // 75.50 / 2 = 37.75 — exact, no remainder.
-        var share = PayCalculator.SplitPayForMultipleEmployees(75.50m, 2);
+        var shares = PayCalculator.SplitPayForMultipleEmployees(100m, 6);
 
-        Assert.Equal(37.75m, share);
-        Assert.Equal(75.50m, share * 2);
+        Assert.Equal(new[] { 16.67m, 16.67m, 16.67m, 16.67m, 16.66m, 16.66m }, shares);
+        Assert.Equal(100m, shares.Sum());
+    }
+
+    [Fact]
+    public void SplitPayForMultipleEmployees_Two_Way_Of_Odd_Cents_Is_Exact()
+    {
+        var shares = PayCalculator.SplitPayForMultipleEmployees(75.50m, 2);
+
+        Assert.Equal(new[] { 37.75m, 37.75m }, shares);
+        Assert.Equal(75.50m, shares.Sum());
+    }
+
+    [Theory]
+    [InlineData(0.01, 2)]
+    [InlineData(0.01, 3)]
+    [InlineData(10.00, 3)]
+    [InlineData(10.00, 7)]
+    [InlineData(99.99, 4)]
+    [InlineData(100.00, 6)]
+    [InlineData(123.45, 5)]
+    [InlineData(1000.00, 9)]
+    [InlineData(0.00, 4)]
+    public void SplitPayForMultipleEmployees_Shares_Always_Sum_To_Total_And_Stay_Within_One_Minor_Unit(
+        double totalAsDouble, int employeeCount)
+    {
+        var total = (decimal)totalAsDouble;
+
+        var shares = PayCalculator.SplitPayForMultipleEmployees(total, employeeCount);
+
+        Assert.Equal(employeeCount, shares.Count);
+        Assert.Equal(total, shares.Sum());
+
+        var evenShare = Math.Round(total / employeeCount, 2, MidpointRounding.AwayFromZero);
+        foreach (var share in shares)
+        {
+            Assert.True(share >= 0m, $"share {share} was negative");
+            Assert.True(Math.Abs(share - evenShare) <= 0.01m,
+                $"share {share} drifts more than one minor unit from the even share {evenShare}");
+        }
+    }
+
+    [Fact]
+    public void SplitPayForMultipleEmployees_Exhaustive_Cent_Totals_Always_Reconcile_To_The_Total()
+    {
+        for (var cents = 0; cents <= 1000; cents++)
+        {
+            var total = cents / 100m;
+            for (var employeeCount = 1; employeeCount <= 9; employeeCount++)
+            {
+                var shares = PayCalculator.SplitPayForMultipleEmployees(total, employeeCount);
+
+                Assert.Equal(employeeCount, shares.Count);
+                Assert.Equal(total, shares.Sum());
+
+                var evenShare = Math.Round(total / employeeCount, 2, MidpointRounding.AwayFromZero);
+                Assert.All(shares, share =>
+                {
+                    Assert.True(share >= 0m);
+                    Assert.True(Math.Abs(share - evenShare) <= 0.01m);
+                });
+            }
+        }
     }
 
     [Fact]

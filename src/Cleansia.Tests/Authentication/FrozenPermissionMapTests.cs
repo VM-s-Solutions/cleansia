@@ -220,6 +220,9 @@ public class FrozenPermissionMapTests
 
         // Marketing
         [Policy.CanSendSitewidePromo] = PhysicalPolicy.AdminOnly,
+
+        // Refunds (admin-issued partial refund)
+        [Policy.CanIssueRefund] = PhysicalPolicy.AdminOnly,
     };
 
     private static IReadOnlyDictionary<string, string> ActualMap()

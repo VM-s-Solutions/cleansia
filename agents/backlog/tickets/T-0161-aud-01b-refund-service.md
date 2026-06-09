@@ -7,7 +7,7 @@ owner: —
 created: 2026-06-06
 updated: 2026-06-06
 depends_on: [T-0160]
-blocks: [T-0162]
+blocks: [T-0164, T-0167, T-0170, T-0173]
 stories: []
 adrs: [0005, 0006, 0009]
 layers: [backend, clients]
@@ -73,6 +73,29 @@ double-refund.
 
 ## Status log
 - 2026-06-06 — draft (created by pm from ADR-0006 follow-up AUD-01b; depends_on T-0160; Wave-2 build)
+- 2026-06-07 — backend: seam landed test-first. `IRefundService.IssueRefundAsync(RefundRequest, ct)
+  → BusinessResult<RefundResult>` (`Cleansia.Core.AppServices/Services/Interfaces/IRefundService.cs`)
+  + `RefundService` impl: deterministic `RefundKey = refund:{OrderId}:{purpose}` (cancel /
+  dispute:{DisputeId} / admin:{RefundRequestId}) passed as Stripe IdempotencyKey; clamps Amount to
+  `refundable(order) = TotalPrice − Σ(succeeded refunds)`; claim-before-Stripe (insert Pending row +
+  flush) so a concurrent double-issue collapses on the unique `RefundKey` index (PG 23505 →
+  resolve-to-existing, ack); confirm-then-record (MarkSucceeded + PaymentStatus
+  Refunded/PartiallyRefunded only after Stripe confirms). Does NOT enqueue notifications and does NOT
+  enforce the refund window. `IStripeClient.RefundCheckoutSessionAsync` gained the idempotency-key
+  param (`IStripeClient.cs` + `StripeClient.cs`); `CancelOrder`'s inline call now passes the same
+  deterministic cancel key (the inline call itself is removed by AUD-01e/T-0164, not here).
+  New `IRefundRepository`/`RefundRepository` (GetByRefundKey, succeeded-total-for-order) auto-registered
+  via the `IRepository<,>` scan; `RefundService` registered in `ServiceExtensions`. `Refund.MarkSucceeded`
+  + `Order.AssignStripeSessionId` domain methods added (behavior, no schema change). Error keys
+  `refund.failed`/`refund.nothing_refundable`/`refund.order_not_refundable` added to
+  `BusinessErrorMessage`.
+  Tests: `RefundServiceTests` (TC-7 money-math + clamp, TC-KEY-REFUND, TC-IDEMP-REFUND retry+23505,
+  TC-RETRY-IDEMP) — 22 pass; full suite 711 pass; `dotnet build` clean.
+
+  **MANUAL_STEP: nswag-regen — NOT required.** No refund response DTO crosses the wire in this ticket:
+  `RefundRequest`/`RefundResult` are internal seam types and no controller/endpoint was added (the admin
+  refund command surface is AUD-01c). The `IStripeClient` change is server-internal. Frontend/mobile
+  add the 3 new `errors.refund.*` i18n keys (5 locales) when AUD-01c surfaces them.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

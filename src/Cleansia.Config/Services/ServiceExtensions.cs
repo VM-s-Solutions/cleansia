@@ -129,6 +129,7 @@ public static class ServiceExtensions
         services.AddScoped<IOrderPricingCalculator, OrderPricingCalculator>();
         services.AddScoped<IOrderFactory, OrderFactory>();
         services.AddScoped<ILoyaltyService, LoyaltyService>();
+        services.AddScoped<IRefundService, RefundService>();
         services.AddScoped<IPromoCodeService, PromoCodeService>();
         services.AddScoped<IReferralService, ReferralService>();
         services.AddScoped<IStripeSubscriptionWebhookHandler, StripeSubscriptionWebhookHandler>();

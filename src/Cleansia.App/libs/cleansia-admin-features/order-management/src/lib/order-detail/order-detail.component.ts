@@ -10,7 +10,10 @@ import {
 } from '@cleansia/components';
 import { CleansiaAdminRoute } from '@cleansia/services';
 import { TranslatePipe } from '@ngx-translate/core';
-import { AdminOrderPhotosComponent } from './components';
+import {
+  AdminOrderPhotosComponent,
+  AdminOrderRefundComponent,
+} from './components';
 import { OrderDetailFacade } from './order-detail.facade';
 
 @Component({
@@ -24,6 +27,7 @@ import { OrderDetailFacade } from './order-detail.facade';
     CleansiaSectionComponent,
     TranslatePipe,
     AdminOrderPhotosComponent,
+    AdminOrderRefundComponent,
   ],
   templateUrl: './order-detail.component.html',
   providers: [OrderDetailFacade],
@@ -43,6 +47,13 @@ export class OrderDetailComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate([CleansiaAdminRoute.ORDER_MANAGEMENT]);
+  }
+
+  onRefunded(): void {
+    const orderId = this.facade.order()?.id;
+    if (orderId) {
+      this.facade.loadOrderDetail(orderId);
+    }
   }
 
   getStatusHistoryIcon(status: OrderStatusTrackDto): string {

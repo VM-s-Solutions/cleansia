@@ -7,5 +7,8 @@ public record PackageDetails(
     decimal Price,
     int EstimatedTime,
     string CurrencyCode,
-    IEnumerable<string> IncludedServices
+    IEnumerable<string> IncludedServices,
+    IEnumerable<PackageServiceRef> IncludedServiceItems
 );
+
+public record PackageServiceRef(string Id, string Name);

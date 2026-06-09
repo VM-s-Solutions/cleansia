@@ -1,13 +1,14 @@
 ---
 id: T-0162
-title: "AUD-01c: Admin partial-refund command over the seam + share-of-TotalPrice allocator + RefundPolicy (window/fee) + PartiallyRefunded summary + admin refund UX"
+title: "[SPLIT] AUD-01c: Admin partial-refund command + allocator + RefundPolicy + UX (epic — tracking only; split into T-0167 backend / T-0168 frontend)"
 status: draft
 size: L
 owner: —
 created: 2026-06-06
-updated: 2026-06-06
+updated: 2026-06-07
 depends_on: [T-0160, T-0161, T-0165]
 blocks: []
+split_into: [T-0167, T-0168]
 stories: []
 adrs: [0001, 0006, 0009]
 layers: [backend, frontend]
@@ -94,6 +95,10 @@ exists (ADR-0009 D5, fact 8); the allocator cannot refund a bundled line without
 ## Status log
 - 2026-06-06 — draft (created by pm from ADR-0009 follow-up AUD-01c; depends_on T-0160, T-0161, T-0165;
   L — must be split before ready; Wave-2 build)
+- 2026-06-07 — [SPLIT] by pm into **T-0167** (backend: allocator + RefundPolicy + command + PartiallyRefunded
+  summary) and **T-0168** (frontend: admin refund UX). This parent is now a tracking epic — do NOT run as one
+  ticket. The L-blocking AC1-AC7 are inherited by T-0167; AC8 is T-0168. The bundled-gross dependency that
+  was `T-0165` resolves to its backend split child **T-0231** (T-0167 depends_on T-0231).
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

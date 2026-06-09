@@ -1,11 +1,11 @@
 ---
 id: T-0144
 title: Route Stripe + SendGrid through IHttpClientFactory (resilience + OTel + reuse)
-status: ready
+status: done
 size: M
 owner: backend
 created: 2026-06-01
-updated: 2026-06-06
+updated: 2026-06-07
 depends_on: [T-0141]
 blocks: [T-0145]
 stories: []
@@ -132,6 +132,7 @@ HTTP-transport-wiring half for Stripe and SendGrid.
   `ServiceExtensions.cs` → serialize before **T-0145** (which depends on this) and before Wave-3 T-0205;
   also the `StripeClient.cs` surface AUD-01b/T-0161 touches — sequence T-0144 first per the TICKET-MAP
   cluster).
+- 2026-06-07 — done (PM reconciliation: Wave-1 Batch 1B merged to master in a4f14094 / PR #73 chain; status corrected from ready/draft to done; reviewer+security gates were satisfied in the merged PR per sprint-3 closeout).
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

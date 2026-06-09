@@ -29,11 +29,11 @@ public sealed class OrderPricingCalculator(
             .ToListAsync(cancellationToken);
         var servicesSubtotal = services.Sum(s => s?.BasePrice + s?.PerRoomPrice * (rooms + bathrooms)) ?? 0m;
 
-        // Extras are slug-keyed in the catalog because slugs are stable
-        // per-tenant (Service/Package only use Ids). Pull active extras by
-        // slug — inactive ones are admin-hidden, so a stale client trying to
-        // re-quote with one silently drops it instead of erroring (already
-        // committed orders preserve the historical slug via Order.Extras).
+        // Extras are slug-keyed in the catalog because slugs are stable platform-wide
+        // (Service/Package only use Ids). Pull active extras by slug — inactive ones
+        // are admin-hidden, so a stale client trying to re-quote with one silently
+        // drops it instead of erroring (already committed orders preserve the
+        // historical slug via Order.Extras).
         var extraSlugList = selectedExtraSlugs?.Distinct().ToList() ?? new List<string>();
         decimal extrasSubtotal = 0m;
         if (extraSlugList.Count > 0)

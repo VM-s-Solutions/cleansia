@@ -1,11 +1,11 @@
 ---
 id: T-0156
 title: "Outbox table + EF entity config + migration flag (per T-0155 schema)"
-status: ready
+status: done
 size: S
 owner: db
 created: 2026-06-05
-updated: 2026-06-06
+updated: 2026-06-07
 depends_on: [T-0155]
 blocks: [T-0157]
 stories: []
@@ -87,6 +87,7 @@ The table is new and empty, so the migration is purely additive: no backfill, no
 column added to an existing table, no rename, no drop. The unique/partial indexes are small on a fresh table;
 `CREATE INDEX CONCURRENTLY` is not required for the initial creation (it would be relevant only for adding an
 index to an already-large table later). After applying, confirm so T-0157 (durable backing + drainer) can start.
+- 2026-06-07 — done (PM reconciliation: Wave-1 Batch 1B merged to master in a4f14094 / PR #73 chain; status corrected from ready/draft to done; reviewer+security gates were satisfied in the merged PR per sprint-3 closeout).
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

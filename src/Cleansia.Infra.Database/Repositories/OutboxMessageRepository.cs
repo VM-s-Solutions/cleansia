@@ -46,7 +46,13 @@ public class OutboxMessageRepository(CleansiaDbContext context)
             RETURNING *;
             """;
 
-        return await GetDbSet()
+        // UPDATE ... RETURNING * is non-composable: EF must append nothing over it. The global tenant
+        // query filter (OutboxMessage is ITenantEntity) WOULD be appended as a WHERE and force composition,
+        // so IgnoreQueryFilters() — the drainer is a system process that must see every tenant's messages,
+        // and the SQL already scopes by status/lease. AsAsyncEnumerable() then materialises with no further
+        // LINQ. Rows are change-tracked by default (DbSet FromSql).
+        var claimed = new List<OutboxMessage>();
+        var rows = GetDbSet()
             .FromSqlRaw(
                 sql,
                 claimToken,
@@ -54,8 +60,16 @@ public class OutboxMessageRepository(CleansiaDbContext context)
                 (int)OutboxMessageStatus.Pending,
                 leaseCutoff,
                 batchSize)
-            .AsTracking()
-            .ToListAsync(cancellationToken);
+            .IgnoreQueryFilters()
+            .AsAsyncEnumerable()
+            .WithCancellation(cancellationToken);
+
+        await foreach (var row in rows)
+        {
+            claimed.Add(row);
+        }
+
+        return claimed;
     }
 
     private async Task<IReadOnlyList<OutboxMessage>> ClaimWithTrackingAsync(

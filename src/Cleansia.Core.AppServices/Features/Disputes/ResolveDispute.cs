@@ -1,5 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -38,7 +40,8 @@ public class ResolveDispute
 
     public class Handler(
         IDisputeRepository disputeRepository,
-        IUserSessionProvider userSessionProvider) : ICommandHandler<Command>
+        IUserSessionProvider userSessionProvider,
+        IRefundService refundService) : ICommandHandler<Command>
     {
         public async Task<BusinessResult> Handle(Command request, CancellationToken cancellationToken)
         {
@@ -55,6 +58,18 @@ public class ResolveDispute
                 refundAmount: request.RefundAmount,
                 resolutionNotes: request.ResolutionNotes
             );
+
+            if (request.RefundAmount is > 0m)
+            {
+                await refundService.IssueRefundAsync(
+                    new RefundRequest(
+                        dispute.OrderId,
+                        request.RefundAmount.Value,
+                        RefundReason.DisputeResolution,
+                        actorId,
+                        DisputeId: dispute.Id),
+                    cancellationToken);
+            }
 
             return BusinessResult.Success();
         }

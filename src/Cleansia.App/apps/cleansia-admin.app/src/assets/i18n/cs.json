@@ -503,7 +503,31 @@
         "paid": "Zaplaceno",
         "failed": "Selhalo",
         "refunded": "Vráceno",
+        "partially_refunded": "Částečně vráceno",
         "disputed": "Sporné"
+      },
+      "refund": {
+        "title": "Vrácení peněz",
+        "unavailable": "Vrácení peněz je možné pouze u dokončených objednávek placených kartou.",
+        "no_lines": "Tato objednávka nemá žádné služby ani balíčky k vrácení.",
+        "select_lines": "Vyberte služby nebo balíčky k vrácení",
+        "reason": "Důvod vrácení",
+        "override_reason": "Odůvodnění výjimky",
+        "override_reason_hint": "Vyžadováno, pokud lhůta pro vrácení uplynula. Vysvětlete, proč je vrácení vynuceno.",
+        "submit": "Vrátit peníze",
+        "success": "Peníze byly úspěšně vráceny.",
+        "package_group": "Balíček",
+        "line_kind": {
+          "service": "Služba",
+          "package": "Balíček",
+          "bundled": "Služba v balíčku"
+        },
+        "reasons": {
+          "customer_cancellation": "Zrušení zákazníkem",
+          "dispute_resolution": "Řešení sporu",
+          "admin_discretion": "Uvážení administrátora",
+          "service_not_rendered": "Služba nebyla poskytnuta"
+        }
       },
       "messages": {
         "load_error": "Nepodařilo se načíst objednávky"
@@ -827,6 +851,9 @@
       "price": "Cena (CZK)",
       "included_services": "Zahrnuté služby",
       "select_services": "Vyberte služby k zahrnutí",
+      "weights_title": "Relativní cenové váhy",
+      "weight": "Váha",
+      "derived_gross": "Odvozená hrubá cena",
       "messages": {
         "load_error": "Nepodařilo se načíst balíček",
         "create_success": "Balíček byl úspěšně vytvořen",
@@ -1760,6 +1787,14 @@
     "general": {
       "not_found": "Zdroj nenalezen"
     },
+    "refund": {
+      "lines_required": "Vyberte alespoň jednu službu nebo balíček k vrácení.",
+      "line_invalid": "Jedna z vybraných položek není součástí této objednávky.",
+      "override_reason_required": "Pro vrácení mimo povolenou lhůtu je vyžadováno odůvodnění.",
+      "failed": "Vrácení peněz se nezdařilo. Zkuste to prosím znovu.",
+      "nothing_refundable": "Na této objednávce již není co vrátit.",
+      "order_not_refundable": "Tuto objednávku nelze vrátit."
+    },
     "service": {
       "not_found": "Služba nenalezena",
       "in_use": "Službu nelze smazat, protože je aktuálně používána",
@@ -1810,7 +1845,9 @@
     },
     "package": {
       "not_found": "Balíček nenalezen",
-      "in_use": "Balíček nelze smazat, protože je aktuálně používán"
+      "in_use": "Balíček nelze smazat, protože je aktuálně používán",
+      "invalid_weight": "Váhy služeb musí být větší než nula",
+      "update_failed": "Balíček se nepodařilo aktualizovat"
     },
     "pay_config": {
       "already_exists": "Konfigurace platby již existuje",
@@ -2154,7 +2191,9 @@
     },
     "package": {
       "not_found": "Balíček nenalezen",
-      "in_use": "Balíček nelze smazat, protože je aktuálně používán"
+      "in_use": "Balíček nelze smazat, protože je aktuálně používán",
+      "invalid_weight": "Váhy služeb musí být větší než nula",
+      "update_failed": "Balíček se nepodařilo aktualizovat"
     },
     "general": {
       "not_found": "Zdroj nenalezen"

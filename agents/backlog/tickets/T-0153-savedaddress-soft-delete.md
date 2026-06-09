@@ -1,11 +1,11 @@
 ---
 id: T-0153
 title: "SavedAddress soft-delete: Deactivate on delete + IsActive read filters + null-FK decision + filtered-unique-index migration"
-status: ready
+status: done
 size: M
 owner: backend
 created: 2026-06-05
-updated: 2026-06-06
+updated: 2026-06-07
 depends_on: [T-0152]
 blocks: [T-0191]
 stories: []
@@ -124,6 +124,7 @@ handler + repository unit/SQLite tests in this ticket do **not** depend on the n
     concurrent ticket (`Register.cs` mid-edit; `RegistrationEmailDispatchTests.cs` missing
     `using ...Services.Interfaces` for `IReferralService`) block the *full* `Cleansia.Tests` assembly —
     NOT a T-0153 file; flagged for the owning agent. T-0153 tests verified in isolation.
+- 2026-06-07 — done (PM reconciliation: Wave-1 Batch 1B merged to master in a4f14094 / PR #73 chain; status corrected from ready/draft to done; reviewer+security gates were satisfied in the merged PR per sprint-3 closeout).
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

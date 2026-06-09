@@ -11,6 +11,7 @@ using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Functions.Core.Handlers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
@@ -44,6 +45,13 @@ public class GenerateReceiptHandlerFiscalIdempotencyTests
     private readonly Mock<ICountryConfigurationRepository> _countryConfigurationRepository = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<ITenantProvider> _tenantProvider = new();
+
+    public GenerateReceiptHandlerFiscalIdempotencyTests()
+    {
+        _unitOfWork
+            .Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Mock.Of<IDbContextTransaction>());
+    }
 
     private GenerateReceiptHandler CreateHandler() => new(
         _orderRepository.Object,

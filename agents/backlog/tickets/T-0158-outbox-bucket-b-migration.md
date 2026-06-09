@@ -1,11 +1,11 @@
 ---
 id: T-0158
 title: "Bucket-B sweeps/called-services migrate onto the per-iteration-commit outbox row"
-status: draft
+status: done
 size: M
 owner: —
 created: 2026-06-05
-updated: 2026-06-05
+updated: 2026-06-07
 depends_on: [T-0157, T-0148]
 blocks: []
 stories: []
@@ -62,6 +62,7 @@ and must serialize against it — this is the lower-id-depends-on-higher-id edge
   strictly-serial outbox chain. Also edits `LoyaltyService.cs` → serialize against T-0148 (T-0148 first) and
   the Wave-2 T-0163 partial-revoke edit. Promote to `ready` only when T-0157 AND T-0148 are both `done`.
   `adrs` set to `[0002,0008]`).
+- 2026-06-07 — done (PM reconciliation: Wave-1 Batch 1B merged to master in a4f14094 / PR #73 chain; status corrected from ready/draft to done; reviewer+security gates were satisfied in the merged PR per sprint-3 closeout).
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

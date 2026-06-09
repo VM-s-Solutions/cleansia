@@ -32,20 +32,6 @@ public class OrderReceiptRepository(CleansiaDbContext context)
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<int> GetNextSequenceForYearAsync(
-        int year,
-        CancellationToken cancellationToken)
-    {
-        var startOfYear = new DateTime(year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-        var endOfYear = new DateTime(year, 12, 31, 23, 59, 59, DateTimeKind.Utc);
-
-        var count = await GetDbSet()
-            .Where(r => r.IssuedAt >= startOfYear && r.IssuedAt <= endOfYear)
-            .CountAsync(cancellationToken);
-
-        return count + 1;
-    }
-
     public async Task<List<OrderReceipt>> GetDueForRetryAsync(
         DateTime utcNow,
         int take,

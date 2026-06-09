@@ -234,6 +234,9 @@ public static class PolicyBuilder
 
         // Marketing (sitewide push)
         [Policy.CanSendSitewidePromo] = PhysicalPolicy.AdminOnly,
+
+        // Refunds (admin-issued partial refund) — ADR-0001 D2
+        [Policy.CanIssueRefund] = PhysicalPolicy.AdminOnly,
     };
 
     /// <summary>

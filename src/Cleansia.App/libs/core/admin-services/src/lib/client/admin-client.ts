@@ -9617,6 +9617,105 @@ export class AdminReferralClient implements IAdminReferralClient {
     }
 }
 
+export interface IAdminRefundClient {
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    partial(body?: IssuePartialRefundCommand | undefined): Observable<IssuePartialRefundResponse>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class AdminRefundClient implements IAdminRefundClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(ADMINAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    partial(body?: IssuePartialRefundCommand | undefined): Observable<IssuePartialRefundResponse> {
+        let url = this.baseUrl + "/api/AdminRefund/partial";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processPartial(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processPartial(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<IssuePartialRefundResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<IssuePartialRefundResponse>;
+        }));
+    }
+
+    protected processPartial(response: HttpResponseBase): Observable<IssuePartialRefundResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = IssuePartialRefundResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
 export interface IAdminReportClient {
     /**
      * @param startDate (optional) 
@@ -17221,6 +17320,7 @@ export class GetUserLoyaltyActivityActivityItem implements IGetUserLoyaltyActivi
     source!: LoyaltyEarnSource;
     orderId!: string | undefined;
     orderDisplayNumber!: string | undefined;
+    description!: string | undefined;
     occurredOn!: Date;
 
     constructor(data?: IGetUserLoyaltyActivityActivityItem) {
@@ -17240,6 +17340,7 @@ export class GetUserLoyaltyActivityActivityItem implements IGetUserLoyaltyActivi
             this.source = Data["source"];
             this.orderId = Data["orderId"];
             this.orderDisplayNumber = Data["orderDisplayNumber"];
+            this.description = Data["description"];
             this.occurredOn = Data["occurredOn"] ? new Date(Data["occurredOn"].toString()) : undefined as any;
         }
     }
@@ -17259,6 +17360,7 @@ export class GetUserLoyaltyActivityActivityItem implements IGetUserLoyaltyActivi
         data["source"] = this.source;
         data["orderId"] = this.orderId;
         data["orderDisplayNumber"] = this.orderDisplayNumber;
+        data["description"] = this.description;
         data["occurredOn"] = this.occurredOn ? this.occurredOn.toISOString() : undefined as any;
         return data;
     }
@@ -17271,6 +17373,7 @@ export interface IGetUserLoyaltyActivityActivityItem {
     source: LoyaltyEarnSource;
     orderId: string | undefined;
     orderDisplayNumber: string | undefined;
+    description: string | undefined;
     occurredOn: Date;
 }
 
@@ -17360,6 +17463,158 @@ export class GrantPointsManuallyResponse implements IGrantPointsManuallyResponse
 export interface IGrantPointsManuallyResponse {
     userId: string | undefined;
     points: number;
+}
+
+export class IssuePartialRefundCommand implements IIssuePartialRefundCommand {
+    orderId!: string | undefined;
+    lines!: IssuePartialRefundRefundLineSelection[] | undefined;
+    reason!: RefundReason;
+    overrideReason!: string | undefined;
+
+    constructor(data?: IIssuePartialRefundCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            if (Array.isArray(Data["lines"])) {
+                this.lines = [] as any;
+                for (let item of Data["lines"])
+                    this.lines!.push(IssuePartialRefundRefundLineSelection.fromJS(item));
+            }
+            this.reason = Data["reason"];
+            this.overrideReason = Data["overrideReason"];
+        }
+    }
+
+    static fromJS(data: any): IssuePartialRefundCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new IssuePartialRefundCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        if (Array.isArray(this.lines)) {
+            data["lines"] = [];
+            for (let item of this.lines)
+                data["lines"].push(item ? item.toJSON() : undefined as any);
+        }
+        data["reason"] = this.reason;
+        data["overrideReason"] = this.overrideReason;
+        return data;
+    }
+}
+
+export interface IIssuePartialRefundCommand {
+    orderId: string | undefined;
+    lines: IssuePartialRefundRefundLineSelection[] | undefined;
+    reason: RefundReason;
+    overrideReason: string | undefined;
+}
+
+export class IssuePartialRefundRefundLineSelection implements IIssuePartialRefundRefundLineSelection {
+    serviceId!: string | undefined;
+    packageId!: string | undefined;
+
+    constructor(data?: IIssuePartialRefundRefundLineSelection) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.serviceId = Data["serviceId"];
+            this.packageId = Data["packageId"];
+        }
+    }
+
+    static fromJS(data: any): IssuePartialRefundRefundLineSelection {
+        data = typeof data === 'object' ? data : {};
+        let result = new IssuePartialRefundRefundLineSelection();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["serviceId"] = this.serviceId;
+        data["packageId"] = this.packageId;
+        return data;
+    }
+}
+
+export interface IIssuePartialRefundRefundLineSelection {
+    serviceId: string | undefined;
+    packageId: string | undefined;
+}
+
+export class IssuePartialRefundResponse implements IIssuePartialRefundResponse {
+    orderId!: string | undefined;
+    refundAmount!: number;
+    refundVat!: number;
+    paymentStatus!: PaymentStatus;
+    refundInitiated!: boolean;
+    windowOverridden!: boolean;
+
+    constructor(data?: IIssuePartialRefundResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.refundAmount = Data["refundAmount"];
+            this.refundVat = Data["refundVat"];
+            this.paymentStatus = Data["paymentStatus"];
+            this.refundInitiated = Data["refundInitiated"];
+            this.windowOverridden = Data["windowOverridden"];
+        }
+    }
+
+    static fromJS(data: any): IssuePartialRefundResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new IssuePartialRefundResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        data["refundAmount"] = this.refundAmount;
+        data["refundVat"] = this.refundVat;
+        data["paymentStatus"] = this.paymentStatus;
+        data["refundInitiated"] = this.refundInitiated;
+        data["windowOverridden"] = this.windowOverridden;
+        return data;
+    }
+}
+
+export interface IIssuePartialRefundResponse {
+    orderId: string | undefined;
+    refundAmount: number;
+    refundVat: number;
+    paymentStatus: PaymentStatus;
+    refundInitiated: boolean;
+    windowOverridden: boolean;
 }
 
 export class JwtTokenResponse implements IJwtTokenResponse {
@@ -17559,6 +17814,7 @@ export enum LoyaltyEarnSource {
     OrderCancelled = 2,
     Referral = 3,
     ManualGrant = 4,
+    OrderPartiallyRefunded = 5,
 }
 
 export enum LoyaltyTier {
@@ -18619,6 +18875,7 @@ export class PackageDetails implements IPackageDetails {
     estimatedTime!: number;
     currencyCode!: string | undefined;
     includedServices!: string[] | undefined;
+    includedServiceItems!: PackageServiceRef[] | undefined;
 
     constructor(data?: IPackageDetails) {
         if (data) {
@@ -18641,6 +18898,11 @@ export class PackageDetails implements IPackageDetails {
                 this.includedServices = [] as any;
                 for (let item of Data["includedServices"])
                     this.includedServices!.push(item);
+            }
+            if (Array.isArray(Data["includedServiceItems"])) {
+                this.includedServiceItems = [] as any;
+                for (let item of Data["includedServiceItems"])
+                    this.includedServiceItems!.push(PackageServiceRef.fromJS(item));
             }
         }
     }
@@ -18665,6 +18927,11 @@ export class PackageDetails implements IPackageDetails {
             for (let item of this.includedServices)
                 data["includedServices"].push(item);
         }
+        if (Array.isArray(this.includedServiceItems)) {
+            data["includedServiceItems"] = [];
+            for (let item of this.includedServiceItems)
+                data["includedServiceItems"].push(item ? item.toJSON() : undefined as any);
+        }
         return data;
     }
 }
@@ -18677,6 +18944,7 @@ export interface IPackageDetails {
     estimatedTime: number;
     currencyCode: string | undefined;
     includedServices: string[] | undefined;
+    includedServiceItems: PackageServiceRef[] | undefined;
 }
 
 export class PackageListItem implements IPackageListItem {
@@ -18759,6 +19027,7 @@ export class PackageServiceDto implements IPackageServiceDto {
     id!: string | undefined;
     name!: string | undefined;
     description!: string | undefined;
+    priceWeight!: number;
 
     constructor(data?: IPackageServiceDto) {
         if (data) {
@@ -18774,6 +19043,7 @@ export class PackageServiceDto implements IPackageServiceDto {
             this.id = Data["id"];
             this.name = Data["name"];
             this.description = Data["description"];
+            this.priceWeight = Data["priceWeight"];
         }
     }
 
@@ -18789,6 +19059,7 @@ export class PackageServiceDto implements IPackageServiceDto {
         data["id"] = this.id;
         data["name"] = this.name;
         data["description"] = this.description;
+        data["priceWeight"] = this.priceWeight;
         return data;
     }
 }
@@ -18797,6 +19068,47 @@ export interface IPackageServiceDto {
     id: string | undefined;
     name: string | undefined;
     description: string | undefined;
+    priceWeight: number;
+}
+
+export class PackageServiceRef implements IPackageServiceRef {
+    id!: string | undefined;
+    name!: string | undefined;
+
+    constructor(data?: IPackageServiceRef) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.name = Data["name"];
+        }
+    }
+
+    static fromJS(data: any): PackageServiceRef {
+        data = typeof data === 'object' ? data : {};
+        let result = new PackageServiceRef();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["name"] = this.name;
+        return data;
+    }
+}
+
+export interface IPackageServiceRef {
+    id: string | undefined;
+    name: string | undefined;
 }
 
 export class PackageServiceSummary implements IPackageServiceSummary {
@@ -19775,6 +20087,7 @@ export enum PaymentStatus {
     Failed = 3,
     Refunded = 4,
     Disputed = 5,
+    PartiallyRefunded = 6,
 }
 
 export enum PaymentType {
@@ -20456,6 +20769,13 @@ export interface IRefreshTokenCommand {
     token: string | undefined;
     requiredProfile: UserProfile;
     requiredAudience: string | undefined;
+}
+
+export enum RefundReason {
+    CustomerCancellation = 1,
+    DisputeResolution = 2,
+    AdminDiscretion = 3,
+    ServiceNotRendered = 4,
 }
 
 export class RegenerateInvoicePdfCommand implements IRegenerateInvoicePdfCommand {
@@ -22317,6 +22637,7 @@ export class UpdatePackageCommand implements IUpdatePackageCommand {
     description!: string | undefined;
     price!: number;
     serviceIds!: string[] | undefined;
+    serviceWeights!: { [key: string]: number; } | undefined;
     translations!: { [key: string]: CreateServiceTranslationInput; } | undefined;
 
     constructor(data?: IUpdatePackageCommand) {
@@ -22338,6 +22659,13 @@ export class UpdatePackageCommand implements IUpdatePackageCommand {
                 this.serviceIds = [] as any;
                 for (let item of Data["serviceIds"])
                     this.serviceIds!.push(item);
+            }
+            if (Data["serviceWeights"]) {
+                this.serviceWeights = {} as any;
+                for (let key in Data["serviceWeights"]) {
+                    if (Data["serviceWeights"].hasOwnProperty(key))
+                        (this.serviceWeights as any)![key] = Data["serviceWeights"][key];
+                }
             }
             if (Data["translations"]) {
                 this.translations = {} as any;
@@ -22367,6 +22695,13 @@ export class UpdatePackageCommand implements IUpdatePackageCommand {
             for (let item of this.serviceIds)
                 data["serviceIds"].push(item);
         }
+        if (this.serviceWeights) {
+            data["serviceWeights"] = {};
+            for (let key in this.serviceWeights) {
+                if (this.serviceWeights.hasOwnProperty(key))
+                    (data["serviceWeights"] as any)[key] = (this.serviceWeights as any)[key];
+            }
+        }
         if (this.translations) {
             data["translations"] = {};
             for (let key in this.translations) {
@@ -22384,6 +22719,7 @@ export interface IUpdatePackageCommand {
     description: string | undefined;
     price: number;
     serviceIds: string[] | undefined;
+    serviceWeights: { [key: string]: number; } | undefined;
     translations: { [key: string]: CreateServiceTranslationInput; } | undefined;
 }
 

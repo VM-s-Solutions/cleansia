@@ -503,7 +503,31 @@
         "paid": "Paid",
         "failed": "Failed",
         "refunded": "Refunded",
+        "partially_refunded": "Partially refunded",
         "disputed": "Disputed"
+      },
+      "refund": {
+        "title": "Issue Refund",
+        "unavailable": "Refunds are only available for completed orders paid by card.",
+        "no_lines": "This order has no refundable services or packages.",
+        "select_lines": "Select the services or packages to refund",
+        "reason": "Refund reason",
+        "override_reason": "Override justification",
+        "override_reason_hint": "Required when the refund window has closed. Explain why this refund is being forced.",
+        "submit": "Issue refund",
+        "success": "Refund issued successfully.",
+        "package_group": "Package",
+        "line_kind": {
+          "service": "Service",
+          "package": "Package",
+          "bundled": "Bundled service"
+        },
+        "reasons": {
+          "customer_cancellation": "Customer cancellation",
+          "dispute_resolution": "Dispute resolution",
+          "admin_discretion": "Admin discretion",
+          "service_not_rendered": "Service not rendered"
+        }
       },
       "messages": {
         "load_error": "Failed to load orders"
@@ -757,6 +781,9 @@
       "price": "Price (CZK)",
       "included_services": "Included Services",
       "select_services": "Select services to include",
+      "weights_title": "Relative price weights",
+      "weight": "Weight",
+      "derived_gross": "Derived gross",
       "messages": {
         "load_error": "Failed to load package",
         "create_success": "Package created successfully",
@@ -1760,6 +1787,14 @@
     "general": {
       "not_found": "Resource not found"
     },
+    "refund": {
+      "lines_required": "Select at least one service or package to refund.",
+      "line_invalid": "One of the selected lines is not part of this order.",
+      "override_reason_required": "A justification is required to refund outside the allowed window.",
+      "failed": "The refund could not be processed. Please try again.",
+      "nothing_refundable": "There is nothing left to refund on this order.",
+      "order_not_refundable": "This order is not eligible for a refund."
+    },
     "service": {
       "not_found": "Service not found",
       "in_use": "Cannot delete service because it is currently in use",
@@ -1810,7 +1845,9 @@
     },
     "package": {
       "not_found": "Package not found",
-      "in_use": "Cannot delete package because it is currently in use"
+      "in_use": "Cannot delete package because it is currently in use",
+      "invalid_weight": "Service weights must be greater than zero",
+      "update_failed": "Failed to update package"
     },
     "pay_config": {
       "already_exists": "Pay configuration already exists",
@@ -2154,7 +2191,9 @@
     },
     "package": {
       "not_found": "Package not found",
-      "in_use": "Cannot delete package because it is currently in use"
+      "in_use": "Cannot delete package because it is currently in use",
+      "invalid_weight": "Service weights must be greater than zero",
+      "update_failed": "Failed to update package"
     },
     "general": {
       "not_found": "Resource not found"

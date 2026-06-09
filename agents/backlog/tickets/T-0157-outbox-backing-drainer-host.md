@@ -1,11 +1,11 @@
 ---
 id: T-0157
 title: "Durable IPendingDispatch backing + post-commit drainer + in-Functions host decision"
-status: draft
+status: done
 size: M
 owner: —
 created: 2026-06-05
-updated: 2026-06-05
+updated: 2026-06-07
 depends_on: [T-0156, T-0118]
 blocks: [T-0158]
 stories: []
@@ -83,6 +83,7 @@ Bucket-A handler churn and zero consumer churn** is the whole point of the contr
   is `done` + the owner confirms the migration. Implements ADR-0008 D2/D3/D4 (governs the single-drainer
   host answer, AC8). `adrs` set to `[0002,0008]`. Note: edits `Cleansia.Functions/Functions/*.cs` →
   serialize against T-0151 (run T-0151 first)).
+- 2026-06-07 — done (PM reconciliation: Wave-1 Batch 1B merged to master in a4f14094 / PR #73 chain; status corrected from ready/draft to done; reviewer+security gates were satisfied in the merged PR per sprint-3 closeout).
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

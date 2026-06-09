@@ -289,6 +289,14 @@
         </div>
       </cleansia-section>
 
+      <!-- Refund -->
+      @if (facade.order()) {
+      <admin-order-refund
+        [order]="facade.order()!"
+        (refunded)="onRefunded()"
+      />
+      }
+
       <!-- Assigned Employees -->
       @if (facade.order()?.assignedEmployees?.length) {
       <cleansia-section

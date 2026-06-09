@@ -4,7 +4,7 @@ using Cleansia.Core.Domain.Internationalization;
 
 namespace Cleansia.Core.Domain.Services;
 
-public class ServiceCategory : Auditable, ITenantEntity
+public class ServiceCategory : Auditable
 {
     // Stable identifier for clients (mobile icon/color map, analytics, deep-links).
     // Immutable after creation — renaming Name is fine, renaming Slug breaks clients.

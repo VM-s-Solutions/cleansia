@@ -22,6 +22,10 @@ public class CzechEet2FiscalService : IFiscalService
 
     public string CountryCode => "CZ";
 
+    // EET 2.0 re-submission of the same receipt (same identifier) returns the original FIK rather than
+    // minting a new authority entry, so the implementation must dedup on the receipt number.
+    public bool RegisterIsIdempotent => true;
+
     public CzechEet2FiscalService(
         IOptions<CzechEet2Options> options,
         HttpClient httpClient,

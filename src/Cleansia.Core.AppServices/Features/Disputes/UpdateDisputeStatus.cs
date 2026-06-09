@@ -42,7 +42,11 @@ public class UpdateDisputeStatus
             }
 
             var actorId = userSessionProvider.GetUserId() ?? string.Empty;
-            dispute.UpdateStatus(request.NewStatus, actorId);
+
+            if (!dispute.UpdateStatus(request.NewStatus, actorId))
+            {
+                return BusinessResult.Failure(new Error(nameof(request.NewStatus), BusinessErrorMessage.InvalidDisputeStatusTransition));
+            }
 
             return BusinessResult.Success();
         }

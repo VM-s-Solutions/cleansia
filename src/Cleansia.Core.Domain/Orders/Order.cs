@@ -134,10 +134,11 @@ public class Order : Auditable, ITenantEntity
     public decimal? CancellationFeeRate { get; private set; }
 
     /// <summary>
-    /// Who initiated the cancellation — "customer", "cleaner", or "system".
+    /// Who initiated the cancellation. Persisted as the legacy lowercase string
+    /// ("customer"/"cleaner"/"admin"/"system") via a value converter so already-cancelled
+    /// rows remain readable. Null while active.
     /// </summary>
-    [MaxLength(20)]
-    public string? CancelledBy { get; private set; }
+    public CancelledBy? CancelledBy { get; private set; }
 
     [MaxLength(500)]
     public string? CancellationReason { get; private set; }
@@ -408,6 +409,22 @@ public class Order : Auditable, ITenantEntity
         return this;
     }
 
+    /// <summary>
+    /// Removes the given employee's assignment, freeing a spot. No-op if the employee is not
+    /// currently assigned. Used by the admin reassign flow to replace a cleaner; the spot-availability
+    /// guard for the replacement add stays in the application layer so it surfaces as a business error.
+    /// </summary>
+    public Order UnassignEmployee(string employeeId)
+    {
+        var assignment = _assignedEmployees.FirstOrDefault(oe => oe.EmployeeId == employeeId);
+        if (assignment is not null)
+        {
+            _assignedEmployees.Remove(assignment);
+        }
+
+        return this;
+    }
+
     public Order CalculateRequiredEmployees()
     {
         if (EstimatedTime <= 0)
@@ -446,7 +463,7 @@ public class Order : Auditable, ITenantEntity
     /// </summary>
     public Order Cancel(
         DateTime cancelledAtUtc,
-        string cancelledBy,
+        CancelledBy cancelledBy,
         decimal feeRate,
         decimal refundAmount,
         string? reason)

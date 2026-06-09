@@ -75,6 +75,9 @@
       "@cleansia/admin-features/language-management": [
         "libs/cleansia-admin-features/language-management/src/index.ts"
       ],
+      "@cleansia/admin-features/disputes-management": [
+        "libs/cleansia-admin-features/disputes-management/src/index.ts"
+      ],
       "@cleansia/admin-features/order-management": [
         "libs/cleansia-admin-features/order-management/src/index.ts"
       ],

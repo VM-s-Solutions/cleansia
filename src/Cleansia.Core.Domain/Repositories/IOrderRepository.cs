@@ -69,6 +69,16 @@ public interface IOrderRepository : IRepository<Order, string>
     Task<Order?> GetByIdIgnoringTenantAsync(string id, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Cross-tenant lookup of the order owning a given Stripe payment intent.
+    /// ONLY for Stripe webhook handlers that resolve an event carrying a
+    /// <c>payment_intent</c> but no OrderId metadata (e.g. a <c>charge.dispute.*</c>
+    /// chargeback). Same tenant-bypass contract as <see cref="GetByIdIgnoringTenantAsync"/>:
+    /// the caller MUST call ITenantProvider.SetTenantOverride(order.TenantId) before any
+    /// subsequent mutation so child rows inherit the right tenant.
+    /// </summary>
+    Task<Order?> GetByStripePaymentIntentIdIgnoringTenantAsync(string paymentIntentId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Average + count of all OrderReview rows attached to orders that had
     /// this employee assigned. Used by the mobile dashboard's rating tile.
     /// Returns (null, 0) when the cleaner has never been reviewed.

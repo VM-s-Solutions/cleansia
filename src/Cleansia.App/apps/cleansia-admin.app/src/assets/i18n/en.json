@@ -81,7 +81,9 @@
       "loyalty_user_detail": "User loyalty",
       "loyalty_referrals": "Referrals",
       "sitewide_push": "Sitewide Push",
-      "not_found": "Page Not Found"
+      "not_found": "Page Not Found",
+      "disputes": "Disputes",
+      "dispute_details": "Dispute Details"
     }
   },
   "components": {
@@ -220,7 +222,8 @@
     "loyalty_referrals": "Referrals",
     "marketing": "Marketing",
     "marketing_sitewide_push": "Sitewide Push",
-    "logout": "Logout"
+    "logout": "Logout",
+    "disputes": "Disputes"
   },
   "pages": {
     "unauthorized": {
@@ -527,6 +530,41 @@
           "dispute_resolution": "Dispute resolution",
           "admin_discretion": "Admin discretion",
           "service_not_rendered": "Service not rendered"
+        }
+      },
+      "ops": {
+        "title": "Order Operations",
+        "cancel": {
+          "action": "Cancel order",
+          "confirm": "Cancel this order. This cannot be undone; a refund is issued automatically for paid card orders.",
+          "reason": "Cancellation reason",
+          "reason_hint": "Optional. Note why this order is being cancelled.",
+          "submit": "Cancel order",
+          "success": "Order cancelled successfully."
+        },
+        "override_status": {
+          "action": "Override status",
+          "confirm": "Manually set the order status. Only valid transitions are allowed.",
+          "target": "New status",
+          "submit": "Apply status",
+          "success": "Order status updated successfully."
+        },
+        "reassign": {
+          "action": "Reassign cleaner",
+          "confirm": "Move the assignment from the current cleaner to another cleaner.",
+          "none_assigned": "This order has no assigned cleaner to reassign.",
+          "from": "From cleaner",
+          "to": "To cleaner (employee ID)",
+          "to_hint": "Enter the target employee ID.",
+          "unnamed": "Unnamed cleaner",
+          "submit": "Reassign",
+          "success": "Cleaner reassigned successfully."
+        },
+        "refund": {
+          "action": "Issue refund",
+          "confirm": "Issue a full refund without changing the order status.",
+          "submit": "Issue refund",
+          "success": "Refund issued successfully."
         }
       },
       "messages": {
@@ -1626,6 +1664,67 @@
       "validation_error": "Please fill in all locale fields before sending.",
       "send_success": "Sitewide promo enqueued. Fan-out is now running in the background.",
       "send_error": "Failed to enqueue the promo. Check your inputs and try again."
+    },
+    "disputes_management": {
+      "title": "Disputes",
+      "description": "Review customer disputes, manage their status, and issue refunds.",
+      "no_disputes": "No disputes found",
+      "load_error": "Disputes could not be loaded. Please try again.",
+      "columns": {
+        "order_number": "Order",
+        "customer_name": "Customer",
+        "customer_email": "Email",
+        "reason": "Reason",
+        "status": "Status",
+        "refund_amount": "Refund",
+        "created_on": "Created"
+      },
+      "actions": {
+        "view_details": "View details"
+      },
+      "status": {
+        "pending": "Pending",
+        "under_review": "Under review",
+        "waiting_for_response": "Waiting for response",
+        "resolved": "Resolved",
+        "closed": "Closed",
+        "escalated": "Escalated"
+      },
+      "detail": {
+        "title": "Dispute",
+        "back": "Back to disputes",
+        "summary": "Summary",
+        "description": "Description",
+        "resolution_notes": "Resolution notes",
+        "messages": "Messages",
+        "no_messages": "No messages yet.",
+        "staff": "Staff",
+        "load_error": "This dispute could not be loaded. Please try again."
+      },
+      "message": {
+        "label": "Staff reply",
+        "placeholder": "Write a reply to the customer…",
+        "send": "Send message",
+        "sent": "Message sent."
+      },
+      "status_update": {
+        "title": "Update status",
+        "hint": "Only valid transitions are accepted; illegal changes are rejected by the system.",
+        "new_status": "New status",
+        "apply": "Apply status",
+        "success": "Dispute status updated."
+      },
+      "resolve": {
+        "title": "Resolve & issue refund",
+        "already_settled": "This dispute is already settled and cannot be resolved again.",
+        "refund_amount": "Refund amount",
+        "refund_amount_placeholder": "Leave empty to resolve without a refund",
+        "refund_disclaimer": "Entering an amount requests a refund processed via Stripe. The refund is not guaranteed to settle immediately and may remain pending if Stripe declines it.",
+        "notes": "Resolution notes",
+        "notes_placeholder": "Explain how this dispute was resolved…",
+        "submit": "Resolve dispute",
+        "submitted": "Dispute resolution submitted"
+      }
     }
   },
   "employees": {
@@ -1755,7 +1854,10 @@
       "already_exists": "Dispute already exists for this order",
       "invalid_refund_amount": "Invalid refund amount",
       "max_length_exceeded": "Maximum length exceeded",
-      "not_found": "Dispute not found"
+      "not_found": "Dispute not found",
+      "already_resolved": "This dispute has already been resolved and cannot be changed.",
+      "invalid_status_transition": "This status change is not allowed for the current dispute state.",
+      "action_failed": "The dispute action could not be completed. Please try again."
     },
     "email": {
       "invalid_format": "Invalid email format",
@@ -1816,6 +1918,10 @@
         "positive": "Actual time must be positive"
       },
       "already_assigned": "Order is already assigned",
+      "already_cancelled": "Order has already been cancelled",
+      "already_completed": "Order has already been completed",
+      "in_progress_cannot_cancel": "An order that is in progress cannot be cancelled",
+      "invalid_status_transition": "This status change is not allowed for the current order state",
       "cleaning_date": {
         "future": "Cleaning date must be in the future"
       },
@@ -2032,6 +2138,10 @@
       },
       "not_found": "Order not found",
       "already_assigned": "Order is already assigned",
+      "already_cancelled": "Order has already been cancelled",
+      "already_completed": "Order has already been completed",
+      "in_progress_cannot_cancel": "An order that is in progress cannot be cancelled",
+      "invalid_status_transition": "This status change is not allowed for the current order state",
       "no_available_spots": "No available spots for this order",
       "employee_already_assigned": "Employee is already assigned to this order",
       "employee_not_assigned": "Employee is not assigned to this order",

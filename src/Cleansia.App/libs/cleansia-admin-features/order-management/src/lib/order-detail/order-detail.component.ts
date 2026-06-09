@@ -11,6 +11,7 @@ import {
 import { CleansiaAdminRoute } from '@cleansia/services';
 import { TranslatePipe } from '@ngx-translate/core';
 import {
+  AdminOrderOpsComponent,
   AdminOrderPhotosComponent,
   AdminOrderRefundComponent,
 } from './components';
@@ -26,6 +27,7 @@ import { OrderDetailFacade } from './order-detail.facade';
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     TranslatePipe,
+    AdminOrderOpsComponent,
     AdminOrderPhotosComponent,
     AdminOrderRefundComponent,
   ],
@@ -50,6 +52,14 @@ export class OrderDetailComponent implements OnInit {
   }
 
   onRefunded(): void {
+    this.reloadOrder();
+  }
+
+  onOrderChanged(): void {
+    this.reloadOrder();
+  }
+
+  private reloadOrder(): void {
     const orderId = this.facade.order()?.id;
     if (orderId) {
       this.facade.loadOrderDetail(orderId);
@@ -63,10 +73,14 @@ export class OrderDetailComponent implements OnInit {
   getStatusHistoryClass(status: OrderStatusTrackDto): string {
     if (!status.status) return 'status-history-item status-pending';
     switch (status.status.value) {
+      case OrderStatus.New:
+        return 'status-history-item status-new';
       case OrderStatus.Pending:
         return 'status-history-item status-pending';
       case OrderStatus.Confirmed:
         return 'status-history-item status-confirmed';
+      case OrderStatus.OnTheWay:
+        return 'status-history-item status-ontheway';
       case OrderStatus.InProgress:
         return 'status-history-item status-inprogress';
       case OrderStatus.Completed:

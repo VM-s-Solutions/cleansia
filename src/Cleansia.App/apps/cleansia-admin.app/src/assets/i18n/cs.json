@@ -81,7 +81,9 @@
       "loyalty_user_detail": "Věrnost uživatele",
       "loyalty_referrals": "Doporučení",
       "sitewide_push": "Hromadné oznámení",
-      "not_found": "Stránka nenalezena"
+      "not_found": "Stránka nenalezena",
+      "disputes": "Spory",
+      "dispute_details": "Detail sporu"
     }
   },
   "components": {
@@ -220,7 +222,8 @@
     "loyalty_referrals": "Doporučení",
     "marketing": "Marketing",
     "marketing_sitewide_push": "Hromadné oznámení",
-    "logout": "Odhlásit se"
+    "logout": "Odhlásit se",
+    "disputes": "Spory"
   },
   "pages": {
     "unauthorized": {
@@ -527,6 +530,41 @@
           "dispute_resolution": "Řešení sporu",
           "admin_discretion": "Uvážení administrátora",
           "service_not_rendered": "Služba nebyla poskytnuta"
+        }
+      },
+      "ops": {
+        "title": "Operace s objednávkou",
+        "cancel": {
+          "action": "Zrušit objednávku",
+          "confirm": "Zrušit tuto objednávku. Akci nelze vrátit zpět; u zaplacených objednávek kartou je automaticky vrácena platba.",
+          "reason": "Důvod zrušení",
+          "reason_hint": "Nepovinné. Uveďte, proč je objednávka rušena.",
+          "submit": "Zrušit objednávku",
+          "success": "Objednávka byla úspěšně zrušena."
+        },
+        "override_status": {
+          "action": "Přepsat stav",
+          "confirm": "Ručně nastavit stav objednávky. Povoleny jsou pouze platné přechody.",
+          "target": "Nový stav",
+          "submit": "Použít stav",
+          "success": "Stav objednávky byl úspěšně aktualizován."
+        },
+        "reassign": {
+          "action": "Přiřadit jiného uklízeče",
+          "confirm": "Přesunout přiřazení ze současného uklízeče na jiného uklízeče.",
+          "none_assigned": "K této objednávce není přiřazen žádný uklízeč, kterého by bylo možné přeřadit.",
+          "from": "Od uklízeče",
+          "to": "Na uklízeče (ID zaměstnance)",
+          "to_hint": "Zadejte ID cílového zaměstnance.",
+          "unnamed": "Nepojmenovaný uklízeč",
+          "submit": "Přeřadit",
+          "success": "Uklízeč byl úspěšně přeřazen."
+        },
+        "refund": {
+          "action": "Vrátit platbu",
+          "confirm": "Vrátit celou platbu bez změny stavu objednávky.",
+          "submit": "Vrátit platbu",
+          "success": "Platba byla úspěšně vrácena."
         }
       },
       "messages": {
@@ -1626,6 +1664,67 @@
       "validation_error": "Vyplňte prosím všechna jazyková pole před odesláním.",
       "send_success": "Hromadné oznámení zařazeno do fronty. Doručování běží na pozadí.",
       "send_error": "Nepodařilo se zařadit oznámení. Zkontrolujte vstup a zkuste to znovu."
+    },
+    "disputes_management": {
+      "title": "Spory",
+      "description": "Procházejte zákaznické spory, spravujte jejich stav a vystavujte vratky.",
+      "no_disputes": "Nebyly nalezeny žádné spory",
+      "load_error": "Spory se nepodařilo načíst. Zkuste to prosím znovu.",
+      "columns": {
+        "order_number": "Objednávka",
+        "customer_name": "Zákazník",
+        "customer_email": "E-mail",
+        "reason": "Důvod",
+        "status": "Stav",
+        "refund_amount": "Vratka",
+        "created_on": "Vytvořeno"
+      },
+      "actions": {
+        "view_details": "Zobrazit detail"
+      },
+      "status": {
+        "pending": "Čeká",
+        "under_review": "V přezkoumání",
+        "waiting_for_response": "Čeká na odpověď",
+        "resolved": "Vyřešeno",
+        "closed": "Uzavřeno",
+        "escalated": "Eskalováno"
+      },
+      "detail": {
+        "title": "Spor",
+        "back": "Zpět na spory",
+        "summary": "Souhrn",
+        "description": "Popis",
+        "resolution_notes": "Poznámky k řešení",
+        "messages": "Zprávy",
+        "no_messages": "Zatím žádné zprávy.",
+        "staff": "Personál",
+        "load_error": "Tento spor se nepodařilo načíst. Zkuste to prosím znovu."
+      },
+      "message": {
+        "label": "Odpověď personálu",
+        "placeholder": "Napište odpověď zákazníkovi…",
+        "send": "Odeslat zprávu",
+        "sent": "Zpráva odeslána."
+      },
+      "status_update": {
+        "title": "Změnit stav",
+        "hint": "Přijímány jsou pouze platné přechody; neplatné změny systém odmítne.",
+        "new_status": "Nový stav",
+        "apply": "Použít stav",
+        "success": "Stav sporu byl aktualizován."
+      },
+      "resolve": {
+        "title": "Vyřešit a vystavit vratku",
+        "already_settled": "Tento spor je již vyřízen a nelze jej znovu řešit.",
+        "refund_amount": "Částka vratky",
+        "refund_amount_placeholder": "Ponechte prázdné pro vyřešení bez vratky",
+        "refund_disclaimer": "Zadání částky vyžádá vratku zpracovanou přes Stripe. Vratka nemusí být vypořádána okamžitě a může zůstat ve stavu čeká, pokud ji Stripe odmítne.",
+        "notes": "Poznámky k řešení",
+        "notes_placeholder": "Vysvětlete, jak byl tento spor vyřešen…",
+        "submit": "Vyřešit spor",
+        "submitted": "Řešení sporu odesláno"
+      }
     }
   },
   "employees": {
@@ -1755,7 +1854,10 @@
       "already_exists": "Spor pro tuto objednávku již existuje",
       "invalid_refund_amount": "Neplatná částka vrácení peněz",
       "max_length_exceeded": "Překročena maximální délka",
-      "not_found": "Spor nenalezen"
+      "not_found": "Spor nenalezen",
+      "already_resolved": "Tento spor již byl vyřešen a nelze jej změnit.",
+      "invalid_status_transition": "Tato změna stavu není pro aktuální stav sporu povolena.",
+      "action_failed": "Akci se sporem se nepodařilo dokončit. Zkuste to prosím znovu."
     },
     "email": {
       "invalid_format": "Neplatný formát e-mailu",
@@ -1816,6 +1918,10 @@
         "positive": "Skutečný čas musí být kladný"
       },
       "already_assigned": "Objednávka je již přiřazena",
+      "already_cancelled": "Objednávka již byla zrušena",
+      "already_completed": "Objednávka již byla dokončena",
+      "in_progress_cannot_cancel": "Probíhající objednávku nelze zrušit",
+      "invalid_status_transition": "Tato změna stavu není pro aktuální stav objednávky povolena",
       "cleaning_date": {
         "future": "Datum úklidu musí být v budoucnosti"
       },
@@ -2032,6 +2138,10 @@
       },
       "not_found": "Objednávka nenalezena",
       "already_assigned": "Objednávka je již přiřazena",
+      "already_cancelled": "Objednávka již byla zrušena",
+      "already_completed": "Objednávka již byla dokončena",
+      "in_progress_cannot_cancel": "Probíhající objednávku nelze zrušit",
+      "invalid_status_transition": "Tato změna stavu není pro aktuální stav objednávky povolena",
       "no_available_spots": "Pro tuto objednávku nejsou k dispozici žádná volná místa",
       "employee_already_assigned": "Zaměstnanec je již přiřazen k této objednávce",
       "employee_not_assigned": "Zaměstnanec není přiřazen k této objednávce",

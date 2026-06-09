@@ -84,6 +84,7 @@ export class AppComponent implements OnInit {
     { label: 'sidebar.employees', icon: 'pi pi-users', route: '/employee-management' },
     { label: 'sidebar.pay_periods', icon: 'pi pi-calendar', route: '/pay-periods' },
     { label: 'sidebar.orders', icon: 'pi pi-shopping-cart', route: '/order-management' },
+    { label: 'sidebar.disputes', icon: 'pi pi-flag', route: '/dispute-management' },
     { label: 'sidebar.invoices', icon: 'pi pi-file', route: '/invoice-management' },
     { label: 'sidebar.reports', icon: 'pi pi-chart-bar', route: '/reports' },
     { label: 'sidebar.services', icon: 'pi pi-wrench', route: '/service-management' },

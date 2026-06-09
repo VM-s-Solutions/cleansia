@@ -39,6 +39,14 @@ export const appRoutes: Route[] = [
       ),
   },
   {
+    path: 'dispute-management',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/disputes-management').then(
+        (m) => m.disputesManagementRoutes
+      ),
+  },
+  {
     path: 'invoice-management',
     canActivate: [adminGuard],
     loadChildren: () =>

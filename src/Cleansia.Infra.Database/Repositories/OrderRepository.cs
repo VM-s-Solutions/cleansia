@@ -118,6 +118,17 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
+    public Task<Order?> GetByStripePaymentIntentIdIgnoringTenantAsync(string paymentIntentId, CancellationToken cancellationToken)
+    {
+        // System-level read for the chargeback webhook (ADR-0006 D4): a
+        // charge.dispute.* event carries the payment_intent but no OrderId
+        // metadata, and arrives with no tenant context. Bypass the tenant
+        // filter; the caller re-scopes via SetTenantOverride before writing.
+        return GetDbSet()
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(o => o.StripePaymentIntentId == paymentIntentId, cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Order>> GetOrdersByDateRangeAsync(
         DateTime startDate, DateTime endDate, CancellationToken cancellationToken)
     {

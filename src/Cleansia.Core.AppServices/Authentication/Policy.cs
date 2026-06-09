@@ -31,6 +31,10 @@ public class Policy
     public const string CanSubmitOrderReview = nameof(CanSubmitOrderReview); // Customer
     public const string CanViewOrderReview = nameof(CanViewOrderReview); // Authenticated (All roles)
     public const string CanCancelOrder = nameof(CanCancelOrder); // Customer (own orders)
+    public const string CanAdminCancelOrder = nameof(CanAdminCancelOrder); // Admin (any order)
+    public const string CanOverrideOrderStatus = nameof(CanOverrideOrderStatus); // Admin (any order)
+    public const string CanReassignOrder = nameof(CanReassignOrder); // Admin (any order)
+    public const string CanRefundOrder = nameof(CanRefundOrder); // Admin (any order)
 
     // Saved addresses (Customer)
     public const string CanManageSavedAddresses = nameof(CanManageSavedAddresses); // Customer
@@ -107,6 +111,10 @@ public class Policy
     public const string CanResolveDispute = nameof(CanResolveDispute); // Admin (Only admins can resolve disputes)
     public const string CanUpdateDisputeStatus = nameof(CanUpdateDisputeStatus); // Admin (Only admins can update status)
     public const string CanUploadDisputeEvidence = nameof(CanUploadDisputeEvidence); // Customer (Customers can upload evidence to their own disputes)
+    // Admin-host dispute reads. Distinct from the CustomerOnly own-data CanViewDispute/CanViewDisputeList:
+    // the admin reads every dispute, so the admin host needs its own AdminOnly view gates.
+    public const string CanViewDisputeAdmin = nameof(CanViewDisputeAdmin); // Admin (any dispute)
+    public const string CanViewDisputeListAdmin = nameof(CanViewDisputeListAdmin); // Admin (all disputes)
 
     // Reports
     public const string CanViewRevenueReport = nameof(CanViewRevenueReport); // Admin

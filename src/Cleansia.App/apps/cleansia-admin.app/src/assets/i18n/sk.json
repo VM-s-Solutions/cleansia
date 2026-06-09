@@ -81,7 +81,9 @@
       "loyalty_user_detail": "Vernosť používateľa",
       "loyalty_referrals": "Odporúčania",
       "sitewide_push": "Hromadné oznámenie",
-      "not_found": "Stránka nebola nájdená"
+      "not_found": "Stránka nebola nájdená",
+      "disputes": "Reklamácie",
+      "dispute_details": "Detail reklamácie"
     }
   },
   "components": {
@@ -220,7 +222,8 @@
     "loyalty_referrals": "Odporúčania",
     "marketing": "Marketing",
     "marketing_sitewide_push": "Hromadné oznámenie",
-    "logout": "Odhlásiť sa"
+    "logout": "Odhlásiť sa",
+    "disputes": "Reklamácie"
   },
   "pages": {
     "unauthorized": {
@@ -527,6 +530,41 @@
           "dispute_resolution": "Riešenie sporu",
           "admin_discretion": "Uváženie administrátora",
           "service_not_rendered": "Služba nebola poskytnutá"
+        }
+      },
+      "ops": {
+        "title": "Operácie s objednávkou",
+        "cancel": {
+          "action": "Zrušiť objednávku",
+          "confirm": "Zrušiť túto objednávku. Akciu nie je možné vrátiť; pri objednávkach zaplatených kartou sa platba automaticky vráti.",
+          "reason": "Dôvod zrušenia",
+          "reason_hint": "Voliteľné. Uveďte, prečo sa objednávka ruší.",
+          "submit": "Zrušiť objednávku",
+          "success": "Objednávka bola úspešne zrušená."
+        },
+        "override_status": {
+          "action": "Prepísať stav",
+          "confirm": "Ručne nastaviť stav objednávky. Povolené sú iba platné prechody.",
+          "target": "Nový stav",
+          "submit": "Použiť stav",
+          "success": "Stav objednávky bol úspešne aktualizovaný."
+        },
+        "reassign": {
+          "action": "Priradiť iného upratovača",
+          "confirm": "Presunúť priradenie zo súčasného upratovača na iného upratovača.",
+          "none_assigned": "K tejto objednávke nie je priradený žiadny upratovač, ktorého by bolo možné preradiť.",
+          "from": "Od upratovača",
+          "to": "Na upratovača (ID zamestnanca)",
+          "to_hint": "Zadajte ID cieľového zamestnanca.",
+          "unnamed": "Nepomenovaný upratovač",
+          "submit": "Preradiť",
+          "success": "Upratovač bol úspešne preradený."
+        },
+        "refund": {
+          "action": "Vrátiť platbu",
+          "confirm": "Vrátiť celú platbu bez zmeny stavu objednávky.",
+          "submit": "Vrátiť platbu",
+          "success": "Platba bola úspešne vrátená."
         }
       },
       "messages": {
@@ -1626,6 +1664,67 @@
       "validation_error": "Pred odoslaním vyplňte všetky jazykové polia.",
       "send_success": "Hromadné oznámenie zaradené do fronty. Doručovanie beží na pozadí.",
       "send_error": "Nepodarilo sa zaradiť oznámenie. Skontrolujte vstup a skúste to znova."
+    },
+    "disputes_management": {
+      "title": "Reklamácie",
+      "description": "Prezerajte zákaznícke reklamácie, spravujte ich stav a vystavujte vrátenia.",
+      "no_disputes": "Nenašli sa žiadne reklamácie",
+      "load_error": "Reklamácie sa nepodarilo načítať. Skúste to znova.",
+      "columns": {
+        "order_number": "Objednávka",
+        "customer_name": "Zákazník",
+        "customer_email": "E-mail",
+        "reason": "Dôvod",
+        "status": "Stav",
+        "refund_amount": "Vrátenie",
+        "created_on": "Vytvorené"
+      },
+      "actions": {
+        "view_details": "Zobraziť detail"
+      },
+      "status": {
+        "pending": "Čaká",
+        "under_review": "V preskúmaní",
+        "waiting_for_response": "Čaká na odpoveď",
+        "resolved": "Vyriešené",
+        "closed": "Uzavreté",
+        "escalated": "Eskalované"
+      },
+      "detail": {
+        "title": "Reklamácia",
+        "back": "Späť na reklamácie",
+        "summary": "Súhrn",
+        "description": "Popis",
+        "resolution_notes": "Poznámky k riešeniu",
+        "messages": "Správy",
+        "no_messages": "Zatiaľ žiadne správy.",
+        "staff": "Personál",
+        "load_error": "Túto reklamáciu sa nepodarilo načítať. Skúste to znova."
+      },
+      "message": {
+        "label": "Odpoveď personálu",
+        "placeholder": "Napíšte odpoveď zákazníkovi…",
+        "send": "Odoslať správu",
+        "sent": "Správa odoslaná."
+      },
+      "status_update": {
+        "title": "Zmeniť stav",
+        "hint": "Akceptované sú len platné prechody; neplatné zmeny systém odmietne.",
+        "new_status": "Nový stav",
+        "apply": "Použiť stav",
+        "success": "Stav reklamácie bol aktualizovaný."
+      },
+      "resolve": {
+        "title": "Vyriešiť a vystaviť vrátenie",
+        "already_settled": "Táto reklamácia je už vybavená a nedá sa znova riešiť.",
+        "refund_amount": "Suma vrátenia",
+        "refund_amount_placeholder": "Nechajte prázdne na vyriešenie bez vrátenia",
+        "refund_disclaimer": "Zadanie sumy si vyžiada vrátenie spracované cez Stripe. Vrátenie nemusí byť vyrovnané okamžite a môže zostať v stave čaká, ak ho Stripe odmietne.",
+        "notes": "Poznámky k riešeniu",
+        "notes_placeholder": "Vysvetlite, ako bola táto reklamácia vyriešená…",
+        "submit": "Vyriešiť reklamáciu",
+        "submitted": "Riešenie sporu odoslané"
+      }
     }
   },
   "employees": {
@@ -1755,7 +1854,10 @@
       "already_exists": "Reklamácia pre túto objednávku už existuje",
       "invalid_refund_amount": "Neplatná suma vrátenia",
       "max_length_exceeded": "Bola prekročená maximálna dĺžka",
-      "not_found": "Reklamácia nebola nájdená"
+      "not_found": "Reklamácia nebola nájdená",
+      "already_resolved": "Táto reklamácia už bola vyriešená a nedá sa zmeniť.",
+      "invalid_status_transition": "Táto zmena stavu nie je pre aktuálny stav reklamácie povolená.",
+      "action_failed": "Akciu s reklamáciou sa nepodarilo dokončiť. Skúste to znova."
     },
     "email": {
       "invalid_format": "Neplatný formát e-mailu",
@@ -1816,6 +1918,10 @@
         "positive": "Skutočný čas musí byť kladný"
       },
       "already_assigned": "Objednávka je už priradená",
+      "already_cancelled": "Objednávka už bola zrušená",
+      "already_completed": "Objednávka už bola dokončená",
+      "in_progress_cannot_cancel": "Prebiehajúcu objednávku nie je možné zrušiť",
+      "invalid_status_transition": "Táto zmena stavu nie je pre aktuálny stav objednávky povolená",
       "cleaning_date": {
         "future": "Dátum upratovania musí byť v budúcnosti"
       },
@@ -2032,6 +2138,10 @@
       },
       "not_found": "Objednávka nebola nájdená",
       "already_assigned": "Objednávka je už priradená",
+      "already_cancelled": "Objednávka už bola zrušená",
+      "already_completed": "Objednávka už bola dokončená",
+      "in_progress_cannot_cancel": "Prebiehajúcu objednávku nie je možné zrušiť",
+      "invalid_status_transition": "Táto zmena stavu nie je pre aktuálny stav objednávky povolená",
       "no_available_spots": "Pre túto objednávku nie sú dostupné voľné miesta",
       "employee_already_assigned": "Zamestnanec je už priradený k tejto objednávke",
       "employee_not_assigned": "Zamestnanec nie je priradený k tejto objednávke",

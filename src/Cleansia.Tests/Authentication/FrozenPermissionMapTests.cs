@@ -38,6 +38,10 @@ public class FrozenPermissionMapTests
         [Policy.CanSubmitOrderReview] = PhysicalPolicy.CustomerOnly,
         [Policy.CanViewOrderReview] = PhysicalPolicy.Authenticated,
         [Policy.CanCancelOrder] = PhysicalPolicy.CustomerOnly,
+        [Policy.CanAdminCancelOrder] = PhysicalPolicy.AdminOnly,   // AUD-01 admin order ops (additive)
+        [Policy.CanOverrideOrderStatus] = PhysicalPolicy.AdminOnly, // AUD-01 admin order ops (additive)
+        [Policy.CanReassignOrder] = PhysicalPolicy.AdminOnly,      // AUD-01 admin order ops (additive)
+        [Policy.CanRefundOrder] = PhysicalPolicy.AdminOnly,        // AUD-01 admin order ops (additive)
 
         // Customer self-service
         [Policy.CanManageSavedAddresses] = PhysicalPolicy.CustomerOnly,
@@ -102,6 +106,10 @@ public class FrozenPermissionMapTests
         [Policy.CanResolveDispute] = PhysicalPolicy.AdminOnly,
         [Policy.CanUpdateDisputeStatus] = PhysicalPolicy.AdminOnly,
         [Policy.CanUploadDisputeEvidence] = PhysicalPolicy.CustomerOnly,
+        // Admin-host dispute reads (D-01 admin dispute management, additive). Distinct from the
+        // CustomerOnly CanViewDispute/CanViewDisputeList own-data reads — admin sees all disputes.
+        [Policy.CanViewDisputeAdmin] = PhysicalPolicy.AdminOnly,
+        [Policy.CanViewDisputeListAdmin] = PhysicalPolicy.AdminOnly,
 
         // Reports
         [Policy.CanViewRevenueReport] = PhysicalPolicy.AdminOnly,

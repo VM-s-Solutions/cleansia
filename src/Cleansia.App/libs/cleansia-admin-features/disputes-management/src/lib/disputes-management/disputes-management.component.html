@@ -1,0 +1,47 @@
+<div class="cleansia-disputes-management">
+  <div class="cleansia-disputes-management__container page-wrapper">
+    <div class="cleansia-disputes-management__header">
+      <cleansia-title [title]="'pages.disputes_management.title' | translate" />
+      <p class="cleansia-disputes-management__description">
+        {{ 'pages.disputes_management.description' | translate }}
+      </p>
+    </div>
+
+    <cleansia-section>
+      @if (facade.initialLoading()) {
+      <cleansia-loader />
+      } @else if (facade.hasError()) {
+      <div class="cleansia-disputes-management__state">
+        <i class="pi pi-exclamation-triangle"></i>
+        <p>{{ 'pages.disputes_management.load_error' | translate }}</p>
+      </div>
+      } @else {
+      <cleansia-table
+        [data]="facade.disputes()"
+        [columns]="disputeColumns"
+        [actions]="disputeActions"
+        [config]="{
+          paginator: true,
+          rows: 20,
+          lazy: true,
+          totalRecords: facade.totalRecords(),
+          emptyMessage: 'pages.disputes_management.no_disputes',
+          hover: true
+        }"
+        [loading]="facade.loading()"
+        (pageChange)="onPageChange($event)"
+        (sortChange)="onSortChange($event)"
+      >
+      </cleansia-table>
+      }
+    </cleansia-section>
+  </div>
+</div>
+
+<ng-template #statusTemplate let-item>
+  <span [class]="getStatusClass(item)">{{ getStatusLabel(item) }}</span>
+</ng-template>
+
+<ng-template #reasonTemplate let-item>
+  <span>{{ getReasonLabel(item) }}</span>
+</ng-template>

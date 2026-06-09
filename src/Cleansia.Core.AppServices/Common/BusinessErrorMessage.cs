@@ -38,6 +38,7 @@ public static class BusinessErrorMessage
     public const string OrderAlreadyCancelled = "order.already_cancelled";
     public const string OrderAlreadyCompleted = "order.already_completed";
     public const string OrderInProgressCannotCancel = "order.in_progress_cannot_cancel";
+    public const string InvalidOrderStatusTransition = "order.invalid_status_transition";
     public const string CancellationWindowClosed = "order.cancellation_window_closed";
     public const string AddressNotOwnedByUser = "address.not_owned_by_user";
     public const string AddressLabelRequired = "address.label_required";
@@ -207,6 +208,8 @@ public static class BusinessErrorMessage
     public const string InvalidRefundAmount = "dispute.invalid_refund_amount";
     public const string MaxLengthExceeded = "dispute.max_length_exceeded";
     public const string DisputeNotOwnedByUser = "dispute.not_owned_by_user";
+    public const string InvalidDisputeStatusTransition = "dispute.invalid_status_transition";
+    public const string DisputeAlreadyResolved = "dispute.already_resolved";
     public const string UserNotFound = "user.not_found";
 
     // Admin User

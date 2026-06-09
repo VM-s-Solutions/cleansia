@@ -33,6 +33,10 @@ public static class PolicyBuilder
         [Policy.CanSubmitOrderReview] = PhysicalPolicy.CustomerOnly,
         [Policy.CanViewOrderReview] = PhysicalPolicy.Authenticated,
         [Policy.CanCancelOrder] = PhysicalPolicy.CustomerOnly,
+        [Policy.CanAdminCancelOrder] = PhysicalPolicy.AdminOnly,
+        [Policy.CanOverrideOrderStatus] = PhysicalPolicy.AdminOnly,
+        [Policy.CanReassignOrder] = PhysicalPolicy.AdminOnly,
+        [Policy.CanRefundOrder] = PhysicalPolicy.AdminOnly,
 
         // Saved addresses
         [Policy.CanManageSavedAddresses] = PhysicalPolicy.CustomerOnly,
@@ -112,6 +116,10 @@ public static class PolicyBuilder
         [Policy.CanResolveDispute] = PhysicalPolicy.AdminOnly,
         [Policy.CanUpdateDisputeStatus] = PhysicalPolicy.AdminOnly,
         [Policy.CanUploadDisputeEvidence] = PhysicalPolicy.CustomerOnly,
+        // Admin-host dispute reads (D-01 admin dispute management). The own-data view gates above stay
+        // CustomerOnly; these are the AdminOnly all-disputes reads for the Admin host.
+        [Policy.CanViewDisputeAdmin] = PhysicalPolicy.AdminOnly,
+        [Policy.CanViewDisputeListAdmin] = PhysicalPolicy.AdminOnly,
 
         // Reports
         [Policy.CanViewRevenueReport] = PhysicalPolicy.AdminOnly,

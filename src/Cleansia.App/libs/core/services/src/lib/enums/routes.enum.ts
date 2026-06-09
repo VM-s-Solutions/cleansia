@@ -19,6 +19,7 @@ export enum CleansiaAdminRoute {
   EMPLOYEE_MANAGEMENT = 'employee-management',
   PAY_PERIODS = 'pay-periods',
   ORDER_MANAGEMENT = 'order-management',
+  DISPUTE_MANAGEMENT = 'dispute-management',
   INVOICE_MANAGEMENT = 'invoice-management',
   REPORTS = 'reports',
   SERVICE_MANAGEMENT = 'service-management',

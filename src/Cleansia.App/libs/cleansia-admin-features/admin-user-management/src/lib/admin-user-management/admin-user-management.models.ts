@@ -56,6 +56,17 @@ export function getAdminUserTableDefinition(
         sortable: true,
         width: '15%',
       },
+      {
+        id: 'lastLoginAt',
+        field: 'lastLoginAt',
+        header: translate.instant('pages.admin_user_management.columns.last_login'),
+        getValue: (row: AdminUserListItem) =>
+          row.lastLoginAt
+            ? new Date(row.lastLoginAt).toLocaleDateString()
+            : '',
+        sortable: true,
+        width: '15%',
+      },
     ],
     actions: [
       {

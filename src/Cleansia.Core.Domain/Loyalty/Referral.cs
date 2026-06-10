@@ -117,4 +117,36 @@ public class Referral : Auditable, ITenantEntity
         Status = ReferralStatus.Expired;
         Updated(actorId, DateTimeOffset.UtcNow);
     }
+
+    /// <summary>
+    /// Admin force-qualify of a legitimate referral stuck in Accepted, where no
+    /// qualifying order is being recorded (so <see cref="FirstQualifyingOrderId"/>
+    /// stays null — there is no Order to FK to). Records the symmetric grants for
+    /// the audit trail. Idempotency is enforced upstream (caller checks
+    /// <see cref="Status"/> before calling).
+    /// </summary>
+    public void ForceQualify(int pointsToReferrer, int pointsToReferred, string actorId)
+    {
+        Status = ReferralStatus.Qualified;
+        FirstQualifyingOrderOn = DateTimeOffset.UtcNow;
+        PointsAwardedToReferrer = pointsToReferrer;
+        PointsAwardedToReferred = pointsToReferred;
+        PointsAwardedOn = DateTimeOffset.UtcNow;
+        Updated(actorId, DateTimeOffset.UtcNow);
+    }
+
+    /// <summary>
+    /// Admin reversal of a previously-Qualified referral. Flips the status to
+    /// the terminal <see cref="ReferralStatus.Reversed"/>; the symmetric point
+    /// grants recorded on the row (<see cref="PointsAwardedToReferrer"/> /
+    /// <see cref="PointsAwardedToReferred"/>) are kept for the audit trail and
+    /// clawed back by the caller through the loyalty manual-revoke path.
+    /// Idempotency is enforced upstream (caller checks <see cref="Status"/>
+    /// before calling).
+    /// </summary>
+    public void Reverse(string actorId)
+    {
+        Status = ReferralStatus.Reversed;
+        Updated(actorId, DateTimeOffset.UtcNow);
+    }
 }

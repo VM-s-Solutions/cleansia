@@ -12,7 +12,17 @@ namespace Cleansia.Core.Clients.Abstractions.Fcm;
 /// (NotRegistered, InvalidArgument, etc.). Caller deletes the matching
 /// <c>Device</c> rows.
 /// </param>
+/// <param name="Skipped">
+/// True when dispatch was a DELIBERATE NO-OP because the provider is unconfigured
+/// (e.g. FCM:ServiceAccountJson / FCM:ProjectId not set in dev / CI). This is
+/// DISTINCT from "all tokens failed transiently": a skipped dispatch will never
+/// succeed on retry until the secret is provisioned, so the consumer must ACK it
+/// (no throw, no poison loop) rather than treat it as a retryable all-failed result.
+/// A genuine cold-start FCM-init race is NOT skipped — it returns an all-failed
+/// (non-skipped) result so the consumer still throws and the queue redelivers.
+/// </param>
 public record PushDispatchResult(
     int SuccessCount,
     int FailureCount,
-    IReadOnlyList<string> InvalidTokens);
+    IReadOnlyList<string> InvalidTokens,
+    bool Skipped = false);

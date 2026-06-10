@@ -2,4 +2,7 @@
 
 namespace Cleansia.Core.Domain.Repositories;
 
-public interface IPackageRepository : IRepository<Package, string>;
+public interface IPackageRepository : IRepository<Package, string>
+{
+    Task<bool> IsInUseAsync(string packageId, CancellationToken cancellationToken);
+}

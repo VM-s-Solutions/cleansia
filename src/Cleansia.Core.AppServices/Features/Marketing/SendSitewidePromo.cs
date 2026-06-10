@@ -1,4 +1,3 @@
-using System.Linq;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
@@ -61,11 +60,10 @@ public static class SendSitewidePromo
 
     public class Handler(
         IPendingDispatch pendingDispatch,
+        IOutboxMessageRepository outboxMessageRepository,
         ITenantProvider tenantProvider) : ICommandHandler<Command>
     {
-        private const char FieldSeparator = '\u001f';
-
-        public Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
+        public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
         {
             var tenantId = tenantProvider.GetCurrentTenantId();
             var titleByLocale = new Dictionary<string, string>
@@ -85,20 +83,28 @@ public static class SendSitewidePromo
                 ["ru"] = command.BodyRu,
             };
 
-            var message = new SendSitewidePromoMessage(titleByLocale, bodyByLocale, tenantId);
-            var messageKey = MessageKeys.SitewidePromo(tenantId, ContentSignature(titleByLocale, bodyByLocale));
+            // S7a/S7b -- claim-before-act on the deterministic CampaignId (== the outbox message key).
+            // A double-submitted admin action collapses onto the one fan-out: a row already on the
+            // outbox for this campaign identity means the campaign was already started, so short-circuit
+            // and enqueue nothing rather than fan out to the whole opted-in base a second time. The
+            // unique (QueueName, MessageKey) index is the concurrent backstop for the read-then-write race.
+            var campaignId = SendSitewidePromoMessage.DeriveCampaignId(tenantId, titleByLocale, bodyByLocale);
+
+            var existing = await outboxMessageRepository.GetByQueueAndKeyAsync(
+                QueueNames.SitewidePromoFanout, campaignId, cancellationToken);
+            if (existing is not null)
+            {
+                return BusinessResult.Success();
+            }
+
+            var message = new SendSitewidePromoMessage(titleByLocale, bodyByLocale, tenantId, campaignId);
 
             pendingDispatch.Enqueue(
                 QueueNames.SitewidePromoFanout,
-                new QueueEnvelope<SendSitewidePromoMessage>(messageKey, tenantId, message),
-                messageKey);
+                new QueueEnvelope<SendSitewidePromoMessage>(campaignId, tenantId, message),
+                campaignId);
 
-            return Task.FromResult(BusinessResult.Success());
+            return BusinessResult.Success();
         }
-
-        private static string ContentSignature(
-            IReadOnlyDictionary<string, string> titleByLocale,
-            IReadOnlyDictionary<string, string> bodyByLocale) =>
-            string.Join(FieldSeparator, titleByLocale.Values.Concat(bodyByLocale.Values));
     }
 }

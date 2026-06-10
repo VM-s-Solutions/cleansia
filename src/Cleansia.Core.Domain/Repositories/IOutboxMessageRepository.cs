@@ -18,4 +18,16 @@ public interface IOutboxMessageRepository : IRepository<OutboxMessage, string>
         DateTimeOffset now,
         DateTimeOffset leaseCutoff,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The claim-before-act fast path on the frozen <c>(QueueName, MessageKey)</c> identity: returns the
+    /// existing row for a deterministic key, or null. A producer enqueuing an effect that must run at
+    /// most once per key (a sitewide-promo campaign) reads this first and short-circuits when a row
+    /// already exists, with the unique index as the concurrent backstop. System-scoped — ignores the
+    /// tenant filter, since the key already embeds the tenant.
+    /// </summary>
+    Task<OutboxMessage?> GetByQueueAndKeyAsync(
+        string queueName,
+        string messageKey,
+        CancellationToken cancellationToken);
 }

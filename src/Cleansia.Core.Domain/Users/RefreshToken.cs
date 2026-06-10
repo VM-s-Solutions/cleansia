@@ -40,6 +40,17 @@ public class RefreshToken : Auditable, ITenantEntity
     [MaxLength(120)]
     public string? DeviceLabel { get; private set; }
 
+    /// <summary>
+    /// Stable per-install device id (the same value the app registers as
+    /// <see cref="Cleansia.Core.Domain.Devices.Device.DeviceId"/>), captured at
+    /// issue/rotation time from the <c>X-Device-Id</c> header. This — not the
+    /// human-readable <see cref="DeviceLabel"/> — is the key a per-device revoke
+    /// matches on. Null for clients that don't send the header (e.g. web), which
+    /// makes those tokens non-matchable by device revoke (they age out at expiry).
+    /// </summary>
+    [MaxLength(64)]
+    public string? DeviceId { get; private set; }
+
     [MaxLength(45)] // IPv6 max length
     public string? IpAddress { get; private set; }
 
@@ -57,7 +68,8 @@ public class RefreshToken : Auditable, ITenantEntity
         DateTimeOffset expiresAt,
         string audience,
         string? deviceLabel,
-        string? ipAddress)
+        string? ipAddress,
+        string? deviceId = null)
         => new()
         {
             UserId = userId,
@@ -66,6 +78,7 @@ public class RefreshToken : Auditable, ITenantEntity
             Audience = audience,
             DeviceLabel = deviceLabel,
             IpAddress = ipAddress,
+            DeviceId = deviceId,
         };
 
     public RefreshToken MarkUsed(DateTimeOffset at)

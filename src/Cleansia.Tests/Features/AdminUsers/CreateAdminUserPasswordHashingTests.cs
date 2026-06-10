@@ -77,7 +77,9 @@ public class CreateAdminUserPasswordHashingTests
             Password: RawPassword,
             FirstName: "First",
             LastName: "Last",
-            PhoneNumber: null);
+            PhoneNumber: null,
+            BirthDate: null,
+            PreferredLanguageCode: null);
 
         var result = await InvokeHandler(userRepository.Object, command);
 

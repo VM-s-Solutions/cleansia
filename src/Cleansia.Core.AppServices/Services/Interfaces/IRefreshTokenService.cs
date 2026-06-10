@@ -11,18 +11,27 @@ public record IssuedRefreshToken(string RawToken, RefreshToken Record);
 public interface IRefreshTokenService
 {
     /// <summary>Creates a new refresh token for a user and returns both the raw value and the entity.</summary>
-    IssuedRefreshToken Issue(string userId, bool rememberMe, string audience, string? deviceLabel = null, string? ipAddress = null);
+    IssuedRefreshToken Issue(string userId, bool rememberMe, string audience, string? deviceLabel = null, string? ipAddress = null, string? deviceId = null);
 
     /// <summary>
     /// Validates a raw refresh token, rotates it, and returns the new token. Throws
     /// <see cref="RefreshTokenValidationException"/> on invalid / expired / revoked input.
     /// If rotation-reuse is detected (an already-rotated token presented again), revokes
     /// the entire chain and throws with <see cref="RefreshTokenValidationException.IsTheftSignal"/> = true.
+    /// The rotated token inherits the existing row's device id (header is a fallback only for
+    /// pre-existing rows rotated for the first time) so a rotated session stays revocable.
     /// </summary>
-    Task<IssuedRefreshToken> RotateAsync(string rawToken, string? deviceLabel, string? ipAddress, CancellationToken cancellationToken);
+    Task<IssuedRefreshToken> RotateAsync(string rawToken, string? deviceLabel, string? ipAddress, CancellationToken cancellationToken, string? deviceId = null);
 
     /// <summary>Revokes a single refresh token. Used by logout. Silently no-ops on unknown/revoked tokens.</summary>
     Task RevokeAsync(string rawToken, string reason, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Revokes every active refresh token a user holds for a given device, via the same
+    /// <see cref="RefreshToken.Revoke"/> mutation logout uses, so a revoked handset can no
+    /// longer mint access tokens on its next refresh. No-ops when nothing matches.
+    /// </summary>
+    Task RevokeByDeviceAsync(string userId, string deviceId, string reason, CancellationToken cancellationToken);
 
     /// <summary>Hashes a raw token using SHA-256 hex — exposed for tests and for the validator that checks existence.</summary>
     string HashToken(string rawToken);

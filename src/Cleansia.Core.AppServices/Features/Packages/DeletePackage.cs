@@ -21,15 +21,24 @@ public class DeletePackage
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
                 .MustAsync(packageRepository.ExistsAsync)
-                .WithMessage(BusinessErrorMessage.PackageNotFound);
+                .WithMessage(BusinessErrorMessage.PackageNotFound)
+                .MustAsync(async (id, ct) =>
+                    !await packageRepository.IsInUseAsync(id, ct))
+                .WithMessage(BusinessErrorMessage.PackageInUse);
         }
     }
 
-    internal class Handler(IPackageRepository packageRepository)
+    public class Handler(IPackageRepository packageRepository)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
+            var isInUse = await packageRepository.IsInUseAsync(command.PackageId, cancellationToken);
+            if (isInUse)
+            {
+                return BusinessResult.Failure<Response>(new Error(nameof(command.PackageId), BusinessErrorMessage.PackageInUse));
+            }
+
             var package = await packageRepository.GetByIdAsync(command.PackageId, cancellationToken);
 
             packageRepository.Remove(package!);

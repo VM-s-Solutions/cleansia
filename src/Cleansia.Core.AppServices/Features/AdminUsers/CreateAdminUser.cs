@@ -6,6 +6,7 @@ using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using static Cleansia.Core.AppServices.Common.Validators.ValidationExtensions;
 
 namespace Cleansia.Core.AppServices.Features.AdminUsers;
 
@@ -16,13 +17,15 @@ public class CreateAdminUser
         string Password,
         string FirstName,
         string LastName,
-        string? PhoneNumber) : ICommand<Response>;
+        string? PhoneNumber,
+        DateOnly? BirthDate,
+        string? PreferredLanguageCode) : ICommand<Response>;
 
     public record Response(string Id);
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator(IUserRepository userRepository)
+        public Validator(IUserRepository userRepository, ILanguageRepository languageRepository)
         {
             RuleFor(x => x.Email)
                 .Cascade(CascadeMode.Stop)
@@ -62,6 +65,19 @@ public class CreateAdminUser
                 .MaximumLength(50)
                 .WithMessage(BusinessErrorMessage.MaxLength)
                 .When(x => !string.IsNullOrEmpty(x.PhoneNumber));
+
+            RuleFor(x => x.BirthDate)
+                .Cascade(CascadeMode.Stop)
+                .Must(date => BeInPast(date!.Value))
+                .WithMessage(BusinessErrorMessage.DateMustBeInPast)
+                .Must(date => BeReasonableAge(date!.Value))
+                .WithMessage(BusinessErrorMessage.InvalidAge)
+                .When(x => x.BirthDate.HasValue);
+
+            RuleFor(x => x.PreferredLanguageCode)
+                .MustAsync(async (code, ct) => await languageRepository.ExistsWithCodeAsync(code!, ct))
+                .WithMessage(BusinessErrorMessage.LanguageNotSupported)
+                .When(x => !string.IsNullOrWhiteSpace(x.PreferredLanguageCode));
         }
     }
 
@@ -78,9 +94,11 @@ public class CreateAdminUser
                 password: command.Password,
                 firstName: command.FirstName,
                 lastName: command.LastName,
-                profile: UserProfile.Administrator);
+                profile: UserProfile.Administrator,
+                languageCode: command.PreferredLanguageCode);
 
             user.ConfirmEmail();
+            user.UpdateBirthDate(command.BirthDate);
 
             if (!string.IsNullOrWhiteSpace(command.PhoneNumber))
             {

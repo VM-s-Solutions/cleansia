@@ -130,6 +130,12 @@ Template uses `cleansia-*` + `cleansia-table` (lazy/server paging) + `*cleansiaP
 }
 ```
 
+Filter-drawer backdrops must be the lint-clean a11y variant (from `partner-features/orders`):
+`role="button" tabindex="0" (click)="closeFilterDrawer()" (keydown.escape)="closeFilterDrawer()"
+[attr.aria-label]="'global.close' | translate"` — a bare `(click)` div fails
+`click-events-have-key-events` / `interactive-supports-focus`. Lib eslint configs use selector
+prefix `cleansia` (not `lib`) to match the `cleansia-*` component selectors above.
+
 ## Table config — exact idiom (`*.models.ts`)
 
 A `models.ts` exports a **function** returning `{ columns, actions }` typed with `TableColumn<T>` /

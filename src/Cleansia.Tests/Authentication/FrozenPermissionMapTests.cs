@@ -52,6 +52,7 @@ public class FrozenPermissionMapTests
         [Policy.CanViewPagedUser] = PhysicalPolicy.EmployeeOrAdmin,
         [Policy.CanViewUserDetail] = PhysicalPolicy.OwnerOrElevated,
         [Policy.CanGetCurrentUser] = PhysicalPolicy.Authenticated,
+        [Policy.CanChangeOwnPassword] = PhysicalPolicy.Authenticated, // additive — [OWN-DATA] authenticated change-own-password
         [Policy.CanUpdateCurrentUser] = PhysicalPolicy.Authenticated,
         [Policy.CanAddPhoneNumber] = PhysicalPolicy.Authenticated,
 
@@ -81,6 +82,9 @@ public class FrozenPermissionMapTests
         [Policy.CanMarkInvoicePaid] = PhysicalPolicy.AdminOnly,
         [Policy.CanCancelInvoice] = PhysicalPolicy.AdminOnly,
         [Policy.CanClosePayPeriod] = PhysicalPolicy.AdminOnly,
+        [Policy.CanUpdateInvoiceAmounts] = PhysicalPolicy.AdminOnly,    // AUD-02 settlement (additive)
+        [Policy.CanDisputeInvoice] = PhysicalPolicy.AdminOnly,          // AUD-02 settlement (additive)
+        [Policy.CanRejectInvoice] = PhysicalPolicy.AdminOnly,           // AUD-02 settlement (additive)
 
         // Payroll — Pay Periods
         [Policy.CanViewPayPeriods] = PhysicalPolicy.EmployeeOrAdmin,     // global cycles (Note B)
@@ -89,6 +93,8 @@ public class FrozenPermissionMapTests
         [Policy.CanUpdatePayPeriod] = PhysicalPolicy.AdminOnly,
         [Policy.CanOpenPayPeriod] = PhysicalPolicy.AdminOnly,
         [Policy.CanDeletePayPeriod] = PhysicalPolicy.AdminOnly,
+        [Policy.CanMarkPayPeriodPaid] = PhysicalPolicy.AdminOnly,       // AUD-02 settlement (additive)
+        [Policy.CanReopenPayPeriod] = PhysicalPolicy.AdminOnly,         // AUD-02 settlement (additive)
 
         // Payroll — Pay Config
         [Policy.CanViewPayConfigs] = PhysicalPolicy.AdminOnly,
@@ -223,8 +229,15 @@ public class FrozenPermissionMapTests
         [Policy.CanGrantLoyaltyPoints] = PhysicalPolicy.AdminOnly,
         [Policy.CanViewUserLoyalty] = PhysicalPolicy.AdminOnly,
 
+        // Admin Membership Plans (additive — T-0175a / LG-04)
+        [Policy.CanViewMembershipPlans] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCreateMembershipPlan] = PhysicalPolicy.AdminOnly,
+        [Policy.CanUpdateMembershipPlan] = PhysicalPolicy.AdminOnly,
+        [Policy.CanDeactivateMembershipPlan] = PhysicalPolicy.AdminOnly,
+
         // Admin Referrals
         [Policy.CanViewReferrals] = PhysicalPolicy.AdminOnly,
+        [Policy.CanInterveneReferral] = PhysicalPolicy.AdminOnly, // additive — referral intervention (LG-06)
 
         // Marketing
         [Policy.CanSendSitewidePromo] = PhysicalPolicy.AdminOnly,
@@ -281,6 +294,8 @@ public class FrozenPermissionMapTests
             Policy.CanCreatePayPeriod, Policy.CanUpdatePayPeriod, Policy.CanOpenPayPeriod,
             Policy.CanDeletePayPeriod, Policy.CanViewPayConfigs, Policy.CanViewPayConfig,
             Policy.CanCreatePayConfig, Policy.CanUpdatePayConfig, Policy.CanDeletePayConfig,
+            Policy.CanUpdateInvoiceAmounts, Policy.CanDisputeInvoice, Policy.CanRejectInvoice,
+            Policy.CanMarkPayPeriodPaid, Policy.CanReopenPayPeriod,
         };
         foreach (var p in adminOnly)
             Assert.Equal(PhysicalPolicy.AdminOnly, p.ToPhysicalPolicy());

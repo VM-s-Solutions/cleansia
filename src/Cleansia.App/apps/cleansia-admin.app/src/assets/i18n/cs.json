@@ -146,6 +146,7 @@
   "global": {
     "yes": "Ano",
     "no": "Ne",
+    "close": "Zavřít",
     "all": "Vše",
     "no_data": "Žádná data k zobrazení",
     "loading": "Načítání...",
@@ -923,6 +924,7 @@
         "phone": "Telefon",
         "status": "Stav",
         "created_at": "Vytvořeno",
+        "last_login": "Poslední přihlášení",
         "actions": "Akce"
       },
       "messages": {

@@ -57,6 +57,9 @@ public class UserEntityConfiguration : AuditableEntityConfiguration<User, string
             .HasMaxLength(5)
             .IsRequired(false);
 
+        builder.Property(u => u.LastLoginAt)
+            .IsRequired(false);
+
         builder
             .HasOne(u => u.PreferredLanguage)
             .WithMany()

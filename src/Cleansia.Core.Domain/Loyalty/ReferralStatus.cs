@@ -13,4 +13,11 @@ public enum ReferralStatus
 
     /// <summary>The 90-day qualifying window passed without a completed order. No points are granted.</summary>
     Expired = 3,
+
+    /// <summary>
+    /// An admin reversed a previously-Qualified referral (fraud / refunded
+    /// qualifying order). The symmetric point grants recorded on the row are
+    /// clawed back via the loyalty manual-revoke path. Terminal.
+    /// </summary>
+    Reversed = 4,
 }

@@ -46,7 +46,7 @@ public class GenerateInvoice
                 .WithMessage(BusinessErrorMessage.PayPeriodNotFound);
 
             RuleFor(x => x)
-                .MustAsync(ExistsForPayPeriodAsync)
+                .MustAsync(NoInvoiceExistsForPayPeriodAsync)
                 .WithMessage(BusinessErrorMessage.InvoiceAlreadyExists);
 
             RuleFor(x => x)
@@ -54,8 +54,11 @@ public class GenerateInvoice
                 .WithMessage(BusinessErrorMessage.NoUnpaidOrderPays);
         }
 
-        private Task<bool> ExistsForPayPeriodAsync(Command command, CancellationToken cancellationToken) =>
-            _employeeInvoiceRepository.ExistsForPayPeriodAsync(command.EmployeeId, command.PayPeriodId,
+        // The rule must PASS when there is NO existing invoice (so a first-time generation
+        // proceeds) and FAIL with "already exists" when one is already present (the at-least-once
+        // redelivery dedup). MustAsync passes on a true predicate, so the existence check is negated.
+        private async Task<bool> NoInvoiceExistsForPayPeriodAsync(Command command, CancellationToken cancellationToken) =>
+            !await _employeeInvoiceRepository.ExistsForPayPeriodAsync(command.EmployeeId, command.PayPeriodId,
                 cancellationToken);
 
         private Task<bool> NoUnpaidOrderPaysExist(Command command, CancellationToken cancellationToken) =>

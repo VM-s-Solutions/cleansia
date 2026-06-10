@@ -110,7 +110,14 @@ the BLIND-7 hook the ADR explicitly reserves.
   **T-0141** AC5; sibling **T-0145 / BLIND-6** AC3.
 
 ## Status log
-- 2026-06-01 â€” draft (created by pm)
+- 2026-06-01 — draft (created by pm)
+- 2026-06-09 — backend (Wave-3 Batch 3D, test-first): Mapbox geocoder — HTTP 429 / 503 / timeout
+  (TaskCanceledException) classified TRANSIENT and logged distinctly from the genuine "address not found"
+  Warning; `Retry-After` honored on 429 (ADR-0005 resilience); genuine miss (200 + empty features) still
+  returns null + the existing Warning; happy-path coordinate parse unchanged (lon/lat order); the caller
+  `AddressGeocoder.PopulateCoordinatesAsync` stays best-effort and never throws into the order path. Tests
+  cover each branch + pin the unchanged contracts. Reviewer **APPROVED**. Build + tests green. No manual step.
 
 ## Review
-<!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->
+- 2026-06-09 reviewer: **APPROVED** — transient classification + Retry-After verified; genuine-miss and
+  happy-path contracts pinned; caller stays best-effort.

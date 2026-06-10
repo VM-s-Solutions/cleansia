@@ -2,7 +2,6 @@ using Cleansia.Config.Filters;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Features.EmployeePayroll.DTOs;
-using Cleansia.Core.AppServices.Features.PayPeriods;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Web.Partner.Abstractions;
 using Cleansia.Web.Partner.Attributes;
@@ -62,66 +61,6 @@ public class EmployeePayrollController(IMediator mediator) : ApiController(media
     {
         var result = await Mediator.Send(command);
         return HandleResult<CalculateOrderPay.Response>(result);
-    }
-
-    [HttpPost("GenerateInvoice")]
-    [Permission(Policy.CanGenerateInvoice)]
-    [ProducesResponseType(typeof(GenerateInvoice.Response), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> GenerateInvoice([FromBody] GenerateInvoice.Command command)
-    {
-        var result = await Mediator.Send(command);
-        return HandleResult<GenerateInvoice.Response>(result);
-    }
-
-    [HttpPut("ApproveInvoice")]
-    [Permission(Policy.CanApproveInvoice)]
-    [ProducesResponseType(typeof(ApproveInvoice.Response), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> ApproveInvoice([FromBody] ApproveInvoice.Command command)
-    {
-        var result = await Mediator.Send(command);
-        return HandleResult<ApproveInvoice.Response>(result);
-    }
-
-    [HttpPut("MarkInvoicePaid")]
-    [Permission(Policy.CanMarkInvoicePaid)]
-    [ProducesResponseType( typeof(MarkInvoicePaid.Response), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> MarkInvoicePaid([FromBody] MarkInvoicePaid.Command command)
-    {
-        var result = await Mediator.Send(command);
-        return HandleResult<MarkInvoicePaid.Response>(result);
-    }
-
-    [HttpPut("CancelInvoice")]
-    [Permission(Policy.CanCancelInvoice)]
-    [ProducesResponseType(typeof(CancelInvoice.Response), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> CancelInvoice([FromBody] CancelInvoice.Command command)
-    {
-        var result = await Mediator.Send(command);
-        return HandleResult<CancelInvoice.Response>(result);
-    }
-
-    [HttpPut("ClosePayPeriod")]
-    [Permission(Policy.CanClosePayPeriod)]
-    [ProducesResponseType(typeof(ClosePayPeriod.Response), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> ClosePayPeriod([FromBody] ClosePayPeriod.Command command)
-    {
-        var result = await Mediator.Send(command);
-        return HandleResult<ClosePayPeriod.Response>(result);
     }
 
     [HttpPost("RegenerateInvoicePdf")]

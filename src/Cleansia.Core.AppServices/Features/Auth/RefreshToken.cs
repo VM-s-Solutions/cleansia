@@ -48,7 +48,8 @@ public class RefreshToken
                     command.Token,
                     deviceLabel: requestMetadata.DeviceLabel,
                     ipAddress: requestMetadata.IpAddress,
-                    cancellationToken);
+                    cancellationToken,
+                    deviceId: requestMetadata.DeviceId);
             }
             catch (RefreshTokenValidationException ex)
             {

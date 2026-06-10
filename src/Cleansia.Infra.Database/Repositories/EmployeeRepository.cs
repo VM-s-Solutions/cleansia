@@ -40,4 +40,10 @@ public class EmployeeRepository(CleansiaDbContext context) : BaseRepository<Empl
                 .ThenInclude(a => a.Country)
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
     }
+
+    public Task<Employee?> GetByIdIgnoringTenantAsync(string id, CancellationToken cancellationToken)
+    {
+        return GetQueryableIgnoringTenant()
+            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+    }
 }

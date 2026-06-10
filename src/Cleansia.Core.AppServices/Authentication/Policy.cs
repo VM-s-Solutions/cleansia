@@ -55,6 +55,7 @@ public class Policy
     public const string CanGetCurrentUser = nameof(CanGetCurrentUser); // Authenticated (All roles)
     public const string CanRequestPasswordChange = nameof(CanRequestPasswordChange); // Authenticated (All roles)
     public const string CanChangePassword = nameof(CanChangePassword);
+    public const string CanChangeOwnPassword = nameof(CanChangeOwnPassword); // Authenticated [OWN-DATA] — subject id from the JWT only
     public const string CanUpdateCurrentUser = nameof(CanUpdateCurrentUser); // Authenticated (All roles)
     public const string CanAddPhoneNumber = nameof(CanAddPhoneNumber); // Authenticated (All roles)
 
@@ -84,6 +85,9 @@ public class Policy
     public const string CanMarkInvoicePaid = nameof(CanMarkInvoicePaid); // Admin
     public const string CanCancelInvoice = nameof(CanCancelInvoice); // Admin
     public const string CanClosePayPeriod = nameof(CanClosePayPeriod); // Admin
+    public const string CanUpdateInvoiceAmounts = nameof(CanUpdateInvoiceAmounts); // Admin
+    public const string CanDisputeInvoice = nameof(CanDisputeInvoice); // Admin
+    public const string CanRejectInvoice = nameof(CanRejectInvoice); // Admin
 
     // Pay Period
     public const string CanViewPayPeriods = nameof(CanViewPayPeriods); // Admin + Employee
@@ -92,6 +96,8 @@ public class Policy
     public const string CanUpdatePayPeriod = nameof(CanUpdatePayPeriod); // Admin
     public const string CanOpenPayPeriod = nameof(CanOpenPayPeriod); // Admin
     public const string CanDeletePayPeriod = nameof(CanDeletePayPeriod); // Admin
+    public const string CanMarkPayPeriodPaid = nameof(CanMarkPayPeriodPaid); // Admin
+    public const string CanReopenPayPeriod = nameof(CanReopenPayPeriod); // Admin
 
     // Pay Config
     public const string CanViewPayConfigs = nameof(CanViewPayConfigs); // Admin
@@ -232,8 +238,15 @@ public class Policy
     public const string CanGrantLoyaltyPoints = nameof(CanGrantLoyaltyPoints); // Admin
     public const string CanViewUserLoyalty = nameof(CanViewUserLoyalty); // Admin
 
+    // Admin Membership Plans
+    public const string CanViewMembershipPlans = nameof(CanViewMembershipPlans); // Admin
+    public const string CanCreateMembershipPlan = nameof(CanCreateMembershipPlan); // Admin
+    public const string CanUpdateMembershipPlan = nameof(CanUpdateMembershipPlan); // Admin
+    public const string CanDeactivateMembershipPlan = nameof(CanDeactivateMembershipPlan); // Admin
+
     // Admin Referrals
     public const string CanViewReferrals = nameof(CanViewReferrals); // Admin
+    public const string CanInterveneReferral = nameof(CanInterveneReferral); // Admin (reverse / force-qualify)
 
     // Marketing (sitewide push)
     public const string CanSendSitewidePromo = nameof(CanSendSitewidePromo); // Admin

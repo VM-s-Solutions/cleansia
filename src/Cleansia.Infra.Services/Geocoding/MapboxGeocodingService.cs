@@ -12,6 +12,14 @@ public class MapboxGeocodingService : IGeocodingService
     private const string HttpClientName = "Mapbox";
     private const string ForwardEndpoint = "https://api.mapbox.com/search/geocode/v6/forward";
 
+    // A genuine miss (200 + no feature) and a transient degrade (429/5xx/timeout, surfacing after the
+    // resilience handler's Retry-After-aware budget is exhausted) both leave the address without
+    // coordinates, but they are observably DISTINCT events so a rate-limit window is not invisible
+    // behind the routine no-result Warning (ADR-0005 D4.2 / runtime-readiness.md).
+    public static readonly EventId GenuineMissEvent = new(7185_01, "MapboxGeocodeNoResult");
+    public static readonly EventId TransientDegradeEvent = new(7185_02, "MapboxGeocodeTransientDegrade");
+    public static readonly EventId AuthConfigDegradeEvent = new(7185_03, "MapboxGeocodeAuthConfigDegrade");
+
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IMapboxConfig _config;
     private readonly ILogger<MapboxGeocodingService> _logger;
@@ -68,7 +76,7 @@ public class MapboxGeocodingService : IGeocodingService
             var coordinates = payload?.Features?.FirstOrDefault()?.Geometry?.Coordinates;
             if (coordinates == null || coordinates.Count < 2)
             {
-                _logger.LogWarning(
+                _logger.LogWarning(GenuineMissEvent,
                     "Mapbox geocoding returned no coordinates for {City}/{ZipCode}; continuing without coordinates.",
                     city, zipCode);
                 return null;
@@ -89,14 +97,17 @@ public class MapboxGeocodingService : IGeocodingService
 
         if (failureClass == IntegrationFailureClass.AuthConfig)
         {
-            _logger.LogError(exception,
+            _logger.LogError(AuthConfigDegradeEvent, exception,
                 "Mapbox geocoding failed: {FailureClass} (provider config/credentials) for {City}/{ZipCode}; continuing without coordinates.",
                 failureClass, city, zipCode);
         }
         else
         {
-            _logger.LogWarning(exception,
-                "Mapbox geocoding failed: {FailureClass} for {City}/{ZipCode}; continuing without coordinates.",
+            // Transient/Timeout (incl. a 429 whose Retry-After-aware retry budget the resilience
+            // handler exhausted): a distinct event so the rate-limit/outage degrade is observable
+            // and not indistinguishable from a genuine no-result miss.
+            _logger.LogWarning(TransientDegradeEvent, exception,
+                "Mapbox geocoding degraded: {FailureClass} (rate-limit/outage) for {City}/{ZipCode}; continuing without coordinates.",
                 failureClass, city, zipCode);
         }
 

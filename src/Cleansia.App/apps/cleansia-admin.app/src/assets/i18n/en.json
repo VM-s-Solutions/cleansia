@@ -146,6 +146,7 @@
   "global": {
     "yes": "Yes",
     "no": "No",
+    "close": "Close",
     "all": "All",
     "no_data": "No data to display",
     "loading": "Loading...",
@@ -853,6 +854,7 @@
         "phone": "Phone",
         "status": "Status",
         "created_at": "Created At",
+        "last_login": "Last Login",
         "actions": "Actions"
       },
       "messages": {

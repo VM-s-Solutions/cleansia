@@ -26,6 +26,17 @@ public static class RepositoryExtensions
         // because the implementation lives in Cleansia.Infra.Database (it needs the scoped DbContext).
         services.AddScoped<IPendingDispatch, OutboxPendingDispatch>();
 
+        // The durable backings for the consumer-idempotency seam (ADR-0010), replacing the process-local
+        // InMemory* singletons that AddAzureStorageQueues used to register: a ProcessedMessage claim row
+        // and a CampaignProgress cursor row survive a worker restart / scale-out (true at-most-once-after-
+        // the-marker for the push guard; durable resume for the promo fan-out). Registered SCOPED — both
+        // need the invocation's scoped DbContext, so they replace the singletons here (mirroring the
+        // OutboxPendingDispatch swap above). The IIdempotencyGuard / ICampaignProgressStore interfaces are
+        // unchanged; the three consumers resolve them per-invocation with no call-site change. Each owns
+        // its own CommitAsync so the claim/cursor flush is independent of any later business commit.
+        services.AddScoped<IIdempotencyGuard, DbIdempotencyGuard>();
+        services.AddScoped<ICampaignProgressStore, DbCampaignProgressStore>();
+
         return services.RegisterFromAssemblies([AssemblyReference.Assembly], type => type.GetInterfaces().Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRepository<,>)));
     }
 }

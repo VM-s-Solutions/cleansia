@@ -14,6 +14,12 @@ var host = new HostBuilder()
     .ConfigureFunctionsWorkerDefaults()
     .ConfigureAppConfiguration((context, config) =>
     {
+        // Committed production cron defaults for the four recurring/notification timers
+        // (the %AppSetting% TimerTrigger tokens resolve from these). The Functions platform
+        // app-settings (env) and, in dev, local.settings.json Values override them, so
+        // promotion is config-only.
+        config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
+
         // HostBuilder doesn't auto-load user secrets like WebApplication does.
         if (context.HostingEnvironment.IsDevelopment())
         {
@@ -67,6 +73,7 @@ var host = new HostBuilder()
         services.AddScoped<SendMembershipLifecycleNotificationsHandler>();
         services.AddScoped<SendRecurringOrderRemindersHandler>();
         services.AddScoped<SendNewJobsDigestTimerHandler>();
+        services.AddScoped<ExpireStaleReferralsHandler>();
 
         // ADR-0002 D3 (F3) — the per-queue -poison consumers. Each [QueueTrigger]
         // "<queue>-poison" shell (Functions/*PoisonFunction.cs) resolves its Core handler here; the

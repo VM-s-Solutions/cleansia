@@ -3,6 +3,12 @@
     "Values": {
         "AzureWebJobsStorage": "UseDevelopmentStorage=true",
         "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+        "_comment_TimerCron": "Dev override for the recurring/notification timer crons. Production defaults (0 0 2, 0 30 2, 0 0 3, 0 0,30, 0 30 3) ship in appsettings.json; promotion is config-only. These dev Values override appsettings.json so local runs fire on a fast cadence without a code change.",
+        "MaterializeRecurringBookingsCron": "0 */2 * * * *",
+        "SendRecurringOrderRemindersCron": "0 */2 * * * *",
+        "SendMembershipLifecycleNotificationsCron": "0 */2 * * * *",
+        "SendNewJobsDigestCron": "0 0/2 * * * *",
+        "ExpireStaleReferralsCron": "0 */2 * * * *",
         "BlobContainerConfiguration__ConnectionStringName": "BlobContainerConfigurationConnectionString",
         "SendGrid__ApiKey": "SET_VIA_USER_SECRETS",
         "SendGrid__OrderReceiptTemplateId": "d-2e4f0bcc8af54b3d88c471d7e0cd507a",

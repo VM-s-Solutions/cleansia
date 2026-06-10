@@ -36,6 +36,18 @@ public class EmployeePayrollController(IMediator mediator) : MobileApiController
         return HandleResult<EmployeeInvoiceDetailDto>(result);
     }
 
+    [HttpGet("GetPeriodPays")]
+    [Permission(Policy.CanViewPeriodPays)]
+    [ProducesResponseType(typeof(PeriodPaySummaryDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetPeriodPays([FromQuery] GetPeriodPays.Query query, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(query, cancellationToken);
+        return HandleResult<PeriodPaySummaryDto>(result);
+    }
+
     [HttpGet("DownloadInvoice/{invoiceId}")]
     [Permission(Policy.CanViewPagedInvoices)]
     [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]

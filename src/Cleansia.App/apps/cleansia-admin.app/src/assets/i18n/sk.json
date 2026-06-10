@@ -146,6 +146,7 @@
   "global": {
     "yes": "Áno",
     "no": "Nie",
+    "close": "Zavrieť",
     "all": "Všetko",
     "no_data": "Žiadne dáta na zobrazenie",
     "loading": "Načítava sa...",
@@ -853,6 +854,7 @@
         "phone": "Telefón",
         "status": "Stav",
         "created_at": "Vytvorené",
+        "last_login": "Posledné prihlásenie",
         "actions": "Akcie"
       },
       "messages": {

@@ -55,6 +55,9 @@ public static class PolicyBuilder
         [Policy.CanGetCurrentUser] = PhysicalPolicy.Authenticated,
         //[Policy.CanRequestPasswordChange] = PhysicalPolicy.Anonymous,
         //[Policy.CanChangePassword] = PhysicalPolicy.Anonymous,
+        // Authenticated change-own-password (distinct from the anonymous email-link reset above).
+        // [OWN-DATA]: the handler takes the subject id from the session/JWT only.
+        [Policy.CanChangeOwnPassword] = PhysicalPolicy.Authenticated,
         [Policy.CanUpdateCurrentUser] = PhysicalPolicy.Authenticated,
         [Policy.CanAddPhoneNumber] = PhysicalPolicy.Authenticated,
 
@@ -87,6 +90,9 @@ public static class PolicyBuilder
         [Policy.CanMarkInvoicePaid] = PhysicalPolicy.AdminOnly,
         [Policy.CanCancelInvoice] = PhysicalPolicy.AdminOnly,
         [Policy.CanClosePayPeriod] = PhysicalPolicy.AdminOnly,
+        [Policy.CanUpdateInvoiceAmounts] = PhysicalPolicy.AdminOnly,
+        [Policy.CanDisputeInvoice] = PhysicalPolicy.AdminOnly,
+        [Policy.CanRejectInvoice] = PhysicalPolicy.AdminOnly,
 
         // Employee Payroll — Pay Periods. Pay periods are global cycles (Note B), so an
         // employee may list them to locate their own pay; the per-row data is fetched via the
@@ -97,6 +103,8 @@ public static class PolicyBuilder
         [Policy.CanUpdatePayPeriod] = PhysicalPolicy.AdminOnly,
         [Policy.CanOpenPayPeriod] = PhysicalPolicy.AdminOnly,
         [Policy.CanDeletePayPeriod] = PhysicalPolicy.AdminOnly,
+        [Policy.CanMarkPayPeriodPaid] = PhysicalPolicy.AdminOnly,
+        [Policy.CanReopenPayPeriod] = PhysicalPolicy.AdminOnly,
 
         // Employee Payroll — Pay Config. Admin-only configuration surface.
         [Policy.CanViewPayConfigs] = PhysicalPolicy.AdminOnly,
@@ -237,8 +245,15 @@ public static class PolicyBuilder
         [Policy.CanGrantLoyaltyPoints] = PhysicalPolicy.AdminOnly,
         [Policy.CanViewUserLoyalty] = PhysicalPolicy.AdminOnly,
 
+        // Admin Membership Plans
+        [Policy.CanViewMembershipPlans] = PhysicalPolicy.AdminOnly,
+        [Policy.CanCreateMembershipPlan] = PhysicalPolicy.AdminOnly,
+        [Policy.CanUpdateMembershipPlan] = PhysicalPolicy.AdminOnly,
+        [Policy.CanDeactivateMembershipPlan] = PhysicalPolicy.AdminOnly,
+
         // Admin Referrals
         [Policy.CanViewReferrals] = PhysicalPolicy.AdminOnly,
+        [Policy.CanInterveneReferral] = PhysicalPolicy.AdminOnly,
 
         // Marketing (sitewide push)
         [Policy.CanSendSitewidePromo] = PhysicalPolicy.AdminOnly,

@@ -83,13 +83,15 @@ public sealed class SendSitewidePromoFanoutTenantScopeTests : IDisposable
             new UserNotificationPreferencesRepository(ctx),
             new UserRepository(ctx),
             queueClient.Object,
+            new NoOpCampaignProgressStore(),
             new FixedTenantProvider(tenantId: null),
             NullLogger<SendSitewidePromoFanoutHandler>.Instance);
 
         var campaign = new SendSitewidePromoMessage(
             TitleByLocale: new() { ["en"] = "Promo!" },
             BodyByLocale: new() { ["en"] = "Big sale." },
-            TenantId: "TENANT-A");
+            TenantId: "TENANT-A",
+            CampaignId: "promo:TENANT-A:test");
 
         await handler.HandleAsync(
             System.Text.Json.JsonSerializer.Serialize(campaign,
@@ -106,5 +108,13 @@ public sealed class SendSitewidePromoFanoutTenantScopeTests : IDisposable
         public string? GetCurrentTenantId() => _tenantId;
         public void SetTenantOverride(string tenantId) => _tenantId = tenantId;
         public void ClearTenantOverride() => _tenantId = null;
+    }
+
+    private sealed class NoOpCampaignProgressStore : ICampaignProgressStore
+    {
+        public Task<CampaignProgress> GetAsync(string campaignId, CancellationToken ct = default) =>
+            Task.FromResult(new CampaignProgress(null, false));
+        public Task AdvanceAsync(string campaignId, string lastUserId, CancellationToken ct = default) => Task.CompletedTask;
+        public Task MarkCompleteAsync(string campaignId, CancellationToken ct = default) => Task.CompletedTask;
     }
 }

@@ -32,6 +32,12 @@
 		<None Update="host.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
+		<!-- F5 — committed production cron defaults for the four recurring/notification timers.
+		     The %AppSetting% TimerTrigger tokens resolve from these; dev overrides via
+		     local.settings.json Values. Not secrets. -->
+		<None Update="appsettings.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 		<None Update="local.settings.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<CopyToPublishDirectory>Never</CopyToPublishDirectory>

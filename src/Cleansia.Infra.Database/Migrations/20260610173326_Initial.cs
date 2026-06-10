@@ -16,6 +16,21 @@ namespace Cleansia.Infra.Database.Migrations
                 .Annotation("Npgsql:PostgresExtension:pg_trgm", ",,");
 
             migrationBuilder.CreateTable(
+                name: "CampaignProgresses",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    CampaignId = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    LastProcessedUserId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    IsComplete = table.Column<bool>(type: "boolean", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CampaignProgresses", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Countries",
                 columns: table => new
                 {
@@ -299,6 +314,20 @@ namespace Cleansia.Infra.Database.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_PayPeriods", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProcessedMessages",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    MessageKey = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    ProcessedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProcessedMessages", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -658,6 +687,7 @@ namespace Cleansia.Infra.Database.Migrations
                     ConfirmationCode = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
                     ConfirmationCodeExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     IsEmailConfirmed = table.Column<bool>(type: "boolean", nullable: false),
+                    LastLoginAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     PreferredLanguageCode = table.Column<string>(type: "citext", maxLength: 5, nullable: true),
                     StripeCustomerId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
@@ -1063,6 +1093,7 @@ namespace Cleansia.Infra.Database.Migrations
                     RevokedReason = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     ReplacedByTokenId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     DeviceLabel = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: true),
+                    DeviceId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
                     IpAddress = table.Column<string>(type: "character varying(45)", maxLength: 45, nullable: true),
                     Audience = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
@@ -2119,6 +2150,12 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_CampaignProgresses_CampaignId",
+                table: "CampaignProgresses",
+                column: "CampaignId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_CartPackageItems_CartId",
                 table: "CartPackageItems",
                 column: "CartId");
@@ -2825,6 +2862,12 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ProcessedMessages_MessageKey",
+                table: "ProcessedMessages",
+                column: "MessageKey",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ProcessedStripeEvents_StripeEventId",
                 table: "ProcessedStripeEvents",
                 column: "StripeEventId",
@@ -3157,6 +3200,9 @@ namespace Cleansia.Infra.Database.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "CampaignProgresses");
+
+            migrationBuilder.DropTable(
                 name: "CartPackageItems");
 
             migrationBuilder.DropTable(
@@ -3245,6 +3291,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "PackageServices");
+
+            migrationBuilder.DropTable(
+                name: "ProcessedMessages");
 
             migrationBuilder.DropTable(
                 name: "ProcessedStripeEvents");

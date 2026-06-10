@@ -24,7 +24,8 @@ public class GetPagedPackages
         public async Task<PagedData<PackageListItem>> Handle(Request request, CancellationToken cancellationToken)
         {
             var specification = PackageSpecification.Create(
-                searchTerm: request.Filter?.SearchTerm
+                searchTerm: request.Filter?.SearchTerm,
+                isActive: request.Filter?.IsActive
             );
 
             var filter = specification.SatisfiedBy();

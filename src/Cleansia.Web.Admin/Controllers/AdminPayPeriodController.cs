@@ -6,6 +6,7 @@ using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Admin.Controllers;
 
@@ -97,5 +98,31 @@ public class AdminPayPeriodController(IMediator mediator) : ApiController(mediat
     {
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<ClosePayPeriod.Response>(result);
+    }
+
+    [HttpPost("mark-paid")]
+    [Permission(Policy.CanMarkPayPeriodPaid)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(MarkPayPeriodPaid.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> MarkPayPeriodPaid([FromBody] MarkPayPeriodPaid.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<MarkPayPeriodPaid.Response>(result);
+    }
+
+    [HttpPost("reopen")]
+    [Permission(Policy.CanReopenPayPeriod)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(ReopenPayPeriod.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ReopenPayPeriod([FromBody] ReopenPayPeriod.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<ReopenPayPeriod.Response>(result);
     }
 }

@@ -19,7 +19,7 @@ public static class AdminUserMappers
                 IsEmailConfirmed: user.IsEmailConfirmed,
                 IsActive: user.IsActive,
                 CreatedAt: user.CreatedOn,
-                LastLoginAt: null);
+                LastLoginAt: user.LastLoginAt);
     }
 
     public static AdminUserDetailDto? MapToAdminDetailDto(this User? user)
@@ -38,6 +38,6 @@ public static class AdminUserMappers
                 BirthDate: user.BirthDate,
                 PreferredLanguageCode: user.PreferredLanguageCode,
                 CreatedAt: user.CreatedOn,
-                LastLoginAt: null);
+                LastLoginAt: user.LastLoginAt);
     }
 }

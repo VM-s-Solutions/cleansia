@@ -156,6 +156,49 @@ mythical exactly-once. Source: findings **F7** (`AUDIT-2026-06-01-findings.md:93
 
 ## Status log
 - 2026-06-01 — draft (created by pm)
+- 2026-06-09 — reviewer finding 2 fix + durability (backend, ADR-0010). Two changes:
+  1. FCM-disabled no longer masquerades as all-failed-transient. `PushDispatchResult` gains a distinct
+     `Skipped` flag (default `false`, source-compatible); `FcmPushDispatcher` returns `Skipped: true`
+     ONLY on the terminal config-missing path (`EnsureInitialized` → `InitOutcome.Disabled`) and keeps
+     `Skipped: false` (all-failed-transient) for the cold-start FCM-init race + the broad-catch network
+     fault. `SendPushNotificationHandler` ACKS the skipped case (no throw, no poison loop) while still
+     THROWING on the genuine all-failed-no-prune transient (the BLIND-8 guard is preserved). The
+     dispatcher's documented dev/CI no-op is now honored end-to-end.
+  2. Durability (reviewer finding 1, owner decision): the load-bearing push at-most-once guard is now
+     DB-backed. `InMemoryIdempotencyGuard` (process-local `ConcurrentDictionary`) is replaced by
+     `DbIdempotencyGuard`, which claims a unique `ProcessedMessage(MessageKey)` row in its OWN commit
+     (mirroring `ProcessedStripeEvent`), scoped DI. The claim now survives a worker restart / scale-out
+     — true at-most-once-after-the-marker, closing the AC3/AC6 durability gap. `IIdempotencyGuard`
+     interface unchanged; consumer body unchanged (DI swap only).
+  - RED→GREEN: `SendPushNotificationDisabledAckTests` (FCM-disabled+eligible-devices → ack, SendAsync
+    called once, no prune commit; cold-start-init-race all-failed-not-skipped → throw) written first —
+    RED on the missing `PushDispatchResult.Skipped` (compile-fail), GREEN after the flag + handler
+    branch landed. `DbIdempotencyGuardPersistenceTests` (5 cases — first-claim-false/second-true,
+    survives-across-contexts/restart, durable-row-committed, parallel-claim-loser-catches-unique-
+    violation against the REAL SQLite unique index, non-unique-fault-re-throws) RED against the
+    not-yet-existing entity/config/repo/guard, then GREEN. Full suite single-threaded: 966 passed / 0
+    failed.
+  - `manual_step: ef-migration` flagged for the owner (new `ProcessedMessages` table + unique index).
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->
+
+### Reviewer verdict — 2026-06-09 — CHANGES REQUESTED
+Gate run: consistency `OK (66 files scanned)` — no new violation. `dotnet build Cleansia.Functions.Core` clean (0/0). Push tests green and non-vacuous: `SendPushNotification*|MessageKeyTests` → 25 passed / 0 failed.
+
+AC traceability (evidence in diff):
+- AC1 producer key: `MessageKeys.Push(...)` in all Bucket-A/B producers (e.g. `HandlePaymentNotification.cs:268,303`, `AddDisputeMessage.cs:82`, `ConfirmRecurringOrder.cs:125`); `MessageKeys.cs:25-26` is a pure function. TC-KEY-0 `MessageKeyTests.cs:36-61`. PASS.
+- AC1 consumer key + dual-read: `SendPushNotificationHandler.cs:85-87` (envelope key authoritative, else synthesize), `ReadPayload` `:219-235`. PASS.
+- AC2 guard-first/unconditional: claim at `SendPushNotificationHandler.cs:89-93` BEFORE `SendAsync` `:135`, before any tenant-scoped read, not gated behind the dead-token commit `:160-168`. Canonical `IIdempotencyGuard.AlreadyProcessedAsync`. PASS for the consumed interface (but see finding 1).
+- AC3 safe-twice: TC-IDEMP-0 `SendPushNotificationIdempotencyTests.cs:70-128` — twice-delivered ⇒ `SendAsync` Times.Once; second run short-circuits before device lookup; guard-first proven. PASS.
+- AC4 classification: `Malformed_Body...Acks` / `Empty_Json...Acks` / `Infra_Fault...Throws` (x2) in `SendPushNotificationClassifyTests.cs:134-209`; handler `:56-62` (JsonException→Warning+ack), `:175-187` (catch→throw). PASS.
+- AC5 transient-init throws / prune preserved: `SendPushNotificationHandler.cs:147-155` throws on all-failed-no-prune; `:160-168` prune preserved. Tests `:160-225`. Dispatcher refactor to `IntegrationFailureClassifier.IsDeadFcmToken` (`FcmPushDispatcher.cs:96`) preserves dead-token semantics. PASS — but see finding 2.
+- AC6 documented at-most-once-after-marker: `SendPushNotificationHandler.cs:19-25`. PASS.
+
+Findings:
+1. [ROUTE: Security + Architect — not a developer code-fix] The registered `IIdempotencyGuard` is `InMemoryIdempotencyGuard` (`QueueExtensions.cs:36`), a process-local `ConcurrentDictionary` (`InMemoryIdempotencyGuard.cs:19-22`). AC2/AC3 and ADR-0002 D2.2 specify a `ProcessedMessage(MessageKey unique)` row "committed in its **own** transaction"; the deployed guard has **no DB row and no commit**. The claim does NOT survive a worker restart or scale-out — exactly the redeliveries that T-0143's now-durable at-least-once delivery guarantees. T-0182 is the ticket that makes this guard load-bearing, and it is `security_touching: true` with the guard as the sole control. The handler consumes the interface correctly and the ticket scopes the durable table out ("consumes the existing `IIdempotencyGuard`"), so this is NOT a T-0182 handler defect and NOT blocking on the consumer code — but the at-most-once-after-marker durability claim in AC3/AC6 is materially weaker than written across restart/scale-out. PM: route to Security (gate is mandatory here) and Architect to confirm whether durable `ProcessedMessage` is required before T-0182 reaches `done`, or whether the in-memory residual is formally accepted for the push queue (ADR-0002 Consequences already accepts at-most-once for notifications, but not the restart/scale-out dedup gap explicitly).
+2. [CHANGES REQUESTED — fixable in this diff] FCM-disabled masquerades as transient → poison-loop in dev/CI. When FCM is unconfigured, `FcmPushDispatcher` returns `PushDispatchResult(0, tokens.Count, [])` (`FcmPushDispatcher.cs:55`, and `:85`), the identical shape the handler now classifies as transient and **throws** on (`SendPushNotificationHandler.cs:147-155`). Config-missing is **permanent** (latched `_initAttempted=true`, `:150`), not the cold-start race AC5 targets, yet it is indistinguishable at the `PushDispatchResult` level. Result: in any env with FCM intentionally off but eligible devices present, every transactional push throws → retries to `maxDequeueCount` → dead-letters (and the guard claim, taken first, makes the redelivery ack, masking it further). Expected fix: have `IPushDispatcher`/`PushDispatchResult` signal "disabled/skipped" distinctly from "all-failed-transient" (e.g. a `Skipped` flag or a sentinel result) so the handler acks the disabled case at `:147` instead of throwing — preserving the BLIND-8 cold-start-init throw without poison-looping a deliberately-disabled environment. The dispatcher's own doc comment (`FcmPushDispatcher.cs:19-21`, "dispatch is a no-op … keeps dev/CI from crashing") is now contradicted by the handler's throw.
+
+Strong-type/reuse: PASS — handler mirrors the canonical `SendEmailHandler` (guard-first + dual-read + classification), thin `[Function]` shell delegating to Core (`SendPushNotificationFunction.cs:7-13`), reuses `QueueEnvelope<T>`/`MessageKeys`/`IIdempotencyGuard`/`IntegrationFailureClassifier`. No reinvention.
+
+Verdict: CHANGES REQUESTED on finding 2; finding 1 must be reconciled by PM via Security + Architect before `done`.

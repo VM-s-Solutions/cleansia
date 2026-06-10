@@ -219,6 +219,21 @@ So a new error = add a `const string` here whose value is a dot key, then add th
 frontend locale under the matching path (the frontend normalizes the code → translation key, see
 `patterns-frontend.md`). Never inline a raw code string — always reference the constant.
 
+### Catalog entity translations (CC-06, owner decision Q-W3-1 path b)
+
+Catalog items (Service, Package) carry a per-language `Translations` dictionary, and translations
+are **mandatory for every ACTIVE `Language` row** — there is no `Language.IsDefault` and no
+fallback language. The enforcement lives in the Create/Update validators
+(`CreateService`/`UpdateService`/`CreatePackage`/`UpdatePackage`): the provided translation codes
+must **exactly equal** the active-language code set (`GetAll().Where(l => l.IsActive)` +
+`SetEquals`), failing with `service.translations_required` / `service.missing_translation_for_language`.
+**Add-a-language behavior:** activating a new `Language` row does not retro-block existing items —
+they keep serving their stored translations — but every item is *incomplete* from that moment: its
+next admin save is rejected until the new language's translation is supplied. New catalog
+entities with translations reuse the shared rule extension — `RuleFor(x => x.Translations)
+.MustCoverAllActiveLanguages(languageRepository)` from `Common/Validators/ValidationExtensions.cs`
+— never a hand-rolled copy of the block.
+
 ## Canonical recipes (copy, then fill in)
 
 > The fastest path must also be the correct one. Start from these skeletons; they encode the

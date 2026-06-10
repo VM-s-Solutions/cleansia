@@ -2455,6 +2455,60 @@ namespace Cleansia.Infra.Database.Migrations
                     b.ToTable("UserMemberships", (string)null);
                 });
 
+            modelBuilder.Entity("Cleansia.Core.Domain.Messaging.CampaignProgress", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("CampaignId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsComplete")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LastProcessedUserId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CampaignId")
+                        .IsUnique();
+
+                    b.ToTable("CampaignProgresses", (string)null);
+                });
+
+            modelBuilder.Entity("Cleansia.Core.Domain.Messaging.ProcessedMessage", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("MessageKey")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTime>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MessageKey")
+                        .IsUnique();
+
+                    b.ToTable("ProcessedMessages", (string)null);
+                });
+
             modelBuilder.Entity("Cleansia.Core.Domain.Notifications.UserNotificationPreferences", b =>
                 {
                     b.Property<string>("Id")
@@ -4380,6 +4434,10 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<DateTimeOffset?>("DeactivatedOn")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("DeviceId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<string>("DeviceLabel")
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
@@ -4565,6 +4623,9 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.Property<bool>("IsEmailConfirmed")
                         .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("LastLoginAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("LastName")
                         .IsRequired()

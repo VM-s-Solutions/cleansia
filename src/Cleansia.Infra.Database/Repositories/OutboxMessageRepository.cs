@@ -15,6 +15,16 @@ public class OutboxMessageRepository(CleansiaDbContext context)
 {
     private const string PostgresProvider = "Npgsql.EntityFrameworkCore.PostgreSQL";
 
+    public Task<OutboxMessage?> GetByQueueAndKeyAsync(
+        string queueName,
+        string messageKey,
+        CancellationToken cancellationToken) =>
+        GetDbSet()
+            .IgnoreQueryFilters()
+            // Pure existence read — never mutated by the caller, so skip change-tracking overhead.
+            .AsNoTracking()
+            .FirstOrDefaultAsync(m => m.QueueName == queueName && m.MessageKey == messageKey, cancellationToken);
+
     public async Task<IReadOnlyList<OutboxMessage>> ClaimPendingBatchAsync(
         string claimToken,
         int batchSize,

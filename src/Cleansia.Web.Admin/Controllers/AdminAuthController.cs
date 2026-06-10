@@ -1,10 +1,12 @@
 using Cleansia.Config.Authentication;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Web.Admin.Abstractions;
+using Cleansia.Web.Admin.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -63,6 +65,21 @@ public class AdminAuthController(
         // revoke failed — the user pressed sign-out, they expect to be out.
         cookieWriter.ClearCookies(HttpContext, cookieConfig);
         return HandleResult<bool>(result);
+    }
+
+    // Credential mutation: covered by the controller-level "auth" rate limit; the handler keys the
+    // subject off the session (the command carries no user id).
+    [Permission(Policy.CanChangeOwnPassword)]
+    [HttpPost("ChangePassword")]
+    [ProducesResponseType(typeof(ChangeOwnPassword.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ChangePassword(
+        [FromBody] ChangeOwnPassword.Command command,
+        CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<ChangeOwnPassword.Response>(result);
     }
 
     // Augment successful token-issuing results with the HttpOnly cookies +

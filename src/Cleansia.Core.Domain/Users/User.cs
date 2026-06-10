@@ -69,6 +69,8 @@ public class User : Auditable, ITenantEntity
 
     public bool IsEmailConfirmed { get; private set; }
 
+    public DateTimeOffset? LastLoginAt { get; private set; }
+
     [MaxLength(5)]
     public string? PreferredLanguageCode { get; private set; }
 
@@ -200,6 +202,13 @@ public class User : Auditable, ITenantEntity
         return this;
     }
 
+    public User UpdateBirthDate(DateOnly? birthDate)
+    {
+        BirthDate = birthDate;
+
+        return this;
+    }
+
     /// <summary>
     /// Generates a fresh cryptographic email-confirmation token, persists only its hash, and RETURNS
     /// the RAW token so the caller can email it. The raw value is never stored.
@@ -217,6 +226,12 @@ public class User : Auditable, ITenantEntity
     public User UpdateLanguagePreference(string? languageCode)
     {
         PreferredLanguageCode = languageCode;
+        return this;
+    }
+
+    public User RecordLogin(DateTimeOffset at)
+    {
+        LastLoginAt = at;
         return this;
     }
 

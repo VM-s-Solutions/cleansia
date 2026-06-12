@@ -18,6 +18,7 @@ import {
   AdminPackageClient,
   AdminPayConfigClient,
   AdminPayPeriodClient,
+  AdminPayrollClient,
   AdminPromoCodeClient,
   AdminReferralClient,
   AdminReportClient,
@@ -40,6 +41,7 @@ import {
   IAdminPackageClient,
   IAdminPayConfigClient,
   IAdminPayPeriodClient,
+  IAdminPayrollClient,
   IAdminPromoCodeClient,
   IAdminReferralClient,
   IAdminReportClient,
@@ -64,6 +66,7 @@ interface IAdminClient {
   adminOrderClient: IAdminOrderClient;
   adminPackageClient: IAdminPackageClient;
   adminPayPeriodClient: IAdminPayPeriodClient;
+  adminPayrollClient: IAdminPayrollClient;
   adminReportClient: IAdminReportClient;
   adminServiceClient: IAdminServiceClient;
   adminUserClient: IAdminUserClient;
@@ -129,6 +132,10 @@ export class AdminClient implements IAdminClient {
     this.apiBaseUrl
   );
   adminPayPeriodClient: IAdminPayPeriodClient = new AdminPayPeriodClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  adminPayrollClient: IAdminPayrollClient = new AdminPayrollClient(
     this.httpClient,
     this.apiBaseUrl
   );

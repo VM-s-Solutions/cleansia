@@ -92,6 +92,11 @@
         </div>
       </cleansia-section>
 
+      <admin-payroll-ops
+        [invoice]="facade.invoice()!"
+        (changed)="onOpsChanged()"
+      />
+
       <!-- Invoice Summary -->
       <cleansia-section
         [title]="'pages.invoice_detail.invoice_summary' | translate"

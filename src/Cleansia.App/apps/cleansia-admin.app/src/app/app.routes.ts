@@ -184,11 +184,35 @@ export const appRoutes: Route[] = [
       ),
   },
   {
+    path: 'membership-plan-management',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/membership-plan-management').then(
+        (m) => m.membershipPlanManagementRoutes
+      ),
+  },
+  {
     path: 'marketing',
     canActivate: [adminGuard],
     loadChildren: () =>
       import('@cleansia/admin-features/marketing').then(
         (m) => m.marketingRoutes
+      ),
+  },
+  {
+    path: 'data-protection',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/data-protection').then(
+        (m) => m.dataProtectionRoutes
+      ),
+  },
+  {
+    path: 'profile',
+    canActivate: [adminGuard],
+    loadChildren: () =>
+      import('@cleansia/admin-features/admin-profile').then(
+        (m) => m.adminProfileRoutes
       ),
   },
   {

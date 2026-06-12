@@ -1,8 +1,8 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { ChangeDetectionStrategy, Component, AfterViewInit, computed, ElementRef, viewChild, NgZone, PLATFORM_ID, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, AfterViewInit, computed, ElementRef, viewChild, NgZone, OnInit, PLATFORM_ID, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   CleansiaBrandNameComponent,
   CleansiaButtonComponent,
@@ -50,8 +50,9 @@ const REFERRAL_ERROR_KEYS: Record<string, string> = {
   providers: [RegisterFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class RegisterComponent implements AfterViewInit {
+export class RegisterComponent implements OnInit, AfterViewInit {
   private readonly store = inject(Store);
+  private readonly route = inject(ActivatedRoute);
   private readonly translate = inject(TranslateService);
   protected readonly facade = inject(RegisterFacade);
   protected readonly loading = toSignal(this.store.select(selectCustomerLoading));
@@ -94,6 +95,28 @@ export class RegisterComponent implements AfterViewInit {
     const state = this.facade.referralState();
     return referralStateToDialog(state, this.translate);
   });
+
+  /**
+   * Inline note under the referral row for a code that arrived pre-applied
+   * (the /r/{code} landing) and failed validation — the visitor never opened
+   * the dialog, so the dialog's error message must surface here instead.
+   * Purely informative: a bad code never blocks signup.
+   */
+  protected readonly referralInlineError = computed<string | null>(() => {
+    const state = this.facade.referralState();
+    if (state.kind !== 'invalid') return null;
+    const key =
+      REFERRAL_ERROR_KEYS[state.error ?? ''] ?? 'auth.register.referral.error_generic';
+    return this.translate.instant(key);
+  });
+
+  ngOnInit(): void {
+    // Skip on the server — the validate call belongs to the hydrated client,
+    // otherwise SSR + hydration would validate the same code twice.
+    if (!this.isBrowser) return;
+    const code = this.route.snapshot.paramMap.get('code');
+    if (code) void this.facade.applyReferralCodeFromUrl(code);
+  }
 
   openReferralDialog(): void {
     this.referralDialogVisible.set(true);

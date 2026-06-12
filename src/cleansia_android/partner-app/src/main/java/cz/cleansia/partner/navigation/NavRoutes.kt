@@ -33,6 +33,13 @@ sealed interface NavRoute {
     @Serializable data class InvoiceDetails(val invoiceId: String) : NavRoute
 
     /**
+     * Read-only "my period pay" breakdown for one pay period — reached from
+     * an invoice's period card. [currencyCode] rides along because the
+     * period-pay DTO carries no currency of its own.
+     */
+    @Serializable data class PeriodPay(val payPeriodId: String, val currencyCode: String? = null) : NavRoute
+
+    /**
      * Pay & Earnings summary — destination from the dashboard earnings
      * card and the Quick Action "Pay history" tile. Always shows
      * meaningful content (today/week/month earnings, pay-period
@@ -79,4 +86,7 @@ sealed interface NavRoute {
      */
     @Serializable data object PreferenceLanguage : NavRoute
     @Serializable data object PreferenceTheme : NavRoute
+
+    /** Device self-service — list registered devices, revoke a lost one. */
+    @Serializable data object Devices : NavRoute
 }

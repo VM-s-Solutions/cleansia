@@ -1,8 +1,7 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   AdminClient,
-  DeletePackageResponse,
   PackageListItem,
   SortDefinition,
 } from '@cleansia/admin-services';
@@ -10,9 +9,11 @@ import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { resolvePackageErrorKey } from './package-management.models';
 
 export interface PackageFilterParams {
   searchTerm?: string;
+  isActive?: boolean;
 }
 
 @Injectable()
@@ -32,6 +33,8 @@ export class PackageManagementFacade extends UnsubscribeControlDirective {
   private currentLimit = signal<number>(20);
   private currentSort = signal<SortDefinition[] | undefined>(undefined);
 
+  readonly isActiveFilter = computed(() => this.currentFilter()?.isActive);
+
   loadPackages(): void {
     this.loading.set(true);
     const filterParams = this.currentFilter();
@@ -39,6 +42,7 @@ export class PackageManagementFacade extends UnsubscribeControlDirective {
     this.adminClient.adminPackageClient
       .getPaged(
         filterParams?.searchTerm,
+        filterParams?.isActive,
         this.currentSort(),
         this.currentOffset(),
         this.currentLimit()
@@ -100,6 +104,58 @@ export class PackageManagementFacade extends UnsubscribeControlDirective {
     }
   }
 
+  deactivatePackage(pkg: PackageListItem): void {
+    if (!pkg.id) return;
+
+    this.adminClient.adminPackageClient
+      .deactivate(pkg.id)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError((error: unknown) => {
+          this.snackbarService.showError(
+            this.translate.instant(resolvePackageErrorKey(error))
+          );
+          return of(null);
+        })
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.snackbarService.showSuccess(
+            this.translate.instant(
+              'pages.package_management.messages.deactivate_success'
+            )
+          );
+          this.loadPackages();
+        }
+      });
+  }
+
+  activatePackage(pkg: PackageListItem): void {
+    if (!pkg.id) return;
+
+    this.adminClient.adminPackageClient
+      .activate(pkg.id)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError((error: unknown) => {
+          this.snackbarService.showError(
+            this.translate.instant(resolvePackageErrorKey(error))
+          );
+          return of(null);
+        })
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.snackbarService.showSuccess(
+            this.translate.instant(
+              'pages.package_management.messages.activate_success'
+            )
+          );
+          this.loadPackages();
+        }
+      });
+  }
+
   deletePackage(pkg: PackageListItem): void {
     if (!pkg.id) return;
 
@@ -107,9 +163,14 @@ export class PackageManagementFacade extends UnsubscribeControlDirective {
       .delete(pkg.id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError((error: unknown) => {
+          this.snackbarService.showError(
+            this.translate.instant(resolvePackageErrorKey(error))
+          );
+          return of(null);
+        })
       )
-      .subscribe((response: DeletePackageResponse | null) => {
+      .subscribe((response) => {
         if (response) {
           this.snackbarService.showSuccess(
             this.translate.instant('pages.package_management.messages.delete_success')

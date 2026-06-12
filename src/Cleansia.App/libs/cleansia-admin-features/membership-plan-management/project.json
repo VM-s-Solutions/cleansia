@@ -1,0 +1,21 @@
+{
+  "name": "membership-plan-management",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/cleansia-admin-features/membership-plan-management/src",
+  "prefix": "cleansia",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/cleansia-admin-features/membership-plan-management/jest.config.ts",
+        "tsConfig": "libs/cleansia-admin-features/membership-plan-management/tsconfig.spec.json"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

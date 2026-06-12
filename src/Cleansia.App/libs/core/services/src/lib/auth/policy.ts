@@ -64,7 +64,12 @@ export const Policy = {
   CanApproveInvoice: 'CanApproveInvoice',
   CanMarkInvoicePaid: 'CanMarkInvoicePaid',
   CanCancelInvoice: 'CanCancelInvoice',
+  CanUpdateInvoiceAmounts: 'CanUpdateInvoiceAmounts',
+  CanDisputeInvoice: 'CanDisputeInvoice',
+  CanRejectInvoice: 'CanRejectInvoice',
   CanClosePayPeriod: 'CanClosePayPeriod',
+  CanMarkPayPeriodPaid: 'CanMarkPayPeriodPaid',
+  CanReopenPayPeriod: 'CanReopenPayPeriod',
 
   // Dispute
   CanCreateDispute: 'CanCreateDispute',
@@ -110,6 +115,9 @@ export const Policy = {
   CanUpdateAdminUser: 'CanUpdateAdminUser',
   CanDeactivateAdminUser: 'CanDeactivateAdminUser',
   CanActivateAdminUser: 'CanActivateAdminUser',
+
+  // Auth (own credentials)
+  CanChangeOwnPassword: 'CanChangeOwnPassword',
 
   // Company
   CanViewCompanyInfo: 'CanViewCompanyInfo',
@@ -166,6 +174,13 @@ export const Policy = {
   CanGrantLoyaltyPoints: 'CanGrantLoyaltyPoints',
   CanViewUserLoyalty: 'CanViewUserLoyalty',
   CanViewReferrals: 'CanViewReferrals',
+  CanInterveneReferral: 'CanInterveneReferral',
+
+  // Admin Membership Plans
+  CanViewMembershipPlans: 'CanViewMembershipPlans',
+  CanCreateMembershipPlan: 'CanCreateMembershipPlan',
+  CanUpdateMembershipPlan: 'CanUpdateMembershipPlan',
+  CanDeactivateMembershipPlan: 'CanDeactivateMembershipPlan',
 } as const;
 
 export type PolicyName = (typeof Policy)[keyof typeof Policy];
@@ -225,7 +240,12 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
   CanApproveInvoice: PhysicalPolicy.AdminOnly,
   CanMarkInvoicePaid: PhysicalPolicy.AdminOnly,
   CanCancelInvoice: PhysicalPolicy.AdminOnly,
+  CanUpdateInvoiceAmounts: PhysicalPolicy.AdminOnly,
+  CanDisputeInvoice: PhysicalPolicy.AdminOnly,
+  CanRejectInvoice: PhysicalPolicy.AdminOnly,
   CanClosePayPeriod: PhysicalPolicy.AdminOnly,
+  CanMarkPayPeriodPaid: PhysicalPolicy.AdminOnly,
+  CanReopenPayPeriod: PhysicalPolicy.AdminOnly,
 
   CanCreateDispute: PhysicalPolicy.CustomerOnly,
   CanViewDispute: PhysicalPolicy.CustomerOnly,
@@ -266,6 +286,8 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
   CanUpdateAdminUser: PhysicalPolicy.AdminOnly,
   CanDeactivateAdminUser: PhysicalPolicy.AdminOnly,
   CanActivateAdminUser: PhysicalPolicy.AdminOnly,
+
+  CanChangeOwnPassword: PhysicalPolicy.Authenticated,
 
   CanViewCompanyInfo: PhysicalPolicy.AdminOnly,
   CanCreateCompanyInfo: PhysicalPolicy.AdminOnly,
@@ -314,6 +336,12 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
   CanGrantLoyaltyPoints: PhysicalPolicy.AdminOnly,
   CanViewUserLoyalty: PhysicalPolicy.AdminOnly,
   CanViewReferrals: PhysicalPolicy.AdminOnly,
+  CanInterveneReferral: PhysicalPolicy.AdminOnly,
+
+  CanViewMembershipPlans: PhysicalPolicy.AdminOnly,
+  CanCreateMembershipPlan: PhysicalPolicy.AdminOnly,
+  CanUpdateMembershipPlan: PhysicalPolicy.AdminOnly,
+  CanDeactivateMembershipPlan: PhysicalPolicy.AdminOnly,
 };
 
 export function resolvePhysicalPolicy(policy: PolicyName | string): PhysicalPolicy {

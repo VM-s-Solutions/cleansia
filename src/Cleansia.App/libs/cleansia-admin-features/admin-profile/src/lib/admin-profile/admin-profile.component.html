@@ -1,0 +1,65 @@
+<div class="cleansia-admin-profile">
+  <div class="cleansia-admin-profile__container page-wrapper">
+    <cleansia-title [title]="'pages.admin_profile.title' | translate" />
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <cleansia-section
+        [title]="'pages.admin_profile.change_password.title' | translate"
+      >
+        <div class="form-grid">
+          <div class="form-field">
+            <cleansia-text-input
+              [label]="
+                'pages.admin_profile.change_password.current_password'
+                  | translate
+              "
+              formControlName="currentPassword"
+              dataType="password"
+              autocomplete="current-password"
+              [required]="true"
+            />
+          </div>
+
+          <div class="form-field">
+            <cleansia-text-input
+              [label]="
+                'pages.admin_profile.change_password.new_password' | translate
+              "
+              formControlName="newPassword"
+              dataType="password"
+              autocomplete="new-password"
+              [required]="true"
+            />
+            <small class="form-field__hint">
+              {{ 'pages.admin_profile.change_password.password_hint' | translate }}
+            </small>
+          </div>
+
+          <div class="form-field">
+            <cleansia-text-input
+              [label]="
+                'pages.admin_profile.change_password.confirm_password'
+                  | translate
+              "
+              formControlName="confirmPassword"
+              dataType="password"
+              autocomplete="new-password"
+              [required]="true"
+            />
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <cleansia-button
+            [label]="'pages.admin_profile.change_password.submit' | translate"
+            type="submit"
+            icon="pi pi-lock"
+            [disabled]="facade.saving()"
+            [loading]="facade.saving()"
+            (onClick)="onSubmit()"
+          />
+        </div>
+      </cleansia-section>
+    </form>
+  </div>
+</div>

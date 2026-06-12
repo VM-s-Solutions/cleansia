@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.Notes
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.CalendarMonth
@@ -82,6 +83,7 @@ import java.util.Locale
 @Composable
 fun InvoiceDetailsScreen(
     onNavigateBack: () -> Unit,
+    onOpenPeriodPay: ((payPeriodId: String, currencyCode: String?) -> Unit)? = null,
     viewModel: InvoiceDetailsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -151,7 +153,14 @@ fun InvoiceDetailsScreen(
                 ) {
                     HeroCard(invoice)
                     BreakdownCard(invoice)
-                    PeriodCard(invoice)
+                    PeriodCard(
+                        invoice = invoice,
+                        onOpenPeriodPay = onOpenPeriodPay?.let { open ->
+                            invoice.payPeriodId?.takeIf { it.isNotBlank() }?.let { periodId ->
+                                { open(periodId, invoice.currencyCode) }
+                            }
+                        },
+                    )
                     ReferencesCard(invoice, onCopy = onCopy)
                     NotesCard(invoice)
 
@@ -259,7 +268,10 @@ private fun BreakdownCard(invoice: EmployeeInvoiceDetailDto) {
 }
 
 @Composable
-private fun PeriodCard(invoice: EmployeeInvoiceDetailDto) {
+private fun PeriodCard(
+    invoice: EmployeeInvoiceDetailDto,
+    onOpenPeriodPay: (() -> Unit)? = null,
+) {
     val period = invoice.payPeriodLabel?.takeIf { it.isNotBlank() } ?: "—"
     val orders = invoice.totalOrders ?: 0
     val generated = formatDate(invoice.generatedAt)
@@ -315,6 +327,30 @@ private fun PeriodCard(invoice: EmployeeInvoiceDetailDto) {
             paid?.let {
                 if (generated != null || approved != null) Spacer(Modifier.height(Spacing.XS))
                 DateRow(stringResource(R.string.invoice_period_paid), it)
+            }
+        }
+
+        onOpenPeriodPay?.let { open ->
+            Spacer(Modifier.height(Spacing.M))
+            Divider()
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { open() }
+                    .padding(top = Spacing.M),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(R.string.invoice_view_period_pay),
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.weight(1f),
+                )
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
             }
         }
     }

@@ -1167,4 +1167,25 @@
     <string name="notification_membership_expiring_body">Your subscription renews in 3 days. Manage your plan in the app.</string>
     <string name="notification_membership_cancelled_title">Cleansia Plus has ended</string>
     <string name="notification_membership_cancelled_body">Your subscription has ended. Resubscribe to keep your Plus perks.</string>
+
+    <!-- ── Your devices ── -->
+    <string name="profile_row_devices">Your devices</string>
+    <string name="devices_title">Your devices</string>
+    <string name="devices_intro">Devices signed in to your account. Removing a device signs it out and stops its notifications.</string>
+    <string name="devices_this_device">This device</string>
+    <string name="devices_last_active">Last active %1$s</string>
+    <string name="devices_platform_android">Android</string>
+    <string name="devices_platform_ios">iOS</string>
+    <string name="devices_platform_web">Web</string>
+    <string name="devices_platform_unknown">Unknown device</string>
+    <string name="devices_empty">No devices registered yet.</string>
+    <string name="devices_error_message">We couldn\'t load your devices. Check your connection and try again.</string>
+    <string name="devices_error_retry">Try again</string>
+    <string name="devices_revoke_action">Remove device</string>
+    <string name="devices_revoke_dialog_title">Remove this device?</string>
+    <string name="devices_revoke_dialog_message">%1$s will be signed out and will stop receiving notifications.</string>
+    <string name="devices_revoke_dialog_confirm">Remove</string>
+    <string name="devices_revoke_success">Device removed</string>
+    <string name="devices_revoke_retry_hint">Couldn\'t remove — please try again.</string>
+    <string name="error_device_not_found">This device is no longer registered.</string>
 </resources>

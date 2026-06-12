@@ -93,6 +93,44 @@
           (pageChange)="onActivityPageChange($event)"
         />
       </cleansia-section>
+
+      <!-- Referral relationships -->
+      <cleansia-section
+        [title]="'pages.loyalty_user_detail.referrals.title' | translate"
+      >
+        @if (facade.referralsError()) {
+          <div class="user-loyalty-detail__referrals-state">
+            <i class="pi pi-exclamation-triangle"></i>
+            <p>
+              {{ 'pages.loyalty_user_detail.referrals.load_error' | translate }}
+            </p>
+          </div>
+        } @else {
+          <h4 class="user-loyalty-detail__referrals-subtitle">
+            {{ 'pages.loyalty_user_detail.referrals.as_referrer' | translate }}
+          </h4>
+          <cleansia-table
+            [data]="facade.referralsAsReferrer()"
+            [columns]="referralsAsReferrerColumns"
+            [config]="{
+              emptyMessage: 'pages.loyalty_user_detail.referrals.empty_as_referrer'
+            }"
+            [loading]="facade.referralsLoading()"
+          />
+
+          <h4 class="user-loyalty-detail__referrals-subtitle">
+            {{ 'pages.loyalty_user_detail.referrals.as_referred' | translate }}
+          </h4>
+          <cleansia-table
+            [data]="facade.referralsAsReferred()"
+            [columns]="referralsAsReferredColumns"
+            [config]="{
+              emptyMessage: 'pages.loyalty_user_detail.referrals.empty_as_referred'
+            }"
+            [loading]="facade.referralsLoading()"
+          />
+        }
+      </cleansia-section>
     }
   </div>
 </div>

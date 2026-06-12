@@ -1,0 +1,122 @@
+<div class="cleansia-period-pay">
+  <div class="cleansia-period-pay__container page-wrapper">
+    <div class="cleansia-period-pay__header">
+      <cleansia-title [title]="'pages.period_pay.title' | translate" />
+      <p class="cleansia-period-pay__description">
+        {{ 'pages.period_pay.description' | translate }}
+      </p>
+    </div>
+
+    @if (facade.initialLoading()) {
+    <cleansia-section>
+      <cleansia-loader />
+    </cleansia-section>
+    } @else if (facade.hasError()) {
+    <cleansia-section>
+      <div class="cleansia-period-pay__state">
+        <i class="pi pi-exclamation-triangle"></i>
+        <p>{{ 'pages.period_pay.load_error' | translate }}</p>
+        <cleansia-button
+          [label]="'global.actions.retry' | translate"
+          [icon]="'pi pi-refresh'"
+          [size]="'small-width'"
+          (onClick)="retry()"
+        />
+      </div>
+    </cleansia-section>
+    } @else if (facade.payPeriods().length === 0) {
+    <cleansia-section>
+      <div class="cleansia-period-pay__state">
+        <i class="pi pi-calendar"></i>
+        <p>{{ 'pages.period_pay.no_periods' | translate }}</p>
+      </div>
+    </cleansia-section>
+    } @else {
+    <cleansia-section [title]="'pages.period_pay.summary' | translate">
+      <div class="cleansia-period-pay__selector">
+        <cleansia-select
+          [label]="'pages.period_pay.pay_period' | translate"
+          [formControl]="periodControl"
+          [options]="facade.periodOptions()"
+          [showClear]="false"
+          [showErrors]="false"
+        />
+        <span
+          class="status-badge"
+          [class]="'status-badge status-' + facade.selectedPeriodStatus()"
+        >
+          {{ 'pages.period_pay.period_status_' + facade.selectedPeriodStatus() | translate }}
+        </span>
+      </div>
+
+      @if (facade.summary(); as summary) {
+      <div class="period-pay-summary" [class.is-loading]="facade.loading()">
+        <div class="summary-grid">
+          <div class="summary-item">
+            <span class="label">{{ 'pages.period_pay.pay_period' | translate }}</span>
+            <span>{{ summary.payPeriodLabel }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="label">{{ 'pages.period_pay.total_orders' | translate }}</span>
+            <span>{{ summary.totalOrders }}</span>
+          </div>
+        </div>
+
+        <div class="amount-breakdown">
+          <div class="amount-row">
+            <span>{{ 'pages.period_pay.base_pay' | translate }}</span>
+            <span class="amount">{{ summary.totalBasePay.toFixed(2) }} Kč</span>
+          </div>
+          <div class="amount-row">
+            <span>{{ 'pages.period_pay.extras_pay' | translate }}</span>
+            <span class="amount">{{ summary.totalExtrasPay.toFixed(2) }} Kč</span>
+          </div>
+          <div class="amount-row">
+            <span>{{ 'pages.period_pay.expenses_pay' | translate }}</span>
+            <span class="amount">{{ summary.totalExpensesPay.toFixed(2) }} Kč</span>
+          </div>
+          @if (summary.totalBonusPay > 0) {
+          <div class="amount-row positive">
+            <span>{{ 'pages.period_pay.bonus_pay' | translate }}</span>
+            <span class="amount">+{{ summary.totalBonusPay.toFixed(2) }} Kč</span>
+          </div>
+          } @if (summary.totalDeductionPay > 0) {
+          <div class="amount-row negative">
+            <span>{{ 'pages.period_pay.deduction_pay' | translate }}</span>
+            <span class="amount">-{{ summary.totalDeductionPay.toFixed(2) }} Kč</span>
+          </div>
+          }
+          <div class="amount-row total">
+            <span>{{ 'pages.period_pay.grand_total' | translate }}</span>
+            <span class="amount">{{ summary.grandTotal.toFixed(2) }} Kč</span>
+          </div>
+        </div>
+
+        @if (summary.hasInvoice && summary.invoiceId) {
+        <div class="cleansia-period-pay__invoice-link">
+          <cleansia-button
+            [label]="'pages.period_pay.view_invoice' | translate"
+            [icon]="'pi pi-file'"
+            [severity]="'secondary'"
+            [outlined]="true"
+            [size]="'small-width'"
+            (onClick)="viewInvoice()"
+          />
+        </div>
+        }
+      </div>
+      }
+    </cleansia-section>
+
+    <cleansia-section [title]="'pages.period_pay.order_lines' | translate">
+      <cleansia-table
+        [data]="facade.summary()?.orderPays || []"
+        [columns]="periodPayColumns"
+        [config]="{ emptyMessage: 'pages.period_pay.no_order_pays' }"
+        [loading]="facade.loading()"
+      >
+      </cleansia-table>
+    </cleansia-section>
+    }
+  </div>
+</div>

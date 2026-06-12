@@ -8,10 +8,12 @@ import {
   UpdateAdminUserCommand,
   UpdateAdminUserResponse,
 } from '@cleansia/admin-services';
+import { ICleansiaSelectOption } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { resolveAdminUserFormErrorKey } from './admin-user-form.models';
 
 export interface AdminUserFormData {
   email: string;
@@ -19,6 +21,8 @@ export interface AdminUserFormData {
   firstName: string;
   lastName: string;
   phoneNumber?: string;
+  birthDate?: Date;
+  preferredLanguageCode?: string;
 }
 
 @Injectable()
@@ -31,6 +35,7 @@ export class AdminUserFormFacade extends UnsubscribeControlDirective {
   readonly user = signal<AdminUserDetailDto | null>(null);
   readonly loading = signal<boolean>(false);
   readonly saving = signal<boolean>(false);
+  readonly languageOptions = signal<ICleansiaSelectOption[]>([]);
 
   loadUser(userId: string): void {
     this.loading.set(true);
@@ -51,6 +56,22 @@ export class AdminUserFormFacade extends UnsubscribeControlDirective {
       });
   }
 
+  loadLanguages(): void {
+    this.adminClient.adminLanguageClient
+      .getOverview()
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of([]))
+      )
+      .subscribe((languages) => {
+        this.languageOptions.set(
+          (languages ?? [])
+            .filter((lang) => Boolean(lang.code) && Boolean(lang.name))
+            .map((lang) => ({ label: lang.name as string, value: lang.code }))
+        );
+      });
+  }
+
   createUser(data: AdminUserFormData): void {
     this.saving.set(true);
 
@@ -60,13 +81,20 @@ export class AdminUserFormFacade extends UnsubscribeControlDirective {
       firstName: data.firstName,
       lastName: data.lastName,
       phoneNumber: data.phoneNumber || undefined,
+      birthDate: data.birthDate,
+      preferredLanguageCode: data.preferredLanguageCode || undefined,
     });
 
     this.adminClient.adminUserClient
       .create(command)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null)),
+        catchError((error: unknown) => {
+          this.snackbarService.showError(
+            this.translate.instant(resolveAdminUserFormErrorKey(error))
+          );
+          return of(null);
+        }),
         finalize(() => this.saving.set(false))
       )
       .subscribe((response: CreateAdminUserResponse | null) => {
@@ -89,13 +117,20 @@ export class AdminUserFormFacade extends UnsubscribeControlDirective {
       firstName: data.firstName,
       lastName: data.lastName,
       phoneNumber: data.phoneNumber || undefined,
+      birthDate: data.birthDate,
+      preferredLanguageCode: data.preferredLanguageCode || undefined,
     });
 
     this.adminClient.adminUserClient
       .update(userId, command)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null)),
+        catchError((error: unknown) => {
+          this.snackbarService.showError(
+            this.translate.instant(resolveAdminUserFormErrorKey(error))
+          );
+          return of(null);
+        }),
         finalize(() => this.saving.set(false))
       )
       .subscribe((response: UpdateAdminUserResponse | null) => {

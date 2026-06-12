@@ -20,7 +20,8 @@
     "section_account": "Účet",
     "section_activity": "Aktivita",
     "email_verified": "E-mail ověřen",
-    "email_not_verified": "E-mail neověřen"
+    "email_not_verified": "E-mail neověřen",
+    "my_addresses": "Moje adresy"
   },
   "cookies": {
     "title": "Vaše soukromí je pro nás důležité",
@@ -79,7 +80,8 @@
       "not_found": "Stránka nenalezena",
       "track_order": "Sledovat objednávku",
       "order_lookup": "Vyhledat objednávku",
-      "order_lookup_detail": "Detaily objednávky"
+      "order_lookup_detail": "Detaily objednávky",
+      "saved_addresses": "Moje adresy"
     }
   },
   "global": {
@@ -633,7 +635,27 @@
       "export_data_desc": "Stáhnout kopii všech vašich osobních údajů",
       "rewards_card_title": "Odměny",
       "rewards_card_link": "Zobrazit odměny",
-      "scroll_to_top": "Přejít nahoru"
+      "scroll_to_top": "Přejít nahoru",
+      "notifications": {
+        "title": "Oznámení",
+        "desc": "Vyberte si, která oznámení chcete dostávat.",
+        "save": "Uložit předvolby",
+        "save_success": "Předvolby oznámení byly uloženy",
+        "save_error": "Předvolby oznámení se nepodařilo uložit",
+        "load_error": "Předvolby oznámení se nepodařilo načíst",
+        "retry": "Zkusit znovu",
+        "order_updates": "Změny objednávky",
+        "cleaner_on_the_way": "Úklidový pracovník na cestě",
+        "order_completed": "Objednávka dokončena",
+        "order_cancelled": "Objednávka zrušena",
+        "refund_issued": "Vrácení peněz",
+        "membership_expiring": "Členství brzy vyprší",
+        "membership_cancelled": "Členství zrušeno",
+        "tier_upgrade": "Postup do vyšší úrovně",
+        "promo": "Akce a nabídky",
+        "dispute_reply": "Odpovědi na reklamace",
+        "recurring_scheduled": "Naplánovaný pravidelný úklid"
+      }
     },
     "services": {
       "title": "Naše služby",
@@ -966,7 +988,9 @@
         "damaged_property": "Poškozený majetek",
         "unauthorized_charge": "Neoprávněný poplatek",
         "incorrect_amount": "Nesprávná částka",
-        "other": "Jiné"
+        "other": "Jiné",
+        "chargeback": "Zpětná platba (chargeback)",
+        "unknown": "Neznámý důvod"
       },
       "empty_faq_title": "Co mohu nahlásit?",
       "empty_faq_items": "Problémy s kvalitou, nedokončenou službu, poškozený majetek, problémy s fakturací a další.",
@@ -976,6 +1000,25 @@
         "reason": "Důvod",
         "status": "Stav",
         "created": "Vytvořeno"
+      },
+      "filter_status": "Filtrovat podle stavu",
+      "new_reply": "Nová odpověď",
+      "refund_amount": "Schválená částka k vrácení",
+      "statuses": {
+        "pending": "Čeká na vyřízení",
+        "under_review": "V řešení",
+        "waiting_for_response": "Čeká na vaši odpověď",
+        "resolved": "Vyřešeno",
+        "closed": "Uzavřeno",
+        "escalated": "Eskalováno"
+      },
+      "evidence": {
+        "title": "Důkazy",
+        "upload": "Nahrát důkaz",
+        "upload_success": "Důkaz byl nahrán",
+        "upload_error": "Důkaz se nepodařilo nahrát",
+        "invalid_type": "Tento typ souboru není povolen. Použijte JPG, PNG, WebP nebo PDF.",
+        "too_large": "Soubor je příliš velký. Maximální velikost je 10 MB."
       }
     },
     "rewards": {
@@ -1197,6 +1240,19 @@
       "guest_limit": "Jako host je sledováno pouze posledních 5 objednávek na tomto zařízení. Vytvořte si účet pro přístup ke všem objednávkám odkudkoli.",
       "guest_cta": "Vytvořit účet",
       "view_details": "Zobrazit detail"
+    },
+    "saved_addresses": {
+      "title": "Moje adresy",
+      "subtitle": "Spravujte své uložené adresy pro rychlejší objednávky.",
+      "add": "Přidat adresu",
+      "empty_title": "Žádné uložené adresy",
+      "empty_text": "Přidejte adresu a urychlete příští objednávku.",
+      "default_badge": "Výchozí",
+      "set_default": "Nastavit jako výchozí",
+      "delete": "Smazat",
+      "default_success": "Výchozí adresa byla změněna",
+      "delete_success": "Adresa byla smazána",
+      "delete_confirm": "Smazat adresu „{{label}}“?"
     }
   },
   "address_picker": {
@@ -1312,6 +1368,15 @@
       "country_not_serviced": "V této zemi zatím nepůsobíme.",
       "country_required": "Vyberte zemi.",
       "city_not_serviced": "V tomto městě zatím nepůsobíme."
+    },
+    "dispute": {
+      "not_found": "Reklamace nebyla nalezena.",
+      "not_owned_by_user": "K této reklamaci nemáte přístup."
+    },
+    "file": {
+      "invalid_file_type": "Tento typ souboru není povolen.",
+      "size_exceeded": "Soubor je příliš velký.",
+      "required": "Soubor je povinný."
     }
   },
   "loyalty": {

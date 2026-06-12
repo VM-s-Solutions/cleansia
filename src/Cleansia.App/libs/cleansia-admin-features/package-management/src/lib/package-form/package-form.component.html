@@ -51,9 +51,9 @@
       <cleansia-section [title]="'pages.package_form.services' | translate">
         <div class="form-grid">
           <div class="form-field full-width">
-            <label class="form-label">{{
+            <span class="form-label">{{
               'pages.package_form.included_services' | translate
-            }}</label>
+            }}</span>
             <p-multiSelect
               [options]="facade.availableServices()"
               [ngModel]="selectedServices()"

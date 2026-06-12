@@ -1,0 +1,120 @@
+.cleansia-period-pay {
+  &__container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  &__header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  &__description {
+    margin: 0;
+    color: var(--text-color-secondary);
+  }
+
+  &__state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 3rem 1rem;
+    color: var(--text-color-secondary);
+    text-align: center;
+
+    i {
+      font-size: 2rem;
+    }
+
+    p {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+  }
+
+  &__selector {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+
+    cleansia-select {
+      flex: 1;
+      max-width: 320px;
+    }
+
+    @media (max-width: 640px) {
+      flex-direction: column;
+      align-items: flex-start;
+
+      cleansia-select {
+        width: 100%;
+        max-width: none;
+      }
+    }
+  }
+
+  &__invoice-link {
+    margin-top: 1.5rem;
+  }
+
+  .status-badge {
+    &.status-open {
+      background-color: rgba(59, 130, 246, 0.15);
+      color: #1e3a8a;
+    }
+
+    &.status-closed {
+      background-color: rgba(245, 158, 11, 0.15);
+      color: #b45309;
+    }
+
+    &.status-unknown {
+      background-color: rgba(107, 114, 128, 0.15);
+      color: #374151;
+    }
+  }
+}
+
+.period-pay-summary {
+  transition: opacity 0.2s ease-in-out;
+
+  &.is-loading {
+    opacity: 0.6;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+
+    @media (max-width: 640px) {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+  }
+
+  .summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    .label {
+      font-weight: 600;
+      color: var(--text-color-secondary);
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+    }
+
+    span:not(.label) {
+      font-weight: 500;
+      color: var(--text-color);
+    }
+  }
+}

@@ -50,10 +50,44 @@ export function getCurrencyFlagCode(currencyCode: string | undefined): string {
   return CURRENCY_TO_COUNTRY_MAP[lowerCode] || '';
 }
 
+export const CURRENCY_ERROR_KEY_MAP: Readonly<Record<string, string>> = {
+  'currency.not_found': 'errors.currency.not_found',
+  'currency.in_use': 'errors.currency.in_use',
+  'currency.cannot_delete_default': 'errors.currency.cannot_delete_default',
+};
+
+export const CURRENCY_FALLBACK_ERROR_KEY = 'errors.common.error_occurred';
+
+export function resolveCurrencyErrorKey(error: unknown): string {
+  const apiError = error as {
+    result?: { detail?: string; title?: string };
+    response?: string;
+  };
+  let code = apiError?.result?.detail || apiError?.result?.title;
+
+  if (!code && apiError?.response) {
+    try {
+      const parsed = JSON.parse(apiError.response) as {
+        detail?: string;
+        title?: string;
+      };
+      code = parsed.detail || parsed.title;
+    } catch {
+      code = undefined;
+    }
+  }
+
+  if (code && CURRENCY_ERROR_KEY_MAP[code]) {
+    return CURRENCY_ERROR_KEY_MAP[code];
+  }
+  return CURRENCY_FALLBACK_ERROR_KEY;
+}
+
 export function getCurrencyTableDefinition(
   defs: {
     onEdit: (row: CurrencyListItem) => void;
     onDelete: (row: CurrencyListItem) => void;
+    onSetDefault: (row: CurrencyListItem) => void;
   },
   translate: TranslateService,
   flagTemplate?: TemplateRef<CurrencyListItem>
@@ -100,7 +134,7 @@ export function getCurrencyTableDefinition(
         field: 'isDefault',
         header: translate.instant('pages.currency_management.columns.is_default'),
         getValue: (row: CurrencyListItem) =>
-          (row as any).isDefault
+          row.isDefault
             ? translate.instant('global.yes')
             : translate.instant('global.no'),
         width: '10%',
@@ -114,11 +148,18 @@ export function getCurrencyTableDefinition(
         onClick: (row: CurrencyListItem) => defs.onEdit(row),
       },
       {
+        icon: 'pi pi-star',
+        tooltip: translate.instant('pages.currency_management.set_default'),
+        color: 'info',
+        onClick: (row: CurrencyListItem) => defs.onSetDefault(row),
+        visible: (row: CurrencyListItem) => !row.isDefault,
+      },
+      {
         icon: 'pi pi-trash',
         tooltip: translate.instant('pages.currency_management.delete_currency'),
         color: 'danger',
         onClick: (row: CurrencyListItem) => defs.onDelete(row),
-        visible: (row: CurrencyListItem) => !(row as any).isDefault,
+        visible: (row: CurrencyListItem) => !row.isDefault,
       },
     ],
   };

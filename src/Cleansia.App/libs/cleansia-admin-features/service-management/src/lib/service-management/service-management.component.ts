@@ -21,9 +21,11 @@ import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
+  CleansiaSelectComponent,
   CleansiaTableComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
+  ICleansiaSelectOption,
   TableColumn,
   TableAction,
   PaginationState,
@@ -33,7 +35,11 @@ import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 import { ServiceManagementFacade } from './service-management.facade';
-import { getServiceTableDefinition } from './service-management.models';
+import {
+  CatalogStatusFilter,
+  getServiceTableDefinition,
+  mapStatusFilterToIsActive,
+} from './service-management.models';
 
 @Component({
   selector: 'cleansia-admin-service-management',
@@ -42,6 +48,7 @@ import { getServiceTableDefinition } from './service-management.models';
     CommonModule,
     CleansiaButtonComponent,
     CleansiaTextInputComponent,
+    CleansiaSelectComponent,
     TranslatePipe,
     CleansiaTableComponent,
     CleansiaTitleComponent,
@@ -65,13 +72,15 @@ export class ServiceManagementComponent implements AfterViewInit, OnDestroy {
 
   serviceColumns!: TableColumn<ServiceListItem>[];
   serviceActions!: TableAction<ServiceListItem>[];
+  statusFilterOptions!: ICleansiaSelectOption[];
 
   private lastSortField: string | null = null;
   private lastSortOrder: number | null = null;
   private destroy$ = new Subject<void>();
 
-  filterForm = this.fb.group({
+  filterForm = this.fb.nonNullable.group({
     searchTerm: [''],
+    status: ['all' as CatalogStatusFilter],
   });
 
   // Filter drawer state
@@ -114,6 +123,9 @@ export class ServiceManagementComponent implements AfterViewInit, OnDestroy {
       {
         onEdit: this.editService.bind(this),
         onDelete: this.confirmDeleteService.bind(this),
+        onDeactivate: this.confirmDeactivateService.bind(this),
+        onActivate: this.activateService.bind(this),
+        getIsActiveFilter: () => this.facade.isActiveFilter(),
       },
       this.translate,
       this.facade.formatCurrency.bind(this.facade)
@@ -121,6 +133,21 @@ export class ServiceManagementComponent implements AfterViewInit, OnDestroy {
 
     this.serviceColumns = tableDefinition.columns;
     this.serviceActions = tableDefinition.actions;
+
+    this.statusFilterOptions = [
+      {
+        label: this.translate.instant('pages.service_management.filters.status_all'),
+        value: 'all',
+      },
+      {
+        label: this.translate.instant('pages.service_management.filters.status_active'),
+        value: 'active',
+      },
+      {
+        label: this.translate.instant('pages.service_management.filters.status_inactive'),
+        value: 'inactive',
+      },
+    ];
   }
 
   ngOnDestroy(): void {
@@ -135,16 +162,18 @@ export class ServiceManagementComponent implements AfterViewInit, OnDestroy {
   }
 
   applyFilters(): void {
-    const formValues = this.filterForm.value;
+    const formValues = this.filterForm.getRawValue();
 
     this.facade.applyFilter({
-      searchTerm: formValues.searchTerm?.trim() || undefined,
+      searchTerm: formValues.searchTerm.trim() || undefined,
+      isActive: mapStatusFilterToIsActive(formValues.status ?? 'all'),
     });
   }
 
   resetFilters(): void {
     this.filterForm.reset({
       searchTerm: '',
+      status: 'all',
     });
     this.facade.resetFilter();
   }
@@ -185,6 +214,24 @@ export class ServiceManagementComponent implements AfterViewInit, OnDestroy {
     this.facade.navigateToEditService(service);
   }
 
+  activateService(service: ServiceListItem): void {
+    this.facade.activateService(service);
+  }
+
+  confirmDeactivateService(service: ServiceListItem): void {
+    this.confirmationService.confirm({
+      message: this.translate.instant(
+        'pages.service_management.deactivate_confirm',
+        { name: service.name }
+      ),
+      header: this.translate.instant('pages.service_management.deactivate_service'),
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => {
+        this.facade.deactivateService(service);
+      },
+    });
+  }
+
   confirmDeleteService(service: ServiceListItem): void {
     this.confirmationService.confirm({
       message: this.translate.instant('pages.service_management.delete_confirm'),
@@ -207,7 +254,7 @@ export class ServiceManagementComponent implements AfterViewInit, OnDestroy {
 
   getActiveFilterChips(): { key: string; label: string; value: string }[] {
     const chips: { key: string; label: string; value: string }[] = [];
-    const values = this.filterForm.value;
+    const values = this.filterForm.getRawValue();
 
     if (values.searchTerm) {
       chips.push({
@@ -217,11 +264,27 @@ export class ServiceManagementComponent implements AfterViewInit, OnDestroy {
       });
     }
 
+    if (values.status && values.status !== 'all') {
+      chips.push({
+        key: 'status',
+        label: this.translate.instant('pages.service_management.filters.status'),
+        value: this.translate.instant(
+          values.status === 'active'
+            ? 'pages.service_management.filters.status_active'
+            : 'pages.service_management.filters.status_inactive'
+        ),
+      });
+    }
+
     return chips;
   }
 
   removeFilterChip(key: string): void {
-    this.filterForm.patchValue({ [key]: '' });
+    if (key === 'status') {
+      this.filterForm.patchValue({ status: 'all' });
+    } else {
+      this.filterForm.patchValue({ [key]: '' });
+    }
     this.applyFilters();
   }
 

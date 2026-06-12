@@ -54,6 +54,9 @@
       "@cleansia/admin-features/admin-login": [
         "libs/cleansia-admin-features/admin-login/src/index.ts"
       ],
+      "@cleansia/admin-features/admin-profile": [
+        "libs/cleansia-admin-features/admin-profile/src/index.ts"
+      ],
       "@cleansia/admin-features/admin-user-management": [
         "libs/cleansia-admin-features/admin-user-management/src/index.ts"
       ],
@@ -113,6 +116,12 @@
       ],
       "@cleansia/admin-features/marketing": [
         "libs/cleansia-admin-features/marketing/src/index.ts"
+      ],
+      "@cleansia/admin-features/membership-plan-management": [
+        "libs/cleansia-admin-features/membership-plan-management/src/index.ts"
+      ],
+      "@cleansia/admin-features/data-protection": [
+        "libs/cleansia-admin-features/data-protection/src/index.ts"
       ],
       "@cleansia-customer/checkout": [
         "libs/cleansia-customer-features/checkout/src/index.ts"

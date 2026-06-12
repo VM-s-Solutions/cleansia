@@ -34,6 +34,7 @@
       "order_details": "Detail objednávky",
       "invoices": "Faktúry",
       "invoice_details": "Detail faktúry",
+      "my_pay": "Moja výplata",
       "not_found": "Stránka nenájdená"
     }
   },
@@ -483,6 +484,30 @@
       "not_found_message": "Faktúra, ktorú hľadáte, nebola nájdená.",
       "load_failed": "Nepodarilo sa načítať detail faktúry"
     },
+    "period_pay": {
+      "title": "Moja výplata za obdobie",
+      "description": "Prehľad vašej výplaty za jednotlivé platobné obdobia – len na čítanie.",
+      "pay_period": "Platobné obdobie",
+      "period_status_open": "Otvorené",
+      "period_status_closed": "Uzavreté",
+      "period_status_paid": "Vyplatené",
+      "period_status_unknown": "Neznáme",
+      "summary": "Súhrn obdobia",
+      "total_orders": "Celkom objednávok",
+      "base_pay": "Základná mzda",
+      "extras_pay": "Mzda za príplatky",
+      "expenses_pay": "Náhrada nákladov",
+      "bonus_pay": "Bonus",
+      "deduction_pay": "Zrážky",
+      "total_pay": "Celkom na výplatu",
+      "grand_total": "Celkom za obdobie",
+      "order_lines": "Výplata podľa objednávok",
+      "order_number": "Číslo objednávky",
+      "no_order_pays": "Pre toto obdobie nie sú žiadne výplatné položky",
+      "no_periods": "Zatiaľ nie sú k dispozícii žiadne platobné obdobia",
+      "load_error": "Nepodarilo sa načítať výplatu za obdobie",
+      "view_invoice": "Zobraziť faktúru"
+    },
     "payslips": {
       "title": "Mzdy a výplatné pásky",
       "description": "Zobrazte si svoje výplatné pásky, históriu miezd a spravujte daňové výhody.",
@@ -650,7 +675,30 @@
       "data_retention_title": "Uchovávanie údajov",
       "data_retention_text": "Vaše údaje uchovávame po dobu vašej spolupráce a zákonom stanovenú dobu poté (zvyčajne 10 rokov).",
       "contact_title": "Kontakt",
-      "contact_text": "S akýmikoľvek otázkami ohľadom ochrany osobných údajov nás kontaktujte na privacy@cleansia.cz."
+      "contact_text": "S akýmikoľvek otázkami ohľadom ochrany osobných údajov nás kontaktujte na privacy@cleansia.cz.",
+      "export_title": "Export mojich údajov",
+      "export_description": "Stiahnite si kópiu všetkých osobných údajov, ktoré o vás uchovávame, ako súbor JSON.",
+      "export_button": "Exportovať moje údaje",
+      "export_success": "Export vašich údajov bol stiahnutý.",
+      "export_error": "Vaše údaje sa nepodarilo exportovať. Skúste to neskôr.",
+      "consents_title": "Správa súhlasov",
+      "consents_description": "Skontrolujte a zmeňte súhlasy, ktoré ste nám udelili.",
+      "consent_updated": "Súhlas bol aktualizovaný.",
+      "consent_error": "Súhlas sa nepodarilo zmeniť. Prepínač zobrazuje uložený stav.",
+      "consent_types": {
+        "terms_of_service": "Obchodné podmienky",
+        "privacy_policy": "Zásady ochrany osobných údajov",
+        "marketing_emails": "Marketingové e-maily",
+        "data_processing": "Spracovanie údajov"
+      },
+      "delete_title": "Vymazať môj účet",
+      "delete_description": "Natrvalo vymaže váš účet a anonymizuje vaše osobné údaje. Túto akciu nemožno vrátiť.",
+      "delete_button": "Vymazať môj účet",
+      "delete_confirm_title": "Vymazať účet?",
+      "delete_confirm_message": "Váš účet bude natrvalo vymazaný a vaše osobné údaje anonymizované. Túto akciu nemožno vrátiť.",
+      "delete_confirm_yes": "Vymazať môj účet",
+      "delete_success": "Váš účet bol vymazaný.",
+      "delete_error": "Váš účet sa nepodarilo vymazať."
     }
   },
   "sidebar": {
@@ -658,6 +706,7 @@
     "profile": "Profil",
     "orders": "Objednávky",
     "invoices": "Faktúry",
+    "my_pay": "Moja výplata",
     "payroll": "Mzdy",
     "logout": "Odhlásiť sa",
     "disputes": "Spory"
@@ -1343,7 +1392,11 @@
   "gdpr": {
     "deletion_already_pending": "Žiadosť o vymazanie už prebieha.",
     "deletion_blocked_by_order": "Účet nie je možné vymazať, kým máte aktívnu objednávku.",
-    "deletion_blocked_by_invoice": "Účet nie je možné vymazať, kým máte nevybavenú faktúru."
+    "deletion_blocked_by_invoice": "Účet nie je možné vymazať, kým máte nevybavenú faktúru.",
+    "export_failed": "Export údajov zlyhal.",
+    "deletion_failed": "Vymazanie účtu zlyhalo.",
+    "consent_not_found": "Súhlas sa nenašiel.",
+    "consent_already_granted": "Tento súhlas je už udelený."
   },
   "order": {
     "review": {

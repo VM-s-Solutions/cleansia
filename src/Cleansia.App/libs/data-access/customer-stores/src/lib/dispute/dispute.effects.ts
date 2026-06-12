@@ -16,7 +16,7 @@ export class CustomerDisputeEffects {
         this.customerClient.disputeClient
           .getPaged(
             undefined, undefined, undefined, undefined,
-            undefined, undefined, undefined, undefined,
+            action.statuses, undefined, undefined, undefined,
             undefined, undefined, undefined, undefined,
             undefined, action.offset, action.limit
           )

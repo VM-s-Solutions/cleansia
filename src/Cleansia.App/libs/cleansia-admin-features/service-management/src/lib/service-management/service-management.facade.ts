@@ -1,8 +1,7 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   AdminClient,
-  DeleteServiceResponse,
   ServiceListItem,
   SortDefinition,
 } from '@cleansia/admin-services';
@@ -10,9 +9,11 @@ import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { resolveServiceErrorKey } from './service-management.models';
 
 export interface ServiceFilterParams {
   searchTerm?: string;
+  isActive?: boolean;
 }
 
 @Injectable()
@@ -32,6 +33,8 @@ export class ServiceManagementFacade extends UnsubscribeControlDirective {
   private currentLimit = signal<number>(20);
   private currentSort = signal<SortDefinition[] | undefined>(undefined);
 
+  readonly isActiveFilter = computed(() => this.currentFilter()?.isActive);
+
   loadServices(): void {
     this.loading.set(true);
     const filterParams = this.currentFilter();
@@ -39,6 +42,7 @@ export class ServiceManagementFacade extends UnsubscribeControlDirective {
     this.adminClient.adminServiceClient
       .getPaged(
         filterParams?.searchTerm,
+        filterParams?.isActive,
         this.currentSort(),
         this.currentOffset(),
         this.currentLimit()
@@ -100,6 +104,58 @@ export class ServiceManagementFacade extends UnsubscribeControlDirective {
     }
   }
 
+  deactivateService(service: ServiceListItem): void {
+    if (!service.id) return;
+
+    this.adminClient.adminServiceClient
+      .deactivate(service.id)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError((error: unknown) => {
+          this.snackbarService.showError(
+            this.translate.instant(resolveServiceErrorKey(error))
+          );
+          return of(null);
+        })
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.snackbarService.showSuccess(
+            this.translate.instant(
+              'pages.service_management.messages.deactivate_success'
+            )
+          );
+          this.loadServices();
+        }
+      });
+  }
+
+  activateService(service: ServiceListItem): void {
+    if (!service.id) return;
+
+    this.adminClient.adminServiceClient
+      .activate(service.id)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError((error: unknown) => {
+          this.snackbarService.showError(
+            this.translate.instant(resolveServiceErrorKey(error))
+          );
+          return of(null);
+        })
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.snackbarService.showSuccess(
+            this.translate.instant(
+              'pages.service_management.messages.activate_success'
+            )
+          );
+          this.loadServices();
+        }
+      });
+  }
+
   deleteService(service: ServiceListItem): void {
     if (!service.id) return;
 
@@ -107,9 +163,14 @@ export class ServiceManagementFacade extends UnsubscribeControlDirective {
       .delete(service.id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError((error: unknown) => {
+          this.snackbarService.showError(
+            this.translate.instant(resolveServiceErrorKey(error))
+          );
+          return of(null);
+        })
       )
-      .subscribe((response: DeleteServiceResponse | null) => {
+      .subscribe((response) => {
         if (response) {
           this.snackbarService.showSuccess(
             this.translate.instant('pages.service_management.messages.delete_success')

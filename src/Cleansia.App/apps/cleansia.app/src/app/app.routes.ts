@@ -35,6 +35,16 @@ export const appRoutes: Route[] = [
     canActivate: [customerGuestGuard],
   },
   {
+    // Referral landing — pre-fills the registration form with the shared
+    // code; a logged-in invitee is bounced to orders by the guest guard.
+    path: CleansiaCustomerRoute.REFERRAL_LANDING + '/:code',
+    loadChildren: () =>
+      import('@cleansia-customer/register').then(
+        (m) => m.referralLandingRoutes
+      ),
+    canActivate: [customerGuestGuard],
+  },
+  {
     path: CleansiaCustomerRoute.CONFIRM_EMAIL,
     loadChildren: () =>
       import('@cleansia-customer/confirm-email').then(
@@ -88,6 +98,12 @@ export const appRoutes: Route[] = [
     path: CleansiaCustomerRoute.PROFILE,
     loadChildren: () =>
       import('@cleansia-customer/profile').then((m) => m.profileRoutes),
+    canActivate: [customerAuthGuard],
+  },
+  {
+    path: CleansiaCustomerRoute.SAVED_ADDRESSES,
+    loadChildren: () =>
+      import('@cleansia-customer/profile').then((m) => m.savedAddressesRoutes),
     canActivate: [customerAuthGuard],
   },
   {

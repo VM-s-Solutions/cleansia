@@ -12,6 +12,7 @@ import { CleansiaAdminRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
+import { AdminPayPeriodOpsComponent } from './components';
 import { PayPeriodDetailFacade } from './pay-period-detail.facade';
 
 @Component({
@@ -25,6 +26,7 @@ import { PayPeriodDetailFacade } from './pay-period-detail.facade';
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     ToastModule,
+    AdminPayPeriodOpsComponent,
   ],
   templateUrl: './pay-period-detail.component.html',
   providers: [PayPeriodDetailFacade, DialogService],
@@ -74,5 +76,12 @@ export class PayPeriodDetailComponent implements OnInit, OnDestroy {
 
   getStatusClass(status: string | null | undefined): string {
     return this.facade.getStatusClass(status);
+  }
+
+  onOpsChanged(): void {
+    const payPeriodId = this.facade.payPeriod()?.id;
+    if (payPeriodId) {
+      this.facade.loadPayPeriodDetail(payPeriodId);
+    }
   }
 }

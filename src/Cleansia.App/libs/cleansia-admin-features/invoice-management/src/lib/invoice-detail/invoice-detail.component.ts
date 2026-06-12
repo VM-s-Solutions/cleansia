@@ -20,6 +20,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 import { getInvoiceStatusClass } from '../invoice-management/invoice-management.models';
+import { AdminPayrollOpsComponent } from './components';
 import { InvoiceDetailFacade } from './invoice-detail.facade';
 import { getOrderPaysTableDefinition } from './invoice-detail.models';
 
@@ -36,6 +37,7 @@ import { getOrderPaysTableDefinition } from './invoice-detail.models';
     CleansiaTableComponent,
     ToastModule,
     CleansiaPermissionDirective,
+    AdminPayrollOpsComponent,
   ],
   templateUrl: './invoice-detail.component.html',
   providers: [InvoiceDetailFacade, DialogService],
@@ -96,5 +98,12 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
   onRegeneratePdf(): void {
     this.facade.regeneratePdf();
+  }
+
+  onOpsChanged(): void {
+    const invoiceId = this.facade.invoice()?.id;
+    if (invoiceId) {
+      this.facade.loadInvoiceDetail(invoiceId);
+    }
   }
 }

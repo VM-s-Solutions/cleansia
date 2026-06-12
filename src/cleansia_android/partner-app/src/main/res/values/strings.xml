@@ -1253,4 +1253,36 @@
     <string name="notification_channel_new_jobs_desc">Periodic digest of new jobs you can take in your work area.</string>
     <string name="notification_new_jobs_title">New jobs available</string>
     <string name="notification_new_jobs_body">%1$d new jobs available near you. Tap to view.</string>
+
+    <!-- ── Your devices ── -->
+    <string name="devices_title">Your devices</string>
+    <string name="profile_devices_summary">Manage signed-in devices</string>
+    <string name="devices_intro">Devices signed in to your account. Removing a device signs it out and stops its notifications.</string>
+    <string name="devices_this_device">This device</string>
+    <string name="devices_last_active">Last active %1$s</string>
+    <string name="devices_platform_android">Android</string>
+    <string name="devices_platform_ios">iOS</string>
+    <string name="devices_platform_web">Web</string>
+    <string name="devices_empty">No devices registered yet.</string>
+    <string name="devices_error_message">We couldn\'t load your devices. Check your connection and try again.</string>
+    <string name="devices_revoke_action">Remove device</string>
+    <string name="devices_revoke_dialog_title">Remove this device?</string>
+    <string name="devices_revoke_dialog_message">%1$s will be signed out and will stop receiving notifications.</string>
+    <string name="devices_revoke_dialog_confirm">Remove</string>
+    <string name="devices_revoke_success">Device removed</string>
+    <string name="devices_revoke_retry_hint">Couldn\'t remove — please try again.</string>
+    <string name="error_device_not_found">This device is no longer registered.</string>
+
+    <!-- ── Period pay (read-only) ── -->
+    <string name="period_pay_title">Period pay</string>
+    <string name="period_pay_hero_label">Period total</string>
+    <string name="period_pay_jobs_count">%1$d jobs included</string>
+    <string name="period_pay_breakdown_section">Pay breakdown</string>
+    <string name="period_pay_base">Base pay</string>
+    <string name="period_pay_extras">Extras</string>
+    <string name="period_pay_expenses">Expenses</string>
+    <string name="period_pay_jobs_section">Jobs in this period</string>
+    <string name="period_pay_empty">No jobs in this period yet.</string>
+    <string name="period_pay_error">We couldn\'t load this period\'s pay.</string>
+    <string name="invoice_view_period_pay">View period pay</string>
 </resources>

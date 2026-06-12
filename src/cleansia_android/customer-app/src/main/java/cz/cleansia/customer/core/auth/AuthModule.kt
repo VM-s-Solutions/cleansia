@@ -3,6 +3,7 @@ package cz.cleansia.customer.core.auth
 import android.content.Context
 import cz.cleansia.core.auth.AuthAuthenticator
 import cz.cleansia.core.auth.AuthInterceptor
+import cz.cleansia.core.auth.DeviceIdProvider
 import cz.cleansia.core.auth.NetworkErrorInterceptor
 import cz.cleansia.core.auth.SessionManager
 import cz.cleansia.core.auth.SessionScopedCache
@@ -178,8 +179,15 @@ object AuthModule {
 
     @Provides
     @Singleton
-    fun provideAuthInterceptor(tokenStore: TokenStore): AuthInterceptor =
-        AuthInterceptor(tokenStore)
+    fun provideDeviceIdProvider(@ApplicationContext context: Context): DeviceIdProvider =
+        DeviceIdProvider(context)
+
+    @Provides
+    @Singleton
+    fun provideAuthInterceptor(
+        tokenStore: TokenStore,
+        deviceIdProvider: DeviceIdProvider,
+    ): AuthInterceptor = AuthInterceptor(tokenStore, deviceIdProvider)
 
     @Provides
     @Singleton

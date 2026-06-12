@@ -3,12 +3,21 @@ import { ProfileComponent } from './profile/profile.component';
 import { MembershipManagementComponent } from './membership/membership-management.component';
 import { MembershipSubscribeComponent } from './membership/membership-subscribe.component';
 import { MembershipWelcomeComponent } from './membership/membership-welcome.component';
+import { SavedAddressesComponent } from './saved-addresses/saved-addresses.component';
 
 export const profileRoutes: Route[] = [
   {
     path: '',
     component: ProfileComponent,
     data: { title: 'page_titles.customer.profile' },
+  },
+];
+
+export const savedAddressesRoutes: Route[] = [
+  {
+    path: '',
+    component: SavedAddressesComponent,
+    data: { title: 'page_titles.customer.saved_addresses' },
   },
 ];
 

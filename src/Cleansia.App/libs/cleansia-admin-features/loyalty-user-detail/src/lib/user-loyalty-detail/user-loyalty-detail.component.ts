@@ -11,10 +11,12 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
+  AdminReferralListItem,
   GetUserLoyaltyActivityActivityItem,
   LoyaltyEarnSource,
   LoyaltyTier,
   LoyaltyTransactionType,
+  ReferralStatus,
 } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
@@ -73,6 +75,8 @@ export class UserLoyaltyDetailComponent
   readonly dialogMode = signal<GrantPointsDialogMode>('grant');
 
   activityColumns!: TableColumn<GetUserLoyaltyActivityActivityItem>[];
+  referralsAsReferrerColumns!: TableColumn<AdminReferralListItem>[];
+  referralsAsReferredColumns!: TableColumn<AdminReferralListItem>[];
 
   readonly headerTitle = computed(() => {
     const email = this.userEmail();
@@ -144,13 +148,18 @@ export class UserLoyaltyDetailComponent
 
     this.facade.loadAccount(id);
     this.facade.loadActivity(id, 0, 20);
+    this.facade.loadReferrals(id);
   }
 
   ngAfterViewInit(): void {
     this.rebuildActivityColumns();
+    this.rebuildReferralColumns();
     this.translate.onLangChange
       .pipe(takeUntil(this.destroy$))
-      .subscribe(() => this.rebuildActivityColumns());
+      .subscribe(() => {
+        this.rebuildActivityColumns();
+        this.rebuildReferralColumns();
+      });
   }
 
   ngOnDestroy(): void {
@@ -259,6 +268,85 @@ export class UserLoyaltyDetailComponent
         return this.translate.instant(
           'pages.loyalty_user_detail.activity.type.Revoke'
         );
+      default:
+        return '';
+    }
+  }
+
+  private rebuildReferralColumns(): void {
+    this.referralsAsReferrerColumns = this.buildReferralColumns(
+      'pages.loyalty_referrals.column.referred',
+      (row) => row.referredEmail || '—'
+    );
+    this.referralsAsReferredColumns = this.buildReferralColumns(
+      'pages.loyalty_referrals.column.referrer',
+      (row) => row.referrerEmail || '—'
+    );
+  }
+
+  private buildReferralColumns(
+    counterpartHeaderKey: string,
+    counterpartValue: (row: AdminReferralListItem) => string
+  ): TableColumn<AdminReferralListItem>[] {
+    const t = this.translate;
+    return [
+      {
+        id: 'counterpart',
+        field: 'id',
+        header: t.instant(counterpartHeaderKey),
+        getValue: counterpartValue,
+        width: '26%',
+      },
+      {
+        id: 'status',
+        field: 'status',
+        header: t.instant('pages.loyalty_referrals.column.status'),
+        getValue: (row) => this.referralStatusLabel(row.status),
+        width: '14%',
+      },
+      {
+        id: 'acceptedOn',
+        field: 'acceptedOn',
+        header: t.instant('pages.loyalty_referrals.column.accepted_on'),
+        getValue: (row) => this.formatDate(row.acceptedOn),
+        width: '20%',
+      },
+      {
+        id: 'qualifiedOn',
+        field: 'firstQualifyingOrderOn',
+        header: t.instant('pages.loyalty_referrals.column.qualified_on'),
+        getValue: (row) => this.formatDate(row.firstQualifyingOrderOn),
+        width: '20%',
+      },
+      {
+        id: 'points',
+        field: 'pointsAwardedToReferrer',
+        header: t.instant('pages.loyalty_referrals.column.points_awarded'),
+        getValue: (row) =>
+          row.pointsAwardedToReferrer == null &&
+          row.pointsAwardedToReferred == null
+            ? '—'
+            : t.instant('pages.loyalty_referrals.points_format', {
+                referrer: row.pointsAwardedToReferrer ?? 0,
+                referred: row.pointsAwardedToReferred ?? 0,
+              }),
+        width: '20%',
+      },
+    ];
+  }
+
+  referralStatusLabel(status: ReferralStatus | undefined): string {
+    switch (status) {
+      case ReferralStatus.Accepted:
+        return this.translate.instant('pages.loyalty_referrals.status.Accepted');
+      case ReferralStatus.Qualified:
+        return this.translate.instant(
+          'pages.loyalty_referrals.status.Qualified'
+        );
+      case ReferralStatus.Expired:
+        return this.translate.instant('pages.loyalty_referrals.status.Expired');
+      case ReferralStatus.Reversed:
+        return this.translate.instant('pages.loyalty_referrals.status.Reversed');
       default:
         return '';
     }

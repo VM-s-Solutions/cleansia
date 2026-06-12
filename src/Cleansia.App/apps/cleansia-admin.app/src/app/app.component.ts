@@ -11,7 +11,7 @@ import {
   CleansiaSidebarMenuComponent,
   SidebarMenuItem,
 } from '@cleansia/components';
-import { DialogService, PageTitleService } from '@cleansia/services';
+import { DialogService, PageTitleService, Policy } from '@cleansia/services';
 import { environment } from '../environments/environment';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
@@ -120,6 +120,12 @@ export class AppComponent implements OnInit {
       ],
     },
     {
+      label: 'sidebar.memberships',
+      icon: 'pi pi-id-card',
+      route: '/membership-plan-management',
+      permission: Policy.CanViewMembershipPlans,
+    },
+    {
       label: 'sidebar.marketing',
       icon: 'pi pi-megaphone',
       children: [
@@ -129,6 +135,22 @@ export class AppComponent implements OnInit {
           route: '/marketing/sitewide-push',
         },
       ],
+    },
+    {
+      label: 'sidebar.data_protection',
+      icon: 'pi pi-shield',
+      route: '/data-protection',
+      permission: [
+        Policy.CanViewGdprRequests,
+        Policy.CanAdminViewUserConsents,
+        Policy.CanAdminExportUserData,
+        Policy.CanAdminDeleteUserAccount,
+      ],
+    },
+    {
+      label: 'sidebar.profile',
+      icon: 'pi pi-user',
+      route: '/profile',
     },
     {
       label: 'sidebar.logout',

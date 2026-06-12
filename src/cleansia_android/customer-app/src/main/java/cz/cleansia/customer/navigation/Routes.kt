@@ -64,6 +64,10 @@ object Routes {
     @Serializable
     data object Security
 
+    /** Device self-service — list registered devices, revoke a lost one. */
+    @Serializable
+    data object Devices
+
     @Serializable
     data object Notifications
 

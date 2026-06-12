@@ -140,13 +140,28 @@ export {
   PaymentType,
   SortDefinition,
   CreateOrderResponse,
+  Code,
   DisputeDetails,
+  DisputeEvidenceDto,
   DisputeListItem,
+  DisputeMessageDto,
   DisputeReason,
   CreateDisputeCommand,
   AddDisputeMessageCommand,
+  UploadDisputeEvidenceResponse,
   PackageListItem,
   ServiceListItem,
+} from './lib/client/customer-client';
+export type { FileParameter } from './lib/client/customer-client';
+export {
+  NotificationPreferencesClient,
+  NotificationPreferencesDto,
+  UpdateNotificationPreferencesCommand,
+} from './lib/client/customer-client';
+export type {
+  INotificationPreferencesClient,
+  INotificationPreferencesDto,
+  IUpdateNotificationPreferencesCommand,
 } from './lib/client/customer-client';
 export * from './lib/guards';
 export * from './lib/interceptors';

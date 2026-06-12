@@ -183,3 +183,36 @@ _No open Wave-1 *planning* questions remain._
   CC-02/CC-03/CC-04 were never gated on this and proceed regardless.
 - _(superseded answer placeholder removed)_ _(owner fills in — choose (a) Language.IsDefault + fallback, or (b) mandatory-all + documented
   add-a-language behavior)_
+
+### Q-W3-2 — [blocking: no] Currency on the partner "my period pay" summary
+- Raised by: frontend (T-0171e)
+- Date: 2026-06-10
+- Question: `PeriodPaySummaryDto` / `OrderEmployeePayDto` carry no currency code (unlike
+  `EmployeeInvoiceDto.currencyCode`). The new partner web "My Pay" screen displays amounts with a
+  hardcoded `Kč` suffix, mirroring the existing partner dashboard earnings precedent
+  (`dashboard.facade.ts` "… Kč"). Should the backend add a `CurrencyCode` to `PeriodPaySummaryDto`
+  (DTO change → nswag-regen) so partner pay surfaces stop hardcoding the currency?
+- Why it matters: when a non-CZK tenant/market launches, every partner pay surface that hardcodes
+  `Kč` shows wrong currency; fixing it then touches the DTO, three clients (web/Android partner +
+  admin), and the screens at once.
+- Default taken (non-blocking): hardcoded `Kč`, consistent with the existing partner dashboard
+  earnings display.
+- Answer: _(owner fills in)_
+
+### Q-W3-3 — [blocking: partial — AC4 display only] PdfGenerationFailed / PdfGenerationError missing from admin invoice DTOs
+- Raised by: frontend (T-0171d)
+- Date: 2026-06-10
+- Question: AC4 requires the admin invoice list/detail to *show* `PdfGenerationFailed` +
+  `PdfGenerationError`, but neither `EmployeeInvoiceDto` nor `EmployeeInvoiceDetailDto`
+  (`Features/EmployeePayroll/DTOs/*`) exposes those domain fields (`EmployeeInvoice.cs:46-51`), so the
+  regenerated admin client cannot carry them. Should the backend add both fields to the two DTOs (+
+  mappers) so the UI can render the explicit failed state and error text? Requires backend DTO change
+  → **manual_step: nswag-regen** before the frontend can finish the display half of AC4.
+- Why it matters: without the flag the UI can only infer "no PDF yet" from an empty `pdfBlobName`; a
+  failed generation and a still-pending generation look identical, and the stored `PdfGenerationError`
+  is invisible to admins.
+- Default taken (non-blocking for the rest of T-0171d): the retry surface shipped — the invoice list
+  shows a retry-PDF action on any non-cancelled invoice without a PDF (`!pdfBlobName`), invoking the
+  existing `RegenerateInvoicePdf` endpoint; the detail page keeps its regenerate action. The explicit
+  failed-flag + error-message display lands as a follow-up once the DTO fields exist.
+- Answer: _(owner fills in)_

@@ -14,6 +14,7 @@ import {
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
+import { PermissionService } from '@cleansia/services';
 import { TranslateModule } from '@ngx-translate/core';
 import { RippleModule } from 'primeng/ripple';
 import { TooltipModule } from 'primeng/tooltip';
@@ -43,12 +44,17 @@ import { filter } from 'rxjs';
 export class CleansiaSidebarMenuComponent {
   private readonly router = inject(Router);
   private readonly el = inject(ElementRef);
+  private readonly permissionService = inject(PermissionService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   // Inputs
   menuItems = input<SidebarMenuItem[]>([]);
   isRoot = input(true);
   collapsed = input(false);
+
+  visibleItems = computed(() =>
+    this.menuItems().filter((item) => this.itemAllowed(item))
+  );
 
   // Two-way binding for mobile sidebar expanded state (controlled by parent)
   mobileExpanded = model(false);
@@ -136,5 +142,13 @@ export class CleansiaSidebarMenuComponent {
 
   getTooltipText(item: SidebarMenuItem): string {
     return this.effectiveCollapsed() ? item.label : '';
+  }
+
+  private itemAllowed(item: SidebarMenuItem): boolean {
+    if (!item.permission) return true;
+    const policies = Array.isArray(item.permission)
+      ? item.permission
+      : [item.permission];
+    return policies.some((p) => this.permissionService.hasPolicy(p));
   }
 }

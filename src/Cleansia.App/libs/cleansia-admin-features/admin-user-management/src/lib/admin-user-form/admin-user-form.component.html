@@ -71,6 +71,25 @@
               formControlName="phoneNumber"
             />
           </div>
+
+          <div class="form-field">
+            <cleansia-calendar
+              [label]="'pages.admin_user_form.birth_date' | translate"
+              formControlName="birthDate"
+              [maxDate]="maxBirthDate"
+            />
+            <small class="form-field__hint">
+              {{ 'pages.admin_user_form.birth_date_hint' | translate }}
+            </small>
+          </div>
+
+          <div class="form-field">
+            <cleansia-select
+              [label]="'pages.admin_user_form.preferred_language' | translate"
+              formControlName="preferredLanguageCode"
+              [options]="facade.languageOptions()"
+            />
+          </div>
         </div>
       </cleansia-section>
 

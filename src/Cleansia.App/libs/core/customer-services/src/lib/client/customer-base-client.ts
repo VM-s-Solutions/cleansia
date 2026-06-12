@@ -18,6 +18,7 @@ import {
   ILanguageClient,
   ILoyaltyClient,
   IMembershipClient,
+  INotificationPreferencesClient,
   IOrderClient as ICustomerOrderClient,
   IPackageClient,
   IPaymentClient,
@@ -30,6 +31,7 @@ import {
   LanguageClient,
   LoyaltyClient,
   MembershipClient,
+  NotificationPreferencesClient,
   OrderClient as CustomerOrderClient,
   PackageClient,
   PaymentClient,
@@ -65,6 +67,7 @@ interface ICustomerClient {
   promoCodeClient: IPromoCodeClient;
   referralClient: IReferralClient;
   membershipClient: IMembershipClient;
+  notificationPreferencesClient: INotificationPreferencesClient;
   recurringBookingClient: IRecurringBookingClient;
   extraClient: IExtraClient;
   // Catch-all generated client. Hosts /api/ServiceCity for the order-wizard
@@ -145,6 +148,8 @@ export class CustomerClient implements ICustomerClient {
     this.httpClient,
     this.apiBaseUrl
   );
+  notificationPreferencesClient: INotificationPreferencesClient =
+    new NotificationPreferencesClient(this.httpClient, this.apiBaseUrl);
   recurringBookingClient: IRecurringBookingClient = new RecurringBookingClient(
     this.httpClient,
     this.apiBaseUrl

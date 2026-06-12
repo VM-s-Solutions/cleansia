@@ -1,0 +1,120 @@
+@if (hasAnyAction()) {
+<cleansia-section [title]="'pages.invoice_detail.ops.title' | translate">
+  <div class="payroll-ops">
+    <div class="payroll-ops__actions">
+      @if (canAdjust()) {
+      <cleansia-button
+        [label]="'pages.invoice_detail.ops.adjust.action' | translate"
+        icon="pi pi-sliders-h"
+        [outlined]="facade.activePanel() !== 'adjust'"
+        (onClick)="toggleAdjustPanel()"
+      />
+      } @if (canDispute()) {
+      <cleansia-button
+        [label]="'pages.invoice_detail.ops.dispute.action' | translate"
+        icon="pi pi-flag"
+        severity="warn"
+        [outlined]="facade.activePanel() !== 'dispute'"
+        (onClick)="togglePanel('dispute')"
+      />
+      } @if (canReject()) {
+      <cleansia-button
+        [label]="'pages.invoice_detail.ops.reject.action' | translate"
+        icon="pi pi-ban"
+        severity="danger"
+        [outlined]="facade.activePanel() !== 'reject'"
+        (onClick)="togglePanel('reject')"
+      />
+      }
+    </div>
+
+    @if (facade.activePanel() === 'adjust') {
+    <div class="payroll-ops__panel">
+      <p class="payroll-ops__hint">
+        {{ 'pages.invoice_detail.ops.adjust.hint' | translate }}
+      </p>
+      <cleansia-text-input
+        dataType="number"
+        [label]="'pages.invoice_detail.ops.adjust.bonus' | translate"
+        [ngModel]="facade.bonusAmount()"
+        (valueChanges)="onBonusAmountChange($event)"
+      />
+      <cleansia-text-input
+        dataType="number"
+        [label]="'pages.invoice_detail.ops.adjust.deduction' | translate"
+        [ngModel]="facade.deductionAmount()"
+        (valueChanges)="onDeductionAmountChange($event)"
+      />
+      <cleansia-textarea
+        [label]="'pages.invoice_detail.ops.adjust.notes' | translate"
+        [placeholder]="'pages.invoice_detail.ops.adjust.notes_hint' | translate"
+        [ngModel]="facade.adjustNotes()"
+        (valueChanges)="onAdjustNotesChange($event)"
+      />
+      @if (facade.errorKey()) {
+      <p class="payroll-ops__error">{{ facade.errorKey()! | translate }}</p>
+      }
+      <cleansia-button
+        [label]="'pages.invoice_detail.ops.adjust.submit' | translate"
+        icon="pi pi-check"
+        [loading]="facade.submitting()"
+        [disabled]="!facade.canSubmitAdjust()"
+        (onClick)="submitAdjust()"
+      />
+    </div>
+    }
+
+    @if (facade.activePanel() === 'dispute') {
+    <div class="payroll-ops__panel">
+      <p class="payroll-ops__hint">
+        {{ 'pages.invoice_detail.ops.dispute.hint' | translate }}
+      </p>
+      <cleansia-textarea
+        [label]="'pages.invoice_detail.ops.dispute.notes' | translate"
+        [placeholder]="
+          'pages.invoice_detail.ops.dispute.notes_hint' | translate
+        "
+        [ngModel]="facade.disputeNotes()"
+        (valueChanges)="onDisputeNotesChange($event)"
+      />
+      @if (facade.errorKey()) {
+      <p class="payroll-ops__error">{{ facade.errorKey()! | translate }}</p>
+      }
+      <cleansia-button
+        [label]="'pages.invoice_detail.ops.dispute.submit' | translate"
+        icon="pi pi-flag"
+        severity="warn"
+        [loading]="facade.submitting()"
+        [disabled]="!facade.canSubmitDispute()"
+        (onClick)="submitDispute()"
+      />
+    </div>
+    }
+
+    @if (facade.activePanel() === 'reject') {
+    <div class="payroll-ops__panel">
+      <p class="payroll-ops__hint">
+        {{ 'pages.invoice_detail.ops.reject.hint' | translate }}
+      </p>
+      <cleansia-textarea
+        [label]="'pages.invoice_detail.ops.reject.notes' | translate"
+        [placeholder]="'pages.invoice_detail.ops.reject.notes_hint' | translate"
+        [ngModel]="facade.rejectNotes()"
+        (valueChanges)="onRejectNotesChange($event)"
+      />
+      @if (facade.errorKey()) {
+      <p class="payroll-ops__error">{{ facade.errorKey()! | translate }}</p>
+      }
+      <cleansia-button
+        [label]="'pages.invoice_detail.ops.reject.submit' | translate"
+        icon="pi pi-ban"
+        severity="danger"
+        [loading]="facade.submitting()"
+        [disabled]="!facade.canSubmitReject()"
+        (onClick)="submitReject()"
+      />
+    </div>
+    }
+  </div>
+</cleansia-section>
+}

@@ -158,12 +158,7 @@ export class PackageFormFacade extends UnsubscribeControlDirective {
 
   loadAvailableServices(): void {
     this.adminClient.adminServiceClient
-      .getPaged(
-        undefined, // searchTerm
-        undefined, // sort
-        0, // offset
-        1000 // limit - Load all services for selection
-      )
+      .getPaged(undefined, undefined, undefined, 0, 1000)
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => of(null))

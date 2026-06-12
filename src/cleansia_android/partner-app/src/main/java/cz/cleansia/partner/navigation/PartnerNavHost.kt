@@ -41,9 +41,11 @@ import cz.cleansia.partner.features.auth.screens.ConfirmEmailScreen
 import cz.cleansia.partner.features.auth.screens.ForgotPasswordScreen
 import cz.cleansia.partner.features.auth.screens.LoginScreen
 import cz.cleansia.partner.features.auth.screens.RegisterScreen
+import cz.cleansia.partner.features.devices.DevicesScreen
 import cz.cleansia.partner.features.earnings.screens.EarningsSummaryScreen
 import cz.cleansia.partner.features.invoices.screens.InvoiceDetailsScreen
 import cz.cleansia.partner.features.invoices.screens.InvoicesListScreen
+import cz.cleansia.partner.features.payroll.PeriodPayScreen
 import cz.cleansia.partner.features.main.MainScaffold
 import cz.cleansia.partner.features.notifications.screens.NotificationsScreen
 import cz.cleansia.partner.features.orders.screens.OrderDetailsScreen
@@ -243,7 +245,16 @@ fun PartnerNavHost(navController: NavHostController) {
         }
 
         composable<NavRoute.InvoiceDetails> {
-            InvoiceDetailsScreen(onNavigateBack = { navController.popBackStack() })
+            InvoiceDetailsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onOpenPeriodPay = { payPeriodId, currencyCode ->
+                    navController.navigate(NavRoute.PeriodPay(payPeriodId, currencyCode))
+                },
+            )
+        }
+
+        composable<NavRoute.PeriodPay> {
+            PeriodPayScreen(onNavigateBack = { navController.popBackStack() })
         }
 
         composable<NavRoute.Earnings> {
@@ -291,6 +302,7 @@ fun PartnerNavHost(navController: NavHostController) {
                 onNavigateToDocuments = { navController.navigate(NavRoute.ProfileDocuments) },
                 onNavigateToLanguage = { navController.navigate(NavRoute.PreferenceLanguage) },
                 onNavigateToTheme = { navController.navigate(NavRoute.PreferenceTheme) },
+                onNavigateToDevices = { navController.navigate(NavRoute.Devices) },
                 onSignedOut = {
                     navController.navigate(NavRoute.Login) {
                         popUpTo(NavRoute.Profile) { inclusive = true }
@@ -402,6 +414,10 @@ fun PartnerNavHost(navController: NavHostController) {
 
         composable<NavRoute.PreferenceTheme> {
             ThemePickerScreen(onNavigateBack = { navController.popBackStack() })
+        }
+
+        composable<NavRoute.Devices> {
+            DevicesScreen(onNavigateBack = { navController.popBackStack() })
         }
 
         composable<NavRoute.AddressPicker> {

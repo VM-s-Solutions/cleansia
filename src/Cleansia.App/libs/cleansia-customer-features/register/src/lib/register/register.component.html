@@ -107,6 +107,12 @@
               <div class="cleansia-register__code-row-applied">
                 {{ 'auth.register.referral.row_applied' | translate: { code: facade.referralCode() } }}
               </div>
+            } @else {
+              @if (referralInlineError(); as inlineError) {
+                <div class="cleansia-register__code-row-error">
+                  {{ inlineError }}
+                </div>
+              }
             }
           </div>
           <div class="cleansia-register__code-row-action">

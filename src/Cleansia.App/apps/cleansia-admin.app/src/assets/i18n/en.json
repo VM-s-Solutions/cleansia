@@ -83,7 +83,12 @@
       "sitewide_push": "Sitewide Push",
       "not_found": "Page Not Found",
       "disputes": "Disputes",
-      "dispute_details": "Dispute Details"
+      "dispute_details": "Dispute Details",
+      "membership_plans": "Membership Plans",
+      "membership_plan_create": "Create Membership Plan",
+      "membership_plan_edit": "Edit Membership Plan",
+      "data_protection": "Data Protection",
+      "profile": "My Profile"
     }
   },
   "components": {
@@ -224,7 +229,10 @@
     "marketing": "Marketing",
     "marketing_sitewide_push": "Sitewide Push",
     "logout": "Logout",
-    "disputes": "Disputes"
+    "disputes": "Disputes",
+    "memberships": "Memberships",
+    "data_protection": "Data Protection",
+    "profile": "My Profile"
   },
   "pages": {
     "unauthorized": {
@@ -658,8 +666,10 @@
       },
       "messages": {
         "load_error": "Failed to load invoices",
-        "download_error": "Failed to download invoice"
-      }
+        "download_error": "Failed to download invoice",
+        "retry_pdf_success": "Invoice PDF generation retried successfully"
+      },
+      "retry_pdf": "Retry PDF Generation"
     },
     "pay_config_management": {
       "title": "Global Rates",
@@ -727,7 +737,11 @@
         "search": "Search",
         "search_placeholder": "Search by name or description",
         "reset": "Reset Filters",
-        "clear_all": "Clear All"
+        "clear_all": "Clear All",
+        "status": "Status",
+        "status_all": "All",
+        "status_active": "Active",
+        "status_inactive": "Inactive"
       },
       "columns": {
         "name": "Name",
@@ -743,8 +757,13 @@
         "update_success": "Service updated successfully",
         "update_error": "Failed to update service",
         "delete_success": "Service deleted successfully",
-        "delete_error": "Failed to delete service"
-      }
+        "delete_error": "Failed to delete service",
+        "activate_success": "Service activated successfully",
+        "deactivate_success": "Service deactivated successfully"
+      },
+      "activate_service": "Activate Service",
+      "deactivate_service": "Deactivate Service",
+      "deactivate_confirm": "Deactivate “{{name}}”? It will be hidden from the customer booking catalog; history is kept."
     },
     "service_edit": {
       "create_title": "Create Service",
@@ -791,7 +810,11 @@
         "search": "Search",
         "search_placeholder": "Search by name or description",
         "reset": "Reset Filters",
-        "clear_all": "Clear All"
+        "clear_all": "Clear All",
+        "status": "Status",
+        "status_all": "All",
+        "status_active": "Active",
+        "status_inactive": "Inactive"
       },
       "columns": {
         "name": "Name",
@@ -806,8 +829,13 @@
         "update_success": "Package updated successfully",
         "update_error": "Failed to update package",
         "delete_success": "Package deleted successfully",
-        "delete_error": "Failed to delete package"
-      }
+        "delete_error": "Failed to delete package",
+        "activate_success": "Package activated successfully",
+        "deactivate_success": "Package deactivated successfully"
+      },
+      "activate_package": "Activate Package",
+      "deactivate_package": "Deactivate Package",
+      "deactivate_confirm": "Deactivate “{{name}}”? It will be hidden from the customer booking catalog; history is kept."
     },
     "package_form": {
       "create_title": "Create Package",
@@ -881,7 +909,10 @@
         "create_error": "Failed to create admin user",
         "update_success": "Admin user updated successfully",
         "update_error": "Failed to update admin user"
-      }
+      },
+      "birth_date": "Birth Date",
+      "birth_date_hint": "The administrator must be at least 18 years old",
+      "preferred_language": "Preferred Language"
     },
     "language_management": {
       "title": "Language Management",
@@ -1027,8 +1058,11 @@
       "messages": {
         "load_error": "Failed to load currencies",
         "delete_success": "Currency deleted successfully",
-        "delete_error": "Failed to delete currency"
-      }
+        "delete_error": "Failed to delete currency",
+        "set_default_success": "Default currency updated"
+      },
+      "set_default": "Set as Default",
+      "set_default_confirm": "Set {{code}} as the default currency?"
     },
     "currency_form": {
       "create_title": "Create Currency",
@@ -1392,6 +1426,35 @@
         "download_error": "Failed to download invoice",
         "regenerate_success": "Invoice PDF regenerated successfully",
         "regenerate_error": "Failed to regenerate invoice PDF"
+      },
+      "ops": {
+        "title": "Settlement Operations",
+        "adjust": {
+          "action": "Adjust Amounts",
+          "hint": "Update the bonus and deduction for this invoice. The total amount is recalculated automatically.",
+          "bonus": "Bonus Amount",
+          "deduction": "Deduction Amount",
+          "notes": "Admin Notes (optional)",
+          "notes_hint": "Explain why the amounts were adjusted...",
+          "submit": "Save Adjustment",
+          "success": "Invoice amounts updated successfully"
+        },
+        "dispute": {
+          "action": "Dispute Invoice",
+          "hint": "Mark this invoice as disputed. Notes are required.",
+          "notes": "Dispute Notes",
+          "notes_hint": "Describe the reason for the dispute...",
+          "submit": "Confirm Dispute",
+          "success": "Invoice marked as disputed"
+        },
+        "reject": {
+          "action": "Reject Invoice",
+          "hint": "Reject this invoice. Notes are required.",
+          "notes": "Rejection Notes",
+          "notes_hint": "Describe the reason for the rejection...",
+          "submit": "Confirm Rejection",
+          "success": "Invoice rejected"
+        }
       }
     },
     "promo_codes": {
@@ -1612,18 +1675,27 @@
         "error": {
           "generic": "Couldn't update points"
         }
+      },
+      "referrals": {
+        "title": "Referral relationships",
+        "load_error": "Couldn't load referrals for this user.",
+        "as_referrer": "As referrer",
+        "as_referred": "As referred",
+        "empty_as_referrer": "No referrals sent",
+        "empty_as_referred": "Not referred by anyone"
       }
     },
     "loyalty_referrals": {
       "title": "Referrals",
-      "description": "All customer referral activity. Read-only.",
+      "description": "All customer referral activity, with reverse and force-qualify interventions.",
       "filter": {
         "status_all": "All statuses",
         "status_accepted": "Accepted",
         "status_qualified": "Qualified",
         "status_expired": "Expired",
         "date_from": "From",
-        "date_to": "To"
+        "date_to": "To",
+        "status_reversed": "Reversed"
       },
       "column": {
         "referrer": "Referrer",
@@ -1636,12 +1708,35 @@
       "status": {
         "Accepted": "Accepted",
         "Qualified": "Qualified",
-        "Expired": "Expired"
+        "Expired": "Expired",
+        "Reversed": "Reversed"
       },
       "points_format": "{{referrer}} / {{referred}}",
       "not_yet": "—",
       "empty": "No referrals yet",
-      "loading": "Loading..."
+      "loading": "Loading...",
+      "actions": {
+        "reverse": "Reverse referral",
+        "force_qualify": "Force-qualify referral"
+      },
+      "intervention": {
+        "title_reverse": "Reverse referral",
+        "title_force_qualify": "Force-qualify referral",
+        "hint_reverse": "Revokes the points granted to both parties and marks the referral as reversed. The reason is stored in the audit ledger.",
+        "hint_force_qualify": "Marks the referral as qualified and grants the points to both parties. The reason is stored in the audit ledger.",
+        "field": {
+          "reason": "Reason",
+          "reason_help": "Required. Visible in the loyalty ledger."
+        },
+        "validation": {
+          "reason_required": "Reason is required",
+          "reason_max": "Reason must be 500 characters or fewer"
+        },
+        "submit_reverse": "Reverse",
+        "submit_force_qualify": "Qualify",
+        "success_reverse": "Referral reversed and points clawed back",
+        "success_force_qualify": "Referral qualified and points granted"
+      }
     },
     "sitewide_push": {
       "title": "Sitewide Push",
@@ -1727,6 +1822,163 @@
         "submit": "Resolve dispute",
         "submitted": "Dispute resolution submitted"
       }
+    },
+    "membership_plans": {
+      "title": "Membership Plans",
+      "description": "Manage subscription plans: pricing, Stripe price ids, trials and benefits.",
+      "create_plan": "New plan",
+      "filter": {
+        "search": "Search by code or name",
+        "active_only": "Active only"
+      },
+      "load_error": "Couldn't load membership plans. Try again later.",
+      "empty": "No membership plans yet",
+      "columns": {
+        "code": "Code",
+        "name": "Name",
+        "interval": "Billing",
+        "price": "Price (CZK)",
+        "monthly_equivalent": "Monthly equiv. (CZK)",
+        "discount": "Discount",
+        "trial_days": "Trial days",
+        "free_cancel_window": "Free-cancel (h)",
+        "express": "Express",
+        "status": "Status"
+      },
+      "interval": {
+        "Monthly": "Monthly",
+        "Yearly": "Yearly"
+      },
+      "actions": {
+        "deactivate": "Deactivate plan"
+      },
+      "deactivate_confirm": {
+        "title": "Deactivate plan?",
+        "message": "Plan {{code}} will disappear from the customer plan switcher. Existing subscriptions keep working.",
+        "yes": "Deactivate"
+      },
+      "messages": {
+        "deactivate_success": "Plan deactivated"
+      },
+      "form": {
+        "create_title": "Create membership plan",
+        "edit_title": "Edit membership plan",
+        "section": {
+          "identity": "Identity",
+          "pricing": "Pricing",
+          "benefits": "Benefits"
+        },
+        "field": {
+          "code": "Code",
+          "code_help": "Unique, uppercase letters/numbers/underscores. Cannot be changed later.",
+          "name": "Name",
+          "interval": "Billing interval",
+          "interval_immutable": "Billing interval cannot be changed after creation.",
+          "price": "Price (CZK)",
+          "stripe_price_id": "Stripe Price id",
+          "stripe_price_id_help": "Copy from the Stripe dashboard (price_...). The platform does not create Stripe prices.",
+          "discount": "Discount (%)",
+          "trial_days": "Trial period (days)",
+          "free_cancel_window": "Free-cancellation window (hours)",
+          "express_upgrade": "Allows express upgrade"
+        },
+        "validation": {
+          "code_invalid": "2–50 characters: letters, numbers or underscores.",
+          "price_negative": "Price must be zero or more.",
+          "stripe_price_id_required": "Stripe Price id is required.",
+          "discount_range": "Discount must be between 0 and 100.",
+          "trial_negative": "Trial days must be zero or more.",
+          "window_negative": "Window must be zero or more."
+        },
+        "submit_create": "Create plan",
+        "submit_update": "Save changes",
+        "success": {
+          "created": "Membership plan created",
+          "updated": "Membership plan updated"
+        }
+      }
+    },
+    "data_protection": {
+      "title": "Data Protection",
+      "description": "GDPR back office: request audit trail, consents, data export and erasure.",
+      "requests": {
+        "title": "GDPR requests",
+        "load_error": "Couldn't load GDPR requests.",
+        "empty": "No GDPR requests yet",
+        "columns": {
+          "user_id": "User id",
+          "type": "Type",
+          "status": "Status",
+          "processed_by": "Processed by",
+          "completed_at": "Completed at",
+          "notes": "Notes",
+          "created_on": "Created on"
+        }
+      },
+      "request_status": {
+        "Pending": "Pending",
+        "Processing": "Processing",
+        "Completed": "Completed",
+        "Failed": "Failed"
+      },
+      "request_types": {
+        "export": "Export",
+        "deletion": "Deletion"
+      },
+      "consent_types": {
+        "terms_of_service": "Terms of service",
+        "privacy_policy": "Privacy policy",
+        "marketing_emails": "Marketing emails",
+        "data_processing": "Data processing"
+      },
+      "user_tools": {
+        "title": "User tools",
+        "hint": "Enter a user id to view consents, export their data (DSAR) or erase the account.",
+        "user_id": "User id",
+        "user_id_required": "User id is required."
+      },
+      "consents": {
+        "load_button": "View consents",
+        "load_error": "Couldn't load consents.",
+        "title_for_user": "Consents for {{userId}}",
+        "empty": "No consents recorded",
+        "granted": "Granted",
+        "withdrawn": "Withdrawn",
+        "columns": {
+          "type": "Consent",
+          "state": "State",
+          "granted_at": "Granted at",
+          "withdrawn_at": "Withdrawn at",
+          "created_on": "Created on"
+        }
+      },
+      "export": {
+        "button": "Export data",
+        "success": "Export downloaded. The request was recorded in the audit trail.",
+        "error": "Couldn't export user data."
+      },
+      "erase": {
+        "button": "Erase account",
+        "success": "Account erased.",
+        "error": "Couldn't erase the account.",
+        "confirm_title": "Erase account?",
+        "confirm_message": "This permanently anonymizes the account of user {{userId}}. This cannot be undone.",
+        "confirm_yes": "Erase"
+      }
+    },
+    "admin_profile": {
+      "title": "My Profile",
+      "change_password": {
+        "title": "Change Password",
+        "current_password": "Current Password",
+        "new_password": "New Password",
+        "confirm_password": "Confirm New Password",
+        "password_hint": "At least 8 characters, including at least one letter and one digit",
+        "submit": "Change Password"
+      },
+      "messages": {
+        "change_password_success": "Password changed successfully"
+      }
     }
   },
   "employees": {
@@ -1789,7 +2041,24 @@
       "modified_at": "Modified At",
       "modified_by": "Modified By",
       "close_period": "Close Pay Period",
-      "not_found": "Pay period not found"
+      "not_found": "Pay period not found",
+      "ops": {
+        "title": "Settlement Operations",
+        "mark_paid": {
+          "action": "Mark Period as Paid",
+          "hint": "Mark this closed pay period as paid. This finalizes the settlement.",
+          "submit": "Confirm Mark as Paid",
+          "success": "Pay period marked as paid"
+        },
+        "reopen": {
+          "action": "Reopen Period",
+          "hint": "Reopen this pay period. The closure information will be cleared.",
+          "notes": "Reopen Notes (optional)",
+          "notes_hint": "Explain why the period is being reopened...",
+          "submit": "Confirm Reopen",
+          "success": "Pay period reopened"
+        }
+      }
     },
     "status": {
       "open": "Open",
@@ -1824,7 +2093,9 @@
       "invalid_google_token": "Invalid Google token",
       "invalid_password_format": "Invalid password format. Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number.",
       "invalid_reset_token": "Invalid or expired password reset token",
-      "same_reset_password": "New password must be different from the current password"
+      "same_reset_password": "New password must be different from the current password",
+      "current_password_invalid": "The current password is incorrect",
+      "change_password_failed": "Failed to change the password"
     },
     "common": {
       "invalid_enum_value": "Invalid value provided",
@@ -1975,7 +2246,8 @@
       "has_order_pays": "Cannot delete pay period that has associated order pays",
       "invalid_duration": "Invalid pay period duration",
       "not_closed": "Pay period is not closed",
-      "overlapping_period": "Pay period overlaps with an existing period"
+      "overlapping_period": "Pay period overlaps with an existing period",
+      "already_paid": "Pay period has already been paid"
     },
     "payroll": {
       "employee_not_assigned": "Employee not assigned to this order",
@@ -1986,7 +2258,8 @@
         "invalid_status": "Invalid invoice status",
         "not_found": "Invoice not found",
         "pdf_generation_failed": "Failed to generate PDF",
-        "template_not_found": "Invoice template not found"
+        "template_not_found": "Invoice template not found",
+        "already_paid": "Invoice has already been paid"
       },
       "no_active_period": "No active pay period found",
       "no_currency": "No currency found",
@@ -2055,6 +2328,21 @@
     },
     "address": {
       "invalid_length": "Invalid address length"
+    },
+    "membership": {
+      "plan": {
+        "code_already_exists": "A plan with this code already exists.",
+        "discount_out_of_range": "Discount must be between 0 and 100.",
+        "not_found": "Membership plan not found.",
+        "action_failed": "The membership plan action failed. Try again."
+      }
+    },
+    "referral": {
+      "not_qualified": "The referral is not in the qualified state.",
+      "not_accepted": "The referral is not in the accepted state.",
+      "reason_required": "A reason is required.",
+      "not_found": "Referral not found.",
+      "action_failed": "The referral action failed. Try again."
     }
   },
   "validation": {
@@ -2068,7 +2356,8 @@
       "phone_number": "Invalid phone number format",
       "iban": "Invalid IBAN format",
       "zip_code": "Invalid zip code format",
-      "confirm_password": "Passwords do not match"
+      "confirm_password": "Passwords do not match",
+      "minimum_age": "Minimum age is {{ requiredAge }} years. Current age: {{ actualAge }} years"
     },
     "auth": {
       "email_not_confirmed": "Email address is not confirmed",
@@ -2415,7 +2704,9 @@
   "gdpr": {
     "deletion_already_pending": "A deletion request is already in progress.",
     "deletion_blocked_by_order": "We can't delete your account while you have an active order.",
-    "deletion_blocked_by_invoice": "We can't delete your account while you have a pending invoice."
+    "deletion_blocked_by_invoice": "We can't delete your account while you have a pending invoice.",
+    "export_failed": "Data export failed.",
+    "deletion_failed": "Account deletion failed."
   },
   "order": {
     "review": {
@@ -2424,5 +2715,8 @@
   },
   "recurring_booking": {
     "not_found": "That recurring booking no longer exists."
+  },
+  "admin_user": {
+    "cannot_target_admin_via_gdpr_tool": "Administrator accounts can't be targeted with the GDPR tools."
   }
 }

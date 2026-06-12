@@ -56,6 +56,12 @@ export const appRoutes: Route[] = [
     canActivate: [authGuard],
   },
   {
+    path: CleansiaPartnerRoute.MY_PAY,
+    loadChildren: () =>
+      import('@cleansia-partner/invoices').then((m) => m.periodPayRoutes),
+    canActivate: [authGuard],
+  },
+  {
     path: CleansiaPartnerRoute.GDPR,
     loadChildren: () =>
       import('@cleansia-partner/gdpr').then((m) => m.gdprRoutes),

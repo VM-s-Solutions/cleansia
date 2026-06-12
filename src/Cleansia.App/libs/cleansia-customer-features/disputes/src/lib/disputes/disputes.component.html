@@ -11,6 +11,17 @@
 
   <!-- Actions Bar -->
   <div class="customer-disputes__actions-bar">
+    <p-select
+      class="customer-disputes__status-filter"
+      [options]="statusFilterOptions"
+      [ngModel]="facade.statusFilter()"
+      (ngModelChange)="onStatusFilterChange($event)"
+      optionLabel="label"
+      optionValue="value"
+      [showClear]="true"
+      [placeholder]="'pages.disputes.filter_status' | translate"
+      appendTo="body"
+    />
     <cleansia-button
       [title]="'pages.disputes.create_new' | translate"
       [severity]="'primary'"
@@ -62,12 +73,18 @@
           <div class="dispute-card__header">
             <span class="dispute-card__order">#{{ dispute.displayOrderNumber }}</span>
             <p-tag
-              [value]="dispute.status.name || ''"
+              [value]="statusLabel(dispute.status)"
               [severity]="getStatusSeverity(dispute.status)"
               styleClass="text-xs"
             />
+            @if (isUnread(dispute)) {
+            <span class="dispute-card__unread">
+              <i class="pi pi-comment"></i>
+              {{ 'pages.disputes.new_reply' | translate }}
+            </span>
+            }
           </div>
-          <div class="dispute-card__reason">{{ dispute.reason.name }}</div>
+          <div class="dispute-card__reason">{{ reasonLabel(dispute.reason) }}</div>
           <div class="dispute-card__date">
             <i class="pi pi-calendar"></i>
             {{ formatDate(dispute.createdOn) }}
@@ -185,46 +202,105 @@
       <p-skeleton width="80%" height="1.5rem" />
       <p-skeleton width="100%" height="8rem" />
     </div>
-    } @else if (disputeDetail()) {
+    } @else { @if (disputeDetail(); as detail) {
     <div class="customer-disputes__detail">
       <!-- Detail Info Cards -->
       <div class="customer-disputes__detail-grid">
         <div class="customer-disputes__detail-item">
           <span class="customer-disputes__detail-label">{{ 'pages.disputes.reason' | translate }}</span>
-          <span class="customer-disputes__detail-value">{{ disputeDetail()!.reason.name }}</span>
+          <span class="customer-disputes__detail-value">{{ reasonLabel(detail.reason) }}</span>
         </div>
         <div class="customer-disputes__detail-item">
           <span class="customer-disputes__detail-label">{{ 'pages.disputes.table.status' | translate }}</span>
-          <p-tag [value]="disputeDetail()!.status.name || ''" [severity]="getStatusSeverity(disputeDetail()!.status)" />
+          <p-tag [value]="statusLabel(detail.status)" [severity]="getStatusSeverity(detail.status)" />
         </div>
+        @if (detail.refundAmount != null) {
+        <div class="customer-disputes__detail-item">
+          <span class="customer-disputes__detail-label">{{ 'pages.disputes.refund_amount' | translate }}</span>
+          <span class="customer-disputes__detail-value customer-disputes__detail-value--refund">
+            {{ formatPrice(detail.refundAmount) }}
+          </span>
+        </div>
+        }
       </div>
 
-      @if (disputeDetail()!.description) {
+      @if (detail.description) {
       <div class="customer-disputes__detail-section">
         <span class="customer-disputes__detail-label">{{ 'pages.disputes.description' | translate }}</span>
-        <p class="customer-disputes__detail-text">{{ disputeDetail()!.description }}</p>
+        <p class="customer-disputes__detail-text">{{ detail.description }}</p>
       </div>
       }
 
-      @if (disputeDetail()!.resolutionNotes) {
+      @if (detail.resolutionNotes) {
       <div class="customer-disputes__detail-section customer-disputes__detail-section--resolution">
         <span class="customer-disputes__detail-label">
           <i class="pi pi-check-circle"></i>
           {{ 'pages.disputes.resolution' | translate }}
         </span>
-        <p class="customer-disputes__detail-text">{{ disputeDetail()!.resolutionNotes }}</p>
+        <p class="customer-disputes__detail-text">{{ detail.resolutionNotes }}</p>
+      </div>
+      }
+
+      <!-- Evidence -->
+      @if (detail.evidence && detail.evidence.length > 0) {
+      <div class="customer-disputes__evidence-section">
+        <h4 class="customer-disputes__evidence-title">
+          <i class="pi pi-paperclip"></i>
+          {{ 'pages.disputes.evidence.title' | translate }}
+        </h4>
+        <ul class="customer-disputes__evidence-list">
+          @for (item of detail.evidence; track item.id) {
+          <li class="customer-disputes__evidence-item">
+            @if (item.blobUrl) {
+            <a [href]="item.blobUrl" target="_blank" rel="noopener noreferrer">
+              <i class="pi pi-file"></i>
+              {{ item.fileName }}
+            </a>
+            } @else {
+            <span>
+              <i class="pi pi-file"></i>
+              {{ item.fileName }}
+            </span>
+            }
+            <small>{{ formatDate(item.uploadedOn) }}</small>
+          </li>
+          }
+        </ul>
+      </div>
+      }
+
+      @if (canUploadEvidence()) {
+      <div class="customer-disputes__evidence-upload">
+        <span class="customer-disputes__detail-label">
+          {{ 'pages.disputes.evidence.upload' | translate }}
+        </span>
+        <cleansia-file
+          [formControl]="evidenceControl"
+          [multiple]="false"
+          [accept]="evidenceAccept"
+          [maxFileSize]="evidenceMaxFileSize"
+        />
+        <cleansia-button
+          [title]="'pages.disputes.evidence.upload' | translate"
+          [severity]="'secondary'"
+          [icon]="'pi pi-upload'"
+          [iconPosition]="'left'"
+          [loading]="facade.uploadingEvidence()"
+          [disabled]="evidenceControl.value.length === 0"
+          (clickFn)="uploadEvidence()"
+        />
       </div>
       }
 
       <!-- Messages Thread -->
-      @if (disputeDetail()!.messages && disputeDetail()!.messages!.length > 0) {
+      @if (detail.messages && detail.messages.length > 0) {
       <div class="customer-disputes__messages-section">
         <h4 class="customer-disputes__messages-title">
           <i class="pi pi-comments"></i>
           {{ 'pages.disputes.messages' | translate }}
         </h4>
         <div class="customer-disputes__messages">
-          @for (msg of disputeDetail()!.messages!; track msg.id) {
+          @for (msg of detail.messages; track msg.id) {
           <div class="customer-disputes__message" [class.customer-disputes__message--staff]="msg.isStaffMessage">
             <div class="customer-disputes__message-bubble">
               <div class="customer-disputes__message-header">
@@ -260,6 +336,6 @@
         />
       </div>
     </div>
-    }
+    } }
   </p-dialog>
 </div>

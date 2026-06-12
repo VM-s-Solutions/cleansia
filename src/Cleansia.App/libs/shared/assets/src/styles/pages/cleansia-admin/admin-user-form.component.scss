@@ -44,6 +44,13 @@
     &.full-width {
       grid-column: 1 / -1;
     }
+
+    &__hint {
+      display: block;
+      margin-top: 0.25rem;
+      color: var(--cleansia-primary-600);
+      font-size: 0.8rem;
+    }
   }
 
   .form-actions {

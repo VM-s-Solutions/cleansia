@@ -28,6 +28,7 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.DeleteForever
+import androidx.compose.material.icons.outlined.Devices
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Gavel
 import androidx.compose.material.icons.outlined.HelpOutline
@@ -108,6 +109,7 @@ fun ProfileTab(
         ProfileRow("appearance", Icons.Outlined.DarkMode, R.string.profile_row_appearance),
         ProfileRow("language", Icons.Outlined.Language, R.string.profile_row_language),
         ProfileRow("security", Icons.Outlined.Lock, R.string.profile_row_security),
+        ProfileRow("devices", Icons.Outlined.Devices, R.string.profile_row_devices),
     )
     val supportRows = listOf(
         ProfileRow("help", Icons.Outlined.HelpOutline, R.string.profile_row_help),

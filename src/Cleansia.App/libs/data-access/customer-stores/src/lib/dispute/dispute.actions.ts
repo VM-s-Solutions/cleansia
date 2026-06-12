@@ -7,7 +7,7 @@ import { createAction, props } from '@ngrx/store';
 
 export const loadCustomerDisputes = createAction(
   '[Customer Dispute] Load Paged',
-  props<{ offset?: number; limit?: number }>()
+  props<{ offset?: number; limit?: number; statuses?: number[] }>()
 );
 export const loadCustomerDisputesSuccess = createAction(
   '[Customer Dispute] Load Paged Success',

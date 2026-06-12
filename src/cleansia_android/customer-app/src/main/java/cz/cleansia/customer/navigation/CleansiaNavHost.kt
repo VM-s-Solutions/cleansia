@@ -37,6 +37,7 @@ import cz.cleansia.customer.features.orders.photos.OrderPhotosScreen
 import cz.cleansia.customer.core.settings.AppSettingsRepository
 import cz.cleansia.customer.features.addresses.AddressManagerScreen
 import cz.cleansia.customer.features.profile.AppearanceScreen
+import cz.cleansia.customer.features.profile.DevicesScreen
 import cz.cleansia.customer.features.profile.EditProfileScreen
 import cz.cleansia.customer.features.profile.HelpSupportScreen
 import cz.cleansia.customer.features.profile.LanguageScreen
@@ -327,6 +328,7 @@ fun CleansiaNavHost(
                         "disputes" -> navController.navigate(Routes.Disputes)
                         "notifications" -> navController.navigate(Routes.Notifications)
                         "security" -> navController.navigate(Routes.Security)
+                        "devices" -> navController.navigate(Routes.Devices)
                         "appearance" -> navController.navigate(Routes.Appearance)
                         "language" -> navController.navigate(Routes.Language)
                         "help" -> navController.navigate(Routes.HelpSupport)
@@ -426,6 +428,14 @@ fun CleansiaNavHost(
             popExitTransition = popExit,
         ) {
             SecurityScreen(onBack = { navController.popBackStack() })
+        }
+        composable<Routes.Devices>(
+            enterTransition = pushEnter,
+            exitTransition = pushExit,
+            popEnterTransition = popEnter,
+            popExitTransition = popExit,
+        ) {
+            DevicesScreen(onBack = { navController.popBackStack() })
         }
         composable<Routes.DeleteAccount>(
             enterTransition = pushEnter,

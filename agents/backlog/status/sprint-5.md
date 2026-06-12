@@ -8,9 +8,9 @@
   The refund epic was pulled ahead of it into Wave 2 (now merged), so the two tickets that were
   **explicitly deferred to Wave 3 because they depend on the refund seam** — T-0170 (admin order ops) and
   T-0173 (admin dispute mgmt) — are now **unblocked.**
-- **Status:** proposed. Awaiting owner sign-off on the batch sequence, the 5 L-splits, and the one blocking
-  question (Q-W3-1, default-language policy — gates only T-0191's CC-06 sub-ticket) before any promotion to
-  `ready`.
+- **Status:** ✅ **WAVE 3 CLOSED (2026-06-12)** — see **§8** for the close-out reconciliation, the pending
+  owner steps, and the follow-up tickets filed. The plan below (§0–§7) is kept as written for traceability.
+  *(Original status: proposed 2026-06-09; owner signed off; executed 2026-06-09 → 2026-06-12.)*
 
 **Wave 2 closed.** The refund money-path epic + per-included-service package-pricing + fiscal go-live gates
 shipped to master in **`8ff35d49` (PR #75)**: T-0160 (Refund entity/enums), T-0161 (IRefundService seam +
@@ -325,7 +325,89 @@ T-0210…T-0218) opens.
 
 ---
 
+## 8. WAVE 3 CLOSE — reconciliation (2026-06-12)
+
+### 8.1 Outcome
+**25 of 26 tickets `done`** on `feature/wave-3a-admin-order-dispute-ops`, four commits:
+
+| Commit | Contents |
+|---|---|
+| `8aa7bcc1` | **Batch 3A** — T-0170 (170a–d + UI), T-0172, T-0173 (173a+173b), T-0174 + the citext `EnableUnmappedTypes` runtime fix |
+| `5d631f8c` | **Batches 3B/3D/3C/3E backend** — T-0171 (171a/b/c), T-0180, T-0175a, T-0176 (backend), T-0177, T-0181–T-0185, T-0186 (backend), T-0188 (backend), T-0189, T-0190 (backend), T-0191 (a–d backend) |
+| `8ddfef9d` | **Frontend mega-batch + Android** — T-0171 (171d/171e incl. Android), T-0175b, T-0176/T-0186/T-0190/T-0191 UIs, T-0178, T-0187, T-0188 (Android device mgmt), T-0192 |
+| `66cc823d` | **Batch 3F** — T-0193, T-0194, T-0195 |
+
+All reviewer + security gates ran per ticket (reviewer-per-developer invariant held; security on every
+`security_touching: true` ticket). The 26 ticket files still read `draft` (T-0193 `in-review`) — the PM
+reconciled status **INDEX-side only**, per the Wave-2 convention (no history rewrite).
+
+**NOT done — T-0179 (unify membership subscribe path).** Verified at close: `CreateMembershipSubscription.cs`
+untouched since Wave 1 (`a4f14094`), the web `MembershipFacade` doc-note absent, the ticket file untouched
+since creation. It was never picked up in the 3C fan-out. It stays `draft` and **carries forward to Wave 4**.
+Its T-0194 `depends_on` edge was satisfied-in-substance (T-0179 is doc + B5-rename only; the Subscribe
+endpoints received their rate-limit windows regardless).
+
+**ADR produced mid-wave: ADR-0010 — durable consumer idempotency** (`adr/0010-durable-consumer-idempotency.md`),
+out of the T-0181/T-0182 consumer-idempotency line. In force for all future queue-consumer work.
+
+**Deviations on the record (owner accepts by accepting this close):**
+1. **T-0194 AC6** — the runtime 429 flood-harness test was not delivered; the structural reflection guard
+   (`RateLimitCoverageGuardTests`) accepted as interim evidence; runtime proof deferred → **T-0235** (Wave-4
+   test slice).
+2. **T-0188 AC6 (optional)** — the admin device panel deferred; backend + Android device management shipped.
+3. **T-0193 AC4** — verification **open until** the owner's Users ef-migration is applied and
+   `Cleansia.IntegrationTests` runs green (see §8.2). Reviewer approval was explicitly conditional on this.
+4. **T-0192 AC5** — client-side last-viewed unread only (as planned in §7; server-side unread model remains
+   a flagged follow-up pending a data-model decision).
+
+### 8.2 Owner steps PENDING (gate the final close of the named ACs — Claude never runs these)
+| # | Step (owner-only) | What it unblocks |
+|---|---|---|
+| 1 | **ef-migration** — 4 additive `Users` lockout columns: `FailedLoginAttempts`, `LockoutEndsAt`, `ConfirmationCodeAttempts`, `ResetPasswordCodeAttempts` (additive + defaulted, S9-safe) | After applying, run **`Cleansia.IntegrationTests`** (AccountLockoutTests, ConfirmationCodeAttemptCapTests, ChangePasswordResetCodeCapTests) → closes **T-0193 AC4** |
+| 2 | **nswag-regen — customer client** (`DisputeReason.Chargeback` + the device endpoints) | Until regenerated, the generated customer client is stale against the merged backend contract (admin + partner regens were applied mid-wave; customer is the one outstanding) |
+
+### 8.3 Carry-forward owner items (still open after Wave 3; rolled from §3.2)
+1. **T-0159 `rotate-mapbox-token` — STILL OUTSTANDING (live exposure).** Unchanged since Wave 1. Highest
+   priority of the carry-forwards.
+2. **IMP-1 Google OAuth ClientId** — owner Google Cloud Console setup; T-0105 server-side verification done.
+3. **CZ Stripe-fee figure** — `RefundStripeFeeRate`/`RefundStripeFixedFee` still null on CZ → platform
+   absorbs on goodwill refunds until set (product/finance call).
+4. **Fiscal DE/AT/ES go-live gates** — T-0220/T-0221 done-in-code, activate on launch; the corrective
+   fiscal document (Q-REFUND-01 / ADR-0009 D7) must be implemented before any BlockingOnline go-live.
+5. **Q-W3-2 (in T-0173's ticket) — dispute-resolve-on-refund-failure UX.** Default kept (ADR-0006:
+   mark Resolved + Pending Refund row for operator re-drive; 173b copy does not over-promise the refund).
+   **Owner/security confirm pending.** ⚠️ **ID collision:** `questions/open.md` has a *different* Q-W3-2
+   (currency on partner pay summary, non-blocking, default `Kč` kept) — the dispute one was never filed
+   into open.md; the PM re-keyed it there as **Q-W3-4** at this close.
+6. **Q-REFUND-03** (per-bundle weights) — still open/non-blocking; owner sets weights via T-0232 UI or
+   confirms even-split.
+7. **Q-W3-3** (invoice PDF-failure DTO fields) — converted to ticket **T-0238**; answer the question or
+   approve the ticket, same outcome.
+
+### 8.4 Follow-up tickets filed at close (all `draft`; from the wave's review/security verdicts)
+**T-0233** lockout-DoS mitigation (T-0193 sec N1) · **T-0234** ChangeOwnPassword guess bound (T-0193 sec N5)
+· **T-0235** runtime 429 harness (T-0194 AC6) · **T-0236** multi-tenant token-revoke asymmetry (T-0188 sec
+note; **must land before multi-tenant onboarding**) · **T-0237** catalog delete TOCTOU → FK Restrict +
+RecurringBookingTemplate JSON refs (T-0191a sec notes) · **T-0238** invoice PDF-failure DTO fields (Q-W3-3)
+· **T-0239** module-boundary sweep, customer features off `@cleansia/partner-services` (14 files) + eslint
+rule · **T-0240** Android `.kotlin` → `.gitignore` (T-0195 nit) · **T-0241** admin selector-prefix eslint
+alignment (recurring 3A+ noise). Rows in INDEX.md under "Wave-3 close follow-ups".
+
+### 8.5 What opens next
+Wave 4 (consistency/quality sweep **T-0196…T-0206** + the test/a11y wave **T-0210…T-0218**) opens once the
+§8.2 owner steps are confirmed. Intake additions to the Wave-4 plan: carried **T-0179**, the **T-0233…T-0241**
+follow-ups (security fast-follows T-0233/T-0234 and the T-0235 test slice sequence naturally into it).
+Merge of `feature/wave-3a-admin-order-dispute-ops` → `master` is the owner's call (PM never merges).
+
+---
+
 ## Status log
+- 2026-06-12 — **WAVE 3 CLOSED** (PM reconciliation). 25/26 `done` across `8aa7bcc1`/`5d631f8c`/`8ddfef9d`/
+  `66cc823d`; INDEX.md Wave-3 roster reconciled with commit refs + Wave-3 CLOSED banner. **T-0179 found NOT
+  built** — stays `draft`, carried to Wave 4. ADR-0010 recorded. Deviations logged (T-0194 AC6 → T-0235;
+  T-0188 AC6 panel deferred; T-0193 AC4 pending owner migration). Follow-ups T-0233…T-0241 filed. Owner
+  steps pending: Users-lockout ef-migration (+IntegrationTests for T-0193 AC4), customer nswag-regen.
+  Q-W3-2 ID collision resolved (T-0173's question re-keyed Q-W3-4 in open.md).
 - 2026-06-09 — Wave-3 plan drafted (PM). Reconciled the 12 Wave-2 tickets (`draft` → `done`) against merge
   `8ff35d49` (PR #75) in INDEX.md. Read all 26 Wave-3 candidate frontmatters; verified every dependency is
   `done` (T-0100/0111/0112/0115/0140/0141/0145/0148/0161/0164 + the T-0142/T-0143 epic children) — **zero

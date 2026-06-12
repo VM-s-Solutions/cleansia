@@ -215,4 +215,22 @@ _No open Wave-1 *planning* questions remain._
   shows a retry-PDF action on any non-cancelled invoice without a PDF (`!pdfBlobName`), invoking the
   existing `RegenerateInvoicePdf` endpoint; the detail page keeps its regenerate action. The explicit
   failed-flag + error-message display lands as a follow-up once the DTO fields exist.
+- Wave-3 close (2026-06-12): converted to ticket **T-0238** (backend DTO fields + admin nswag-regen +
+  UI display). Answering here or approving T-0238 are the same decision.
+- Answer: _(owner fills in)_
+
+### Q-W3-4 — [blocking: no] Dispute Resolve when the Stripe refund FAILS — keep "Resolved + Pending Refund row" or defer/surface?
+- Raised by: backend (T-0173a); originally recorded as "Q-W3-2" inside the T-0173 ticket file — **re-keyed
+  to Q-W3-4 by the PM at Wave-3 close (2026-06-12)** because `Q-W3-2` above (partner-pay currency) already
+  held the id; the ticket-file text is the original.
+- Date: 2026-06-09 (filed into this inbox 2026-06-12)
+- Question: On a dispute Resolve where the Stripe refund FAILS: keep ADR-0006's "mark `Resolved` + return
+  Success, leave a Pending `Refund` row for operator re-drive" (current, shipped behavior), OR defer the
+  `Resolved` transition until the refund confirms / surface the failure to the admin?
+- Why it matters: the admin sees "resolved" while money hasn't moved, and the terminal-state guard then
+  blocks a retried Resolve from re-driving the refund (the Pending Refund row is the re-drive path, but it
+  is operator-driven, not self-evident in the UI).
+- Default taken (non-blocking): keep ADR-0006 behavior. The shipped 173b UX honors it defensively — the
+  resolve copy does NOT over-promise ("submitted", not "refunded"; Stripe may-remain-pending disclaimer).
+- Status: **owner/security confirmation pending** (carried at Wave-3 close, sprint-5 §8.3 item 5).
 - Answer: _(owner fills in)_

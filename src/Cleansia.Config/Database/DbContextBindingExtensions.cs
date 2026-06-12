@@ -27,6 +27,7 @@ public static class DbContextBindingExtensions
         var dataSource = dataSourceBuilder.Build();
 
         services.AddSingleton(dataSource);
+        services.AddHostedService<NpgsqlTypeCatalogInitializer>();
         services.AddDbContext<CleansiaDbContext>(options => options.UseNpgsql(dataSource));
         services.AddScoped<IUnitOfWork>(provider => provider.GetService<CleansiaDbContext>()!);
 

@@ -40,6 +40,7 @@ public class ChangePasswordResetCodeCapTests(PostgresContainerFixture fixture) :
                     Constants.TestUserSession.TestFirstName,
                     Constants.TestUserSession.TestLastName);
                 user.ConfirmEmail();
+                user.Created(Constants.TestUserSession.TestUserId, DateTime.UtcNow);
                 rawResetCode = user.UpdateResetPasswordToken();
                 context.Users.Add(user);
             },
@@ -88,6 +89,7 @@ public class ChangePasswordResetCodeCapTests(PostgresContainerFixture fixture) :
                     Constants.TestUserSession.TestFirstName,
                     Constants.TestUserSession.TestLastName);
                 user.ConfirmEmail();
+                user.Created(Constants.TestUserSession.TestUserId, DateTime.UtcNow);
                 rawResetCode = user.UpdateResetPasswordToken();
                 context.Users.Add(user);
             },

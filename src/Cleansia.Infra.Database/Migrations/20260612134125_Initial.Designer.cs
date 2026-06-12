@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260610173326_Initial")]
+    [Migration("20260612134125_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -4589,6 +4589,11 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<int>("ConfirmationCodeAttempts")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
                     b.Property<DateTimeOffset?>("ConfirmationCodeExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -4611,6 +4616,11 @@ namespace Cleansia.Infra.Database.Migrations
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("citext");
+
+                    b.Property<int>("FailedLoginAttempts")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -4635,6 +4645,9 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("citext");
 
+                    b.Property<DateTimeOffset?>("LockoutEndsAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Password")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
@@ -4656,6 +4669,11 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<string>("ResetPasswordCode")
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
+
+                    b.Property<int>("ResetPasswordCodeAttempts")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<DateTimeOffset?>("ResetPasswordCodeExpiresAt")
                         .HasColumnType("timestamp with time zone");

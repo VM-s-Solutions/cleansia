@@ -35,6 +35,7 @@ public class AccountLockoutTests(PostgresContainerFixture fixture) : BaseIntegra
             firstName: Constants.TestUserSession.TestFirstName,
             lastName: Constants.TestUserSession.TestLastName);
         user.ConfirmEmail();
+        user.Created(Constants.TestUserSession.TestUserId, DateTime.UtcNow);
         context.Users.Add(user);
     }
 

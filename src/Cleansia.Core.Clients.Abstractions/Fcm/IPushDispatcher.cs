@@ -13,6 +13,12 @@ public interface IPushDispatcher
     /// <summary>
     /// Send a single payload to a batch of device tokens. Returns a result
     /// the caller uses to prune dead tokens.
+    ///
+    /// <para>The result's <see cref="PushDispatchResult.Skipped"/> flag DISTINGUISHES a deliberate no-op
+    /// (the provider is unconfigured — dev / CI) from an all-failed-transient outcome (a cold-start init
+    /// race or a network fault). A skipped dispatch can never succeed on retry until the secret is
+    /// provisioned, so the consumer ACKS it; an all-failed (non-skipped) result is retryable, so the
+    /// consumer throws and the queue redelivers.</para>
     /// </summary>
     /// <param name="deviceTokens">FCM registration tokens. Caller is
     /// responsible for filtering by user preference + NotificationsEnabled

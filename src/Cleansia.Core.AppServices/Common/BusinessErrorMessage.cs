@@ -13,6 +13,9 @@ public static class BusinessErrorMessage
     public const string InsufficientPrivileges = "auth.insufficient_privileges";
     public const string InvalidRefreshToken = "auth.invalid_refresh_token";
     public const string RefreshTokenReused = "auth.refresh_token_reused";
+    public const string CurrentPasswordInvalid = "auth.current_password_invalid";
+    public const string AccountLocked = "auth.account_locked";
+    public const string TooManyAttempts = "auth.too_many_attempts";
 
     // Common
     public const string InvalidEnumValue = "common.invalid_enum_value";
@@ -38,6 +41,7 @@ public static class BusinessErrorMessage
     public const string OrderAlreadyCancelled = "order.already_cancelled";
     public const string OrderAlreadyCompleted = "order.already_completed";
     public const string OrderInProgressCannotCancel = "order.in_progress_cannot_cancel";
+    public const string InvalidOrderStatusTransition = "order.invalid_status_transition";
     public const string CancellationWindowClosed = "order.cancellation_window_closed";
     public const string AddressNotOwnedByUser = "address.not_owned_by_user";
     public const string AddressLabelRequired = "address.label_required";
@@ -66,6 +70,10 @@ public static class BusinessErrorMessage
     public const string MembershipNotOwnedByUser = "membership.not_owned_by_user";
     public const string MembershipStripeCustomerRequired = "membership.stripe_customer_required";
     public const string MembershipSwapSamePlan = "membership.swap_same_plan";
+
+    // Membership plans — admin back-office CRUD
+    public const string MembershipPlanCodeAlreadyExists = "membership.plan.code_already_exists";
+    public const string MembershipPlanDiscountOutOfRange = "membership.plan.discount_out_of_range";
 
     // Recurring booking template errors. Backend rejects with these keys; the
     // customer UI maps to localized strings. NotOwnedByUser is the per-user
@@ -140,6 +148,7 @@ public static class BusinessErrorMessage
     public const string TemplateNotFound = "payroll.invoice.template_not_found";
     public const string CannotCancelPaidInvoice = "payroll.invoice.cannot_cancel_paid";
     public const string InvoiceAlreadyCancelled = "payroll.invoice.already_cancelled";
+    public const string InvoiceAlreadyPaid = "payroll.invoice.already_paid";
 
     // Receipt
     public const string ReceiptNotFound = "receipt.not_found";
@@ -150,6 +159,7 @@ public static class BusinessErrorMessage
     public const string OverlappingPeriod = "pay_period.overlapping_period";
     public const string HasOrderPays = "pay_period.has_order_pays";
     public const string PayPeriodNotClosed = "pay_period.not_closed";
+    public const string PayPeriodAlreadyPaid = "pay_period.already_paid";
 
     // Pay Config
     public const string PayConfigServiceOrPackageRequired = "pay_config.service_or_package_required";
@@ -207,6 +217,8 @@ public static class BusinessErrorMessage
     public const string InvalidRefundAmount = "dispute.invalid_refund_amount";
     public const string MaxLengthExceeded = "dispute.max_length_exceeded";
     public const string DisputeNotOwnedByUser = "dispute.not_owned_by_user";
+    public const string InvalidDisputeStatusTransition = "dispute.invalid_status_transition";
+    public const string DisputeAlreadyResolved = "dispute.already_resolved";
     public const string UserNotFound = "user.not_found";
 
     // Admin User
@@ -263,6 +275,7 @@ public static class BusinessErrorMessage
 
     // Device
     public const string InvalidPlatform = "device.invalid_platform";
+    public const string DeviceNotFound = "device.not_found";
 
     // Feature Flag
     public const string FeatureFlagNotFound = "feature_flag.not_found";
@@ -338,4 +351,9 @@ public static class BusinessErrorMessage
     public const string ReferralSelfReferral = "referral.self_referral";
     public const string ReferralAlreadyReferred = "referral.already_referred";
     public const string ReferralInactive = "referral.inactive";
+
+    // Referrals — admin intervention (reverse / force-qualify)
+    public const string ReferralNotQualified = "referral.not_qualified";
+    public const string ReferralNotAccepted = "referral.not_accepted";
+    public const string ReferralReasonRequired = "referral.reason_required";
 }

@@ -174,6 +174,11 @@ export class AppComponent implements OnInit, OnDestroy {
       route: `/${CleansiaPartnerRoute.INVOICES}`,
     },
     {
+      label: 'sidebar.my_pay',
+      icon: 'pi pi-wallet',
+      route: `/${CleansiaPartnerRoute.MY_PAY}`,
+    },
+    {
       label: 'sidebar.logout',
       icon: 'pi pi-sign-out',
       onClickFn: () => {

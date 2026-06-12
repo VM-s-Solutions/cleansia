@@ -1243,4 +1243,36 @@
     <string name="notification_channel_new_jobs_desc">Pravidelný souhrn nových zakázek dostupných ve vaší oblasti.</string>
     <string name="notification_new_jobs_title">Nové dostupné zakázky</string>
     <string name="notification_new_jobs_body">Ve vašem okolí je %1$d nových zakázek. Klepnutím je zobrazíte.</string>
+
+    <!-- ── Vaše zařízení ── -->
+    <string name="devices_title">Vaše zařízení</string>
+    <string name="profile_devices_summary">Správa přihlášených zařízení</string>
+    <string name="devices_intro">Zařízení přihlášená k vašemu účtu. Odebráním zařízení dojde k jeho odhlášení a vypnutí oznámení.</string>
+    <string name="devices_this_device">Toto zařízení</string>
+    <string name="devices_last_active">Naposledy aktivní %1$s</string>
+    <string name="devices_platform_android">Android</string>
+    <string name="devices_platform_ios">iOS</string>
+    <string name="devices_platform_web">Web</string>
+    <string name="devices_empty">Zatím žádná registrovaná zařízení.</string>
+    <string name="devices_error_message">Zařízení se nepodařilo načíst. Zkontrolujte připojení a zkuste to znovu.</string>
+    <string name="devices_revoke_action">Odebrat zařízení</string>
+    <string name="devices_revoke_dialog_title">Odebrat toto zařízení?</string>
+    <string name="devices_revoke_dialog_message">%1$s bude odhlášeno a přestane dostávat oznámení.</string>
+    <string name="devices_revoke_dialog_confirm">Odebrat</string>
+    <string name="devices_revoke_success">Zařízení odebráno</string>
+    <string name="devices_revoke_retry_hint">Nepodařilo se odebrat – zkuste to znovu.</string>
+    <string name="error_device_not_found">Toto zařízení už není registrované.</string>
+
+    <!-- ── Výplata za období (pouze pro čtení) ── -->
+    <string name="period_pay_title">Výplata za období</string>
+    <string name="period_pay_hero_label">Celkem za období</string>
+    <string name="period_pay_jobs_count">%1$d zakázek</string>
+    <string name="period_pay_breakdown_section">Rozpis výplaty</string>
+    <string name="period_pay_base">Základní odměna</string>
+    <string name="period_pay_extras">Příplatky</string>
+    <string name="period_pay_expenses">Náhrady výdajů</string>
+    <string name="period_pay_jobs_section">Zakázky v tomto období</string>
+    <string name="period_pay_empty">V tomto období zatím nejsou žádné zakázky.</string>
+    <string name="period_pay_error">Výplatu za toto období se nepodařilo načíst.</string>
+    <string name="invoice_view_period_pay">Zobrazit výplatu za období</string>
 </resources>

@@ -38,7 +38,7 @@
     <!-- Navigation menu -->
     <nav class="sidebar-nav">
       <ul class="menu-list">
-        @for (item of menuItems(); track $index) {
+        @for (item of visibleItems(); track $index) {
         <li
           class="menu-item"
           [class.menu-item--active]="isActiveRoute(item.route)"
@@ -112,7 +112,7 @@
 } @else {
 <!-- Submenu rendering (non-root) -->
 <ul class="menu-list">
-  @for (item of menuItems(); track $index) {
+  @for (item of visibleItems(); track $index) {
   <li
     class="menu-item"
     [class.menu-item--active]="isActiveRoute(item.route)"

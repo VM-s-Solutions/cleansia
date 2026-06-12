@@ -4,7 +4,10 @@
   "sourceRoot": "libs/data-access/customer-stores/src",
   "prefix": "lib",
   "projectType": "library",
-  "tags": ["scope:customer", "type:data-access"],
+  "tags": [
+    "scope:customer",
+    "type:data"
+  ],
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint"

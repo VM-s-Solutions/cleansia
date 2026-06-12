@@ -44,6 +44,9 @@ public class ChangePassword
 
             RuleFor(command => command)
                 .Cascade(CascadeMode.Stop)
+                .MustAsync(HasAttemptBudgetAsync)
+                    .WithErrorCode(nameof(Command.Code))
+                    .WithMessage(BusinessErrorMessage.TooManyAttempts)
                 .MustAsync(ValidateUserTokenAsync)
                     .WithErrorCode(nameof(Command.Code))
                     .WithMessage(BusinessErrorMessage.NotValidResetPasswordToken)
@@ -52,6 +55,21 @@ public class ChangePassword
                     .WithMessage(BusinessErrorMessage.SameResetPassword)
                 .When(c => !string.IsNullOrWhiteSpace(c.Code) && !string.IsNullOrWhiteSpace(c.NewPassword))
                 .WhenAsync((c, cc) => userRepository.ExistsWithEmailAsync(c.Email, cc));
+        }
+
+        // The reset command is email-bound, so every guess against an account holding an ACTIVE
+        // reset code is charged to that account's per-code budget BEFORE the hash compare — a
+        // wrong-code spray is stopped at the cap even if a later guess would have been correct
+        // (ADR-0003 residual: per-code attempt cap). A fresh code re-grants the budget.
+        private async Task<bool> HasAttemptBudgetAsync(Command command, CancellationToken cancellationToken)
+        {
+            var user = await _userRepository.GetByEmailAsync(command.Email, cancellationToken);
+            if (user?.ResetPasswordCode is null)
+            {
+                return true;
+            }
+
+            return await _userRepository.TryChargeResetPasswordCodeAttemptAsync(user.Id, cancellationToken);
         }
 
         private async Task<bool> ValidateUserTokenAsync(Command command, CancellationToken cancellationToken)

@@ -20,7 +20,8 @@
     "section_account": "Account",
     "section_activity": "Activity",
     "email_verified": "Email verified",
-    "email_not_verified": "Email not verified"
+    "email_not_verified": "Email not verified",
+    "my_addresses": "My addresses"
   },
   "cookies": {
     "title": "Your Privacy Matters",
@@ -79,7 +80,8 @@
       "not_found": "Page Not Found",
       "track_order": "Track Order",
       "order_lookup": "Look Up Order",
-      "order_lookup_detail": "Order Details"
+      "order_lookup_detail": "Order Details",
+      "saved_addresses": "My Addresses"
     }
   },
   "global": {
@@ -633,7 +635,27 @@
       "export_data_desc": "Download a copy of all your personal data",
       "rewards_card_title": "Rewards",
       "rewards_card_link": "View rewards",
-      "scroll_to_top": "Scroll to top"
+      "scroll_to_top": "Scroll to top",
+      "notifications": {
+        "title": "Notifications",
+        "desc": "Choose which notifications you want to receive.",
+        "save": "Save preferences",
+        "save_success": "Notification preferences saved",
+        "save_error": "Failed to save notification preferences",
+        "load_error": "Failed to load notification preferences",
+        "retry": "Try again",
+        "order_updates": "Order updates",
+        "cleaner_on_the_way": "Cleaner on the way",
+        "order_completed": "Order completed",
+        "order_cancelled": "Order cancelled",
+        "refund_issued": "Refund issued",
+        "membership_expiring": "Membership expiring",
+        "membership_cancelled": "Membership cancelled",
+        "tier_upgrade": "Tier upgrade",
+        "promo": "Promotions and offers",
+        "dispute_reply": "Dispute replies",
+        "recurring_scheduled": "Recurring cleaning scheduled"
+      }
     },
     "services": {
       "title": "Our Services",
@@ -966,7 +988,9 @@
         "damaged_property": "Damaged Property",
         "unauthorized_charge": "Unauthorized Charge",
         "incorrect_amount": "Incorrect Amount",
-        "other": "Other"
+        "other": "Other",
+        "chargeback": "Chargeback",
+        "unknown": "Unknown reason"
       },
       "empty_faq_title": "What can I report?",
       "empty_faq_items": "Quality issues, incomplete service, damaged property, billing problems, and more.",
@@ -976,6 +1000,25 @@
         "reason": "Reason",
         "status": "Status",
         "created": "Created"
+      },
+      "filter_status": "Filter by status",
+      "new_reply": "New reply",
+      "refund_amount": "Agreed refund",
+      "statuses": {
+        "pending": "Pending",
+        "under_review": "Under review",
+        "waiting_for_response": "Waiting for your response",
+        "resolved": "Resolved",
+        "closed": "Closed",
+        "escalated": "Escalated"
+      },
+      "evidence": {
+        "title": "Evidence",
+        "upload": "Upload evidence",
+        "upload_success": "Evidence uploaded",
+        "upload_error": "Failed to upload evidence",
+        "invalid_type": "This file type isn't allowed. Use JPG, PNG, WebP or PDF.",
+        "too_large": "The file is too large. Maximum size is 10 MB."
       }
     },
     "rewards": {
@@ -1197,6 +1240,19 @@
       "guest_limit": "As a guest, only your last 5 orders are tracked on this device. Create an account to access all your orders from anywhere.",
       "guest_cta": "Create an account",
       "view_details": "View details"
+    },
+    "saved_addresses": {
+      "title": "My addresses",
+      "subtitle": "Manage your saved addresses for faster booking.",
+      "add": "Add address",
+      "empty_title": "No saved addresses",
+      "empty_text": "Add an address to speed up your next booking.",
+      "default_badge": "Default",
+      "set_default": "Set as default",
+      "delete": "Delete",
+      "default_success": "Default address updated",
+      "delete_success": "Address deleted",
+      "delete_confirm": "Delete address \"{{label}}\"?"
     }
   },
   "address_picker": {
@@ -1300,6 +1356,10 @@
     "section6_text": "For privacy-related inquiries, please contact us at info@cleansia.cz or +420 739 788 108."
   },
   "api": {
+    "auth": {
+      "account_locked": "Too many failed login attempts. The account is temporarily locked — try again in a few minutes.",
+      "too_many_attempts": "Too many attempts with this code. Request a new code and try again."
+    },
     "common": {
       "unauthorized": "You are not authorized to perform this action",
       "error_occurred": "An error occurred"
@@ -1312,6 +1372,15 @@
       "country_not_serviced": "We don't currently operate in this country.",
       "country_required": "Please select a country.",
       "city_not_serviced": "We don't currently serve this city."
+    },
+    "dispute": {
+      "not_found": "Dispute not found.",
+      "not_owned_by_user": "You don't have access to this dispute."
+    },
+    "file": {
+      "invalid_file_type": "This file type isn't allowed.",
+      "size_exceeded": "The file is too large.",
+      "required": "A file is required."
     }
   },
   "loyalty": {

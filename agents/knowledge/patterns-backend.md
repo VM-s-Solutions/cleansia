@@ -193,6 +193,15 @@ expose `IQueryable` to *handlers in the same feature* via `GetQueryable()` (the 
 trust boundary, and never let a query escape tenant scope (S8). Use `.AsNoTracking()` + `.AsSplitQuery()`
 on read paths.
 
+**Failure-path counters (lockout / attempt budgets) bypass the UoW deliberately.** A security counter
+that must persist when the COMMAND FAILS (failed-login lockout, per-code attempt budget) cannot ride
+the UnitOfWork pipeline — the pipeline only commits successful `BusinessResult`s. The canonical shape
+is an **atomic conditional `ExecuteUpdateAsync`** on the repository (`WHERE counter < cap`, 0 rows =
+limit reached; mirrors `PromoCodeRepository.TryIncrementGlobalRedemptionsAsync`, S7a), invoked from
+the validator/handler that detects the failure: `UserRepository.RecordFailedLoginAsync` /
+`TryCharge*CodeAttemptAsync`. The entity keeps only the read side (`IsLockedOut(now)`) and the
+success-path resets.
+
 ## Entities (from `Core.Domain/Common/`)
 
 - `IEntity` = `{ object Id; bool IsActive; }`; `IEntity<T>` narrows `Id`/`IsActive`. IDs are strings.
@@ -218,6 +227,21 @@ public const string InvalidEnumValue  = "common.invalid_enum_value";
 So a new error = add a `const string` here whose value is a dot key, then add that key to every
 frontend locale under the matching path (the frontend normalizes the code → translation key, see
 `patterns-frontend.md`). Never inline a raw code string — always reference the constant.
+
+### Catalog entity translations (CC-06, owner decision Q-W3-1 path b)
+
+Catalog items (Service, Package) carry a per-language `Translations` dictionary, and translations
+are **mandatory for every ACTIVE `Language` row** — there is no `Language.IsDefault` and no
+fallback language. The enforcement lives in the Create/Update validators
+(`CreateService`/`UpdateService`/`CreatePackage`/`UpdatePackage`): the provided translation codes
+must **exactly equal** the active-language code set (`GetAll().Where(l => l.IsActive)` +
+`SetEquals`), failing with `service.translations_required` / `service.missing_translation_for_language`.
+**Add-a-language behavior:** activating a new `Language` row does not retro-block existing items —
+they keep serving their stored translations — but every item is *incomplete* from that moment: its
+next admin save is rejected until the new language's translation is supplied. New catalog
+entities with translations reuse the shared rule extension — `RuleFor(x => x.Translations)
+.MustCoverAllActiveLanguages(languageRepository)` from `Common/Validators/ValidationExtensions.cs`
+— never a hand-rolled copy of the block.
 
 ## Canonical recipes (copy, then fill in)
 

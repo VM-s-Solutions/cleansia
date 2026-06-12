@@ -86,6 +86,7 @@ export class CurrencyManagementComponent implements AfterViewInit, OnDestroy {
       {
         onEdit: this.editCurrency.bind(this),
         onDelete: this.confirmDeleteCurrency.bind(this),
+        onSetDefault: this.confirmSetDefaultCurrency.bind(this),
       },
       this.translate,
       this.flagTemplate()
@@ -107,8 +108,22 @@ export class CurrencyManagementComponent implements AfterViewInit, OnDestroy {
     this.facade.navigateToEditCurrency(currency);
   }
 
+  confirmSetDefaultCurrency(currency: CurrencyListItem): void {
+    this.confirmationService.confirm({
+      message: this.translate.instant(
+        'pages.currency_management.set_default_confirm',
+        { code: currency.code }
+      ),
+      header: this.translate.instant('pages.currency_management.set_default'),
+      icon: 'pi pi-star',
+      accept: () => {
+        this.facade.setDefaultCurrency(currency);
+      },
+    });
+  }
+
   confirmDeleteCurrency(currency: CurrencyListItem): void {
-    if ((currency as any).isDefault) {
+    if (currency.isDefault) {
       this.confirmationService.confirm({
         message: this.translate.instant('pages.currency_management.cannot_delete_default'),
         header: this.translate.instant('pages.currency_management.delete_currency'),

@@ -50,6 +50,9 @@
          the dispatch-contract tests (TC-IDEMP-0 / TC-DISPATCH-0 / …) can compile against the real
          consumer code. The Exe host (Cleansia.Functions) keeps the [Function] trigger shells. -->
     <ProjectReference Include="..\Cleansia.Functions.Core\Cleansia.Functions.Core.csproj" />
+    <!-- F5 — the [TimerTrigger] shells live in the Functions Exe; TimerScheduleConfigTests reflects
+         their %AppSetting% cron tokens to assert the effective schedule equals each documented cadence. -->
+    <ProjectReference Include="..\Cleansia.Functions\Cleansia.Functions.csproj" />
     <ProjectReference Include="..\Cleansia.TestUtilities\Cleansia.TestUtilities.csproj" />
     <ProjectReference Include="..\Cleansia.Web.Admin\Cleansia.Web.Admin.csproj" />
     <ProjectReference Include="..\Cleansia.Web.Partner\Cleansia.Web.Partner.csproj" />

@@ -89,6 +89,21 @@ export class RegisterFacade extends UnsubscribeControlDirective {
     this.referralState.set({ kind: 'idle' });
   }
 
+  /**
+   * Pre-applies a code captured from the /r/{code} landing URL. The code is
+   * mirrored into the form BEFORE the single-shot validation so it survives
+   * to authService.register even when validation fails or the network is
+   * down — the backend skips bad codes fail-soft and never blocks signup.
+   */
+  async applyReferralCodeFromUrl(
+    code: string | null | undefined
+  ): Promise<void> {
+    const normalized = code?.trim().toUpperCase();
+    if (!normalized) return;
+    this.setReferralCode(normalized);
+    await this.validateReferralCodeNow(normalized);
+  }
+
   /** Mirror the value into both the signal and the form control. */
   private setReferralCode(value: string): void {
     this.referralCode.set(value);

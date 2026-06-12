@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Features.Services;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
@@ -23,7 +24,10 @@ public class UpdatePackage
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator(IPackageRepository packageRepository, IServiceRepository serviceRepository)
+        public Validator(
+            IPackageRepository packageRepository,
+            IServiceRepository serviceRepository,
+            ILanguageRepository languageRepository)
         {
             RuleFor(x => x.PackageId)
                 .Cascade(CascadeMode.Stop)
@@ -58,6 +62,24 @@ public class UpdatePackage
             RuleFor(x => x.ServiceWeights)
                 .Must(weights => weights == null || weights.Values.All(w => w > 0))
                 .WithMessage(BusinessErrorMessage.PackageInvalidWeight);
+
+            RuleFor(x => x.Translations)
+                .MustCoverAllActiveLanguages(languageRepository);
+
+            RuleForEach(x => x.Translations)
+                .ChildRules(translation =>
+                {
+                    translation.RuleFor(t => t.Value.Name)
+                        .Cascade(CascadeMode.Stop)
+                        .NotEmpty()
+                        .WithMessage(BusinessErrorMessage.Required)
+                        .MaximumLength(100)
+                        .WithMessage(BusinessErrorMessage.MaxLength);
+
+                    translation.RuleFor(t => t.Value.Description)
+                        .MaximumLength(500)
+                        .WithMessage(BusinessErrorMessage.MaxLength);
+                });
         }
     }
 

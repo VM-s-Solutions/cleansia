@@ -5,6 +5,71 @@
       {{ 'pages.gdpr.subtitle' | translate }}
     </p>
 
+    @if (facade.isAuthenticated()) {
+      <div class="cleansia-gdpr__section">
+        <h3>
+          <i class="pi pi-download"></i>
+          {{ 'pages.gdpr.export_title' | translate }}
+        </h3>
+        <p>{{ 'pages.gdpr.export_description' | translate }}</p>
+        <div class="cleansia-gdpr__section-action">
+          <cleansia-button
+            [label]="'pages.gdpr.export_button' | translate"
+            icon="pi pi-download"
+            size="small-width"
+            [loading]="facade.exporting()"
+            [disabled]="facade.exporting()"
+            (onClick)="exportData()"
+          />
+        </div>
+      </div>
+
+      <div class="cleansia-gdpr__section">
+        <h3>
+          <i class="pi pi-shield"></i>
+          {{ 'pages.gdpr.consents_title' | translate }}
+        </h3>
+        <p>{{ 'pages.gdpr.consents_description' | translate }}</p>
+
+        @if (facade.loadingConsents()) {
+          <cleansia-loader />
+        } @else {
+          <div class="cleansia-gdpr__consents">
+            @for (type of consentTypes; track type) {
+              <div class="cleansia-gdpr__consent-item">
+                <strong>{{ consentLabels[type] | translate }}</strong>
+                <p-toggleSwitch
+                  [ngModel]="facade.isConsentGranted(type)"
+                  (ngModelChange)="toggleConsent(type, $event)"
+                />
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="cleansia-gdpr__section cleansia-gdpr__section--danger">
+        <h3>
+          <i class="pi pi-trash"></i>
+          {{ 'pages.gdpr.delete_title' | translate }}
+        </h3>
+        <p>{{ 'pages.gdpr.delete_description' | translate }}</p>
+        <div class="cleansia-gdpr__section-action">
+          <cleansia-button
+            [label]="'pages.gdpr.delete_button' | translate"
+            icon="pi pi-trash"
+            severity="danger"
+            size="small-width"
+            [loading]="facade.deleting()"
+            [disabled]="facade.deleting()"
+            (onClick)="deleteAccount()"
+          />
+        </div>
+      </div>
+
+      <p-confirmDialog styleClass="cleansia-dialog" />
+    }
+
     <div class="cleansia-gdpr__section">
       <h3>{{ 'pages.gdpr.data_collection_title' | translate }}</h3>
       <p>{{ 'pages.gdpr.data_collection_text' | translate }}</p>

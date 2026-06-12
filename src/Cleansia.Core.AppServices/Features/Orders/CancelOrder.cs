@@ -116,7 +116,7 @@ public class CancelOrder
 
             order.Cancel(
                 cancelledAtUtc: now,
-                cancelledBy: "customer",
+                cancelledBy: CancelledBy.Customer,
                 feeRate: feeRate,
                 refundAmount: refundAmount,
                 reason: command.Reason);

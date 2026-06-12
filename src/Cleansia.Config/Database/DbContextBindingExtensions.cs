@@ -20,9 +20,14 @@ public static class DbContextBindingExtensions
 
         var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
         dataSourceBuilder.EnableDynamicJson();
+        // citext columns (Address/Language/Currency/User) report DataTypeName "citext", which Npgsql 7+
+        // no longer auto-maps — reading one as string otherwise throws InvalidCastException. Enabling
+        // unmapped types lets citext round-trip through its text representation.
+        dataSourceBuilder.EnableUnmappedTypes();
         var dataSource = dataSourceBuilder.Build();
 
         services.AddSingleton(dataSource);
+        services.AddHostedService<NpgsqlTypeCatalogInitializer>();
         services.AddDbContext<CleansiaDbContext>(options => options.UseNpgsql(dataSource));
         services.AddScoped<IUnitOfWork>(provider => provider.GetService<CleansiaDbContext>()!);
 

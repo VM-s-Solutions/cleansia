@@ -16,4 +16,12 @@ public interface IRequestMetadataProvider
     /// <c>X-Device-Label</c> header which takes priority.
     /// </summary>
     string? DeviceLabel { get; }
+
+    /// <summary>
+    /// Stable per-install device id from the custom <c>X-Device-Id</c> header — the
+    /// same value the mobile app registers for its device. Unlike <see cref="DeviceLabel"/>
+    /// there is no User-Agent fallback: when the header is absent (e.g. web clients) this
+    /// is null. Captured at token issue/rotation so a per-device revoke can match the token.
+    /// </summary>
+    string? DeviceId { get; }
 }

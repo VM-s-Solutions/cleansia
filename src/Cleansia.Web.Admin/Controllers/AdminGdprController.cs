@@ -5,6 +5,7 @@ using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Admin.Controllers;
 
@@ -23,6 +24,7 @@ public class AdminGdprController(IMediator mediator) : ApiController(mediator)
 
     [HttpPost("delete-account/{userId}")]
     [Permission(Policy.CanAdminDeleteUserAccount)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> DeleteUserAccount(string userId, CancellationToken cancellationToken)
     {

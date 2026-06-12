@@ -77,6 +77,8 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
   getOrderStatusClass(status: Code | undefined): string {
     if (!status) return 'order-status-badge status-pending';
     switch (status.value) {
+      case OrderStatus.New:
+        return 'order-status-badge status-new';
       case OrderStatus.Pending:
         return 'order-status-badge status-pending';
       case OrderStatus.Confirmed:
@@ -125,10 +127,14 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
   getOrderStatusIcon(status: Code | undefined): string {
     if (!status) return 'pi pi-circle';
     switch (status.value) {
+      case OrderStatus.New:
+        return 'pi pi-circle';
       case OrderStatus.Pending:
         return 'pi pi-clock';
       case OrderStatus.Confirmed:
         return 'pi pi-check';
+      case OrderStatus.OnTheWay:
+        return 'pi pi-car';
       case OrderStatus.InProgress:
         return 'pi pi-spinner';
       case OrderStatus.Completed:

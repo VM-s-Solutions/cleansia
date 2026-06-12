@@ -9,7 +9,6 @@ import {
   signal,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 import {
   PackageListItem,
   SortDefinition,
@@ -19,9 +18,11 @@ import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
+  CleansiaSelectComponent,
   CleansiaTableComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
+  ICleansiaSelectOption,
   TableColumn,
   TableAction,
   PaginationState,
@@ -33,7 +34,11 @@ import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 import { PackageManagementFacade } from './package-management.facade';
-import { getPackageTableDefinition } from './package-management.models';
+import {
+  CatalogStatusFilter,
+  getPackageTableDefinition,
+  mapStatusFilterToIsActive,
+} from './package-management.models';
 
 @Component({
   selector: 'cleansia-admin-package-management',
@@ -42,6 +47,7 @@ import { getPackageTableDefinition } from './package-management.models';
     CommonModule,
     CleansiaButtonComponent,
     CleansiaTextInputComponent,
+    CleansiaSelectComponent,
     TranslatePipe,
     CleansiaTableComponent,
     CleansiaTitleComponent,
@@ -57,7 +63,6 @@ import { getPackageTableDefinition } from './package-management.models';
 })
 export class PackageManagementComponent implements AfterViewInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
-  private readonly router = inject(Router);
   protected readonly facade = inject(PackageManagementFacade);
   protected readonly Policy = Policy;
   private readonly translate = inject(TranslateService);
@@ -65,13 +70,15 @@ export class PackageManagementComponent implements AfterViewInit, OnDestroy {
 
   packageColumns!: TableColumn<PackageListItem>[];
   packageActions!: TableAction<PackageListItem>[];
+  statusFilterOptions!: ICleansiaSelectOption[];
 
   private lastSortField: string | null = null;
   private lastSortOrder: number | null = null;
   private destroy$ = new Subject<void>();
 
-  filterForm = this.fb.group({
+  filterForm = this.fb.nonNullable.group({
     searchTerm: [''],
+    status: ['all' as CatalogStatusFilter],
   });
 
   // Filter drawer state
@@ -114,12 +121,30 @@ export class PackageManagementComponent implements AfterViewInit, OnDestroy {
       {
         onEdit: this.editPackage.bind(this),
         onDelete: this.confirmDeletePackage.bind(this),
+        onDeactivate: this.confirmDeactivatePackage.bind(this),
+        onActivate: this.activatePackage.bind(this),
+        getIsActiveFilter: () => this.facade.isActiveFilter(),
       },
       this.translate,
       this.facade.formatCurrency.bind(this.facade)
     );
     this.packageColumns = tableDef.columns;
     this.packageActions = tableDef.actions;
+
+    this.statusFilterOptions = [
+      {
+        label: this.translate.instant('pages.package_management.filters.status_all'),
+        value: 'all',
+      },
+      {
+        label: this.translate.instant('pages.package_management.filters.status_active'),
+        value: 'active',
+      },
+      {
+        label: this.translate.instant('pages.package_management.filters.status_inactive'),
+        value: 'inactive',
+      },
+    ];
   }
 
   ngOnDestroy(): void {
@@ -128,16 +153,18 @@ export class PackageManagementComponent implements AfterViewInit, OnDestroy {
   }
 
   applyFilters(): void {
-    const formValues = this.filterForm.value;
+    const formValues = this.filterForm.getRawValue();
 
     this.facade.applyFilter({
-      searchTerm: formValues.searchTerm?.trim() || undefined,
+      searchTerm: formValues.searchTerm.trim() || undefined,
+      isActive: mapStatusFilterToIsActive(formValues.status ?? 'all'),
     });
   }
 
   resetFilters(): void {
     this.filterForm.reset({
       searchTerm: '',
+      status: 'all',
     });
     this.facade.resetFilter();
   }
@@ -178,6 +205,24 @@ export class PackageManagementComponent implements AfterViewInit, OnDestroy {
     this.facade.navigateToEditPackage(pkg);
   }
 
+  activatePackage(pkg: PackageListItem): void {
+    this.facade.activatePackage(pkg);
+  }
+
+  confirmDeactivatePackage(pkg: PackageListItem): void {
+    this.confirmationService.confirm({
+      message: this.translate.instant(
+        'pages.package_management.deactivate_confirm',
+        { name: pkg.name }
+      ),
+      header: this.translate.instant('pages.package_management.deactivate_package'),
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => {
+        this.facade.deactivatePackage(pkg);
+      },
+    });
+  }
+
   confirmDeletePackage(pkg: PackageListItem): void {
     this.confirmationService.confirm({
       message: this.translate.instant('pages.package_management.delete_confirm'),
@@ -200,7 +245,7 @@ export class PackageManagementComponent implements AfterViewInit, OnDestroy {
 
   getActiveFilterChips(): { key: string; label: string; value: string }[] {
     const chips: { key: string; label: string; value: string }[] = [];
-    const values = this.filterForm.value;
+    const values = this.filterForm.getRawValue();
 
     if (values.searchTerm) {
       chips.push({
@@ -210,11 +255,27 @@ export class PackageManagementComponent implements AfterViewInit, OnDestroy {
       });
     }
 
+    if (values.status && values.status !== 'all') {
+      chips.push({
+        key: 'status',
+        label: this.translate.instant('pages.package_management.filters.status'),
+        value: this.translate.instant(
+          values.status === 'active'
+            ? 'pages.package_management.filters.status_active'
+            : 'pages.package_management.filters.status_inactive'
+        ),
+      });
+    }
+
     return chips;
   }
 
   removeFilterChip(key: string): void {
-    this.filterForm.patchValue({ [key]: '' });
+    if (key === 'status') {
+      this.filterForm.patchValue({ status: 'all' });
+    } else {
+      this.filterForm.patchValue({ [key]: '' });
+    }
     this.applyFilters();
   }
 

@@ -146,3 +146,91 @@ _No open Wave-1 *planning* questions remain._
   (b) set real weights via T-0232. AUD-02p is now split: weighting capability = T-0232, schema/backfill = T-0231.
 - Answer: _(owner fills in — set per-bundle weights via the admin UI in T-0232 post-T-0231, or confirm
   even-split is acceptable for all current bundles)_
+
+---
+
+## Wave-3 planning questions (2026-06-09) — raised by PM sequencing Wave 3 (`status/sprint-5.md`)
+
+> Wave 3 = the admin-feature block T-0170…T-0195 (26 tickets). The refund seam (T-0161) + seam
+> migration (T-0164) that gated T-0170/T-0173 are now `done` (merged 8ff35d49, PR #75), so those two
+> are unblocked. One genuine **pre-build owner decision** surfaced; everything else is an architect/PM
+> call at contract-lock. The carry-forward owner action items in §3 of sprint-5 are owner *tracking*
+> items, not blocking questions, and are listed there.
+
+### Q-W3-1 — [blocking: yes — gates T-0191 sub-(d) CC-06 only; NOT the rest of T-0191 or Wave 3] Default-language policy for catalog translations
+- Raised by: pm (T-0191 / finding CC-06, the ticket's own AC7)
+- Date: 2026-06-09
+- Question: `Language` has only `Code`/`Name` (no `IsDefault`, unlike `Currency`/`Country`), and the
+  Service/Package validators require a translation for **all 5** languages (`CreateService.cs:67-74`)
+  with no designated fallback. T-0191 AC7 makes this an explicit `blocking: yes` precondition: choose
+  **(a)** introduce `Language.IsDefault` + a `SetDefaultLanguage` flow + relax the
+  all-languages-required validator to a fallback rule, **or** **(b)** formally document translations as
+  mandatory-for-all and define add-a-language behavior (no `Language.IsDefault` column).
+- Why it matters: path (a) is a schema change (new column → owner ef-migration) plus a validator
+  semantics change; path (b) is a doc/validator-rule change with no migration. Building the wrong one
+  is rework on a money-adjacent catalog surface. The other three CC findings in T-0191 (CC-02 in-use
+  guard, CC-03 activate/deactivate, CC-04 set-default-currency) are **not** gated on this — only the
+  CC-06 sub-ticket (T-0191 split-(d)) is.
+- Default taken (non-blocking for the rest of T-0191): the PM holds **only** the CC-06 sub-work
+  (T-0191 split-(d)); CC-02/CC-03/CC-04 (splits a/b/c) proceed independently once T-0142's soft-delete
+  ADR gate is confirmed (it is — children `done`). No CC-06 schema/code lands before the owner answers.
+- Answer: **(b) — translations mandatory for all active languages, no `Language.IsDefault` column, no
+  ef-migration** (owner, 2026-06-09). CC-06 documents catalog translations as required for every active
+  language; the existing all-languages-required validators (`CreateService.cs:67-74`, package equivalents)
+  STAY and are the enforcement. Define add-a-language behavior: when an admin adds a new active language,
+  existing catalog items are flagged **incomplete / needs-translation** until a translation is supplied
+  (they are not auto-filled and there is no fallback). No `Language.IsDefault`/`SetDefaultLanguage` work.
+  CC-02/CC-03/CC-04 were never gated on this and proceed regardless.
+- _(superseded answer placeholder removed)_ _(owner fills in — choose (a) Language.IsDefault + fallback, or (b) mandatory-all + documented
+  add-a-language behavior)_
+
+### Q-W3-2 — [blocking: no] Currency on the partner "my period pay" summary
+- Raised by: frontend (T-0171e)
+- Date: 2026-06-10
+- Question: `PeriodPaySummaryDto` / `OrderEmployeePayDto` carry no currency code (unlike
+  `EmployeeInvoiceDto.currencyCode`). The new partner web "My Pay" screen displays amounts with a
+  hardcoded `Kč` suffix, mirroring the existing partner dashboard earnings precedent
+  (`dashboard.facade.ts` "… Kč"). Should the backend add a `CurrencyCode` to `PeriodPaySummaryDto`
+  (DTO change → nswag-regen) so partner pay surfaces stop hardcoding the currency?
+- Why it matters: when a non-CZK tenant/market launches, every partner pay surface that hardcodes
+  `Kč` shows wrong currency; fixing it then touches the DTO, three clients (web/Android partner +
+  admin), and the screens at once.
+- Default taken (non-blocking): hardcoded `Kč`, consistent with the existing partner dashboard
+  earnings display.
+- Answer: _(owner fills in)_
+
+### Q-W3-3 — [blocking: partial — AC4 display only] PdfGenerationFailed / PdfGenerationError missing from admin invoice DTOs
+- Raised by: frontend (T-0171d)
+- Date: 2026-06-10
+- Question: AC4 requires the admin invoice list/detail to *show* `PdfGenerationFailed` +
+  `PdfGenerationError`, but neither `EmployeeInvoiceDto` nor `EmployeeInvoiceDetailDto`
+  (`Features/EmployeePayroll/DTOs/*`) exposes those domain fields (`EmployeeInvoice.cs:46-51`), so the
+  regenerated admin client cannot carry them. Should the backend add both fields to the two DTOs (+
+  mappers) so the UI can render the explicit failed state and error text? Requires backend DTO change
+  → **manual_step: nswag-regen** before the frontend can finish the display half of AC4.
+- Why it matters: without the flag the UI can only infer "no PDF yet" from an empty `pdfBlobName`; a
+  failed generation and a still-pending generation look identical, and the stored `PdfGenerationError`
+  is invisible to admins.
+- Default taken (non-blocking for the rest of T-0171d): the retry surface shipped — the invoice list
+  shows a retry-PDF action on any non-cancelled invoice without a PDF (`!pdfBlobName`), invoking the
+  existing `RegenerateInvoicePdf` endpoint; the detail page keeps its regenerate action. The explicit
+  failed-flag + error-message display lands as a follow-up once the DTO fields exist.
+- Wave-3 close (2026-06-12): converted to ticket **T-0238** (backend DTO fields + admin nswag-regen +
+  UI display). Answering here or approving T-0238 are the same decision.
+- Answer: _(owner fills in)_
+
+### Q-W3-4 — [blocking: no] Dispute Resolve when the Stripe refund FAILS — keep "Resolved + Pending Refund row" or defer/surface?
+- Raised by: backend (T-0173a); originally recorded as "Q-W3-2" inside the T-0173 ticket file — **re-keyed
+  to Q-W3-4 by the PM at Wave-3 close (2026-06-12)** because `Q-W3-2` above (partner-pay currency) already
+  held the id; the ticket-file text is the original.
+- Date: 2026-06-09 (filed into this inbox 2026-06-12)
+- Question: On a dispute Resolve where the Stripe refund FAILS: keep ADR-0006's "mark `Resolved` + return
+  Success, leave a Pending `Refund` row for operator re-drive" (current, shipped behavior), OR defer the
+  `Resolved` transition until the refund confirms / surface the failure to the admin?
+- Why it matters: the admin sees "resolved" while money hasn't moved, and the terminal-state guard then
+  blocks a retried Resolve from re-driving the refund (the Pending Refund row is the re-drive path, but it
+  is operator-driven, not self-evident in the UI).
+- Default taken (non-blocking): keep ADR-0006 behavior. The shipped 173b UX honors it defensively — the
+  resolve copy does NOT over-promise ("submitted", not "refunded"; Stripe may-remain-pending disclaimer).
+- Status: **owner/security confirmation pending** (carried at Wave-3 close, sprint-5 §8.3 item 5).
+- Answer: _(owner fills in)_

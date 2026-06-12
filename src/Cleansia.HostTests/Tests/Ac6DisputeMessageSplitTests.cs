@@ -96,7 +96,7 @@ public sealed class Ac6DisputeMessageSplitTests(HostTestPostgresFixture db) : Au
         // the CanRespondToDispute = AdminOnly policy must 403 it.
         var token = TestJwtFactory.Mint(AdminAudience, a.OutsiderId, a.OutsiderEmail, UserProfile.Customer);
 
-        var resp = await AdminClient(token).PostAsync("/api/AdminDispute/AddMessage", MessageBody(a.DisputeId, claimStaff: true));
+        var resp = await AdminClient(token).PostAsync("/api/AdminDispute/add-message", MessageBody(a.DisputeId, claimStaff: true));
 
         HttpAssert.IsForbidden(resp);
     }

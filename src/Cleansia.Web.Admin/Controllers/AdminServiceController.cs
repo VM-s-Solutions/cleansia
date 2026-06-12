@@ -6,6 +6,7 @@ using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Admin.Controllers;
 
@@ -90,6 +91,38 @@ public class AdminServiceController(IMediator mediator) : ApiController(mediator
         }
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<UpdateService.Response>(result);
+    }
+
+    [HttpPost("deactivate/{serviceId}")]
+    [Permission(Policy.CanUpdateService)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(DeactivateService.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeactivateService(
+        string serviceId,
+        CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new DeactivateService.Command(serviceId), cancellationToken);
+        return HandleResult<DeactivateService.Response>(result);
+    }
+
+    [HttpPost("activate/{serviceId}")]
+    [Permission(Policy.CanUpdateService)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(ActivateService.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ActivateService(
+        string serviceId,
+        CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new ActivateService.Command(serviceId), cancellationToken);
+        return HandleResult<ActivateService.Response>(result);
     }
 
     [HttpDelete("delete/{serviceId}")]

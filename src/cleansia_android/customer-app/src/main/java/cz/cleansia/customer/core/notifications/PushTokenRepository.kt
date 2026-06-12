@@ -2,14 +2,13 @@ package cz.cleansia.customer.core.notifications
 import cz.cleansia.core.auth.SessionScopedCache
 
 import android.content.Context
-import android.os.Build
-import android.provider.Settings
 import android.util.Log
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.firebase.messaging.FirebaseMessaging
+import cz.cleansia.core.auth.DeviceIdProvider
 import cz.cleansia.core.network.networkCall
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -41,6 +40,7 @@ private val Context.pushTokenDataStore by preferencesDataStore(name = "push_toke
 @Singleton
 class PushTokenRepository @Inject constructor(
     private val deviceApi: DeviceApi,
+    deviceIdProvider: DeviceIdProvider,
     @ApplicationContext private val context: Context,
 ) : cz.cleansia.core.auth.SessionScopedCache {
 
@@ -69,7 +69,7 @@ class PushTokenRepository @Inject constructor(
         clearLastRegisteredToken()
     }
 
-    private val deviceId: String by lazy { resolveDeviceId(context) }
+    private val deviceId: String by lazy { deviceIdProvider.deviceId }
 
     /**
      * Asks FCM for the current token and pushes it into [fcmToken]. Called
@@ -187,22 +187,6 @@ class PushTokenRepository @Inject constructor(
 
     private suspend fun clearLastRegisteredToken() {
         context.pushTokenDataStore.edit { it.remove(KEY_LAST_TOKEN) }
-    }
-
-    /**
-     * Stable per-install device id. ANDROID_ID is reset on factory reset
-     * + per-app on Android 8+, which is the right granularity here — a
-     * factory reset SHOULD invalidate the FCM registration anyway, and
-     * ANDROID_ID being app-scoped means two apps on the same device see
-     * different ids (so the partner app's device row doesn't collide).
-     */
-    private fun resolveDeviceId(context: Context): String {
-        val android = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
-        if (!android.isNullOrEmpty()) return android
-        // Rare nulls — fall back to a build-derived synthetic. SERIAL was
-        // deprecated in API 26; we deliberately avoid it because the
-        // permission story would force REQUEST_INSTALL_PACKAGES.
-        return "${Build.MANUFACTURER}-${Build.MODEL}"
     }
 
     private companion object {

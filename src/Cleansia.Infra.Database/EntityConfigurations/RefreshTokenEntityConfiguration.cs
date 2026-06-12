@@ -26,6 +26,9 @@ public class RefreshTokenEntityConfiguration : AuditableEntityConfiguration<Refr
         builder.Property(t => t.DeviceLabel)
             .HasMaxLength(120);
 
+        builder.Property(t => t.DeviceId)
+            .HasMaxLength(64);
+
         builder.Property(t => t.IpAddress)
             .HasMaxLength(45);
 

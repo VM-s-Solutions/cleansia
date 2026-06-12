@@ -80,6 +80,7 @@ export function getInvoiceTableActions(
   defs: {
     onViewDetails: (row: EmployeeInvoiceDto) => void;
     onDownload: (row: EmployeeInvoiceDto) => void;
+    onRetryPdf: (row: EmployeeInvoiceDto) => void;
   },
   translate: TranslateService
 ): TableAction<EmployeeInvoiceDto>[] {
@@ -97,8 +98,27 @@ export function getInvoiceTableActions(
       tooltip: translate.instant('pages.invoice_management.download'),
       visible: (row: EmployeeInvoiceDto) => !!row.pdfBlobName,
     },
+    {
+      icon: 'pi pi-refresh',
+      onClick: (row: EmployeeInvoiceDto) => defs.onRetryPdf(row),
+      color: 'warning',
+      tooltip: translate.instant('pages.invoice_management.retry_pdf'),
+      visible: (row: EmployeeInvoiceDto) =>
+        !row.pdfBlobName && row.status !== EmployeeInvoiceStatus.Cancelled,
+    },
   ];
 }
+
+export const RETRY_PDF_ERROR_KEY_MAP: Readonly<Record<string, string>> = {
+  'payroll.invoice.not_found': 'errors.payroll.invoice.not_found',
+  'payroll.invoice.pdf_generation_failed':
+    'errors.payroll.invoice.pdf_generation_failed',
+  'payroll.invoice.template_not_found':
+    'errors.payroll.invoice.template_not_found',
+  'company.not_found': 'errors.company.not_found',
+};
+
+export const RETRY_PDF_FALLBACK_ERROR_KEY = 'errors.common.error_occurred';
 
 export function getInvoiceStatusClass(
   status: EmployeeInvoiceStatus | undefined

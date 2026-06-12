@@ -35,6 +35,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { DialogModule } from 'primeng/dialog';
 import { RewardsCardComponent } from '@cleansia-customer/rewards';
+import { NotificationPreferencesComponent } from '../notification-preferences/notification-preferences.component';
 import { PROFILE_SECTIONS, SectionDef, setupScrollSpy } from './profile.helpers';
 import { ProfileFacade } from './profile.facade';
 
@@ -57,6 +58,7 @@ import { ProfileFacade } from './profile.facade';
     CleansiaSelectComponent,
     CleansiaAddressAutocompleteComponent,
     RewardsCardComponent,
+    NotificationPreferencesComponent,
   ],
   providers: [ProfileFacade],
   templateUrl: './profile.component.html',
@@ -112,7 +114,6 @@ export class ProfileComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // Preferences
   readonly isDarkMode = computed(() => this.themeService.currentTheme() === 'dark');
-  emailNotifications = signal(true);
 
   languageOptions = [
     { label: 'Čeština', value: 'cs' },

@@ -23,6 +23,22 @@ public class DisputeRepository(CleansiaDbContext context) : BaseRepository<Dispu
             .FirstOrDefaultAsync(cancellationToken);
     }
 
+    public Task<Dispute?> GetByStripeDisputeIdAsync(string stripeDisputeId, CancellationToken cancellationToken)
+    {
+        return GetDbSet()
+            .FirstOrDefaultAsync(d => d.StripeDisputeId == stripeDisputeId, cancellationToken);
+    }
+
+    public Task<Dispute?> GetByStripeDisputeIdIgnoringTenantAsync(string stripeDisputeId, CancellationToken cancellationToken)
+    {
+        // System-level read for the chargeback webhook (ADR-0006 D4): a charge.dispute.* event
+        // arrives with no tenant context. Bypass the tenant filter; the caller re-scopes via
+        // SetTenantOverride before writing.
+        return GetDbSet()
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(d => d.StripeDisputeId == stripeDisputeId, cancellationToken);
+    }
+
     public Task<Dispute?> GetDisputeWithDetailsAsync(string disputeId)
     {
         return GetDbSet()

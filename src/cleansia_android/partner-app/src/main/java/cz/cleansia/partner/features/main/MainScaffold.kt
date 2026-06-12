@@ -132,6 +132,7 @@ fun MainScaffold(
                     onNavigateToDocuments = { onOpenProfileSection(NavRoute.ProfileDocuments) },
                     onNavigateToLanguage = { onOpenProfileSection(NavRoute.PreferenceLanguage) },
                     onNavigateToTheme = { onOpenProfileSection(NavRoute.PreferenceTheme) },
+                    onNavigateToDevices = { onOpenProfileSection(NavRoute.Devices) },
                     onSignedOut = onSignedOut,
                 )
             }

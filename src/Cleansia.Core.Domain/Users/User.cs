@@ -11,6 +11,10 @@ namespace Cleansia.Core.Domain.Users;
 
 public class User : Auditable, ITenantEntity
 {
+    public const int MaxFailedLoginAttempts = 5;
+    public const int MaxCodeVerificationAttempts = 5;
+    public static readonly TimeSpan FailedLoginLockout = TimeSpan.FromMinutes(15);
+
     [Password]
     [MaxLength(255)]
     public string? Password { get; private set; }
@@ -68,6 +72,20 @@ public class User : Auditable, ITenantEntity
     public string? RawConfirmationToken { get; private set; }
 
     public bool IsEmailConfirmed { get; private set; }
+
+    // The failure-path increments live in UserRepository as atomic conditional UPDATEs (a failing
+    // login/confirm command never reaches the UnitOfWork commit, and a read-then-write counter would
+    // race under a distributed guessing run). The entity owns only the read side and the
+    // success-path / re-issuance resets.
+    public int FailedLoginAttempts { get; private set; }
+
+    public DateTimeOffset? LockoutEndsAt { get; private set; }
+
+    public int ConfirmationCodeAttempts { get; private set; }
+
+    public int ResetPasswordCodeAttempts { get; private set; }
+
+    public DateTimeOffset? LastLoginAt { get; private set; }
 
     [MaxLength(5)]
     public string? PreferredLanguageCode { get; private set; }
@@ -141,6 +159,7 @@ public class User : Auditable, ITenantEntity
         var rawToken = SecurityTokens.Generate();
         ResetPasswordCode = SecurityTokens.Hash(rawToken);
         ResetPasswordCodeExpiresAt = DateTime.UtcNow.AddMinutes(15);
+        ResetPasswordCodeAttempts = 0;
         return rawToken;
     }
 
@@ -154,6 +173,17 @@ public class User : Auditable, ITenantEntity
     {
         ResetPasswordCode = null;
         ResetPasswordCodeExpiresAt = null;
+        ResetPasswordCodeAttempts = 0;
+        return this;
+    }
+
+    public bool IsLockedOut(DateTimeOffset now)
+        => LockoutEndsAt.HasValue && LockoutEndsAt.Value > now;
+
+    public User ResetLoginThrottle()
+    {
+        FailedLoginAttempts = 0;
+        LockoutEndsAt = null;
         return this;
     }
 
@@ -187,6 +217,7 @@ public class User : Auditable, ITenantEntity
         // One-shot: clear the hashed token so a consumed confirmation cannot be replayed.
         ConfirmationCode = null;
         ConfirmationCodeExpiresAt = null;
+        ConfirmationCodeAttempts = 0;
         RawConfirmationToken = null;
         IsEmailConfirmed = true;
 
@@ -196,6 +227,13 @@ public class User : Auditable, ITenantEntity
     public User UpdatePhoneNumber(string phoneNumber)
     {
         PhoneNumber = phoneNumber;
+
+        return this;
+    }
+
+    public User UpdateBirthDate(DateOnly? birthDate)
+    {
+        BirthDate = birthDate;
 
         return this;
     }
@@ -210,6 +248,7 @@ public class User : Auditable, ITenantEntity
         ConfirmationCode = SecurityTokens.Hash(rawToken);
         RawConfirmationToken = rawToken;
         ConfirmationCodeExpiresAt = DateTime.UtcNow.AddMinutes(15);
+        ConfirmationCodeAttempts = 0;
 
         return rawToken;
     }
@@ -217,6 +256,12 @@ public class User : Auditable, ITenantEntity
     public User UpdateLanguagePreference(string? languageCode)
     {
         PreferredLanguageCode = languageCode;
+        return this;
+    }
+
+    public User RecordLogin(DateTimeOffset at)
+    {
+        LastLoginAt = at;
         return this;
     }
 
@@ -244,9 +289,13 @@ public class User : Auditable, ITenantEntity
         PreferredLanguageCode = null;
         ResetPasswordCode = null;
         ResetPasswordCodeExpiresAt = null;
+        ResetPasswordCodeAttempts = 0;
         ConfirmationCode = null;
         ConfirmationCodeExpiresAt = null;
+        ConfirmationCodeAttempts = 0;
         RawConfirmationToken = null;
+        FailedLoginAttempts = 0;
+        LockoutEndsAt = null;
         StripeCustomerId = null;
         return this;
     }

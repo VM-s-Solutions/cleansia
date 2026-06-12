@@ -110,6 +110,7 @@ public class HandlePaymentNotification
     public class Handler(
         IStripeConfig stripeConfig,
         IOrderRepository orderRepository,
+        IDisputeRepository disputeRepository,
         IProcessedStripeEventRepository processedStripeEventRepository,
         IStripeSubscriptionWebhookHandler subscriptionWebhookHandler,
         ITenantProvider tenantProvider,
@@ -165,6 +166,15 @@ public class HandlePaymentNotification
             {
                 var subscriptionId = await subscriptionWebhookHandler.HandleAsync(stripeEvent, cancellationToken);
                 return BusinessResult.Success(subscriptionId);
+            }
+
+            // Bank chargeback (ADR-0006 D4). No OrderId metadata — the event
+            // resolves to the Order by payment_intent. Branched here, after the
+            // idempotency gate (S7) and before the OrderId-metadata path below
+            // which cannot resolve these.
+            if (Constants.StripeEventType.IsChargebackEvent(stripeEvent.Type))
+            {
+                return await HandleChargeback(stripeEvent, cancellationToken);
             }
 
             var orderId = ExtractOrderId(stripeEvent);
@@ -308,5 +318,139 @@ public class HandlePaymentNotification
             return BusinessResult.Success(orderId);
         }
 
+        private const string ChargebackActor = "stripe-webhook";
+
+        /// <summary>
+        /// Inbound bank chargeback (ADR-0006 D4). Resolves the disputed charge to
+        /// our Order by payment_intent, then links a Dispute (created if absent) to
+        /// the Stripe dispute id and reflects Stripe's status. A charge that maps to
+        /// no local Order is a no-op success (S6 — never a retry-inducing failure).
+        /// </summary>
+        private async Task<BusinessResult<string>> HandleChargeback(Event stripeEvent, CancellationToken cancellationToken)
+        {
+            var stripeDispute = stripeEvent.Data.Object as Stripe.Dispute;
+            var paymentIntentId = stripeDispute?.PaymentIntentId;
+            var stripeDisputeId = stripeDispute?.Id;
+
+            if (string.IsNullOrWhiteSpace(paymentIntentId) || string.IsNullOrWhiteSpace(stripeDisputeId))
+            {
+                logger.LogWarning("Chargeback event {EventType} missing payment_intent or dispute id; ignoring", stripeEvent.Type);
+                return BusinessResult.Success(stripeEvent.Id);
+            }
+
+            if (stripeEvent.Type is Constants.StripeEventType.ChargeDisputeUpdated
+                                 or Constants.StripeEventType.ChargeDisputeClosed)
+            {
+                return await ReflectChargebackStatus(stripeDispute!, stripeDisputeId, stripeEvent, cancellationToken);
+            }
+
+            var order = await orderRepository.GetByStripePaymentIntentIdIgnoringTenantAsync(paymentIntentId, cancellationToken);
+            if (order is null)
+            {
+                logger.LogWarning("Chargeback {EventType} resolved to no local order; ignoring", stripeEvent.Type);
+                return BusinessResult.Success(stripeEvent.Id);
+            }
+
+            if (!string.IsNullOrEmpty(order.TenantId))
+            {
+                tenantProvider.SetTenantOverride(order.TenantId);
+            }
+
+            var existing = await disputeRepository.GetOpenDisputeForOrderAsync(order.Id, cancellationToken);
+            if (existing is not null)
+            {
+                existing.LinkStripeDispute(stripeDisputeId, ChargebackActor);
+                logger.LogInformation("Linked chargeback to existing dispute for order {OrderId}", order.Id);
+                return BusinessResult.Success(stripeEvent.Id);
+            }
+
+            var dispute = new Cleansia.Core.Domain.Disputes.Dispute(
+                orderId: order.Id,
+                userId: order.UserId ?? string.Empty,
+                reason: DisputeReason.Chargeback, // ADR-0006 D4: a bank chargeback, not a customer claim
+                description: ChargebackDescription,
+                createdBy: ChargebackActor);
+            dispute.LinkStripeDispute(stripeDisputeId, ChargebackActor);
+            dispute.Escalate(ChargebackActor);
+            disputeRepository.Add(dispute);
+
+            logger.LogInformation("Created and linked chargeback dispute for order {OrderId}", order.Id);
+            return BusinessResult.Success(stripeEvent.Id);
+        }
+
+        private const string ChargebackDescription = "Bank chargeback raised against this order's payment.";
+
+        private async Task<BusinessResult<string>> ReflectChargebackStatus(
+            Stripe.Dispute stripeDispute, string stripeDisputeId, Event stripeEvent, CancellationToken cancellationToken)
+        {
+            // Tenant-ignoring read: the webhook is anonymous (no tenant claim), so a tenant-scoped read
+            // would collapse to TenantId == null and miss any non-null-tenant dispute (ADR-0006 D4).
+            var dispute = await disputeRepository.GetByStripeDisputeIdIgnoringTenantAsync(stripeDisputeId, cancellationToken);
+            if (dispute is null)
+            {
+                logger.LogWarning("Chargeback {EventType} for unknown linked dispute; ignoring", stripeEvent.Type);
+                return BusinessResult.Success(stripeEvent.Id);
+            }
+
+            // Re-scope BEFORE the status write so the Updated(...) audit commit lands under the
+            // dispute's tenant (the read bypassed the filter; the write must not).
+            if (!string.IsNullOrEmpty(dispute.TenantId))
+            {
+                tenantProvider.SetTenantOverride(dispute.TenantId);
+            }
+
+            // The webhook is a SECOND writer on the same legal graph as the in-app UpdateStatus path,
+            // so it obeys the same transition guard (ADR-0006 D4 / the T-0172 table) rather than forcing
+            // an edge. Map Stripe status → target first, then gate before any write.
+            var target = MapStripeStatusToDisputeStatus(stripeDispute.Status);
+
+            // Idempotent redelivery: target already reached (e.g. a second charge.dispute.updated still
+            // mapping to Escalated). Self-edges are absent from the table by design — benign no-op.
+            if (target == dispute.Status)
+            {
+                return BusinessResult.Success(stripeEvent.Id);
+            }
+
+            switch (target)
+            {
+                // Resolve is owned OUTSIDE the CanTransitionTo table (Dispute.cs comment), so the "won"
+                // arm gates on terminality instead: never resolve an already-settled dispute (this is the
+                // Closed→Resolved late-event hazard).
+                case DisputeStatus.Resolved when !dispute.IsTerminal:
+                    dispute.Resolve(ChargebackActor, refundAmount: null, resolutionNotes: ChargebackWonNotes);
+                    break;
+                case DisputeStatus.Closed when dispute.CanTransitionTo(DisputeStatus.Closed):
+                    dispute.Close(ChargebackActor);
+                    break;
+                case DisputeStatus.Escalated when dispute.CanTransitionTo(DisputeStatus.Escalated):
+                    dispute.Escalate(ChargebackActor);
+                    break;
+                default:
+                    // A genuine forbidden edge (e.g. "won" after a prior "lost" left it Closed). No-op +
+                    // warn; never a retry-inducing failure for a benign late event (S6).
+                    logger.LogWarning(
+                        "Chargeback {EventType} would force an illegal transition on dispute {DisputeId} " +
+                        "({CurrentStatus} → {Target}); ignoring",
+                        stripeEvent.Type, dispute.Id, dispute.Status, target);
+                    return BusinessResult.Success(stripeEvent.Id);
+            }
+
+            logger.LogInformation("Reflected chargeback {EventType} status onto dispute for order {OrderId}", stripeEvent.Type, dispute.OrderId);
+            return BusinessResult.Success(stripeEvent.Id);
+        }
+
+        /// <summary>
+        /// Maps a Stripe dispute status to the target <see cref="DisputeStatus"/> (ADR-0006 D4):
+        /// <c>won</c> → Resolved (settled in our favor), <c>lost</c> → Closed (the bank pulled funds),
+        /// everything else (<c>needs_response</c>, <c>under_review</c>, <c>warning_*</c>, …) → Escalated.
+        /// </summary>
+        private static DisputeStatus MapStripeStatusToDisputeStatus(string stripeStatus) => stripeStatus switch
+        {
+            "won" => DisputeStatus.Resolved,
+            "lost" => DisputeStatus.Closed,
+            _ => DisputeStatus.Escalated,
+        };
+
+        private const string ChargebackWonNotes = "Chargeback won; funds retained.";
     }
 }

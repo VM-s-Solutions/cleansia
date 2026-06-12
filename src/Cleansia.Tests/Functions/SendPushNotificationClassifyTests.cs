@@ -31,14 +31,24 @@ public class SendPushNotificationClassifyTests
     private readonly Mock<IPushDispatcher> _pushDispatcher = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<ITenantProvider> _tenantProvider = new();
+    private readonly NoopIdempotencyGuard _guard = new();
 
     private SendPushNotificationHandler CreateHandler() => new(
         _deviceRepository.Object,
         _preferencesRepository.Object,
         _pushDispatcher.Object,
         _unitOfWork.Object,
+        _guard,
         _tenantProvider.Object,
         NullLogger<SendPushNotificationHandler>.Instance);
+
+    // A guard that never reports already-processed — so the classification branches under test (which
+    // are about deserialize/validation/infra, not dedup) run their full path uninterrupted.
+    private sealed class NoopIdempotencyGuard : IIdempotencyGuard
+    {
+        public Task<bool> AlreadyProcessedAsync(string messageKey, CancellationToken ct = default) =>
+            Task.FromResult(false);
+    }
 
     private static string Serialize(SendPushNotificationMessage message) =>
         JsonSerializer.Serialize(message, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });

@@ -138,6 +138,7 @@ export class InvoiceManagementComponent implements AfterViewInit, OnDestroy {
       {
         onViewDetails: this.viewInvoiceDetails.bind(this),
         onDownload: this.downloadInvoice.bind(this),
+        onRetryPdf: this.retryPdf.bind(this),
       },
       this.translate
     );
@@ -183,6 +184,10 @@ export class InvoiceManagementComponent implements AfterViewInit, OnDestroy {
 
   downloadInvoice(invoice: EmployeeInvoiceDto): void {
     this.facade.downloadInvoice(invoice);
+  }
+
+  retryPdf(invoice: EmployeeInvoiceDto): void {
+    this.facade.retryPdf(invoice);
   }
 
   getInvoiceStatusClass(invoice: EmployeeInvoiceDto): string {

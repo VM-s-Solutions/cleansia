@@ -34,6 +34,7 @@
       "order_details": "Order Details",
       "invoices": "Invoices",
       "invoice_details": "Invoice Details",
+      "my_pay": "My Pay",
       "not_found": "Page Not Found"
     }
   },
@@ -483,6 +484,30 @@
       "not_found_message": "The invoice you are looking for could not be found.",
       "load_failed": "Failed to load invoice details"
     },
+    "period_pay": {
+      "title": "My Period Pay",
+      "description": "A read-only summary of your pay for each pay period.",
+      "pay_period": "Pay Period",
+      "period_status_open": "Open",
+      "period_status_closed": "Closed",
+      "period_status_paid": "Paid",
+      "period_status_unknown": "Unknown",
+      "summary": "Period Summary",
+      "total_orders": "Total Orders",
+      "base_pay": "Base Pay",
+      "extras_pay": "Extras Pay",
+      "expenses_pay": "Expenses Pay",
+      "bonus_pay": "Bonus Pay",
+      "deduction_pay": "Deduction Pay",
+      "total_pay": "Total Pay",
+      "grand_total": "Grand Total",
+      "order_lines": "Per-Order Pay",
+      "order_number": "Order Number",
+      "no_order_pays": "No pay lines for this period",
+      "no_periods": "No pay periods are available yet",
+      "load_error": "Failed to load your period pay",
+      "view_invoice": "View Invoice"
+    },
     "payslips": {
       "title": "Payroll & Salary Management",
       "description": "View your payslips, salary history, and manage tax benefits.",
@@ -650,7 +675,30 @@
       "data_retention_title": "Data retention",
       "data_retention_text": "We retain your data for the duration of your partnership and for the legally required period afterward (typically 10 years for tax documents under Czech law).",
       "contact_title": "Contact",
-      "contact_text": "For any privacy-related questions, contact our Data Protection Officer at privacy@cleansia.cz."
+      "contact_text": "For any privacy-related questions, contact our Data Protection Officer at privacy@cleansia.cz.",
+      "export_title": "Export my data",
+      "export_description": "Download a copy of all personal data we store about you as a JSON file.",
+      "export_button": "Export my data",
+      "export_success": "Your data export has been downloaded.",
+      "export_error": "We couldn't export your data. Try again later.",
+      "consents_title": "Consent management",
+      "consents_description": "Review and change the consents you've given us.",
+      "consent_updated": "Consent updated.",
+      "consent_error": "We couldn't update your consent. The switch shows the saved state.",
+      "consent_types": {
+        "terms_of_service": "Terms of service",
+        "privacy_policy": "Privacy policy",
+        "marketing_emails": "Marketing emails",
+        "data_processing": "Data processing"
+      },
+      "delete_title": "Delete my account",
+      "delete_description": "Permanently delete your account and anonymize your personal data. This cannot be undone.",
+      "delete_button": "Delete my account",
+      "delete_confirm_title": "Delete account?",
+      "delete_confirm_message": "Your account will be permanently deleted and your personal data anonymized. This cannot be undone.",
+      "delete_confirm_yes": "Delete my account",
+      "delete_success": "Your account has been deleted.",
+      "delete_error": "We couldn't delete your account."
     }
   },
   "sidebar": {
@@ -658,6 +706,7 @@
     "profile": "Profile",
     "orders": "Orders",
     "invoices": "Invoices",
+    "my_pay": "My Pay",
     "payroll": "Payroll",
     "logout": "Logout",
     "disputes": "Disputes"
@@ -940,7 +989,9 @@
       "invalid_google_token": "Invalid Google token",
       "invalid_password_format": "Invalid password format",
       "invalid_reset_token": "Invalid password reset token",
-      "same_reset_password": "New password matches the old password"
+      "same_reset_password": "New password matches the old password",
+      "account_locked": "Too many failed login attempts. The account is temporarily locked — try again in a few minutes.",
+      "too_many_attempts": "Too many attempts with this code. Request a new code and try again."
     },
     "common": {
       "invalid_enum_value": "Invalid enum value",
@@ -1343,7 +1394,11 @@
   "gdpr": {
     "deletion_already_pending": "A deletion request is already in progress.",
     "deletion_blocked_by_order": "We can't delete your account while you have an active order.",
-    "deletion_blocked_by_invoice": "We can't delete your account while you have a pending invoice."
+    "deletion_blocked_by_invoice": "We can't delete your account while you have a pending invoice.",
+    "export_failed": "Data export failed.",
+    "deletion_failed": "Account deletion failed.",
+    "consent_not_found": "Consent not found.",
+    "consent_already_granted": "This consent is already granted."
   },
   "order": {
     "review": {

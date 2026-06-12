@@ -9,7 +9,7 @@ import {
   LoyaltyTier,
   LoyaltyTransactionType,
 } from '@cleansia/customer-services';
-import { SnackbarService } from '@cleansia/services';
+import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
 import { ProgressBarModule } from 'primeng/progressbar';
@@ -205,8 +205,9 @@ export class RewardsComponent implements OnInit {
 
   /** Build the public landing-page URL the customer pastes into a chat. */
   private referralUrl(code: string): string {
-    if (!this.isBrowser) return `/r/${code}`;
-    return `${window.location.origin}/r/${code}`;
+    const path = `/${CleansiaCustomerRoute.REFERRAL_LANDING}/${code}`;
+    if (!this.isBrowser) return path;
+    return `${window.location.origin}${path}`;
   }
 
   copyReferralCode(code: string): void {

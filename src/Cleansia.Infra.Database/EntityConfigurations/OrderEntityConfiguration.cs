@@ -1,9 +1,11 @@
-﻿using Cleansia.Core.Domain.Loyalty;
+﻿using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Receipts;
 using Cleansia.Infra.Database.Converters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Cleansia.Infra.Database.EntityConfigurations;
 
@@ -109,6 +111,16 @@ public class OrderEntityConfiguration : AuditableEntityConfiguration<Order, stri
         builder.Property(o => o.StripeSessionId)
             .IsRequired()
             .HasMaxLength(100);
+
+        // CancelledBy persists as the legacy lowercase string so already-cancelled rows
+        // ("customer"/"cleaner"/"system") stay readable without a data migration — the column
+        // remains varchar(20). EF's default enum-to-string would write "Customer" (capitalized)
+        // and break those rows, so the mapping is explicit lowercase both ways.
+        builder.Property(o => o.CancelledBy)
+            .HasMaxLength(20)
+            .HasConversion(new ValueConverter<CancelledBy?, string?>(
+                v => v.HasValue ? v.Value.ToString().ToLowerInvariant() : null,
+                v => string.IsNullOrEmpty(v) ? null : Enum.Parse<CancelledBy>(v, ignoreCase: true)));
 
         // EF Core must write to the private backing fields because the public
         // OrderNotes / OrderIssues properties return ReadOnlyCollections.

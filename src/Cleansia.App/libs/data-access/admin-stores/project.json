@@ -4,7 +4,10 @@
   "sourceRoot": "libs/data-access/admin-stores/src",
   "prefix": "lib",
   "projectType": "library",
-  "tags": ["scope:admin", "type:data-access"],
+  "tags": [
+    "scope:admin",
+    "type:data"
+  ],
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint"

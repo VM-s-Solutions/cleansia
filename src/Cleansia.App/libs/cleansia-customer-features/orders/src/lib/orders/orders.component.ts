@@ -10,7 +10,7 @@ import {
   selectCustomerOrdersTotal,
   selectCustomerOrderLoading,
 } from '@cleansia/customer-stores';
-import { OrderListItem } from '@cleansia/partner-services';
+import { OrderListItem } from '@cleansia/customer-services';
 import {
   OrderStatusLabelPipe,
   OrderStatusSeverityPipe,

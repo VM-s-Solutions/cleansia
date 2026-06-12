@@ -13,12 +13,14 @@ public class SendSitewidePromoFanoutHandlerSmokeTests
     private readonly Mock<IUserNotificationPreferencesRepository> _preferencesRepository = new();
     private readonly Mock<IUserRepository> _userRepository = new();
     private readonly Mock<IQueueClient> _queueClient = new();
+    private readonly Mock<ICampaignProgressStore> _campaignProgressStore = new();
     private readonly Mock<ITenantProvider> _tenantProvider = new();
 
     private SendSitewidePromoFanoutHandler CreateHandler() => new(
         _preferencesRepository.Object,
         _userRepository.Object,
         _queueClient.Object,
+        _campaignProgressStore.Object,
         _tenantProvider.Object,
         NullLogger<SendSitewidePromoFanoutHandler>.Instance);
 
@@ -33,7 +35,8 @@ public class SendSitewidePromoFanoutHandlerSmokeTests
             new SendSitewidePromoMessage(
                 TitleByLocale: new Dictionary<string, string>(),
                 BodyByLocale: new Dictionary<string, string>(),
-                TenantId: null),
+                TenantId: null,
+                CampaignId: "promo::test"),
             new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 
         await handler.HandleAsync(messageText, CancellationToken.None);

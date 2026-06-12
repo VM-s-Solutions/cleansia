@@ -39,6 +39,13 @@ public class Constants
         public const string SubscriptionDeleted = "customer.subscription.deleted";
         public const string InvoicePaymentFailed = "invoice.payment_failed";
 
+        // Bank chargebacks (ADR-0006 D4). These carry charge + payment_intent
+        // but NO order metadata, so they resolve to the Order by payment-intent,
+        // not the OrderId-metadata path the other order events use.
+        public const string ChargeDisputeCreated = "charge.dispute.created";
+        public const string ChargeDisputeUpdated = "charge.dispute.updated";
+        public const string ChargeDisputeClosed = "charge.dispute.closed";
+
         public static bool IsOrderEvent(string eventType) =>
             eventType is CompletedSession
                       or ExpiredSession
@@ -51,6 +58,11 @@ public class Constants
                       or SubscriptionUpdated
                       or SubscriptionDeleted
                       or InvoicePaymentFailed;
+
+        public static bool IsChargebackEvent(string eventType) =>
+            eventType is ChargeDisputeCreated
+                      or ChargeDisputeUpdated
+                      or ChargeDisputeClosed;
     }
 
     public class Language

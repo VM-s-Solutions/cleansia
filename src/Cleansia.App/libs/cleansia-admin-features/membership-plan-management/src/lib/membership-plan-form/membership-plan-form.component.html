@@ -1,0 +1,226 @@
+<div class="cleansia-membership-plan-form">
+  <div class="cleansia-membership-plan-form__container page-wrapper">
+    <div class="cleansia-membership-plan-form__header">
+      <cleansia-button
+        [label]="'global.actions.back' | translate"
+        icon="pi pi-arrow-left"
+        (onClick)="onCancel()"
+        [outlined]="true"
+      />
+      <cleansia-title [title]="pageTitle()" />
+    </div>
+
+    @if (facade.loading()) {
+      <cleansia-loader />
+    } @else {
+      <form
+        [formGroup]="form"
+        (ngSubmit)="onSave()"
+        class="cleansia-membership-plan-form__content"
+      >
+        <cleansia-section
+          [title]="'pages.membership_plans.form.section.identity' | translate"
+        >
+          <div class="form-grid">
+            <div class="form-field">
+              <cleansia-text-input
+                [label]="'pages.membership_plans.form.field.code' | translate"
+                formControlName="code"
+                [required]="true"
+              />
+              <small class="field-help">
+                {{ 'pages.membership_plans.form.field.code_help' | translate }}
+              </small>
+              @if (form.controls.code.touched && form.controls.code.errors) {
+                <small class="field-error">
+                  {{
+                    'pages.membership_plans.form.validation.code_invalid'
+                      | translate
+                  }}
+                </small>
+              }
+            </div>
+            <div class="form-field">
+              <cleansia-text-input
+                [label]="'pages.membership_plans.form.field.name' | translate"
+                formControlName="name"
+                [required]="true"
+              />
+            </div>
+            <div class="form-field">
+              <cleansia-select
+                [label]="
+                  'pages.membership_plans.form.field.interval' | translate
+                "
+                formControlName="billingInterval"
+                [options]="intervalOptions()"
+                [showClear]="false"
+              />
+              @if (isEditMode()) {
+                <small class="field-help">
+                  {{
+                    'pages.membership_plans.form.field.interval_immutable'
+                      | translate
+                  }}
+                </small>
+              }
+            </div>
+          </div>
+        </cleansia-section>
+
+        <cleansia-section
+          [title]="'pages.membership_plans.form.section.pricing' | translate"
+        >
+          <div class="form-grid">
+            <div class="form-field">
+              <cleansia-text-input
+                [label]="'pages.membership_plans.form.field.price' | translate"
+                formControlName="monthlyPriceCzk"
+                dataType="number"
+                [required]="true"
+              />
+              @if (
+                form.controls.monthlyPriceCzk.touched &&
+                form.controls.monthlyPriceCzk.errors?.['min']
+              ) {
+                <small class="field-error">
+                  {{
+                    'pages.membership_plans.form.validation.price_negative'
+                      | translate
+                  }}
+                </small>
+              }
+            </div>
+            <div class="form-field">
+              <cleansia-text-input
+                [label]="
+                  'pages.membership_plans.form.field.stripe_price_id'
+                    | translate
+                "
+                formControlName="stripePriceId"
+                [required]="true"
+              />
+              <small class="field-help">
+                {{
+                  'pages.membership_plans.form.field.stripe_price_id_help'
+                    | translate
+                }}
+              </small>
+              @if (
+                form.controls.stripePriceId.touched &&
+                form.controls.stripePriceId.errors?.['required']
+              ) {
+                <small class="field-error">
+                  {{
+                    'pages.membership_plans.form.validation.stripe_price_id_required'
+                      | translate
+                  }}
+                </small>
+              }
+            </div>
+            <div class="form-field">
+              <cleansia-text-input
+                [label]="
+                  'pages.membership_plans.form.field.discount' | translate
+                "
+                formControlName="discountPercentage"
+                dataType="number"
+                [required]="true"
+              />
+              @if (
+                form.controls.discountPercentage.touched &&
+                (form.controls.discountPercentage.errors?.['min'] ||
+                  form.controls.discountPercentage.errors?.['max'])
+              ) {
+                <small class="field-error">
+                  {{
+                    'pages.membership_plans.form.validation.discount_range'
+                      | translate
+                  }}
+                </small>
+              }
+            </div>
+          </div>
+        </cleansia-section>
+
+        <cleansia-section
+          [title]="'pages.membership_plans.form.section.benefits' | translate"
+        >
+          <div class="form-grid">
+            <div class="form-field">
+              <cleansia-text-input
+                [label]="
+                  'pages.membership_plans.form.field.trial_days' | translate
+                "
+                formControlName="trialPeriodDays"
+                dataType="number"
+                [required]="true"
+              />
+              @if (
+                form.controls.trialPeriodDays.touched &&
+                form.controls.trialPeriodDays.errors?.['min']
+              ) {
+                <small class="field-error">
+                  {{
+                    'pages.membership_plans.form.validation.trial_negative'
+                      | translate
+                  }}
+                </small>
+              }
+            </div>
+            <div class="form-field">
+              <cleansia-text-input
+                [label]="
+                  'pages.membership_plans.form.field.free_cancel_window'
+                    | translate
+                "
+                formControlName="freeCancellationWindowHours"
+                dataType="number"
+                [required]="true"
+              />
+              @if (
+                form.controls.freeCancellationWindowHours.touched &&
+                form.controls.freeCancellationWindowHours.errors?.['min']
+              ) {
+                <small class="field-error">
+                  {{
+                    'pages.membership_plans.form.validation.window_negative'
+                      | translate
+                  }}
+                </small>
+              }
+            </div>
+            <div class="form-field">
+              <cleansia-checkbox
+                [label]="
+                  'pages.membership_plans.form.field.express_upgrade'
+                    | translate
+                "
+                formControlName="allowsExpressUpgrade"
+              />
+            </div>
+          </div>
+        </cleansia-section>
+
+        <div class="form-actions">
+          <cleansia-button
+            [label]="'global.actions.cancel' | translate"
+            [outlined]="true"
+            (onClick)="onCancel()"
+          />
+          <cleansia-button
+            [label]="
+              isEditMode()
+                ? ('pages.membership_plans.form.submit_update' | translate)
+                : ('pages.membership_plans.form.submit_create' | translate)
+            "
+            type="submit"
+            [disabled]="facade.saving()"
+            [loading]="facade.saving()"
+            (onClick)="onSave()"
+          />
+        </div>
+      </form>
+    }
+  </div>
+</div>

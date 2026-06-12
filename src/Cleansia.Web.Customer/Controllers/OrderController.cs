@@ -65,6 +65,7 @@ public class OrderController(IMediator mediator) : CustomerApiController(mediato
     /// PaymentSheet can collect payment.
     /// </summary>
     [Authorize]
+    [EnableRateLimiting("auth")]
     [HttpPost("ConfirmRecurring")]
     [ProducesResponseType(typeof(ConfirmRecurringOrder.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -141,6 +142,7 @@ public class OrderController(IMediator mediator) : CustomerApiController(mediato
 
     [HttpPost("SubmitReview")]
     [Permission(Policy.CanSubmitOrderReview)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(OrderReviewDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -153,6 +155,7 @@ public class OrderController(IMediator mediator) : CustomerApiController(mediato
 
     [HttpPost("ReportIssue")]
     [Permission(Policy.CanReportOrderIssue)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(ReportOrderIssue.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -165,6 +168,7 @@ public class OrderController(IMediator mediator) : CustomerApiController(mediato
 
     [HttpPost("Cancel")]
     [Permission(Policy.CanCancelOrder)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(CancelOrder.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

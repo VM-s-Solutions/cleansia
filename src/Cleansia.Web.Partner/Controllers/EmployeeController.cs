@@ -8,6 +8,7 @@ using Cleansia.Web.Partner.Abstractions;
 using Cleansia.Web.Partner.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Partner.Controllers;
 
@@ -39,6 +40,7 @@ public class EmployeeController(IMediator mediator) : ApiController(mediator)
 
     [HttpPut("UpdateEmployee")]
     [Permission(Policy.CanUpdateCurrentEmployee)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(CreateOrder.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UpdateEmployee([FromBody] UpdateEmployee.Command command)
@@ -50,6 +52,7 @@ public class EmployeeController(IMediator mediator) : ApiController(mediator)
 
     [HttpPost("SaveMyDocuments")]
     [Permission(Policy.CanUploadEmployeeDocument)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(SaveMyDocuments.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -72,6 +75,7 @@ public class EmployeeController(IMediator mediator) : ApiController(mediator)
 
     [HttpDelete("DeleteMyDocument")]
     [Permission(Policy.CanDeleteEmployeeDocument)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(DeleteMyDocument.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

@@ -1,0 +1,58 @@
+<p-dialog
+  [header]="headerKey() | translate"
+  [visible]="visible()"
+  (visibleChange)="onVisibilityChanged($event)"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '480px' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <form
+    [formGroup]="form"
+    (ngSubmit)="submit()"
+    class="referral-intervention-dialog__form"
+  >
+    <p class="referral-intervention-dialog__hint">
+      {{ hintKey() | translate }}
+    </p>
+
+    <div class="form-field">
+      <cleansia-textarea
+        [label]="'pages.loyalty_referrals.intervention.field.reason' | translate"
+        formControlName="reason"
+        [rows]="4"
+      />
+      <small class="field-help">
+        {{ 'pages.loyalty_referrals.intervention.field.reason_help' | translate }}
+      </small>
+      @if (form.controls.reason.touched && form.controls.reason.errors?.['required']) {
+        <small class="field-error">
+          {{ 'pages.loyalty_referrals.intervention.validation.reason_required' | translate }}
+        </small>
+      }
+      @if (form.controls.reason.touched && form.controls.reason.errors?.['maxlength']) {
+        <small class="field-error">
+          {{ 'pages.loyalty_referrals.intervention.validation.reason_max' | translate }}
+        </small>
+      }
+    </div>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <cleansia-button
+      [label]="'global.actions.cancel' | translate"
+      [outlined]="true"
+      severity="secondary"
+      (onClick)="cancel()"
+    />
+    <cleansia-button
+      [label]="submitKey() | translate"
+      icon="pi pi-check"
+      [severity]="mode() === 'reverse' ? 'danger' : 'primary'"
+      [disabled]="submitting()"
+      [loading]="submitting()"
+      (onClick)="submit()"
+    />
+  </ng-template>
+</p-dialog>

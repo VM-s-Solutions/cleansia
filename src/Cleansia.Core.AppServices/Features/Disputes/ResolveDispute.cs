@@ -2,7 +2,10 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 
@@ -41,7 +44,8 @@ public class ResolveDispute
     public class Handler(
         IDisputeRepository disputeRepository,
         IUserSessionProvider userSessionProvider,
-        IRefundService refundService) : ICommandHandler<Command>
+        IRefundService refundService,
+        IPendingDispatch pending) : ICommandHandler<Command>
     {
         public async Task<BusinessResult> Handle(Command request, CancellationToken cancellationToken)
         {
@@ -50,6 +54,14 @@ public class ResolveDispute
             if (dispute == null)
             {
                 return BusinessResult.Failure(new Error(nameof(request.DisputeId), BusinessErrorMessage.DisputeNotFound));
+            }
+
+            // A terminal dispute (Resolved/Closed) is never re-resolved: a second Resolve would overwrite
+            // the recorded RefundAmount/notes of the settled dispute. Resolve owns the Resolved state and
+            // does not run through CanTransitionTo, so the terminal check is enforced here at the seam.
+            if (dispute.IsTerminal)
+            {
+                return BusinessResult.Failure(new Error(nameof(request.DisputeId), BusinessErrorMessage.DisputeAlreadyResolved));
             }
 
             var actorId = userSessionProvider.GetUserId() ?? string.Empty;
@@ -61,7 +73,7 @@ public class ResolveDispute
 
             if (request.RefundAmount is > 0m)
             {
-                await refundService.IssueRefundAsync(
+                var refund = await refundService.IssueRefundAsync(
                     new RefundRequest(
                         dispute.OrderId,
                         request.RefundAmount.Value,
@@ -69,6 +81,25 @@ public class ResolveDispute
                         actorId,
                         DisputeId: dispute.Id),
                     cancellationToken);
+
+                if (refund.IsSuccess && !string.IsNullOrEmpty(dispute.UserId))
+                {
+                    pending.Enqueue(
+                        QueueNames.NotificationsDispatch,
+                        new QueueEnvelope<SendPushNotificationMessage>(
+                            MessageKeys.Push(dispute.UserId, NotificationEventCatalog.OrderRefunded, dispute.OrderId),
+                            dispute.TenantId,
+                            new SendPushNotificationMessage(
+                                UserId: dispute.UserId,
+                                EventKey: NotificationEventCatalog.OrderRefunded,
+                                Args: new Dictionary<string, string>
+                                {
+                                    ["orderId"] = dispute.OrderId,
+                                    ["disputeId"] = dispute.Id,
+                                },
+                                TenantId: dispute.TenantId)),
+                        MessageKeys.Push(dispute.UserId, NotificationEventCatalog.OrderRefunded, dispute.OrderId));
+                }
             }
 
             return BusinessResult.Success();

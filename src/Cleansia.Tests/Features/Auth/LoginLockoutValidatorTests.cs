@@ -1,0 +1,155 @@
+using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Auth;
+using Cleansia.Core.Domain.Extensions;
+using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Users;
+using Cleansia.TestUtilities.MockDataFactories.Users;
+using Moq;
+
+namespace Cleansia.Tests.Features.Auth;
+
+/// <summary>
+/// Per-account login lockout. The guard keys on the account row, not the caller's
+/// IP, so a distributed (multi-IP) credential-stuffing run is bounded by the same per-account budget.
+/// All three internal-auth login surfaces (customer/admin/partner) enforce the identical rules.
+/// </summary>
+public class LoginLockoutValidatorTests
+{
+    private const string Password = TestUtilities.Constants.TestUserSession.TestUserPassword;
+
+    private static User UserWith(DateTimeOffset? lockoutEndsAt = null)
+        => UserMockFactory.Generate(new UserMockFactory.UserPartial
+        {
+            Password = Password.HashAndSaltPassword(),
+            LockoutEndsAt = lockoutEndsAt,
+        });
+
+    private static Mock<IUserRepository> RepoFor(User user)
+    {
+        var repo = new Mock<IUserRepository>();
+        repo.Setup(r => r.ExistsWithEmailAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        repo.Setup(r => r.GetByEmailAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        return repo;
+    }
+
+    [Fact]
+    public async Task When_The_Account_Is_Locked_Even_The_Correct_Password_Is_Refused()
+    {
+        var user = UserWith(lockoutEndsAt: DateTimeOffset.UtcNow.AddMinutes(10));
+        var repo = RepoFor(user);
+        var validator = new Login.Validator(repo.Object);
+
+        var result = await validator.ValidateAsync(new Login.Command(user.Email, Password, true));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.AccountLocked && e.ErrorCode == nameof(Login.Command.Password));
+        repo.Verify(r => r.RecordFailedLoginAsync(It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task When_The_Account_Is_Locked_A_Wrong_Password_Is_Not_Evaluated_Or_Recorded()
+    {
+        var user = UserWith(lockoutEndsAt: DateTimeOffset.UtcNow.AddMinutes(10));
+        var repo = RepoFor(user);
+        var validator = new Login.Validator(repo.Object);
+
+        var result = await validator.ValidateAsync(new Login.Command(user.Email, Password + "wrong", true));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.AccountLocked);
+        Assert.DoesNotContain(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.InvalidPassword);
+        repo.Verify(r => r.RecordFailedLoginAsync(It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task When_The_Password_Is_Wrong_The_Failure_Is_Recorded_Against_The_Account()
+    {
+        var user = UserWith();
+        var repo = RepoFor(user);
+        var validator = new Login.Validator(repo.Object);
+
+        var result = await validator.ValidateAsync(new Login.Command(user.Email, Password + "wrong", true));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.InvalidPassword);
+        repo.Verify(r => r.RecordFailedLoginAsync(user.Email, It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task When_The_Password_Is_Correct_Nothing_Is_Recorded_And_Validation_Passes()
+    {
+        var user = UserWith();
+        var repo = RepoFor(user);
+        var validator = new Login.Validator(repo.Object);
+
+        var result = await validator.ValidateAsync(new Login.Command(user.Email, Password, true));
+
+        Assert.True(result.IsValid);
+        repo.Verify(r => r.RecordFailedLoginAsync(It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task When_The_Lockout_Window_Has_Expired_The_Correct_Password_Passes()
+    {
+        var user = UserWith(lockoutEndsAt: DateTimeOffset.UtcNow.AddMinutes(-1));
+        var validator = new Login.Validator(RepoFor(user).Object);
+
+        var result = await validator.ValidateAsync(new Login.Command(user.Email, Password, true));
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task AdminLogin_Refuses_A_Locked_Account()
+    {
+        var user = UserWith(lockoutEndsAt: DateTimeOffset.UtcNow.AddMinutes(10));
+        var repo = RepoFor(user);
+        var validator = new AdminLogin.Validator(repo.Object);
+
+        var result = await validator.ValidateAsync(new AdminLogin.Command(user.Email, Password, true));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.AccountLocked);
+        repo.Verify(r => r.RecordFailedLoginAsync(It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AdminLogin_Records_A_Wrong_Password()
+    {
+        var user = UserWith();
+        var repo = RepoFor(user);
+        var validator = new AdminLogin.Validator(repo.Object);
+
+        var result = await validator.ValidateAsync(new AdminLogin.Command(user.Email, Password + "wrong", true));
+
+        Assert.False(result.IsValid);
+        repo.Verify(r => r.RecordFailedLoginAsync(user.Email, It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task PartnerLogin_Refuses_A_Locked_Account()
+    {
+        var user = UserWith(lockoutEndsAt: DateTimeOffset.UtcNow.AddMinutes(10));
+        var repo = RepoFor(user);
+        var validator = new PartnerLogin.Validator(repo.Object);
+
+        var result = await validator.ValidateAsync(new PartnerLogin.Command(user.Email, Password, true));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.AccountLocked);
+        repo.Verify(r => r.RecordFailedLoginAsync(It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task PartnerLogin_Records_A_Wrong_Password()
+    {
+        var user = UserWith();
+        var repo = RepoFor(user);
+        var validator = new PartnerLogin.Validator(repo.Object);
+
+        var result = await validator.ValidateAsync(new PartnerLogin.Command(user.Email, Password + "wrong", true));
+
+        Assert.False(result.IsValid);
+        repo.Verify(r => r.RecordFailedLoginAsync(user.Email, It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+}

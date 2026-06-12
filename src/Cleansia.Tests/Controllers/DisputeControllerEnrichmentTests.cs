@@ -83,4 +83,32 @@ public class DisputeControllerEnrichmentTests
             .GetMethod("AddMessage", BindingFlags.Public | BindingFlags.Instance);
         Assert.Null(method);
     }
+
+    [Theory]
+    [InlineData("ResolveDispute")]
+    [InlineData("UpdateStatus")]
+    [InlineData("CreateDispute")]
+    [InlineData("GetDisputeById")]
+    [InlineData("GetPagedDisputes")]
+    public void Partner_Host_No_Longer_Exposes_The_Migrated_Or_Dead_Dispute_Actions(string actionName)
+    {
+        // SEC-DSP-07: the admin-policied Resolve/UpdateStatus actions and the duplicated
+        // customer-policied Create/GetById/GetPaged are gone from the Partner host. Resolve/UpdateStatus
+        // now live on the Admin host; Create/GetById/GetPaged live on the Customer host.
+        var method = typeof(Cleansia.Web.Partner.Controllers.DisputeController)
+            .GetMethod(actionName, BindingFlags.Public | BindingFlags.Instance);
+        Assert.Null(method);
+    }
+
+    [Theory]
+    [InlineData("ResolveDispute")]
+    [InlineData("UpdateStatus")]
+    [InlineData("GetDisputeById")]
+    [InlineData("GetPagedDisputes")]
+    public void Admin_Host_Owns_The_Dispute_Management_Actions(string actionName)
+    {
+        var method = typeof(Cleansia.Web.Admin.Controllers.AdminDisputeController)
+            .GetMethod(actionName, BindingFlags.Public | BindingFlags.Instance);
+        Assert.NotNull(method);
+    }
 }

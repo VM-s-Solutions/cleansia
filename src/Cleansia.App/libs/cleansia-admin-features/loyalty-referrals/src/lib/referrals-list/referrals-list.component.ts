@@ -6,6 +6,7 @@ import {
   Component,
   inject,
   OnDestroy,
+  signal,
   TemplateRef,
   viewChild,
 } from '@angular/core';
@@ -22,11 +23,22 @@ import {
   CleansiaTableComponent,
   CleansiaTitleComponent,
   PaginationState,
+  TableAction,
   TableColumn,
 } from '@cleansia/components';
+import { PermissionService, Policy } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { TagModule } from 'primeng/tag';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
+import {
+  ReferralInterventionDialogComponent,
+  ReferralInterventionMode,
+  ReferralInterventionSubmit,
+} from '../referral-intervention-dialog/referral-intervention-dialog.component';
+import {
+  getReferralInterventionActions,
+  REFERRAL_STATUS_LABEL_KEYS,
+} from './referrals-list.models';
 import {
   ReferralStatusFilter,
   ReferralsListFacade,
@@ -47,6 +59,7 @@ import {
     CleansiaSelectComponent,
     CleansiaTableComponent,
     CleansiaTitleComponent,
+    ReferralInterventionDialogComponent,
   ],
   templateUrl: './referrals-list.component.html',
   providers: [ReferralsListFacade],
@@ -55,6 +68,7 @@ export class ReferralsListComponent implements AfterViewInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly translate = inject(TranslateService);
   private readonly cd = inject(ChangeDetectorRef);
+  private readonly permissionService = inject(PermissionService);
   protected readonly facade = inject(ReferralsListFacade);
 
   readonly ReferralStatus = ReferralStatus;
@@ -69,6 +83,11 @@ export class ReferralsListComponent implements AfterViewInit, OnDestroy {
   );
 
   referralColumns!: TableColumn<AdminReferralListItem>[];
+  referralActions!: TableAction<AdminReferralListItem>[];
+
+  readonly dialogVisible = signal<boolean>(false);
+  readonly dialogMode = signal<ReferralInterventionMode>('reverse');
+  private interventionTarget: AdminReferralListItem | null = null;
 
   filterForm = this.fb.group({
     status: ['all' as ReferralStatusFilter],
@@ -89,6 +108,10 @@ export class ReferralsListComponent implements AfterViewInit, OnDestroy {
     {
       label: 'pages.loyalty_referrals.filter.status_expired',
       value: 'expired',
+    },
+    {
+      label: 'pages.loyalty_referrals.filter.status_reversed',
+      value: 'reversed',
     },
   ];
 
@@ -134,6 +157,16 @@ export class ReferralsListComponent implements AfterViewInit, OnDestroy {
   }
 
   private rebuildTableDefinitions(): void {
+    this.referralActions = getReferralInterventionActions(
+      {
+        canIntervene: this.permissionService.hasPolicy(
+          Policy.CanInterveneReferral
+        ),
+        onReverse: (row) => this.openIntervention(row, 'reverse'),
+        onForceQualify: (row) => this.openIntervention(row, 'forceQualify'),
+      },
+      this.translate
+    );
     this.referralColumns = [
       {
         id: 'referrer',
@@ -214,23 +247,14 @@ export class ReferralsListComponent implements AfterViewInit, OnDestroy {
   }
 
   statusLabel(status: ReferralStatus | undefined): string {
-    switch (status) {
-      case ReferralStatus.Accepted:
-        return this.translate.instant('pages.loyalty_referrals.status.Accepted');
-      case ReferralStatus.Qualified:
-        return this.translate.instant(
-          'pages.loyalty_referrals.status.Qualified'
-        );
-      case ReferralStatus.Expired:
-        return this.translate.instant('pages.loyalty_referrals.status.Expired');
-      default:
-        return '';
-    }
+    if (status == null) return '';
+    const key = REFERRAL_STATUS_LABEL_KEYS[status];
+    return key ? this.translate.instant(key) : '';
   }
 
   statusSeverity(
     status: ReferralStatus | undefined
-  ): 'info' | 'success' | 'warn' | 'secondary' {
+  ): 'info' | 'success' | 'warn' | 'danger' | 'secondary' {
     switch (status) {
       case ReferralStatus.Accepted:
         return 'info';
@@ -238,8 +262,38 @@ export class ReferralsListComponent implements AfterViewInit, OnDestroy {
         return 'success';
       case ReferralStatus.Expired:
         return 'warn';
+      case ReferralStatus.Reversed:
+        return 'danger';
       default:
         return 'secondary';
+    }
+  }
+
+  openIntervention(
+    row: AdminReferralListItem,
+    mode: ReferralInterventionMode
+  ): void {
+    this.interventionTarget = row;
+    this.dialogMode.set(mode);
+    this.dialogVisible.set(true);
+  }
+
+  onDialogVisibleChange(value: boolean): void {
+    this.dialogVisible.set(value);
+    if (!value) {
+      this.interventionTarget = null;
+    }
+  }
+
+  onInterventionSubmit(payload: ReferralInterventionSubmit): void {
+    const id = this.interventionTarget?.id;
+    if (!id) return;
+
+    const close = () => this.onDialogVisibleChange(false);
+    if (payload.mode === 'reverse') {
+      this.facade.reverseReferral(id, payload.reason, close);
+    } else {
+      this.facade.forceQualifyReferral(id, payload.reason, close);
     }
   }
 

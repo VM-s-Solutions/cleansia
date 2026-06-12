@@ -1,0 +1,83 @@
+<div class="customer-saved-addresses">
+  <div class="customer-saved-addresses__hero">
+    <h1 class="customer-saved-addresses__hero-title">
+      {{ 'pages.saved_addresses.title' | translate }}
+    </h1>
+    <p class="customer-saved-addresses__hero-subtitle">
+      {{ 'pages.saved_addresses.subtitle' | translate }}
+    </p>
+  </div>
+
+  <div class="customer-saved-addresses__actions-bar">
+    <cleansia-button
+      [title]="'pages.saved_addresses.add' | translate"
+      [severity]="'primary'"
+      [style]="'raised-button'"
+      [icon]="'pi pi-plus'"
+      [iconPosition]="'left'"
+      (clickFn)="goToProfileAddresses()"
+    />
+  </div>
+
+  @if (facade.loading()) {
+  <div class="customer-saved-addresses__skeleton">
+    @for (i of [1, 2, 3]; track i) {
+    <p-skeleton width="100%" height="6rem" borderRadius="16px" />
+    }
+  </div>
+  } @else if (facade.addresses().length === 0) {
+  <div class="customer-saved-addresses__empty">
+    <div class="customer-saved-addresses__empty-icon">
+      <i class="pi pi-map-marker"></i>
+    </div>
+    <h3>{{ 'pages.saved_addresses.empty_title' | translate }}</h3>
+    <p>{{ 'pages.saved_addresses.empty_text' | translate }}</p>
+  </div>
+  } @else {
+  <div class="customer-saved-addresses__list">
+    @for (address of facade.addresses(); track address.id) {
+    <div
+      class="customer-saved-addresses__card"
+      [class.customer-saved-addresses__card--default]="address.isDefault"
+    >
+      @if (address.isDefault) {
+      <span class="customer-saved-addresses__default-badge">
+        <i class="pi pi-check-circle"></i>
+        {{ 'pages.saved_addresses.default_badge' | translate }}
+      </span>
+      }
+      <div class="customer-saved-addresses__info">
+        <div class="customer-saved-addresses__label">{{ address.label }}</div>
+        <strong>{{ address.street }}</strong>
+        <span>{{ address.city }}, {{ address.zipCode }}</span>
+        @if (address.country) {
+        <span>{{ address.country }}</span>
+        }
+      </div>
+      <div class="customer-saved-addresses__card-actions">
+        @if (!address.isDefault) {
+        <cleansia-button
+          [title]="'pages.saved_addresses.set_default' | translate"
+          [severity]="'secondary'"
+          [icon]="'pi pi-star'"
+          [iconPosition]="'left'"
+          [outlined]="true"
+          [disabled]="facade.mutating()"
+          (clickFn)="setDefault(address)"
+        />
+        }
+        <cleansia-button
+          [title]="'pages.saved_addresses.delete' | translate"
+          [severity]="'danger'"
+          [icon]="'pi pi-trash'"
+          [iconPosition]="'left'"
+          [outlined]="true"
+          [disabled]="facade.mutating()"
+          (clickFn)="delete(address)"
+        />
+      </div>
+    </div>
+    }
+  </div>
+  }
+</div>

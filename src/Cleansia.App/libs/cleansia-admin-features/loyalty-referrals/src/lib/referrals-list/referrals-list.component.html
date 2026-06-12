@@ -34,6 +34,7 @@
         <cleansia-table
           [data]="facade.referrals()"
           [columns]="referralColumns"
+          [actions]="referralActions"
           [config]="{
             paginator: true,
             rows: 20,
@@ -48,6 +49,14 @@
     </cleansia-section>
   </div>
 </div>
+
+<cleansia-admin-referral-intervention-dialog
+  [visible]="dialogVisible()"
+  (visibleChange)="onDialogVisibleChange($event)"
+  [mode]="dialogMode()"
+  [submitting]="facade.intervening()"
+  (submitForm)="onInterventionSubmit($event)"
+/>
 
 <ng-template #statusTemplate let-row>
   <p-tag

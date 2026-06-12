@@ -10,6 +10,82 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
+> ## ✅ WAVE 3 CLOSED — admin-feature block T-0170…T-0195 (2026-06-12 reconciliation)
+> **Wave 3** (26 tickets, 6 batches 3A–3F) is functionally complete on
+> `feature/wave-3a-admin-order-dispute-ops` across four commits: **`8aa7bcc1`** (Batch 3A — admin order
+> ops, dispute management, chargeback linkage + the citext runtime fix), **`5d631f8c`** (Batches
+> 3B/3D/3C/3E backend — payroll lifecycle, Functions resilience, durable idempotency, membership/referral/
+> device/profile/catalog admin ops), **`8ddfef9d`** (frontend mega-batch — payroll/membership/referral/
+> GDPR/profile/catalog admin UIs, customer self-service, partner read-only pay, Android device management),
+> **`66cc823d`** (Batch 3F — account lockout, S5 rate-limit closure, client Retry-After back-off).
+> **25 of 26 reconciled `done ✅`** in the table below (the ticket files still read `draft`/`in-review`;
+> PM reconciled status here, INDEX-side only, per the Wave-2 convention — no history rewrite).
+> **EXCEPTION: T-0179 was NOT built** — verified: `CreateMembershipSubscription.cs` untouched since Wave 1,
+> ticket file untouched since creation; it stays `draft` and **carries forward to Wave 4** (its T-0194 edge
+> was satisfied-in-substance: the Subscribe endpoints got their rate-limit windows regardless; T-0179 is
+> doc + B5-rename only). **ADR-0010 (durable consumer idempotency) was produced mid-wave** (the
+> T-0181/T-0182 consumer-idempotency line) and is in force. **Deviations on the record:** T-0194 AC6 —
+> runtime 429 flood harness deferred to the Wave-4 test slice (→ **T-0235**); T-0188 — optional AC6 admin
+> device panel deferred (backend + Android shipped); T-0193 — AC4 verification **closes only after** the
+> owner applies the Users lockout ef-migration and `Cleansia.IntegrationTests` runs green.
+> **Owner steps PENDING:** ef-migration (4 additive `Users` lockout columns) + nswag-regen (customer
+> client: `DisputeReason.Chargeback` + device endpoints) — detail in `status/sprint-5.md` §8.
+> **Review-generated follow-ups filed (all `draft`): T-0233…T-0241** — see the follow-up table below the
+> Wave-3 roster. Q-W3-1 answered (path b — no `Language.IsDefault`); T-0191 sub-(d) shipped against it.
+>
+> ## ✅ WAVE 2 CLOSED — merged to master (2026-06-09 reconciliation)
+> **Wave 2** (the refund money-path epic + per-included-service package-pricing + fiscal go-live gates +
+> fast-follows) = merged in **`8ff35d49` (PR #75).** The 12 Wave-2 ticket files still read `status: draft`
+> in their frontmatter (the plan was never marked executed); the PM reconciled them to **`done ✅`** here,
+> status-reconciliation only (no history rewrite). **Shipped & now `done`:** **T-0160** (Refund entity +
+> enums), **T-0161** (IRefundService seam + key param), **T-0163** (loyalty partial-refund clawback),
+> **T-0164** (CancelOrder/ResolveDispute migrated onto the seam), **T-0167** (admin partial-refund cmd +
+> allocator + RefundPolicy + per-country Stripe-fee config), **T-0168** (admin refund UX incl. bundled-
+> service selection), **T-0231** (PackageService.PriceWeight + the T-0231b extension exposing PriceWeight +
+> serviceWeights on the package DTO), **T-0232** (admin package-weight UX), **T-0219** (anon-catalog →
+> platform config), **T-0220** (FiscalCounter gapless allocator), **T-0221** (IFiscalService register
+> idempotency key), **T-0222** (pay-split rounding). Plus two runtime fixes folded into the PR
+> (OutboxMessageRepository non-composable FromSqlRaw; AppHost pinned Postgres password) and the new backend
+> DTO field `PackageDetails.IncludedServiceItems [{Id,Name}]`. Split epics **T-0162**/**T-0165** remain
+> `[SPLIT]` tracking epics — all four children (T-0167/T-0168/T-0231/T-0232) `done`. **Q-REFUND-03**
+> (per-bundle weights) stays open/non-blocking — owner sets weights via T-0232 or confirms even-split.
+>
+> ## 🟡 WAVE 3 PLANNED — admin-feature block T-0170…T-0195 *(superseded by the WAVE 3 CLOSED banner above; kept for traceability)*
+> Full sequenced plan: **`status/sprint-5.md`**. **No new ADR gates Wave 3** — ADR-0001 (authz, frozen
+> map), ADR-0002 (outbox/dispatch), ADR-0006/0009 (refund seam + policy) are all `accepted` and freeze
+> every decision the 26 tickets consume; Wave 3 is pure BUILD against accepted contracts.
+>
+> **Scope (26 tickets, 6 batches).** **Batch 3A — refund-seam consumers (the spine):** **T-0170** (admin
+> order ops, `L`→split), **T-0172** (dispute transition-guard), **T-0174** (chargeback linkage), then
+> **T-0173** (admin dispute mgmt + issue refund, `L`→split). **Batch 3B — payroll lifecycle:** **T-0171**
+> (`L`→split) then **T-0180** (GenerateInvoiceFunction). **Batch 3C — loyalty/membership/referral:**
+> **T-0175** (`L`→split), **T-0176**, **T-0177**, **T-0178**, **T-0179**. **Batch 3D — Functions resilience
+> fast-follows:** **T-0181**, **T-0182**, **T-0183**, **T-0184**, **T-0185**. **Batch 3E —
+> identity/GDPR/device/catalog:** **T-0186** (`L`→split), **T-0187**, **T-0188**, **T-0189**, **T-0190**,
+> **T-0191** (`L`→split), **T-0192**. **Batch 3F — rate-limit fast-follows:** **T-0193**, **T-0194**,
+> **T-0195**.
+>
+> **L-splits authorized this pass (5):** **T-0170** → 170a generalized-cancel+CancelledBy enum (folds
+> AUD-15) / 170b status-override / 170c reassign / 170d refund-only; **T-0173** → 173a backend (Admin
+> DisputeController + Partner-endpoint removal + refund/guard) / 173b admin disputes-management frontend;
+> **T-0171** → 171a invoice adjust+dispute/reject / 171b period MarkPaid+Reopen / 171c AUD-04 partner-
+> surface reconciliation / 171d admin UI / 171e partner web+Android read-only; **T-0175** → 175a backend /
+> 175b admin frontend; **T-0186** → 186a admin Data-Protection / 186b partner GDPR self-service. **T-0191**
+> stays one ticket with internal split-(a/b/c/d) sub-sequencing (CC-06 sub-(d) held on Q-W3-1).
+>
+> **Corrected/verified edges (post Wave-2):** **T-0170** `depends_on T-0161✓, T-0164✓` (refund seam +
+> migration — both now `done`, so T-0170 is **unblocked**); **T-0173** `depends_on T-0161✓, T-0164✓, T-0172,
+> T-0171` (so 3A's dispute spine + 3B's payroll spine gate it). **All other Wave-3 deps verified `done`:**
+> T-0100, T-0111, T-0112, T-0115, T-0141, T-0142(epic children), T-0143(epic children), T-0145, T-0148.
+>
+> **Open question:** **Q-W3-1** (blocking) — default-language policy for catalog translations (gates ONLY
+> T-0191 CC-06 sub-(d); the rest of T-0191 and all of Wave 3 proceed). Plus **carry-forward owner items**
+> (not Wave-3 tickets) tracked in sprint-5 §3: **T-0159 rotate-mapbox-token** (still outstanding),
+> outstanding Wave-0 nswag-regens (T-0102/0104/0111/0112 — confirm), IMP-1 Google OAuth ClientId, CZ
+> Stripe-fee figure, fiscal go-live gates DE/AT/ES.
+>
+> --- (Wave-1 history below, kept for traceability) ---
+>
 > ## ✅ WAVE 1 CLOSED — merged to master (2026-06-07 reconciliation)
 > **Wave 0** = PR #72 (`9a774435`); **Wave 1 Batch 1A** (4 ADRs) + **Batch 1B** (T-0144…T-0159) = merged in
 > `a4f14094` ("Wave-1 Batch 1B — integration resilience, outbox durability, soft-delete, loyalty/membership
@@ -81,22 +157,90 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > the exposed token still needs rotating in the Mapbox account (a live exposure until done). Surfaced in
 > `status/sprint-4.md` §3.
 
-**Wave 2 — refund BUILD from ADR-0006/0009 + fiscal go-live gates + fast-follows (plan: `status/sprint-4.md`; `draft` — awaiting owner sign-off):**
+**Wave 2 — refund BUILD from ADR-0006/0009 + fiscal go-live gates + fast-follows. ALL `done` ✅ (merged in `8ff35d49` / PR #75; PM-reconciled 2026-06-09 from stale `draft`). Plan: `status/sprint-4.md`.**
 
 | ID | Title | Size | Status | depends_on | blocks | Layers | sec | manual_step |
 |----|-------|------|--------|-----------|--------|--------|-----|-------------|
-| **T-0160** | AUD-01a: Refund entity + EF + PaymentStatus.PartiallyRefunded + RefundReason enum | M | draft | — | T-0161, T-0163, T-0164, T-0167 | backend, db | no | ef-migration |
-| **T-0161** | AUD-01b: IRefundService impl (seam, ceiling, RefundKey) + IStripeClient key param | M | draft | T-0160 | T-0164, T-0167, T-0170, T-0173 | backend, clients | **yes** | nswag-regen* |
-| **T-0231** | AUD-02p1 (split of T-0165): PackageService.PriceWeight + even-weight backfill + bundled-gross | M | draft | — | **T-0167**, T-0232 | db, backend | no | ef-migration |
-| **T-0163** | AUD-01d: ILoyaltyService.RevokeForPartialRefundAsync (proportional, keyed) | M | draft | T-0160 | — | backend, db | no | ef-migration |
-| **T-0164** | AUD-01e: Migrate CancelOrder + ResolveDispute onto the seam | M | draft | T-0160, T-0161 | T-0170, T-0173 | backend | **yes** | — |
-| **T-0167** | AUD-01c1 (split of T-0162): admin partial-refund cmd + allocator + RefundPolicy + PartiallyRefunded | M | draft | T-0160, T-0161, **T-0231** | T-0168, T-0170, T-0173 | backend | **yes** | nswag-regen |
-| **T-0168** | AUD-01c2 (split of T-0162): admin partial-refund UX | M | draft | T-0167 | — | frontend | no | nswag-regen (consumes) |
-| **T-0232** | AUD-02p2 (split of T-0165): admin package-form weight UX | S | draft | T-0231 | — | frontend | no | nswag-regen (consumes) |
-| **T-0220** | FISCAL-SEQ: gapless fiscal sequence allocator (FiscalCounter) — **DE/AT/ES go-live gate** | M | draft | T-0119✓ | — | backend, db | **yes** | ef-migration |
-| **T-0221** | FISCAL-AUTH-IDEMP: per-provider RegisterReceiptAsync idempotency — **DE/AT/ES go-live gate** | M | draft | T-0119✓ | — | backend, clients | **yes** | — |
-| **T-0219** | Anon-catalog entities → platform config (Service/Category/Package/Extra/ServiceCity) | M | draft | T-0100✓, T-0113✓ | — | backend, db | **yes** | ef-migration |
-| **T-0222** | SplitPayForMultipleEmployees — currency-minor-unit split + remainder reconciliation | S | draft | — | — | backend | no | — |
+| **T-0160** | AUD-01a: Refund entity + EF + PaymentStatus.PartiallyRefunded + RefundReason enum | M | **done ✅** | — | T-0161, T-0163, T-0164, T-0167 | backend, db | no | ef-migration |
+| **T-0161** | AUD-01b: IRefundService impl (seam, ceiling, RefundKey) + IStripeClient key param | M | **done ✅** | T-0160 | T-0164, T-0167, T-0170, T-0173 | backend, clients | **yes** | nswag-regen* |
+| **T-0231** | AUD-02p1 (split of T-0165): PackageService.PriceWeight + even-weight backfill + bundled-gross (incl. T-0231b: PriceWeight + serviceWeights on package DTO) | M | **done ✅** | — | **T-0167**, T-0232 | db, backend | no | ef-migration |
+| **T-0163** | AUD-01d: ILoyaltyService.RevokeForPartialRefundAsync (proportional, keyed) | M | **done ✅** | T-0160 | — | backend, db | no | ef-migration |
+| **T-0164** | AUD-01e: Migrate CancelOrder + ResolveDispute onto the seam | M | **done ✅** | T-0160, T-0161 | T-0170, T-0173 | backend | **yes** | — |
+| **T-0167** | AUD-01c1 (split of T-0162): admin partial-refund cmd + allocator + RefundPolicy + PartiallyRefunded + per-country Stripe-fee config | M | **done ✅** | T-0160, T-0161, **T-0231** | T-0168, T-0170, T-0173 | backend | **yes** | nswag-regen |
+| **T-0168** | AUD-01c2 (split of T-0162): admin partial-refund UX (incl. bundled-service selection) | M | **done ✅** | T-0167 | — | frontend | no | nswag-regen (consumes) |
+| **T-0232** | AUD-02p2 (split of T-0165): admin package-form weight UX | S | **done ✅** | T-0231 | — | frontend | no | nswag-regen (consumes) |
+| **T-0220** | FISCAL-SEQ: gapless fiscal sequence allocator (FiscalCounter) — **DE/AT/ES go-live gate** | M | **done ✅** | T-0119✓ | — | backend, db | **yes** | ef-migration |
+| **T-0221** | FISCAL-AUTH-IDEMP: per-provider RegisterReceiptAsync idempotency — **DE/AT/ES go-live gate** | M | **done ✅** | T-0119✓ | — | backend, clients | **yes** | — |
+| **T-0219** | Anon-catalog entities → platform config (Service/Category/Package/Extra/ServiceCity) | M | **done ✅** | T-0100✓, T-0113✓ | — | backend, db | **yes** | ef-migration |
+| **T-0222** | SplitPayForMultipleEmployees — currency-minor-unit split + remainder reconciliation | S | **done ✅** | — | — | backend | no | — |
+
+> **Wave 2 = 12 `done`** (merged `8ff35d49` / PR #75). Reconciled 2026-06-09 from stale `draft`. Plus the
+> new backend DTO field `PackageDetails.IncludedServiceItems [{Id,Name}]` and two runtime fixes folded in
+> (OutboxMessageRepository non-composable FromSqlRaw; AppHost pinned Postgres password). Split epics
+> **T-0162**/**T-0165** remain `[SPLIT]` tracking with all four children `done`. The fiscal go-live gates
+> (T-0220/T-0221) are `done` in code but only **activate** on a DE/AT/ES launch — not CZ/SK/PL (see
+> `status/sprint-5.md` §3 carry-forward).
+
+**Wave 3 — admin-feature block T-0170…T-0195. ✅ CLOSED 2026-06-12 — 25/26 `done` (T-0179 NOT built, carried forward). Commits: `8aa7bcc1` (3A) → `5d631f8c` (backend 3B/3D/3C/3E) → `8ddfef9d` (frontend/Android mega-batch) → `66cc823d` (3F). Q-W3-1 answered (b). Plan + close-out: `status/sprint-5.md`.**
+
+| ID | Title | Size | Status (commit) | depends_on (✓ = done) | Batch | Layers | sec | manual_step |
+|----|-------|------|--------|------------------------|-------|--------|-----|-------------|
+| **T-0170** | Admin order ops (cancel/reassign/refund/status-override) + generalized cancel | **L→split** | **done ✅** `8aa7bcc1` (170a–d + UI) | T-0100✓, T-0140✓, T-0161✓, T-0164✓ | 3A | backend, frontend | **yes** | nswag-regen ✓ |
+| **T-0172** | Dispute transition-guard: Close/Escalate/LinkStripe reachable + guarded | M | **done ✅** `8aa7bcc1` | T-0140✓ | 3A | backend | **yes** | — |
+| **T-0174** | Wire Stripe chargeback linkage (LinkStripeDispute) | M | **done ✅** `8aa7bcc1` | T-0140✓ | 3A | backend | **yes** | — |
+| **T-0173** | Admin dispute management + issue refund; remove dead Partner endpoints | **L→split** | **done ✅** `8aa7bcc1` (173a+173b) | T-0100✓, T-0140✓, T-0161✓, T-0164✓, T-0172✓, T-0171✓ | 3A | backend, frontend | **yes** | nswag-regen ✓ |
+| **T-0171** | Payroll adjustment + settlement lifecycle + partner payroll surface | **L→split** | **done ✅** `5d631f8c` (171a/b/c) + `8ddfef9d` (171d/e UI + Android) | T-0100✓, T-0143✓, T-0170✓ | 3B | backend, frontend, android | **yes** | nswag-regen ✓, ef-migration (none needed) |
+| **T-0180** | Implement GenerateInvoiceFunction (revive generate-invoice queue) | S | **done ✅** `5d631f8c` | T-0143✓, T-0171✓ | 3B | functions | no | — |
+| **T-0175** | Admin Membership-Plan CRUD surface | **L→split** | **done ✅** `5d631f8c` (175a) + `8ddfef9d` (175b) | T-0100✓, T-0173✓ | 3C | backend, frontend | **yes** | nswag-regen ✓ |
+| **T-0176** | Admin referral intervention + wire by-user endpoint + sidebar | M | **done ✅** `5d631f8c` + `8ddfef9d` | T-0100✓, T-0148✓, T-0175✓ | 3C | backend, frontend | **yes** | nswag-regen ✓ |
+| **T-0177** | Invoke referral expiry sweep (timer) | S | **done ✅** `5d631f8c` | T-0143✓ | 3C | backend, functions | no | — |
+| **T-0178** | /r/{code} referral landing route | M | **done ✅** `8ddfef9d` | — | 3C | frontend | no | — |
+| **T-0179** | Unify membership subscribe path (web/mobile) | S | **⚠️ NOT BUILT — still `draft`, carried to Wave 4** (verified: `CreateMembershipSubscription.cs` untouched since Wave 1) | T-0111✓ | 3C | backend, frontend | no | nswag-regen* |
+| **T-0181** | SendSitewidePromo fan-out: resume cursor + idempotent enqueue | M | **done ✅** `5d631f8c` | T-0143✓ | 3D | functions, backend | **yes** | — |
+| **T-0182** | Idempotent push dispatch (per-message key; fix at-most-once) | M | **done ✅** `5d631f8c` (+ **ADR-0010** produced) | T-0143✓, T-0141✓ | 3D | functions, backend | **yes** | — |
+| **T-0183** | Fix cron cadence on 4 notification/recurring timers | S | **done ✅** `5d631f8c` | — | 3D | functions | no | — |
+| **T-0184** | FiscalRetryService per-receipt durability (no all-or-nothing batch) | S | **done ✅** `5d631f8c` | T-0143✓ | 3D | backend | no | — |
+| **T-0185** | Mapbox 429/rate-limit handling | M | **done ✅** `5d631f8c` | T-0141✓, T-0145✓ | 3D | backend | no | — |
+| **T-0186** | Admin GDPR back-office UI + partner GDPR self-service | **L→split** | **done ✅** `5d631f8c` + `8ddfef9d` (186a/b) | T-0100✓, T-0176✓ | 3E | backend, frontend | **yes** | nswag-regen ✓ |
+| **T-0187** | Customer-web notification-preferences UI (11-category API) | M | **done ✅** `8ddfef9d` | — | 3E | frontend | no | — |
+| **T-0188** | Device / active-session management (GetMyDevices + revoke UI) | M | **done ✅** `5d631f8c` (backend) + `8ddfef9d` (Android) — optional AC6 admin panel **deferred** | — | 3E | backend, frontend, mobile | **yes** | nswag-regen ⚠️ customer client pending |
+| **T-0189** | LastLoginAt tracking (field + write + surface) | M | **done ✅** `5d631f8c` | — | 3E | backend, db, frontend | no | ef-migration ✓ |
+| **T-0190** | Admin self-service profile/password; accept BirthDate/PreferredLanguageCode | M | **done ✅** `5d631f8c` + `8ddfef9d` | T-0100✓, T-0172✓ | 3E | backend, frontend | no | nswag-regen ✓ |
+| **T-0191** | Service/Package in-use guard + activate/deactivate; default-currency/-language | L (internal split a/b/c/d) | **done ✅** `5d631f8c` (a–d backend; CC-06 per Q-W3-1 path b) + `8ddfef9d` (UI) | T-0142✓ | 3E | backend, frontend | **yes** | ef-migration (none needed), nswag-regen ✓ |
+| **T-0192** | Customer dispute evidence+refund UI; status filter/unread; saved-address UI | M | **done ✅** `8ddfef9d` | — | 3E | frontend | no | — |
+| **T-0193** | Account-lockout / per-confirmation-code throttle (rate-limit fast-follow) | M | **done ✅** `66cc823d` (⚠️ **AC4 closes after owner ef-migration + `Cleansia.IntegrationTests`**) | T-0115✓, T-0189✓, T-0190✓ | 3F | backend, db | **yes** | **ef-migration ⚠️ PENDING (owner)** |
+| **T-0194** | Rate-limit coverage for uncovered money/side-effect endpoints | S | **done ✅** `66cc823d` (recorded **AC6 deviation** — runtime 429 harness → **T-0235**, Wave 4) | T-0115✓, T-0171✓, T-0173✓, T-0179 (waived — doc-only, endpoints annotated regardless), T-0188✓ | 3F | backend | **yes** | — |
+| **T-0195** | Client-side Retry-After back-off jitter (SPA + mobile) | S | **done ✅** `66cc823d` | T-0115✓ | 3F | frontend, mobile | no | — |
+
+> \* T-0179's `nswag-regen` footnote is moot until it is built (likely comment-only → no regen). The
+> T-0176/T-0190 hold-point regens were satisfied by the owner mid-wave (the `8ddfef9d` frontend slices
+> built against the regenerated admin client). **Still pending: the customer-client regen**
+> (`DisputeReason.Chargeback` + device endpoints) — flagged in the Wave-3 CLOSED banner + sprint-5 §8.
+
+**Wave-3 close follow-ups (filed 2026-06-12, all `draft`) — review/security-gate findings made tickets. T-0236 MUST land before any multi-tenant onboarding; T-0233/T-0234 are security fast-follows.**
+
+| ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
+|----|-------|------|--------|-----------|--------|-----|-------------|--------|
+| **T-0233** | Targeted-lockout DoS mitigation — trusted-device bypass / CAPTCHA on locked-account login | M | draft | T-0193✓ | backend, frontend | **yes** | — | T-0193 security note N1 |
+| **T-0234** | Bound ChangeOwnPassword current-password guessing (authenticated surface) | S | draft | T-0193✓ | backend | **yes** | — (ef-migration only if a dedicated counter is chosen) | T-0193 security note N5 |
+| **T-0235** | Runtime 429 flood-harness test (the T-0194 AC6 deviation; Wave-4 test slice) | S | draft | T-0194✓ | backend | no | — | T-0194 AC6 deviation |
+| **T-0236** | Multi-tenant token-revoke asymmetry: TenantId=null token writes vs tenant-filtered revoke reads | M | draft | T-0188✓ | backend | **yes** | ef-migration (TBD at contract-lock) | T-0188 security note; `security/auth-sessions.md` |
+| **T-0237** | Catalog delete TOCTOU → FK Restrict + violation→`in_use` mapping; + RecurringBookingTemplate JSON-id dangling refs | M | draft | T-0191✓ | backend, db | **yes** | ef-migration | T-0191a security re-gate notes 1+2 |
+| **T-0238** | EmployeeInvoice DTOs gain PdfGenerationFailed/PdfGenerationError + admin regen (closes Q-W3-3 / T-0171d AC4) | S | draft | T-0171✓ | backend, frontend | no | nswag-regen | Q-W3-3 |
+| **T-0239** | Module-boundary sweep: customer features off `@cleansia/partner-services` (14 files) + eslint boundary rule | M | draft | — | frontend | no | — | Wave-3 review finding |
+| **T-0240** | Android `.kotlin` build-artifact dir → `.gitignore` | S | draft | — | android | no | — | T-0195 reviewer nit |
+| **T-0241** | Admin-app selector-prefix eslint alignment + Nx generator default | S | draft | — | frontend | no | — | recurring 3A+ baseline noise |
+>
+> **L-splits authorized (5)** — children created as part of execution intake, contract-first per
+> `routing.md`: **T-0170**→170a/b/c/d, **T-0173**→173a/b, **T-0171**→171a/b/c/d/e, **T-0175**→175a/b,
+> **T-0186**→186a/b. Parents become `[SPLIT]` tracking epics. **T-0191** keeps its id but runs as four
+> internal sub-tickets (a CC-02 / b CC-03 / c CC-04 / d CC-06); sub-(d) is **held on Q-W3-1**.
+>
+> **Build order:** 3A (refund-seam consumers — the spine) → 3B (payroll, gated by 3A's T-0170) → {3C, 3D,
+> 3E} largely parallel after their spines, with the dispute-backend serialization cluster
+> (T-0172 → T-0173) and the PolicyBuilder/admin-shell clusters serializing inside 3A/3C/3E → 3F last
+> (T-0194 depends on 3B/3A/3C consumers existing; T-0193 depends on T-0189/T-0190). Per-batch rationale +
+> serialization detail: `status/sprint-5.md`.
 
 > \* T-0161 `nswag-regen` only if a refund **response DTO** surfaces on a client; the admin refund command DTO
 > regen is on **T-0167**.
@@ -177,9 +321,9 @@ One row per ticket. Source of truth for "what's the team doing right now".
 | TC-IDEMP-0 → **T-0127** | "Safe to run twice" idempotency tests (webhooks + 3 LG money fixes) | 0 | crit | M | **done ✅** (cases shipped inline w/ fixes; audit confirmed full coverage) | backend | with the fix |
 | TC-AUTH-TAKEOVER → **T-0128** | Token-claim binding + reset-code lookup tests | 0 | crit | M | **done ✅** (covered + GoogleTokenVerifier gap filled) | backend | with IDA-SEC-01/03 |
 | LG-SEC-05 → **T-0113** | Anonymous-but-tenant-scoped MembershipPlan read → platform config (Option A) | 0 | maj | M | **done ✅** (migration regenerated 2026-06-03: MembershipPlans Code-unique, no tenant-scoping) | backend, db | ADR-AUTHZ A1 |
-| LG-SEC-05-sibs → **T-0219** | Anon catalog entities (Service/Category/Package/Extra/ServiceCity) → platform config | 2 | maj | M | draft (created from doctrine) | backend, db | ADR-AUTHZ A1 |
-| FISCAL-SEQ → **T-0220** | Gapless-monotonic-atomic fiscal sequence allocator (FiscalCounter) — replace COUNT(*)+1 | 2 | maj | M | draft (ADR-0004 split; **DE/AT/ES go-live gate**) | backend, db | ADR-0004 |
-| FISCAL-AUTH-IDEMP → **T-0221** | Per-provider RegisterReceiptAsync idempotency on ReceiptNumber (IFiscalService key) | 2 | maj | M | draft (ADR-0004 split; **DE/AT/ES go-live gate**) | backend, clients | ADR-0004 |
+| LG-SEC-05-sibs → **T-0219** | Anon catalog entities (Service/Category/Package/Extra/ServiceCity) → platform config | 2 | maj | M | **done ✅** (Wave 2; merged 8ff35d49) | backend, db | ADR-AUTHZ A1 |
+| FISCAL-SEQ → **T-0220** | Gapless-monotonic-atomic fiscal sequence allocator (FiscalCounter) — replace COUNT(*)+1 | 2 | maj | M | **done ✅** (Wave 2; merged 8ff35d49; **activates on DE/AT/ES go-live**) | backend, db | ADR-0004 |
+| FISCAL-AUTH-IDEMP → **T-0221** | Per-provider RegisterReceiptAsync idempotency on ReceiptNumber (IFiscalService key) | 2 | maj | M | **done ✅** (Wave 2; merged 8ff35d49; **activates on DE/AT/ES go-live**) | backend, clients | ADR-0004 |
 
 > ⚠️ **Plan corrected 2026-06-01** after a collision check (`audits/AUDIT-2026-06-01-plan-corrections.md`):
 > 3 blocking defects fixed — ADRs frozen pre-Wave-0, outbox split tactical/strategic, BSP-1+BSP-6

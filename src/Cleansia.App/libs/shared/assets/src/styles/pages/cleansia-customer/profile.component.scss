@@ -828,3 +828,56 @@ $font-heading: 'Poppins', sans-serif;
     }
   }
 }
+
+.customer-notification-prefs {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--surface-border, #e2e8f0);
+
+  &__header {
+    margin-bottom: 1rem;
+
+    strong {
+      display: block;
+      font-size: 1rem;
+      color: var(--text-color, #0f172a);
+    }
+
+    p {
+      margin: 0.25rem 0 0;
+      font-size: 0.875rem;
+      color: var(--text-color-secondary, #64748b);
+    }
+  }
+
+  &__skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  &__error {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 1rem;
+    border-radius: 12px;
+    background: var(--red-50, #fef2f2);
+
+    i {
+      color: var(--red-500, #ef4444);
+      font-size: 1.25rem;
+    }
+
+    p {
+      margin: 0;
+      color: var(--text-color, #0f172a);
+    }
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+  }
+}

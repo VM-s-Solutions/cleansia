@@ -7,6 +7,7 @@ using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Admin.Controllers;
 
@@ -41,6 +42,7 @@ public class AdminEmailTemplateController(IMediator mediator) : ApiController(me
 
     [HttpPost("types/{emailType}/send-test")]
     [Permission(Policy.CanUpdateEmailTemplate)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(SendTestEmailByType.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -89,6 +91,7 @@ public class AdminEmailTemplateController(IMediator mediator) : ApiController(me
 
     [HttpPut("update/{emailTemplateId}")]
     [Permission(Policy.CanUpdateEmailTemplate)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(UpdateEmailTemplate.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -109,6 +112,7 @@ public class AdminEmailTemplateController(IMediator mediator) : ApiController(me
 
     [HttpPost("{emailTemplateId}/send-test")]
     [Permission(Policy.CanUpdateEmailTemplate)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(SendTestEmail.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -129,6 +133,7 @@ public class AdminEmailTemplateController(IMediator mediator) : ApiController(me
 
     [HttpPost("create")]
     [Permission(Policy.CanUpdateEmailTemplate)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(CreateEmailTemplateTranslation.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -143,6 +148,7 @@ public class AdminEmailTemplateController(IMediator mediator) : ApiController(me
 
     [HttpDelete("delete/{emailTemplateId}")]
     [Permission(Policy.CanUpdateEmailTemplate)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(DeleteEmailTemplateTranslation.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

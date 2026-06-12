@@ -17,13 +17,15 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   CleansiaButtonComponent,
+  CleansiaCalendarComponent,
   CleansiaLoaderComponent,
   CleansiaSectionComponent,
+  CleansiaSelectComponent,
   CleansiaTelephoneComponent,
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
-import { CleansiaAdminRoute } from '@cleansia/services';
+import { CleansiaAdminRoute, CustomValidators } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AdminUserFormData, AdminUserFormFacade } from './admin-user-form.facade';
 
@@ -35,6 +37,8 @@ import { AdminUserFormData, AdminUserFormFacade } from './admin-user-form.facade
     ReactiveFormsModule,
     TranslatePipe,
     CleansiaButtonComponent,
+    CleansiaCalendarComponent,
+    CleansiaSelectComponent,
     CleansiaTextInputComponent,
     CleansiaTelephoneComponent,
     CleansiaLoaderComponent,
@@ -61,12 +65,18 @@ export class AdminUserFormComponent implements OnInit, OnDestroy {
       : this.translate.instant('pages.admin_user_form.create_title')
   );
 
+  readonly maxBirthDate = new Date();
+
   readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email, Validators.maxLength(150)]],
     password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(100)]],
     firstName: ['', [Validators.required, Validators.maxLength(50)]],
     lastName: ['', [Validators.required, Validators.maxLength(50)]],
     phoneNumber: ['', [Validators.maxLength(50)]],
+    birthDate: this.fb.control<Date | null>(null, [
+      CustomValidators.minimumAge(18),
+    ]),
+    preferredLanguageCode: this.fb.control<string | null>(null),
   });
 
   private userLoadEffect = effect(() => {
@@ -81,6 +91,8 @@ export class AdminUserFormComponent implements OnInit, OnDestroy {
     if (routeMode) {
       this.mode.set(routeMode);
     }
+
+    this.facade.loadLanguages();
 
     if (this.isEditMode()) {
       // In edit mode, password is not required
@@ -108,12 +120,16 @@ export class AdminUserFormComponent implements OnInit, OnDestroy {
     firstName?: string;
     lastName?: string;
     phoneNumber?: string;
+    birthDate?: Date;
+    preferredLanguageCode?: string;
   }): void {
     this.form.patchValue({
       email: user.email ?? '',
       firstName: user.firstName ?? '',
       lastName: user.lastName ?? '',
       phoneNumber: user.phoneNumber ?? '',
+      birthDate: user.birthDate ? new Date(user.birthDate) : null,
+      preferredLanguageCode: user.preferredLanguageCode ?? null,
     });
   }
 
@@ -131,6 +147,8 @@ export class AdminUserFormComponent implements OnInit, OnDestroy {
       firstName: formValue.firstName,
       lastName: formValue.lastName,
       phoneNumber: formValue.phoneNumber || undefined,
+      birthDate: formValue.birthDate ?? undefined,
+      preferredLanguageCode: formValue.preferredLanguageCode || undefined,
     };
 
     if (this.isEditMode()) {

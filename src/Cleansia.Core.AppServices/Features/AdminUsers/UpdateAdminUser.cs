@@ -5,6 +5,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using static Cleansia.Core.AppServices.Common.Validators.ValidationExtensions;
 
 namespace Cleansia.Core.AppServices.Features.AdminUsers;
 
@@ -14,13 +15,15 @@ public class UpdateAdminUser
         string UserId,
         string FirstName,
         string LastName,
-        string? PhoneNumber) : ICommand<Response>;
+        string? PhoneNumber,
+        DateOnly? BirthDate,
+        string? PreferredLanguageCode) : ICommand<Response>;
 
     public record Response(string Id);
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator(IUserRepository userRepository)
+        public Validator(IUserRepository userRepository, ILanguageRepository languageRepository)
         {
             RuleFor(x => x.UserId)
                 .Cascade(CascadeMode.Stop)
@@ -49,6 +52,19 @@ public class UpdateAdminUser
                 .MaximumLength(50)
                 .WithMessage(BusinessErrorMessage.MaxLength)
                 .When(x => !string.IsNullOrEmpty(x.PhoneNumber));
+
+            RuleFor(x => x.BirthDate)
+                .Cascade(CascadeMode.Stop)
+                .Must(date => BeInPast(date!.Value))
+                .WithMessage(BusinessErrorMessage.DateMustBeInPast)
+                .Must(date => BeReasonableAge(date!.Value))
+                .WithMessage(BusinessErrorMessage.InvalidAge)
+                .When(x => x.BirthDate.HasValue);
+
+            RuleFor(x => x.PreferredLanguageCode)
+                .MustAsync(async (code, ct) => await languageRepository.ExistsWithCodeAsync(code!, ct))
+                .WithMessage(BusinessErrorMessage.LanguageNotSupported)
+                .When(x => !string.IsNullOrWhiteSpace(x.PreferredLanguageCode));
         }
     }
 
@@ -63,10 +79,18 @@ public class UpdateAdminUser
                     u => u.Id == command.UserId && u.Profile == UserProfile.Administrator,
                     cancellationToken);
 
+            // Omitted optional fields preserve the stored values — User.Update defaults
+            // birthDate to null, which silently wiped it on every name-only edit.
             user!.Update(
                 firstName: command.FirstName,
                 lastName: command.LastName,
-                phoneNumber: command.PhoneNumber ?? string.Empty);
+                phoneNumber: command.PhoneNumber ?? string.Empty,
+                birthDate: command.BirthDate ?? user.BirthDate);
+
+            if (!string.IsNullOrWhiteSpace(command.PreferredLanguageCode))
+            {
+                user.UpdateLanguagePreference(command.PreferredLanguageCode);
+            }
 
             return BusinessResult.Success(new Response(user.Id));
         }

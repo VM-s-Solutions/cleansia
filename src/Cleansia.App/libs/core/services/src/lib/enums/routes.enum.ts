@@ -5,6 +5,7 @@ export enum CleansiaPartnerRoute {
   ORDERS = 'orders',
   DISPUTES = 'disputes',
   INVOICES = 'invoices',
+  MY_PAY = 'my-pay',
   LOGIN = 'login',
   REGISTER = 'register',
   FORGOT_PASSWORD = 'forgot-password',
@@ -19,6 +20,7 @@ export enum CleansiaAdminRoute {
   EMPLOYEE_MANAGEMENT = 'employee-management',
   PAY_PERIODS = 'pay-periods',
   ORDER_MANAGEMENT = 'order-management',
+  DISPUTE_MANAGEMENT = 'dispute-management',
   INVOICE_MANAGEMENT = 'invoice-management',
   REPORTS = 'reports',
   SERVICE_MANAGEMENT = 'service-management',
@@ -31,18 +33,25 @@ export enum CleansiaAdminRoute {
   COMPANY_INFO = 'company-info',
   TEMPLATE_MANAGEMENT = 'template-management',
   PAY_CONFIG_MANAGEMENT = 'pay-config-management',
+  MEMBERSHIP_PLAN_MANAGEMENT = 'membership-plan-management',
+  DATA_PROTECTION = 'data-protection',
+  PROFILE = 'profile',
 }
 
 export enum CleansiaCustomerRoute {
   HOME = '',
   LOGIN = 'login',
   REGISTER = 'register',
+  // Public referral landing — /r/{code}. Single source for both the share
+  // URL (rewards) and the app route so they cannot drift.
+  REFERRAL_LANDING = 'r',
   CONFIRM_EMAIL = 'confirm-email',
   FORGOT_PASSWORD = 'forgot-password',
   SERVICES = 'services',
   ORDER = 'order',
   ORDERS = 'orders',
   PROFILE = 'profile',
+  SAVED_ADDRESSES = 'saved-addresses',
   DISPUTES = 'disputes',
   REWARDS = 'rewards',
   MEMBERSHIP = 'membership',

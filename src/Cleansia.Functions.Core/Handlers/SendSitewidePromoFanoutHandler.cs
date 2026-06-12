@@ -33,6 +33,7 @@ public class SendSitewidePromoFanoutHandler(
     IUserNotificationPreferencesRepository preferencesRepository,
     IUserRepository userRepository,
     IQueueClient queueClient,
+    ICampaignProgressStore campaignProgressStore,
     ITenantProvider tenantProvider,
     ILogger<SendSitewidePromoFanoutHandler> logger)
 {
@@ -40,9 +41,25 @@ public class SendSitewidePromoFanoutHandler(
     /// Page size for the opted-in user query. Bigger pages = fewer DB
     /// round-trips but more memory + queue burst per batch. 200 is a
     /// conservative middle ground; the per-user push messages each fan out
-    /// to their own consumer downstream.
+    /// to their own consumer downstream. Overridable so a test can force
+    /// multiple pages (and a between-page failure) without seeding 200+ rows.
     /// </summary>
-    private const int PageSize = 200;
+    private readonly int _pageSize = DefaultPageSize;
+
+    private const int DefaultPageSize = 200;
+
+    public SendSitewidePromoFanoutHandler(
+        IUserNotificationPreferencesRepository preferencesRepository,
+        IUserRepository userRepository,
+        IQueueClient queueClient,
+        ICampaignProgressStore campaignProgressStore,
+        ITenantProvider tenantProvider,
+        ILogger<SendSitewidePromoFanoutHandler> logger,
+        int pageSize)
+        : this(preferencesRepository, userRepository, queueClient, campaignProgressStore, tenantProvider, logger)
+    {
+        _pageSize = pageSize;
+    }
 
     /// <summary>
     /// Locales we ship with. Anything else falls back to "en". Kept in sync
@@ -101,15 +118,26 @@ public class SendSitewidePromoFanoutHandler(
                 // Stable order so paged reads don't skip rows.
                 .OrderBy(x => x.UserId);
 
+            // ADR-0002 D2.3 — per-campaign RESUME cursor (the named nice-to-have, a cost/spam layer on
+            // top of the downstream push:{UserId}:{EventKey} effect dedup, which this never replaces).
+            // On redelivery, resume from the last persisted cursor (the last fully-processed page’s
+            // last UserId, consistent with the OrderBy(UserId) stable order) instead of restarting at
+            // offset 0, so a flaky page read does not re-enqueue (re-cost) the recipients already
+            // processed. A campaign whose cursor reached the end is recognized complete and is a no-op.
+            var progress = await campaignProgressStore.GetAsync(campaign.CampaignId, ct);
+            if (progress.IsComplete)
+            {
+                logger.LogInformation(
+                    "Sitewide promo campaign {CampaignId} already complete — redelivery is a no-op",
+                    campaign.CampaignId);
+                return;
+            }
+
             // KEYSET (seek) paging instead of Skip(offset). UserId is a unique key, so
             // `WHERE UserId > lastUserId` avoids Postgres scanning+discarding `offset` rows per page —
             // the old Skip(offset) was O(N^2) over the doc-stated million-user fan-out.
-            // (accepted): a mid-campaign crash re-runs from the first page on redelivery
-            // (no persisted high-water mark across redeliveries), and per-user pushes carry no dedup key,
-            // so a retry RE-NOTIFIES already-processed recipients. Tolerated for a best-effort marketing
-            // fan-out; a resumable cursor / push dedup is tracked as a follow-up, not done here.
             var totalEnqueued = 0;
-            string? lastUserId = null;
+            var lastUserId = progress.LastProcessedUserId;
             while (true)
             {
                 var pageQuery = query.AsQueryable();
@@ -119,7 +147,7 @@ public class SendSitewidePromoFanoutHandler(
                 }
 
                 var page = await pageQuery
-                    .Take(PageSize)
+                    .Take(_pageSize)
                     .ToListAsync(ct);
 
                 if (page.Count == 0) break;
@@ -159,8 +187,16 @@ public class SendSitewidePromoFanoutHandler(
                     }
                 }
 
-                if (page.Count < PageSize) break;
+                // The page finished — persist the cursor so a crash/redelivery after this point
+                // resumes PAST it rather than re-paging from offset 0. F8’s named failure (a later
+                // page read throwing) lands in the outer catch and redelivers; the cursor already
+                // reflects every fully-processed page, so the retry seeks past them.
+                await campaignProgressStore.AdvanceAsync(campaign.CampaignId, lastUserId, ct);
+
+                if (page.Count < _pageSize) break;
             }
+
+            await campaignProgressStore.MarkCompleteAsync(campaign.CampaignId, ct);
 
             logger.LogInformation(
                 "Sitewide promo fan-out complete: enqueued {Count} user-level push messages",

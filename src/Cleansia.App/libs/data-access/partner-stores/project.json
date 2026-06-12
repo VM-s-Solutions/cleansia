@@ -4,7 +4,10 @@
   "sourceRoot": "libs/data-access/partner-stores/src",
   "prefix": "lib",
   "projectType": "library",
-  "tags": ["scope:partner", "type:data-access"],
+  "tags": [
+    "scope:partner",
+    "type:data"
+  ],
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint"

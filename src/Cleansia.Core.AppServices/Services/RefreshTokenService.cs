@@ -19,7 +19,7 @@ public class RefreshTokenService(
     // 48 bytes = 384 bits of entropy → 64 base64url chars. Overkill; that's the point.
     private const int TokenByteLength = 48;
 
-    public IssuedRefreshToken Issue(string userId, bool rememberMe, string audience, string? deviceLabel = null, string? ipAddress = null)
+    public IssuedRefreshToken Issue(string userId, bool rememberMe, string audience, string? deviceLabel = null, string? ipAddress = null, string? deviceId = null)
     {
         var raw = GenerateRawToken();
         var hash = HashToken(raw);
@@ -33,13 +33,14 @@ public class RefreshTokenService(
             expiresAt: DateTimeOffset.UtcNow.Add(lifetime),
             audience: audience,
             deviceLabel: deviceLabel,
-            ipAddress: ipAddress);
+            ipAddress: ipAddress,
+            deviceId: deviceId);
 
         repository.Add(record);
         return new IssuedRefreshToken(raw, record);
     }
 
-    public async Task<IssuedRefreshToken> RotateAsync(string rawToken, string? deviceLabel, string? ipAddress, CancellationToken cancellationToken)
+    public async Task<IssuedRefreshToken> RotateAsync(string rawToken, string? deviceLabel, string? ipAddress, CancellationToken cancellationToken, string? deviceId = null)
     {
         var hash = HashToken(rawToken);
         var existing = await repository.GetByTokenHashAsync(hash, cancellationToken);
@@ -91,7 +92,11 @@ public class RefreshTokenService(
         // before revoking the old one so we can set ReplacedByTokenId for the forensic chain.
         // Audience is preserved across rotation so the new token stays bound to the same host.
         var audience = existing.Audience ?? string.Empty;
-        var issued = Issue(existing.UserId, rememberMe, audience, deviceLabel, ipAddress);
+        // Inherit the device id so a rotated session stays revocable. The DB value wins;
+        // the header is only a fallback for a pre-existing row being rotated for the first
+        // time after this ships (its stored DeviceId is still null).
+        var carriedDeviceId = existing.DeviceId ?? deviceId;
+        var issued = Issue(existing.UserId, rememberMe, audience, deviceLabel, ipAddress, carriedDeviceId);
 
         existing.MarkUsed(DateTimeOffset.UtcNow);
         existing.Revoke("rotated", DateTimeOffset.UtcNow, replacedByTokenId: issued.Record.Id);
@@ -110,6 +115,21 @@ public class RefreshTokenService(
             return;
         }
         existing.Revoke(reason, DateTimeOffset.UtcNow);
+    }
+
+    public async Task RevokeByDeviceAsync(string userId, string deviceId, string reason, CancellationToken cancellationToken)
+    {
+        var active = await repository.GetActiveByUserIdAsync(userId, cancellationToken);
+        var now = DateTimeOffset.UtcNow;
+        // Match on the stable device id captured at issue/rotation time. The null-guard is
+        // load-bearing: a token with no DeviceId (pre-existing, or a client that never sent
+        // X-Device-Id) must never match, so it survives until natural expiry rather than
+        // being revoked by an unrelated device. Reuse the same Revoke mutation logout uses;
+        // the UnitOfWork pipeline commits.
+        foreach (var token in active.Where(t => t.DeviceId != null && t.DeviceId == deviceId))
+        {
+            token.Revoke(reason, now);
+        }
     }
 
     public string HashToken(string rawToken)

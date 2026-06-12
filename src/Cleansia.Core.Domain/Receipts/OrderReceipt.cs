@@ -107,6 +107,19 @@ public class OrderReceipt : Auditable, ITenantEntity
         EmailMessageId = messageId;
     }
 
+    /// <summary>
+    /// ADR-0002 D2.2 — claim-first marker for the terminal email effect. Flips <see cref="EmailSent"/>
+    /// BEFORE the provider message id is known so the claim can be committed ahead of the actual send;
+    /// the message id is stamped afterwards via <see cref="MarkEmailSent"/> for observability. A crash
+    /// between this committed claim and the send loses that one email (recoverable), but never causes a
+    /// double-send.
+    /// </summary>
+    public void ClaimEmailSend()
+    {
+        EmailSent = true;
+        EmailSentAt = DateTime.UtcNow;
+    }
+
     public void AcknowledgeFiscalFailure()
     {
         FiscalAcknowledged = true;

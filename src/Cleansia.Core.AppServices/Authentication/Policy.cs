@@ -31,6 +31,10 @@ public class Policy
     public const string CanSubmitOrderReview = nameof(CanSubmitOrderReview); // Customer
     public const string CanViewOrderReview = nameof(CanViewOrderReview); // Authenticated (All roles)
     public const string CanCancelOrder = nameof(CanCancelOrder); // Customer (own orders)
+    public const string CanAdminCancelOrder = nameof(CanAdminCancelOrder); // Admin (any order)
+    public const string CanOverrideOrderStatus = nameof(CanOverrideOrderStatus); // Admin (any order)
+    public const string CanReassignOrder = nameof(CanReassignOrder); // Admin (any order)
+    public const string CanRefundOrder = nameof(CanRefundOrder); // Admin (any order)
 
     // Saved addresses (Customer)
     public const string CanManageSavedAddresses = nameof(CanManageSavedAddresses); // Customer
@@ -51,6 +55,7 @@ public class Policy
     public const string CanGetCurrentUser = nameof(CanGetCurrentUser); // Authenticated (All roles)
     public const string CanRequestPasswordChange = nameof(CanRequestPasswordChange); // Authenticated (All roles)
     public const string CanChangePassword = nameof(CanChangePassword);
+    public const string CanChangeOwnPassword = nameof(CanChangeOwnPassword); // Authenticated [OWN-DATA] — subject id from the JWT only
     public const string CanUpdateCurrentUser = nameof(CanUpdateCurrentUser); // Authenticated (All roles)
     public const string CanAddPhoneNumber = nameof(CanAddPhoneNumber); // Authenticated (All roles)
 
@@ -80,6 +85,9 @@ public class Policy
     public const string CanMarkInvoicePaid = nameof(CanMarkInvoicePaid); // Admin
     public const string CanCancelInvoice = nameof(CanCancelInvoice); // Admin
     public const string CanClosePayPeriod = nameof(CanClosePayPeriod); // Admin
+    public const string CanUpdateInvoiceAmounts = nameof(CanUpdateInvoiceAmounts); // Admin
+    public const string CanDisputeInvoice = nameof(CanDisputeInvoice); // Admin
+    public const string CanRejectInvoice = nameof(CanRejectInvoice); // Admin
 
     // Pay Period
     public const string CanViewPayPeriods = nameof(CanViewPayPeriods); // Admin + Employee
@@ -88,6 +96,8 @@ public class Policy
     public const string CanUpdatePayPeriod = nameof(CanUpdatePayPeriod); // Admin
     public const string CanOpenPayPeriod = nameof(CanOpenPayPeriod); // Admin
     public const string CanDeletePayPeriod = nameof(CanDeletePayPeriod); // Admin
+    public const string CanMarkPayPeriodPaid = nameof(CanMarkPayPeriodPaid); // Admin
+    public const string CanReopenPayPeriod = nameof(CanReopenPayPeriod); // Admin
 
     // Pay Config
     public const string CanViewPayConfigs = nameof(CanViewPayConfigs); // Admin
@@ -107,6 +117,10 @@ public class Policy
     public const string CanResolveDispute = nameof(CanResolveDispute); // Admin (Only admins can resolve disputes)
     public const string CanUpdateDisputeStatus = nameof(CanUpdateDisputeStatus); // Admin (Only admins can update status)
     public const string CanUploadDisputeEvidence = nameof(CanUploadDisputeEvidence); // Customer (Customers can upload evidence to their own disputes)
+    // Admin-host dispute reads. Distinct from the CustomerOnly own-data CanViewDispute/CanViewDisputeList:
+    // the admin reads every dispute, so the admin host needs its own AdminOnly view gates.
+    public const string CanViewDisputeAdmin = nameof(CanViewDisputeAdmin); // Admin (any dispute)
+    public const string CanViewDisputeListAdmin = nameof(CanViewDisputeListAdmin); // Admin (all disputes)
 
     // Reports
     public const string CanViewRevenueReport = nameof(CanViewRevenueReport); // Admin
@@ -224,8 +238,15 @@ public class Policy
     public const string CanGrantLoyaltyPoints = nameof(CanGrantLoyaltyPoints); // Admin
     public const string CanViewUserLoyalty = nameof(CanViewUserLoyalty); // Admin
 
+    // Admin Membership Plans
+    public const string CanViewMembershipPlans = nameof(CanViewMembershipPlans); // Admin
+    public const string CanCreateMembershipPlan = nameof(CanCreateMembershipPlan); // Admin
+    public const string CanUpdateMembershipPlan = nameof(CanUpdateMembershipPlan); // Admin
+    public const string CanDeactivateMembershipPlan = nameof(CanDeactivateMembershipPlan); // Admin
+
     // Admin Referrals
     public const string CanViewReferrals = nameof(CanViewReferrals); // Admin
+    public const string CanInterveneReferral = nameof(CanInterveneReferral); // Admin (reverse / force-qualify)
 
     // Marketing (sitewide push)
     public const string CanSendSitewidePromo = nameof(CanSendSitewidePromo); // Admin

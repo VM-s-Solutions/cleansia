@@ -6,6 +6,7 @@ using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Admin.Controllers;
 
@@ -74,6 +75,38 @@ public class AdminPackageController(IMediator mediator) : ApiController(mediator
         }
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<UpdatePackage.Response>(result);
+    }
+
+    [HttpPost("deactivate/{packageId}")]
+    [Permission(Policy.CanUpdatePackage)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(DeactivatePackage.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeactivatePackage(
+        string packageId,
+        CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new DeactivatePackage.Command(packageId), cancellationToken);
+        return HandleResult<DeactivatePackage.Response>(result);
+    }
+
+    [HttpPost("activate/{packageId}")]
+    [Permission(Policy.CanUpdatePackage)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(ActivatePackage.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ActivatePackage(
+        string packageId,
+        CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(new ActivatePackage.Command(packageId), cancellationToken);
+        return HandleResult<ActivatePackage.Response>(result);
     }
 
     [HttpDelete("delete/{packageId}")]

@@ -7,7 +7,6 @@ import {
   CountryClient,
   CurrencyClient,
   DashboardClient,
-  DisputeClient,
   EmployeeClient,
   EmployeePayrollClient,
   IAuthClient,
@@ -15,18 +14,19 @@ import {
   ICountryClient,
   ICurrencyClient,
   IDashboardClient,
-  IDisputeClient,
   IEmployeeClient,
   IEmployeePayrollClient,
   ILanguageClient,
   IOrderClient,
   IPackageClient,
+  IPayPeriodClient,
   IPaymentClient,
   IServiceClient,
   IUserClient,
   LanguageClient,
   OrderClient,
   PackageClient,
+  PayPeriodClient,
   PaymentClient,
   ServiceClient,
   UserClient,
@@ -37,7 +37,6 @@ interface IPartnerClient {
   codeClient: ICodeClient;
   userClient: IUserClient;
   orderClient: IOrderClient;
-  disputeClient: IDisputeClient;
   countryClient: ICountryClient;
   currencyClient: ICurrencyClient;
   dashboardClient: IDashboardClient;
@@ -45,6 +44,7 @@ interface IPartnerClient {
   employeePayrollClient: IEmployeePayrollClient;
   languageClient: ILanguageClient;
   packageClient: IPackageClient;
+  payPeriodClient: IPayPeriodClient;
   paymentClient: IPaymentClient;
   serviceClient: IServiceClient;
 }
@@ -61,7 +61,6 @@ export class PartnerClient implements IPartnerClient {
   codeClient: ICodeClient = new CodeClient(this.httpClient, this.apiBaseUrl);
   userClient: IUserClient = new UserClient(this.httpClient, this.apiBaseUrl);
   orderClient: IOrderClient = new OrderClient(this.httpClient, this.apiBaseUrl);
-  disputeClient: IDisputeClient = new DisputeClient(this.httpClient, this.apiBaseUrl);
   countryClient: ICountryClient = new CountryClient(
     this.httpClient,
     this.apiBaseUrl
@@ -87,6 +86,10 @@ export class PartnerClient implements IPartnerClient {
     this.apiBaseUrl
   );
   packageClient: IPackageClient = new PackageClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  payPeriodClient: IPayPeriodClient = new PayPeriodClient(
     this.httpClient,
     this.apiBaseUrl
   );

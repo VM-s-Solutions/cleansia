@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Features.Services;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
@@ -21,7 +22,7 @@ public class CreatePackage
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator(IServiceRepository serviceRepository)
+        public Validator(IServiceRepository serviceRepository, ILanguageRepository languageRepository)
         {
             RuleFor(x => x.Name)
                 .Cascade(CascadeMode.Stop)
@@ -45,6 +46,24 @@ public class CreatePackage
                     return await serviceRepository.ExistWithIdsAsync(serviceIds, ct);
                 })
                 .WithMessage(BusinessErrorMessage.ServiceNotFound);
+
+            RuleFor(x => x.Translations)
+                .MustCoverAllActiveLanguages(languageRepository);
+
+            RuleForEach(x => x.Translations)
+                .ChildRules(translation =>
+                {
+                    translation.RuleFor(t => t.Value.Name)
+                        .Cascade(CascadeMode.Stop)
+                        .NotEmpty()
+                        .WithMessage(BusinessErrorMessage.Required)
+                        .MaximumLength(100)
+                        .WithMessage(BusinessErrorMessage.MaxLength);
+
+                    translation.RuleFor(t => t.Value.Description)
+                        .MaximumLength(500)
+                        .WithMessage(BusinessErrorMessage.MaxLength);
+                });
         }
     }
 

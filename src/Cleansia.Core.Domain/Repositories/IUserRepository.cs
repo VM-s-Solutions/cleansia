@@ -21,4 +21,23 @@ public interface IUserRepository : IRepository<User, string>
     /// <c>user.TenantId</c> before mutating any tenant-scoped row.
     /// </summary>
     Task<User?> GetByIdIgnoringTenantAsync(string id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Atomically increments the account's failed-login counter and opens the lockout window once
+    /// <see cref="User.MaxFailedLoginAttempts"/> is reached. Persists immediately (the failing login
+    /// command never commits the unit of work) and is a no-op while the account is already locked.
+    /// </summary>
+    Task RecordFailedLoginAsync(string email, DateTimeOffset now, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Atomically consumes one unit of the account's per-confirmation-code attempt budget.
+    /// Returns false when the budget (<see cref="User.MaxCodeVerificationAttempts"/>) is spent.
+    /// </summary>
+    Task<bool> TryChargeConfirmationCodeAttemptAsync(string userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Atomically consumes one unit of the account's per-reset-code attempt budget.
+    /// Returns false when the budget (<see cref="User.MaxCodeVerificationAttempts"/>) is spent.
+    /// </summary>
+    Task<bool> TryChargeResetPasswordCodeAttemptAsync(string userId, CancellationToken cancellationToken = default);
 }

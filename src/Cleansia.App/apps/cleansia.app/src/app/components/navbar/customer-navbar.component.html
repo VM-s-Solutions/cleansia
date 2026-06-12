@@ -128,6 +128,16 @@
                 <span class="customer-navbar__dropdown-icon"><i class="pi pi-user"></i></span>
                 {{ 'nav.profile' | translate }}
               </a>
+              <a
+                class="customer-navbar__dropdown-item"
+                role="button"
+                tabindex="0"
+                (click)="navigateTo('/saved-addresses')"
+                (keydown.enter)="navigateTo('/saved-addresses')"
+              >
+                <span class="customer-navbar__dropdown-icon"><i class="pi pi-map-marker"></i></span>
+                {{ 'nav.my_addresses' | translate }}
+              </a>
             </div>
             <!-- Activity section -->
             <div class="customer-navbar__section-label">{{ 'nav.section_activity' | translate }}</div>
@@ -247,6 +257,16 @@
         <a class="customer-navbar__mobile-link" (click)="navigateTo('/profile')">
           <i class="pi pi-user mr-2"></i>
           {{ 'nav.profile' | translate }}
+        </a>
+        <a
+          class="customer-navbar__mobile-link"
+          role="button"
+          tabindex="0"
+          (click)="navigateTo('/saved-addresses')"
+          (keydown.enter)="navigateTo('/saved-addresses')"
+        >
+          <i class="pi pi-map-marker mr-2"></i>
+          {{ 'nav.my_addresses' | translate }}
         </a>
         <a class="customer-navbar__mobile-link" (click)="navigateTo('/disputes')">
           <i class="pi pi-exclamation-triangle mr-2"></i>

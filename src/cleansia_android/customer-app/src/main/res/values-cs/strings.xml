@@ -1146,4 +1146,25 @@
     <string name="notification_membership_expiring_body">Vaše předplatné se obnoví za 3 dny. Plán spravujete v aplikaci.</string>
     <string name="notification_membership_cancelled_title">Cleansia Plus skončilo</string>
     <string name="notification_membership_cancelled_body">Vaše předplatné skončilo. Obnovte ho a vraťte si výhody Plus.</string>
+
+    <!-- ── Vaše zařízení ── -->
+    <string name="profile_row_devices">Vaše zařízení</string>
+    <string name="devices_title">Vaše zařízení</string>
+    <string name="devices_intro">Zařízení přihlášená k vašemu účtu. Odebráním zařízení dojde k jeho odhlášení a vypnutí oznámení.</string>
+    <string name="devices_this_device">Toto zařízení</string>
+    <string name="devices_last_active">Naposledy aktivní %1$s</string>
+    <string name="devices_platform_android">Android</string>
+    <string name="devices_platform_ios">iOS</string>
+    <string name="devices_platform_web">Web</string>
+    <string name="devices_platform_unknown">Neznámé zařízení</string>
+    <string name="devices_empty">Zatím žádná registrovaná zařízení.</string>
+    <string name="devices_error_message">Zařízení se nepodařilo načíst. Zkontrolujte připojení a zkuste to znovu.</string>
+    <string name="devices_error_retry">Zkusit znovu</string>
+    <string name="devices_revoke_action">Odebrat zařízení</string>
+    <string name="devices_revoke_dialog_title">Odebrat toto zařízení?</string>
+    <string name="devices_revoke_dialog_message">%1$s bude odhlášeno a přestane dostávat oznámení.</string>
+    <string name="devices_revoke_dialog_confirm">Odebrat</string>
+    <string name="devices_revoke_success">Zařízení odebráno</string>
+    <string name="devices_revoke_retry_hint">Nepodařilo se odebrat – zkuste to znovu.</string>
+    <string name="error_device_not_found">Toto zařízení už není registrované.</string>
 </resources>

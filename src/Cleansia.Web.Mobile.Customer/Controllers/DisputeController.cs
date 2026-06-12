@@ -6,6 +6,7 @@ using Cleansia.Web.Mobile.Customer.Abstractions;
 using Cleansia.Web.Mobile.Customer.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Mobile.Customer.Controllers;
 
@@ -15,6 +16,7 @@ public class DisputeController(IMediator mediator) : CustomerMobileApiController
 {
     [HttpPost("Create")]
     [Permission(Policy.CanCreateDispute)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -51,6 +53,7 @@ public class DisputeController(IMediator mediator) : CustomerMobileApiController
 
     [HttpPost("AddMessage")]
     [Permission(Policy.CanAddDisputeMessage)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -66,6 +69,7 @@ public class DisputeController(IMediator mediator) : CustomerMobileApiController
 
     [HttpPost("UploadEvidence")]
     [Permission(Policy.CanUploadDisputeEvidence)]
+    [EnableRateLimiting("auth")]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(UploadDisputeEvidence.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]

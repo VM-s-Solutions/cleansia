@@ -3,10 +3,12 @@ package cz.cleansia.customer.core.auth
 import android.content.Context
 import cz.cleansia.core.auth.AuthAuthenticator
 import cz.cleansia.core.auth.AuthInterceptor
+import cz.cleansia.core.auth.DeviceIdProvider
 import cz.cleansia.core.auth.NetworkErrorInterceptor
 import cz.cleansia.core.auth.SessionManager
 import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.auth.TokenStore
+import cz.cleansia.core.network.RetryAfterInterceptor
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.BuildConfig
 import cz.cleansia.customer.R
@@ -178,8 +180,15 @@ object AuthModule {
 
     @Provides
     @Singleton
-    fun provideAuthInterceptor(tokenStore: TokenStore): AuthInterceptor =
-        AuthInterceptor(tokenStore)
+    fun provideDeviceIdProvider(@ApplicationContext context: Context): DeviceIdProvider =
+        DeviceIdProvider(context)
+
+    @Provides
+    @Singleton
+    fun provideAuthInterceptor(
+        tokenStore: TokenStore,
+        deviceIdProvider: DeviceIdProvider,
+    ): AuthInterceptor = AuthInterceptor(tokenStore, deviceIdProvider)
 
     @Provides
     @Singleton
@@ -193,15 +202,24 @@ object AuthModule {
      */
     @Provides
     @Singleton
+    fun provideRetryAfterInterceptor(): RetryAfterInterceptor = RetryAfterInterceptor()
+
+    @Provides
+    @Singleton
     @AuthOkHttp
     fun provideAuthOkHttpClient(
         logging: HttpLoggingInterceptor,
         authInterceptor: AuthInterceptor,
         networkErrorInterceptor: NetworkErrorInterceptor,
         authenticator: AuthAuthenticator,
+        retryAfterInterceptor: RetryAfterInterceptor,
         @TimeZoneInterceptorQ timeZoneInterceptor: okhttp3.Interceptor,
     ): OkHttpClient = OkHttpClient.Builder()
         .eventListener(SentryOkHttpEventListener())
+        // Outermost on purpose — the 429 back-off retry re-enters auth/timezone/
+        // logging so the retried request carries a fresh token. NoAuth (refresh/
+        // login) client stays without it.
+        .addInterceptor(retryAfterInterceptor)
         .addInterceptor(authInterceptor)
         .addInterceptor(timeZoneInterceptor)
         .addInterceptor(networkErrorInterceptor)

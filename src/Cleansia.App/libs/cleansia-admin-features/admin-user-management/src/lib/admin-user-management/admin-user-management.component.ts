@@ -68,7 +68,7 @@ export class AdminUserManagementComponent implements AfterViewInit, OnDestroy {
   private readonly confirmationService = inject(ConfirmationService);
   private readonly permissions = inject(PermissionService);
 
-  statusTemplate = viewChild<TemplateRef<any>>('statusTemplate');
+  statusTemplate = viewChild<TemplateRef<AdminUserListItem>>('statusTemplate');
 
   userColumns!: TableColumn<AdminUserListItem>[];
   userActions!: TableAction<AdminUserListItem>[];

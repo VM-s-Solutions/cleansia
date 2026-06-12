@@ -1226,4 +1226,36 @@
     <string name="notification_channel_new_jobs_desc">Періодичний дайджест нових замовлень, доступних у вашому регіоні.</string>
     <string name="notification_new_jobs_title">Нові доступні замовлення</string>
     <string name="notification_new_jobs_body">Поруч з вами доступно %1$d нових замовлень. Торкніться, щоб переглянути.</string>
+
+    <!-- ── Ваші пристрої ── -->
+    <string name="devices_title">Ваші пристрої</string>
+    <string name="profile_devices_summary">Керування пристроями, на яких виконано вхід</string>
+    <string name="devices_intro">Пристрої, на яких виконано вхід у ваш обліковий запис. Видалення пристрою завершує його сеанс і вимикає сповіщення.</string>
+    <string name="devices_this_device">Цей пристрій</string>
+    <string name="devices_last_active">Остання активність %1$s</string>
+    <string name="devices_platform_android">Android</string>
+    <string name="devices_platform_ios">iOS</string>
+    <string name="devices_platform_web">Web</string>
+    <string name="devices_empty">Поки немає зареєстрованих пристроїв.</string>
+    <string name="devices_error_message">Не вдалося завантажити пристрої. Перевірте з\'єднання та спробуйте ще раз.</string>
+    <string name="devices_revoke_action">Видалити пристрій</string>
+    <string name="devices_revoke_dialog_title">Видалити цей пристрій?</string>
+    <string name="devices_revoke_dialog_message">%1$s буде відключено від облікового запису, і він перестане отримувати сповіщення.</string>
+    <string name="devices_revoke_dialog_confirm">Видалити</string>
+    <string name="devices_revoke_success">Пристрій видалено</string>
+    <string name="devices_revoke_retry_hint">Не вдалося видалити – спробуйте ще раз.</string>
+    <string name="error_device_not_found">Цей пристрій більше не зареєстрований.</string>
+
+    <!-- ── Оплата за період (лише читання) ── -->
+    <string name="period_pay_title">Оплата за період</string>
+    <string name="period_pay_hero_label">Усього за період</string>
+    <string name="period_pay_jobs_count">%1$d замовлень</string>
+    <string name="period_pay_breakdown_section">Розбивка оплати</string>
+    <string name="period_pay_base">Базова оплата</string>
+    <string name="period_pay_extras">Додаткові послуги</string>
+    <string name="period_pay_expenses">Компенсація витрат</string>
+    <string name="period_pay_jobs_section">Замовлення за цей період</string>
+    <string name="period_pay_empty">У цьому періоді поки немає замовлень.</string>
+    <string name="period_pay_error">Не вдалося завантажити оплату за цей період.</string>
+    <string name="invoice_view_period_pay">Переглянути оплату за період</string>
 </resources>

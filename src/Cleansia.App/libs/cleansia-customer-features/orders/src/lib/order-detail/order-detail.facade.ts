@@ -5,9 +5,9 @@ import {
   CustomerAuthService,
   CustomerClient,
   GetMyMembershipResponse,
+  OrderItem,
   SubmitOrderReviewCommand,
 } from '@cleansia/customer-services';
-import { OrderItem } from '@cleansia/partner-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { takeUntil } from 'rxjs';

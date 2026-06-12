@@ -1226,4 +1226,36 @@
     <string name="notification_channel_new_jobs_desc">Периодический дайджест новых доступных заказов в вашем регионе.</string>
     <string name="notification_new_jobs_title">Новые доступные заказы</string>
     <string name="notification_new_jobs_body">Рядом доступно %1$d новых заказов. Нажмите, чтобы посмотреть.</string>
+
+    <!-- ── Ваши устройства ── -->
+    <string name="devices_title">Ваши устройства</string>
+    <string name="profile_devices_summary">Управление устройствами, на которых выполнен вход</string>
+    <string name="devices_intro">Устройства, на которых выполнен вход в ваш аккаунт. Удаление устройства завершает его сеанс и отключает уведомления.</string>
+    <string name="devices_this_device">Это устройство</string>
+    <string name="devices_last_active">Последняя активность %1$s</string>
+    <string name="devices_platform_android">Android</string>
+    <string name="devices_platform_ios">iOS</string>
+    <string name="devices_platform_web">Web</string>
+    <string name="devices_empty">Пока нет зарегистрированных устройств.</string>
+    <string name="devices_error_message">Не удалось загрузить устройства. Проверьте подключение и повторите попытку.</string>
+    <string name="devices_revoke_action">Удалить устройство</string>
+    <string name="devices_revoke_dialog_title">Удалить это устройство?</string>
+    <string name="devices_revoke_dialog_message">%1$s выйдет из аккаунта и перестанет получать уведомления.</string>
+    <string name="devices_revoke_dialog_confirm">Удалить</string>
+    <string name="devices_revoke_success">Устройство удалено</string>
+    <string name="devices_revoke_retry_hint">Не удалось удалить – попробуйте ещё раз.</string>
+    <string name="error_device_not_found">Это устройство больше не зарегистрировано.</string>
+
+    <!-- ── Оплата за период (только чтение) ── -->
+    <string name="period_pay_title">Оплата за период</string>
+    <string name="period_pay_hero_label">Итого за период</string>
+    <string name="period_pay_jobs_count">%1$d заказов</string>
+    <string name="period_pay_breakdown_section">Структура оплаты</string>
+    <string name="period_pay_base">Базовая оплата</string>
+    <string name="period_pay_extras">Доплаты</string>
+    <string name="period_pay_expenses">Компенсация расходов</string>
+    <string name="period_pay_jobs_section">Заказы за этот период</string>
+    <string name="period_pay_empty">В этом периоде пока нет заказов.</string>
+    <string name="period_pay_error">Не удалось загрузить оплату за этот период.</string>
+    <string name="invoice_view_period_pay">Посмотреть оплату за период</string>
 </resources>

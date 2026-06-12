@@ -18,7 +18,7 @@ import {
   PaymentStatusLabelPipe,
   PaymentStatusSeverityPipe,
 } from '@cleansia/pipes';
-import { OrderStatus } from '@cleansia/partner-services';
+import { OrderStatus } from '@cleansia/customer-services';
 import {
   RECURRING_PREFILL_STORAGE_KEY,
   RecurringPrefillParams,

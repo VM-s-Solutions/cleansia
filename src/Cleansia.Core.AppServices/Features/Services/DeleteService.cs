@@ -21,15 +21,24 @@ public class DeleteService
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
                 .MustAsync(serviceRepository.ExistsAsync)
-                .WithMessage(BusinessErrorMessage.ServiceNotFound);
+                .WithMessage(BusinessErrorMessage.ServiceNotFound)
+                .MustAsync(async (id, ct) =>
+                    !await serviceRepository.IsInUseAsync(id, ct))
+                .WithMessage(BusinessErrorMessage.ServiceInUse);
         }
     }
 
-    internal class Handler(IServiceRepository serviceRepository)
+    public class Handler(IServiceRepository serviceRepository)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
+            var isInUse = await serviceRepository.IsInUseAsync(command.ServiceId, cancellationToken);
+            if (isInUse)
+            {
+                return BusinessResult.Failure<Response>(new Error(nameof(command.ServiceId), BusinessErrorMessage.ServiceInUse));
+            }
+
             var service = await serviceRepository.GetByIdAsync(command.ServiceId, cancellationToken);
 
             serviceRepository.Remove(service!);

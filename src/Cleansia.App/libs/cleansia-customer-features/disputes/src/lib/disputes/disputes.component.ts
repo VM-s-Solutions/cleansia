@@ -1,13 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { FormsModule } from '@angular/forms';
-import { CleansiaButtonComponent } from '@cleansia/components';
+import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { CleansiaButtonComponent, CleansiaFileComponent } from '@cleansia/components';
 import {
+  Code,
   DisputeListItem,
   DisputeReason,
-  DisputeStatus,
-} from '@cleansia/partner-services';
+} from '@cleansia/customer-services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { TagModule } from 'primeng/tag';
 import { InputTextModule } from 'primeng/inputtext';
@@ -17,6 +17,15 @@ import { DialogModule } from 'primeng/dialog';
 import { SkeletonModule } from 'primeng/skeleton';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { DisputesFacade } from './disputes.facade';
+import {
+  CustomerDisputeStatus,
+  DISPUTE_EVIDENCE_ALLOWED_CONTENT_TYPES,
+  DISPUTE_EVIDENCE_MAX_FILE_SIZE_BYTES,
+  DISPUTE_STATUS_LABEL_KEYS,
+  getDisputeReasonLabelKey,
+  getDisputeStatusSeverity,
+  isDisputeOpen,
+} from './disputes.models';
 import {
   DISPUTE_DESCRIPTION_MAX_LENGTH,
   DISPUTE_DESCRIPTION_MIN_LENGTH,
@@ -28,6 +37,7 @@ import {
   imports: [
     CommonModule,
     FormsModule,
+    ReactiveFormsModule,
     TranslatePipe,
     TagModule,
     InputTextModule,
@@ -37,6 +47,7 @@ import {
     SkeletonModule,
     PaginatorModule,
     CleansiaButtonComponent,
+    CleansiaFileComponent,
   ],
   templateUrl: './disputes.component.html',
   providers: [DisputesFacade],
@@ -57,10 +68,15 @@ export class DisputesComponent implements OnInit {
   readonly sendingMessage = this.facade.sendingMessage;
 
   protected readonly descriptionMaxLength = DISPUTE_DESCRIPTION_MAX_LENGTH;
+  protected readonly evidenceAccept =
+    DISPUTE_EVIDENCE_ALLOWED_CONTENT_TYPES.join(',');
+  protected readonly evidenceMaxFileSize = DISPUTE_EVIDENCE_MAX_FILE_SIZE_BYTES;
 
   showCreateDialog = signal(false);
   showDetailDialog = signal(false);
   newMessage = signal('');
+
+  evidenceControl = new FormControl<File[]>([], { nonNullable: true });
 
   createForm = {
     orderId: '',
@@ -109,6 +125,13 @@ export class DisputesComponent implements OnInit {
     { label: this.translate.instant('pages.disputes.reasons.other'), value: DisputeReason.Other },
   ];
 
+  statusFilterOptions = Object.entries(DISPUTE_STATUS_LABEL_KEYS).map(
+    ([value, labelKey]) => ({
+      label: this.translate.instant(labelKey),
+      value: Number(value) as CustomerDisputeStatus,
+    })
+  );
+
   rows = 10;
   first = 0;
 
@@ -126,6 +149,12 @@ export class DisputesComponent implements OnInit {
     this.facade.loadDisputes(this.first, this.rows);
   }
 
+  onStatusFilterChange(status: CustomerDisputeStatus | null): void {
+    this.facade.setStatusFilter(status);
+    this.first = 0;
+    this.loadDisputes();
+  }
+
   onPageChange(event: PaginatorState): void {
     this.first = event.first ?? 0;
     this.rows = event.rows ?? 10;
@@ -134,8 +163,14 @@ export class DisputesComponent implements OnInit {
 
   openDetail(dispute: DisputeListItem): void {
     if (!dispute.id) return;
+    this.facade.markViewed(dispute.id);
     this.facade.loadDisputeDetail(dispute.id);
+    this.evidenceControl.setValue([]);
     this.showDetailDialog.set(true);
+  }
+
+  isUnread(dispute: DisputeListItem): boolean {
+    return !!dispute.id && this.facade.unreadDisputeIds().has(dispute.id);
   }
 
   createDispute(): void {
@@ -163,16 +198,32 @@ export class DisputesComponent implements OnInit {
     });
   }
 
-  getStatusSeverity(status: { value?: number }): string {
-    switch (status?.value) {
-      case DisputeStatus.Pending: return 'warn';
-      case DisputeStatus.UnderReview: return 'info';
-      case DisputeStatus.WaitingForResponse: return 'warn';
-      case DisputeStatus.Resolved: return 'success';
-      case DisputeStatus.Closed: return 'secondary';
-      case DisputeStatus.Escalated: return 'danger';
-      default: return 'info';
-    }
+  uploadEvidence(): void {
+    const detail = this.disputeDetail();
+    const file = this.evidenceControl.value[0];
+    if (!detail?.id || !file) return;
+
+    this.facade.uploadEvidence(detail.id, file, () => {
+      this.evidenceControl.setValue([]);
+    });
+  }
+
+  canUploadEvidence(): boolean {
+    return isDisputeOpen(this.disputeDetail()?.status?.value);
+  }
+
+  getStatusSeverity(status: Code | undefined): string {
+    return getDisputeStatusSeverity(status?.value);
+  }
+
+  statusLabel(status: Code | undefined): string {
+    const value = status?.value as CustomerDisputeStatus | undefined;
+    const labelKey = value != null ? DISPUTE_STATUS_LABEL_KEYS[value] : undefined;
+    return labelKey ? this.translate.instant(labelKey) : status?.name ?? '';
+  }
+
+  reasonLabel(reason: Code | undefined): string {
+    return this.translate.instant(getDisputeReasonLabelKey(reason?.value));
   }
 
   private getLocale(): string {
@@ -185,5 +236,13 @@ export class DisputesComponent implements OnInit {
     return new Date(date).toLocaleDateString(this.getLocale(), {
       day: '2-digit', month: '2-digit', year: 'numeric',
     });
+  }
+
+  formatPrice(price: number): string {
+    return new Intl.NumberFormat(this.getLocale(), {
+      style: 'currency',
+      currency: 'CZK',
+      minimumFractionDigits: 0,
+    }).format(price);
   }
 }

@@ -9,6 +9,14 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Cleansia.Web.Partner.Controllers;
 
+/// <summary>
+/// Partner-host pay-period surface — READ-ONLY by design. The full mutation surface
+/// (Create/Update/Delete/Open/Close/MarkPaid/Reopen) lives ONLY on the Admin host's
+/// <c>AdminPayPeriodController</c>, per the per-audience-host seam: pay periods are an admin/payroll
+/// concern, so the Partner API exposes only the two reads a partner-facing screen needs. The previously
+/// duplicated mutation endpoints (AdminOnly-gated, so never cleaner-exploitable, but redundant write
+/// surface) were removed; authz holds regardless of host.
+/// </summary>
 [Route("api/[controller]")]
 [ApiController]
 public class PayPeriodController(IMediator mediator) : ApiController(mediator)
@@ -34,65 +42,5 @@ public class PayPeriodController(IMediator mediator) : ApiController(mediator)
     {
         var result = await Mediator.Send(query);
         return HandleResult<PayPeriodDto>(result);
-    }
-
-    [HttpPost("CreatePayPeriod")]
-    [Permission(Policy.CanCreatePayPeriod)]
-    [ProducesResponseType(typeof(CreatePayPeriod.Response), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> CreatePayPeriod([FromBody] CreatePayPeriod.Command command)
-    {
-        var result = await Mediator.Send(command);
-        return HandleResult<CreatePayPeriod.Response>(result);
-    }
-
-    [HttpPut("UpdatePayPeriod")]
-    [Permission(Policy.CanUpdatePayPeriod)]
-    [ProducesResponseType(typeof(UpdatePayPeriod.Response), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> UpdatePayPeriod([FromBody] UpdatePayPeriod.Command command)
-    {
-        var result = await Mediator.Send(command);
-        return HandleResult<UpdatePayPeriod.Response>(result);
-    }
-
-    [HttpDelete("DeletePayPeriod")]
-    [Permission(Policy.CanDeletePayPeriod)]
-    [ProducesResponseType(typeof(DeletePayPeriod.Response), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> DeletePayPeriod([FromBody] DeletePayPeriod.Command command)
-    {
-        var result = await Mediator.Send(command);
-        return HandleResult<DeletePayPeriod.Response>(result);
-    }
-
-    [HttpPut("OpenPayPeriod")]
-    [Permission(Policy.CanOpenPayPeriod)]
-    [ProducesResponseType(typeof(OpenPayPeriod.Response), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> OpenPayPeriod([FromBody] OpenPayPeriod.Command command)
-    {
-        var result = await Mediator.Send(command);
-        return HandleResult<OpenPayPeriod.Response>(result);
-    }
-
-    [HttpPut("ClosePayPeriod")]
-    [Permission(Policy.CanClosePayPeriod)]
-    [ProducesResponseType(typeof(ClosePayPeriod.Response), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> ClosePayPeriod([FromBody] ClosePayPeriod.Command command)
-    {
-        var result = await Mediator.Send(command);
-        return HandleResult<ClosePayPeriod.Response>(result);
     }
 }

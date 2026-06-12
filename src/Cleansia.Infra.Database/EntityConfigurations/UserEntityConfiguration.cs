@@ -57,6 +57,21 @@ public class UserEntityConfiguration : AuditableEntityConfiguration<User, string
             .HasMaxLength(5)
             .IsRequired(false);
 
+        builder.Property(u => u.LastLoginAt)
+            .IsRequired(false);
+
+        builder.Property(u => u.FailedLoginAttempts)
+            .HasDefaultValue(0);
+
+        builder.Property(u => u.LockoutEndsAt)
+            .IsRequired(false);
+
+        builder.Property(u => u.ConfirmationCodeAttempts)
+            .HasDefaultValue(0);
+
+        builder.Property(u => u.ResetPasswordCodeAttempts)
+            .HasDefaultValue(0);
+
         builder
             .HasOne(u => u.PreferredLanguage)
             .WithMany()

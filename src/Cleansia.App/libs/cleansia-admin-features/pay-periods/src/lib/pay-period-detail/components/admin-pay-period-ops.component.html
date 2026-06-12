@@ -1,0 +1,64 @@
+@if (isClosed()) {
+<cleansia-section [title]="'pay_periods.detail.ops.title' | translate">
+  <div class="pay-period-ops">
+    <div class="pay-period-ops__actions">
+      <cleansia-button
+        [label]="'pay_periods.detail.ops.mark_paid.action' | translate"
+        icon="pi pi-money-bill"
+        severity="success"
+        [outlined]="facade.activePanel() !== 'markPaid'"
+        (onClick)="togglePanel('markPaid')"
+      />
+      <cleansia-button
+        [label]="'pay_periods.detail.ops.reopen.action' | translate"
+        icon="pi pi-lock-open"
+        severity="warn"
+        [outlined]="facade.activePanel() !== 'reopen'"
+        (onClick)="togglePanel('reopen')"
+      />
+    </div>
+
+    @if (facade.activePanel() === 'markPaid') {
+    <div class="pay-period-ops__panel">
+      <p class="pay-period-ops__hint">
+        {{ 'pay_periods.detail.ops.mark_paid.hint' | translate }}
+      </p>
+      @if (facade.errorKey()) {
+      <p class="pay-period-ops__error">{{ facade.errorKey()! | translate }}</p>
+      }
+      <cleansia-button
+        [label]="'pay_periods.detail.ops.mark_paid.submit' | translate"
+        icon="pi pi-money-bill"
+        severity="success"
+        [loading]="facade.submitting()"
+        (onClick)="submitMarkPaid()"
+      />
+    </div>
+    }
+
+    @if (facade.activePanel() === 'reopen') {
+    <div class="pay-period-ops__panel">
+      <p class="pay-period-ops__hint">
+        {{ 'pay_periods.detail.ops.reopen.hint' | translate }}
+      </p>
+      <cleansia-textarea
+        [label]="'pay_periods.detail.ops.reopen.notes' | translate"
+        [placeholder]="'pay_periods.detail.ops.reopen.notes_hint' | translate"
+        [ngModel]="facade.reopenNotes()"
+        (valueChanges)="onReopenNotesChange($event)"
+      />
+      @if (facade.errorKey()) {
+      <p class="pay-period-ops__error">{{ facade.errorKey()! | translate }}</p>
+      }
+      <cleansia-button
+        [label]="'pay_periods.detail.ops.reopen.submit' | translate"
+        icon="pi pi-lock-open"
+        severity="warn"
+        [loading]="facade.submitting()"
+        (onClick)="submitReopen()"
+      />
+    </div>
+    }
+  </div>
+</cleansia-section>
+}

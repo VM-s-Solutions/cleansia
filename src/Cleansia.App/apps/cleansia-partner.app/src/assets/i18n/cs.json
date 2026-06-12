@@ -34,6 +34,7 @@
       "order_details": "Detail objednávky",
       "invoices": "Faktury",
       "invoice_details": "Detail faktury",
+      "my_pay": "Moje výplata",
       "not_found": "Stránka nenalezena"
     }
   },
@@ -483,6 +484,30 @@
       "not_found_message": "Faktura, kterou hledáte, nebyla nalezena.",
       "load_failed": "Nepodařilo se načíst detail faktury"
     },
+    "period_pay": {
+      "title": "Moje výplata za období",
+      "description": "Přehled vaší výplaty za jednotlivá platební období – pouze pro čtení.",
+      "pay_period": "Platební období",
+      "period_status_open": "Otevřené",
+      "period_status_closed": "Uzavřené",
+      "period_status_paid": "Vyplacené",
+      "period_status_unknown": "Neznámé",
+      "summary": "Souhrn období",
+      "total_orders": "Celkem objednávek",
+      "base_pay": "Základní mzda",
+      "extras_pay": "Mzda za příplatky",
+      "expenses_pay": "Náhrada nákladů",
+      "bonus_pay": "Bonus",
+      "deduction_pay": "Srážky",
+      "total_pay": "Celkem k výplatě",
+      "grand_total": "Celkem za období",
+      "order_lines": "Výplata podle objednávek",
+      "order_number": "Číslo objednávky",
+      "no_order_pays": "Pro toto období nejsou žádné výplatní položky",
+      "no_periods": "Zatím nejsou k dispozici žádná platební období",
+      "load_error": "Nepodařilo se načíst výplatu za období",
+      "view_invoice": "Zobrazit fakturu"
+    },
     "payslips": {
       "title": "Mzdy a výplatní pásky",
       "description": "Zobrazte si své výplatní pásky, historii mezd a spravujte daňové výhody.",
@@ -650,7 +675,30 @@
       "data_retention_title": "Uchovávání údajů",
       "data_retention_text": "Vaše údaje uchováváme po dobu vaší spolupráce a zákonem stanovenou dobu poté (obvykle 10 let).",
       "contact_title": "Kontakt",
-      "contact_text": "S jakýmikoli dotazy ohledně ochrany osobních údajů nás kontaktujte na privacy@cleansia.cz."
+      "contact_text": "S jakýmikoli dotazy ohledně ochrany osobních údajů nás kontaktujte na privacy@cleansia.cz.",
+      "export_title": "Export mých dat",
+      "export_description": "Stáhněte si kopii všech osobních údajů, které o vás uchováváme, jako soubor JSON.",
+      "export_button": "Exportovat má data",
+      "export_success": "Export vašich dat byl stažen.",
+      "export_error": "Vaše data se nepodařilo exportovat. Zkuste to později.",
+      "consents_title": "Správa souhlasů",
+      "consents_description": "Zkontrolujte a změňte souhlasy, které jste nám udělili.",
+      "consent_updated": "Souhlas byl aktualizován.",
+      "consent_error": "Souhlas se nepodařilo změnit. Přepínač zobrazuje uložený stav.",
+      "consent_types": {
+        "terms_of_service": "Obchodní podmínky",
+        "privacy_policy": "Zásady ochrany osobních údajů",
+        "marketing_emails": "Marketingové e-maily",
+        "data_processing": "Zpracování údajů"
+      },
+      "delete_title": "Smazat můj účet",
+      "delete_description": "Trvale smaže váš účet a anonymizuje vaše osobní údaje. Tuto akci nelze vrátit.",
+      "delete_button": "Smazat můj účet",
+      "delete_confirm_title": "Smazat účet?",
+      "delete_confirm_message": "Váš účet bude trvale smazán a vaše osobní údaje anonymizovány. Tuto akci nelze vrátit.",
+      "delete_confirm_yes": "Smazat můj účet",
+      "delete_success": "Váš účet byl smazán.",
+      "delete_error": "Váš účet se nepodařilo smazat."
     }
   },
   "sidebar": {
@@ -658,6 +706,7 @@
     "profile": "Profil",
     "orders": "Objednávky",
     "invoices": "Faktury",
+    "my_pay": "Moje výplata",
     "payroll": "Mzdy",
     "logout": "Odhlásit se",
     "disputes": "Spory"
@@ -940,7 +989,9 @@
       "invalid_google_token": "Neplatný Google token",
       "invalid_password_format": "Neplatný formát hesla",
       "invalid_reset_token": "Neplatný token pro obnovení hesla",
-      "same_reset_password": "Nové heslo se shoduje se starým heslem"
+      "same_reset_password": "Nové heslo se shoduje se starým heslem",
+      "account_locked": "Příliš mnoho neúspěšných pokusů o přihlášení. Účet je dočasně uzamčen — zkuste to znovu za několik minut.",
+      "too_many_attempts": "Příliš mnoho pokusů s tímto kódem. Vyžádejte si nový kód a zkuste to znovu."
     },
     "common": {
       "invalid_enum_value": "Neplatná hodnota výčtu",
@@ -1343,7 +1394,11 @@
   "gdpr": {
     "deletion_already_pending": "Žádost o smazání už probíhá.",
     "deletion_blocked_by_order": "Účet nelze smazat, dokud máte aktivní objednávku.",
-    "deletion_blocked_by_invoice": "Účet nelze smazat, dokud máte nevyřízenou fakturu."
+    "deletion_blocked_by_invoice": "Účet nelze smazat, dokud máte nevyřízenou fakturu.",
+    "export_failed": "Export dat se nezdařil.",
+    "deletion_failed": "Smazání účtu se nezdařilo.",
+    "consent_not_found": "Souhlas nebyl nalezen.",
+    "consent_already_granted": "Tento souhlas je již udělen."
   },
   "order": {
     "review": {

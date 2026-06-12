@@ -142,10 +142,22 @@ public class MembershipPlan : Auditable
             TrialPeriodDays = trialPeriodDays,
         };
 
+    public MembershipPlan UpdateName(string name)
+    {
+        Name = name;
+        return this;
+    }
+
     public MembershipPlan UpdatePricing(decimal monthlyPriceCzk, string stripePriceId)
     {
         MonthlyPriceCzk = monthlyPriceCzk;
         StripePriceId = stripePriceId;
+        return this;
+    }
+
+    public MembershipPlan UpdateTrial(int trialPeriodDays)
+    {
+        TrialPeriodDays = trialPeriodDays;
         return this;
     }
 

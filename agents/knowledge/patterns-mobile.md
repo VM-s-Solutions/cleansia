@@ -82,7 +82,9 @@ class OrderDetailViewModel @Inject constructor(
 }
 ```
 
-The shared one-shot action state (`ui.state.ActionState`):
+The shared one-shot action state — canonical home is `:core` (`cz.cleansia.core.ui.state.ActionState`);
+new code in either app imports it from there. The customer app's `cz.cleansia.customer.ui.state.ActionState`
+is the identical pre-existing copy, kept until its call sites migrate:
 
 ```kotlin
 sealed interface ActionState {

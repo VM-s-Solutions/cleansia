@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   AdminClient,
+  AdminReferralListItem,
   GetUserLoyaltyAccountResponse,
   GetUserLoyaltyActivityActivityItem,
   GrantPointsManuallyCommand,
@@ -30,6 +31,11 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
   readonly activity = signal<GetUserLoyaltyActivityActivityItem[]>([]);
   readonly activityLoading = signal<boolean>(false);
   readonly activityTotal = signal<number>(0);
+
+  readonly referralsAsReferrer = signal<AdminReferralListItem[]>([]);
+  readonly referralsAsReferred = signal<AdminReferralListItem[]>([]);
+  readonly referralsLoading = signal<boolean>(false);
+  readonly referralsError = signal<boolean>(false);
 
   readonly submitting = signal<boolean>(false);
 
@@ -70,6 +76,27 @@ export class UserLoyaltyDetailFacade extends UnsubscribeControlDirective {
         if (response) {
           this.activity.set(response.data ?? []);
           this.activityTotal.set(response.total ?? 0);
+        }
+      });
+  }
+
+  loadReferrals(userId: string): void {
+    this.referralsLoading.set(true);
+    this.referralsError.set(false);
+    this.adminClient.adminReferralClient
+      .byUser(userId)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => {
+          this.referralsError.set(true);
+          return of(null);
+        }),
+        finalize(() => this.referralsLoading.set(false))
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.referralsAsReferrer.set(response.asReferrer ?? []);
+          this.referralsAsReferred.set(response.asReferred ?? []);
         }
       });
   }

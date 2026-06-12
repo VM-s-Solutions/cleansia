@@ -61,10 +61,52 @@ public class Dispute : Auditable, ITenantEntity
         Created(createdBy, DateTimeOffset.UtcNow);
     }
 
-    public void UpdateStatus(DisputeStatus newStatus, string updatedBy)
+    // Natural lifecycle for the in-process transition guard (Resolved is owned exclusively by Resolve):
+    //   Pending ↔ UnderReview ↔ WaitingForResponse → { Closed, Escalated }
+    //   Escalated → Closed
+    //   Resolved and Closed are terminal (no re-open).
+    private static readonly IReadOnlyDictionary<DisputeStatus, DisputeStatus[]> AllowedTransitions =
+        new Dictionary<DisputeStatus, DisputeStatus[]>
+        {
+            [DisputeStatus.Pending] = [DisputeStatus.UnderReview, DisputeStatus.WaitingForResponse, DisputeStatus.Closed, DisputeStatus.Escalated],
+            [DisputeStatus.UnderReview] = [DisputeStatus.Pending, DisputeStatus.WaitingForResponse, DisputeStatus.Closed, DisputeStatus.Escalated],
+            [DisputeStatus.WaitingForResponse] = [DisputeStatus.Pending, DisputeStatus.UnderReview, DisputeStatus.Closed, DisputeStatus.Escalated],
+            [DisputeStatus.Escalated] = [DisputeStatus.Closed],
+            [DisputeStatus.Resolved] = [],
+            [DisputeStatus.Closed] = [],
+        };
+
+    public bool CanTransitionTo(DisputeStatus newStatus) =>
+        AllowedTransitions.TryGetValue(Status, out var targets) && targets.Contains(newStatus);
+
+    // The terminal set the transition table also encodes (no outgoing edges). Named here so a second
+    // writer on the same legal graph (the chargeback webhook's Resolve special, which lives OUTSIDE
+    // CanTransitionTo) can ask the domain "is this dispute already settled?" rather than hand-rolling
+    // the status comparison.
+    public bool IsTerminal => Status is DisputeStatus.Resolved or DisputeStatus.Closed;
+
+    public bool UpdateStatus(DisputeStatus newStatus, string updatedBy)
     {
-        Status = newStatus;
-        Updated(updatedBy, DateTimeOffset.UtcNow);
+        if (!CanTransitionTo(newStatus))
+        {
+            return false;
+        }
+
+        switch (newStatus)
+        {
+            case DisputeStatus.Closed:
+                Close(updatedBy);
+                break;
+            case DisputeStatus.Escalated:
+                Escalate(updatedBy);
+                break;
+            default:
+                Status = newStatus;
+                Updated(updatedBy, DateTimeOffset.UtcNow);
+                break;
+        }
+
+        return true;
     }
 
     public void AddMessage(string message, string authorId, bool isStaff)

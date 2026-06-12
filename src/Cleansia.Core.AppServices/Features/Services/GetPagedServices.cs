@@ -24,6 +24,7 @@ public class GetPagedServices
         public async Task<PagedData<ServiceListItem>> Handle(Request request, CancellationToken cancellationToken)
         {
             var specification = ServiceSpecification.Create(
+                isActive: request.Filter?.IsActive,
                 searchTerm: request.Filter?.SearchTerm
             );
 
@@ -32,8 +33,8 @@ public class GetPagedServices
             var totalItems = await serviceRepository.GetCountAsync(filter, cancellationToken);
             var services = await serviceRepository
                 .GetPagedSort<ServiceSort>(request.Offset, request.Limit, filter, request.Sort.MapToDomain())
-                .AsNoTracking()
                 .Include(s => s.Category)
+                .AsNoTracking()
                 .ToListAsync(cancellationToken);
 
             return services.Select(service => service.MapToDto()).MapToDto(totalItems, request);

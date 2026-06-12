@@ -27,9 +27,35 @@ public class ConfirmUserEmail
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
                 .WithErrorCode(nameof(Command.Code))
+                .MustAsync(HasAttemptBudgetAsync)
+                .WithMessage(BusinessErrorMessage.TooManyAttempts)
+                .WithErrorCode(nameof(Command.Code))
                 .MustAsync(ValidateUserTokenAsync)
                 .WithMessage(BusinessErrorMessage.InvalidConfirmationCode)
                 .WithErrorCode(nameof(Command.Code));
+        }
+
+        // Every attempt that RESOLVES an account consumes one unit of that account's per-code budget
+        // BEFORE validity is evaluated — once the budget is spent even the correct live code is
+        // refused, so a guessing run cannot convert a late hit into a confirmation (ADR-0003
+        // residual: per-code attempt cap). Unresolvable guesses carry no account to charge; they
+        // stay bounded by the 128-bit token entropy plus the per-IP auth window.
+        private async Task<bool> HasAttemptBudgetAsync(string code, CancellationToken cancellationToken)
+        {
+            var user = await _userRepository.GetByConfirmationCodeAsync(code, cancellationToken);
+            if (user is null)
+            {
+                return true;
+            }
+
+            var charged = await _userRepository.TryChargeConfirmationCodeAttemptAsync(user.Id, cancellationToken);
+            if (!charged)
+            {
+                // S6: log the user id only — never the code.
+                _logger.LogWarning("Email confirmation refused for user {UserId}: per-code attempt cap reached.", user.Id);
+            }
+
+            return charged;
         }
 
         private async Task<bool> ValidateUserTokenAsync(Command command, string code, CancellationToken cancellationToken)

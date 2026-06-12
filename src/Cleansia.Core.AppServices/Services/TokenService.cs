@@ -16,7 +16,8 @@ public class TokenService(
     IJwtSettings jwtSettings,
     IRefreshTokenService refreshTokenService,
     IEmployeeRepository employeeRepository,
-    IRequestMetadataProvider requestMetadata)
+    IRequestMetadataProvider requestMetadata,
+    TimeProvider timeProvider)
     : ITokenService
 {
     public async Task<JwtTokenResponse> GenerateTokenAsync(User user, bool rememberMe, string audience, CancellationToken cancellationToken = default)
@@ -28,6 +29,8 @@ public class TokenService(
                 IsEmailConfirmed: false);
         }
 
+        user.RecordLogin(timeProvider.GetUtcNow());
+
         var employeeId = await ResolveEmployeeIdAsync(user, cancellationToken);
         var accessToken = GenerateAccessToken(user, employeeId, audience);
         var refresh = refreshTokenService.Issue(
@@ -35,7 +38,8 @@ public class TokenService(
             rememberMe: rememberMe,
             audience: audience,
             deviceLabel: requestMetadata.DeviceLabel,
-            ipAddress: requestMetadata.IpAddress);
+            ipAddress: requestMetadata.IpAddress,
+            deviceId: requestMetadata.DeviceId);
 
         return new JwtTokenResponse(
             Token: accessToken,

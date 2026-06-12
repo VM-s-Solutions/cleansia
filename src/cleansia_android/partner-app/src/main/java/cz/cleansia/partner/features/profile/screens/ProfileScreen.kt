@@ -27,6 +27,7 @@ import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Devices
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Phone
@@ -75,6 +76,7 @@ fun ProfileScreen(
     onNavigateToDocuments: () -> Unit,
     onNavigateToLanguage: () -> Unit,
     onNavigateToTheme: () -> Unit,
+    onNavigateToDevices: () -> Unit,
     onSignedOut: () -> Unit,
     viewModel: ProfileViewModel = hiltViewModel(),
     settingsViewModel: SettingsViewModel = hiltViewModel(),
@@ -192,6 +194,13 @@ fun ProfileScreen(
                             title = stringResource(R.string.theme),
                             summary = themeSummary(settings.theme),
                             onClick = onNavigateToTheme,
+                        )
+                        RowDivider()
+                        ProfileSectionRow(
+                            icon = Icons.Outlined.Devices,
+                            title = stringResource(R.string.devices_title),
+                            summary = stringResource(R.string.profile_devices_summary),
+                            onClick = onNavigateToDevices,
                         )
                     }
                 }

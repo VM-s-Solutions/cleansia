@@ -5,6 +5,7 @@ using Cleansia.Web.Mobile.Customer.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Mobile.Customer.Controllers;
 
@@ -14,6 +15,7 @@ public class MembershipController(IMediator mediator) : CustomerMobileApiControl
 {
     [HttpPost("Subscribe")]
     [Permission(Policy.CanManageMembership)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(CreateMembershipSubscription.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Subscribe(
@@ -26,6 +28,7 @@ public class MembershipController(IMediator mediator) : CustomerMobileApiControl
 
     [HttpPost("Cancel")]
     [Permission(Policy.CanManageMembership)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(CancelMembershipSubscription.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Cancel(CancellationToken cancellationToken)
@@ -45,6 +48,7 @@ public class MembershipController(IMediator mediator) : CustomerMobileApiControl
 
     [HttpPost("CreateCheckoutSession")]
     [Permission(Policy.CanManageMembership)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(CreateMembershipCheckoutSession.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateCheckoutSession(
@@ -66,6 +70,7 @@ public class MembershipController(IMediator mediator) : CustomerMobileApiControl
 
     [HttpPost("SwapPlan")]
     [Permission(Policy.CanManageMembership)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(SwapMembershipPlan.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> SwapPlan(

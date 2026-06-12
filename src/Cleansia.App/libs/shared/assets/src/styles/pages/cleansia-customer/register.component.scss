@@ -201,6 +201,12 @@
       text-transform: uppercase;
     }
 
+    &-error {
+      font-size: 0.85rem;
+      color: #dc2626;
+      margin-top: 2px;
+    }
+
     &-action {
       color: var(--text-color-secondary, #64748b);
       display: inline-flex;

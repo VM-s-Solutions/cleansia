@@ -1,5 +1,7 @@
 ﻿using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.Domain.Repositories;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Common.Validators;
 
@@ -41,6 +43,28 @@ public static class ValidationExtensions
         return ruleBuilder
             .Must(BeReasonableAge)
             .WithMessage(BusinessErrorMessage.InvalidAge);
+    }
+
+    public static IRuleBuilderOptions<T, Dictionary<string, TTranslation>?> MustCoverAllActiveLanguages<T, TTranslation>(
+        this IRuleBuilderInitial<T, Dictionary<string, TTranslation>?> ruleBuilder,
+        ILanguageRepository languageRepository)
+    {
+        return ruleBuilder
+            .Cascade(CascadeMode.Stop)
+            .NotNull()
+            .WithMessage(BusinessErrorMessage.TranslationsRequired)
+            .NotEmpty()
+            .WithMessage(BusinessErrorMessage.TranslationsRequired)
+            .MustAsync(async (translations, cancellationToken) =>
+            {
+                var activeLanguages = await languageRepository.GetAll()
+                    .Where(l => l.IsActive)
+                    .ToListAsync(cancellationToken);
+                var activeLanguageCodes = activeLanguages.Select(l => l.Code).ToHashSet();
+                var providedCodes = translations!.Keys.ToHashSet();
+                return activeLanguageCodes.SetEquals(providedCodes);
+            })
+            .WithMessage(BusinessErrorMessage.MissingTranslationForLanguage);
     }
 
     public static IRuleBuilderOptions<T, string> ValidateStreetAddress<T>(this IRuleBuilderInitial<T, string> ruleBuilder)

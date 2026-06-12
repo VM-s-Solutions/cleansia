@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Cleansia.Config\Cleansia.Config.csproj" />
+    <ProjectReference Include="..\Cleansia.Functions.Core\Cleansia.Functions.Core.csproj" />
     <ProjectReference Include="..\Cleansia.Infra.Database\Cleansia.Infra.Database.csproj" />
     <ProjectReference Include="..\Cleansia.TestUtilities\Cleansia.TestUtilities.csproj" />
   </ItemGroup>

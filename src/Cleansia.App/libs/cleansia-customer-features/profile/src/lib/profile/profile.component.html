@@ -346,17 +346,9 @@
             </div>
           </div>
 
-          <!-- Email Notifications -->
-          <div class="customer-profile__pref-row">
-            <div class="customer-profile__pref-label">
-              <i class="pi pi-bell"></i>
-              {{ 'pages.profile.pref_notifications' | translate }}
-            </div>
-            <div class="customer-profile__pref-control">
-              <p-toggleSwitch [ngModel]="emailNotifications()" (ngModelChange)="emailNotifications.set($event)" />
-            </div>
-          </div>
         </div>
+
+        <cleansia-customer-notification-preferences />
       </div>
 
       <!-- Danger Zone -->

@@ -130,6 +130,12 @@ Template uses `cleansia-*` + `cleansia-table` (lazy/server paging) + `*cleansiaP
 }
 ```
 
+Filter-drawer backdrops must be the lint-clean a11y variant (from `partner-features/orders`):
+`role="button" tabindex="0" (click)="closeFilterDrawer()" (keydown.escape)="closeFilterDrawer()"
+[attr.aria-label]="'global.close' | translate"` — a bare `(click)` div fails
+`click-events-have-key-events` / `interactive-supports-focus`. Lib eslint configs use selector
+prefix `cleansia` (not `lib`) to match the `cleansia-*` component selectors above.
+
 ## Table config — exact idiom (`*.models.ts`)
 
 A `models.ts` exports a **function** returning `{ columns, actions }` typed with `TableColumn<T>` /
@@ -153,6 +159,13 @@ export function getCompanyInfoTableDefinition(
 }
 ```
 
+When a row action depends on state the list DTO does **not** carry (e.g. service/package
+`ListItem`s have no `isActive`), don't guess per row — pass a getter for the list's current filter
+into the table definition and drive `visible` off it
+(`visible: () => defs.getIsActiveFilter() !== false`), showing both toggle directions when the
+filter is "All" (the backend activate/deactivate commands are idempotent, so a redundant click is
+harmless). See `service-management.models.ts` / `package-management.models.ts`.
+
 ## Forms — exact idiom
 
 Reactive forms via `FormBuilder.nonNullable.group(...)` with `Validators`, rendered with `cleansia-*`
@@ -165,6 +178,17 @@ errors come from `ErrorPipe`; API errors from `SnackbarService.showApiError`.
 `lib.routes.ts` exports a `Route[]`, list + `create` + `:id/edit`, using `data: { mode, title }` read
 in the component via `route.snapshot.data`.
 
+## Selector-driven detail (master select → dependent load)
+
+When a screen is "pick X in a `cleansia-select`, load the data for X" (e.g. partner `period-pay`:
+pick a pay period → load its pay summary), the component owns a bare `FormControl<string | null>`
+and hands it to the facade once (`facade.connectPeriodControl(control)` in `ngOnInit`). The facade
+subscribes to `valueChanges` (takeUntil `destroyed$`) to drive the dependent load, and when **it**
+auto-selects (e.g. newest item after the list loads) it syncs the control back with
+`control.setValue(id, { emitEvent: false })` so the select displays the selection without
+re-triggering the load. Same family as the invoices `bindFormChanges` idiom — the control lives in
+the component, every subscription lives in the facade.
+
 ## i18n binding (verified)
 
 Keys live in `apps/<app>/src/assets/i18n/{en,cs,sk,uk,ru}.json`, deeply namespaced
@@ -173,7 +197,12 @@ Keys live in `apps/<app>/src/assets/i18n/{en,cs,sk,uk,ru}.json`, deeply namespac
 alphanumeric key and looks it up via a mapping table (`DEFAULT_SNACKBAR_ERROR_MAPPINGS`) into an
 `api.order.not_found`-style key. So when backend adds a `BusinessErrorMessage` constant, add the
 matching `api.*` key in **all five** locales. Use `TranslatePipe` in templates, `TranslateService.instant`
-in TS.
+in TS. Two further error-resolution paths exist: (1) when no mapping matches, the snackbar tries the raw
+backend code **as a translation key**, so dot-path codes like `gdpr.deletion_blocked_by_order` resolve
+against a root-level locale block mirroring the code (the partner/admin `gdpr.*` blocks); (2) features
+that must not depend on best-effort normalization keep an explicit `XXX_ERROR_KEY_MAP` +
+`resolveXxxErrorKey(error)` in their `*.models.ts` mapping codes to `errors.*` keys
+(see `membership-plan-list.models.ts`, `referrals-list.models.ts`, disputes-management).
 
 ## What to mirror, not invent
 
@@ -181,6 +210,14 @@ in TS.
 - Call the generated client wrapper (`adminClient.adminXClient.method()`); never hand-roll HTTP, never
   edit generated files. If a backend DTO changes → ticket carries `manual_step: nswag-regen`; **wait**.
 - Use `cleansia-*` components + `cleansia-table` + `getXxxTableDefinition()`. No raw HTML form controls.
-- Gate UI with `*cleansiaPermission="Policy.CanXxx"`. Toasts via `SnackbarService`.
+- Gate UI with `*cleansiaPermission="Policy.CanXxx"`. Toasts via `SnackbarService`. For data-driven
+  menus where a structural directive can't attach (the app-shell sidebar), set
+  `SidebarMenuItem.permission: Policy.CanXxx | Policy[]` — same `PermissionService` engine,
+  any-of semantics for an array.
 - OnPush always; standalone always; facade `providers: [XxxFacade]` on the component.
 - Every string via `TranslatePipe`/`TranslateService`, present in all 5 locales. No `any`.
+- Cross-app HTTP concerns live as `HttpInterceptorFn`s in `libs/core/services/src/lib/interceptors/`
+  and join `COMMON_INTERCEPTORS_FN` — all three apps inherit with zero `app.config.ts` edits. Array
+  order = chain order: a later entry is closer to the backend, so its errors are seen first (the 429
+  `RetryAfterInterceptorFn` sits after `HttpErrorInterceptorFn` so the snackbar fires only once the
+  back-off retry is exhausted). Customer is SSR — guard wait/retry logic with `isPlatformServer`.

@@ -63,6 +63,7 @@ class BookingViewModelTest {
     private lateinit var paymentRepository: PaymentRepository
     private lateinit var tokenStore: cz.cleansia.core.auth.TokenStore
     private lateinit var snackbar: SnackbarController
+    private lateinit var serviceAreaProvider: cz.cleansia.core.servicearea.ServiceAreaProvider
     private lateinit var appContext: Context
 
     private val currentUserFlow = MutableStateFlow<CurrentUser?>(null)
@@ -81,6 +82,8 @@ class BookingViewModelTest {
         paymentRepository = mockk(relaxed = true)
         tokenStore = mockk(relaxed = true)
         snackbar = mockk(relaxed = true)
+        serviceAreaProvider = mockk()
+        coEvery { serviceAreaProvider.loadCountries() } returns emptyList()
         appContext = mockk(relaxed = true)
 
         every { userRepository.currentUser } returns currentUserFlow
@@ -110,6 +113,7 @@ class BookingViewModelTest {
         paymentRepository = paymentRepository,
         tokenStore = tokenStore,
         snackbar = snackbar,
+        serviceAreaProvider = serviceAreaProvider,
         appContext = appContext,
     )
 

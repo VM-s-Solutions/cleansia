@@ -107,4 +107,7 @@ dependencies {
     // format-as-you-type + validation. ~700kB APK cost, replaces any
     // hand-rolled phone mask.
     implementation(libs.libphonenumber)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.okhttp.mockwebserver)
 }

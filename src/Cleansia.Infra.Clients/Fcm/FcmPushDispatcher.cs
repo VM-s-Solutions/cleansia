@@ -41,18 +41,22 @@ public class FcmPushDispatcher(
             return new PushDispatchResult(0, 0, []);
         }
 
-        var messaging = EnsureInitialized();
+        var (messaging, outcome) = EnsureInitialized();
         if (messaging is null)
         {
-            // No service-account configured — silently skip in dev. Production
-            // callers should ensure the config secret is provisioned before
-            // shipping; we don't fail noisy here because that would block every
-            // upstream order/dispute commit on a config gap.
-            logger.LogWarning(
-                "FCM dispatcher not initialized (FCM:ServiceAccountJson empty). " +
-                "Skipping {TokenCount} tokens for event {EventKey}.",
-                deviceTokens.Count, eventKey);
-            return new PushDispatchResult(0, deviceTokens.Count, []);
+            return outcome switch
+            {
+                // No credentials configured — a DELIBERATE no-op in dev / CI. Signal Skipped so the
+                // consumer ACKS (no throw, no poison loop): this can never succeed on retry until the
+                // secret is provisioned, so retrying to maxDequeueCount would only dead-letter every
+                // transactional push.
+                InitOutcome.Disabled => SkippedResult(deviceTokens.Count, eventKey),
+
+                // Cold-start FCM-init race (credential refresh / ADC's first OAuth round trip raced the
+                // queue trigger). TRANSIENT — surface as all-failed (NOT skipped) so the consumer throws
+                // and the queue redelivers; _initAttempted stays false so the next dispatch retries init.
+                _ => AllFailedTransientResult(deviceTokens.Count),
+            };
         }
 
         var payload = new Dictionary<string, string>(data) { ["event_key"] = eventKey };
@@ -81,8 +85,9 @@ public class FcmPushDispatcher(
             IntegrationFailureMetrics.Record(Provider, failureClass);
             logger.LogError(ex, "FCM dispatch failed: {FailureClass} for event {EventKey} ({TokenCount} tokens)",
                 failureClass, eventKey, deviceTokens.Count);
-            // Surface as all-failed; caller will not prune (no InvalidTokens) and the queue redelivers.
-            return new PushDispatchResult(0, deviceTokens.Count, []);
+            // Surface as all-failed (NOT skipped); caller will not prune (no InvalidTokens) and throws so
+            // the queue redelivers.
+            return AllFailedTransientResult(deviceTokens.Count);
         }
 
         var invalidTokens = new List<string>();
@@ -105,15 +110,37 @@ public class FcmPushDispatcher(
             InvalidTokens: invalidTokens);
     }
 
-    private FirebaseMessaging? EnsureInitialized()
+    /// <summary>Why <see cref="EnsureInitialized"/> could not return a live <see cref="FirebaseMessaging"/>.</summary>
+    private enum InitOutcome
     {
-        if (_messaging is not null) return _messaging;
-        if (_initAttempted) return null;
+        /// <summary>A live messaging client is available.</summary>
+        Ready,
+
+        /// <summary>No credentials configured (terminal until the secret is provisioned) — the consumer ACKS.</summary>
+        Disabled,
+
+        /// <summary>Init threw (cold-start credential/OAuth race) — transient; the consumer THROWS and the queue retries.</summary>
+        TransientInitFault,
+    }
+
+    /// <summary>Skipped (disabled) result — distinct from all-failed-transient so the consumer can ACK.</summary>
+    private static PushDispatchResult SkippedResult(int tokenCount, string eventKey) =>
+        new(0, tokenCount, [], Skipped: true);
+
+    /// <summary>All-failed, non-skipped result — the consumer throws and the queue redelivers.</summary>
+    private static PushDispatchResult AllFailedTransientResult(int tokenCount) =>
+        new(0, tokenCount, []);
+
+    private (FirebaseMessaging? Messaging, InitOutcome Outcome) EnsureInitialized()
+    {
+        if (_messaging is not null) return (_messaging, InitOutcome.Ready);
+        // Latched only on the terminal config-missing path, so a latched null is always Disabled.
+        if (_initAttempted) return (null, InitOutcome.Disabled);
 
         lock (InitLock)
         {
-            if (_messaging is not null) return _messaging;
-            if (_initAttempted) return null;
+            if (_messaging is not null) return (_messaging, InitOutcome.Ready);
+            if (_initAttempted) return (null, InitOutcome.Disabled);
 
             try
             {
@@ -152,7 +179,7 @@ public class FcmPushDispatcher(
                             "FCM dispatcher not initialized: neither FCM:ServiceAccountJson nor " +
                             "FCM:ProjectId configured. Run `gcloud auth application-default login` " +
                             "and set FCM:ProjectId user-secret to enable ADC-based dispatch.");
-                        return null;
+                        return (null, InitOutcome.Disabled);
                     }
                     credential = GoogleCredential.GetApplicationDefault();
                     projectIdOverride = config.ProjectId;
@@ -163,7 +190,7 @@ public class FcmPushDispatcher(
 
                 var app = FirebaseApp.DefaultInstance ?? FirebaseApp.Create(options);
                 _messaging = FirebaseMessaging.GetMessaging(app);
-                return _messaging;
+                return (_messaging, InitOutcome.Ready);
             }
             catch (Exception ex)
             {
@@ -171,9 +198,10 @@ public class FcmPushDispatcher(
                 // the network is fully reachable, or ADC's first OAuth round
                 // trip races with the queue trigger. Leave _initAttempted
                 // false so the NEXT dispatch retries; FCM dispatch is at-most-
-                // once today anyway, and the queue will redeliver.
+                // once today anyway, and the queue will redeliver. NOT skipped:
+                // the consumer must THROW so the message redelivers.
                 logger.LogError(ex, "Failed to initialize Firebase Admin SDK (will retry on next dispatch)");
-                return null;
+                return (null, InitOutcome.TransientInitFault);
             }
         }
     }

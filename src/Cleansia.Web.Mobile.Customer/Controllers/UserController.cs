@@ -27,6 +27,7 @@ public class UserController(IMediator mediator) : CustomerMobileApiController(me
 
     [HttpPut("UpdateCurrentUser")]
     [Permission(Policy.CanUpdateCurrentUser)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(UpdateCurrentUser.Response), StatusCodes.Status200OK, "application/json")]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UpdateCurrentUser([FromBody] UpdateCurrentUser.Command command, CancellationToken cancellationToken)

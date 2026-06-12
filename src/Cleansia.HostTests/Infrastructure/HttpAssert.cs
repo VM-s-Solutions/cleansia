@@ -22,6 +22,9 @@ public static class HttpAssert
     public static void IsOk(HttpResponseMessage response) =>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
+    public static void IsNotFound(HttpResponseMessage response) =>
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+
     /// <summary>The request was NOT served the resource — it is either a policy denial (401/403) or a
     /// business not-found/ownership rejection (400 carrying <paramref name="expectedErrorCode"/>).
     /// Never 200. This is the "→ 403/404, never the other user's resource" contract from the ACs,

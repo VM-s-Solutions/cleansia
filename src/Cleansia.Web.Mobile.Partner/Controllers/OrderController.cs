@@ -6,6 +6,7 @@ using Cleansia.Web.Mobile.Partner.Abstractions;
 using Cleansia.Web.Mobile.Partner.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Mobile.Partner.Controllers;
 
@@ -38,6 +39,7 @@ public class OrderController(IMediator mediator) : MobileApiController(mediator)
 
     [HttpPost("TakeOrder")]
     [Permission(Policy.CanTakeOrder)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(TakeOrder.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -50,6 +52,7 @@ public class OrderController(IMediator mediator) : MobileApiController(mediator)
 
     [HttpPost("StartOrder")]
     [Permission(Policy.CanStartOrder)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(StartOrder.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -62,6 +65,7 @@ public class OrderController(IMediator mediator) : MobileApiController(mediator)
 
     [HttpPost("NotifyOnTheWay")]
     [Permission(Policy.CanStartOrder)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(NotifyOnTheWay.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -74,6 +78,7 @@ public class OrderController(IMediator mediator) : MobileApiController(mediator)
 
     [HttpPost("CompleteOrder")]
     [Permission(Policy.CanCompleteOrder)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(CompleteOrder.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -104,6 +109,7 @@ public class OrderController(IMediator mediator) : MobileApiController(mediator)
 
     [HttpPost("UploadPhoto")]
     [Permission(Policy.CanUploadOrderPhoto)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(UploadOrderPhoto.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -116,6 +122,7 @@ public class OrderController(IMediator mediator) : MobileApiController(mediator)
 
     [HttpPost("SavePhotos")]
     [Permission(Policy.CanUploadOrderPhoto)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(SaveOrderPhotos.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -140,6 +147,7 @@ public class OrderController(IMediator mediator) : MobileApiController(mediator)
 
     [HttpDelete("DeletePhoto")]
     [Permission(Policy.CanDeleteOrderPhoto)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(DeleteOrderPhoto.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -152,6 +160,7 @@ public class OrderController(IMediator mediator) : MobileApiController(mediator)
 
     [HttpPost("AddNote")]
     [Permission(Policy.CanAddOrderNote)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(AddOrderNote.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -164,6 +173,7 @@ public class OrderController(IMediator mediator) : MobileApiController(mediator)
 
     [HttpPost("ReportIssue")]
     [Permission(Policy.CanReportOrderIssue)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(ReportOrderIssue.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -176,6 +186,7 @@ public class OrderController(IMediator mediator) : MobileApiController(mediator)
 
     [HttpPut("UpdateNote")]
     [Permission(Policy.CanUpdateOrderNote)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(UpdateOrderNote.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -188,6 +199,7 @@ public class OrderController(IMediator mediator) : MobileApiController(mediator)
 
     [HttpDelete("DeleteNote")]
     [Permission(Policy.CanDeleteOrderNote)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(DeleteOrderNote.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -200,6 +212,7 @@ public class OrderController(IMediator mediator) : MobileApiController(mediator)
 
     [HttpPut("UpdateIssue")]
     [Permission(Policy.CanUpdateOrderIssue)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(UpdateOrderIssue.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -212,6 +225,7 @@ public class OrderController(IMediator mediator) : MobileApiController(mediator)
 
     [HttpDelete("DeleteIssue")]
     [Permission(Policy.CanDeleteOrderIssue)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(DeleteOrderIssue.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

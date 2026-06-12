@@ -196,6 +196,22 @@ public static class DatabaseMigrationExtensions
         if (environment.IsDevelopment())
         {
             dbContext.Migrate();
+            // The migration's own connection is the data source's FIRST connection on a fresh DB —
+            // it caches the Postgres type catalog BEFORE the migration creates the citext/pg_trgm
+            // extensions, so every citext column afterwards reads as the unknown type "-.-"
+            // (InvalidCastException) until the process restarts. Reloading rebuilds the catalog
+            // with the extensions present.
+            var connection = dbContext.Database.GetDbConnection();
+            if (connection is Npgsql.NpgsqlConnection npgsqlConnection)
+            {
+                if (npgsqlConnection.State != System.Data.ConnectionState.Open)
+                {
+                    npgsqlConnection.Open();
+                }
+
+                npgsqlConnection.ReloadTypes();
+            }
+
             SeedDevelopmentData(dbContext, scope.ServiceProvider.GetRequiredService<ILogger<Cleansia.Infra.Database.CleansiaDbContext>>());
         }
     }

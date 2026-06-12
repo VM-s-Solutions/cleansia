@@ -6,6 +6,7 @@ using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Admin.Controllers;
 
@@ -44,6 +45,7 @@ public class AdminPayConfigController(IMediator mediator) : ApiController(mediat
 
     [HttpPost("create")]
     [Permission(Policy.CanCreatePayConfig)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(CreatePayConfig.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -58,6 +60,7 @@ public class AdminPayConfigController(IMediator mediator) : ApiController(mediat
 
     [HttpPut("update/{payConfigId}")]
     [Permission(Policy.CanUpdatePayConfig)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(UpdatePayConfig.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -78,6 +81,7 @@ public class AdminPayConfigController(IMediator mediator) : ApiController(mediat
 
     [HttpDelete("delete/{payConfigId}")]
     [Permission(Policy.CanDeletePayConfig)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(DeletePayConfig.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -108,6 +112,7 @@ public class AdminPayConfigController(IMediator mediator) : ApiController(mediat
 
     [HttpPost("bulk-create-for-employee")]
     [Permission(Policy.CanCreatePayConfig)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(BulkCreateEmployeePayConfigs.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

@@ -1,8 +1,8 @@
 export default {
   displayName: 'cleansia-customer-disputes',
-  preset: '../../../../jest.preset.js',
-  setupFilesAfterSetup: ['<rootDir>/src/test-setup.ts'],
-  coverageDirectory: '../../../../coverage/libs/cleansia-customer-features/disputes',
+  preset: '../../../jest.preset.js',
+  setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
+  coverageDirectory: '../../../coverage/libs/cleansia-customer-features/disputes',
   transform: {
     '^.+\\.(ts|mjs|js|html)$': [
       'jest-preset-angular',

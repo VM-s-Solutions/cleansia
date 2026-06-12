@@ -8,9 +8,16 @@ public class PackageSpecification : ISpecification<Package>
 {
     public string? SearchTerm { get; set; }
 
+    public bool? IsActive { get; set; }
+
     public Expression<Func<Package, bool>> SatisfiedBy()
     {
         Specification<Package> specification = new TrueSpecification<Package>();
+
+        if (IsActive.HasValue)
+        {
+            specification &= new DirectSpecification<Package>(x => x.IsActive == IsActive.Value);
+        }
 
         if (!string.IsNullOrEmpty(SearchTerm))
         {
@@ -24,9 +31,12 @@ public class PackageSpecification : ISpecification<Package>
         return specification.SatisfiedBy();
     }
 
-    public static PackageSpecification Create(string? searchTerm = null) =>
+    public static PackageSpecification Create(
+        string? searchTerm = null,
+        bool? isActive = null) =>
         new()
         {
-            SearchTerm = searchTerm
+            SearchTerm = searchTerm,
+            IsActive = isActive
         };
 }

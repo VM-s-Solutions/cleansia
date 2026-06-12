@@ -120,6 +120,11 @@
       </cleansia-section>
       }
 
+      <admin-pay-period-ops
+        [payPeriod]="facade.payPeriod()!"
+        (changed)="onOpsChanged()"
+      />
+
       <!-- Actions -->
       @if (facade.payPeriod()?.status === PayPeriodStatus[PayPeriodStatus.Open])
       {

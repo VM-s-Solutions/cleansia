@@ -54,6 +54,9 @@ public class ConfirmUserEmailSecurityTests
         repo.Setup(r => r.GetByConfirmationCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string raw, CancellationToken _) =>
                 users.FirstOrDefault(u => u.ConfirmationCode == SecurityTokens.Hash(raw)));
+        // Attempt budget available — the per-code cap is covered by ConfirmUserEmailAttemptCapTests.
+        repo.Setup(r => r.TryChargeConfirmationCodeAttemptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
         return repo;
     }
 

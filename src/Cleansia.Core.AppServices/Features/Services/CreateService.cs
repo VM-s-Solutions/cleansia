@@ -1,11 +1,10 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
-using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
-using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Services;
 
@@ -59,19 +58,7 @@ public class CreateService
                 .WithMessage(BusinessErrorMessage.MustBePositive);
 
             RuleFor(x => x.Translations)
-                .Cascade(CascadeMode.Stop)
-                .NotNull()
-                .WithMessage(BusinessErrorMessage.TranslationsRequired)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.TranslationsRequired)
-                .MustAsync(async (translations, cancellationToken) =>
-                {
-                    var allLanguages = await languageRepository.GetAll().ToListAsync(cancellationToken);
-                    var allLanguageCodes = allLanguages.Select(l => l.Code).ToHashSet();
-                    var providedCodes = translations!.Keys.ToHashSet();
-                    return allLanguageCodes.SetEquals(providedCodes);
-                })
-                .WithMessage(BusinessErrorMessage.MissingTranslationForLanguage);
+                .MustCoverAllActiveLanguages(languageRepository);
 
             RuleForEach(x => x.Translations)
                 .ChildRules(translation =>

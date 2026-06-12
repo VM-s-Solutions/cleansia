@@ -1,14 +1,13 @@
 package cz.cleansia.partner.core.notifications
 
 import android.content.Context
-import android.os.Build
-import android.provider.Settings
 import android.util.Log
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.firebase.messaging.FirebaseMessaging
+import cz.cleansia.core.auth.DeviceIdProvider
 import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.partner.core.network.ApiResult
 import cz.cleansia.partner.core.network.safeApiCall
@@ -46,10 +45,11 @@ private val Context.pushTokenDataStore by preferencesDataStore(name = "partner_p
 class PushTokenRepository @Inject constructor(
     private val deviceApi: DeviceApi,
     private val json: Json,
+    deviceIdProvider: DeviceIdProvider,
     @ApplicationContext private val context: Context,
 ) : SessionScopedCache {
 
-    private val deviceId: String by lazy { resolveDeviceId(context) }
+    private val deviceId: String by lazy { deviceIdProvider.deviceId }
 
     /**
      * Latest FCM token observed via either the initial fetch
@@ -189,19 +189,6 @@ class PushTokenRepository @Inject constructor(
 
     private suspend fun clearLastRegisteredToken() {
         context.pushTokenDataStore.edit { it.remove(KEY_LAST_TOKEN) }
-    }
-
-    /**
-     * Stable per-install device id. ANDROID_ID is reset on factory reset + is
-     * per-app-signing-key on Android 8+, which is the right granularity here:
-     * a factory reset SHOULD invalidate the FCM registration, and the per-app
-     * scoping means the partner app's device row doesn't collide with the
-     * customer app's on the same handset.
-     */
-    private fun resolveDeviceId(context: Context): String {
-        val android = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
-        if (!android.isNullOrEmpty()) return android
-        return "${Build.MANUFACTURER}-${Build.MODEL}"
     }
 
     private companion object {

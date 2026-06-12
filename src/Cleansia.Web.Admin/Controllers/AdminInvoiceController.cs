@@ -6,6 +6,7 @@ using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Admin.Controllers;
 
@@ -39,6 +40,7 @@ public class AdminInvoiceController(IMediator mediator) : ApiController(mediator
 
     [HttpPut("approve")]
     [Permission(Policy.CanApproveInvoice)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(ApproveInvoice.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -51,6 +53,7 @@ public class AdminInvoiceController(IMediator mediator) : ApiController(mediator
 
     [HttpPut("mark-paid")]
     [Permission(Policy.CanMarkInvoicePaid)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(MarkInvoicePaid.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -63,6 +66,7 @@ public class AdminInvoiceController(IMediator mediator) : ApiController(mediator
 
     [HttpPut("cancel")]
     [Permission(Policy.CanCancelInvoice)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(CancelInvoice.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -75,6 +79,7 @@ public class AdminInvoiceController(IMediator mediator) : ApiController(mediator
 
     [HttpPost("regenerate-pdf")]
     [Permission(Policy.CanGenerateInvoice)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(RegenerateInvoicePdf.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

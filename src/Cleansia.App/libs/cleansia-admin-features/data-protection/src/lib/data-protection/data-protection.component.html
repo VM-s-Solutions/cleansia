@@ -1,0 +1,118 @@
+<div class="cleansia-data-protection">
+  <div class="cleansia-data-protection__container page-wrapper">
+    <div class="cleansia-data-protection__header">
+      <cleansia-title [title]="'pages.data_protection.title' | translate" />
+      <p class="cleansia-data-protection__description">
+        {{ 'pages.data_protection.description' | translate }}
+      </p>
+    </div>
+
+    <ng-container *cleansiaPermission="Policy.CanViewGdprRequests">
+      <cleansia-section
+        [title]="'pages.data_protection.requests.title' | translate"
+      >
+        @if (facade.initialLoading()) {
+          <cleansia-loader />
+        } @else if (facade.hasError()) {
+          <div class="cleansia-data-protection__state">
+            <i class="pi pi-exclamation-triangle"></i>
+            <p>{{ 'pages.data_protection.requests.load_error' | translate }}</p>
+          </div>
+        } @else {
+          <cleansia-table
+            [data]="facade.requests()"
+            [columns]="requestColumns"
+            [config]="{
+              paginator: true,
+              rows: 20,
+              lazy: true,
+              totalRecords: facade.totalRecords(),
+              emptyMessage: 'pages.data_protection.requests.empty',
+              hover: true
+            }"
+            [loading]="facade.loading()"
+            (pageChange)="onRequestsPageChange($event)"
+          />
+        }
+      </cleansia-section>
+    </ng-container>
+
+    <cleansia-section
+      [title]="'pages.data_protection.user_tools.title' | translate"
+    >
+      <p class="cleansia-data-protection__hint">
+        {{ 'pages.data_protection.user_tools.hint' | translate }}
+      </p>
+
+      <form [formGroup]="userForm" class="cleansia-data-protection__user-form">
+        <div class="form-field">
+          <cleansia-text-input
+            [label]="'pages.data_protection.user_tools.user_id' | translate"
+            formControlName="userId"
+            [required]="true"
+          />
+          @if (
+            userForm.controls.userId.touched &&
+            userForm.controls.userId.errors?.['required']
+          ) {
+            <small class="field-error">
+              {{
+                'pages.data_protection.user_tools.user_id_required' | translate
+              }}
+            </small>
+          }
+        </div>
+
+        <div class="cleansia-data-protection__user-actions">
+          <cleansia-button
+            *cleansiaPermission="Policy.CanAdminViewUserConsents"
+            [label]="
+              'pages.data_protection.consents.load_button' | translate
+            "
+            icon="pi pi-shield"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="loadConsents()"
+          />
+          <cleansia-button
+            *cleansiaPermission="Policy.CanAdminExportUserData"
+            [label]="'pages.data_protection.export.button' | translate"
+            icon="pi pi-download"
+            [loading]="facade.exporting()"
+            [disabled]="facade.exporting()"
+            (onClick)="exportData()"
+          />
+          <cleansia-button
+            *cleansiaPermission="Policy.CanAdminDeleteUserAccount"
+            [label]="'pages.data_protection.erase.button' | translate"
+            icon="pi pi-trash"
+            severity="danger"
+            [loading]="facade.erasing()"
+            [disabled]="facade.erasing()"
+            (onClick)="confirmErase()"
+          />
+        </div>
+      </form>
+
+      <ng-container *cleansiaPermission="Policy.CanAdminViewUserConsents">
+        @if (facade.consentsLoading()) {
+          <cleansia-loader />
+        } @else if (facade.consentsUserId()) {
+          <h4 class="cleansia-data-protection__consents-title">
+            {{
+              'pages.data_protection.consents.title_for_user'
+                | translate: { userId: facade.consentsUserId() }
+            }}
+          </h4>
+          <cleansia-table
+            [data]="facade.consents()"
+            [columns]="consentColumns"
+            [config]="{
+              emptyMessage: 'pages.data_protection.consents.empty'
+            }"
+          />
+        }
+      </ng-container>
+    </cleansia-section>
+  </div>
+</div>

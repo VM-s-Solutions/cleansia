@@ -30,10 +30,13 @@ public static class QueueExtensions
         // in AddRepositories, which runs after this, because the implementation needs the scoped
         // DbContext; the command-handler call sites are unchanged either way.
 
-        // The claim-then-act dedup for non-transactional consumer effects with no domain target-state
-        // (the send-email consumer). Singleton so a claim survives redeliveries within the worker
-        // process; Wave-1 swaps the backing for a durable ProcessedMessage row.
-        services.AddSingleton<IIdempotencyGuard, InMemoryIdempotencyGuard>();
+        // The consumer-idempotency seams (IIdempotencyGuard, ICampaignProgressStore) are NOT registered
+        // here: ADR-0010 swapped the process-local InMemory* singletons for the durable DB-backed
+        // DbIdempotencyGuard / DbCampaignProgressStore, registered SCOPED in AddRepositories (they need
+        // the scoped DbContext), mirroring the OutboxPendingDispatch swap. A ProcessedMessage claim /
+        // CampaignProgress cursor now survives a worker restart + scale-out. The InMemory* classes remain
+        // in this assembly for unit tests / a non-DB fallback, but production DI resolves the DB-backed
+        // ones. No stale singleton registration is left here to shadow them.
 
         return services;
     }

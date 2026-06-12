@@ -18,6 +18,12 @@ public class DeviceRepository(CleansiaDbContext context) : BaseRepository<Device
             .FirstOrDefaultAsync(d => d.UserId == userId && d.DeviceId == deviceId && d.IsActive, cancellationToken);
     }
 
+    public async Task<Device?> GetByIdAndUserAsync(string id, string userId, CancellationToken cancellationToken)
+    {
+        return await context.Devices
+            .FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId && d.IsActive, cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Device>> GetByUserIdAsync(string userId, CancellationToken cancellationToken)
     {
         return await context.Devices

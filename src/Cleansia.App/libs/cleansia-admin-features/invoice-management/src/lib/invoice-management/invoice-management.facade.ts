@@ -3,12 +3,22 @@ import {
   AdminClient,
   EmployeeInvoiceDto,
   EmployeeInvoiceStatus,
+  RegenerateInvoicePdfCommand,
   SortDefinition,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
+import {
+  RETRY_PDF_ERROR_KEY_MAP,
+  RETRY_PDF_FALLBACK_ERROR_KEY,
+} from './invoice-management.models';
+
+interface ApiErrorResult {
+  detail?: string;
+  title?: string;
+}
 
 export interface InvoiceFilterParams {
   statuses?: EmployeeInvoiceStatus[];
@@ -26,6 +36,7 @@ export class InvoiceManagementFacade extends UnsubscribeControlDirective {
   readonly loading = signal<boolean>(false);
   readonly initialLoading = signal<boolean>(true);
   readonly totalRecords = signal<number>(0);
+  readonly retryingPdf = signal<boolean>(false);
 
   private currentFilter = signal<InvoiceFilterParams | null>(null);
   private currentOffset = signal<number>(0);
@@ -149,6 +160,59 @@ export class InvoiceManagementFacade extends UnsubscribeControlDirective {
           window.URL.revokeObjectURL(url);
         }
       });
+  }
+
+  retryPdf(invoice: EmployeeInvoiceDto): void {
+    if (!invoice.id) return;
+
+    this.retryingPdf.set(true);
+
+    const command = new RegenerateInvoicePdfCommand({
+      invoiceId: invoice.id,
+      languageCode: this.translate.currentLang || 'en',
+    });
+
+    this.adminClient.adminInvoiceClient
+      .regeneratePdf(command)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError((error: unknown) => {
+          this.snackbarService.showError(
+            this.translate.instant(this.resolveRetryErrorKey(error))
+          );
+          return of(null);
+        }),
+        finalize(() => this.retryingPdf.set(false))
+      )
+      .subscribe((response) => {
+        if (response) {
+          this.snackbarService.showSuccess(
+            this.translate.instant(
+              'pages.invoice_management.messages.retry_pdf_success'
+            )
+          );
+          this.loadInvoices();
+        }
+      });
+  }
+
+  private resolveRetryErrorKey(error: unknown): string {
+    const apiError = error as { result?: ApiErrorResult; response?: string };
+    let code = apiError?.result?.detail || apiError?.result?.title;
+
+    if (!code && apiError?.response) {
+      try {
+        const parsed = JSON.parse(apiError.response) as ApiErrorResult;
+        code = parsed.detail || parsed.title;
+      } catch {
+        code = undefined;
+      }
+    }
+
+    if (code && RETRY_PDF_ERROR_KEY_MAP[code]) {
+      return RETRY_PDF_ERROR_KEY_MAP[code];
+    }
+    return RETRY_PDF_FALLBACK_ERROR_KEY;
   }
 
   getStatusLabel(status: EmployeeInvoiceStatus | undefined): string {

@@ -1,0 +1,54 @@
+<div class="customer-notification-prefs">
+  <div class="customer-notification-prefs__header">
+    <strong>{{ 'pages.profile.notifications.title' | translate }}</strong>
+    <p>{{ 'pages.profile.notifications.desc' | translate }}</p>
+  </div>
+
+  @if (facade.loading()) {
+  <div class="customer-notification-prefs__skeleton">
+    @for (i of [1, 2, 3, 4]; track i) {
+    <p-skeleton width="100%" height="2.5rem" borderRadius="8px" />
+    }
+  </div>
+  } @else if (facade.hasError()) {
+  <div class="customer-notification-prefs__error">
+    <i class="pi pi-exclamation-circle"></i>
+    <p>{{ 'pages.profile.notifications.load_error' | translate }}</p>
+    <cleansia-button
+      [title]="'pages.profile.notifications.retry' | translate"
+      [severity]="'secondary'"
+      [icon]="'pi pi-refresh'"
+      [iconPosition]="'left'"
+      (clickFn)="facade.load()"
+    />
+  </div>
+  } @else { @if (facade.preferences(); as prefs) {
+  <div class="customer-notification-prefs__list">
+    @for (category of categories; track category.field) {
+    <div class="customer-profile__pref-row">
+      <div class="customer-profile__pref-label">
+        <i [class]="category.icon"></i>
+        {{ category.labelKey | translate }}
+      </div>
+      <div class="customer-profile__pref-control">
+        <p-toggleSwitch
+          [ngModel]="prefs[category.field]"
+          (ngModelChange)="facade.setPreference(category.field, $event)"
+          [disabled]="facade.saving()"
+        />
+      </div>
+    </div>
+    }
+  </div>
+
+  <div class="customer-profile__actions">
+    <cleansia-button
+      [title]="'pages.profile.notifications.save' | translate"
+      [severity]="'primary'"
+      [style]="'raised-button'"
+      [loading]="facade.saving()"
+      (clickFn)="facade.save()"
+    />
+  </div>
+  } }
+</div>

@@ -1143,4 +1143,25 @@
     <string name="notification_membership_expiring_body">Ваша підписка поновиться через 3 дні. Керуйте планом у застосунку.</string>
     <string name="notification_membership_cancelled_title">Cleansia Plus завершено</string>
     <string name="notification_membership_cancelled_body">Ваша підписка завершилася. Поновіть її, щоб повернути переваги Plus.</string>
+
+    <!-- ── Ваші пристрої ── -->
+    <string name="profile_row_devices">Ваші пристрої</string>
+    <string name="devices_title">Ваші пристрої</string>
+    <string name="devices_intro">Пристрої, на яких виконано вхід у ваш обліковий запис. Видалення пристрою завершує його сеанс і вимикає сповіщення.</string>
+    <string name="devices_this_device">Цей пристрій</string>
+    <string name="devices_last_active">Остання активність %1$s</string>
+    <string name="devices_platform_android">Android</string>
+    <string name="devices_platform_ios">iOS</string>
+    <string name="devices_platform_web">Web</string>
+    <string name="devices_platform_unknown">Невідомий пристрій</string>
+    <string name="devices_empty">Поки немає зареєстрованих пристроїв.</string>
+    <string name="devices_error_message">Не вдалося завантажити пристрої. Перевірте з\'єднання та спробуйте ще раз.</string>
+    <string name="devices_error_retry">Спробувати ще раз</string>
+    <string name="devices_revoke_action">Видалити пристрій</string>
+    <string name="devices_revoke_dialog_title">Видалити цей пристрій?</string>
+    <string name="devices_revoke_dialog_message">%1$s буде відключено від облікового запису, і він перестане отримувати сповіщення.</string>
+    <string name="devices_revoke_dialog_confirm">Видалити</string>
+    <string name="devices_revoke_success">Пристрій видалено</string>
+    <string name="devices_revoke_retry_hint">Не вдалося видалити – спробуйте ще раз.</string>
+    <string name="error_device_not_found">Цей пристрій більше не зареєстрований.</string>
 </resources>

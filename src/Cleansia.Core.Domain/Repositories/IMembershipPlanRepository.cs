@@ -18,4 +18,16 @@ public interface IMembershipPlanRepository : IRepository<MembershipPlan, string>
     /// plan switcher on the subscribe screen.
     /// </summary>
     Task<IReadOnlyList<MembershipPlan>> GetActivePlansAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Admin back-office paged list across ALL plans (active and inactive),
+    /// with an optional active filter and a case-insensitive code/name search.
+    /// Returns the materialised page plus the unfiltered (by paging) total.
+    /// </summary>
+    Task<(IReadOnlyList<MembershipPlan> Items, int Total)> GetPagedAdminAsync(
+        bool? active,
+        string? search,
+        int offset,
+        int limit,
+        CancellationToken cancellationToken);
 }

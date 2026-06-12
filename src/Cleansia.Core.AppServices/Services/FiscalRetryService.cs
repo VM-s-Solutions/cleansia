@@ -58,6 +58,11 @@ public sealed class FiscalRetryService(
 
                 var succeeded = await receiptService.RetryFiscalRegistrationAsync(receipt, order, cancellationToken);
 
+                // Persist this receipt's retry-tracking + fiscal stamp NOW, before the terminal email and
+                // before moving to the next receipt. A per-receipt commit means a later receipt's commit
+                // fault cannot roll back the work already durably written for this one.
+                await unitOfWork.CommitAsync(cancellationToken);
+
                 // For BlockingOnline countries the confirmation email is held until the fiscal
                 // authority signs the receipt. Once signed, release it now.
                 if (succeeded && !receipt.EmailSent)
@@ -67,9 +72,22 @@ public sealed class FiscalRetryService(
                     {
                         var pdfBytes = await receiptService.DownloadReceiptPdfAsync(receipt, cancellationToken);
                         var languageCode = receipt.Language?.Code ?? Constants.Language.English;
+
+                        // ADR-0002 D2.2 — claim-first. Commit the EmailSent marker BEFORE the send so a
+                        // commit fault leaves the email un-sent (re-sendable next tick), never sent-but-
+                        // unmarked (which would re-send). The accepted residual is a rare lost email on a
+                        // crash between this claim commit and the send.
+                        receipt.ClaimEmailSend();
+                        await unitOfWork.CommitAsync(cancellationToken);
+
                         var messageId = await emailService.SendOrderReceiptEmailAsync(
                             order.CustomerEmail, order, pdfBytes, receipt.FileName, languageCode, cancellationToken);
+
+                        // Best-effort metadata stamp. The at-most-once guarantee is already secured by the
+                        // committed claim above; this records the provider message id for observability.
                         receipt.MarkEmailSent(messageId);
+                        await unitOfWork.CommitAsync(cancellationToken);
+
                         logger.LogInformation(
                             "Held receipt email released for ReceiptNumber={ReceiptNumber} after successful fiscal retry",
                             receipt.ReceiptNumber);
@@ -78,8 +96,11 @@ public sealed class FiscalRetryService(
             }
             catch (Exception ex)
             {
-                // Swallow per-receipt failures so one bad row doesn't abort the batch.
-                // The receipt's retry-tracking state is updated inside RetryFiscalRegistrationAsync.
+                // Swallow per-receipt failures so one bad row doesn't abort the batch. The remainder of
+                // the batch is still processed and its already-committed receipts stay durable; this
+                // receipt's unpersisted work simply stays due for the next tick. Discard this receipt's
+                // pending in-memory mutations so a failed commit cannot bleed into the next receipt's.
+                unitOfWork.Rollback();
                 logger.LogError(ex,
                     "FiscalRetryService failed to process ReceiptNumber={ReceiptNumber}",
                     receipt.ReceiptNumber);
@@ -88,8 +109,7 @@ public sealed class FiscalRetryService(
             processed++;
         }
 
-        await unitOfWork.CommitAsync(cancellationToken);
-        logger.LogInformation("FiscalRetryService committed {Processed} retry attempts", processed);
+        logger.LogInformation("FiscalRetryService processed {Processed} retry attempts", processed);
         return processed;
     }
 

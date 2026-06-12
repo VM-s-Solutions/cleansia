@@ -20,6 +20,7 @@ public class DeviceController(IMediator mediator) : CustomerApiController(mediat
     /// </summary>
     [HttpPost("Register")]
     [Permission(Policy.Authenticated)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(RegisterDevice.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -38,6 +39,7 @@ public class DeviceController(IMediator mediator) : CustomerApiController(mediat
     /// </summary>
     [HttpDelete("Unregister")]
     [Permission(Policy.Authenticated)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(UnregisterDevice.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

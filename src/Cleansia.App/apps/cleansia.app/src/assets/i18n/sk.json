@@ -1356,6 +1356,10 @@
     "section6_text": "V prípade otázok týkajúcich sa súkromia nás kontaktujte na info@cleansia.cz alebo +420 739 788 108."
   },
   "api": {
+    "auth": {
+      "account_locked": "Príliš veľa neúspešných pokusov o prihlásenie. Účet je dočasne uzamknutý — skúste to znova o niekoľko minút.",
+      "too_many_attempts": "Príliš veľa pokusov s týmto kódom. Vyžiadajte si nový kód a skúste to znova."
+    },
     "common": {
       "unauthorized": "Nemáte oprávnenie na vykonanie tejto akcie",
       "error_occurred": "Vyskytla sa chyba"

@@ -52,6 +52,14 @@ public class UserMockFactory
 
         public DateTimeOffset? ConfirmationCodeExpiresAt { get; set; }
 
+        public int? FailedLoginAttempts { get; set; }
+
+        public DateTimeOffset? LockoutEndsAt { get; set; }
+
+        public int? ConfirmationCodeAttempts { get; set; }
+
+        public int? ResetPasswordCodeAttempts { get; set; }
+
         public bool? IsEmailConfirmed { get; set; }
 
         public DateTime? CreatedAt { get; set; }

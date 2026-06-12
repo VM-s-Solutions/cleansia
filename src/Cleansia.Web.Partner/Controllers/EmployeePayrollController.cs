@@ -8,6 +8,7 @@ using Cleansia.Web.Partner.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Partner.Controllers;
 
@@ -53,6 +54,7 @@ public class EmployeePayrollController(IMediator mediator) : ApiController(media
 
     [HttpPost("CalculateOrderPay")]
     [Permission(Policy.CanCalculateOrderPay)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(CalculateOrderPay.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -65,6 +67,7 @@ public class EmployeePayrollController(IMediator mediator) : ApiController(media
 
     [HttpPost("RegenerateInvoicePdf")]
     [Permission(Policy.CanGenerateInvoice)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(RegenerateInvoicePdf.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

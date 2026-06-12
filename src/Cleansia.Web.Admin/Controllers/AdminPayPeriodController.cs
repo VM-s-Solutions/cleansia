@@ -41,6 +41,7 @@ public class AdminPayPeriodController(IMediator mediator) : ApiController(mediat
 
     [HttpPost("create")]
     [Permission(Policy.CanCreatePayPeriod)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(CreatePayPeriod.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -53,6 +54,7 @@ public class AdminPayPeriodController(IMediator mediator) : ApiController(mediat
 
     [HttpPut("update")]
     [Permission(Policy.CanUpdatePayPeriod)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(UpdatePayPeriod.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -65,6 +67,7 @@ public class AdminPayPeriodController(IMediator mediator) : ApiController(mediat
 
     [HttpDelete("delete/{payPeriodId}")]
     [Permission(Policy.CanDeletePayPeriod)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(DeletePayPeriod.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -78,6 +81,7 @@ public class AdminPayPeriodController(IMediator mediator) : ApiController(mediat
 
     [HttpPost("open")]
     [Permission(Policy.CanOpenPayPeriod)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(OpenPayPeriod.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -90,6 +94,7 @@ public class AdminPayPeriodController(IMediator mediator) : ApiController(mediat
 
     [HttpPost("close")]
     [Permission(Policy.CanClosePayPeriod)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(ClosePayPeriod.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

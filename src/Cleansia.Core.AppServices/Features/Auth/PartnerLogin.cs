@@ -30,6 +30,9 @@ public class PartnerLogin
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
+                .MustAsync((command, _, cancellationToken) => AccountIsNotLockedOut(command.Email, cancellationToken))
+                .WithMessage(BusinessErrorMessage.AccountLocked)
+                .WithErrorCode(nameof(Command.Password))
                 .MustAsync((command, _, cancellationToken) => HasValidPassword(command, cancellationToken))
                 .WithMessage(BusinessErrorMessage.InvalidPassword)
                 .WithErrorCode(nameof(Command.Password))
@@ -58,10 +61,29 @@ public class PartnerLogin
             return user is not null && user.AuthenticationType == AuthenticationType.Internal;
         }
 
+        // The lockout check precedes the password check (Cascade.Stop), so a locked account never
+        // evaluates the password — no correctness oracle and no further counting while locked.
+        private async Task<bool> AccountIsNotLockedOut(string email, CancellationToken cancellationToken)
+        {
+            var user = await userRepository.GetByEmailAsync(email, cancellationToken);
+            return user is null || !user.IsLockedOut(DateTimeOffset.UtcNow);
+        }
+
         private async Task<bool> HasValidPassword(Command user, CancellationToken cancellationToken)
         {
             var userEntity = await userRepository.GetByEmailAsync(user.Email, cancellationToken);
-            return userEntity is not null && user.Password.CheckIfPasswordSame(userEntity.Password!);
+            if (userEntity is null)
+            {
+                return false;
+            }
+
+            if (user.Password.CheckIfPasswordSame(userEntity.Password!))
+            {
+                return true;
+            }
+
+            await userRepository.RecordFailedLoginAsync(user.Email, DateTimeOffset.UtcNow, cancellationToken);
+            return false;
         }
     }
 
@@ -92,6 +114,8 @@ public class PartnerLogin
                 return BusinessResult.Failure<JwtTokenResponse>(
                     new Error(nameof(command.Email), BusinessErrorMessage.InsufficientPrivileges));
             }
+
+            user.ResetLoginThrottle();
 
             return BusinessResult.Success(await tokenService.GenerateTokenAsync(user, command.RememberMe, hostAudience.Audience, cancellationToken));
         }

@@ -9,6 +9,7 @@ import cz.cleansia.core.auth.RefreshClient
 import cz.cleansia.core.auth.SessionManager
 import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.auth.TokenStore
+import cz.cleansia.core.network.RetryAfterInterceptor
 import cz.cleansia.partner.BuildConfig
 import cz.cleansia.partner.api.client.AuthApi
 import cz.cleansia.partner.api.client.CountryApi
@@ -205,13 +206,22 @@ object NetworkModule {
 
     @Provides
     @Singleton
+    fun provideRetryAfterInterceptor(): RetryAfterInterceptor = RetryAfterInterceptor()
+
+    @Provides
+    @Singleton
     @AuthOkHttp
     fun provideAuthOkHttp(
         logging: HttpLoggingInterceptor,
         authInterceptor: AuthInterceptor,
         authenticator: AuthAuthenticator,
+        retryAfterInterceptor: RetryAfterInterceptor,
         @TimeZoneInterceptorQ timeZoneInterceptor: okhttp3.Interceptor,
     ): OkHttpClient = OkHttpClient.Builder()
+        // Outermost on purpose — the 429 back-off retry re-enters auth/timezone/
+        // logging so the retried request carries a fresh token. NoAuth (refresh)
+        // client stays without it.
+        .addInterceptor(retryAfterInterceptor)
         .addInterceptor(authInterceptor)
         .addInterceptor(timeZoneInterceptor)
         .addInterceptor(logging)

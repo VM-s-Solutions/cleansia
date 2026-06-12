@@ -14,6 +14,8 @@ public static class BusinessErrorMessage
     public const string InvalidRefreshToken = "auth.invalid_refresh_token";
     public const string RefreshTokenReused = "auth.refresh_token_reused";
     public const string CurrentPasswordInvalid = "auth.current_password_invalid";
+    public const string AccountLocked = "auth.account_locked";
+    public const string TooManyAttempts = "auth.too_many_attempts";
 
     // Common
     public const string InvalidEnumValue = "common.invalid_enum_value";

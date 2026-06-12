@@ -216,3 +216,8 @@ that must not depend on best-effort normalization keep an explicit `XXX_ERROR_KE
   any-of semantics for an array.
 - OnPush always; standalone always; facade `providers: [XxxFacade]` on the component.
 - Every string via `TranslatePipe`/`TranslateService`, present in all 5 locales. No `any`.
+- Cross-app HTTP concerns live as `HttpInterceptorFn`s in `libs/core/services/src/lib/interceptors/`
+  and join `COMMON_INTERCEPTORS_FN` — all three apps inherit with zero `app.config.ts` edits. Array
+  order = chain order: a later entry is closer to the backend, so its errors are seen first (the 429
+  `RetryAfterInterceptorFn` sits after `HttpErrorInterceptorFn` so the snackbar fires only once the
+  back-off retry is exhausted). Customer is SSR — guard wait/retry logic with `isPlatformServer`.

@@ -5,6 +5,7 @@ using Cleansia.Web.Mobile.Customer.Abstractions;
 using Cleansia.Web.Mobile.Customer.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Mobile.Customer.Controllers;
 
@@ -23,6 +24,7 @@ public class RecurringBookingController(IMediator mediator) : CustomerMobileApiC
 
     [HttpPost("Create")]
     [Permission(Policy.CanManageRecurringBookings)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(RecurringBookingTemplateDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create(
@@ -35,6 +37,7 @@ public class RecurringBookingController(IMediator mediator) : CustomerMobileApiC
 
     [HttpPost("Update")]
     [Permission(Policy.CanManageRecurringBookings)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(RecurringBookingTemplateDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Update(
@@ -47,6 +50,7 @@ public class RecurringBookingController(IMediator mediator) : CustomerMobileApiC
 
     [HttpPost("SetActive")]
     [Permission(Policy.CanManageRecurringBookings)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> SetActive(
@@ -59,6 +63,7 @@ public class RecurringBookingController(IMediator mediator) : CustomerMobileApiC
 
     [HttpPost("Delete")]
     [Permission(Policy.CanManageRecurringBookings)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Delete(

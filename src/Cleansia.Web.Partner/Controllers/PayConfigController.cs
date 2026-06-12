@@ -6,6 +6,7 @@ using Cleansia.Web.Partner.Abstractions;
 using Cleansia.Web.Partner.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Partner.Controllers;
 
@@ -38,6 +39,7 @@ public class PayConfigController(IMediator mediator) : ApiController(mediator)
 
     [HttpPost("CreatePayConfig")]
     [Permission(Policy.CanCreatePayConfig)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(CreatePayConfig.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -50,6 +52,7 @@ public class PayConfigController(IMediator mediator) : ApiController(mediator)
 
     [HttpPut("UpdatePayConfig")]
     [Permission(Policy.CanUpdatePayConfig)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(UpdatePayConfig.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -62,6 +65,7 @@ public class PayConfigController(IMediator mediator) : ApiController(mediator)
 
     [HttpDelete("DeletePayConfig")]
     [Permission(Policy.CanDeletePayConfig)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(DeletePayConfig.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

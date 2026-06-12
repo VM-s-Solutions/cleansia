@@ -44,6 +44,7 @@ public class GdprController(IMediator mediator) : ApiController(mediator)
 
     [HttpPost("consents")]
     [Permission(Policy.CanGrantConsent)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GrantConsent([FromBody] GrantConsent.Command command, CancellationToken cancellationToken)
     {
@@ -53,6 +54,7 @@ public class GdprController(IMediator mediator) : ApiController(mediator)
 
     [HttpPost("consents/withdraw")]
     [Permission(Policy.CanWithdrawConsent)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> WithdrawConsent([FromBody] WithdrawConsent.Command command, CancellationToken cancellationToken)
     {

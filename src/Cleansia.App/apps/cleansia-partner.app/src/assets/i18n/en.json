@@ -989,7 +989,9 @@
       "invalid_google_token": "Invalid Google token",
       "invalid_password_format": "Invalid password format",
       "invalid_reset_token": "Invalid password reset token",
-      "same_reset_password": "New password matches the old password"
+      "same_reset_password": "New password matches the old password",
+      "account_locked": "Too many failed login attempts. The account is temporarily locked — try again in a few minutes.",
+      "too_many_attempts": "Too many attempts with this code. Request a new code and try again."
     },
     "common": {
       "invalid_enum_value": "Invalid enum value",

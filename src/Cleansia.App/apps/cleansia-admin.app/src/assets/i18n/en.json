@@ -2095,7 +2095,9 @@
       "invalid_reset_token": "Invalid or expired password reset token",
       "same_reset_password": "New password must be different from the current password",
       "current_password_invalid": "The current password is incorrect",
-      "change_password_failed": "Failed to change the password"
+      "change_password_failed": "Failed to change the password",
+      "account_locked": "Too many failed login attempts. The account is temporarily locked — try again in a few minutes.",
+      "too_many_attempts": "Too many attempts with this code. Request a new code and try again."
     },
     "common": {
       "invalid_enum_value": "Invalid value provided",
@@ -2390,7 +2392,9 @@
       "invalid_password_format": "Invalid password format. Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number.",
       "invalid_reset_token": "Invalid or expired password reset token",
       "same_reset_password": "New password must be different from the current password",
-      "insufficient_privileges": "You do not have permission to access the admin panel. Only administrators and employees can log in."
+      "insufficient_privileges": "You do not have permission to access the admin panel. Only administrators and employees can log in.",
+      "account_locked": "Too many failed login attempts. The account is temporarily locked — try again in a few minutes.",
+      "too_many_attempts": "Too many attempts with this code. Request a new code and try again."
     },
     "common": {
       "invalid_enum_value": "Invalid value provided",

@@ -7,6 +7,7 @@ using Cleansia.Web.Mobile.Partner.Abstractions;
 using Cleansia.Web.Mobile.Partner.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Mobile.Partner.Controllers;
 
@@ -38,6 +39,7 @@ public class EmployeeController(IMediator mediator) : MobileApiController(mediat
 
     [HttpPut("UpdateEmployee")]
     [Permission(Policy.CanUpdateCurrentEmployee)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(UpdateEmployee.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UpdateEmployee([FromBody] UpdateEmployee.Command command)
@@ -49,6 +51,7 @@ public class EmployeeController(IMediator mediator) : MobileApiController(mediat
 
     [HttpPut("UpdatePersonalInfo")]
     [Permission(Policy.CanUpdateCurrentEmployee)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(UpdatePersonalInfo.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UpdatePersonalInfo([FromBody] UpdatePersonalInfo.Command command)
@@ -59,6 +62,7 @@ public class EmployeeController(IMediator mediator) : MobileApiController(mediat
 
     [HttpPut("UpdateIdentificationInfo")]
     [Permission(Policy.CanUpdateCurrentEmployee)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(UpdateIdentificationInfo.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UpdateIdentificationInfo([FromBody] UpdateIdentificationInfo.Command command)
@@ -69,6 +73,7 @@ public class EmployeeController(IMediator mediator) : MobileApiController(mediat
 
     [HttpPut("UpdateAddressInfo")]
     [Permission(Policy.CanUpdateCurrentEmployee)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(UpdateAddressInfo.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UpdateAddressInfo([FromBody] UpdateAddressInfo.Command command)
@@ -79,6 +84,7 @@ public class EmployeeController(IMediator mediator) : MobileApiController(mediat
 
     [HttpPut("UpdateBankDetails")]
     [Permission(Policy.CanUpdateCurrentEmployee)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(UpdateBankDetails.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UpdateBankDetails([FromBody] UpdateBankDetails.Command command)
@@ -89,6 +95,7 @@ public class EmployeeController(IMediator mediator) : MobileApiController(mediat
 
     [HttpPut("UpdateEmergencyContact")]
     [Permission(Policy.CanUpdateCurrentEmployee)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(UpdateEmergencyContact.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UpdateEmergencyContact([FromBody] UpdateEmergencyContact.Command command)
@@ -99,6 +106,7 @@ public class EmployeeController(IMediator mediator) : MobileApiController(mediat
 
     [HttpPut("UpdateAvailability")]
     [Permission(Policy.CanUpdateCurrentEmployee)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(UpdateAvailability.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UpdateAvailability([FromBody] UpdateAvailability.Command command)
@@ -109,6 +117,7 @@ public class EmployeeController(IMediator mediator) : MobileApiController(mediat
 
     [HttpPost("SaveMyDocuments")]
     [Permission(Policy.CanUploadEmployeeDocument)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(SaveMyDocuments.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -131,6 +140,7 @@ public class EmployeeController(IMediator mediator) : MobileApiController(mediat
 
     [HttpDelete("DeleteMyDocument")]
     [Permission(Policy.CanDeleteEmployeeDocument)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(DeleteMyDocument.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

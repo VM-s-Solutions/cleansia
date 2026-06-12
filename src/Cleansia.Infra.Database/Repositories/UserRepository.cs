@@ -78,4 +78,51 @@ public class UserRepository(CleansiaDbContext context)
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
     }
+
+    // S7a — the lockout transition must be one atomic statement: a read-then-increment would let a
+    // distributed guessing run race past the threshold. ExecuteUpdateAsync issues SQL outside the
+    // UnitOfWork commit by design — the failing login command never commits, but the counter must
+    // still land. Both SetProperty conditions evaluate against the PRE-update row (SQL semantics),
+    // and the WHERE makes attempts during an open lockout a no-op so racing failures cannot extend it.
+    // Hitting the threshold opens the window and resets the counter, so cooldown expiry restores a
+    // fresh budget.
+    public async Task RecordFailedLoginAsync(string email, DateTimeOffset now, CancellationToken cancellationToken = default)
+    {
+        var lockoutEnd = now.Add(User.FailedLoginLockout);
+
+        await GetDbSet()
+            .Where(u => u.Email == email && (u.LockoutEndsAt == null || u.LockoutEndsAt <= now))
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(
+                    u => u.FailedLoginAttempts,
+                    u => u.FailedLoginAttempts + 1 >= User.MaxFailedLoginAttempts ? 0 : u.FailedLoginAttempts + 1)
+                .SetProperty(
+                    u => u.LockoutEndsAt,
+                    u => u.FailedLoginAttempts + 1 >= User.MaxFailedLoginAttempts ? lockoutEnd : u.LockoutEndsAt),
+                cancellationToken);
+    }
+
+    public async Task<bool> TryChargeConfirmationCodeAttemptAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        // S7a — atomic conditional increment; 0 rows affected = budget spent (no exception).
+        var rowsAffected = await GetDbSet()
+            .Where(u => u.Id == userId && u.ConfirmationCodeAttempts < User.MaxCodeVerificationAttempts)
+            .ExecuteUpdateAsync(
+                s => s.SetProperty(u => u.ConfirmationCodeAttempts, u => u.ConfirmationCodeAttempts + 1),
+                cancellationToken);
+
+        return rowsAffected > 0;
+    }
+
+    public async Task<bool> TryChargeResetPasswordCodeAttemptAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        // S7a — atomic conditional increment; 0 rows affected = budget spent (no exception).
+        var rowsAffected = await GetDbSet()
+            .Where(u => u.Id == userId && u.ResetPasswordCodeAttempts < User.MaxCodeVerificationAttempts)
+            .ExecuteUpdateAsync(
+                s => s.SetProperty(u => u.ResetPasswordCodeAttempts, u => u.ResetPasswordCodeAttempts + 1),
+                cancellationToken);
+
+        return rowsAffected > 0;
+    }
 }

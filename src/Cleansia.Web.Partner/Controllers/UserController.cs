@@ -7,6 +7,7 @@ using Cleansia.Web.Partner.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Partner.Controllers;
 
@@ -50,6 +51,7 @@ public class UserController(IMediator mediator) : ApiController(mediator)
     }
 
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     [HttpPut("RequestPasswordChange")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -61,6 +63,7 @@ public class UserController(IMediator mediator) : ApiController(mediator)
     }
 
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     [HttpPut("ChangePassword")]
     [ProducesResponseType(typeof(ChangePassword.Response), StatusCodes.Status200OK, "application/json")]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -73,6 +76,7 @@ public class UserController(IMediator mediator) : ApiController(mediator)
 
     [HttpPut("UpdateCurrentUser")]
     [Permission(Policy.CanUpdateCurrentUser)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(UpdateCurrentUser.Response), StatusCodes.Status200OK, "application/json")]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UpdateCurrentUser([FromBody] UpdateCurrentUser.Command command, CancellationToken cancellationToken)

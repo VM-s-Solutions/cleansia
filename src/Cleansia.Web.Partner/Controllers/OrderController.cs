@@ -7,6 +7,7 @@ using Cleansia.Web.Partner.Abstractions;
 using Cleansia.Web.Partner.Attributes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Cleansia.Web.Partner.Controllers;
 
@@ -40,6 +41,7 @@ public class OrderController(IMediator mediator) : ApiController(mediator)
 
     [HttpPost("TakeOrder")]
     [Permission(Policy.CanTakeOrder)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(TakeOrder.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -52,6 +54,7 @@ public class OrderController(IMediator mediator) : ApiController(mediator)
 
     [HttpPost("StartOrder")]
     [Permission(Policy.CanStartOrder)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(StartOrder.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -63,7 +66,7 @@ public class OrderController(IMediator mediator) : ApiController(mediator)
     }
 
     /// <summary>
-    /// Cleaner taps "On my way" — fires a heads-up push to the customer
+    /// Cleaner taps "On my way" ï¿½ fires a heads-up push to the customer
     /// and appends an OnTheWay status track. Optional step in the
     /// workflow (Confirmed ? OnTheWay ? InProgress); cleaner can still
     /// skip directly from Confirmed ? InProgress via StartOrder if they
@@ -71,6 +74,7 @@ public class OrderController(IMediator mediator) : ApiController(mediator)
     /// </summary>
     [HttpPost("NotifyOnTheWay")]
     [Permission(Policy.CanStartOrder)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(NotifyOnTheWay.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -83,6 +87,7 @@ public class OrderController(IMediator mediator) : ApiController(mediator)
 
     [HttpPost("CompleteOrder")]
     [Permission(Policy.CanCompleteOrder)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(CompleteOrder.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -113,6 +118,7 @@ public class OrderController(IMediator mediator) : ApiController(mediator)
 
     [HttpPost("UploadPhoto")]
     [Permission(Policy.CanUploadOrderPhoto)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(UploadOrderPhoto.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -125,6 +131,7 @@ public class OrderController(IMediator mediator) : ApiController(mediator)
 
     [HttpPost("SavePhotos")]
     [Permission(Policy.CanUploadOrderPhoto)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(SaveOrderPhotos.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -149,6 +156,7 @@ public class OrderController(IMediator mediator) : ApiController(mediator)
 
     [HttpDelete("DeletePhoto")]
     [Permission(Policy.CanDeleteOrderPhoto)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(DeleteOrderPhoto.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -161,6 +169,7 @@ public class OrderController(IMediator mediator) : ApiController(mediator)
 
     [HttpPost("AddNote")]
     [Permission(Policy.CanAddOrderNote)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(AddOrderNote.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -173,6 +182,7 @@ public class OrderController(IMediator mediator) : ApiController(mediator)
 
     [HttpPost("ReportIssue")]
     [Permission(Policy.CanReportOrderIssue)]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(ReportOrderIssue.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

@@ -989,7 +989,9 @@
       "invalid_google_token": "Neplatný Google token",
       "invalid_password_format": "Neplatný formát hesla",
       "invalid_reset_token": "Neplatný token na obnovenie hesla",
-      "same_reset_password": "Nové heslo sa zhoduje so starým heslom"
+      "same_reset_password": "Nové heslo sa zhoduje so starým heslom",
+      "account_locked": "Príliš veľa neúspešných pokusov o prihlásenie. Účet je dočasne uzamknutý — skúste to znova o niekoľko minút.",
+      "too_many_attempts": "Príliš veľa pokusov s týmto kódom. Vyžiadajte si nový kód a skúste to znova."
     },
     "common": {
       "invalid_enum_value": "Neplatná hodnota výčtu",

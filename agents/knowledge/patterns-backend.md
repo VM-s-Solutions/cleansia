@@ -193,6 +193,15 @@ expose `IQueryable` to *handlers in the same feature* via `GetQueryable()` (the 
 trust boundary, and never let a query escape tenant scope (S8). Use `.AsNoTracking()` + `.AsSplitQuery()`
 on read paths.
 
+**Failure-path counters (lockout / attempt budgets) bypass the UoW deliberately.** A security counter
+that must persist when the COMMAND FAILS (failed-login lockout, per-code attempt budget) cannot ride
+the UnitOfWork pipeline — the pipeline only commits successful `BusinessResult`s. The canonical shape
+is an **atomic conditional `ExecuteUpdateAsync`** on the repository (`WHERE counter < cap`, 0 rows =
+limit reached; mirrors `PromoCodeRepository.TryIncrementGlobalRedemptionsAsync`, S7a), invoked from
+the validator/handler that detects the failure: `UserRepository.RecordFailedLoginAsync` /
+`TryCharge*CodeAttemptAsync`. The entity keeps only the read side (`IsLockedOut(now)`) and the
+success-path resets.
+
 ## Entities (from `Core.Domain/Common/`)
 
 - `IEntity` = `{ object Id; bool IsActive; }`; `IEntity<T>` narrows `Id`/`IsActive`. IDs are strings.

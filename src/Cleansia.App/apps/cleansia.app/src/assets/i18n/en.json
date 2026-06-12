@@ -1356,6 +1356,10 @@
     "section6_text": "For privacy-related inquiries, please contact us at info@cleansia.cz or +420 739 788 108."
   },
   "api": {
+    "auth": {
+      "account_locked": "Too many failed login attempts. The account is temporarily locked — try again in a few minutes.",
+      "too_many_attempts": "Too many attempts with this code. Request a new code and try again."
+    },
     "common": {
       "unauthorized": "You are not authorized to perform this action",
       "error_occurred": "An error occurred"

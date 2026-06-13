@@ -77,8 +77,11 @@ public class HandlePaymentNotification
                 return true; // Unhandled event type — no order check needed
             }
 
+            // Tenant-ignoring existence check: the webhook is anonymous (no tenant claim), so the
+            // tenant-scoped ExistsAsync collapses to TenantId == null and would reject any non-null-tenant
+            // order — while the handler resolves it via GetByIdIgnoringTenantAsync. Mirror that read here.
             return !string.IsNullOrWhiteSpace(orderId)
-                && await _orderRepository.ExistsAsync(orderId, cancellationToken);
+                && await _orderRepository.ExistsIgnoringTenantAsync(orderId, cancellationToken);
         }
     }
 

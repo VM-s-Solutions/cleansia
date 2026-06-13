@@ -118,6 +118,13 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
+    public Task<bool> ExistsIgnoringTenantAsync(string id, CancellationToken cancellationToken)
+    {
+        return GetDbSet()
+            .IgnoreQueryFilters()
+            .AnyAsync(o => o.Id == id, cancellationToken);
+    }
+
     public Task<Order?> GetByStripePaymentIntentIdIgnoringTenantAsync(string paymentIntentId, CancellationToken cancellationToken)
     {
         // System-level read for the chargeback webhook (ADR-0006 D4): a

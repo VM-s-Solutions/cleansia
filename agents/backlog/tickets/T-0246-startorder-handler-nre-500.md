@@ -1,7 +1,7 @@
 ---
 id: T-0246
 title: "BUG: StartOrder handler NullReferenceException → 500 on validator/handler load divergence"
-status: ready
+status: done
 size: S
 owner: —
 created: 2026-06-13
@@ -97,6 +97,46 @@ line 137). This ticket is the fix.
   handler/validator load reconciliation + defensive null-guard returning a business result. Runs in
   **Batch 5A ∥ T-0245** (disjoint files — `StartOrder.cs` vs webhook validator/repo). Stale-text note
   for the implementing agent recorded in `status/sprint-7.md` §3.)
+- 2026-06-13 — **review** (backend, Batch 5A). Test-first TDD, real RED→GREEN.
+  - **RED (against current buggy code):** new `StartOrderHandlerTests.When_HandlerLoad_Returns_Null_Then_OrderNotFound_NoNre`
+    (handler load returns null where the validator's `ExistsAsync` passed) FAILED with the real defect:
+    `System.NullReferenceException : Object reference not set to an instance of an object.` at
+    `Cleansia.Core.AppServices/Features/Orders/StartOrder.cs:line 137` (`order!.StartOrder()`). The
+    happy-path test passed already (1 passed / 1 failed), proving the divergence — not a typo — was the cause.
+  - **GREEN (after fix):** both tests pass (2/2). Divergence case returns a clean
+    `BusinessResult.Failure` with `BusinessErrorMessage.OrderNotFound` (no NRE/500); happy path still
+    advances to `InProgress`. Full `Features.Orders` suite: 147/147 pass, no regression.
+  - **Production change (minimal, surgical):** `StartOrder.cs` handler — line numbers re-derived from
+    current source (the old `:137` `order!.StartOrder()` was correct). Replaced the unguarded
+    null-forgiving dereference with a defensive guard: `if (order is null) return
+    BusinessResult.Failure<Response>(new Error(nameof(command.OrderId), BusinessErrorMessage.OrderNotFound));`
+    then `order.StartOrder();`. **AC1/AC4** met (null load → clean `OrderNotFound`, never NRE/500).
+  - **AC2 reconciliation:** the handler predicate `o => o.Id == command.OrderId` already matches the
+    validator's `ExistsAsync` predicate (`BaseRepository.ExistsAsync`: `entity.Id == id`) — both run
+    `==` through the same tenant-filtered `DbSet`; `Include(...)` is a LEFT JOIN that does not drop the
+    principal row. The `ExistsAsync` `==` form was itself the documented fix that made these two paths
+    agree (vs the old `.Equals()`). So an existing, validator-approved order resolves identically on
+    both paths; no predicate change was needed (would be non-minimal), and the null-guard is the
+    belt-and-suspenders the AC asks for. **AC3** proven by `When_Order_Loads_Then_Advances_To_InProgress`.
+  - **Out-of-scope same-file-pattern scan (per ## Out of scope):** two SIBLING handlers carry the same
+    unguarded `order!`-after-load shape — `Features/Orders/NotifyOnTheWay.cs:99`
+    (`order!.AddOrderStatus(...)`) and `Features/Orders/TakeOrder.cs:190` (`order!.AddAssignedEmployee(...)`).
+    NOT touched here: outside this ticket's owned files (`StartOrder.cs` + the new test) and `TakeOrder`
+    sits in a concurrent lane. **Recommend follow-up tickets** to apply the same null-guard there.
+  - **Verification achieved:** `dotnet build`+`dotnet test` of `Cleansia.Tests.csproj` with
+    `-p:BuildProjectReferences=false --no-build` (against built dependency DLLs, host-lock trap avoided).
+    Did NOT run IntegrationTests/HostTests (unit-layer fix; orchestrator does the authoritative clean run).
+  - **Deviations:** none. No migration, no nswag-regen, no DTO/contract change. `security_touching:false`
+    holds (rejection path untouched; this is a 500-vs-clean-not-found robustness fix).
+- 2026-06-13 — **review-fix** (backend, Batch 5A). Resolved blocking review finding: ticket-ID token in
+  source. `StartOrderHandlerTests.cs:15` XML doc comment carried `(T-0215 Ac14)`, which violates the lane
+  rule (NO ticket IDs in source) and `conventions.md` ("ticket/review/issue numbers in code rot into
+  dangling pointers; traceability moves to the commit message"). Changed `validator/handler load divergence
+  (T-0215 Ac14): the` → `validator/handler load divergence: the`; the load-bearing divergence-scenario prose
+  is kept verbatim. Comment-only edit — no production/behavior change. Re-verified: `dotnet build`
+  `Cleansia.Tests.csproj -p:BuildProjectReferences=false` succeeds (0 warn/0 err); `dotnet test --no-build
+  --filter StartOrderHandlerTests` → 2/2 pass (`When_HandlerLoad_Returns_Null_Then_OrderNotFound_NoNre`,
+  `When_Order_Loads_Then_Advances_To_InProgress`). No migration, no nswag-regen.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

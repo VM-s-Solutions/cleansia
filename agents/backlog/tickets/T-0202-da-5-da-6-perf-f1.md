@@ -1,11 +1,11 @@
 ﻿---
 id: T-0202
 title: Customer disputes feature â†’ own generated client + cleansia-table/form/error archetype
-status: draft
+status: blocked
 size: M
 owner: â€”
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-13
 depends_on: [T-0196]
 blocks: []
 stories: []
@@ -158,6 +158,17 @@ to the user; we are removing the smells, not changing the contract.
 
 ## Status log
 - 2026-06-01 â€” draft (created by pm)
+- 2026-06-13 — **blocked on T-0196 + manual-step verify** (PM, Wave-5 intake / Batch **5F**, after 5C).
+  `depends_on: [T-0196]` — T-0202 owns the full rewrite of `disputes.facade.ts` (which T-0196 explicitly
+  **excludes**), rebasing on the canonical C1 base T-0196 (5C) establishes; **5C must be `done` first**.
+  Then goes `ready` in 5F. **Two pre-start gates:** (1) `manual_steps: [nswag-regen]` — the frontend dev
+  must FIRST verify the **customer** generated client already emits the dispute DTOs/enums
+  (`DisputeListItem`/`DisputeReason`/`DisputeStatus`/`CreateDisputeCommand`/`AddDisputeMessageCommand`/
+  `OrderListItem`); if any are **missing** this ticket is **held on the owner regenerating the customer
+  client** (PM never runs it). NB the standing customer-client regen (Wave-3: `DisputeReason.Chargeback`
+  + device endpoints) is still outstanding — likely the same regen unblocks this. (2) Lane-isolated:
+  sole editor of `libs/cleansia-customer-features/disputes/**` this wave. Not security-touching;
+  import-source + presentation refactor only. sprint re-tagged 5.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

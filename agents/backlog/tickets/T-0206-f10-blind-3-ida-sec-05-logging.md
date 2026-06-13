@@ -1,11 +1,11 @@
 ---
 id: T-0206
 title: "S6 logging hygiene: stop logging messageText/PII/Stripe-ids/confirmation-codes"
-status: draft
+status: ready
 size: S
 owner: —
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-13
 depends_on: []
 blocks: []
 stories: []
@@ -111,6 +111,14 @@ values, no contracts change.
 
 ## Status log
 - 2026-06-01 — draft (created by pm)
+- 2026-06-13 — **ready** (PM, Wave-5 intake / Batch **5B**). No deps. DoR met: AC1–AC6 observable
+  (characterization pins the log *event* + scalar correlation keys, never the message string), S,
+  behavior-unchanged (only PII/secret values removed from log templates above Debug). **`security_touching:
+  false` in frontmatter, but it implements the S6 security law** (stop logging confirmation codes / email /
+  Stripe ids / SendGrid body / raw queue payloads) — the PM routes a **Security advisory pass** alongside
+  the reviewer (it is a security-hygiene fix, even though it changes no auth/data-exposure control flow).
+  No migration/regen. backend + functions; touches the Functions consumers + ConfirmUserEmail + EmailService
+  log call-sites only — disjoint from other 5B files. sprint re-tagged 5.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

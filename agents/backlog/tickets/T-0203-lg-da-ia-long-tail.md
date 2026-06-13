@@ -1,11 +1,11 @@
 ﻿---
 id: T-0203
 title: B/C/D-rule deviations + wrong-source ledger + CQRS-violation reads + magic strings + swallowed catches (long tail)
-status: draft
+status: ready
 size: M
 owner: â€”
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-13
 depends_on: [T-0142]
 blocks: []
 stories: []
@@ -164,6 +164,19 @@ Confirmed live offenders (real code, verified 2026-06-01):
 
 ## Status log
 - 2026-06-01 â€” draft (created by pm)
+- 2026-06-13 — **ready** (PM, Wave-5 intake / Batch **5B**). `depends_on: [T-0142]` — T-0142 is a
+  `[SPLIT]` epic whose soft-delete children (T-0152/0153/0154) are all **`done`** (merged Wave 1), so the
+  `RegisterDevice.cs`/`UnregisterDevice.cs` files this touches are settled and the serialize-against-T-0142
+  constraint is satisfied (T-0142 is no longer an open writer). DoR met: AC1–AC9 observable, M, not
+  security-touching, mostly behavior-preserving with **two named behavior fixes** (LG-02 wrong-source
+  ledger → adds `LoyaltyEarnSource.ManualRevoke`; LG-14 swallowed catch surfaces the error). **NSwag
+  watch (AC4/AC3/AC6):** `SendSitewidePromo` gains a `Response` (B1) and device/membership handler error
+  shapes change — if any client-consumed endpoint's generated surface changes, add `manual_step:
+  nswag-regen` and hold consumers (admin/mobile actions — verify at review; the new enum value is
+  int-backed, no migration). **Lane note:** this edits `CreateMembershipCheckoutSession.cs` /
+  `CancelMembershipSubscription.cs` / `SwapMembershipPlan.cs` (LG-05 B5) — **shares
+  `CreateMembershipCheckoutSession.cs` with T-0243** → run T-0203 and T-0243 in the **same membership
+  lane (5B Lane M-Membership), serialized**, never concurrently. sprint re-tagged 5.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

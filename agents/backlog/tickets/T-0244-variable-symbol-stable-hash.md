@@ -1,7 +1,7 @@
 ---
 id: T-0244
 title: EmployeeInvoice.GenerateVariableSymbol — replace per-process GetHashCode with a deterministic stable hash
-status: draft
+status: ready
 size: S
 owner: —
 created: 2026-06-13
@@ -72,6 +72,13 @@ cross-invocation/cross-process determinism.
 
 ## Status log
 - 2026-06-13 — draft (created by pm; T-0213 carried fiscal-reference finding made a ticket — Wave-5 candidate).
+- 2026-06-13 — **ready** (PM, Wave-5 intake / Batch **5B**). Dep T-0213✓ is `done`. DoR met: AC1–AC4
+  observable (cross-process determinism via stable hash, 10-digit shape preserved, cross-invocation test
+  red-first), S, not security-touching. **Pure-logic / fiscal-reference → strict TDD (test predates
+  code) + adversarial-style money review** per the standing money lesson. `manual_steps: []` for the
+  default (stable-hash) path; **ef-migration flags ONLY if the dev chooses AC1 path-(b)
+  persist-and-never-recompute** — if so, hold at the migration boundary and flag the owner (PM never
+  runs it). Edits `EmployeeInvoice.cs` (domain) only — disjoint from other 5B files; parallel rider.)
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

@@ -1,7 +1,7 @@
 ---
 id: T-0246
 title: "BUG: StartOrder handler NullReferenceException → 500 on validator/handler load divergence"
-status: draft
+status: ready
 size: S
 owner: —
 created: 2026-06-13
@@ -89,6 +89,14 @@ line 137). This ticket is the fix.
 - 2026-06-13 — draft (created by pm; confirmed production finding from T-0215 (TC-9) Ac14, reproduced
   live on the Mobile partner host with fully tenant-consistent seed data. Filed S; ranked below the
   multi-tenant go-live blocker T-0245.)
+- 2026-06-13 — **ready** (PM, Wave-5 intake / Batch **5A**). Dep T-0215✓ is `done` (Wave 4 merged,
+  PR #77 `ee95a57f`). Owner folded this to the FRONT of Wave 5 as a priority bug. DoR met: AC1–AC4
+  observable (null load → clean `OrderNotFound`, never NRE/500; happy path advances to `InProgress`;
+  regression test red-first on `order!`), sized S, no migration/regen, `security_touching: false`
+  (rejection path unchanged; this is a 500-vs-clean-not-found robustness fix). Archetype:
+  handler/validator load reconciliation + defensive null-guard returning a business result. Runs in
+  **Batch 5A ∥ T-0245** (disjoint files — `StartOrder.cs` vs webhook validator/repo). Stale-text note
+  for the implementing agent recorded in `status/sprint-7.md` §3.)
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

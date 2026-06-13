@@ -1,11 +1,11 @@
 ---
-id: T-0200
+id: T-0247
 title: "check-consistency rule: direct Dispute.Close/Escalate/Resolve outside the transition-guard allowlist"
-status: draft
+status: ready
 size: S
 owner: —
 created: 2026-06-09
-updated: 2026-06-09
+updated: 2026-06-13
 depends_on: [T-0172, T-0174]
 blocks: []
 stories: []
@@ -52,3 +52,11 @@ should be a `check-consistency` rule rather than relying on review vigilance.
 
 - This is a tooling/enforcement follow-up, not a code-behavior change. No migration, no NSwag regen.
 - Mirror the existing rule shapes in `check-consistency.mjs`; do not invent a new rule format.
+
+## Status log
+- 2026-06-09 — draft (created by pm)
+- 2026-06-13 — **re-id'd T-0200 → T-0247** (PM, Wave-5 intake): the id `T-0200` collided with the
+  AUD-07 order-wizard ticket (`T-0200-aud-07.md`); both frontmatters read `id: T-0200`. This follow-up
+  (filed 2026-06-09, later) takes the next free id `T-0247`. File slug unchanged. Promoted to `ready`
+  for Wave 5 (Batch 5G): deps T-0172✓/T-0174✓ are `done` (Wave 3 merged). `security_touching: true`
+  (it guards the dispute state-machine writers); tooling-only, no migration/regen.

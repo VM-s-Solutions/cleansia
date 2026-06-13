@@ -1,7 +1,7 @@
 ---
 id: T-0245
 title: "BUG: Multi-tenant Stripe webhook validator/handler tenant-scope mismatch silently fails to confirm paid orders (multi-tenant GO-LIVE BLOCKER)"
-status: draft
+status: ready
 size: M
 owner: —
 created: 2026-06-13
@@ -105,6 +105,15 @@ that lets the suite seed a non-null-tenant order and prove the webhook confirms 
 - 2026-06-13 — draft (created by pm; confirmed production finding from T-0210 (TC-2/3) review +
   Security gate, verified by the Wave-4 4C webhook integration suite. Flagged a **multi-tenant
   go-live blocker** — must land before any multi-tenant onboarding, alongside T-0236.)
+- 2026-06-13 — **ready** (PM, Wave-5 intake / Batch **5A**). Dep T-0210✓ is `done` (Wave 4 merged,
+  PR #77 `ee95a57f`). Owner folded this to the FRONT of Wave 5 as a priority bug. DoR met: AC1–AC5
+  observable (order ends `Confirmed`/`Paid` once + effects once on a non-null-tenant order), sized M,
+  no migration/regen (`manual_steps: []`), `security_touching: true` → mandatory Security gate
+  (adversarial: tenant-ignoring read must still bind the write to the **order's own** tenant, never
+  widen the surface). Archetype: anonymous-webhook tenant-ignoring-read pattern (memory note
+  `tenant-ignoring-read-on-webhook-paths.md`). Runs in **Batch 5A ∥ T-0246** (disjoint files — webhook
+  validator/repo vs `StartOrder.cs`). Stale-text note for the implementing agent recorded in
+  `status/sprint-7.md` §3.)
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

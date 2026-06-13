@@ -10,6 +10,65 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
+> ## 🟢 WAVE 5 IN PROGRESS — priority bugs + consistency/quality sweep (promoted 2026-06-13)
+> **Wave 4 merged to master: PR #77 (`ee95a57f`).** Owner gave GO on Wave 5 and **folded the two
+> confirmed production bugs T-0245 + T-0246 to the FRONT** (fix first). Scope = the 2 bugs + the
+> consistency/quality sweep **T-0196…T-0206** + the 3 Wave-4 follow-ups **T-0242/T-0243/T-0244**. Full
+> sequenced plan + per-ticket stale-text deltas + lane/serialization notes: **`status/sprint-7.md`**.
+> **Branch:** all work on `feature/wave-5-consistency-bugs` (cut from `ee95a57f`), committed batch-by-batch.
+>
+> **Intake actions:** (1) **fixed an id collision** — two files claimed `id: T-0200`; the dispute-guard
+> `check-consistency` follow-up (`T-0200-da-2-followup.md`) was **re-id'd `T-0200 → T-0247`**; the AUD-07
+> order-wizard file keeps canonical `T-0200`. (2) sprint frontmatter re-tagged `3→5` on the swept tickets.
+> (3) **L-epics are NOT promoted `ready`** — they stay `draft` and the PM splits them at batch dispatch
+> (T-0196, T-0199, T-0197, and the AUD-07 L-file). (4) Opened **Q-W5-1 (blocking)** — Plus
+> free-cancellation-window direction — **gates T-0242 ONLY**; the rest of the wave proceeds.
+>
+> **Critical sequencing:** **Batch 5A = T-0245 ∥ T-0246 FIRST** (disjoint files; T-0245 is the
+> **multi-tenant GO-LIVE BLOCKER**, `security_touching`, with a non-null-tenant integration test extending
+> the T-0210 webhook suite; T-0246 = null-guard + regression). **Batch 5D = T-0199/AUD-06 runs ALONE on
+> the `CreateOrder.cs` cluster** — its acceptance gate is **T-0212's Wave-4 characterization suite staying
+> green unchanged**; nothing else touching `CreateOrder.cs` parallelizes with it. **T-0196 (5C) is the
+> base** the frontend rebuilds (T-0200, T-0202) and the perf cluster (T-0204) depend on. **Reviewer-per-
+> developer on every ticket; Security gate on T-0245** (advisory on T-0198/T-0206/T-0247); adversarial
+> money review on T-0244 (and T-0242 when unblocked); optimizer on T-0204.
+>
+> | Batch | Tickets | Parallelism / lanes |
+> |---|---|---|
+> | **5A — priority bugs (FIRST)** | **T-0245** (webhook tenant-scope, M, **sec gate**, GO-LIVE BLOCKER) ∥ **T-0246** (StartOrder NRE→500, S) | Parallel — disjoint files (webhook validator/repo vs `StartOrder.cs`). T-0245 → new non-null-tenant test in `Cleansia.IntegrationTests/.../Webhooks/`. |
+> | **5B — backend micro-fixes + long tail** | **T-0243** (XS) → **T-0203** (M) *(Lane M-Membership, serial — both edit `CreateMembershipCheckoutSession.cs`)* · **T-0244** (S, money-adv) · **T-0205** (S, backend∥mobile) · **T-0206** (S, S6 sec-advisory) · **T-0242** (S, **BLOCKED Q-W5-1**, Lane BookingPolicy) | Fan out; 2 serial lanes (M-Membership, BookingPolicy). |
+> | **5C — consistency sweep base (T-0196, L→split)** | 5 disjoint sub-streams: A* paged-query · B1 Response-wrap · B3 validator-base · C* customer facades *(excl. `disputes.facade.ts`)* · E1/E2 Android sealed states | Sub-streams concurrent; serialize only on same-file. **Base dep for 5F/5G.** |
+> | **5D — AUD-06 (T-0199, L→split) ALONE** | **T-0199** CreateOrder decomposition (a/b/c under the T-0212 net) | **LANE-ISOLATED on `CreateOrder.cs`.** No other CreateOrder writer concurrent. Gate: T-0212 stays green. |
+> | **5E — de-triplication + AddSavedAddress** | **T-0198** (M, auth/dispute/saved-address controllers + login/forgot facades, sec-advisory) · **T-0201** (M, AddSavedAddress + B9 mapper) | Separate lanes; SavedAddress controllers (T-0198) vs handlers/mappers (T-0201) disjoint but same area — one lane. |
+> | **5F — frontend rebuilds (after 5C)** | **T-0200** (AUD-07 order-wizard, L→split) ∥ **T-0202** (disputes archetype, M, **regen-verify**) | Disjoint feature folders. Both BLOCKED on T-0196 (5C). |
+> | **5G — perf cluster + tooling (after 5C)** | **T-0204** (M, **ef-migration**, optimizer, BLOCKED on T-0196) ∥ **T-0247** (S, check-consistency rule, sec) | Parallel. T-0204 internal fan-out one dev/reviewer per repo group. |
+> | **5H — mobile ApiResult<T> (T-0197, L→split) — DEFER-CANDIDATE** | **T-0197** (architect ADR-first; one serial child per customer-app repo) | **Recommend defer to Wave 6** (owner call, sprint-7 §4.2). |
+>
+> | ID | Title | Size | Status | Batch | Layers | sec | manual_step |
+> |----|-------|------|--------|-------|--------|-----|-------------|
+> | T-0245 ⚠️ GO-LIVE BLOCKER | Multi-tenant webhook validator/handler tenant-scope mismatch | M | **ready** | 5A | backend | **yes** | — |
+> | T-0246 | StartOrder handler NRE→500 on load divergence | S | **ready** | 5A | backend | no | — |
+> | T-0243 | CheckoutSession `nameof(Command)`→`nameof(userId)` B5 | XS | **ready** | 5B | backend | no | — |
+> | T-0244 | `GenerateVariableSymbol` deterministic stable hash | S | **ready** | 5B | backend | no (money-adv) | ef-migration* |
+> | T-0205 | Remove dead/unsafe code (Handlebars/SendGrid/FCM/scrap) | S | **ready** | 5B | backend, mobile | no | — |
+> | T-0206 | S6 logging hygiene (no PII/secrets in logs) | S | **ready** | 5B | backend, functions | no (advisory) | — |
+> | T-0203 | LG/DA/IA long tail (B5/B1/CQRS/magic-strings/swallowed catch) | M | **ready** | 5B | backend, frontend | no | nswag-regen* |
+> | T-0242 | Cancellation-fee Plus free-window override direction | S | **blocked (Q-W5-1)** | 5B | backend | no (money-adv) | — |
+> | T-0196 | Mechanical consistency canonicalization sweep (A*/B1/B3/C*/E1/E2) | **L** | **draft (split)** | 5C | backend, frontend, android | no | nswag-regen* |
+> | T-0199 | AUD-06: decompose CreateOrder god-handler | **L** | **draft (split)** | 5D | backend | no | — |
+> | T-0198 | De-triplicate Dispute/SavedAddress/Auth controllers + login/forgot facades | M | **ready** | 5E | backend, frontend | no (advisory) | — |
+> | T-0201 | Decompose AddSavedAddress god-method + B9 mapper | M | **ready** | 5E | backend | no | — |
+> | T-0200 | AUD-07: split order-wizard god-facade + C3 pipe | **L** | **blocked (T-0196)** | 5F | frontend | no | — |
+> | T-0202 | Customer disputes → own client + cleansia-table/form/error | M | **blocked (T-0196 + regen-verify)** | 5F | frontend | no | nswag-regen* |
+> | T-0204 | PERF cluster: indexes, tracked reads, eager Includes, projection-before-order | M | **blocked (T-0196)** | 5G | backend, db | no (optimizer) | **ef-migration** |
+> | T-0247 | check-consistency rule: Dispute state-write allowlist *(re-id'd from T-0200)* | S | **ready** | 5G | backend, tooling | yes | — |
+> | T-0197 | Migrate customer-app repos to `ApiResult<T>` (mobile) | **L** | **draft (split, ADR-first)** | 5H (defer) | architect, android, ios | no | — |
+>
+> \* `nswag-regen`/`ef-migration` fire **only if** the diff actually changes a generated-client surface or
+> schema (T-0196 B1 / T-0203 SendSitewidePromo+device-error / T-0202 customer-client / T-0244 persist-path)
+> — the dev confirms at review; the PM adds the flag + holds consumers only then. **Owner manual steps this
+> wave:** T-0204 ef-migration (4 indexes, CONCURRENTLY); see sprint-7 §4.3.
+>
 > ## ✅ WAVE 4 COMPLETE — tests + accessibility (11 of 11 done 2026-06-13)
 > **Wave 3 merged to master: PR #76 (`05bf567a`).** Owner gave the go signal; Wave 4 = the test+a11y
 > block **T-0210…T-0218** + carried **T-0179** (LG-07, not built in Wave 3) + **T-0235** (the T-0194

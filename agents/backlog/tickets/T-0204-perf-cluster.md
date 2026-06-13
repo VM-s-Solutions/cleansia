@@ -1,11 +1,11 @@
 ﻿---
 id: T-0204
 title: "Performance: missing indexes (address dedup, membership/referral), tracked reads, eager Includes, projection-before-order"
-status: draft
+status: blocked
 size: M
 owner: â€”
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-13
 depends_on: [T-0142, T-0196]
 blocks: []
 stories: []
@@ -253,6 +253,20 @@ The findings, grouped by smell, with file:line grounding:
 
 ## Status log
 - 2026-06-01 â€” draft (created by pm)
+- 2026-06-13 — **blocked on T-0196** (PM, Wave-5 intake / Batch **5G**, after 5C). `depends_on:
+  [T-0142, T-0196]`: T-0142's children are `done` (so AC3's Device `(IsActive, LastActiveAt)` index is
+  unblocked), but **T-0196 (5C) is not yet done** — PERF-D2's lightweight `GetForUpdateAsync` swap rebases
+  on the **post-T-0196 `UpdateDisputeStatus.cs`** (TICKET-MAP: T-0196 B1-wrap → T-0204 PERF-D2). Holds
+  until 5C lands, then goes `ready` in 5G. **Carries `manual_steps: [ef-migration]`** — four new indexes
+  (Addresses composite, UserMembership `(Status, CurrentPeriodEnd)`, GdprRequest `CreatedOn`, Devices
+  `(IsActive, LastActiveAt)`) in **one** migration the **owner** builds (`CONCURRENTLY` on populated
+  tables) — Claude does NOT run it; AC8 holds the ticket at the migration boundary. **Optimizer gate
+  applies** (PERF-IDA-02 critical + LG-PERF-01 booking hot path) — invoke optimizer before QA. AC6
+  (GdprRequest order-before-page) is a **latent-correctness fix → flag to owner**. Internal fan-out: one
+  dev+reviewer per repo group (dispute / loyalty-referral / user-identity / address+membership-index),
+  never two on the same repo file; the 4 EF-config edits land in one serialized migration. `CreateOrder.cs`
+  is **not** edited here — but if a loyalty/membership read-variant needs a one-line call-site change there,
+  serialize behind T-0199 (5D). sprint re-tagged 5.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

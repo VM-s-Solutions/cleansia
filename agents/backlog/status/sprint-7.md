@@ -1,0 +1,305 @@
+# Sprint 7 — Wave 5 plan (priority bugs + consistency/quality sweep)
+
+- **Date:** 2026-06-13
+- **Goal:** Sequence and execute **Wave 5**: the two folded-front production bugs **T-0245 / T-0246**
+  first, then the consistency/quality sweep **T-0196…T-0206** (the original Wave-5 core), plus the 3
+  Wave-4 follow-ups **T-0242 / T-0243 / T-0244** fitted into the sweep where they belong.
+- **Status:** **READY — promoted 2026-06-13.** Owner gave the GO on Wave 5 with an explicit instruction:
+  fold T-0245 + T-0246 to the FRONT (fix first). Batch breakdown below.
+- **Branch:** all Wave-5 work goes on **one feature branch `feature/wave-5-consistency-bugs`** cut from
+  current `master` (**`ee95a57f`**, Wave 4 / PR #77), committed **batch-by-batch**. PM never merges; the
+  PR to `master` is the owner's call.
+
+---
+
+## 0. Pre-flight reconciliation (verified against the repo, 2026-06-13)
+
+- **Wave 4 merged:** `master` tip = **`ee95a57f`** ("Feature/wave 4 tests a11y (#77)"). All Waves 0–4
+  are `done`. Every Wave-5 ticket's `depends_on` resolves against merged reality (table in §1).
+- **Wave-4 left a green safety net Wave 5 leans on hard:**
+  - **T-0212** (CreateOrder characterization, 20 cases) — the **acceptance gate** for T-0199/AUD-06.
+  - **T-0210** (webhook integration suite, `Cleansia.IntegrationTests/Features/Payments/Webhooks/`) — the
+    home for T-0245's new **non-null-tenant** webhook test.
+  - **T-0215** (cross-tenant/cross-user write-path, `Cleansia.HostTests` `Ac*` family) — the suite that
+    reproduced T-0246; its `Ac14` happy-leg can finally go end-to-end once T-0246 lands.
+  - **T-0211** (`CancellationFeeRateBoundaryTests`) — pins the behavior T-0242 must re-flip.
+  - **T-0213** (`EmployeeInvoiceEntityTests`) — pins the within-run determinism T-0244 extends to
+    cross-invocation.
+- **ID-collision fixed at intake:** two ticket files both claimed `id: T-0200` — the AUD-07 order-wizard
+  ticket (`T-0200-aud-07.md`, created 2026-06-01) and the dispute-guard `check-consistency` rule
+  (`T-0200-da-2-followup.md`, created 2026-06-09). The later follow-up was **re-id'd `T-0200 → T-0247`**
+  (file slug unchanged). The AUD-07 file keeps the canonical `T-0200`.
+- **`sprint:` frontmatter** re-tagged to `5` on the swept tickets (was `3` on the T-0196…T-0206 set, the
+  original audit numbering).
+- **Carried owner items still standing (unchanged):** T-0159 rotate-mapbox-token (live exposure);
+  customer nswag-regen (`DisputeReason.Chargeback` + device endpoints) — **this one likely also unblocks
+  T-0202**; IMP-1 Google OAuth ClientId; DE/AT/ES fiscal go-live gates; T-0236 (multi-tenant token-revoke
+  asymmetry) **must land before multi-tenant onboarding, alongside T-0245**.
+
+---
+
+## 1. Scope — the Wave-5 tickets (16: 2 bugs + 11 sweep + 3 follow-ups)
+
+L-sized epics are **NOT promoted to `ready`** — they stay `draft` and the PM splits them at batch
+dispatch (the lifecycle "no L runs" rule). Their child S/M tickets get reviewer-per-developer like any
+other.
+
+| ID | Title (short) | Size | Batch | Layers | depends_on (✓=done) | status | sec gate | manual_step |
+|----|---------------|------|-------|--------|---------------------|--------|----------|-------------|
+| **T-0245** ⚠️ GO-LIVE BLOCKER | Multi-tenant webhook validator/handler tenant-scope mismatch | M | **5A** | backend | T-0210✓ | **ready** | **YES** | — |
+| **T-0246** | StartOrder handler NRE→500 on load divergence | S | **5A** | backend | T-0215✓ | **ready** | no | — |
+| **T-0243** | CheckoutSession `nameof(Command)`→`nameof(userId)` B5 | XS | **5B** | backend | T-0179✓ | **ready** | no | — |
+| **T-0244** | `GenerateVariableSymbol` deterministic stable hash | S | **5B** | backend | T-0213✓ | **ready** | no (money-adv.) | ef-migration *(only if persist-path chosen)* |
+| **T-0205** | Remove dead/unsafe code (Handlebars/SendGrid/FCM/scrap) | S | **5B** | backend, mobile | T-0144✓ | **ready** | no | — |
+| **T-0206** | S6 logging hygiene (no PII/secrets in logs) | S | **5B** | backend, functions | — | **ready** | no (sec-advisory) | — |
+| **T-0203** | LG/DA/IA long tail (B5/B1/CQRS/magic-strings/swallowed catch) | M | **5B** | backend, frontend | T-0142✓(children) | **ready** | no | nswag-regen *(verify)* |
+| **T-0242** | Cancellation-fee Plus free-window override direction | S | **5B** | backend | T-0211✓ | **blocked** (Q-W5-1) | no (money-adv.) | — |
+| **T-0196** | Mechanical consistency canonicalization sweep (A*/B1/B3/C*/E1/E2) | **L** | **5C** | backend, frontend, android | — | **draft (split)** | no | nswag-regen *(B1 watch)* |
+| **T-0198** | De-triplicate Dispute/SavedAddress/Auth controllers + login/forgot facades | M | **5E** | backend, frontend | — | **ready** | no (sec-advisory) | — |
+| **T-0201** | Decompose AddSavedAddress god-method + B9 mapper de-triplication | M | **5E** | backend | T-0150✓ | **ready** | no | — |
+| **T-0199** | AUD-06: Decompose CreateOrder god-handler | **L** | **5D** | backend | T-0118✓ | **draft (split)** | no | — |
+| **T-0200** | AUD-07: Split order-wizard god-facade + C3 pipe | **L** | **5F** | frontend | T-0196 | **blocked** (T-0196) | no | — |
+| **T-0202** | Customer disputes → own client + cleansia-table/form/error archetype | M | **5F** | frontend | T-0196 | **blocked** (T-0196 + regen-verify) | no | nswag-regen *(verify)* |
+| **T-0204** | PERF cluster: indexes, tracked reads, eager Includes, projection-before-order | M | **5G** | backend, db | T-0142✓, T-0196 | **blocked** (T-0196) | no (optimizer) | **ef-migration** |
+| **T-0247** | check-consistency rule: direct Dispute.Close/Escalate/Resolve allowlist | S | **5G** | backend, tooling | T-0172✓, T-0174✓ | **ready** | yes (guards state machine) | — |
+| **T-0197** | Migrate customer-app repos to `ApiResult<T>` (mobile) | **L** | **5H** (defer-candidate) | architect, android, ios | — | **draft (split, ADR-first)** | no | — |
+
+**Counts:** ready **9** (T-0245, T-0246, T-0243, T-0244, T-0205, T-0206, T-0203, T-0198, T-0201, T-0247 →
+**10** actually), draft-split-required **4** (T-0196, T-0199, T-0197 + the AUD-07 file's L-split),
+blocked **3** (T-0242 on Q-W5-1; T-0200/T-0202/T-0204 on T-0196). (T-0200 is L *and* blocked.)
+
+---
+
+## 2. Batches, parallelism, shared-file lanes
+
+**Strict wave-internal ordering only where a real edge or shared file forces it.** The two bugs run
+first and alone-enough to ship a hotfix; the sweep then fans out by shared-file lane.
+
+### Batch 5A — the two folded-front production bugs. **FIRST. 2 tickets, parallel.**
+T-0245 and T-0246 touch **disjoint files** — no collision, run concurrently.
+
+| Ticket | Dev | Reviewer | Extra gates | Lane / files |
+|---|---|---|---|---|
+| **T-0245** (M, GO-LIVE BLOCKER) | backend | yes (concurrent) | **Security gate (mandatory)** + qa | `HandlePaymentNotification.Validator` + `IOrderRepository`/`BaseRepository.ExistsAsync` (add tenant-ignoring existence read) + new **non-null-tenant** test in `Cleansia.IntegrationTests/.../Webhooks/`. **Lane I1** (shared IntegrationTests fixtures) — but T-0246 is in `HostTests`/unit, no overlap. |
+| **T-0246** (S) | backend | yes | qa | `StartOrder.cs` (null-guard + reconcile handler load with validator) + regression test. Disjoint from T-0245. |
+
+Recommended dispatch: **5A first**, both in parallel, each with its reviewer; T-0245 also gets the
+Security gate (adversarial: the tenant-ignoring read must bind the write to the **order's own** tenant,
+never widen the surface). A hotfix PR for 5A alone is the owner's option after both are green.
+
+### Batch 5B — independent backend/functions micro-fixes + the long tail. Fan out, with 2 serialized lanes.
+All can run after (or alongside) 5A. **Two intra-batch serialization lanes:**
+- **Lane M-Membership** — `CreateMembershipCheckoutSession.cs` is edited by **both T-0243** (B5 rename)
+  and **T-0203** (LG-05 B5 across the membership handlers). **Serialize T-0243 → T-0203** (or fold the
+  T-0243 one-liner into T-0203's membership pass — PM's call at dispatch); never concurrent.
+- **Lane BookingPolicy** — **T-0242** (when unblocked) is the sole editor of `BookingPolicy.cs` +
+  `CancellationFeeRateBoundaryTests.cs`. No other 5B ticket touches it.
+
+| Ticket | Dev | Reviewer | Extra gates | Parallel with |
+|---|---|---|---|---|
+| T-0243 (XS) | backend | yes | qa-light | 5B (Lane M-Membership: before T-0203) |
+| T-0203 (M) | backend (+ promo facade) | yes | qa; **nswag-regen verify** (AC4 SendSitewidePromo Response, device/membership error shapes) | 5B (Lane M-Membership: after T-0243) |
+| T-0244 (S) | backend | yes | **adversarial money review** (fiscal ref); ef-migration *only if persist-path* | all of 5B (edits `EmployeeInvoice.cs`) |
+| T-0205 (S) | backend ∥ mobile | yes | qa-light | all of 5B (4 disjoint surfaces) |
+| T-0206 (S) | backend (+ functions) | yes | **Security advisory** (S6) + qa | all of 5B |
+| T-0242 (S) | backend | yes | **adversarial money review** | **HELD on Q-W5-1**; unblocks into 5B Lane BookingPolicy |
+
+### Batch 5C — the mechanical consistency sweep (T-0196, **L → split first**). The base layer.
+T-0196 is the **dependency for 5D-adjacent consumers** (T-0200, T-0202, T-0204 build on its C1 base /
+B1 `UpdateDisputeStatus` wrap). The PM splits it into independent cluster sub-streams, run as disjoint
+lanes with a reviewer per developer:
+- **5C.A** — A* backend paged-query (PromoCodes/Referrals/PayConfigs/Services) — disjoint Features folders.
+- **5C.B** — B1 backend Response-wrap (CreateDispute/UpdateDisputeStatus/DeleteSavedAddress). **NSwag
+  watch:** prefer wire-compatible Response shapes; if a generated response *type* changes, add
+  `manual_step: nswag-regen` and hold consumers.
+- **5C.C** — B3 backend validator-base (PayConfig/PayPeriod/Employee/CurrentUser validators).
+- **5C.D** — C* customer frontend facades (order-wizard/recurring/rewards/fiscal-failures/invoices/
+  partner-orders) — **excludes `disputes.facade.ts`** (owned by T-0202).
+- **5C.E** — E1/E2 Android sealed states (partner + customer ViewModels).
+The 5 sub-streams touch disjoint files and run **concurrently**; serialize only if any two land in the
+same file. Each is S/M with its own characterization test (behavior-unchanged net).
+
+### Batch 5D — AUD-06 CreateOrder decomposition (T-0199, **L → split**). **RUNS ALONE on `CreateOrder.cs`.**
+**The big, risky, lane-isolated ticket.** Split into (a) address-resolution+serviced-area collaborator,
+(b) promo-application collaborator, (c) payment-side-effect dispatcher + late-referral + handler
+slim-down — each landing under the **T-0212 characterization net**. **Acceptance gate: T-0212 stays green
+unchanged through every sub-step.** **No other ticket touching `CreateOrder.cs` runs concurrently** (and
+T-0204's loyalty read-variant, if it needs a call-site touch in `CreateOrder.cs`, serializes behind 5D).
+5D can run in parallel with 5B/5C/5E since none of those edit `CreateOrder.cs`.
+
+### Batch 5E — de-triplication + AddSavedAddress decomposition. 2 tickets, separate lanes.
+- **T-0198** — exclusive surface (3 login handlers, 5 AuthControllers, Dispute/SavedAddress controllers
+  ×3, 4 login/forgot facades). **Security advisory** (auth surface + admin-password-complexity
+  alignment + 2 swallowed-error bug fixes). Must NOT touch host auth registration (BSP-1/T-0100) or
+  `disputes.facade.ts` (T-0202).
+- **T-0201** — SavedAddress **feature handlers** (AddSavedAddress/UpdateSavedAddress/GetSavedAddresses +
+  new Mappers). **Lane SavedAddress:** T-0198 touches the SavedAddress **controllers**, T-0201 the
+  **handlers/mappers** — disjoint files, but both in the SavedAddress area; keep them in one lane and do
+  not let them race on a shared file. T-0203's device/GDPR handlers are disjoint from both.
+
+### Batch 5F — the two frontend god-unit/archetype rebuilds. **After 5C (T-0196) lands.** 2 tickets.
+- **T-0200** (AUD-07, L → split) — sole editor of `libs/cleansia-customer-features/order-wizard/**`.
+- **T-0202** (M) — sole editor of `libs/cleansia-customer-features/disputes/**`; **gated on the customer
+  nswag-regen verify** (the dev confirms the customer client emits the dispute DTOs/enums; if missing,
+  hold on the owner regen — likely the same outstanding Wave-3 customer regen).
+Disjoint feature folders → T-0200 ∥ T-0202 once both are unblocked.
+
+### Batch 5G — the perf cluster + the tooling rule. **After 5C (T-0196) lands** (PERF-D2 rebases on the
+B1 `UpdateDisputeStatus`). 2 tickets.
+- **T-0204** (M) — **carries `ef-migration`** (4 indexes, owner builds CONCURRENTLY; held at the
+  migration boundary). **Optimizer gate** (PERF-IDA-02 critical + LG-PERF-01 booking hot path). AC6
+  GdprRequest order-before-page is a **latent-correctness fix → flag to owner**. Internal fan-out: one
+  dev+reviewer per repo group (dispute / loyalty-referral / user-identity / address+membership-index).
+- **T-0247** (S) — `check-consistency.mjs` rule (Dispute state-machine writer allowlist).
+  `security_touching: true` (guards the T-0172 transition graph). Tooling-only; parallel with T-0204.
+
+### Batch 5H — the mobile `ApiResult<T>` migration (T-0197, **L → split, ADR-first**). **DEFER-CANDIDATE.**
+Lowest priority: a large cross-app mobile refactor, **no go-live/money pressure**, needs an architect ADR
++ a `:core` type move + one serial child per customer-app repo. **Recommend deferring to a Wave-6 mobile
+slice** (owner sequencing call, §4). If kept in Wave 5, it runs last and entirely in its own lane.
+
+### Commit cadence
+One commit per batch on `feature/wave-5-consistency-bugs` (5A may land as its own early commit / hotfix
+PR option). PM never merges; the PR to `master` is the owner's call.
+
+---
+
+## 3. Stale-ticket-text deltas (merged Waves-1…4 reality the implementing agents MUST be told)
+
+The sweep ticket bodies were written 2026-06-01 (the bug + follow-up tickets 2026-06-13). Corrections:
+
+- **T-0245:** (1) `HandlePaymentNotification.cs` was changed by **T-0174** (chargeback
+  `LinkStripeDispute`) — cited line refs are stale; re-derive. (2) The dispatch substrate is the
+  **durable outbox** (T-0157/T-0158) + **ADR-0010** in force alongside ADR-0002 — AC2's "effects fire
+  once" must assert at the **current** post-commit dispatch seam (outbox rows), not a raw
+  `IQueueClient.SendAsync`. (3) The **T-0210** suite **exists** and deliberately seeds single-tenant to
+  dodge this bug — extend it to seed a **non-null-tenant** order; consume `PostgresContainerFixture`/
+  `BaseIntegrationTest`. (4) citext columns need `EnableUnmappedTypes` — already fixed in
+  `DbContextBindingExtensions`; the container suite exercises it. (5) The fix is the **memory pattern**
+  `tenant-ignoring-read-on-webhook-paths.md`: tenant-ignoring existence read, then set the tenant override
+  from the resolved order before the confirm/paid write.
+- **T-0246:** `StartOrder.cs:137` / `:45` line refs may have drifted (Waves 1–4 touches) — re-derive
+  against current master. T-0215's `Ac14` (in `Cleansia.HostTests`) proved the bug on the Mobile partner
+  host with tenant-consistent seed; its happy-leg currently routes through `TakeOrder` to dodge the NRE —
+  the regression test home is the same suite family.
+- **T-0196:** the consistency baseline + canonical forms are unchanged, but Waves 2–3 **added** handlers
+  in the touched Features folders (refund/dispute/payroll/catalog) — re-derive the exact A*/B1/B3 hit
+  list from current source before splitting; `disputes.facade.ts` is **excluded** (T-0202 owns it).
+- **T-0198:** `BusinessErrorMessage.cs` grew in Waves 2–3 (refund/chargeback/payroll/catalog/lockout) —
+  the IA-6 password/email single-source-of-truth must be derived from **current** validators; the admin
+  weak-password divergence is still the target. Host auth registration is BSP-1/T-0100's surface — do NOT
+  touch it. The 5 AuthControllers gained Wave-3 endpoints; the shared base must preserve every host's
+  current attributes verbatim.
+- **T-0199 (AUD-06):** line numbers drifted (Wave-1/2 touches). The Cash-branch enqueue is the
+  **post-commit dispatch / outbox** seam (T-0118), **not** a raw `IQueueClient.SendAsync` in the handler —
+  keep T-0118's shape; rebase on post-Wave-4 master. **T-0212 is the green net (Wave 4 shipped it) — it
+  must stay green unchanged.**
+- **T-0200 (AUD-07):** the god-facade is **977 lines** today (title says 1048 — drifted post-Wave-0).
+  T-0218 (Wave-4 a11y) already touched the order-wizard **markup/components** — verify no merge surprise,
+  but the facade is this ticket's surface and was not refactored by T-0218.
+- **T-0201:** depends on **T-0150✓ (done)** — consume the named `"CZE"`/geo/length constants; do NOT
+  re-introduce them. The triplicated inline `SavedAddressDto` projection is in AddSavedAddress /
+  UpdateSavedAddress / GetSavedAddresses — verify the line refs against current master.
+- **T-0202:** the **customer** generated client must already emit the dispute DTOs/enums — **verify FIRST**;
+  if missing, hold on the owner regen (the outstanding Wave-3 customer regen for `DisputeReason.Chargeback`
+  + device endpoints is likely the same unblock). Depends on T-0196's C1 base.
+- **T-0203:** T-0148 (tier-threshold `Reason`) and T-0176 (referral wiring) touched `RevokePointsManually.cs`
+  /loyalty in different regions — sequence after them (done) and rebase. The device handlers
+  (`RegisterDevice`/`UnregisterDevice`) were soft-deleted by T-0142's children (done) — touch only the
+  exception/magic-string smell, not delete semantics. The new `LoyaltyEarnSource.ManualRevoke` is an int
+  enum value → **no migration**.
+- **T-0204:** the dispute write handlers were changed by T-0172 (transition guard) and T-0173 (admin
+  management) — PERF-D2's `GetForUpdateAsync` rebases on the **post-DA-2 / post-T-0196 B1** handler. The
+  Wave-0 perf indexes (User.Email etc., T-0124) are done — don't re-touch them. `database.md` is flagged
+  stale — index per the real columns.
+- **T-0205:** **T-0144 (done)** routed Stripe/SendGrid through `IHttpClientFactory` — confirm whether it
+  already collapsed the dead `SendGridClientFactory.SendTemplateEmailAsync`; if so, reconcile rather than
+  re-delete (AC2). The 13-file Android scrap tree + Handlebars engine + FCM log-spam are independent.
+- **T-0206:** the Functions consumers were reshaped across Waves 0–3 (T-0118/0157/0181/0182/0184) — the
+  `messageText`-logging call-sites may have moved; re-derive the exact lines. Assert the log **event +
+  scalar keys**, never the message string.
+- **T-0242/0243/0244:** current (filed 2026-06-13). T-0242 is **held on Q-W5-1** (owner product decision).
+  T-0244: confirm no current code recomputes the variable symbol from stored invoices before choosing the
+  persist-and-never-recompute path (which would add a migration).
+- **T-0247:** filed 2026-06-09 (re-id'd from T-0200). Deps T-0172✓/T-0174✓ done — the three sanctioned
+  writers (`Dispute.UpdateStatus`, `ResolveDispute.Handler`, `HandlePaymentNotification.ReflectChargebackStatus`)
+  are the current allowlist; verify the rule is green on current master before wiring it into the run.
+
+---
+
+## 4. Owner items
+
+### 4.1 Blocking question (gates ONE ticket; not the wave)
+- **Q-W5-1 (blocking: yes)** — Plus-membership free-cancellation-window direction. **Gates T-0242 only.**
+  T-0242 is held `blocked`; every other Wave-5 ticket proceeds. Recommended resolution: path (b) (invert
+  override semantics in `BookingPolicy`), but the owner's product intent decides. See `questions/open.md`.
+
+### 4.2 Sequencing call (PM recommendation)
+- **Defer T-0197** (mobile `ApiResult<T>` migration, L) to a **Wave-6 mobile slice**. It is a large
+  cross-app refactor with no go-live/money pressure and needs its own architect ADR; keeping it in Wave 5
+  stretches the wave for low marginal value. Confirm or keep-in-scope.
+
+### 4.3 Manual steps flagged this wave (owner-only — PM never runs)
+- **T-0204:** `ef-migration` — 4 new indexes (Addresses composite; UserMembership `(Status,
+  CurrentPeriodEnd)`; GdprRequest `CreatedOn`; Devices `(IsActive, LastActiveAt)`) in one migration, built
+  `CONCURRENTLY` on populated tables. Ticket held at the migration boundary (AC8).
+- **T-0244:** `ef-migration` **only if** the dev chooses AC1 path-(b) persist-and-never-recompute; the
+  default stable-hash path needs none.
+- **T-0202:** `nswag-regen` (customer client) **if** the dispute DTOs/enums are missing from the generated
+  client — likely satisfied by the still-outstanding Wave-3 customer regen.
+- **T-0196 (B1) / T-0203 (SendSitewidePromo Response + device/membership error shapes):** `nswag-regen`
+  **only if** the OpenAPI response type actually changes — prefer wire-compatible shapes; the dev confirms
+  the OpenAPI diff at review and the PM adds the flag + holds consumers only if it changes.
+
+### 4.4 Latent-correctness fixes to surface to the owner
+- **T-0204 / PERF-IDA-06** — `GetAllGdprRequests` currently orders **after** paging (wrong page contents
+  on an Article-30 compliance surface). The fix corrects it; called out as a behavior-correcting change,
+  not a silent one.
+
+### 4.5 Standing carry-forwards (unchanged, owner-tracked)
+T-0159 rotate-mapbox-token (live exposure) · customer nswag-regen (Wave-3 residual) · IMP-1 Google OAuth
+ClientId · CZ Stripe-fee figures · DE/AT/ES fiscal go-live gates (Q-REFUND-01/ADR-0009 D7) · Q-REFUND-03
+per-bundle weights · Q-W3-4 dispute-resolve-on-refund-failure UX · **T-0236 (multi-tenant token-revoke
+asymmetry) must land before multi-tenant onboarding — alongside T-0245.**
+
+---
+
+## 5. Definition of "Wave 5 done"
+
+All in-scope tickets `done`: every AC has named-test / migration-metadata / log-event / reviewer
+evidence; reviewer approved each (Security gate reconciled on **T-0245** + advisory on T-0198/T-0206/
+T-0247; adversarial money review on T-0244 and T-0242-when-unblocked; optimizer on T-0204); QA recorded;
+`dotnet build` + `dotnet test` (Cleansia.Tests, IntegrationTests, HostTests) green on the branch, the
+touched `nx` projects build/lint/test green, **T-0212 stays green through T-0199**, and
+`check-consistency.mjs` reports no new violation for every touched area; every owner manual-step is
+flagged-and-confirmed (no migration/regen run by an agent); INDEX.md + this doc match reality. The two
+L-epics (T-0196, T-0199) and the AUD-07 L-file are `done` only via their split children. T-0242 is `done`
+only after Q-W5-1; T-0197 is `done`, deferred, or descoped per §4.2. PR to `master` is the owner's call.
+
+---
+
+## 6. Explicitly NOT in Wave 5
+
+- **T-0233/T-0234** (lockout-DoS, ChangeOwnPassword bound), **T-0236** (multi-tenant token-revoke — must
+  precede multi-tenant onboarding), **T-0237/0238/0239/0240/0241** — Wave-3 security/quality follow-ups,
+  stay `draft`; sequence at a later wave (T-0236 before multi-tenant onboarding, with T-0245).
+- The owner manual steps themselves (migrations, regens) — flagged, never run.
+- Any new feature behavior — Wave 5 is bug-fix + consistency/quality only (plus the two named behavior
+  fixes inside T-0203 and the T-0242 product-correction once unblocked).
+
+---
+
+## Status log
+- 2026-06-13 — Wave-5 plan drafted + promoted (PM). Verified master `ee95a57f` (Wave 4 / PR #77); every
+  Wave-5 ticket's `depends_on` resolved against merged Waves 0–4. **Folded T-0245 + T-0246 to the FRONT
+  as Batch 5A** (parallel, disjoint files; T-0245 Security-gated + non-null-tenant integration test in the
+  T-0210 suite; T-0246 null-guard + regression). **Fixed an id collision** (two files claimed `T-0200`;
+  re-id'd the dispute-guard follow-up `T-0200 → T-0247`). Sequenced the sweep into 5B (independent
+  micro-fixes + long tail) → 5C (T-0196 L-split base) → 5D (T-0199 AUD-06, **lane-isolated on
+  `CreateOrder.cs`, gated by T-0212 staying green**) → 5E (de-triplication + AddSavedAddress) → 5F (the two
+  frontend rebuilds, after T-0196) → 5G (perf cluster + the tooling rule, after T-0196) → 5H (T-0197 mobile
+  migration, **defer-candidate**). Promoted **10 ready**, held **4 draft (L-split required: T-0196/T-0199/
+  T-0197 + the AUD-07 file)**, **4 blocked** (T-0242 on Q-W5-1; T-0200/T-0202/T-0204 on T-0196). Opened
+  **Q-W5-1 (blocking, gates T-0242 only)**. Stale-text deltas in §3 for the implementing agents; owner
+  items (Q-W5-1, defer-T-0197 recommendation, 3 manual-step flags, the GDPR latent-correctness fix) in §4.
+  No code/commits/branch ops by the PM (backlog bookkeeping only).

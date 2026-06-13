@@ -219,6 +219,39 @@ _No open Wave-1 *planning* questions remain._
   UI display). Answering here or approving T-0238 are the same decision.
 - Answer: _(owner fills in)_
 
+---
+
+## Wave-5 planning questions (2026-06-13) — raised by PM sequencing Wave 5 (`status/sprint-7.md`)
+
+> Wave 5 = the two folded-front production bugs (T-0245/T-0246) + the consistency/quality sweep
+> (T-0196…T-0206) + 3 Wave-4 follow-ups (T-0242/T-0243/T-0244). One genuine pre-build owner product
+> decision surfaced (Q-W5-1). It gates **only T-0242** — the rest of Wave 5 proceeds.
+
+### Q-W5-1 — [blocking: yes — gates T-0242 ONLY; not the rest of Wave 5] Plus-membership free-cancellation-window direction
+- Raised by: pm (T-0242 / carried T-0211 TC-7 finding)
+- Date: 2026-06-13
+- Question: `BookingPolicy.CalculateCancellationFeeRate` treats `freeCancellationHoursOverride` as a
+  **literal replacement** of `FreeCancellationHours` in the `h >= freeWindow` test, so a **larger**
+  override makes the free window **stricter** (customer must cancel *earlier* to be free). The Plus path
+  (`CancellationPolicyResolver`) passes a **larger** override (e.g. `48`), which by this code makes Plus
+  members' free window *less* generous — contradicting the doc/intent that "Plus = more generous". Which
+  is the intended product behavior, and which fix: **(a)** pass a *smaller* override on the Plus path so
+  the existing literal-replacement semantics widen the free window, or **(b)** *invert* the override
+  semantics inside `BookingPolicy` so a larger override widens (not narrows) the window?
+- Why it matters: this decides which cancellations are free vs charged a fee for paying Plus members —
+  a money/CX correctness issue. T-0211's `CancellationFeeRateBoundaryTests` currently **pin the existing
+  (literal-replacement) behavior**, so the correction must also flip those pinning tests; building the
+  wrong direction is rework on a money-adjacent surface and re-pins the wrong intent.
+- Default taken (non-blocking for the rest of Wave 5): **none taken — T-0242 is held `blocked`.** No
+  behavior or test-pin change lands until the owner answers. Every other Wave-5 ticket is independent of
+  this and proceeds. Recommended once answered: path **(b)** (invert in `BookingPolicy`) is the least
+  surprising to readers and least likely to be silently re-broken — but the owner's product intent is the
+  decider.
+- Answer: _(owner fills in — confirm "Plus = wider free window", then choose (a) smaller override on the
+  Plus path, or (b) invert override semantics in `BookingPolicy`)_
+
+---
+
 ### Q-W3-4 — [blocking: no] Dispute Resolve when the Stripe refund FAILS — keep "Resolved + Pending Refund row" or defer/surface?
 - Raised by: backend (T-0173a); originally recorded as "Q-W3-2" inside the T-0173 ticket file — **re-keyed
   to Q-W3-4 by the PM at Wave-3 close (2026-06-12)** because `Q-W3-2` above (partner-pay currency) already

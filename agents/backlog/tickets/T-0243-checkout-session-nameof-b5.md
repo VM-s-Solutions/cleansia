@@ -1,7 +1,7 @@
 ---
 id: T-0243
 title: CreateMembershipCheckoutSession UserNotFound — nameof(Command) → nameof(userId) (B5 consistency)
-status: draft
+status: ready
 size: XS
 owner: —
 created: 2026-06-13
@@ -59,6 +59,12 @@ already reviewed and accepted in the sibling handler.
 
 ## Status log
 - 2026-06-13 — draft (created by pm; T-0179 carried B5 sibling-finding made a ticket — Wave-5 candidate).
+- 2026-06-13 — **ready** (PM, Wave-5 intake / Batch **5B**). Dep T-0179✓ is `done`. No-decision
+  mechanical `nameof` rename (skips the deliberation panel per the one-line no-decision note in the
+  body). DoR met: AC observable, XS, no migration, no regen (runtime error-payload field only), not
+  security-touching. Edits `CreateMembershipCheckoutSession.cs` only — riders with the 5B backend
+  micro-fixes; **serialize against T-0203** if 5B is fanned out, since T-0203's LG-05 also touches this
+  handler (see `status/sprint-7.md` §2 Lane M-Membership).)
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

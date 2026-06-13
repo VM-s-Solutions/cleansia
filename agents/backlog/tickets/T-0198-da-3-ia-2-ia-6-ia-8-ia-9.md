@@ -1,7 +1,7 @@
 ---
 id: T-0198
 title: De-triplicate Dispute/SavedAddress/Auth controllers + login/forgot-password facades; unify email/password rules
-status: draft            # draft | ready | in_progress | in_review | qa | done | blocked
+status: ready            # draft | ready | in_progress | in_review | qa | done | blocked
 size: M                  # S | M | L  (L must be split before going ready)
 owner: —                 # the agent currently working it (pm sets this)
 created: 2026-06-01
@@ -177,6 +177,16 @@ fix lands once, not five times.
 
 ## Status log
 - 2026-06-01 — draft (created by pm)
+- 2026-06-13 — **ready** (PM, Wave-5 intake / Batch **5E**). No deps. DoR met: AC1–AC6 observable,
+  M, **`security_touching: false`** but this touches the **auth surface** (Login/forgot-password
+  de-triplication + the IA-6 single source of truth for password rules incl. **aligning the weaker
+  admin password complexity** to the customer/partner rule) — the PM routes a **Security advisory pass**
+  alongside the reviewer (auth-adjacent, two real bug fixes: partner login + forgot-password swallowed
+  errors). No nswag-regen / no migration (routes/verbs/DTOs unchanged — reviewer stops and re-scopes if
+  any generated-client surface changes). **Exclusive surface** (3 login handlers, 5 AuthControllers,
+  Dispute/SavedAddress controllers ×3, 4 facades) — do NOT run concurrently with any ticket touching
+  those files; in particular **must not touch host auth registration** (BSP-1/T-0100 surface) or
+  `disputes.facade.ts` (T-0202). Runs in its own lane in 5E. sprint re-tagged 5.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

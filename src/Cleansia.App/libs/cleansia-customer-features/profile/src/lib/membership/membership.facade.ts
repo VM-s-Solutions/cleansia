@@ -17,6 +17,11 @@ import { catchError, of, takeUntil } from 'rxjs';
  *
  * NOTE: Always go through CustomerClient — direct injection of MembershipClient
  * hits NSwag's empty-string default baseUrl and bypasses CUSTOMER_API_BASE_URL.
+ *
+ * NOTE: Web subscribes ONLY via Stripe-hosted Checkout (createCheckoutSession) and
+ * deliberately never calls the `subscribe` endpoint. That endpoint is the native-SDK
+ * SetupIntent/PaymentSheet flow consumed by the MOBILE app; the split is intentional,
+ * so the absence of a subscribe() call here is by design, not a missing feature.
  */
 @Injectable()
 export class MembershipFacade extends UnsubscribeControlDirective {

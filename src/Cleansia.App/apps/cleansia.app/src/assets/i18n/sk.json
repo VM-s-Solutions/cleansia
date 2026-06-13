@@ -1358,29 +1358,149 @@
   "api": {
     "auth": {
       "account_locked": "Príliš veľa neúspešných pokusov o prihlásenie. Účet je dočasne uzamknutý — skúste to znova o niekoľko minút.",
-      "too_many_attempts": "Príliš veľa pokusov s týmto kódom. Vyžiadajte si nový kód a skúste to znova."
+      "too_many_attempts": "Príliš veľa pokusov s týmto kódom. Vyžiadajte si nový kód a skúste to znova.",
+      "invalid_confirmation_code": "Tento potvrdzovací kód je neplatný alebo vypršal.",
+      "invalid_password_format": "Vaše heslo nespĺňa požiadavky.",
+      "current_password_invalid": "Vaše súčasné heslo nie je správne.",
+      "insufficient_privileges": "Na túto akciu nemáte oprávnenie."
     },
     "common": {
       "unauthorized": "Nemáte oprávnenie na vykonanie tejto akcie",
       "error_occurred": "Vyskytla sa chyba"
     },
+    "user": {
+      "email_confirmed": "Táto e-mailová adresa je už potvrdená.",
+      "existing_email": "Účet s týmto e-mailom už existuje.",
+      "not_existing_email": "Účet s týmto e-mailom sme nenašli.",
+      "existing_phone_number": "Toto telefónne číslo sa už používa.",
+      "not_found": "Tento účet sme nenašli."
+    },
+    "order": {
+      "cleaning_date": {
+        "future": "Dátum upratovania musí byť v budúcnosti.",
+        "below_lead_time": "Vyberte dátum s dostatočným predstihom na naplánovanie upratovania."
+      },
+      "already_cancelled": "Táto objednávka už bola zrušená.",
+      "already_completed": "Táto objednávka už bola dokončená.",
+      "in_progress_cannot_cancel": "Toto upratovanie už prebieha a nedá sa zrušiť.",
+      "invalid_status_transition": "Táto akcia nie je pre aktuálny stav objednávky povolená.",
+      "cancellation_window_closed": "Lehota na bezplatné zrušenie tejto objednávky vypršala.",
+      "address_exactly_one_required": "Zadajte k objednávke práve jednu adresu.",
+      "empty": "Pridajte do objednávky aspoň jednu službu alebo balík.",
+      "selected_package": {
+        "invalid": "Jeden z vybraných balíkov už nie je dostupný."
+      },
+      "selected_services": {
+        "invalid": "Jedna z vybraných služieb už nie je dostupná."
+      },
+      "not_found": "Túto objednávku sme nenašli.",
+      "no_available_spots": "Pre vybraný čas nie sú voľné termíny.",
+      "weekly_limit_reached": "Dosiahli ste limit objednávok na tento týždeň.",
+      "time_conflict": "Na tento čas už máte naplánované upratovanie.",
+      "total_price": {
+        "positive": "Celková cena objednávky musí byť vyššia ako nula.",
+        "not_match": "Celková cena objednávky sa zmenila — skontrolujte objednávku a skúste to znova."
+      },
+      "payment_gateway_unavailable": "Platby sú dočasne nedostupné. Skúste to prosím o chvíľu.",
+      "creation_failed": "Objednávku sa nepodarilo vytvoriť. Skúste to prosím znova.",
+      "not_completed": "Táto akcia je dostupná až po dokončení upratovania.",
+      "review": {
+        "already_exists": "Túto objednávku ste už ohodnotili.",
+        "rating_invalid": "Zvoľte hodnotenie od 1 do 5."
+      },
+      "note": {
+        "content_required": "Pred uložením zadajte poznámku."
+      },
+      "issue": {
+        "description_required": "Pred odoslaním opíšte problém."
+      }
+    },
     "address": {
       "already_exists": "Túto adresu už máte uloženú.",
-      "mapbox_coords_required": "Vyberte adresu z ponuky."
+      "mapbox_coords_required": "Vyberte adresu z ponuky.",
+      "not_owned_by_user": "K tejto adrese nemáte prístup.",
+      "label_required": "Pridajte k tejto adrese označenie.",
+      "invalid_length": "Adresa je príliš dlhá. Skráťte ju prosím."
     },
     "service_area": {
       "country_not_serviced": "V tejto krajine zatiaľ nepôsobíme.",
       "country_required": "Vyberte krajinu.",
       "city_not_serviced": "V tomto meste zatiaľ nepôsobíme."
     },
+    "country": {
+      "not_serviced": "V tejto krajine zatiaľ nepôsobíme.",
+      "required": "Vyberte krajinu."
+    },
+    "city": {
+      "not_serviced": "V tomto meste zatiaľ nepôsobíme."
+    },
     "dispute": {
       "not_found": "Reklamácia sa nenašla.",
-      "not_owned_by_user": "K tejto reklamácii nemáte prístup."
+      "not_owned_by_user": "K tejto reklamácii nemáte prístup.",
+      "already_exists": "K tejto objednávke už máte otvorenú reklamáciu.",
+      "invalid_refund_amount": "Suma vrátenia nie je pre túto objednávku platná.",
+      "max_length_exceeded": "Vaša správa je príliš dlhá. Skráťte ju prosím."
     },
     "file": {
       "invalid_file_type": "Tento typ súboru nie je povolený.",
       "size_exceeded": "Súbor je príliš veľký.",
-      "required": "Súbor je povinný."
+      "required": "Súbor je povinný.",
+      "content_type_doesnt_match": "Typ súboru nezodpovedá jeho obsahu.",
+      "count_exceeded": "Pripojili ste príliš veľa súborov.",
+      "count_too_few": "Pripojte aspoň jeden súbor.",
+      "size_exceeded_10mb": "Súbor je príliš veľký. Maximálna veľkosť je 10 MB.",
+      "type_not_allowed": "Tento typ súboru nie je povolený."
+    },
+    "receipt": {
+      "not_found": "K tejto objednávke sme nenašli účtenku.",
+      "generation_failed": "Účtenku sa nepodarilo vytvoriť. Skúste to prosím znova."
+    },
+    "gdpr": {
+      "export_failed": "Vaše údaje sa nepodarilo exportovať. Skúste to prosím znova.",
+      "deletion_failed": "Váš účet sa nepodarilo zmazať. Skúste to prosím znova.",
+      "deletion_already_pending": "Žiadosť o zmazanie účtu už prebieha.",
+      "deletion_blocked_by_order": "Váš účet nie je možné zmazať, kým máte aktívne objednávky.",
+      "deletion_blocked_by_invoice": "Váš účet nie je možné zmazať, kým máte nevyrovnané faktúry.",
+      "consent_not_found": "Toto nastavenie súhlasu sme nenašli.",
+      "consent_already_granted": "Tento súhlas ste už udelili."
+    },
+    "promo": {
+      "not_found": "Tento zľavový kód neexistuje.",
+      "expired": "Platnosť tohto zľavového kódu vypršala.",
+      "not_yet_valid": "Tento zľavový kód ešte nie je aktívny.",
+      "inactive": "Tento zľavový kód už nie je aktívny.",
+      "global_limit_reached": "Tento zľavový kód dosiahol limit použitia.",
+      "per_user_limit_reached": "Tento zľavový kód ste už použili.",
+      "below_minimum_order_amount": "Vaša objednávka nespĺňa minimálnu sumu pre tento zľavový kód.",
+      "currency_mismatch": "Tento zľavový kód nie je možné použiť s vybranou menou."
+    },
+    "referral": {
+      "not_found": "Tento odporúčací kód neexistuje.",
+      "self_referral": "Nemôžete odporučiť sami seba.",
+      "already_referred": "Tento účet už bol odporučený.",
+      "inactive": "Tento odporúčací kód už nie je aktívny."
+    },
+    "membership": {
+      "plan": {
+        "not_found": "Tento členský plán už neexistuje."
+      },
+      "already_active": "Aktívne členstvo už máte.",
+      "not_found": "Vaše členstvo sme nenašli.",
+      "not_owned_by_user": "Toto členstvo nemôžete spravovať.",
+      "stripe_customer_required": "Nepodarilo sa nám spojiť s platobnou bránou — skúste to prosím znova.",
+      "swap_same_plan": "Na tomto pláne už ste."
+    },
+    "recurring_booking": {
+      "not_found": "Táto opakovaná objednávka už neexistuje.",
+      "not_owned_by_user": "Túto opakovanú objednávku nemôžete spravovať.",
+      "saved_address_not_found": "Vyberte pre tento plán uloženú adresu.",
+      "no_services_or_packages": "Vyberte aspoň jednu službu alebo balík.",
+      "starts_on_in_past": "Dátum začiatku nemôže byť v minulosti.",
+      "ends_on_before_start": "Dátum ukončenia musí byť po dátume začiatku."
+    },
+    "device": {
+      "invalid_platform": "Táto platforma zariadenia nie je podporovaná.",
+      "not_found": "Toto zariadenie sme nenašli."
     }
   },
   "loyalty": {
@@ -1507,5 +1627,18 @@
       "refunded": "Vrátené",
       "disputed": "Sporné"
     }
+  },
+  "aria": {
+    "step": "Krok {{number}}: {{label}}",
+    "select_service": "Vybrať službu: {{name}}",
+    "select_package": "Vybrať balík: {{name}}",
+    "select_payment": "Vybrať spôsob platby: {{method}}",
+    "use_address": "Použiť uloženú adresu: {{label}}",
+    "use_new_address": "Zadať novú adresu",
+    "toggle_price_breakdown": "Prepnúť rozpis ceny",
+    "decrease_rooms": "Znížiť počet izieb",
+    "increase_rooms": "Zvýšiť počet izieb",
+    "decrease_bathrooms": "Znížiť počet kúpeľní",
+    "increase_bathrooms": "Zvýšiť počet kúpeľní"
   }
 }

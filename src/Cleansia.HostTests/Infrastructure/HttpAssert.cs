@@ -66,13 +66,39 @@ public static class HttpAssert
         {
             foreach (var prop in errors.EnumerateObject())
             {
-                var val = prop.Value.ValueKind == JsonValueKind.String ? prop.Value.GetString() : null;
-                if (prop.Name == expectedErrorCode || val == expectedErrorCode)
+                if (prop.Name == expectedErrorCode)
+                    return;
+
+                // A FluentValidation result with two parallel RuleFor chains (e.g. TakeOrder/StartOrder,
+                // whose OrderId chain and whole-command chain both fail) serializes its messages
+                // "; "-joined under a synthetic property name ("AsyncPredicateValidator"). Match the
+                // expected BusinessErrorMessage constant as one of those tokens — still asserting on the
+                // constant, never a hard-coded prose string (testing.md anti-pattern). A single-error
+                // value is just a one-token list, so exact matches keep working.
+                if (TokenizeErrorValue(prop.Value).Contains(expectedErrorCode))
                     return;
             }
         }
 
         Assert.Fail(
             $"Expected business error '{expectedErrorCode}' in the 400 ProblemDetails but got type='{type}', detail='{detail}'. Body: {body}");
+    }
+
+    private static IReadOnlyCollection<string> TokenizeErrorValue(JsonElement value)
+    {
+        var tokens = new List<string>();
+        if (value.ValueKind == JsonValueKind.String)
+        {
+            var s = value.GetString();
+            if (s is not null)
+                tokens.AddRange(s.Split(';', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries));
+        }
+        else if (value.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in value.EnumerateArray())
+                if (item.ValueKind == JsonValueKind.String && item.GetString() is { } s)
+                    tokens.Add(s);
+        }
+        return tokens;
     }
 }

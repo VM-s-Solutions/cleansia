@@ -79,6 +79,7 @@ export class CleansiaButtonComponent {
   className = input<string>('');
   tooltip = input<string>(''); // Tooltip text
   tooltipPosition = input<'top' | 'bottom' | 'left' | 'right'>('top');
+  ariaLabel = input<string>('');
 
   onClick = output<MouseEvent>(); // PrimeNG-compatible output name
   clickFn = output<MouseEvent>(); // Legacy output name
@@ -89,6 +90,12 @@ export class CleansiaButtonComponent {
     const hasLabel = !!(this.label() || this.title());
     return hasIcon && !hasLabel;
   });
+
+  // Icon-only buttons render no visible text, so they need a programmatic
+  // accessible name. Text buttons already carry their label as the name.
+  resolvedAriaLabel = computed(() =>
+    this.isIconOnly() && this.ariaLabel() ? this.ariaLabel() : undefined,
+  );
 
   handleClick(event: MouseEvent): void {
     this.clickFn.emit(event);

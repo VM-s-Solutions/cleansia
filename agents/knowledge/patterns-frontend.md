@@ -192,17 +192,44 @@ the component, every subscription lives in the facade.
 ## i18n binding (verified)
 
 Keys live in `apps/<app>/src/assets/i18n/{en,cs,sk,uk,ru}.json`, deeply namespaced
-(`pages.company_management.columns.legal_name`). Backend error **codes** map to translations under
-`api.*`: the snackbar layer normalizes a code (`OrderNotFound` / `order.not_found`) to a lowercase
-alphanumeric key and looks it up via a mapping table (`DEFAULT_SNACKBAR_ERROR_MAPPINGS`) into an
-`api.order.not_found`-style key. So when backend adds a `BusinessErrorMessage` constant, add the
-matching `api.*` key in **all five** locales. Use `TranslatePipe` in templates, `TranslateService.instant`
-in TS. Two further error-resolution paths exist: (1) when no mapping matches, the snackbar tries the raw
-backend code **as a translation key**, so dot-path codes like `gdpr.deletion_blocked_by_order` resolve
-against a root-level locale block mirroring the code (the partner/admin `gdpr.*` blocks); (2) features
-that must not depend on best-effort normalization keep an explicit `XXX_ERROR_KEY_MAP` +
-`resolveXxxErrorKey(error)` in their `*.models.ts` mapping codes to `errors.*` keys
-(see `membership-plan-list.models.ts`, `referrals-list.models.ts`, disputes-management).
+(`pages.company_management.columns.legal_name`). Use `TranslatePipe` in templates,
+`TranslateService.instant` in TS.
+
+### Error-contract → i18n: the one canonical path is the interceptor `api.*` namespace
+
+The single canonical mechanism for surfacing a backend `BusinessErrorMessage` to the user is the
+shared `HttpErrorInterceptorFn` (`libs/core/services/.../interceptors/http-error.interceptor.ts`). It
+fires for **every** non-404/non-403 error, pulls the first `BusinessErrorMessage` dot-value out of the
+response body (`order.cancellation_window_closed`), and resolves it as **`api.${dotValue}`** — i.e. it
+looks up `api.order.cancellation_window_closed` against the deeply-nested `api.*` block. So when the
+backend adds a customer-reachable `BusinessErrorMessage` constant, add the matching `api.*` key (the
+**full dot path**, nested) in **all five** locales.
+
+Note the canonical namespace is **`api.*`**, not `errors.*`. `conventions.md` historically phrased the
+rule as `errors.*`; the live customer interceptor uses `api.${code}`. **Follow the code: `api.*`.**
+
+**Hard parity rule (enforced by a CI guard):**
+- Every customer-reachable backend error key must have a non-empty translation under `api.*` in all
+  five customer locales, with **identical `api.*` key sets** across the five files.
+- The guard is `apps/cleansia.app/src/app/i18n/error-contract-parity.spec.ts`. It holds the explicit
+  customer-surface key contract (the dot-values a Customer API endpoint can return), asserts each
+  resolves under `api.*` in `en` and in all five, cross-checks the five files' `api.*` key sets are
+  identical, and asserts every contract key is a real `BusinessErrorMessage` value. Adding a new
+  customer-surface error → add its key to the contract + all five locales, or the guard fails.
+- **Unknown/unmapped key → generic fallback, never the raw key.** The interceptor never lets a machine
+  key reach the snackbar: if `instant('api.<code>')` echoes the key back (no translation), it falls
+  back to `api.common.error_occurred`. Pinned by `http-error.interceptor.spec.ts`.
+
+### Other (non-canonical) error-resolution paths — do not add new ones
+
+These predate the canonical path and exist for back-compat; **do not hand-roll new per-feature maps**,
+reuse the interceptor `api.*` path instead (EP-3 root cause was the proliferation of bespoke maps):
+1. `SnackbarService.showApiError(err, fallbackKey)` normalizes a PascalCase/dot code to a lowercase
+   alphanumeric key and looks it up via `DEFAULT_SNACKBAR_ERROR_MAPPINGS`; when no mapping matches it
+   tries the raw code **as a translation key** (root-level blocks like `membership.*`/`gdpr.*` mirror
+   the code).
+2. A few features keep an explicit `XXX_ERROR_KEY_MAP` + `resolveXxxErrorKey(error)` in their
+   `*.models.ts` (see `membership-plan-list.models.ts`, `referrals-list.models.ts`, disputes upload).
 
 ## What to mirror, not invent
 

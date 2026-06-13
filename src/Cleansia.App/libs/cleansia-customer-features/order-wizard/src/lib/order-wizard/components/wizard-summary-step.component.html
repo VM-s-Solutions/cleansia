@@ -135,8 +135,10 @@
       class="order-wizard__code-row"
       tabindex="0"
       role="button"
+      [attr.aria-label]="'pages.order.referral.row_title' | translate"
       (click)="openReferralDialog()"
       (keydown.enter)="openReferralDialog()"
+      (keydown.space)="$event.preventDefault(); openReferralDialog()"
     >
       <div class="order-wizard__code-row-icon">
         <i class="pi pi-users"></i>
@@ -174,8 +176,10 @@
       class="order-wizard__code-row"
       tabindex="0"
       role="button"
+      [attr.aria-label]="'pages.order.promo.row_title' | translate"
       (click)="openPromoDialog()"
       (keydown.enter)="openPromoDialog()"
+      (keydown.space)="$event.preventDefault(); openPromoDialog()"
     >
       <div class="order-wizard__code-row-icon">
         <i class="pi pi-tag"></i>

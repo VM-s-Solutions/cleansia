@@ -12,6 +12,20 @@ using StripeException = Stripe.StripeException;
 
 namespace Cleansia.Core.AppServices.Features.Memberships;
 
+/// <summary>
+/// The native-SDK membership subscribe flow (SetupIntent + EphemeralKey, then a confirmed
+/// PaymentSheet subscribe). This is deliberately ONE of two subscribe surfaces, and they do not
+/// share a path:
+/// <list type="bullet">
+/// <item>WEB subscribes via Stripe-hosted Checkout — <c>CreateMembershipCheckoutSession</c>, driven
+/// by the web <c>MembershipFacade.createCheckoutSession</c>. The web facade never calls this handler.</item>
+/// <item>MOBILE subscribes via this handler's SetupIntent/PaymentSheet flow — it is the SOLE consumer
+/// of <c>MembershipController.Subscribe</c> (wired on both the web-customer and mobile-customer APIs).
+/// The endpoint is therefore NOT orphaned despite the web facade not calling it.</item>
+/// </list>
+/// The split is intentional and the endpoint is gated by <c>[Permission(Policy.CanManageMembership)]</c>
+/// and rate-limited. The confirmed branch is idempotent on a client-supplied idempotency token.
+/// </summary>
 public class CreateMembershipSubscription
 {
     public record Command(string PlanCode, bool PaymentMethodConfirmed = false) : ICommand<Response>
@@ -59,7 +73,7 @@ public class CreateMembershipSubscription
             if (user == null)
             {
                 return BusinessResult.Failure<Response>(new Error(
-                    nameof(Command), BusinessErrorMessage.UserNotFound));
+                    nameof(userId), BusinessErrorMessage.UserNotFound));
             }
 
             var plan = await membershipPlanRepository.GetByCodeAsync(command.PlanCode, cancellationToken);

@@ -3,6 +3,7 @@ using Cleansia.Core.Domain.Documents;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Database;
@@ -102,7 +103,14 @@ public static class DomainSeed
             availability: new Dictionary<string, List<Cleansia.Core.Domain.Users.TimeRange>>(),
             emergencyContactName: "ICE",
             emergencyContactPhone: "+420777000000");
-        if (tenantId is not null) employee.TenantId = tenantId;
+        if (tenantId is not null)
+        {
+            employee.TenantId = tenantId;
+            // The address is ITenantEntity; seeding runs outside an HTTP request so the interceptor would
+            // stamp it null, and the in-tenant caller's filtered .Include(e => e.Address) would then not
+            // see it (employee looks profile-incomplete). Stamp it to the employee's tenant explicitly.
+            address.TenantId = tenantId;
+        }
         return employee;
     }
 
@@ -161,9 +169,44 @@ public static class DomainSeed
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Pending,
             userId: ownerUserId);
-        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
-        if (tenantId is not null) order.TenantId = tenantId;
+        var newTrack = OrderStatusTrack.Create(OrderStatus.New, order);
+        order.AddOrderStatus(newTrack);
+        if (tenantId is not null)
+        {
+            order.TenantId = tenantId;
+            // Seeding runs outside an HTTP request, so the interceptor's tenant auto-stamp resolves null;
+            // child rows (status track, customer address — both ITenantEntity) must carry the order's
+            // tenant explicitly, otherwise the tenant filter on an Include() hides them from the in-tenant
+            // caller and the order looks status-less / address-less.
+            newTrack.TenantId = tenantId;
+            address.TenantId = tenantId;
+        }
         return order;
+    }
+
+    /// <summary>Assign <paramref name="employee"/> to <paramref name="order"/> and advance it to
+    /// Confirmed — the state StartOrder requires. Mirrors what TakeOrder.Handler does, so a cleaner who
+    /// is NOT this assignee trips EmployeeNotAssignedToOrder on StartOrder.
+    ///
+    /// The status tracks are stamped with explicit, ORDERED CreatedOn values: in production New and
+    /// Confirmed are written in separate commits, but a single seed commit stamps every Added row with
+    /// the same interceptor timestamp (a tie that makes OrderByDescending(CreatedOn) nondeterministic).
+    /// Setting CreatedBy here also opts the rows out of the auto-stamp so these explicit times survive.</summary>
+    public static void ConfirmAndAssign(Order order, Employee employee)
+    {
+        order.AddAssignedEmployee(OrderEmployee.Create(order, employee));
+
+        var now = DateTimeOffset.UtcNow;
+        foreach (var track in order.OrderStatusHistory)
+        {
+            track.Created("seed", now.AddMinutes(-5));
+            track.TenantId = order.TenantId;
+        }
+
+        var confirmed = OrderStatusTrack.Create(OrderStatus.Confirmed, order);
+        confirmed.Created("seed", now);
+        confirmed.TenantId = order.TenantId;
+        order.AddOrderStatus(confirmed);
     }
 
     public static Dispute Dispute(string orderId, string ownerUserId, string? tenantId = null)
@@ -176,5 +219,50 @@ public static class DomainSeed
             createdBy: ownerUserId);
         if (tenantId is not null) dispute.TenantId = tenantId;
         return dispute;
+    }
+
+    /// <summary>An <see cref="Address"/> + <see cref="SavedAddress"/> pair owned by
+    /// <paramref name="ownerUserId"/>. Both are <c>ITenantEntity</c>, so both are stamped with the same
+    /// <paramref name="tenantId"/> — the SavedAddress repo's <c>GetByIdAsync</c> is tenant-filtered, so a
+    /// foreign-tenant caller can never see the row (existence fails → NotFound) while the in-tenant
+    /// ownership gate (BeOwnedByCaller) is what a same-tenant, different-user caller trips.</summary>
+    public static (Address address, SavedAddress saved) SavedAddressFor(
+        string ownerUserId, string label = "Home", string? tenantId = null)
+    {
+        var address = Address.Create("Saved St 7", "Plzen", "30100", CountryId, null, 49.7475, 13.3776);
+        if (tenantId is not null) address.TenantId = tenantId;
+
+        var saved = SavedAddress.Create(ownerUserId, address.Id, label, isDefault: false);
+        if (tenantId is not null) saved.TenantId = tenantId;
+        return (address, saved);
+    }
+
+    public static MembershipPlan MembershipPlan(string code = "HOSTTEST-MONTHLY", string? tenantId = null)
+    {
+        var plan = Cleansia.Core.Domain.Memberships.MembershipPlan.Create(
+            code: code,
+            name: "Host-test plan",
+            monthlyPriceCzk: 299m,
+            stripePriceId: "price_hosttest",
+            discountPercentage: 10m,
+            freeCancellationWindowHours: 24,
+            allowsExpressUpgrade: true);
+        if (tenantId is not null) plan.TenantId = tenantId;
+        return plan;
+    }
+
+    /// <summary>An ACTIVE <see cref="UserMembership"/> for <paramref name="ownerUserId"/> with a period
+    /// that ends in the future (so <c>IsActive</c> and <c>GetActiveForUserAsync</c> resolve it). The
+    /// resolve is tenant-filtered, so a foreign-tenant caller resolves null → MembershipNotFound.</summary>
+    public static UserMembership ActiveMembership(string ownerUserId, string membershipPlanId, string? tenantId = null)
+    {
+        var membership = UserMembership.Create(
+            userId: ownerUserId,
+            membershipPlanId: membershipPlanId,
+            stripeSubscriptionId: "sub_hosttest",
+            currentPeriodStart: DateTime.UtcNow.AddDays(-3),
+            currentPeriodEnd: DateTime.UtcNow.AddDays(27));
+        if (tenantId is not null) membership.TenantId = tenantId;
+        return membership;
     }
 }

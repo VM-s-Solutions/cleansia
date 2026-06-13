@@ -9,6 +9,16 @@ import { TranslateService } from '@ngx-translate/core';
 import { catchError, throwError } from 'rxjs';
 import { SnackbarService } from '../services';
 
+const GENERIC_ERROR_KEY = 'api.common.error_occurred';
+
+function resolveApiError(translate: TranslateService, errorKey: unknown): string {
+  const candidateKey = `api.${String(errorKey)}`;
+  const message = translate.instant(candidateKey);
+  // ngx-translate echoes the key back when it has no translation — never let a
+  // raw machine key reach the snackbar; fall back to the generic message.
+  return message === candidateKey ? translate.instant(GENERIC_ERROR_KEY) : message;
+}
+
 export const HttpErrorInterceptorFn: HttpInterceptorFn = (req, next) => {
   const snackbarService = inject(SnackbarService);
   const translate = inject(TranslateService);
@@ -26,19 +36,16 @@ export const HttpErrorInterceptorFn: HttpInterceptorFn = (req, next) => {
                 const errorKey = parserErrorResponse.errors
                   ? getObjectValues(parserErrorResponse.errors)[0]
                   : 'common.error_occurred';
-                snackbarService.showError(translate.instant(`api.${errorKey}`));
+                snackbarService.showError(resolveApiError(translate, errorKey));
               })
               .catch(() => {
-                snackbarService.showError(
-                  translate.instant('api.common.error_occurred')
-                );
+                snackbarService.showError(translate.instant(GENERIC_ERROR_KEY));
               });
           } else {
-            // Handle non-blob errors directly
             const errorKey = error.error?.errors
               ? getObjectValues(error.error.errors)[0]
               : 'common.error_occurred';
-            snackbarService.showError(translate.instant(`api.${errorKey}`));
+            snackbarService.showError(resolveApiError(translate, errorKey));
           }
         }
       }

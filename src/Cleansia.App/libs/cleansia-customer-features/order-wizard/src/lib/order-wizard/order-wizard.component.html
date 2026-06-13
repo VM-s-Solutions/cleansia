@@ -26,10 +26,14 @@
   <!-- Custom Stepper -->
   <div class="order-wizard__stepper">
     @for (step of facade.steps; track step; let i = $index) {
-    <div
+    <button
+      type="button"
       class="order-wizard__stepper-item"
       [class.order-wizard__stepper-item--active]="i === facade.activeStep()"
       [class.order-wizard__stepper-item--completed]="i < facade.activeStep()"
+      [disabled]="i >= facade.activeStep()"
+      [attr.aria-current]="i === facade.activeStep() ? 'step' : null"
+      [attr.aria-label]="'aria.step' | translate: { number: i + 1, label: step | translate }"
       (click)="i < facade.activeStep() ? facade.goToStep(i) : null"
     >
       <div class="order-wizard__stepper-icon">
@@ -42,7 +46,7 @@
       <span class="order-wizard__stepper-label">
         {{ step | translate }}
       </span>
-    </div>
+    </button>
     @if (i < facade.steps.length - 1) {
     <div
       class="order-wizard__stepper-line"
@@ -116,9 +120,12 @@
 
           <div class="order-wizard__card-grid">
             @for (service of facade.filteredServices(); track service.id) {
-            <div
+            <button
+              type="button"
               class="order-wizard__selection-card"
               [class.order-wizard__selection-card--selected]="isServiceSelected(service.id!)"
+              [attr.aria-pressed]="isServiceSelected(service.id!)"
+              [attr.aria-label]="'aria.select_service' | translate: { name: getTranslation(service, 'name') }"
               (click)="toggleService(service.id!)"
             >
               @if (isServiceSelected(service.id!)) {
@@ -144,7 +151,7 @@
                 </span>
                 }
               </div>
-            </div>
+            </button>
             }
           </div>
         </div>
@@ -163,7 +170,9 @@
               </label>
               <div class="order-wizard__counter-controls">
                 <button
+                  type="button"
                   class="order-wizard__counter-btn"
+                  [attr.aria-label]="'aria.decrease_rooms' | translate"
                   (click)="decrementRooms()"
                   [disabled]="facade.formData().rooms <= 1"
                 >
@@ -173,7 +182,9 @@
                   {{ facade.formData().rooms }}
                 </span>
                 <button
+                  type="button"
                   class="order-wizard__counter-btn"
+                  [attr.aria-label]="'aria.increase_rooms' | translate"
                   (click)="incrementRooms()"
                 >
                   <i class="pi pi-plus"></i>
@@ -186,7 +197,9 @@
               </label>
               <div class="order-wizard__counter-controls">
                 <button
+                  type="button"
                   class="order-wizard__counter-btn"
+                  [attr.aria-label]="'aria.decrease_bathrooms' | translate"
                   (click)="decrementBathrooms()"
                   [disabled]="facade.formData().bathrooms <= 1"
                 >
@@ -196,7 +209,9 @@
                   {{ facade.formData().bathrooms }}
                 </span>
                 <button
+                  type="button"
                   class="order-wizard__counter-btn"
+                  [attr.aria-label]="'aria.increase_bathrooms' | translate"
                   (click)="incrementBathrooms()"
                 >
                   <i class="pi pi-plus"></i>
@@ -215,9 +230,12 @@
           </h2>
           <div class="order-wizard__card-grid">
             @for (pkg of facade.packages(); track pkg.id) {
-            <div
+            <button
+              type="button"
               class="order-wizard__selection-card"
               [class.order-wizard__selection-card--selected]="isPackageSelected(pkg.id!)"
+              [attr.aria-pressed]="isPackageSelected(pkg.id!)"
+              [attr.aria-label]="'aria.select_package' | translate: { name: getTranslation(pkg, 'name') }"
               (click)="togglePackage(pkg.id!)"
             >
               @if (isPackageSelected(pkg.id!)) {
@@ -247,7 +265,7 @@
               <div class="order-wizard__selection-price">
                 {{ formatPrice(pkg.price) }}
               </div>
-            </div>
+            </button>
             }
           </div>
         </div>
@@ -265,59 +283,71 @@
           </h2>
           <div class="order-wizard__form-grid">
             <div class="order-wizard__field">
-              <label>{{ 'pages.order.customer_first_name' | translate }}</label>
+              <label for="wizard-first-name">{{ 'pages.order.customer_first_name' | translate }}</label>
               <input
                 pInputText
+                id="wizard-first-name"
                 [ngModel]="facade.formData().customerFirstName"
                 (ngModelChange)="facade.updateFormData({ customerFirstName: $event })"
                 (blur)="markTouched('customerFirstName')"
                 [placeholder]="'pages.order.customer_first_name_placeholder' | translate"
                 [class.ng-invalid]="fieldError('customerFirstName')"
+                [attr.aria-invalid]="fieldError('customerFirstName') ? 'true' : null"
+                [attr.aria-describedby]="fieldError('customerFirstName') ? 'wizard-first-name-error' : null"
               />
               @if (fieldError('customerFirstName')) {
-              <small class="order-wizard__field-error">{{ fieldError('customerFirstName') }}</small>
+              <small id="wizard-first-name-error" class="order-wizard__field-error">{{ fieldError('customerFirstName') }}</small>
               }
             </div>
             <div class="order-wizard__field">
-              <label>{{ 'pages.order.customer_last_name' | translate }}</label>
+              <label for="wizard-last-name">{{ 'pages.order.customer_last_name' | translate }}</label>
               <input
                 pInputText
+                id="wizard-last-name"
                 [ngModel]="facade.formData().customerLastName"
                 (ngModelChange)="facade.updateFormData({ customerLastName: $event })"
                 (blur)="markTouched('customerLastName')"
                 [placeholder]="'pages.order.customer_last_name_placeholder' | translate"
                 [class.ng-invalid]="fieldError('customerLastName')"
+                [attr.aria-invalid]="fieldError('customerLastName') ? 'true' : null"
+                [attr.aria-describedby]="fieldError('customerLastName') ? 'wizard-last-name-error' : null"
               />
               @if (fieldError('customerLastName')) {
-              <small class="order-wizard__field-error">{{ fieldError('customerLastName') }}</small>
+              <small id="wizard-last-name-error" class="order-wizard__field-error">{{ fieldError('customerLastName') }}</small>
               }
             </div>
             <div class="order-wizard__field">
-              <label>{{ 'pages.order.customer_email' | translate }}</label>
+              <label for="wizard-email">{{ 'pages.order.customer_email' | translate }}</label>
               <input
                 pInputText
+                id="wizard-email"
                 [ngModel]="facade.formData().customerEmail"
                 (ngModelChange)="facade.updateFormData({ customerEmail: $event })"
                 (blur)="markTouched('customerEmail')"
                 type="email"
                 [placeholder]="'pages.order.customer_email_placeholder' | translate"
                 [class.ng-invalid]="fieldError('customerEmail')"
+                [attr.aria-invalid]="fieldError('customerEmail') ? 'true' : null"
+                [attr.aria-describedby]="fieldError('customerEmail') ? 'wizard-email-error' : null"
               />
               @if (fieldError('customerEmail')) {
-              <small class="order-wizard__field-error">{{ fieldError('customerEmail') }}</small>
+              <small id="wizard-email-error" class="order-wizard__field-error">{{ fieldError('customerEmail') }}</small>
               }
             </div>
             <div class="order-wizard__field">
-              <label>{{ 'pages.order.customer_phone' | translate }} *</label>
+              <label for="wizard-phone">{{ 'pages.order.customer_phone' | translate }} *</label>
               <cleansia-telephone
+                id="wizard-phone"
                 [ngModel]="facade.formData().customerPhone"
                 (ngModelChange)="facade.updateFormData({ customerPhone: $event })"
                 (blur)="markTouched('customerPhone')"
                 defaultCountryFlag="cz"
                 [class.ng-invalid]="fieldError('customerPhone')"
+                [attr.aria-invalid]="fieldError('customerPhone') ? 'true' : null"
+                [attr.aria-describedby]="fieldError('customerPhone') ? 'wizard-phone-error' : null"
               />
               @if (fieldError('customerPhone')) {
-              <small class="order-wizard__field-error">{{ fieldError('customerPhone') }}</small>
+              <small id="wizard-phone-error" class="order-wizard__field-error">{{ fieldError('customerPhone') }}</small>
               }
             </div>
           </div>
@@ -332,9 +362,12 @@
           @if (facade.isAuthenticated() && facade.savedAddresses().length > 0) {
           <div class="order-wizard__saved-addresses">
             @for (addr of facade.savedAddresses(); track addr.id) {
-            <div
+            <button
+              type="button"
               class="order-wizard__saved-address"
               [class.order-wizard__saved-address--selected]="isAddressSelected(addr)"
+              [attr.aria-pressed]="isAddressSelected(addr)"
+              [attr.aria-label]="'aria.use_address' | translate: { label: addr.label }"
               (click)="addr.id && facade.selectSavedAddress(addr.id)"
             >
               <div class="order-wizard__saved-address-radio">
@@ -348,11 +381,14 @@
                 <span class="order-wizard__saved-address-badge">{{ 'pages.order.saved_address_default' | translate }}</span>
                 }
               </div>
-            </div>
+            </button>
             }
-            <div
+            <button
+              type="button"
               class="order-wizard__saved-address"
               [class.order-wizard__saved-address--selected]="isCustomAddress()"
+              [attr.aria-pressed]="isCustomAddress()"
+              [attr.aria-label]="'aria.use_new_address' | translate"
               (click)="clearAddress()"
             >
               <div class="order-wizard__saved-address-radio">
@@ -361,7 +397,7 @@
               <div class="order-wizard__saved-address-info">
                 <strong>{{ 'pages.order.new_address' | translate }}</strong>
               </div>
-            </div>
+            </button>
           </div>
           }
 
@@ -412,16 +448,19 @@
             </div>
             @if (saveNewAddress()) {
             <div class="order-wizard__field order-wizard__field--full">
-              <label>{{ 'pages.order.address_label' | translate }}</label>
+              <label for="wizard-address-label">{{ 'pages.order.address_label' | translate }}</label>
               <input
                 pInputText
+                id="wizard-address-label"
                 [ngModel]="newAddressLabel()"
                 (ngModelChange)="newAddressLabel.set($event); labelError.set(null)"
                 [placeholder]="'pages.order.address_label_placeholder' | translate"
                 [class.ng-invalid]="!!labelError()"
+                [attr.aria-invalid]="labelError() ? 'true' : null"
+                [attr.aria-describedby]="labelError() ? 'wizard-address-label-error' : null"
               />
               @if (labelError()) {
-              <small class="order-wizard__field-error">{{ labelError() }}</small>
+              <small id="wizard-address-label-error" class="order-wizard__field-error">{{ labelError() }}</small>
               }
             </div>
             }
@@ -543,9 +582,12 @@
           </h2>
 
           <div class="order-wizard__payment-grid">
-            <div
+            <button
+              type="button"
               class="order-wizard__payment-card"
               [class.order-wizard__payment-card--selected]="facade.formData().paymentType === PaymentType.Card"
+              [attr.aria-pressed]="facade.formData().paymentType === PaymentType.Card"
+              [attr.aria-label]="'aria.select_payment' | translate: { method: ('pages.order.payment_card_title' | translate) }"
               (click)="facade.updateFormData({ paymentType: PaymentType.Card })"
             >
               <div class="order-wizard__payment-card-icon">
@@ -562,11 +604,14 @@
                 <i class="pi pi-check"></i>
               </div>
               }
-            </div>
+            </button>
 
-            <div
+            <button
+              type="button"
               class="order-wizard__payment-card"
               [class.order-wizard__payment-card--selected]="facade.formData().paymentType === PaymentType.Cash"
+              [attr.aria-pressed]="facade.formData().paymentType === PaymentType.Cash"
+              [attr.aria-label]="'aria.select_payment' | translate: { method: ('pages.order.payment_cash_title' | translate) }"
               (click)="facade.updateFormData({ paymentType: PaymentType.Cash })"
             >
               <div class="order-wizard__payment-card-icon">
@@ -583,7 +628,7 @@
                 <i class="pi pi-check"></i>
               </div>
               }
-            </div>
+            </button>
           </div>
         </div>
 
@@ -729,7 +774,13 @@
 
   <!-- Mobile Price Bar -->
   <div class="order-wizard__mobile-price" [class.order-wizard__mobile-price--expanded]="mobileBreakdownExpanded()">
-    <div class="order-wizard__mobile-price-header" (click)="mobileBreakdownExpanded.set(!mobileBreakdownExpanded())">
+    <button
+      type="button"
+      class="order-wizard__mobile-price-header"
+      [attr.aria-expanded]="mobileBreakdownExpanded()"
+      [attr.aria-label]="'aria.toggle_price_breakdown' | translate"
+      (click)="mobileBreakdownExpanded.set(!mobileBreakdownExpanded())"
+    >
       <div class="order-wizard__mobile-price-label">
         {{ 'pages.order.price_total' | translate }}
       </div>
@@ -742,7 +793,7 @@
           [class.pi-chevron-down]="mobileBreakdownExpanded()"
         ></i>
       </div>
-    </div>
+    </button>
     <div class="order-wizard__mobile-price-breakdown"
       [class.order-wizard__mobile-price-breakdown--expanded]="mobileBreakdownExpanded()">
       @for (pkg of selectedPackages(); track pkg.id) {

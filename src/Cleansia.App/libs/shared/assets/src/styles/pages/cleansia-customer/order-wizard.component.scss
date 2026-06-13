@@ -104,6 +104,13 @@ $font-heading: 'Poppins', sans-serif;
   }
 
   &__stepper-item {
+    appearance: none;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: inherit;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -112,6 +119,16 @@ $font-heading: 'Poppins', sans-serif;
     flex-shrink: 0;
     position: relative;
     transition: transform 0.2s ease;
+
+    &:disabled {
+      cursor: default;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary;
+      outline-offset: 2px;
+      border-radius: 0.5rem;
+    }
 
     &--completed {
       cursor: pointer;
@@ -378,6 +395,10 @@ $font-heading: 'Poppins', sans-serif;
   }
 
   &__selection-card {
+    appearance: none;
+    font: inherit;
+    color: inherit;
+    width: 100%;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -395,6 +416,11 @@ $font-heading: 'Poppins', sans-serif;
       border-color: $primary-accent;
       box-shadow: $shadow-hover;
       transform: translateY(-2px);
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary;
+      outline-offset: 2px;
     }
 
     &--selected {
@@ -571,6 +597,11 @@ $font-heading: 'Poppins', sans-serif;
   }
 
   &__saved-address {
+    appearance: none;
+    font: inherit;
+    color: inherit;
+    width: 100%;
+    text-align: left;
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -583,6 +614,11 @@ $font-heading: 'Poppins', sans-serif;
 
     &:hover {
       border-color: $primary-accent;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary;
+      outline-offset: 2px;
     }
 
     &--selected {
@@ -887,6 +923,10 @@ $font-heading: 'Poppins', sans-serif;
   }
 
   &__payment-card {
+    appearance: none;
+    font: inherit;
+    color: inherit;
+    width: 100%;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -902,6 +942,11 @@ $font-heading: 'Poppins', sans-serif;
     &:hover {
       border-color: $primary-accent;
       box-shadow: $shadow-hover;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary;
+      outline-offset: 2px;
     }
 
     &--selected {
@@ -1481,11 +1526,24 @@ $font-heading: 'Poppins', sans-serif;
   }
 
   &__mobile-price-header {
+    appearance: none;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
     display: flex;
     align-items: center;
     justify-content: space-between;
     cursor: pointer;
     width: 100%;
+
+    &:focus-visible {
+      outline: 2px solid $primary;
+      outline-offset: 2px;
+    }
   }
 
   &__mobile-price-right {

@@ -1,7 +1,7 @@
 ---
 id: T-0235
 title: Runtime 429 flood-harness test for the T-0194 rate-limit coverage sweep
-status: draft
+status: ready
 size: S
 owner: —
 created: 2026-06-12
@@ -13,7 +13,7 @@ adrs: [0003]
 layers: [backend]
 security_touching: false
 manual_steps: []
-sprint: 4
+sprint: 6
 source: T-0194 AC6 deviation (recorded 2026-06-12; accepted at Wave-3 close — Wave-4 test slice)
 ---
 
@@ -48,6 +48,12 @@ the Wave-4 test wave (T-0210…T-0218).
 
 ## Status log
 - 2026-06-12 — draft (created by pm at Wave-3 close; the T-0194 AC6 deviation made a ticket)
+- 2026-06-12 — **ready** (pm; Wave-4 Batch 4C per `status/sprint-6.md`; `Cleansia.HostTests` —
+  parallel with T-0210/T-0215, no shared files; must NOT touch `RateLimitCoverageGuardTests.cs`,
+  attributes, policies, or `CleansiaStartupBase.cs`). Design note: **account lockout (T-0193) now
+  trips on repeated failed logins** — flooding a credentialed auth endpoint can hit the lockout
+  before the rate limit; use distinct users per request or pick representatives whose 429 is not
+  confounded by lockout, per policy class.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

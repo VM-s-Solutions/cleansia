@@ -10,6 +10,44 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
+> ## 🟢 WAVE 4 IN PROGRESS — tests + accessibility (promoted `ready` 2026-06-12)
+> **Wave 3 merged to master: PR #76 (`05bf567a`).** Owner gave the go signal; Wave 4 = the test+a11y
+> block **T-0210…T-0218** + carried **T-0179** (LG-07, not built in Wave 3) + **T-0235** (the T-0194
+> AC6 runtime-429 deviation). Full plan + per-ticket stale-text deltas: **`status/sprint-6.md`**.
+> **Branch:** all work on `feature/wave-4-tests-a11y` (cut from `05bf567a`), committed batch-by-batch.
+> **All `security_touching: false`** (tests/i18n/a11y/doc against existing behavior); adversarial/
+> security-advisory review on T-0211 (money), T-0210 (signature lock), T-0215 (tenant boundary).
+> Reviewer-per-developer on every ticket; QA = suite-green + AC↔test mapping (+ keyboard walkthrough
+> on T-0218). **Resizes on verified dedup evidence: T-0213 L→M, T-0214 L→M** (Waves 0–3 TDD already
+> shipped the bulk — both are now audit+gap-fill nets; if either regrows past M the dev stops and the
+> PM splits). **Zero open dependencies; no intra-wave edges** — batching is shared-file lanes only.
+> The consistency sweep **T-0196…T-0206 is NOT in this wave** (Wave-5 candidate, owner to confirm).
+>
+> | Batch | Tickets | Parallelism / lanes |
+> |---|---|---|
+> | **4A — backend unit nets** (`Cleansia.Tests`) | **T-0212** (CreateOrder characterization, M) ∥ **T-0211** (refund/dispute money-math gap-fill, M, adversarial review) ∥ **T-0213** (invoice/pay-period gap-fill, M) ∥ **T-0214** (per-Function coverage audit+gap-fill, M) ∥ **T-0216** (fiscal-mode matrix, M) ∥ **T-0179** (carried; doc+B5 rename+lock test, S) | All 6 parallel. Lane U1: edits to the same existing `Cleansia.TestUtilities` builder file serialize (Order builders: T-0211/T-0212). Lane U2: `Cleansia.Tests.csproj` already refs Functions(.Core) — no edit expected. |
+> | **4B — frontend (customer app)** — runs ∥ 4A | **T-0218** (a11y: cleansia-* + order wizard, M) **→ then T-0217** (error-contract parity `api.*` ×5 locales + parity guard, M) | **STRICTLY SERIAL** — both edit the 5 customer locale JSONs. T-0218 is sole editor of `libs/shared/components/**` + `order-wizard/**` this wave. |
+> | **4C — integration/host runtime** | **T-0210** (webhook integration + signature-stays-on, M) ∥ **T-0215** (cross-tenant/cross-user write-path integration, M) ∥ **T-0235** (runtime 429 flood harness, S, `Cleansia.HostTests`) | T-0210 ∥ T-0215 with Lane I1: any edit to `PostgresContainerFixture`/`BaseIntegrationTest`/`PostgresCollection` serializes. T-0235 parallel (separate project; touches no guard-test/policy/startup file). |
+>
+> **Gates/owner confirms (sprint-6 §4 — none blocks 4A/4B):** (1) confirm `Cleansia.IntegrationTests`
+> green on master — the Users-lockout migration is verified **in-repo** (`20260612134125_Initial`),
+> so 4C is not hard-blocked; the confirm formally closes **T-0193 AC4**; (2) customer nswag-regen
+> still outstanding (no Wave-4 ticket consumes it); (3) confirm T-0196…T-0206 → Wave 5.
+>
+> | ID | Title | Size | Status | Batch | Layers | sec | manual_step |
+> |----|-------|------|--------|-------|--------|-----|-------------|
+> | T-0212 | TC-4: CreateOrder characterization tests | M | **ready** | 4A | backend | no | — |
+> | T-0211 | TC-7: refund/dispute money-math gap-fill | M | **ready** | 4A | backend | no (adversarial) | — |
+> | T-0213 | TC-6: invoice/numbering/pay-period tests (resized L→M) | M | **ready** | 4A | backend | no | — |
+> | T-0214 | TC-8: per-Function coverage audit + gap-fill (resized L→M; 26 fns) | M | **ready** | 4A | backend | no | — |
+> | T-0216 | TC-10: fiscal-mode selection characterization | M | **ready** | 4A | backend | no | — |
+> | T-0179 | LG-07 (carried): unify membership subscribe path | S | **ready** | 4A | backend, frontend | no | nswag-regen* (likely none) |
+> | T-0218 | A11Y-1: a11y pass — cleansia-* + order wizard | M | **ready** | 4B (1st) | frontend | no | — |
+> | T-0217 | EP-1/2/DA-7: error-contract parity ×5 locales | M | **ready** | 4B (2nd, after T-0218) | frontend | no | — |
+> | T-0210 | TC-2/3: Stripe webhook integration + signature lock | M | **ready** | 4C | backend | no (advisory) | — |
+> | T-0215 | TC-9: authz/cross-tenant write-path integration | M | **ready** | 4C | backend | no (advisory) | — |
+> | T-0235 | Runtime 429 flood harness (T-0194 AC6) | S | **ready** | 4C | backend | no | — |
+>
 > ## ✅ WAVE 3 CLOSED — admin-feature block T-0170…T-0195 (2026-06-12 reconciliation)
 > **Wave 3** (26 tickets, 6 batches 3A–3F) is functionally complete on
 > `feature/wave-3a-admin-order-dispute-ops` across four commits: **`8aa7bcc1`** (Batch 3A — admin order
@@ -195,7 +233,7 @@ One row per ticket. Source of truth for "what's the team doing right now".
 | **T-0176** | Admin referral intervention + wire by-user endpoint + sidebar | M | **done ✅** `5d631f8c` + `8ddfef9d` | T-0100✓, T-0148✓, T-0175✓ | 3C | backend, frontend | **yes** | nswag-regen ✓ |
 | **T-0177** | Invoke referral expiry sweep (timer) | S | **done ✅** `5d631f8c` | T-0143✓ | 3C | backend, functions | no | — |
 | **T-0178** | /r/{code} referral landing route | M | **done ✅** `8ddfef9d` | — | 3C | frontend | no | — |
-| **T-0179** | Unify membership subscribe path (web/mobile) | S | **⚠️ NOT BUILT — still `draft`, carried to Wave 4** (verified: `CreateMembershipSubscription.cs` untouched since Wave 1) | T-0111✓ | 3C | backend, frontend | no | nswag-regen* |
+| **T-0179** | Unify membership subscribe path (web/mobile) | S | **⚠️ NOT BUILT in Wave 3 — carried; now `ready` in Wave-4 Batch 4A** (verified: `CreateMembershipSubscription.cs` untouched since Wave 1) | T-0111✓ | 3C→4A | backend, frontend | no | nswag-regen* |
 | **T-0181** | SendSitewidePromo fan-out: resume cursor + idempotent enqueue | M | **done ✅** `5d631f8c` | T-0143✓ | 3D | functions, backend | **yes** | — |
 | **T-0182** | Idempotent push dispatch (per-message key; fix at-most-once) | M | **done ✅** `5d631f8c` (+ **ADR-0010** produced) | T-0143✓, T-0141✓ | 3D | functions, backend | **yes** | — |
 | **T-0183** | Fix cron cadence on 4 notification/recurring timers | S | **done ✅** `5d631f8c` | — | 3D | functions | no | — |
@@ -223,7 +261,7 @@ One row per ticket. Source of truth for "what's the team doing right now".
 |----|-------|------|--------|-----------|--------|-----|-------------|--------|
 | **T-0233** | Targeted-lockout DoS mitigation — trusted-device bypass / CAPTCHA on locked-account login | M | draft | T-0193✓ | backend, frontend | **yes** | — | T-0193 security note N1 |
 | **T-0234** | Bound ChangeOwnPassword current-password guessing (authenticated surface) | S | draft | T-0193✓ | backend | **yes** | — (ef-migration only if a dedicated counter is chosen) | T-0193 security note N5 |
-| **T-0235** | Runtime 429 flood-harness test (the T-0194 AC6 deviation; Wave-4 test slice) | S | draft | T-0194✓ | backend | no | — | T-0194 AC6 deviation |
+| **T-0235** | Runtime 429 flood-harness test (the T-0194 AC6 deviation; Wave-4 test slice) | S | **ready** (Wave-4 Batch 4C) | T-0194✓ | backend | no | — | T-0194 AC6 deviation |
 | **T-0236** | Multi-tenant token-revoke asymmetry: TenantId=null token writes vs tenant-filtered revoke reads | M | draft | T-0188✓ | backend | **yes** | ef-migration (TBD at contract-lock) | T-0188 security note; `security/auth-sessions.md` |
 | **T-0237** | Catalog delete TOCTOU → FK Restrict + violation→`in_use` mapping; + RecurringBookingTemplate JSON-id dangling refs | M | draft | T-0191✓ | backend, db | **yes** | ef-migration | T-0191a security re-gate notes 1+2 |
 | **T-0238** | EmployeeInvoice DTOs gain PdfGenerationFailed/PdfGenerationError + admin regen (closes Q-W3-3 / T-0171d AC4) | S | draft | T-0171✓ | backend, frontend | no | nswag-regen | Q-W3-3 |

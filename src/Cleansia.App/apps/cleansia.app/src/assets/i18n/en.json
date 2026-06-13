@@ -1358,29 +1358,149 @@
   "api": {
     "auth": {
       "account_locked": "Too many failed login attempts. The account is temporarily locked — try again in a few minutes.",
-      "too_many_attempts": "Too many attempts with this code. Request a new code and try again."
+      "too_many_attempts": "Too many attempts with this code. Request a new code and try again.",
+      "invalid_confirmation_code": "That confirmation code is invalid or has expired.",
+      "invalid_password_format": "Your password doesn't meet the requirements.",
+      "current_password_invalid": "Your current password is incorrect.",
+      "insufficient_privileges": "You don't have permission to do that."
     },
     "common": {
       "unauthorized": "You are not authorized to perform this action",
       "error_occurred": "An error occurred"
     },
+    "user": {
+      "email_confirmed": "This email address is already confirmed.",
+      "existing_email": "An account with this email already exists.",
+      "not_existing_email": "We couldn't find an account with this email.",
+      "existing_phone_number": "This phone number is already in use.",
+      "not_found": "We couldn't find that account."
+    },
+    "order": {
+      "cleaning_date": {
+        "future": "The cleaning date must be in the future.",
+        "below_lead_time": "Please pick a date that allows enough lead time to schedule a cleaner."
+      },
+      "already_cancelled": "This order has already been cancelled.",
+      "already_completed": "This order has already been completed.",
+      "in_progress_cannot_cancel": "This cleaning is already in progress and can no longer be cancelled.",
+      "invalid_status_transition": "That action isn't allowed for the order's current status.",
+      "cancellation_window_closed": "The free cancellation window for this order has closed.",
+      "address_exactly_one_required": "Please provide exactly one address for this order.",
+      "empty": "Add at least one service or package to your order.",
+      "selected_package": {
+        "invalid": "One of the selected packages is no longer available."
+      },
+      "selected_services": {
+        "invalid": "One of the selected services is no longer available."
+      },
+      "not_found": "We couldn't find that order.",
+      "no_available_spots": "There are no available slots for the selected time.",
+      "weekly_limit_reached": "You've reached the booking limit for this week.",
+      "time_conflict": "You already have a cleaning booked at that time.",
+      "total_price": {
+        "positive": "The order total must be greater than zero.",
+        "not_match": "The order total has changed — please review your order and try again."
+      },
+      "payment_gateway_unavailable": "Payments are temporarily unavailable. Please try again shortly.",
+      "creation_failed": "We couldn't create your order. Please try again.",
+      "not_completed": "This action is only available once the cleaning is completed.",
+      "review": {
+        "already_exists": "You've already reviewed this order.",
+        "rating_invalid": "Please choose a rating between 1 and 5."
+      },
+      "note": {
+        "content_required": "Please enter a note before saving."
+      },
+      "issue": {
+        "description_required": "Please describe the issue before submitting."
+      }
+    },
     "address": {
       "already_exists": "You already have this address saved.",
-      "mapbox_coords_required": "Please pick an address from the suggestions."
+      "mapbox_coords_required": "Please pick an address from the suggestions.",
+      "not_owned_by_user": "You don't have access to this address.",
+      "label_required": "Please add a label for this address.",
+      "invalid_length": "The address is too long. Please shorten it."
     },
     "service_area": {
       "country_not_serviced": "We don't currently operate in this country.",
       "country_required": "Please select a country.",
       "city_not_serviced": "We don't currently serve this city."
     },
+    "country": {
+      "not_serviced": "We don't currently operate in this country.",
+      "required": "Please select a country."
+    },
+    "city": {
+      "not_serviced": "We don't currently serve this city."
+    },
     "dispute": {
       "not_found": "Dispute not found.",
-      "not_owned_by_user": "You don't have access to this dispute."
+      "not_owned_by_user": "You don't have access to this dispute.",
+      "already_exists": "You already have an open dispute on this order.",
+      "invalid_refund_amount": "The refund amount isn't valid for this order.",
+      "max_length_exceeded": "Your message is too long. Please shorten it."
     },
     "file": {
       "invalid_file_type": "This file type isn't allowed.",
       "size_exceeded": "The file is too large.",
-      "required": "A file is required."
+      "required": "A file is required.",
+      "content_type_doesnt_match": "The file type doesn't match its contents.",
+      "count_exceeded": "You've attached too many files.",
+      "count_too_few": "Please attach at least one file.",
+      "size_exceeded_10mb": "The file is too large. The maximum size is 10 MB.",
+      "type_not_allowed": "This file type isn't allowed."
+    },
+    "receipt": {
+      "not_found": "We couldn't find a receipt for this order.",
+      "generation_failed": "We couldn't generate the receipt. Please try again."
+    },
+    "gdpr": {
+      "export_failed": "We couldn't export your data. Please try again.",
+      "deletion_failed": "We couldn't delete your account. Please try again.",
+      "deletion_already_pending": "An account deletion request is already in progress.",
+      "deletion_blocked_by_order": "Your account can't be deleted while you have active orders.",
+      "deletion_blocked_by_invoice": "Your account can't be deleted while invoices are outstanding.",
+      "consent_not_found": "We couldn't find that consent setting.",
+      "consent_already_granted": "You've already granted this consent."
+    },
+    "promo": {
+      "not_found": "That promo code doesn't exist.",
+      "expired": "This promo code has expired.",
+      "not_yet_valid": "This promo code isn't active yet.",
+      "inactive": "This promo code is no longer active.",
+      "global_limit_reached": "This promo code has reached its usage limit.",
+      "per_user_limit_reached": "You've already used this promo code.",
+      "below_minimum_order_amount": "Your order doesn't meet the minimum amount for this promo code.",
+      "currency_mismatch": "This promo code can't be used with your selected currency."
+    },
+    "referral": {
+      "not_found": "That referral code doesn't exist.",
+      "self_referral": "You can't refer yourself.",
+      "already_referred": "This account has already been referred.",
+      "inactive": "This referral code is no longer active."
+    },
+    "membership": {
+      "plan": {
+        "not_found": "That membership plan no longer exists."
+      },
+      "already_active": "You already have an active membership.",
+      "not_found": "We couldn't find your membership.",
+      "not_owned_by_user": "You can't manage this membership.",
+      "stripe_customer_required": "We couldn't reach the payment provider — please try again.",
+      "swap_same_plan": "You're already on this plan."
+    },
+    "recurring_booking": {
+      "not_found": "That recurring booking no longer exists.",
+      "not_owned_by_user": "You can't manage this recurring booking.",
+      "saved_address_not_found": "Pick a saved address for this schedule.",
+      "no_services_or_packages": "Choose at least one service or package.",
+      "starts_on_in_past": "The start date can't be in the past.",
+      "ends_on_before_start": "The end date must be after the start date."
+    },
+    "device": {
+      "invalid_platform": "This device platform isn't supported.",
+      "not_found": "We couldn't find that device."
     }
   },
   "loyalty": {
@@ -1507,5 +1627,18 @@
       "refunded": "Refunded",
       "disputed": "Disputed"
     }
+  },
+  "aria": {
+    "step": "Step {{number}}: {{label}}",
+    "select_service": "Select service: {{name}}",
+    "select_package": "Select package: {{name}}",
+    "select_payment": "Select payment method: {{method}}",
+    "use_address": "Use saved address: {{label}}",
+    "use_new_address": "Enter a new address",
+    "toggle_price_breakdown": "Toggle price breakdown",
+    "decrease_rooms": "Decrease rooms",
+    "increase_rooms": "Increase rooms",
+    "decrease_bathrooms": "Decrease bathrooms",
+    "increase_bathrooms": "Increase bathrooms"
   }
 }

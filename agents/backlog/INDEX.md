@@ -10,11 +10,20 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
-> ## 🟢 WAVE 4 IN PROGRESS — tests + accessibility (promoted `ready` 2026-06-12)
+> ## ✅ WAVE 4 COMPLETE — tests + accessibility (11 of 11 done 2026-06-13)
 > **Wave 3 merged to master: PR #76 (`05bf567a`).** Owner gave the go signal; Wave 4 = the test+a11y
 > block **T-0210…T-0218** + carried **T-0179** (LG-07, not built in Wave 3) + **T-0235** (the T-0194
-> AC6 runtime-429 deviation). Full plan + per-ticket stale-text deltas: **`status/sprint-6.md`**.
+> AC6 runtime-429 deviation). Full plan + per-ticket stale-text deltas + the 4C close-out:
+> **`status/sprint-6.md`** (§7 = 4A+4B, §8 = 4C).
 > **Branch:** all work on `feature/wave-4-tests-a11y` (cut from `05bf567a`), committed batch-by-batch.
+> **DONE: 11 of 11.** **Batch 4A** (T-0212/T-0211/T-0213/T-0214/T-0216/T-0179) + **Batch 4B**
+> (T-0218/T-0217) landed orchestrator-verified green (**Cleansia.Tests 1311/1311**, frontend Jest green,
+> customer prod build clean), committed **`6706d8d1`** + pushed. **Batch 4C** = **T-0210 / T-0215 /
+> T-0235** (integration + host-runtime tests) **DONE 2026-06-13**, orchestrator-verified green against
+> real Postgres (**HostTests 51/51, IntegrationTests 60/60, RateLimiting 65/65**). 4C surfaced **2
+> confirmed production bugs** (test-only wave, correctly NOT fixed) → new tickets **T-0245** (multi-tenant
+> webhook tenant-scope mismatch — **GO-LIVE BLOCKER**) + **T-0246** (StartOrder handler NRE→500). The 5
+> Wave-4 carried follow-ups are **T-0242…T-0246**. Close-out: `status/sprint-6.md` §7 (4A+4B) + §8 (4C).
 > **All `security_touching: false`** (tests/i18n/a11y/doc against existing behavior); adversarial/
 > security-advisory review on T-0211 (money), T-0210 (signature lock), T-0215 (tenant boundary).
 > Reviewer-per-developer on every ticket; QA = suite-green + AC↔test mapping (+ keyboard walkthrough
@@ -36,17 +45,30 @@ One row per ticket. Source of truth for "what's the team doing right now".
 >
 > | ID | Title | Size | Status | Batch | Layers | sec | manual_step |
 > |----|-------|------|--------|-------|--------|-----|-------------|
-> | T-0212 | TC-4: CreateOrder characterization tests | M | **ready** | 4A | backend | no | — |
-> | T-0211 | TC-7: refund/dispute money-math gap-fill | M | **ready** | 4A | backend | no (adversarial) | — |
-> | T-0213 | TC-6: invoice/numbering/pay-period tests (resized L→M) | M | **ready** | 4A | backend | no | — |
-> | T-0214 | TC-8: per-Function coverage audit + gap-fill (resized L→M; 26 fns) | M | **ready** | 4A | backend | no | — |
-> | T-0216 | TC-10: fiscal-mode selection characterization | M | **ready** | 4A | backend | no | — |
-> | T-0179 | LG-07 (carried): unify membership subscribe path | S | **ready** | 4A | backend, frontend | no | nswag-regen* (likely none) |
-> | T-0218 | A11Y-1: a11y pass — cleansia-* + order wizard | M | **ready** | 4B (1st) | frontend | no | — |
-> | T-0217 | EP-1/2/DA-7: error-contract parity ×5 locales | M | **ready** | 4B (2nd, after T-0218) | frontend | no | — |
-> | T-0210 | TC-2/3: Stripe webhook integration + signature lock | M | **ready** | 4C | backend | no (advisory) | — |
-> | T-0215 | TC-9: authz/cross-tenant write-path integration | M | **ready** | 4C | backend | no (advisory) | — |
-> | T-0235 | Runtime 429 flood harness (T-0194 AC6) | S | **ready** | 4C | backend | no | — |
+> | T-0212 | TC-4: CreateOrder characterization tests | M | **done ✅** `6706d8d1` | 4A | backend | no | — |
+> | T-0211 | TC-7: refund/dispute money-math gap-fill | M | **done ✅** `6706d8d1` | 4A | backend | no (adversarial) | — |
+> | T-0213 | TC-6: invoice/numbering/pay-period tests (resized L→M) | M | **done ✅** `6706d8d1` | 4A | backend | no | — |
+> | T-0214 | TC-8: per-Function coverage audit + gap-fill (resized L→M; 26 fns) | M | **done ✅** `6706d8d1` | 4A | backend | no | — |
+> | T-0216 | TC-10: fiscal-mode selection characterization | M | **done ✅** `6706d8d1` | 4A | backend | no | — |
+> | T-0179 | LG-07 (carried): unify membership subscribe path | S | **done ✅** `6706d8d1` (no regen) | 4A | backend, frontend | no | nswag-regen* (none needed) |
+> | T-0218 | A11Y-1: a11y pass — cleansia-* + order wizard | M | **done ✅** `6706d8d1` | 4B (1st) | frontend | no | — |
+> | T-0217 | EP-1/2/DA-7: error-contract parity ×5 locales | M | **done ✅** `6706d8d1` | 4B (2nd, after T-0218) | frontend | no | — |
+> | T-0210 | TC-2/3: Stripe webhook integration + signature lock | M | **done ✅** | 4C | backend | no (advisory) | — |
+> | T-0215 | TC-9: authz/cross-tenant write-path integration | M | **done ✅** | 4C | backend | no (advisory) | — |
+> | T-0235 | Runtime 429 flood harness (T-0194 AC6) | S | **done ✅** | 4C | backend | no | — |
+>
+> **Batch 4C orchestrator-verified green** (real Postgres): **HostTests 51/51, IntegrationTests 60/60,
+> RateLimiting 65/65**. (T-0235's AC3 named `Cleansia.HostTests` as the home, but the runtime limiter is
+> only exercisable in `Cleansia.Tests/RateLimiting` — the existing harness home; AC3 intent satisfied,
+> deviation D1 accepted.)
+>
+> **Wave-4 carried production findings → new tickets (all `draft`, Wave-5 candidates):**
+> **T-0242** (cancellation-fee free-window override direction, from T-0211) · **T-0243**
+> (CreateMembershipCheckoutSession `nameof` B5 consistency, from T-0179) · **T-0244**
+> (EmployeeInvoice.GenerateVariableSymbol cross-process stable hash, from T-0213) · **T-0245**
+> (multi-tenant Stripe webhook validator/handler tenant-scope mismatch — **GO-LIVE BLOCKER**, from T-0210) ·
+> **T-0246** (StartOrder handler NRE→500 on validator/handler load divergence, from T-0215). Detail rows
+> in the follow-up table below the Wave-3 roster.
 >
 > ## ✅ WAVE 3 CLOSED — admin-feature block T-0170…T-0195 (2026-06-12 reconciliation)
 > **Wave 3** (26 tickets, 6 batches 3A–3F) is functionally complete on
@@ -268,6 +290,16 @@ One row per ticket. Source of truth for "what's the team doing right now".
 | **T-0239** | Module-boundary sweep: customer features off `@cleansia/partner-services` (14 files) + eslint boundary rule | M | draft | — | frontend | no | — | Wave-3 review finding |
 | **T-0240** | Android `.kotlin` build-artifact dir → `.gitignore` | S | draft | — | android | no | — | T-0195 reviewer nit |
 | **T-0241** | Admin-app selector-prefix eslint alignment + Nx generator default | S | draft | — | frontend | no | — | recurring 3A+ baseline noise |
+
+**Wave-4 close follow-ups (filed 2026-06-13, all `draft`, Wave-5 candidates) — production findings the test wave uncovered but (correctly) did NOT fix in a test-only wave. T-0242–T-0244 from 4A; T-0245/T-0246 from 4C. ⚠️ T-0245 is a MULTI-TENANT GO-LIVE BLOCKER (must land before any multi-tenant onboarding, alongside T-0236).**
+
+| ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
+|----|-------|------|--------|-----------|--------|-----|-------------|--------|
+| **T-0242** | Cancellation-fee free-window override semantics: larger Plus override makes the free window STRICTER, contradicting "Plus = more generous" — confirm intent + fix direction (either smaller override on the Plus path or invert override semantics) + update the T-0211 pinning tests | S | draft | T-0211✓ | backend | no (money — adversarial review) | — | T-0211 (TC-7) carried finding |
+| **T-0243** | `CreateMembershipCheckoutSession` `UserNotFound` uses `nameof(Command)` → `nameof(userId)` (same B5 smell T-0179 fixed in the sibling handler, scoped out there); mechanical rename, pin if practical | XS | draft | T-0179✓ | backend | no | — | T-0179 (LG-07) carried finding |
+| **T-0244** | `EmployeeInvoice.GenerateVariableSymbol` uses per-process-randomized `string.GetHashCode()` (cross-process recompute → silent fiscal/payment-reference mismatch); replace with a deterministic stable hash (or persist-and-never-recompute) + cross-invocation determinism test | S | draft | T-0213✓ | backend | no | ef-migration (only if persist-and-never-recompute is chosen) | T-0213 (TC-6) carried finding |
+| **T-0245** ⚠️ **MULTI-TENANT GO-LIVE BLOCKER** | Multi-tenant Stripe webhook validator/handler tenant-scope mismatch: order-exists VALIDATOR rule (`BaseRepository.ExistsAsync`) is tenant-scoped while the handler read (`GetByIdIgnoringTenantAsync`) is tenant-ignoring → a non-null-tenant paid `checkout.session.completed` FAILS VALIDATION and the order is never confirmed/paid (silent money/lifecycle failure). Masked today (web Checkout is single-tenant, `TenantId==null`). Fix: tenant-ignoring existence check + non-null-tenant integration test. Sibling of T-0236. | M | draft | T-0210✓ | backend | **yes** | — | T-0210 (TC-2/3) review + Security; verified by 4C webhook suite |
+| **T-0246** | StartOrder handler NRE→500 on validator/handler load divergence: `StartOrder.cs:137` `order!.StartOrder()` derefs an unguarded Include-shaped `FirstOrDefaultAsync` while the validator (`:45`) gated existence via `ExistsAsync` (a different query path); when they disagree the handler NREs into a 500 instead of a clean business not-found. Reproduced live on the Mobile partner host with tenant-consistent seed data. Fix: guard the null load (`OrderNotFound`) + reconcile handler query with validator + regression test. | S | draft | T-0215✓ | backend | no | — | T-0215 (TC-9) Ac14 carried finding |
 >
 > **L-splits authorized (5)** — children created as part of execution intake, contract-first per
 > `routing.md`: **T-0170**→170a/b/c/d, **T-0173**→173a/b, **T-0171**→171a/b/c/d/e, **T-0175**→175a/b,

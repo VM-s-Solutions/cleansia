@@ -258,6 +258,164 @@ reality. PR to `master` is the owner's call.
 
 ---
 
+## 7. Batch 4A + 4B close-out (2026-06-13) — 8 of 11 done
+
+**Status:** Batches **4A** (6 backend unit-net tickets) and **4B** (2 frontend tickets) are complete,
+orchestrator-verified green, committed **`6706d8d1`** and pushed on `feature/wave-4-tests-a11y`.
+**Wave-4 progress: 8 of 11 done. Remaining: Batch 4C** (T-0210 webhook integration, T-0215 cross-tenant/
+cross-user write-path integration, T-0235 runtime 429 flood harness).
+
+### 7.1 What landed
+- **4A (backend, `Cleansia.Tests`):**
+  - **T-0212** — green-field CreateOrder characterization suite (20 cases, validator + handler + shared
+    fixture; AUD-06 has not run, so the before-refactor net is intact).
+  - **T-0211** — refund/dispute money-math **gap-fill** (50 new tests, 5 files) — fee-tier boundaries,
+    Plus free-window override, pure-decimal refund formula, CancelOrder wiring + refund-branch guards,
+    illegal-state rejection, ResolveDispute validator, adversarial fee-rounding. Adversarial money
+    review honoured; 4 production mutations applied + reverted to prove RED; zero production edits.
+  - **T-0213** — invoice/numbering/pay-period **gap-fill** (54 tests, 5 files + 1 additive builder) —
+    money aggregation/AssignToInvoice/clamp, validator paths, numbering shape + variable symbol,
+    entity transition guards, ClosePayPeriod + PayPeriod lifecycle.
+  - **T-0214** — per-Function **coverage audit + gap-fill** (audit table over 26 Function shells → 18
+    Core handlers + 1 poison base mapped to the 33 existing suites; 6 new files / 18 tests for the
+    uncovered branches: OutboxDrainer entry point, 3 GenerateReceipt branches, push muted-category,
+    CalculateOrderPay classification, the 6 mediator sweeps' failure-else, SendEmailPoison).
+  - **T-0216** — fiscal-mode selection characterization **matrix** (29 theory cases, 3 files;
+    None/AsyncBackground/BlockingOnline × hold/send/release + fallback-to-None).
+  - **T-0179** — membership subscribe-path doc + B5 `nameof(Command)`→`nameof(userId)` rename + contract-
+    lock test (3 tests, red-first). **No nswag-regen needed** (comment + runtime-error-payload only).
+- **4B (frontend, customer app):**
+  - **T-0218** — a11y pass on `cleansia-button` + order wizard (16 Jest cases; div→native-button
+    conversions, ARIA state, label/error association, icon-button names; 11 `aria.*` i18n keys ×5
+    locales). Reviewer APPROVED (PASS-WITH-NOTES).
+  - **T-0217** — error-contract parity: customer `api.*` keys backfilled across all 5 locales (identical
+    key sets), parity-guard + interceptor-fallback specs, `patterns-frontend.md` AC5 doc. Serialized
+    correctly behind T-0218 on the locale JSONs (disjoint `aria.*`/`api.*` subtrees).
+
+### 7.2 Verified test counts (orchestrator)
+- **`Cleansia.Tests` = 1311 / 1311 passed**, 0 failed, 0 skipped.
+- **Frontend Jest green** for the touched projects (`components` 4/4, `cleansia-customer-order-wizard`
+  12/12, `services` 27/27, `cleansia.app` 5/5).
+- **Customer production build clean** (`nx build cleansia.app --configuration=production`; only the
+  pre-existing unrelated NG8102 order-wizard warning).
+
+### 7.3 T-0216 transient-FAIL explanation (resolved)
+The T-0216 workflow returned a transient FAIL that was **two distinct, now-resolved** items:
+1. **Cross-lane mid-write flicker** — the concurrent T-0212/T-0214 lanes were mid-write on
+   `Features/Orders/CreateOrderHandlerCharacterizationTests.cs` (and the T-0216 lane's own
+   `Functions/GenerateReceiptHandlerFiscalModeMatrixTests.cs` briefly overlapped T-0214's AC2
+   BlockingOnline-hold case) while T-0216's full-project run executed, so the project transiently did
+   not compile / showed 2 unrelated Orders-lane failures. These were **not** caused by T-0216 and
+   cleared once the lanes converged.
+2. **Comment-token must-fix** — the reviewer's single CHANGES-REQUESTED item: the three new fiscal-mode
+   test files carried `TC-10` (and one `post-T-0184`) ticket-ID tokens in their class docblocks,
+   violating `conventions.md` (no `// T-NNNN` in source). The dev stripped the tokens (behavioural
+   prose + load-bearing ADR refs kept); comment-only, zero IL change.
+**Both resolved.** T-0216's 29 fiscal-mode cases pass and the orchestrator confirmed the new test files
+across all 4A lanes carry no TC-/T-NNNN tokens. T-0216 marked `done`.
+
+### 7.4 The 3 follow-ups filed (carried production findings — Wave-5 candidates, all `draft`)
+The characterization tests uncovered three real production findings that the test-only wave (correctly)
+did **not** fix. Each is now a proper ticket:
+- **T-0242** (from T-0211, backend, S, money-semantics) — `BookingPolicy.CalculateCancellationFeeRate`
+  treats `freeCancellationHoursOverride` as a literal replacement, so the **larger** override the Plus
+  path passes makes the free-cancellation window **stricter**, contradicting the "Plus = more generous"
+  doc. AC: confirm intended direction with the owner, then either pass a smaller override on the Plus
+  path or invert the override semantics in `BookingPolicy`, and update T-0211's
+  `CancellationFeeRateBoundaryTests` (which currently PIN the literal-replacement behavior) to the
+  corrected intent.
+- **T-0243** (from T-0179, backend, XS) — `CreateMembershipCheckoutSession.cs` (~line 45) builds its
+  `UserNotFound` failure with `nameof(Command)` instead of `nameof(userId)` — the same B5 smell T-0179
+  fixed in the sibling, explicitly scoped out there. Mechanical rename; consistency debt, not a runtime
+  defect.
+- **T-0244** (from T-0213, backend, S) — `EmployeeInvoice.GenerateVariableSymbol` relies on
+  per-process-randomized `string.GetHashCode()`; no live bug today (computed once, not recomputed
+  cross-process), but a persist-then-recompute-in-another-process path would silently mismatch a
+  fiscal/payment reference. AC: replace with a deterministic stable hash (or persist-and-never-recompute)
+  + a cross-invocation determinism test (T-0213 pins only within-run determinism today).
+
+### 7.5 Carried production findings list (the §6 "fixing any defect a test surfaces" rule in action)
+| Finding | Surfaced by | Severity | Filed as |
+|---|---|---|---|
+| Cancellation-fee Plus free-window override direction contradicts doc | T-0211 (TC-7) | money-semantics (product decision) | **T-0242** |
+| `CreateMembershipCheckoutSession` `nameof(Command)` B5 smell | T-0179 (LG-07) | consistency debt (no runtime defect) | **T-0243** |
+| `GenerateVariableSymbol` per-process `GetHashCode` cross-process trap | T-0213 (TC-6) | latent fiscal-reference correctness | **T-0244** |
+
+All three are `draft`, `sprint: 5` (Wave-5 candidates), `owner: —`, and depend on their done source
+ticket. None blocks Batch 4C.
+
+---
+
+## 8. Batch 4C close-out (2026-06-13) — 11 of 11 done · WAVE 4 COMPLETE
+
+**Status:** Batch **4C** (the integration + host-runtime test slice) is complete and
+orchestrator-verified green against **real Postgres** (Testcontainers). With 4A+4B (§7) already landed,
+**Wave 4 is COMPLETE: 11 of 11 tickets `done`.**
+
+### 8.1 What landed
+- **T-0210** (TC-2/3 — Stripe order + subscription webhook integration + signature-stays-on lock,
+  backend) — 15 integration tests in 3 new files under
+  `src/Cleansia.IntegrationTests/Features/Payments/Webhooks/` (order-webhook idempotency at the durable-
+  outbox seam, subscription active-membership + filtered-unique-index backstop, missing/forged-signature
+  rejection on both routes, the no-env-bypass structural + behavioral lock, happy paths). NO production
+  code edits. Reviewer CHANGES-REQUESTED (comment-discipline must-fix — strip `T-NNNN` from sources)
+  resolved; Security PASS-WITH-NOTES (two test-strength notes, non-blocking).
+- **T-0215** (TC-9 — authz / cross-tenant + cross-user write-path integration, backend) — 13 tests
+  across 4 new files extending the `Cleansia.HostTests` `Ac*` family (SavedAddress cross-user/cross-tenant,
+  Dispute add-message cross-tenant, Membership cancel cross-tenant, Order Take/Start on the 4th — Mobile
+  partner — host). Additive `HttpAssert`/`DomainSeed` infra only; **zero production source edits**.
+  Reviewer + Security both PASS-WITH-NOTES (coverage-attribution / degenerate-case observations,
+  non-blocking; isolation locked both directions, non-vacuous).
+- **T-0235** (runtime 429 flood harness — the T-0194 AC6 deviation, backend) — 3 cases over the existing
+  runtime harness `src/Cleansia.Tests/RateLimiting/Harness/RateLimiterHostHarness.cs` (auth-anonymous +
+  remediation path, auth-authenticated per-sub, webhook per-source-IP), each flooding past its window to
+  runtime 429 + `Retry-After` with an under-window control. RED (right-reason) proven by temporarily
+  dropping the remediation route's `RequireRateLimiting("auth")`. Additive non-breaking `extraEndpoints`
+  harness hook; no change to policies/attributes/`CleansiaStartupBase.cs`.
+
+### 8.2 Verified test counts (orchestrator, clean runs vs real Postgres)
+- **`Cleansia.HostTests` = 51 / 51 passed.**
+- **`Cleansia.IntegrationTests` = 60 / 60 passed.**
+- **`Cleansia.Tests` RateLimiting = 65 / 65 passed** (62 prior + 3 new).
+
+### 8.3 T-0235 AC3 home divergence (accepted)
+AC3 named `Cleansia.HostTests` as the test home, but that project does not exercise the **runtime**
+rate-limiter; the runtime limiter is exercisable in `Cleansia.Tests/RateLimiting` via the existing
+TestServer harness (`RateLimiterHostHarness`, already the home of `WebhookRateLimitTests` /
+`RateLimiterHostBehaviorTests`). The tests correctly live there; the AC3 **intent** (runtime proof, not
+`BaseIntegrationTest`, green in CI, per-policy-class mapping) is fully satisfied. Deviation D1 stands.
+
+### 8.4 The 2 confirmed production bugs filed (4C carried findings — test-only wave, correctly NOT fixed)
+| Bug | Surfaced/verified by | Severity | Filed as |
+|---|---|---|---|
+| Multi-tenant Stripe webhook validator/handler tenant-scope mismatch — order-exists VALIDATOR (`BaseRepository.ExistsAsync`) tenant-scoped vs handler read (`GetByIdIgnoringTenantAsync`) tenant-ignoring → a non-null-tenant paid `checkout.session.completed` fails validation and the order is never confirmed/paid (silent money/lifecycle failure; masked today because web Checkout is single-tenant) | T-0210 (TC-2/3) review + Security; the suite seeds single-tenant to dodge it and documents the gap | ⚠️ **MULTI-TENANT GO-LIVE BLOCKER** (M, `security_touching`) — sibling of T-0236 | **T-0245** |
+| StartOrder handler NRE→500 — `StartOrder.cs:137` `order!.StartOrder()` derefs an unguarded Include-shaped load while the validator (`:45`) gated existence via a different query path (`ExistsAsync`); divergence → 500 instead of clean business not-found | T-0215 (TC-9) Ac14, reproduced live on the Mobile partner host with tenant-consistent seed data | latent 500-vs-not-found robustness (S) | **T-0246** |
+
+Both are `draft`, `sprint: 5` (Wave-5 candidates), `owner: —`, depend on their done source ticket.
+**T-0245 must land before any multi-tenant onboarding** (alongside T-0236). Cross-linked: T-0245 ↔
+memory `tenant-ignoring-read-on-webhook-paths.md` + T-0236; T-0246 ↔ T-0215 Ac14.
+
+### 8.5 Wave-4 overall summary
+- **11 tickets `done`** across 3 batches: 4A (T-0212/T-0211/T-0213/T-0214/T-0216/T-0179),
+  4B (T-0218/T-0217), 4C (T-0210/T-0215/T-0235). Zero production-source edits in the wave (tests /
+  i18n / a11y / doc / comment-only renames against existing behavior).
+- **Orchestrator-verified green:** `Cleansia.Tests` 1311/1311 (4A) + frontend Jest + customer prod
+  build (4B); `Cleansia.HostTests` 51/51 + `Cleansia.IntegrationTests` 60/60 + RateLimiting 65/65 (4C,
+  real Postgres).
+- **5 carried production findings filed** as new `draft` tickets — **T-0242** (cancellation-fee override
+  direction, from T-0211), **T-0243** (CheckoutSession `nameof` B5, from T-0179), **T-0244** (variable-
+  symbol stable hash, from T-0213), **T-0245** (multi-tenant webhook tenant-scope mismatch — go-live
+  blocker, from T-0210), **T-0246** (StartOrder NRE→500, from T-0215). None blocked Wave 4; all are
+  Wave-5 candidates.
+- **PR to `master` is the owner's call** (PM does not merge). Branch `feature/wave-4-tests-a11y`.
+
+### 8.6 WAVE 4 CLOSED
+**Wave 4 (tests + a11y) CLOSED 2026-06-13 — 11/11 done; follow-ups T-0242–T-0246 filed (`draft`,
+Wave-5 candidates; T-0245 + T-0236 = multi-tenant onboarding blockers).** No code/commits/branch ops
+by the PM in this close-out (backlog bookkeeping only).
+
+---
+
 ## Status log
 - 2026-06-12 — Wave-4 plan drafted + promoted (PM). Verified master `05bf567a` (PR #76); all 11
   tickets' dependencies `done`; Users-lockout migration present in-repo; IntegrationTests/HostTests
@@ -267,3 +425,25 @@ reality. PR to `master` is the owner's call.
   lanes U1/U2), 4B frontend **T-0218 → T-0217 serialized** on the 5 customer locale JSONs, 4C
   integration/host (T-0210 ∥ T-0215 on Lane I1 + T-0235). All 11 promoted `ready`; stale-text deltas
   recorded in §3 for the implementing agents. Owner confirms filed in §4.1 (none blocks 4A/4B).
+- 2026-06-13 — **Batch 4A+4B closed (PM bookkeeping)**. 8 tickets set `done`
+  (T-0212/T-0211/T-0213/T-0214/T-0216/T-0179 + T-0218/T-0217) — orchestrator-verified green
+  (`Cleansia.Tests` 1311/1311, frontend Jest green, customer prod build clean), committed `6706d8d1`
+  + pushed. Each ticket carries an `updated: 2026-06-13` bump and a final `done` status-log line. The
+  T-0216 transient FAIL (cross-lane mid-write flicker + comment-token must-fix) explained + recorded
+  as resolved (§7.3). Three carried production findings filed as new `draft` tickets: **T-0242**
+  (cancellation-fee override direction, from T-0211), **T-0243** (CheckoutSession `nameof` B5, from
+  T-0179), **T-0244** (variable-symbol stable hash, from T-0213) — §7.4/§7.5. INDEX.md updated (8
+  `done`, 3 new drafts, Wave-4 progress 8/11; 4C = T-0210/T-0215/T-0235 remaining). Wave-4 close-out
+  subsection added (§7). No code/commits/branch ops by the PM (bookkeeping only).
+- 2026-06-13 — **Batch 4C closed → WAVE 4 COMPLETE (PM bookkeeping)**. 3 tickets set `done`
+  (T-0210/T-0215/T-0235), each with `updated: 2026-06-13` + a final `done` status-log line —
+  orchestrator-verified green vs real Postgres (`Cleansia.HostTests` 51/51, `Cleansia.IntegrationTests`
+  60/60, `Cleansia.Tests` RateLimiting 65/65). T-0235's AC3 home divergence (named HostTests; tests live
+  in `Cleansia.Tests/RateLimiting` where the runtime limiter is exercisable) noted + accepted (§8.3).
+  **2 confirmed production bugs filed** as new `draft` tickets — **T-0245** (multi-tenant Stripe webhook
+  validator/handler tenant-scope mismatch — **MULTI-TENANT GO-LIVE BLOCKER**, `security_touching`, from
+  T-0210) + **T-0246** (StartOrder handler NRE→500 on validator/handler load divergence, from T-0215).
+  §8 close-out added (4C + Wave-4 summary + WAVE 4 CLOSED line). INDEX.md: 4C roster rows → `done ✅`,
+  Wave-4 banner → "✅ WAVE 4 COMPLETE — 11 of 11 done", T-0245/T-0246 added to the Wave-4 follow-up table
+  (T-0245 flagged go-live blocker). **Wave 4 = 11/11 done; follow-ups T-0242–T-0246 filed.** No
+  code/commits/branch ops by the PM (bookkeeping only).

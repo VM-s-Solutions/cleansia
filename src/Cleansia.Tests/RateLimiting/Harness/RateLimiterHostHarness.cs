@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,9 +49,10 @@ public sealed class RateLimiterHostHarness : IAsyncDisposable
 
     public static async Task<RateLimiterHostHarness> StartAsync(
         IDictionary<string, string?> config,
-        string environmentName = "Production")
+        string environmentName = "Production",
+        Action<IEndpointRouteBuilder>? extraEndpoints = null)
     {
-        var host = BuildHost(config, environmentName);
+        var host = BuildHost(config, environmentName, extraEndpoints);
         await host.StartAsync();
         return new RateLimiterHostHarness(host);
     }
@@ -105,7 +107,10 @@ public sealed class RateLimiterHostHarness : IAsyncDisposable
         public bool Is429 => StatusCode == StatusCodes.Status429TooManyRequests;
     }
 
-    private static IHost BuildHost(IDictionary<string, string?> config, string environmentName)
+    private static IHost BuildHost(
+        IDictionary<string, string?> config,
+        string environmentName,
+        Action<IEndpointRouteBuilder>? extraEndpoints = null)
     {
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(config).Build();
 
@@ -152,6 +157,12 @@ public sealed class RateLimiterHostHarness : IAsyncDisposable
                         endpoints.MapPost("/api/Payment/webhook", Ok)
                             .AllowAnonymous()
                             .RequireRateLimiting("webhook");
+
+                        // Optional, test-supplied routes that mirror a SPECIFIC production endpoint
+                        // shape (e.g. a T-0194 remediation-target anonymous password path) so a
+                        // runtime flood proves that endpoint's window is live middleware, not just
+                        // attributed. Additive: null preserves the three canonical stub routes above.
+                        extraEndpoints?.Invoke(endpoints);
                     });
                 });
             })

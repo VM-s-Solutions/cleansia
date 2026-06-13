@@ -20,9 +20,15 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > **Intake actions:** (1) **fixed an id collision** — two files claimed `id: T-0200`; the dispute-guard
 > `check-consistency` follow-up (`T-0200-da-2-followup.md`) was **re-id'd `T-0200 → T-0247`**; the AUD-07
 > order-wizard file keeps canonical `T-0200`. (2) sprint frontmatter re-tagged `3→5` on the swept tickets.
-> (3) **L-epics are NOT promoted `ready`** — they stay `draft` and the PM splits them at batch dispatch
-> (T-0196, T-0199, T-0197, and the AUD-07 L-file). (4) Opened **Q-W5-1 (blocking)** — Plus
-> free-cancellation-window direction — **gates T-0242 ONLY**; the rest of the wave proceeds.
+> (3) **L-epics are NOT promoted `ready`** — they were split at dispatch. (4) Opened **Q-W5-1 (blocking)** —
+> Plus free-cancellation-window direction — **gates T-0242 ONLY**; the rest of the wave proceeds.
+>
+> **WAVE-5 PROGRESS (2026-06-13):** **Batch 5A DONE / committed `3df53ab2`** (T-0245 webhook tenant-scope +
+> T-0246 StartOrder NRE). Owner approved driving the rest autonomously. **The three L-epics are now SPLIT**
+> into **11 child tickets T-0248…T-0258** (T-0196→T-0248..T-0252; T-0199→T-0253..T-0255; T-0200→T-0256..T-0258);
+> the epics are `in_progress` [SPLIT/EPIC] trackers (`done` only when their children are). T-0197 (5H) stays
+> `draft`, defer-candidate. **Dependency-ordered dispatch plan: sprint-7 §2.2** — {5B,5C,5D,5E} concurrent →
+> {5F,5G} after T-0249/T-0251 land → 5H deferred. **5C must complete before 5F/5G.** T-0242 BLOCKED on Q-W5-1.
 >
 > **Critical sequencing:** **Batch 5A = T-0245 ∥ T-0246 FIRST** (disjoint files; T-0245 is the
 > **multi-tenant GO-LIVE BLOCKER**, `security_touching`, with a non-null-tenant integration test extending
@@ -35,39 +41,58 @@ One row per ticket. Source of truth for "what's the team doing right now".
 >
 > | Batch | Tickets | Parallelism / lanes |
 > |---|---|---|
-> | **5A — priority bugs (FIRST)** | **T-0245** (webhook tenant-scope, M, **sec gate**, GO-LIVE BLOCKER) ∥ **T-0246** (StartOrder NRE→500, S) | Parallel — disjoint files (webhook validator/repo vs `StartOrder.cs`). T-0245 → new non-null-tenant test in `Cleansia.IntegrationTests/.../Webhooks/`. |
+> | **5A — priority bugs (FIRST) — DONE ✅ `3df53ab2`** | **T-0245** (webhook tenant-scope, M, sec gate, GO-LIVE BLOCKER) ∥ **T-0246** (StartOrder NRE→500, S) | Parallel — disjoint files. Both verified + committed. |
 > | **5B — backend micro-fixes + long tail** | **T-0243** (XS) → **T-0203** (M) *(Lane M-Membership, serial — both edit `CreateMembershipCheckoutSession.cs`)* · **T-0244** (S, money-adv) · **T-0205** (S, backend∥mobile) · **T-0206** (S, S6 sec-advisory) · **T-0242** (S, **BLOCKED Q-W5-1**, Lane BookingPolicy) | Fan out; 2 serial lanes (M-Membership, BookingPolicy). |
-> | **5C — consistency sweep base (T-0196, L→split)** | 5 disjoint sub-streams: A* paged-query · B1 Response-wrap · B3 validator-base · C* customer facades *(excl. `disputes.facade.ts`)* · E1/E2 Android sealed states | Sub-streams concurrent; serialize only on same-file. **Base dep for 5F/5G.** |
-> | **5D — AUD-06 (T-0199, L→split) ALONE** | **T-0199** CreateOrder decomposition (a/b/c under the T-0212 net) | **LANE-ISOLATED on `CreateOrder.cs`.** No other CreateOrder writer concurrent. Gate: T-0212 stays green. |
-> | **5E — de-triplication + AddSavedAddress** | **T-0198** (M, auth/dispute/saved-address controllers + login/forgot facades, sec-advisory) · **T-0201** (M, AddSavedAddress + B9 mapper) | Separate lanes; SavedAddress controllers (T-0198) vs handlers/mappers (T-0201) disjoint but same area — one lane. |
-> | **5F — frontend rebuilds (after 5C)** | **T-0200** (AUD-07 order-wizard, L→split) ∥ **T-0202** (disputes archetype, M, **regen-verify**) | Disjoint feature folders. Both BLOCKED on T-0196 (5C). |
-> | **5G — perf cluster + tooling (after 5C)** | **T-0204** (M, **ef-migration**, optimizer, BLOCKED on T-0196) ∥ **T-0247** (S, check-consistency rule, sec) | Parallel. T-0204 internal fan-out one dev/reviewer per repo group. |
+> | **5C — consistency sweep base (T-0196 SPLIT → T-0248..T-0252)** | **T-0248** A* ∥ **T-0249** B1 ∥ **T-0250** B3 ∥ **T-0251** C* *(excl. `disputes.facade.ts`)* ∥ **T-0252** E1/E2 | 5 children concurrent; serialize only on same-file. **Base dep for 5F/5G (T-0249→T-0202/T-0204; T-0251→T-0200/T-0204).** |
+> | **5D — AUD-06 (T-0199 SPLIT → T-0253..T-0255) ALONE** | **T-0253**→**T-0254**→**T-0255** (serial a/b/c under the T-0212 net; T-0255 preserves the outbox seam) | **LANE-ISOLATED + SERIAL on `CreateOrder.cs`.** No other CreateOrder writer concurrent. Gate: T-0212 stays green+unmodified. |
+> | **5E — de-triplication + AddSavedAddress** | **T-0198** (M, auth/dispute/saved-address controllers + login/forgot facades, sec-advisory) · **T-0201** (M, AddSavedAddress + B9 mapper) | Separate lanes; SavedAddress controllers (T-0198) vs handlers/mappers (T-0201) vs T-0249 DeleteSavedAddress command disjoint but same area — one lane. |
+> | **5F — frontend rebuilds (after 5C)** | **[T-0256→T-0257→T-0258]** (AUD-07 order-wizard, SPLIT, serial) ∥ **T-0202** (disputes archetype, M, **regen-verify**) | Disjoint feature folders. AUD-07 chain downstream of T-0251; T-0202 downstream of T-0249 + regen-verify. |
+> | **5G — perf cluster + tooling (after 5C)** | **T-0204** (M, **ef-migration**, optimizer, BLOCKED on T-0249/T-0251) ∥ **T-0247** (S, check-consistency rule, sec) | Parallel. T-0204 internal fan-out one dev/reviewer per repo group; rebases PERF-D2 on T-0249 B1. |
 > | **5H — mobile ApiResult<T> (T-0197, L→split) — DEFER-CANDIDATE** | **T-0197** (architect ADR-first; one serial child per customer-app repo) | **Recommend defer to Wave 6** (owner call, sprint-7 §4.2). |
 >
 > | ID | Title | Size | Status | Batch | Layers | sec | manual_step |
 > |----|-------|------|--------|-------|--------|-----|-------------|
-> | T-0245 ⚠️ GO-LIVE BLOCKER | Multi-tenant webhook validator/handler tenant-scope mismatch | M | **ready** | 5A | backend | **yes** | — |
-> | T-0246 | StartOrder handler NRE→500 on load divergence | S | **ready** | 5A | backend | no | — |
+> | T-0245 ⚠️ GO-LIVE BLOCKER | Multi-tenant webhook validator/handler tenant-scope mismatch | M | **done ✅** `3df53ab2` | 5A | backend | **yes** | — |
+> | T-0246 | StartOrder handler NRE→500 on load divergence | S | **done ✅** `3df53ab2` | 5A | backend | no | — |
 > | T-0243 | CheckoutSession `nameof(Command)`→`nameof(userId)` B5 | XS | **ready** | 5B | backend | no | — |
 > | T-0244 | `GenerateVariableSymbol` deterministic stable hash | S | **ready** | 5B | backend | no (money-adv) | ef-migration* |
 > | T-0205 | Remove dead/unsafe code (Handlebars/SendGrid/FCM/scrap) | S | **ready** | 5B | backend, mobile | no | — |
 > | T-0206 | S6 logging hygiene (no PII/secrets in logs) | S | **ready** | 5B | backend, functions | no (advisory) | — |
 > | T-0203 | LG/DA/IA long tail (B5/B1/CQRS/magic-strings/swallowed catch) | M | **ready** | 5B | backend, frontend | no | nswag-regen* |
 > | T-0242 | Cancellation-fee Plus free-window override direction | S | **blocked (Q-W5-1)** | 5B | backend | no (money-adv) | — |
-> | T-0196 | Mechanical consistency canonicalization sweep (A*/B1/B3/C*/E1/E2) | **L** | **draft (split)** | 5C | backend, frontend, android | no | nswag-regen* |
-> | T-0199 | AUD-06: decompose CreateOrder god-handler | **L** | **draft (split)** | 5D | backend | no | — |
+> | T-0196 | Mechanical consistency canonicalization sweep (A*/B1/B3/C*/E1/E2) | **L** | **in_progress (SPLIT → T-0248..T-0252)** | 5C | backend, frontend, android | no | nswag-regen* |
+> | T-0199 | AUD-06: decompose CreateOrder god-handler | **L** | **in_progress (SPLIT → T-0253..T-0255)** | 5D | backend | no | — |
 > | T-0198 | De-triplicate Dispute/SavedAddress/Auth controllers + login/forgot facades | M | **ready** | 5E | backend, frontend | no (advisory) | — |
 > | T-0201 | Decompose AddSavedAddress god-method + B9 mapper | M | **ready** | 5E | backend | no | — |
-> | T-0200 | AUD-07: split order-wizard god-facade + C3 pipe | **L** | **blocked (T-0196)** | 5F | frontend | no | — |
-> | T-0202 | Customer disputes → own client + cleansia-table/form/error | M | **blocked (T-0196 + regen-verify)** | 5F | frontend | no | nswag-regen* |
-> | T-0204 | PERF cluster: indexes, tracked reads, eager Includes, projection-before-order | M | **blocked (T-0196)** | 5G | backend, db | no (optimizer) | **ef-migration** |
+> | T-0200 | AUD-07: split order-wizard god-facade + C3 pipe | **L** | **in_progress (SPLIT → T-0256..T-0258)** | 5F | frontend | no | — |
+> | T-0202 | Customer disputes → own client + cleansia-table/form/error | M | **blocked (T-0249 + regen-verify)** | 5F | frontend | no | nswag-regen* |
+> | T-0204 | PERF cluster: indexes, tracked reads, eager Includes, projection-before-order | M | **blocked (T-0249/T-0251)** | 5G | backend, db | no (optimizer) | **ef-migration** |
 > | T-0247 | check-consistency rule: Dispute state-write allowlist *(re-id'd from T-0200)* | S | **ready** | 5G | backend, tooling | yes | — |
 > | T-0197 | Migrate customer-app repos to `ApiResult<T>` (mobile) | **L** | **draft (split, ADR-first)** | 5H (defer) | architect, android, ios | no | — |
 >
+> **L-epic split children (created 2026-06-13, ids T-0248…T-0258) — the three L-epics above are now
+> `in_progress` [SPLIT/EPIC] tracking tickets; each is `done` only when all its children are `done`:**
+>
+> | ID | Title | Size | Status | Batch | Parent | depends_on / blocks | Layers | manual_step |
+> |----|-------|------|--------|-------|--------|---------------------|--------|-------------|
+> | T-0248 | 5C.A A* canonical paged-query (PromoCodes/Referrals/PayConfigs/Services) | M | **ready** | 5C | T-0196 | — | backend | — |
+> | T-0249 | 5C.B B1 Response-wrap (CreateDispute/UpdateDisputeStatus/DeleteSavedAddress) | S | **ready** | 5C | T-0196 | blocks T-0202, T-0204 | backend | nswag-regen* (conditional) |
+> | T-0250 | 5C.C B3 validator-base composition (PayConfig/PayPeriod/Employee/CurrentUser) | S | **ready** | 5C | T-0196 | — | backend | — |
+> | T-0251 | 5C.D C* customer/partner/admin facades (**EXCL `disputes.facade.ts`**) | M | **ready** | 5C | T-0196 | blocks T-0200, T-0204 | frontend | — |
+> | T-0252 | 5C.E E1/E2 sealed Android UiState + shared ActionState | M | **ready** | 5C | T-0196 | — | android | — |
+> | T-0253 | AUD-06a address-resolution + serviced-area collaborator | M | **ready** | 5D | T-0199 | dep T-0118✓/T-0212✓; blocks T-0254 | backend | — |
+> | T-0254 | AUD-06b promo preview/apply collaborator | M | **blocked (T-0253)** | 5D | T-0199 | blocks T-0255 | backend | — |
+> | T-0255 | AUD-06c payment-dispatcher + late-referral + slim handler (preserves outbox seam) | M | **blocked (T-0254)** | 5D | T-0199 | closes T-0199 | backend | — |
+> | T-0256 | AUD-07a quote/pricing collaborator + C3-migrate stream | M | **blocked (T-0251)** | 5F | T-0200 | blocks T-0257 | frontend | — |
+> | T-0257 | AUD-07b promo+referral + city-serviced collaborators + drop `firstValueFrom` | M | **blocked (T-0251/T-0256)** | 5F | T-0200 | blocks T-0258 | frontend | — |
+> | T-0258 | AUD-07c saved-address + slim facade (step-nav + submit) + C1/C3 submit branches | M | **blocked (T-0251/T-0257)** | 5F | T-0200 | closes T-0200 | frontend | — |
+>
 > \* `nswag-regen`/`ef-migration` fire **only if** the diff actually changes a generated-client surface or
-> schema (T-0196 B1 / T-0203 SendSitewidePromo+device-error / T-0202 customer-client / T-0244 persist-path)
+> schema (**T-0249** B1 / T-0203 SendSitewidePromo+device-error / T-0202 customer-client / T-0244 persist-path)
 > — the dev confirms at review; the PM adds the flag + holds consumers only then. **Owner manual steps this
-> wave:** T-0204 ef-migration (4 indexes, CONCURRENTLY); see sprint-7 §4.3.
+> wave:** T-0204 ef-migration (4 indexes, CONCURRENTLY); see sprint-7 §4.3. **Dependency-ordered dispatch
+> plan (post-split): sprint-7 §2.2** — {5B,5C,5D,5E} fan out concurrently → {5F,5G} after T-0249/T-0251 land →
+> 5H deferred; **5C must complete before 5F/5G**; T-0242 stays BLOCKED on Q-W5-1.
 >
 > ## ✅ WAVE 4 COMPLETE — tests + accessibility (11 of 11 done 2026-06-13)
 > **Wave 3 merged to master: PR #76 (`05bf567a`).** Owner gave the go signal; Wave 4 = the test+a11y

@@ -386,3 +386,106 @@ only after Q-W5-1; T-0197 is `done`, deferred, or descoped per §4.2. PR to `mas
   **dispatch plan in §2.2**: {5B, 5C, 5D, 5E} fan out concurrently → {5F, 5G} after their 5C predecessors
   (T-0249/T-0251) land → 5H deferred. **5C must complete before 5F/5G.** **T-0242 stays BLOCKED on Q-W5-1.**
   INDEX.md child rows added. No code/commits by the PM (backlog only).
+- 2026-06-14 — **WAVE 5 CLOSED.** All in-scope work landed orchestrator-verified green and committed +
+  pushed; the 3 parent epics (T-0196/T-0199/T-0200) reconciled to `done`; 4 close follow-ups filed
+  (T-0259…T-0262); T-0242 carried (blocked Q-W5-1); T-0197 deferred to Wave 6. INDEX.md banner flipped to
+  **WAVE 5 COMPLETE**. Close-out detail in **§7** below. No code/commits/branch ops by the PM (backlog only).
+
+---
+
+## 7. Close-out (Wave 5 CLOSED, 2026-06-14)
+
+**Status: WAVE 5 CLOSED.** Functionally complete, committed + pushed on `feature/wave-5-consistency-bugs`
+(commits **`3df53ab2`** [5A], **`79b0153c`**, **`226bc928`**, **`9be1f8ee`**). PR to `master` is the owner's call.
+
+### 7.1 Verified suite counts (orchestrator, clean rebuild, real Postgres)
+- **Cleansia.Tests 1472/1472** · **IntegrationTests 66/66** · **HostTests 51/51**
+- **frontend order-wizard 119/119 + customer-disputes 41/41 Jest**
+- **all 3 web apps build production** · **S6 logging 9/9**
+- **T-0212 CreateOrder characterization gate held 20/20 unchanged** through the entire AUD-06 decomposition.
+
+### 7.2 What landed, per batch (21 tickets DONE)
+- **5A — priority bugs (committed `3df53ab2`):** **T-0245** multi-tenant Stripe webhook validator/handler
+  tenant-scope mismatch **FIXED** (the GO-LIVE BLOCKER; tenant-ignoring existence read bound to the order's
+  own tenant + non-null-tenant integration test in the T-0210 suite; Security gate reconciled). **T-0246**
+  StartOrder handler NRE→500 on load divergence **FIXED** (null-guard + handler/validator query reconciled +
+  regression test).
+- **5B — backend micro-fixes + long tail:** **T-0243** (CheckoutSession `nameof` B5 rename), **T-0203**
+  (LG/DA/IA long tail — B5/B1/CQRS/magic-strings/swallowed-catch; **admin nswag-regen owed**), **T-0244**
+  (`GenerateVariableSymbol` deterministic stable hash — stable-hash path chosen → **no migration**),
+  **T-0205** (dead/unsafe code removed — Handlebars/SendGrid/FCM/Android scrap), **T-0206** (S6 logging
+  hygiene — event+scalar keys, never message strings; 9/9).
+- **5C — consistency sweep base (T-0196 epic → all 5 children done):** **T-0248** A* paged-query, **T-0249**
+  B1 Response-wrap (wire-compatible — no regen needed), **T-0250** B3 validator-base, **T-0251** C*
+  customer/partner/admin facades (excl. `disputes.facade.ts`), **T-0252** E1/E2 Android sealed states.
+- **5D — AUD-06 (T-0199 epic → all 3 children done):** **T-0253**→**T-0254**→**T-0255**. CreateOrder
+  god-handler **decomposed** into address-resolution + serviced-area, promo preview/apply, and
+  payment-side-effect-dispatcher + late-referral collaborators; the slim handler reads as orchestration.
+  Cash-branch **outbox/post-commit dispatch seam preserved** (T-0255 AC4). **T-0212 held 20/20 unmodified.**
+- **5E — de-triplication + AddSavedAddress:** **T-0201** (AddSavedAddress god-method + B9 mapper), **T-0198**
+  (de-triplicated Dispute/SavedAddress/Auth controllers + login/forgot facades) — **fixed 2 real bugs**:
+  the **weak admin password** path and the **swallowed login/forgot-password errors**.
+- **5F — frontend rebuilds (T-0200/AUD-07 epic → all 3 children done) + disputes:** **T-0256**→**T-0257**→
+  **T-0258** order-wizard god-facade **decomposed** onto focused collaborators with C1/C3 paradigm
+  (behavior-identical, 119/119); **T-0202** customer disputes moved to its own client + cleansia-table/form/
+  error archetype (41/41; **customer nswag-regen owed**).
+- **5G — perf cluster + tooling:** **T-0204** PERF cluster — **4 indexes** + tracked-read/eager-Include
+  cleanup + the **GDPR paging correctness fix** (PERF-IDA-06: `GetAllGdprRequests` now orders **before**
+  paging — a behavior-correcting fix on an Article-30 surface). **T-0247** check-consistency Dispute
+  state-write allowlist tooling (lives in `tickets/T-0200-da-2-followup.md`).
+
+### 7.3 AUD-06 / AUD-07 decomposition outcomes
+- **AUD-06 (T-0199):** the 484-line, 15-dep `CreateOrder.Handler` god-handler is decomposed; each
+  collaborator independently unit-tested; **no contract/wire change** → no nswag-regen, no migration; the
+  acceptance gate (T-0212 20-case characterization suite **green and unmodified**) held through every
+  serial sub-step.
+- **AUD-07 (T-0200):** the 977-line `OrderWizardFacade` god-facade is split into focused collaborators with
+  the slim facade retaining step-nav + submit orchestration; C1 (`UnsubscribeControlDirective`) + C3
+  (`takeUntil → catchError → finalize`) paradigm migrated; **behavior-identical** (characterization Jest
+  spec held) → no nswag-regen.
+
+### 7.4 Real bugs fixed this wave
+- **T-0245** — multi-tenant webhook tenant-scope mismatch (silent money/lifecycle failure on non-null-tenant
+  paid `checkout.session.completed`) — the **GO-LIVE BLOCKER**, now fixed.
+- **T-0246** — StartOrder handler NRE→500 on validator/handler load divergence — fixed.
+- **T-0198** — **weak admin password** path + **swallowed login/forgot-password errors** — both fixed.
+- **T-0204** — **GDPR paging correctness** (order-before-page on `GetAllGdprRequests`) — fixed (behavior-correcting).
+
+### 7.5 MANUAL_STEPS owner queue (PM never runs these)
+1. **nswag-regen — admin client** (T-0203 SendSitewidePromo Response / device+membership error shapes that
+   surfaced a generated-type change).
+2. **nswag-regen — customer client** (T-0202 dispute DTOs/enums; also clears the residual Wave-3 customer
+   regen for `DisputeReason.Chargeback` + device endpoints).
+3. **ef-migration — DONE in this wave** (T-0204's 4 indexes were applied). **For PROD:** apply the 4 indexes
+   `CONCURRENTLY` by hand (`CREATE INDEX CONCURRENTLY` outside the migration transaction) on the populated
+   tables — the EF migration creates them in-transaction, which locks; the CONCURRENTLY hand-edit is the
+   prod-safe application. (Indexes: Addresses composite; UserMembership `(Status,CurrentPeriodEnd)`;
+   GdprRequest `CreatedOn`; Devices `(IsActive,LastActiveAt)`.)
+
+### 7.6 Follow-ups filed (Wave-6 candidates, all `draft`)
+- **T-0259** — frontend nx-lib test-infra scaffolding (tags + jest/eslint/tsconfig.spec targets for
+  loyalty-promo-codes + customer login/forgot + partner-forgot libs). Source: T-0203 + T-0198.
+- **T-0260** — funnel `HandleChargeback` dispute-terminal write through the T-0172 `CanTransitionTo` guard
+  (not direct `Escalate`); safe today (`Pending→Escalated` legal) but a defense-in-depth gap. `sec`.
+  Source: T-0247.
+- **T-0261** — UserMembership partial-index gap: the renewal-arm partial index doesn't cover the
+  cancellation-reminder sweep arm. DB optimization; `ef-migration` (CONCURRENTLY). Source: T-0204.
+- **T-0262** — remove dead `BusinessErrorMessage.EmailNotSentError` constant (zero consumers). Source: T-0205.
+
+### 7.7 Carried / deferred
+- **T-0242** (cancellation-fee Plus free-window direction) — **still BLOCKED on Q-W5-1** (owner product
+  decision, unanswered in `questions/open.md`). Carried to whenever the owner answers; then S, money-adjacent
+  (adversarial review), edits `BookingPolicy.cs` + `CancellationFeeRateBoundaryTests.cs`.
+- **T-0197** (mobile `ApiResult<T>` L-migration) — **DEFERRED to Wave 6** per §4.2. Stays `draft`
+  (SPLIT-REQUIRED + ADR-FIRST); re-tag `sprint: 6` and promote at Wave-6 planning when the owner opens a
+  mobile slice.
+
+### 7.8 Consolidated OWNER ACTION LIST for Wave 5
+1. **nswag-regen — admin client** (T-0203). 2. **nswag-regen — customer client** (T-0202; clears Wave-3
+   residual too). 3. **PROD index application — apply the 4 T-0204 indexes `CONCURRENTLY` by hand** (the EF
+   migration itself is done). 4. **Answer Q-W5-1** to unblock T-0242. 5. **Confirm defer-T-0197-to-Wave-6.**
+   6. **Open the PR `feature/wave-5-consistency-bugs` → `master`** (PM never merges). Standing carry-forwards
+   unchanged: T-0159 rotate-mapbox-token (live exposure) · IMP-1 Google OAuth ClientId · CZ Stripe-fee
+   figures · DE/AT/ES fiscal go-live gates · Q-REFUND-03 per-bundle weights · Q-W3-4 dispute-resolve-on-
+   refund-failure UX · **T-0236 (multi-tenant token-revoke asymmetry) must land before multi-tenant
+   onboarding, alongside the now-fixed T-0245.**

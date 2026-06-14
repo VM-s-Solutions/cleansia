@@ -5,7 +5,7 @@ status: blocked
 size: S
 owner: —
 created: 2026-06-13
-updated: 2026-06-13
+updated: 2026-06-14
 depends_on: [T-0211]
 blocks: []
 stories: []
@@ -80,6 +80,13 @@ adversarial money review even though it is not authz/secret-touching (`security_
   adversarial review). It edits `BookingPolicy.cs` + `CancellationFeeRateBoundaryTests.cs`; once Q-W5-1
   is answered it unblocks into **Batch 5B** and **serializes against any other ticket touching
   `BookingPolicy.cs`** (none in this wave). Held so the rest of Wave 5 proceeds; gated only on Q-W5-1.)
+- 2026-06-14 — **stays blocked — CARRIED past Wave-5 close** (PM, Wave-5 close-out). Wave 5 closed with
+  every other ticket `done`/deferred; this one remains **blocked on Q-W5-1** (owner product decision on the
+  Plus free-cancellation-window direction — still unanswered in `questions/open.md`). No behavior or
+  test-pin change has landed. It carries forward to whenever the owner answers Q-W5-1; at that point it
+  unblocks as an S, money-adjacent (adversarial money review) ticket editing `BookingPolicy.cs` +
+  `CancellationFeeRateBoundaryTests.cs`, serializing against any other `BookingPolicy.cs` writer. On the
+  owner action list (see `status/sprint-7.md` §close-out).
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

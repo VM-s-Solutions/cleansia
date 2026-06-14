@@ -94,7 +94,8 @@ fun SubscribePlusScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val submitting by viewModel.submitting.collectAsState()
+    val submitState by viewModel.submitState.collectAsState()
+    val submitting = submitState is cz.cleansia.customer.ui.state.ActionState.Submitting
     val current by viewModel.current.collectAsState()
     val plans by viewModel.plans.collectAsState()
 

@@ -1,8 +1,8 @@
 export default {
   displayName: 'cleansia-customer-login',
-  preset: '../../../../jest.preset.js',
-  setupFilesAfterSetup: ['<rootDir>/src/test-setup.ts'],
-  coverageDirectory: '../../../../coverage/libs/cleansia-customer-features/login',
+  preset: '../../../jest.preset.js',
+  setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
+  coverageDirectory: '../../../coverage/libs/cleansia-customer-features/login',
   transform: {
     '^.+\\.(ts|mjs|js|html)$': [
       'jest-preset-angular',

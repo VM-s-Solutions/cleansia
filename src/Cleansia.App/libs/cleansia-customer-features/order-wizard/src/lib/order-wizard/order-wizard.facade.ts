@@ -1,6 +1,7 @@
-import { DestroyRef, inject, Injectable, PLATFORM_ID, signal, computed } from '@angular/core';
+import { inject, Injectable, PLATFORM_ID, signal, computed } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   AddSavedAddressCommand,
   AddressDto,
@@ -32,8 +33,8 @@ import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { GuestOrderService } from '@cleansia-customer/orders';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
-import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { catchError, debounceTime, distinctUntilChanged, filter, firstValueFrom, of, switchMap, tap } from 'rxjs';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { catchError, debounceTime, distinctUntilChanged, filter, firstValueFrom, of, switchMap, takeUntil, tap } from 'rxjs';
 import {
   EXPRESS_SURCHARGE_RATE,
   ORDER_WIZARD_INITIAL_DATA,
@@ -65,7 +66,7 @@ interface QuoteInputs {
 }
 
 @Injectable()
-export class OrderWizardFacade {
+export class OrderWizardFacade extends UnsubscribeControlDirective {
   private readonly store = inject(Store);
   private readonly router = inject(Router);
   private readonly customerClient = inject(CustomerClient);
@@ -75,7 +76,6 @@ export class OrderWizardFacade {
   private readonly guestOrderService = inject(GuestOrderService);
   private readonly savedAddressStore = inject(SavedAddressStore);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
-  private readonly destroyRef = inject(DestroyRef);
 
   isAuthenticated = signal(false);
 
@@ -285,6 +285,7 @@ export class OrderWizardFacade {
   }
 
   constructor() {
+    super();
     // SSR guard: don't fire HTTP during server render. The signal stays null
     // on the server and the client picks up the debounce loop after hydrate.
     if (!this.isBrowser) return;
@@ -341,7 +342,7 @@ export class OrderWizardFacade {
               }),
             ),
         ),
-        takeUntilDestroyed(this.destroyRef),
+        takeUntil(this.destroyed$),
       )
       .subscribe(() => this.quoting.set(false));
   }
@@ -362,17 +363,19 @@ export class OrderWizardFacade {
     this.quoting.set(true);
     try {
       const resp = await firstValueFrom(
-        this.customerClient.orderClient.quote(
-          new QuoteOrderCommand({
-            selectedServiceIds: inputs.selectedServiceIds,
-            selectedPackageIds: inputs.selectedPackageIds,
-            rooms: inputs.rooms,
-            bathrooms: inputs.bathrooms,
-            currencyId: inputs.currencyId ?? undefined,
-            selectedExtraSlugs: inputs.selectedExtraSlugs,
-            cleaningDate: inputs.cleaningDate ? new Date(inputs.cleaningDate) : undefined,
-          }),
-        ),
+        this.customerClient.orderClient
+          .quote(
+            new QuoteOrderCommand({
+              selectedServiceIds: inputs.selectedServiceIds,
+              selectedPackageIds: inputs.selectedPackageIds,
+              rooms: inputs.rooms,
+              bathrooms: inputs.bathrooms,
+              currencyId: inputs.currencyId ?? undefined,
+              selectedExtraSlugs: inputs.selectedExtraSlugs,
+              cleaningDate: inputs.cleaningDate ? new Date(inputs.cleaningDate) : undefined,
+            }),
+          )
+          .pipe(takeUntil(this.destroyed$)),
       );
       this.quote.set(resp);
       this.lastQuotedInputs.set(inputs);
@@ -494,12 +497,14 @@ export class OrderWizardFacade {
     const subtotal = this.displayedTotalPrice() ?? 0;
     try {
       const resp = await firstValueFrom(
-        this.customerClient.promoCodeClient.validate(
-          new ValidatePromoCodeCommand({
-            code: normalized,
-            orderSubtotal: subtotal,
-          }),
-        ),
+        this.customerClient.promoCodeClient
+          .validate(
+            new ValidatePromoCodeCommand({
+              code: normalized,
+              orderSubtotal: subtotal,
+            }),
+          )
+          .pipe(takeUntil(this.destroyed$)),
       );
       const newState: PromoCodeUiState =
         resp.isValid && resp.discountAmount != null
@@ -533,11 +538,13 @@ export class OrderWizardFacade {
     this.referralState.set({ kind: 'validating' });
     try {
       const resp = await firstValueFrom(
-        this.customerClient.referralClient.validate(
-          new ValidateReferralQuery({
-            code: normalized,
-          }),
-        ),
+        this.customerClient.referralClient
+          .validate(
+            new ValidateReferralQuery({
+              code: normalized,
+            }),
+          )
+          .pipe(takeUntil(this.destroyed$)),
       );
       const newState: ReferralUiState = resp.isValid
         ? { kind: 'valid', referrerFirstName: resp.referrerFirstName ?? null }
@@ -575,7 +582,7 @@ export class OrderWizardFacade {
     // every CZ booking — the address persisted with CountryId=Argentina and
     // the backend now (rightly) rejects that. Service-area work in
     // planning/active/service-areas.md.
-    this.customerClient.countryClient.getServiced().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.customerClient.countryClient.getServiced().pipe(takeUntil(this.destroyed$)).subscribe({
       next: (countries) => {
         this.countries.set(countries);
         // Auto-select country ONLY when there's exactly one served — otherwise
@@ -593,7 +600,7 @@ export class OrderWizardFacade {
       },
     });
     // Best-effort load — empty catalog just hides the extras section.
-    this.customerClient.extraClient.getOverview().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.customerClient.extraClient.getOverview().pipe(takeUntil(this.destroyed$)).subscribe({
       next: (extras) => this.extras.set([...extras].sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))),
       error: () => this.extras.set([]),
     });
@@ -605,7 +612,7 @@ export class OrderWizardFacade {
       if (!this.savedAddressStore.loaded()) {
         this.savedAddressStore.refresh();
       }
-      this.customerClient.userClient.getCurrent().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      this.customerClient.userClient.getCurrent().pipe(takeUntil(this.destroyed$)).subscribe({
         next: (user) => {
           this.updateFormData({
             customerFirstName: user.firstName ?? '',
@@ -676,7 +683,7 @@ export class OrderWizardFacade {
     this.cityServiced.set('pending');
     this.customerClient.apiClient
       .serviceCity(countryId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(takeUntil(this.destroyed$))
       .subscribe({
         next: (cities) => {
           // Stale-response guard: if the user already typed past this
@@ -1004,7 +1011,7 @@ export class OrderWizardFacade {
     });
 
     if (data.paymentType === PaymentType.Card) {
-      this.customerClient.paymentClient.createOrder(command).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      this.customerClient.paymentClient.createOrder(command).pipe(takeUntil(this.destroyed$)).subscribe({
         next: (response) => {
           this.submitting.set(false);
           if (response.id) {
@@ -1026,7 +1033,7 @@ export class OrderWizardFacade {
         },
       });
     } else {
-      this.customerClient.orderClient.createOrder(command).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      this.customerClient.orderClient.createOrder(command).pipe(takeUntil(this.destroyed$)).subscribe({
         next: (response) => {
           this.submitting.set(false);
           if (response.id) {

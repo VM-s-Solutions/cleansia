@@ -76,8 +76,10 @@ public class SendSitewidePromoFanoutHandler(
             campaign = JsonSerializer.Deserialize<SendSitewidePromoMessage>(
                 messageText,
                 new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
+                // S6: the exception message is logged at Error in the outer catch — do not embed the
+                // raw body, only its size.
                 ?? throw new InvalidOperationException(
-                    $"Failed to deserialize SendSitewidePromoMessage: {messageText}");
+                    $"Failed to deserialize SendSitewidePromoMessage ({messageText.Length} bytes)");
 
             // No JWT on the queue trigger — set the tenant override from the
             // campaign so the global filter scopes to the right partition.
@@ -91,9 +93,11 @@ public class SendSitewidePromoFanoutHandler(
             // with missing locales would still serve users via the en fallback.
             if (!campaign.TitleByLocale.ContainsKey("en") || !campaign.BodyByLocale.ContainsKey("en"))
             {
+                // S6: the campaign deserialized — log its safe id, never the raw body (admin-authored
+                // title/body text).
                 logger.LogWarning(
-                    "Discarding sitewide promo campaign without en title/body fallback: {Message}",
-                    messageText);
+                    "Discarding sitewide promo campaign {CampaignId} without en title/body fallback",
+                    campaign.CampaignId);
                 return;
             }
 
@@ -204,9 +208,11 @@ public class SendSitewidePromoFanoutHandler(
         }
         catch (Exception ex)
         {
+            // S6: log the campaign id when it deserialized (null if the failure was the parse itself),
+            // never the raw body.
             logger.LogError(ex,
-                "Failed sitewide promo fan-out. Message: {Message}",
-                messageText);
+                "Failed sitewide promo fan-out for campaign {CampaignId}",
+                campaign?.CampaignId);
             throw; // poison-message pipeline retries the whole campaign.
         }
     }

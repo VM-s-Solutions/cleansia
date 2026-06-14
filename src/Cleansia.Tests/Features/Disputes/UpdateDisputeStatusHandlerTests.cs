@@ -71,6 +71,8 @@ public class UpdateDisputeStatusHandlerTests
             new UpdateDisputeStatus.Command(DisputeId, to), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
+        Assert.Equal(DisputeId, result.Value!.DisputeId);
+        Assert.Equal(to, result.Value.Status);
         Assert.Equal(to, dispute.Status);
         Assert.Equal(ActorId, dispute.UpdatedBy);
     }

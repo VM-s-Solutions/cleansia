@@ -11,14 +11,14 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class EarningsSummaryUiState(
-    val isLoading: Boolean = false,
-    val stats: DashboardStatsDto? = null,
-)
+sealed interface EarningsSummaryUiState {
+    data object Loading : EarningsSummaryUiState
+    data object Error : EarningsSummaryUiState
+    data class Loaded(val stats: DashboardStatsDto) : EarningsSummaryUiState
+}
 
 /**
  * Thin VM for the Pay & Earnings summary screen. Re-uses
@@ -34,7 +34,7 @@ class EarningsSummaryViewModel @Inject constructor(
     private val errorTranslator: ApiErrorTranslator,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(EarningsSummaryUiState())
+    private val _uiState = MutableStateFlow<EarningsSummaryUiState>(EarningsSummaryUiState.Loading)
     val uiState: StateFlow<EarningsSummaryUiState> = _uiState.asStateFlow()
 
     init {
@@ -43,14 +43,16 @@ class EarningsSummaryViewModel @Inject constructor(
 
     fun refresh() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            if (_uiState.value !is EarningsSummaryUiState.Loaded) {
+                _uiState.value = EarningsSummaryUiState.Loading
+            }
             when (val result = dashboardRepository.getStats(employeeId = null)) {
-                is ApiResult.Success -> _uiState.update {
-                    it.copy(isLoading = false, stats = result.data)
-                }
+                is ApiResult.Success -> _uiState.value = EarningsSummaryUiState.Loaded(result.data)
                 is ApiResult.Error -> {
                     snackbar.showError(errorTranslator.translate(result.error))
-                    _uiState.update { it.copy(isLoading = false) }
+                    if (_uiState.value !is EarningsSummaryUiState.Loaded) {
+                        _uiState.value = EarningsSummaryUiState.Error
+                    }
                 }
             }
         }

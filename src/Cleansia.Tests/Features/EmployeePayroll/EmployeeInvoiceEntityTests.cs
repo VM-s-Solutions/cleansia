@@ -110,6 +110,23 @@ public class EmployeeInvoiceEntityTests
         Assert.NotEqual(first, second);
     }
 
+    // ── cross-invocation (cross-process) determinism ────────────────
+    // The expected values are independently derived from the stable FNV-1a-32 basis over the
+    // UTF-8 input bytes (empHash = fnv1a32("emp-1") % 10000, periodHash = fnv1a32("period-1") %
+    // 1000000, formatted D4+D6). They are hard-coded, not a second in-process call, so this would
+    // FAIL against a per-process string.GetHashCode() basis.
+
+    [Theory]
+    [InlineData("emp-1", "period-1", "1883454606")]
+    [InlineData("emp-1", "period-2", "1883676987")]
+    public void GenerateVariableSymbol_Matches_Stable_Hash_Expected_Value(
+        string employeeId, string payPeriodId, string expected)
+    {
+        var symbol = EmployeeInvoice.GenerateVariableSymbol(employeeId, payPeriodId);
+
+        Assert.Equal(expected, symbol);
+    }
+
     // ── AC11: Approve legal from Pending/Disputed, illegal elsewhere ─
 
     [Fact]

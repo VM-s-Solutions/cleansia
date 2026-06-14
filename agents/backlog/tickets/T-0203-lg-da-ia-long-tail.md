@@ -1,18 +1,18 @@
 ﻿---
 id: T-0203
 title: B/C/D-rule deviations + wrong-source ledger + CQRS-violation reads + magic strings + swallowed catches (long tail)
-status: ready
+status: done
 size: M
 owner: â€”
 created: 2026-06-01
-updated: 2026-06-13
+updated: 2026-06-14
 depends_on: [T-0142]
 blocks: []
 stories: []
 adrs: []
 layers: [backend, frontend, mobile]
 security_touching: false
-manual_steps: []
+manual_steps: [nswag-regen]
 sprint: 3
 source: audit long tail (LG/DA/IA findings)
 ---
@@ -177,6 +177,67 @@ Confirmed live offenders (real code, verified 2026-06-01):
   `CancelMembershipSubscription.cs` / `SwapMembershipPlan.cs` (LG-05 B5) — **shares
   `CreateMembershipCheckoutSession.cs` with T-0243** → run T-0203 and T-0243 in the **same membership
   lane (5B Lane M-Membership), serialized**, never concurrently. sprint re-tagged 5.
+- 2026-06-13 — **review** (backend). All AC implemented behavior-preserving except the two named
+  behavior fixes (AC1, AC5). Test-first throughout (chars/contract-locks predate the prod change in the
+  diff). Evidence: `dotnet build Cleansia.Tests.csproj` → 0 errors; targeted run of the 8 T-0203 test
+  classes → **17/17 passed**; full touched-area run (Loyalty/Memberships/Gdpr/Devices/Marketing/Disputes)
+  → **190/190 passed** (no regressions, incl. the pre-existing `AdminLoyaltyReasonPersistenceTests`).
+  `Cleansia.Web.Admin` + `Cleansia.Web.Mobile.Partner` build clean.
+  - **AC1 (LG-02)** — added `LoyaltyEarnSource.ManualRevoke = 6` (enum already had `OrderPartiallyRefunded
+    = 5` from another lane, so `= 6`, int-backed, no migration); `RevokePointsManually.Handler` now passes
+    `ManualRevoke`. Pinned by `RevokePointsManuallyHandlerTests` (asserts source==ManualRevoke, every other
+    forwarded arg unchanged). The service stores `source` straight onto the ledger row (admin path keyed on
+    `requestId`, not `source`) so no idempotency interaction.
+  - **AC2 (LG-09)** — `PreviewTierThresholdImpact` Command→`Query`/`IQueryHandler` (no UoW commit on the
+    read path); controller updated to `.Query`. `Impacts` identical (pinned by
+    `PreviewTierThresholdImpactHandlerTests`).
+  - **AC3 (LG-05/B5)** — `CreateMembershipCheckoutSession` `nameof(UserMembership)`→`nameof(command.PlanCode)`
+    (the line-45 `nameof(Command)`→`nameof(userId)` was already done by T-0243; rebased on it, not redone);
+    `CancelMembershipSubscription`/`SwapMembershipPlan` `nameof(Command)`→`nameof(userId)` (parameterless/
+    user-derived "membership not found"). `BusinessErrorMessage` values byte-unchanged. Locked by
+    `MembershipB5ContractLockTests` + a new `MembershipAlreadyActive` case in
+    `CreateMembershipCheckoutSessionContractLockTests`. Consistency B5 scan: 0 hits on touched membership files.
+  - **AC4 (LG-13/B1)** — `SendSitewidePromo` `ICommand`→`ICommand<Response>` with `record Response(bool
+    Enqueued)` (true on enqueue, false on the idempotent double-submit short-circuit); admin controller returns
+    the typed response. Enqueue behavior unchanged (pinned by `SendSitewidePromoResponseShapeTests`). The
+    `SendSitewidePromoFanoutHandler.cs` edit in the tree is a **different lane** (S6 PII-logging) — not touched.
+  - **AC5 (LG-14, behavior fix)** — `promo-codes-list.facade.ts` `deactivate()` now uses the canonical C3 pipe
+    `takeUntil → catchError(err → showApiError; of(null)) → finalize(loading=false)` and surfaces the error via
+    `SnackbarService.showApiError` (C4) instead of the silent `of(null)` no-op. New spec
+    `promo-codes-list.facade.spec.ts` asserts success reload + error surface + loading reset (mirrors
+    `referrals-list.facade.spec.ts`). **See deviation note re: lib has no Jest/lint harness.**
+  - **AC6 (IA-13 handlers)** — `RegisterDevice`/`UnregisterDevice` missing-session now returns
+    `BusinessResult.Failure(new Error(nameof(userId), BusinessErrorMessage.UserNotFound))` instead of throwing
+    `UnauthorizedAccessException("User ID not found in claims.")`; repo never touched when no identity. Pinned
+    by `DeviceHandlerMissingSessionTests`. Did NOT touch delete semantics (T-0142 — already `Deactivate`).
+  - **AC7 (IA-19)** — new `GdprAuditReasons` (`SelfDeletion="GDPR_DELETION"`, `AdminDeletion=
+    "GDPR_ADMIN_DELETION"`, `FallbackAdminActor="admin"`); both GDPR handlers reference the constants. Persisted
+    reason/actor strings byte-identical (pinned by `GdprDeletionReasonConstantsTests`).
+  - **AC8 (DA-12)** — `UploadDisputeEvidence` empty `catch {}` → `catch (Exception ex) { logger.LogWarning(...) }`
+    (added `ILogger<Handler>` to the handler ctor); upload still succeeds with null `BlobUrl` when SAS gen
+    throws. Pinned by `UploadDisputeEvidenceSasFailureTests` (forces SAS throw, asserts success + null URL +
+    one Warning log). Broad `catch` is intentional here — graceful degradation of a non-blocking side effect
+    after the row is committed, NOT control flow; the S6 fix is "log, don't swallow."
+  - **AC9** — `check-consistency.mjs` clean for every file T-0203 touched (B5: 0 hits on the membership files;
+    the only hits in the scanned dirs are pre-existing A1/A5 in `GetUserLoyaltyActivity`/`GetLoyaltyActivity`/
+    `GetPagedMembershipPlans` and a D2 in `promo-code-form.component.ts` — all **untouched, out-of-scope**
+    files owned elsewhere).
+  - **MANUAL_STEP nswag-regen (admin client):** AC4 changes `sendSitewidePromo` from `Observable<void>` →
+    `Observable<SendSitewidePromoResponse>`; AC2 renames the generated request DTO
+    `PreviewTierThresholdImpactCommand`→`...Query`; AC1's new `LoyaltyEarnSource.ManualRevoke` flows on regen.
+    Owner regenerates the **admin** client + holds the admin FE consumers. Device/membership **Response** DTO
+    shapes are unchanged (mobile/customer clients need no regen for those — only the missing-session path's
+    HTTP changes from 500→400, not a DTO shape). No EF migration (enum value is int-backed).
+  - **Deviations / follow-ups (do NOT fix here):**
+    1. `loyalty-promo-codes` lib has **empty `tags: []` and no `jest.config.ts`/`tsconfig.spec.json`/
+       `eslint.config.mjs`** (unlike its sibling `loyalty-referrals`). Result: `nx test loyalty-promo-codes`
+       has no inferred `test` target and `nx lint` fails lib-wide with `@nx/enforce-module-boundaries`
+       "project without tags" on **every** file (incl. untouched `.models.ts:1`, `promo-code-form/*`). My
+       spec is written to the established pattern but cannot be executed until the lib is scaffolded. This is
+       a pre-existing lib-config gap, not introduced by this change → **follow-up ticket** (add lib tags +
+       Jest/eslint config to `loyalty-promo-codes`).
+    2. `promo-code-form.component.ts:82` D2 `fb.group(...)`→`fb.nonNullable.group(...)` — pre-existing,
+       out of scope (form, not the list facade).
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

@@ -1,4 +1,5 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   CreateRecurringBookingCommand,
   CustomerClient,
@@ -18,7 +19,7 @@ import { PackageListItem, ServiceListItem } from '@cleansia/partner-services';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, takeUntil } from 'rxjs';
 import {
   RecurringPrefillParams,
   RecurringWizardFormData,
@@ -38,7 +39,7 @@ import {
  * cache without a re-fetch round trip.
  */
 @Injectable()
-export class RecurringBookingsFacade {
+export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   // Always go through CustomerClient — injecting RecurringBookingClient
   // directly hits NSwag's empty-string default baseUrl, sending requests
   // back to the SPA's own origin instead of the configured API URL.
@@ -114,7 +115,7 @@ export class RecurringBookingsFacade {
     if (this.listLoading()) return;
     this.listLoading.set(true);
     try {
-      const list = await firstValueFrom(this.client.getMine());
+      const list = await firstValueFrom(this.client.getMine().pipe(takeUntil(this.destroyed$)));
       this.templates.set(list ?? []);
       this.listLoaded.set(true);
     } catch {
@@ -247,7 +248,7 @@ export class RecurringBookingsFacade {
         startsOn: d.startsOn,
         endsOn: undefined,
       });
-      const created = await firstValueFrom(this.client.create(command));
+      const created = await firstValueFrom(this.client.create(command).pipe(takeUntil(this.destroyed$)));
       // Optimistic in-place insert so the list shows the new template
       // immediately when the user lands back on it (avoids a flash of
       // "no schedules yet" if the network refresh races recomposition).
@@ -275,7 +276,7 @@ export class RecurringBookingsFacade {
         templateId: template.id,
         isActive: !template.isActive,
       });
-      await firstValueFrom(this.client.setActive(command));
+      await firstValueFrom(this.client.setActive(command).pipe(takeUntil(this.destroyed$)));
       // Optimistic flip — saves a refresh round trip.
       this.templates.update((list) =>
         list.map((t) =>
@@ -298,7 +299,7 @@ export class RecurringBookingsFacade {
       const command = new DeleteRecurringBookingCommand({
         templateId,
       });
-      await firstValueFrom(this.client.delete(command));
+      await firstValueFrom(this.client.delete(command).pipe(takeUntil(this.destroyed$)));
       this.templates.update((list) => list.filter((t) => t.id !== templateId));
       this.snackbar.showSuccess(this.translate.instant('recurring_booking.delete_success'));
     } catch {

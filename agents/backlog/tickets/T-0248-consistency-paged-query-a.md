@@ -1,11 +1,11 @@
 ---
 id: T-0248
 title: "Consistency sweep A* — canonical paged-query form (PromoCodes/Referrals/PayConfigs/Services)"
-status: ready
+status: done
 size: M
 owner: —
 created: 2026-06-13
-updated: 2026-06-13
+updated: 2026-06-14
 depends_on: []
 blocks: []
 stories: []
@@ -69,6 +69,36 @@ pay estimation) or the audit "not-issues" list.
 ## Status log
 - 2026-06-13 — ready (created by pm — split of T-0196, Batch 5C sub-stream A*). DoR met: AC observable
   (characterization-test pinned), sized M, no deps, no migration/regen, refactor-only. Reviewer-per-developer.
+- 2026-06-13 — review (backend). Re-derived the live hit list from `master` (`ee95a57f`) per the stale-text
+  delta. Findings: `GetPagedPromoCodes`/`GetPagedReferrals` were already canonicalized in the working tree
+  (A1 `Request : DataRangeRequest`, `PromoCodeSpecification`/`ReferralSpecification` + matching `*Sort`,
+  `GetPagedSort` + `GetCountAsync`, `Include → AsNoTracking → Select(MapTo…) → ToListAsync`, `items.MapToDto`);
+  `GetPagedServices` already had the A6 in-query projection; `GetPagedPayConfigs` already had A7 (`set`→`init`).
+  **The one remaining ticket-owned production deviation was A6 in `GetPagedPayConfigs` — `.AsNoTracking()`
+  before the `.Include(...)` chain.** Fixed by moving `.AsNoTracking()` after the includes (canonical
+  `Include → AsNoTracking → Select → ToListAsync`). 2-line diff; behavior-preserving (AsNoTracking is
+  position-independent w.r.t. Include).
+  - Test evidence (AC1/AC3): the four characterization suites (`GetPaged{PromoCodes,Referrals,PayConfigs,Services}HandlerTests`,
+    12 tests) pin row projection, page metadata (total/PageNumber/PageSize), filter-reaches-spec, and the
+    init/A6 read-path. **Green BEFORE the PayConfig refactor (12/12)**, **still green AFTER (12/12)** — identical
+    items/total/page metadata. `dotnet test src/Cleansia.Tests --filter <the 4 classes> --no-build` = Passed 12/0.
+  - The three PayConfig/Referrals/Services suites had been left instantiating the `internal` `Handler` via
+    direct `new(...)` (CS0122 — no `InternalsVisibleTo` for `Cleansia.Tests`), which broke the test assembly;
+    converted them to the reflection-based `Handle(request)` helper already used by the PromoCodes suite, and
+    finished the half-converted PromoCodes call sites. Dropped a stray `Shared.DTOs.Sorting` import that
+    collided with `Domain.Sorting.Common.SortDefinition`. No `InternalsVisibleTo` added (out-of-scope cross-cut).
+  - AC4 (consistency gate): `check-consistency.mjs backend --paths=<4 touched dirs>` reports **zero** A1/A3/A4/A5/A6/A7
+    violations for the four enumerated files. Remaining reported violations are all out-of-scope siblings
+    (`GetPromoCodeRedemptions`/`GetMyReferrals` A1/A5; `BulkCreateEmployeePayConfigs`/`DeletePayConfig` B3) — not
+    in this ticket's enumerated set; logged for the relevant 5C children.
+  - AC5: `dotnet build` of `Cleansia.Core.AppServices` and `Cleansia.Tests` = 0 errors. A full
+    `Cleansia.Tests` compile is currently blocked by a CONCURRENT lane's in-flight file
+    `Features/Orders/CreateOrderHandlerCharacterizationTests.cs` (CS1729 — CreateOrder.Handler ctor arity changed
+    by the AUD-06 decomposition, T-0253/T-0254/T-0255); that file is NOT owned here and was restored byte-identical
+    (md5 verified) after a transient move-aside used only to run the four owned suites. Orchestrator does the
+    authoritative clean run once the Orders lane lands.
+  - Deviations: none in scope. No DTO/wire/route/error-code change → **no nswag-regen, no migration**.
+  - Production bug found (report-only, do NOT fix here): none.
 
 ## Review
 <!-- reviewer writes verdict here; PM reconciles before advancing state -->

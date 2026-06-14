@@ -1,59 +1,59 @@
+#nullable enable
 using Cleansia.Core.AppServices.Features.PromoCodes.Admin.DTOs;
+using Cleansia.Core.AppServices.Features.PromoCodes.Admin.Filters;
+using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.AppServices.Shared.DTOs.RequestModels;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Sorting;
+using Cleansia.Core.Domain.Specifications;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
+using SortDefinition = Cleansia.Core.Domain.Sorting.Common.SortDefinition;
+using SortDirection = Cleansia.Core.Domain.Sorting.Common.SortDirection;
 
 namespace Cleansia.Core.AppServices.Features.PromoCodes.Admin;
 
-/// <summary>
-/// Admin-side paged list of promo codes with optional active/expired/search
-/// filters. Used by the Loyalty admin module's promo-codes table.
-/// </summary>
 public class GetPagedPromoCodes
 {
-    public record Query(
-        bool? Active = null,
-        bool? Expired = null,
-        string? SearchCode = null,
-        int Offset = 0,
-        int Limit = 20) : IRequest<PagedData<PromoCodeListItem>>;
+    public class Request : DataRangeRequest, IRequest<PagedData<PromoCodeListItem>>
+    {
+        public PromoCodeFilter? Filter { get; init; }
+    }
 
     internal class Handler(IPromoCodeRepository promoCodeRepository)
-        : IRequestHandler<Query, PagedData<PromoCodeListItem>>
+        : IRequestHandler<Request, PagedData<PromoCodeListItem>>
     {
-        public async Task<PagedData<PromoCodeListItem>> Handle(Query request, CancellationToken cancellationToken)
+        public async Task<PagedData<PromoCodeListItem>> Handle(Request request, CancellationToken cancellationToken)
         {
-            var pageNumber = request.Limit > 0 ? (request.Offset / request.Limit) + 1 : 1;
+            var specification = PromoCodeSpecification.Create(
+                isActive: request.Filter?.Active,
+                expired: request.Filter?.Expired,
+                expiredReference: request.Filter?.Expired is null ? null : DateTimeOffset.UtcNow,
+                searchCode: request.Filter?.SearchCode);
 
-            var (items, total) = await promoCodeRepository.GetPagedAdminAsync(
-                request.Active,
-                request.Expired,
-                request.SearchCode,
-                request.Offset,
-                request.Limit,
-                cancellationToken);
+            var filter = specification.SatisfiedBy();
 
-            var data = items
-                .Select(c => new PromoCodeListItem(
-                    Id: c.Id,
-                    Code: c.Code,
-                    Type: c.Type,
-                    DiscountPercent: c.DiscountPercent,
-                    DiscountAmount: c.DiscountAmount,
-                    CurrencyId: c.CurrencyId,
-                    CurrencyCode: c.Currency?.Code,
-                    MinimumOrderAmount: c.MinimumOrderAmount,
-                    MaxRedemptionsPerUser: c.MaxRedemptionsPerUser,
-                    GlobalMaxRedemptions: c.GlobalMaxRedemptions,
-                    CurrentRedemptionsCount: c.CurrentRedemptionsCount,
-                    ValidFrom: c.ValidFrom,
-                    ValidUntil: c.ValidUntil,
-                    IsActive: c.IsActive,
-                    Description: c.Description,
-                    CreatedOn: c.CreatedOn))
-                .ToList();
+            var totalItems = await promoCodeRepository.GetCountAsync(filter, cancellationToken);
+            var items = await promoCodeRepository
+                .GetPagedSort<PromoCodeSort>(request.Offset, request.Limit, filter, ResolveSort(request))
+                .Include(c => c.Currency)
+                .AsNoTracking()
+                .Select(promoCode => promoCode.MapToListItem())
+                .ToListAsync(cancellationToken);
 
-            return new PagedData<PromoCodeListItem>(pageNumber, request.Limit, total, data);
+            return items.MapToDto(totalItems, request);
+        }
+
+        // Preserves the historical newest-first default: the bespoke repo ordered by
+        // CreatedOn desc, and the empty-sort GetPagedSort path applies no ordering.
+        private static IEnumerable<SortDefinition> ResolveSort(Request request)
+        {
+            var sort = request.Sort.MapToDomain().ToList();
+            return sort.Count > 0
+                ? sort
+                : [new SortDefinition { Field = nameof(PromoCode.CreatedOn), Direction = SortDirection.Descending }];
         }
     }
 }

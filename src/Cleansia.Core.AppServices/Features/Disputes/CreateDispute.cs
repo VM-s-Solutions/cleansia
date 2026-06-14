@@ -41,14 +41,16 @@ public class CreateDispute
         string OrderId,
         DisputeReason Reason,
         string Description
-    ) : ICommand<string>;
+    ) : ICommand<Response>;
+
+    public record Response(string DisputeId);
 
     public class Handler(
         IDisputeRepository disputeRepository,
         IOrderRepository orderRepository,
-        IUserSessionProvider userSessionProvider) : ICommandHandler<Command, string>
+        IUserSessionProvider userSessionProvider) : ICommandHandler<Command, Response>
     {
-        public async Task<BusinessResult<string>> Handle(Command request, CancellationToken cancellationToken)
+        public async Task<BusinessResult<Response>> Handle(Command request, CancellationToken cancellationToken)
         {
             var userId = userSessionProvider.GetUserId()!;
 
@@ -63,7 +65,7 @@ public class CreateDispute
 
             if (order is null || order.UserId != userId)
             {
-                return BusinessResult.Failure<string>(new Error(nameof(request.OrderId), BusinessErrorMessage.OrderNotFound));
+                return BusinessResult.Failure<Response>(new Error(nameof(request.OrderId), BusinessErrorMessage.OrderNotFound));
             }
 
             var existingDispute = await disputeRepository.GetOpenDisputeForOrderAsync(
@@ -71,7 +73,7 @@ public class CreateDispute
 
             if (existingDispute != null)
             {
-                return BusinessResult.Failure<string>(new Error(nameof(request.OrderId), BusinessErrorMessage.DisputeAlreadyExists));
+                return BusinessResult.Failure<Response>(new Error(nameof(request.OrderId), BusinessErrorMessage.DisputeAlreadyExists));
             }
 
             var dispute = new Dispute(
@@ -84,7 +86,7 @@ public class CreateDispute
 
             disputeRepository.Add(dispute);
 
-            return BusinessResult.Success(dispute.Id);
+            return BusinessResult.Success(new Response(dispute.Id));
         }
     }
 }

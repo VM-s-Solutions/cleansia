@@ -130,6 +130,10 @@ public static class ServiceExtensions
         services.AddScoped<ICurrencyResolutionService, CurrencyResolutionService>();
         services.AddScoped<IOrderPricingCalculator, OrderPricingCalculator>();
         services.AddScoped<IOrderFactory, OrderFactory>();
+        services.AddScoped<IOrderAddressResolver, OrderAddressResolver>();
+        services.AddScoped<IOrderPromoApplier, OrderPromoApplier>();
+        services.AddScoped<IOrderLateReferralAcceptor, OrderLateReferralAcceptor>();
+        services.AddScoped<IOrderPaymentDispatcher, OrderPaymentDispatcher>();
         services.AddScoped<ILoyaltyService, LoyaltyService>();
         services.AddScoped<IRefundService, RefundService>();
         services.AddScoped<IPromoCodeService, PromoCodeService>();

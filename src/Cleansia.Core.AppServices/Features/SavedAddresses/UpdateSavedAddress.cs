@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.SavedAddresses.DTOs;
+using Cleansia.Core.AppServices.Features.SavedAddresses.Mappers;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
@@ -149,18 +150,7 @@ public class UpdateSavedAddress
             saved.UpdateLabel(command.Label);
 
             var country = await countryRepository.GetByIdAsync(countryId, cancellationToken);
-            return BusinessResult.Success(new SavedAddressDto(
-                Id: saved.Id,
-                Label: saved.Label,
-                Street: address.Street,
-                City: address.City,
-                ZipCode: address.ZipCode,
-                State: address.State,
-                CountryId: address.CountryId,
-                Country: country?.Name,
-                Latitude: address.Latitude,
-                Longitude: address.Longitude,
-                IsDefault: saved.IsDefault));
+            return BusinessResult.Success(saved.MapToDto(address, country?.Name));
         }
     }
 }

@@ -94,21 +94,27 @@ public class CreateOrderHandlerCharacterizationTests
 
     private CreateOrder.Handler CreateHandler() =>
         new(
-            _addressRepository.Object,
-            _savedAddressRepository.Object,
             _currencyRepository.Object,
-            _countryRepository.Object,
-            _serviceCityRepository.Object,
-            _stripeClientFactory.Object,
-            _pending.Object,
-            _promoCodeService.Object,
-            _referralService.Object,
-            _referralRepository.Object,
             _session.Object,
             _pricingCalculator.Object,
             _orderFactory.Object,
-            _addressGeocoder.Object,
-            NullLogger<CreateOrder.Handler>.Instance);
+            new OrderAddressResolver(
+                _addressRepository.Object,
+                _savedAddressRepository.Object,
+                _countryRepository.Object,
+                _serviceCityRepository.Object,
+                _addressGeocoder.Object),
+            new OrderPromoApplier(
+                _promoCodeService.Object,
+                NullLogger<OrderPromoApplier>.Instance),
+            new OrderLateReferralAcceptor(
+                _referralService.Object,
+                _referralRepository.Object,
+                NullLogger<OrderLateReferralAcceptor>.Instance),
+            new OrderPaymentDispatcher(
+                _stripeClientFactory.Object,
+                _pending.Object,
+                NullLogger<OrderPaymentDispatcher>.Instance));
 
     private void ArrangeSavedAddress(string savedAddressId, string ownerUserId, Address? resolved = null)
     {

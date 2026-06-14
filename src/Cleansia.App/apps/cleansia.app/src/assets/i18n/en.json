@@ -1191,7 +1191,9 @@
         "resend_code": "Resend Code",
         "change_password": "Change Password",
         "remember_password": "Remember your password?"
-      }
+      },
+      "send_code_error": "Could not send the verification code. Please try again.",
+      "change_password_error": "Could not change your password. Please try again."
     },
     "email_confirm": {
       "title": "Email Confirmation",

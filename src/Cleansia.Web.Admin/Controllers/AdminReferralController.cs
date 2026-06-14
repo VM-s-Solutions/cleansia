@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Referrals.Admin;
 using Cleansia.Core.AppServices.Features.Referrals.Admin.DTOs;
+using Cleansia.Core.AppServices.Features.Referrals.Admin.Filters;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Web.Admin.Abstractions;
@@ -29,9 +30,13 @@ public class AdminReferralController(IMediator mediator) : ApiController(mediato
         [FromQuery] int limit = 20,
         CancellationToken cancellationToken = default)
     {
-        var result = await Mediator.Send(
-            new GetPagedReferrals.Query(status, dateFrom, dateTo, offset, limit),
-            cancellationToken);
+        var request = new GetPagedReferrals.Request
+        {
+            Offset = offset,
+            Limit = limit,
+            Filter = new ReferralFilter(status, dateFrom, dateTo)
+        };
+        var result = await Mediator.Send(request, cancellationToken);
         return Ok(result);
     }
 

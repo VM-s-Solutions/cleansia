@@ -70,15 +70,7 @@ public abstract class BaseUserValidator<TRequest> : AbstractValidator<TRequest>
 
     protected void AddPasswordRules(Expression<Func<TRequest, string>> passwordExpression)
     {
-        // Requires: minimum 8 characters, at least one letter and one digit
-        const string passwordPattern = @"^(?=.*[a-zA-Z])(?=.*\d).{8,}$";
-
-        RuleFor(passwordExpression)
-            .Cascade(CascadeMode.Stop)
-            .NotEmpty()
-            .WithMessage(BusinessErrorMessage.Required)
-            .Matches(passwordPattern)
-            .WithMessage(BusinessErrorMessage.InvalidPasswordFormat);
+        RuleFor(passwordExpression).ValidatePassword();
     }
 
     private static string GetPropertyName<T, TProperty>(Expression<Func<T, TProperty>> expression)

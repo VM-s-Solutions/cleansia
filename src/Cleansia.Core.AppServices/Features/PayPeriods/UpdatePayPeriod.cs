@@ -19,16 +19,18 @@ public class UpdatePayPeriod
 
     public record Response(string PayPeriodId);
 
-    public class Validator : UserEmailValidator<Command>
+    public class Validator : AbstractValidator<Command>
     {
         private readonly IPayPeriodRepository _payPeriodRepository;
 
         public Validator(
             IUserRepository userRepository,
             IUserSessionProvider userSessionProvider,
-            IPayPeriodRepository payPeriodRepository) : base(userRepository, userSessionProvider)
+            IPayPeriodRepository payPeriodRepository)
         {
             _payPeriodRepository = payPeriodRepository;
+
+            RuleFor(x => x).SetValidator(new UserEmailValidator<Command>(userRepository, userSessionProvider));
 
             RuleFor(x => x.PayPeriodId)
                 .Cascade(CascadeMode.Stop)

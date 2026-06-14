@@ -40,7 +40,7 @@ public class SwapMembershipPlan
             if (membership == null)
             {
                 return BusinessResult.Failure<Response>(new Error(
-                    nameof(Command), BusinessErrorMessage.MembershipNotFound));
+                    nameof(userId), BusinessErrorMessage.MembershipNotFound));
             }
 
             var newPlan = await membershipPlanRepository.GetByCodeAsync(command.NewPlanCode, cancellationToken);

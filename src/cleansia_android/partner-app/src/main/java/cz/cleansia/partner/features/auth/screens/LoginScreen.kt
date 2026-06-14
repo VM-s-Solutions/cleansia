@@ -15,14 +15,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -35,6 +32,7 @@ import cz.cleansia.core.ui.components.CleansiaCheckbox
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.CleansiaTextField
 import cz.cleansia.core.ui.components.CleansiaTextLink
+import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.partner.R
 import cz.cleansia.partner.features.auth.viewmodels.LoginViewModel
 
@@ -53,23 +51,17 @@ fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val loginState by viewModel.loginState.collectAsState()
+    val isLoading = loginState is ActionState.Submitting
 
-    LaunchedEffect(uiState.isLoginSuccessful) {
-        if (uiState.isLoginSuccessful) {
-            if (uiState.requiresEmailConfirmation) onNavigateToConfirmEmail()
+    LaunchedEffect(viewModel) {
+        viewModel.loginSuccess.collect { success ->
+            if (success.requiresEmailConfirmation) onNavigateToConfirmEmail()
             else onLoginSuccess()
         }
     }
 
-    LaunchedEffect(uiState.error) {
-        uiState.error?.let { error ->
-            snackbarHostState.showSnackbar(error)
-            viewModel.clearError()
-        }
-    }
-
-    Scaffold(snackbarHost = { SnackbarHost(hostState = snackbarHostState) }) { paddingValues ->
+    Scaffold { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -110,7 +102,7 @@ fun LoginScreen(
                 label = stringResource(R.string.email),
                 keyboardType = KeyboardType.Email,
                 errorText = uiState.emailError,
-                enabled = !uiState.isLoading,
+                enabled = !isLoading,
             )
 
             Spacer(Modifier.height(8.dp))
@@ -121,7 +113,7 @@ fun LoginScreen(
                 label = stringResource(R.string.password),
                 isPassword = true,
                 errorText = uiState.passwordError,
-                enabled = !uiState.isLoading,
+                enabled = !isLoading,
             )
 
             Spacer(Modifier.height(8.dp))
@@ -147,7 +139,7 @@ fun LoginScreen(
             CleansiaPrimaryButton(
                 text = stringResource(R.string.login),
                 onClick = { viewModel.login() },
-                loading = uiState.isLoading,
+                loading = isLoading,
                 enabled = uiState.email.isNotBlank() && uiState.password.isNotBlank(),
             )
 

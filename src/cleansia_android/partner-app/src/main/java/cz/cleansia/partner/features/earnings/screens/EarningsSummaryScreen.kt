@@ -47,6 +47,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.DashboardStatsDto
+import cz.cleansia.partner.features.earnings.viewmodels.EarningsSummaryUiState
 import cz.cleansia.partner.features.earnings.viewmodels.EarningsSummaryViewModel
 import java.time.LocalDate
 import java.time.ZonedDateTime
@@ -100,7 +101,7 @@ fun EarningsSummaryScreen(
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { paddingValues ->
-        if (uiState.isLoading && uiState.stats == null) {
+        if (uiState is EarningsSummaryUiState.Loading) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -112,7 +113,7 @@ fun EarningsSummaryScreen(
             return@Scaffold
         }
 
-        val stats = uiState.stats
+        val stats = (uiState as? EarningsSummaryUiState.Loaded)?.stats
         Column(
             modifier = Modifier
                 .fillMaxSize()

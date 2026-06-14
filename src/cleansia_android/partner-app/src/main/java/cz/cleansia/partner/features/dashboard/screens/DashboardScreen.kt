@@ -72,6 +72,7 @@ import cz.cleansia.partner.api.model.AvailableJobsPreviewResponse
 import cz.cleansia.partner.api.model.DashboardStatsDto
 import cz.cleansia.partner.api.model.OrderListItem
 import cz.cleansia.partner.api.model.OrderStatus
+import cz.cleansia.partner.features.dashboard.viewmodels.DashboardUiState
 import cz.cleansia.partner.features.dashboard.viewmodels.DashboardViewModel
 import cz.cleansia.partner.features.main.MainBottomNavInset
 import cz.cleansia.partner.features.orders.components.toOrderStatus
@@ -120,6 +121,7 @@ fun DashboardScreen(
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val firstName by viewModel.firstName.collectAsState()
     val unreadNotifications by viewModel.unreadNotifications.collectAsState()
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
@@ -138,15 +140,18 @@ fun DashboardScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    val nextJob = remember(uiState.upcoming) { pickNextJob(uiState.upcoming) }
-    val todaysJobs = remember(uiState.upcoming) { filterTodaysJobs(uiState.upcoming) }
+    val loaded = uiState as? DashboardUiState.Loaded
+    val upcoming = loaded?.upcoming.orEmpty()
+    val stats = loaded?.stats
+    val availableJobsPreview = loaded?.availableJobsPreview
+    val nextJob = remember(upcoming) { pickNextJob(upcoming) }
+    val todaysJobs = remember(upcoming) { filterTodaysJobs(upcoming) }
 
     // Genuine first-ever paint — owns the screen with the centered
     // CircularProgressIndicator. After that first paint, the data renders
     // and background refreshes never re-trigger this branch (stats stays
     // non-null even while a silent refresh swaps numbers under the user).
-    val isInitialLoading = (uiState.isUserRefreshing || uiState.isBackgroundRefreshing) &&
-        uiState.stats == null
+    val isInitialLoading = uiState is DashboardUiState.Loading
 
     val pullState = rememberPullToRefreshState()
     PullToRefreshBox(
@@ -186,7 +191,7 @@ fun DashboardScreen(
     ) {
         item {
             CompactGreetingBar(
-                firstName = uiState.firstName,
+                firstName = firstName,
                 todaysJobsCount = todaysJobs.size,
                 statusBarTop = statusBarTop,
                 unreadCount = unreadNotifications,
@@ -209,25 +214,25 @@ fun DashboardScreen(
             item {
                 TodayHeroCard(
                     nextJob = nextJob,
-                    preview = uiState.availableJobsPreview,
-                    currencyCode = uiState.stats?.currencyCode,
+                    preview = availableJobsPreview,
+                    currencyCode = stats?.currencyCode,
                     onOpenOrders = onOpenOrders,
                     onOpenOrderDetail = { id -> onOrderClick(id) },
                 )
             }
 
             item {
-                EarningsSplitRow(stats = uiState.stats, onClick = onOpenEarnings)
+                EarningsSplitRow(stats = stats, onClick = onOpenEarnings)
             }
 
-            uiState.stats?.takeIf { it.currentPayPeriodStart != null }?.let { stats ->
+            stats?.takeIf { it.currentPayPeriodStart != null }?.let { periodStats ->
                 item {
-                    PayPeriodCard(stats = stats, onClick = onOpenEarnings)
+                    PayPeriodCard(stats = periodStats, onClick = onOpenEarnings)
                 }
             }
 
             item {
-                LastMonthCard(stats = uiState.stats)
+                LastMonthCard(stats = stats)
             }
 
             item {

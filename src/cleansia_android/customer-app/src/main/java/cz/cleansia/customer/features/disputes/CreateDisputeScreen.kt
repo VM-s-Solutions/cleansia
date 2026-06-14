@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
+import cz.cleansia.customer.ui.state.ActionState
 
 /**
  * CreateDisputeScreen — "Report an issue" full-screen form. Reached from two
@@ -74,8 +75,9 @@ fun CreateDisputeScreen(
     onCreated: (disputeId: String) -> Unit = {},
     viewModel: CreateDisputeViewModel = hiltViewModel(),
 ) {
-    val submitting by viewModel.submitting.collectAsStateWithLifecycle()
-    val error by viewModel.error.collectAsStateWithLifecycle()
+    val submitState by viewModel.submitState.collectAsStateWithLifecycle()
+    val submitting = submitState is ActionState.Submitting
+    val error = (submitState as? ActionState.Error)?.message
 
     var reasonValue by remember { mutableStateOf<Int?>(null) }
     var description by remember { mutableStateOf("") }

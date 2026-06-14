@@ -1,55 +1,59 @@
+#nullable enable
 using Cleansia.Core.AppServices.Features.Referrals.Admin.DTOs;
+using Cleansia.Core.AppServices.Features.Referrals.Admin.Filters;
+using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.AppServices.Shared.DTOs.RequestModels;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Sorting;
+using Cleansia.Core.Domain.Specifications;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
+using SortDefinition = Cleansia.Core.Domain.Sorting.Common.SortDefinition;
+using SortDirection = Cleansia.Core.Domain.Sorting.Common.SortDirection;
 
 namespace Cleansia.Core.AppServices.Features.Referrals.Admin;
 
-/// <summary>
-/// Admin paged list of referrals across all users. Filters: status,
-/// AcceptedOn date range. Pagination is repository-materialised (a single
-/// query yielding the page + total count).
-/// </summary>
 public class GetPagedReferrals
 {
-    public record Query(
-        ReferralStatus? Status = null,
-        DateTimeOffset? DateFrom = null,
-        DateTimeOffset? DateTo = null,
-        int Offset = 0,
-        int Limit = 20) : IRequest<PagedData<AdminReferralListItem>>;
+    public class Request : DataRangeRequest, IRequest<PagedData<AdminReferralListItem>>
+    {
+        public ReferralFilter? Filter { get; init; }
+    }
 
     internal class Handler(IReferralRepository referralRepository)
-        : IRequestHandler<Query, PagedData<AdminReferralListItem>>
+        : IRequestHandler<Request, PagedData<AdminReferralListItem>>
     {
-        public async Task<PagedData<AdminReferralListItem>> Handle(Query request, CancellationToken cancellationToken)
+        public async Task<PagedData<AdminReferralListItem>> Handle(Request request, CancellationToken cancellationToken)
         {
-            var pageNumber = request.Limit > 0 ? (request.Offset / request.Limit) + 1 : 1;
+            var specification = ReferralSpecification.Create(
+                status: request.Filter?.Status,
+                acceptedFrom: request.Filter?.DateFrom,
+                acceptedTo: request.Filter?.DateTo);
 
-            var (rows, total) = await referralRepository.GetPagedAdminAsync(
-                request.Status,
-                request.DateFrom,
-                request.DateTo,
-                request.Offset,
-                request.Limit,
-                cancellationToken);
+            var filter = specification.SatisfiedBy();
 
-            var items = rows
-                .Select(r => new AdminReferralListItem(
-                    Id: r.Id,
-                    ReferrerUserId: r.ReferrerUserId,
-                    ReferrerEmail: r.Referrer?.Email,
-                    ReferredUserId: r.ReferredUserId,
-                    ReferredEmail: r.Referred?.Email,
-                    Status: r.Status,
-                    AcceptedOn: r.AcceptedOn,
-                    FirstQualifyingOrderOn: r.FirstQualifyingOrderOn,
-                    PointsAwardedToReferrer: r.PointsAwardedToReferrer,
-                    PointsAwardedToReferred: r.PointsAwardedToReferred))
-                .ToList();
+            var totalItems = await referralRepository.GetCountAsync(filter, cancellationToken);
+            var items = await referralRepository
+                .GetPagedSort<ReferralSort>(request.Offset, request.Limit, filter, ResolveSort(request))
+                .Include(r => r.Referrer)
+                .Include(r => r.Referred)
+                .AsNoTracking()
+                .Select(referral => referral.MapToAdminListItem())
+                .ToListAsync(cancellationToken);
 
-            return new PagedData<AdminReferralListItem>(pageNumber, request.Limit, total, items);
+            return items.MapToDto(totalItems, request);
+        }
+
+        // Preserves the historical newest-first default: the bespoke repo ordered by
+        // AcceptedOn desc, and the empty-sort GetPagedSort path applies no ordering.
+        private static IEnumerable<SortDefinition> ResolveSort(Request request)
+        {
+            var sort = request.Sort.MapToDomain().ToList();
+            return sort.Count > 0
+                ? sort
+                : [new SortDefinition { Field = nameof(Referral.AcceptedOn), Direction = SortDirection.Descending }];
         }
     }
 }

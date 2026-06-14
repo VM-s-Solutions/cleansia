@@ -1,11 +1,11 @@
 ---
 id: T-0243
 title: CreateMembershipCheckoutSession UserNotFound — nameof(Command) → nameof(userId) (B5 consistency)
-status: ready
+status: done
 size: XS
 owner: —
 created: 2026-06-13
-updated: 2026-06-13
+updated: 2026-06-14
 depends_on: [T-0179]
 blocks: []
 stories: []
@@ -65,6 +65,19 @@ already reviewed and accepted in the sibling handler.
   security-touching. Edits `CreateMembershipCheckoutSession.cs` only — riders with the 5B backend
   micro-fixes; **serialize against T-0203** if 5B is fanned out, since T-0203's LG-05 also touches this
   handler (see `status/sprint-7.md` §2 Lane M-Membership).)
+- 2026-06-13 — **review** (backend). **AC1 done**: `CreateMembershipCheckoutSession.cs:45`
+  `UserNotFound` `Error` first arg changed `nameof(Command)` → `nameof(userId)`, mirroring the accepted
+  T-0179 fix in `CreateMembershipSubscription.cs:76`. The other per-field/per-entity keys
+  (`nameof(command.PlanCode)`, `nameof(UserMembership)`) were already correct and left untouched.
+  **AC2 done**: no Command/Response/OpenAPI shape change — only a runtime `Error.Code` payload string;
+  **no nswag-regen** (confirmed: generated schema is unaffected). **AC3 done**: added
+  `CreateMembershipSubscriptionContractLockTests`' sibling —
+  `Features/Memberships/CreateMembershipCheckoutSessionContractLockTests.cs` (2 tests), red-first
+  verified: against the reverted `nameof(Command)` DLL the field test fails `Expected "userId" /
+  Actual "Command"`; with the fix both pass. Test evidence: full `Features.Memberships` filter green
+  (54/54). Scope kept minimal/additive for T-0203 (LG-05) which runs after me in this lane.
+  No MANUAL_STEPs. No new behavior, no new error constants, no i18n change (`UserNotFound` message
+  unchanged).
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

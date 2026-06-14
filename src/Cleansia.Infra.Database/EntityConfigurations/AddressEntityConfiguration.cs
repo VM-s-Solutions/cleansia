@@ -32,5 +32,11 @@ public class AddressEntityConfiguration : AuditableEntityConfiguration<Address, 
 
         builder.Property(a => a.Longitude)
             .HasPrecision(9, 6);
+
+        // Saved-address create/update and order-creation dedup resolve an address by the full
+        // (Street, City, ZipCode, CountryId) equality (AddressRepository.GetAddressAsync). Without
+        // this index every dedup is a sequential scan of the cross-tenant Addresses table.
+        // Columns are ordered most-selective-first; Street/City are citext, fine for equality seeks.
+        builder.HasIndex(a => new { a.CountryId, a.ZipCode, a.City, a.Street });
     }
 }

@@ -1,11 +1,11 @@
 ---
 id: T-0256
 title: "AUD-07a — extract quote/pricing collaborator from order-wizard facade + C3-migrate its stream"
-status: blocked
+status: done
 size: M
-owner: —
+owner: frontend
 created: 2026-06-13
-updated: 2026-06-13
+updated: 2026-06-14
 depends_on: [T-0251]
 blocks: [T-0257]
 stories: []
@@ -81,6 +81,49 @@ ticket's surface and was not refactored by T-0218 — verify no merge surprise.
   observable (characterization spec), sized M, no migration/regen, refactor-only, lane-isolated on
   `order-wizard/**`, `blocks: [T-0257]` (serial a→b→c). Promotes to `ready` when T-0251 is `done`.
   Reviewer-per-developer.
+- 2026-06-14 — review (frontend dev). T-0251 confirmed `done` (order-wizard facade already on
+  `UnsubscribeControlDirective` + canonical pipe + bound `firstValueFrom`); built on that state. Sole editor of
+  `order-wizard/**` this window.
+
+  **Test-first (AC1):** extended `order-wizard.facade.spec.ts` with a characterization block pinning the
+  current quote behavior against the **unchanged** facade BEFORE the split — express math
+  (`isExpressSlot`/`expressSurcharge`/`displayedTotalPrice`/`totalPrice` across express vs standard slots) and
+  the debounced live-quote stream (browser platform + `fakeAsync`/`tick(800)`/`flushEffects`: debounce-coalesce
+  populates `quote()`, empty-selection clears + skips network, stream error keeps prior quote and resets
+  `quoting`). Ran green first (37 cases), THEN extracted.
+
+  **Extraction (AC2):** new separately-providable collaborator
+  `order-wizard/order-pricing.facade.ts` (`OrderPricingFacade`) owns `quote`/`quoting`/`lastQuotedInputs`, the
+  `QuoteInputs` snapshot + equality/empty helpers, the debounced `toObservable(quoteInputs)` stream,
+  `refreshQuoteNow()`, `cachedQuoteMatchesCurrentState()`, `totalPrice`, and the express-surcharge
+  `isExpressSlot`/`expressSurcharge`/`displayedTotalPrice` computeds. It reads `formData` + `effectiveDiscount`
+  from the orchestrating facade via a one-shot `connect()` (the discount inputs stay in the wizard facade — out
+  of scope for this step). The orchestrating facade re-exposes the quote/pricing surface by delegation so the
+  template/`wizard-summary-step` are unchanged (no behavior change, no markup edit). Wizard facade dropped
+  ~1055→834 lines (−221). New `order-pricing.facade.spec.ts` (14 cases) covers the collaborator in isolation.
+  Provided `OrderPricingFacade` ahead of `OrderWizardFacade` in the component `providers`.
+
+  **C1 + C3 migration (AC3):** collaborator `extends UnsubscribeControlDirective`; the live-quote stream now
+  resets `quoting` via `finalize(() => this.quoting.set(false))` on the inner per-request pipe (not inline in
+  `subscribe`) — `quoting.set(true)` moved inside the `switchMap` projection so rapid input changes don't let a
+  cancelled request's `finalize` prematurely flip `quoting` off; `refreshQuoteNow` likewise resets `quoting` via
+  `finalize` (try/finally removed). No `DestroyRef`/`takeUntilDestroyed`/bare `firstValueFrom` in the migrated
+  code (`firstValueFrom` is bound `…pipe(takeUntil(this.destroyed$), finalize(...))`); `toObservable` uses the
+  injected `Injector` since the stream starts in `connect()`, not the constructor.
+
+  **Behavior identical (AC4):** AC1's spec re-ran **unchanged** after the split and stayed green.
+
+  **Gates:**
+  - `nx test cleansia-customer-order-wizard` → 3 suites, **51 passed** (37 + 14).
+  - `nx lint cleansia-customer-order-wizard` → all files pass.
+  - `node agents/tools/check-consistency.mjs frontend --paths=…/order-wizard` → `OK`, zero C1/C3 violations on the
+    touched code; no new C2/C8 (AC5).
+  - `nx build cleansia.app --configuration=production` → **succeeded** (AC6). One **pre-existing** NG8102
+    template warning in `components/wizard-summary-step.component.html:117` (`extra.price ?? 0`) — untouched by
+    this ticket (T-0251 also noted a pre-existing NG8102 in a wizard summary template).
+
+  **MANUAL_STEPs:** none — refactor-only, no DTO/endpoint/response-shape change (no nswag-regen), no schema
+  change (no ef-migration), no new user-visible strings (no i18n).
 
 ## Review
 <!-- reviewer writes verdict here; PM reconciles before advancing state -->

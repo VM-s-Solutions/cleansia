@@ -1,11 +1,11 @@
 ---
 id: T-0258
 title: "AUD-07c — extract saved-address collaborator + slim order-wizard facade (step-nav + submit) + C1/C3-migrate submit branches"
-status: blocked
+status: done
 size: M
-owner: —
+owner: frontend
 created: 2026-06-13
-updated: 2026-06-13
+updated: 2026-06-14
 depends_on: [T-0251, T-0257]
 blocks: []
 stories: []
@@ -79,6 +79,33 @@ Card/Cash submit outcomes/navigation and error→`SnackbarService` mapping.
   (C1 base) + **T-0257** (sub-step b). DoR otherwise met: AC observable, sized M, no migration/regen,
   refactor-only, lane-isolated. Promotes to `ready` when T-0251 and T-0257 are `done`. Reviewer-per-developer.
   Closes the T-0200 epic when `done`.
+- 2026-06-14 — review (frontend). Implemented test-first per Gate 6:
+  - **AC1** — augmented `order-wizard.facade.spec.ts` with characterization for `canProceed()` per step,
+    `prefillFromRebook` outputs, saved-address handling, and submit-payload XOR branches (savedAddressId vs
+    customerAddress) against the **unchanged** facade — **green before** the split (59 facade tests passing
+    pre-refactor).
+  - **AC2** — extracted saved-address into `order-saved-address.facade.ts` (@Injectable, extends
+    `UnsubscribeControlDirective`, `connect()` with currentFormData/patchFormData deps), with its own
+    `order-saved-address.facade.spec.ts`. Wizard facade re-exposes `savedAddresses`/`selectedSavedAddressId`
+    and delegates `selectSavedAddress`/`isSavedAddressSelected`/`saveCurrentAddressAsSaved`/
+    `updateAddressFromForm`/`applyAddressSuggestion` (mirrors the pricing/promo/service-area collaborator
+    idiom). Facade now reads as step-nav + submit orchestration (701→662 lines; saved-address concern is a
+    119-line focused collaborator). Catalog/category filtering left as legitimate shared-store reads (C8, no
+    per-feature state pushed into NgRx).
+  - **AC3** — wizard facade already extends `UnsubscribeControlDirective`; **both** submit branches migrated
+    to the C3 pipe (`takeUntil(this.destroyed$) → catchError(() => of(null)) → finalize(submitting.set(false))`);
+    error→`SnackbarService` handled via the `null`-response branch in `next`. No `DestroyRef`/
+    `takeUntilDestroyed`/bare `firstValueFrom` remain in the wizard facade (the prior C1-line-86 deviation is
+    gone — `firstValueFrom` no longer appears in `order-wizard.facade.ts`).
+  - **AC4** — AC1's spec re-runs unchanged and stays green after the refactor (same `canProceed` gating,
+    same Card/Cash outcomes/navigation, same snackbar mapping, same `CreateOrderCommand` payload).
+  - **AC5** — `check-consistency.mjs frontend --paths=…/order-wizard` → `OK (18 files scanned)`, zero
+    violations across the whole order-wizard surface (C1/C3 clean; no new C2/C4/C8).
+  - **AC6** — `npx nx test cleansia-customer-order-wizard` → 6 suites / 119 tests green;
+    `nx lint cleansia-customer-order-wizard` → clean; `nx build cleansia.app --configuration=production` →
+    success. Refactor-only; no NSwag edit → **no nswag-regen**.
+  - Note: pre-existing unrelated NG8102 warning in `wizard-summary-step.component.html:117` (`extra.price ?? 0`)
+    — out of scope, reported not fixed. Closes the T-0200 epic when verified.
 
 ## Review
 <!-- reviewer writes verdict here; PM reconciles before advancing state -->

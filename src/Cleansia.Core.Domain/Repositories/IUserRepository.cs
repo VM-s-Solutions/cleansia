@@ -5,6 +5,21 @@ namespace Cleansia.Core.Domain.Repositories;
 public interface IUserRepository : IRepository<User, string>
 {
     Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// No-tracking variant of <see cref="GetByEmailAsync"/> for read-only profile surfaces
+    /// (GetCurrentUser, GetUserByEmail). Returns the SAME row + includes as the tracked variant; it
+    /// just doesn't enrol the entity in the change tracker. The tracked variant stays the one shared
+    /// with the mutation paths (Login/Register/ChangePassword), so do not flip it.
+    /// </summary>
+    Task<User?> GetByEmailNoTrackingAsync(string email, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// No-tracking variant of the base by-id read for read-only user surfaces (GetUser). Mirrors
+    /// <c>GetQueryable</c>'s includes (PreferredLanguage) without tracking; the tracked base
+    /// <c>GetByIdAsync</c> stays for load-then-mutate handlers.
+    /// </summary>
+    Task<User?> GetByIdNoTrackingAsync(string id, CancellationToken cancellationToken = default);
     Task<User?> GetByPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken = default);
     Task<User?> GetByEmailOrPhoneNumberAsync(string email, string phoneNumber, CancellationToken cancellationToken = default);
     Task<bool> ExistsWithEmailAsync(string email, CancellationToken cancellationToken = default);

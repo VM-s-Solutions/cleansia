@@ -2144,9 +2144,9 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Addresses_CountryId",
+                name: "IX_Addresses_CountryId_ZipCode_City_Street",
                 table: "Addresses",
-                column: "CountryId");
+                columns: new[] { "CountryId", "ZipCode", "City", "Street" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Addresses_TenantId",
@@ -2252,6 +2252,11 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_DeadLetters_TenantId",
                 table: "DeadLetters",
                 column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Devices_IsActive_LastActiveAt",
+                table: "Devices",
+                columns: new[] { "IsActive", "LastActiveAt" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Devices_TenantId",
@@ -2535,6 +2540,11 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_FiscalCounters_TenantId",
                 table: "FiscalCounters",
                 column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GdprRequests_CreatedOn",
+                table: "GdprRequests",
+                column: "CreatedOn");
 
             migrationBuilder.CreateIndex(
                 name: "IX_GdprRequests_TenantId",
@@ -3124,6 +3134,12 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_UserMemberships_MembershipPlanId",
                 table: "UserMemberships",
                 column: "MembershipPlanId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserMemberships_Status_CurrentPeriodEnd",
+                table: "UserMemberships",
+                columns: new[] { "Status", "CurrentPeriodEnd" },
+                filter: "\"RenewalReminderSentAt\" IS NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserMemberships_StripeSubscriptionId",

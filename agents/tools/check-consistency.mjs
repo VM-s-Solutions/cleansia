@@ -73,6 +73,49 @@ const read = (f) => {
 };
 const dir = (rel) => join(REPO, rel);
 
+// The enclosing C# method/local-function name for a 0-based line index, or "" if none found.
+// Walks backwards to the nearest `<modifiers> <returnType> <Name>(` signature, skipping the
+// generic-suffix `> Name(` case. Heuristic, sufficient for the dispute-guard allowlist below.
+function enclosingMethod(lines, idx) {
+    const sig = /^\s*(?:public|private|protected|internal|static|async|override|virtual|sealed|\s)+[\w.<>\[\],?]+\s+(\w+)\s*\(/;
+    for (let i = idx; i >= 0; i--) {
+        const m = lines[i].match(sig);
+        if (m && m[1] !== "if" && m[1] !== "while" && m[1] !== "for" &&
+            m[1] !== "switch" && m[1] !== "foreach" && m[1] !== "catch")
+            return m[1];
+    }
+    return "";
+}
+
+// B10 — the sanctioned writers of the Dispute terminal state-machine (ADR-0006 D4).
+// A direct Dispute.Close/Escalate/Resolve outside these bypasses CanTransitionTo and can force an
+// illegal terminal overwrite (e.g. Closed→Resolved on a late Stripe event). Keyed by enclosing
+// method name; the ResolveDispute.Handle path is additionally pinned to its file basename.
+//   - UpdateStatus            : the guarded in-app routing method itself (Dispute.cs)
+//   - Handle (ResolveDispute) : owns the Resolve money-path; gates on IsTerminal at the seam
+//   - ReflectChargebackStatus : webhook reflector; gates on CanTransitionTo/IsTerminal itself
+//   - HandleChargeback        : webhook creator; Escalates a freshly-built Pending dispute
+//                               (Pending→Escalated is a legal edge) before persisting it
+const DISPUTE_WRITE_ALLOW = new Set([
+    "UpdateStatus",
+    "ReflectChargebackStatus",
+    "HandleChargeback",
+]);
+const DISPUTE_WRITE_ALLOW_HANDLE_FILES = new Set(["ResolveDispute.cs"]);
+
+// B10 matches .Close/.Escalate/.Resolve( on ANY receiver (a Dispute can be bound to any local name,
+// e.g. `existing`/`d`), so the same method names on unrelated types must be excluded explicitly
+// rather than relying on an allow-only `dispute.` token. Excluded receivers:
+//   - period / payPeriod  : PayPeriod.Close (PayPeriodBackgroundService)
+//   - FiscalSequenceScope : static FiscalSequenceScope.Resolve (numbering)
+//   - *Resolver           : DI resolver services' .Resolve (e.g. fiscalServiceResolver.Resolve)
+const DISPUTE_WRITE_RECEIVER_EXCLUDE = new Set([
+    "period",
+    "payPeriod",
+    "FiscalSequenceScope",
+]);
+const DISPUTE_WRITE_RECEIVER_EXCLUDE_RE = /Resolver$/;
+
 // ---------------------------------------------------------------------------- BACKEND (A, B)
 function checkBackend(roots) {
     const files = roots.flatMap((r) => walk(dir(r), [".cs"]));
@@ -95,6 +138,7 @@ function checkBackend(roots) {
                 );
             }
         }
+        // B10 runs over its own (wider) roots — see checkDisputeWrites — not the general A/B loop.
         lines.forEach((ln, i) => {
             const n = i + 1;
             // B1 — command must not return a raw scalar; wrap it in a Response record.
@@ -165,6 +209,44 @@ function checkBackend(roots) {
                     "Hand-built `new PagedData<T>` — return via items.MapToDto(total, request)",
                 );
             }
+        }
+    }
+    return files.length;
+}
+
+// B10 — direct Dispute terminal-state write outside the transition-guard allowlist. Scans the
+// domain/handler call sites (not just Features/**): the unguarded public Close/Escalate/Resolve live
+// on Dispute itself (Core.Domain/Disputes), and a direct caller can also sit in AppServices/Services
+// or any other handler dir. Matches .Close/.Escalate/.Resolve( on ANY receiver, excluding the known
+// non-Dispute receivers, then allowlists the sanctioned writers by enclosing method (ADR-0006 D4).
+function checkDisputeWrites(roots) {
+    const files = roots.flatMap((r) => walk(dir(r), [".cs"]));
+    for (const f of files) {
+        const lines = read(f);
+        const text = lines.join("\n");
+        const base = f.split(/[\\/]/).pop();
+        const re = /\b(\w+)\.(Close|Escalate|Resolve)\s*\(/g;
+        let m;
+        while ((m = re.exec(text)) !== null) {
+            const receiver = m[1];
+            if (
+                DISPUTE_WRITE_RECEIVER_EXCLUDE.has(receiver) ||
+                DISPUTE_WRITE_RECEIVER_EXCLUDE_RE.test(receiver)
+            )
+                continue;
+            const lineNo = text.slice(0, m.index).split("\n").length;
+            const method = enclosingMethod(lines, lineNo - 1);
+            const allowed =
+                DISPUTE_WRITE_ALLOW.has(method) ||
+                (method === "Handle" &&
+                    DISPUTE_WRITE_ALLOW_HANDLE_FILES.has(base));
+            if (!allowed)
+                add(
+                    f,
+                    lineNo,
+                    "B10",
+                    "direct Dispute state-write bypasses the T-0172 transition guard; route through CanTransitionTo/UpdateStatus or the sanctioned webhook path",
+                );
         }
     }
     return files.length;
@@ -323,13 +405,22 @@ function checkMobile(roots) {
 // ---------------------------------------------------------------------------- run
 const DEFAULTS = {
     backend: ["src/Cleansia.Core.AppServices/Features"],
+    // B10 scans the dispute call sites wherever they live: the unguarded domain methods
+    // (Core.Domain/Disputes) plus the handler/service dirs that can call them directly.
+    disputeWrites: [
+        "src/Cleansia.Core.AppServices/Features",
+        "src/Cleansia.Core.AppServices/Services",
+        "src/Cleansia.Core.Domain/Disputes",
+    ],
     frontend: ["src/Cleansia.App/libs"],
     mobile: ["src/cleansia_android"],
 };
 const custom = pathsArg ? pathsArg.split(",") : null;
 let scanned = 0;
-if (onlyStacks.includes("backend"))
+if (onlyStacks.includes("backend")) {
     scanned += checkBackend(custom || DEFAULTS.backend);
+    checkDisputeWrites(custom || DEFAULTS.disputeWrites);
+}
 if (onlyStacks.includes("frontend"))
     scanned += checkFrontend(custom || DEFAULTS.frontend);
 if (onlyStacks.includes("mobile"))

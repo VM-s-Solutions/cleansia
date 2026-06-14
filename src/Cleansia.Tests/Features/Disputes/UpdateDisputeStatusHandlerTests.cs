@@ -52,7 +52,7 @@ public class UpdateDisputeStatusHandlerTests
         }
 
         _disputeRepository
-            .Setup(r => r.GetByIdAsync(DisputeId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetForUpdateAsync(DisputeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(dispute);
         return dispute;
     }
@@ -116,7 +116,7 @@ public class UpdateDisputeStatusHandlerTests
     public async Task Missing_dispute_returns_not_found()
     {
         _disputeRepository
-            .Setup(r => r.GetByIdAsync(DisputeId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetForUpdateAsync(DisputeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Dispute?)null);
 
         var result = await CreateHandler().Handle(

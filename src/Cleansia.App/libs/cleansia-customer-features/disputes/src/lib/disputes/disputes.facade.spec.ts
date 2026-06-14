@@ -32,6 +32,7 @@ describe('DisputesFacade', () => {
     showErrorTranslated: jest.Mock;
     showSuccess: jest.Mock;
     showError: jest.Mock;
+    showApiError: jest.Mock;
   };
 
   const dispute = DisputeListItem.fromJS({
@@ -86,6 +87,7 @@ describe('DisputesFacade', () => {
       showErrorTranslated: jest.fn(),
       showSuccess: jest.fn(),
       showError: jest.fn(),
+      showApiError: jest.fn(),
     };
 
     TestBed.configureTestingModule({
@@ -210,6 +212,78 @@ describe('DisputesFacade', () => {
       expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
         'pages.disputes.evidence.upload_error'
       );
+    });
+  });
+
+  const anyErrorSnackbarShown = (): boolean =>
+    snackbar.showError.mock.calls.length > 0 ||
+    snackbar.showApiError.mock.calls.length > 0 ||
+    snackbar.showErrorTranslated.mock.calls.length > 0;
+
+  const anySuccessSnackbarShown = (): boolean =>
+    snackbar.showSuccess.mock.calls.length > 0 ||
+    snackbar.showSuccessTranslated.mock.calls.length > 0;
+
+  describe('createDispute', () => {
+    it('shows a success snackbar and invokes the callback on success', () => {
+      disputeClient.create.mockReturnValue(of('new-dispute-id'));
+      const onSuccess = jest.fn();
+
+      facade.createDispute('order-1', 1, 'description text', onSuccess);
+
+      expect(disputeClient.create).toHaveBeenCalledTimes(1);
+      const command = disputeClient.create.mock.calls[0][0];
+      expect(command.orderId).toBe('order-1');
+      expect(command.reason).toBe(1);
+      expect(command.description).toBe('description text');
+      expect(anySuccessSnackbarShown()).toBe(true);
+      expect(onSuccess).toHaveBeenCalledTimes(1);
+    });
+
+    it('surfaces an error snackbar and skips the callback on failure', () => {
+      disputeClient.create.mockReturnValue(
+        throwError(() => ({ result: { detail: 'dispute.order_already_disputed' } }))
+      );
+      const onSuccess = jest.fn();
+
+      facade.createDispute('order-1', 1, 'description text', onSuccess);
+
+      expect(anyErrorSnackbarShown()).toBe(true);
+      expect(anySuccessSnackbarShown()).toBe(false);
+      expect(onSuccess).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('sendMessage', () => {
+    it('toggles sendingMessage, reloads the detail, and invokes the callback on success', () => {
+      disputeClient.addMessage.mockReturnValue(of(undefined));
+      const onSuccess = jest.fn();
+
+      facade.sendMessage('dispute-1', 'hello there', onSuccess);
+
+      expect(disputeClient.addMessage).toHaveBeenCalledTimes(1);
+      const command = disputeClient.addMessage.mock.calls[0][0];
+      expect(command.disputeId).toBe('dispute-1');
+      expect(command.message).toBe('hello there');
+      expect(command.isStaffMessage).toBe(false);
+      expect(onSuccess).toHaveBeenCalledTimes(1);
+      expect(dispatchSpy).toHaveBeenCalledWith(
+        loadCustomerDisputeDetail({ disputeId: 'dispute-1' })
+      );
+      expect(facade.sendingMessage()).toBe(false);
+    });
+
+    it('surfaces an error snackbar and resets sendingMessage on failure', () => {
+      disputeClient.addMessage.mockReturnValue(
+        throwError(() => ({ result: { detail: 'dispute.not_owned_by_user' } }))
+      );
+      const onSuccess = jest.fn();
+
+      facade.sendMessage('dispute-1', 'hello there', onSuccess);
+
+      expect(anyErrorSnackbarShown()).toBe(true);
+      expect(onSuccess).not.toHaveBeenCalled();
+      expect(facade.sendingMessage()).toBe(false);
     });
   });
 

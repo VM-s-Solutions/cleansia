@@ -32,7 +32,7 @@ public class GetMyMembership
         public async Task<BusinessResult<Response>> Handle(Query query, CancellationToken cancellationToken)
         {
             var userId = userSessionProvider.GetUserId()!;
-            var membership = await userMembershipRepository.GetActiveForUserAsync(userId, cancellationToken);
+            var membership = await userMembershipRepository.GetActiveForUserNoTrackingAsync(userId, cancellationToken);
             if (membership == null)
             {
                 return BusinessResult.Success(new Response(

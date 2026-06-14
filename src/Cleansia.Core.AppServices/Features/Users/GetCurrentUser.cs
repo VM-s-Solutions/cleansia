@@ -31,7 +31,7 @@ public class GetCurrentUser
     {
         public async Task<BusinessResult<MyProfileDto>> Handle(Query query, CancellationToken cancellationToken)
         {
-            var user = await userRepository.GetByEmailAsync(userSessionProvider.GetUserEmail()!, cancellationToken);
+            var user = await userRepository.GetByEmailNoTrackingAsync(userSessionProvider.GetUserEmail()!, cancellationToken);
             return BusinessResult.Success(user!.MapToMyProfileDto()!);
         }
     }

@@ -10,6 +10,13 @@ public interface ILoyaltyAccountRepository : IRepository<LoyaltyAccount, string>
     Task<LoyaltyAccount?> GetByUserIdAsync(string userId, CancellationToken cancellationToken);
 
     /// <summary>
+    /// No-tracking, ledger-free read for the booking/quote hot path, which reads only
+    /// <see cref="LoyaltyAccount.CurrentTier"/>. Returns the same account row as
+    /// <see cref="GetByUserIdAsync"/> without enrolling it in the change tracker.
+    /// </summary>
+    Task<LoyaltyAccount?> GetByUserIdTierOnlyAsync(string userId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Get-or-create — lazily creates the account on first access. The new
     /// account is added to the change tracker; the calling handler's
     /// UnitOfWork pipeline commits.

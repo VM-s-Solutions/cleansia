@@ -1,7 +1,8 @@
 import { PLATFORM_ID, signal } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import {
+  AddressDto,
   CustomerAuthService,
   CustomerClient,
 } from '@cleansia/customer-services';
@@ -16,6 +17,10 @@ import { GuestOrderService } from '@cleansia-customer/orders';
 import { provideMockStore, MockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
+import { OrderPricingFacade } from './order-pricing.facade';
+import { OrderPromoFacade } from './order-promo.facade';
+import { OrderSavedAddressFacade } from './order-saved-address.facade';
+import { OrderServiceAreaFacade } from './order-service-area.facade';
 import { OrderWizardFacade } from './order-wizard.facade';
 
 describe('OrderWizardFacade', () => {
@@ -33,10 +38,28 @@ describe('OrderWizardFacade', () => {
   let snackbar: { showError: jest.Mock };
   let router: { navigate: jest.Mock };
   let guestOrderService: { save: jest.Mock };
+  let savedAddressStore: {
+    addresses: ReturnType<typeof signal>;
+    loaded: ReturnType<typeof signal>;
+    defaultAddress: ReturnType<typeof signal>;
+    refresh: jest.Mock;
+    add: jest.Mock;
+  };
 
   const quoteResponse = { totalPrice: 1000, currencyId: 'czk' };
 
-  function configure(): void {
+  const savedAddress = {
+    id: 'addr-1',
+    street: 'Wenceslas 1',
+    city: 'Prague',
+    zipCode: '11000',
+    countryId: 'cz',
+    state: '',
+    latitude: 50.08,
+    longitude: 14.42,
+  };
+
+  function configure(platform: 'server' | 'browser' = 'server'): void {
     orderClient = {
       quote: jest.fn().mockReturnValue(of(quoteResponse)),
       createOrder: jest.fn().mockReturnValue(of({ id: 'order-1' })),
@@ -58,12 +81,23 @@ describe('OrderWizardFacade', () => {
     snackbar = { showError: jest.fn() };
     router = { navigate: jest.fn() };
     guestOrderService = { save: jest.fn() };
+    savedAddressStore = {
+      addresses: signal([]),
+      loaded: signal(true),
+      defaultAddress: signal(null),
+      refresh: jest.fn(),
+      add: jest.fn().mockResolvedValue({ id: 'addr-new' }),
+    };
 
     TestBed.configureTestingModule({
       providers: [
+        OrderPricingFacade,
+        OrderPromoFacade,
+        OrderSavedAddressFacade,
+        OrderServiceAreaFacade,
         OrderWizardFacade,
         provideMockStore(),
-        { provide: PLATFORM_ID, useValue: 'server' },
+        { provide: PLATFORM_ID, useValue: platform },
         {
           provide: CustomerClient,
           useValue: {
@@ -83,12 +117,7 @@ describe('OrderWizardFacade', () => {
         { provide: GuestOrderService, useValue: guestOrderService },
         {
           provide: SavedAddressStore,
-          useValue: {
-            addresses: signal([]),
-            loaded: signal(true),
-            defaultAddress: signal(null),
-            refresh: jest.fn(),
-          },
+          useValue: savedAddressStore,
         },
         {
           provide: TranslateService,
@@ -165,6 +194,139 @@ describe('OrderWizardFacade', () => {
     });
   });
 
+  describe('promo + referral code mutators', () => {
+    it('setPromoCode persists the raw input into form data', () => {
+      facade.setPromoCode('save10');
+
+      expect(facade.promoCode()).toBe('save10');
+      expect(facade.formData().promoCode).toBe('save10');
+    });
+
+    it('setReferralCode persists the raw input into form data', () => {
+      facade.setReferralCode('friend');
+
+      expect(facade.referralCode()).toBe('friend');
+      expect(facade.formData().referralCode).toBe('friend');
+    });
+
+    it('a valid promo code normalizes and is stored uppercased', async () => {
+      await facade.validatePromoCodeNow('save10');
+
+      expect(facade.promoCode()).toBe('SAVE10');
+      expect(facade.formData().promoCode).toBe('SAVE10');
+    });
+
+    it('validates the promo against the displayed total (post-surcharge subtotal)', async () => {
+      await facade.validatePromoCodeNow('save10');
+
+      const command = promoCodeClient.validate.mock.calls[0][0];
+      expect(command.orderSubtotal).toBe(facade.displayedTotalPrice() ?? 0);
+    });
+
+    it('clearPromoCode resets the state and wipes the form value', async () => {
+      await facade.validatePromoCodeNow('save10');
+
+      facade.clearPromoCode();
+
+      expect(facade.promoCodeState()).toEqual({ kind: 'idle' });
+      expect(facade.promoCode()).toBe('');
+      expect(facade.formData().promoCode).toBe('');
+    });
+
+    it('clearReferralCode resets the state and wipes the form value', async () => {
+      await facade.validateReferralCodeNow('friend');
+
+      facade.clearReferralCode();
+
+      expect(facade.referralState()).toEqual({ kind: 'idle' });
+      expect(facade.referralCode()).toBe('');
+      expect(facade.formData().referralCode).toBe('');
+    });
+
+    it('effectivePromoDiscount reflects the applied valid discount', async () => {
+      await facade.validatePromoCodeNow('save10');
+
+      expect(facade.effectivePromoDiscount()).toBe(100);
+
+      facade.clearPromoCode();
+
+      expect(facade.effectivePromoDiscount()).toBe(0);
+    });
+  });
+
+  describe('city-serviced check', () => {
+    beforeEach(() => {
+      TestBed.resetTestingModule();
+      configure('browser');
+    });
+
+    function setAddress(partial: Partial<{ city: string; countryId: string }>): void {
+      facade.updateFormData({
+        address: new AddressDto({
+          street: 'Main 1',
+          city: partial.city ?? 'Prague',
+          zipCode: '11000',
+          countryId: partial.countryId ?? 'cz',
+          state: '',
+        }),
+      });
+    }
+
+    it('starts idle', () => {
+      expect(facade.cityServiced()).toBe('idle');
+    });
+
+    it('stays idle when city or country is missing', () => {
+      facade.updateFormData({
+        address: new AddressDto({ street: '', city: '', zipCode: '', countryId: 'cz', state: '' }),
+      });
+
+      expect(facade.cityServiced()).toBe('idle');
+      expect(apiClient.serviceCity).not.toHaveBeenCalled();
+    });
+
+    it('transitions idle → pending → ok when the city is served', () => {
+      apiClient.serviceCity.mockReturnValue(of([{ name: 'Prague' }]));
+
+      setAddress({ city: 'Prague' });
+
+      expect(facade.cityServiced()).toBe('ok');
+    });
+
+    it('transitions to rejected when the city is not served', () => {
+      apiClient.serviceCity.mockReturnValue(of([{ name: 'Brno' }]));
+
+      setAddress({ city: 'Prague' });
+
+      expect(facade.cityServiced()).toBe('rejected');
+    });
+
+    it('transitions to error (pass-through) on a network failure', () => {
+      apiClient.serviceCity.mockReturnValue(throwError(() => new Error('boom')));
+
+      setAddress({ city: 'Prague' });
+
+      expect(facade.cityServiced()).toBe('error');
+    });
+
+    it('skips re-querying when the city/country key is unchanged', () => {
+      apiClient.serviceCity.mockReturnValue(of([{ name: 'Prague' }]));
+
+      setAddress({ city: 'Prague' });
+      setAddress({ city: 'Prague' });
+
+      expect(apiClient.serviceCity).toHaveBeenCalledTimes(1);
+    });
+
+    it('matches the city case-insensitively', () => {
+      apiClient.serviceCity.mockReturnValue(of([{ name: 'PRAGUE' }]));
+
+      setAddress({ city: 'prague' });
+
+      expect(facade.cityServiced()).toBe('ok');
+    });
+  });
+
   describe('refreshQuoteNow', () => {
     it('returns null and clears the quote when there is no selection', async () => {
       const result = await facade.refreshQuoteNow();
@@ -193,6 +355,247 @@ describe('OrderWizardFacade', () => {
 
       expect(result).toBeNull();
       expect(facade.quoting()).toBe(false);
+    });
+  });
+
+  describe('canProceed', () => {
+    function fillValidContactAndAddress(): void {
+      facade.applyAddressSuggestion({
+        street: 'Wenceslas Square',
+        city: 'Prague',
+        zipCode: '11000',
+        latitude: 50.08,
+        longitude: 14.42,
+      });
+      facade.updateFormData({
+        address: new AddressDto({
+          street: 'Wenceslas Square',
+          city: 'Prague',
+          zipCode: '11000',
+          countryId: 'cz',
+          state: '',
+        }),
+        addressLatitude: 50.08,
+        addressLongitude: 14.42,
+        customerFirstName: 'Anna',
+        customerLastName: 'Brown',
+        customerEmail: 'anna@example.com',
+        customerPhone: '+420123456789',
+      });
+    }
+
+    it('step 0 requires at least one selected service or package', () => {
+      facade.goToStep(0);
+      expect(facade.canProceed()).toBe(false);
+
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+      expect(facade.canProceed()).toBe(true);
+    });
+
+    it('step 0 passes with only a package selected', () => {
+      facade.goToStep(0);
+      facade.updateFormData({ selectedPackageIds: ['p1'] });
+      expect(facade.canProceed()).toBe(true);
+    });
+
+    it('step 1 requires valid contact, address and phone', () => {
+      facade.goToStep(1);
+      expect(facade.canProceed()).toBe(false);
+
+      fillValidContactAndAddress();
+      expect(facade.canProceed()).toBe(true);
+    });
+
+    it('step 1 rejects a custom address without coordinates', () => {
+      facade.goToStep(1);
+      facade.updateFormData({
+        address: new AddressDto({
+          street: 'Wenceslas Square',
+          city: 'Prague',
+          zipCode: '11000',
+          countryId: 'cz',
+          state: '',
+        }),
+        addressLatitude: null,
+        addressLongitude: null,
+        customerFirstName: 'Anna',
+        customerLastName: 'Brown',
+        customerEmail: 'anna@example.com',
+        customerPhone: '+420123456789',
+      });
+
+      expect(facade.canProceed()).toBe(false);
+    });
+
+    it('step 1 rejects an invalid email', () => {
+      facade.goToStep(1);
+      fillValidContactAndAddress();
+      facade.updateFormData({ customerEmail: 'not-an-email' });
+
+      expect(facade.canProceed()).toBe(false);
+    });
+
+    it('step 1 is blocked when the city-serviced check rejected', () => {
+      TestBed.resetTestingModule();
+      configure('browser');
+      apiClient.serviceCity.mockReturnValue(of([{ name: 'Brno' }]));
+      facade.goToStep(1);
+      fillValidContactAndAddress();
+
+      expect(facade.cityServiced()).toBe('rejected');
+      expect(facade.canProceed()).toBe(false);
+    });
+
+    it('step 2 requires a cleaning date', () => {
+      facade.goToStep(2);
+      expect(facade.canProceed()).toBe(false);
+
+      facade.updateFormData({ cleaningDate: new Date('2026-07-01T00:00:00Z') });
+      expect(facade.canProceed()).toBe(true);
+    });
+
+    it('step 3 (payment) always passes', () => {
+      facade.goToStep(3);
+      expect(facade.canProceed()).toBe(true);
+    });
+  });
+
+  describe('prefillFromRebook', () => {
+    beforeEach(() => {
+      store.overrideSelector(selectCustomerServices, [
+        { id: 's1' },
+        { id: 's2' },
+      ] as never);
+      store.overrideSelector(selectCustomerPackages, [{ id: 'p1' }] as never);
+      store.refreshState();
+    });
+
+    it('prefills available services/packages and reports none unavailable', () => {
+      const missing = facade.prefillFromRebook({
+        selectedServiceIds: ['s1', 's2'],
+        selectedPackageIds: ['p1'],
+        selectedServiceNames: ['Svc 1', 'Svc 2'],
+        selectedPackageNames: ['Pkg 1'],
+        rooms: 3,
+        bathrooms: 2,
+      });
+
+      expect(missing).toEqual([]);
+      expect(facade.formData().selectedServiceIds).toEqual(['s1', 's2']);
+      expect(facade.formData().selectedPackageIds).toEqual(['p1']);
+      expect(facade.formData().rooms).toBe(3);
+      expect(facade.formData().bathrooms).toBe(2);
+    });
+
+    it('drops unavailable items and returns their names', () => {
+      const missing = facade.prefillFromRebook({
+        selectedServiceIds: ['s1', 'gone'],
+        selectedPackageIds: ['missing-pkg'],
+        selectedServiceNames: ['Svc 1', 'Old Service'],
+        selectedPackageNames: ['Old Package'],
+        rooms: 1,
+        bathrooms: 1,
+      });
+
+      expect(missing).toEqual(['Old Service', 'Old Package']);
+      expect(facade.formData().selectedServiceIds).toEqual(['s1']);
+      expect(facade.formData().selectedPackageIds).toEqual([]);
+    });
+
+    it('applies the address when the rebook carries one', () => {
+      facade.prefillFromRebook({
+        selectedServiceIds: ['s1'],
+        selectedPackageIds: [],
+        selectedServiceNames: ['Svc 1'],
+        selectedPackageNames: [],
+        rooms: 1,
+        bathrooms: 1,
+        address: { street: 'Old St 5', city: 'Brno', zipCode: '60200', countryId: 'cz', state: '' },
+      });
+
+      expect(facade.formData().address.street).toBe('Old St 5');
+      expect(facade.formData().address.city).toBe('Brno');
+    });
+  });
+
+  describe('saved-address handling', () => {
+    beforeEach(() => {
+      savedAddressStore.addresses.set([savedAddress] as never);
+    });
+
+    it('selectSavedAddress copies the record into form data and marks it selected', () => {
+      facade.selectSavedAddress('addr-1');
+
+      expect(facade.selectedSavedAddressId()).toBe('addr-1');
+      expect(facade.isSavedAddressSelected()).toBe(true);
+      expect(facade.formData().address.street).toBe('Wenceslas 1');
+      expect(facade.formData().address.city).toBe('Prague');
+      expect(facade.formData().addressLatitude).toBe(50.08);
+      expect(facade.formData().addressLongitude).toBe(14.42);
+    });
+
+    it('selectSavedAddress is a no-op for an unknown id', () => {
+      facade.selectSavedAddress('nope');
+
+      expect(facade.selectedSavedAddressId()).toBeNull();
+      expect(facade.isSavedAddressSelected()).toBe(false);
+    });
+
+    it('updateAddressFromForm clears the saved-address binding and coordinates', () => {
+      facade.selectSavedAddress('addr-1');
+
+      facade.updateAddressFromForm(
+        new AddressDto({ street: 'New St 9', city: 'Plzen', zipCode: '30100', countryId: 'cz', state: '' }),
+      );
+
+      expect(facade.selectedSavedAddressId()).toBeNull();
+      expect(facade.formData().address.street).toBe('New St 9');
+      expect(facade.formData().addressLatitude).toBeNull();
+      expect(facade.formData().addressLongitude).toBeNull();
+    });
+
+    it('applyAddressSuggestion captures coordinates and clears the saved binding', () => {
+      facade.selectSavedAddress('addr-1');
+
+      facade.applyAddressSuggestion({
+        street: 'Park Ave 2',
+        city: 'Ostrava',
+        zipCode: '70200',
+        latitude: 49.83,
+        longitude: 18.28,
+      });
+
+      expect(facade.selectedSavedAddressId()).toBeNull();
+      expect(facade.formData().address.street).toBe('Park Ave 2');
+      expect(facade.formData().addressLatitude).toBe(49.83);
+      expect(facade.formData().addressLongitude).toBe(18.28);
+    });
+
+    it('saveCurrentAddressAsSaved returns false without coordinates and skips the store', async () => {
+      facade.updateAddressFromForm(
+        new AddressDto({ street: 'New St 9', city: 'Plzen', zipCode: '30100', countryId: 'cz', state: '' }),
+      );
+
+      const saved = await facade.saveCurrentAddressAsSaved('Home');
+
+      expect(saved).toBe(false);
+      expect(savedAddressStore.add).not.toHaveBeenCalled();
+    });
+
+    it('saveCurrentAddressAsSaved persists and selects the new id when coordinates exist', async () => {
+      facade.applyAddressSuggestion({
+        street: 'Park Ave 2',
+        city: 'Ostrava',
+        zipCode: '70200',
+        latitude: 49.83,
+        longitude: 18.28,
+      });
+
+      const saved = await facade.saveCurrentAddressAsSaved('Home');
+
+      expect(saved).toBe(true);
+      expect(savedAddressStore.add).toHaveBeenCalledTimes(1);
+      expect(facade.selectedSavedAddressId()).toBe('addr-new');
     });
   });
 
@@ -266,6 +669,45 @@ describe('OrderWizardFacade', () => {
       expect(snackbar.showError).toHaveBeenCalledWith('pages.order.submit_error');
       expect(facade.submitting()).toBe(false);
     });
+
+    it('sends customerAddress and no savedAddressId for a custom address', async () => {
+      facade.updateFormData({ paymentType: PaymentType.Cash });
+
+      await facade.submitOrder();
+
+      const command = orderClient.createOrder.mock.calls[0][0];
+      expect(command.savedAddressId).toBeUndefined();
+      expect(command.customerAddress).toBeDefined();
+    });
+
+    it('sends savedAddressId and no customerAddress for a saved address', async () => {
+      savedAddressStore.addresses.set([savedAddress] as never);
+      facade.selectSavedAddress('addr-1');
+      facade.updateFormData({ paymentType: PaymentType.Cash });
+
+      await facade.submitOrder();
+
+      const command = orderClient.createOrder.mock.calls[0][0];
+      expect(command.savedAddressId).toBe('addr-1');
+      expect(command.customerAddress).toBeUndefined();
+    });
+
+    it('saves a new address before submitting when requested', async () => {
+      facade.applyAddressSuggestion({
+        street: 'Park Ave 2',
+        city: 'Ostrava',
+        zipCode: '70200',
+        latitude: 49.83,
+        longitude: 18.28,
+      });
+      facade.updateFormData({ paymentType: PaymentType.Cash });
+
+      await facade.submitOrder({ label: 'Home' });
+
+      expect(savedAddressStore.add).toHaveBeenCalledTimes(1);
+      const command = orderClient.createOrder.mock.calls[0][0];
+      expect(command.savedAddressId).toBe('addr-new');
+    });
   });
 
   describe('initialize', () => {
@@ -276,5 +718,106 @@ describe('OrderWizardFacade', () => {
       expect(extraClient.getOverview).toHaveBeenCalledTimes(1);
       expect(facade.isAuthenticated()).toBe(false);
     });
+  });
+
+  describe('pricing math', () => {
+    it('reflects the server-quoted total in totalPrice', async () => {
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+      await facade.refreshQuoteNow();
+
+      expect(facade.totalPrice()).toBe(1000);
+    });
+
+    it('returns false for isExpressSlot when there is no slot picked', () => {
+      expect(facade.isExpressSlot()).toBe(false);
+    });
+
+    it('marks the slot express when it falls in the 2-4h lead window', () => {
+      const slot = new Date(Date.now() + 3 * 60 * 60 * 1000);
+      const time = `${slot.getHours().toString().padStart(2, '0')}:${slot
+        .getMinutes()
+        .toString()
+        .padStart(2, '0')}`;
+      facade.updateFormData({ cleaningDate: slot, cleaningTime: time });
+
+      expect(facade.isExpressSlot()).toBe(true);
+    });
+
+    it('does not mark a slot express outside the 2-4h window', () => {
+      const slot = new Date(Date.now() + 6 * 60 * 60 * 1000);
+      const time = `${slot.getHours().toString().padStart(2, '0')}:${slot
+        .getMinutes()
+        .toString()
+        .padStart(2, '0')}`;
+      facade.updateFormData({ cleaningDate: slot, cleaningTime: time });
+
+      expect(facade.isExpressSlot()).toBe(false);
+    });
+
+    it('applies a 20% surcharge on the discounted total for an express slot', async () => {
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+      await facade.refreshQuoteNow();
+      const slot = new Date(Date.now() + 3 * 60 * 60 * 1000);
+      const time = `${slot.getHours().toString().padStart(2, '0')}:${slot
+        .getMinutes()
+        .toString()
+        .padStart(2, '0')}`;
+      facade.updateFormData({ cleaningDate: slot, cleaningTime: time });
+
+      expect(facade.expressSurcharge()).toBeCloseTo(200, 5);
+      expect(facade.displayedTotalPrice()).toBeCloseTo(1200, 5);
+    });
+
+    it('charges no surcharge and shows the bare total for a standard slot', async () => {
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+      await facade.refreshQuoteNow();
+
+      expect(facade.expressSurcharge()).toBe(0);
+      expect(facade.displayedTotalPrice()).toBe(1000);
+    });
+  });
+
+  describe('live quote stream', () => {
+    beforeEach(() => {
+      TestBed.resetTestingModule();
+      configure('browser');
+    });
+
+    it('debounces selection changes into a single quote call and populates quote()', fakeAsync(() => {
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+      TestBed.flushEffects();
+      facade.updateFormData({ selectedServiceIds: ['s1', 's2'] });
+      TestBed.flushEffects();
+      tick(800);
+
+      expect(orderClient.quote).toHaveBeenCalledTimes(1);
+      expect(facade.quote()).toEqual(quoteResponse);
+      expect(facade.quoting()).toBe(false);
+    }));
+
+    it('clears the quote and skips the network when the selection becomes empty', fakeAsync(() => {
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+      TestBed.flushEffects();
+      tick(800);
+      orderClient.quote.mockClear();
+
+      facade.updateFormData({ selectedServiceIds: [] });
+      TestBed.flushEffects();
+      tick(800);
+
+      expect(orderClient.quote).not.toHaveBeenCalled();
+      expect(facade.quote()).toBeNull();
+      expect(facade.quoting()).toBe(false);
+    }));
+
+    it('keeps the prior quote and stops quoting when the quote call errors', fakeAsync(() => {
+      orderClient.quote.mockReturnValueOnce(throwError(() => new Error('boom')));
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+      TestBed.flushEffects();
+      tick(800);
+
+      expect(facade.quote()).toBeNull();
+      expect(facade.quoting()).toBe(false);
+    }));
   });
 });

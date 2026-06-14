@@ -1,11 +1,11 @@
 ﻿---
 id: T-0202
 title: Customer disputes feature â†’ own generated client + cleansia-table/form/error archetype
-status: blocked
+status: done
 size: M
 owner: â€”
 created: 2026-06-01
-updated: 2026-06-13
+updated: 2026-06-14
 depends_on: [T-0196]
 blocks: []
 stories: []
@@ -170,5 +170,116 @@ to the user; we are removing the smells, not changing the contract.
   sole editor of `libs/cleansia-customer-features/disputes/**` this wave. Not security-touching;
   import-source + presentation refactor only. sprint re-tagged 5.
 
+- 2026-06-14 — **review** (frontend dev, Batch 5F). Manual-step gate cleared: the **customer**
+  generated client already emits `DisputeListItem`/`DisputeReason`/`CreateDisputeCommand`/
+  `AddDisputeMessageCommand`/`OrderListItem`/`Code`/`DisputeDetails`/`DisputeMessageDto` (verified in
+  `libs/core/customer-services/.../customer-client.ts`); no regen needed to proceed. **AC2/PERF-F1
+  pre-done by the 5C rebase (T-0196):** the facade already imported from `@cleansia/customer-services`
+  — partner-services grep is clean and the Nx dep graph for `cleansia-customer-disputes` shows
+  `components / customer-services / customer-stores / services / directives` with **no partner-services
+  edge** (AC3 evidence). Remaining smells (AC4/AC5/AC6) refactored this ticket.
+  **TEST-FIRST (AC1, red→green→refactor):** added a `createDispute`/`sendMessage` characterization spec
+  to `disputes.facade.spec.ts` FIRST, confirmed **green against the un-refactored facade** (39 tests),
+  then refactored the facade and kept it green (AC7). The stable assertions (success-vs-error snackbar,
+  callback invoked, `sendingMessage` toggle, detail reload) survive the showError→showApiError swap.
+  - **AC6/C3+C4:** `createDispute`/`sendMessage` now use `takeUntil(this.destroyed$) → map(()=>true) →
+    catchError(() => { showApiError(err, '<feature fallback>'); of(false) }) → finalize(reset flag)`;
+    success via `showSuccessTranslated`. Removed the hardcoded `translate.instant('...create_error')`
+    path and the now-unused `TranslateService` injection. Added a `creatingDispute` loading signal.
+  - **AC4/C6:** new `getDisputesTableDefinition()` in `disputes.models.ts` returning `{ columns,
+    actions }`; list re-rendered via `<cleansia-table>` (lazy/server paging on `offset`/`limit`, C5),
+    with `ng-template` cells for order/reason/status/created. Removed `PaginatorModule` + the
+    hand-rolled card markup. (No sortable columns — matches the pre-refactor card screen.)
+  - **AC5/D2+D3:** create dialog is now an `fb.nonNullable.group(...)` with `cleansia-select`/
+    `cleansia-textarea` by `formControlName` (`required`/min-10/max-2000 unchanged, surfaced by the
+    components' built-in `ErrorPipe` via the existing `validation.common.*` keys). Removed the plain
+    `createForm` object, `createFieldError()` switch, `markCreateTouched`, `isCreateFormValid`, and all
+    `FormsModule`/`InputTextModule`/`TextareaModule`/`SelectModule` `ngModel` usage. Status filter and
+    new-message textarea also moved off `ngModel` onto `FormControl` + `cleansia-*`.
+  - **C8 kept (per ticket):** NgRx reads for the cross-feature disputes/orders stores are unchanged.
+  - **No new i18n** (all keys pre-existed in all 5 locales; verified). **No DTO/endpoint change.**
+  - **Verification:** `npx nx test cleansia-customer-disputes` → 41 passed; `npx nx lint
+    cleansia-customer-disputes` → clean; `npx nx build cleansia.app --configuration=production` →
+    success (SSR), no disputes errors; consistency checker → no `customer-features/disputes` deviation.
+  - **Known follow-ons (not blockers):** (1) T-0249 response-wrapped `CreateDispute`
+    (`Observable<string>` → `CreateDisputeResponse`) on the backend; the customer client still returns
+    `Observable<string>` — coded against the current shape; owner regen aligns later. (2) DA-7 still
+    owes `api.dispute.*`/`api.file.*` keys; `showApiError` falls back to the feature generic until then.
+    (3) SCSS: `libs/shared/assets/.../disputes.component.scss` (outside this ticket's owned path) still
+    has dead `.dispute-card` rules and lacks `.customer-disputes__table`/`__cell-*` styling — flagged
+    as a styling follow-on, not edited to respect lane isolation.
+
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->
+
+### Reviewer verdict — 2026-06-14 (Batch 5F) — APPROVED
+
+Scope: reviewed ONLY the developer-listed files via `git diff`; ignored unrelated working-tree changes
+in other lanes. Verified, not trusted: ran the lib test/lint/consistency gates myself.
+
+**AC traceability**
+- **AC1 (test-first / characterization)** — PASS. Facade characterization specs added to
+  `disputes.facade.spec.ts` (createDispute success+error, sendMessage success+error) plus
+  `getDisputesTableDefinition` specs. Assertions are behavior-stable (`anyErrorSnackbarShown` /
+  `anySuccessSnackbarShown` helpers span `showError`/`showApiError`/`showErrorTranslated`), so they
+  hold across the mandated `showError→showApiError` swap — consistent with a genuine
+  characterization-first approach. Per testing.md this is UI/facade logic → pragmatic test-first at the
+  facade is the correct bar; sad paths (error→snackbar, callback skipped, flag reset) are covered, not
+  theater.
+- **AC2 (own client)** — PASS (with justified deviation). Grep of
+  `libs/cleansia-customer-features/disputes/` for `@cleansia/partner-services` is CLEAN (0 hits). All
+  used DTOs/enums import from `@cleansia/customer-services`; confirmed the customer client exports
+  `DisputeListItem`/`DisputeReason`/`CreateDisputeCommand`/`AddDisputeMessageCommand`/`OrderListItem`/
+  `DisputeMessageDto`/`Code`/`DisputeDetails`. NOTE: the customer client does **not** emit
+  `DisputeStatus`; status resolves via the pre-existing local `CustomerDisputeStatus` mirror enum
+  (created in commit 05bf567a, not this ticket). The literal AC2 wording ("`DisputeStatus` from
+  customer-services") is not satisfiable, but its intent (no partner coupling; runtime enum values
+  resolve customer-side) is fully met. Justified deviation.
+- **AC3 (no partner edge / bundle)** — PASS. Import-graph evidence is load-bearing and verified:
+  zero partner-services import in the feature. Dev's production SSR build reported green.
+- **AC4 (cleansia-table / C6)** — PASS. `getDisputesTableDefinition()` in `disputes.models.ts` returns
+  `{ columns, actions }`; list rendered via `<cleansia-table>` (lazy/server paging on `offset`/`limit`,
+  C5); `PaginatorModule`/`p-paginator`/card markup removed. `PaginationState.first|rows` are
+  non-optional so dropping `?? 0/10` is type-safe & behavior-equivalent.
+- **AC5 (reactive form / D3)** — PASS. Create dialog is `fb.nonNullable.group(...)` with
+  `cleansia-select`/`cleansia-textarea` by `formControlName`; field errors via the components' built-in
+  `ErrorPipe` → `validation.common.required|min_length|max_length` (present in all 5 customer locales).
+  `createForm` object, `createFieldError()` switch, `markCreateTouched`, `isCreateFormValid`, and all
+  `ngModel`/`FormsModule`/`InputText|Textarea|SelectModule` usages removed (grep clean — only
+  `ReactiveFormsModule` remains). required/min-10/max-2000 outcomes preserved.
+- **AC6 (error pipe / C3+C4)** — PASS. `createDispute`/`sendMessage` use
+  `takeUntil → map(()=>true) → catchError(showApiError + of(false)) → finalize(reset flag)`; flags
+  reset in `finalize`, not `catchError`; success via `showSuccessTranslated`. Hardcoded
+  `translate.instant('...create_error')` path and unused `TranslateService` injection removed; added
+  `creatingDispute` guard signal.
+- **AC7 (behavior unchanged)** — PASS. Refactor is behavior-preserving under the green spec.
+- **AC8 (consistency gate)** — PASS. `check-consistency.mjs` reports NO deviation for
+  `customer-features/disputes` (the 143 repo-wide violations are all pre-existing debt in other
+  features/layers — none in this owned path, none introduced here).
+
+**Conventions** — OnPush + standalone + `providers:[DisputesFacade]` retained (C7); facade extends
+`UnsubscribeControlDirective` with `takeUntil(this.destroyed$)` (C1/C3); `SnackbarService` for toasts
+(C4); no `any` introduced; no new i18n strings; C8 NgRx reads kept per ticket. No ticket-IDs in source
+the ticket added (the two `D-10` labels in the spec are pre-existing context `describe(...)` strings,
+not touched). No DTO/endpoint/contract change → `manual_step: nswag-regen` correctly recorded but not
+needed to proceed (current `Observable<string>` shape coded against; T-0249 aligns later).
+
+**Independent verification achieved**
+- `npx nx test cleansia-customer-disputes --skip-nx-cache` → 3 suites, **41 passed**.
+- `npx nx lint cleansia-customer-disputes --skip-nx-cache` → **clean**.
+- `node agents/tools/check-consistency.mjs` → **no disputes deviation**.
+- partner-services grep over the feature → **0 hits**; customer client exports confirmed.
+- i18n: `pages.disputes.table.*`, `no_disputes`, `create/send_error`, `create_success`,
+  `validation.common.required|min_length|max_length` present in all 5 customer locales.
+- Did NOT run full-repo build/test (env trap: shared host DLL locks) — orchestrator does the
+  authoritative clean run.
+
+**Notes for PM (non-blocking)** — (1) The pre-existing `D-10` describe-labels in the spec are minor
+test-descriptor debt outside this ticket; leave or sweep separately. (2) DA-7 (`api.dispute.*` keys),
+T-0249 (response-wrapped CreateDispute + customer-client regen), and the SCSS dead `.dispute-card`
+rules / missing `.customer-disputes__table` styling are all correctly flagged as out-of-scope
+follow-ons. (3) AC2's literal `DisputeStatus` wording vs. the `CustomerDisputeStatus` mirror is a
+real-but-acceptable gap; consider updating the AC text or tracking the customer-client `DisputeStatus`
+emit in the standing regen.
+
+**Verdict: APPROVED.**

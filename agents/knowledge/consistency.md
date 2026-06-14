@@ -78,6 +78,17 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   `CreateMembershipSubscription` calls Stripe with no try/catch; ✗ `CreateOrder` has a Stripe
   try/catch but no idempotency guard.
 - **B9.** Map outputs with the **`entity.MapToDto()` extension**; never inline-project a DTO in a handler.
+- **B10.** **Dispute terminal-state writes go through the guard** (ADR-0006 D4 / the T-0172 transition
+  table). A direct `dispute.Close(...)` / `dispute.Escalate(...)` / `dispute.Resolve(...)` is allowed
+  **only** from the sanctioned writers: `Dispute.UpdateStatus` (the guarded in-app router),
+  `ResolveDispute.Handle` (owns the `Resolve` money-path; gates on `IsTerminal` at the seam),
+  `HandlePaymentNotification.ReflectChargebackStatus` (webhook reflector; gates on
+  `CanTransitionTo`/`IsTerminal` itself), and `HandlePaymentNotification.HandleChargeback` (webhook
+  creator; escalates a freshly-built `Pending` dispute on the legal `Pending → Escalated` edge before
+  persisting). Any new caller must be added to the allowlist with a reviewable justification or
+  refactored to route through `CanTransitionTo`/`UpdateStatus` — a direct write elsewhere can force an
+  illegal terminal overwrite (e.g. `Closed → Resolved` on a late Stripe event). Mechanically checked
+  by `check-consistency.mjs` (rule B10).
 
 ## C. Frontend — list features
 

@@ -1,18 +1,18 @@
 ﻿---
 id: T-0204
 title: "Performance: missing indexes (address dedup, membership/referral), tracked reads, eager Includes, projection-before-order"
-status: blocked
+status: done
 size: M
 owner: â€”
 created: 2026-06-01
-updated: 2026-06-13
+updated: 2026-06-14
 depends_on: [T-0142, T-0196]
 blocks: []
 stories: []
 adrs: []
 layers: [backend, db]
 security_touching: false
-manual_steps: [ef-migration]
+manual_steps: [ef-migration, nswag-regen]
 sprint: 3
 source: PERF-* findings (soft-delete-touching indexes depend on T-0009)
 ---
@@ -146,7 +146,9 @@ The findings, grouped by smell, with file:line grounding:
   shows `AsNoTracking()` added on the read variant only.
 
 - [ ] **AC5 (eager Includes â€” PERF-IDA-02/07 / PERF-D1 / PERF-D2 / PERF-D3 / LG-PERF-01 / LG-PERF-02 /
-  LG-PERF-07).** Given each over-fetching read/write path, When it runs after the change, Then it loads
+  LG-PERF-07).** *(LG-PERF-07 disposition: **resolved-by-T-0248**, not implemented in this ticket â€”
+  see the 2026-06-14 LG-PERF-07 resolution entry in the status log; PM/Architect to ratify the scope
+  cut.)* Given each over-fetching read/write path, When it runs after the change, Then it loads
   **only the navigations its mapper/handler actually reads** (blanket `Orders` include removed from
   `UserRepository.GetQueryable()`; `Messages`/`Evidence` dropped from `GetPagedDisputes`; the three
   dispute write handlers use a lightweight `GetForUpdateAsync`; `GetDisputeWithDetailsAsync` threads the
@@ -267,6 +269,171 @@ The findings, grouped by smell, with file:line grounding:
   never two on the same repo file; the 4 EF-config edits land in one serialized migration. `CreateOrder.cs`
   is **not** edited here — but if a loyalty/membership read-variant needs a one-line call-site change there,
   serialize behind T-0199 (5D). sprint re-tagged 5.
+- 2026-06-14 — **→ review** (backend). Dep T-0196 (5C / `UpdateDisputeStatus` B1-wrap) is `done`, so
+  PERF-D2's `GetForUpdateAsync` swap is rebased onto the post-5C handlers. All cluster items implemented
+  and verified:
+  - **AC2/AC3 indexes** — 4 EF-config index declarations added (`AddressEntityConfiguration`
+    `(CountryId, ZipCode, City, Street)`; `UserMembershipEntityConfiguration` `(Status, CurrentPeriodEnd)`
+    partial `WHERE "RenewalReminderSentAt" IS NULL`; `GdprRequestEntityConfiguration` `CreatedOn`;
+    `DeviceConfiguration` `(IsActive, LastActiveAt)`). **No `dotnet ef` run.**
+    - **LG-PERF-05 (DB-Master call, NOT added here):** verified against
+      `CleansiaDbContextModelSnapshot.cs` — `Orders.UserId` index is **present** (snapshot
+      `b.HasIndex("UserId")` on `Orders`), but `OrderStatusHistory` carries **only `(OrderId)`**, not
+      the `(OrderId, Status)` composite the ticket mentions. The `ReferralService` qualifying-order check
+      (`ReferralService.cs:192-195`) is `Orders WHERE UserId == ? AND OrderStatusHistory.Any(h => h.Status
+      == Completed)` — the existing `(OrderId)` FK index already backs the correlated EXISTS join; adding
+      `Status` would only make that EXISTS index-only (marginal). AC2 routes this as "DB Master verifies
+      before adding (don't add a duplicate)" and it is **not** in the named 4-config set, so I did **not**
+      add it. **Flag to DB Master:** decide whether to widen `OrderStatusHistory (OrderId)` →
+      `(OrderId, Status)` in the same migration; low value, optional.
+    - **LG-PERF-06 partial-filter tradeoff (flag to optimizer/DB-Master):** the `(Status,
+      CurrentPeriodEnd)` index is **partial** `WHERE "RenewalReminderSentAt" IS NULL`. That exactly
+      covers the **renewal** sweep (`SendMembershipLifecycleNotifications.cs:77-82`:
+      `Status==Active AND RenewalReminderSentAt==null AND CurrentPeriodEnd IN [range]`), but the handler
+      has a **second** sweep — the **cancellation-effective** arm (`:120-126`:
+      `CancelledAt!=null AND CancellationReminderSentAt==null AND Status==Active AND CurrentPeriodEnd IN
+      [range]`). The partial predicate keys off `RenewalReminderSentAt`, an independent stamp, so rows
+      pending a cancellation reminder that already had a renewal reminder sent are **excluded from the
+      partial index** → the cancellation arm falls back to a seq scan. The ticket allows "optionally
+      partial", and AC2 only requires that a `(Status, CurrentPeriodEnd)` index exist (it does), so this
+      is AC-compliant as written. **Recommendation:** prefer the **non-partial** `(Status,
+      CurrentPeriodEnd)` (both arms lead with `Status==Active` + `CurrentPeriodEnd` range and would both
+      seek), or add a second partial on `CancellationReminderSentAt IS NULL`. Left as-is (behavior
+      unchanged, no second config-author touch); optimizer to confirm the chosen form before QA.
+  - **AC4 tracked reads** — `GdprRequestRepository.GetByUserIdAsync` AsNoTracking; user reads via
+    dedicated no-tracking variants (`GetByEmailNoTrackingAsync`/`GetByIdNoTrackingAsync`) — shared
+    `GetByEmailAsync` left tracked for the mutation paths; `LoyaltyTransactionRepository.GetForAccountAsync`
+    AsNoTracking; `UserMembershipRepository.GetActiveForUserNoTrackingAsync` added.
+  - **AC5 includes** — blanket `Orders` include removed from `UserRepository.GetQueryable()`;
+    `GetPagedDisputes` drops Messages/Evidence + projects in-query; the three dispute write handlers use
+    `GetForUpdateAsync`; `GetDisputeWithDetailsAsync` threads CT + AsNoTracking (tracked variant split off);
+    `LoyaltyAccountRepository.GetByUserIdTierOnlyAsync` (tier-only no-tracking) on the booking hot path;
+    `GetMyReferral` uses `GetStatusCountsByReferrerAsync` grouped count. Auth/tenant scoping preserved
+    verbatim.
+  - **AC6 GdprRequest paging** — re-shaped to canonical recipe (`GetPagedSort<GdprRequestSort>` +
+    `GetCountAsync` + `MapToDto(total, request)`), **order-before-page**, `PagedData<GdprRequestDto>`
+    return. **Latent-correctness fix → FLAGGED TO OWNER**: old code applied OrderBy AFTER Skip/Take and
+    returned `List`, so the admin GDPR list (Article-30 surface) served the wrong page window.
+  - **AC1 tests** — `PerfIndexModelMetadataTests` (4 index-metadata assertions on `IEntityType.GetIndexes()`),
+    `GetMyReferralHandlerTests`, `GetAllGdprRequestsPagingTests` (real Postgres, order-before-page),
+    `UserReadNoTrackingTests` (no-tracking variant returns same row untracked; tracked variant still tracks).
+  - **AC7 consistency gate** — `check-consistency.mjs` clean for every T-0204-touched file (the remaining
+    A1/A5 flags are on out-of-scope files `GetLoyaltyActivity`/`GetUserLoyaltyActivity`/`GetMyReferrals`,
+    not modified here).
+  - **Verification:** `dotnet build Cleansia.Tests` green (0 warn/0 err). Unit suite: 1471 passed; the 4
+    new index-metadata + 2 GetMyReferral + 83 dispute/GetUser tests all green. (One unrelated flake:
+    `EmailServiceBoundaryClassificationTests` cross-test metric-source pollution under parallel run —
+    passes in isolation; touches no perf code.) `Cleansia.IntegrationTests` **builds** green; the two new
+    Postgres tests are **blocked only by `PendingModelChangesWarning`** — the model carries the 4 new
+    indexes but no migration exists yet, which is exactly the **AC8 migration boundary**. They pass once
+    the owner runs the migration.
+- 2026-06-14 — **MANUAL_STEP: ef-migration (owner-only).** One migration adds the 4 indexes, built
+  `CONCURRENTLY` on the populated tables: `Addresses (CountryId, ZipCode, City, Street)`;
+  `UserMemberships (Status, CurrentPeriodEnd) WHERE "RenewalReminderSentAt" IS NULL`; `GdprRequests
+  (CreatedOn)`; `Devices (IsActive, LastActiveAt)`. Hand-author the `CREATE INDEX CONCURRENTLY` /
+  `migrationBuilder.Sql(...)` (CONCURRENTLY cannot run inside a transaction — use
+  `migrationBuilder.Sql(..., suppressTransaction: true)`). No `nswag-regen` strictly required for the
+  index half; **but** `GetAllGdprRequests` changed `List<GdprRequestDto> → PagedData<GdprRequestDto>`
+  (AC8 note) — if the admin client signature changes, run `nswag-regen` for the admin client then.
+- 2026-06-14 — **LG-PERF-07 resolution (review fix; explicit disposition, supersedes the earlier
+  vague "out-of-scope consistency flag" wording).** Review correctly flagged that LG-PERF-07 — a
+  **named AC5 sub-item** ("admin paged repos `ReferralRepository.GetPagedAdminAsync:58-94` and
+  `PromoCodeRepository.GetPagedAdminAsync:24-65` materialize full entities then map in the handler;
+  project to the list DTO in-query per A6") — was neither implemented here nor cleanly deferred. The
+  earlier status log mislabeled it. Corrected disposition below.
+  - **Disposition: RESOLVED-BY-T-0248, not re-implemented here.** Sibling ticket **T-0248** (status
+    `done`, landed in this branch's commit `226bc928` — the Wave-5 5B+5C+5D+5E batch) canonicalized
+    **both** consuming handlers onto the §A paged-query form. `GetPagedReferrals.Handle`
+    (`Features/Referrals/Admin/GetPagedReferrals.cs:38-44`) and `GetPagedPromoCodes.Handle`
+    (`Features/PromoCodes/Admin/GetPagedPromoCodes.cs:39-44`) now read via
+    `GetPagedSort<XxxSort>(...).Include(...).AsNoTracking().Select(x => x.MapTo…()).ToListAsync(ct)` —
+    i.e. **in-query projection to the list DTO, exactly the A6 fix LG-PERF-07 asked for**
+    (slice-reports `:1789-1793`). The over-fetch (whole-entity materialize-then-map) is already gone
+    on the live read path.
+  - **Why the two `GetPagedAdminAsync` methods are unchanged in this ticket's tree (the thing review
+    verified):** T-0248's canonicalization removed every production caller of
+    `ReferralRepository.GetPagedAdminAsync` and `PromoCodeRepository.GetPagedAdminAsync`. They are now
+    **dead code** (the only remaining live `GetPagedAdminAsync` caller is
+    `MembershipPlanRepository`'s, via `GetPagedMembershipPlans.cs:29` — a different repo, **not** in
+    LG-PERF-07's scope). Editing the dead methods to project in-query would change nothing observable
+    and would just add churn to a method slated for deletion. So neither this ticket's
+    `ReferralRepository.cs` working-tree change (which adds only LG-PERF-02's
+    `GetStatusCountsByReferrerAsync`) nor `PromoCodeRepository.cs` (no change) touches them — by
+    design, because the fix already shipped one layer up.
+  - **Entanglement with tracked A1/A3/A5 debt (per review):** these methods/handlers are the same
+    `GetPagedPromoCodes`/`GetPagedReferrals` cluster catalogued in
+    `audits/consistency-violations.md:21-27` (F1, A1/A3/A5) whose canonicalization was deliberately
+    routed to a **separate** ticket (T-0248). The in-query-projection half (LG-PERF-07) was
+    legitimately entangled with that canonicalization and was carried by it.
+  - **Residual (report-only, do NOT fix here):** `ReferralRepository.GetPagedAdminAsync:75-111`,
+    `PromoCodeRepository.GetPagedAdminAsync:66-107`, and their interface declarations
+    (`IReferralRepository.cs:48`, `IPromoCodeRepository.cs:45`) are now **orphaned dead code**. Flag to
+    PM/Architect for a small follow-up cleanup ticket (remove the unused repo methods + interface
+    members). Not removed here: T-0204 is a read-shape/index sweep, `PromoCodeRepository.cs` is in a
+    different repo-group fan-out lane per the internal-serialization note, and dead-code removal is out
+    of this ticket's scope.
+  - **Scope cut for PM/Architect ratification:** AC5's LG-PERF-07 sub-item is marked
+    **resolved-by-sibling (T-0248)** rather than implemented in T-0204. AC5 is otherwise complete (all
+    other sub-items implemented and verified per the 2026-06-14 review entry above). No code change was
+    made for this resolution — it is a documentation/traceability correction only; no re-run of tests
+    is warranted (no production code touched). The earlier T-0204 unit/integration evidence stands
+    unchanged.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->
+
+### Optimizer gate — PASS-WITH-NOTES (2026-06-14)
+
+Verified every claimed perf fix actually changes the generated query shape, and that each of the 4
+index declarations matches the predicate it serves (column order vs WHERE + ORDER BY).
+
+**Indexes (AC2/AC3) — all 4 match their queries:**
+- Addresses `(CountryId, ZipCode, City, Street)` vs `AddressRepository.GetAddressAsync` all-equality
+  filter on Street/City/ZipCode/CountryId — equality-only, any column order seeks; most-selective-first
+  is sound. MATCH.
+- UserMemberships `(Status, CurrentPeriodEnd) WHERE "RenewalReminderSentAt" IS NULL` vs the renewal
+  sweep (`Status==Active` equality lead, `CurrentPeriodEnd` range follow, partial keys off
+  `RenewalReminderSentAt==null`). Exact MATCH for the renewal arm.
+- GdprRequests `(CreatedOn)` vs the admin sort default `CreatedOn DESC` — btree serves either
+  direction. MATCH.
+- Devices `(IsActive, LastActiveAt)` vs the stale sweep `IsActive && LastActiveAt < cutoff`
+  (equality lead + range follow). MATCH.
+- `PerfIndexModelMetadataTests` asserts each tuple via `IEntityType.GetIndexes()` + `SequenceEqual` —
+  real metadata assertion, not theater. All 33 perf-cluster unit tests green; Infra.Database builds clean.
+
+**N+1 / over-fetch (AC5) — query shape genuinely narrowed, all call sites wired:**
+- `UserRepository.GetQueryable()` drops the blanket `Orders` Include (keeps only PreferredLanguage,
+  which the DTOs read). Shape changed.
+- `GetPagedDisputes` drops Messages/Evidence, keeps only Order+User, AsNoTracking + `.Select(MapToListItem)`
+  in-query → single statement (no collection includes, no split). Auth/tenant scoping preserved.
+- 3 dispute write handlers use `GetForUpdateAsync` (tracked, no includes); ownership/state checks verbatim.
+- `GetDisputeWithDetailsAsync` threads CT + AsNoTracking; `GetByIdAsync` is the tracked variant.
+- `LoyaltyService.ResolveTierDiscountForOrderAsync` uses `GetByUserIdTierOnlyAsync` (no-tracking,
+  ledger-free); handler reads only `CurrentTier`. Booking hot path is now ledger-free.
+- `GetMyReferral` uses `GetStatusCountsByReferrerAsync` (server-side GroupBy+Count) — no fetch-then-count.
+
+**AsNoTracking (AC4):** GdprRequest/UserConsent/User read variants + LoyaltyTransaction.GetForAccountAsync
++ UserMembership.GetActiveForUserNoTrackingAsync all no-tracking; shared write queryables left tracked.
+
+**PERF-IDA-06 order-before-page (AC6):** CONFIRMED. `GetAllGdprRequests` now routes through
+`BaseRepository.GetPagedSort<GdprRequestSort>`, which applies `ApplySort` (OrderBy on `x.CreatedOn`)
+BEFORE `.Skip(offset).Take(limit)`. `GetAllGdprRequestsPagingTests` (real Postgres) pins newest-first
+across both page windows. The order column is the one the new `CreatedOn` index serves.
+
+**AC7:** check-consistency.mjs reports zero violations on every T-0204-touched file.
+
+**Notes (not blocking):**
+- `QuoteOrder.cs:133` and `OrderFactory.cs:64` (CreateOrder pricing pipeline) still call the tracked
+  `GetActiveForUserAsync`, not the new no-tracking variant. The ticket explicitly defers CreateOrder
+  call-site changes (serialize behind the CreateOrder-decompose ticket), so this is in-bounds — but the
+  membership read on the pricing hot path remains tracked. Flag to follow-up, not a must-fix here.
+- LG-PERF-06 partial index covers only the renewal arm; the cancellation-effective arm
+  (`CancellationReminderSentAt IS NULL`) falls back to a seq scan — already flagged by the dev. The
+  ticket allows "optionally partial". Recommend the owner choose the non-partial `(Status, CurrentPeriodEnd)`
+  (both arms lead with Status==Active + CurrentPeriodEnd range) before running the migration. Optimizer
+  endorses the non-partial form.
+- LG-PERF-05 `OrderStatusHistory (OrderId, Status)` was intentionally NOT added (existing `(OrderId)`
+  FK index backs the correlated EXISTS; widening is marginal). Correct DB-Master deferral.
+- Authoritative verification (clean solution-graph build + full IntegrationTests Postgres run) is the
+  orchestrator's; the 2 new Postgres tests are gated only by `PendingModelChangesWarning` until the
+  owner runs the AC8 migration — expected at the migration boundary.

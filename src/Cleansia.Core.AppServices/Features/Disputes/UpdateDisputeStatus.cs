@@ -36,7 +36,7 @@ public class UpdateDisputeStatus
     {
         public async Task<BusinessResult<Response>> Handle(Command request, CancellationToken cancellationToken)
         {
-            var dispute = await disputeRepository.GetByIdAsync(request.DisputeId, cancellationToken);
+            var dispute = await disputeRepository.GetForUpdateAsync(request.DisputeId, cancellationToken);
 
             if (dispute == null)
             {

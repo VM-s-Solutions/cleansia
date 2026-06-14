@@ -1,9 +1,15 @@
-import { DisputeMessageDto, DisputeReason } from '@cleansia/customer-services';
+import {
+  DisputeListItem,
+  DisputeMessageDto,
+  DisputeReason,
+} from '@cleansia/customer-services';
+import { TranslateService } from '@ngx-translate/core';
 import {
   CustomerDisputeStatus,
   DISPUTE_EVIDENCE_ALLOWED_CONTENT_TYPES,
   DISPUTE_EVIDENCE_MAX_FILE_SIZE_BYTES,
   getDisputeReasonLabelKey,
+  getDisputesTableDefinition,
   getDisputeStatusSeverity,
   hasUnreadStaffReply,
   isDisputeOpen,
@@ -106,6 +112,48 @@ describe('disputes.models', () => {
       expect(isDisputeOpen(CustomerDisputeStatus.Resolved)).toBe(false);
       expect(isDisputeOpen(CustomerDisputeStatus.Closed)).toBe(false);
       expect(isDisputeOpen(undefined)).toBe(false);
+    });
+  });
+
+  describe('getDisputesTableDefinition', () => {
+    const translate = {
+      instant: (key: string) => key,
+    } as unknown as TranslateService;
+
+    it('builds the four list columns in order against the list DTO fields', () => {
+      const { columns } = getDisputesTableDefinition(
+        { onOpen: jest.fn() },
+        translate,
+        {}
+      );
+
+      expect(columns.map((c) => c.field)).toEqual([
+        'displayOrderNumber',
+        'reason',
+        'status',
+        'createdOn',
+      ]);
+      expect(columns.map((c) => c.header)).toEqual([
+        'pages.disputes.table.order',
+        'pages.disputes.table.reason',
+        'pages.disputes.table.status',
+        'pages.disputes.table.created',
+      ]);
+    });
+
+    it('exposes a single open action that routes the row to onOpen', () => {
+      const onOpen = jest.fn();
+      const { actions } = getDisputesTableDefinition(
+        { onOpen },
+        translate,
+        {}
+      );
+      const row = DisputeListItem.fromJS({ id: 'dispute-1' });
+
+      expect(actions).toHaveLength(1);
+      actions[0].onClick(row);
+
+      expect(onOpen).toHaveBeenCalledWith(row);
     });
   });
 

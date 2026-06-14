@@ -21,7 +21,7 @@ public class GetDisputeDetails
     {
         public async Task<BusinessResult<DisputeDetails>> Handle(Query request, CancellationToken cancellationToken)
         {
-            var dispute = await disputeRepository.GetDisputeWithDetailsAsync(request.DisputeId);
+            var dispute = await disputeRepository.GetDisputeWithDetailsAsync(request.DisputeId, cancellationToken);
 
             if (dispute == null)
             {

@@ -1,4 +1,11 @@
-import { DisputeMessageDto, DisputeReason } from '@cleansia/customer-services';
+import { TemplateRef } from '@angular/core';
+import {
+  DisputeListItem,
+  DisputeMessageDto,
+  DisputeReason,
+} from '@cleansia/customer-services';
+import { TableAction, TableColumn } from '@cleansia/components';
+import { TranslateService } from '@ngx-translate/core';
 
 // Mirrors the backend DisputeStatus enum — the generated customer client does
 // not expose it (no customer endpoint takes it as a typed parameter yet).
@@ -137,3 +144,58 @@ export const DISPUTE_UPLOAD_ERROR_KEY_MAP: Record<string, string> = {
 
 export const DISPUTE_UPLOAD_FALLBACK_ERROR_KEY =
   'pages.disputes.evidence.upload_error';
+
+export function getDisputesTableDefinition(
+  defs: { onOpen: (row: DisputeListItem) => void },
+  translate: TranslateService,
+  templates: {
+    order?: TemplateRef<DisputeListItem>;
+    reason?: TemplateRef<DisputeListItem>;
+    status?: TemplateRef<DisputeListItem>;
+    created?: TemplateRef<DisputeListItem>;
+  }
+): {
+  columns: TableColumn<DisputeListItem>[];
+  actions: TableAction<DisputeListItem>[];
+} {
+  return {
+    columns: [
+      {
+        id: 'displayOrderNumber',
+        field: 'displayOrderNumber',
+        header: translate.instant('pages.disputes.table.order'),
+        customTemplate: templates.order,
+        width: '25%',
+      },
+      {
+        id: 'reason',
+        field: 'reason',
+        header: translate.instant('pages.disputes.table.reason'),
+        customTemplate: templates.reason,
+        width: '30%',
+      },
+      {
+        id: 'status',
+        field: 'status',
+        header: translate.instant('pages.disputes.table.status'),
+        customTemplate: templates.status,
+        width: '25%',
+      },
+      {
+        id: 'createdOn',
+        field: 'createdOn',
+        header: translate.instant('pages.disputes.table.created'),
+        customTemplate: templates.created,
+        width: '20%',
+      },
+    ],
+    actions: [
+      {
+        icon: 'pi pi-chevron-right',
+        tooltip: translate.instant('pages.disputes.title'),
+        color: 'primary',
+        onClick: (row: DisputeListItem) => defs.onOpen(row),
+      },
+    ],
+  };
+}

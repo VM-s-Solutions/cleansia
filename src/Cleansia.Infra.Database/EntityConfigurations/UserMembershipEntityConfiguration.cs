@@ -60,6 +60,13 @@ public class UserMembershipEntityConfiguration : AuditableEntityConfiguration<Us
         // CreateOrder. Composite index keeps that O(log n).
         builder.HasIndex(m => new { m.UserId, m.Status });
 
+        // The membership lifecycle cron sweep (SendMembershipLifecycleNotifications) selects by
+        // Status = Active AND CurrentPeriodEnd IN [range] AND RenewalReminderSentAt IS NULL with NO
+        // UserId, so the (UserId, Status) index above can't seek. This (Status, CurrentPeriodEnd)
+        // composite serves the sweep's equality + range. Partial on the un-reminded rows keeps it tiny.
+        builder.HasIndex(m => new { m.Status, m.CurrentPeriodEnd })
+            .HasFilter("\"RenewalReminderSentAt\" IS NULL");
+
         // ADR-0002 D2 — DB-level backstop for the
         // "at most one ACTIVE membership per user" invariant. The webhook
         // provisioning path (StripeSubscriptionWebhookHandler

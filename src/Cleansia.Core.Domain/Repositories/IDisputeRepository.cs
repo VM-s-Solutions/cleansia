@@ -19,9 +19,19 @@ public interface IDisputeRepository : IRepository<Dispute, string>
     Task<Dispute?> GetOpenDisputeForOrderAsync(string orderId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Gets a dispute by ID with all related data (messages, evidence).
+    /// Read-only fetch of a dispute by ID with all related data (order, user, messages + authors,
+    /// evidence) for the details surface. No-tracking — callers only project to a DTO.
     /// </summary>
-    Task<Dispute?> GetDisputeWithDetailsAsync(string disputeId);
+    Task<Dispute?> GetDisputeWithDetailsAsync(string disputeId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Tracked, include-free fetch for write handlers that mutate one scalar or append one child row
+    /// (status change, message append, resolve). The dispute aggregate's mutating methods don't read
+    /// its collections, so loading them is pure over-fetch; EF tracks an appended child without
+    /// pre-loading the collection. Preserves the exact <c>UserId</c>/<c>TenantId</c> the handlers
+    /// auth-check against.
+    /// </summary>
+    Task<Dispute?> GetForUpdateAsync(string disputeId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Returns the dispute linked to a given Stripe dispute id, if any. Tenant-scoped — the safe

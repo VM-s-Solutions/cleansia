@@ -1,9 +1,9 @@
 ---
 id: T-0260
 title: "Defense-in-depth: funnel HandleChargeback dispute-terminal write through the CanTransitionTo guard (not direct Escalate)"
-status: draft
+status: ready
 size: S
-owner: —
+owner: pm
 created: 2026-06-14
 updated: 2026-06-14
 depends_on: [T-0172, T-0247]
@@ -68,6 +68,12 @@ This is `security_touching: true` (it guards the dispute state machine / money-a
   writes dispute terminal state via direct `dispute.Escalate`, bypassing the T-0172 `CanTransitionTo` guard;
   safe today [`Pending → Escalated` is legal] but a defense-in-depth funnel-through-the-guard fix).
   `security_touching: true`. Wave-6 candidate.
+- 2026-06-14 — **ready** (PM, Wave-6 intake / Batch **6B**). Deps T-0172✓/T-0247✓. Contract is fixed
+  (route through the existing guarded entry point T-0174's `ReflectChargebackStatus` uses) → not a design
+  decision, no panel. **Characterization-test-first** (pin the current `Pending→Escalated` happy path) then
+  the funnel + an illegal-start-state rejection test. **Security gate** (dispute state machine, money-adjacent).
+  **Lane Dispute-guard** — sole editor of the `HandleChargeback` call site + the T-0247 allowlist entry.
+  Plan: `status/sprint-8.md` §3 Batch 6B.
 
 ## Review
 <!-- reviewer / security write verdicts here; PM reconciles before advancing state -->

@@ -1,11 +1,11 @@
 ---
 id: T-0241
 title: Admin-app eslint selector-prefix alignment (kill the recurring baseline noise)
-status: draft
+status: ready
 size: S
-owner: —
+owner: pm
 created: 2026-06-12
-updated: 2026-06-12
+updated: 2026-06-14
 depends_on: []
 blocks: []
 stories: []
@@ -13,7 +13,7 @@ adrs: []
 layers: [frontend]
 security_touching: false
 manual_steps: []
-sprint: 4
+sprint: 6
 source: recurring Wave-3 baseline noise (flagged since Batch 3A; T-0191 frontend fixed one instance ad hoc)
 ---
 
@@ -43,6 +43,11 @@ panel.
 
 ## Status log
 - 2026-06-12 — draft (created by pm at Wave-3 close; recurring reviewer baseline noise since 3A)
+- 2026-06-14 — **ready** (PM, Wave-6 intake / Batch **6C**). No-decision mechanical config alignment to the
+  `cleansia` selector-prefix convention → skips the panel. **Lane FE-config:** edits admin eslint configs +
+  the Nx generator default (`nx.json` generators block) + the admin app. **Parallel to the T-0259→T-0239
+  chain** UNLESS it needs the same `nx.json` generators block they touch — if so, serialize after T-0259.
+  Plan: `status/sprint-8.md` §3 Batch 6C.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

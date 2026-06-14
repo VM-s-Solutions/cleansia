@@ -1,13 +1,13 @@
 ---
 id: T-0259
 title: "Frontend nx-lib test-infra scaffolding: tags + jest/eslint/tsconfig.spec test targets for under-scaffolded customer libs"
-status: draft
+status: ready
 size: M
-owner: —
+owner: pm
 created: 2026-06-14
 updated: 2026-06-14
 depends_on: []
-blocks: []
+blocks: [T-0239]
 stories: []
 adrs: []
 layers: [frontend]
@@ -72,6 +72,11 @@ M ticket because they share the same shape (add `tags`, add `jest.config`/`eslin
   finding [loyalty-promo-codes empty tags + missing jest/eslint/tsconfig.spec] and the T-0198
   login/forgot-password / partner-forgot-password missing-test-target finding into one frontend test-infra
   scaffolding ticket). Wave-6 candidate.
+- 2026-06-14 — **ready** (PM, Wave-6 intake / Batch **6C**). Mechanical build/test-infra scaffolding, no
+  production-code change → no panel. **Lane FE-config — runs FIRST in the chain, BEFORE T-0239**: it
+  establishes the `scope:*`/`type:*` **tags** on the under-scaffolded libs; T-0239's
+  `@nx/enforce-module-boundaries` rule needs those tags present to constrain anything (an untagged lib is
+  invisible to the rule). Added `blocks: [T-0239]`. Plan: `status/sprint-8.md` §3 Batch 6C.
 
 ## Review
 <!-- reviewer write verdicts here; PM reconciles before advancing state -->

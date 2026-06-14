@@ -1,9 +1,9 @@
 ---
 id: T-0261
 title: "LG-PERF-06: UserMembership partial index doesn't cover the cancellation-reminder sweep arm"
-status: draft
+status: ready
 size: S
-owner: —
+owner: pm
 created: 2026-06-14
 updated: 2026-06-14
 depends_on: [T-0204]
@@ -64,6 +64,10 @@ populated table, like the T-0204 batch).
   `(Status, CurrentPeriodEnd)` partial index `WHERE RenewalReminderSentAt IS NULL` covers only the
   renewal-reminder arm and not the cancellation-reminder sweep arm). DB optimization follow-up;
   `manual_step: ef-migration` (owner, CONCURRENTLY). Wave-6 candidate.
+- 2026-06-14 — **ready** (PM, Wave-6 intake / Batch **6B**). Dep T-0204✓. Pure DB index follow-up, no
+  behavior change → no panel. **Optimizer gate** on the `EXPLAIN`/query-plan evidence. **ef-migration
+  (owner, CONCURRENTLY)** on the populated `UserMembership` table — held at the migration boundary; coexists
+  with the T-0204 renewal partial index without conflict. Plan: `status/sprint-8.md` §3 Batch 6B.
 
 ## Review
 <!-- reviewer / optimizer write verdicts here; PM reconciles before advancing state -->

@@ -1,11 +1,11 @@
 ---
 id: T-0238
 title: Expose PdfGenerationFailed/PdfGenerationError on admin EmployeeInvoice DTOs (closes Q-W3-3 / T-0171d AC4 display)
-status: draft
+status: ready
 size: S
-owner: —
+owner: pm
 created: 2026-06-12
-updated: 2026-06-12
+updated: 2026-06-14
 depends_on: [T-0171]
 blocks: []
 stories: []
@@ -13,7 +13,7 @@ adrs: []
 layers: [backend, frontend]
 security_touching: false
 manual_steps: [nswag-regen]
-sprint: 4
+sprint: 6
 source: Q-W3-3 (questions/open.md) — T-0171d AC4 display gap (Wave-3 close)
 ---
 
@@ -52,6 +52,11 @@ Frontend: extend the existing invoice list/detail facades (T-0171d libs), three 
 
 ## Status log
 - 2026-06-12 — draft (created by pm at Wave-3 close; Q-W3-3 made a ticket)
+- 2026-06-14 — **ready** (PM, Wave-6 intake / Batch **6B**). Dep T-0171✓. Contract completion of T-0171d
+  AC4 (the owner default already anticipated "yes") → no panel. **Backend DTO half first → flag
+  `nswag-regen (admin)` to the owner → HOLD the frontend half** until the regenerated admin client is
+  confirmed. On closure, move Q-W3-3 to `answered.md` and note the closure in T-0171. Disjoint files from
+  the rest of 6B. Plan: `status/sprint-8.md` §3 Batch 6B.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

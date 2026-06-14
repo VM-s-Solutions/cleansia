@@ -1,11 +1,11 @@
 ---
 id: T-0234
 title: Bound ChangeOwnPassword current-password guessing (authenticated surface)
-status: draft
+status: ready
 size: S
-owner: —
+owner: pm
 created: 2026-06-12
-updated: 2026-06-12
+updated: 2026-06-14
 depends_on: [T-0193]
 blocks: []
 stories: []
@@ -13,7 +13,7 @@ adrs: [0003]
 layers: [backend]
 security_touching: true
 manual_steps: []
-sprint: 4
+sprint: 6
 source: T-0193 security-gate note N5 + dev handoff residual (Wave-3 close, 2026-06-12)
 ---
 
@@ -53,6 +53,13 @@ contract-lock; default recommendation: reuse the existing lockout pair, no new c
 
 ## Status log
 - 2026-06-12 — draft (created by pm at Wave-3 close; from T-0193 security note N5)
+- 2026-06-14 — **ready** (PM, Wave-6 intake / Batch **6B**). Dep T-0193✓. The shape is canonical (the
+  T-0193 validator-invoked atomic `ExecuteUpdateAsync` counter pattern) → no panel; **security gate** runs
+  (charges a counter on an authenticated path) and settles the counter choice at contract-lock. **Default =
+  reuse the existing lockout pair → no migration**; ef-migration ONLY if a dedicated counter is chosen
+  (flag then). **Lane BusinessErrorMessage + locale-JSONs — runs AFTER T-0262** (6A) which removes a key in
+  the same files; this ticket adds a new `auth.*` key ×5 locales. **Lane Auth-surface — before T-0233**
+  (6E), same lockout/login authn surface. Red-first tests. Plan: `status/sprint-8.md` §3 Batch 6B.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

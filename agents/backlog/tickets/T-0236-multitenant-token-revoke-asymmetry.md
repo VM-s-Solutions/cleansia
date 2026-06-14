@@ -1,11 +1,11 @@
 ---
 id: T-0236
 title: Multi-tenant token-revoke asymmetry — TenantId=null token writes vs tenant-filtered revoke reads
-status: draft
+status: ready
 size: M
-owner: —
+owner: pm
 created: 2026-06-12
-updated: 2026-06-12
+updated: 2026-06-14
 depends_on: [T-0188]
 blocks: []
 stories: []
@@ -13,7 +13,7 @@ adrs: [0001]
 layers: [backend]
 security_touching: true
 manual_steps: []
-sprint: 4
+sprint: 6
 source: T-0188 security-gate note 1; recorded in agents/backlog/security/auth-sessions.md (Wave-3 close)
 ---
 
@@ -53,6 +53,14 @@ fix; read-side `IgnoreQueryFilters` is the contained one — cf. `RefreshTokenSe
 
 ## Status log
 - 2026-06-12 — draft (created by pm at Wave-3 close; from the T-0188 security note)
+- 2026-06-14 — **ready** (PM, Wave-6 intake / Batch **6A — FIRST**). The MULTI-TENANT GO-LIVE BLOCKER —
+  front-loaded. Dep T-0188✓. AC1 is an **architect call at contract-lock** between two implementation
+  options (issuance-side TenantId stamping vs read-side `IgnoreQueryFilters` with a user-scoped predicate) —
+  **not** an owner product decision, so it does not block promotion. **Security gate mandatory.** Lane
+  Auth-token (`RefreshTokenService.cs`/`TokenService.cs` + refresh-token repo reads/revoke paths); no other
+  6A ticket touches it. Must not regress T-0149 (rotation re-checks). **ef-migration ONLY if** AC4's
+  backfill of existing null-stamped rows is required by the chosen rule — flagged + held then.
+  Plan: `status/sprint-8.md` §3 Batch 6A.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

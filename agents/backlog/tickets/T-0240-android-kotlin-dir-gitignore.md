@@ -1,11 +1,11 @@
 ---
 id: T-0240
 title: Android — add .kotlin build-artifact dir to .gitignore
-status: draft
+status: ready
 size: S
-owner: —
+owner: pm
 created: 2026-06-12
-updated: 2026-06-12
+updated: 2026-06-14
 depends_on: []
 blocks: []
 stories: []
@@ -13,7 +13,7 @@ adrs: []
 layers: [android]
 security_touching: false
 manual_steps: []
-sprint: 4
+sprint: 6
 source: T-0195 reviewer nit (Wave-3 close)
 ---
 
@@ -35,6 +35,9 @@ machine-local build state. **No-decision note:** pure mechanical hygiene fix —
 
 ## Status log
 - 2026-06-12 — draft (created by pm at Wave-3 close; T-0195 nit)
+- 2026-06-14 — **ready** (PM, Wave-6 intake / Batch **6A**). Pure mechanical hygiene, no-decision, skips the
+  panel. Sole editor of `src/cleansia_android/.gitignore` — fully disjoint, parallel with all of 6A/6B/6C/6D.
+  Plan: `status/sprint-8.md` §3 Batch 6A.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

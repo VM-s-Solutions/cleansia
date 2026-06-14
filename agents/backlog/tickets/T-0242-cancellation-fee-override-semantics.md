@@ -1,7 +1,7 @@
 ---
 id: T-0242
 title: Cancellation-fee free-window override semantics — Plus override direction contradicts the doc
-status: blocked
+status: ready
 size: S
 owner: —
 created: 2026-06-13
@@ -13,7 +13,7 @@ adrs: []
 layers: [backend]
 security_touching: false
 manual_steps: []
-sprint: 5
+sprint: 6
 source: T-0211 (TC-7) carried production finding — characterization tests pinned the contradiction
 ---
 
@@ -87,6 +87,18 @@ adversarial money review even though it is not authz/secret-touching (`security_
   unblocks as an S, money-adjacent (adversarial money review) ticket editing `BookingPolicy.cs` +
   `CancellationFeeRateBoundaryTests.cs`, serializing against any other `BookingPolicy.cs` writer. On the
   owner action list (see `status/sprint-7.md` §close-out).
+- 2026-06-14 — **stays blocked — EXCLUDED from the executable Wave 6** (PM, Wave-6 intake). Re-confirmed
+  **Q-W5-1 is still unanswered** in `questions/open.md` (the `Answer:` field is empty). It gates no other
+  ticket, so the rest of Wave 6 proceeds without it. Unblocks the moment the owner answers Q-W5-1 — then runs
+  as an S money-adjacent ticket (adversarial review) editing `BookingPolicy.cs` +
+  `CancellationFeeRateBoundaryTests.cs`. Carried; on the owner action list. Plan: `status/sprint-8.md` §4.1.
+
+- 2026-06-14 — **Q-W5-1 ANSWERED by owner: path (b)** → unblocked, `ready`, folded into Wave 6.
+  Plus members must get a MORE GENEROUS (longer) free-cancellation window. Fix = INVERT the override
+  handling in `BookingPolicy.CalculateCancellationFeeRate` so a larger `freeCancellationHoursOverride`
+  WIDENS the free window (cancel-free further out), matching the doc intent — not the current
+  literal-replacement that made it stricter. Re-flip T-0211's `CancellationFeeRateBoundaryTests` to the
+  corrected intent (they currently pin the buggy direction). Adversarial money review applies.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

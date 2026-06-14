@@ -10,6 +10,65 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
+> ## 🟢 WAVE 6 IN PROGRESS — carried follow-ups (multi-tenant blocker, security fast-follows, hygiene, mobile ApiResult) (promoted 2026-06-14)
+> **Wave 5 merged to master: PR #78 (`7debef45`).** Owner gave the GO on **Wave 6** — the genuinely-open
+> carry-forward set after the Wave-5 close. **Branch: `feature/wave-6`** (cut from `7debef45`), committed
+> batch-by-batch. PM never merges; the PR to `master` is the owner's call. Full sequenced plan + per-ticket
+> lanes/gates/manual-steps + the owner items: **`status/sprint-8.md`**.
+>
+> **Scope = 13 genuinely-open tickets** (the recent follow-ups + deferred items), NOT the ~66 historical
+> Wave 0–3 ticket files that still read `draft` but are `done ✅` here (a `grep status: draft` over-reports
+> ~5× — see the **stale-status reconciliation flag**, sprint-8 §4.4: a future bulk bookkeeping pass, not
+> Wave-6 work). **Front-loaded T-0236** (the MULTI-TENANT GO-LIVE BLOCKER, security-gated) + two safe
+> mechanical cleanups (T-0262, T-0240) as **Batch 6A**.
+>
+> **Promoted 11 `ready`:** T-0236, T-0262, T-0240, T-0260, T-0234, T-0238, T-0261, T-0241, T-0259, T-0239,
+> T-0237. **Held 1 `draft` for the deliberation PANEL** (its body mandates it): **T-0233** (lockout-DoS
+> mitigation — trusted-device vs CAPTCHA design decision). **Deferred-epic 1:** **T-0197** (mobile
+> `ApiResult<T>`, L, ADR-first) — runs as its own mini-wave **6M** or stays deferred (owner call, sprint-8
+> §4.2); the ADR may bank in parallel. **Excluded-blocked 1:** **T-0242** — still **BLOCKED on Q-W5-1**
+> (owner product decision, still unanswered) — gates no other ticket.
+>
+> **Reviewer-per-developer on every ticket. Security gate** on T-0236, T-0260, T-0234, T-0237 (and T-0233
+> once promoted). **Optimizer** on T-0261.
+>
+> | Batch | Tickets | Parallelism / lanes |
+> |---|---|---|
+> | **6A — blocker + safe cleanups (FIRST)** | **T-0236** (M, multi-tenant GO-LIVE BLOCKER, **sec gate**) ∥ **T-0262** (S, dead constant) ∥ **T-0240** (S, gitignore) | Parallel, disjoint. **Lane Auth-token** (T-0236). **Lane BusinessErrorMessage+locale-JSONs** — T-0262 BEFORE T-0234 (6B). |
+> | **6B — backend follow-ups** | **T-0260** (S, funnel-guard, **sec**) · **T-0234** (S, authn bound, **sec**) · **T-0238** (S, DTO + **nswag-regen HOLD**) · **T-0261** (S, index + **ef-migration HOLD**, optimizer) | Fan out. **Lane BusinessErrorMessage+locale** (T-0262→T-0234). **Lane Auth-surface** (T-0234→T-0233). **Lane Dispute-guard** (T-0260). |
+> | **6C — frontend hygiene** | **T-0259** (M, nx test-infra + tags) **→ T-0239** (M, module-boundary rule + import swap) · **T-0241** (S, eslint selector-prefix) ∥ | **Lane FE-config: T-0259 → T-0239** (boundary rule needs the tags T-0259 lays down). T-0241 parallel unless it shares the `nx.json` generators block → then after T-0259. |
+> | **6D — catalog-delete TOCTOU** | **T-0237** (M, FK Restrict + violation→`in_use` + template JSON check, **sec**, **ef-migration HOLD**) | DB-contract-first; disjoint → parallel with 6A/6B/6C. |
+> | **6E — lockout-DoS mitigation (PANEL-FIRST, LAST)** | **T-0233** (M, **sec**) — panel → finalize story → `ready` → implement | After 6B's T-0234 (shared Lane Auth-surface). |
+> | **6M — mobile `ApiResult<T>` (T-0197, L→split, ADR-first) — DEFER-CANDIDATE** | **T-0197** (architect ADR → `:core` move → one serial child per customer-app repo → iOS) | Own mini-wave / deferred (owner call). ADR may bank in parallel. |
+>
+> | ID | Title | Size | Status | Batch | Layers | sec | manual_step |
+> |----|-------|------|--------|-------|--------|-----|-------------|
+> | **T-0236** ⚠️ MULTI-TENANT GO-LIVE BLOCKER | Token-revoke asymmetry: TenantId=null writes vs tenant-filtered revoke reads | M | **ready** | 6A | backend | **yes** | ef-migration* (only if AC4 backfill) |
+> | **T-0262** | Remove dead `BusinessErrorMessage.EmailNotSentError` (zero consumers) | S | **ready** | 6A | backend | no | — |
+> | **T-0240** | Android `.kotlin` build-artifact dir → `.gitignore` | S | **ready** | 6A | android | no | — |
+> | **T-0260** | Funnel `HandleChargeback` through the T-0172 `CanTransitionTo` guard (defense-in-depth) | S | **ready** | 6B | backend | **yes** | — |
+> | **T-0234** | Bound `ChangeOwnPassword` current-password guessing | S | **ready** | 6B | backend | **yes** | ef-migration* (only if dedicated counter) |
+> | **T-0238** | Expose PdfGenerationFailed/Error on admin EmployeeInvoice DTOs (closes Q-W3-3) | S | **ready** | 6B | backend, frontend | no | **nswag-regen (admin)** |
+> | **T-0261** | UserMembership partial index: cover the cancellation-reminder sweep arm | S | **ready** | 6B | db, backend | no (optimizer) | **ef-migration** |
+> | **T-0241** | Admin-app eslint selector-prefix alignment + Nx generator default | S | **ready** | 6C | frontend | no | — |
+> | **T-0259** | Frontend nx-lib test-infra scaffolding (tags + jest/eslint/tsconfig.spec) — `blocks: [T-0239]` | M | **ready** | 6C | frontend | no | — |
+> | **T-0239** | Module-boundary sweep: customer features off `@cleansia/partner-services` + eslint rule — `depends_on: [T-0259]` | M | **ready** | 6C | frontend | no | — |
+> | **T-0237** | Catalog delete TOCTOU → FK Restrict + violation→`in_use` + template JSON check | M | **ready** | 6D | backend, db | **yes** | **ef-migration** |
+> | **T-0233** | Targeted-lockout DoS mitigation (trusted-device / CAPTCHA) | M | **draft → PANEL** | 6E | backend, frontend | **yes** | ef-migration* (TBD by panel) |
+> | **T-0197** | Migrate customer-app repos to `ApiResult<T>` (mobile) | **L** | **draft (ADR-first, DEFER → 6M)** | 6M | architect, android, ios | no | — |
+> | **T-0242** | Cancellation-fee Plus free-window override direction | S | **blocked (Q-W5-1) — EXCLUDED** | — | backend | no (money-adv) | — |
+>
+> \* `nswag-regen`/`ef-migration` flagged conditionally fire only when the diff actually changes a
+> generated-client surface or schema (T-0236 AC4 backfill / T-0234 dedicated counter); the dev confirms at
+> review, the PM adds the flag + holds consumers only then. **Owner manual steps this wave:** T-0238
+> nswag-regen (admin); T-0261 ef-migration (UserMembership index, CONCURRENTLY); T-0237 ef-migration
+> (catalog FK Cascade→Restrict). Full detail: sprint-8 §4.3. **Owner questions:** Q-W5-1 carried (gates
+> T-0242 only); T-0197 sequencing call (sprint-8 §4.2). **Dependency-ordered dispatch: sprint-8 §3** —
+> {6A, 6B, 6C, 6D} fan out concurrently (within-batch lanes serialized) → 6E (T-0233) after the panel +
+> 6B's T-0234 → 6M deferred.
+>
+> --- (Wave-5 history below, kept for traceability) ---
+>
 > ## ✅ WAVE 5 COMPLETE — priority bugs + consistency/quality sweep (closed 2026-06-14)
 > **Wave 5 is functionally COMPLETE — all work committed + pushed on `feature/wave-5-consistency-bugs`**
 > (commits **`3df53ab2`** [5A bugs], **`79b0153c`**, **`226bc928`**, **`9be1f8ee`**). PR to `master` is the

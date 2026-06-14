@@ -1,11 +1,11 @@
 ---
 id: T-0237
 title: Catalog delete TOCTOU — FK Restrict + 23505/restrict-violation → in_use mapping (replace check-then-act)
-status: draft
+status: ready
 size: M
-owner: —
+owner: pm
 created: 2026-06-12
-updated: 2026-06-12
+updated: 2026-06-14
 depends_on: [T-0191]
 blocks: []
 stories: []
@@ -13,7 +13,7 @@ adrs: [0007]
 layers: [backend, db]
 security_touching: true
 manual_steps: [ef-migration]
-sprint: 4
+sprint: 6
 source: T-0191a security re-gate note 1 (S7a TOCTOU residue) + the RecurringBookingTemplate JSON-id case (Wave-3 close)
 ---
 
@@ -58,6 +58,14 @@ RecurringBookingTemplate reads. ef-migration is owner-run — flag and HOLD depe
 
 ## Status log
 - 2026-06-12 — draft (created by pm at Wave-3 close; from the T-0191a security notes, both folded)
+- 2026-06-14 — **ready** (PM, Wave-6 intake / Batch **6D**). Dep T-0191✓. Durable S7a fix recommended by
+  the security re-gate (DB-as-arbiter, same shape as the promo-code conditional UPDATE) → no panel.
+  **DB layer FIRST** (FKs `Cascade → Restrict` is the contract) then SQLSTATE-23503 violation-mapping in the
+  catalog-delete handlers, plus the `RecurringBookingTemplate` JSON-id in-use check (no FK guards JSON refs).
+  **Security gate** (TOCTOU). **ef-migration (owner)** for the FK-behavior change — held at the migration
+  boundary; dependent violation-mapping verification HELD until confirmed. Real-database test (Postgres for
+  the violation mapping). Disjoint from all other batches → parallel with 6A/6B/6C.
+  Plan: `status/sprint-8.md` §3 Batch 6D.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

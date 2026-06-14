@@ -3,9 +3,9 @@ id: T-0233
 title: Targeted-lockout DoS mitigation — trusted-device bypass / CAPTCHA on locked-account login
 status: draft
 size: M
-owner: —
+owner: pm
 created: 2026-06-12
-updated: 2026-06-12
+updated: 2026-06-14
 depends_on: [T-0193]
 blocks: []
 stories: []
@@ -13,7 +13,7 @@ adrs: [0003]
 layers: [backend, frontend]
 security_touching: true
 manual_steps: []
-sprint: 4
+sprint: 6
 source: T-0193 security-gate note N1 (Wave-3 close, 2026-06-12)
 ---
 
@@ -57,6 +57,16 @@ path if the panel chooses cookies — flag the android layer at contract-lock if
 
 ## Status log
 - 2026-06-12 — draft (created by pm at Wave-3 close; from T-0193 security note N1)
+- 2026-06-14 — **stays draft — PANEL-FIRST** (PM, Wave-6 intake / Batch **6E, last**). Dep T-0193✓, but the
+  ticket body itself mandates **convening the deliberation panel before `ready`**: trusted-device-cookie vs
+  CAPTCHA vs both, cookie lifetime + HMAC scope, coverage across `Login`/`AdminLogin`/`PartnerLogin`, and
+  whether Android needs an equivalent marker path is a **product/security design decision**. Per the charter,
+  the panel (analyst author + 2–3 challengers + lead, **security in the loop**) runs first; the analyst
+  finalizes the story (the marker must NOT become a session credential — S1–S4); **only then** does the PM
+  flip this `ready` and route backend (+ frontend, + android if cookies chosen) with a reviewer + the
+  **security gate**. Sequenced **after Batch 6B's T-0234** (shared **Lane Auth-surface** — same lockout/login
+  authn surface). ef-migration TBD by the panel (a trusted-device marker may need a column/store) — flag at
+  contract-lock if so. Implementation is red-first. sprint re-tagged 6. Plan: `status/sprint-8.md` §3 Batch 6E.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

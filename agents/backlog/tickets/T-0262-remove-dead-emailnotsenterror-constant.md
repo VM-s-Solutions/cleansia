@@ -1,9 +1,9 @@
 ---
 id: T-0262
 title: "Dead-code cleanup: remove unused BusinessErrorMessage.EmailNotSentError constant (zero consumers)"
-status: draft
+status: ready
 size: S
-owner: —
+owner: pm
 created: 2026-06-14
 updated: 2026-06-14
 depends_on: []
@@ -57,6 +57,10 @@ and skips the deliberation panel.
 - 2026-06-14 — draft (created by pm; Wave-5 close-out follow-up from the T-0205 finding — dead
   `BusinessErrorMessage.EmailNotSentError` constant, zero consumers). Tiny dead-code cleanup; **no-decision
   note** carried (no new behavior/decision → skips the panel). Wave-6 candidate.
+- 2026-06-14 — **ready** (PM, Wave-6 intake / Batch **6A**). No-decision mechanical dead-code cleanup,
+  skips the panel. **Lane BusinessErrorMessage + Lane locale-JSONs — serialize BEFORE T-0234** (6B), which
+  adds a new key in the same `BusinessErrorMessage.cs` + 5 locale files (remove-then-add order is clean).
+  Plan: `status/sprint-8.md` §3 Batch 6A.
 
 ## Review
 <!-- reviewer write verdicts here; PM reconciles before advancing state -->

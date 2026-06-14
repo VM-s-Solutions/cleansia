@@ -1,19 +1,19 @@
 ---
 id: T-0239
 title: Module-boundary sweep — customer features off @cleansia/partner-services + eslint boundary rule
-status: draft
+status: ready
 size: M
-owner: —
+owner: pm
 created: 2026-06-12
-updated: 2026-06-12
-depends_on: []
+updated: 2026-06-14
+depends_on: [T-0259]
 blocks: []
 stories: []
 adrs: []
 layers: [frontend]
 security_touching: false
 manual_steps: []
-sprint: 4
+sprint: 6
 source: Wave-3 review finding (3 files fixed in-wave; grep 2026-06-12 shows 14 remaining)
 ---
 
@@ -60,6 +60,13 @@ work (AUD-07 is a future wave; none in flight now).
 
 ## Status log
 - 2026-06-12 — draft (created by pm at Wave-3 close; review-finding sweep, 14 files enumerated)
+- 2026-06-14 — **ready** (PM, Wave-6 intake / Batch **6C**). No-decision mechanical canonicalization + a
+  lint guard → skips the panel. **Added `depends_on: [T-0259]`** — the `@nx/enforce-module-boundaries` rule
+  (AC2) needs the workspace **tags** T-0259 lays down to be effective; **runs AFTER T-0259** in Lane
+  FE-config. Re-derive the violating-file list against current master (the body's 14-file grep was
+  2026-06-12). The **order-wizard cluster (4 files, money path) is done LAST** with its existing Jest specs
+  as the harness; no AUD-07 work is in flight (shipped Wave 5) → no contention. Per-call-site DTO-parity
+  check; flag any drift to the PM. Plan: `status/sprint-8.md` §3 Batch 6C.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

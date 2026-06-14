@@ -1,4 +1,5 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   CustomerClient,
   GetLoyaltyActivityActivityItem,
@@ -7,7 +8,7 @@ import {
   GetMyReferralResponse,
   LoyaltyTier,
 } from '@cleansia/customer-services';
-import { catchError, forkJoin, of } from 'rxjs';
+import { catchError, forkJoin, of, takeUntil } from 'rxjs';
 
 /**
  * Rewards facade — single source of truth for the customer Rewards page.
@@ -21,7 +22,7 @@ import { catchError, forkJoin, of } from 'rxjs';
  * visits feel instant while a fresh request runs in the background.
  */
 @Injectable({ providedIn: 'root' })
-export class RewardsFacade {
+export class RewardsFacade extends UnsubscribeControlDirective {
   private readonly customerClient = inject(CustomerClient);
 
   readonly account = signal<GetMyLoyaltyResponse | null>(null);
@@ -56,18 +57,20 @@ export class RewardsFacade {
       account: this.customerClient.loyaltyClient.getMy(),
       tiers: this.customerClient.loyaltyClient.getTiers(),
       activity: this.customerClient.loyaltyClient.getActivity(0, 5),
-    }).subscribe({
-      next: ({ account, tiers, activity }) => {
-        this.account.set(account);
-        this.tiers.set(tiers.tiers ?? []);
-        this.recentActivity.set(activity.data ?? []);
-        this.loading.set(false);
-      },
-      error: () => {
-        this.loading.set(false);
-        this.error.set('load');
-      },
-    });
+    })
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe({
+        next: ({ account, tiers, activity }) => {
+          this.account.set(account);
+          this.tiers.set(tiers.tiers ?? []);
+          this.recentActivity.set(activity.data ?? []);
+          this.loading.set(false);
+        },
+        error: () => {
+          this.loading.set(false);
+          this.error.set('load');
+        },
+      });
 
     // Pulled in parallel but tracked separately — referral fetch failures
     // shouldn't poison the main rewards screen. See loadReferral() for the
@@ -85,7 +88,7 @@ export class RewardsFacade {
     this.referralAccountLoading.set(true);
     this.customerClient.referralClient
       .getMy()
-      .pipe(catchError(() => of(null)))
+      .pipe(takeUntil(this.destroyed$), catchError(() => of(null)))
       .subscribe((response) => {
         this.referralAccount.set(response);
         this.referralAccountLoading.set(false);
@@ -104,24 +107,27 @@ export class RewardsFacade {
       this.activityLoading.set(true);
     }
 
-    this.customerClient.loyaltyClient.getActivity(offset, limit).subscribe({
-      next: (paged) => {
-        const items = paged.data ?? [];
-        if (append) {
-          this.activityList.set([...this.activityList(), ...items]);
-        } else {
-          this.activityList.set(items);
-        }
-        this.totalActivity.set(paged.total ?? 0);
-        this.loadingMore.set(false);
-        this.activityLoading.set(false);
-      },
-      error: () => {
-        this.loadingMore.set(false);
-        this.activityLoading.set(false);
-        this.error.set('load');
-      },
-    });
+    this.customerClient.loyaltyClient
+      .getActivity(offset, limit)
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe({
+        next: (paged) => {
+          const items = paged.data ?? [];
+          if (append) {
+            this.activityList.set([...this.activityList(), ...items]);
+          } else {
+            this.activityList.set(items);
+          }
+          this.totalActivity.set(paged.total ?? 0);
+          this.loadingMore.set(false);
+          this.activityLoading.set(false);
+        },
+        error: () => {
+          this.loadingMore.set(false);
+          this.activityLoading.set(false);
+          this.error.set('load');
+        },
+      });
   }
 
   /**

@@ -55,14 +55,14 @@ public class AdminDisputeController(IMediator mediator) : ApiController(mediator
     [HttpPost("update-status")]
     [Permission(Policy.CanUpdateDisputeStatus)]
     [EnableRateLimiting("auth")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(UpdateDisputeStatus.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UpdateStatus([FromBody] UpdateDisputeStatus.Command command, CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(command, cancellationToken);
-        return HandleResult<object>(result);
+        return HandleResult<UpdateDisputeStatus.Response>(result);
     }
 
     // ADR-0001 §D2 Note C, Q-0005: staff dispute replies are Admin-only. This is the

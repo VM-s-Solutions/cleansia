@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Features.SavedAddresses.DTOs;
+using Cleansia.Core.AppServices.Features.SavedAddresses.Mappers;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using Microsoft.Extensions.Logging;
@@ -34,18 +35,7 @@ public class GetSavedAddresses
                     continue;
                 }
 
-                dtos.Add(new SavedAddressDto(
-                    Id: s.Id,
-                    Label: s.Label,
-                    Street: s.Address.Street,
-                    City: s.Address.City,
-                    ZipCode: s.Address.ZipCode,
-                    State: s.Address.State,
-                    CountryId: s.Address.CountryId,
-                    Country: s.Address.Country?.Name,
-                    Latitude: s.Address.Latitude,
-                    Longitude: s.Address.Longitude,
-                    IsDefault: s.IsDefault));
+                dtos.Add(s.MapToDto());
             }
 
             return BusinessResult.Success<IReadOnlyList<SavedAddressDto>>(dtos);

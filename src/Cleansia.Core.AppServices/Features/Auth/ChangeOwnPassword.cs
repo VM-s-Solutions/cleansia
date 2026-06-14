@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Extensions;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -17,9 +18,6 @@ public class ChangeOwnPassword
 
     public class Validator : AbstractValidator<Command>
     {
-        // Same policy as the reset flow: minimum 8 characters, at least one letter and one digit.
-        private const string PasswordPattern = @"^(?=.*[a-zA-Z])(?=.*\d).{8,}$";
-
         public Validator()
         {
             RuleFor(x => x.CurrentPassword)
@@ -27,12 +25,7 @@ public class ChangeOwnPassword
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required);
 
-            RuleFor(x => x.NewPassword)
-                .Cascade(CascadeMode.Stop)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .Matches(PasswordPattern)
-                .WithMessage(BusinessErrorMessage.InvalidPasswordFormat);
+            RuleFor(x => x.NewPassword).ValidatePassword();
         }
     }
 

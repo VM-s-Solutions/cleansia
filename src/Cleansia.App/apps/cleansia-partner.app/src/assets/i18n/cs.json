@@ -100,7 +100,9 @@
       },
       "email_invalid": "E-mail je neplatný",
       "password_invalid": "Heslo je neplatné",
-      "password_changed": "Heslo bylo úspěšně změněno"
+      "password_changed": "Heslo bylo úspěšně změněno",
+      "send_code_error": "Ověřovací kód se nepodařilo odeslat. Zkuste to prosím znovu.",
+      "change_password_error": "Heslo se nepodařilo změnit. Zkuste to prosím znovu."
     },
     "profile": {
       "title": "Onboarding profil zaměstnance",
@@ -1371,7 +1373,8 @@
       "password": "Heslo",
       "remember_me": "Zapamatovat si mě",
       "forgot_password": "Zapomenuté heslo?",
-      "dont_have_account": "Nemáte účet?"
+      "dont_have_account": "Nemáte účet?",
+      "error": "Přihlášení se nezdařilo. Zkontrolujte prosím své údaje a zkuste to znovu."
     },
     "register": {
       "first_name": "Jméno",

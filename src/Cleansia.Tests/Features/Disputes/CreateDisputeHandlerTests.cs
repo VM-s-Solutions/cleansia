@@ -118,7 +118,7 @@ public class CreateDisputeHandlerTests
         Assert.True(result.IsSuccess);
         _disputeRepository.Verify(r => r.Add(It.IsAny<Dispute>()), Times.Once);
         Assert.NotNull(added);
-        Assert.Equal(added!.Id, result.Value);
+        Assert.Equal(added!.Id, result.Value!.DisputeId);
         Assert.Equal(OwnedOrderId, added.OrderId);
         Assert.Equal(CallerUserId, added.UserId);
     }

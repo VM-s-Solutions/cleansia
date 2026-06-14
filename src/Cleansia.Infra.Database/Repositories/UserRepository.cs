@@ -10,8 +10,11 @@ public class UserRepository(CleansiaDbContext context)
 {
     public override IQueryable<User> GetQueryable()
     {
+        // No blanket Include(Orders): every single-user fetch (GetUser, RefreshToken, ExportUserData,
+        // admin user reads) was loading the user's entire order history, which no mapper reads. The
+        // PreferredLanguage nav stays — the user DTOs render PreferredLanguage.Name. Callers that DO
+        // need a nav add it explicitly (GdprDeletionService Includes Employee/Cart).
         return GetDbSet()
-            .Include(user => user.Orders)
             .Include(user => user.PreferredLanguage)
             .AsQueryable();
     }
@@ -21,6 +24,21 @@ public class UserRepository(CleansiaDbContext context)
         return GetDbSet()
             .Include(user => user.Employee)
             .FirstOrDefaultAsync(user => user.Email == email, cancellationToken);
+    }
+
+    public Task<User?> GetByEmailNoTrackingAsync(string email, CancellationToken cancellationToken = default)
+    {
+        return GetDbSet()
+            .Include(user => user.Employee)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(user => user.Email == email, cancellationToken);
+    }
+
+    public Task<User?> GetByIdNoTrackingAsync(string id, CancellationToken cancellationToken = default)
+    {
+        return GetQueryable()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(user => user.Id == id, cancellationToken);
     }
 
     public Task<User?> GetByPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken = default)

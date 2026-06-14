@@ -635,6 +635,8 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex("IsActive", "LastActiveAt");
+
                     b.HasIndex("UserId", "DeviceId")
                         .IsUnique();
 
@@ -2446,6 +2448,9 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasIndex("TenantId");
 
+                    b.HasIndex("Status", "CurrentPeriodEnd")
+                        .HasFilter("\"RenewalReminderSentAt\" IS NULL");
+
                     b.HasIndex("TenantId", "UserId")
                         .IsUnique()
                         .HasFilter("\"Status\" = 1");
@@ -4083,9 +4088,9 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CountryId");
-
                     b.HasIndex("TenantId");
+
+                    b.HasIndex("CountryId", "ZipCode", "City", "Street");
 
                     b.ToTable("Addresses");
                 });
@@ -4401,6 +4406,8 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(26)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedOn");
 
                     b.HasIndex("TenantId");
 

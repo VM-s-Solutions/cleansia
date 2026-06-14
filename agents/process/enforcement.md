@@ -22,7 +22,8 @@ It line-scans source for the project-specific rules that ESLint/analyzers can't 
 
 - **Backend:** A1 (paged query inherits `DataRangeRequest`), A5 (no hand-built `PagedData`), B1
   (no raw-scalar command return), B3 (validator inherits `AbstractValidator`), B5 (`Error` code is a
-  field name, not `nameof(Command)`), and a `dynamic` ban.
+  field name, not `nameof(Command)`), B10 (no direct `dispute.Close/Escalate/Resolve` outside the
+  T-0172 transition-guard allowlist), and a `dynamic` ban.
 - **Frontend:** C1 (facade extends `UnsubscribeControlDirective`, no `DestroyRef`), C2 (no
   `BehaviorSubject`), C3 (`.subscribe()` has `takeUntil(this.destroyed$)`), C7 (component is OnPush),
   D2 (forms use `fb.nonNullable.group`), and an `any` ban.

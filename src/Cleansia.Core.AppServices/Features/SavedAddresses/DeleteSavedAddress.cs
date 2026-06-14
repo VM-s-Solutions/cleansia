@@ -8,7 +8,9 @@ namespace Cleansia.Core.AppServices.Features.SavedAddresses;
 
 public class DeleteSavedAddress
 {
-    public record Command(string SavedAddressId) : ICommand;
+    public record Command(string SavedAddressId) : ICommand<Response>;
+
+    public record Response(string SavedAddressId);
 
     public class Validator : AbstractValidator<Command>
     {
@@ -47,13 +49,13 @@ public class DeleteSavedAddress
     }
 
     public class Handler(
-        ISavedAddressRepository savedAddressRepository) : ICommandHandler<Command>
+        ISavedAddressRepository savedAddressRepository) : ICommandHandler<Command, Response>
     {
-        public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
+        public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var saved = (await savedAddressRepository.GetByIdAsync(command.SavedAddressId, cancellationToken))!;
             savedAddressRepository.Deactivate(saved);
-            return BusinessResult.Success();
+            return BusinessResult.Success(new Response(saved.Id));
         }
     }
 }

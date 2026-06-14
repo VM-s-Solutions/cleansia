@@ -17,7 +17,7 @@ namespace Cleansia.Core.AppServices.Features.Users;
 
 public class UpdateCurrentUser
 {
-    public class Validator : BaseUserValidator<Command>
+    public class Validator : AbstractValidator<Command>
     {
         private readonly IUserRepository _userRepository;
         private readonly IUserSessionProvider _userSessionProvider;
@@ -36,9 +36,9 @@ public class UpdateCurrentUser
                 .WithMessage(BusinessErrorMessage.NotAllowedToUpdateUser)
                 .WithErrorCode(nameof(User.Email));
 
-            AddFirstNameRules(c => c.FirstName);
+            RuleFor(c => c.FirstName).ValidateFirstName();
 
-            AddLastNameRules(c => c.LastName);
+            RuleFor(c => c.LastName).ValidateLastName();
 
             RuleFor(c => c.BirthDate)
                 .Cascade(CascadeMode.Stop)

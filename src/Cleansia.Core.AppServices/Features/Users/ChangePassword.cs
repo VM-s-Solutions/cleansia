@@ -1,5 +1,6 @@
 ﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Extensions;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Repositories;
@@ -18,9 +19,6 @@ public class ChangePassword
         {
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
 
-            // Requires: minimum 8 characters, at least one letter and one digit
-            const string passwordPattern = @"^(?=.*[a-zA-Z])(?=.*\d).{8,}$";
-
             RuleFor(command => command.Email)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
@@ -30,12 +28,7 @@ public class ChangePassword
                 .WithErrorCode(nameof(Command.Email))
                 .WithMessage(BusinessErrorMessage.NotExistingUserWithEmail);
 
-            RuleFor(command => command.NewPassword)
-                .Cascade(CascadeMode.Stop)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .Matches(passwordPattern)
-                .WithMessage(BusinessErrorMessage.InvalidPasswordFormat);
+            RuleFor(command => command.NewPassword).ValidatePassword();
 
             RuleFor(command => command.Code)
                 .Cascade(CascadeMode.Stop)

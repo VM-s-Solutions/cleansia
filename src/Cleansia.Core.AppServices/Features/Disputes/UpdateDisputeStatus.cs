@@ -26,29 +26,31 @@ public class UpdateDisputeStatus
     public record Command(
         string DisputeId,
         DisputeStatus NewStatus
-    ) : ICommand;
+    ) : ICommand<Response>;
+
+    public record Response(string DisputeId, DisputeStatus Status);
 
     public class Handler(
         IDisputeRepository disputeRepository,
-        IUserSessionProvider userSessionProvider) : ICommandHandler<Command>
+        IUserSessionProvider userSessionProvider) : ICommandHandler<Command, Response>
     {
-        public async Task<BusinessResult> Handle(Command request, CancellationToken cancellationToken)
+        public async Task<BusinessResult<Response>> Handle(Command request, CancellationToken cancellationToken)
         {
-            var dispute = await disputeRepository.GetByIdAsync(request.DisputeId, cancellationToken);
+            var dispute = await disputeRepository.GetForUpdateAsync(request.DisputeId, cancellationToken);
 
             if (dispute == null)
             {
-                return BusinessResult.Failure(new Error(nameof(request.DisputeId), BusinessErrorMessage.DisputeNotFound));
+                return BusinessResult.Failure<Response>(new Error(nameof(request.DisputeId), BusinessErrorMessage.DisputeNotFound));
             }
 
             var actorId = userSessionProvider.GetUserId() ?? string.Empty;
 
             if (!dispute.UpdateStatus(request.NewStatus, actorId))
             {
-                return BusinessResult.Failure(new Error(nameof(request.NewStatus), BusinessErrorMessage.InvalidDisputeStatusTransition));
+                return BusinessResult.Failure<Response>(new Error(nameof(request.NewStatus), BusinessErrorMessage.InvalidDisputeStatusTransition));
             }
 
-            return BusinessResult.Success();
+            return BusinessResult.Success(new Response(dispute.Id, dispute.Status));
         }
     }
 }

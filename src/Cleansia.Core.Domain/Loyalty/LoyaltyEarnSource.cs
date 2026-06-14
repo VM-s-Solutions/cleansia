@@ -10,4 +10,5 @@ public enum LoyaltyEarnSource
     Referral = 3,
     ManualGrant = 4,
     OrderPartiallyRefunded = 5,
+    ManualRevoke = 6,
 }

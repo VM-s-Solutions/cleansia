@@ -7,6 +7,7 @@ import cz.cleansia.customer.R
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.MembershipPlanDto
 import cz.cleansia.customer.core.memberships.MembershipRepository
+import cz.cleansia.customer.ui.state.ActionState
 import cz.cleansia.core.snackbar.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -60,8 +61,8 @@ class MembershipViewModel @Inject constructor(
     val current: StateFlow<GetMyMembershipResponse?> = repository.current
     val loading: StateFlow<Boolean> = repository.loading
 
-    private val _submitting = MutableStateFlow(false)
-    val submitting: StateFlow<Boolean> = _submitting.asStateFlow()
+    private val _submitState = MutableStateFlow<ActionState>(ActionState.Idle)
+    val submitState: StateFlow<ActionState> = _submitState.asStateFlow()
 
     private val _plans = MutableStateFlow<List<MembershipPlanDto>>(emptyList())
     /** Plan catalog driving the monthly/yearly switcher on the subscribe page. */
@@ -72,7 +73,7 @@ class MembershipViewModel @Inject constructor(
      * Generated ONCE in [startSubscribe] (Phase-1) and
      * replayed UNCHANGED on every [confirmSubscribe] (Phase-2) so the backend
      * collapses retried/double-tapped confirms — PaymentSheet returning
-     * Completed twice, a network retry, or a double-tap surviving [_submitting]
+     * Completed twice, a network retry, or a double-tap surviving [submitState]
      * — onto a SINGLE Stripe subscription instead of double-charging. A fresh
      * subscribe attempt (a new [startSubscribe], e.g. after a cancellation)
      * generates a NEW token so a genuine re-subscribe is not blocked.
@@ -94,8 +95,8 @@ class MembershipViewModel @Inject constructor(
      * payment-method capture succeeds.
      */
     suspend fun startSubscribe(planCode: String): SubscribeOutcome {
-        if (_submitting.value) return SubscribeOutcome.Failed
-        _submitting.value = true
+        if (_submitState.value is ActionState.Submitting) return SubscribeOutcome.Failed
+        _submitState.value = ActionState.Submitting
         // New logical subscribe attempt → mint a fresh idempotency token. It is
         // held until the next startSubscribe and replayed on every confirm
         // (Phase-2) retry for THIS attempt.
@@ -117,7 +118,7 @@ class MembershipViewModel @Inject constructor(
                 customerId = resp.stripeCustomerId,
             )
         } finally {
-            _submitting.value = false
+            _submitState.value = ActionState.Idle
         }
     }
 
@@ -126,7 +127,7 @@ class MembershipViewModel @Inject constructor(
      * actual Stripe subscription + local UserMembership row.
      */
     suspend fun confirmSubscribe(planCode: String): SubscribeOutcome {
-        _submitting.value = true
+        _submitState.value = ActionState.Submitting
         try {
             // Replay the SAME token minted at Phase-1. Do NOT regenerate here —
             // that is what lets the backend collapse a double-tap / network retry /
@@ -142,7 +143,7 @@ class MembershipViewModel @Inject constructor(
             }
             return SubscribeOutcome.Subscribed(resp.membershipId)
         } finally {
-            _submitting.value = false
+            _submitState.value = ActionState.Idle
         }
     }
 
@@ -151,8 +152,8 @@ class MembershipViewModel @Inject constructor(
      * [current] which reflects the cancellation request flag.
      */
     fun cancel(onSuccess: (effectiveEndDate: String) -> Unit = {}) {
-        if (_submitting.value) return
-        _submitting.value = true
+        if (_submitState.value is ActionState.Submitting) return
+        _submitState.value = ActionState.Submitting
         viewModelScope.launch {
             try {
                 val resp = repository.cancel()
@@ -162,7 +163,7 @@ class MembershipViewModel @Inject constructor(
                 }
                 onSuccess(resp.effectiveEndDate)
             } finally {
-                _submitting.value = false
+                _submitState.value = ActionState.Idle
             }
         }
     }
@@ -173,8 +174,8 @@ class MembershipViewModel @Inject constructor(
      * the spot — no PaymentSheet round-trip needed.
      */
     fun swapPlan(newPlanCode: String, onSuccess: () -> Unit = {}) {
-        if (_submitting.value) return
-        _submitting.value = true
+        if (_submitState.value is ActionState.Submitting) return
+        _submitState.value = ActionState.Submitting
         viewModelScope.launch {
             try {
                 val resp = repository.swapPlan(newPlanCode)
@@ -184,9 +185,8 @@ class MembershipViewModel @Inject constructor(
                 }
                 onSuccess()
             } finally {
-                _submitting.value = false
+                _submitState.value = ActionState.Idle
             }
         }
     }
 }
-

@@ -1,7 +1,6 @@
 using Cleansia.Infra.Services.Geocoding;
 using Cleansia.Infra.Services.Pdf;
 using Cleansia.Infra.Services.Pdf.Layouts;
-using Cleansia.Infra.Services.Templates;
 using Microsoft.Extensions.DependencyInjection;
 using Polly;
 
@@ -11,8 +10,6 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services)
     {
-        services.AddScoped<ITemplateEngine, HandlebarsTemplateEngine>();
-
         services.AddSingleton<IReceiptLayoutBuilder, DefaultReceiptLayoutBuilder>();
         services.AddSingleton<IInvoiceLayoutBuilder, DefaultInvoiceLayoutBuilder>();
         services.AddSingleton<LayoutBuilderFactory>();

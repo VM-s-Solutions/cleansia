@@ -20,34 +20,30 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * State the redesigned dashboard reads. Screen derives next-job + today's
- * jobs from [upcoming]. Backed by the singleton [DashboardRepository]
- * cache so swiping back to the tab shows data instantly instead of a
- * spinner; only the genuine first load shows a spinner.
+ * State the redesigned dashboard reads, projected from the singleton
+ * [DashboardRepository] cache so swiping back to the tab shows data
+ * instantly instead of a spinner; only the genuine first load (no cached
+ * stats while a refresh is in flight) shows the [Loading] spinner.
  *
- * The two refresh flags exist so the UI can render different affordances
- * depending on *who* triggered the network round-trip:
- *  - [isUserRefreshing]: the user pulled-to-refresh — show the chunky
- *    suds indicator at the top.
- *  - [isBackgroundRefreshing]: init / ON_RESUME / post-mutation silent-
- *    stale refresh — render silently; the data swap is its own feedback.
- * Never both at once. The screen combines the two flags with `stats == null`
- * to decide between the full-page initial spinner and the no-op silent path.
+ * [Loaded] carries a nullable stats so the cards render with their
+ * own zero/placeholder fallbacks in the brief pre-load and error-cleared
+ * moments, matching the cache projection. [isUserRefreshing] drives the
+ * pull-to-refresh suds indicator; background refreshes (init / ON_RESUME /
+ * post-mutation) never set it, so they render silently.
  */
-data class DashboardUiState(
-    val isUserRefreshing: Boolean = false,
-    val isBackgroundRefreshing: Boolean = false,
-    val firstName: String? = null,
-    val stats: DashboardStatsDto? = null,
-    val upcoming: List<OrderListItem> = emptyList(),
-    /** Top unclaimed jobs + total potential earnings. Null until first load. */
-    val availableJobsPreview: AvailableJobsPreviewResponse? = null,
-)
+sealed interface DashboardUiState {
+    val isUserRefreshing: Boolean
 
-/**
- * Distinguishes who triggered a [DashboardViewModel] load. Routes through
- * the two-flag UI state above so the screen renders the right affordance.
- */
+    data class Loading(override val isUserRefreshing: Boolean) : DashboardUiState
+
+    data class Loaded(
+        val stats: DashboardStatsDto?,
+        val upcoming: List<OrderListItem>,
+        val availableJobsPreview: AvailableJobsPreviewResponse?,
+        override val isUserRefreshing: Boolean,
+    ) : DashboardUiState
+}
+
 private enum class RefreshSource { INIT, RESUME, USER_PULL }
 
 @HiltViewModel
@@ -71,69 +67,54 @@ class DashboardViewModel @Inject constructor(
     // network call — so the greeting renders immediately, independent
     // of the stats refresh.
     private val _firstName = MutableStateFlow<String?>(null)
+    val firstName: StateFlow<String?> = _firstName
 
     // Local routing flag so we can tell user-pull refreshes apart from
     // background ones. The repository tracks a single `refreshing` bit;
-    // here we lift that into the two-flag UI state. Set BEFORE we hand
-    // off to the repository (so the flag is live the moment the snapshot
-    // flips to refreshing=true), cleared in the finally of [load].
+    // here we lift that into isUserRefreshing. Set BEFORE we hand off to
+    // the repository, cleared in the finally of [load].
     private val _userPullInFlight = MutableStateFlow(false)
 
-    // UI state is a projection of the repository's cached snapshot
-    // combined with the (locally cached) first name and the user-pull
-    // marker. Because the snapshot is singleton-scoped, it survives tab
-    // swipes and VM recreation — the screen sees cached data immediately
-    // and only a spinner on the genuine first load (stats == null).
     val uiState: StateFlow<DashboardUiState> =
         combine(
             dashboardRepository.snapshot,
-            _firstName,
             _userPullInFlight,
-        ) { snap, firstName, userPulling ->
-            val refreshing = snap.refreshing
-            DashboardUiState(
-                // Split projection: route the in-flight refresh to exactly
-                // one of the two flags based on who started it. Never both.
-                // PullToRefreshBox.isRefreshing binds to isUserRefreshing
-                // ONLY, so background refreshes don't summon the chunky
-                // suds indicator — the silent-stale contract.
-                isUserRefreshing = refreshing && userPulling,
-                isBackgroundRefreshing = refreshing && !userPulling,
-                firstName = firstName,
-                stats = snap.stats,
-                upcoming = snap.upcoming,
-                availableJobsPreview = snap.availableJobsPreview,
-            )
+        ) { snap, userPulling ->
+            val isUserRefreshing = snap.refreshing && userPulling
+            if (snap.stats == null && snap.refreshing) {
+                DashboardUiState.Loading(isUserRefreshing = isUserRefreshing)
+            } else {
+                DashboardUiState.Loaded(
+                    stats = snap.stats,
+                    upcoming = snap.upcoming,
+                    availableJobsPreview = snap.availableJobsPreview,
+                    isUserRefreshing = isUserRefreshing,
+                )
+            }
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = DashboardUiState(),
+            initialValue = DashboardUiState.Loaded(
+                stats = null,
+                upcoming = emptyList(),
+                availableJobsPreview = null,
+                isUserRefreshing = false,
+            ),
         )
 
     init {
         viewModelScope.launch { _firstName.value = userProfileStore.current()?.firstName }
-        // INIT path: silent-stale. Loads on genuine cold start, no-ops
-        // when the cache is already warm (VM recreated while the singleton
-        // repo still holds fresh data within the staleness window).
         load(RefreshSource.INIT)
     }
 
-    /** Pull-to-refresh — always hits the network, surfaces as [isUserRefreshing]. */
+    /** Pull-to-refresh — always hits the network, surfaces as isUserRefreshing. */
     fun refresh() = load(RefreshSource.USER_PULL)
 
-    /**
-     * Lifecycle ON_RESUME hook. Routes through the staleness-gated path
-     * so returning to the tab against a warm cache is a no-op (no spinner,
-     * no redundant network call); only a stale cache triggers a silent
-     * background refresh.
-     */
     fun onResume() = load(RefreshSource.RESUME)
 
     private fun load(source: RefreshSource) {
         viewModelScope.launch {
             val isUserPull = source == RefreshSource.USER_PULL
-            // Set BEFORE the repo flips refreshing=true so the combine()
-            // projection sees the marker on the very first emission.
             if (isUserPull) _userPullInFlight.value = true
             try {
                 val employeeId = userProfileStore.current()?.employeeId
@@ -142,10 +123,6 @@ class DashboardViewModel @Inject constructor(
                     snackbar.showError(errorTranslator.translate(error))
                 }
             } finally {
-                // Clear AFTER the snapshot's refreshing=false emission has
-                // propagated. Since we own this flag the order is fine —
-                // the combine() reads both flows and the next emission of
-                // either flips us back to a clean (false, false) state.
                 if (isUserPull) _userPullInFlight.value = false
             }
         }

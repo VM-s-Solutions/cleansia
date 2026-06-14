@@ -33,5 +33,10 @@ public class GdprRequestEntityConfiguration : AuditableEntityConfiguration<GdprR
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(e => e.UserId);
+
+        // The admin GDPR-request list (GetAllGdprRequests) and the retention sweep both order/filter
+        // by CreatedOn over the unboundedly growing audit table. Index it so the Article-30 surface
+        // sort is an index scan, not a full sort.
+        builder.HasIndex(e => e.CreatedOn);
     }
 }

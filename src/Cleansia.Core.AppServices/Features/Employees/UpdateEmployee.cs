@@ -20,7 +20,7 @@ namespace Cleansia.Core.AppServices.Features.Employees;
 
 public class UpdateEmployee
 {
-    public class Validator : BaseUserValidator<Command>
+    public class Validator : AbstractValidator<Command>
     {
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IUserSessionProvider _userSessionProvider;
@@ -46,8 +46,8 @@ public class UpdateEmployee
                 .MustAsync(employeeRepository.ExistsAsync)
                 .WithMessage(BusinessErrorMessage.NotFound);
 
-            AddFirstNameRules(c => c.FirstName);
-            AddLastNameRules(c => c.LastName);
+            RuleFor(c => c.FirstName).ValidateFirstName();
+            RuleFor(c => c.LastName).ValidateLastName();
 
             RuleFor(c => c.BirthDate)
                 .Cascade(CascadeMode.Stop)
@@ -86,7 +86,7 @@ public class UpdateEmployee
             RuleFor(c => c.Phone)
                 .ValidatePhoneNumber();
 
-            AddEmailRules(c => c.Email);
+            RuleFor(c => c.Email).ValidateUserEmail();
 
             RuleFor(c => c.PassportId)
                 .ValidatePassportId();

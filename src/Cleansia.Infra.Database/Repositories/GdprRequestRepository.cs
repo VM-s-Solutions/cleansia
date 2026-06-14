@@ -10,6 +10,7 @@ public class GdprRequestRepository(CleansiaDbContext context) : BaseRepository<G
     public Task<List<GdprRequest>> GetByUserIdAsync(string userId, CancellationToken cancellationToken)
     {
         return GetDbSet()
+            .AsNoTracking()
             .Where(r => r.UserId == userId)
             .OrderByDescending(r => r.CreatedOn)
             .ToListAsync(cancellationToken);

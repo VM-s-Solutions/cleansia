@@ -34,7 +34,7 @@ public class GetUserByEmail
     {
         public async Task<BusinessResult<UserListItem>> Handle(Query query, CancellationToken cancellationToken)
         {
-            var user = await userRepository.GetByEmailAsync(query.Email, cancellationToken);
+            var user = await userRepository.GetByEmailNoTrackingAsync(query.Email, cancellationToken);
             return BusinessResult.Success(user!.MapToDto()!);
         }
     }

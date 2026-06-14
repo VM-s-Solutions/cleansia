@@ -39,7 +39,9 @@ public class GenerateReceiptHandler(
             message = ReadPayload(messageText);
             if (message is null)
             {
-                throw new InvalidOperationException($"Failed to deserialize GenerateReceiptMessage: {messageText}");
+                // S6: this exception is logged at Error in the outer catch — log size, never the body.
+                throw new InvalidOperationException(
+                    $"Failed to deserialize GenerateReceiptMessage ({messageText.Length} bytes)");
             }
 
             // The idempotency key is deterministic from the order id (envelope or synthesized) — used
@@ -174,8 +176,9 @@ public class GenerateReceiptHandler(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to generate receipt for order {OrderId}. Message: {Message}",
-                message?.OrderId ?? "unknown", messageText);
+            // S6: log the correlation OrderId only — the raw body carries receipt/fiscal detail.
+            logger.LogError(ex, "Failed to generate receipt for order {OrderId}",
+                message?.OrderId ?? "unknown");
             throw; // Re-throw so Azure Functions retries via queue (D3.3: target-not-found stays transient)
         }
     }

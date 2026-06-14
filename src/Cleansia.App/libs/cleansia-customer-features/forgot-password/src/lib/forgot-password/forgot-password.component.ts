@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -37,8 +37,6 @@ export class ForgotPasswordComponent implements OnInit {
   protected readonly translate = inject(TranslateService);
   protected readonly facade = inject(ForgotPasswordFacade);
 
-  protected readonly loading = signal(false);
-
   routes = CleansiaCustomerRoute;
 
   get hasPasswordInput(): boolean {
@@ -63,11 +61,8 @@ export class ForgotPasswordComponent implements OnInit {
   }
 
   get resendCodeTimeout(): string {
-    return `00:${
-      this.facade.resendCodeTimeout > 9
-        ? this.facade.resendCodeTimeout
-        : '0' + this.facade.resendCodeTimeout
-    }`;
+    const seconds = this.facade.resendCodeTimeout();
+    return `00:${seconds > 9 ? seconds : '0' + seconds}`;
   }
 
   ngOnInit(): void {

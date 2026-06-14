@@ -19,7 +19,7 @@ public static class GetUserConsents
         {
             // userId is non-null past the controller's [Permission] gate.
             var userId = userSessionProvider.GetUserId()!;
-            var consents = await userConsentRepository.GetByUserIdAsync(userId, cancellationToken);
+            var consents = await userConsentRepository.GetByUserIdNoTrackingAsync(userId, cancellationToken);
             var dtos = consents.Select(c => new UserConsentDto(
                 c.Id, c.ConsentType, c.IsGranted,
                 c.GrantedAt, c.WithdrawnAt, c.CreatedOn)).ToList();

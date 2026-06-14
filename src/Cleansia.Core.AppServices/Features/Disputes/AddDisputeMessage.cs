@@ -47,7 +47,7 @@ public class AddDisputeMessage
         public async Task<BusinessResult> Handle(Command request, CancellationToken cancellationToken)
         {
             var userId = userSessionProvider.GetUserId()!;
-            var dispute = await disputeRepository.GetDisputeWithDetailsAsync(request.DisputeId);
+            var dispute = await disputeRepository.GetForUpdateAsync(request.DisputeId, cancellationToken);
 
             // ADR-0001 §D2 Note C: the staff flag is DERIVED from the caller's profile,
             // never trusted from the request body. A customer-host caller can flip

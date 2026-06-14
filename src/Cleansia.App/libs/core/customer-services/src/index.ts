@@ -151,6 +151,9 @@ export {
   UploadDisputeEvidenceResponse,
   PackageListItem,
   ServiceListItem,
+  JwtTokenResponse,
+  ChangePasswordCommand,
+  RequestPasswordChangeCommand,
 } from './lib/client/customer-client';
 export type { FileParameter } from './lib/client/customer-client';
 export {

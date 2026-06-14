@@ -31,13 +31,14 @@ public class GetPagedServices
             var filter = specification.SatisfiedBy();
 
             var totalItems = await serviceRepository.GetCountAsync(filter, cancellationToken);
-            var services = await serviceRepository
+            var items = await serviceRepository
                 .GetPagedSort<ServiceSort>(request.Offset, request.Limit, filter, request.Sort.MapToDomain())
                 .Include(s => s.Category)
                 .AsNoTracking()
+                .Select(service => service.MapToDto())
                 .ToListAsync(cancellationToken);
 
-            return services.Select(service => service.MapToDto()).MapToDto(totalItems, request);
+            return items.MapToDto(totalItems, request);
         }
     }
 }

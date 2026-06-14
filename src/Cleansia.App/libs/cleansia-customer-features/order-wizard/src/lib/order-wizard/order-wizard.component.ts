@@ -16,6 +16,10 @@ import { SelectModule } from 'primeng/select';
 import { DialogModule } from 'primeng/dialog';
 import { CheckboxModule } from 'primeng/checkbox';
 import { OrderWizardFacade } from './order-wizard.facade';
+import { OrderPricingFacade } from './order-pricing.facade';
+import { OrderPromoFacade } from './order-promo.facade';
+import { OrderSavedAddressFacade } from './order-saved-address.facade';
+import { OrderServiceAreaFacade } from './order-service-area.facade';
 import {
   RebookParams,
   TimeOption,
@@ -47,7 +51,13 @@ import { WizardSummaryStepComponent } from './components/wizard-summary-step.com
     WizardSummaryStepComponent,
   ],
   templateUrl: './order-wizard.component.html',
-  providers: [OrderWizardFacade],
+  providers: [
+    OrderPricingFacade,
+    OrderPromoFacade,
+    OrderSavedAddressFacade,
+    OrderServiceAreaFacade,
+    OrderWizardFacade,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OrderWizardComponent implements OnInit {

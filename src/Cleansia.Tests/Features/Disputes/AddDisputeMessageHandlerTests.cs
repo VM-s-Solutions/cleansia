@@ -59,7 +59,7 @@ public class AddDisputeMessageHandlerTests
             Id = DisputeId,
         };
         _disputeRepository
-            .Setup(r => r.GetDisputeWithDetailsAsync(DisputeId))
+            .Setup(r => r.GetForUpdateAsync(DisputeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(dispute);
         return dispute;
     }

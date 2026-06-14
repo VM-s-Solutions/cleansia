@@ -50,10 +50,10 @@ public class AdminLoyaltyTierController(IMediator mediator) : ApiController(medi
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> PreviewThresholdImpact(
-        [FromBody] PreviewTierThresholdImpact.Command command,
+        [FromBody] PreviewTierThresholdImpact.Query query,
         CancellationToken cancellationToken)
     {
-        var result = await Mediator.Send(command, cancellationToken);
+        var result = await Mediator.Send(query, cancellationToken);
         return HandleResult<PreviewTierThresholdImpact.Response>(result);
     }
 }

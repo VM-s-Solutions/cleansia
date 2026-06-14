@@ -47,11 +47,11 @@ public static class AdminDeleteUserAccount
     {
         public Task<BusinessResult> Handle(Command request, CancellationToken cancellationToken)
         {
-            var adminEmail = userSessionProvider.GetUserEmail() ?? "admin";
+            var adminEmail = userSessionProvider.GetUserEmail() ?? GdprAuditReasons.FallbackAdminActor;
 
             return gdprDeletionService.DeleteUserAccountAsync(
                 request.UserId,
-                deactivationReason: "GDPR_ADMIN_DELETION",
+                deactivationReason: GdprAuditReasons.AdminDeletion,
                 resolveAuditActor: _ => (adminEmail, $"Admin deletion by {adminEmail}"),
                 cancellationToken);
         }

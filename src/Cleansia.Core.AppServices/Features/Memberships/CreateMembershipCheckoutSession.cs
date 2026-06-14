@@ -42,7 +42,7 @@ public class CreateMembershipCheckoutSession
             if (user == null)
             {
                 return BusinessResult.Failure<Response>(new Error(
-                    nameof(Command), BusinessErrorMessage.UserNotFound));
+                    nameof(userId), BusinessErrorMessage.UserNotFound));
             }
 
             var plan = await membershipPlanRepository.GetByCodeAsync(command.PlanCode, cancellationToken);
@@ -56,7 +56,7 @@ public class CreateMembershipCheckoutSession
             if (existing != null)
             {
                 return BusinessResult.Failure<Response>(new Error(
-                    nameof(UserMembership), BusinessErrorMessage.MembershipAlreadyActive));
+                    nameof(command.PlanCode), BusinessErrorMessage.MembershipAlreadyActive));
             }
 
             var stripeCustomerId = user.StripeCustomerId;

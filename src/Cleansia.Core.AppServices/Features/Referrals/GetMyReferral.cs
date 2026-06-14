@@ -28,12 +28,10 @@ public class GetMyReferral
             var userId = userSessionProvider.GetUserId()!;
             var code = await referralService.EnsureCodeForUserAsync(userId, cancellationToken);
 
-            var totalCount = await referralRepository.CountByReferrerAsync(userId, cancellationToken);
-            var referrals = await referralRepository.GetByReferrerAsync(
-                userId, 0, totalCount > 0 ? totalCount : 0, cancellationToken);
+            var statusCounts = await referralRepository.GetStatusCountsByReferrerAsync(userId, cancellationToken);
 
-            var qualified = referrals.Count(r => r.Status == ReferralStatus.Qualified);
-            var accepted = referrals.Count(r => r.Status == ReferralStatus.Accepted);
+            var qualified = statusCounts.GetValueOrDefault(ReferralStatus.Qualified);
+            var accepted = statusCounts.GetValueOrDefault(ReferralStatus.Accepted);
 
             var response = new Response(
                 Code: code.Code,

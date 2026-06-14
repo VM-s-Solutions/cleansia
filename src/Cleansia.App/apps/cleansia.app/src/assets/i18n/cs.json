@@ -1191,7 +1191,9 @@
         "resend_code": "Odeslat kód znovu",
         "change_password": "Změnit heslo",
         "remember_password": "Pamatujete si heslo?"
-      }
+      },
+      "send_code_error": "Ověřovací kód se nepodařilo odeslat. Zkuste to prosím znovu.",
+      "change_password_error": "Heslo se nepodařilo změnit. Zkuste to prosím znovu."
     },
     "email_confirm": {
       "title": "Potvrzení e-mailu",

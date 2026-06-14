@@ -45,7 +45,7 @@ public class GetUserHandlerTests
         // Force the entity id to the value the query asks for (BaseEntity.Id has a public setter).
         user.Id = id;
         _userRepository
-            .Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByIdNoTrackingAsync(id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
         return user;
     }

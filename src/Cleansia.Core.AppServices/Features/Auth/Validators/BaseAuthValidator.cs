@@ -1,4 +1,5 @@
 ﻿using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Common.Validators;
 using FluentValidation;
 using System.Linq.Expressions;
 
@@ -54,17 +55,8 @@ public class BaseAuthValidator<TRequest> : AbstractValidator<TRequest>
     protected void AddPasswordRules(Expression<Func<TRequest, string>> passwordExpression)
     {
         var propertyName = GetPropertyName(passwordExpression);
-        // Requires: minimum 8 characters, at least one letter and one digit
-        const string passwordPattern = @"^(?=.*[a-zA-Z])(?=.*\d).{8,}$";
 
-        RuleFor(passwordExpression)
-            .Cascade(CascadeMode.Stop)
-            .NotEmpty()
-            .WithMessage(BusinessErrorMessage.Required)
-            .WithErrorCode(propertyName)
-            .Matches(passwordPattern)
-            .WithMessage(BusinessErrorMessage.InvalidPasswordFormat)
-            .WithErrorCode(propertyName);
+        RuleFor(passwordExpression).ValidatePassword(propertyName);
     }
 
     private static string GetPropertyName<T, TProperty>(Expression<Func<T, TProperty>> expression)

@@ -1,11 +1,11 @@
 ---
 id: T-0206
 title: "S6 logging hygiene: stop logging messageText/PII/Stripe-ids/confirmation-codes"
-status: draft
+status: done
 size: S
 owner: —
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-14
 depends_on: []
 blocks: []
 stories: []
@@ -111,6 +111,54 @@ values, no contracts change.
 
 ## Status log
 - 2026-06-01 — draft (created by pm)
+- 2026-06-13 — **review** (backend, Wave-5 Batch 5B). S6 call-site sweep landed, behavior-preserving.
+  **TEST-FIRST evidence (red→green):** added `src/Cleansia.Tests/Logging/S6LoggingHygieneCharacterizationTests.cs`
+  (9 cases) pinning the log EVENT + safe scalar correlation keys, asserting the *event/scalar
+  properties* not the template string. Initial run **RED 7/7** for the right reason (raw body / PII / SendGrid
+  body present in the log message; push transient log missing `UserId` scalar). After the redaction it is
+  **GREEN**; the existing behavior suites `SendPushNotificationClassifyTests` (6), `GenerateReceiptHandlerBranchTests`
+  (3), `SendSitewidePromoFanoutHandlerSmokeTests` (1) stay **green unchanged** → 19/19 in an isolated
+  runner (see Verification note below). 2 cases added after a sink was found in the deserialize-failure
+  exception messages.
+  **AC1** ✓ characterization-first (red→green, asserts event+scalars). **AC2** ✓ Functions `messageText`
+  removed from all three handlers' log payloads — replaced by `message.UserId`/`EventKey` /
+  `campaign.CampaignId` / `OrderId` when deserialized, and `messageText.Length` (byte count) when not;
+  ack/return/throw control flow identical. **AC3** ✓ already satisfied — `ConfirmUserEmail.ValidateUserTokenAsync`
+  was remediated in Wave-3a (#76): it logs `{UserId}` only / no identifier on the no-user branch, no
+  `{Code}`/`{Email}`; **no change needed** (deviation D1). **AC4** ✓ `EmailService.ThrowClassifiedAsync`
+  Error log keeps `{FailureClass}`+`{StatusCode}`; the SendGrid `{Body}` moved to `LogDebug`. Send
+  outcome/return unchanged. **AC5** ✓ no S6 token in any Information+ log template across the touched files
+  (only `{Body}` remains, at Debug); `node agents/tools/check-consistency.mjs` flags none of the touched
+  files (the tool has no S6 rule yet — manual grep used). **AC6** ✓ diff is logging-template/argument-only
+  + the new test; no logic/signature/contract edit.
+  **Files changed:** `SendPushNotificationHandler.cs`, `SendSitewidePromoFanoutHandler.cs`,
+  `GenerateReceiptHandler.cs` (Functions.Core), `EmailService.cs` (Core.AppServices), + new test file.
+  **Extra sink found & closed (in-scope):** the two handler-constructed `InvalidOperationException(
+  $"Failed to deserialize …: {messageText}")` messages embed the raw body and are logged at Error in the
+  same enumerated catch — redacted to a `({messageText.Length} bytes)` marker (control flow unchanged).
+  This is NOT the out-of-scope `GlobalExceptionHandler` pattern.
+  **Verification:** `dotnet build` of `Cleansia.Core.AppServices` and `Cleansia.Functions.Core` with
+  `-p:BuildProjectReferences=false` = **0 errors**. The full `Cleansia.Tests` project currently CANNOT
+  emit because of UNRELATED concurrent-lane compile breaks (foreign files: `CreateOrder`/`CreateDispute`
+  handler-ctor mismatch, `GetPaged*Handler` `internal`-access, and a mid-flight
+  `Infra.Services/Templates/*` deletion that breaks a full `Core.AppServices` *reference* rebuild) — all
+  outside this ticket's files. To prove red→green I compiled my test file + the three existing behavior
+  suites against the freshly-built library DLLs in an isolated throwaway runner (outside the repo, since
+  removed): **19/19 green**. The orchestrator's authoritative clean run will execute these in-project once
+  the sibling lanes' compile breaks clear.
+  **MANUAL_STEPs:** none (no DTO/endpoint/schema change → no nswag-regen, no ef-migration).
+  **Production bugs found (report-only, do NOT fix here):** `Core.AppServices` is currently broken in the
+  shared tree by a concurrent lane deleting `Cleansia.Infra.Services/Templates/*` while
+  `RegenerateInvoicePdf.cs` + `PayPeriodBackgroundService.cs` still import that namespace — flag for the
+  owning lane / a follow-up if it persists past their commit.
+- 2026-06-13 — **ready** (PM, Wave-5 intake / Batch **5B**). No deps. DoR met: AC1–AC6 observable
+  (characterization pins the log *event* + scalar correlation keys, never the message string), S,
+  behavior-unchanged (only PII/secret values removed from log templates above Debug). **`security_touching:
+  false` in frontmatter, but it implements the S6 security law** (stop logging confirmation codes / email /
+  Stripe ids / SendGrid body / raw queue payloads) — the PM routes a **Security advisory pass** alongside
+  the reviewer (it is a security-hygiene fix, even though it changes no auth/data-exposure control flow).
+  No migration/regen. backend + functions; touches the Functions consumers + ConfirmUserEmail + EmailService
+  log call-sites only — disjoint from other 5B files. sprint re-tagged 5.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

@@ -28,7 +28,7 @@ public static class DeleteUserAccount
             var userId = userSessionProvider.GetUserId()!;
             return gdprDeletionService.DeleteUserAccountAsync(
                 userId,
-                deactivationReason: "GDPR_DELETION",
+                deactivationReason: GdprAuditReasons.SelfDeletion,
                 resolveAuditActor: user => (user.Email, null),
                 cancellationToken);
         }

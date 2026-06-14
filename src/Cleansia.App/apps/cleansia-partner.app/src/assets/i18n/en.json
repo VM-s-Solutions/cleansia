@@ -100,7 +100,9 @@
       },
       "email_invalid": "Email is invalid",
       "password_invalid": "Password is invalid",
-      "password_changed": "Password successfully changed"
+      "password_changed": "Password successfully changed",
+      "send_code_error": "Could not send the verification code. Please try again.",
+      "change_password_error": "Could not change your password. Please try again."
     },
     "profile": {
       "title": "Employee Onboarding Profile",
@@ -1371,7 +1373,8 @@
       "password": "Password",
       "remember_me": "Remember me",
       "forgot_password": "Forgot password?",
-      "dont_have_account": "Don't have an account?"
+      "dont_have_account": "Don't have an account?",
+      "error": "Login failed. Please check your credentials and try again."
     },
     "register": {
       "first_name": "First Name",

@@ -34,6 +34,11 @@ public class DeviceConfiguration : AuditableEntityConfiguration<Device, string>
         builder.HasIndex(d => d.UserId);
         builder.HasIndex(d => new { d.UserId, d.DeviceId }).IsUnique();
 
+        // The stale-device retention sweep (DataRetentionBackgroundService.CleanStaleDevicesAsync)
+        // filters IsActive AND LastActiveAt < cutoff over every tenant. This (IsActive, LastActiveAt)
+        // composite serves that equality + range so the sweep is index-backed, not a full scan.
+        builder.HasIndex(d => new { d.IsActive, d.LastActiveAt });
+
         builder.HasOne(d => d.User)
             .WithMany()
             .HasForeignKey(d => d.UserId)

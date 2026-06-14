@@ -284,11 +284,29 @@ public class EmployeeInvoice : Auditable, ITenantEntity
         return $"{prefix}-{periodShort}-{employeeShort}";
     }
 
+    // FNV-1a-32 over the UTF-8 bytes — a process-independent stable hash. string.GetHashCode() is
+    // randomized per process in .NET, so a variable symbol recomputed in another process would
+    // silently mismatch the stored value on a payment reference (a fiscal correctness trap).
     public static string GenerateVariableSymbol(string employeeId, string payPeriodId)
     {
-        var empHash = Math.Abs(employeeId.GetHashCode()) % 10000;
-        var periodHash = Math.Abs(payPeriodId.GetHashCode()) % 1000000;
+        var empHash = StableHash(employeeId) % 10000;
+        var periodHash = StableHash(payPeriodId) % 1000000;
         return $"{empHash:D4}{periodHash:D6}";
+    }
+
+    private static uint StableHash(string value)
+    {
+        const uint offsetBasis = 2166136261;
+        const uint prime = 16777619;
+
+        var hash = offsetBasis;
+        foreach (var b in System.Text.Encoding.UTF8.GetBytes(value))
+        {
+            hash ^= b;
+            hash *= prime;
+        }
+
+        return hash;
     }
 
     public decimal CalculateAveragePay()

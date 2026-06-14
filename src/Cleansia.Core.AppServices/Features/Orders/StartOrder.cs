@@ -134,7 +134,14 @@ public class StartOrder
                 .Include(o => o.User)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
-            order!.StartOrder();
+            if (order is null)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.OrderId),
+                    BusinessErrorMessage.OrderNotFound));
+            }
+
+            order.StartOrder();
 
             var statusTrack = OrderStatusTrack.Create(OrderStatus.InProgress, order);
             order.AddOrderStatus(statusTrack);

@@ -10,7 +10,6 @@ using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Infra.Services.Pdf;
 using Cleansia.Infra.Services.Pdf.Models;
-using Cleansia.Infra.Services.Templates;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 

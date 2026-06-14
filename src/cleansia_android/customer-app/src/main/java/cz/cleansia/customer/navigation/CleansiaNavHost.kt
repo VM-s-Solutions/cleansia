@@ -370,7 +370,8 @@ fun CleansiaNavHost(
         ) {
             val vm: cz.cleansia.customer.features.profile.ProfileViewModel = hiltViewModel()
             val user by vm.currentUser.collectAsState()
-            val saving by vm.savingProfile.collectAsState()
+            val saveState by vm.saveState.collectAsState()
+            val saving = saveState is cz.cleansia.customer.ui.state.ActionState.Submitting
 
             cz.cleansia.customer.features.profile.ProfileOnboardingScreen(
                 user = user,
@@ -393,7 +394,8 @@ fun CleansiaNavHost(
         ) {
             val vm: cz.cleansia.customer.features.profile.ProfileViewModel = hiltViewModel()
             val user by vm.currentUser.collectAsState()
-            val saving by vm.savingProfile.collectAsState()
+            val saveState by vm.saveState.collectAsState()
+            val saving = saveState is cz.cleansia.customer.ui.state.ActionState.Submitting
 
             EditProfileScreen(
                 user = user,

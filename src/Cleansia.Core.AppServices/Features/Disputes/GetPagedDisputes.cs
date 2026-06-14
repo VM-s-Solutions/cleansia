@@ -45,9 +45,6 @@ public class GetPagedDisputes
                 .GetPagedSort<DisputeSort>(request.Offset, request.Limit, filter, request.Sort.MapToDomain())
                 .Include(d => d.Order)
                 .Include(d => d.User)
-                .Include(d => d.Messages)
-                .Include(d => d.Evidence)
-                .AsSplitQuery()
                 .AsNoTracking()
                 .Select(dispute => dispute.MapToListItem())
                 .ToListAsync(cancellationToken);

@@ -1,11 +1,11 @@
 ---
 id: T-0242
 title: Cancellation-fee free-window override semantics — Plus override direction contradicts the doc
-status: draft
+status: blocked
 size: S
 owner: —
 created: 2026-06-13
-updated: 2026-06-13
+updated: 2026-06-14
 depends_on: [T-0211]
 blocks: []
 stories: []
@@ -74,6 +74,19 @@ adversarial money review even though it is not authz/secret-touching (`security_
 
 ## Status log
 - 2026-06-13 — draft (created by pm; Wave-4 Batch 4A/T-0211 carried finding made a ticket — Wave-5 candidate).
+- 2026-06-13 — **blocked** (PM, Wave-5 intake). Dep T-0211✓ is `done`, but **AC1 requires an owner
+  product decision** (Plus free-cancellation-window direction) before behavior can change — opened as
+  **Q-W5-1 (blocking: yes)** in `questions/open.md`. The fix is otherwise small (S, money-adjacent →
+  adversarial review). It edits `BookingPolicy.cs` + `CancellationFeeRateBoundaryTests.cs`; once Q-W5-1
+  is answered it unblocks into **Batch 5B** and **serializes against any other ticket touching
+  `BookingPolicy.cs`** (none in this wave). Held so the rest of Wave 5 proceeds; gated only on Q-W5-1.)
+- 2026-06-14 — **stays blocked — CARRIED past Wave-5 close** (PM, Wave-5 close-out). Wave 5 closed with
+  every other ticket `done`/deferred; this one remains **blocked on Q-W5-1** (owner product decision on the
+  Plus free-cancellation-window direction — still unanswered in `questions/open.md`). No behavior or
+  test-pin change has landed. It carries forward to whenever the owner answers Q-W5-1; at that point it
+  unblocks as an S, money-adjacent (adversarial money review) ticket editing `BookingPolicy.cs` +
+  `CancellationFeeRateBoundaryTests.cs`, serializing against any other `BookingPolicy.cs` writer. On the
+  owner action list (see `status/sprint-7.md` §close-out).
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

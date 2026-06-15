@@ -5,6 +5,7 @@ import {
   GdprExportDto,
   GdprRequestDto,
   GdprRequestStatus,
+  PagedDataOfGdprRequestDto,
   UserConsentDto,
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
@@ -34,6 +35,14 @@ describe('DataProtectionFacade', () => {
       status: GdprRequestStatus.Completed,
     }),
   ];
+
+  const pagedRequests = (rows: GdprRequestDto[], total = rows.length) =>
+    PagedDataOfGdprRequestDto.fromJS({
+      data: rows,
+      total,
+      pageNumber: 1,
+      pageSize: 20,
+    });
 
   const consentRows = [
     UserConsentDto.fromJS({
@@ -69,43 +78,33 @@ describe('DataProtectionFacade', () => {
   });
 
   describe('requests list', () => {
-    it('loads page 1 by default and stores the rows', () => {
-      gdprClient.requests.mockReturnValue(of(requestRows));
+    it('loads the first page by default and stores the rows and total', () => {
+      gdprClient.requests.mockReturnValue(of(pagedRequests(requestRows, 1)));
 
       facade.loadRequests();
 
-      expect(gdprClient.requests).toHaveBeenCalledWith(1, 20);
+      expect(gdprClient.requests).toHaveBeenCalledWith(undefined, 0, 20);
       expect(facade.requests().length).toBe(1);
+      expect(facade.totalRecords()).toBe(1);
       expect(facade.initialLoading()).toBe(false);
       expect(facade.loading()).toBe(false);
       expect(facade.hasError()).toBe(false);
     });
 
-    it('converts the offset-based page event to a 1-based page', () => {
-      gdprClient.requests.mockReturnValue(of(requestRows));
+    it('passes the offset/limit from the page event straight through', () => {
+      gdprClient.requests.mockReturnValue(of(pagedRequests(requestRows, 1)));
 
       facade.onPageChange(40, 20);
 
-      expect(gdprClient.requests).toHaveBeenCalledWith(3, 20);
+      expect(gdprClient.requests).toHaveBeenCalledWith(undefined, 40, 20);
     });
 
-    it('estimates one more page while a full page comes back', () => {
-      const fullPage = Array.from({ length: 20 }, (_, i) =>
-        GdprRequestDto.fromJS({ id: `req-${i}` })
-      );
-      gdprClient.requests.mockReturnValue(of(fullPage));
+    it('uses the server-reported total record count', () => {
+      gdprClient.requests.mockReturnValue(of(pagedRequests(requestRows, 57)));
 
       facade.loadRequests();
 
-      expect(facade.totalRecords()).toBe(21);
-    });
-
-    it('stops the estimate at the last short page', () => {
-      gdprClient.requests.mockReturnValue(of(requestRows));
-
-      facade.onPageChange(20, 20);
-
-      expect(facade.totalRecords()).toBe(21);
+      expect(facade.totalRecords()).toBe(57);
     });
 
     it('sets the error flag and surfaces the API error on failure', () => {
@@ -159,7 +158,7 @@ describe('DataProtectionFacade', () => {
       gdprClient.export.mockReturnValue(
         of(GdprExportDto.fromJS({ userId: 'user-1' }))
       );
-      gdprClient.requests.mockReturnValue(of(requestRows));
+      gdprClient.requests.mockReturnValue(of(pagedRequests(requestRows, 1)));
       const download = jest
         .spyOn(
           facade as unknown as { downloadJson: (d: unknown, n: string) => void },
@@ -203,7 +202,7 @@ describe('DataProtectionFacade', () => {
   describe('erasure', () => {
     it('erases the account, shows success and refreshes the audit list', () => {
       gdprClient.deleteAccount.mockReturnValue(of(undefined));
-      gdprClient.requests.mockReturnValue(of(requestRows));
+      gdprClient.requests.mockReturnValue(of(pagedRequests(requestRows, 1)));
 
       facade.eraseUserAccount('user-1');
 

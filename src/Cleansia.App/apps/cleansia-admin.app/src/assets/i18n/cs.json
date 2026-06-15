@@ -643,6 +643,12 @@
       "total_orders": "Objednávky",
       "total_amount": "Celková částka",
       "status": "Stav",
+      "pdf_status": "PDF",
+      "pdf_state": {
+        "ready": "Připraveno",
+        "failed": "Selhalo",
+        "pending": "Generuje se…"
+      },
       "generated_at": "Vygenerováno",
       "actions": "Akce",
       "view_details": "Zobrazit detail",
@@ -676,6 +682,9 @@
       "back_to_list": "Zpět na seznam faktur",
       "invoice_number": "Číslo faktury",
       "status": "Stav",
+      "pdf_status": "PDF",
+      "pdf_failed_title": "Generování PDF selhalo",
+      "pdf_error_label": "Chyba",
       "actions_section": "Akce",
       "invoice_summary": "Přehled faktury",
       "employee_name": "Zaměstnanec",

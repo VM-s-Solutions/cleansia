@@ -40,7 +40,15 @@ export class AdminAuthService {
     rememberMe = false
   ): Observable<JwtTokenResponse> {
     return this.adminClient.adminAuthClient.login(
-      new AdminLoginCommand({ email, password, rememberMe })
+      // trustedDeviceToken stays undefined: the trusted-device lockout bypass
+      // reads the raw refresh token server-side from the HttpOnly cookie
+      // (cookie wins, never JS-readable) — the browser must not supply it.
+      new AdminLoginCommand({
+        email,
+        password,
+        rememberMe,
+        trustedDeviceToken: undefined,
+      })
     );
   }
 

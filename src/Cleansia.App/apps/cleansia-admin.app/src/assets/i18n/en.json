@@ -643,6 +643,12 @@
       "total_orders": "Orders",
       "total_amount": "Total Amount",
       "status": "Status",
+      "pdf_status": "PDF",
+      "pdf_state": {
+        "ready": "Ready",
+        "failed": "Failed",
+        "pending": "Generating…"
+      },
       "generated_at": "Generated",
       "actions": "Actions",
       "view_details": "View Details",
@@ -1363,6 +1369,9 @@
       "back_to_list": "Back to Invoice List",
       "invoice_number": "Invoice Number",
       "status": "Status",
+      "pdf_status": "PDF",
+      "pdf_failed_title": "PDF generation failed",
+      "pdf_error_label": "Error",
       "actions_section": "Actions",
       "invoice_summary": "Invoice Summary",
       "employee_name": "Employee",

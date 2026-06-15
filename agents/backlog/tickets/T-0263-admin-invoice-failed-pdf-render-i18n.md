@@ -1,7 +1,7 @@
 ---
 id: T-0263
 title: Admin invoice failed-PDF render (failed-vs-pending indicator + error text) + i18n — carried frontend half of T-0238
-status: blocked
+status: done
 size: S
 owner: pm
 created: 2026-06-15
@@ -62,6 +62,26 @@ regenerated admin client is confirmed to carry the two fields.
   `nswag-regen`** so the generated DTOs carry `PdfGenerationFailed`/`PdfGenerationError`. Unblocks to
   `ready` the moment the owner confirms the regen. On the owner action list (sprint-8 §close-out). Pure
   mechanical contract-completion of a behavior already specified by T-0171d AC4 → no panel (no-decision).
+- 2026-06-15 — **IMPLEMENTED → status `review`** (frontend). Admin nswag-regen confirmed: the generated
+  `EmployeeInvoiceDto`/`EmployeeInvoiceDetailDto` now carry `pdfGenerationFailed` (bool) +
+  `pdfGenerationError` (string?). Implemented the failed-vs-pending render against the regenerated client.
+  **AC1:** a shared three-state derivation `getInvoicePdfState()` (`failed` when `pdfGenerationFailed`,
+  else `ready` when `pdfBlobName` present, else `pending`) drives both views. The invoice **list** gained a
+  dedicated "PDF" column with a `#pdfStatusTemplate` badge (`invoice-pdf-badge pdf-{failed|ready|pending}`)
+  — a *failed* generation is now visually distinct from a *still-generating* one. The invoice **detail**
+  status banner shows the same PDF-state badge and, when `pdfGenerationFailed`, a red `pdf-error-banner`
+  surfacing the stored `pdfGenerationError` text (error-prefix + message). The existing retry-PDF action
+  (`getInvoiceTableActions` `pi pi-refresh`, visible on no-blob non-cancelled rows) and the detail
+  regenerate-PDF button are **unchanged**. Three data states (loading/loaded/error) intact. **AC2:** new
+  keys added in all five admin locales (en/cs/sk/uk/ru) under the existing scopes —
+  `invoice_management.pdf_status` + `invoice_management.pdf_state.{ready,failed,pending}`, and
+  `invoice_detail.{pdf_status,pdf_failed_title,pdf_error_label}` — TranslatePipe only, no hardcoded
+  strings; all 5 JSONs parse. OnPush + facade-resident logic + `cleansia-*`/PrimeNG conventions followed.
+  **Verification:** `nx build cleansia-admin.app --configuration=production` succeeds (0 errors; only the
+  pre-existing NG8107 `employee-detail.html:77` + bundle-budget warnings remain); `nx test
+  invoice-management` 34/34 green, `nx test data-protection` 12/12 green. **AC3 (closure)** is a PM/coord
+  step (note closure in T-0171, move Q-W3-3 to `answered.md`) — left for the PM to reconcile on review.
+  Frontend-only; no backend/ef change.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

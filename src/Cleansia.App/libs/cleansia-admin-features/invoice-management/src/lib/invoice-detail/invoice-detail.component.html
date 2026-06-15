@@ -27,6 +27,14 @@
                 {{ facade.getStatusLabel(facade.invoice()!.status) }}
               </span>
             </div>
+            <div class="status-info">
+              <span class="label"
+                >{{ 'pages.invoice_detail.pdf_status' | translate }}:</span
+              >
+              <span [class]="getPdfStateClass(facade.invoice()!)">
+                {{ getPdfStateLabelKey(facade.invoice()!) | translate }}
+              </span>
+            </div>
             <div class="invoice-number-info">
               <span class="label"
                 >{{ 'pages.invoice_detail.invoice_number' | translate }}:</span
@@ -36,6 +44,23 @@
               }}</span>
             </div>
           </div>
+
+          @if (facade.invoice()!.pdfGenerationFailed) {
+          <div class="pdf-error-banner" role="alert">
+            <i class="pi pi-exclamation-triangle"></i>
+            <div class="pdf-error-content">
+              <span class="pdf-error-title">{{
+                'pages.invoice_detail.pdf_failed_title' | translate
+              }}</span>
+              @if (facade.invoice()!.pdfGenerationError) {
+              <span class="pdf-error-detail">
+                {{ 'pages.invoice_detail.pdf_error_label' | translate }}:
+                {{ facade.invoice()!.pdfGenerationError }}
+              </span>
+              }
+            </div>
+          </div>
+          }
         </cleansia-section>
       </div>
 

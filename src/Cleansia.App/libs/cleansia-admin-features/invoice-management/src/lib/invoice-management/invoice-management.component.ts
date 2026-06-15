@@ -37,9 +37,13 @@ import { TooltipModule } from 'primeng/tooltip';
 import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 import { InvoiceManagementFacade } from './invoice-management.facade';
 import {
+  getInvoicePdfState,
+  getInvoicePdfStateClass,
+  getInvoicePdfStateLabelKey,
   getInvoiceStatusClass,
   getInvoiceTableColumns,
   getInvoiceTableActions,
+  InvoicePdfState,
 } from './invoice-management.models';
 
 @Component({
@@ -71,6 +75,7 @@ export class InvoiceManagementComponent implements AfterViewInit, OnDestroy {
   private readonly translate = inject(TranslateService);
 
   statusTemplate = viewChild<TemplateRef<any>>('statusTemplate');
+  pdfStatusTemplate = viewChild<TemplateRef<any>>('pdfStatusTemplate');
 
   invoiceTableColumns!: TableColumn<EmployeeInvoiceDto>[];
   invoiceTableActions!: TableAction<EmployeeInvoiceDto>[];
@@ -131,7 +136,8 @@ export class InvoiceManagementComponent implements AfterViewInit, OnDestroy {
   private rebuildTableDefinitions(): void {
     this.invoiceTableColumns = getInvoiceTableColumns(
       this.translate,
-      this.statusTemplate()
+      this.statusTemplate(),
+      this.pdfStatusTemplate()
     );
 
     this.invoiceTableActions = getInvoiceTableActions(
@@ -192,6 +198,18 @@ export class InvoiceManagementComponent implements AfterViewInit, OnDestroy {
 
   getInvoiceStatusClass(invoice: EmployeeInvoiceDto): string {
     return getInvoiceStatusClass(invoice.status);
+  }
+
+  getPdfState(invoice: EmployeeInvoiceDto): InvoicePdfState {
+    return getInvoicePdfState(invoice);
+  }
+
+  getPdfStateClass(invoice: EmployeeInvoiceDto): string {
+    return getInvoicePdfStateClass(getInvoicePdfState(invoice));
+  }
+
+  getPdfStateLabelKey(invoice: EmployeeInvoiceDto): string {
+    return getInvoicePdfStateLabelKey(getInvoicePdfState(invoice));
   }
 
   applyFilters(): void {

@@ -1,11 +1,11 @@
 ---
 id: T-0161
 title: "AUD-01b: IRefundService implementation (one seam, ceiling clamp, deterministic RefundKey) + IStripeClient idempotency-key param"
-status: draft
+status: done
 size: M
 owner: —
 created: 2026-06-06
-updated: 2026-06-06
+updated: 2026-06-15
 depends_on: [T-0160]
 blocks: [T-0164, T-0167, T-0170, T-0173]
 stories: []

@@ -1,11 +1,11 @@
 ﻿---
 id: T-0123
 title: "Prod-config hardening: CSRF-in-prod (BSP-3) + Swagger-off-staging (BSP-5) + anon tenant batch (BSP-9)"
-status: draft
+status: done
 size: S
 owner: â€”
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-15
 depends_on: [T-0115, T-0116]
 blocks: []
 stories: []

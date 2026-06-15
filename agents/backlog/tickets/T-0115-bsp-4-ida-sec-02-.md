@@ -1,11 +1,11 @@
 ---
 id: T-0115
 title: Partitioned rate limiter + UseForwardedHeaders + startup guard + cardinality cap
-status: in_progress
+status: done
 size: M
 owner: —
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-15
 depends_on: []
 blocks: []
 stories: [US-partner-0042]

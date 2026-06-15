@@ -6,9 +6,10 @@
   fast-follows and frontend/Android hygiene in shared-file lanes; sequence the **mobile `ApiResult<T>`
   migration (T-0197) ADR-first** (architect-owned, L) — recommend it as its own later mini-wave (Wave 6M)
   rather than folding the whole epic into this wave.
-- **Status:** **READY — promoted 2026-06-14.** Executable tickets set to `ready`; T-0197 stays `draft`
-  (ADR-FIRST, split-required); T-0242 stays `blocked` (Q-W5-1 unanswered) and is **excluded** from the
-  executable wave.
+- **Status:** **✅ COMPLETE — closed 2026-06-15.** All in-scope tickets `done`, committed + pushed on
+  `feature/wave-6` (`b8f89202`), orchestrator-verified green on a clean rebuild against real Postgres. PR to
+  `master` is the owner's call. Q-W5-1 answered (path B) mid-wave → T-0242 unblocked + done. T-0197 stays
+  deferred (ADR-first). **Close-out: §close-out below.**
 - **Branch:** all Wave-6 work goes on one feature branch **`feature/wave-6`** cut from current `master`
   (**`7debef45`**, Wave 5 / PR #78), committed batch-by-batch. PM never merges; the PR to `master` is the
   owner's call.
@@ -196,11 +197,10 @@ given it is the multi-tenant go-live blocker). PM never merges; the PR to `maste
 
 ## 4. Owner items
 
-### 4.1 Blocking question carried (gates ONE excluded ticket; not the wave)
-- **Q-W5-1 (blocking: yes)** — Plus free-cancellation-window direction. **Still unanswered.** Gates **T-0242
-  ONLY**, which is **excluded** from the executable Wave-6 set. Recommended resolution stands: path (b)
-  (invert override semantics in `BookingPolicy`), owner intent decides. T-0242 unblocks and runs the moment
-  this is answered. See `questions/open.md`.
+### 4.1 Blocking question carried (gates ONE excluded ticket; not the wave) — ✅ RESOLVED at close
+- **Q-W5-1 (blocking: yes)** — Plus free-cancellation-window direction. **ANSWERED 2026-06-14 — path (B)**
+  (Plus = wider free window). T-0242 unblocked, folded into 6E, and `done` (`b8f89202`). Moved to
+  `questions/answered.md`. No longer carried.
 
 ### 4.2 Sequencing question (PM recommendation)
 - **T-0197 (mobile `ApiResult<T>`, L, ADR-first):** recommend **either (a) run it as its own mini-wave
@@ -223,11 +223,12 @@ given it is the multi-tenant go-live blocker). PM never merges; the PR to `maste
 - **T-0233:** `ef-migration` **TBD by the panel** (a trusted-device marker may need a column/store) — flag
   at contract-lock if the chosen mechanism requires it.
 
-### 4.4 Stale-status reconciliation flag (one-line cleanup, NOT Wave-6 deliverable)
-- ~66 historical Wave 0–3 ticket files still read `status: draft` in frontmatter despite being `done ✅` in
-  INDEX.md (T-0100…T-0124, T-0142/0143, T-0160…T-0232). A `grep status: draft` therefore over-reports open
-  work by ~5×. **Recommend a future mechanical bulk status-reconciliation pass** to flip the shipped-and-
-  merged ticket files to `done` (INDEX is already correct). Not Wave-6 work; a bookkeeping job to schedule.
+### 4.4 Stale-status reconciliation flag — ✅ EXECUTED at Wave-6 close (2026-06-15)
+- The flagged bulk reconciliation was **performed at close** (see §close-out): **68 historical Wave 0–3
+  ticket files** flipped `draft`/`in_progress`/`in-review` → `done` (T-0100…T-0124, T-0126…T-0128,
+  T-0142/0143, T-0160…T-0168, T-0170…T-0195, T-0219…T-0222, T-0231/T-0232) — each cross-checked as `done ✅`
+  in INDEX. Inline template comments preserved; `updated:` bumped to 2026-06-15. **NOT flipped:** T-0197
+  (open deferred epic), T-0263/T-0264 (new follow-ups). `grep status: draft` no longer over-reports.
 
 ### 4.5 Standing carry-forwards (unchanged, owner-tracked — from Wave 5 §7.8)
 nswag-regen admin client (T-0203) · nswag-regen customer client (T-0202, clears Wave-3 residual) · apply
@@ -266,7 +267,107 @@ this doc match reality. **T-0236 (the multi-tenant go-live blocker) is the headl
 
 ---
 
+## close-out — Wave 6 COMPLETE (2026-06-15)
+
+**Committed + pushed on `feature/wave-6` (`b8f89202`). PR to `master` is the owner's call (PM never merges).**
+
+### What landed — 12 tickets DONE, orchestrator-verified green (clean rebuild, real Postgres)
+Final suite counts: **Cleansia.Tests 1513/1513 · IntegrationTests 79/79 · HostTests 51/51 · all 3 web apps
+build production · 15 locale files valid.**
+
+- **6A** — **T-0236** (multi-tenant token-revoke asymmetry — **GO-LIVE BLOCKER, FIXED**; no ef-migration
+  taken) · **T-0262** (dead `BusinessErrorMessage.EmailNotSentError` removed) · **T-0240** (`.kotlin`
+  build-artifact dir gitignored).
+- **6B** — **T-0260** (chargeback funneled through the T-0172 `CanTransitionTo` dispute guard) · **T-0234**
+  (`ChangeOwnPassword` current-password guessing bounded; reused the lockout pair → no migration) ·
+  **T-0238** (**BACKEND HALF ONLY** — admin `EmployeeInvoiceDto`/`EmployeeInvoiceDetailDto` gain
+  `PdfGenerationFailed`/`PdfGenerationError` + red-first mapper tests; **frontend AC3/AC4 HELD on the admin
+  nswag-regen → carried as T-0263**) · **T-0261** (UserMembership cancellation-reminder partial index).
+- **6C** — **T-0259** (nx-lib test-infra: tags + jest/eslint/tsconfig.spec on the under-scaffolded libs) ·
+  **T-0239** (module-boundary sweep — zero `@cleansia/partner-services` imports under customer features +
+  `enforce-module-boundaries` rule) · **T-0241** (admin eslint selector-prefix + Nx generator default).
+- **6D** — **T-0237** (catalog-delete TOCTOU → FK Cascade→Restrict + SQLSTATE-23503→`in_use` mapping +
+  RecurringBookingTemplate JSON-id in-use check).
+- **6E** — **T-0242** (cancellation-fee free-window — **Q-W5-1 answered path (B)** → unblocked + done) ·
+  **T-0233** (targeted-lockout DoS mitigation — analyst-panel-decided trusted-device mitigation).
+
+> Count note: "12 DONE this wave" counts T-0238's backend landing; end-to-end fully-closed = 11 (T-0238's
+> frontend half is carried as T-0263). The held state is explicit in T-0238's status log so it is not lost.
+
+### Q-W5-1 RESOLVED — path (B)
+Owner answered **path (B)**: Plus members get a MORE generous (wider) free-cancellation window. T-0242
+implemented + done; **moved to `questions/answered.md`**. Implementation note: under the existing
+absolute-threshold caller/resolver wiring the owner intent is satisfied without any out-of-lane change (a
+Plus plan seeded below the standard 24h is already more generous) — a literal `BookingPolicy`-only
+inversion leaked the standard tier to all-free (reviewer caught it; security re-gate confirmed the revert).
+
+### TWO regressions the real-Postgres gate caught + the orchestrator fixed during verification (AUDIT TRAIL)
+Both were green on the unit suite AND passed their per-ticket reviewer — **caught ONLY by the real-DB
+HostTests/IntegrationTests.** This reinforces the **verify-on-real-DB gate**.
+1. **T-0237** — an explicit `.WithMany()` on `Service`'s read-only projection navs created a **duplicate
+   shadow FK `ServiceId1`** that 500'd order-with-services queries. Fixed by a **string-named inverse nav**.
+2. **T-0233** — its new integration test seeded a `RefreshToken` for an **unseeded foreign user → FK
+   violation**. Fixed by **seeding the foreign user row**.
+
+### Held T-0238 frontend half → follow-up T-0263
+The admin failed-vs-pending render + `PdfGenerationError` text + i18n ×5 (T-0238 AC3/AC4) is **blocked on
+the owner's admin nswag-regen** so the generated DTOs carry the two new fields. Carried as **T-0263**
+(`blocked`). **Q-W3-3 stays OPEN** until T-0263 AC1 lands — NOT moved to `answered.md` yet.
+
+### New Wave-6 close follow-ups filed
+- **T-0263** — admin invoice failed-PDF render + i18n (carried frontend half of T-0238), **blocked** on the
+  admin nswag-regen. Sprint 7 (Wave-7 candidate).
+- **T-0264** — remove the **vestigial `api.email.sending_failed` locale keys** in admin.app + partner.app
+  (×5 locales each = 10 entries) that T-0262's `errors.*`/backend scope did not reach (the `api.*`
+  namespace). `ready`. Sprint 7 (Wave-7 candidate). No-decision mechanical cleanup.
+
+### Stale-status reconciliation performed (the §4.4 flag, executed at close)
+Flipped **68 historical Wave 0–3 ticket files** that read `status: draft`/`in_progress`/`in-review` in
+frontmatter but are `done ✅` in INDEX (cross-checked against the INDEX Done markers): **T-0100…T-0124,
+T-0126…T-0128, T-0142/0143 (split epics, all children done), T-0160…T-0168, T-0170…T-0195, T-0219…T-0222,
+T-0231/T-0232.** Inline template comments preserved; `updated:` bumped to 2026-06-15. **Deliberately NOT
+flipped:** T-0197 (genuinely-open deferred epic), T-0263 (new, blocked), T-0264 (new, ready). After the
+pass the **only** non-`done` ticket files are exactly those three. `grep status: draft` no longer
+over-reports closed work.
+
+### Consolidated OWNER ACTION LIST — Wave 6 (PM never runs these)
+**Wave-6 specific:**
+1. **Open the PR** `feature/wave-6` → `master` (`b8f89202`). T-0236, the multi-tenant go-live blocker, is
+   the headline — it should land before any multi-tenant onboarding (alongside the already-merged T-0245).
+2. **nswag-regen — admin client** (T-0238 backend DTO fields `PdfGenerationFailed`/`PdfGenerationError`).
+   **Unblocks the held frontend half T-0263.** The same shared DTOs also feed the partner + mobile-partner
+   endpoints — additive/backward-compatible (no consumer break), regen those too for completeness.
+3. **ef-migrations** — apply **T-0261** (UserMembership cancellation-reminder partial index) and **T-0237**
+   (catalog-referencing FKs Cascade→Restrict). In **PROD apply the new indexes `CONCURRENTLY`** by hand
+   (additive `CREATE INDEX CONCURRENTLY` outside the migration transaction).
+4. **Confirm T-0197 sequencing** — run as its own mini-wave 6M (ADR-first) now, or keep deferred (§4.2).
+
+**Still-carrying (standing owner items, unchanged from prior waves):**
+5. **citext fix** — the Azure **Functions** host needs `NpgsqlDataSourceBuilder.EnableUnmappedTypes()` (the
+   `DbContextBindingExtensions` fix) and a **Functions restart** to read citext columns without throwing.
+6. **T-0159 rotate-mapbox-token** — the code fix shipped long ago (token off the URL) but the exposed token
+   is still live until rotated in the Mapbox account.
+7. **T-0197 mobile `ApiResult<T>` mini-wave** — the deferred L epic (ADR-first); same as item 4.
+8. Prior-wave carries still open: nswag-regen customer client (Wave-5 T-0202, clears the Wave-3 residual) +
+   admin client (Wave-5 T-0203); the Wave-5 PR `feature/wave-5-consistency-bugs` → `master`; the 4 T-0204
+   indexes `CONCURRENTLY` in PROD; IMP-1 Google OAuth ClientId; CZ Stripe-fee figures; DE/AT/ES fiscal
+   go-live gates (Q-REFUND-01 / ADR-0009 D7); Q-REFUND-03 per-bundle weights; Q-W3-2 partner-pay currency;
+   Q-W3-4 dispute-resolve-on-refund-failure UX.
+
+---
+
 ## Status log
+- 2026-06-15 — **Wave 6 CLOSED (PM).** All 12 in-scope tickets `done` on `feature/wave-6` (`b8f89202`),
+  orchestrator-verified green (Cleansia.Tests 1513/1513 · IntegrationTests 79/79 · HostTests 51/51 · 3 web
+  apps prod-build · 15 locales valid). **T-0236 multi-tenant go-live blocker FIXED.** Q-W5-1 answered
+  path (B) → T-0242 unblocked + done, moved to `answered.md`. Recorded the 2 real-Postgres-caught
+  regressions (T-0237 `ServiceId1` shadow FK; T-0233 seed FK violation) for the audit trail — both missed
+  by unit suite + reviewer. T-0238 done backend-half only; frontend AC3/AC4 HELD on admin nswag-regen →
+  carried as **T-0263** (blocked); Q-W3-3 stays open. Filed **T-0264** (vestigial `api.email.sending_failed`
+  locale residual, ready). **Stale-status reconciliation executed: 68 historical Wave 0–3 ticket files
+  flipped draft→done** (INDEX-confirmed); only T-0197/T-0263/T-0264 remain non-done. Updated INDEX (Wave-6
+  COMPLETE banner + done roster + follow-up table) + this doc (§close-out). Owner action list consolidated.
+  Backlog bookkeeping only — no code/commits.
 - 2026-06-14 — **Wave-6 plan drafted + promoted (PM).** Verified master `7debef45` (Wave 5 / PR #78); cut
   `feature/wave-6` from it. **Confirmed Q-W5-1 STILL UNANSWERED** → T-0242 stays `blocked` and is excluded.
   Reconciled the candidate set against current master: the open Wave-6 set is **13 tickets** (T-0236, T-0260,

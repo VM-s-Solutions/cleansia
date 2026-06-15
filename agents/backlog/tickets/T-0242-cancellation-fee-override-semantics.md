@@ -3,7 +3,7 @@ id: T-0242
 title: Cancellation-fee free-window override semantics — Plus override direction contradicts the doc
 status: done
 size: S
-owner: —
+owner: pm
 created: 2026-06-13
 updated: 2026-06-15
 depends_on: [T-0211]
@@ -277,3 +277,17 @@ red→green (not the fixer's claims).
   authz/PII/secret/tenant surface changed; the only production change is a doc comment.
 
 VERDICT: PASS. No blocking finding survives. Recommend PM advance state.
+
+## Close-out
+- 2026-06-15 — **done** (PM, Wave-6 close-out). Q-W5-1 ANSWERED by owner — path **(B)**: Plus members
+  get a MORE generous (wider) free-cancellation window; the override semantics inverted per the owner's
+  intent. Implementation reconciled to the **absolute-threshold contract (AC2 path a)**: under the
+  resolver's existing absolute-window wiring a Plus plan seeded below 24h is already more generous than
+  the standard 24h, so the owner intent is satisfied with NO out-of-lane caller/resolver/seed change —
+  `BookingPolicy.CalculateCancellationFeeRate` stays `freeWindow = freeCancellationHoursOverride ??
+  FreeCancellationHours` and only its param doc was clarified. Reviewer initially CHANGES-REQUESTED a
+  path-(b) inversion that leaked the standard tier to all-free; the fix reverted to path (a) and the
+  security/adversarial re-gate independently re-verified (inverted-formula injection → 8 RED for the
+  right reason → restored → 34/34 GREEN; Orders+Memberships+Cancellation 242/242). Orchestrator
+  authoritative clean run confirmed green (Cleansia.Tests 1513/1513). AC1–AC4 satisfied. No
+  nswag-regen, no ef-migration. Q-W5-1 moved to `answered.md`.

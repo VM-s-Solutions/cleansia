@@ -78,6 +78,16 @@ Frontend: extend the existing invoice list/detail facades (T-0171d libs), three 
   - **AC3 (frontend) HELD** on the regen — not started this lane.
   - **AC4** pending frontend completion; PM to move Q-W3-3 → `answered.md` and note closure in T-0171
     once AC3 lands.
+- 2026-06-15 — **done (BACKEND HALF) — FRONTEND AC3/AC4 HELD → carried as follow-up T-0263** (PM,
+  Wave-6 close-out). AC1 (backend DTO fields + red-first mapper tests) and AC2 (the `nswag-regen (admin)`
+  hold-point flagged to the owner) are **satisfied and shipped** in the Wave-6 commit (`b8f89202`),
+  orchestrator-verified green (Cleansia.Tests 1513/1513). **AC3 (admin failed-vs-pending render +
+  `PdfGenerationError` text + i18n ×5) and AC4 (closure of T-0171d AC4 + move Q-W3-3 to answered) remain
+  HELD** — they cannot start until the owner regenerates the admin NSwag client (the held manual_step).
+  This ticket is therefore **NOT fully closed**: marked `done` for the backend half only, and the open
+  frontend AC is carried as **follow-up T-0263** (admin invoice failed-PDF render + i18n, `blocked` on
+  the admin nswag-regen). Q-W3-3 stays **open** until T-0263 lands AC3 (do NOT move it to answered yet).
+  The held state is explicit so it is not lost at wave close.
 
 ## Review
 <!-- reviewer / security / optimizer write verdicts here; PM reconciles before advancing state -->

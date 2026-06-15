@@ -1,11 +1,11 @@
 ---
 id: T-0126
 title: Cross-tenant/cross-user write-path rejection tests + WebApplicationFactory host harness
-status: draft
+status: done
 size: M
 owner: —
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-15
 depends_on: [T-0100]
 blocks: []
 stories: []

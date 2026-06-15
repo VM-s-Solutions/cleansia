@@ -1,11 +1,11 @@
 ---
 id: T-0232
 title: "AUD-02p2 (split of T-0165): Admin package-form per-included-service weight UX (facade, i18n ×5)"
-status: draft
+status: done
 size: S
 owner: —
 created: 2026-06-07
-updated: 2026-06-07
+updated: 2026-06-15
 depends_on: [T-0231]
 blocks: []
 stories: []

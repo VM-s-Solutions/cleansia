@@ -10,62 +10,115 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
-> ## 🟢 WAVE 6 IN PROGRESS — carried follow-ups (multi-tenant blocker, security fast-follows, hygiene, mobile ApiResult) (promoted 2026-06-14)
+> ## ✅ WAVE 6 COMPLETE — carried follow-ups (multi-tenant blocker, security fast-follows, hygiene) (closed 2026-06-15)
+> **Wave 6 is COMPLETE — all work committed + pushed on `feature/wave-6` (`b8f89202`).** PR to `master`
+> is the owner's call (PM never merges). **12 tickets DONE this wave**, **orchestrator-verified green** on a
+> clean rebuild against real Postgres: **Cleansia.Tests 1513/1513 · IntegrationTests 79/79 · HostTests
+> 51/51 · all 3 web apps build production · 15 locale files valid.** The headline: **T-0236, the
+> MULTI-TENANT TOKEN-REVOKE GO-LIVE BLOCKER, is FIXED.** Close-out detail (per-batch landings, the two
+> regressions the real-DB gate caught, the held T-0238 frontend half, owner manual-step queue, follow-ups
+> filed): **`status/sprint-8.md` §close-out**.
+>
+> **DONE (12):** 6A — **T-0236** (multi-tenant token-revoke asymmetry — GO-LIVE BLOCKER, FIXED) · **T-0262**
+> (dead const removed) · **T-0240** (.kotlin gitignore). 6B — **T-0260** (chargeback funneled through the
+> dispute guard) · **T-0234** (ChangeOwnPassword guess bound) · **T-0238** (invoice PDF-failure DTO —
+> **BACKEND HALF ONLY**; frontend AC3 HELD on the admin nswag-regen → carried as **T-0263**) · **T-0261**
+> (UserMembership cancellation-reminder partial index). 6C — **T-0259** (nx-lib test-infra) · **T-0239**
+> (module-boundary sweep — zero `@cleansia/partner-services` imports under customer features + eslint rule)
+> · **T-0241** (admin eslint selector-prefix). 6D — **T-0237** (catalog-delete TOCTOU → FK Restrict). 6E —
+> **T-0242** (cancellation-fee per **Q-W5-1 path (B)** — unblocked + done) · **T-0233** (lockout-DoS —
+> analyst-panel-decided trusted-device mitigation). *(T-0238 is `done` for its backend half; its frontend
+> half is the new follow-up T-0263 — count of fully-closed-end-to-end = 11; "12 DONE this wave" counts
+> T-0238's backend landing.)*
+>
+> **Q-W5-1 RESOLVED:** owner answered **path (B)** — Plus members get a wider free-cancellation window;
+> T-0242 implemented + done, Q-W5-1 moved to `answered.md`.
+>
+> **TWO regressions the real-Postgres gate caught + the orchestrator fixed during verification (audit trail
+> — unit tests + reviewer PASS MISSED both):** (a) **T-0237** — an explicit `.WithMany()` on Service's
+> read-only projection navs created a duplicate shadow FK `ServiceId1` that 500'd order-with-services
+> queries; fixed by a string-named inverse nav. (b) **T-0233** — its new integration test seeded a
+> `RefreshToken` for an unseeded foreign user (FK violation); fixed by seeding the foreign user row. **Both
+> were caught ONLY by HostTests/IntegrationTests against real Postgres** — reinforces the verify-on-real-DB
+> gate (the unit suite + the per-ticket reviewer were both green and blind to them).
+>
+> **STILL OPEN / carried out of Wave 6:** **T-0197** (mobile `ApiResult<T>`, L, ADR-first) — stays
+> deferred; owner sequencing call stands (run as mini-wave 6M or keep deferred — sprint-8 §4.2). The ADR may
+> bank in parallel.
+>
+> **NEW Wave-6 close follow-ups filed (T-0263…T-0264):** **T-0263** (admin invoice failed-PDF render + i18n
+> — the carried frontend half of T-0238, `blocked` on the admin nswag-regen) · **T-0264** (remove the
+> vestigial `api.email.sending_failed` locale keys in admin.app + partner.app, ×5 locales each, that
+> T-0262's `errors.*`/backend scope did not reach, `ready`). Detail rows in the Wave-6 close follow-up table
+> below the Wave-6 roster. Both are Wave-7 candidates.
+>
+> ⚠️ **OWNER ACTION QUEUE for Wave 6** (PM never runs these): **(1)** open the **PR `feature/wave-6` →
+> `master`** · **(2) nswag-regen — admin client** (T-0238 backend DTO fields `PdfGenerationFailed`/
+> `PdfGenerationError`; unblocks the held frontend half **T-0263**; the same shared DTOs also feed
+> partner + mobile-partner — additive/backward-compatible) · **(3)** apply the **T-0261 + T-0237
+> ef-migrations**, and in PROD apply the **new indexes `CONCURRENTLY`** by hand · **(4)** confirm the
+> **T-0197** sequencing (6M now or stay deferred). Full consolidated list: `status/sprint-8.md` §close-out.
+>
+> --- (Wave-6 planning/progress history below, kept for traceability) ---
+>
+> ## 🟢 WAVE 6 (planning + progress) — carried follow-ups (multi-tenant blocker, security fast-follows, hygiene, mobile ApiResult) (promoted 2026-06-14) *(superseded by the WAVE 6 COMPLETE banner above)*
 > **Wave 5 merged to master: PR #78 (`7debef45`).** Owner gave the GO on **Wave 6** — the genuinely-open
 > carry-forward set after the Wave-5 close. **Branch: `feature/wave-6`** (cut from `7debef45`), committed
 > batch-by-batch. PM never merges; the PR to `master` is the owner's call. Full sequenced plan + per-ticket
 > lanes/gates/manual-steps + the owner items: **`status/sprint-8.md`**.
 >
-> **Scope = 13 genuinely-open tickets** (the recent follow-ups + deferred items), NOT the ~66 historical
-> Wave 0–3 ticket files that still read `draft` but are `done ✅` here (a `grep status: draft` over-reports
-> ~5× — see the **stale-status reconciliation flag**, sprint-8 §4.4: a future bulk bookkeeping pass, not
-> Wave-6 work). **Front-loaded T-0236** (the MULTI-TENANT GO-LIVE BLOCKER, security-gated) + two safe
+> **Scope = 13 genuinely-open tickets** (the recent follow-ups + deferred items), NOT the historical
+> Wave 0–3 ticket files that still read `draft` but are `done ✅` here (the **stale-status reconciliation**
+> was performed at Wave-6 close — see the close-out banner; 68 stale historical ticket files flipped to
+> `done`). **Front-loaded T-0236** (the MULTI-TENANT GO-LIVE BLOCKER, security-gated) + two safe
 > mechanical cleanups (T-0262, T-0240) as **Batch 6A**.
 >
 > **Promoted 11 `ready`:** T-0236, T-0262, T-0240, T-0260, T-0234, T-0238, T-0261, T-0241, T-0259, T-0239,
 > T-0237. **Held 1 `draft` for the deliberation PANEL** (its body mandates it): **T-0233** (lockout-DoS
 > mitigation — trusted-device vs CAPTCHA design decision). **Deferred-epic 1:** **T-0197** (mobile
 > `ApiResult<T>`, L, ADR-first) — runs as its own mini-wave **6M** or stays deferred (owner call, sprint-8
-> §4.2); the ADR may bank in parallel. **Excluded-blocked 1:** **T-0242** — still **BLOCKED on Q-W5-1**
-> (owner product decision, still unanswered) — gates no other ticket.
+> §4.2); the ADR may bank in parallel. **Excluded-blocked 1:** **T-0242** — was **BLOCKED on Q-W5-1**
+> (now answered path (B) → unblocked + done this wave).
 >
-> **Reviewer-per-developer on every ticket. Security gate** on T-0236, T-0260, T-0234, T-0237 (and T-0233
-> once promoted). **Optimizer** on T-0261.
->
-> | Batch | Tickets | Parallelism / lanes |
-> |---|---|---|
-> | **6A — blocker + safe cleanups (FIRST)** | **T-0236** (M, multi-tenant GO-LIVE BLOCKER, **sec gate**) ∥ **T-0262** (S, dead constant) ∥ **T-0240** (S, gitignore) | Parallel, disjoint. **Lane Auth-token** (T-0236). **Lane BusinessErrorMessage+locale-JSONs** — T-0262 BEFORE T-0234 (6B). |
-> | **6B — backend follow-ups** | **T-0260** (S, funnel-guard, **sec**) · **T-0234** (S, authn bound, **sec**) · **T-0238** (S, DTO + **nswag-regen HOLD**) · **T-0261** (S, index + **ef-migration HOLD**, optimizer) | Fan out. **Lane BusinessErrorMessage+locale** (T-0262→T-0234). **Lane Auth-surface** (T-0234→T-0233). **Lane Dispute-guard** (T-0260). |
-> | **6C — frontend hygiene** | **T-0259** (M, nx test-infra + tags) **→ T-0239** (M, module-boundary rule + import swap) · **T-0241** (S, eslint selector-prefix) ∥ | **Lane FE-config: T-0259 → T-0239** (boundary rule needs the tags T-0259 lays down). T-0241 parallel unless it shares the `nx.json` generators block → then after T-0259. |
-> | **6D — catalog-delete TOCTOU** | **T-0237** (M, FK Restrict + violation→`in_use` + template JSON check, **sec**, **ef-migration HOLD**) | DB-contract-first; disjoint → parallel with 6A/6B/6C. |
-> | **6E — lockout-DoS mitigation (PANEL-FIRST, LAST)** | **T-0233** (M, **sec**) — panel → finalize story → `ready` → implement | After 6B's T-0234 (shared Lane Auth-surface). |
-> | **6M — mobile `ApiResult<T>` (T-0197, L→split, ADR-first) — DEFER-CANDIDATE** | **T-0197** (architect ADR → `:core` move → one serial child per customer-app repo → iOS) | Own mini-wave / deferred (owner call). ADR may bank in parallel. |
+> **Reviewer-per-developer on every ticket. Security gate** on T-0236, T-0260, T-0234, T-0237, T-0233.
+> **Optimizer** on T-0261.
 >
 > | ID | Title | Size | Status | Batch | Layers | sec | manual_step |
 > |----|-------|------|--------|-------|--------|-----|-------------|
-> | **T-0236** ⚠️ MULTI-TENANT GO-LIVE BLOCKER | Token-revoke asymmetry: TenantId=null writes vs tenant-filtered revoke reads | M | **ready** | 6A | backend | **yes** | ef-migration* (only if AC4 backfill) |
-> | **T-0262** | Remove dead `BusinessErrorMessage.EmailNotSentError` (zero consumers) | S | **ready** | 6A | backend | no | — |
-> | **T-0240** | Android `.kotlin` build-artifact dir → `.gitignore` | S | **ready** | 6A | android | no | — |
-> | **T-0260** | Funnel `HandleChargeback` through the T-0172 `CanTransitionTo` guard (defense-in-depth) | S | **ready** | 6B | backend | **yes** | — |
-> | **T-0234** | Bound `ChangeOwnPassword` current-password guessing | S | **ready** | 6B | backend | **yes** | ef-migration* (only if dedicated counter) |
-> | **T-0238** | Expose PdfGenerationFailed/Error on admin EmployeeInvoice DTOs (closes Q-W3-3) | S | **ready** | 6B | backend, frontend | no | **nswag-regen (admin)** |
-> | **T-0261** | UserMembership partial index: cover the cancellation-reminder sweep arm | S | **ready** | 6B | db, backend | no (optimizer) | **ef-migration** |
-> | **T-0241** | Admin-app eslint selector-prefix alignment + Nx generator default | S | **ready** | 6C | frontend | no | — |
-> | **T-0259** | Frontend nx-lib test-infra scaffolding (tags + jest/eslint/tsconfig.spec) — `blocks: [T-0239]` | M | **ready** | 6C | frontend | no | — |
-> | **T-0239** | Module-boundary sweep: customer features off `@cleansia/partner-services` + eslint rule — `depends_on: [T-0259]` | M | **ready** | 6C | frontend | no | — |
-> | **T-0237** | Catalog delete TOCTOU → FK Restrict + violation→`in_use` + template JSON check | M | **ready** | 6D | backend, db | **yes** | **ef-migration** |
-> | **T-0233** | Targeted-lockout DoS mitigation (trusted-device / CAPTCHA) | M | **draft → PANEL** | 6E | backend, frontend | **yes** | ef-migration* (TBD by panel) |
+> | **T-0236** ⚠️ MULTI-TENANT GO-LIVE BLOCKER | Token-revoke asymmetry: TenantId=null writes vs tenant-filtered revoke reads | M | **done ✅** `b8f89202` | 6A | backend | **yes** | ef-migration* (not taken) |
+> | **T-0262** | Remove dead `BusinessErrorMessage.EmailNotSentError` (zero consumers) | S | **done ✅** `b8f89202` | 6A | backend | no | — |
+> | **T-0240** | Android `.kotlin` build-artifact dir → `.gitignore` | S | **done ✅** `b8f89202` | 6A | android | no | — |
+> | **T-0260** | Funnel `HandleChargeback` through the T-0172 `CanTransitionTo` guard (defense-in-depth) | S | **done ✅** `b8f89202` | 6B | backend | **yes** | — |
+> | **T-0234** | Bound `ChangeOwnPassword` current-password guessing | S | **done ✅** `b8f89202` | 6B | backend | **yes** | ef-migration* (not taken — reused lockout pair) |
+> | **T-0238** | Expose PdfGenerationFailed/Error on admin EmployeeInvoice DTOs (closes Q-W3-3) | S | **done ✅ (BACKEND HALF)** `b8f89202` — frontend AC3 HELD → **T-0263** | 6B | backend, frontend | no | **nswag-regen (admin) — owner** |
+> | **T-0261** | UserMembership partial index: cover the cancellation-reminder sweep arm | S | **done ✅** `b8f89202` | 6B | db, backend | no (optimizer) | **ef-migration (owner; PROD = CONCURRENTLY)** |
+> | **T-0241** | Admin-app eslint selector-prefix alignment + Nx generator default | S | **done ✅** `b8f89202` | 6C | frontend | no | — |
+> | **T-0259** | Frontend nx-lib test-infra scaffolding (tags + jest/eslint/tsconfig.spec) | M | **done ✅** `b8f89202` | 6C | frontend | no | — |
+> | **T-0239** | Module-boundary sweep: customer features off `@cleansia/partner-services` + eslint rule | M | **done ✅** `b8f89202` | 6C | frontend | no | — |
+> | **T-0237** | Catalog delete TOCTOU → FK Restrict + violation→`in_use` + template JSON check | M | **done ✅** `b8f89202` (⚠️ caught the `ServiceId1` shadow-FK regression — see close-out) | 6D | backend, db | **yes** | **ef-migration (owner)** |
+> | **T-0242** | Cancellation-fee Plus free-window override direction (Q-W5-1 path **B**) | S | **done ✅** `b8f89202` | 6E | backend | no (money-adv) | — |
+> | **T-0233** | Targeted-lockout DoS mitigation (trusted-device, panel-decided) | M | **done ✅** `b8f89202` (⚠️ caught the seed FK-violation regression — see close-out) | 6E | backend, frontend | **yes** | (panel marker; no migration taken) |
 > | **T-0197** | Migrate customer-app repos to `ApiResult<T>` (mobile) | **L** | **draft (ADR-first, DEFER → 6M)** | 6M | architect, android, ios | no | — |
-> | **T-0242** | Cancellation-fee Plus free-window override direction | S | **blocked (Q-W5-1) — EXCLUDED** | — | backend | no (money-adv) | — |
 >
 > \* `nswag-regen`/`ef-migration` flagged conditionally fire only when the diff actually changes a
-> generated-client surface or schema (T-0236 AC4 backfill / T-0234 dedicated counter); the dev confirms at
-> review, the PM adds the flag + holds consumers only then. **Owner manual steps this wave:** T-0238
-> nswag-regen (admin); T-0261 ef-migration (UserMembership index, CONCURRENTLY); T-0237 ef-migration
-> (catalog FK Cascade→Restrict). Full detail: sprint-8 §4.3. **Owner questions:** Q-W5-1 carried (gates
-> T-0242 only); T-0197 sequencing call (sprint-8 §4.2). **Dependency-ordered dispatch: sprint-8 §3** —
-> {6A, 6B, 6C, 6D} fan out concurrently (within-batch lanes serialized) → 6E (T-0233) after the panel +
-> 6B's T-0234 → 6M deferred.
+> generated-client surface or schema. **Owner manual steps this wave:** T-0238 nswag-regen (admin);
+> T-0261 ef-migration (UserMembership index, CONCURRENTLY in PROD); T-0237 ef-migration (catalog FK
+> Cascade→Restrict). Full detail: sprint-8 §close-out / §4.3. **Q-W5-1 RESOLVED (path B).** Dispatch was
+> {6A, 6B, 6C, 6D} concurrent → 6E (T-0233 panel + T-0242 once Q-W5-1 answered).
+
+**Wave-6 close follow-ups (filed 2026-06-15) — the held T-0238 frontend half + the T-0262 locale residual. Both Wave-7 candidates.**
+
+| ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
+|----|-------|------|--------|-----------|--------|-----|-------------|--------|
+| **T-0263** | Admin invoice failed-PDF render (failed-vs-pending indicator + `PdfGenerationError` text) + i18n ×5 — carried frontend half of T-0238 | S | **blocked** (admin nswag-regen) | T-0238✓ (backend) | frontend | no | **nswag-regen (admin)** | T-0238 AC3/AC4 held at Wave-6 close |
+| **T-0264** | Remove vestigial `api.email.sending_failed` locale keys (admin.app + partner.app, ×5 locales each = 10 entries) | S | **ready** | T-0262✓ | frontend | no | — | T-0262 residual (its `errors.*`/backend scope did not reach the `api.*` namespace) |
+
+> **T-0263** carries the **frontend half of T-0238** (the admin failed-vs-pending render + error text +
+> i18n). T-0238 shipped its backend DTO fields in Wave 6; the frontend AC is **blocked on the owner's
+> admin nswag-regen** and unblocks to `ready` the moment that lands. **Q-W3-3 stays OPEN** until T-0263's
+> AC1 lands (it is NOT moved to `answered.md` yet). **T-0264** is the i18n residual T-0262 left because its
+> scope was the backend constant + the `errors.*` namespace, not the `api.*` namespace where the frontend
+> mirror lives (10 orphaned entries; the sibling `api.email.invalid_format`/`invalid_email` stay).
 >
 > --- (Wave-5 history below, kept for traceability) ---
 >

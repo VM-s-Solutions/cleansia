@@ -1,11 +1,11 @@
 ---
 id: T-0168
 title: "AUD-01c2 (split of T-0162): Admin partial-refund UX on order detail (choose lines + reason, facade, i18n ×5)"
-status: draft
+status: done
 size: M
 owner: —
 created: 2026-06-07
-updated: 2026-06-07
+updated: 2026-06-15
 depends_on: [T-0167]
 blocks: []
 stories: []

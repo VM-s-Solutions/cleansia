@@ -1,11 +1,11 @@
 ---
 id: T-0107
 title: Admin GDPR delete/export + deactivate — self + last-admin protection
-status: draft
+status: done
 size: S
 owner: —
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-15
 depends_on: [T-0100]
 blocks: []
 stories: []

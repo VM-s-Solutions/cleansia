@@ -1,11 +1,11 @@
 ﻿---
 id: T-0109
 title: Gate Take/Start/Complete order on ContractStatus (rejected cleaners cannot work)
-status: draft
+status: done
 size: M
 owner: â€”
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-15
 depends_on: [T-0100, T-0107]
 blocks: []
 stories: []

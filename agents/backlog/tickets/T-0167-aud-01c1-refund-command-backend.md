@@ -1,11 +1,11 @@
 ---
 id: T-0167
 title: "AUD-01c1 (split of T-0162): Admin partial-refund command + share-of-TotalPrice allocator + RefundPolicy (window/fee) + PartiallyRefunded summary (backend)"
-status: draft
+status: done
 size: M
 owner: —
 created: 2026-06-07
-updated: 2026-06-07
+updated: 2026-06-15
 depends_on: [T-0160, T-0161, T-0231]
 blocks: [T-0168, T-0170, T-0173]
 stories: []

@@ -1,11 +1,11 @@
 ---
 id: T-0160
 title: "AUD-01a: Refund entity + EF config + PaymentStatus.PartiallyRefunded + RefundReason enum (the refund projection schema)"
-status: draft
+status: done
 size: M
 owner: —
 created: 2026-06-06
-updated: 2026-06-06
+updated: 2026-06-15
 depends_on: []
 blocks: [T-0161, T-0163, T-0164, T-0167]
 stories: []

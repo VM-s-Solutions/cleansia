@@ -4,9 +4,9 @@ import androidx.lifecycle.SavedStateHandle
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.partner.api.model.OrderItem
-import cz.cleansia.partner.core.network.ApiError
+import cz.cleansia.core.network.ApiError
 import cz.cleansia.partner.core.network.ApiErrorTranslator
-import cz.cleansia.partner.core.network.ApiResult
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.orders.OrdersRepository
 import cz.cleansia.partner.features.orders.viewmodels.OrderAction
 import cz.cleansia.partner.features.orders.viewmodels.OrderDetailsUiState

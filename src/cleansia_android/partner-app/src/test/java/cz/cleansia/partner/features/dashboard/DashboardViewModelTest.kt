@@ -5,7 +5,7 @@ import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.partner.api.model.DashboardStatsDto
 import cz.cleansia.partner.core.auth.UserProfileData
 import cz.cleansia.partner.core.auth.UserProfileStore
-import cz.cleansia.partner.core.network.ApiError
+import cz.cleansia.core.network.ApiError
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.core.notifications.db.NotificationDao
 import cz.cleansia.partner.data.dashboard.DashboardRepository

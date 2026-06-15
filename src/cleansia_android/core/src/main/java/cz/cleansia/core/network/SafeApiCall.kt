@@ -1,4 +1,4 @@
-package cz.cleansia.partner.core.network
+package cz.cleansia.core.network
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers

@@ -1,4 +1,4 @@
-package cz.cleansia.partner.core.network
+package cz.cleansia.core.network
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
@@ -38,8 +38,8 @@ sealed class ApiError : Exception() {
 
     /**
      * 400 with optional structured validation errors. `errorKey` is the first
-     * server-supplied translation key (e.g. `user.not_existing_email`) that
-     * [ApiErrorTranslator] can map to a localized string at the UI layer.
+     * server-supplied translation key (e.g. `user.not_existing_email`) that the
+     * app-local error localizer can map to a localized string at the UI layer.
      */
     data class BadRequest(
         override val message: String,

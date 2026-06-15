@@ -8,9 +8,9 @@ import cz.cleansia.partner.api.model.EarningsAnalyticsDto
 import cz.cleansia.partner.api.model.OrderListItem
 import cz.cleansia.partner.api.model.SortDefinition
 import cz.cleansia.partner.api.model.SortDirection
-import cz.cleansia.partner.core.network.ApiError
-import cz.cleansia.partner.core.network.ApiResult
-import cz.cleansia.partner.core.network.safeApiCall
+import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.network.ApiResult
+import cz.cleansia.core.network.safeApiCall
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

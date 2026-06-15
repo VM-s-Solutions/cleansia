@@ -1,6 +1,7 @@
 package cz.cleansia.partner.core.network
 
 import android.content.Context
+import cz.cleansia.core.network.ApiError
 import cz.cleansia.partner.R
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject

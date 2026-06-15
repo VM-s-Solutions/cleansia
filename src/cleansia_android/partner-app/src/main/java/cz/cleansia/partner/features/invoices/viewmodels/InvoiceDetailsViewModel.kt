@@ -9,7 +9,7 @@ import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.EmployeeInvoiceDetailDto
 import cz.cleansia.partner.core.network.ApiErrorTranslator
-import cz.cleansia.partner.core.network.ApiResult
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.invoices.InvoicesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext

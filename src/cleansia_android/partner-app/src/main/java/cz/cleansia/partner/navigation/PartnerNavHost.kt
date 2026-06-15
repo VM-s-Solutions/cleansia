@@ -35,7 +35,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import cz.cleansia.core.auth.TokenStore
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.partner.api.model.RegistrationCompletionStatus
-import cz.cleansia.partner.core.network.ApiResult
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.profile.ProfileRepository
 import cz.cleansia.partner.features.auth.screens.ConfirmEmailScreen
 import cz.cleansia.partner.features.auth.screens.ForgotPasswordScreen

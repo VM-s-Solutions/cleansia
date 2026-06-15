@@ -2,9 +2,9 @@ package cz.cleansia.partner.features.earnings
 
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.partner.api.model.DashboardStatsDto
-import cz.cleansia.partner.core.network.ApiError
+import cz.cleansia.core.network.ApiError
 import cz.cleansia.partner.core.network.ApiErrorTranslator
-import cz.cleansia.partner.core.network.ApiResult
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.features.earnings.viewmodels.EarningsSummaryUiState
 import cz.cleansia.partner.features.earnings.viewmodels.EarningsSummaryViewModel
 import cz.cleansia.partner.testing.MainDispatcherRule

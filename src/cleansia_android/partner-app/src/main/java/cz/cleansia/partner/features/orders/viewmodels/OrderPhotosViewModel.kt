@@ -7,7 +7,7 @@ import cz.cleansia.partner.api.model.GetOrderPhotosOrderPhotoDto
 import cz.cleansia.partner.api.model.PhotoType
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.partner.core.network.ApiErrorTranslator
-import cz.cleansia.partner.core.network.ApiResult
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.orders.OrdersRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

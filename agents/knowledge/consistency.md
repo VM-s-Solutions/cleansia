@@ -158,12 +158,17 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
 - **E4.** Repositories are **`@Singleton`**, implement **`SessionScopedCache`** (`clear()` on sign-out),
   cache via `StateFlow`, wrap calls in **`networkCall { }`**, and parse errors with
   **`ApiErrorParser.parseToUserMessage(...)`**.
-- **E5.** **Repository contract: return `ApiResult<T>`** (the sealed `Success`/`Error` type that already
-  exists in `partner-app/core/network/ApiResult.kt`) and surface the snackbar in the ViewModel. *(Judgment
-  call: `ApiResult<T>` is the target over customer-app's `T?`-with-snackbar-in-repo because it carries
-  the error explicitly, enables retry, and doesn't bury UI concerns in the data layer. customer-app's
-  `T?` repos are the legacy form to migrate — this is a cross-cutting change, so it's a tracked
-  refactor, not a same-day edit.)*
+- **E5.** **Repository contract: return `ApiResult<T>`** (the sealed `Success`/`Error(ApiError)` type with
+  `map`/`onSuccess`/`onError`) and surface the snackbar in the ViewModel. *(Judgment call: `ApiResult<T>` is
+  the target over customer-app's `T?`-with-snackbar-in-repo because it carries the error explicitly, enables
+  retry, and doesn't bury UI concerns in the data layer. customer-app's `T?` repos are the legacy form to
+  migrate — this is a cross-cutting change, so it's a tracked refactor, not a same-day edit.)* **Ratified by
+  ADR-0011** (`../backlog/adr/0011-mobile-apiresult-contract.md`): `ApiResult<T>` is THE mobile repository
+  contract; the type **lives in the shared `:core` module** (`cz.cleansia.core.network`) so partner-app,
+  customer-app, and the incoming iOS app consume **one** contract (fire-and-forget returns `ApiResult<Unit>`);
+  the app-local localizers (`ApiErrorTranslator`/`ApiErrorParser`) stay per-app (E3); and the iOS Swift
+  equivalent (`Result<T, ApiError>` / `ApiResult<Void>`, repo returns it, ViewModel surfaces the message) is
+  fixed there so iOS is born canonical. Changing E5 is an ADR superseding ADR-0011, not an ad-hoc edit.
 - **E6.** Screens inject via **`hiltViewModel()`**, collect **every** flow with
   **`collectAsStateWithLifecycle()`** (✗ `RecurringBookingsScreen` uses `collectAsState()` — a real
   lifecycle bug), and split a stateful `XxxScreen` (collects state, wires effects) from a stateless
@@ -181,7 +186,8 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
 
 - **B6 soft-delete:** majority hard-deletes; we canonicalize on **soft-delete** because audit/GDPR/
   history demand it long-term.
-- **E5 `ApiResult<T>`:** the two apps disagree; we canonicalize on the **more explicit** contract.
+- **E5 `ApiResult<T>`:** the two apps disagree; we canonicalize on the **more explicit** contract — ratified
+  by **ADR-0011** (the type moves to shared `:core`/`cz.cleansia.core.network`; iOS born on the Swift equivalent).
 - **E1/E2 sealed states:** customer-app is mostly right, partner-app mostly wrong; we canonicalize on
   **sealed states** because flag-bags permit impossible states (the actual defect).
 - **B4 fetch-and-guard:** the "redundant null-check after validator" flagged by analysis is **not**

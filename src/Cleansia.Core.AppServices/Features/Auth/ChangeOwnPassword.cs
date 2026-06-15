@@ -38,13 +38,33 @@ public class ChangeOwnPassword
         {
             // [OWN-DATA] (S1/S3): the subject is always the JWT caller — the command carries no user id.
             var userId = userSessionProvider.GetUserId()!;
+            var now = DateTimeOffset.UtcNow;
             var user = await userRepository.GetByIdAsync(userId, cancellationToken);
 
-            if (user?.Password is null || !command.CurrentPassword.CheckIfPasswordSame(user.Password))
+            if (user?.Password is null)
             {
                 return BusinessResult.Failure<Response>(
                     new Error(nameof(command.CurrentPassword), BusinessErrorMessage.CurrentPasswordInvalid));
             }
+
+            // Lockout gate precedes the password compare so an exhausted budget refuses without
+            // evaluating the current password — no guessing oracle. The charge below shares the login
+            // lockout pair (atomic conditional UPDATE in the repo), so this failure never reaches the
+            // unit-of-work commit yet the counter still lands.
+            if (user.IsLockedOut(now))
+            {
+                return BusinessResult.Failure<Response>(
+                    new Error(nameof(command.CurrentPassword), BusinessErrorMessage.AccountLocked));
+            }
+
+            if (!command.CurrentPassword.CheckIfPasswordSame(user.Password))
+            {
+                await userRepository.RecordFailedCurrentPasswordAttemptAsync(userId, now, cancellationToken);
+                return BusinessResult.Failure<Response>(
+                    new Error(nameof(command.CurrentPassword), BusinessErrorMessage.CurrentPasswordInvalid));
+            }
+
+            user.ResetLoginThrottle();
 
             // Raw password on the entity — the EF PasswordConverter hashes exactly once on persist.
             user.UpdatePassword(command.NewPassword);

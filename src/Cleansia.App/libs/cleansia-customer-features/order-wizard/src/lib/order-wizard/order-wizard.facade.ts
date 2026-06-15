@@ -4,12 +4,17 @@ import { Router } from '@angular/router';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   AddressDto,
+  CategoryDto,
+  CountryListItem,
   CreateOrderCommand,
   CustomerAddress,
   CustomerAuthService,
   CustomerClient,
   ExtraListItem,
+  PackageListItem,
+  PaymentType,
   QuoteOrderResponse,
+  ServiceListItem,
 } from '@cleansia/customer-services';
 import {
   loadCustomerPackages,
@@ -18,13 +23,6 @@ import {
   selectCustomerPackages,
   selectCustomerServices,
 } from '@cleansia/customer-stores';
-import {
-  CategoryDto,
-  CountryListItem,
-  PackageListItem,
-  PaymentType,
-  ServiceListItem,
-} from '@cleansia/partner-services';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { GuestOrderService } from '@cleansia-customer/orders';
 import { Store } from '@ngrx/store';

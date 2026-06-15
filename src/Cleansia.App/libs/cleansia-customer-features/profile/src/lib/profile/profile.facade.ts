@@ -3,16 +3,14 @@ import { ICleansiaSelectOption } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   AddSavedAddressCommand,
+  ChangePasswordCommand,
   CustomerClient,
+  GetCurrentUserQuery,
   MyProfileDto,
+  UpdateCurrentUserCommand,
   UpdateSavedAddressCommand,
 } from '@cleansia/customer-services';
 import { SavedAddressStore } from '@cleansia/customer-stores';
-import {
-  ChangePasswordCommand,
-  GetCurrentUserQuery,
-  UpdateCurrentUserCommand,
-} from '@cleansia/partner-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { takeUntil } from 'rxjs';

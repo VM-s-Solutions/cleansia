@@ -2,7 +2,7 @@
   "name": "service-management",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/cleansia-admin-features/service-management/src",
-  "prefix": "lib",
+  "prefix": "cleansia",
   "projectType": "library",
   "tags": [],
   "targets": {

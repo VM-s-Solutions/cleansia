@@ -9,6 +9,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Constants = Cleansia.TestUtilities.Constants;
+using RefreshTokenEntity = Cleansia.Core.Domain.Users.RefreshToken;
 
 namespace Cleansia.IntegrationTests.Features.Auth;
 
@@ -39,13 +40,39 @@ public class AccountLockoutTests(PostgresContainerFixture fixture) : BaseIntegra
         context.Users.Add(user);
     }
 
-    private static async Task<BusinessResult<JwtTokenResponse>> LoginInFreshScope(IServiceProvider provider, string password)
+    private static async Task<BusinessResult<JwtTokenResponse>> LoginInFreshScope(IServiceProvider provider, string password, string? trustedDeviceToken = null)
     {
         // A fresh scope per attempt = a fresh DbContext, as in production where every request is its
         // own scope; nothing can leak through a tracked in-memory entity.
         using var scope = provider.CreateScope();
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-        return await mediator.Send(new Login.Command(Constants.TestUserSession.TestUserEmail, password, true));
+        return await mediator.Send(new Login.Command(Constants.TestUserSession.TestUserEmail, password, true)
+        {
+            TrustedDeviceToken = trustedDeviceToken,
+        });
+    }
+
+    private static string HashToken(string raw)
+    {
+        var bytes = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(raw));
+        return Convert.ToHexString(bytes).ToLowerInvariant();
+    }
+
+    private static async Task<string> SeedTrustedRefreshTokenForUser(Infra.Database.CleansiaDbContext context)
+    {
+        const string raw = "trusted-device-refresh-token-integration";
+        var user = await context.Users.SingleAsync();
+        var token = RefreshTokenEntity.Create(
+            userId: user.Id,
+            tokenHash: HashToken(raw),
+            expiresAt: DateTimeOffset.UtcNow.AddDays(7),
+            audience: "audience",
+            deviceLabel: null,
+            ipAddress: null);
+        token.Created("test", DateTimeOffset.UtcNow);
+        context.RefreshTokens.Add(token);
+        await context.SaveChangesAsync();
+        return raw;
     }
 
     [Fact]
@@ -117,6 +144,88 @@ public class AccountLockoutTests(PostgresContainerFixture fixture) : BaseIntegra
                 var user = await context.Users.SingleAsync();
                 Assert.Equal(0, user.FailedLoginAttempts);
                 Assert.Null(user.LockoutEndsAt);
+            });
+    }
+
+    [Fact]
+    public async Task A_Trusted_Device_With_A_Valid_Account_Token_Logs_In_Despite_The_Lockout()
+    {
+        string trustedToken = null!;
+
+        await TestMethod(
+            arrange: async context =>
+            {
+                await SeedConfirmedUser(context);
+                await context.SaveChangesAsync();
+                trustedToken = await SeedTrustedRefreshTokenForUser(context);
+            },
+            act: async provider =>
+            {
+                for (var attempt = 0; attempt < User.MaxFailedLoginAttempts; attempt++)
+                {
+                    await LoginInFreshScope(provider, WrongPassword);
+                }
+
+                return await LoginInFreshScope(provider, Constants.TestUserSession.TestUserPassword, trustedToken);
+            },
+            assert: (_, result) =>
+            {
+                Assert.True(result.IsSuccess);
+                Assert.NotEmpty(result.Value.Token);
+                return Task.CompletedTask;
+            });
+    }
+
+    [Fact]
+    public async Task A_Locked_Account_With_A_Token_Bound_To_Another_User_Stays_Locked()
+    {
+        const string foreignRaw = "refresh-token-for-some-other-account";
+
+        await TestMethod(
+            arrange: async context =>
+            {
+                await SeedConfirmedUser(context);
+                await context.SaveChangesAsync();
+
+                // The foreign token references another user — RefreshTokens.UserId FKs to Users, so the
+                // owning row must exist (distinct email; audit-stamped to satisfy CreatedBy NOT NULL).
+                var otherUser = User.CreateWithPassword(
+                    email: "another-user@example.com",
+                    password: Constants.TestUserSession.TestUserPassword,
+                    firstName: "Other",
+                    lastName: "Account");
+                otherUser.Id = "another-users-id";
+                otherUser.ConfirmEmail();
+                otherUser.Created("test", DateTime.UtcNow);
+                context.Users.Add(otherUser);
+                await context.SaveChangesAsync();
+
+                var foreign = RefreshTokenEntity.Create(
+                    userId: "another-users-id",
+                    tokenHash: HashToken(foreignRaw),
+                    expiresAt: DateTimeOffset.UtcNow.AddDays(7),
+                    audience: "audience",
+                    deviceLabel: null,
+                    ipAddress: null);
+                foreign.Created("test", DateTimeOffset.UtcNow);
+                context.RefreshTokens.Add(foreign);
+                await context.SaveChangesAsync();
+            },
+            act: async provider =>
+            {
+                for (var attempt = 0; attempt < User.MaxFailedLoginAttempts; attempt++)
+                {
+                    await LoginInFreshScope(provider, WrongPassword);
+                }
+
+                return await LoginInFreshScope(provider, Constants.TestUserSession.TestUserPassword, foreignRaw);
+            },
+            assert: (_, result) =>
+            {
+                Assert.False(result.IsSuccess);
+                var validation = Assert.IsAssignableFrom<IValidationResult>(result);
+                Assert.Contains(validation.Errors, e => e.Message == BusinessErrorMessage.AccountLocked);
+                return Task.CompletedTask;
             });
     }
 }

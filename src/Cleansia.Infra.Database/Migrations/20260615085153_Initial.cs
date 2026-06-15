@@ -1289,7 +1289,7 @@ namespace Cleansia.Infra.Database.Migrations
                         column: x => x.ServiceId,
                         principalTable: "Services",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1316,7 +1316,7 @@ namespace Cleansia.Infra.Database.Migrations
                         column: x => x.PackageId,
                         principalTable: "Packages",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1343,7 +1343,7 @@ namespace Cleansia.Infra.Database.Migrations
                         column: x => x.ServiceId,
                         principalTable: "Services",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1709,7 +1709,7 @@ namespace Cleansia.Infra.Database.Migrations
                         column: x => x.PackageId,
                         principalTable: "Packages",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1858,7 +1858,7 @@ namespace Cleansia.Infra.Database.Migrations
                         column: x => x.ServiceId,
                         principalTable: "Services",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -3140,6 +3140,12 @@ namespace Cleansia.Infra.Database.Migrations
                 table: "UserMemberships",
                 columns: new[] { "Status", "CurrentPeriodEnd" },
                 filter: "\"RenewalReminderSentAt\" IS NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserMemberships_Status_CurrentPeriodEnd_Cancellation",
+                table: "UserMemberships",
+                columns: new[] { "Status", "CurrentPeriodEnd" },
+                filter: "\"CancelledAt\" IS NOT NULL AND \"CancellationReminderSentAt\" IS NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserMemberships_StripeSubscriptionId",

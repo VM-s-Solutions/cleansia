@@ -1,11 +1,11 @@
 ---
 id: T-0259
 title: "Frontend nx-lib test-infra scaffolding: tags + jest/eslint/tsconfig.spec test targets for under-scaffolded customer libs"
-status: ready
+status: done
 size: M
 owner: pm
 created: 2026-06-14
-updated: 2026-06-14
+updated: 2026-06-15
 depends_on: []
 blocks: [T-0239]
 stories: []
@@ -77,6 +77,34 @@ M ticket because they share the same shape (add `tags`, add `jest.config`/`eslin
   establishes the `scope:*`/`type:*` **tags** on the under-scaffolded libs; T-0239's
   `@nx/enforce-module-boundaries` rule needs those tags present to constrain anything (an untagged lib is
   invisible to the rule). Added `blocks: [T-0239]`. Plan: `status/sprint-8.md` §3 Batch 6C.
+- 2026-06-14 — **review** (frontend, FE-config lane). Scaffolding-only; no production/runtime source
+  touched (config + test-infra files only → AC3 holds without an app rebuild).
+  - **loyalty-promo-codes (admin)** — AC1+AC2 met. `project.json` now carries
+    `tags: ["scope:admin","type:feature"]`, `prefix: "cleansia"`, and `test`/`lint` targets (was empty
+    `tags: []` + `targets: {}`). Full test-infra present (jest.config.ts, tsconfig.json/.lib/.spec,
+    eslint.config.mjs, src/test-setup.ts) mirroring the `loyalty-referrals` neighbor. `nx test` green
+    (3 passing facade specs), `nx lint` green (0 errors; 4 pre-existing style warnings, non-blocking).
+  - **partner forgot-password** — AC2 met. Added the one genuinely-missing file this session:
+    `eslint.config.mjs` (mirrors the partner-features convention; selector prefix kept as `cleansia` to
+    match the lib's existing `cleansia-forgot-password` selector so lint stays green **without** touching
+    the production component — see deviation). Other infra (project.json with
+    `tags: ["scope:partner","type:feature"]`, jest.config.ts, tsconfig.*, test-setup.ts) already present
+    in-tree. `nx test` green (empty suite, passWithNoTests), `nx lint` green.
+  - **customer login + customer forgot-password** — already fully scaffolded + committed by T-0251/T-0198
+    (project.json tags + `test`/`lint` targets, jest.config.ts, tsconfig.spec.json, test-setup.ts,
+    colocated facade.spec). Reconciled with current state — **not re-broken, not re-touched**. Both
+    `nx test` + `nx lint` re-verified green. Customer-features libs intentionally have no per-lib
+    `eslint.config.mjs` (they inherit the root config); matched that convention.
+  - **AC4** — `nx graph` builds clean; both scaffolded libs are discovered by the project graph;
+    `@nx/enforce-module-boundaries` (run within `nx lint`) reports no new boundary violation.
+  - **Deviations / findings** (reported, NOT fixed — out of this lane): (1) partner `eslint.config.mjs`
+    uses prefix `cleansia` rather than the neighbors' `cleansia-partner`, because the existing
+    `ForgotPasswordComponent` selector is `cleansia-forgot-password`; using `cleansia-partner` would have
+    failed lint and renaming the selector is a production-source change AC3 forbids. (2) Pre-existing
+    empty `tags: []` on sibling libs `partner-features/login` and `admin-features/loyalty-referrals`
+    (AC1's "any sibling found with empty tags" — left for the T-0239 boundary-tags lane to avoid lane
+    collision). (3) Pre-existing `nx lint` failures in partner `profile` and `orders` (non-partner-prefixed
+    sub-component selectors) — unrelated lint debt, not in scope.
 
 ## Review
 <!-- reviewer write verdicts here; PM reconciles before advancing state -->

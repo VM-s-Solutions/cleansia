@@ -31,7 +31,8 @@ public class AdminAuthController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] AdminLogin.Command command)
     {
-        var result = await Mediator.Send(command);
+        var enriched = command with { TrustedDeviceToken = RefreshTokenFromCookieOrBody(command.TrustedDeviceToken ?? string.Empty) };
+        var result = await Mediator.Send(enriched);
 
         return HandleTokenIssuingResult(result);
     }

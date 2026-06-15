@@ -19,8 +19,7 @@ import { AdminPayPeriodOpsFacade } from './admin-pay-period-ops.facade';
 import { AdminPayPeriodOpsPanel } from './admin-pay-period-ops.models';
 
 @Component({
-  // eslint-disable-next-line @angular-eslint/component-selector
-  selector: 'admin-pay-period-ops',
+  selector: 'cleansia-admin-pay-period-ops',
   standalone: true,
   imports: [
     CommonModule,

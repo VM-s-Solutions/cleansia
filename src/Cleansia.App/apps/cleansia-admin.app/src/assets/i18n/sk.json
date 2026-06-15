@@ -2136,8 +2136,7 @@
     },
     "email": {
       "invalid_format": "Neplatný formát e-mailu",
-      "invalid_email": "Neplatná e-mailová adresa",
-      "sending_failed": "Nepodarilo sa odoslať e-mail"
+      "invalid_email": "Neplatná e-mailová adresa"
     },
     "employee": {
       "already_approved": "Zamestnanec už bol schválený",

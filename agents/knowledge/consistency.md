@@ -78,6 +78,19 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   `CreateMembershipSubscription` calls Stripe with no try/catch; ✗ `CreateOrder` has a Stripe
   try/catch but no idempotency guard.
 - **B9.** Map outputs with the **`entity.MapToDto()` extension**; never inline-project a DTO in a handler.
+- **B10a.** **A hard-delete guarded by an in-use check must let the DB be the final arbiter (S7a/S7b).**
+  An `if (await repo.IsInUseAsync(id)) return InUse;` followed by `repo.Remove(...)` is check-then-act:
+  a reference inserted between the check and the commit is still orphaned/cascaded. The durable shape is
+  (1) the catalog-reference FKs are **`OnDelete(DeleteBehavior.Restrict)`** (the owning-aggregate side
+  stays Cascade), and (2) the handler **flushes the `Remove` itself** —
+  `try { await repo.CommitAsync(ct); } catch (DbUpdateException ex) when (DbConstraintViolation.IsForeignKeyViolation(ex)) { return Failure(...InUse); }`
+  — because the `UnitOfWorkPipelineBehavior` commit runs AFTER the handler returns (S7b), so a try/catch
+  around a tracked delete only works if YOU flush. The `IsInUseAsync` pre-check stays for honest UX.
+  **Gotcha (real, T-0237):** an explicit `ON DELETE RESTRICT` raises SQLSTATE **`23001` (restrict_violation)**,
+  NOT `23503` — `DbConstraintViolation.IsForeignKeyViolation` maps BOTH. A reference class with **no FK**
+  (ids inside a JSON column, e.g. `RecurringBookingTemplate.SelectedServiceIds`) cannot be made
+  DB-arbitrated; cover it in `IsInUseAsync` (materialize + check in memory, `IgnoreQueryFilters` when the
+  referenced row is tenantless platform config) and accept the documented window.
 - **B10.** **Dispute terminal-state writes go through the guard** (ADR-0006 D4 / the T-0172 transition
   table). A direct `dispute.Close(...)` / `dispute.Escalate(...)` / `dispute.Resolve(...)` is allowed
   **only** from the sanctioned writers: `Dispute.UpdateStatus` (the guarded in-app router),

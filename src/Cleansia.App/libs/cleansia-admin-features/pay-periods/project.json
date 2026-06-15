@@ -2,7 +2,7 @@
   "name": "pay-periods",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/cleansia-admin-features/pay-periods/src",
-  "prefix": "lib",
+  "prefix": "cleansia",
   "projectType": "library",
   "tags": [],
   "targets": {

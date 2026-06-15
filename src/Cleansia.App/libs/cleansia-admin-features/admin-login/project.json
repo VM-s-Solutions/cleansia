@@ -2,7 +2,7 @@
   "name": "admin-login",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/cleansia-admin-features/admin-login/src",
-  "prefix": "lib",
+  "prefix": "cleansia",
   "projectType": "library",
   "tags": [],
   "targets": {

@@ -2136,8 +2136,7 @@
     },
     "email": {
       "invalid_format": "Invalid email format",
-      "invalid_email": "Invalid email address",
-      "sending_failed": "Failed to send email"
+      "invalid_email": "Invalid email address"
     },
     "employee": {
       "already_approved": "Employee has already been approved",

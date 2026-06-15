@@ -30,7 +30,7 @@ import {
 } from '../disputes-management/disputes-management.models';
 
 @Component({
-  selector: 'lib-dispute-detail',
+  selector: 'cleansia-admin-dispute-detail',
   standalone: true,
   imports: [
     CommonModule,

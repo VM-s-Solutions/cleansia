@@ -1,14 +1,15 @@
 import { isPlatformBrowser } from '@angular/common';
 import { inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { CustomerAuthService, CustomerClient } from '@cleansia/customer-services';
 import {
   ConsentType,
+  CustomerAuthService,
+  CustomerClient,
   GdprExportDto,
   GrantConsentCommand,
   UserConsentDto,
   WithdrawConsentCommand,
-} from '@cleansia/partner-services';
+} from '@cleansia/customer-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { takeUntil } from 'rxjs';

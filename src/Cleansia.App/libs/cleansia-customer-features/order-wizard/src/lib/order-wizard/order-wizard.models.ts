@@ -1,5 +1,4 @@
-import { AddressDto } from '@cleansia/customer-services';
-import { PackageListItem, PackageServiceSummary, PaymentType, ServiceListItem } from '@cleansia/partner-services';
+import { AddressDto, PackageListItem, PackageServiceSummary, PaymentType, ServiceListItem } from '@cleansia/customer-services';
 import { TranslateService } from '@ngx-translate/core';
 
 /**

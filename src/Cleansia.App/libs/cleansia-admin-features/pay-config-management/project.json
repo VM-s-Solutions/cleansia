@@ -2,7 +2,7 @@
   "name": "pay-config-management",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/cleansia-admin-features/pay-config-management/src",
-  "prefix": "lib",
+  "prefix": "cleansia",
   "projectType": "library",
   "tags": [],
   "targets": {}

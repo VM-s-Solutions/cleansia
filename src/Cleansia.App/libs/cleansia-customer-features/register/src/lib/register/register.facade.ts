@@ -5,9 +5,9 @@ import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   CustomerAuthService,
   CustomerClient,
+  JwtTokenResponse,
   ValidateReferralQuery,
 } from '@cleansia/customer-services';
-import { JwtTokenResponse } from '@cleansia/partner-services';
 import { loadCustomerUser } from '@cleansia/customer-stores';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { Store } from '@ngrx/store';

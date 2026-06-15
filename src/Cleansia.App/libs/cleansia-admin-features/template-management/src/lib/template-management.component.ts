@@ -15,7 +15,7 @@ interface TemplateTab {
 }
 
 @Component({
-  selector: 'lib-template-management',
+  selector: 'cleansia-admin-template-management',
   standalone: true,
   imports: [
     RouterOutlet,

@@ -43,6 +43,14 @@ public sealed class PerfIndexModelMetadataTests : IDisposable
             ix.Properties.Select(p => p.Name).SequenceEqual(columns));
     }
 
+    private static bool HasPartialIndexOn<TEntity>(CleansiaDbContext ctx, string filter, params string[] columns)
+    {
+        var entityType = ctx.Model.FindEntityType(typeof(TEntity))!;
+        return entityType.GetIndexes().Any(ix =>
+            ix.Properties.Select(p => p.Name).SequenceEqual(columns)
+            && ix.GetFilter() == filter);
+    }
+
     [Fact]
     public void Addresses_HasCompositeDedupIndex_CountryId_ZipCode_City_Street()
     {
@@ -56,6 +64,24 @@ public sealed class PerfIndexModelMetadataTests : IDisposable
     {
         using var ctx = NewContext();
         Assert.True(HasIndexOn<UserMembership>(ctx,
+            nameof(UserMembership.Status), nameof(UserMembership.CurrentPeriodEnd)));
+    }
+
+    [Fact]
+    public void UserMembership_HasRenewalReminderPartialIndex_ForRenewalArm()
+    {
+        using var ctx = NewContext();
+        Assert.True(HasPartialIndexOn<UserMembership>(ctx,
+            "\"RenewalReminderSentAt\" IS NULL",
+            nameof(UserMembership.Status), nameof(UserMembership.CurrentPeriodEnd)));
+    }
+
+    [Fact]
+    public void UserMembership_HasCancellationReminderPartialIndex_ForCancellationArm()
+    {
+        using var ctx = NewContext();
+        Assert.True(HasPartialIndexOn<UserMembership>(ctx,
+            "\"CancelledAt\" IS NOT NULL AND \"CancellationReminderSentAt\" IS NULL",
             nameof(UserMembership.Status), nameof(UserMembership.CurrentPeriodEnd)));
     }
 

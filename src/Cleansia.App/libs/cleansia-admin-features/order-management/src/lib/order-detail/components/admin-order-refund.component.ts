@@ -32,7 +32,7 @@ import {
 } from './admin-order-refund.models';
 
 @Component({
-  selector: 'admin-order-refund',
+  selector: 'cleansia-admin-order-refund',
   standalone: true,
   imports: [
     CommonModule,

@@ -1,8 +1,10 @@
-import baseConfig from '../../../eslint.config.mjs';
-import tseslint from 'typescript-eslint';
+import nx from '@nx/eslint-plugin';
+import baseConfig from '../../../eslint.base.config.mjs';
 
-export default tseslint.config(
+export default [
   ...baseConfig,
+  ...nx.configs['flat/angular'],
+  ...nx.configs['flat/angular-template'],
   {
     files: ['**/*.ts'],
     rules: {
@@ -10,7 +12,7 @@ export default tseslint.config(
         'error',
         {
           type: 'attribute',
-          prefix: 'lib',
+          prefix: 'cleansia',
           style: 'camelCase',
         },
       ],
@@ -18,7 +20,7 @@ export default tseslint.config(
         'error',
         {
           type: 'element',
-          prefix: 'lib',
+          prefix: 'cleansia',
           style: 'kebab-case',
         },
       ],
@@ -27,5 +29,5 @@ export default tseslint.config(
   {
     files: ['**/*.html'],
     rules: {},
-  }
-);
+  },
+];

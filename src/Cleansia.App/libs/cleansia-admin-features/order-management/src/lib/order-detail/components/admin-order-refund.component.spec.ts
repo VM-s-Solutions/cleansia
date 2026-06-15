@@ -1,7 +1,6 @@
 /* Test doubles below intentionally mirror the real shared-component selectors
    and the PrimeNG-compatible `onClick` output so the override-imports swap is
    binding-compatible under the strict template test env. */
-/* eslint-disable @angular-eslint/component-selector */
 /* eslint-disable @angular-eslint/component-class-suffix */
 /* eslint-disable @angular-eslint/no-output-on-prefix */
 import { Component, forwardRef, input, output, signal, Type } from '@angular/core';

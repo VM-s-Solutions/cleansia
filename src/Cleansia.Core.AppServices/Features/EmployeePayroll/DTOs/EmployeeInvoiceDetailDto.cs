@@ -20,6 +20,8 @@ public record EmployeeInvoiceDetailDto(
     string CurrencyCode,
     EmployeeInvoiceStatus Status,
     string? PdfBlobName,
+    bool PdfGenerationFailed,
+    string? PdfGenerationError,
     DateTime GeneratedAt,
     DateTime? ApprovedAt,
     string? ApprovedBy,

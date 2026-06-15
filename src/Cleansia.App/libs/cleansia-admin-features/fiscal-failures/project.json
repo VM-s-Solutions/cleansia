@@ -2,7 +2,7 @@
   "name": "fiscal-failures",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/cleansia-admin-features/fiscal-failures/src",
-  "prefix": "lib",
+  "prefix": "cleansia",
   "projectType": "library",
   "tags": [],
   "targets": {

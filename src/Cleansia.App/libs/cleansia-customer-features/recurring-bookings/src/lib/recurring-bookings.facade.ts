@@ -4,7 +4,9 @@ import {
   CreateRecurringBookingCommand,
   CustomerClient,
   DeleteRecurringBookingCommand,
+  PackageListItem,
   RecurringBookingTemplateDto,
+  ServiceListItem,
   SetRecurringBookingActiveCommand,
 } from '@cleansia/customer-services';
 import { SnackbarService } from '@cleansia/services';
@@ -15,7 +17,6 @@ import {
   selectCustomerPackages,
   selectCustomerServices,
 } from '@cleansia/customer-stores';
-import { PackageListItem, ServiceListItem } from '@cleansia/partner-services';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { toSignal } from '@angular/core/rxjs-interop';

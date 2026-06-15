@@ -374,7 +374,19 @@ public class HandlePaymentNotification
                 description: ChargebackDescription,
                 createdBy: ChargebackActor);
             dispute.LinkStripeDispute(stripeDisputeId, ChargebackActor);
-            dispute.Escalate(ChargebackActor);
+
+            // Route the terminal write through the same transition guard the in-app path obeys
+            // (CanTransitionTo) rather than forcing the edge via a bare Escalate. A freshly-built
+            // dispute is Pending and Pending→Escalated is legal, so the happy path is unchanged; a
+            // non-legal start state is rejected here instead of being silently overwritten.
+            if (!dispute.UpdateStatus(DisputeStatus.Escalated, ChargebackActor))
+            {
+                logger.LogWarning(
+                    "Chargeback {EventType} could not escalate a new dispute for order {OrderId} " +
+                    "(illegal {CurrentStatus} → Escalated); not persisting",
+                    stripeEvent.Type, order.Id, dispute.Status);
+                return BusinessResult.Success(stripeEvent.Id);
+            }
             disputeRepository.Add(dispute);
 
             logger.LogInformation("Created and linked chargeback dispute for order {OrderId}", order.Id);

@@ -1,11 +1,11 @@
 ---
 id: T-0262
 title: "Dead-code cleanup: remove unused BusinessErrorMessage.EmailNotSentError constant (zero consumers)"
-status: ready
+status: done
 size: S
 owner: pm
 created: 2026-06-14
-updated: 2026-06-14
+updated: 2026-06-15
 depends_on: []
 blocks: []
 stories: []
@@ -61,6 +61,36 @@ and skips the deliberation panel.
   skips the panel. **Lane BusinessErrorMessage + Lane locale-JSONs — serialize BEFORE T-0234** (6B), which
   adds a new key in the same `BusinessErrorMessage.cs` + 5 locale files (remove-then-add order is clean).
   Plan: `status/sprint-8.md` §3 Batch 6A.
+- 2026-06-14 — **review** (backend). Implemented as a pure deletion; no behavior change (dead-code
+  cleanup → no red→green TDD loop; the existing customer error-contract parity guard
+  `error-contract-parity.spec.ts` is the regression net and stays green).
+  - **AC1 (zero-consumer verified)** — repo-wide grep for `EmailNotSentError` and its value
+    `"email.sending_failed"` across `src/` (incl. `Cleansia.Tests`): the **only** source reference was
+    the declaration in `BusinessErrorMessage.cs:35`. No handler/validator/test/TS consumer. All other
+    hits are in `agents/` docs/tickets/ADRs/audits (not consumers). Building
+    `Cleansia.Core.AppServices.csproj` after deletion succeeded (0 warn / 0 err), proving no
+    compile-time consumer.
+  - **AC2 (removed)** — constant removed (pure single-line deletion; `// Email` header kept because
+    `InvalidEmailFormat` remains). `Cleansia.Core.AppServices` builds clean.
+  - **AC3 (i18n parity)** — the constant maps to the frontend `errors.*` namespace (admin/partner resolve
+    backend codes under `errors.<code>`; e.g. admin `currency-management.models.ts`). The orphaned key
+    `errors.email.sending_failed` existed **only in admin.app** (all 5 locales) → removed from
+    en/cs/sk/uk/ru. partner.app and customer.app had **no** `errors.email.sending_failed`. All 15
+    locale JSONs re-validated as parseable. Customer parity guard `error-contract-parity.spec.ts`:
+    **5/5 pass** post-change.
+  - **Out-of-scope note (not touched, reported):** an `api.email.sending_failed` key remains in
+    admin.app (5 locales) and partner.app (5 locales). It is a different namespace (`api.*`, the shared
+    `http-error.interceptor.ts` customer-surface resolver), **not** the `errors.*` key this constant
+    mapped to, and is outside this ticket's `errors.email.*` scope. With the backend constant gone it is
+    now also vestigial — candidate for a separate follow-up cleanup; left untouched to keep this a
+    surgical, scope-bounded deletion.
+  - **Verification achieved:** `dotnet build Cleansia.Core.AppServices.csproj` clean; customer
+    error-contract parity Jest spec 5/5 green; all 15 i18n JSONs parse. Full
+    `dotnet test src/Cleansia.Tests` shows 6 **pre-existing, unrelated** failures from concurrent lanes
+    in this shared tree (`CancellationFeeRateBoundaryTests` ×5 — cancellation-fee math;
+    `EmailServiceBoundaryClassificationTests` ×1 — SendGrid failure-classification metrics). Neither
+    references the removed constant; `git diff --stat` confirms those test/source files are other lanes'
+    uncommitted work, not mine. The orchestrator runs the authoritative clean suite.
 
 ## Review
 <!-- reviewer write verdicts here; PM reconciles before advancing state -->

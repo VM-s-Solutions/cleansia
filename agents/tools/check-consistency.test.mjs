@@ -95,7 +95,11 @@ public class H
     assert.equal(r.b10.length, 0, `expected 0 B10, got: ${r.out}`);
 });
 
-test("allows HandleChargeback (sanctioned webhook creator)", () => {
+// HandleChargeback no longer gets a direct-call exception: it routes its new dispute's escalation
+// through dispute.UpdateStatus(Escalated) (the guard), so a *direct* Escalate inside it is now a
+// genuine B10 violation. This pins that the funnel is enforced going forward (it regresses if anyone
+// re-introduces a bare dispute.Escalate in the chargeback creator).
+test("flags a direct dispute.Escalate inside HandleChargeback (no longer allowlisted)", () => {
     const r = run({
         code: `namespace X;
 public class H
@@ -103,6 +107,23 @@ public class H
     private void HandleChargeback(Dispute dispute)
     {
         dispute.Escalate("a");
+    }
+}`,
+    });
+    assert.equal(r.b10.length, 1, `expected 1 B10, got: ${r.out}`);
+    assert.equal(r.code, 1, "checker must exit 1 on a violation");
+});
+
+// The guarded funnel the creator now uses is allowed: dispute.UpdateStatus(...) is not a
+// Close/Escalate/Resolve call, so HandleChargeback routing through it produces no B10.
+test("allows HandleChargeback routing through dispute.UpdateStatus (the guarded funnel)", () => {
+    const r = run({
+        code: `namespace X;
+public class H
+{
+    private void HandleChargeback(Dispute dispute)
+    {
+        dispute.UpdateStatus(DisputeStatus.Escalated, "a");
     }
 }`,
     });

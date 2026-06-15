@@ -23,8 +23,7 @@ import { AdminPayrollOpsFacade } from './admin-payroll-ops.facade';
 import { AdminPayrollOpsPanel } from './admin-payroll-ops.models';
 
 @Component({
-  // eslint-disable-next-line @angular-eslint/component-selector
-  selector: 'admin-payroll-ops',
+  selector: 'cleansia-admin-payroll-ops',
   standalone: true,
   imports: [
     CommonModule,

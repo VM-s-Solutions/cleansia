@@ -17,9 +17,12 @@ public class CartPackageItemEntityConfiguration : BaseEntityConfiguration<CartPa
             .HasForeignKey(cartItem => cartItem.CartId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // Restrict (not Cascade) so deleting a Package that sits in a live customer cart is rejected at
+        // the database rather than silently orphaning the cart line; the admin in-use guard maps the
+        // resulting restrict violation to package.in_use. Cart -> CartPackageItem stays Cascade.
         builder.HasOne(cartItem => cartItem.Package)
             .WithMany()
             .HasForeignKey(cartItem => cartItem.PackageId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -3,6 +3,9 @@ package cz.cleansia.customer.features.recurring
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.network.ApiResult
+import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.core.catalog.CatalogRepository
 import cz.cleansia.customer.core.data.AddressRepository
 import cz.cleansia.customer.core.orders.OrderRepository
@@ -45,6 +48,7 @@ class CreateRecurringViewModel @Inject constructor(
     private val orderRepo: OrderRepository,
     private val catalogRepo: CatalogRepository,
     private val addressRepo: AddressRepository,
+    private val snackbar: SnackbarController,
 ) : ViewModel() {
 
     /** Optional source order id for Path B pre-fill. Null → Path A blank slate. */
@@ -63,7 +67,11 @@ class CreateRecurringViewModel @Inject constructor(
     init {
         // Catalog + addresses are needed regardless of path. Refresh once on
         // entry; safe no-op if already loaded.
-        viewModelScope.launch { catalogRepo.refresh() }
+        viewModelScope.launch {
+            catalogRepo.refresh().onError { error ->
+                if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+            }
+        }
         // Default the savedAddressId to the user's default address so Path B
         // and Path A both start with a sensible pick.
         viewModelScope.launch {
@@ -144,7 +152,7 @@ class CreateRecurringViewModel @Inject constructor(
             _submitting.value = true
             try {
                 val result = recurringRepo.create(request)
-                _submitOutcome.value = if (result != null) SubmitOutcome.Success else SubmitOutcome.Failed
+                _submitOutcome.value = if (result is ApiResult.Success) SubmitOutcome.Success else SubmitOutcome.Failed
             } finally {
                 _submitting.value = false
             }
@@ -157,7 +165,10 @@ class CreateRecurringViewModel @Inject constructor(
 
     private fun prefillFromOrder(orderId: String) {
         viewModelScope.launch {
-            val order = orderRepo.getById(orderId) ?: return@launch
+            val order = orderRepo.getById(orderId)
+                .onError { error -> if (error !is ApiError.Network) snackbar.showError(error.getUserMessage()) }
+                .getOrNull()
+                ?: return@launch
             val timeOfDay = order.cleaningDateTime?.let { iso ->
                 runCatching {
                     val instant = Instant.parse(iso)

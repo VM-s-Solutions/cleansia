@@ -84,7 +84,9 @@ fun PreferredCleanerPicker(
     // Fetch only once Plus is confirmed — saves a round trip for non-Plus users.
     LaunchedEffect(isPlus) {
         if (isPlus && !loaded) {
-            cleaners = orders.getMyServingCleaners()
+            // Silent on failure — the picker just stays empty and booking
+            // proceeds without a preference (background eligibility fetch).
+            cleaners = orders.getMyServingCleaners().getOrNull().orEmpty()
             loaded = true
         }
     }

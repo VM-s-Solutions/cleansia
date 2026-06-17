@@ -192,11 +192,10 @@ fun MainShell(
     }
 
     // Warm the address cache from the server in parallel with the profile fetch.
-    // The repo isn't owned by a VM at this scope; the holder VM exposes it.
-    // The call is a safe no-op for guests.
-    val addressRepo = shellViewModel.addressRepository
+    // The VM surfaces a snackbar on HTTP failure; guests and connectivity
+    // failures stay silent. Safe no-op for guests.
     LaunchedEffect(Unit) {
-        addressRepo.refreshFromServer()
+        shellViewModel.refreshAddresses()
     }
 
     // Warm the services/packages catalog so opening the booking sheet feels instant.
@@ -204,7 +203,7 @@ fun MainShell(
     val catalogRepo = shellViewModel.catalogRepository
     LaunchedEffect(Unit) {
         if (!catalogRepo.loaded.value) {
-            catalogRepo.refresh()
+            shellViewModel.refreshCatalog()
         }
     }
 

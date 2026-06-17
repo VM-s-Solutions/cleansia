@@ -3,6 +3,7 @@ package cz.cleansia.customer.features.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.customer.core.settings.AppSettingsRepository
+import cz.cleansia.core.network.ApiError
 import cz.cleansia.customer.core.user.CurrentUser
 import cz.cleansia.customer.core.user.UserRepository
 import cz.cleansia.customer.ui.state.ActionState
@@ -68,20 +69,22 @@ class ProfileViewModel @Inject constructor(
         if (_saveState.value is ActionState.Submitting) return
         _saveState.value = ActionState.Submitting
         viewModelScope.launch {
-            val error = userRepository.updateCurrentUser(
+            val result = userRepository.updateCurrentUser(
                 firstName = firstName.trim(),
                 lastName = lastName.trim(),
                 phoneNumber = phoneNumber?.trim(),
                 birthDate = birthDate?.trim(),
                 languageCode = languageCode,
             )
-            if (error == null) {
-                _saveState.value = ActionState.Idle
-                onSaved()
-            } else {
-                _saveState.value = ActionState.Error(error)
-                snackbar.showError(error)
-            }
+            result
+                .onSuccess {
+                    _saveState.value = ActionState.Idle
+                    onSaved()
+                }
+                .onError { error ->
+                    _saveState.value = ActionState.Error(error.getUserMessage())
+                    if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+                }
         }
     }
 
@@ -103,21 +106,23 @@ class ProfileViewModel @Inject constructor(
         val languageCode = if (deviceLang in SUPPORTED_LANGUAGES) deviceLang else "en"
         _saveState.value = ActionState.Submitting
         viewModelScope.launch {
-            val error = userRepository.updateCurrentUser(
+            val result = userRepository.updateCurrentUser(
                 firstName = user.firstName,
                 lastName = user.lastName,
                 phoneNumber = phoneNumber.trim(),
                 birthDate = birthDate?.trim(),
                 languageCode = languageCode,
             )
-            if (error == null) {
-                _saveState.value = ActionState.Idle
-                settings.markOnboardingSeen(user.id)
-                onCompleted()
-            } else {
-                _saveState.value = ActionState.Error(error)
-                snackbar.showError(error)
-            }
+            result
+                .onSuccess {
+                    _saveState.value = ActionState.Idle
+                    settings.markOnboardingSeen(user.id)
+                    onCompleted()
+                }
+                .onError { error ->
+                    _saveState.value = ActionState.Error(error.getUserMessage())
+                    if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+                }
         }
     }
 

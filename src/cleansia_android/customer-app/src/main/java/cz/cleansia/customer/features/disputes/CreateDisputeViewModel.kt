@@ -7,6 +7,9 @@ import androidx.lifecycle.viewModelScope
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.disputes.DisputeRepository
 import cz.cleansia.customer.ui.state.ActionState
+import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.network.ApiResult
+import cz.cleansia.core.snackbar.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -35,6 +38,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class CreateDisputeViewModel @Inject constructor(
     private val disputeRepository: DisputeRepository,
+    private val snackbar: SnackbarController,
     savedStateHandle: SavedStateHandle,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
@@ -59,13 +63,16 @@ class CreateDisputeViewModel @Inject constructor(
 
         _submitState.value = ActionState.Submitting
         viewModelScope.launch {
-            val disputeId = disputeRepository.create(id, reason, description.trim())
-            if (disputeId != null) {
-                _submitState.value = ActionState.Idle
-                disputeRepository.refresh()
-                _createdDisputeId.emit(disputeId)
-            } else {
-                _submitState.value = ActionState.Error(appContext.getString(R.string.dispute_create_retry_hint))
+            when (val result = disputeRepository.create(id, reason, description.trim())) {
+                is ApiResult.Success -> {
+                    _submitState.value = ActionState.Idle
+                    disputeRepository.refresh()
+                    _createdDisputeId.emit(result.data)
+                }
+                is ApiResult.Error -> {
+                    if (result.error !is ApiError.Network) snackbar.showError(result.error.getUserMessage())
+                    _submitState.value = ActionState.Error(appContext.getString(R.string.dispute_create_retry_hint))
+                }
             }
         }
     }

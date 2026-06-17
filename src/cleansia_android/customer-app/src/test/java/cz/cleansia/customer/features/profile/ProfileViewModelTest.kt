@@ -1,5 +1,7 @@
 package cz.cleansia.customer.features.profile
 
+import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.core.settings.AppSettingsRepository
 import cz.cleansia.customer.core.user.CurrentUser
@@ -62,7 +64,7 @@ class ProfileViewModelTest {
 
     @Test
     fun `refresh toggles refreshState Submitting then Idle`() = runTest {
-        coEvery { userRepository.refreshCurrentUser() } returns null
+        coEvery { userRepository.refreshCurrentUser() } returns ApiResult.Success(Unit)
 
         val vm = viewModel()
         vm.refresh()
@@ -77,7 +79,7 @@ class ProfileViewModelTest {
         var calls = 0
         coEvery { userRepository.refreshCurrentUser() } coAnswers {
             calls++
-            null
+            ApiResult.Success(Unit)
         }
 
         val vm = viewModel()
@@ -92,7 +94,7 @@ class ProfileViewModelTest {
     fun `saveProfile success returns to Idle and calls onSaved`() = runTest {
         coEvery {
             userRepository.updateCurrentUser(any(), any(), any(), any(), any())
-        } returns null
+        } returns ApiResult.Success(Unit)
 
         var saved = false
         val vm = viewModel()
@@ -107,7 +109,7 @@ class ProfileViewModelTest {
     fun `saveProfile failure surfaces ActionState Error, snackbars, no onSaved`() = runTest {
         coEvery {
             userRepository.updateCurrentUser(any(), any(), any(), any(), any())
-        } returns "save failed"
+        } returns ApiResult.Error(ApiError.Server(statusCode = 500, message = "save failed"))
 
         var saved = false
         val vm = viewModel()
@@ -121,13 +123,27 @@ class ProfileViewModelTest {
     }
 
     @Test
+    fun `saveProfile network failure sets ActionState Error but stays silent`() = runTest {
+        coEvery {
+            userRepository.updateCurrentUser(any(), any(), any(), any(), any())
+        } returns ApiResult.Error(ApiError.Network("offline"))
+
+        val vm = viewModel()
+        vm.saveProfile("Ann", "Brown", null, null, "en") {}
+        advanceUntilIdle()
+
+        assertTrue(vm.saveState.value is ActionState.Error)
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    @Test
     fun `saveProfile is re-entry guarded`() = runTest {
         var calls = 0
         coEvery {
             userRepository.updateCurrentUser(any(), any(), any(), any(), any())
         } coAnswers {
             calls++
-            null
+            ApiResult.Success(Unit)
         }
 
         val vm = viewModel()
@@ -143,7 +159,7 @@ class ProfileViewModelTest {
         currentUser.value = sampleUser
         coEvery {
             userRepository.updateCurrentUser(any(), any(), any(), any(), any())
-        } returns null
+        } returns ApiResult.Success(Unit)
 
         var completed = false
         val vm = viewModel()

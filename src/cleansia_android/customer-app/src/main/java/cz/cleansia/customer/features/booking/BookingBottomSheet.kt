@@ -56,6 +56,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
+import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.theme.Poppins
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -306,7 +307,10 @@ private fun SheetContent(
         if (target == lastRebookedFrom) return@LaunchedEffect
         lastRebookedFrom = target
 
-        val order = orderRepo.getById(target) ?: return@LaunchedEffect
+        val order = orderRepo.getById(target)
+            .onError { error -> if (error !is ApiError.Network) snackbarController.showError(error.getUserMessage()) }
+            .getOrNull()
+            ?: return@LaunchedEffect
 
         // Match the inline address against any saved address by street + city + zip
         // (case-insensitive) so the saved-address UI stays in selected state.

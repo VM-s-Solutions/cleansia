@@ -3,6 +3,8 @@ package cz.cleansia.customer.features.orders.photos
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.core.orders.OrderPhotosResponse
 import cz.cleansia.customer.core.orders.OrderRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,13 +20,14 @@ import kotlinx.coroutines.launch
  *
  * Photos are fetched fresh every time the screen opens — the Azure SAS URLs
  * embedded in `blobUrl` expire after 1h, so caching them in the repository
- * would risk serving stale signed URLs. [OrderRepository.getPhotos] already
- * surfaces a snackbar on failure, so we just translate a null result into
- * [UiState.Error] and let the screen render a retry affordance.
+ * would risk serving stale signed URLs. On failure we surface the snackbar
+ * here (skipping [ApiError.Network] — NetworkErrorInterceptor owns the infra
+ * toast), translate to [UiState.Error] and let the screen render a retry.
  */
 @HiltViewModel
 class OrderPhotosViewModel @Inject constructor(
     private val orderRepository: OrderRepository,
+    private val snackbar: SnackbarController,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -54,6 +57,8 @@ class OrderPhotosViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = UiState.Loading
             val resp = orderRepository.getPhotos(id)
+                .onError { error -> if (error !is ApiError.Network) snackbar.showError(error.getUserMessage()) }
+                .getOrNull()
             _state.value = if (resp != null) UiState.Loaded(resp) else UiState.Error
         }
     }

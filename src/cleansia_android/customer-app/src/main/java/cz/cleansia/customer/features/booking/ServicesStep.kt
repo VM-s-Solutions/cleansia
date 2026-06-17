@@ -43,7 +43,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,7 +66,6 @@ import cz.cleansia.customer.core.catalog.PackageListItem
 import cz.cleansia.customer.core.catalog.ServiceListItem
 import cz.cleansia.customer.ui.theme.selectionTint
 import cz.cleansia.customer.ui.theme.Sky600
-import kotlinx.coroutines.launch
 
 // Local palette for backend-driven categories. Keyed by slug so backend can add
 // new categories without code changes; unknown slugs fall back to DefaultPalette.
@@ -136,7 +134,6 @@ fun ServicesStep(
     viewModel: ServicesStepViewModel = androidx.hilt.navigation.compose.hiltViewModel(),
 ) {
     val catalogRepo = viewModel.catalogRepository
-    val scope = rememberCoroutineScope()
 
     val services by catalogRepo.services.collectAsState()
     val packages by catalogRepo.packages.collectAsState()
@@ -165,9 +162,9 @@ fun ServicesStep(
 
     when {
         loading && !loaded -> LoadingState()
-        !loaded -> ErrorState(onRetry = { scope.launch { catalogRepo.refresh() } })
+        !loaded -> ErrorState(onRetry = viewModel::refreshCatalog)
         services.isEmpty() && packages.isEmpty() -> EmptyCatalogState(
-            onRetry = { scope.launch { catalogRepo.refresh() } },
+            onRetry = viewModel::refreshCatalog,
         )
         else -> CatalogContent(
             state = state,

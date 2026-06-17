@@ -142,7 +142,7 @@ fun HomeTab(
     val catalogRepo = viewModel.catalogRepository
     val packages by catalogRepo.packages.collectAsState(initial = emptyList())
     androidx.compose.runtime.LaunchedEffect(Unit) {
-        if (packages.isEmpty()) catalogRepo.refresh()
+        if (packages.isEmpty()) viewModel.refreshCatalog()
     }
     // Top-3 packages by displayOrder (proxy for popularity) — falls back to
     // first 3 if displayOrder is null/uniform across the catalog.

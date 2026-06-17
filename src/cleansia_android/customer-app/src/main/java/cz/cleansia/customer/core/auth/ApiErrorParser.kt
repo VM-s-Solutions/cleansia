@@ -1,6 +1,7 @@
 package cz.cleansia.customer.core.auth
 
 import android.content.Context
+import cz.cleansia.core.network.ApiError
 import cz.cleansia.customer.R
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -48,6 +49,23 @@ object ApiErrorParser {
         val status: Int? = null,
         val errors: Map<String, JsonElement>? = null,
     )
+
+    fun parseToUserMessage(context: Context, error: ApiError): String = when (error) {
+        is ApiError.BadRequest -> {
+            val firstError = error.errorKey ?: error.validationErrors?.values?.firstOrNull()?.firstOrNull()
+            firstError?.let { resolveStringByErrorKey(context, it) ?: it.takeIf { k -> k.isNotBlank() } }
+                ?: error.message.takeIf { it.isNotBlank() }
+                ?: context.getString(R.string.error_generic_unknown)
+        }
+        is ApiError.Unauthorized -> context.getString(R.string.error_generic_unauthorized)
+        is ApiError.Server -> error.message.takeIf { it.isNotBlank() }
+            ?: context.getString(R.string.error_generic_server)
+        is ApiError.Network -> context.getString(R.string.error_generic_network)
+        is ApiError.NotFound -> error.message.takeIf { it.isNotBlank() }
+            ?: context.getString(R.string.error_generic_unknown)
+        is ApiError.Unknown -> error.message.takeIf { it.isNotBlank() }
+            ?: context.getString(R.string.error_generic_unknown)
+    }
 
     fun parseToUserMessage(context: Context, body: ResponseBody?, httpCode: Int): String {
         val raw = runCatching { body?.string() }.getOrNull()

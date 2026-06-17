@@ -9,10 +9,11 @@ import androidx.datastore.preferences.preferencesDataStore
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.auth.ApiErrorParser
 import cz.cleansia.core.auth.TokenStore
+import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.networkCall
 import cz.cleansia.customer.core.user.SavedAddressApi
 import cz.cleansia.customer.core.user.SetDefaultSavedAddressCommand
-import cz.cleansia.core.snackbar.SnackbarController
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -36,15 +37,16 @@ private val Context.addressStore by preferencesDataStore(name = "user_addresses"
  *    [refreshFromServer] (call on sign-in / app resume).
  *  - Guest users (no token) → DataStore is the only store; no network calls.
  *
- * Mutation methods return `null` on success or a localized error message on
- * failure. Failures also push a snackbar and leave the local cache untouched
- * so the UI stays consistent with the server.
+ * Mutation methods return [ApiResult.Success] once the local cache reflects the
+ * change and [ApiResult.Error] carrying the parsed message on failure (the
+ * cache is left untouched so the UI stays consistent with the server). The
+ * consuming ViewModel surfaces the snackbar; an [ApiError.Network] failure
+ * stays silent (NetworkErrorInterceptor owns the infra toast).
  */
 @Singleton
 class AddressRepository @Inject constructor(
     private val api: SavedAddressApi,
     private val tokenStore: TokenStore,
-    private val snackbar: SnackbarController,
     @ApplicationContext private val context: Context,
 ) : cz.cleansia.core.auth.SessionScopedCache {
 
@@ -67,25 +69,20 @@ class AddressRepository @Inject constructor(
 
     /**
      * Pulls the signed-in user's saved addresses from the backend and overwrites
-     * the local cache. No-op (returns null) when the user is unauthenticated.
-     *
-     * @return null on success, localized error string on failure.
+     * the local cache. No-op ([ApiResult.Success]) when the user is unauthenticated.
      */
-    suspend fun refreshFromServer(): String? {
-        if (tokenStore.current() == null) return null
+    suspend fun refreshFromServer(): ApiResult<Unit> {
+        if (tokenStore.current() == null) return ApiResult.Success(Unit)
 
-        val response = networkCall { api.getMine() }
-            ?: return context.getString(R.string.error_generic_network)
+        val response = networkCall { api.getMine() } ?: return networkError()
 
         if (!response.isSuccessful) {
-            val msg = ApiErrorParser.parseToUserMessage(context, response.errorBody(), response.code())
-            snackbar.showError(msg)
-            return msg
+            return httpError(response.errorBody(), response.code())
         }
 
         val mapped = response.body().orEmpty().map { it.toUserAddress() }
         writeCache(mapped)
-        return null
+        return ApiResult.Success(Unit)
     }
 
     /**
@@ -99,12 +96,12 @@ class AddressRepository @Inject constructor(
      * address belonging to the user — we trigger a full [refreshFromServer] to
      * pick that up rather than mirroring the invariant in two places.
      */
-    suspend fun upsert(address: UserAddress, setAsDefault: Boolean = address.isDefault): String? {
+    suspend fun upsert(address: UserAddress, setAsDefault: Boolean = address.isDefault): ApiResult<Unit> {
         val isGuest = tokenStore.current() == null
 
         if (isGuest) {
             writeLocalUpsert(address)
-            return null
+            return ApiResult.Success(Unit)
         }
 
         return if (address.serverId == null) {
@@ -114,23 +111,16 @@ class AddressRepository @Inject constructor(
         }
     }
 
-    private suspend fun createOnServer(address: UserAddress, setAsDefault: Boolean): String? {
+    private suspend fun createOnServer(address: UserAddress, setAsDefault: Boolean): ApiResult<Unit> {
         // Wave 1 Finding 2 — refuse to submit without coordinates. The backend
         // expects non-nullable lat/lng and would otherwise bind nulls to 0.0.
         // Surface the same "move pin" copy the picker uses; mirrors how the
         // booking flow validates required fields.
-        val command = address.toAddCommand(setAsDefault) ?: run {
-            val msg = context.getString(R.string.address_picker_move_pin)
-            snackbar.showError(msg)
-            return msg
-        }
-        val response = networkCall { api.add(command) }
-            ?: return context.getString(R.string.error_generic_network)
+        val command = address.toAddCommand(setAsDefault) ?: return movePinError()
+        val response = networkCall { api.add(command) } ?: return networkError()
 
         if (!response.isSuccessful) {
-            val msg = ApiErrorParser.parseToUserMessage(context, response.errorBody(), response.code())
-            snackbar.showError(msg)
-            return msg
+            return httpError(response.errorBody(), response.code())
         }
 
         val dto = response.body() ?: return refreshFromServer()
@@ -141,72 +131,60 @@ class AddressRepository @Inject constructor(
         } else {
             val mapped = dto.toUserAddress()
             mergeIntoCache(localIdToReplace = address.id, replacement = mapped)
-            null
+            ApiResult.Success(Unit)
         }
     }
 
-    private suspend fun updateOnServer(address: UserAddress): String? {
-        val serverId = address.serverId ?: return null
+    private suspend fun updateOnServer(address: UserAddress): ApiResult<Unit> {
+        val serverId = address.serverId ?: return ApiResult.Success(Unit)
         // Same coordinate guard as createOnServer — see Wave 1 Finding 2.
-        val command = address.toUpdateCommand(serverId) ?: run {
-            val msg = context.getString(R.string.address_picker_move_pin)
-            snackbar.showError(msg)
-            return msg
-        }
-        val response = networkCall { api.update(command) }
-            ?: return context.getString(R.string.error_generic_network)
+        val command = address.toUpdateCommand(serverId) ?: return movePinError()
+        val response = networkCall { api.update(command) } ?: return networkError()
 
         if (!response.isSuccessful) {
-            val msg = ApiErrorParser.parseToUserMessage(context, response.errorBody(), response.code())
-            snackbar.showError(msg)
-            return msg
+            return httpError(response.errorBody(), response.code())
         }
 
         val mapped = response.body()?.toUserAddress() ?: address
         mergeIntoCache(localIdToReplace = address.id, replacement = mapped)
-        return null
+        return ApiResult.Success(Unit)
     }
 
-    suspend fun delete(id: String): String? {
+    suspend fun delete(id: String): ApiResult<Unit> {
         val cached = currentList().firstOrNull { it.id == id }
         val isGuest = tokenStore.current() == null
         val serverId = cached?.serverId
 
         if (isGuest || serverId == null) {
             writeLocalDelete(id)
-            return null
+            return ApiResult.Success(Unit)
         }
 
-        val response = networkCall { api.delete(serverId) }
-            ?: return context.getString(R.string.error_generic_network)
+        val response = networkCall { api.delete(serverId) } ?: return networkError()
 
         if (!response.isSuccessful) {
-            val msg = ApiErrorParser.parseToUserMessage(context, response.errorBody(), response.code())
-            snackbar.showError(msg)
-            return msg
+            return httpError(response.errorBody(), response.code())
         }
 
         writeLocalDelete(id)
-        return null
+        return ApiResult.Success(Unit)
     }
 
-    suspend fun setDefault(id: String): String? {
+    suspend fun setDefault(id: String): ApiResult<Unit> {
         val cached = currentList().firstOrNull { it.id == id }
         val isGuest = tokenStore.current() == null
         val serverId = cached?.serverId
 
         if (isGuest || serverId == null) {
             writeLocalSetDefault(id)
-            return null
+            return ApiResult.Success(Unit)
         }
 
         val response = networkCall { api.setDefault(SetDefaultSavedAddressCommand(savedAddressId = serverId)) }
-            ?: return context.getString(R.string.error_generic_network)
+            ?: return networkError()
 
         if (!response.isSuccessful) {
-            val msg = ApiErrorParser.parseToUserMessage(context, response.errorBody(), response.code())
-            snackbar.showError(msg)
-            return msg
+            return httpError(response.errorBody(), response.code())
         }
 
         // The server demoted every other peer — refetch so the cache picks that
@@ -220,35 +198,28 @@ class AddressRepository @Inject constructor(
         }
     }
 
-    suspend fun rename(id: String, newLabel: String): String? {
-        val cached = currentList().firstOrNull { it.id == id } ?: return null
+    suspend fun rename(id: String, newLabel: String): ApiResult<Unit> {
+        val cached = currentList().firstOrNull { it.id == id } ?: return ApiResult.Success(Unit)
         val isGuest = tokenStore.current() == null
         val serverId = cached.serverId
 
         if (isGuest || serverId == null) {
             writeLocalRename(id, newLabel)
-            return null
+            return ApiResult.Success(Unit)
         }
 
         val renamed = cached.copy(label = newLabel)
         // Coordinate guard — server rename round-trips the full update DTO.
-        val command = renamed.toUpdateCommand(serverId) ?: run {
-            val msg = context.getString(R.string.address_picker_move_pin)
-            snackbar.showError(msg)
-            return msg
-        }
-        val response = networkCall { api.update(command) }
-            ?: return context.getString(R.string.error_generic_network)
+        val command = renamed.toUpdateCommand(serverId) ?: return movePinError()
+        val response = networkCall { api.update(command) } ?: return networkError()
 
         if (!response.isSuccessful) {
-            val msg = ApiErrorParser.parseToUserMessage(context, response.errorBody(), response.code())
-            snackbar.showError(msg)
-            return msg
+            return httpError(response.errorBody(), response.code())
         }
 
         val mapped = response.body()?.toUserAddress() ?: renamed
         mergeIntoCache(localIdToReplace = id, replacement = mapped)
-        return null
+        return ApiResult.Success(Unit)
     }
 
     /** Wipe the local cache — called on sign-out so the next user doesn't inherit this one's addresses. */
@@ -257,6 +228,29 @@ class AddressRepository @Inject constructor(
             prefs.remove(Keys.ADDRESSES)
             prefs.remove(Keys.SELECTED_ID)
         }
+    }
+
+    /* ───────── error builders ───────── */
+
+    private fun networkError(): ApiResult<Unit> =
+        ApiResult.Error(ApiError.Network(context.getString(R.string.error_generic_network)))
+
+    private fun movePinError(): ApiResult<Unit> =
+        ApiResult.Error(ApiError.BadRequest(context.getString(R.string.address_picker_move_pin)))
+
+    private fun httpError(errorBody: okhttp3.ResponseBody?, httpCode: Int): ApiResult<Unit> {
+        // Carry the message [ApiErrorParser] already resolved from the body so
+        // the surfacing ViewModel shows the identical string. The 401 case folds
+        // into the message-carrying [ApiError.Unknown] alongside the generic
+        // fallback rather than the messageless Unauthorized object.
+        val message = ApiErrorParser.parseToUserMessage(context, errorBody, httpCode)
+        val error = when (httpCode) {
+            404 -> ApiError.NotFound(message)
+            400 -> ApiError.BadRequest(message)
+            in 500..599 -> ApiError.Server(statusCode = httpCode, message = message)
+            else -> ApiError.Unknown(message)
+        }
+        return ApiResult.Error(error)
     }
 
     /* ───────── private cache helpers ───────── */

@@ -5,8 +5,9 @@ import cz.cleansia.core.auth.AuthAuthenticator
 import android.content.Context
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.auth.ApiErrorParser
+import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.networkCall
-import cz.cleansia.core.snackbar.SnackbarController
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -28,13 +29,14 @@ import kotlinx.coroutines.flow.asStateFlow
  * OrderRepository / DisputeRepository hooks.
  *
  * Error model mirrors [cz.cleansia.customer.core.orders.OrderRepository]:
- * snackbar-shown failure on [refresh]/[loadActivity], silent return on
- * any background-friendly variants we add later.
+ * foreground operations return [ApiResult.Success] on success and
+ * [ApiResult.Error] carrying the parsed message on failure. The consuming
+ * ViewModel surfaces the snackbar; an [ApiError.Network] failure stays
+ * silent (NetworkErrorInterceptor owns the infra toast).
  */
 @Singleton
 class LoyaltyRepository @Inject constructor(
     private val api: LoyaltyApi,
-    private val snackbar: SnackbarController,
     @ApplicationContext private val appContext: Context,
 ) : cz.cleansia.core.auth.SessionScopedCache {
     private val _account = MutableStateFlow<LoyaltyAccountDto?>(null)
@@ -52,20 +54,14 @@ class LoyaltyRepository @Inject constructor(
     /**
      * Fetch the account + tier ladder in a single screen-load pass. Shown by
      * MainShell on first composition (lazy-prefetch alongside catalog/orders).
-     *
-     * @return null on success, localized error message on failure (snackbar
-     *  surfaced automatically).
      */
-    suspend fun refresh(): String? {
-        if (_loading.value) return null
+    suspend fun refresh(): ApiResult<Unit> {
+        if (_loading.value) return ApiResult.Success(Unit)
         _loading.value = true
         try {
-            val accountResp = networkCall { api.getMy() }
-                ?: return appContext.getString(R.string.error_generic_network)
+            val accountResp = networkCall { api.getMy() } ?: return networkError()
             if (!accountResp.isSuccessful) {
-                val msg = ApiErrorParser.parseToUserMessage(appContext, accountResp.errorBody(), accountResp.code())
-                snackbar.showError(msg)
-                return msg
+                return httpError(accountResp.errorBody(), accountResp.code())
             }
             _account.value = accountResp.body()
 
@@ -78,7 +74,7 @@ class LoyaltyRepository @Inject constructor(
             }
 
             _loaded.value = true
-            return null
+            return ApiResult.Success(Unit)
         } finally {
             _loading.value = false
         }
@@ -86,16 +82,32 @@ class LoyaltyRepository @Inject constructor(
 
     /**
      * Fetch one page of activity. Returns the full response so the caller can
-     * paginate (offset/limit). Silent on failure beyond the snackbar.
+     * paginate (offset/limit).
      */
-    suspend fun loadActivity(offset: Int, limit: Int = 20): LoyaltyActivityResponseDto? {
-        val resp = networkCall { api.getActivity(offset = offset, limit = limit) } ?: return null
+    suspend fun loadActivity(offset: Int, limit: Int = 20): ApiResult<LoyaltyActivityResponseDto> {
+        val resp = networkCall { api.getActivity(offset = offset, limit = limit) } ?: return networkError()
         if (!resp.isSuccessful) {
-            val msg = ApiErrorParser.parseToUserMessage(appContext, resp.errorBody(), resp.code())
-            snackbar.showError(msg)
-            return null
+            return httpError(resp.errorBody(), resp.code())
         }
-        return resp.body()
+        return resp.body()?.let { ApiResult.Success(it) } ?: networkError()
+    }
+
+    private fun networkError(): ApiResult<Nothing> =
+        ApiResult.Error(ApiError.Network(appContext.getString(R.string.error_generic_network)))
+
+    private fun httpError(errorBody: okhttp3.ResponseBody?, httpCode: Int): ApiResult<Nothing> {
+        // Carry the message [ApiErrorParser] already resolved from the body so
+        // the surfacing ViewModel shows the identical string. The 401 object
+        // would drop that message, so it folds into the message-carrying
+        // [ApiError.Unknown] alongside the generic fallback.
+        val message = ApiErrorParser.parseToUserMessage(appContext, errorBody, httpCode)
+        val error = when (httpCode) {
+            404 -> ApiError.NotFound(message)
+            400 -> ApiError.BadRequest(message)
+            in 500..599 -> ApiError.Server(statusCode = httpCode, message = message)
+            else -> ApiError.Unknown(message)
+        }
+        return ApiResult.Error(error)
     }
 
     /** Wipe the in-memory cache — called on sign-out so the next user starts fresh. */

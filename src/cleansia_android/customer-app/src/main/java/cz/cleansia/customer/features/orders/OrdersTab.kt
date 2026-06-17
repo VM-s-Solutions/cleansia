@@ -62,6 +62,7 @@ import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderDateRange
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.customer.ui.format.orderStatusColor
+import cz.cleansia.core.network.ApiError
 import cz.cleansia.customer.core.orders.OrderListItemDto
 import cz.cleansia.customer.core.orders.OrderRepositoryEntryPoint
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
@@ -92,11 +93,11 @@ fun OrdersTab(
     // TODO(W3.3): refactor to VM injection — observed StateFlows from a
     // singleton; a small @HiltViewModel exposing OrderRepository would let
     // this drop the EntryPointAccessors detour.
-    val orderRepo = remember {
-        EntryPointAccessors
-            .fromApplication(context, OrderRepositoryEntryPoint::class.java)
-            .orderRepository()
+    val entryPoint = remember {
+        EntryPointAccessors.fromApplication(context, OrderRepositoryEntryPoint::class.java)
     }
+    val orderRepo = remember { entryPoint.orderRepository() }
+    val snackbar = remember { entryPoint.snackbarController() }
     val scope = rememberCoroutineScope()
 
     val orders by orderRepo.orders.collectAsState()
@@ -123,7 +124,13 @@ fun OrdersTab(
     }
 
     val pullState = rememberPullToRefreshState()
-    val refresh: () -> Unit = { scope.launch { orderRepo.refresh() } }
+    val refresh: () -> Unit = {
+        scope.launch {
+            orderRepo.refresh().onError { error ->
+                if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+            }
+        }
+    }
 
     // Safety-net auto-refresh on tab entry. The MainShell prefetch only fires
     // once per shell composition; if a booking is created between the initial
@@ -132,7 +139,11 @@ fun OrdersTab(
     // `loading` to avoid stacking parallel calls. Pull-to-refresh stays
     // available for explicit manual refreshes.
     LaunchedEffect(Unit) {
-        if (!orderRepo.loading.value) orderRepo.refresh()
+        if (!orderRepo.loading.value) {
+            orderRepo.refresh().onError { error ->
+                if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+            }
+        }
     }
 
     Column(

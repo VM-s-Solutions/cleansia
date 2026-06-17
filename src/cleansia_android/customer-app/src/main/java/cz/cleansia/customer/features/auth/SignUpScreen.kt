@@ -288,7 +288,7 @@ fun SignUpScreen(
                 if (normalized.isBlank()) {
                     ReferralCodeUiState.Idle
                 } else {
-                    val resp = referralRepo.validate(normalized)
+                    val resp = referralRepo.validate(normalized).getOrNull()
                     when {
                         resp == null -> ReferralCodeUiState.Invalid(null)
                         resp.isValid -> ReferralCodeUiState.Valid(resp.referrerFirstName)

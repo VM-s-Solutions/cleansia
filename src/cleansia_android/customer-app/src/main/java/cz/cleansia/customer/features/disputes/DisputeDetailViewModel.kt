@@ -7,6 +7,8 @@ import androidx.lifecycle.viewModelScope
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.disputes.DisputeDetailsDto
 import cz.cleansia.customer.core.disputes.DisputeRepository
+import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -73,8 +75,13 @@ class DisputeDetailViewModel @Inject constructor(
         }
         viewModelScope.launch {
             _state.value = UiState.Loading
-            val result = disputeRepository.getById(id)
-            _state.value = if (result != null) UiState.Loaded(result) else UiState.Error
+            when (val result = disputeRepository.getById(id)) {
+                is ApiResult.Success -> _state.value = UiState.Loaded(result.data)
+                is ApiResult.Error -> {
+                    if (result.error !is ApiError.Network) snackbar.showError(result.error.getUserMessage())
+                    _state.value = UiState.Error
+                }
+            }
         }
     }
 
@@ -91,9 +98,13 @@ class DisputeDetailViewModel @Inject constructor(
         if (trimmed.length !in 1..2000) return
         viewModelScope.launch {
             _sending.value = true
-            val ok = disputeRepository.addMessage(id, trimmed)
+            val result = disputeRepository.addMessage(id, trimmed)
             _sending.value = false
-            if (ok) load()
+            when (result) {
+                is ApiResult.Success -> load()
+                is ApiResult.Error ->
+                    if (result.error !is ApiError.Network) snackbar.showError(result.error.getUserMessage())
+            }
         }
     }
 
@@ -121,14 +132,17 @@ class DisputeDetailViewModel @Inject constructor(
         }
         viewModelScope.launch {
             _uploadingEvidence.value = true
-            val response = disputeRepository.uploadEvidence(id, bytes, fileName, mimeType)
+            val result = disputeRepository.uploadEvidence(id, bytes, fileName, mimeType)
             _uploadingEvidence.value = false
-            if (response != null) {
-                // Re-fetch detail to pick up the persisted evidence row. The
-                // returned DTO carries the SAS-signed blobUrl too, but going
-                // through load() also picks up any other thread changes that
-                // happened on the server side meanwhile.
-                load()
+            when (result) {
+                is ApiResult.Success ->
+                    // Re-fetch detail to pick up the persisted evidence row. The
+                    // returned DTO carries the SAS-signed blobUrl too, but going
+                    // through load() also picks up any other thread changes that
+                    // happened on the server side meanwhile.
+                    load()
+                is ApiResult.Error ->
+                    if (result.error !is ApiError.Network) snackbar.showError(result.error.getUserMessage())
             }
         }
     }

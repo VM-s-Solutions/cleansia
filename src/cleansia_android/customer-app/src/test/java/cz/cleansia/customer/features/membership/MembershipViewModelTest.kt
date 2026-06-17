@@ -1,6 +1,8 @@
 package cz.cleansia.customer.features.membership
 
 import android.content.Context
+import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.memberships.CancelMembershipSubscriptionResponse
@@ -44,8 +46,8 @@ class MembershipViewModelTest {
         appContext = mockk(relaxed = true)
         every { repository.current } returns current
         every { repository.loading } returns loading
-        coEvery { repository.refresh() } returns null
-        coEvery { repository.getPlans() } returns emptyList()
+        coEvery { repository.refresh() } returns ApiResult.Error(ApiError.Network("network error"))
+        coEvery { repository.getPlans() } returns ApiResult.Success(emptyList())
         every { appContext.getString(R.string.error_generic_network) } returns "network error"
     }
 
@@ -60,13 +62,14 @@ class MembershipViewModelTest {
 
     @Test
     fun `startSubscribe success returns NeedsPaymentMethod and Idle`() = runTest {
-        coEvery { repository.subscribePhase1("plus_monthly") } returns
+        coEvery { repository.subscribePhase1("plus_monthly") } returns ApiResult.Success(
             CreateMembershipSubscriptionResponse(
                 membershipId = "",
                 setupIntentClientSecret = "seti_secret",
                 stripeCustomerId = "cus_1",
                 ephemeralKey = "ek_1",
-            )
+            ),
+        )
 
         val vm = viewModel()
         advanceUntilIdle()
@@ -77,27 +80,43 @@ class MembershipViewModelTest {
     }
 
     @Test
-    fun `startSubscribe failure snackbars, returns Failed and Idle`() = runTest {
-        coEvery { repository.subscribePhase1("plus_monthly") } returns null
+    fun `startSubscribe http failure snackbars carried message, returns Failed and Idle`() = runTest {
+        coEvery { repository.subscribePhase1("plus_monthly") } returns
+            ApiResult.Error(ApiError.Server(statusCode = 500, message = "server boom"))
 
         val vm = viewModel()
         advanceUntilIdle()
         val outcome = vm.startSubscribe("plus_monthly")
 
         assertEquals(SubscribeOutcome.Failed, outcome)
-        verify { snackbar.showError("network error") }
+        verify { snackbar.showError("server boom") }
+        assertEquals(ActionState.Idle, vm.submitState.value)
+    }
+
+    @Test
+    fun `startSubscribe network failure stays silent, returns Failed and Idle`() = runTest {
+        coEvery { repository.subscribePhase1("plus_monthly") } returns
+            ApiResult.Error(ApiError.Network("network error"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        val outcome = vm.startSubscribe("plus_monthly")
+
+        assertEquals(SubscribeOutcome.Failed, outcome)
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
         assertEquals(ActionState.Idle, vm.submitState.value)
     }
 
     @Test
     fun `startSubscribe with existing membership returns AlreadyActive and Idle`() = runTest {
-        coEvery { repository.subscribePhase1("plus_monthly") } returns
+        coEvery { repository.subscribePhase1("plus_monthly") } returns ApiResult.Success(
             CreateMembershipSubscriptionResponse(
                 membershipId = "mem-existing",
                 setupIntentClientSecret = "seti",
                 stripeCustomerId = "cus",
                 ephemeralKey = "ek",
-            )
+            ),
+        )
 
         val vm = viewModel()
         advanceUntilIdle()
@@ -109,13 +128,14 @@ class MembershipViewModelTest {
 
     @Test
     fun `confirmSubscribe success returns Subscribed and Idle`() = runTest {
-        coEvery { repository.subscribePhase2("plus_monthly", any()) } returns
+        coEvery { repository.subscribePhase2("plus_monthly", any()) } returns ApiResult.Success(
             CreateMembershipSubscriptionResponse(
                 membershipId = "mem-99",
                 setupIntentClientSecret = "",
                 stripeCustomerId = "cus",
                 ephemeralKey = "ek",
-            )
+            ),
+        )
 
         val vm = viewModel()
         advanceUntilIdle()
@@ -128,8 +148,9 @@ class MembershipViewModelTest {
 
     @Test
     fun `cancel success runs callback and returns to Idle`() = runTest {
-        coEvery { repository.cancel() } returns
-            CancelMembershipSubscriptionResponse(membershipId = "mem-1", effectiveEndDate = "2026-07-01")
+        coEvery { repository.cancel() } returns ApiResult.Success(
+            CancelMembershipSubscriptionResponse(membershipId = "mem-1", effectiveEndDate = "2026-07-01"),
+        )
 
         var endDate: String? = null
         val vm = viewModel()
@@ -142,26 +163,42 @@ class MembershipViewModelTest {
     }
 
     @Test
-    fun `cancel failure snackbars and returns to Idle`() = runTest {
-        coEvery { repository.cancel() } returns null
+    fun `cancel http failure snackbars carried message and returns to Idle`() = runTest {
+        coEvery { repository.cancel() } returns
+            ApiResult.Error(ApiError.Server(statusCode = 500, message = "server boom"))
 
         val vm = viewModel()
         advanceUntilIdle()
         vm.cancel { }
         advanceUntilIdle()
 
-        verify { snackbar.showError("network error") }
+        verify { snackbar.showError("server boom") }
+        assertEquals(ActionState.Idle, vm.submitState.value)
+    }
+
+    @Test
+    fun `cancel network failure stays silent and returns to Idle`() = runTest {
+        coEvery { repository.cancel() } returns
+            ApiResult.Error(ApiError.Network("network error"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.cancel { }
+        advanceUntilIdle()
+
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
         assertEquals(ActionState.Idle, vm.submitState.value)
     }
 
     @Test
     fun `swapPlan success runs callback`() = runTest {
-        coEvery { repository.swapPlan("plus_yearly") } returns
+        coEvery { repository.swapPlan("plus_yearly") } returns ApiResult.Success(
             SwapMembershipPlanResponse(
                 membershipId = "mem-1",
                 newPlanCode = "plus_yearly",
                 currentPeriodEnd = "2026-12-01",
-            )
+            ),
+        )
 
         var swapped = false
         val vm = viewModel()

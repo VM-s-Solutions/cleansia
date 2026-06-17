@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
  * the local snapshot immediately and enqueues a debounced PUT so rapid
  * toggling collapses into a single network call.
  *
- * Debounce window is 300ms — long enough for "swipe-flip a toggle and
+ * Debounce window is 300ms - long enough for "swipe-flip a toggle and
  * realize you wanted the other state" but short enough that the user
  * doesn't navigate away before the write commits.
  */
@@ -42,14 +42,14 @@ class NotificationPreferencesViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            repository.refresh()
+            repository.refresh().onError { }
             _loading.value = false
         }
         viewModelScope.launch {
             pendingWrites.consumeAsFlow()
                 .debounce(DEBOUNCE_MS)
                 .collect { payload ->
-                    repository.update(payload)
+                    repository.update(payload).onError { }
                 }
         }
     }
@@ -57,7 +57,7 @@ class NotificationPreferencesViewModel @Inject constructor(
     /**
      * Flip one category. Reads the current local snapshot, applies the
      * change, queues the result for a debounced PUT. Caller doesn't need
-     * to await — the UI reads from `preferences` which we update first.
+     * to await - the UI reads from `preferences` which we update first.
      */
     fun setCategory(category: NotificationCategoryDto, enabled: Boolean) {
         val current = preferences.value ?: return
@@ -69,7 +69,7 @@ class NotificationPreferencesViewModel @Inject constructor(
         }
         // Repo's update() also flips the snapshot. To make the toggle
         // visually settle BEFORE the debounce fires, push the local-only
-        // optimistic value here too — repo will reconfirm on response.
+        // optimistic value here too - repo will reconfirm on response.
         viewModelScope.launch {
             // Synchronous-feeling local flip: write straight into the
             // backing flow via the repo's update path WITHOUT the network

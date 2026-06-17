@@ -10,6 +10,44 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
+> ## ✅ MOBILE SLICE — T-0197 `ApiResult<T>` migration COMPLETE (closed 2026-06-17, on `feature/wave-6`)
+> **T-0197 (mobile `ApiResult<T>`, the deferred ADR-first L epic) is DONE** — committed + pushed on
+> `feature/wave-6` in two phases: **Phase 1 = `dca897e1`** (ADR-0011 authored+accepted + the `:core` type
+> move: `ApiResult`/`ApiError`/`safeApiCall` hoisted into `cz.cleansia.core.network`, partner-app imports
+> re-pointed) · **Phase 2 = `7f391fdb`** (all **15 customer-app repos** migrated to `ApiResult<T>`, snackbar
+> moved repo → VM). PR to `master` is the owner's call (the `feature/wave-6` PR now also carries ADR-0011 +
+> this mobile migration on top of the Wave-6 batches). **PM never merges.**
+>
+> **ADR-0011 (`adr/0011-mobile-apiresult-contract.md`) is `accepted`** (2026-06-15) — it ratifies
+> consistency rule **E5** as the binding mobile repo contract, fixes the type's `:core` home, and fixes the
+> born-canonical iOS Swift equivalent. Living doc: `architecture/decisions/mobile-result-contract.md`.
+>
+> **Orchestrator-verified** on the real combined Android tree: `:core` + partner-app + customer-app **all
+> compile**; **customer-app 201/201 unit tests pass**; **ZERO E5 consistency violations for customer-app**
+> (`check-consistency mobile`); all **64 changed files encoding-clean**. The E5 entry for the customer-app
+> repos is **cleared** in `audits/consistency-violations.md` (F16).
+>
+> **Process note (rate-limit-resume recovery):** the run hit a provider rate-limit mid-Phase-2 and was
+> resumed; the resume was reconciled against the real tree (compile + 201/201 tests + 0 E5 + encoding) before
+> close — no partial/abandoned migration left behind.
+>
+> **STILL OPEN — separate out-of-scope mobile-consistency rules (their OWN future tickets, NOT closed by
+> T-0197):** **E1/E2** (sealed `*UiState` + shared `ActionState` — F13/F14) · **E6**
+> (`collectAsStateWithLifecycle()`, **22 instances** — F15) · **E7** (dir/naming inline-singular — F16).
+>
+> **NEW follow-up filed:** **T-0265** (S, `[android]`, draft, sprint 7) — the partner-app + customer-app
+> unit-test-env gap: `LoginViewModelTest` (×4) + `DashboardViewModelTest` fail on plain JVM because
+> `android.util.Patterns.EMAIL_ADDRESS` returns `null` without Robolectric/an Android test runtime (keeps the
+> partner suite permanently red; **proven pre-existing** — fails identically on clean `master`, independent
+> of T-0197). Scope: add Robolectric **or** extract email validation off `android.util.Patterns`. Row in the
+> follow-up table below the Wave-6 roster.
+>
+> ⚠️ **OWNER:** the `feature/wave-6` PR → `master` now carries **ADR-0011 + the mobile `ApiResult<T>`
+> migration** in addition to the Wave-6 batches. Mobile-only refactor → **no nswag-regen, no ef-migration**
+> for T-0197. Full consolidated owner list: `status/sprint-8.md` §close-out.
+>
+> --- (Wave-6 close banner below, kept for traceability) ---
+>
 > ## ✅ WAVE 6 COMPLETE — carried follow-ups (multi-tenant blocker, security fast-follows, hygiene) (closed 2026-06-15)
 > **Wave 6 is COMPLETE — all work committed + pushed on `feature/wave-6` (`b8f89202`).** PR to `master`
 > is the owner's call (PM never merges). **12 tickets DONE this wave**, **orchestrator-verified green** on a
@@ -42,9 +80,10 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > were caught ONLY by HostTests/IntegrationTests against real Postgres** — reinforces the verify-on-real-DB
 > gate (the unit suite + the per-ticket reviewer were both green and blind to them).
 >
-> **STILL OPEN / carried out of Wave 6:** **T-0197** (mobile `ApiResult<T>`, L, ADR-first) — stays
-> deferred; owner sequencing call stands (run as mini-wave 6M or keep deferred — sprint-8 §4.2). The ADR may
-> bank in parallel.
+> **STILL OPEN / carried out of Wave 6:** ~~**T-0197** (mobile `ApiResult<T>`, L, ADR-first) — stays
+> deferred~~ → **DONE 2026-06-17** as the mobile slice on `feature/wave-6` (`dca897e1`+`7f391fdb`); ADR-0011
+> accepted. See the MOBILE SLICE banner at the top of Active. Its out-of-scope siblings (E1/E2, E6, E7) and
+> the new test-env follow-up **T-0265** carry forward.
 >
 > **NEW Wave-6 close follow-ups filed (T-0263…T-0264):** **T-0263** (admin invoice failed-PDF render + i18n
 > — the carried frontend half of T-0238, `blocked` on the admin nswag-regen) · **T-0264** (remove the
@@ -98,7 +137,7 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > | **T-0237** | Catalog delete TOCTOU → FK Restrict + violation→`in_use` + template JSON check | M | **done ✅** `b8f89202` (⚠️ caught the `ServiceId1` shadow-FK regression — see close-out) | 6D | backend, db | **yes** | **ef-migration (owner)** |
 > | **T-0242** | Cancellation-fee Plus free-window override direction (Q-W5-1 path **B**) | S | **done ✅** `b8f89202` | 6E | backend | no (money-adv) | — |
 > | **T-0233** | Targeted-lockout DoS mitigation (trusted-device, panel-decided) | M | **done ✅** `b8f89202` (⚠️ caught the seed FK-violation regression — see close-out) | 6E | backend, frontend | **yes** | (panel marker; no migration taken) |
-> | **T-0197** | Migrate customer-app repos to `ApiResult<T>` (mobile) | **L** | **draft (ADR-first, DEFER → 6M)** | 6M | architect, android, ios | no | — |
+> | **T-0197** | Migrate customer-app repos to `ApiResult<T>` (mobile) | **L** (epic, ran as 15 serial children) | **done ✅** `dca897e1`+`7f391fdb` (mobile slice, closed 2026-06-17; ADR-0011 accepted; 0 E5; 201/201) | 6M | architect, android, ios | no | — |
 >
 > \* `nswag-regen`/`ef-migration` flagged conditionally fire only when the diff actually changes a
 > generated-client surface or schema. **Owner manual steps this wave:** T-0238 nswag-regen (admin);
@@ -112,6 +151,7 @@ One row per ticket. Source of truth for "what's the team doing right now".
 |----|-------|------|--------|-----------|--------|-----|-------------|--------|
 | **T-0263** | Admin invoice failed-PDF render (failed-vs-pending indicator + `PdfGenerationError` text) + i18n ×5 — carried frontend half of T-0238 | S | **blocked** (admin nswag-regen) | T-0238✓ (backend) | frontend | no | **nswag-regen (admin)** | T-0238 AC3/AC4 held at Wave-6 close |
 | **T-0264** | Remove vestigial `api.email.sending_failed` locale keys (admin.app + partner.app, ×5 locales each = 10 entries) | S | **ready** | T-0262✓ | frontend | no | — | T-0262 residual (its `errors.*`/backend scope did not reach the `api.*` namespace) |
+| **T-0265** | Make email-validating VMs unit-testable off `android.util.Patterns` (Robolectric or extract) — `LoginViewModelTest`×4 + `DashboardViewModelTest` red on plain JVM | S | **draft** (sprint 7) | — | android | no | — | T-0197 Phase-2 verification (pre-existing test-env gap, proven on clean `master`) |
 
 > **T-0263** carries the **frontend half of T-0238** (the admin failed-vs-pending render + error text +
 > i18n). T-0238 shipped its backend DTO fields in Wave 6; the frontend AC is **blocked on the owner's

@@ -340,14 +340,17 @@ over-reports closed work.
 3. **ef-migrations** — apply **T-0261** (UserMembership cancellation-reminder partial index) and **T-0237**
    (catalog-referencing FKs Cascade→Restrict). In **PROD apply the new indexes `CONCURRENTLY`** by hand
    (additive `CREATE INDEX CONCURRENTLY` outside the migration transaction).
-4. **Confirm T-0197 sequencing** — run as its own mini-wave 6M (ADR-first) now, or keep deferred (§4.2).
+4. ~~**Confirm T-0197 sequencing**~~ → **RESOLVED — T-0197 ran ADR-first and CLOSED 2026-06-17** on
+   `feature/wave-6` (`dca897e1` + `7f391fdb`); ADR-0011 accepted. **The `feature/wave-6` PR → `master` now
+   also carries ADR-0011 + the mobile `ApiResult<T>` migration.** Mobile-only → no nswag-regen, no
+   ef-migration. See the T-0197 close-out section above.
 
 **Still-carrying (standing owner items, unchanged from prior waves):**
 5. **citext fix** — the Azure **Functions** host needs `NpgsqlDataSourceBuilder.EnableUnmappedTypes()` (the
    `DbContextBindingExtensions` fix) and a **Functions restart** to read citext columns without throwing.
 6. **T-0159 rotate-mapbox-token** — the code fix shipped long ago (token off the URL) but the exposed token
    is still live until rotated in the Mapbox account.
-7. **T-0197 mobile `ApiResult<T>` mini-wave** — the deferred L epic (ADR-first); same as item 4.
+7. ~~**T-0197 mobile `ApiResult<T>` mini-wave**~~ → **DONE (see item 4).**
 8. Prior-wave carries still open: nswag-regen customer client (Wave-5 T-0202, clears the Wave-3 residual) +
    admin client (Wave-5 T-0203); the Wave-5 PR `feature/wave-5-consistency-bugs` → `master`; the 4 T-0204
    indexes `CONCURRENTLY` in PROD; IMP-1 Google OAuth ClientId; CZ Stripe-fee figures; DE/AT/ES fiscal
@@ -356,7 +359,63 @@ over-reports closed work.
 
 ---
 
+## close-out — T-0197 mobile `ApiResult<T>` slice COMPLETE (2026-06-17)
+
+The deferred Batch-6M epic (§3.7 / §4.2) was **executed and closed** after the Wave-6 batches, on the same
+`feature/wave-6` branch. The owner's §4.2 sequencing question is **answered in the running**: option (a) —
+ADR-first, then implement — was taken.
+
+### What landed
+- **Phase 1 — `dca897e1`:** **ADR-0011 authored + accepted** (`adr/0011-mobile-apiresult-contract.md`,
+  living doc `architecture/decisions/mobile-result-contract.md`) — canonicalizes `ApiResult<T>` as the
+  binding mobile repository contract (ratifies consistency rule **E5**, clarifies **E3**), and the **`:core`
+  type move**: `ApiResult`/`ApiError`/`safeApiCall` hoisted from partner-app into
+  `cz.cleansia.core.network`, with partner-app imports re-pointed (no partner behavior change). The iOS Swift
+  equivalent (`Result<T, ApiError>`, VM surfaces the alert) is fixed in the ADR so iOS is born canonical.
+- **Phase 2 — `7f391fdb`:** **all 15 customer-app repos migrated** to `ApiResult<T>`, with the snackbar
+  moved **repo → ViewModel** (`onError { if (it !is ApiError.Network) snackbar.showError(...) }`); silent/
+  background paths kept silent (Error → no-op), `ApiError.Network` mapped to VM no-op so the
+  `NetworkErrorInterceptor` infra toast is not doubled. Behavior-preserving: same successes, same failures,
+  same single snackbar per failure. No E1/E2 UiState change.
+
+### Verified counts (orchestrator, real combined Android tree)
+**`:core` + partner-app + customer-app all compile · customer-app 201/201 unit tests pass · `check-consistency
+mobile` reports ZERO E5 violations for customer-app · all 64 changed files encoding-clean.** The E5 entry for
+the customer-app repos is cleared in `audits/consistency-violations.md` (F16).
+
+### Process note — rate-limit-resume recovery
+The run hit a provider rate-limit mid-Phase-2 and was **resumed**; on resume the work was reconciled against
+the **real tree** (compile + 201/201 tests + 0 E5 + encoding-clean) before close — confirming no
+partial/abandoned migration was left behind. Lesson: a rate-limit interruption on a long serial epic is
+recoverable, but **re-verify the whole touched tree on resume** (compile + suite + consistency + encoding),
+never trust the pre-interruption green.
+
+### Out of scope — STILL OPEN (their own future tickets, NOT closed by T-0197)
+- **E1/E2** — sealed `*UiState` + shared `ActionState` (`audits/consistency-violations.md` F13/F14).
+- **E6** — `collectAsStateWithLifecycle()`, **22 instances** remain across mobile screens (F15).
+- **E7** — dir/naming inline-singular `features/<name>/` unification (F16).
+- **T-0265** (NEW, filed 2026-06-17, S, `[android]`, sprint 7) — the partner/customer unit-test-env gap:
+  `LoginViewModelTest` (×4) + `DashboardViewModelTest` fail on plain JVM because
+  `android.util.Patterns.EMAIL_ADDRESS` returns `null` without Robolectric/an Android test runtime
+  (keeps the partner suite permanently red; **proven pre-existing** — fails identically on clean `master`).
+
+### Owner note
+The **`feature/wave-6` PR → `master` now also carries ADR-0011 + the mobile `ApiResult<T>` migration** on top
+of the Wave-6 batches. T-0197 is **mobile-only → no nswag-regen, no ef-migration.** PR to `master` is the
+owner's call (PM never merges).
+
+---
+
 ## Status log
+- 2026-06-17 — **T-0197 mobile `ApiResult<T>` slice CLOSED (PM).** The deferred Batch-6M epic executed
+  ADR-first on `feature/wave-6`: Phase 1 `dca897e1` (ADR-0011 authored+accepted + `:core` type move +
+  partner import re-point) + Phase 2 `7f391fdb` (all 15 customer-app repos → `ApiResult<T>`, snackbar
+  repo→VM). Orchestrator-verified on the real combined tree: 3 modules compile · customer-app 201/201 ·
+  0 E5 violations (customer-app) · 64 changed files encoding-clean. Cleared the E5 entry in
+  `audits/consistency-violations.md` (F16); **E1/E2/E6/E7 kept OPEN as separate rules.** Filed **T-0265**
+  (android email-validation unit-test-env gap, pre-existing, sprint 7). Updated INDEX (MOBILE SLICE banner +
+  T-0197 row → done + T-0265 follow-up row) + this doc. The owner §4.2 T-0197 sequencing question is answered
+  in the running (option (a), ADR-first-then-implement). Backlog bookkeeping only — no code/commits by the PM.
 - 2026-06-15 — **Wave 6 CLOSED (PM).** All 12 in-scope tickets `done` on `feature/wave-6` (`b8f89202`),
   orchestrator-verified green (Cleansia.Tests 1513/1513 · IntegrationTests 79/79 · HostTests 51/51 · 3 web
   apps prod-build · 15 locales valid). **T-0236 multi-tenant go-live blocker FIXED.** Q-W5-1 answered

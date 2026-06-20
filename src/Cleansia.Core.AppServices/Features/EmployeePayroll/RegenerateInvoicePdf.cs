@@ -7,7 +7,6 @@ using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Services.Pdf;
 using Cleansia.Infra.Services.Pdf.Models;
-using Cleansia.Infra.Services.Templates;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Cleansia.Core.AppServices.Extensions;

@@ -18,17 +18,17 @@ namespace Cleansia.Core.AppServices.Features.Loyalty.Admin;
 /// </summary>
 public class PreviewTierThresholdImpact
 {
-    public record Command(
+    public record Query(
         int BronzeThreshold,
         int SilverThreshold,
         int GoldThreshold,
-        int PlatinumThreshold) : ICommand<Response>;
+        int PlatinumThreshold) : IQuery<Response>;
 
     public record Response(IReadOnlyList<TierImpact> Impacts);
 
     public record TierImpact(LoyaltyTier Tier, int CurrentCount, int NewCount, int Delta);
 
-    public class Validator : AbstractValidator<Command>
+    public class Validator : AbstractValidator<Query>
     {
         public Validator()
         {
@@ -45,9 +45,9 @@ public class PreviewTierThresholdImpact
 
     public class Handler(
         ILoyaltyAccountRepository loyaltyAccountRepository,
-        ILoyaltyTierConfigRepository tierConfigRepository) : ICommandHandler<Command, Response>
+        ILoyaltyTierConfigRepository tierConfigRepository) : IQueryHandler<Query, Response>
     {
-        public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
+        public async Task<BusinessResult<Response>> Handle(Query command, CancellationToken cancellationToken)
         {
             // Current thresholds — null-safe even if a tier row is missing.
             var configs = await tierConfigRepository.GetAllForTenantAsync(cancellationToken);

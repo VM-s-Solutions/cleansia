@@ -21,13 +21,11 @@ import {
 import type { MapboxAddressSuggestion } from '@cleansia/services';
 import {
   AddSavedAddressCommand,
+  ChangePasswordCommand,
   SavedAddressDto,
+  UpdateCurrentUserCommand,
   UpdateSavedAddressCommand,
 } from '@cleansia/customer-services';
-import {
-  ChangePasswordCommand,
-  UpdateCurrentUserCommand,
-} from '@cleansia/partner-services';
 import { ThemeService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { InputTextModule } from 'primeng/inputtext';

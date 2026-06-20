@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.PromoCodes.Admin;
 using Cleansia.Core.AppServices.Features.PromoCodes.Admin.DTOs;
+using Cleansia.Core.AppServices.Features.PromoCodes.Admin.Filters;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
@@ -27,9 +28,13 @@ public class AdminPromoCodeController(IMediator mediator) : ApiController(mediat
         [FromQuery] int limit = 20,
         CancellationToken cancellationToken = default)
     {
-        var result = await Mediator.Send(
-            new GetPagedPromoCodes.Query(active, expired, searchCode, offset, limit),
-            cancellationToken);
+        var request = new GetPagedPromoCodes.Request
+        {
+            Offset = offset,
+            Limit = limit,
+            Filter = new PromoCodeFilter(active, expired, searchCode)
+        };
+        var result = await Mediator.Send(request, cancellationToken);
         return Ok(result);
     }
 

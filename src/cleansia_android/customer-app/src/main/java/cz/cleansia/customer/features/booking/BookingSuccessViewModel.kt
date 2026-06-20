@@ -60,10 +60,10 @@ class BookingSuccessViewModel @Inject constructor(
 
     init {
         // Pre-warm the Orders list so the new order is visible the moment the
-        // user lands on the Orders tab. Failure is fine — the tab refreshes
+        // user lands on the Orders tab. Failure is silent — the tab refreshes
         // itself when it's empty.
         viewModelScope.launch {
-            runCatching { orderRepository.refresh() }
+            orderRepository.refresh()
         }
         load()
     }

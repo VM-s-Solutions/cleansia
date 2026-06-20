@@ -9,8 +9,8 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.google.firebase.messaging.FirebaseMessaging
 import cz.cleansia.core.auth.DeviceIdProvider
 import cz.cleansia.core.auth.SessionScopedCache
-import cz.cleansia.partner.core.network.ApiResult
-import cz.cleansia.partner.core.network.safeApiCall
+import cz.cleansia.core.network.ApiResult
+import cz.cleansia.core.network.safeApiCall
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow

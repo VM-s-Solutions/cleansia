@@ -25,7 +25,7 @@ import {
 } from './admin-order-ops.models';
 
 @Component({
-  selector: 'admin-order-ops',
+  selector: 'cleansia-admin-order-ops',
   standalone: true,
   imports: [
     CommonModule,

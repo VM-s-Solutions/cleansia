@@ -72,7 +72,7 @@ public class RevokePointsManually
             await loyaltyService.RevokePointsManuallyAsync(
                 userId: command.UserId,
                 points: command.Points,
-                source: LoyaltyEarnSource.ManualGrant,
+                source: LoyaltyEarnSource.ManualRevoke,
                 orderId: null,
                 actorId: actorId,
                 reason: command.Reason,

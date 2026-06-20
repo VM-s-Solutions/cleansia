@@ -54,7 +54,7 @@ public class ResolveDisputeRefundSeamTests
     {
         var dispute = NewPendingDispute();
         _disputeRepository
-            .Setup(r => r.GetDisputeWithDetailsAsync(DisputeId))
+            .Setup(r => r.GetForUpdateAsync(DisputeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(dispute);
         return dispute;
     }
@@ -195,7 +195,7 @@ public class ResolveDisputeRefundSeamTests
         // — the SECOND call comes back ResolvedToExisting=true. The terminal guard is what blocks a re-resolve
         // of an ALREADY-Resolved dispute (covered above); the seam key is what makes a Pending redelivery safe.
         _disputeRepository
-            .SetupSequence(r => r.GetDisputeWithDetailsAsync(DisputeId))
+            .SetupSequence(r => r.GetForUpdateAsync(DisputeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(NewPendingDispute())
             .ReturnsAsync(NewPendingDispute());
 

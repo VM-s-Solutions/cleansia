@@ -38,7 +38,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { EmailTypeDetailFacade } from './email-type-detail.facade';
 
 @Component({
-  selector: 'lib-email-type-detail',
+  selector: 'cleansia-admin-email-type-detail',
   standalone: true,
   imports: [
     CommonModule,

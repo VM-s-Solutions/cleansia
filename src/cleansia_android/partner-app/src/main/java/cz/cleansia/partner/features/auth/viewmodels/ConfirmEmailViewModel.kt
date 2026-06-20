@@ -7,7 +7,7 @@ import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.partner.R
 import cz.cleansia.partner.core.auth.UserProfileStore
 import cz.cleansia.partner.core.network.ApiErrorTranslator
-import cz.cleansia.partner.core.network.ApiResult
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.core.settings.AppSettingsRepository
 import cz.cleansia.partner.data.auth.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel

@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
@@ -15,6 +15,7 @@ import { takeUntil } from 'rxjs';
 
 @Injectable()
 export class LoginFacade extends UnsubscribeControlDirective {
+  private readonly fb = inject(FormBuilder);
   private readonly store = inject(Store);
   private readonly router = inject(Router);
   private readonly authService = inject(PartnerAuthService);
@@ -24,15 +25,14 @@ export class LoginFacade extends UnsubscribeControlDirective {
   formGroup = this.createFormGroup();
   loading = toSignal(this.store.select(selectLoading));
 
-  login() {
+  login(): void {
     if (this.formGroup.invalid) {
-      return this.snackbarService.showError(
+      this.snackbarService.showError(
         this.translate.instant('validation.common.not_all_fields_filled')
       );
+      return;
     }
-    const email = this.formGroup.get('email')?.value;
-    const password = this.formGroup.get('password')?.value;
-    const rememberMe = this.formGroup.get('rememberMe')?.value;
+    const { email, password, rememberMe } = this.formGroup.getRawValue();
     this.authService
       .login(email, password, rememberMe)
       .pipe(takeUntil(this.destroyed$))
@@ -48,15 +48,17 @@ export class LoginFacade extends UnsubscribeControlDirective {
           this.store.dispatch(loadUserCurrent());
           this.router.navigate([CleansiaPartnerRoute.ORDERS]);
         },
+        error: (err) => {
+          this.snackbarService.showApiError(err, 'auth.login.error');
+        },
       });
   }
 
-  private createFormGroup(): FormGroup {
-    const formGroup = new FormGroup({
-      email: new FormControl('', [Validators.required, Validators.email]),
-      password: new FormControl('', [Validators.required]),
-      rememberMe: new FormControl(false),
+  private createFormGroup() {
+    return this.fb.nonNullable.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required]],
+      rememberMe: [false],
     });
-    return formGroup;
   }
 }

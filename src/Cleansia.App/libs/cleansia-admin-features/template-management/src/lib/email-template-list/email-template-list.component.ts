@@ -14,7 +14,7 @@ import { EmailTemplateListFacade } from './email-template-list.facade';
 import { getEmailTypeTableDefinition } from './email-template-list.models';
 
 @Component({
-  selector: 'lib-email-template-list',
+  selector: 'cleansia-admin-email-template-list',
   standalone: true,
   imports: [
     CommonModule,

@@ -16,7 +16,7 @@ public class GetPagedPayConfigs
 {
     public class Request : DataRangeRequest, IRequest<PagedData<EmployeePayConfigDto>>
     {
-        public PayConfigFilter? Filter { get; set; }
+        public PayConfigFilter? Filter { get; init; }
     }
 
     internal class Handler(
@@ -37,12 +37,12 @@ public class GetPagedPayConfigs
             var totalItems = await payConfigRepository.GetCountAsync(filter, cancellationToken);
             var items = await payConfigRepository
                 .GetPagedSort<EmployeePayConfigSort>(request.Offset, request.Limit, filter, request.Sort.MapToDomain())
-                .AsNoTracking()
                 .Include(c => c.Service)
                 .Include(c => c.Package)
                 .Include(c => c.Currency)
                 .Include(c => c.Employee)
                     .ThenInclude(e => e!.User)
+                .AsNoTracking()
                 .Select(config => config.MapToDto())
                 .ToListAsync(cancellationToken);
 

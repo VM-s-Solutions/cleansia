@@ -100,7 +100,9 @@
       },
       "email_invalid": "E-mail je neplatný",
       "password_invalid": "Heslo je neplatné",
-      "password_changed": "Heslo bolo úspešne zmenené"
+      "password_changed": "Heslo bolo úspešne zmenené",
+      "send_code_error": "Overovací kód sa nepodarilo odoslať. Skúste to prosím znova.",
+      "change_password_error": "Heslo sa nepodarilo zmeniť. Skúste to prosím znova."
     },
     "profile": {
       "title": "Profil pre nástup zamestnanca",
@@ -1371,7 +1373,8 @@
       "password": "Heslo",
       "remember_me": "Zapamätať si ma",
       "forgot_password": "Zabudnuté heslo?",
-      "dont_have_account": "Nemáte účet?"
+      "dont_have_account": "Nemáte účet?",
+      "error": "Prihlásenie zlyhalo. Skontrolujte prosím svoje údaje a skúste to znova."
     },
     "register": {
       "first_name": "Meno",

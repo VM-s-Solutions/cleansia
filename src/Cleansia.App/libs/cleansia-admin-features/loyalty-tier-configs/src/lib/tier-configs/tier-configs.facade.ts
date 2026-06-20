@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import {
   AdminClient,
   LoyaltyTier,
-  PreviewTierThresholdImpactCommand,
+  PreviewTierThresholdImpactQuery,
   PreviewTierThresholdImpactResponse,
   PreviewTierThresholdImpactTierImpact,
   TierConfigAdminDto,
@@ -110,7 +110,7 @@ export class TierConfigsFacade extends UnsubscribeControlDirective {
   ): void {
     this.previewing.set(true);
 
-    const command = new PreviewTierThresholdImpactCommand({
+    const query = new PreviewTierThresholdImpactQuery({
       bronzeThreshold,
       silverThreshold,
       goldThreshold,
@@ -118,7 +118,7 @@ export class TierConfigsFacade extends UnsubscribeControlDirective {
     });
 
     this.adminClient.adminLoyaltyTierClient
-      .previewThresholdImpact(command)
+      .previewThresholdImpact(query)
       .pipe(
         takeUntil(this.destroyed$),
         catchError(() => {

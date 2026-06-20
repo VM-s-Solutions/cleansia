@@ -49,7 +49,7 @@ public class ResolveDispute
     {
         public async Task<BusinessResult> Handle(Command request, CancellationToken cancellationToken)
         {
-            var dispute = await disputeRepository.GetDisputeWithDetailsAsync(request.DisputeId);
+            var dispute = await disputeRepository.GetForUpdateAsync(request.DisputeId, cancellationToken);
 
             if (dispute == null)
             {

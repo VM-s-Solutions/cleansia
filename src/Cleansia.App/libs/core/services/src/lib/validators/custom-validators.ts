@@ -1,5 +1,15 @@
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 
+/**
+ * Single source of truth for password complexity across both apps: minimum 8 characters,
+ * at least one letter and one digit. Mirrors the backend rule (ValidationExtensions.ValidatePassword)
+ * exactly — the partner app previously used a stricter regex that rejected backend-valid passwords.
+ */
+export const PASSWORD_PATTERN = /^(?=.*[a-zA-Z])(?=.*\d).{8,}$/;
+
+/** Seconds a user must wait before re-requesting a password-reset code (shared by both apps). */
+export const RESEND_CODE_COOLDOWN_SECONDS = 30;
+
 export class CustomValidators {
   static minimumAge(minAge: number): ValidatorFn {
     return (control: AbstractControl): ValidationErrors | null => {

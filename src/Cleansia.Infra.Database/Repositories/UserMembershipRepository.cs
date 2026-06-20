@@ -9,6 +9,16 @@ public class UserMembershipRepository(CleansiaDbContext context)
 {
     public Task<UserMembership?> GetActiveForUserAsync(string userId, CancellationToken cancellationToken)
     {
+        return ActiveForUserQuery(userId).FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public Task<UserMembership?> GetActiveForUserNoTrackingAsync(string userId, CancellationToken cancellationToken)
+    {
+        return ActiveForUserQuery(userId).AsNoTracking().FirstOrDefaultAsync(cancellationToken);
+    }
+
+    private IQueryable<UserMembership> ActiveForUserQuery(string userId)
+    {
         return GetDbSet()
             .Include(m => m.MembershipPlan)
             // IsActive on the entity is a computed property combining Status
@@ -17,8 +27,7 @@ public class UserMembershipRepository(CleansiaDbContext context)
             .Where(m => m.UserId == userId
                 && m.Status == MembershipStatus.Active
                 && m.CurrentPeriodEnd > DateTime.UtcNow)
-            .OrderByDescending(m => m.CurrentPeriodEnd)
-            .FirstOrDefaultAsync(cancellationToken);
+            .OrderByDescending(m => m.CurrentPeriodEnd);
     }
 
     public Task<UserMembership?> GetByStripeSubscriptionIdAsync(string stripeSubscriptionId, CancellationToken cancellationToken)

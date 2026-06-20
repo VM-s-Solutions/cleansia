@@ -82,11 +82,17 @@ export class PromoCodesListFacade extends UnsubscribeControlDirective {
   deactivate(promoCode: PromoCodeListItem): void {
     if (!promoCode.id) return;
 
+    this.loading.set(true);
+
     this.adminClient.adminPromoCodeClient
       .deactivate(promoCode.id)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null))
+        catchError((error) => {
+          this.snackbarService.showApiError(error);
+          return of(null);
+        }),
+        finalize(() => this.loading.set(false))
       )
       .subscribe((response) => {
         if (response) {

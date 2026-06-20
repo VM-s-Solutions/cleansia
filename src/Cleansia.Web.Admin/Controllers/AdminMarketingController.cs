@@ -20,7 +20,7 @@ public class AdminMarketingController(IMediator mediator) : ApiController(mediat
     [HttpPost("send-sitewide-promo")]
     [Permission(Policy.CanSendSitewidePromo)]
     [EnableRateLimiting("auth")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(SendSitewidePromo.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -29,6 +29,6 @@ public class AdminMarketingController(IMediator mediator) : ApiController(mediat
         CancellationToken cancellationToken)
     {
         var result = await Mediator.Send(command, cancellationToken);
-        return HandleResult<object>(result);
+        return HandleResult<SendSitewidePromo.Response>(result);
     }
 }

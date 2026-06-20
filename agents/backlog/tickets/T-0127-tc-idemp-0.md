@@ -1,11 +1,11 @@
 ---
 id: T-0127
 title: "\"Safe to run twice\" idempotency tests (webhooks + F2/F11/SEC-W2 + LG money fixes)"
-status: draft
+status: done
 size: M
 owner: —
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-15
 depends_on: [T-0118]
 blocks: []
 stories: []

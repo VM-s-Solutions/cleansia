@@ -2,8 +2,20 @@
   "name": "loyalty-promo-codes",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/cleansia-admin-features/loyalty-promo-codes/src",
-  "prefix": "lib",
+  "prefix": "cleansia",
   "projectType": "library",
-  "tags": [],
-  "targets": {}
+  "tags": ["scope:admin", "type:feature"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/cleansia-admin-features/loyalty-promo-codes/jest.config.ts",
+        "tsConfig": "libs/cleansia-admin-features/loyalty-promo-codes/tsconfig.spec.json"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
 }

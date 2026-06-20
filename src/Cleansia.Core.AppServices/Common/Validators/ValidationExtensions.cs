@@ -7,6 +7,11 @@ namespace Cleansia.Core.AppServices.Common.Validators;
 
 public static class ValidationExtensions
 {
+    // Single source of truth for password complexity: minimum 8 characters, at least one
+    // letter and one digit. Every auth/password feature composes ValidatePassword — there is no
+    // second copy of this regex on the backend, and the frontend constant mirrors it exactly.
+    private const string PasswordPattern = @"^(?=.*[a-zA-Z])(?=.*\d).{8,}$";
+
     public static bool BeAValidDate(DateOnly date)
     {
         return date != default;
@@ -136,5 +141,62 @@ public static class ValidationExtensions
         return ruleBuilder
             .NotEmpty()
             .WithMessage(BusinessErrorMessage.Required);
+    }
+
+    public static IRuleBuilderOptions<T, string> ValidateFirstName<T>(this IRuleBuilderInitial<T, string> ruleBuilder)
+    {
+        return ruleBuilder
+            .Cascade(CascadeMode.Stop)
+            .NotEmpty()
+            .WithMessage(BusinessErrorMessage.Required)
+            .MaximumLength(50)
+            .WithMessage(BusinessErrorMessage.MaxLength);
+    }
+
+    public static IRuleBuilderOptions<T, string> ValidateLastName<T>(this IRuleBuilderInitial<T, string> ruleBuilder)
+    {
+        return ruleBuilder
+            .Cascade(CascadeMode.Stop)
+            .NotEmpty()
+            .WithMessage(BusinessErrorMessage.Required)
+            .MaximumLength(50)
+            .WithMessage(BusinessErrorMessage.MaxLength);
+    }
+
+    public static IRuleBuilderOptions<T, string> ValidateUserEmail<T>(this IRuleBuilderInitial<T, string> ruleBuilder)
+    {
+        return ruleBuilder
+            .Cascade(CascadeMode.Stop)
+            .NotEmpty()
+            .WithMessage(BusinessErrorMessage.Required)
+            .EmailAddress()
+            .WithMessage(BusinessErrorMessage.InvalidEmailFormat)
+            .MaximumLength(50)
+            .WithMessage(BusinessErrorMessage.MaxLength);
+    }
+
+    public static IRuleBuilderOptions<T, string> ValidatePassword<T>(this IRuleBuilderInitial<T, string> ruleBuilder)
+    {
+        return ruleBuilder
+            .Cascade(CascadeMode.Stop)
+            .NotEmpty()
+            .WithMessage(BusinessErrorMessage.Required)
+            .Matches(PasswordPattern)
+            .WithMessage(BusinessErrorMessage.InvalidPasswordFormat);
+    }
+
+    // Same single-source-of-truth password complexity as ValidatePassword, but with the offending
+    // field's name stamped on every error (the auth surface keys frontend i18n off the property name).
+    public static IRuleBuilderOptions<T, string> ValidatePassword<T>(
+        this IRuleBuilderInitial<T, string> ruleBuilder, string errorCode)
+    {
+        return ruleBuilder
+            .Cascade(CascadeMode.Stop)
+            .NotEmpty()
+            .WithMessage(BusinessErrorMessage.Required)
+            .WithErrorCode(errorCode)
+            .Matches(PasswordPattern)
+            .WithMessage(BusinessErrorMessage.InvalidPasswordFormat)
+            .WithErrorCode(errorCode);
     }
 }

@@ -219,6 +219,19 @@ _No open Wave-1 *planning* questions remain._
   UI display). Answering here or approving T-0238 are the same decision.
 - Answer: _(owner fills in)_
 
+---
+
+## Wave-5 planning questions (2026-06-13) — raised by PM sequencing Wave 5 (`status/sprint-7.md`)
+
+> Wave 5 = the two folded-front production bugs (T-0245/T-0246) + the consistency/quality sweep
+> (T-0196…T-0206) + 3 Wave-4 follow-ups (T-0242/T-0243/T-0244). One genuine pre-build owner product
+> decision surfaced (Q-W5-1). It gates **only T-0242** — the rest of Wave 5 proceeds.
+
+> **Q-W5-1 ANSWERED 2026-06-14 (owner) — path (B), Plus = wider free window — moved to `answered.md`.**
+> T-0242 unblocked, folded into Wave 6, and `done` (Wave-6 close `b8f89202`). No open Wave-5 questions remain.
+
+---
+
 ### Q-W3-4 — [blocking: no] Dispute Resolve when the Stripe refund FAILS — keep "Resolved + Pending Refund row" or defer/surface?
 - Raised by: backend (T-0173a); originally recorded as "Q-W3-2" inside the T-0173 ticket file — **re-keyed
   to Q-W3-4 by the PM at Wave-3 close (2026-06-12)** because `Q-W3-2` above (partner-pay currency) already

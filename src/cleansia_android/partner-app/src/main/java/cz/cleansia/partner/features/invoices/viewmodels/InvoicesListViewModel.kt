@@ -6,7 +6,7 @@ import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.partner.api.model.EmployeeInvoiceDto
 import cz.cleansia.partner.core.auth.UserProfileStore
 import cz.cleansia.partner.core.network.ApiErrorTranslator
-import cz.cleansia.partner.core.network.ApiResult
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.invoices.InvoicesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

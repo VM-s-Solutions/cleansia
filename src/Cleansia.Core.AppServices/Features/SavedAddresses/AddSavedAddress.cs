@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.SavedAddresses.DTOs;
+using Cleansia.Core.AppServices.Features.SavedAddresses.Mappers;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
@@ -91,28 +92,14 @@ public class AddSavedAddress
         public async Task<BusinessResult<SavedAddressDto>> Handle(Command command, CancellationToken cancellationToken)
         {
             var userId = userSessionProvider.GetUserId()!;
-            var countryId = command.CountryId;
-            if (string.IsNullOrEmpty(countryId))
-            {
-                var defaultCountry = await countryRepository.GetByIsoCodeAsync(AddressDefaults.FallbackCountryIso, cancellationToken)
-                    ?? await countryRepository.GetQueryable().FirstOrDefaultAsync(cancellationToken);
-                countryId = defaultCountry?.Id
-                    ?? throw new InvalidOperationException("No countries configured");
-            }
+            var countryId = await ResolveCountryIdAsync(command.CountryId, cancellationToken);
+            var address = await GetOrCreateAddressAsync(command, countryId, cancellationToken);
 
-            var address = await addressRepository.GetAddressAsync(
-                command.Street, command.City, command.ZipCode, countryId, cancellationToken)
-                ?? Address.Create(command.Street, command.City, command.ZipCode, countryId, null, command.Latitude, command.Longitude);
-
-            if (!string.IsNullOrEmpty(address.Id))
+            if (!string.IsNullOrEmpty(address.Id) && await IsAlreadySavedAsync(userId, address.Id, cancellationToken))
             {
-                var existing = await savedAddressRepository.GetByUserAsync(userId, cancellationToken);
-                if (existing.Any(s => s.AddressId == address.Id))
-                {
-                    return BusinessResult.Failure<SavedAddressDto>(new Error(
-                        nameof(command.Street),
-                        BusinessErrorMessage.SavedAddressAlreadyExists));
-                }
+                return BusinessResult.Failure<SavedAddressDto>(new Error(
+                    nameof(command.Street),
+                    BusinessErrorMessage.SavedAddressAlreadyExists));
             }
 
             if (address.Id == null || await addressRepository.GetByIdAsync(address.Id, cancellationToken) == null)
@@ -134,18 +121,31 @@ public class AddSavedAddress
             savedAddressRepository.Add(saved);
 
             var country = await countryRepository.GetByIdAsync(countryId, cancellationToken);
-            return BusinessResult.Success(new SavedAddressDto(
-                Id: saved.Id,
-                Label: saved.Label,
-                Street: address.Street,
-                City: address.City,
-                ZipCode: address.ZipCode,
-                State: address.State,
-                CountryId: address.CountryId,
-                Country: country?.Name,
-                Latitude: address.Latitude,
-                Longitude: address.Longitude,
-                IsDefault: saved.IsDefault));
+            return BusinessResult.Success(saved.MapToDto(address, country?.Name));
+        }
+
+        private async Task<string> ResolveCountryIdAsync(string? requestedCountryId, CancellationToken cancellationToken)
+        {
+            if (!string.IsNullOrEmpty(requestedCountryId))
+            {
+                return requestedCountryId;
+            }
+
+            var defaultCountry = await countryRepository.GetByIsoCodeAsync(AddressDefaults.FallbackCountryIso, cancellationToken)
+                ?? await countryRepository.GetQueryable().FirstOrDefaultAsync(cancellationToken);
+            return defaultCountry?.Id
+                ?? throw new InvalidOperationException("No countries configured");
+        }
+
+        private async Task<Address> GetOrCreateAddressAsync(Command command, string countryId, CancellationToken cancellationToken) =>
+            await addressRepository.GetAddressAsync(
+                command.Street, command.City, command.ZipCode, countryId, cancellationToken)
+            ?? Address.Create(command.Street, command.City, command.ZipCode, countryId, null, command.Latitude, command.Longitude);
+
+        private async Task<bool> IsAlreadySavedAsync(string userId, string addressId, CancellationToken cancellationToken)
+        {
+            var existing = await savedAddressRepository.GetByUserAsync(userId, cancellationToken);
+            return existing.Any(s => s.AddressId == addressId);
         }
     }
 }

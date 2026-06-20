@@ -40,12 +40,7 @@ public class CreateAdminUser
                         .AnyAsync(u => u.Email.ToLower() == email.ToLower(), ct))
                 .WithMessage(BusinessErrorMessage.AdminUserEmailExists);
 
-            RuleFor(x => x.Password)
-                .Cascade(CascadeMode.Stop)
-                .NotEmpty()
-                .WithMessage(BusinessErrorMessage.Required)
-                .MinimumLength(8)
-                .WithMessage(BusinessErrorMessage.InvalidPasswordFormat);
+            RuleFor(x => x.Password).ValidatePassword();
 
             RuleFor(x => x.FirstName)
                 .Cascade(CascadeMode.Stop)

@@ -10,7 +10,7 @@ import cz.cleansia.partner.api.model.OrderStatus
 import cz.cleansia.partner.core.auth.UserProfileStore
 import cz.cleansia.partner.core.location.haversineKm
 import cz.cleansia.partner.core.network.ApiErrorTranslator
-import cz.cleansia.partner.core.network.ApiResult
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.orders.OrdersMutation
 import cz.cleansia.partner.data.orders.OrdersPane
 import cz.cleansia.partner.data.orders.OrdersRepository

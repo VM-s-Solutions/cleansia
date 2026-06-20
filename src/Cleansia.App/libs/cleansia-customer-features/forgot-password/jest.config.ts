@@ -1,8 +1,8 @@
 export default {
   displayName: 'cleansia-customer-forgot-password',
-  preset: '../../../../jest.preset.js',
-  setupFilesAfterSetup: ['<rootDir>/src/test-setup.ts'],
-  coverageDirectory: '../../../../coverage/libs/cleansia-customer-features/forgot-password',
+  preset: '../../../jest.preset.js',
+  setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
+  coverageDirectory: '../../../coverage/libs/cleansia-customer-features/forgot-password',
   transform: {
     '^.+\\.(ts|mjs|js|html)$': [
       'jest-preset-angular',

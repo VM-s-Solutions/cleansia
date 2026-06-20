@@ -90,9 +90,15 @@ public static class BookingPolicy
     /// <param name="isFirstTimeCustomer">Whether the customer has 0 prior completed orders.</param>
     /// <param name="hasBeenAccepted">True if a cleaner has accepted the order (i.e. an OrderStatusHistory entry of Confirmed exists).</param>
     /// <param name="freeCancellationHoursOverride">
-    /// When set, replaces <see cref="FreeCancellationHours"/>. Used by Plus
-    /// members who get a more generous free-cancel window. The partial-fee
-    /// threshold and rates stay the same — Plus only widens the free window.
+    /// Absolute free-cancellation threshold in hours that REPLACES
+    /// <see cref="FreeCancellationHours"/> when set. The sole caller
+    /// (<c>CancelOrder</c>) passes <c>CancellationPolicy.FreeCancellationHours</c>,
+    /// which the resolver fills with the absolute window: 24 for the standard tier,
+    /// the membership's <c>FreeCancellationWindowHours</c> for a Plus member. A
+    /// SMALLER threshold is MORE generous (a member can cancel free closer to the
+    /// start), so a Plus plan seeded at e.g. 4 is wider than the standard 24h. Null
+    /// keeps the standard 24h window. The partial-fee and last-minute thresholds and
+    /// rates are unaffected — only the free window moves.
     /// </param>
     /// <returns>Fee rate: 0.0 = free, 0.25 = quarter charge, 0.5 = half charge.</returns>
     public static decimal CalculateCancellationFeeRate(

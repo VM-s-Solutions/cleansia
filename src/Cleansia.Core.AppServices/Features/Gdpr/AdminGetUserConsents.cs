@@ -27,7 +27,7 @@ public static class AdminGetUserConsents
     {
         public async Task<BusinessResult<List<UserConsentDto>>> Handle(Query request, CancellationToken cancellationToken)
         {
-            var consents = await userConsentRepository.GetByUserIdAsync(request.UserId, cancellationToken);
+            var consents = await userConsentRepository.GetByUserIdNoTrackingAsync(request.UserId, cancellationToken);
             var dtos = consents.Select(c => new UserConsentDto(
                 c.Id, c.ConsentType, c.IsGranted,
                 c.GrantedAt, c.WithdrawnAt, c.CreatedOn)).ToList();

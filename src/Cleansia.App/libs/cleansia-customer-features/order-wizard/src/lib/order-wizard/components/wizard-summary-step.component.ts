@@ -1,8 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, Input, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { CustomerClient } from '@cleansia/customer-services';
-import { PaymentType } from '@cleansia/partner-services';
+import { CustomerClient, PaymentType } from '@cleansia/customer-services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, of } from 'rxjs';
 import { InputTextModule } from 'primeng/inputtext';

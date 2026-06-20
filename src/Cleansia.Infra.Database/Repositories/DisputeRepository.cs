@@ -39,7 +39,7 @@ public class DisputeRepository(CleansiaDbContext context) : BaseRepository<Dispu
             .FirstOrDefaultAsync(d => d.StripeDisputeId == stripeDisputeId, cancellationToken);
     }
 
-    public Task<Dispute?> GetDisputeWithDetailsAsync(string disputeId)
+    public Task<Dispute?> GetDisputeWithDetailsAsync(string disputeId, CancellationToken cancellationToken)
     {
         return GetDbSet()
             .Include(d => d.Order)
@@ -48,7 +48,14 @@ public class DisputeRepository(CleansiaDbContext context) : BaseRepository<Dispu
                 .ThenInclude(m => m.Author)
             .Include(d => d.Evidence)
             .AsSplitQuery()
-            .FirstOrDefaultAsync(d => d.Id == disputeId);
+            .AsNoTracking()
+            .FirstOrDefaultAsync(d => d.Id == disputeId, cancellationToken);
+    }
+
+    public Task<Dispute?> GetForUpdateAsync(string disputeId, CancellationToken cancellationToken)
+    {
+        return GetDbSet()
+            .FirstOrDefaultAsync(d => d.Id == disputeId, cancellationToken);
     }
 
     public override Task<Dispute?> GetByIdAsync(string id, CancellationToken cancellationToken)

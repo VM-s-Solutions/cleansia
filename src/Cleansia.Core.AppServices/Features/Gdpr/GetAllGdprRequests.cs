@@ -1,43 +1,54 @@
-using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Features.Gdpr.DTOs;
+using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.AppServices.Shared.DTOs.RequestModels;
+using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Infra.Common.Validations;
+using Cleansia.Core.Domain.Sorting;
+using Cleansia.Core.Domain.Sorting.Common;
+using Cleansia.Core.Domain.Users;
 using FluentValidation;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Gdpr;
 
-public static class GetAllGdprRequests
+public class GetAllGdprRequests
 {
-    public record Query(int Page = 1, int PageSize = 20) : IQuery<List<GdprRequestDto>>;
+    public class Request : DataRangeRequest, IRequest<PagedData<GdprRequestDto>>;
 
-    internal class Validator : AbstractValidator<Query>
+    internal class Validator : AbstractValidator<Request>
     {
         public Validator()
         {
-            // Defense-in-depth against an admin / compromised admin sending
-            // pageSize=int.MaxValue to dump the whole audit table.
-            RuleFor(q => q.PageSize).InclusiveBetween(1, 100);
-            RuleFor(q => q.Page).GreaterThanOrEqualTo(1);
+            // Defense-in-depth against an admin / compromised admin sending a huge limit to dump
+            // the whole audit table. Tighter than DataRangeRequest's default range for this surface.
+            RuleFor(q => q.Limit).InclusiveBetween(1, 100);
         }
     }
 
     internal class Handler(IGdprRequestRepository gdprRequestRepository)
-        : IQueryHandler<Query, List<GdprRequestDto>>
+        : IRequestHandler<Request, PagedData<GdprRequestDto>>
     {
-        public async Task<BusinessResult<List<GdprRequestDto>>> Handle(Query request, CancellationToken cancellationToken)
+        public async Task<PagedData<GdprRequestDto>> Handle(Request request, CancellationToken cancellationToken)
         {
-            var offset = (request.Page - 1) * request.PageSize;
+            var sort = request.Sort?.MapToDomain().ToList();
+            if (sort is null || sort.Count == 0)
+            {
+                // Article-30 surface default: newest first. Without this, an empty Sort would leave
+                // the window unordered (Skip/Take on a heap) — the bug this re-shape fixes was the
+                // sort being applied AFTER paging, returning the wrong rows entirely.
+                sort = [new SortDefinition { Field = nameof(GdprRequest.CreatedOn), Direction = SortDirection.Descending }];
+            }
 
-            var requests = await gdprRequestRepository.GetPaged(offset, request.PageSize)
+            var totalItems = await gdprRequestRepository.GetCountAsync(null, cancellationToken);
+
+            var items = await gdprRequestRepository
+                .GetPagedSort<GdprRequestSort>(request.Offset, request.Limit, null, sort)
                 .AsNoTracking()
-                .OrderByDescending(r => r.CreatedOn)
-                .Select(r => new GdprRequestDto(
-                    r.Id, r.UserId, r.RequestType, r.Status,
-                    r.ProcessedBy, r.CompletedAt, r.Notes, r.CreatedOn))
+                .Select(r => r.MapToDto())
                 .ToListAsync(cancellationToken);
 
-            return BusinessResult.Success(requests);
+            return items.MapToDto(totalItems, request);
         }
     }
 }

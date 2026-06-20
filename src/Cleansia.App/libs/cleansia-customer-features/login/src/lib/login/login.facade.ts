@@ -1,12 +1,12 @@
 import { inject, Injectable } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   CustomerAuthService,
+  JwtTokenResponse,
 } from '@cleansia/customer-services';
-import { JwtTokenResponse } from '@cleansia/partner-services';
 import { loadCustomerUser, selectCustomerLoading } from '@cleansia/customer-stores';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { GuestOrderService } from '@cleansia-customer/orders';
@@ -16,6 +16,7 @@ import { takeUntil } from 'rxjs';
 
 @Injectable()
 export class LoginFacade extends UnsubscribeControlDirective {
+  private readonly fb = inject(FormBuilder);
   private readonly store = inject(Store);
   private readonly router = inject(Router);
   private readonly authService = inject(CustomerAuthService);
@@ -26,15 +27,14 @@ export class LoginFacade extends UnsubscribeControlDirective {
   formGroup = this.createFormGroup();
   loading = toSignal(this.store.select(selectCustomerLoading));
 
-  login() {
+  login(): void {
     if (this.formGroup.invalid) {
-      return this.snackbarService.showError(
+      this.snackbarService.showError(
         this.translate.instant('validation.common.not_all_fields_filled')
       );
+      return;
     }
-    const email = this.formGroup.get('email')?.value;
-    const password = this.formGroup.get('password')?.value;
-    const rememberMe = this.formGroup.get('rememberMe')?.value;
+    const { email, password, rememberMe } = this.formGroup.getRawValue();
     this.authService
       .login(email, password, rememberMe)
       .pipe(takeUntil(this.destroyed$))
@@ -59,7 +59,7 @@ export class LoginFacade extends UnsubscribeControlDirective {
       });
   }
 
-  googleLogin(credential: string) {
+  googleLogin(credential: string): void {
     const decoded = JSON.parse(atob(credential.split('.')[1]));
     const { sub: googleId, email, given_name: firstName, family_name: lastName } = decoded;
 
@@ -80,11 +80,11 @@ export class LoginFacade extends UnsubscribeControlDirective {
       });
   }
 
-  private createFormGroup(): FormGroup {
-    return new FormGroup({
-      email: new FormControl('', [Validators.required, Validators.email]),
-      password: new FormControl('', [Validators.required]),
-      rememberMe: new FormControl(false),
+  private createFormGroup() {
+    return this.fb.nonNullable.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required]],
+      rememberMe: [false],
     });
   }
 }

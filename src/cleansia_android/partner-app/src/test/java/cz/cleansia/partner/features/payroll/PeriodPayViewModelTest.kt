@@ -4,9 +4,9 @@ import androidx.lifecycle.SavedStateHandle
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.partner.core.auth.UserProfileData
 import cz.cleansia.partner.core.auth.UserProfileStore
-import cz.cleansia.partner.core.network.ApiError
+import cz.cleansia.core.network.ApiError
 import cz.cleansia.partner.core.network.ApiErrorTranslator
-import cz.cleansia.partner.core.network.ApiResult
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.payroll.PeriodPayRepository
 import cz.cleansia.partner.data.payroll.PeriodPaySummary
 import cz.cleansia.partner.testing.MainDispatcherRule

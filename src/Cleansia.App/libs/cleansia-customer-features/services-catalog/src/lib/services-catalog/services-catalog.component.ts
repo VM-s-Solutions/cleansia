@@ -9,7 +9,7 @@ import {
   selectCustomerPackages,
   selectCustomerServices,
 } from '@cleansia/customer-stores';
-import { PackageListItem, PackageServiceSummary, ServiceListItem } from '@cleansia/partner-services';
+import { PackageListItem, PackageServiceSummary, ServiceListItem } from '@cleansia/customer-services';
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';

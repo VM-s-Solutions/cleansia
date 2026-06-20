@@ -72,7 +72,8 @@ fun MembershipManagementCard(
 ) {
     val current by viewModel.current.collectAsState()
     val plans by viewModel.plans.collectAsState()
-    val submitting by viewModel.submitting.collectAsState()
+    val submitState by viewModel.submitState.collectAsState()
+    val submitting = submitState is cz.cleansia.customer.ui.state.ActionState.Submitting
     val context = LocalContext.current
 
     // TODO(W3.3): refactor to VM injection — pull snackbar into

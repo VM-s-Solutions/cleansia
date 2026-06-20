@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.customer.core.disputes.DisputeListItemDto
 import cz.cleansia.customer.core.disputes.DisputeRepository
+import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.snackbar.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -38,18 +39,22 @@ class DisputesListViewModel @Inject constructor(
         // populated (e.g. user opened the list, went back, then re-opened).
         viewModelScope.launch {
             if (!disputeRepository.loaded.value) {
-                disputeRepository.refresh()
+                disputeRepository.refresh().onError(::surfaceError)
             }
         }
     }
 
     /** Pull-to-refresh — always hits the network regardless of cache state. */
     fun refresh() {
-        viewModelScope.launch { disputeRepository.refresh() }
+        viewModelScope.launch { disputeRepository.refresh().onError(::surfaceError) }
     }
 
     /** Infinite scroll — additive page fetch, silent on failure. */
     fun loadNextPage() {
         viewModelScope.launch { disputeRepository.loadNextPage() }
+    }
+
+    private fun surfaceError(error: ApiError) {
+        if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
     }
 }

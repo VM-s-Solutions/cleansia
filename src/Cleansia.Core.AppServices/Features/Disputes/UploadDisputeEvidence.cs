@@ -6,6 +6,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Features.Disputes;
 
@@ -71,7 +72,8 @@ public class UploadDisputeEvidence
     public class Handler(
         IDisputeRepository disputeRepository,
         IUserSessionProvider userSessionProvider,
-        IBlobContainerClientFactory blobClientFactory) : ICommandHandler<Command, Response>
+        IBlobContainerClientFactory blobClientFactory,
+        ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -105,13 +107,19 @@ public class UploadDisputeEvidence
 
             var addedEvidence = dispute.Evidence.LastOrDefault(e => e.FilePath == blobName);
 
+            // The evidence is already persisted to blob storage and recorded on the dispute; a failure
+            // generating the read SAS must NOT fail the upload. Degrade to a null URL (the caller can
+            // re-resolve it later) but never swallow silently (S6) — log it for diagnosis.
             string? blobUrl = null;
             try
             {
                 blobUrl = blobClient.GenerateSasUri(blobName, TimeSpan.FromHours(1)).ToString();
             }
-            catch
+            catch (Exception ex)
             {
+                logger.LogWarning(ex,
+                    "Failed to generate SAS URI for dispute evidence {BlobName} on dispute {DisputeId}; returning null URL",
+                    blobName, command.DisputeId);
             }
 
             return BusinessResult.Success(new Response(

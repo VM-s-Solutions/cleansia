@@ -3,8 +3,6 @@ using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Infra.Common.Configuration.Interfaces;
-using Cleansia.Infra.Common.Validations;
-using Cleansia.Web.Partner.Abstractions;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,7 +16,7 @@ namespace Cleansia.Web.Partner.Controllers;
 public class AuthController(
     IMediator mediator,
     AuthCookieWriter cookieWriter,
-    AuthCookieConfig cookieConfig) : ApiController(mediator)
+    AuthCookieConfig cookieConfig) : CookieAuthApiController(mediator, cookieWriter, cookieConfig)
 {
     [AllowAnonymous]
     [HttpPost("Register")]
@@ -51,7 +49,8 @@ public class AuthController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] PartnerLogin.Command command)
     {
-        var result = await Mediator.Send(command);
+        var enriched = command with { TrustedDeviceToken = RefreshTokenFromCookieOrBody(command.TrustedDeviceToken ?? string.Empty) };
+        var result = await Mediator.Send(enriched);
 
         return HandleTokenIssuingResult(result);
     }
@@ -97,9 +96,12 @@ public class AuthController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshToken.Command command, CancellationToken cancellationToken)
     {
-        // Refresh token lives in the HttpOnly cookie now � body is back-compat only.
-        var token = cookieWriter.ReadRefreshTokenFromCookie(HttpContext, cookieConfig) ?? command.Token;
-        var enriched = command with { Token = token, RequiredProfile = UserProfile.Employee, RequiredAudience = JwtAudiences.Partner };
+        var enriched = command with
+        {
+            Token = RefreshTokenFromCookieOrBody(command.Token),
+            RequiredProfile = UserProfile.Employee,
+            RequiredAudience = JwtAudiences.Partner,
+        };
         var result = await Mediator.Send(enriched, cancellationToken);
         return HandleTokenIssuingResult(result);
     }
@@ -110,24 +112,9 @@ public class AuthController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Logout([FromBody] Logout.Command command, CancellationToken cancellationToken)
     {
-        var token = cookieWriter.ReadRefreshTokenFromCookie(HttpContext, cookieConfig) ?? command.Token;
-        var enriched = command with { Token = token };
+        var enriched = command with { Token = RefreshTokenFromCookieOrBody(command.Token) };
         var result = await Mediator.Send(enriched, cancellationToken);
-        // Always clear the cookies on logout, even when the server-side
-        // revoke failed � the user pressed sign-out, they expect to be out.
-        cookieWriter.ClearCookies(HttpContext, cookieConfig);
+        ClearAuthCookies();
         return HandleResult<bool>(result);
-    }
-
-    // Augment successful token-issuing results with the HttpOnly cookies +
-    // the CSRF token before serializing. Failures fall through unchanged.
-    private IActionResult HandleTokenIssuingResult(BusinessResult<JwtTokenResponse> result)
-    {
-        if (result.IsSuccess && result.Value != null)
-        {
-            var augmented = cookieWriter.ApplyCookies(HttpContext, result.Value, cookieConfig);
-            return HandleResult<JwtTokenResponse>(BusinessResult.Success(augmented));
-        }
-        return HandleResult<JwtTokenResponse>(result);
     }
 }

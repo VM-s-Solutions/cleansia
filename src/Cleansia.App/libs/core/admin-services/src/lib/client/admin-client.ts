@@ -2050,7 +2050,7 @@ export interface IAdminDisputeClient {
      * @param body (optional) 
      * @return OK
      */
-    updateStatus(body?: UpdateDisputeStatusCommand | undefined): Observable<void>;
+    updateStatus(body?: UpdateDisputeStatusCommand | undefined): Observable<UpdateDisputeStatusResponse>;
     /**
      * @param body (optional) 
      * @return OK
@@ -2375,7 +2375,7 @@ export class AdminDisputeClient implements IAdminDisputeClient {
      * @param body (optional) 
      * @return OK
      */
-    updateStatus(body?: UpdateDisputeStatusCommand | undefined): Observable<void> {
+    updateStatus(body?: UpdateDisputeStatusCommand | undefined): Observable<UpdateDisputeStatusResponse> {
         let url = this.baseUrl + "/api/AdminDispute/update-status";
         url = url.replace(/[?&]$/, "");
 
@@ -2387,6 +2387,7 @@ export class AdminDisputeClient implements IAdminDisputeClient {
             responseType: "blob",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
+                "Accept": "application/json"
             })
         };
 
@@ -2397,14 +2398,14 @@ export class AdminDisputeClient implements IAdminDisputeClient {
                 try {
                     return this.processUpdateStatus(response as any);
                 } catch (e) {
-                    return ObservableThrow(e) as any as Observable<void>;
+                    return ObservableThrow(e) as any as Observable<UpdateDisputeStatusResponse>;
                 }
             } else
-                return ObservableThrow(response) as any as Observable<void>;
+                return ObservableThrow(response) as any as Observable<UpdateDisputeStatusResponse>;
         }));
     }
 
-    protected processUpdateStatus(response: HttpResponseBase): Observable<void> {
+    protected processUpdateStatus(response: HttpResponseBase): Observable<UpdateDisputeStatusResponse> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -2413,7 +2414,10 @@ export class AdminDisputeClient implements IAdminDisputeClient {
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return ObservableOf(null as any);
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = UpdateDisputeStatusResponse.fromJS(resultData200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -5229,11 +5233,12 @@ export interface IAdminGdprClient {
      */
     consents(userId: string): Observable<UserConsentDto[]>;
     /**
-     * @param page (optional) 
-     * @param pageSize (optional) 
+     * @param sort (optional) 
+     * @param offset (optional) 
+     * @param limit (optional) 
      * @return OK
      */
-    requests(page?: number | undefined, pageSize?: number | undefined): Observable<GdprRequestDto[]>;
+    requests(sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfGdprRequestDto>;
 }
 
 @Injectable({
@@ -5415,20 +5420,30 @@ export class AdminGdprClient implements IAdminGdprClient {
     }
 
     /**
-     * @param page (optional) 
-     * @param pageSize (optional) 
+     * @param sort (optional) 
+     * @param offset (optional) 
+     * @param limit (optional) 
      * @return OK
      */
-    requests(page?: number | undefined, pageSize?: number | undefined): Observable<GdprRequestDto[]> {
+    requests(sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfGdprRequestDto> {
         let url = this.baseUrl + "/api/v1/AdminGdpr/requests?";
-        if (page === null)
-            throw new globalThis.Error("The parameter 'page' cannot be null.");
-        else if (page !== undefined)
-            url += "page=" + encodeURIComponent("" + page) + "&";
-        if (pageSize === null)
-            throw new globalThis.Error("The parameter 'pageSize' cannot be null.");
-        else if (pageSize !== undefined)
-            url += "pageSize=" + encodeURIComponent("" + pageSize) + "&";
+        if (sort === null)
+            throw new globalThis.Error("The parameter 'sort' cannot be null.");
+        else if (sort !== undefined)
+            sort && sort.forEach((item, index) => {
+                for (const attr in item)
+        			if (item.hasOwnProperty(attr)) {
+        				url += "Sort[" + index + "]." + attr + "=" + encodeURIComponent("" + (item as any)[attr]) + "&";
+        			}
+            });
+        if (offset === null)
+            throw new globalThis.Error("The parameter 'offset' cannot be null.");
+        else if (offset !== undefined)
+            url += "Offset=" + encodeURIComponent("" + offset) + "&";
+        if (limit === null)
+            throw new globalThis.Error("The parameter 'limit' cannot be null.");
+        else if (limit !== undefined)
+            url += "Limit=" + encodeURIComponent("" + limit) + "&";
         url = url.replace(/[?&]$/, "");
 
         let options : any = {
@@ -5446,14 +5461,14 @@ export class AdminGdprClient implements IAdminGdprClient {
                 try {
                     return this.processRequests(response as any);
                 } catch (e) {
-                    return ObservableThrow(e) as any as Observable<GdprRequestDto[]>;
+                    return ObservableThrow(e) as any as Observable<PagedDataOfGdprRequestDto>;
                 }
             } else
-                return ObservableThrow(response) as any as Observable<GdprRequestDto[]>;
+                return ObservableThrow(response) as any as Observable<PagedDataOfGdprRequestDto>;
         }));
     }
 
-    protected processRequests(response: HttpResponseBase): Observable<GdprRequestDto[]> {
+    protected processRequests(response: HttpResponseBase): Observable<PagedDataOfGdprRequestDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -5464,14 +5479,7 @@ export class AdminGdprClient implements IAdminGdprClient {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
-            if (Array.isArray(resultData200)) {
-                result200 = [] as any;
-                for (let item of resultData200)
-                    result200!.push(GdprRequestDto.fromJS(item));
-            }
-            else {
-                result200 = null as any;
-            }
+            result200 = PagedDataOfGdprRequestDto.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status !== 200 && status !== 204) {
@@ -6955,7 +6963,7 @@ export interface IAdminLoyaltyTierClient {
      * @param body (optional) 
      * @return OK
      */
-    previewThresholdImpact(body?: PreviewTierThresholdImpactCommand | undefined): Observable<PreviewTierThresholdImpactResponse>;
+    previewThresholdImpact(body?: PreviewTierThresholdImpactQuery | undefined): Observable<PreviewTierThresholdImpactResponse>;
 }
 
 @Injectable({
@@ -7134,7 +7142,7 @@ export class AdminLoyaltyTierClient implements IAdminLoyaltyTierClient {
      * @param body (optional) 
      * @return OK
      */
-    previewThresholdImpact(body?: PreviewTierThresholdImpactCommand | undefined): Observable<PreviewTierThresholdImpactResponse> {
+    previewThresholdImpact(body?: PreviewTierThresholdImpactQuery | undefined): Observable<PreviewTierThresholdImpactResponse> {
         let url = this.baseUrl + "/api/AdminLoyaltyTier/preview-threshold-impact";
         url = url.replace(/[?&]$/, "");
 
@@ -7213,7 +7221,7 @@ export interface IAdminMarketingClient {
      * @param body (optional) 
      * @return OK
      */
-    sendSitewidePromo(body?: SendSitewidePromoCommand | undefined): Observable<void>;
+    sendSitewidePromo(body?: SendSitewidePromoCommand | undefined): Observable<SendSitewidePromoResponse>;
 }
 
 @Injectable({
@@ -7233,7 +7241,7 @@ export class AdminMarketingClient implements IAdminMarketingClient {
      * @param body (optional) 
      * @return OK
      */
-    sendSitewidePromo(body?: SendSitewidePromoCommand | undefined): Observable<void> {
+    sendSitewidePromo(body?: SendSitewidePromoCommand | undefined): Observable<SendSitewidePromoResponse> {
         let url = this.baseUrl + "/api/AdminMarketing/send-sitewide-promo";
         url = url.replace(/[?&]$/, "");
 
@@ -7245,6 +7253,7 @@ export class AdminMarketingClient implements IAdminMarketingClient {
             responseType: "blob",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
+                "Accept": "application/json"
             })
         };
 
@@ -7255,14 +7264,14 @@ export class AdminMarketingClient implements IAdminMarketingClient {
                 try {
                     return this.processSendSitewidePromo(response as any);
                 } catch (e) {
-                    return ObservableThrow(e) as any as Observable<void>;
+                    return ObservableThrow(e) as any as Observable<SendSitewidePromoResponse>;
                 }
             } else
-                return ObservableThrow(response) as any as Observable<void>;
+                return ObservableThrow(response) as any as Observable<SendSitewidePromoResponse>;
         }));
     }
 
-    protected processSendSitewidePromo(response: HttpResponseBase): Observable<void> {
+    protected processSendSitewidePromo(response: HttpResponseBase): Observable<SendSitewidePromoResponse> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -7271,7 +7280,10 @@ export class AdminMarketingClient implements IAdminMarketingClient {
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
-            return ObservableOf(null as any);
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = SendSitewidePromoResponse.fromJS(resultData200);
+            return ObservableOf(result200);
             }));
         } else if (status === 400) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -13968,6 +13980,7 @@ export class AdminLoginCommand implements IAdminLoginCommand {
     email!: string | undefined;
     password!: string | undefined;
     rememberMe!: boolean;
+    trustedDeviceToken!: string | undefined;
 
     constructor(data?: IAdminLoginCommand) {
         if (data) {
@@ -13983,6 +13996,7 @@ export class AdminLoginCommand implements IAdminLoginCommand {
             this.email = Data["email"];
             this.password = Data["password"];
             this.rememberMe = Data["rememberMe"];
+            this.trustedDeviceToken = Data["trustedDeviceToken"];
         }
     }
 
@@ -13998,6 +14012,7 @@ export class AdminLoginCommand implements IAdminLoginCommand {
         data["email"] = this.email;
         data["password"] = this.password;
         data["rememberMe"] = this.rememberMe;
+        data["trustedDeviceToken"] = this.trustedDeviceToken;
         return data;
     }
 }
@@ -14006,6 +14021,7 @@ export interface IAdminLoginCommand {
     email: string | undefined;
     password: string | undefined;
     rememberMe: boolean;
+    trustedDeviceToken: string | undefined;
 }
 
 export class AdminOverrideOrderStatusCommand implements IAdminOverrideOrderStatusCommand {
@@ -18992,6 +19008,8 @@ export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
     currencyCode!: string | undefined;
     status!: EmployeeInvoiceStatus;
     pdfBlobName!: string | undefined;
+    pdfGenerationFailed!: boolean;
+    pdfGenerationError!: string | undefined;
     generatedAt!: Date;
     approvedAt!: Date | undefined;
     approvedBy!: string | undefined;
@@ -19028,6 +19046,8 @@ export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
             this.currencyCode = Data["currencyCode"];
             this.status = Data["status"];
             this.pdfBlobName = Data["pdfBlobName"];
+            this.pdfGenerationFailed = Data["pdfGenerationFailed"];
+            this.pdfGenerationError = Data["pdfGenerationError"];
             this.generatedAt = Data["generatedAt"] ? new Date(Data["generatedAt"].toString()) : undefined as any;
             this.approvedAt = Data["approvedAt"] ? new Date(Data["approvedAt"].toString()) : undefined as any;
             this.approvedBy = Data["approvedBy"];
@@ -19068,6 +19088,8 @@ export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
         data["currencyCode"] = this.currencyCode;
         data["status"] = this.status;
         data["pdfBlobName"] = this.pdfBlobName;
+        data["pdfGenerationFailed"] = this.pdfGenerationFailed;
+        data["pdfGenerationError"] = this.pdfGenerationError;
         data["generatedAt"] = this.generatedAt ? this.generatedAt.toISOString() : undefined as any;
         data["approvedAt"] = this.approvedAt ? this.approvedAt.toISOString() : undefined as any;
         data["approvedBy"] = this.approvedBy;
@@ -19101,6 +19123,8 @@ export interface IEmployeeInvoiceDetailDto {
     currencyCode: string | undefined;
     status: EmployeeInvoiceStatus;
     pdfBlobName: string | undefined;
+    pdfGenerationFailed: boolean;
+    pdfGenerationError: string | undefined;
     generatedAt: Date;
     approvedAt: Date | undefined;
     approvedBy: string | undefined;
@@ -19127,6 +19151,8 @@ export class EmployeeInvoiceDto implements IEmployeeInvoiceDto {
     currencyCode!: string | undefined;
     status!: EmployeeInvoiceStatus;
     pdfBlobName!: string | undefined;
+    pdfGenerationFailed!: boolean;
+    pdfGenerationError!: string | undefined;
     generatedAt!: Date;
     approvedAt!: Date | undefined;
     approvedBy!: string | undefined;
@@ -19161,6 +19187,8 @@ export class EmployeeInvoiceDto implements IEmployeeInvoiceDto {
             this.currencyCode = Data["currencyCode"];
             this.status = Data["status"];
             this.pdfBlobName = Data["pdfBlobName"];
+            this.pdfGenerationFailed = Data["pdfGenerationFailed"];
+            this.pdfGenerationError = Data["pdfGenerationError"];
             this.generatedAt = Data["generatedAt"] ? new Date(Data["generatedAt"].toString()) : undefined as any;
             this.approvedAt = Data["approvedAt"] ? new Date(Data["approvedAt"].toString()) : undefined as any;
             this.approvedBy = Data["approvedBy"];
@@ -19195,6 +19223,8 @@ export class EmployeeInvoiceDto implements IEmployeeInvoiceDto {
         data["currencyCode"] = this.currencyCode;
         data["status"] = this.status;
         data["pdfBlobName"] = this.pdfBlobName;
+        data["pdfGenerationFailed"] = this.pdfGenerationFailed;
+        data["pdfGenerationError"] = this.pdfGenerationError;
         data["generatedAt"] = this.generatedAt ? this.generatedAt.toISOString() : undefined as any;
         data["approvedAt"] = this.approvedAt ? this.approvedAt.toISOString() : undefined as any;
         data["approvedBy"] = this.approvedBy;
@@ -19222,6 +19252,8 @@ export interface IEmployeeInvoiceDto {
     currencyCode: string | undefined;
     status: EmployeeInvoiceStatus;
     pdfBlobName: string | undefined;
+    pdfGenerationFailed: boolean;
+    pdfGenerationError: string | undefined;
     generatedAt: Date;
     approvedAt: Date | undefined;
     approvedBy: string | undefined;
@@ -21468,6 +21500,7 @@ export enum LoyaltyEarnSource {
     Referral = 3,
     ManualGrant = 4,
     OrderPartiallyRefunded = 5,
+    ManualRevoke = 6,
 }
 
 export enum LoyaltyTier {
@@ -23560,6 +23593,62 @@ export interface IPagedDataOfEmployeePayConfigDto {
     data: EmployeePayConfigDto[] | undefined;
 }
 
+export class PagedDataOfGdprRequestDto implements IPagedDataOfGdprRequestDto {
+    pageNumber!: number;
+    pageSize!: number;
+    total!: number;
+    data!: GdprRequestDto[] | undefined;
+
+    constructor(data?: IPagedDataOfGdprRequestDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.pageNumber = Data["pageNumber"];
+            this.pageSize = Data["pageSize"];
+            this.total = Data["total"];
+            if (Array.isArray(Data["data"])) {
+                this.data = [] as any;
+                for (let item of Data["data"])
+                    this.data!.push(GdprRequestDto.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): PagedDataOfGdprRequestDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new PagedDataOfGdprRequestDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["pageNumber"] = this.pageNumber;
+        data["pageSize"] = this.pageSize;
+        data["total"] = this.total;
+        if (Array.isArray(this.data)) {
+            data["data"] = [];
+            for (let item of this.data)
+                data["data"].push(item ? item.toJSON() : undefined as any);
+        }
+        return data;
+    }
+}
+
+export interface IPagedDataOfGdprRequestDto {
+    pageNumber: number;
+    pageSize: number;
+    total: number;
+    data: GdprRequestDto[] | undefined;
+}
+
 export class PagedDataOfGetUserLoyaltyActivityActivityItem implements IPagedDataOfGetUserLoyaltyActivityActivityItem {
     pageNumber!: number;
     pageSize!: number;
@@ -24257,13 +24346,13 @@ export enum PhotoType {
     After = 2,
 }
 
-export class PreviewTierThresholdImpactCommand implements IPreviewTierThresholdImpactCommand {
+export class PreviewTierThresholdImpactQuery implements IPreviewTierThresholdImpactQuery {
     bronzeThreshold!: number;
     silverThreshold!: number;
     goldThreshold!: number;
     platinumThreshold!: number;
 
-    constructor(data?: IPreviewTierThresholdImpactCommand) {
+    constructor(data?: IPreviewTierThresholdImpactQuery) {
         if (data) {
             for (var property in data) {
                 if (data.hasOwnProperty(property))
@@ -24281,9 +24370,9 @@ export class PreviewTierThresholdImpactCommand implements IPreviewTierThresholdI
         }
     }
 
-    static fromJS(data: any): PreviewTierThresholdImpactCommand {
+    static fromJS(data: any): PreviewTierThresholdImpactQuery {
         data = typeof data === 'object' ? data : {};
-        let result = new PreviewTierThresholdImpactCommand();
+        let result = new PreviewTierThresholdImpactQuery();
         result.init(data);
         return result;
     }
@@ -24298,7 +24387,7 @@ export class PreviewTierThresholdImpactCommand implements IPreviewTierThresholdI
     }
 }
 
-export interface IPreviewTierThresholdImpactCommand {
+export interface IPreviewTierThresholdImpactQuery {
     bronzeThreshold: number;
     silverThreshold: number;
     goldThreshold: number;
@@ -25760,6 +25849,42 @@ export interface ISendSitewidePromoCommand {
     bodyRu: string | undefined;
 }
 
+export class SendSitewidePromoResponse implements ISendSitewidePromoResponse {
+    enqueued!: boolean;
+
+    constructor(data?: ISendSitewidePromoResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.enqueued = Data["enqueued"];
+        }
+    }
+
+    static fromJS(data: any): SendSitewidePromoResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new SendSitewidePromoResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["enqueued"] = this.enqueued;
+        return data;
+    }
+}
+
+export interface ISendSitewidePromoResponse {
+    enqueued: boolean;
+}
+
 export class SendTestEmailByTypeCommand implements ISendTestEmailByTypeCommand {
     emailType!: EmailType;
     languageCode!: string | undefined;
@@ -26847,6 +26972,46 @@ export class UpdateDisputeStatusCommand implements IUpdateDisputeStatusCommand {
 export interface IUpdateDisputeStatusCommand {
     disputeId: string | undefined;
     newStatus: DisputeStatus;
+}
+
+export class UpdateDisputeStatusResponse implements IUpdateDisputeStatusResponse {
+    disputeId!: string | undefined;
+    status!: DisputeStatus;
+
+    constructor(data?: IUpdateDisputeStatusResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.disputeId = Data["disputeId"];
+            this.status = Data["status"];
+        }
+    }
+
+    static fromJS(data: any): UpdateDisputeStatusResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new UpdateDisputeStatusResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["disputeId"] = this.disputeId;
+        data["status"] = this.status;
+        return data;
+    }
+}
+
+export interface IUpdateDisputeStatusResponse {
+    disputeId: string | undefined;
+    status: DisputeStatus;
 }
 
 export class UpdateEmailTemplateCommand implements IUpdateEmailTemplateCommand {

@@ -13,6 +13,8 @@ import cz.cleansia.core.auth.TokenStore
 import cz.cleansia.customer.core.data.AddressRepository
 import cz.cleansia.customer.core.disputes.DisputeRepository
 import cz.cleansia.customer.core.loyalty.LoyaltyRepository
+import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.networkCall
 import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.referral.ReferralRepository
@@ -47,6 +49,11 @@ class UserRepository @Inject constructor(
      * Cached current-user snapshot. Screens observe this; call [refreshCurrentUser]
      * to trigger a fetch. Emits null while the first fetch is in flight and
      * after [deleteAccount]/sign-out.
+     *
+     * Foreground operations return [ApiResult.Success] on success and
+     * [ApiResult.Error] carrying the parsed message on failure. The consuming
+     * ViewModel surfaces the snackbar; an [ApiError.Network] failure stays silent
+     * (NetworkErrorInterceptor owns the infra toast).
      */
     private val _currentUser = MutableStateFlow<CurrentUser?>(null)
     val currentUser: StateFlow<CurrentUser?> = _currentUser.asStateFlow()
@@ -70,40 +77,29 @@ class UserRepository @Inject constructor(
         }
         .stateIn(derivedScope, SharingStarted.Eagerly, initialValue = false)
 
-    /**
-     * Fetch the authenticated user's profile and update the cached [currentUser].
-     *
-     * @return null on success, translated user-facing error message on failure.
-     */
-    suspend fun refreshCurrentUser(): String? {
+    /** Fetch the authenticated user's profile and update the cached [currentUser]. */
+    suspend fun refreshCurrentUser(): ApiResult<Unit> {
         // User id isn't part of the profile response — it's in the JWT sub
         // claim. Pull it once at request time so downstream code can keep
         // using `currentUser.value.id`.
-        val accessToken = tokenStore.current()?.accessToken
-            ?: return appContext.getString(R.string.error_generic_network)
-        val userId = JwtDecoder.extractUserId(accessToken)
-            ?: return appContext.getString(R.string.error_generic_network)
+        val accessToken = tokenStore.current()?.accessToken ?: return networkError()
+        val userId = JwtDecoder.extractUserId(accessToken) ?: return networkError()
 
         // Generated method takes an optional `query` parameter because the
         // backend declares `[FromQuery] GetCurrentUser.Query query` (an empty
         // record). Pass null — backend defaults are fine.
-        val response = networkCall { userApi.userGetCurrentUser(query = null) }
-            ?: return appContext.getString(R.string.error_generic_network)
-
-        if (!response.isSuccessful) {
-            return ApiErrorParser.parseToUserMessage(appContext, response.errorBody(), response.code())
+        val resp = networkCall { userApi.userGetCurrentUser(query = null) } ?: return networkError()
+        if (!resp.isSuccessful) {
+            return httpError(resp.errorBody(), resp.code())
         }
-
-        val body = response.body() ?: return appContext.getString(R.string.error_generic_network)
+        val body = resp.body() ?: return networkError()
         _currentUser.value = body.toCurrentUser(userId)
-        return null
+        return ApiResult.Success(Unit)
     }
 
     /**
      * Update the authenticated user's profile. On success, re-fetches so the
      * cached snapshot reflects server-side normalisations.
-     *
-     * @return null on success, translated user-facing error message on failure.
      */
     suspend fun updateCurrentUser(
         firstName: String,
@@ -111,9 +107,8 @@ class UserRepository @Inject constructor(
         phoneNumber: String?,
         birthDate: String?,
         languageCode: String?,
-    ): String? {
-        val userId = _currentUser.value?.id
-            ?: return appContext.getString(R.string.error_generic_network)
+    ): ApiResult<Unit> {
+        val userId = _currentUser.value?.id ?: return networkError()
 
         // Generated command takes `kotlinx.datetime.LocalDate?` for birthDate.
         // UI passes "yyyy-MM-dd" (or blank). Parse defensively — a malformed
@@ -122,7 +117,7 @@ class UserRepository @Inject constructor(
             runCatching { LocalDate.parse(raw) }.getOrNull()
         }
 
-        val response = networkCall {
+        val resp = networkCall {
             userApi.userUpdateCurrentUser(
                 UpdateCurrentUserCommand(
                     id = userId,
@@ -133,10 +128,9 @@ class UserRepository @Inject constructor(
                     languageCode = languageCode,
                 ),
             )
-        } ?: return appContext.getString(R.string.error_generic_network)
-
-        if (!response.isSuccessful) {
-            return ApiErrorParser.parseToUserMessage(appContext, response.errorBody(), response.code())
+        } ?: return networkError()
+        if (!resp.isSuccessful) {
+            return httpError(resp.errorBody(), resp.code())
         }
 
         // Re-fetch so the cache reflects the persisted row (trimmed whitespace,
@@ -147,15 +141,11 @@ class UserRepository @Inject constructor(
     /**
      * Permanently delete the signed-in user's account. On success, wipes local
      * tokens and emits a forced sign-out so the app returns to the login screen.
-     *
-     * Returns a user-facing translated error message on failure, or null on success.
      */
-    suspend fun deleteAccount(): String? {
-        val response = networkCall { gdprApi.gdprDeleteMyAccount() }
-            ?: return appContext.getString(R.string.error_generic_network)
-
-        if (!response.isSuccessful) {
-            return ApiErrorParser.parseToUserMessage(appContext, response.errorBody(), response.code())
+    suspend fun deleteAccount(): ApiResult<Unit> {
+        val resp = networkCall { gdprApi.gdprDeleteMyAccount() } ?: return networkError()
+        if (!resp.isSuccessful) {
+            return httpError(resp.errorBody(), resp.code())
         }
 
         _currentUser.value = null
@@ -166,6 +156,24 @@ class UserRepository @Inject constructor(
         referralRepository.clear()
         tokenStore.clear()
         sessionManager.emitForcedSignOut(ForcedSignOutReason.UserInitiated)
-        return null
+        return ApiResult.Success(Unit)
+    }
+
+    private fun networkError(): ApiResult<Nothing> =
+        ApiResult.Error(ApiError.Network(appContext.getString(R.string.error_generic_network)))
+
+    private fun httpError(errorBody: okhttp3.ResponseBody?, httpCode: Int): ApiResult<Nothing> {
+        // Carry the message [ApiErrorParser] already resolved from the body so
+        // the surfacing ViewModel shows the identical string. The 401 object
+        // would drop that message, so it folds into the message-carrying
+        // [ApiError.Unknown] alongside the generic fallback.
+        val message = ApiErrorParser.parseToUserMessage(appContext, errorBody, httpCode)
+        val error = when (httpCode) {
+            404 -> ApiError.NotFound(message)
+            400 -> ApiError.BadRequest(message)
+            in 500..599 -> ApiError.Server(statusCode = httpCode, message = message)
+            else -> ApiError.Unknown(message)
+        }
+        return ApiResult.Error(error)
     }
 }

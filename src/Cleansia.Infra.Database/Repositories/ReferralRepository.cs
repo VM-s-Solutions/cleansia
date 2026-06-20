@@ -47,6 +47,23 @@ public class ReferralRepository(CleansiaDbContext context)
             .CountAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyDictionary<ReferralStatus, int>> GetStatusCountsByReferrerAsync(
+        string userId, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return new Dictionary<ReferralStatus, int>();
+        }
+
+        var grouped = await GetDbSet()
+            .Where(r => r.ReferrerUserId == userId)
+            .GroupBy(r => r.Status)
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToListAsync(cancellationToken);
+
+        return grouped.ToDictionary(x => x.Status, x => x.Count);
+    }
+
     public async Task<IReadOnlyList<Referral>> GetExpirableAsync(
         DateTimeOffset cutoff, CancellationToken cancellationToken)
     {

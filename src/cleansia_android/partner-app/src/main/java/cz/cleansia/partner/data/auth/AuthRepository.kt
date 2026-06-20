@@ -14,8 +14,8 @@ import cz.cleansia.partner.api.model.RequestPasswordChangeCommand
 import cz.cleansia.partner.api.model.ResendConfirmationEmailCommand
 import cz.cleansia.partner.core.auth.UserProfileData
 import cz.cleansia.partner.core.auth.UserProfileStore
-import cz.cleansia.partner.core.network.ApiResult
-import cz.cleansia.partner.core.network.safeApiCall
+import cz.cleansia.core.network.ApiResult
+import cz.cleansia.core.network.safeApiCall
 import cz.cleansia.partner.core.notifications.PushTokenRepository
 import kotlinx.serialization.json.Json
 import java.time.Instant

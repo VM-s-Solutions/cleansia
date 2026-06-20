@@ -83,10 +83,12 @@
     },
     "@nx/angular:library": {
       "linter": "eslint",
-      "unitTestRunner": "jest"
+      "unitTestRunner": "jest",
+      "prefix": "cleansia"
     },
     "@nx/angular:component": {
-      "style": "scss"
+      "style": "scss",
+      "prefix": "cleansia"
     }
   },
   "nxCloudAccessToken": "ODA0YjJiM2MtNTY3Yi00Mjg5LThiZTYtZGQxOTY3YjM5MTczfHJlYWQ=",

@@ -423,9 +423,12 @@ public sealed class EmailService : IEmailService
 
         IntegrationFailureMetrics.Record(SendGridHttpClientName, failureClass);
 
+        // S6: the response body can echo recipient addresses — keep it out of Error; the class +
+        // status carry the alerting signal, and the body stays at Debug for local diagnosis only.
         logger.LogError(
-            "SendGrid send failed: {FailureClass} ({StatusCode}). Body: {Body}",
-            failureClass, status, body);
+            "SendGrid send failed: {FailureClass} ({StatusCode})",
+            failureClass, status);
+        logger.LogDebug("SendGrid failure response body: {Body}", body);
 
         throw new EmailDeliveryException($"Could not deliver email to {email} ({response.StatusCode}).");
     }

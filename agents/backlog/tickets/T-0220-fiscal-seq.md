@@ -1,7 +1,7 @@
 ---
 id: T-0220
 title: Gapless-monotonic-atomic fiscal sequence allocator (FiscalCounter) — replace COUNT(*)+1
-status: draft
+status: done
 size: M
 owner: —
 created: 2026-06-03

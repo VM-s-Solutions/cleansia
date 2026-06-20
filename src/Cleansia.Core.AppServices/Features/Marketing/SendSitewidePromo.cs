@@ -35,7 +35,9 @@ public static class SendSitewidePromo
         string BodyCs,
         string BodySk,
         string BodyUk,
-        string BodyRu) : ICommand;
+        string BodyRu) : ICommand<Response>;
+
+    public record Response(bool Enqueued);
 
     public class Validator : AbstractValidator<Command>
     {
@@ -61,9 +63,9 @@ public static class SendSitewidePromo
     public class Handler(
         IPendingDispatch pendingDispatch,
         IOutboxMessageRepository outboxMessageRepository,
-        ITenantProvider tenantProvider) : ICommandHandler<Command>
+        ITenantProvider tenantProvider) : ICommandHandler<Command, Response>
     {
-        public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
+        public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var tenantId = tenantProvider.GetCurrentTenantId();
             var titleByLocale = new Dictionary<string, string>
@@ -94,7 +96,7 @@ public static class SendSitewidePromo
                 QueueNames.SitewidePromoFanout, campaignId, cancellationToken);
             if (existing is not null)
             {
-                return BusinessResult.Success();
+                return BusinessResult.Success(new Response(Enqueued: false));
             }
 
             var message = new SendSitewidePromoMessage(titleByLocale, bodyByLocale, tenantId, campaignId);
@@ -104,7 +106,7 @@ public static class SendSitewidePromo
                 new QueueEnvelope<SendSitewidePromoMessage>(campaignId, tenantId, message),
                 campaignId);
 
-            return BusinessResult.Success();
+            return BusinessResult.Success(new Response(Enqueued: true));
         }
     }
 }

@@ -1,11 +1,11 @@
 ---
 id: T-0231
 title: "AUD-02p1 (split of T-0165): PackageService.PriceWeight column + even-weight backfill migration + bundled-gross derivation (db+backend)"
-status: draft
+status: done
 size: M
 owner: —
 created: 2026-06-07
-updated: 2026-06-07
+updated: 2026-06-15
 depends_on: []
 blocks: [T-0167, T-0232]
 stories: []

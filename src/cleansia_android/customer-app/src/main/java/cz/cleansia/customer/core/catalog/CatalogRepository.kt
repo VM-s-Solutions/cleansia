@@ -4,8 +4,9 @@ import android.content.Context
 import android.util.Log
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.auth.ApiErrorParser
+import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.networkCall
-import cz.cleansia.core.snackbar.SnackbarController
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -21,14 +22,14 @@ import kotlinx.coroutines.flow.asStateFlow
  * call site — the services flow already carries the data and adding a second
  * derived StateFlow here would just duplicate reactivity.
  *
- * Mutation-style [refresh] returns null on success or a translated user-facing
- * error message on failure, mirroring [UserRepository]/[AddressRepository].
- * Failures also push a snackbar so fire-and-forget callers still surface them.
+ * [refresh] returns [ApiResult.Success] once the catalog is warm and
+ * [ApiResult.Error] carrying the parsed message on failure. The consuming
+ * ViewModel surfaces the snackbar; an [ApiError.Network] failure stays silent
+ * (NetworkErrorInterceptor owns the infra toast).
  */
 @Singleton
 class CatalogRepository @Inject constructor(
     private val api: CatalogApi,
-    private val snackbar: SnackbarController,
     @ApplicationContext private val appContext: Context,
 ) {
     private val _services = MutableStateFlow<List<ServiceListItem>>(emptyList())
@@ -43,19 +44,19 @@ class CatalogRepository @Inject constructor(
     val loading: StateFlow<Boolean> = _loading.asStateFlow()
     val loaded: StateFlow<Boolean> = _loaded.asStateFlow()
 
-    suspend fun refresh(): String? {
+    suspend fun refresh(): ApiResult<Unit> {
         if (_loading.value) {
             Log.d(TAG, "refresh: already loading, skipping")
-            return null
+            return ApiResult.Success(Unit)
         }
         _loading.value = true
         Log.d(TAG, "refresh: start")
         try {
             val servicesResp = networkCall(TAG) { api.getServices() }
-                ?: return appContext.getString(R.string.error_generic_network)
+                ?: return networkError()
 
             val packagesResp = networkCall(TAG) { api.getPackages() }
-                ?: return appContext.getString(R.string.error_generic_network)
+                ?: return networkError()
 
             // Extras are best-effort — if the call fails (e.g. backend rolled
             // back before the Extras table shipped to this env) the wizard
@@ -68,23 +69,11 @@ class CatalogRepository @Inject constructor(
             Log.d(TAG, "refresh: extras http=${extrasResp?.code()} ok=${extrasResp?.isSuccessful}")
 
             if (!servicesResp.isSuccessful) {
-                val msg = ApiErrorParser.parseToUserMessage(
-                    appContext,
-                    servicesResp.errorBody(),
-                    servicesResp.code(),
-                )
-                snackbar.showError(msg)
-                return msg
+                return httpError(servicesResp.errorBody(), servicesResp.code())
             }
 
             if (!packagesResp.isSuccessful) {
-                val msg = ApiErrorParser.parseToUserMessage(
-                    appContext,
-                    packagesResp.errorBody(),
-                    packagesResp.code(),
-                )
-                snackbar.showError(msg)
-                return msg
+                return httpError(packagesResp.errorBody(), packagesResp.code())
             }
 
             val servicesBody = servicesResp.body()
@@ -97,10 +86,28 @@ class CatalogRepository @Inject constructor(
             _extras.value = extrasBody.orEmpty()
             _loaded.value = true
             Log.d(TAG, "refresh: DONE, _services=${_services.value.size} _packages=${_packages.value.size} _extras=${_extras.value.size} _loaded=true")
-            return null
+            return ApiResult.Success(Unit)
         } finally {
             _loading.value = false
         }
+    }
+
+    private fun networkError(): ApiResult<Unit> =
+        ApiResult.Error(ApiError.Network(appContext.getString(R.string.error_generic_network)))
+
+    private fun httpError(errorBody: okhttp3.ResponseBody?, httpCode: Int): ApiResult<Unit> {
+        // Carry the message [ApiErrorParser] already resolved from the body so
+        // the surfacing ViewModel shows the identical string. The 401 object
+        // would drop that message, so it folds into the message-carrying
+        // [ApiError.Unknown] alongside the generic fallback.
+        val message = ApiErrorParser.parseToUserMessage(appContext, errorBody, httpCode)
+        val error = when (httpCode) {
+            404 -> ApiError.NotFound(message)
+            400 -> ApiError.BadRequest(message)
+            in 500..599 -> ApiError.Server(statusCode = httpCode, message = message)
+            else -> ApiError.Unknown(message)
+        }
+        return ApiResult.Error(error)
     }
 
     private companion object {

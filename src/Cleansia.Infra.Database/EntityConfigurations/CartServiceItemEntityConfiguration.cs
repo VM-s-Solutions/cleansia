@@ -17,9 +17,12 @@ public class CartServiceItemEntityConfiguration : BaseEntityConfiguration<CartSe
             .HasForeignKey(cartItem => cartItem.CartId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // Restrict (not Cascade) so deleting a Service that sits in a live customer cart is rejected at
+        // the database rather than silently orphaning the cart line; the admin in-use guard maps the
+        // resulting restrict violation to service.in_use. Cart -> CartServiceItem stays Cascade.
         builder.HasOne(cartItem => cartItem.Service)
             .WithMany()
             .HasForeignKey(cartItem => cartItem.ServiceId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

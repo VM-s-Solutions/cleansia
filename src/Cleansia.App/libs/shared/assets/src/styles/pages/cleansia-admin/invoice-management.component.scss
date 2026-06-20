@@ -243,6 +243,37 @@
   }
 }
 
+.invoice-pdf-badge {
+  display: inline-block;
+  padding: 0.25rem 0.625rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: center;
+  line-height: 1;
+  white-space: nowrap;
+
+  &.pdf-ready {
+    background-color: rgba(34, 197, 94, 0.15);
+    color: #14532d;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+  }
+
+  &.pdf-failed {
+    background-color: rgba(220, 38, 38, 0.15);
+    color: #7f1d1d;
+    border: 1px solid rgba(220, 38, 38, 0.3);
+  }
+
+  &.pdf-pending {
+    background-color: rgba(245, 158, 11, 0.15);
+    color: #b45309;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+  }
+}
+
 cleansia-admin-invoice-management {
   display: flex;
   flex-direction: column;

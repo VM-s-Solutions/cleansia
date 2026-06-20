@@ -21,13 +21,15 @@ public class UpdatePayConfig
 
     public record Response(string PayConfigId);
 
-    public class Validator : UserEmailValidator<Command>
+    public class Validator : AbstractValidator<Command>
     {
         public Validator(
             IUserRepository userRepository,
             IUserSessionProvider userSessionProvider,
-            IEmployeePayConfigRepository payConfigRepository) : base(userRepository, userSessionProvider)
+            IEmployeePayConfigRepository payConfigRepository)
         {
+            RuleFor(x => x).SetValidator(new UserEmailValidator<Command>(userRepository, userSessionProvider));
+
             RuleFor(x => x.PayConfigId)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()

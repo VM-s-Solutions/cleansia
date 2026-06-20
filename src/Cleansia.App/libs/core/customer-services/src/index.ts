@@ -150,9 +150,31 @@ export {
   AddDisputeMessageCommand,
   UploadDisputeEvidenceResponse,
   PackageListItem,
+  PackageServiceSummary,
   ServiceListItem,
+  CategoryDto,
+  CountryListItem,
+  JwtTokenResponse,
+  ChangePasswordCommand,
+  RequestPasswordChangeCommand,
+  UpdateCurrentUserCommand,
+  ConsentType,
+  UserConsentDto,
+  GrantConsentCommand,
+  WithdrawConsentCommand,
+  GdprExportDto,
 } from './lib/client/customer-client';
-export type { FileParameter } from './lib/client/customer-client';
+export type {
+  IPackageServiceSummary,
+  ICategoryDto,
+  ICountryListItem,
+  IUpdateCurrentUserCommand,
+  IUserConsentDto,
+  IGrantConsentCommand,
+  IWithdrawConsentCommand,
+  IGdprExportDto,
+  FileParameter,
+} from './lib/client/customer-client';
 export {
   NotificationPreferencesClient,
   NotificationPreferencesDto,

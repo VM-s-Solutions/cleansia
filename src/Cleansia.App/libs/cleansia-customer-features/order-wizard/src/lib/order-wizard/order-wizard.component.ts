@@ -4,10 +4,9 @@ import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { CleansiaAddressAutocompleteComponent, CleansiaButtonComponent, CleansiaScrollTopComponent, CleansiaTelephoneComponent } from '@cleansia/components';
-import { AddressDto, SavedAddressDto } from '@cleansia/customer-services';
+import { AddressDto, CategoryDto, PackageListItem, PackageServiceSummary, PaymentType, SavedAddressDto, ServiceListItem } from '@cleansia/customer-services';
 import type { MapboxAddressSuggestion } from '@cleansia/services';
 import { SnackbarService } from '@cleansia/services';
-import { CategoryDto, PackageListItem, PackageServiceSummary, PaymentType, ServiceListItem } from '@cleansia/partner-services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { InputTextModule } from 'primeng/inputtext';
 import { DatePickerModule } from 'primeng/datepicker';
@@ -16,6 +15,10 @@ import { SelectModule } from 'primeng/select';
 import { DialogModule } from 'primeng/dialog';
 import { CheckboxModule } from 'primeng/checkbox';
 import { OrderWizardFacade } from './order-wizard.facade';
+import { OrderPricingFacade } from './order-pricing.facade';
+import { OrderPromoFacade } from './order-promo.facade';
+import { OrderSavedAddressFacade } from './order-saved-address.facade';
+import { OrderServiceAreaFacade } from './order-service-area.facade';
 import {
   RebookParams,
   TimeOption,
@@ -47,7 +50,13 @@ import { WizardSummaryStepComponent } from './components/wizard-summary-step.com
     WizardSummaryStepComponent,
   ],
   templateUrl: './order-wizard.component.html',
-  providers: [OrderWizardFacade],
+  providers: [
+    OrderPricingFacade,
+    OrderPromoFacade,
+    OrderSavedAddressFacade,
+    OrderServiceAreaFacade,
+    OrderWizardFacade,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OrderWizardComponent implements OnInit {

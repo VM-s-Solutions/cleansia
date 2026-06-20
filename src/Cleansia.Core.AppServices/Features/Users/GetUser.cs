@@ -49,7 +49,7 @@ public class GetUser
                     nameof(Query.UserId), BusinessErrorMessage.NotExistingUserWithId));
             }
 
-            var user = await userRepository.GetByIdAsync(query.UserId, cancellationToken);
+            var user = await userRepository.GetByIdNoTrackingAsync(query.UserId, cancellationToken);
 
             return BusinessResult.Success(user!.MapToDetailDto())!;
         }

@@ -1,18 +1,20 @@
-import { DestroyRef, inject, Injectable, PLATFORM_ID, signal, computed } from '@angular/core';
+import { inject, Injectable, PLATFORM_ID, signal, computed } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
+import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
-  AddSavedAddressCommand,
   AddressDto,
+  CategoryDto,
+  CountryListItem,
   CreateOrderCommand,
   CustomerAddress,
   CustomerAuthService,
   CustomerClient,
   ExtraListItem,
-  QuoteOrderCommand,
+  PackageListItem,
+  PaymentType,
   QuoteOrderResponse,
-  ValidatePromoCodeCommand,
-  ValidateReferralQuery,
+  ServiceListItem,
 } from '@cleansia/customer-services';
 import {
   loadCustomerPackages,
@@ -21,51 +23,26 @@ import {
   selectCustomerPackages,
   selectCustomerServices,
 } from '@cleansia/customer-stores';
-import {
-  CategoryDto,
-  CountryListItem,
-  PackageListItem,
-  PaymentType,
-  ServiceListItem,
-} from '@cleansia/partner-services';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { GuestOrderService } from '@cleansia-customer/orders';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
-import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { catchError, debounceTime, distinctUntilChanged, filter, firstValueFrom, of, switchMap, tap } from 'rxjs';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { OrderPricingFacade } from './order-pricing.facade';
+import { OrderPromoFacade } from './order-promo.facade';
+import { OrderSavedAddressFacade } from './order-saved-address.facade';
+import { OrderServiceAreaFacade } from './order-service-area.facade';
 import {
-  EXPRESS_SURCHARGE_RATE,
   ORDER_WIZARD_INITIAL_DATA,
   OrderWizardFormData,
   PromoCodeUiState,
   RebookParams,
   ReferralUiState,
-  STANDARD_LEAD_TIME_HOURS,
-  EXPRESS_LEAD_TIME_HOURS,
 } from './order-wizard.models';
 
-/**
- * Snapshot of the wizard inputs that affect pricing. Sorted arrays so
- * "same set, different insertion order" hashes equal in `distinctUntilChanged`.
- */
-interface QuoteInputs {
-  selectedServiceIds: string[];
-  selectedPackageIds: string[];
-  // Slugs of catalog extras the user toggled on (sorted for stable
-  // distinctUntilChanged hashing). Empty when the user hasn't toggled
-  // anything in the extras section.
-  selectedExtraSlugs: string[];
-  rooms: number;
-  bathrooms: number;
-  currencyId: string | null;
-  // ISO-8601 UTC of the chosen slot — drives the express-surcharge check
-  // server-side. Null until the user picks a slot.
-  cleaningDate: string | null;
-}
-
 @Injectable()
-export class OrderWizardFacade {
+export class OrderWizardFacade extends UnsubscribeControlDirective {
   private readonly store = inject(Store);
   private readonly router = inject(Router);
   private readonly customerClient = inject(CustomerClient);
@@ -74,8 +51,11 @@ export class OrderWizardFacade {
   private readonly snackbarService = inject(SnackbarService);
   private readonly guestOrderService = inject(GuestOrderService);
   private readonly savedAddressStore = inject(SavedAddressStore);
+  private readonly pricing = inject(OrderPricingFacade);
+  private readonly promo = inject(OrderPromoFacade);
+  private readonly serviceArea = inject(OrderServiceAreaFacade);
+  private readonly savedAddress = inject(OrderSavedAddressFacade);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
-  private readonly destroyRef = inject(DestroyRef);
 
   isAuthenticated = signal(false);
 
@@ -91,8 +71,14 @@ export class OrderWizardFacade {
   // if the call fails the wizard still works, the extras section just stays
   // empty (same approach the mobile app uses).
   extras = signal<ExtraListItem[]>([]);
-  readonly savedAddresses = this.savedAddressStore.addresses;
-  readonly selectedSavedAddressId = signal<string | null>(null);
+
+  // ─── Saved-address management ───────────────────────────────────
+  //
+  // Selection + persisting a new saved address live in OrderSavedAddressFacade,
+  // provided alongside this facade on the component. We re-expose its surface so
+  // the template/component keep reading the wizard facade.
+  readonly savedAddresses = this.savedAddress.savedAddresses;
+  readonly selectedSavedAddressId = this.savedAddress.selectedSavedAddressId;
 
   activeStep = signal(0);
   formData = signal<OrderWizardFormData>({ ...ORDER_WIZARD_INITIAL_DATA });
@@ -152,261 +138,58 @@ export class OrderWizardFacade {
 
   // ─── Live quote (server-authoritative pricing) ──────────────────
   //
-  // Mirrors the mobile pattern: debounced /api/Order/Quote on every
-  // selection change. The server is the single source of truth for the
-  // total — clients never compute prices themselves. Reasons:
-  //  - Express surcharge, loyalty discount, future extras pricing all
-  //    live server-side; client formulas would drift the moment they
-  //    change.
-  //  - Backend's `PriceMatchesAsync` validator on /Create rejects orders
-  //    whose totalPrice doesn't match the server calculation. Live quote
-  //    guarantees we always submit the authoritative number.
-  readonly quote = signal<QuoteOrderResponse | null>(null);
-  readonly quoting = signal(false);
-  /** Snapshot of inputs that produced the current `quote()`, for cache reuse. */
-  private readonly lastQuotedInputs = signal<QuoteInputs | null>(null);
+  // The quote engine + express-surcharge math live in OrderPricingFacade,
+  // provided alongside this facade on the component. We re-expose its surface
+  // so the template/summary-step keep reading the wizard facade.
+  readonly quote = this.pricing.quote;
+  readonly quoting = this.pricing.quoting;
+  readonly totalPrice = this.pricing.totalPrice;
+  readonly isExpressSlot = this.pricing.isExpressSlot;
+  readonly expressSurcharge = this.pricing.expressSurcharge;
+  readonly displayedTotalPrice = this.pricing.displayedTotalPrice;
 
-  /**
-   * Service-area client-side check. Backend rejects orders in non-served
-   * cities with `city.not_serviced`, but that only fires on submit — the
-   * wizard surfaces an inline warning earlier so the user doesn't waste
-   * time filling out the rest of the form. Backend stays the source of
-   * truth; this is purely UX defense-in-depth.
-   *
-   *  - 'idle'    → no city yet, nothing to check
-   *  - 'pending' → query in flight
-   *  - 'ok'      → city matches a ServiceCity row
-   *  - 'rejected'→ city not served (show banner + disable Next)
-   *  - 'error'   → network failed; treat as pass-through, backend re-checks
-   */
-  readonly cityServiced = signal<'idle' | 'pending' | 'ok' | 'rejected' | 'error'>('idle');
-  /** Internal cache: avoids re-querying when city/country haven't changed. */
-  private lastCityCheckKey = '';
-
-  /**
-   * Server-quoted base total — does NOT include the express surcharge. Use
-   * [displayedTotalPrice] for what the user sees in the summary.
-   */
-  totalPrice = computed(() => this.quote()?.totalPrice ?? 0);
-
-  /**
-   * True when the currently-selected (date, time) falls inside the 2–4h lead
-   * window. The backend's QuoteOrder endpoint does NOT know about the cleaning
-   * date/time, so the express surcharge is applied client-side here. Backend
-   * mirrors the same `EXPRESS_SURCHARGE_RATE = 0.20` in `BookingPolicy.cs`
-   * and grosses up at CreateOrder time — keep those two constants in sync.
-   */
-  readonly isExpressSlot = computed(() => {
-    const data = this.formData();
-    if (!data.cleaningDate || !data.cleaningTime) return false;
-    const [h, m] = data.cleaningTime.split(':').map(Number);
-    if (Number.isNaN(h) || Number.isNaN(m)) return false;
-    const slot = new Date(data.cleaningDate);
-    slot.setHours(h, m, 0, 0);
-    const hoursAhead = (slot.getTime() - Date.now()) / (1000 * 60 * 60);
-    return hoursAhead >= EXPRESS_LEAD_TIME_HOURS && hoursAhead < STANDARD_LEAD_TIME_HOURS;
-  });
-
-  /**
-   * 20% surcharge amount (CZK), or 0 when the slot isn't express. Computed
-   * against the POST-discount subtotal so the surcharge tracks what the user
-   * actually pays. Mirrors backend CreateOrder.Handler order: discount on raw,
-   * then surcharge on the discounted price.
-   */
-  readonly expressSurcharge = computed(() => {
-    if (!this.isExpressSlot()) return 0;
-    const discounted = Math.max(0, this.totalPrice() - this.effectiveDiscount());
-    return discounted * EXPRESS_SURCHARGE_RATE;
-  });
-
-  /**
-   * Final price the user pays — raw subtotal minus best-of-three discount,
-   * plus express surcharge on the discounted total. Sidebar + summary both
-   * render this so they always agree.
-   */
-  readonly displayedTotalPrice = computed(() => {
-    const discounted = Math.max(0, this.totalPrice() - this.effectiveDiscount());
-    return discounted + this.expressSurcharge();
-  });
-
-  /** Inputs that affect the server quote. Sorted ids so the snapshot is stable. */
-  private readonly quoteInputs = computed<QuoteInputs>(() => {
-    const data = this.formData();
-    // extras is a slug → boolean map; pull just the slugs that are `true`
-    // and sort them so the snapshot is stable under reorder.
-    const selectedExtraSlugs = Object.entries(data.extras)
-      .filter(([, on]) => on)
-      .map(([slug]) => slug)
-      .sort();
-    // Compose the actual slot moment for the quote. `data.cleaningDate` is
-    // the day-only Date the user picked from the calendar; `data.cleaningTime`
-    // is the local-clock hour ("14:00"). Building the slot the same way
-    // submit() does keeps the backend's express-surcharge check consistent
-    // between /Quote and /Create — otherwise the quote sees midnight (no
-    // surcharge) but Create sees the real slot (surcharge applies) and the
-    // PriceMatchesAsync validator rejects with order.total_price.not_match.
-    let cleaningDateIso: string | null = null;
-    if (data.cleaningDate && data.cleaningTime) {
-      const [h, m] = data.cleaningTime.split(':').map(Number);
-      if (!Number.isNaN(h) && !Number.isNaN(m)) {
-        const slot = new Date(
-          data.cleaningDate.getFullYear(),
-          data.cleaningDate.getMonth(),
-          data.cleaningDate.getDate(),
-          h,
-          m,
-          0,
-          0,
-        );
-        cleaningDateIso = slot.toISOString();
-      }
-    }
-    return {
-      selectedServiceIds: [...data.selectedServiceIds].sort(),
-      selectedPackageIds: [...data.selectedPackageIds].sort(),
-      selectedExtraSlugs,
-      rooms: data.rooms,
-      bathrooms: data.bathrooms,
-      currencyId: null, // backend default until a currency picker ships
-      // Backend computes the surcharge from this; null skips the surcharge
-      // check (initial Step 1 quote before the user has chosen a slot).
-      cleaningDate: cleaningDateIso,
-    };
-  });
-
-  private isEmptyInputs(i: QuoteInputs): boolean {
-    return i.selectedServiceIds.length === 0 && i.selectedPackageIds.length === 0;
-  }
-
-  private quoteInputsEqual(a: QuoteInputs | null, b: QuoteInputs | null): boolean {
-    if (a === b) return true;
-    if (!a || !b) return false;
-    return JSON.stringify(a) === JSON.stringify(b);
-  }
+  // ─── Service-area (city-serviced) check ─────────────────────────
+  //
+  // The client-side service-area lookup lives in OrderServiceAreaFacade,
+  // provided alongside this facade on the component. We re-expose its signal
+  // so the template keeps reading the wizard facade.
+  readonly cityServiced = this.serviceArea.cityServiced;
 
   constructor() {
-    // SSR guard: don't fire HTTP during server render. The signal stays null
-    // on the server and the client picks up the debounce loop after hydrate.
-    if (!this.isBrowser) return;
-
-    toObservable(this.quoteInputs)
-      .pipe(
-        // 800ms matches the typing-pause UX norm for booking wizards and
-        // keeps us well under the backend's "interactive" rate-limit
-        // (60/min) even if the user rapidly steps rooms / extras. The
-        // earlier 400ms was tuned for an unthrottled endpoint.
-        debounceTime(800),
-        // Cheap structural compare via the same JSON shape we use to
-        // detect stale inputs at submit time — same comparator the
-        // imperative refreshQuoteNow path uses, so the two stay in sync.
-        distinctUntilChanged((a, b) => this.quoteInputsEqual(a, b)),
-        tap((inputs) => {
-          // Empty selections — clear the quote immediately. No HTTP needed.
-          if (this.isEmptyInputs(inputs)) {
-            this.quote.set(null);
-            this.lastQuotedInputs.set(null);
-            this.quoting.set(false);
-          }
-        }),
-        filter((inputs) => !this.isEmptyInputs(inputs)),
-        // Skip when the most recent successful quote already matches the
-        // pending inputs — the form likely changed and reverted within
-        // the debounce window, and re-issuing the same request would
-        // just burn a rate-limit token for an identical answer.
-        filter((inputs) => !this.quoteInputsEqual(inputs, this.lastQuotedInputs())),
-        tap(() => this.quoting.set(true)),
-        switchMap((inputs) =>
-          this.customerClient.orderClient
-            .quote(
-              new QuoteOrderCommand({
-                selectedServiceIds: inputs.selectedServiceIds,
-                selectedPackageIds: inputs.selectedPackageIds,
-                rooms: inputs.rooms,
-                bathrooms: inputs.bathrooms,
-                currencyId: inputs.currencyId ?? undefined,
-                selectedExtraSlugs: inputs.selectedExtraSlugs,
-                cleaningDate: inputs.cleaningDate ? new Date(inputs.cleaningDate) : undefined,
-              }),
-            )
-            .pipe(
-              // Silent during editing — keep the prior quote so the user
-              // doesn't see a "—" flash on a transient backend hiccup. Errors
-              // surface only at submit time.
-              catchError(() => of(null)),
-              tap((resp) => {
-                if (resp) {
-                  this.quote.set(resp);
-                  this.lastQuotedInputs.set(inputs);
-                }
-              }),
-            ),
-        ),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe(() => this.quoting.set(false));
+    super();
+    this.pricing.connect({
+      formData: this.formData,
+      effectiveDiscount: this.effectiveDiscount,
+    });
+    this.promo.connect({
+      displayedTotalPrice: this.displayedTotalPrice,
+      persistPromoCode: (value) => this.updateFormData({ promoCode: value }),
+      persistReferralCode: (value) => this.updateFormData({ referralCode: value }),
+    });
+    this.serviceArea.connect({
+      currentAddress: () => this.formData().address,
+    });
+    this.savedAddress.connect({
+      currentFormData: () => this.formData(),
+      patchFormData: (partial) => this.updateFormData(partial),
+    });
   }
 
-  /**
-   * Imperative quote refresh. Used by submit when the cached quote's
-   * inputs don't match the current wizard state — we await a fresh
-   * /Quote call before /Create so the backend validator can't reject
-   * us for a stale total.
-   */
-  async refreshQuoteNow(): Promise<QuoteOrderResponse | null> {
-    const inputs = this.quoteInputs();
-    if (this.isEmptyInputs(inputs)) {
-      this.quote.set(null);
-      this.lastQuotedInputs.set(null);
-      return null;
-    }
-    this.quoting.set(true);
-    try {
-      const resp = await firstValueFrom(
-        this.customerClient.orderClient.quote(
-          new QuoteOrderCommand({
-            selectedServiceIds: inputs.selectedServiceIds,
-            selectedPackageIds: inputs.selectedPackageIds,
-            rooms: inputs.rooms,
-            bathrooms: inputs.bathrooms,
-            currencyId: inputs.currencyId ?? undefined,
-            selectedExtraSlugs: inputs.selectedExtraSlugs,
-            cleaningDate: inputs.cleaningDate ? new Date(inputs.cleaningDate) : undefined,
-          }),
-        ),
-      );
-      this.quote.set(resp);
-      this.lastQuotedInputs.set(inputs);
-      return resp;
-    } catch {
-      return null;
-    } finally {
-      this.quoting.set(false);
-    }
+  /** Delegates to the pricing engine — see OrderPricingFacade.refreshQuoteNow. */
+  refreshQuoteNow(): Promise<QuoteOrderResponse | null> {
+    return this.pricing.refreshQuoteNow();
   }
 
-  /** True when the current input snapshot matches the inputs that produced `quote()`. */
-  private cachedQuoteMatchesCurrentState(): boolean {
-    return !!this.quote() && this.quoteInputsEqual(this.quoteInputs(), this.lastQuotedInputs());
-  }
-
-  // ─── Promo code validation ───────────────────────────────────
+  // ─── Promo + referral code validation ────────────────────────
   //
-  // Wolt-style: the summary step shows a tappable row that opens a modal. The
-  // dialog calls `validatePromoCodeNow(code)` exactly once on Apply. No
-  // debounced auto-validation pipeline anymore — that produced too much noise
-  // and a chatty backend. The state machine still lives here so the row can
-  // render the applied chip and the dialog can read live state.
-  promoCode = signal('');
-  promoCodeState = signal<PromoCodeUiState>({ kind: 'idle' });
-
-  // ─── Referral code (late-acceptance path) ───────────────────
-  //
-  // Same row+dialog pattern as promo. Backend treats invalid codes as best-
-  // effort (logged, never blocks submit), so the dialog only surfaces
-  // validation feedback for clarity — the order will still go through with
-  // an unverified referral code if the user types one and skips Apply.
-  referralCode = signal('');
-  referralState = signal<ReferralUiState>({ kind: 'idle' });
+  // The promo/referral validation state machines + their backend calls live in
+  // OrderPromoFacade, provided alongside this facade on the component. We
+  // re-expose their surface so the template/summary-step keep reading the
+  // wizard facade.
+  readonly promoCode = this.promo.promoCode;
+  readonly promoCodeState = this.promo.promoCodeState;
+  readonly referralCode = this.promo.referralCode;
+  readonly referralState = this.promo.referralState;
 
   /**
    * Server-resolved tier discount preview from the live quote (anonymous quotes return 0).
@@ -427,13 +210,8 @@ export class OrderWizardFacade {
     () => this.quote()?.tierDiscountMinOrderAmount ?? null,
   );
 
-  /**
-   * Promo discount the user just applied via the dialog (client-side validation).
-   */
-  effectivePromoDiscount = computed(() => {
-    const state = this.promoCodeState();
-    return state.kind === 'valid' ? state.discount : 0;
-  });
+  /** Promo discount the user just applied via the dialog — see OrderPromoFacade. */
+  readonly effectivePromoDiscount = this.promo.effectivePromoDiscount;
 
   /**
    * LOY-003 — effective discount displayed to the user. Plus + tier are
@@ -465,105 +243,31 @@ export class OrderWizardFacade {
   });
 
   setPromoCode(value: string): void {
-    this.promoCode.set(value);
-    this.updateFormData({ promoCode: value });
+    this.promo.setPromoCode(value);
   }
 
   setReferralCode(value: string): void {
-    this.referralCode.set(value);
-    this.updateFormData({ referralCode: value });
+    this.promo.setReferralCode(value);
   }
 
-  /**
-   * Apply-button handler from the promo dialog. Single backend call, no
-   * debounce. Empty input resets to idle without touching the network.
-   * Returns the resolved state so the dialog can react to it.
-   */
-  async validatePromoCodeNow(code: string): Promise<PromoCodeUiState> {
-    const normalized = code.trim().toUpperCase();
-    if (!normalized) {
-      this.promoCodeState.set({ kind: 'idle' });
-      this.setPromoCode('');
-      return { kind: 'idle' };
-    }
-    this.promoCodeState.set({ kind: 'validating' });
-    // Validate against the price the user is actually charged — backend's
-    // CreateOrder.Handler resolves promo discounts against `finalTotalPrice`
-    // (post-express-surcharge), so a bare-subtotal validation could fail a
-    // min-order threshold that would otherwise pass on the real charge.
-    const subtotal = this.displayedTotalPrice() ?? 0;
-    try {
-      const resp = await firstValueFrom(
-        this.customerClient.promoCodeClient.validate(
-          new ValidatePromoCodeCommand({
-            code: normalized,
-            orderSubtotal: subtotal,
-          }),
-        ),
-      );
-      const newState: PromoCodeUiState =
-        resp.isValid && resp.discountAmount != null
-          ? { kind: 'valid', discount: resp.discountAmount }
-          : { kind: 'invalid', error: resp.errorCode ?? null };
-      this.promoCodeState.set(newState);
-      if (newState.kind === 'valid') {
-        this.setPromoCode(normalized);
-      }
-      return newState;
-    } catch {
-      const newState: PromoCodeUiState = { kind: 'invalid', error: null };
-      this.promoCodeState.set(newState);
-      return newState;
-    }
+  /** Apply-button handler from the promo dialog — see OrderPromoFacade. */
+  validatePromoCodeNow(code: string): Promise<PromoCodeUiState> {
+    return this.promo.validatePromoCodeNow(code);
   }
 
-  /**
-   * Apply-button handler from the referral dialog. Mirrors `validatePromoCodeNow`.
-   * Backend doesn't fail orders on bad referral codes, so this is purely UX
-   * confirmation — but we still gate the row's "applied" chip on a `valid`
-   * state so the user knows it stuck.
-   */
-  async validateReferralCodeNow(code: string): Promise<ReferralUiState> {
-    const normalized = code.trim().toUpperCase();
-    if (!normalized) {
-      this.referralState.set({ kind: 'idle' });
-      this.setReferralCode('');
-      return { kind: 'idle' };
-    }
-    this.referralState.set({ kind: 'validating' });
-    try {
-      const resp = await firstValueFrom(
-        this.customerClient.referralClient.validate(
-          new ValidateReferralQuery({
-            code: normalized,
-          }),
-        ),
-      );
-      const newState: ReferralUiState = resp.isValid
-        ? { kind: 'valid', referrerFirstName: resp.referrerFirstName ?? null }
-        : { kind: 'invalid', error: resp.errorCode ?? null };
-      this.referralState.set(newState);
-      if (newState.kind === 'valid') {
-        this.setReferralCode(normalized);
-      }
-      return newState;
-    } catch {
-      const newState: ReferralUiState = { kind: 'invalid', error: null };
-      this.referralState.set(newState);
-      return newState;
-    }
+  /** Apply-button handler from the referral dialog — see OrderPromoFacade. */
+  validateReferralCodeNow(code: string): Promise<ReferralUiState> {
+    return this.promo.validateReferralCodeNow(code);
   }
 
   /** Wipes the applied promo state — used by the row's clear-X button. */
   clearPromoCode(): void {
-    this.setPromoCode('');
-    this.promoCodeState.set({ kind: 'idle' });
+    this.promo.clearPromoCode();
   }
 
   /** Wipes the applied referral state — used by the row's clear-X button. */
   clearReferralCode(): void {
-    this.setReferralCode('');
-    this.referralState.set({ kind: 'idle' });
+    this.promo.clearReferralCode();
   }
 
   initialize(): void {
@@ -575,7 +279,7 @@ export class OrderWizardFacade {
     // every CZ booking — the address persisted with CountryId=Argentina and
     // the backend now (rightly) rejects that. Service-area work in
     // planning/active/service-areas.md.
-    this.customerClient.countryClient.getServiced().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.customerClient.countryClient.getServiced().pipe(takeUntil(this.destroyed$)).subscribe({
       next: (countries) => {
         this.countries.set(countries);
         // Auto-select country ONLY when there's exactly one served — otherwise
@@ -593,7 +297,7 @@ export class OrderWizardFacade {
       },
     });
     // Best-effort load — empty catalog just hides the extras section.
-    this.customerClient.extraClient.getOverview().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.customerClient.extraClient.getOverview().pipe(takeUntil(this.destroyed$)).subscribe({
       next: (extras) => this.extras.set([...extras].sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))),
       error: () => this.extras.set([]),
     });
@@ -605,7 +309,7 @@ export class OrderWizardFacade {
       if (!this.savedAddressStore.loaded()) {
         this.savedAddressStore.refresh();
       }
-      this.customerClient.userClient.getCurrent().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      this.customerClient.userClient.getCurrent().pipe(takeUntil(this.destroyed$)).subscribe({
         next: (user) => {
           this.updateFormData({
             customerFirstName: user.firstName ?? '',
@@ -627,20 +331,7 @@ export class OrderWizardFacade {
   }
 
   selectSavedAddress(addressId: string): void {
-    const addr = this.savedAddresses().find((a) => a.id === addressId);
-    if (!addr) return;
-    this.selectedSavedAddressId.set(addressId);
-    this.updateFormData({
-      address: new AddressDto({
-        street: addr.street ?? '',
-        city: addr.city ?? '',
-        zipCode: addr.zipCode ?? '',
-        countryId: addr.countryId ?? '',
-        state: addr.state ?? '',
-      }),
-      addressLatitude: addr.latitude ?? null,
-      addressLongitude: addr.longitude ?? null,
-    });
+    this.savedAddress.selectSavedAddress(addressId);
   }
 
   updateFormData(partial: Partial<OrderWizardFormData>): void {
@@ -649,50 +340,8 @@ export class OrderWizardFacade {
     // edit, saved-address selection). Centralise the service-area check
     // here so every path triggers it uniformly.
     if (partial.address !== undefined) {
-      this.refreshCityServicedCheck();
+      this.serviceArea.refreshCheck();
     }
-  }
-
-  /**
-   * Fire-and-forget service-area lookup. Skips when nothing's changed
-   * (avoids hammering /api/ServiceCity on every keystroke), skips during
-   * SSR, and degrades to 'error' (pass-through) on network failure so a
-   * flaky connection can't strand the user — backend re-validates on
-   * submit anyway.
-   */
-  private refreshCityServicedCheck(): void {
-    if (!this.isBrowser) return;
-    const addr = this.formData().address;
-    const countryId = addr.countryId ?? '';
-    const city = (addr.city ?? '').trim();
-    if (!countryId || !city) {
-      this.cityServiced.set('idle');
-      this.lastCityCheckKey = '';
-      return;
-    }
-    const key = `${countryId}|${city.toLowerCase()}`;
-    if (key === this.lastCityCheckKey) return;
-    this.lastCityCheckKey = key;
-    this.cityServiced.set('pending');
-    this.customerClient.apiClient
-      .serviceCity(countryId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (cities) => {
-          // Stale-response guard: if the user already typed past this
-          // city between the request and the response, drop the result.
-          if (key !== this.lastCityCheckKey) return;
-          const normalized = city.toLowerCase();
-          const match = (cities ?? []).some(
-            (c) => (c.name ?? '').trim().toLowerCase() === normalized
-          );
-          this.cityServiced.set(match ? 'ok' : 'rejected');
-        },
-        error: () => {
-          if (key !== this.lastCityCheckKey) return;
-          this.cityServiced.set('error');
-        },
-      });
   }
 
   /**
@@ -712,16 +361,7 @@ export class OrderWizardFacade {
   }
 
   updateAddressFromForm(next: AddressDto): void {
-    // Manual edits to the address break the saved-address binding — the user is
-    // entering a one-off. Nulling the id ensures we POST customerAddress instead
-    // of savedAddressId on submit. Also clears any previously-picked coords —
-    // they don't belong to this freshly-typed address anymore.
-    this.selectedSavedAddressId.set(null);
-    this.updateFormData({
-      address: next,
-      addressLatitude: null,
-      addressLongitude: null,
-    });
+    this.savedAddress.updateAddressFromForm(next);
   }
 
   /**
@@ -735,19 +375,7 @@ export class OrderWizardFacade {
     latitude: number;
     longitude: number;
   }): void {
-    this.selectedSavedAddressId.set(null);
-    const current = this.formData().address;
-    this.updateFormData({
-      address: new AddressDto({
-        street: suggestion.street || current.street || '',
-        city: suggestion.city || current.city || '',
-        zipCode: suggestion.zipCode || current.zipCode || '',
-        countryId: current.countryId ?? '',
-        state: current.state ?? '',
-      }),
-      addressLatitude: suggestion.latitude,
-      addressLongitude: suggestion.longitude,
-    });
+    this.savedAddress.applyAddressSuggestion(suggestion);
   }
 
   prefillFromRebook(params: RebookParams): string[] {
@@ -818,7 +446,7 @@ export class OrderWizardFacade {
   private readonly zipRegex = /^[\d\s-]{3,20}$/;
 
   isSavedAddressSelected(): boolean {
-    return this.selectedSavedAddressId() !== null;
+    return this.savedAddress.isSavedAddressSelected();
   }
 
   canProceed(): boolean {
@@ -878,32 +506,8 @@ export class OrderWizardFacade {
     }
   }
 
-  async saveCurrentAddressAsSaved(label: string): Promise<boolean> {
-    const data = this.formData();
-    const addr = data.address;
-    // Backend requires Mapbox-resolved coordinates. If the user hasn't picked
-    // a suggestion, we can't save — bail out (TASK-005 will surface a hint UI).
-    const lat = data.addressLatitude;
-    const lng = data.addressLongitude;
-    if (lat === undefined || lng === undefined || lat === null || lng === null) {
-      return false;
-    }
-    const command = new AddSavedAddressCommand({
-      label,
-      street: addr.street ?? '',
-      city: addr.city ?? '',
-      zipCode: addr.zipCode ?? '',
-      countryId: addr.countryId ?? undefined,
-      setAsDefault: false,
-      latitude: lat,
-      longitude: lng,
-    });
-    const result = await this.savedAddressStore.add(command);
-    if (result?.id) {
-      this.selectedSavedAddressId.set(result.id);
-      return true;
-    }
-    return false;
+  saveCurrentAddressAsSaved(label: string): Promise<boolean> {
+    return this.savedAddress.saveCurrentAddressAsSaved(label);
   }
 
   async submitOrder(saveAddress?: { label: string } | null): Promise<void> {
@@ -922,7 +526,7 @@ export class OrderWizardFacade {
     // one synchronously — the backend validator will reject /Create if the
     // total doesn't match its calculation, so we must send the server's number.
     let quoted = this.quote();
-    if (!quoted || !this.cachedQuoteMatchesCurrentState()) {
+    if (!quoted || !this.pricing.cachedQuoteMatchesCurrentState()) {
       quoted = await this.refreshQuoteNow();
     }
     if (!quoted) {
@@ -1004,9 +608,20 @@ export class OrderWizardFacade {
     });
 
     if (data.paymentType === PaymentType.Card) {
-      this.customerClient.paymentClient.createOrder(command).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-        next: (response) => {
-          this.submitting.set(false);
+      this.customerClient.paymentClient
+        .createOrder(command)
+        .pipe(
+          takeUntil(this.destroyed$),
+          catchError(() => of(null)),
+          finalize(() => this.submitting.set(false)),
+        )
+        .subscribe((response) => {
+          if (!response) {
+            this.snackbarService.showError(
+              this.translate.instant('pages.order.submit_error'),
+            );
+            return;
+          }
           if (response.id) {
             this.guestOrderService.save(response.id, data.customerEmail);
           }
@@ -1017,32 +632,29 @@ export class OrderWizardFacade {
               queryParams: { type: 'card' },
             });
           }
-        },
-        error: () => {
-          this.submitting.set(false);
-          this.snackbarService.showError(
-            this.translate.instant('pages.order.submit_error')
-          );
-        },
-      });
+        });
     } else {
-      this.customerClient.orderClient.createOrder(command).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-        next: (response) => {
-          this.submitting.set(false);
+      this.customerClient.orderClient
+        .createOrder(command)
+        .pipe(
+          takeUntil(this.destroyed$),
+          catchError(() => of(null)),
+          finalize(() => this.submitting.set(false)),
+        )
+        .subscribe((response) => {
+          if (!response) {
+            this.snackbarService.showError(
+              this.translate.instant('pages.order.submit_error'),
+            );
+            return;
+          }
           if (response.id) {
             this.guestOrderService.save(response.id, data.customerEmail);
           }
           this.router.navigate([CleansiaCustomerRoute.CHECKOUT_SUCCESS], {
-              queryParams: { type: 'cash' },
-            });
-        },
-        error: () => {
-          this.submitting.set(false);
-          this.snackbarService.showError(
-            this.translate.instant('pages.order.submit_error')
-          );
-        },
-      });
+            queryParams: { type: 'cash' },
+          });
+        });
     }
   }
 }

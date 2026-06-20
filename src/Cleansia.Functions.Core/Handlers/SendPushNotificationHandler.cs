@@ -55,25 +55,26 @@ public class SendPushNotificationHandler(
         }
         catch (JsonException ex)
         {
+            // S6: never log the raw body — it carries PII / push content. Log only its size.
             logger.LogWarning(ex,
-                "Discarding push message: malformed/un-deserializable body (permanent). Message: {Message}",
-                messageText);
+                "Discarding push message: malformed/un-deserializable body (permanent), {Bytes} bytes",
+                messageText.Length);
             return;
         }
 
         if (message is null)
         {
             logger.LogWarning(
-                "Discarding push message: deserialized to null (permanent). Message: {Message}",
-                messageText);
+                "Discarding push message: deserialized to null (permanent), {Bytes} bytes",
+                messageText.Length);
             return;
         }
 
         if (string.IsNullOrEmpty(message.UserId) || string.IsNullOrEmpty(message.EventKey))
         {
             logger.LogWarning(
-                "Discarding push message with missing UserId or EventKey: {Message}",
-                messageText);
+                "Discarding push message with missing UserId or EventKey ({Bytes} bytes)",
+                messageText.Length);
             return;
         }
 
@@ -195,9 +196,11 @@ public class SendPushNotificationHandler(
             // validated. Re-throw so the queue retries up to maxDequeueCount (host.json = 5), then moves
             // the message to notifications-dispatch-poison for durable recording. Acking a transient
             // fault here would silently drop recoverable work.
+            // S6: the body deserialized and validated by this point — log the safe scalar correlation
+            // keys (UserId/EventKey), never the raw queue body.
             logger.LogError(ex,
-                "Transient/infra failure dispatching push notification — will retry via queue. Message: {Message}",
-                messageText);
+                "Transient/infra failure dispatching push notification — will retry via queue for user {UserId} on event {EventKey}",
+                message.UserId, message.EventKey);
             throw;
         }
     }

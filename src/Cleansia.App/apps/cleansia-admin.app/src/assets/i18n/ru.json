@@ -643,6 +643,12 @@
       "total_orders": "Заказы",
       "total_amount": "Общая сумма",
       "status": "Статус",
+      "pdf_status": "PDF",
+      "pdf_state": {
+        "ready": "Готово",
+        "failed": "Ошибка",
+        "pending": "Генерируется…"
+      },
       "generated_at": "Создан",
       "actions": "Действия",
       "view_details": "Просмотреть детали",
@@ -1363,6 +1369,9 @@
       "back_to_list": "Вернуться к списку счетов",
       "invoice_number": "Номер счёта",
       "status": "Статус",
+      "pdf_status": "PDF",
+      "pdf_failed_title": "Не удалось сгенерировать PDF",
+      "pdf_error_label": "Ошибка",
       "actions_section": "Действия",
       "invoice_summary": "Сводка счёта",
       "employee_name": "Сотрудник",
@@ -2136,8 +2145,7 @@
     },
     "email": {
       "invalid_format": "Недействительный формат электронной почты",
-      "invalid_email": "Недействительный адрес электронной почты",
-      "sending_failed": "Не удалось отправить электронное письмо"
+      "invalid_email": "Недействительный адрес электронной почты"
     },
     "employee": {
       "already_approved": "Сотрудник уже одобрен",

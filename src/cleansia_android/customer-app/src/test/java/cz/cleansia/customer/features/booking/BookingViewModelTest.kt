@@ -18,6 +18,7 @@ import cz.cleansia.customer.core.referral.ValidateReferralResponse
 import cz.cleansia.customer.core.user.CurrentUser
 import cz.cleansia.customer.core.user.UserRepository
 import cz.cleansia.customer.testing.MainDispatcherRule
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.ui.state.ActionState
 import io.mockk.coEvery
@@ -87,7 +88,7 @@ class BookingViewModelTest {
         appContext = mockk(relaxed = true)
 
         every { userRepository.currentUser } returns currentUserFlow
-        coEvery { userRepository.refreshCurrentUser() } returns null
+        coEvery { userRepository.refreshCurrentUser() } returns ApiResult.Success(Unit)
         // Default: signed in. Tests that exercise the signed-out branch
         // override this per-test.
         every { tokenStore.current() } returns mockk(relaxed = true)
@@ -293,11 +294,13 @@ class BookingViewModelTest {
         coEvery { bookingApi.create(any()) } returns Response.success(
             CreateOrderResponse(id = "o-1", confirmationCode = "X"),
         )
-        coEvery { paymentRepository.createPaymentIntent("o-1") } returns CreatePaymentIntentResponse(
-            clientSecret = "pi_secret",
-            paymentIntentId = "pi_1",
-            stripeCustomerId = "cus_1",
-            ephemeralKey = "ek",
+        coEvery { paymentRepository.createPaymentIntent("o-1") } returns ApiResult.Success(
+            CreatePaymentIntentResponse(
+                clientSecret = "pi_secret",
+                paymentIntentId = "pi_1",
+                stripeCustomerId = "cus_1",
+                ephemeralKey = "ek",
+            ),
         )
 
         val vm = newViewModel()
@@ -451,9 +454,11 @@ class BookingViewModelTest {
 
     @Test
     fun validateReferralCodeNow_givenValidCode_transitionsToValidAndPersistsCode() = runTest {
-        coEvery { referralRepository.validate("FRIEND10") } returns ValidateReferralResponse(
-            isValid = true,
-            referrerFirstName = "Bob",
+        coEvery { referralRepository.validate("FRIEND10") } returns ApiResult.Success(
+            ValidateReferralResponse(
+                isValid = true,
+                referrerFirstName = "Bob",
+            ),
         )
 
         val vm = newViewModel()
@@ -465,9 +470,11 @@ class BookingViewModelTest {
 
     @Test
     fun validateReferralCodeNow_givenInvalidCode_transitionsToInvalidWithMappedError() = runTest {
-        coEvery { referralRepository.validate(any()) } returns ValidateReferralResponse(
-            isValid = false,
-            errorCode = "SelfReferral",
+        coEvery { referralRepository.validate(any()) } returns ApiResult.Success(
+            ValidateReferralResponse(
+                isValid = false,
+                errorCode = "SelfReferral",
+            ),
         )
 
         val vm = newViewModel()

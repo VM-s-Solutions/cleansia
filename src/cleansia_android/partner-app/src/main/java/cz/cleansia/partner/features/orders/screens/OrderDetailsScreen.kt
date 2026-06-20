@@ -33,7 +33,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -85,6 +84,7 @@ import cz.cleansia.partner.features.orders.components.StatusTimeline
 import cz.cleansia.partner.features.orders.components.toOrderStatus
 import cz.cleansia.partner.features.orders.viewmodels.CleaningChecklistViewModel
 import cz.cleansia.partner.features.orders.viewmodels.OrderAction
+import cz.cleansia.partner.features.orders.viewmodels.OrderDetailsUiState
 import cz.cleansia.partner.features.orders.viewmodels.OrderDetailsViewModel
 
 /**
@@ -103,17 +103,13 @@ fun OrderDetailsScreen(
     checklistViewModel: CleaningChecklistViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val inFlightAction by viewModel.inFlightAction.collectAsState()
     val checkedIds by checklistViewModel.checkedIds.collectAsState()
 
     // No local SnackbarHostState — all VMs push directly to the
     // app-wide SnackbarController bus, rendered by GlobalSnackbarHost
     // at the nav root. Errors/successes therefore look identical to
     // every other surface in the app, not the bare Material default.
-    LaunchedEffect(uiState.isCompletedJustNow) {
-        if (uiState.isCompletedJustNow) {
-            viewModel.clearCompletedJustNow()
-        }
-    }
 
     // Silent freshness check on every resume so coming back from a
     // sub-screen (photo picker, notes dialog) shows the latest server
@@ -124,8 +120,8 @@ fun OrderDetailsScreen(
         viewModel.onResume()
     }
 
-    when {
-        uiState.isInitialLoad && uiState.order == null -> {
+    when (val s = uiState) {
+        OrderDetailsUiState.Loading -> {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -135,10 +131,10 @@ fun OrderDetailsScreen(
                 CircularProgressIndicator()
             }
         }
-        uiState.order != null -> {
+        is OrderDetailsUiState.Loaded -> {
             OrderDetailsBottomSheetLayout(
-                order = uiState.order!!,
-                inFlight = uiState.inFlight,
+                order = s.order,
+                inFlight = inFlightAction,
                 checkedIds = checkedIds,
                 onToggleChecklistItem = checklistViewModel::setChecked,
                 onTake = viewModel::take,
@@ -158,6 +154,7 @@ fun OrderDetailsScreen(
                 onNavigateBack = onNavigateBack,
             )
         }
+        OrderDetailsUiState.Error -> Unit
     }
 }
 

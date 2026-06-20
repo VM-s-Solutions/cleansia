@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
+  EmployeeInvoiceDetailDto,
   EmployeeInvoiceStatus,
   OrderEmployeePayDto,
 } from '@cleansia/admin-services';
@@ -19,7 +20,13 @@ import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
-import { getInvoiceStatusClass } from '../invoice-management/invoice-management.models';
+import {
+  getInvoicePdfState,
+  getInvoicePdfStateClass,
+  getInvoicePdfStateLabelKey,
+  getInvoiceStatusClass,
+  InvoicePdfState,
+} from '../invoice-management/invoice-management.models';
 import { AdminPayrollOpsComponent } from './components';
 import { InvoiceDetailFacade } from './invoice-detail.facade';
 import { getOrderPaysTableDefinition } from './invoice-detail.models';
@@ -78,6 +85,18 @@ export class InvoiceDetailComponent implements OnInit, OnDestroy {
 
   getInvoiceStatusClass(status: EmployeeInvoiceStatus | undefined): string {
     return getInvoiceStatusClass(status);
+  }
+
+  getPdfState(invoice: EmployeeInvoiceDetailDto): InvoicePdfState {
+    return getInvoicePdfState(invoice);
+  }
+
+  getPdfStateClass(invoice: EmployeeInvoiceDetailDto): string {
+    return getInvoicePdfStateClass(getInvoicePdfState(invoice));
+  }
+
+  getPdfStateLabelKey(invoice: EmployeeInvoiceDetailDto): string {
+    return getInvoicePdfStateLabelKey(getInvoicePdfState(invoice));
   }
 
   onApprove(): void {

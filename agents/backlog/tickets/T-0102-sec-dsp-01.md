@@ -1,11 +1,11 @@
 ---
 id: T-0102
 title: IsStaffMessage server-derived + dispute message split (CanAddDisputeMessage / CanRespondToDispute=AdminOnly) + move staff endpoint Partner→Admin
-status: draft
+status: done
 size: M
 owner: —
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-15
 depends_on: [T-0100, T-0101]
 blocks: []
 stories: []

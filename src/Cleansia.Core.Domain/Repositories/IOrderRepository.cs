@@ -69,6 +69,15 @@ public interface IOrderRepository : IRepository<Order, string>
     Task<Order?> GetByIdIgnoringTenantAsync(string id, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Cross-tenant existence check by order id. The tenant-ignoring counterpart of
+    /// <see cref="IRepository{Order,String}.ExistsAsync"/>, for the anonymous Stripe webhook validator:
+    /// the request carries no tenant claim, so the tenant-scoped <c>ExistsAsync</c> collapses to
+    /// <c>TenantId == null</c> and misses any non-null-tenant order — while the handler resolves it via
+    /// <see cref="GetByIdIgnoringTenantAsync"/>. Mirror that read here so validator and handler agree.
+    /// </summary>
+    Task<bool> ExistsIgnoringTenantAsync(string id, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Cross-tenant lookup of the order owning a given Stripe payment intent.
     /// ONLY for Stripe webhook handlers that resolve an event carrying a
     /// <c>payment_intent</c> but no OrderId metadata (e.g. a <c>charge.dispute.*</c>

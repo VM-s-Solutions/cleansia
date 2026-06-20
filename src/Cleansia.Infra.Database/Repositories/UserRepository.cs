@@ -10,8 +10,11 @@ public class UserRepository(CleansiaDbContext context)
 {
     public override IQueryable<User> GetQueryable()
     {
+        // No blanket Include(Orders): every single-user fetch (GetUser, RefreshToken, ExportUserData,
+        // admin user reads) was loading the user's entire order history, which no mapper reads. The
+        // PreferredLanguage nav stays — the user DTOs render PreferredLanguage.Name. Callers that DO
+        // need a nav add it explicitly (GdprDeletionService Includes Employee/Cart).
         return GetDbSet()
-            .Include(user => user.Orders)
             .Include(user => user.PreferredLanguage)
             .AsQueryable();
     }
@@ -21,6 +24,21 @@ public class UserRepository(CleansiaDbContext context)
         return GetDbSet()
             .Include(user => user.Employee)
             .FirstOrDefaultAsync(user => user.Email == email, cancellationToken);
+    }
+
+    public Task<User?> GetByEmailNoTrackingAsync(string email, CancellationToken cancellationToken = default)
+    {
+        return GetDbSet()
+            .Include(user => user.Employee)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(user => user.Email == email, cancellationToken);
+    }
+
+    public Task<User?> GetByIdNoTrackingAsync(string id, CancellationToken cancellationToken = default)
+    {
+        return GetQueryable()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(user => user.Id == id, cancellationToken);
     }
 
     public Task<User?> GetByPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken = default)
@@ -92,6 +110,28 @@ public class UserRepository(CleansiaDbContext context)
 
         await GetDbSet()
             .Where(u => u.Email == email && (u.LockoutEndsAt == null || u.LockoutEndsAt <= now))
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(
+                    u => u.FailedLoginAttempts,
+                    u => u.FailedLoginAttempts + 1 >= User.MaxFailedLoginAttempts ? 0 : u.FailedLoginAttempts + 1)
+                .SetProperty(
+                    u => u.LockoutEndsAt,
+                    u => u.FailedLoginAttempts + 1 >= User.MaxFailedLoginAttempts ? lockoutEnd : u.LockoutEndsAt),
+                cancellationToken);
+    }
+
+    // Same lockout transition as RecordFailedLoginAsync (S7a) but keyed by id for the authenticated
+    // change-password surface, charging the SHARED FailedLoginAttempts/LockoutEndsAt pair so a
+    // change-password sprayer also bounds login. Both SetProperty conditions evaluate against the
+    // PRE-update row, and the WHERE makes attempts during an open lockout a no-op so racing failures
+    // cannot extend it. Hitting the threshold opens the window and resets the counter, so cooldown
+    // expiry restores a fresh budget.
+    public async Task RecordFailedCurrentPasswordAttemptAsync(string userId, DateTimeOffset now, CancellationToken cancellationToken = default)
+    {
+        var lockoutEnd = now.Add(User.FailedLoginLockout);
+
+        await GetDbSet()
+            .Where(u => u.Id == userId && (u.LockoutEndsAt == null || u.LockoutEndsAt <= now))
             .ExecuteUpdateAsync(s => s
                 .SetProperty(
                     u => u.FailedLoginAttempts,

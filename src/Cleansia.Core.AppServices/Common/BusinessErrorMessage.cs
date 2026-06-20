@@ -32,7 +32,6 @@ public static class BusinessErrorMessage
     public const string ExchangeRateMustBePositive = "currency.exchange_rate_must_be_positive";
     
     // Email
-    public const string EmailNotSentError = "email.sending_failed";
     public const string InvalidEmailFormat = "email.invalid_format";
 
     // Order

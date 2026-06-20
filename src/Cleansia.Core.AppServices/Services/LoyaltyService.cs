@@ -223,7 +223,7 @@ public sealed class LoyaltyService(
             return new TierDiscountResult(0m, null);
         }
 
-        var account = await loyaltyAccountRepository.GetByUserIdAsync(userId, cancellationToken);
+        var account = await loyaltyAccountRepository.GetByUserIdTierOnlyAsync(userId, cancellationToken);
         if (account == null)
         {
             return new TierDiscountResult(0m, null);

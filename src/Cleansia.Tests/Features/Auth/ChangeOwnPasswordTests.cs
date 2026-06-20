@@ -8,6 +8,8 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database.Converters;
+using Cleansia.TestUtilities;
+using Cleansia.TestUtilities.MockDataFactories.Users;
 using Moq;
 
 namespace Cleansia.Tests.Features.Auth;
@@ -82,6 +84,58 @@ public class ChangeOwnPasswordTests
         Assert.True(result.IsFailure);
         Assert.Equal(BusinessErrorMessage.CurrentPasswordInvalid, result.Error!.Message);
         Assert.Equal(storedBefore, caller.Password);
+    }
+
+    // A wrong current-password attempt is charged to the account's lockout budget (the same
+    // pair the login surfaces use, so a change-password sprayer also bounds login).
+    [Fact]
+    public async Task Wrong_Current_Password_Charges_The_Account_Lockout_Budget()
+    {
+        ArrangeCaller();
+
+        var result = await InvokeHandler(new ChangeOwnPassword.Command("WrongPass1", NewPassword));
+
+        Assert.True(result.IsFailure);
+        _userRepository.Verify(
+            r => r.RecordFailedCurrentPasswordAttemptAsync(CallerId, It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    // Once the budget is exhausted (lockout window open) the current password is no longer
+    // evaluated: the distinct AccountLocked key is returned and no further charge is made (no oracle).
+    [Fact]
+    public async Task Locked_Account_Refuses_Even_The_Correct_Current_Password_Without_Evaluating_It()
+    {
+        var caller = BuildAdmin(CallerId, CurrentPassword);
+        caller.Merge(new UserMockFactory.UserPartial { LockoutEndsAt = DateTimeOffset.UtcNow.AddMinutes(10) });
+        var storedBefore = caller.Password;
+        _session.Setup(s => s.GetUserId()).Returns(CallerId);
+        _userRepository.Setup(r => r.GetByIdAsync(CallerId, It.IsAny<CancellationToken>())).ReturnsAsync(caller);
+
+        var result = await InvokeHandler(new ChangeOwnPassword.Command(CurrentPassword, NewPassword));
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.AccountLocked, result.Error!.Message);
+        Assert.Equal(storedBefore, caller.Password);
+        _userRepository.Verify(
+            r => r.RecordFailedCurrentPasswordAttemptAsync(It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    // A successful change restores a fresh budget by resetting the login throttle.
+    [Fact]
+    public async Task Successful_Change_Resets_The_Lockout_Budget()
+    {
+        var caller = BuildAdmin(CallerId, CurrentPassword);
+        caller.Merge(new UserMockFactory.UserPartial { FailedLoginAttempts = 3 });
+        _session.Setup(s => s.GetUserId()).Returns(CallerId);
+        _userRepository.Setup(r => r.GetByIdAsync(CallerId, It.IsAny<CancellationToken>())).ReturnsAsync(caller);
+
+        var result = await InvokeHandler(new ChangeOwnPassword.Command(CurrentPassword, NewPassword));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(0, caller.FailedLoginAttempts);
+        Assert.Null(caller.LockoutEndsAt);
     }
 
     // AC4 — the handler resolves the subject from the session only; another admin's row is

@@ -7,8 +7,8 @@ import cz.cleansia.partner.api.client.CountryApi
 import cz.cleansia.partner.api.model.CountryListItem
 import cz.cleansia.partner.api.model.EmployeeEntityType
 import cz.cleansia.partner.core.network.ApiErrorTranslator
-import cz.cleansia.partner.core.network.ApiResult
-import cz.cleansia.partner.core.network.safeApiCall
+import cz.cleansia.core.network.ApiResult
+import cz.cleansia.core.network.safeApiCall
 import cz.cleansia.partner.data.profile.ProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

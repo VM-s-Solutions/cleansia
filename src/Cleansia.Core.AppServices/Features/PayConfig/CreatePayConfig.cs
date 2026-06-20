@@ -25,7 +25,7 @@ public class CreatePayConfig
 
     public record Response(string PayConfigId);
 
-    public class Validator : UserEmailValidator<Command>
+    public class Validator : AbstractValidator<Command>
     {
         private readonly IServiceRepository _serviceRepository;
         private readonly IPackageRepository _packageRepository;
@@ -40,13 +40,15 @@ public class CreatePayConfig
             IPackageRepository packageRepository,
             ICurrencyRepository currencyRepository,
             IEmployeePayConfigRepository payConfigRepository,
-            IEmployeeRepository employeeRepository) : base(userRepository, userSessionProvider)
+            IEmployeeRepository employeeRepository)
         {
             _serviceRepository = serviceRepository;
             _packageRepository = packageRepository;
             _currencyRepository = currencyRepository;
             _payConfigRepository = payConfigRepository;
             _employeeRepository = employeeRepository;
+
+            RuleFor(x => x).SetValidator(new UserEmailValidator<Command>(userRepository, userSessionProvider));
 
             RuleFor(x => x)
                 .Cascade(CascadeMode.Stop)

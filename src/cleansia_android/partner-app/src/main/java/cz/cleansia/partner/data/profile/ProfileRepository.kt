@@ -15,8 +15,8 @@ import cz.cleansia.partner.api.model.UpdateEmergencyContactCommand
 import cz.cleansia.partner.api.model.UpdateIdentificationInfoCommand
 import cz.cleansia.partner.api.model.UpdatePersonalInfoCommand
 import cz.cleansia.core.freshness.Staleness
-import cz.cleansia.partner.core.network.ApiResult
-import cz.cleansia.partner.core.network.safeApiCall
+import cz.cleansia.core.network.ApiResult
+import cz.cleansia.core.network.safeApiCall
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton

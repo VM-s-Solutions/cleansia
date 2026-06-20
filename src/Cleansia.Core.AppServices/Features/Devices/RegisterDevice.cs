@@ -32,8 +32,12 @@ public static class RegisterDevice
     {
         public async Task<BusinessResult<Response>> Handle(Command request, CancellationToken cancellationToken)
         {
-            var userId = userSessionProvider.GetUserId()
-                         ?? throw new UnauthorizedAccessException("User ID not found in claims.");
+            var userId = userSessionProvider.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return BusinessResult.Failure<Response>(
+                    new Error(nameof(userId), BusinessErrorMessage.UserNotFound));
+            }
 
             var existingDevice = await deviceRepository.GetByUserAndDeviceIdAsync(userId, request.DeviceId, cancellationToken);
 

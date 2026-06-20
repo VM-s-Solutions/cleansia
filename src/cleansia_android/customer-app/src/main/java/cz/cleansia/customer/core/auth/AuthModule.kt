@@ -146,14 +146,14 @@ object AuthModule {
         sessionManager: SessionManager,
         sessionScopedCaches: Set<@JvmSuppressWildcards SessionScopedCache>,
         pushTokenRepository: cz.cleansia.customer.core.notifications.PushTokenRepository,
-        @ApplicationContext appContext: Context,
+        json: Json,
     ): AuthRepository = AuthRepository(
         api,
         tokenStore,
         sessionManager,
         sessionScopedCaches,
         pushTokenRepository,
-        appContext,
+        json,
     )
 
     @Provides

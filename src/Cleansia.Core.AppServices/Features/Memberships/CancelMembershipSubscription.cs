@@ -33,7 +33,7 @@ public class CancelMembershipSubscription
             if (membership == null)
             {
                 return BusinessResult.Failure<Response>(new Error(
-                    nameof(Command), BusinessErrorMessage.MembershipNotFound));
+                    nameof(userId), BusinessErrorMessage.MembershipNotFound));
             }
 
             try

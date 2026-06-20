@@ -15,6 +15,7 @@ public class LoyaltyTransactionRepository(CleansiaDbContext context)
             .OrderByDescending(t => t.OccurredOn)
             .Skip(offset)
             .Take(limit)
+            .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
 

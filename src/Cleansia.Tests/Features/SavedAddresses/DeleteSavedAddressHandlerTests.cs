@@ -45,6 +45,7 @@ public class DeleteSavedAddressHandlerTests
         var result = await handler.Handle(new DeleteSavedAddress.Command(SavedAddressId), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
+        Assert.Equal(SavedAddressId, result.Value!.SavedAddressId);
         _savedAddressRepository.Verify(r => r.Deactivate(saved), Times.Once);
         _savedAddressRepository.Verify(r => r.Remove(It.IsAny<SavedAddress>()), Times.Never);
     }

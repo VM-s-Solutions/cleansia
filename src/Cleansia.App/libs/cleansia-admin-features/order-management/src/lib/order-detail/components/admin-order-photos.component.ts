@@ -21,7 +21,7 @@ import {
 import { AdminOrderPhotosFacade } from './admin-order-photos.facade';
 
 @Component({
-  selector: 'admin-order-photos',
+  selector: 'cleansia-admin-order-photos',
   standalone: true,
   imports: [
     CommonModule,

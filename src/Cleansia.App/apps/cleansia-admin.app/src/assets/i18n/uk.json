@@ -643,6 +643,12 @@
       "total_orders": "Замовлення",
       "total_amount": "Загальна сума",
       "status": "Статус",
+      "pdf_status": "PDF",
+      "pdf_state": {
+        "ready": "Готово",
+        "failed": "Помилка",
+        "pending": "Генерується…"
+      },
       "generated_at": "Створено",
       "actions": "Дії",
       "view_details": "Переглянути деталі",
@@ -1363,6 +1369,9 @@
       "back_to_list": "Повернутися до списку рахунків",
       "invoice_number": "Номер рахунку",
       "status": "Статус",
+      "pdf_status": "PDF",
+      "pdf_failed_title": "Не вдалося згенерувати PDF",
+      "pdf_error_label": "Помилка",
       "actions_section": "Дії",
       "invoice_summary": "Підсумок рахунку",
       "employee_name": "Працівник",
@@ -2136,8 +2145,7 @@
     },
     "email": {
       "invalid_format": "Недійсний формат електронної пошти",
-      "invalid_email": "Недійсна адреса електронної пошти",
-      "sending_failed": "Не вдалося надіслати електронний лист"
+      "invalid_email": "Недійсна адреса електронної пошти"
     },
     "employee": {
       "already_approved": "Працівника вже схвалено",

@@ -635,6 +635,8 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex("IsActive", "LastActiveAt");
+
                     b.HasIndex("UserId", "DeviceId")
                         .IsUnique();
 
@@ -2452,6 +2454,12 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasIndex("UserId", "Status");
 
+                    b.HasIndex(new[] { "Status", "CurrentPeriodEnd" }, "IX_UserMemberships_Status_CurrentPeriodEnd")
+                        .HasFilter("\"RenewalReminderSentAt\" IS NULL");
+
+                    b.HasIndex(new[] { "Status", "CurrentPeriodEnd" }, "IX_UserMemberships_Status_CurrentPeriodEnd_Cancellation")
+                        .HasFilter("\"CancelledAt\" IS NOT NULL AND \"CancellationReminderSentAt\" IS NULL");
+
                     b.ToTable("UserMemberships", (string)null);
                 });
 
@@ -4083,9 +4091,9 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CountryId");
-
                     b.HasIndex("TenantId");
+
+                    b.HasIndex("CountryId", "ZipCode", "City", "Street");
 
                     b.ToTable("Addresses");
                 });
@@ -4401,6 +4409,8 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(26)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedOn");
 
                     b.HasIndex("TenantId");
 
@@ -5257,7 +5267,7 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasOne("Cleansia.Core.Domain.Packages.Package", "Package")
                         .WithMany()
                         .HasForeignKey("PackageId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Order");
@@ -5306,7 +5316,7 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasOne("Cleansia.Core.Domain.Services.Service", "Service")
                         .WithMany("IncludedInOrders")
                         .HasForeignKey("ServiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Order");
@@ -5336,7 +5346,7 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasOne("Cleansia.Core.Domain.Services.Service", "Service")
                         .WithMany("Packages")
                         .HasForeignKey("ServiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Package");
@@ -5443,7 +5453,7 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasOne("Cleansia.Core.Domain.Packages.Package", "Package")
                         .WithMany()
                         .HasForeignKey("PackageId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Cart");
@@ -5462,7 +5472,7 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasOne("Cleansia.Core.Domain.Services.Service", "Service")
                         .WithMany()
                         .HasForeignKey("ServiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Cart");

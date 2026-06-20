@@ -1,5 +1,4 @@
 <div class="customer-disputes">
-  <!-- Hero Section -->
   <div class="customer-disputes__hero">
     <h1 class="customer-disputes__hero-title">
       {{ 'pages.disputes.hero_title' | translate }}
@@ -9,18 +8,15 @@
     </p>
   </div>
 
-  <!-- Actions Bar -->
   <div class="customer-disputes__actions-bar">
-    <p-select
+    <cleansia-select
       class="customer-disputes__status-filter"
+      [formControl]="statusFilterControl"
       [options]="statusFilterOptions"
-      [ngModel]="facade.statusFilter()"
-      (ngModelChange)="onStatusFilterChange($event)"
-      optionLabel="label"
-      optionValue="value"
-      [showClear]="true"
       [placeholder]="'pages.disputes.filter_status' | translate"
-      appendTo="body"
+      [showClear]="true"
+      [appendTo]="'body'"
+      (valueChanges)="onStatusFilterChange($event)"
     />
     <cleansia-button
       [title]="'pages.disputes.create_new' | translate"
@@ -32,14 +28,13 @@
     />
   </div>
 
-  @if (loading()) {
+  @if (loading() && disputes().length === 0) {
   <div class="customer-disputes__skeleton flex flex-column gap-3">
     @for (i of [1, 2, 3]; track i) {
-    <p-skeleton width="100%" height="6rem" borderRadius="16px" />
+    <p-skeleton width="100%" height="4rem" borderRadius="16px" />
     }
   </div>
-  } @else if (disputes().length === 0) {
-  <!-- Empty State -->
+  } @else if (!loading() && disputes().length === 0) {
   <div class="customer-disputes__empty">
     <div class="customer-disputes__empty-icon">
       <i class="pi pi-check-circle"></i>
@@ -51,7 +46,6 @@
       {{ 'pages.disputes.empty_description' | translate }}
     </p>
 
-    <!-- FAQ-style help -->
     <div class="customer-disputes__empty-faq">
       <strong>{{ 'pages.disputes.empty_faq_title' | translate }}</strong>
       <p>{{ 'pages.disputes.empty_faq_items' | translate }}</p>
@@ -63,53 +57,51 @@
     </div>
   </div>
   } @else {
-  <!-- Dispute Cards -->
-  <div class="customer-disputes__list">
-    @for (dispute of disputes(); track dispute.id) {
-    <div class="dispute-card" (click)="openDetail(dispute)">
-      <div class="dispute-card__status-bar" [class]="'dispute-card__status-bar--' + getStatusSeverity(dispute.status)"></div>
-      <div class="dispute-card__body">
-        <div class="dispute-card__main">
-          <div class="dispute-card__header">
-            <span class="dispute-card__order">#{{ dispute.displayOrderNumber }}</span>
-            <p-tag
-              [value]="statusLabel(dispute.status)"
-              [severity]="getStatusSeverity(dispute.status)"
-              styleClass="text-xs"
-            />
-            @if (isUnread(dispute)) {
-            <span class="dispute-card__unread">
-              <i class="pi pi-comment"></i>
-              {{ 'pages.disputes.new_reply' | translate }}
-            </span>
-            }
-          </div>
-          <div class="dispute-card__reason">{{ reasonLabel(dispute.reason) }}</div>
-          <div class="dispute-card__date">
-            <i class="pi pi-calendar"></i>
-            {{ formatDate(dispute.createdOn) }}
-          </div>
-        </div>
-        <div class="dispute-card__action">
-          <i class="pi pi-chevron-right"></i>
-        </div>
-      </div>
-    </div>
-    }
-  </div>
-
-  <p-paginator
-    *ngIf="totalRecords() > rows"
-    class="mt-4"
-    [first]="first"
-    [rows]="rows"
-    [totalRecords]="totalRecords()"
-    (onPageChange)="onPageChange($event)"
-  >
-  </p-paginator>
+  <cleansia-table
+    class="customer-disputes__table"
+    [data]="disputes()"
+    [columns]="columns"
+    [actions]="actions"
+    [config]="{
+      lazy: true,
+      paginator: true,
+      rows: rows,
+      totalRecords: totalRecords(),
+      emptyMessage: 'pages.disputes.no_disputes'
+    }"
+    [loading]="loading()"
+    [clickableRows]="true"
+    (rowClick)="openDetail($event)"
+    (pageChange)="onPageChange($event)"
+  />
   }
 
-  <!-- Create Dispute Dialog -->
+  <ng-template #orderCell let-row>
+    <span class="customer-disputes__cell-order">#{{ row.displayOrderNumber }}</span>
+    @if (isUnread(row)) {
+    <span class="customer-disputes__cell-unread">
+      <i class="pi pi-comment"></i>
+      {{ 'pages.disputes.new_reply' | translate }}
+    </span>
+    }
+  </ng-template>
+
+  <ng-template #reasonCell let-row>
+    {{ reasonLabel(row.reason) }}
+  </ng-template>
+
+  <ng-template #statusCell let-row>
+    <p-tag
+      [value]="statusLabel(row.status)"
+      [severity]="getStatusSeverity(row.status)"
+      styleClass="text-xs"
+    />
+  </ng-template>
+
+  <ng-template #createdCell let-row>
+    {{ formatDate(row.createdOn) }}
+  </ng-template>
+
   <p-dialog
     [header]="'pages.disputes.create_title' | translate"
     [(visible)]="showCreateDialog"
@@ -118,60 +110,42 @@
     [breakpoints]="{ '600px': '95vw' }"
     styleClass="cleansia-dialog"
   >
-    <div class="customer-disputes__create-form">
+    <form [formGroup]="createForm" class="customer-disputes__create-form">
       <div class="customer-disputes__field">
-        <label>
-          <i class="pi pi-shopping-bag"></i>
-          {{ 'pages.disputes.order_id' | translate }}
-        </label>
-        <p-select
+        <cleansia-select
+          [label]="'pages.disputes.order_id' | translate"
+          formControlName="orderId"
           [options]="orderOptions()"
-          [(ngModel)]="createForm.orderId"
-          optionLabel="label"
-          optionValue="value"
           [filter]="true"
-          filterBy="label"
+          [required]="true"
+          [appendTo]="'body'"
           [placeholder]="'pages.disputes.select_order' | translate"
-          appendTo="body"
-          (onBlur)="markCreateTouched('orderId')"
         />
-        @if (createFieldError('orderId')) {
-        <small class="customer-disputes__field-error">{{ createFieldError('orderId') }}</small>
-        }
       </div>
       <div class="customer-disputes__field">
-        <label>
-          <i class="pi pi-exclamation-triangle"></i>
-          {{ 'pages.disputes.reason' | translate }}
-        </label>
-        <p-select
+        <cleansia-select
+          [label]="'pages.disputes.reason' | translate"
+          formControlName="reason"
           [options]="reasonOptions"
-          [(ngModel)]="createForm.reason"
-          optionLabel="label"
-          optionValue="value"
-          appendTo="body"
+          [required]="true"
+          [showClear]="false"
+          [appendTo]="'body'"
         />
       </div>
       <div class="customer-disputes__field">
-        <label>
-          <i class="pi pi-align-left"></i>
-          {{ 'pages.disputes.description' | translate }}
-        </label>
-        <textarea
-          pTextarea
-          [(ngModel)]="createForm.description"
+        <cleansia-textarea
+          [label]="'pages.disputes.description' | translate"
+          formControlName="description"
           [rows]="4"
-          (blur)="markCreateTouched('description')"
-          [class.ng-invalid]="createFieldError('description')"
-        ></textarea>
-        @if (createFieldError('description')) {
-        <small class="customer-disputes__field-error">{{ createFieldError('description') }}</small>
-        }
-        @if (createForm.description) {
-        <small class="customer-disputes__field-count">{{ createForm.description.length }} / {{ descriptionMaxLength }}</small>
+          [required]="true"
+        />
+        @if (createForm.controls.description.value) {
+        <small class="customer-disputes__field-count">
+          {{ createForm.controls.description.value.length }} / {{ descriptionMaxLength }}
+        </small>
         }
       </div>
-    </div>
+    </form>
     <ng-template #footer>
       <cleansia-button
         [title]="'global.actions.cancel' | translate"
@@ -181,13 +155,13 @@
       <cleansia-button
         [title]="'pages.disputes.submit' | translate"
         [severity]="'primary'"
+        [loading]="facade.creatingDispute()"
+        [disabled]="createForm.invalid"
         (clickFn)="createDispute()"
-        [disabled]="!isCreateFormValid()"
       />
     </ng-template>
   </p-dialog>
 
-  <!-- Dispute Detail Dialog -->
   <p-dialog
     [header]="disputeDetail()?.displayOrderNumber ? ('pages.disputes.title' | translate) + ' - #' + disputeDetail()?.displayOrderNumber : ('pages.disputes.title' | translate)"
     [(visible)]="showDetailDialog"
@@ -204,7 +178,6 @@
     </div>
     } @else { @if (disputeDetail(); as detail) {
     <div class="customer-disputes__detail">
-      <!-- Detail Info Cards -->
       <div class="customer-disputes__detail-grid">
         <div class="customer-disputes__detail-item">
           <span class="customer-disputes__detail-label">{{ 'pages.disputes.reason' | translate }}</span>
@@ -241,7 +214,6 @@
       </div>
       }
 
-      <!-- Evidence -->
       @if (detail.evidence && detail.evidence.length > 0) {
       <div class="customer-disputes__evidence-section">
         <h4 class="customer-disputes__evidence-title">
@@ -292,7 +264,6 @@
       </div>
       }
 
-      <!-- Messages Thread -->
       @if (detail.messages && detail.messages.length > 0) {
       <div class="customer-disputes__messages-section">
         <h4 class="customer-disputes__messages-title">
@@ -315,23 +286,19 @@
       </div>
       }
 
-      <!-- New Message -->
       <div class="customer-disputes__new-message">
-        <textarea
-          pTextarea
-          [ngModel]="newMessage()"
-          (ngModelChange)="newMessage.set($event)"
+        <cleansia-textarea
+          [formControl]="messageControl"
           [rows]="2"
           [placeholder]="'pages.disputes.type_message' | translate"
-          class="w-full"
-        ></textarea>
+        />
         <cleansia-button
           [title]="'pages.disputes.send' | translate"
           [severity]="'primary'"
           [icon]="'pi pi-send'"
           [iconPosition]="'left'"
           [loading]="sendingMessage()"
-          [disabled]="!newMessage()"
+          [disabled]="!messageControl.value"
           (clickFn)="sendMessage()"
         />
       </div>

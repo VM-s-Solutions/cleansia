@@ -1,11 +1,12 @@
 package cz.cleansia.customer.features.profile
-import cz.cleansia.core.auth.NetworkErrorInterceptor
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.customer.core.settings.AppSettingsRepository
+import cz.cleansia.core.network.ApiError
 import cz.cleansia.customer.core.user.CurrentUser
 import cz.cleansia.customer.core.user.UserRepository
+import cz.cleansia.customer.ui.state.ActionState
 import cz.cleansia.core.snackbar.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -28,31 +29,28 @@ class ProfileViewModel @Inject constructor(
 
     val currentUser: StateFlow<CurrentUser?> = userRepository.currentUser
 
-    private val _loading = MutableStateFlow(false)
-    val loading: StateFlow<Boolean> = _loading.asStateFlow()
+    private val _refreshState = MutableStateFlow<ActionState>(ActionState.Idle)
+    val refreshState: StateFlow<ActionState> = _refreshState.asStateFlow()
 
-    private val _savingProfile = MutableStateFlow(false)
-    val savingProfile: StateFlow<Boolean> = _savingProfile.asStateFlow()
+    private val _saveState = MutableStateFlow<ActionState>(ActionState.Idle)
+    val saveState: StateFlow<ActionState> = _saveState.asStateFlow()
 
     /**
      * Trigger a refresh. We don't auto-fetch in init so test harnesses can
      * inject a cached user; the tab calls this on first composition.
+     *
+     * No snackbar from here: the NetworkErrorInterceptor already shows a global
+     * toast for infrastructure failures (IOException, 5xx); a second toast here
+     * on every Home cold-start double-toasted genuine failures. HTTP 4xx
+     * (auth/business) is not toasted by the interceptor — a caller that needs
+     * those should surface the returned error itself.
      */
     fun refresh() {
-        if (_loading.value) return
-        _loading.value = true
+        if (_refreshState.value is ActionState.Submitting) return
+        _refreshState.value = ActionState.Submitting
         viewModelScope.launch {
             userRepository.refreshCurrentUser()
-            _loading.value = false
-            // NOTE: do NOT snackbar from here. The NetworkErrorInterceptor
-            // already shows a global toast for infrastructure failures
-            // (IOException, 5xx); calling snackbar.showError(error) here on
-            // every Home cold-start produced a double-toast for genuine
-            // failures and a phantom toast when the interceptor suppressed
-            // a cancellation but refreshCurrentUser still returned the
-            // localized error string. For HTTP 4xx (auth/business errors)
-            // the interceptor doesn't toast — callers that care about
-            // those should switch to a method that surfaces `error`.
+            _refreshState.value = ActionState.Idle
         }
     }
 
@@ -68,22 +66,25 @@ class ProfileViewModel @Inject constructor(
         languageCode: String?,
         onSaved: () -> Unit,
     ) {
-        if (_savingProfile.value) return
-        _savingProfile.value = true
+        if (_saveState.value is ActionState.Submitting) return
+        _saveState.value = ActionState.Submitting
         viewModelScope.launch {
-            val error = userRepository.updateCurrentUser(
+            val result = userRepository.updateCurrentUser(
                 firstName = firstName.trim(),
                 lastName = lastName.trim(),
                 phoneNumber = phoneNumber?.trim(),
                 birthDate = birthDate?.trim(),
                 languageCode = languageCode,
             )
-            _savingProfile.value = false
-            if (error == null) {
-                onSaved()
-            } else {
-                snackbar.showError(error)
-            }
+            result
+                .onSuccess {
+                    _saveState.value = ActionState.Idle
+                    onSaved()
+                }
+                .onError { error ->
+                    _saveState.value = ActionState.Error(error.getUserMessage())
+                    if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+                }
         }
     }
 
@@ -99,26 +100,29 @@ class ProfileViewModel @Inject constructor(
         birthDate: String?,
         onCompleted: () -> Unit,
     ) {
-        if (_savingProfile.value) return
+        if (_saveState.value is ActionState.Submitting) return
         val user = userRepository.currentUser.value ?: return
         val deviceLang = java.util.Locale.getDefault().language.lowercase()
         val languageCode = if (deviceLang in SUPPORTED_LANGUAGES) deviceLang else "en"
-        _savingProfile.value = true
+        _saveState.value = ActionState.Submitting
         viewModelScope.launch {
-            val error = userRepository.updateCurrentUser(
+            val result = userRepository.updateCurrentUser(
                 firstName = user.firstName,
                 lastName = user.lastName,
                 phoneNumber = phoneNumber.trim(),
                 birthDate = birthDate?.trim(),
                 languageCode = languageCode,
             )
-            _savingProfile.value = false
-            if (error == null) {
-                settings.markOnboardingSeen(user.id)
-                onCompleted()
-            } else {
-                snackbar.showError(error)
-            }
+            result
+                .onSuccess {
+                    _saveState.value = ActionState.Idle
+                    settings.markOnboardingSeen(user.id)
+                    onCompleted()
+                }
+                .onError { error ->
+                    _saveState.value = ActionState.Error(error.getUserMessage())
+                    if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+                }
         }
     }
 

@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Services;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
+using Microsoft.EntityFrameworkCore;
 using Moq;
 
 namespace Cleansia.Tests.Features.Services;
@@ -67,5 +68,33 @@ public class DeleteServiceHandlerTests
 
         Assert.True(result.IsSuccess);
         _serviceRepository.Verify(r => r.Remove(service), Times.Once);
+    }
+
+    // The durable TOCTOU backstop: the pre-check passes (a concurrent reference is inserted in the race
+    // window), but the FLUSH hits the catalog FK's ON DELETE RESTRICT. The handler maps that restrict
+    // violation to ServiceInUse instead of letting a raw DbUpdateException reach the pipeline as a 500.
+    [Theory]
+    [InlineData("23001")] // restrict_violation (explicit ON DELETE RESTRICT)
+    [InlineData("23503")] // foreign_key_violation (NO ACTION)
+    public async Task Reference_Racing_Past_The_Check_Maps_Restrict_Violation_To_ServiceInUse(string sqlState)
+    {
+        ArrangeService();
+        _serviceRepository
+            .Setup(r => r.IsInUseAsync(ServiceId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+        _serviceRepository
+            .Setup(r => r.CommitAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new DbUpdateException("fk", new FakePostgresException(sqlState)));
+        var handler = CreateHandler();
+
+        var result = await handler.Handle(new DeleteService.Command(ServiceId), CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(BusinessErrorMessage.ServiceInUse, result.Error!.Message);
+    }
+
+    private sealed class FakePostgresException(string sqlState) : Exception
+    {
+        public string SqlState { get; } = sqlState;
     }
 }

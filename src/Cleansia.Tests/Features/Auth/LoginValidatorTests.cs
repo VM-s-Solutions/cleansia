@@ -1,5 +1,6 @@
 ﻿using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auth;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Extensions;
 using Cleansia.Core.Domain.Repositories;
@@ -17,7 +18,7 @@ public class LoginValidatorTests
     public LoginValidatorTests()
     {
         _mockRepo = new Mock<IUserRepository>();
-        _validator = new Login.Validator(_mockRepo.Object);
+        _validator = new Login.Validator(_mockRepo.Object, Mock.Of<IRefreshTokenRepository>(), Mock.Of<IRefreshTokenService>());
     }
 
     [Fact]

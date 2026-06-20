@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.AppServices.Features.Gdpr.DTOs;
+using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Web.Admin.Abstractions;
 using Cleansia.Web.Admin.Attributes;
 using MediatR;
@@ -43,10 +44,7 @@ public class AdminGdprController(IMediator mediator) : ApiController(mediator)
 
     [HttpGet("requests")]
     [Permission(Policy.CanViewGdprRequests)]
-    [ProducesResponseType(typeof(List<GdprRequestDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAllGdprRequests([FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
-    {
-        var result = await Mediator.Send(new GetAllGdprRequests.Query(page, pageSize), cancellationToken);
-        return HandleResult<List<GdprRequestDto>>(result);
-    }
+    [ProducesResponseType(typeof(PagedData<GdprRequestDto>), StatusCodes.Status200OK)]
+    public async Task<PagedData<GdprRequestDto>> GetAllGdprRequests([FromQuery] GetAllGdprRequests.Request request, CancellationToken cancellationToken)
+        => await Mediator.Send(request, cancellationToken);
 }

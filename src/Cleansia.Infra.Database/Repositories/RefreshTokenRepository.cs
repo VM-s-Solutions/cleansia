@@ -11,14 +11,25 @@ public class RefreshTokenRepository(CleansiaDbContext context)
     {
         // Intentionally ignores IsActive and RevokedAt — callers need to see revoked
         // tokens to detect rotation reuse.
+        //
+        // IgnoreQueryFilters(): tokens are issued/rotated on the ANONYMOUS login/refresh path with no
+        // tenant claim, so their rows are stamped TenantId == null; the revoke/rotate read runs on an
+        // AUTHENTICATED request whose JWT may carry a tenant_id. The tenant filter would then hide the
+        // user's own null-stamped row, so logout/rotation-reuse detection would silently match nothing.
+        // The unguessable SHA-256 hash is the scope — it can never match another tenant's token.
         return context.RefreshTokens
+            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(t => t.TokenHash == tokenHash, cancellationToken);
     }
 
     public async Task<IReadOnlyList<RefreshToken>> GetActiveByUserIdAsync(string userId, CancellationToken cancellationToken)
     {
         var now = DateTimeOffset.UtcNow;
+        // IgnoreQueryFilters() + the explicit UserId predicate: see GetByTokenHashAsync. The UserId
+        // (taken from the caller's own JWT) keeps the read scoped to the requesting user's own rows,
+        // never widening across tenants — it just stops the filter hiding their null-stamped tokens.
         return await context.RefreshTokens
+            .IgnoreQueryFilters()
             .Where(t => t.UserId == userId && t.RevokedAt == null && t.ExpiresAt > now)
             .ToListAsync(cancellationToken);
     }
@@ -29,12 +40,16 @@ public class RefreshTokenRepository(CleansiaDbContext context)
         // (rootTokenId in ReplacedByTokenId of older tokens) plus descendants.
         // Simpler: find the UserId, then revoke every non-revoked token for that user.
         // Any theft signal is serious enough to warrant force-logout-everywhere anyway.
+        // IgnoreQueryFilters() + UserId scope: see GetByTokenHashAsync — the theft-signal chain revoke
+        // must reach the user's null-stamped tokens even on a tenant-claimed request, scoped to that user.
         var root = await context.RefreshTokens
+            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(t => t.Id == rootTokenId, cancellationToken);
         if (root is null) return 0;
 
         var now = DateTimeOffset.UtcNow;
         var tokensToRevoke = await context.RefreshTokens
+            .IgnoreQueryFilters()
             .Where(t => t.UserId == root.UserId && t.RevokedAt == null)
             .ToListAsync(cancellationToken);
 

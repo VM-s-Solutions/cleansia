@@ -242,7 +242,7 @@ class BookingViewModel @Inject constructor(
             return ReferralCodeUiState.Idle
         }
         _referralCodeState.value = ReferralCodeUiState.Validating
-        val resp = referralRepository.validate(normalized)
+        val resp = referralRepository.validate(normalized).getOrNull()
         val newState: ReferralCodeUiState = when {
             resp == null -> ReferralCodeUiState.Invalid(null)
             resp.isValid -> ReferralCodeUiState.Valid(resp.referrerFirstName)
@@ -472,7 +472,7 @@ class BookingViewModel @Inject constructor(
                 return BookingSubmitOutcome.Success(body)
             }
 
-            val intent = paymentRepository.createPaymentIntent(body.id)
+            val intent = paymentRepository.createPaymentIntent(body.id).getOrNull()
             if (intent == null) {
                 // Order is created but PaymentIntent failed — leave the order
                 // in Pending. The stale-pending sweeper will clean it up

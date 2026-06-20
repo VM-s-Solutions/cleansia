@@ -1,8 +1,33 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  inject,
+  OnInit,
+  signal,
+  TemplateRef,
+  ViewChild,
+} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { CleansiaButtonComponent, CleansiaFileComponent } from '@cleansia/components';
+import {
+  FormBuilder,
+  FormControl,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import {
+  CleansiaButtonComponent,
+  CleansiaFileComponent,
+  CleansiaSelectComponent,
+  CleansiaTableComponent,
+  CleansiaTextareaComponent,
+  ICleansiaSelectOption,
+  PaginationState,
+  TableAction,
+  TableColumn,
+} from '@cleansia/components';
 import {
   Code,
   DisputeListItem,
@@ -10,12 +35,8 @@ import {
 } from '@cleansia/customer-services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { TagModule } from 'primeng/tag';
-import { InputTextModule } from 'primeng/inputtext';
-import { TextareaModule } from 'primeng/textarea';
-import { SelectModule } from 'primeng/select';
 import { DialogModule } from 'primeng/dialog';
 import { SkeletonModule } from 'primeng/skeleton';
-import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { DisputesFacade } from './disputes.facade';
 import {
   CustomerDisputeStatus,
@@ -24,6 +45,7 @@ import {
   DISPUTE_STATUS_LABEL_KEYS,
   getDisputeReasonLabelKey,
   getDisputeStatusSeverity,
+  getDisputesTableDefinition,
   isDisputeOpen,
 } from './disputes.models';
 import {
@@ -36,29 +58,28 @@ import {
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
     ReactiveFormsModule,
     TranslatePipe,
     TagModule,
-    InputTextModule,
-    TextareaModule,
-    SelectModule,
     DialogModule,
     SkeletonModule,
-    PaginatorModule,
     CleansiaButtonComponent,
     CleansiaFileComponent,
+    CleansiaTableComponent,
+    CleansiaSelectComponent,
+    CleansiaTextareaComponent,
   ],
   templateUrl: './disputes.component.html',
   providers: [DisputesFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DisputesComponent implements OnInit {
+export class DisputesComponent implements OnInit, AfterViewInit {
   private readonly route = inject(ActivatedRoute);
   private readonly translate = inject(TranslateService);
+  private readonly fb = inject(FormBuilder);
+  private readonly cdr = inject(ChangeDetectorRef);
   protected readonly facade = inject(DisputesFacade);
 
-  // Re-expose facade signals to keep template bindings unchanged.
   readonly disputes = this.facade.disputes;
   readonly totalRecords = this.facade.totalRecords;
   readonly loading = this.facade.loading;
@@ -74,48 +95,33 @@ export class DisputesComponent implements OnInit {
 
   showCreateDialog = signal(false);
   showDetailDialog = signal(false);
-  newMessage = signal('');
 
+  messageControl = new FormControl('', { nonNullable: true });
   evidenceControl = new FormControl<File[]>([], { nonNullable: true });
+  statusFilterControl = new FormControl<CustomerDisputeStatus | null>(null);
 
-  createForm = {
-    orderId: '',
-    reason: DisputeReason.QualityIssue,
-    description: '',
-  };
-  createFormTouched: Record<string, boolean> = {};
+  readonly createForm = this.fb.nonNullable.group({
+    orderId: ['', Validators.required],
+    reason: [DisputeReason.QualityIssue, Validators.required],
+    description: [
+      '',
+      [
+        Validators.required,
+        Validators.minLength(DISPUTE_DESCRIPTION_MIN_LENGTH),
+        Validators.maxLength(DISPUTE_DESCRIPTION_MAX_LENGTH),
+      ],
+    ],
+  });
 
-  markCreateTouched(field: string): void {
-    this.createFormTouched[field] = true;
-  }
+  columns: TableColumn<DisputeListItem>[] = [];
+  actions: TableAction<DisputeListItem>[] = [];
 
-  createFieldError(field: string): string | null {
-    if (!this.createFormTouched[field]) return null;
-    switch (field) {
-      case 'orderId':
-        return !this.createForm.orderId ? this.translate.instant('global.validation.required') : null;
-      case 'description':
-        if (!this.createForm.description) return this.translate.instant('global.validation.required');
-        if (this.createForm.description.length < DISPUTE_DESCRIPTION_MIN_LENGTH)
-          return this.translate.instant('global.validation.minlength', { min: DISPUTE_DESCRIPTION_MIN_LENGTH });
-        if (this.createForm.description.length > DISPUTE_DESCRIPTION_MAX_LENGTH)
-          return this.translate.instant('global.validation.maxlength', { max: DISPUTE_DESCRIPTION_MAX_LENGTH });
-        return null;
-      default:
-        return null;
-    }
-  }
+  @ViewChild('orderCell') orderCell?: TemplateRef<DisputeListItem>;
+  @ViewChild('reasonCell') reasonCell?: TemplateRef<DisputeListItem>;
+  @ViewChild('statusCell') statusCell?: TemplateRef<DisputeListItem>;
+  @ViewChild('createdCell') createdCell?: TemplateRef<DisputeListItem>;
 
-  isCreateFormValid(): boolean {
-    return !!(
-      this.createForm.orderId &&
-      this.createForm.description &&
-      this.createForm.description.length >= DISPUTE_DESCRIPTION_MIN_LENGTH &&
-      this.createForm.description.length <= DISPUTE_DESCRIPTION_MAX_LENGTH
-    );
-  }
-
-  reasonOptions = [
+  readonly reasonOptions: ICleansiaSelectOption[] = [
     { label: this.translate.instant('pages.disputes.reasons.quality_issue'), value: DisputeReason.QualityIssue },
     { label: this.translate.instant('pages.disputes.reasons.service_not_provided'), value: DisputeReason.ServiceNotProvided },
     { label: this.translate.instant('pages.disputes.reasons.service_incomplete'), value: DisputeReason.ServiceIncomplete },
@@ -125,12 +131,12 @@ export class DisputesComponent implements OnInit {
     { label: this.translate.instant('pages.disputes.reasons.other'), value: DisputeReason.Other },
   ];
 
-  statusFilterOptions = Object.entries(DISPUTE_STATUS_LABEL_KEYS).map(
-    ([value, labelKey]) => ({
-      label: this.translate.instant(labelKey),
-      value: Number(value) as CustomerDisputeStatus,
-    })
-  );
+  readonly statusFilterOptions: ICleansiaSelectOption[] = Object.entries(
+    DISPUTE_STATUS_LABEL_KEYS
+  ).map(([value, labelKey]) => ({
+    label: this.translate.instant(labelKey),
+    value: Number(value) as CustomerDisputeStatus,
+  }));
 
   rows = 10;
   first = 0;
@@ -140,9 +146,25 @@ export class DisputesComponent implements OnInit {
     this.facade.loadOrdersForSelect();
     const orderId = this.route.snapshot.queryParamMap.get('orderId');
     if (orderId) {
-      this.createForm.orderId = orderId;
+      this.createForm.patchValue({ orderId });
       this.showCreateDialog.set(true);
     }
+  }
+
+  ngAfterViewInit(): void {
+    const definition = getDisputesTableDefinition(
+      { onOpen: (row) => this.openDetail(row) },
+      this.translate,
+      {
+        order: this.orderCell,
+        reason: this.reasonCell,
+        status: this.statusCell,
+        created: this.createdCell,
+      }
+    );
+    this.columns = definition.columns;
+    this.actions = definition.actions;
+    this.cdr.detectChanges();
   }
 
   loadDisputes(): void {
@@ -150,14 +172,14 @@ export class DisputesComponent implements OnInit {
   }
 
   onStatusFilterChange(status: CustomerDisputeStatus | null): void {
-    this.facade.setStatusFilter(status);
+    this.facade.setStatusFilter(status ?? null);
     this.first = 0;
     this.loadDisputes();
   }
 
-  onPageChange(event: PaginatorState): void {
-    this.first = event.first ?? 0;
-    this.rows = event.rows ?? 10;
+  onPageChange(event: PaginationState): void {
+    this.first = event.first;
+    this.rows = event.rows;
     this.loadDisputes();
   }
 
@@ -174,27 +196,30 @@ export class DisputesComponent implements OnInit {
   }
 
   createDispute(): void {
-    if (!this.createForm.orderId || !this.createForm.description) return;
+    if (this.createForm.invalid) {
+      this.createForm.markAllAsTouched();
+      return;
+    }
 
-    this.facade.createDispute(
-      this.createForm.orderId,
-      this.createForm.reason,
-      this.createForm.description,
-      () => {
-        this.showCreateDialog.set(false);
-        this.createForm = { orderId: '', reason: DisputeReason.QualityIssue, description: '' };
-        this.loadDisputes();
-      }
-    );
+    const { orderId, reason, description } = this.createForm.getRawValue();
+    this.facade.createDispute(orderId, reason, description, () => {
+      this.showCreateDialog.set(false);
+      this.createForm.reset({
+        orderId: '',
+        reason: DisputeReason.QualityIssue,
+        description: '',
+      });
+      this.loadDisputes();
+    });
   }
 
   sendMessage(): void {
     const detail = this.disputeDetail();
-    const message = this.newMessage();
+    const message = this.messageControl.value.trim();
     if (!detail?.id || !message) return;
 
     this.facade.sendMessage(detail.id, message, () => {
-      this.newMessage.set('');
+      this.messageControl.reset('');
     });
   }
 

@@ -25,6 +25,14 @@ public interface IReferralRepository : IRepository<Referral, string>
     Task<int> CountByReferrerAsync(string userId, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Per-status counts of referrals where the given user is the referrer, computed with a single
+    /// grouped query over the indexed ReferrerUserId — replaces materialising every row (with the
+    /// invitee included) just to count statuses in memory. Statuses with no rows are absent from the map.
+    /// </summary>
+    Task<IReadOnlyDictionary<ReferralStatus, int>> GetStatusCountsByReferrerAsync(
+        string userId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Background expiry sweep: returns Accepted referrals whose AcceptedOn
     /// is older than the cutoff. Caller flips them to Expired.
     /// </summary>

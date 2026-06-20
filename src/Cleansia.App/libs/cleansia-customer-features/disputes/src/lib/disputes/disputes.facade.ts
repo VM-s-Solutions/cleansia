@@ -29,8 +29,7 @@ import {
 } from '@cleansia/customer-stores';
 import { SnackbarService } from '@cleansia/services';
 import { Store } from '@ngrx/store';
-import { TranslateService } from '@ngx-translate/core';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, finalize, map, of, takeUntil } from 'rxjs';
 import {
   CustomerDisputeStatus,
   DISPUTE_UPLOAD_ERROR_KEY_MAP,
@@ -52,7 +51,6 @@ interface ApiErrorResult {
 export class DisputesFacade extends UnsubscribeControlDirective {
   private readonly store = inject(Store);
   private readonly customerClient = inject(CustomerClient);
-  private readonly translate = inject(TranslateService);
   private readonly snackbar = inject(SnackbarService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -81,6 +79,7 @@ export class DisputesFacade extends UnsubscribeControlDirective {
   );
 
   readonly sendingMessage = signal(false);
+  readonly creatingDispute = signal(false);
   readonly uploadingEvidence = signal(false);
   readonly statusFilter = signal<CustomerDisputeStatus | null>(null);
 
@@ -182,27 +181,23 @@ export class DisputesFacade extends UnsubscribeControlDirective {
     description: string,
     onSuccess: () => void
   ): void {
+    if (this.creatingDispute()) return;
+    this.creatingDispute.set(true);
     this.customerClient.disputeClient
-      .create(
-        new CreateDisputeCommand({
-          orderId,
-          reason,
-          description,
-        })
+      .create(new CreateDisputeCommand({ orderId, reason, description }))
+      .pipe(
+        takeUntil(this.destroyed$),
+        map(() => true),
+        catchError((error: unknown) => {
+          this.snackbar.showApiError(error, 'pages.disputes.create_error');
+          return of(false);
+        }),
+        finalize(() => this.creatingDispute.set(false))
       )
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe({
-        next: () => {
-          this.snackbar.showSuccess(
-            this.translate.instant('pages.disputes.create_success')
-          );
-          onSuccess();
-        },
-        error: () => {
-          this.snackbar.showError(
-            this.translate.instant('pages.disputes.create_error')
-          );
-        },
+      .subscribe((succeeded) => {
+        if (!succeeded) return;
+        this.snackbar.showSuccessTranslated('pages.disputes.create_success');
+        onSuccess();
       });
   }
 
@@ -216,19 +211,19 @@ export class DisputesFacade extends UnsubscribeControlDirective {
           isStaffMessage: false,
         })
       )
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe({
-        next: () => {
-          this.sendingMessage.set(false);
-          onSuccess();
-          this.loadDisputeDetail(disputeId);
-        },
-        error: () => {
-          this.sendingMessage.set(false);
-          this.snackbar.showError(
-            this.translate.instant('pages.disputes.send_error')
-          );
-        },
+      .pipe(
+        takeUntil(this.destroyed$),
+        map(() => true),
+        catchError((error: unknown) => {
+          this.snackbar.showApiError(error, 'pages.disputes.send_error');
+          return of(false);
+        }),
+        finalize(() => this.sendingMessage.set(false))
+      )
+      .subscribe((succeeded) => {
+        if (!succeeded) return;
+        onSuccess();
+        this.loadDisputeDetail(disputeId);
       });
   }
 

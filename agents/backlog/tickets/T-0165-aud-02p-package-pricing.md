@@ -1,11 +1,11 @@
 ---
 id: T-0165
 title: "[SPLIT] AUD-02p: Per-included-service package pricing (epic — tracking only; split into T-0231 db+backend / T-0232 admin UX)"
-status: draft
+status: done
 size: L
 owner: —
 created: 2026-06-06
-updated: 2026-06-07
+updated: 2026-06-15
 depends_on: []
 blocks: [T-0162]
 split_into: [T-0231, T-0232]

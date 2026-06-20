@@ -1,11 +1,11 @@
 ---
 id: T-0163
 title: "AUD-01d: ILoyaltyService.RevokeForPartialRefundAsync (proportional, per-refund-keyed) + LoyaltyEarnSource.OrderPartiallyRefunded + filtered-unique-index backstop"
-status: draft
+status: done
 size: M
 owner: —
 created: 2026-06-06
-updated: 2026-06-06
+updated: 2026-06-15
 depends_on: [T-0160]
 blocks: []
 stories: []

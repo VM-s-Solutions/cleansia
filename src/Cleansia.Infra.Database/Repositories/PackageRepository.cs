@@ -14,7 +14,7 @@ public class PackageRepository(CleansiaDbContext context) : BaseRepository<Packa
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
     }
 
-    public async Task<bool> IsInUseAsync(string packageId, CancellationToken cancellationToken)
+    public virtual async Task<bool> IsInUseAsync(string packageId, CancellationToken cancellationToken)
     {
         if (await Context.OrderPackages.AnyAsync(op => op.PackageId == packageId, cancellationToken))
             return true;
@@ -27,8 +27,16 @@ public class PackageRepository(CleansiaDbContext context) : BaseRepository<Packa
         if (await Context.CartPackageItems.AnyAsync(cpi => cpi.PackageId == packageId, cancellationToken))
             return true;
 
-        // Follow-up: RecurringBookingTemplate stores package ids inside a JSON column, so it
-        // cannot be checked with a typed predicate here. Tracked separately; not in scope.
+        // RecurringBookingTemplate stores package ids inside a JSON array column, which no foreign key
+        // can guard — a deleted catalog item would leave a dangling JSON id that materializes into a
+        // broken recurring booking. The column has a JSON value converter, so it cannot be filtered in
+        // SQL provider-agnostically; the id collections are materialized and checked in memory. This is
+        // acceptable: templates are a small, no-UI-yet table and this stays a fast pre-check (no FK can
+        // make the DB the arbiter for JSON refs, so the TOCTOU window here is tolerated by design).
+        // IgnoreQueryFilters because the catalog row is tenantless platform config — a reference in ANY
+        // tenant's template counts, and the admin's tenant claim must not hide other tenants' references.
+        if (await CatalogReferenceJson.IsReferencedByTemplatePackageAsync(Context, packageId, cancellationToken))
+            return true;
 
         return false;
     }

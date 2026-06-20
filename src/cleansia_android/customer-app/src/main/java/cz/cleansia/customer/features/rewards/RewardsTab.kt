@@ -63,6 +63,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderDateTime
+import cz.cleansia.core.network.ApiError
 import cz.cleansia.customer.core.loyalty.LoyaltyAccountDto
 import cz.cleansia.customer.core.loyalty.LoyaltyActivityItemDto
 import cz.cleansia.customer.core.loyalty.LoyaltyEarnSource
@@ -121,6 +122,11 @@ fun RewardsTab(
             .fromApplication(context, ReferralRepositoryEntryPoint::class.java)
             .referralRepository()
     }
+    val snackbar = remember {
+        EntryPointAccessors
+            .fromApplication(context, SnackbarControllerEntryPoint::class.java)
+            .snackbarController()
+    }
     val scope = rememberCoroutineScope()
 
     val account by loyaltyRepo.account.collectAsState()
@@ -135,21 +141,31 @@ fun RewardsTab(
     var activityPreview by remember { mutableStateOf<List<LoyaltyActivityItemDto>>(emptyList()) }
     LaunchedEffect(loaded) {
         if (loaded) {
-            val resp = loyaltyRepo.loadActivity(offset = 0, limit = 5)
-            activityPreview = resp?.data ?: emptyList()
+            loyaltyRepo.loadActivity(offset = 0, limit = 5)
+                .onSuccess { activityPreview = it.data }
+                .onError { error ->
+                    if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+                }
         }
     }
 
     val pullState = rememberPullToRefreshState()
     val refresh: () -> Unit = {
         scope.launch {
-            loyaltyRepo.refresh()
+            loyaltyRepo.refresh().onError { error ->
+                if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+            }
             // Pull-to-refresh also re-fetches the referral snapshot so the stats
             // counters stay current after a friend qualifies.
-            referralRepo.refresh()
+            referralRepo.refresh().onError { error ->
+                if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+            }
             // Re-prime the preview after a manual refresh — the repo doesn't cache it.
-            val resp = loyaltyRepo.loadActivity(offset = 0, limit = 5)
-            activityPreview = resp?.data ?: emptyList()
+            loyaltyRepo.loadActivity(offset = 0, limit = 5)
+                .onSuccess { activityPreview = it.data }
+                .onError { error ->
+                    if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+                }
         }
     }
 

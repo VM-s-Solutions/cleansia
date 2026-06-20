@@ -147,6 +147,18 @@ filter applies to `Set<T>()` reads but **not** to raw SQL (`FromSqlRaw`/`Execute
 `IQueryable` exposed from the wrong layer, or joins where only one side carries the filter — audit
 those paths.
 
+**Anonymous-write / authenticated-read asymmetry (the silent-zero-rows trap).** A row written on an
+**anonymous** path (no tenant claim → stamped `TenantId = null`) but later read/updated on an
+**authenticated** request (JWT carries `tenant_id`) is **hidden by the global filter** — the
+write silently matches zero rows and the side effect (confirm an order, revoke a token) never happens.
+Same class as the *tenant-ignoring-read-on-webhook-paths* memory note. The fix on the read side:
+`IgnoreQueryFilters()` **plus an explicit caller-scoped predicate** that re-pins the surface — never
+just clearing the filter. Pin by an unguessable secret (`TokenHash`) or the caller's own `UserId` from
+the JWT, so the read finds the caller's own null-stamped rows without widening across tenants
+(preserves S1/S3). References: the order webhook existence check `ExistsIgnoringTenantAsync` (T-0245);
+the refresh-token revoke/rotate reads `RefreshTokenRepository.GetByTokenHashAsync` /
+`GetActiveByUserIdAsync` / `RevokeChainAsync` (T-0236).
+
 ## S9 — Migration & DTO-contract safety
 
 - Add **nullable** columns freely. **Non-nullable** columns need a default or a backfill.

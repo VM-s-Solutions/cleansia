@@ -9603,6 +9603,7 @@ export class LoginCommand implements ILoginCommand {
     email!: string | undefined;
     password!: string | undefined;
     rememberMe!: boolean;
+    trustedDeviceToken!: string | undefined;
 
     constructor(data?: ILoginCommand) {
         if (data) {
@@ -9618,6 +9619,7 @@ export class LoginCommand implements ILoginCommand {
             this.email = Data["email"];
             this.password = Data["password"];
             this.rememberMe = Data["rememberMe"];
+            this.trustedDeviceToken = Data["trustedDeviceToken"];
         }
     }
 
@@ -9633,6 +9635,7 @@ export class LoginCommand implements ILoginCommand {
         data["email"] = this.email;
         data["password"] = this.password;
         data["rememberMe"] = this.rememberMe;
+        data["trustedDeviceToken"] = this.trustedDeviceToken;
         return data;
     }
 }
@@ -9641,6 +9644,7 @@ export interface ILoginCommand {
     email: string | undefined;
     password: string | undefined;
     rememberMe: boolean;
+    trustedDeviceToken: string | undefined;
 }
 
 export class LogoutCommand implements ILogoutCommand {
@@ -9929,6 +9933,7 @@ export enum LoyaltyEarnSource {
     Referral = 3,
     ManualGrant = 4,
     OrderPartiallyRefunded = 5,
+    ManualRevoke = 6,
 }
 
 export enum LoyaltyTier {

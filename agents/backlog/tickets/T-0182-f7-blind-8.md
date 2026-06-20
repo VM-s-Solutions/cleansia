@@ -1,11 +1,11 @@
 ---
 id: T-0182
 title: "Idempotent push dispatch (per-message key; fix at-most-once)"
-status: draft
+status: done
 size: M
 owner: —
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-15
 depends_on: [T-0143, T-0141]
 blocks: []
 stories: []

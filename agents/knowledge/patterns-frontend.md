@@ -134,7 +134,14 @@ Filter-drawer backdrops must be the lint-clean a11y variant (from `partner-featu
 `role="button" tabindex="0" (click)="closeFilterDrawer()" (keydown.escape)="closeFilterDrawer()"
 [attr.aria-label]="'global.close' | translate"` — a bare `(click)` div fails
 `click-events-have-key-events` / `interactive-supports-focus`. Lib eslint configs use selector
-prefix `cleansia` (not `lib`) to match the `cleansia-*` component selectors above.
+prefix `cleansia` (not `lib`) to match the `cleansia-*` component selectors above — and the Nx
+generator default (`nx.json` `generators` → `@nx/angular:library`/`@nx/angular:component`
+`prefix: 'cleansia'`) is set so a freshly scaffolded lib/component is born compliant. Every component
+selector is `cleansia-*` (route shells and feature components alike, e.g.
+`cleansia-admin-order-detail`, `cleansia-admin-payroll-ops`). The only `app-*` selectors live in the
+app shells (`app-root` in each app's `index.html`, the lazy `app-unauthorized` route shell); the admin
+app's eslint config therefore allows `prefix: ['app', 'cleansia']` — `app` for the framework shell,
+`cleansia` for everything else.
 
 ## Table config — exact idiom (`*.models.ts`)
 
@@ -248,3 +255,32 @@ reuse the interceptor `api.*` path instead (EP-3 root cause was the proliferatio
   order = chain order: a later entry is closer to the backend, so its errors are seen first (the 429
   `RetryAfterInterceptorFn` sits after `HttpErrorInterceptorFn` so the snackbar fires only once the
   back-off retry is exhausted). Customer is SSR — guard wait/retry logic with `isPlatformServer`.
+
+## Module boundaries — the per-app client is the only client a feature may import
+
+Each app owns its **own generated client lib**: `@cleansia/customer-services`
+(`libs/core/customer-services`), `@cleansia/partner-services` (`libs/core/partner-services`),
+`@cleansia/admin-services` (`libs/core/admin-services`). They are generated from **per-host OpenAPI
+specs** — the partner spec is regenerated independently of customer, so a customer feature that imports
+`@cleansia/partner-services` silently compiles against the wrong contract and a partner-only regen (or
+a removed partner endpoint) can break/skew customer flows. **A customer feature imports only
+`@cleansia/customer-services`; partner only partner; admin only admin.** The shared `@cleansia/services`
+(`libs/core/services`, `scope:shared`) is app-agnostic and fine for everyone.
+
+This is enforced by `@nx/enforce-module-boundaries` (`eslint.config.mjs`) on a **scope tag** scheme
+(each `project.json` carries a `scope:*` and a `type:*` tag):
+
+| Tag | Applied to |
+|---|---|
+| `scope:customer` / `scope:partner` / `scope:admin` | each app's feature libs, its `*-services` client lib, its `*-stores` data lib |
+| `scope:shared` | cross-app libs (`components`, `directives`, `pipes`, `services`, `models`, `utils`, `assets`) |
+| `type:feature` / `type:ui` / `type:data` / `type:util` | feature / shared-UI / NgRx-store / client-or-helper libs |
+
+The constraints read: `scope:customer → [scope:customer, scope:shared]` (and the same for partner/admin),
+plus the orthogonal `type:*` rules. A cross-app client import is therefore a **lint error**
+("A project tagged with `scope:customer` can only depend on libs tagged with `scope:customer`,
+`scope:shared`"), caught by `nx lint` in CI. When you add a lib, tag it (`scope` + `type`) in its
+`project.json` or it falls outside the guard. The `*-services` index barrels
+(`libs/core/<app>-services/src/index.ts`) are **hand-maintained** (not generated — NSwag only emits
+`client/<app>-client.ts`); re-exporting an already-generated DTO through the barrel is normal frontend
+work, **not** a `nswag-regen` step.

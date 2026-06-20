@@ -169,9 +169,9 @@ fun AddressManagerScreen(
                 onAddressSelected(address)
                 onBack()
             },
-            onSetDefault = { id -> scope.launch { repo.setDefault(id) } },
-            onDelete = { id -> scope.launch { repo.delete(id) } },
-            onRename = { id, label -> scope.launch { repo.rename(id, label) } },
+            onSetDefault = { id -> viewModel.setDefault(id) },
+            onDelete = { id -> viewModel.delete(id) },
+            onRename = { id, label -> viewModel.rename(id, label) },
             isInSheet = isInSheet,
         )
         ManagerPane.AddOnMap -> AddOnMapPane(
@@ -199,9 +199,7 @@ fun AddressManagerScreen(
                     onConfirm = { label, save, setDefault ->
                         if (save) {
                             val newAddress = picked.toUserAddress(label = label, isDefault = setDefault)
-                            scope.launch {
-                                repo.upsert(newAddress)
-                                repo.setSelected(newAddress.id)
+                            viewModel.saveAndSelect(newAddress) {
                                 onAddressSelected(newAddress)
                                 onBack()
                             }

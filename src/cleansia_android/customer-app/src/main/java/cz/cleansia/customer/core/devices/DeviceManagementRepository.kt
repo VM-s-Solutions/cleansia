@@ -1,11 +1,10 @@
 package cz.cleansia.customer.core.devices
 
-import android.content.Context
 import cz.cleansia.core.auth.DeviceIdProvider
-import cz.cleansia.core.network.networkCall
-import cz.cleansia.core.snackbar.SnackbarController
-import cz.cleansia.customer.core.auth.ApiErrorParser
-import dagger.hilt.android.qualifiers.ApplicationContext
+import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.network.ApiResult
+import cz.cleansia.core.network.safeApiCall
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -13,38 +12,33 @@ import javax.inject.Singleton
  * Device self-service over GET /api/Device/Mine + DELETE /api/Device/{rowId}.
  * Sends THIS install's stable device id as `currentDeviceId` so the backend
  * can flag the row the user is holding (the screen hides revoke for it).
- * Stateless — nothing cached, so no [cz.cleansia.core.auth.SessionScopedCache].
- *
- * Customer-app repo contract: `null`/false = failure, already snackbarred here.
+ * Stateless - nothing cached, so no [cz.cleansia.core.auth.SessionScopedCache].
  */
 @Singleton
 class DeviceManagementRepository @Inject constructor(
     private val api: DeviceManagementApi,
     private val deviceIdProvider: DeviceIdProvider,
-    private val snackbar: SnackbarController,
-    @ApplicationContext private val appContext: Context,
+    private val json: Json,
 ) {
 
-    suspend fun getMyDevices(): List<UserDeviceDto>? {
-        val resp = networkCall(TAG) { api.mine(deviceIdProvider.deviceId) } ?: return null
-        if (!resp.isSuccessful) {
-            snackbar.showError(ApiErrorParser.parseToUserMessage(appContext, resp.errorBody(), resp.code()))
-            return null
+    suspend fun getMyDevices(): ApiResult<List<UserDeviceDto>> =
+        when (val result = safeApiCall(json) { api.mine(deviceIdProvider.deviceId) }) {
+            is ApiResult.Success ->
+                ApiResult.Success((result.data as? List<UserDeviceDto>).orEmpty())
+            is ApiResult.Error -> result
         }
-        return resp.body().orEmpty()
-    }
 
-    /** Revoke by the server-side row id — kills push + that device's session. */
-    suspend fun revoke(deviceRowId: String): Boolean {
-        val resp = networkCall(TAG) { api.revoke(deviceRowId) } ?: return false
-        if (!resp.isSuccessful) {
-            snackbar.showError(ApiErrorParser.parseToUserMessage(appContext, resp.errorBody(), resp.code()))
-            return false
+    /**
+     * Revoke by the server-side row id - kills push + that device's session.
+     * A `200 { success = false }` is a soft failure the backend reports without
+     * an error body; it carries no surfaceable message (legacy showed none), so
+     * it maps to the silent [ApiError.Network] channel the ViewModel no-ops.
+     */
+    suspend fun revoke(deviceRowId: String): ApiResult<Unit> =
+        when (val result = safeApiCall(json) { api.revoke(deviceRowId) }) {
+            is ApiResult.Success ->
+                if (result.data is RevokeDeviceResponse && !result.data.success) ApiResult.Error(ApiError.Network(""))
+                else ApiResult.Success(Unit)
+            is ApiResult.Error -> result
         }
-        return resp.body()?.success ?: true
-    }
-
-    private companion object {
-        const val TAG = "DeviceManagementRepository"
-    }
 }

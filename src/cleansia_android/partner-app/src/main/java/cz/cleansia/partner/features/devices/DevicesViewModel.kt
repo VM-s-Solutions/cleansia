@@ -9,7 +9,7 @@ import cz.cleansia.partner.R
 import cz.cleansia.partner.core.devices.DevicesRepository
 import cz.cleansia.partner.core.devices.UserDeviceDto
 import cz.cleansia.partner.core.network.ApiErrorTranslator
-import cz.cleansia.partner.core.network.ApiResult
+import cz.cleansia.core.network.ApiResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow

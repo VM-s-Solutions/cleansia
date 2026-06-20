@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { CleansiaButtonComponent, CleansiaTitleComponent } from '@cleansia/components';
-import { ConsentType } from '@cleansia/partner-services';
+import { ConsentType } from '@cleansia/customer-services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { FormsModule } from '@angular/forms';

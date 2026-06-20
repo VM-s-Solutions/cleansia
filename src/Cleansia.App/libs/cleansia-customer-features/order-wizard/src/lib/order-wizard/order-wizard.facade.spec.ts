@@ -5,13 +5,13 @@ import {
   AddressDto,
   CustomerAuthService,
   CustomerClient,
+  PaymentType,
 } from '@cleansia/customer-services';
 import {
   SavedAddressStore,
   selectCustomerPackages,
   selectCustomerServices,
 } from '@cleansia/customer-stores';
-import { PaymentType } from '@cleansia/partner-services';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { GuestOrderService } from '@cleansia-customer/orders';
 import { provideMockStore, MockStore } from '@ngrx/store/testing';

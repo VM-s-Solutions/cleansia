@@ -5,6 +5,31 @@ permanent record so a settled decision is never re-litigated.
 
 ---
 
+### Q-W5-1 — Plus-membership free-cancellation-window direction
+- Raised by: pm (T-0242 / carried T-0211 TC-7 finding) · Answered: 2026-06-14
+- Question: `BookingPolicy.CalculateCancellationFeeRate` treated `freeCancellationHoursOverride` so that a
+  **larger** override made the free window **stricter**, contradicting the doc/intent that "Plus = more
+  generous". Confirm the intended product direction and the fix path: (a) pass a smaller override on the
+  Plus path, or (b) invert the override semantics in `BookingPolicy`.
+- **Answer (owner): PATH (B) — Plus members get a MORE generous (longer) free-cancellation window; invert
+  the override semantics in `BookingPolicy` so a larger free-window value WIDENS (does not narrow) the
+  window.** Implemented by **T-0242** (Wave 6).
+- **Locked in:** T-0242 (now `done`, Wave-6 close `b8f89202`). Implementation note: under the existing
+  caller/resolver wiring the override is supplied as an **absolute free-window threshold** (resolver
+  returns 24 for standard, `MembershipPlan.FreeCancellationWindowHours` for Plus). The owner's "Plus =
+  wider" intent is therefore satisfied by the **absolute-threshold contract (AC2 path a)** — a Plus plan
+  seeded below 24h is already more generous than the standard 24h — with NO out-of-lane caller/resolver/
+  seed change. A literal `BookingPolicy`-only inversion (the path-(b) wording) leaked the standard tier to
+  all-free (reviewer caught it; security re-gate confirmed the revert). Net effect matches the owner's
+  product intent; `BookingPolicy.CalculateCancellationFeeRate` stays `freeWindow =
+  freeCancellationHoursOverride ?? FreeCancellationHours` with a clarified param doc. T-0211's
+  `CancellationFeeRateBoundaryTests` re-pinned to the corrected (absolute) intent; adversarial money
+  review + security re-gate both PASS; orchestrator clean run green (Cleansia.Tests 1513/1513). If the
+  product later wants a different Plus free window, only the seeded `FreeCancellationWindowHours` changes
+  (owner-only). **RESOLVED.**
+
+---
+
 ### Q-W1-1 — Confirm the Wave-0 close before Wave 1 opens
 - Raised by: pm (Wave-1 planning) · Answered: 2026-06-05
 - **Answer (owner): Wave 0 is CLOSED — T-0230 is reconciled to `done`.** Its #7/#8/#11/#12 shipped in

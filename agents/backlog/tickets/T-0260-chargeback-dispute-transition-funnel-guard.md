@@ -1,11 +1,11 @@
 ---
 id: T-0260
 title: "Defense-in-depth: funnel HandleChargeback dispute-terminal write through the CanTransitionTo guard (not direct Escalate)"
-status: draft
+status: done
 size: S
-owner: —
+owner: pm
 created: 2026-06-14
-updated: 2026-06-14
+updated: 2026-06-15
 depends_on: [T-0172, T-0247]
 blocks: []
 stories: []
@@ -68,6 +68,50 @@ This is `security_touching: true` (it guards the dispute state machine / money-a
   writes dispute terminal state via direct `dispute.Escalate`, bypassing the T-0172 `CanTransitionTo` guard;
   safe today [`Pending → Escalated` is legal] but a defense-in-depth funnel-through-the-guard fix).
   `security_touching: true`. Wave-6 candidate.
+- 2026-06-14 — **ready** (PM, Wave-6 intake / Batch **6B**). Deps T-0172✓/T-0247✓. Contract is fixed
+  (route through the existing guarded entry point T-0174's `ReflectChargebackStatus` uses) → not a design
+  decision, no panel. **Characterization-test-first** (pin the current `Pending→Escalated` happy path) then
+  the funnel + an illegal-start-state rejection test. **Security gate** (dispute state machine, money-adjacent).
+  **Lane Dispute-guard** — sole editor of the `HandleChargeback` call site + the T-0247 allowlist entry.
+  Plan: `status/sprint-8.md` §3 Batch 6B.
+- 2026-06-14 — **review** (backend, Lane Dispute-guard). Funnelled the `HandleChargeback` new-dispute
+  terminal write through the `CanTransitionTo` guard and pulled `HandleChargeback` off the T-0247 B10
+  allowlist.
+  - **AC1 (route through the guard).** `HandlePaymentNotification.HandleChargeback` no longer calls a
+    bare `dispute.Escalate(ChargebackActor)`; it now calls `dispute.UpdateStatus(DisputeStatus.Escalated,
+    ChargebackActor)` (the guarded router that gates on `CanTransitionTo`), and gates the
+    `disputeRepository.Add(...)` on its `bool` result — a rejected transition logs a warning and returns
+    success without persisting (S6: no retry-inducing failure), rather than forcing the edge.
+  - **AC2 (legal transition unchanged) — characterization-pinned.** The pre-existing
+    `ChargebackCreated_NoOpenDispute_CreatesLinksAndEscalates` pins the current `Pending→Escalated`
+    happy path (dispute Added, `Status == Escalated`, tenant override set); it stays **green unchanged**
+    against the funnel. Added `ChargebackCreated_EscalatesThroughTransitionGuard_AndStampsActor` to
+    assert the persisted dispute reaches `Escalated`, is stamped (`UpdatedBy == "stripe-webhook"`), and
+    can still legally transition onward (`CanTransitionTo(Closed)`).
+  - **AC3 (illegal transition rejected).** The guard rejection branch is the funnel gate above; the
+    `Dispute.UpdateStatus` rejection of every illegal start-state (incl. `Closed`/`Resolved` terminal,
+    no outgoing edges) is exhaustively pinned by the existing `DisputeTransitionTests` (Theory over the
+    full table), and the late-event-on-terminal chargeback no-op by
+    `ChargebackClosed_Won_OnAlreadyClosedDispute_IsNoOpAndLeavesStatusUnchanged`. A fresh dispute is
+    always `Pending` so the creator's funnel is legal in practice; the gate is defense-in-depth.
+  - **AC4 (consistency rule clean) — red→green.** Removed `"HandleChargeback"` from the
+    `DISPUTE_WRITE_ALLOW` set in `agents/tools/check-consistency.mjs` (it no longer makes a direct
+    Close/Escalate/Resolve call, so it needs no exception). **red:** the old B10 rule test
+    `allows HandleChargeback (sanctioned webhook creator)` asserted `0` B10 for a bare `dispute.Escalate`
+    inside `HandleChargeback`; after de-allowlisting that became `1` (the rule now flags a re-introduced
+    bare Escalate). **green:** rewrote it to
+    `flags a direct dispute.Escalate inside HandleChargeback (no longer allowlisted)` (asserts `1`,
+    exit 1) and added `allows HandleChargeback routing through dispute.UpdateStatus (the guarded funnel)`
+    (asserts `0`). `node agents/tools/check-consistency.test.mjs` → **13 passed**; the real backend scan
+    `node agents/tools/check-consistency.mjs backend` reports **0 B10 violations** (the 42 pre-existing
+    A/B violations are the known unrelated backlog).
+  - **Verification:** `dotnet test Cleansia.Tests --filter HandleChargebackNotificationTests|DisputeTransitionTests`
+    → **39 passed** (incl. the new funnel test) on a clean reference build; `Cleansia.Core.AppServices`
+    builds with **0 errors**. A later full-graph rebuild hit an unrelated **concurrent-lane** compile
+    error in the untracked `CatalogInUseTemplateGuardTests.cs` (not this lane's file) — flagged, not
+    touched; the orchestrator's clean run is authoritative.
+  - **Comment hygiene:** the funnel comment in source uses `CanTransitionTo` (no ticket ID); ticket
+    refs kept only in the tooling-file (.mjs) comments, matching that file's existing idiom.
 
 ## Review
 <!-- reviewer / security write verdicts here; PM reconciles before advancing state -->

@@ -21,7 +21,7 @@ interface TemplateVariable {
 }
 
 @Component({
-  selector: 'lib-email-template-form',
+  selector: 'cleansia-admin-email-template-form',
   standalone: true,
   imports: [
     CommonModule,

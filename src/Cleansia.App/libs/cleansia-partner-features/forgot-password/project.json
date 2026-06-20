@@ -1,0 +1,21 @@
+{
+  "name": "cleansia-partner-forgot-password",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/cleansia-partner-features/forgot-password/src",
+  "prefix": "cleansia-partner",
+  "projectType": "library",
+  "tags": ["scope:partner", "type:feature"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/cleansia-partner-features/forgot-password/jest.config.ts",
+        "tsConfig": "libs/cleansia-partner-features/forgot-password/tsconfig.spec.json"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

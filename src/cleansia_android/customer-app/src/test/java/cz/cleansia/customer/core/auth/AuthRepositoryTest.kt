@@ -1,11 +1,11 @@
 package cz.cleansia.customer.core.auth
 
-import cz.cleansia.core.auth.RefreshClient
-import cz.cleansia.core.auth.SessionScopedCache
-import cz.cleansia.core.auth.SessionManager
-import cz.cleansia.core.auth.TokenStore
-import cz.cleansia.core.auth.JwtDecoder
 import cz.cleansia.core.auth.ForcedSignOutReason
+import cz.cleansia.core.auth.SessionManager
+import cz.cleansia.core.auth.SessionScopedCache
+import cz.cleansia.core.auth.TokenStore
+import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.network.ApiResult
 
 import android.content.Context
 import cz.cleansia.customer.R
@@ -18,6 +18,7 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
@@ -27,9 +28,11 @@ import org.junit.Test
 import retrofit2.Response
 
 /**
- * AuthRepository tests — covers happy/error paths for [AuthRepository.login]
- * and the side-effects of [AuthRepository.logout]. Doesn't bring up Retrofit
- * or DataStore — every collaborator is a MockK fake.
+ * AuthRepository tests — the ApiResult<T> contract (ADR-0011). A success returns
+ * the body in [ApiResult.Success]; a failure returns [ApiResult.Error] carrying
+ * the typed [ApiError]. The repo no longer renders the snackbar message — the VM
+ * does via [ApiErrorParser.parseToUserMessage]; these tests pin the same single
+ * message the VM would surface. No Retrofit/DataStore — every collaborator is a fake.
  */
 class AuthRepositoryTest {
 
@@ -38,6 +41,8 @@ class AuthRepositoryTest {
     private lateinit var sessionManager: SessionManager
     private lateinit var pushTokenRepository: PushTokenRepository
     private lateinit var appContext: Context
+
+    private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
     private val networkMessage = "Check your internet connection and try again."
     private val unknownMessage = "Something went wrong. Please try again."
@@ -68,13 +73,17 @@ class AuthRepositoryTest {
             sessionManager = sessionManager,
             sessionScopedCaches = caches,
             pushTokenRepository = pushTokenRepository,
-            appContext = appContext,
+            json = json,
         )
+
+    /** Mirrors how the consuming ViewModel turns an ApiError into the user-facing string. */
+    private fun ApiResult<*>.surfacedMessage(): String =
+        ApiErrorParser.parseToUserMessage(appContext, (this as ApiResult.Error).error)
 
     // ── login() ──
 
     @Test
-    fun login_givenValidJwtResponse_persistsTokensAndReturnsSuccess() = kotlinx.coroutines.test.runTest {
+    fun login_givenValidJwtResponse_persistsTokensAndReturnsAuthenticated() = kotlinx.coroutines.test.runTest {
         val refreshExp = "2099-01-01T00:00:00Z"
         // Use a real-shaped JWT-ish access token to exercise JwtDecoder; we
         // accept the fallback path (15-min default) when it can't decode.
@@ -92,20 +101,23 @@ class AuthRepositoryTest {
 
         val result = newRepository().login("user@example.com", "pw", rememberMe = true)
 
-        assertTrue("expected Success but was $result", result is AuthResult.Success)
+        assertTrue("expected Success but was $result", result is ApiResult.Success)
+        val data = (result as ApiResult.Success).data
+        assertTrue(data is AuthSuccess.Authenticated)
         verify { tokenStore.save(match { it.refreshToken == "r-1" && it.accessToken == accessToken }) }
     }
 
     @Test
-    fun login_givenHttp401_returnsAuthResultErrorWithParsedMessage() = kotlinx.coroutines.test.runTest {
+    fun login_givenHttp401_returnsErrorWithUnauthorizedMessage() = kotlinx.coroutines.test.runTest {
         val errorBody = """{}""".toResponseBody("application/json".toMediaType())
         coEvery { api.login(any()) } returns Response.error(401, errorBody)
 
         val result = newRepository().login("user@example.com", "wrong", rememberMe = false)
 
-        assertTrue("expected Error but was $result", result is AuthResult.Error)
-        // Empty body + 401 → the unauthorized fallback string.
-        assertEquals("Your session expired.", (result as AuthResult.Error).message)
+        assertTrue("expected Error but was $result", result is ApiResult.Error)
+        assertTrue((result as ApiResult.Error).error is ApiError.Unauthorized)
+        // The VM would surface the unauthorized fallback string.
+        assertEquals("Your session expired.", result.surfacedMessage())
     }
 
     @Test
@@ -118,18 +130,19 @@ class AuthRepositoryTest {
 
         val result = newRepository().login("user@example.com", "wrong", rememberMe = false)
 
-        assertTrue(result is AuthResult.Error)
-        assertEquals("Invalid credentials.", (result as AuthResult.Error).message)
+        assertTrue(result is ApiResult.Error)
+        assertEquals("Invalid credentials.", result.surfacedMessage())
     }
 
     @Test
-    fun login_whenApiThrows_returnsAuthResultErrorWithNetworkMessage() = kotlinx.coroutines.test.runTest {
+    fun login_whenApiThrows_returnsErrorWithNetworkMessage() = kotlinx.coroutines.test.runTest {
         coEvery { api.login(any()) } throws java.io.IOException("boom")
 
         val result = newRepository().login("u", "p", rememberMe = false)
 
-        assertTrue(result is AuthResult.Error)
-        assertEquals(networkMessage, (result as AuthResult.Error).message)
+        assertTrue(result is ApiResult.Error)
+        assertTrue((result as ApiResult.Error).error is ApiError.Network)
+        assertEquals(networkMessage, result.surfacedMessage())
     }
 
     @Test
@@ -143,8 +156,10 @@ class AuthRepositoryTest {
 
         val result = newRepository().login("pending@example.com", "pw", rememberMe = false)
 
-        assertTrue(result is AuthResult.EmailUnconfirmed)
-        assertEquals("pending@example.com", (result as AuthResult.EmailUnconfirmed).email)
+        assertTrue(result is ApiResult.Success)
+        val data = (result as ApiResult.Success).data
+        assertTrue(data is AuthSuccess.EmailUnconfirmed)
+        assertEquals("pending@example.com", (data as AuthSuccess.EmailUnconfirmed).email)
         verify(exactly = 0) { tokenStore.save(any()) }
     }
 
@@ -161,9 +176,43 @@ class AuthRepositoryTest {
 
         val result = newRepository().login("user@example.com", "pw", rememberMe = false)
 
-        assertTrue(result is AuthResult.Error)
-        assertEquals(unknownMessage, (result as AuthResult.Error).message)
+        assertTrue(result is ApiResult.Error)
+        assertEquals(unknownMessage, result.surfacedMessage())
         verify(exactly = 0) { tokenStore.save(any()) }
+    }
+
+    // ── register() (fire-and-forget → ApiResult<Unit>) ──
+
+    @Test
+    fun register_givenSuccess_returnsUnitSuccess() = kotlinx.coroutines.test.runTest {
+        coEvery { api.register(any()) } returns Response.success(true)
+
+        val result = newRepository().register(
+            email = "user@example.com",
+            password = "pw",
+            firstName = "A",
+            lastName = "B",
+            language = "en",
+        )
+
+        assertTrue(result is ApiResult.Success)
+        assertEquals(Unit, (result as ApiResult.Success).data)
+    }
+
+    @Test
+    fun register_givenHttpError_returnsError() = kotlinx.coroutines.test.runTest {
+        val errorBody = """{}""".toResponseBody("application/json".toMediaType())
+        coEvery { api.register(any()) } returns Response.error(400, errorBody)
+
+        val result = newRepository().register(
+            email = "user@example.com",
+            password = "pw",
+            firstName = "A",
+            lastName = "B",
+            language = "en",
+        )
+
+        assertTrue(result is ApiResult.Error)
     }
 
     // ── logout() ──

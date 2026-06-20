@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import cz.cleansia.partner.api.model.RegistrationCompletionStatus
-import cz.cleansia.partner.core.network.ApiResult
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.profile.ProfileRepository
 import cz.cleansia.partner.navigation.NavRoute
 import dagger.hilt.android.lifecycle.HiltViewModel

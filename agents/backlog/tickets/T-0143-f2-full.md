@@ -1,12 +1,12 @@
 ﻿---
 id: T-0143
 title: "[SPLIT] Full transactional outbox: outbox table + dispatcher + post-commit drain across 5 queues — epic, see children"
-status: draft
+status: done
 size: L
 split_into: [T-0155, T-0156, T-0157, T-0158]
 owner: â€”
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-15
 depends_on: [T-0118, T-0148]
 blocks: []
 stories: []

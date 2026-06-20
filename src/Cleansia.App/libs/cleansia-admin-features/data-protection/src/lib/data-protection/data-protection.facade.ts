@@ -4,6 +4,7 @@ import {
   AdminGdprClient,
   GdprExportDto,
   GdprRequestDto,
+  SortDefinition,
   UserConsentDto,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
@@ -31,15 +32,16 @@ export class DataProtectionFacade extends UnsubscribeControlDirective {
   readonly exporting = signal<boolean>(false);
   readonly erasing = signal<boolean>(false);
 
-  private currentPage = 1;
-  private currentPageSize = 20;
+  private currentOffset = 0;
+  private currentLimit = 20;
+  private currentSort: SortDefinition[] | undefined = undefined;
 
   loadRequests(): void {
     this.loading.set(true);
     this.hasError.set(false);
 
     this.gdprClient
-      .requests(this.currentPage, this.currentPageSize)
+      .requests(this.currentSort, this.currentOffset, this.currentLimit)
       .pipe(
         takeUntil(this.destroyed$),
         catchError((error: unknown) => {
@@ -52,15 +54,10 @@ export class DataProtectionFacade extends UnsubscribeControlDirective {
         }),
         finalize(() => this.loading.set(false))
       )
-      .subscribe((rows) => {
-        if (rows) {
-          this.requests.set(rows);
-          // The endpoint returns a bare page without a total count; expose
-          // "one row beyond the current window" while pages come back full so
-          // the paginator keeps offering a next page.
-          const offset = (this.currentPage - 1) * this.currentPageSize;
-          const hasMore = rows.length === this.currentPageSize;
-          this.totalRecords.set(offset + rows.length + (hasMore ? 1 : 0));
+      .subscribe((response) => {
+        if (response) {
+          this.requests.set(response.data ?? []);
+          this.totalRecords.set(response.total ?? 0);
         }
         if (this.initialLoading()) {
           this.initialLoading.set(false);
@@ -69,8 +66,8 @@ export class DataProtectionFacade extends UnsubscribeControlDirective {
   }
 
   onPageChange(offset: number, limit: number): void {
-    this.currentPageSize = limit;
-    this.currentPage = Math.floor(offset / limit) + 1;
+    this.currentOffset = offset;
+    this.currentLimit = limit;
     this.loadRequests();
   }
 

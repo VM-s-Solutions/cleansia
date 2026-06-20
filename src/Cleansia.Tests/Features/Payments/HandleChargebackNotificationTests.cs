@@ -193,6 +193,31 @@ public class HandleChargebackNotificationTests
         _tenantProvider.Verify(t => t.SetTenantOverride(TenantId), Times.Once);
     }
 
+    // The created dispute's escalation is funnelled through the CanTransitionTo guard
+    // (dispute.UpdateStatus(Escalated)) rather than a bare dispute.Escalate. A fresh dispute is Pending
+    // and Pending→Escalated is a legal edge, so it is persisted with Escalated status and the actor is
+    // stamped through the guard — proving the legal path is unchanged while the write now goes through
+    // the guard (an illegal start state would be rejected before the Add, never force the edge).
+    [Fact]
+    public async Task ChargebackCreated_EscalatesThroughTransitionGuard_AndStampsActor()
+    {
+        ArrangeOrderResolvable();
+        Dispute? added = null;
+        _disputeRepository.Setup(r => r.Add(It.IsAny<Dispute>()))
+            .Callback<Dispute>(d => added = d);
+        var handler = CreateHandler();
+
+        var result = await handler.Handle(
+            ChargebackCommand(Constants.StripeEventType.ChargeDisputeCreated, "needs_response", "evt_guard"),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(added);
+        Assert.Equal(DisputeStatus.Escalated, added!.Status);
+        Assert.True(added.CanTransitionTo(DisputeStatus.Closed));
+        Assert.Equal("stripe-webhook", added.UpdatedBy);
+    }
+
     [Fact]
     public async Task ChargebackCreated_ExistingOpenDispute_LinksWithoutStacking()
     {

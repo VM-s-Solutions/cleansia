@@ -8,8 +8,8 @@ import cz.cleansia.partner.R
 import cz.cleansia.partner.core.devices.DevicesRepository
 import cz.cleansia.partner.core.devices.RevokeDeviceResponse
 import cz.cleansia.partner.core.devices.UserDeviceDto
-import cz.cleansia.partner.core.network.ApiError
-import cz.cleansia.partner.core.network.ApiResult
+import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.testing.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.every

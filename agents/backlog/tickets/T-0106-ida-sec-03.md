@@ -1,11 +1,11 @@
 ---
 id: T-0106
 title: Cryptographic email-confirm + password-reset tokens; user-scoped lookup + expiry
-status: draft
+status: done
 size: M
 owner: —
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-15
 depends_on: []
 blocks: []
 stories: []

@@ -1,7 +1,7 @@
 ---
 id: T-0221
 title: Per-provider RegisterReceiptAsync idempotency on ReceiptNumber (IFiscalService idempotency key)
-status: draft
+status: done
 size: M
 owner: —
 created: 2026-06-03

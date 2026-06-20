@@ -1,4 +1,4 @@
-package cz.cleansia.partner.core.network
+package cz.cleansia.core.network
 
 /**
  * Result of an API call — either success with data or error with [ApiError].

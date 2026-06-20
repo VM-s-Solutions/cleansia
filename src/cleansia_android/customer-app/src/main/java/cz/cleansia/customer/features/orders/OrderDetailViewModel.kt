@@ -6,6 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderPrice
+import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.customer.core.notifications.OrderEventBus
 import cz.cleansia.customer.core.orders.CancelOrderResponse
 import cz.cleansia.customer.core.orders.ConfirmRecurringOrderResponse
@@ -171,11 +173,11 @@ class OrderDetailViewModel @Inject constructor(
         }
         _state.value = OrderDetailUiState.Loading
         viewModelScope.launch {
-            val dto = orderRepository.getById(id)
+            val dto = orderRepository.getById(id).surfaceError().getOrNull()
             _state.value = if (dto != null) {
                 OrderDetailUiState.Loaded(dto)
             } else {
-                // Repository already showed a snackbar; offer a retry.
+                // Error already surfaced as a snackbar (non-network); offer a retry.
                 OrderDetailUiState.Error(canRetry = true)
             }
             // Whenever a fresh detail comes in, re-evaluate whether to keep the
@@ -212,7 +214,7 @@ class OrderDetailViewModel @Inject constructor(
                 while (true) {
                     delay(POLL_INTERVAL_MS)
                     val id = orderId ?: break
-                    val fresh = orderRepository.getById(id)
+                    val fresh = orderRepository.getById(id).surfaceError().getOrNull()
                     if (fresh != null) {
                         _state.value = OrderDetailUiState.Loaded(fresh)
                         // Status may have flipped to Completed/Cancelled — let
@@ -257,9 +259,10 @@ class OrderDetailViewModel @Inject constructor(
         viewModelScope.launch {
             _cancelState.value = ActionState.Submitting
             val result = orderRepository.cancel(id, reason?.trim()?.ifBlank { null })
+                .surfaceError().getOrNull()
             if (result == null) {
-                // Snackbar already shown by repo — inline hint tells the user the
-                // sheet is still live and ready for another try.
+                // Snackbar already surfaced (non-network) — inline hint tells the
+                // user the sheet is still live and ready for another try.
                 _cancelState.value = ActionState.Error(
                     appContext.getString(R.string.order_cancel_retry_hint),
                 )
@@ -322,7 +325,7 @@ class OrderDetailViewModel @Inject constructor(
         if (_confirmRecurringState.value is ActionState.Submitting) return
         viewModelScope.launch {
             _confirmRecurringState.value = ActionState.Submitting
-            val resp = orderRepository.confirmRecurring(id)
+            val resp = orderRepository.confirmRecurring(id).surfaceError().getOrNull()
             if (resp == null) {
                 _confirmRecurringState.value = ActionState.Idle
                 return@launch
@@ -388,7 +391,7 @@ class OrderDetailViewModel @Inject constructor(
         viewModelScope.launch {
             _reviewState.value = ActionState.Submitting
             val trimmed = comment?.trim()?.take(2000)?.ifBlank { null }
-            val result = orderRepository.submitReview(id, rating, trimmed)
+            val result = orderRepository.submitReview(id, rating, trimmed).surfaceError().getOrNull()
             if (result == null) {
                 _reviewState.value = ActionState.Error(
                     appContext.getString(R.string.order_review_retry_hint),
@@ -450,12 +453,12 @@ class OrderDetailViewModel @Inject constructor(
         if (_receiptDownloadState.value is ActionState.Submitting) return
         viewModelScope.launch {
             _receiptDownloadState.value = ActionState.Submitting
-            val file = orderRepository.downloadReceipt(id)
+            val file = orderRepository.downloadReceipt(id).surfaceError().getOrNull()
             _receiptDownloadState.value = ActionState.Idle
             if (file != null) {
                 _receiptFile.emit(file)
             }
-            // On failure the repo already surfaced a snackbar — nothing more to do.
+            // On failure the snackbar is already surfaced (non-network) — nothing more to do.
         }
     }
 
@@ -497,8 +500,17 @@ class OrderDetailViewModel @Inject constructor(
         if (_photos.value !is PhotosUiState.Idle && _photos.value !is PhotosUiState.Error) return
         viewModelScope.launch {
             _photos.value = PhotosUiState.Loading
-            val resp = orderRepository.getPhotos(id)
+            val resp = orderRepository.getPhotos(id).surfaceError().getOrNull()
             _photos.value = if (resp != null) PhotosUiState.Loaded(resp) else PhotosUiState.Error
         }
+    }
+
+    /**
+     * Surface a repository failure as a single snackbar, skipping
+     * [ApiError.Network] (NetworkErrorInterceptor owns the infra toast). Returns
+     * the result so callers can `.getOrNull()` for the success branch.
+     */
+    private fun <T> ApiResult<T>.surfaceError(): ApiResult<T> = onError { error ->
+        if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
     }
 }

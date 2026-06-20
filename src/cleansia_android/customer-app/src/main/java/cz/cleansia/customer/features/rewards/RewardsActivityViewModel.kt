@@ -2,6 +2,8 @@ package cz.cleansia.customer.features.rewards
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.core.loyalty.LoyaltyActivityItemDto
 import cz.cleansia.customer.core.loyalty.LoyaltyRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,6 +25,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class RewardsActivityViewModel @Inject constructor(
     private val loyaltyRepository: LoyaltyRepository,
+    private val snackbar: SnackbarController,
 ) : ViewModel() {
 
     private val _items = MutableStateFlow<List<LoyaltyActivityItemDto>>(emptyList())
@@ -52,12 +55,15 @@ class RewardsActivityViewModel @Inject constructor(
         viewModelScope.launch {
             _loading.value = true
             try {
-                val resp = loyaltyRepository.loadActivity(offset = 0, limit = pageSize)
-                if (resp != null) {
-                    _items.value = resp.data
-                    _total.value = resp.total
-                    _loaded.value = true
-                }
+                loyaltyRepository.loadActivity(offset = 0, limit = pageSize)
+                    .onSuccess { resp ->
+                        _items.value = resp.data
+                        _total.value = resp.total
+                        _loaded.value = true
+                    }
+                    .onError { error ->
+                        if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+                    }
             } finally {
                 _loading.value = false
             }
@@ -65,9 +71,9 @@ class RewardsActivityViewModel @Inject constructor(
     }
 
     /**
-     * Fetch the next page if there are more rows to load. Silent on failure —
-     * the snackbar from the repo already surfaces the error and the user can
-     * scroll up to retry.
+     * Fetch the next page if there are more rows to load. The user can scroll
+     * up to retry; a connectivity failure stays silent (NetworkErrorInterceptor
+     * owns the infra toast), any other error surfaces the same single message.
      */
     fun loadNextPage() {
         if (_loadingMore.value || _loading.value) return
@@ -75,14 +81,17 @@ class RewardsActivityViewModel @Inject constructor(
         viewModelScope.launch {
             _loadingMore.value = true
             try {
-                val resp = loyaltyRepository.loadActivity(
+                loyaltyRepository.loadActivity(
                     offset = _items.value.size,
                     limit = pageSize,
                 )
-                if (resp != null) {
-                    _items.value = _items.value + resp.data
-                    _total.value = resp.total
-                }
+                    .onSuccess { resp ->
+                        _items.value = _items.value + resp.data
+                        _total.value = resp.total
+                    }
+                    .onError { error ->
+                        if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+                    }
             } finally {
                 _loadingMore.value = false
             }

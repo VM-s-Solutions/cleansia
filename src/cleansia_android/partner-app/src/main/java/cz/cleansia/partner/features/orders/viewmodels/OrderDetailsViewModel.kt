@@ -8,7 +8,7 @@ import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderItem
 import cz.cleansia.partner.core.network.ApiErrorTranslator
-import cz.cleansia.partner.core.network.ApiResult
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.orders.OrdersRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

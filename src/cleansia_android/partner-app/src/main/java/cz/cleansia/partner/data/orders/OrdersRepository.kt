@@ -20,8 +20,8 @@ import cz.cleansia.partner.api.model.TakeOrderCommand
 import cz.cleansia.partner.api.model.UpdateOrderIssueCommand
 import cz.cleansia.partner.api.model.UpdateOrderNoteCommand
 import cz.cleansia.core.freshness.Staleness
-import cz.cleansia.partner.core.network.ApiResult
-import cz.cleansia.partner.core.network.safeApiCall
+import cz.cleansia.core.network.ApiResult
+import cz.cleansia.core.network.safeApiCall
 import kotlinx.serialization.json.Json
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject

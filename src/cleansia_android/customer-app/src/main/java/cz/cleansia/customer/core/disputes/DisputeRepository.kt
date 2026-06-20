@@ -5,8 +5,9 @@ import cz.cleansia.core.auth.AuthAuthenticator
 import android.content.Context
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.auth.ApiErrorParser
+import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.networkCall
-import cz.cleansia.core.snackbar.SnackbarController
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -30,10 +31,11 @@ import okhttp3.RequestBody.Companion.toRequestBody
  * OrderRepository / AddressRepository clear() hooks.
  *
  * Error model mirrors [cz.cleansia.customer.core.orders.OrderRepository]:
- *  - Foreground operations ([refresh], [getById], [create], [addMessage])
- *    surface failures via the shared [SnackbarController] and return a
- *    sentinel value indicating failure (null / null / null / false).
- *  - Background page loads ([loadNextPage]) are silent — scrolling again retries.
+ * operations return [ApiResult.Success] on success and [ApiResult.Error]
+ * carrying the parsed message on failure. The consuming ViewModel surfaces the
+ * snackbar; an [ApiError.Network] failure stays silent (NetworkErrorInterceptor
+ * owns the infra toast). Background page loads ([loadNextPage]) are silent —
+ * the VM maps their Error to a no-op; scrolling again retries.
  *
  * Deliberately does NOT auto-invalidate or refetch on mutations. After a
  * successful [create] or [addMessage], the calling VM is expected to trigger
@@ -47,7 +49,6 @@ import okhttp3.RequestBody.Companion.toRequestBody
 @Singleton
 class DisputeRepository @Inject constructor(
     private val api: DisputeApi,
-    private val snackbar: SnackbarController,
     @ApplicationContext private val appContext: Context,
 ) : cz.cleansia.core.auth.SessionScopedCache {
     private val _disputes = MutableStateFlow<List<DisputeListItemDto>>(emptyList())
@@ -70,25 +71,20 @@ class DisputeRepository @Inject constructor(
     /**
      * Fetch page 0 and replace the cache. Intended for pull-to-refresh and
      * initial screen loads.
-     *
-     * @return null on success, localized error message on failure.
      */
-    suspend fun refresh(): String? {
-        if (_loading.value) return null
+    suspend fun refresh(): ApiResult<Unit> {
+        if (_loading.value) return ApiResult.Success(Unit)
         _loading.value = true
         try {
-            val resp = networkCall { api.getPaged(offset = 0, limit = pageSize) }
-                ?: return appContext.getString(R.string.error_generic_network)
+            val resp = networkCall { api.getPaged(offset = 0, limit = pageSize) } ?: return networkError()
             if (!resp.isSuccessful) {
-                val msg = ApiErrorParser.parseToUserMessage(appContext, resp.errorBody(), resp.code())
-                snackbar.showError(msg)
-                return msg
+                return httpError(resp.errorBody(), resp.code())
             }
-            val body = resp.body() ?: return null
+            val body = resp.body() ?: return ApiResult.Success(Unit)
             _disputes.value = body.data
             _totalRecords.value = body.total
             _loaded.value = true
-            return null
+            return ApiResult.Success(Unit)
         } finally {
             _loading.value = false
         }
@@ -96,80 +92,72 @@ class DisputeRepository @Inject constructor(
 
     /**
      * Append the next page to the cache, if we have not already exhausted
-     * [totalRecords]. Silent on failure — the user can trigger another load
-     * by scrolling again.
+     * [totalRecords]. Silent on failure — the consuming VM maps the Error to a
+     * no-op, so scrolling again retries.
      */
-    suspend fun loadNextPage(): String? {
-        if (_loadingMore.value) return null
-        if (_disputes.value.size >= _totalRecords.value) return null
+    suspend fun loadNextPage(): ApiResult<Unit> {
+        if (_loadingMore.value) return ApiResult.Success(Unit)
+        if (_disputes.value.size >= _totalRecords.value) return ApiResult.Success(Unit)
         _loadingMore.value = true
         try {
             val resp = networkCall { api.getPaged(offset = _disputes.value.size, limit = pageSize) }
-                ?: return null
-            if (!resp.isSuccessful) return null
-            val body = resp.body() ?: return null
+                ?: return networkError()
+            if (!resp.isSuccessful) {
+                return httpError(resp.errorBody(), resp.code())
+            }
+            val body = resp.body() ?: return ApiResult.Success(Unit)
             _disputes.value = _disputes.value + body.data
             _totalRecords.value = body.total
-            return null
+            return ApiResult.Success(Unit)
         } finally {
             _loadingMore.value = false
         }
     }
 
-    /**
-     * Fetch a single dispute's details (including messages + evidence).
-     * Returns null on failure — snackbar is surfaced automatically.
-     */
-    suspend fun getById(id: String): DisputeDetailsDto? {
-        val resp = networkCall { api.getById(id) } ?: return null
+    /** Fetch a single dispute's details (including messages + evidence). */
+    suspend fun getById(id: String): ApiResult<DisputeDetailsDto> {
+        val resp = networkCall { api.getById(id) } ?: return networkError()
         if (!resp.isSuccessful) {
-            val msg = ApiErrorParser.parseToUserMessage(appContext, resp.errorBody(), resp.code())
-            snackbar.showError(msg)
-            return null
+            return httpError(resp.errorBody(), resp.code())
         }
-        return resp.body()
+        return resp.body()?.let { ApiResult.Success(it) } ?: networkError()
     }
 
     /**
      * Create a new dispute against an order. Returns the new dispute's id on
-     * success, null on failure — snackbar surfaced automatically.
+     * success.
      *
      * Frontend should validate `description.length in 10..2000` before calling.
      */
-    suspend fun create(orderId: String, reason: Int, description: String): String? {
+    suspend fun create(orderId: String, reason: Int, description: String): ApiResult<String> {
         val resp = networkCall {
             api.create(CreateDisputeRequest(orderId = orderId, reason = reason, description = description))
-        } ?: return null
+        } ?: return networkError()
         if (!resp.isSuccessful) {
-            val msg = ApiErrorParser.parseToUserMessage(appContext, resp.errorBody(), resp.code())
-            snackbar.showError(msg)
-            return null
+            return httpError(resp.errorBody(), resp.code())
         }
-        return resp.body()
+        return resp.body()?.let { ApiResult.Success(it) } ?: networkError()
     }
 
     /**
-     * Post a reply on an existing dispute. Returns true on success, false on
-     * failure — snackbar surfaced automatically. The calling VM should follow
-     * up with [getById] to pick up the persisted message.
+     * Post a reply on an existing dispute. The calling VM should follow up with
+     * [getById] to pick up the persisted message.
      */
-    suspend fun addMessage(disputeId: String, content: String): Boolean {
+    suspend fun addMessage(disputeId: String, content: String): ApiResult<Unit> {
         val resp = networkCall {
             api.addMessage(AddDisputeMessageRequest(disputeId = disputeId, message = content))
-        } ?: return false
+        } ?: return networkError()
         if (!resp.isSuccessful) {
-            val msg = ApiErrorParser.parseToUserMessage(appContext, resp.errorBody(), resp.code())
-            snackbar.showError(msg)
-            return false
+            return httpError(resp.errorBody(), resp.code())
         }
-        return true
+        return ApiResult.Success(Unit)
     }
 
     /**
      * Upload a single evidence file (image or PDF, max 10MB) for an existing
-     * dispute. Returns the persisted evidence DTO on success, null on failure
-     * — snackbar surfaced automatically. The caller (DisputeDetailViewModel)
-     * is expected to follow up with [getById] to refresh the dispute thread.
+     * dispute. Returns the persisted evidence DTO on success. The caller
+     * (DisputeDetailViewModel) is expected to follow up with [getById] to
+     * refresh the dispute thread.
      *
      * Size cap is enforced server-side too, but pre-check on the caller side
      * avoids burning a network round-trip on a doomed request.
@@ -179,18 +167,30 @@ class DisputeRepository @Inject constructor(
         fileBytes: ByteArray,
         fileName: String,
         mimeType: String,
-    ): UploadDisputeEvidenceResponse? {
+    ): ApiResult<UploadDisputeEvidenceResponse> {
         val disputeIdPart = disputeId.toRequestBody("text/plain".toMediaTypeOrNull())
         val fileBody: RequestBody = fileBytes.toRequestBody(mimeType.toMediaTypeOrNull())
         val filePart = MultipartBody.Part.createFormData("file", fileName, fileBody)
         val resp = networkCall { api.uploadEvidence(disputeId = disputeIdPart, file = filePart) }
-            ?: return null
+            ?: return networkError()
         if (!resp.isSuccessful) {
-            val msg = ApiErrorParser.parseToUserMessage(appContext, resp.errorBody(), resp.code())
-            snackbar.showError(msg)
-            return null
+            return httpError(resp.errorBody(), resp.code())
         }
-        return resp.body()
+        return resp.body()?.let { ApiResult.Success(it) } ?: networkError()
+    }
+
+    private fun networkError(): ApiResult<Nothing> =
+        ApiResult.Error(ApiError.Network(appContext.getString(R.string.error_generic_network)))
+
+    private fun httpError(errorBody: okhttp3.ResponseBody?, httpCode: Int): ApiResult<Nothing> {
+        val message = ApiErrorParser.parseToUserMessage(appContext, errorBody, httpCode)
+        val error = when (httpCode) {
+            404 -> ApiError.NotFound(message)
+            400 -> ApiError.BadRequest(message)
+            in 500..599 -> ApiError.Server(statusCode = httpCode, message = message)
+            else -> ApiError.Unknown(message)
+        }
+        return ApiResult.Error(error)
     }
 
     /** Wipe the in-memory cache — called on sign-out so the next user starts fresh. */

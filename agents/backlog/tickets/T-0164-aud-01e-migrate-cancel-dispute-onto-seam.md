@@ -1,11 +1,11 @@
 ---
 id: T-0164
 title: "AUD-01e: Migrate CancelOrder + ResolveDispute onto the IRefundService seam (remove inline un-keyed Stripe refund; honour the window-exempt chargeback row)"
-status: draft
+status: done
 size: M
 owner: —
 created: 2026-06-06
-updated: 2026-06-06
+updated: 2026-06-15
 depends_on: [T-0160, T-0161]
 blocks: []
 stories: []

@@ -45,6 +45,15 @@ public interface IUserRepository : IRepository<User, string>
     Task RecordFailedLoginAsync(string email, DateTimeOffset now, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Charges one unit of the SAME lockout budget as <see cref="RecordFailedLoginAsync"/>, but keyed
+    /// by user id, for a wrong current-password attempt on the authenticated change-password surface.
+    /// Sharing the budget is deliberate: a change-password sprayer also bounds login. Atomic and a
+    /// no-op while the account is already locked; persists immediately (the failing command never
+    /// reaches the unit-of-work commit).
+    /// </summary>
+    Task RecordFailedCurrentPasswordAttemptAsync(string userId, DateTimeOffset now, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Atomically consumes one unit of the account's per-confirmation-code attempt budget.
     /// Returns false when the budget (<see cref="User.MaxCodeVerificationAttempts"/>) is spent.
     /// </summary>

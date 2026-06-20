@@ -8,14 +8,15 @@ import cz.cleansia.core.auth.TokenStore
 import cz.cleansia.core.auth.JwtDecoder
 import cz.cleansia.core.auth.ForcedSignOutReason
 
-import android.content.Context
 import android.util.Log
-import cz.cleansia.customer.R
+import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.networkCall
+import cz.cleansia.core.network.safeApiCall
 import cz.cleansia.customer.core.notifications.PushTokenRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.datetime.Instant
-import retrofit2.Response
+import kotlinx.serialization.json.Json
 
 /**
  * Orchestrates auth flows + token persistence on top of [AuthApi].
@@ -25,7 +26,7 @@ import retrofit2.Response
  *
  * "Unconfirmed email" case: when a user logs in but hasn't confirmed their
  * email, the server returns 200 OK with `isEmailConfirmed = false` and an
- * empty `token`. We surface that as [AuthResult.EmailUnconfirmed] so the UI
+ * empty `token`. We surface that as [AuthSuccess.EmailUnconfirmed] so the UI
  * can route to the verification screen without treating it as a failure.
  *
  * Sign-out wipes every [SessionScopedCache] in [sessionScopedCaches] — adding
@@ -37,16 +38,16 @@ class AuthRepository(
     private val sessionManager: SessionManager,
     private val sessionScopedCaches: Set<@JvmSuppressWildcards SessionScopedCache>,
     private val pushTokenRepository: PushTokenRepository,
-    private val appContext: Context,
+    private val json: Json,
 ) : RefreshClient {
 
     // ─── Login + register ───
 
-    suspend fun login(email: String, password: String, rememberMe: Boolean): AuthResult {
-        val response = networkCall { api.login(LoginRequest(email, password, rememberMe)) }
-            ?: return AuthResult.Error(appContext.getString(R.string.error_generic_network))
-        return handleAuthResponse(response)
-    }
+    suspend fun login(email: String, password: String, rememberMe: Boolean): ApiResult<AuthSuccess> =
+        when (val result = safeApiCall(json) { api.login(LoginRequest(email, password, rememberMe)) }) {
+            is ApiResult.Success -> handleAuthBody(result.data)
+            is ApiResult.Error -> result
+        }
 
     suspend fun register(
         email: String,
@@ -55,8 +56,8 @@ class AuthRepository(
         lastName: String,
         language: String,
         referralCode: String? = null,
-    ): Result<Boolean> = runCatching {
-        val response = api.register(
+    ): ApiResult<Unit> = safeApiCall(json) {
+        api.register(
             RegisterRequest(
                 email = email,
                 password = password,
@@ -66,33 +67,22 @@ class AuthRepository(
                 referralCode = referralCode,
             ),
         )
-        if (!response.isSuccessful) throw HttpException(response.code(), response.message())
-        response.body() ?: true
-    }
+    }.map { }
 
-    suspend fun confirmEmail(code: String): AuthResult {
-        val response = networkCall { api.confirmUserEmail(ConfirmUserEmailRequest(code)) }
-            ?: return AuthResult.Error(appContext.getString(R.string.error_generic_network))
-        return handleAuthResponse(response)
-    }
+    suspend fun confirmEmail(code: String): ApiResult<AuthSuccess> =
+        when (val result = safeApiCall(json) { api.confirmUserEmail(ConfirmUserEmailRequest(code)) }) {
+            is ApiResult.Success -> handleAuthBody(result.data)
+            is ApiResult.Error -> result
+        }
 
-    suspend fun resendConfirmationEmail(email: String, language: String): Result<Boolean> = runCatching {
-        val response = api.resendConfirmationEmail(ResendConfirmationEmailRequest(email, language))
-        if (!response.isSuccessful) throw HttpException(response.code(), response.message())
-        response.body() ?: true
-    }
+    suspend fun resendConfirmationEmail(email: String, language: String): ApiResult<Unit> =
+        safeApiCall(json) { api.resendConfirmationEmail(ResendConfirmationEmailRequest(email, language)) }.map { }
 
-    suspend fun requestPasswordChange(email: String, language: String): Result<Boolean> = runCatching {
-        val response = api.requestPasswordChange(RequestPasswordChangeRequest(email, language))
-        if (!response.isSuccessful) throw HttpException(response.code(), response.message())
-        true
-    }
+    suspend fun requestPasswordChange(email: String, language: String): ApiResult<Unit> =
+        safeApiCall(json) { api.requestPasswordChange(RequestPasswordChangeRequest(email, language)) }
 
-    suspend fun changePassword(email: String, code: String, newPassword: String): Result<Boolean> = runCatching {
-        val response = api.changePassword(ChangePasswordRequest(email, newPassword, code))
-        if (!response.isSuccessful) throw HttpException(response.code(), response.message())
-        true
-    }
+    suspend fun changePassword(email: String, code: String, newPassword: String): ApiResult<Unit> =
+        safeApiCall(json) { api.changePassword(ChangePasswordRequest(email, newPassword, code)) }.map { }
 
     suspend fun googleAuth(
         googleIdToken: String,
@@ -100,11 +90,13 @@ class AuthRepository(
         email: String,
         firstName: String,
         lastName: String,
-    ): AuthResult {
-        val response = networkCall {
+    ): ApiResult<AuthSuccess> = when (
+        val result = safeApiCall(json) {
             api.googleAuth(GoogleAuthRequest(googleIdToken, googleId, email, firstName, lastName))
-        } ?: return AuthResult.Error(appContext.getString(R.string.error_generic_network))
-        return handleAuthResponse(response)
+        }
+    ) {
+        is ApiResult.Success -> handleAuthBody(result.data)
+        is ApiResult.Error -> result
     }
 
     // ─── Logout ───
@@ -155,18 +147,12 @@ class AuthRepository(
 
     // ─── Internal helpers ───
 
-    private suspend fun handleAuthResponse(response: Response<JwtTokenResponseDto>): AuthResult {
-        if (!response.isSuccessful) {
-            val message = ApiErrorParser.parseToUserMessage(appContext, response.errorBody(), response.code())
-            return AuthResult.Error(message)
-        }
-        val body = response.body() ?: return AuthResult.Error(appContext.getString(R.string.error_generic_unknown))
-
+    private suspend fun handleAuthBody(body: JwtTokenResponseDto): ApiResult<AuthSuccess> {
         if (!body.isEmailConfirmed || body.token.isEmpty()) {
-            return AuthResult.EmailUnconfirmed(body.email)
+            return ApiResult.Success(AuthSuccess.EmailUnconfirmed(body.email))
         }
 
-        val tokens = body.toTokens() ?: return AuthResult.Error(appContext.getString(R.string.error_generic_unknown))
+        val tokens = body.toTokens() ?: return ApiResult.Error(ApiError.Unknown(""))
 
         // Defensive: clear every session-scoped cache BEFORE saving the new
         // tokens. Voluntary sign-out already does this via `logout()`, but a
@@ -182,7 +168,7 @@ class AuthRepository(
         // (which the tokenStore.save above just triggered). No explicit
         // hook needed here — see PushTokenSessionObserver for rationale.
 
-        return AuthResult.Success(tokens)
+        return ApiResult.Success(AuthSuccess.Authenticated(tokens))
     }
 
     /** @return null if the DTO is missing required fields (refreshToken / expiry / parseable access). */
@@ -209,10 +195,8 @@ class AuthRepository(
     }
 }
 
-sealed class AuthResult {
-    data class Success(val tokens: TokenStore.Tokens) : AuthResult()
-    data class EmailUnconfirmed(val email: String?) : AuthResult()
-    data class Error(val message: String) : AuthResult()
+/** Successful auth body outcome — mirrors partner-app's [cz.cleansia.partner.data.auth.LoginOutcome]. */
+sealed class AuthSuccess {
+    data class Authenticated(val tokens: TokenStore.Tokens) : AuthSuccess()
+    data class EmailUnconfirmed(val email: String?) : AuthSuccess()
 }
-
-class HttpException(val code: Int, message: String) : RuntimeException("HTTP $code: $message")

@@ -1,14 +1,37 @@
 import { TemplateRef } from '@angular/core';
 import {
+  EmployeeInvoiceDetailDto,
   EmployeeInvoiceDto,
   EmployeeInvoiceStatus,
 } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
 import { TranslateService } from '@ngx-translate/core';
 
+export type InvoicePdfState = 'ready' | 'failed' | 'pending';
+
+export function getInvoicePdfState(
+  invoice: Pick<
+    EmployeeInvoiceDto | EmployeeInvoiceDetailDto,
+    'pdfGenerationFailed' | 'pdfBlobName'
+  >
+): InvoicePdfState {
+  if (invoice.pdfGenerationFailed) return 'failed';
+  if (invoice.pdfBlobName) return 'ready';
+  return 'pending';
+}
+
+export function getInvoicePdfStateLabelKey(state: InvoicePdfState): string {
+  return `pages.invoice_management.pdf_state.${state}`;
+}
+
+export function getInvoicePdfStateClass(state: InvoicePdfState): string {
+  return `invoice-pdf-badge pdf-${state}`;
+}
+
 export function getInvoiceTableColumns(
   translate: TranslateService,
-  statusTemplate?: TemplateRef<EmployeeInvoiceDto>
+  statusTemplate?: TemplateRef<EmployeeInvoiceDto>,
+  pdfStatusTemplate?: TemplateRef<EmployeeInvoiceDto>
 ): TableColumn<EmployeeInvoiceDto>[] {
   return [
     {
@@ -57,6 +80,14 @@ export function getInvoiceTableColumns(
       sortable: true,
       width: '10%',
       customTemplate: statusTemplate,
+    },
+    {
+      id: 'pdfStatus',
+      field: 'pdfGenerationFailed',
+      header: 'pages.invoice_management.pdf_status',
+      sortable: false,
+      width: '10%',
+      customTemplate: pdfStatusTemplate,
     },
     {
       id: 'generatedAt',

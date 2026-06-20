@@ -7381,6 +7381,8 @@ export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
     currencyCode!: string | undefined;
     status!: EmployeeInvoiceStatus;
     pdfBlobName!: string | undefined;
+    pdfGenerationFailed!: boolean;
+    pdfGenerationError!: string | undefined;
     generatedAt!: Date;
     approvedAt!: Date | undefined;
     approvedBy!: string | undefined;
@@ -7417,6 +7419,8 @@ export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
             this.currencyCode = Data["currencyCode"];
             this.status = Data["status"];
             this.pdfBlobName = Data["pdfBlobName"];
+            this.pdfGenerationFailed = Data["pdfGenerationFailed"];
+            this.pdfGenerationError = Data["pdfGenerationError"];
             this.generatedAt = Data["generatedAt"] ? new Date(Data["generatedAt"].toString()) : undefined as any;
             this.approvedAt = Data["approvedAt"] ? new Date(Data["approvedAt"].toString()) : undefined as any;
             this.approvedBy = Data["approvedBy"];
@@ -7457,6 +7461,8 @@ export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
         data["currencyCode"] = this.currencyCode;
         data["status"] = this.status;
         data["pdfBlobName"] = this.pdfBlobName;
+        data["pdfGenerationFailed"] = this.pdfGenerationFailed;
+        data["pdfGenerationError"] = this.pdfGenerationError;
         data["generatedAt"] = this.generatedAt ? this.generatedAt.toISOString() : undefined as any;
         data["approvedAt"] = this.approvedAt ? this.approvedAt.toISOString() : undefined as any;
         data["approvedBy"] = this.approvedBy;
@@ -7490,6 +7496,8 @@ export interface IEmployeeInvoiceDetailDto {
     currencyCode: string | undefined;
     status: EmployeeInvoiceStatus;
     pdfBlobName: string | undefined;
+    pdfGenerationFailed: boolean;
+    pdfGenerationError: string | undefined;
     generatedAt: Date;
     approvedAt: Date | undefined;
     approvedBy: string | undefined;
@@ -7516,6 +7524,8 @@ export class EmployeeInvoiceDto implements IEmployeeInvoiceDto {
     currencyCode!: string | undefined;
     status!: EmployeeInvoiceStatus;
     pdfBlobName!: string | undefined;
+    pdfGenerationFailed!: boolean;
+    pdfGenerationError!: string | undefined;
     generatedAt!: Date;
     approvedAt!: Date | undefined;
     approvedBy!: string | undefined;
@@ -7550,6 +7560,8 @@ export class EmployeeInvoiceDto implements IEmployeeInvoiceDto {
             this.currencyCode = Data["currencyCode"];
             this.status = Data["status"];
             this.pdfBlobName = Data["pdfBlobName"];
+            this.pdfGenerationFailed = Data["pdfGenerationFailed"];
+            this.pdfGenerationError = Data["pdfGenerationError"];
             this.generatedAt = Data["generatedAt"] ? new Date(Data["generatedAt"].toString()) : undefined as any;
             this.approvedAt = Data["approvedAt"] ? new Date(Data["approvedAt"].toString()) : undefined as any;
             this.approvedBy = Data["approvedBy"];
@@ -7584,6 +7596,8 @@ export class EmployeeInvoiceDto implements IEmployeeInvoiceDto {
         data["currencyCode"] = this.currencyCode;
         data["status"] = this.status;
         data["pdfBlobName"] = this.pdfBlobName;
+        data["pdfGenerationFailed"] = this.pdfGenerationFailed;
+        data["pdfGenerationError"] = this.pdfGenerationError;
         data["generatedAt"] = this.generatedAt ? this.generatedAt.toISOString() : undefined as any;
         data["approvedAt"] = this.approvedAt ? this.approvedAt.toISOString() : undefined as any;
         data["approvedBy"] = this.approvedBy;
@@ -7611,6 +7625,8 @@ export interface IEmployeeInvoiceDto {
     currencyCode: string | undefined;
     status: EmployeeInvoiceStatus;
     pdfBlobName: string | undefined;
+    pdfGenerationFailed: boolean;
+    pdfGenerationError: string | undefined;
     generatedAt: Date;
     approvedAt: Date | undefined;
     approvedBy: string | undefined;
@@ -10756,6 +10772,7 @@ export class PartnerLoginCommand implements IPartnerLoginCommand {
     email!: string | undefined;
     password!: string | undefined;
     rememberMe!: boolean;
+    trustedDeviceToken!: string | undefined;
 
     constructor(data?: IPartnerLoginCommand) {
         if (data) {
@@ -10771,6 +10788,7 @@ export class PartnerLoginCommand implements IPartnerLoginCommand {
             this.email = Data["email"];
             this.password = Data["password"];
             this.rememberMe = Data["rememberMe"];
+            this.trustedDeviceToken = Data["trustedDeviceToken"];
         }
     }
 
@@ -10786,6 +10804,7 @@ export class PartnerLoginCommand implements IPartnerLoginCommand {
         data["email"] = this.email;
         data["password"] = this.password;
         data["rememberMe"] = this.rememberMe;
+        data["trustedDeviceToken"] = this.trustedDeviceToken;
         return data;
     }
 }
@@ -10794,6 +10813,7 @@ export interface IPartnerLoginCommand {
     email: string | undefined;
     password: string | undefined;
     rememberMe: boolean;
+    trustedDeviceToken: string | undefined;
 }
 
 export class PayPeriodDto implements IPayPeriodDto {

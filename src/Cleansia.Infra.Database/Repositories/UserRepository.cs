@@ -120,6 +120,28 @@ public class UserRepository(CleansiaDbContext context)
                 cancellationToken);
     }
 
+    // Same lockout transition as RecordFailedLoginAsync (S7a) but keyed by id for the authenticated
+    // change-password surface, charging the SHARED FailedLoginAttempts/LockoutEndsAt pair so a
+    // change-password sprayer also bounds login. Both SetProperty conditions evaluate against the
+    // PRE-update row, and the WHERE makes attempts during an open lockout a no-op so racing failures
+    // cannot extend it. Hitting the threshold opens the window and resets the counter, so cooldown
+    // expiry restores a fresh budget.
+    public async Task RecordFailedCurrentPasswordAttemptAsync(string userId, DateTimeOffset now, CancellationToken cancellationToken = default)
+    {
+        var lockoutEnd = now.Add(User.FailedLoginLockout);
+
+        await GetDbSet()
+            .Where(u => u.Id == userId && (u.LockoutEndsAt == null || u.LockoutEndsAt <= now))
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(
+                    u => u.FailedLoginAttempts,
+                    u => u.FailedLoginAttempts + 1 >= User.MaxFailedLoginAttempts ? 0 : u.FailedLoginAttempts + 1)
+                .SetProperty(
+                    u => u.LockoutEndsAt,
+                    u => u.FailedLoginAttempts + 1 >= User.MaxFailedLoginAttempts ? lockoutEnd : u.LockoutEndsAt),
+                cancellationToken);
+    }
+
     public async Task<bool> TryChargeConfirmationCodeAttemptAsync(string userId, CancellationToken cancellationToken = default)
     {
         // S7a — atomic conditional increment; 0 rows affected = budget spent (no exception).

@@ -21,7 +21,7 @@ export interface GalleryPhoto {
 }
 
 @Component({
-  selector: 'admin-photo-gallery',
+  selector: 'cleansia-admin-photo-gallery',
   standalone: true,
   imports: [CommonModule, TranslatePipe],
   templateUrl: './admin-photo-gallery.component.html',

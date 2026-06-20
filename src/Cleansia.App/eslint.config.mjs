@@ -25,6 +25,18 @@ export default [
               onlyDependOnLibsWithTags: ['scope:shared', 'scope:cleansia'],
             },
             {
+              sourceTag: 'scope:customer',
+              onlyDependOnLibsWithTags: ['scope:customer', 'scope:shared'],
+            },
+            {
+              sourceTag: 'scope:partner',
+              onlyDependOnLibsWithTags: ['scope:partner', 'scope:shared'],
+            },
+            {
+              sourceTag: 'scope:admin',
+              onlyDependOnLibsWithTags: ['scope:admin', 'scope:shared'],
+            },
+            {
               sourceTag: 'type:feature',
               onlyDependOnLibsWithTags: ['type:feature', 'type:ui', 'type:data', 'type:util'],
             },

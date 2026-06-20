@@ -129,3 +129,11 @@
     </span>
   </div>
 </ng-template>
+
+<ng-template #pdfStatusTemplate let-item>
+  <div class="status-cell">
+    <span [class]="getPdfStateClass(item)">
+      {{ getPdfStateLabelKey(item) | translate }}
+    </span>
+  </div>
+</ng-template>

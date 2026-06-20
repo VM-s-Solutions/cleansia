@@ -19,8 +19,12 @@ public class AdminLogin
 {
     public class Validator : LoginValidator<Command>
     {
-        public Validator(IUserRepository userRepository)
-            : base(userRepository, c => c.Email, c => c.Password, c => c.RememberMe)
+        public Validator(
+            IUserRepository userRepository,
+            IRefreshTokenRepository refreshTokenRepository,
+            IRefreshTokenService refreshTokenService)
+            : base(userRepository, refreshTokenRepository, refreshTokenService,
+                c => c.Email, c => c.Password, c => c.RememberMe, c => c.TrustedDeviceToken)
         {
         }
     }
@@ -29,7 +33,10 @@ public class AdminLogin
         string Email,
         string Password,
         bool RememberMe)
-        : ICommand<JwtTokenResponse>;
+        : ICommand<JwtTokenResponse>
+    {
+        public string? TrustedDeviceToken { get; init; }
+    }
 
     internal class Handler(
         ITokenService tokenService,

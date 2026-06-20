@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import cz.cleansia.partner.api.model.ContractStatus
 import cz.cleansia.partner.api.model.RegistrationCompletionStatus
 import cz.cleansia.partner.core.network.ApiErrorTranslator
-import cz.cleansia.partner.core.network.ApiResult
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.auth.AuthRepository
 import cz.cleansia.partner.data.profile.ProfileRepository
 import cz.cleansia.partner.navigation.NavRoute

@@ -7,7 +7,7 @@ import cz.cleansia.partner.api.model.DocumentType
 import cz.cleansia.partner.api.model.GetMyDocumentsMyDocumentDto
 import cz.cleansia.partner.api.model.SaveMyDocumentsDocumentToSave
 import cz.cleansia.partner.core.network.ApiErrorTranslator
-import cz.cleansia.partner.core.network.ApiResult
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.profile.ProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

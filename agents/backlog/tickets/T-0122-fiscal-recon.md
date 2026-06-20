@@ -1,11 +1,11 @@
 ﻿---
 id: T-0122
 title: Fiscal reconciliation sweep (target-not-found stays transient)
-status: draft
+status: done
 size: S
 owner: â€”
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-15
 depends_on: [T-0118, T-0121]
 blocks: []
 stories: []

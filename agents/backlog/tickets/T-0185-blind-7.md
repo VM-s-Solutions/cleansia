@@ -1,11 +1,11 @@
 ﻿---
 id: T-0185
 title: Mapbox 429/rate-limit handling
-status: draft
+status: done
 size: M
 owner: â€”
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-15
 depends_on: [T-0141, T-0145]
 blocks: []
 stories: []

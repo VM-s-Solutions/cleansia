@@ -1,11 +1,11 @@
 ﻿---
 id: T-0124
 title: DB index on User.Email + other lookup columns
-status: draft
+status: done
 size: S
 owner: â€”
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-15
 depends_on: [T-0106]
 blocks: []
 stories: []

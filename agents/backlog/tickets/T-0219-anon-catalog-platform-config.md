@@ -1,11 +1,11 @@
 ---
 id: T-0219
 title: Anonymous catalog entities → platform config (Service/ServiceCategory/Package/Extra/ServiceCity)
-status: draft
+status: done
 size: M
 owner: —
 created: 2026-06-02
-updated: 2026-06-02
+updated: 2026-06-15
 depends_on: [T-0100, T-0113]
 blocks: []
 stories: []

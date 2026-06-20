@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.partner.core.network.ApiErrorTranslator
-import cz.cleansia.partner.core.network.ApiResult
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.auth.AuthRepository
 import cz.cleansia.partner.data.auth.LoginOutcome
 import dagger.hilt.android.lifecycle.HiltViewModel

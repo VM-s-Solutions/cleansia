@@ -1,11 +1,11 @@
 ---
 id: T-0162
 title: "[SPLIT] AUD-01c: Admin partial-refund command + allocator + RefundPolicy + UX (epic — tracking only; split into T-0167 backend / T-0168 frontend)"
-status: draft
+status: done
 size: L
 owner: —
 created: 2026-06-06
-updated: 2026-06-07
+updated: 2026-06-15
 depends_on: [T-0160, T-0161, T-0165]
 blocks: []
 split_into: [T-0167, T-0168]

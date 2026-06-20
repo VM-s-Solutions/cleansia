@@ -94,12 +94,12 @@ function enclosingMethod(lines, idx) {
 //   - UpdateStatus            : the guarded in-app routing method itself (Dispute.cs)
 //   - Handle (ResolveDispute) : owns the Resolve money-path; gates on IsTerminal at the seam
 //   - ReflectChargebackStatus : webhook reflector; gates on CanTransitionTo/IsTerminal itself
-//   - HandleChargeback        : webhook creator; Escalates a freshly-built Pending dispute
-//                               (Pending→Escalated is a legal edge) before persisting it
+// HandleChargeback (the webhook creator) is intentionally NOT allowlisted: it now routes its new
+// dispute's escalation through dispute.UpdateStatus(Escalated) (the guard), so it makes no direct
+// Close/Escalate/Resolve call for the rule to flag — the rule enforces that funnel going forward.
 const DISPUTE_WRITE_ALLOW = new Set([
     "UpdateStatus",
     "ReflectChargebackStatus",
-    "HandleChargeback",
 ]);
 const DISPUTE_WRITE_ALLOW_HANDLE_FILES = new Set(["ResolveDispute.cs"]);
 

@@ -1,11 +1,11 @@
 ---
 id: T-0121
 title: Extract Cleansia.Functions.Core so queue consumers are unit-testable
-status: draft
+status: done
 size: S
 owner: —
 created: 2026-06-01
-updated: 2026-06-01
+updated: 2026-06-15
 depends_on: []
 blocks: []
 stories: []

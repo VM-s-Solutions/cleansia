@@ -9,7 +9,8 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.firebase.messaging.FirebaseMessaging
 import cz.cleansia.core.auth.DeviceIdProvider
-import cz.cleansia.core.network.networkCall
+import cz.cleansia.core.network.ApiResult
+import cz.cleansia.core.network.safeApiCall
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.serialization.json.Json
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -42,6 +44,7 @@ class PushTokenRepository @Inject constructor(
     private val deviceApi: DeviceApi,
     deviceIdProvider: DeviceIdProvider,
     @ApplicationContext private val context: Context,
+    private val json: Json,
 ) : cz.cleansia.core.auth.SessionScopedCache {
 
     /**
@@ -134,7 +137,7 @@ class PushTokenRepository @Inject constructor(
      */
     suspend fun ensureRegistered(token: String) {
         if (token == readLastRegisteredToken()) return
-        val response = networkCall(TAG) {
+        val result = safeApiCall(json) {
             deviceApi.register(
                 RegisterDeviceRequest(
                     deviceId = deviceId,
@@ -143,7 +146,7 @@ class PushTokenRepository @Inject constructor(
                 ),
             )
         }
-        if (response?.isSuccessful == true) {
+        if (result is ApiResult.Success) {
             writeLastRegisteredToken(token)
         }
     }
@@ -154,7 +157,7 @@ class PushTokenRepository @Inject constructor(
      * Called from the logout flow.
      */
     suspend fun unregisterDevice() {
-        networkCall(TAG) { deviceApi.unregister(deviceId) }
+        safeApiCall(json) { deviceApi.unregister(deviceId) }
         clearLastRegisteredToken()
     }
 

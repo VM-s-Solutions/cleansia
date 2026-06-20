@@ -116,11 +116,25 @@ remove before PROD.
 - **Proposed ticket:** `Fix RecurringBookingsScreen state collection (lifecycle)` · S · [android]
 
 ### F16 — divergent repo contract (`T?` vs `ApiResult<T>`) + dir/naming split [major] [type: spaghetti]
-- **Where:** customer-app repos return `T?` (snackbar in repo); partner-app returns `ApiResult<T>`
+- **Where:** customer-app repos returned `T?` (snackbar in repo); partner-app returns `ApiResult<T>`
   (snackbar in VM). Customer features inline; partner splits `screens/`+`viewmodels/` with `Details` drift.
 - **Rule:** E5, E7. **Fix:** canonicalize on `ApiResult<T>` + inline singular structure.
-  **(Cross-cutting — Architect-owned; needs an ADR before sweeping.)**
-- **Proposed ticket:** `ADR + migrate customer-app repos to ApiResult<T> and unify mobile structure` · L (split) · [architect, android, ios]
+  **(Cross-cutting — Architect-owned; ADR-0011 accepted.)**
+- **E5 — RESOLVED for customer-app (T-0197, closed 2026-06-17, commits dca897e1 + 7f391fdb).** ADR-0011
+  accepted; `ApiResult`/`ApiError`/`safeApiCall` hoisted into `:core` (`cz.cleansia.core.network`);
+  **all 15 customer-app repos migrated to `ApiResult<T>` with the snackbar moved repo → VM**
+  (catalog, data/address, devices, notifications, payments, auth, orders, disputes, memberships, loyalty,
+  referral, recurring, user, settings, + the remaining repo). Orchestrator-verified: `:core` + partner-app
+  + customer-app all compile, customer-app 201/201 unit tests pass, **`check-consistency mobile` reports
+  ZERO E5 violations for customer-app**, all 64 changed files encoding-clean. **E5 closed.**
+- **STILL OPEN — separate rules, NOT resolved by T-0197 (their own future tickets):**
+  - **E1/E2 (sealed `*UiState` + shared `ActionState`)** — see F13/F14 below; T-0197 deliberately did not
+    touch UiState shape (its scope was only the repo → VM error channel).
+  - **E6 (`collectAsStateWithLifecycle()`)** — 22 instances of `collectAsState()` remain across the mobile
+    screens; see F15.
+  - **E7 (dir/naming — inline-singular `features/<name>/` convention)** — still its own ticket.
+- **Proposed ticket:** ~~`ADR + migrate customer-app repos to ApiResult<T> and unify mobile structure`~~
+  **DONE for the E5/ApiResult half (T-0197); E7 structure unification remains a separate ticket.**
 
 ---
 

@@ -1,7 +1,7 @@
 ---
 id: T-0222
 title: SplitPayForMultipleEmployees — currency-minor-unit split + last-share remainder reconciliation
-status: draft
+status: done
 size: S
 owner: —
 created: 2026-06-05

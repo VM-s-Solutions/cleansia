@@ -6,8 +6,8 @@ import cz.cleansia.partner.api.model.EmployeeInvoiceDetailDto
 import cz.cleansia.partner.api.model.EmployeeInvoiceDto
 import cz.cleansia.partner.api.model.SortDefinition
 import cz.cleansia.partner.api.model.SortDirection
-import cz.cleansia.partner.core.network.ApiResult
-import cz.cleansia.partner.core.network.safeApiCall
+import cz.cleansia.core.network.ApiResult
+import cz.cleansia.core.network.safeApiCall
 import kotlinx.serialization.json.Json
 import okhttp3.ResponseBody
 import javax.inject.Inject

@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.customer.R
+import cz.cleansia.core.network.ApiError
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.MembershipPlanDto
 import cz.cleansia.customer.core.memberships.MembershipRepository
@@ -81,8 +83,10 @@ class MembershipViewModel @Inject constructor(
     private var subscribeIdempotencyToken: String? = null
 
     init {
+        // Background loads stay silent on failure (the repo used to swallow-and-log);
+        // the management card just keeps rendering the cached/empty state.
         viewModelScope.launch { repository.refresh() }
-        viewModelScope.launch { _plans.value = repository.getPlans() }
+        viewModelScope.launch { repository.getPlans().onSuccess { _plans.value = it } }
     }
 
     fun refresh() {
@@ -103,10 +107,8 @@ class MembershipViewModel @Inject constructor(
         subscribeIdempotencyToken = UUID.randomUUID().toString()
         try {
             val resp = repository.subscribePhase1(planCode)
-            if (resp == null) {
-                snackbar.showError(appContext.getString(R.string.error_generic_network))
-                return SubscribeOutcome.Failed
-            }
+                .showErrorUnlessNetwork().getOrNull()
+                ?: return SubscribeOutcome.Failed
             // Phase 1 always returns a SetupIntent; if membershipId is non-empty
             // the user already had an active sub (defensive, backend rejects).
             if (resp.membershipId.isNotEmpty()) {
@@ -137,8 +139,12 @@ class MembershipViewModel @Inject constructor(
             val token = subscribeIdempotencyToken
                 ?: UUID.randomUUID().toString().also { subscribeIdempotencyToken = it }
             val resp = repository.subscribePhase2(planCode, token)
+                .showErrorUnlessNetwork().getOrNull()
             if (resp == null || resp.membershipId.isEmpty()) {
-                snackbar.showError(appContext.getString(R.string.error_generic_network))
+                // A null result already snackbarred via showErrorUnlessNetwork;
+                // a 2xx with an empty membershipId is a malformed success — keep
+                // the original generic message so the user still sees a failure.
+                if (resp != null) snackbar.showError(appContext.getString(R.string.error_generic_network))
                 return SubscribeOutcome.Failed
             }
             return SubscribeOutcome.Subscribed(resp.membershipId)
@@ -156,11 +162,8 @@ class MembershipViewModel @Inject constructor(
         _submitState.value = ActionState.Submitting
         viewModelScope.launch {
             try {
-                val resp = repository.cancel()
-                if (resp == null) {
-                    snackbar.showError(appContext.getString(R.string.error_generic_network))
-                    return@launch
-                }
+                val resp = repository.cancel().showErrorUnlessNetwork().getOrNull()
+                    ?: return@launch
                 onSuccess(resp.effectiveEndDate)
             } finally {
                 _submitState.value = ActionState.Idle
@@ -178,15 +181,16 @@ class MembershipViewModel @Inject constructor(
         _submitState.value = ActionState.Submitting
         viewModelScope.launch {
             try {
-                val resp = repository.swapPlan(newPlanCode)
-                if (resp == null) {
-                    snackbar.showError(appContext.getString(R.string.error_generic_network))
-                    return@launch
-                }
+                repository.swapPlan(newPlanCode).showErrorUnlessNetwork().getOrNull()
+                    ?: return@launch
                 onSuccess()
             } finally {
                 _submitState.value = ActionState.Idle
             }
         }
+    }
+
+    private fun <T> ApiResult<T>.showErrorUnlessNetwork(): ApiResult<T> = onError { error ->
+        if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
     }
 }

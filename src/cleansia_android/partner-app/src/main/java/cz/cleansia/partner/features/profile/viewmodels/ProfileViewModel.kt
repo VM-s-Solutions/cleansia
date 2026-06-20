@@ -6,7 +6,7 @@ import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.partner.api.model.ContractStatus
 import cz.cleansia.partner.api.model.EmployeeItem
 import cz.cleansia.partner.core.network.ApiErrorTranslator
-import cz.cleansia.partner.core.network.ApiResult
+import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.auth.AuthRepository
 import cz.cleansia.partner.data.profile.ProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel

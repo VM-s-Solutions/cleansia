@@ -291,7 +291,7 @@
 
       <!-- Admin Operations -->
       @if (facade.order()) {
-      <admin-order-ops
+      <cleansia-admin-order-ops
         [order]="facade.order()!"
         (changed)="onOrderChanged()"
       />
@@ -299,7 +299,7 @@
 
       <!-- Refund -->
       @if (facade.order()) {
-      <admin-order-refund
+      <cleansia-admin-order-refund
         [order]="facade.order()!"
         (refunded)="onRefunded()"
       />
@@ -399,7 +399,7 @@
 
       <!-- Order Photos -->
       @if (facade.order()?.id) {
-      <admin-order-photos [orderId]="facade.order()!.id!" />
+      <cleansia-admin-order-photos [orderId]="facade.order()!.id!" />
       }
     </div>
     } @else {

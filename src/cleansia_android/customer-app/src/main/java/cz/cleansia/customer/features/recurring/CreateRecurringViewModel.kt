@@ -11,11 +11,16 @@ import cz.cleansia.customer.core.data.AddressRepository
 import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.recurring.CreateRecurringBookingRequest
 import cz.cleansia.customer.core.recurring.RecurrenceFrequency
+import cz.cleansia.customer.R
 import cz.cleansia.customer.core.recurring.RecurringBookingRepository
+import cz.cleansia.customer.ui.state.ActionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.first
@@ -57,12 +62,12 @@ class CreateRecurringViewModel @Inject constructor(
     private val _state = MutableStateFlow(CreateRecurringFormState())
     val state: StateFlow<CreateRecurringFormState> = _state.asStateFlow()
 
-    private val _submitting = MutableStateFlow(false)
-    val submitting: StateFlow<Boolean> = _submitting.asStateFlow()
+    private val _submitState = MutableStateFlow<ActionState>(ActionState.Idle)
+    val submitState: StateFlow<ActionState> = _submitState.asStateFlow()
 
-    /** Outcome of the latest submit attempt — UI listens to navigate / snackbar. */
-    private val _submitOutcome = MutableStateFlow<SubmitOutcome?>(null)
-    val submitOutcome: StateFlow<SubmitOutcome?> = _submitOutcome.asStateFlow()
+    /** One-shot success effect — the screen navigates on emit (snackbar fires in the VM). */
+    private val _submitted = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val submitted: SharedFlow<Unit> = _submitted.asSharedFlow()
 
     init {
         // Catalog + addresses are needed regardless of path. Refresh once on
@@ -146,20 +151,23 @@ class CreateRecurringViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     fun submit() {
-        if (_submitting.value) return
+        if (_submitState.value is ActionState.Submitting) return
         val request = buildRequest() ?: return
+        _submitState.value = ActionState.Submitting
         viewModelScope.launch {
-            _submitting.value = true
-            try {
-                val result = recurringRepo.create(request)
-                _submitOutcome.value = if (result is ApiResult.Success) SubmitOutcome.Success else SubmitOutcome.Failed
-            } finally {
-                _submitting.value = false
+            when (val result = recurringRepo.create(request)) {
+                is ApiResult.Success -> {
+                    _submitState.value = ActionState.Idle
+                    snackbar.showSuccessKey(R.string.recurring_create_success)
+                    _submitted.emit(Unit)
+                }
+                is ApiResult.Error -> {
+                    snackbar.showErrorKey(R.string.recurring_create_failed)
+                    _submitState.value = ActionState.Error(result.error.getUserMessage())
+                }
             }
         }
     }
-
-    fun consumeOutcome() { _submitOutcome.value = null }
 
     // ─── Path B pre-fill ───
 
@@ -220,8 +228,3 @@ data class CreateRecurringFormState(
     /** ISO-8601 instant. Default empty — UI must set before submit. */
     val startsOnIso: String = "",
 )
-
-sealed interface SubmitOutcome {
-    data object Success : SubmitOutcome
-    data object Failed : SubmitOutcome
-}

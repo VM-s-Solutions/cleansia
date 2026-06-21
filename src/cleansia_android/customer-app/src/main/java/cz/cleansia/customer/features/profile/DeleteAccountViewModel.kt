@@ -5,11 +5,15 @@ import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.user.UserRepository
+import cz.cleansia.customer.ui.state.ActionState
 import cz.cleansia.core.snackbar.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
@@ -19,23 +23,25 @@ class DeleteAccountViewModel @Inject constructor(
     private val snackbar: SnackbarController,
 ) : ViewModel() {
 
-    private val _loading = MutableStateFlow(false)
-    val loading: StateFlow<Boolean> = _loading.asStateFlow()
+    private val _deleteState = MutableStateFlow<ActionState>(ActionState.Idle)
+    val deleteState: StateFlow<ActionState> = _deleteState.asStateFlow()
+
+    private val _accountDeleted = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val accountDeleted: SharedFlow<Unit> = _accountDeleted.asSharedFlow()
 
     fun deleteAccount() {
-        if (_loading.value) return
-        _loading.value = true
+        if (_deleteState.value is ActionState.Submitting) return
+        _deleteState.value = ActionState.Submitting
         viewModelScope.launch {
-            val result = userRepository.deleteAccount()
-            _loading.value = false
-            result
+            userRepository.deleteAccount()
                 .onSuccess {
-                    // Success — UserRepository emitted ForcedSignOut which navigates us to SignIn.
-                    // Show a confirmation snackbar that survives the navigation.
+                    _deleteState.value = ActionState.Idle
                     snackbar.showSuccessKey(R.string.delete_account_success)
+                    _accountDeleted.emit(Unit)
                 }
                 .onError { error ->
                     if (error !is ApiError.Network) snackbar.showError(error.getUserMessage())
+                    _deleteState.value = ActionState.Error(error.getUserMessage())
                 }
         }
     }

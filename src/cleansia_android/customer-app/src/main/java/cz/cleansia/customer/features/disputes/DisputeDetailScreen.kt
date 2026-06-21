@@ -83,6 +83,7 @@ import cz.cleansia.customer.core.disputes.openEvidencePdfFromUrl
 import cz.cleansia.core.format.disputeAllowsMessages
 import cz.cleansia.core.format.formatOrderDateTime
 import cz.cleansia.customer.ui.format.disputeStatusColor
+import cz.cleansia.customer.ui.state.ActionState
 import cz.cleansia.customer.core.orders.ReceiptOpenResult
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.snackbar.SnackbarController
@@ -117,8 +118,10 @@ fun DisputeDetailScreen(
     viewModel: DisputeDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val sending by viewModel.sending.collectAsStateWithLifecycle()
-    val uploading by viewModel.uploadingEvidence.collectAsStateWithLifecycle()
+    val sendState by viewModel.sendState.collectAsStateWithLifecycle()
+    val uploadState by viewModel.uploadState.collectAsStateWithLifecycle()
+    val sending = sendState is ActionState.Submitting
+    val uploading = uploadState is ActionState.Submitting
 
     val loaded = state as? DisputeDetailViewModel.UiState.Loaded
     val context = LocalContext.current
@@ -145,9 +148,10 @@ fun DisputeDetailScreen(
         contract = ActivityResultContracts.GetMultipleContents(),
         onResult = { uris ->
             if (uris.isEmpty()) return@rememberLauncherForActivityResult
-            // Read each URI off the main thread; sequentially queue uploads
-            // through the VM. Single-flight via `uploadingEvidence` flag means
-            // each call awaits the previous one's reload — safe.
+            // Read each URI off the main thread, then hand it to the VM. uploadEvidence
+            // is intentionally NOT single-flight-guarded: it fires each upload as its own
+            // coroutine, so a guard would drop files 2..N of a multi-file selection. The
+            // Add-evidence button is gated by uploadState (Submitting) instead.
             coroutineScope.launch {
                 for (uri in uris) {
                     // Read everything off the main thread — bytes, the binder

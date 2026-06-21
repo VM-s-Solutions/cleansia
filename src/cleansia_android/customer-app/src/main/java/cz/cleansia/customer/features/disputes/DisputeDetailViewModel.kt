@@ -7,14 +7,18 @@ import androidx.lifecycle.viewModelScope
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.disputes.DisputeDetailsDto
 import cz.cleansia.customer.core.disputes.DisputeRepository
+import cz.cleansia.customer.ui.state.ActionState
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
@@ -54,17 +58,23 @@ class DisputeDetailViewModel @Inject constructor(
     private val _state = MutableStateFlow<UiState>(UiState.Loading)
     val state: StateFlow<UiState> = _state.asStateFlow()
 
-    private val _sending = MutableStateFlow(false)
-    val sending: StateFlow<Boolean> = _sending.asStateFlow()
+    private val _sendState = MutableStateFlow<ActionState>(ActionState.Idle)
+    val sendState: StateFlow<ActionState> = _sendState.asStateFlow()
+
+    private val _messageSent = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val messageSent: SharedFlow<Unit> = _messageSent.asSharedFlow()
 
     /**
-     * True while at least one evidence upload is in flight. Multi-file picks
-     * are uploaded sequentially (see [uploadEvidence] callers), so this stays
-     * true across the whole batch — the UI shows a single global spinner on
-     * the "Add evidence" button rather than per-file progress.
+     * Drives the single global spinner on the "Add evidence" button. Multi-file
+     * picks are uploaded sequentially (see [uploadEvidence] callers), so this
+     * stays [ActionState.Submitting] across the whole batch rather than showing
+     * per-file progress.
      */
-    private val _uploadingEvidence = MutableStateFlow(false)
-    val uploadingEvidence: StateFlow<Boolean> = _uploadingEvidence.asStateFlow()
+    private val _uploadState = MutableStateFlow<ActionState>(ActionState.Idle)
+    val uploadState: StateFlow<ActionState> = _uploadState.asStateFlow()
+
+    private val _evidenceUploaded = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val evidenceUploaded: SharedFlow<Unit> = _evidenceUploaded.asSharedFlow()
 
     init { load() }
 
@@ -96,14 +106,18 @@ class DisputeDetailViewModel @Inject constructor(
         val id = disputeId ?: return
         val trimmed = content.trim()
         if (trimmed.length !in 1..2000) return
+        _sendState.value = ActionState.Submitting
         viewModelScope.launch {
-            _sending.value = true
-            val result = disputeRepository.addMessage(id, trimmed)
-            _sending.value = false
-            when (result) {
-                is ApiResult.Success -> load()
-                is ApiResult.Error ->
+            when (val result = disputeRepository.addMessage(id, trimmed)) {
+                is ApiResult.Success -> {
+                    _sendState.value = ActionState.Idle
+                    _messageSent.emit(Unit)
+                    load()
+                }
+                is ApiResult.Error -> {
                     if (result.error !is ApiError.Network) snackbar.showError(result.error.getUserMessage())
+                    _sendState.value = ActionState.Error(result.error.getUserMessage())
+                }
             }
         }
     }
@@ -130,19 +144,22 @@ class DisputeDetailViewModel @Inject constructor(
             snackbar.showError(appContext.getString(R.string.dispute_evidence_unsupported_type))
             return
         }
+        _uploadState.value = ActionState.Submitting
         viewModelScope.launch {
-            _uploadingEvidence.value = true
-            val result = disputeRepository.uploadEvidence(id, bytes, fileName, mimeType)
-            _uploadingEvidence.value = false
-            when (result) {
-                is ApiResult.Success ->
+            when (val result = disputeRepository.uploadEvidence(id, bytes, fileName, mimeType)) {
+                is ApiResult.Success -> {
+                    _uploadState.value = ActionState.Idle
+                    _evidenceUploaded.emit(Unit)
                     // Re-fetch detail to pick up the persisted evidence row. The
                     // returned DTO carries the SAS-signed blobUrl too, but going
                     // through load() also picks up any other thread changes that
                     // happened on the server side meanwhile.
                     load()
-                is ApiResult.Error ->
+                }
+                is ApiResult.Error -> {
                     if (result.error !is ApiError.Network) snackbar.showError(result.error.getUserMessage())
+                    _uploadState.value = ActionState.Error(result.error.getUserMessage())
+                }
             }
         }
     }

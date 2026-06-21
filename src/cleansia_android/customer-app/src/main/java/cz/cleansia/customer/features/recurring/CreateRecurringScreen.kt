@@ -73,7 +73,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.recurring.RecurrenceFrequency
 import cz.cleansia.customer.features.addresses.AddressManagerSheet
-import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.customer.ui.state.ActionState
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
@@ -108,17 +108,8 @@ fun CreateRecurringScreen(
     viewModel: CreateRecurringViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val submitting by viewModel.submitting.collectAsStateWithLifecycle()
-    val outcome by viewModel.submitOutcome.collectAsStateWithLifecycle()
-
-    val context = LocalContext.current
-    // TODO(W3.3): refactor to VM injection — pull snackbar into
-    // CreateRecurringViewModel like ProfileViewModel/OrderDetailViewModel.
-    val snackbar = remember {
-        EntryPointAccessors
-            .fromApplication(context, RecurringSnackbarEntryPoint::class.java)
-            .snackbarController()
-    }
+    val submitState by viewModel.submitState.collectAsStateWithLifecycle()
+    val submitting = submitState is ActionState.Submitting
 
     var currentStep by remember { mutableIntStateOf(1) }
     var addressSheetOpen by remember { mutableStateOf(false) }
@@ -133,19 +124,9 @@ fun CreateRecurringScreen(
         }
     }
 
-    LaunchedEffect(outcome) {
-        when (outcome) {
-            SubmitOutcome.Success -> {
-                snackbar.showSuccess(context.getString(R.string.recurring_create_success))
-                viewModel.consumeOutcome()
-                onCreated()
-            }
-            SubmitOutcome.Failed -> {
-                snackbar.showError(context.getString(R.string.recurring_create_failed))
-                viewModel.consumeOutcome()
-            }
-            null -> Unit
-        }
+    // One-shot success effect — won't replay on config change / rotation.
+    LaunchedEffect(viewModel) {
+        viewModel.submitted.collect { onCreated() }
     }
 
     val isPathB = viewModel.sourceOrderId != null
@@ -1332,12 +1313,6 @@ private class NotInPastSelectableDates(
 }
 
 /* ── Hilt entry points for non-VM Compose contexts ── */
-
-@dagger.hilt.EntryPoint
-@dagger.hilt.InstallIn(dagger.hilt.components.SingletonComponent::class)
-interface RecurringSnackbarEntryPoint {
-    fun snackbarController(): SnackbarController
-}
 
 @dagger.hilt.EntryPoint
 @dagger.hilt.InstallIn(dagger.hilt.components.SingletonComponent::class)

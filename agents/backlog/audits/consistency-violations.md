@@ -109,6 +109,19 @@ remove before PROD.
   `_submitting`/`_error`); partner uses `enum OrderAction inFlight`.
 - **Rule:** E2. **Fix:** shared `ActionState` + `SharedFlow` effect.
 - **Proposed ticket:** `Standardize one-shot actions on ActionState` · M · [android]
+- **CLEARED — done by T-0252 (Wave 5), verified by T-0268 (Wave 7, 2026-06-21).** The three named
+  customer VMs use `cz.cleansia.customer.ui.state.ActionState` + `SharedFlow`/callback effects (no
+  loose `_submitting`/`_error`); partner `OrderDetailsViewModel` is on `cz.cleansia.core.ui.state.ActionState`
+  (`actionState`), with the retained `enum OrderAction`/`inFlightAction` now a per-button spinner
+  discriminator layered on top (§E2 judgment-call non-issue). Gate: `check-consistency.mjs` mobile →
+  **0 E2 violations**; the three T-0252 E2 VM tests green (`CreateDisputeViewModelTest` 8/8,
+  `MembershipViewModelTest` 10/10, `ProfileViewModelTest` 9/9). **F14 closed.**
+- **NOTE (separate follow-up, NOT F14):** three one-shot ACTION paths shipped AFTER this audit still
+  use a loose `_submitting`-style boolean (genuine but out of F14's named set, surfaced by T-0268):
+  `recurring/CreateRecurringViewModel` (`_submitting` + `_submitOutcome` StateFlow),
+  `disputes/DisputeDetailViewModel` (`_sending`, `_uploadingEvidence`),
+  `profile/DeleteAccountViewModel` (`_loading` gating `deleteAccount()`). Recommend a scoped
+  `Standardize post-Wave-5 one-shot actions on ActionState` follow-up — not folded into F14.
 
 ### F15 — `collectAsState()` instead of lifecycle-aware [major] [type: bug/leak]
 - **Where:** `customer/features/recurring/RecurringBookingsScreen.kt:77`

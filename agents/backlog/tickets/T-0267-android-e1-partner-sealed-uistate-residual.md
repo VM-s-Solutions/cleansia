@@ -1,7 +1,7 @@
 ---
 id: T-0267
 title: "E1 — convert residual partner-app flag-bag *UiState to sealed states (the ones T-0252 did not name)"
-status: ready
+status: done
 size: M
 owner: —
 created: 2026-06-21

@@ -1,7 +1,7 @@
 ---
 id: T-0266
 title: "E7 — unify partner-app dir/naming to the inline-singular features/<name>/ convention (structural move, no logic change)"
-status: ready
+status: done
 size: M
 owner: —
 created: 2026-06-21
@@ -93,6 +93,31 @@ survives, is renamed to singular in the same pass.)
   structural canonicalization against the already-ratified §E7 convention; one-line no-decision note).
   Reviewer-per-developer. **Lane-isolated, runs FIRST** (blocks T-0269; precedes T-0267 in the same
   partner-files lane).
+- 2026-06-21 — in-progress → done (android). E7 structural move executed:
+  - AC1/AC7: baseline `:partner-app:testDebugUnitTest` GREEN (26/26, 6 classes); GREEN after the move
+    (26/26 — same classes, only package/import lines changed; `OrderDetailsViewModelTest` →
+    `OrderDetailViewModelTest`).
+  - AC2: all 74 split files in `auth/dashboard/earnings/invoices/notifications/onboarding/orders/
+    profile/settings` `{screens,viewmodels,components}/` collapsed inline into `features/<name>/`; the
+    empty sub-package dirs removed. Deliberate inline features (`devices`, `main`, `payroll`) left as-is.
+  - AC3: every moved file's `package …{screens|viewmodels|components}` rewritten to
+    `…features.<name>`; all imports across prod + `navigation/PartnerNavHost.kt`, `features/main/
+    MainScaffold.kt`, `core/notifications/NotificationDeepLink.kt` and the 4 test sources updated; 72
+    now-redundant same-package self-imports (cross-sub-package refs that collapsed) removed.
+  - AC4: `Details` plural-drift renamed to singular to match the customer-app `OrderDetail`/`Detail`
+    convention — types `OrderDetails*`→`OrderDetail*`, `InvoiceDetails*`→`InvoiceDetail*` (incl.
+    `NavRoute.OrderDetails`/`InvoiceDetails`, `OrderDetailsUiState`, `OrderDetailsBottomSheetLayout`,
+    `OrderDetailsSheetContent`, `OrderDetailsCompactHeader`) and the 6 files carrying it; the lambda
+    params `onOpenOrderDetails`/`onOpenInvoiceDetails` and the API `EmployeeInvoiceDetailDto` left
+    untouched (not types/filenames in scope).
+  - AC5: proven move/rename/package/import-only — all 75 moved/renamed file bodies are byte-identical
+    to HEAD modulo package + import + the Details→Detail token (blob-sha comparison, 0 body diffs); the
+    8 path-stable edited files changed only import/route-rename lines. customer-app + `:core` untouched.
+  - AC6: `check-consistency.mjs --paths=…/partner-app` — type counts identical to HEAD baseline
+    (17 E1, 1 E5, 27 E6, **0 E7**); no new violation introduced, E7 structural divergence gone. The
+    remaining E1/E6 are the pre-existing debt owned by T-0267 (E1) / T-0269 (E6), out of scope here.
+  - Encoding: all 132 partner `.kt` clean UTF-8, no BOM, no mojibake (`Ã`/`Â`/`â€`); per-file line
+    endings preserved (124 CRLF + 1 pre-existing LF unchanged). Paths settled for T-0267/T-0269.
 
 ## Review
 <!-- reviewer writes verdict here; PM reconciles before advancing state -->

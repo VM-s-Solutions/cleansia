@@ -27,10 +27,10 @@ sealed interface NavRoute {
     @Serializable data object Dashboard : NavRoute
 
     @Serializable data object Orders : NavRoute
-    @Serializable data class OrderDetails(val orderId: String) : NavRoute
+    @Serializable data class OrderDetail(val orderId: String) : NavRoute
 
     @Serializable data object Invoices : NavRoute
-    @Serializable data class InvoiceDetails(val invoiceId: String) : NavRoute
+    @Serializable data class InvoiceDetail(val invoiceId: String) : NavRoute
 
     /**
      * Read-only "my period pay" breakdown for one pay period — reached from

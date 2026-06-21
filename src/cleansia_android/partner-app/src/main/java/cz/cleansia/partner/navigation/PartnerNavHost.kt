@@ -37,31 +37,31 @@ import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.partner.api.model.RegistrationCompletionStatus
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.profile.ProfileRepository
-import cz.cleansia.partner.features.auth.screens.ConfirmEmailScreen
-import cz.cleansia.partner.features.auth.screens.ForgotPasswordScreen
-import cz.cleansia.partner.features.auth.screens.LoginScreen
-import cz.cleansia.partner.features.auth.screens.RegisterScreen
+import cz.cleansia.partner.features.auth.ConfirmEmailScreen
+import cz.cleansia.partner.features.auth.ForgotPasswordScreen
+import cz.cleansia.partner.features.auth.LoginScreen
+import cz.cleansia.partner.features.auth.RegisterScreen
 import cz.cleansia.partner.features.devices.DevicesScreen
-import cz.cleansia.partner.features.earnings.screens.EarningsSummaryScreen
-import cz.cleansia.partner.features.invoices.screens.InvoiceDetailsScreen
-import cz.cleansia.partner.features.invoices.screens.InvoicesListScreen
+import cz.cleansia.partner.features.earnings.EarningsSummaryScreen
+import cz.cleansia.partner.features.invoices.InvoiceDetailScreen
+import cz.cleansia.partner.features.invoices.InvoicesListScreen
 import cz.cleansia.partner.features.payroll.PeriodPayScreen
 import cz.cleansia.partner.features.main.MainScaffold
-import cz.cleansia.partner.features.notifications.screens.NotificationsScreen
-import cz.cleansia.partner.features.orders.screens.OrderDetailsScreen
-import cz.cleansia.partner.features.orders.screens.RegistrationLockScreen
-import cz.cleansia.partner.features.orders.viewmodels.OnboardingChainViewModel
-import cz.cleansia.partner.features.orders.viewmodels.isRegistrationComplete
-import cz.cleansia.partner.features.profile.screens.AddressSectionScreen
-import cz.cleansia.partner.features.profile.screens.BankSectionScreen
-import cz.cleansia.partner.features.profile.screens.DocumentsSectionScreen
-import cz.cleansia.partner.features.profile.screens.EmergencySectionScreen
-import cz.cleansia.partner.features.profile.screens.IdentificationSectionScreen
-import cz.cleansia.partner.features.onboarding.screens.OnboardingScreen
-import cz.cleansia.partner.features.profile.screens.PersonalSectionScreen
-import cz.cleansia.partner.features.profile.screens.ProfileScreen
-import cz.cleansia.partner.features.settings.screens.LanguagePickerScreen
-import cz.cleansia.partner.features.settings.screens.ThemePickerScreen
+import cz.cleansia.partner.features.notifications.NotificationsScreen
+import cz.cleansia.partner.features.orders.OrderDetailScreen
+import cz.cleansia.partner.features.orders.RegistrationLockScreen
+import cz.cleansia.partner.features.orders.OnboardingChainViewModel
+import cz.cleansia.partner.features.orders.isRegistrationComplete
+import cz.cleansia.partner.features.profile.AddressSectionScreen
+import cz.cleansia.partner.features.profile.BankSectionScreen
+import cz.cleansia.partner.features.profile.DocumentsSectionScreen
+import cz.cleansia.partner.features.profile.EmergencySectionScreen
+import cz.cleansia.partner.features.profile.IdentificationSectionScreen
+import cz.cleansia.partner.features.onboarding.OnboardingScreen
+import cz.cleansia.partner.features.profile.PersonalSectionScreen
+import cz.cleansia.partner.features.profile.ProfileScreen
+import cz.cleansia.partner.features.settings.LanguagePickerScreen
+import cz.cleansia.partner.features.settings.ThemePickerScreen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
@@ -159,10 +159,10 @@ fun PartnerNavHost(navController: NavHostController) {
         composable<NavRoute.Main> { entry ->
             MainScaffold(
                 onOpenOrderDetails = { id ->
-                    navController.navigate(NavRoute.OrderDetails(orderId = id))
+                    navController.navigate(NavRoute.OrderDetail(orderId = id))
                 },
                 onOpenInvoiceDetails = { id ->
-                    navController.navigate(NavRoute.InvoiceDetails(invoiceId = id))
+                    navController.navigate(NavRoute.InvoiceDetail(invoiceId = id))
                 },
                 onOpenProfileSection = { route -> navController.navigate(route) },
                 onOpenEarnings = { navController.navigate(NavRoute.Earnings) },
@@ -207,7 +207,7 @@ fun PartnerNavHost(navController: NavHostController) {
             )
         }
 
-        composable<NavRoute.OrderDetails>(
+        composable<NavRoute.OrderDetail>(
             // Slide-in/out (not fade) for this route specifically.
             // The map is a SurfaceView/TextureView under the hood and
             // doesn't respect Compose alpha during the default fade
@@ -241,11 +241,11 @@ fun PartnerNavHost(navController: NavHostController) {
                 ) + fadeOut(animationSpec = tween(durationMillis = 260))
             },
         ) {
-            OrderDetailsScreen(onNavigateBack = { navController.popBackStack() })
+            OrderDetailScreen(onNavigateBack = { navController.popBackStack() })
         }
 
-        composable<NavRoute.InvoiceDetails> {
-            InvoiceDetailsScreen(
+        composable<NavRoute.InvoiceDetail> {
+            InvoiceDetailScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onOpenPeriodPay = { payPeriodId, currencyCode ->
                     navController.navigate(NavRoute.PeriodPay(payPeriodId, currencyCode))
@@ -285,7 +285,7 @@ fun PartnerNavHost(navController: NavHostController) {
             // via the pager with onNavigateBack = null.
             InvoicesListScreen(
                 onInvoiceClick = { id ->
-                    navController.navigate(NavRoute.InvoiceDetails(invoiceId = id))
+                    navController.navigate(NavRoute.InvoiceDetail(invoiceId = id))
                 },
                 onNavigateBack = { navController.popBackStack() },
             )
@@ -338,7 +338,7 @@ fun PartnerNavHost(navController: NavHostController) {
             val savedHandle = entry.savedStateHandle
             val encodedResult by savedHandle
                 .getStateFlow<String?>(
-                    cz.cleansia.partner.features.profile.screens.ADDRESS_PICKER_RESULT_KEY,
+                    cz.cleansia.partner.features.profile.ADDRESS_PICKER_RESULT_KEY,
                     initialValue = null,
                 )
                 .collectAsState()
@@ -363,7 +363,7 @@ fun PartnerNavHost(navController: NavHostController) {
                 pickerResult = pickerResult,
                 onPickerResultConsumed = {
                     savedHandle[
-                        cz.cleansia.partner.features.profile.screens.ADDRESS_PICKER_RESULT_KEY,
+                        cz.cleansia.partner.features.profile.ADDRESS_PICKER_RESULT_KEY,
                     ] = null
                 },
                 onboarding = route.onboarding,
@@ -421,7 +421,7 @@ fun PartnerNavHost(navController: NavHostController) {
         }
 
         composable<NavRoute.AddressPicker> {
-            cz.cleansia.partner.features.profile.screens.AddressPickerScreen(
+            cz.cleansia.partner.features.profile.AddressPickerScreen(
                 onBack = { navController.popBackStack() },
                 onConfirmed = { picked ->
                     // Stash the pick on the previous backstack entry so
@@ -435,7 +435,7 @@ fun PartnerNavHost(navController: NavHostController) {
                             picked,
                         )
                         previous.savedStateHandle
-                            .set(cz.cleansia.partner.features.profile.screens.ADDRESS_PICKER_RESULT_KEY, json)
+                            .set(cz.cleansia.partner.features.profile.ADDRESS_PICKER_RESULT_KEY, json)
                     }
                     navController.popBackStack()
                 },

@@ -55,6 +55,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
@@ -206,11 +207,11 @@ private fun SheetContent(
         ?: addresses.firstOrNull()
 
     val bookingVm: BookingViewModel = androidx.hilt.navigation.compose.hiltViewModel()
-    val state by bookingVm.state.collectAsState()
+    val state by bookingVm.state.collectAsStateWithLifecycle()
     // Wave 4 — `submitting: Boolean` was folded into `submitState: ActionState`.
     // Derive the boolean here so the rest of this composable's enable/loading
     // logic stays untouched.
-    val submitState by bookingVm.submitState.collectAsState()
+    val submitState by bookingVm.submitState.collectAsStateWithLifecycle()
     val submitting = submitState is cz.cleansia.customer.ui.state.ActionState.Submitting
     val scope = androidx.compose.runtime.rememberCoroutineScope()
 
@@ -540,9 +541,9 @@ private fun SheetContent(
             // `quoteState: QuoteState`. Pull out the response once via the
             // Quoted variant so the existing `quote?.let { … }` shape below
             // remains 1:1 with the prior implementation.
-            val quoteState by bookingVm.quoteState.collectAsState()
+            val quoteState by bookingVm.quoteState.collectAsStateWithLifecycle()
             val quote = (quoteState as? QuoteState.Quoted)?.response
-            val promoCodeState by bookingVm.promoCodeState.collectAsState()
+            val promoCodeState by bookingVm.promoCodeState.collectAsStateWithLifecycle()
             // Slide-button label has to match the receipt's grand total — the
             // ConfirmStep applies the express surcharge + best-discount math
             // client-side via BookingPricing.finalTotal(). Re-run the same

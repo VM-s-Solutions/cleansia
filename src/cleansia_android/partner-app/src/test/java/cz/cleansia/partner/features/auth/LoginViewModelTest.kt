@@ -8,7 +8,7 @@ import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.auth.AuthRepository
 import cz.cleansia.partner.data.auth.LoginOutcome
-import cz.cleansia.partner.features.auth.viewmodels.LoginViewModel
+import cz.cleansia.partner.features.auth.LoginViewModel
 import cz.cleansia.partner.testing.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.coVerify

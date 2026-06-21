@@ -1,7 +1,7 @@
 ---
 id: T-0269
 title: "E6 — collectAsStateWithLifecycle() sweep over screen/VM-flow collections (both apps; filtered real violations)"
-status: ready
+status: done
 size: M
 owner: —
 created: 2026-06-21

@@ -5,8 +5,8 @@ import cz.cleansia.partner.api.model.DashboardStatsDto
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.core.network.ApiResult
-import cz.cleansia.partner.features.earnings.viewmodels.EarningsSummaryUiState
-import cz.cleansia.partner.features.earnings.viewmodels.EarningsSummaryViewModel
+import cz.cleansia.partner.features.earnings.EarningsSummaryUiState
+import cz.cleansia.partner.features.earnings.EarningsSummaryViewModel
 import cz.cleansia.partner.testing.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.every

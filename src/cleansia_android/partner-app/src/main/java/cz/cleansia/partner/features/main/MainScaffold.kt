@@ -28,10 +28,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavBackStackEntry
 import cz.cleansia.core.snackbar.SnackbarInsetScope
 import cz.cleansia.partner.R
-import cz.cleansia.partner.features.dashboard.screens.DashboardScreen
-import cz.cleansia.partner.features.invoices.screens.InvoicesListScreen
-import cz.cleansia.partner.features.orders.screens.OrdersListScreen
-import cz.cleansia.partner.features.profile.screens.ProfileScreen
+import cz.cleansia.partner.features.dashboard.DashboardScreen
+import cz.cleansia.partner.features.invoices.InvoicesListScreen
+import cz.cleansia.partner.features.orders.OrdersListScreen
+import cz.cleansia.partner.features.profile.ProfileScreen
 import cz.cleansia.partner.navigation.NavRoute
 import kotlinx.coroutines.launch
 

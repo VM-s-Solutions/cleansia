@@ -10,8 +10,8 @@ import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.core.notifications.db.NotificationDao
 import cz.cleansia.partner.data.dashboard.DashboardRepository
 import cz.cleansia.partner.data.dashboard.DashboardSnapshot
-import cz.cleansia.partner.features.dashboard.viewmodels.DashboardUiState
-import cz.cleansia.partner.features.dashboard.viewmodels.DashboardViewModel
+import cz.cleansia.partner.features.dashboard.DashboardUiState
+import cz.cleansia.partner.features.dashboard.DashboardViewModel
 import cz.cleansia.partner.testing.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.every

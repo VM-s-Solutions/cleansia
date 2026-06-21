@@ -1,11 +1,11 @@
 ---
 id: T-0265
 title: Make email-validating ViewModels unit-testable off android.util.Patterns (Robolectric or extract)
-status: draft
+status: done
 size: S
 owner: pm
 created: 2026-06-17
-updated: 2026-06-17
+updated: 2026-06-21
 depends_on: []
 blocks: []
 stories: []

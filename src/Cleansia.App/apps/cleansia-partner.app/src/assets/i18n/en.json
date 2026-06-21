@@ -1033,7 +1033,6 @@
       "exchange_rate_must_be_positive": "Exchange rate must be a positive number"
     },
     "email": {
-      "sending_failed": "Email sending failed",
       "invalid_format": "Invalid email format",
       "invalid_email": "Invalid email address"
     },

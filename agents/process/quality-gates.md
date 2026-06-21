@@ -85,13 +85,32 @@ adds a dependency.
 
 ### Gate 8 — Mechanical checks pass (always; this is what makes the rules real)
 Deterministic beats diligent. Before a ticket reaches `done`, the **mechanical** checks for the
-touched stacks pass, and the Reviewer/PM record the result on the ticket as evidence:
-- **Backend touched:** `dotnet build` + `dotnet test` succeed (the same as CI `backend-ci.yml`).
-- **Frontend touched:** the affected app(s) `nx build` (and `nx lint`/`nx test` where wired) succeed.
+touched stacks pass, and the Reviewer/PM record the result on the ticket as evidence. These are the
+**same checks CI enforces** (so a green local check is a green PR), and CI is the structural safety
+net — the gate must not depend on a human remembering to run a suite:
+- **Backend touched:** `dotnet build` + **all three** test projects succeed — `Cleansia.Tests` (unit),
+  **`Cleansia.IntegrationTests` and `Cleansia.HostTests` (real Postgres via Testcontainers)**. The
+  integration/host suites are the ones that catch multi-tenant, FK, migration, and webhook bugs that
+  SQLite/mocked unit tests cannot — run them, do not skip them. CI `backend-ci.yml` runs all three as
+  explicit single-threaded steps.
+- **Frontend touched:** the affected app(s) `nx build` (production) **and `nx affected -t test`** (Jest)
+  succeed. `nx lint` runs but is currently **non-blocking** (pre-existing baseline debt) — make it
+  blocking once that baseline is cleaned. CI `frontend-ci.yml` runs build (blocking) + test (blocking)
+  + lint (informational).
+- **Android touched:** `:core`/`:partner-app`/`:customer-app` `compileDebugKotlin` + `testDebugUnitTest`
+  (JVM unit tests, no emulator) succeed. CI `android-ci.yml` runs these. **Kotlin source must stay
+  ASCII/UTF-8 clean — no BOM, no mojibake** (a past mass-edit corrupted encodings that `-q` compiles
+  tolerate; verify the diff is byte-clean).
 - **Any stack:** `node agents/tools/check-consistency.mjs --paths=<changed dirs>` reports **no new**
   violation. A pre-existing violation the change merely sits near is noted, not blocking — unless the
   ticket *is* its canonicalization ticket. See [`enforcement.md`](./enforcement.md) for the tool, the
   ~187-item baseline, and the rollout to fully-automatic CI gating.
+
+> **Verify-not-trust (the lesson that caught every shipped bug in the rework):** when work fans out
+> across agents, the orchestrator re-runs the **combined-tree** suites itself before accepting — it does
+> not trust per-agent "PASS" reports or per-lane isolation runs. Agents repeatedly reported "the tree
+> won't build" on a transient mid-flight state, and reported PASS where a real-DB run failed. The
+> authoritative gate is a clean rebuild of the merged tree, not the agent's word.
 
 A ticket whose mechanical checks fail cannot be `done`, regardless of how good the review reads. If a
 check is failing for a reason genuinely unrelated to the change (a flaky test, a pre-existing
@@ -110,6 +129,32 @@ entry on the ticket, and **block the dependent work** until the owner confirms i
   the TypeScript clients before dependent frontend/mobile work begins.
 
 A ticket that needs either and hasn't had it confirmed cannot reach `done`.
+
+### Batch the owner-only handoffs (don't interleave them mid-wave)
+The owner-only rule is sound, but interleaving each `dotnet ef` / regen mid-wave is lossy: it leaves
+the tree half-broken (a missing migration trips EF `PendingModelChangesWarning` on **every**
+integration test; a stale client breaks the build) and forces a slow per-step round-trip. Instead, a
+batch should produce **one MANUAL_STEPS bundle at the end** — "run these N migrations + these M
+regens, then tell me" — so there is a single fat handoff, not many thin ones. The PM collects the
+bundle from the batch's tickets; the orchestrator re-verifies once after the owner confirms the whole
+bundle.
+
+### After an NSwag regen, build **all three** apps before pushing
+Regenerating one client (e.g. an added required DTO field) commonly breaks an **untouched** consumer
+in another app. This drift surfaced repeatedly and was always the same shape (a stale `new
+LoginCommand({...})` missing a now-required field). The owner-only regen guardrail stays, but the
+follow-through is: **after any regen, run all three production builds** (`build:cleansia-{customer,
+partner,admin}`) and fix the consumers before pushing. The blocking frontend prod-build CI catches
+this too, but catching it locally avoids a red PR. (No dedicated client-drift CI job: the build gate
+already fails on the drift symptom.)
+
+### Match agent count to task risk (don't fan out mechanical work)
+Multi-agent fan-out earns its overhead on **wide, parallel, or risky** work (a many-file migration, a
+consistency sweep, anything needing independent verification). For **narrow, deterministic** work
+(delete N lines, rename a symbol, a one-line consumer fix), a single direct edit + the mechanical
+checks is faster and cheaper than dispatching a dev+reviewer — and avoids the rate-limit / collision
+cost of pushing parallelism past what the task needs. Heuristic: **fan out for breadth or risk; act
+directly for mechanical certainty.**
 
 ---
 

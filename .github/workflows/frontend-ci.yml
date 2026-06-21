@@ -11,7 +11,10 @@ jobs:
 
     steps:
       - name: Checkout code
+        # Nx 'affected' needs the merge-base with the target branch, so fetch history.
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -24,6 +27,29 @@ jobs:
         run: npm ci
         working-directory: ./src/Cleansia.App
 
+      # Derive the Nx affected base (the PR target branch) so lint/test only run on
+      # projects the change actually touches — fast, and still a real gate.
+      - name: Set Nx base
+        run: echo "NX_BASE=origin/${{ github.base_ref }}" >> "$GITHUB_ENV"
+
+      # Lint is INFORMATIONAL for now (continue-on-error): the lint baseline has
+      # pre-existing debt in several libs (module-boundary, a11y, unused-var), so making
+      # it blocking today would red every PR on debt the change didn't introduce. It still
+      # runs so regressions are visible in the PR. Flip to blocking once the baseline is
+      # clean (tracked as a follow-up lint-cleanup ticket).
+      - name: Lint (affected, non-blocking)
+        continue-on-error: true
+        run: npx nx affected -t lint --base="$NX_BASE" --head=HEAD --parallel=3
+        working-directory: ./src/Cleansia.App
+
+      # Jest unit tests — the suites (facades, components, parity guards, a11y) that
+      # CI was not running before. Affected-only keeps it quick.
+      - name: Unit tests (affected)
+        run: npx nx affected -t test --base="$NX_BASE" --head=HEAD --parallel=3 --ci
+        working-directory: ./src/Cleansia.App
+
+      # Production builds of all 3 apps stay an explicit gate (they catch generated-client
+      # / template / SSR breakage that unit tests miss — e.g. the NSwag regen drift).
       - name: Build Customer App
         run: npm run build:cleansia-customer
         working-directory: ./src/Cleansia.App

@@ -446,7 +446,8 @@ fun CleansiaNavHost(
             popExitTransition = popExit,
         ) {
             val vm: cz.cleansia.customer.features.profile.DeleteAccountViewModel = hiltViewModel()
-            val loading by vm.loading.collectAsState()
+            val deleteState by vm.deleteState.collectAsState()
+            val loading = deleteState is cz.cleansia.customer.ui.state.ActionState.Submitting
 
             // Read the current user's email from TokenStore so we can pre-fill the confirm-match check.
             // TODO(W3.3): refactor to VM injection — DeleteAccountViewModel

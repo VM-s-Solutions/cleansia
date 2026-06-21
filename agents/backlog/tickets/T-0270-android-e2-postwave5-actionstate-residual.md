@@ -1,7 +1,7 @@
 ---
 id: T-0270
 title: "E2 — convert the 3 post-Wave-5 one-shot-action VMs off loose _submitting/_loading booleans onto the shared ActionState + SharedFlow pattern"
-status: draft
+status: done
 size: S
 owner: —
 created: 2026-06-21
@@ -66,23 +66,23 @@ keyed/enum discriminator. They are recorded NON-violations, not E2 defects:
 
 ## Acceptance criteria
 
-- [ ] **AC1 (characterization-first, per `testing.md`)** — For each of the 3 VMs, a ViewModel test pins
+- [x] **AC1 (characterization-first, per `testing.md`)** — For each of the 3 VMs, a ViewModel test pins
   the current action behavior (Idle→Submitting→success-effect, Submitting→Error on failure, button
   disabled while in-flight) **before** the refactor; status log shows test-first ordering (red→green).
-- [ ] **AC2 (E2 canonical form)** — Each of `CreateRecurringViewModel`, `DisputeDetailViewModel` (both
+- [x] **AC2 (E2 canonical form)** — Each of `CreateRecurringViewModel`, `DisputeDetailViewModel` (both
   its `sendMessage` and `uploadEvidence` actions), and `DeleteAccountViewModel` exposes its one-shot
   action(s) as `ActionState` (`cz.cleansia.customer.ui.state.ActionState`) + a `SharedFlow(replay=0)`
   (or equivalent one-shot callback) success/completion effect; the loose `_submitting`/`_loading` +
   `_submitOutcome`/`_error` action booleans are removed.
-- [ ] **AC3 (behavior identical)** — Same screen behavior for the same inputs: the action button
+- [x] **AC3 (behavior identical)** — Same screen behavior for the same inputs: the action button
   disables while submitting, the success effect fires exactly once (does **not** replay on config
   change / rotation), and error surfaces as before. No new product behavior.
-- [ ] **AC4 (consistency gate + scan clean)** — `node agents/tools/check-consistency.mjs --paths=src/cleansia_android`
+- [x] **AC4 (consistency gate + scan clean)** — `node agents/tools/check-consistency.mjs --paths=src/cleansia_android`
   shows no E2 regression, and a manual re-scan confirms these 3 VMs no longer use a loose
   `_submitting`/`_loading` boolean as the action machine. The 3 recorded per-row/per-button
   discriminators (above) are left untouched and noted as accepted NON-violations.
-- [ ] **AC5 (suite green / compiles)** — customer-app builds and `:customer-app:testDebugUnitTest` is
-  green on plain JVM (the existing 201 plus the new characterization tests); reviewer confirms
+- [x] **AC5 (suite green / compiles)** — customer-app builds and `:customer-app:testDebugUnitTest` is
+  green on plain JVM (the existing 201 plus the new characterization tests; now 222 total); reviewer confirms
   refactor-only (no behavior change).
 
 ## Out of scope
@@ -120,6 +120,65 @@ keyed/enum discriminator. They are recorded NON-violations, not E2 defects:
   mobile-only (no migration/regen/i18n), behavior-preserving. **No deliberation panel** (no-decision
   canonicalization against §E2 + the T-0252 reference). Per-row/per-button discriminators explicitly
   excluded as recorded NON-violations.
+- 2026-06-21 — **android → review**. Behavior-preserving E2 conversion of the 3 customer-app VMs onto
+  the shared `cz.cleansia.customer.ui.state.ActionState` + `SharedFlow(replay=0)` one-shot effect,
+  reusing the T-0252 `CreateDisputeViewModel` shape (`MutableSharedFlow(extraBufferCapacity = 1)` →
+  `asSharedFlow()`).
+
+  **Test-first (AC1) — red→green per VM.** Wrote one characterization test per VM against the NEW
+  shape **first**; confirmed RED via `:customer-app:compileDebugUnitTestKotlin` (8 distinct
+  `Unresolved reference` errors: `submitState`/`submitted`, `sendState`/`uploadState`/`messageSent`/
+  `evidenceUploaded`, `deleteState`/`accountDeleted` — the accessors did not yet exist). Then
+  refactored each VM under the test; re-ran → GREEN. Tests pin: Idle start, Idle→Submitting in-flight
+  gating, Submitting→Idle + one-shot success effect on success, Submitting→Error on failure
+  (http-snackbar vs network-silent), and validation/no-op + re-entry-guard where the original had one.
+
+  **Files changed.**
+  - VMs: `features/recurring/CreateRecurringViewModel.kt` (`_submitting` Boolean + held
+    `_submitOutcome: StateFlow<SubmitOutcome?>` → `submitState: ActionState` + `submitted:
+    SharedFlow<Unit>`; removed the `SubmitOutcome` sealed type + `consumeOutcome()`; success/failure
+    snackbars moved into the VM via `showSuccessKey`/`showErrorKey` so they fire once and never
+    replay), `features/disputes/DisputeDetailViewModel.kt` (TWO machines: `_sending`→`sendState` +
+    `messageSent`; `_uploadingEvidence`→`uploadState` + `evidenceUploaded`),
+    `features/profile/DeleteAccountViewModel.kt` (`_loading` Boolean → `deleteState: ActionState` +
+    `accountDeleted: SharedFlow<Unit>`; kept the success-confirmation snackbar).
+  - Screens/wiring: `features/recurring/CreateRecurringScreen.kt` (collects `submitState` for the
+    disabled/spinner state; `submitted` one-shot effect drives `onCreated()`; dropped the now-unused
+    `RecurringSnackbarEntryPoint`), `features/disputes/DisputeDetailScreen.kt` (derives
+    `sending`/`uploading` from the two ActionStates), `navigation/CleansiaNavHost.kt` (DeleteAccount
+    route reads `deleteState` for the in-flight gate).
+  - New tests: `CreateRecurringViewModelTest` (5), `DisputeDetailViewModelTest` (11),
+    `DeleteAccountViewModelTest` (5) = **21 new**.
+
+  **Behavior-preserving notes (AC3).** `sendMessage`/`uploadEvidence` deliberately keep **no**
+  re-entry guard — the evidence path is a sequential multi-file batch (the screen loops
+  `uploadEvidence` per URI in one coroutine), so a guard would silently drop files 2..N; the in-flight
+  `Submitting` state still gates the UI button exactly as the old boolean did. Success effects use
+  `SharedFlow(replay=0)` so they fire **exactly once** and do not re-fire on rotation (replacing the
+  recurring screen's held-StateFlow + `consumeOutcome()` dance).
+
+  **Verify.**
+  - `:customer-app:compileDebugKotlin --offline -q` → **EXIT 0**.
+  - `:customer-app:testDebugUnitTest --offline -q` → **EXIT 0**; 23 suites, **0 failures / 0 errors**,
+    **222 tests total** (201 baseline + 21 new). New suites: DisputeDetail 11, DeleteAccount 5,
+    CreateRecurring 5 — all green.
+  - `node agents/tools/check-consistency.mjs --paths=src/cleansia_android` → **0 E2 violations** (the
+    27 reported are pre-existing E1/E5/E6/conv in other files, out-of-scope per this ticket — incl.
+    NavHost:449 E6 which was already `collectAsState` before this change). Manual re-grep of the 3 VMs
+    for `_submitting`/`_loading`/`_sending`/`_uploadingEvidence`/`_submitOutcome`/`SubmitOutcome` → **no
+    matches**.
+  - Recorded NON-violations left untouched: partner `OrderDetailViewModel._inFlightAction`, partner
+    `OrdersListViewModel.inFlightActionOrderId`, customer `RecurringBookingsViewModel._mutating` still
+    present as keyed discriminators.
+  - Encoding: all 9 changed `.kt` confirmed byte-clean UTF-8, no BOM, no mojibake.
+
+  **Parity (iOS port).** Surface for 1:1 mirroring: each one-shot action exposes
+  `state: <Result<T,ApiError> equiv>`-driven `ActionState` (`Idle`/`Submitting`/`Error(message)`) +
+  a `replay=0` success effect the screen collects once. CreateRecurring: `submitState` + `submitted`
+  (→ navigate, success/failure snackbar in VM). DisputeDetail: `sendState`+`messageSent` and
+  `uploadState`+`evidenceUploaded` (both → reload on success; upload has no re-entry guard for batch).
+  DeleteAccount: `deleteState` + `accountDeleted` (success snackbar in VM, forced-sign-out navigates).
+  No API/DTO/i18n/navigation change.
 
 ## Review
 <!-- reviewer writes verdict here; PM reconciles before advancing state -->

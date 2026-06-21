@@ -12,6 +12,43 @@ production handling real customers and real money" — not "does it compile."
 
 ## The gates
 
+### Gate 0 — Evidence discipline (every reviewing/finding agent: reviewer, security, optimizer, qa, and any ad-hoc audit/exploration)
+
+This is a **meta-gate**: it governs *how* every finding from every other gate is reported. It exists
+because automated finders **systematically over-report** — they pattern-match to a scary scenario and
+assert a defect without tracing the guard that already prevents it. This was observed on this very
+codebase: agents reported "the tree won't build" on a transient mid-flight state, and security/review
+passes flagged "bugs" that an existing `[Permission]` gate, idempotency key, or query filter already
+prevented. **A finder that emits confident false findings is worse than no finder, because its output
+gets trusted — and you may "fix" working code and introduce a real bug.**
+
+Therefore, every reported finding MUST satisfy ALL of:
+
+1. **REFUTED by default.** Treat your own hypothesis as false until you have *traced it through the
+   actual code*. If you cannot complete the trace, report it as a **question** ("is X guarded?"), not
+   a finding.
+2. **File:line evidence.** Cite the exact location of the defect AND the location of the guard you
+   confirmed is missing/insufficient. "Could happen if…" with no traced path is not a finding.
+3. **Concrete trigger.** State the exact input/sequence/request that reaches the bug. If you can't
+   describe the repro, you haven't confirmed it.
+4. **Guard check (most "bugs" die here).** Before reporting, look for the guard that already prevents
+   it. In this codebase the guard menu is: a `[Permission]`/`Policy.*` authz attribute; a deterministic
+   **idempotency key** / `ProcessedMessage` / `DbIdempotencyGuard` claim; a **FluentValidation** rule
+   (every `*Command` has a Validator, `Cascade.Stop`); an EF **query filter** (tenant scoping) or DB
+   **constraint** (unique index, FK Restrict); a **rate-limit window** (`[EnableRateLimiting]`); the
+   **UnitOfWork** commit-only-on-success pipeline; a domain **state-transition guard**
+   (`CanTransitionTo`); or a config/options default. If a guard exists, the finding is **REFUTED** —
+   say so and move on.
+5. **Severity honesty.** A blocker = exploitable / money-losing / illegal-state in production *as
+   written, reachable today* — not "in a hypothetical future topology." Downgrade or refute everything
+   else. (A genuine *latent* multi-tenant/go-live blocker is real, but label it as such — dormant on
+   the current single-tenant path, blocking before that capability ships — not as a live crash.)
+
+When the orchestrator consumes finder output, the posture is **verify before acting** — never "fix" on
+an unverified finding. A clean area reported honestly ("traced X/Y/Z, no defect, guard at file:line")
+is a valid, valuable result; manufacturing findings to look thorough is the failure mode this gate
+prevents. This is the report-side complement to the build-side **verify-not-trust** rule in Gate 8.
+
 ### Gate 1 — Conventions self-check (always)
 The change conforms to [`../knowledge/conventions.md`](../knowledge/conventions.md) and the
 relevant stack catalog (`patterns-backend.md` / `patterns-frontend.md` / `patterns-mobile.md`).

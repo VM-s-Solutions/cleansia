@@ -4,11 +4,32 @@ Any agent appends a question here when it needs an owner decision. The PM surfac
 entries at the next checkpoint. When the owner answers, the entry moves to `answered.md` and the
 decision is locked into the relevant artifact (ADR / story / charter) so it's never re-asked.
 
+## Triage discipline (no question stays open without an owner AND a deadline)
+
+`blocking: yes/no` alone is not enough — a "no" question with no deadline drifts silently and becomes a
+late surprise (this happened: a question sat open weeks past the wave it belonged to). So **every** open
+question carries:
+- **Owner** — who decides: `owner` for a business/legal/product/money call; an **agent** for a technical
+  default the owner only ratifies.
+- **Resolve-by** — a deadline bucket: **`pre-prod`** (must be answered before going to production) |
+  **`post-prod`** (a v1.x refinement) | **`backlog`** (nice-to-have). A question with no Resolve-by may
+  not stay in this file.
+
+The **Pre-prod blocking index** below lists *only* the `pre-prod` questions so nothing go-live-critical
+hides in a long file. The PM re-surfaces every still-open `pre-prod` question at every checkpoint, and
+each gets a line on the pre-PROD readiness checklist.
+
+### Pre-prod blocking index (the only questions that block go-live)
+<!-- PM keeps this list in sync: one line per OPEN question whose Resolve-by is `pre-prod`. -->
+- _(none currently open — Q-REFUND-01 is `pre-prod` but scoped to DE/AT/ES go-live only, not the CZ/SK/PL launch)_
+
 Format:
 
 ```
 ### Q-NNNN — [blocking: yes|no] <short title>
 - Raised by: <agent> (<ticket id>)
+- Owner: owner | <agent>
+- Resolve-by: pre-prod | post-prod | backlog
 - Date: YYYY-MM-DD
 - Question: <the precise decision needed>
 - Why it matters: <the lasting consequence of getting it wrong>

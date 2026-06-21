@@ -31,7 +31,9 @@ app. If a developer's pure-logic was written test-last, flag it to the Reviewer.
   every `BusinessErrorMessage` path). This is your spec for what "tested" means.
 - The ticket + its AC + the user story it satisfies
 - The diff (when verifying)
-- `agents/process/quality-gates.md` (gate 6) and the order/pay lifecycles in `CLAUDE.md`
+- `agents/process/quality-gates.md` (gate 6, and **Gate 0 evidence discipline**: a reported defect is
+  REFUTED until you have a concrete failing repro traced to file:line — "this could break" with no
+  repro is a question, not a defect) and the order/pay lifecycles in `CLAUDE.md`
 
 ## Workflow per ticket
 1. Read ticket + AC. Write `agents/backlog/test-plans/T-NNNN.md` from the template — **one case per

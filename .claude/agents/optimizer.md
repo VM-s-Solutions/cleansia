@@ -18,6 +18,10 @@ not micro-tweaks that hurt readability.
   `patterns-mobile.md`
 - `docs/architecture/database.md` for the schema/index picture
 - The ticket + AC
+- `agents/process/quality-gates.md` **Gate 0 (evidence discipline)** — a perf finding is REFUTED until
+  you can point at the actual N+1 / missing index / over-fetch with file:line and show the generated
+  query (or `EXPLAIN`) proves it. A theoretical slowdown with no measured/traced path is a note, not a
+  finding.
 
 ## Backend checklist
 - **N+1:** any `.ToList()` + `foreach` with another DB call → `Include()` or project into a DTO.

@@ -10,6 +10,40 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
+> ## 🟢 WAVE 7 — Android consistency debt (deferred E1/E2/E6/E7) — IN PROGRESS (planned 2026-06-21)
+> The whole ticketed backlog (Waves 0–6 + T-0197 mobile slice + T-0264/T-0265) is **DONE / merged to
+> `master`** (tip `b9e91cd8`, PR #81). Wave 7 clears the **last** engineering debt: the deferred Android
+> consistency-sweep rules **E1/E2/E6/E7** filed STILL-OPEN in `audits/consistency-violations.md`
+> (F13/F14/F15/F16). T-0197 closed **E5/ApiResult** only. All four are **Android-only, mobile-only,
+> behavior-preserving** — no go-live / money / correctness impact. **No new ADR** (E5/E7 ratified by
+> ADR-0011; E1/E2/E6 are §E rules). **No deliberation panel** (each is a mechanical canonicalization
+> against a ratified rule, no new behavior/decision → one-line no-decision note). Full plan + execution
+> lanes + the E6 real-vs-raw count: **`status/sprint-9.md`**. Branch: orchestrator's call. PM never merges.
+>
+> **Reconciliation (audit was stale — verified on `master`, NOT taken at face value):** **T-0252 (Wave 5)
+> already did the audit-named E1/E2 work** — partner `Dashboard`/`Earnings`/`OrderDetails` are sealed,
+> `Login` is already canonical (`LoginFormState` + shared `ActionState`), and customer
+> `CreateDispute`/`Membership`/`Profile` + partner ex-`OrderAction inFlight` all use the shared
+> `ActionState`. So **E2 = verify-and-close (zero impl work)** and **E1 = the un-named partner residual
+> only**. **E6 filtered real count ≈ 56 occ / ~30 files** (raw grep = 85/36; the audit's "~22" undercounts
+> current master; excluded ≈29 = `@Singleton` repo flows + NavHost + `:core` infra, which are correctly
+> plain `collectAsState()`).
+>
+> **CRITICAL serialization (orchestrator):** E7 (move partner files), E1 (refactor same partner VMs), E6
+> (edit same partner screens) **collide on the same partner files** → a single **strictly-serial
+> partner-files lane: T-0266 (E7) → T-0267 (E1) → T-0269 (E6)**. **T-0268 (E2 verify, no production edits)
+> runs concurrently with everything.** The **customer-app half of T-0269** is partner-disjoint and may run
+> early. Reviewer-per-developer on each; no security/optimizer gate. Detail + dispatch order: sprint-9 §2.
+>
+> | ID | Rule | Title | Size | Status | depends_on | Layers | sec | manual_step |
+> |----|------|-------|------|--------|-----------|--------|-----|-------------|
+> | **T-0266** | **E7** | Unify partner-app dir/naming → inline-singular `features/<name>/` (structural move, no logic) | M | **ready** | — | android | no | — |
+> | **T-0267** | **E1** | Convert residual partner flag-bag `*UiState` → sealed (`InvoiceDetails`+`OrderPhotos`; T-0252 did the rest) | M | **ready** | T-0266 | android | no | — |
+> | **T-0268** | **E2** | Verify-and-close shared `ActionState` coverage (already done by T-0252) — no production edits | S | **ready** | — | android | no | — |
+> | **T-0269** | **E6** | `collectAsStateWithLifecycle()` sweep — filtered ≈56 screen/VM-flow violations (both apps) | M | **ready** | T-0266, T-0267 | android | no | — |
+>
+> --- (mobile-slice + Wave-6 history below, kept for traceability) ---
+>
 > ## ✅ MOBILE SLICE — T-0197 `ApiResult<T>` migration COMPLETE (closed 2026-06-17, on `feature/wave-6`)
 > **T-0197 (mobile `ApiResult<T>`, the deferred ADR-first L epic) is DONE** — committed + pushed on
 > `feature/wave-6` in two phases: **Phase 1 = `dca897e1`** (ADR-0011 authored+accepted + the `:core` type

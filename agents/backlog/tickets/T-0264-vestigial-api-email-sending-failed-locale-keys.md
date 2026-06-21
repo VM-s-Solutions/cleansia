@@ -1,11 +1,11 @@
 ---
 id: T-0264
 title: Remove vestigial api.email.sending_failed locale keys (admin.app + partner.app, ×5 locales each)
-status: ready
+status: done
 size: S
 owner: pm
 created: 2026-06-15
-updated: 2026-06-15
+updated: 2026-06-21
 depends_on: [T-0262]
 blocks: []
 stories: []

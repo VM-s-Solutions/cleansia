@@ -1,5 +1,6 @@
 package cz.cleansia.partner.features.auth.viewmodels
 
+import cz.cleansia.core.validation.EmailValidator
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.snackbar.SnackbarController
@@ -65,7 +66,7 @@ class LoginViewModel @Inject constructor(
         if (state.email.isBlank()) {
             _uiState.update { it.copy(emailError = "Email is required") }
             hasError = true
-        } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(state.email).matches()) {
+        } else if (!EmailValidator.isValid(state.email)) {
             _uiState.update { it.copy(emailError = "Please enter a valid email") }
             hasError = true
         }

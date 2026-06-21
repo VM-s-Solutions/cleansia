@@ -1033,7 +1033,6 @@
       "exchange_rate_must_be_positive": "Směnný kurz musí být kladné číslo"
     },
     "email": {
-      "sending_failed": "Odeslání e-mailu se nezdařilo",
       "invalid_format": "Neplatný formát e-mailu",
       "invalid_email": "Neplatná e-mailová adresa"
     },

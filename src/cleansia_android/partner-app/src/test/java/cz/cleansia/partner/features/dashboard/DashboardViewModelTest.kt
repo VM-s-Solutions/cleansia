@@ -17,6 +17,7 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
@@ -101,16 +102,34 @@ class DashboardViewModelTest {
 
     @Test
     fun `user pull surfaces isUserRefreshing on the state`() = runTest {
+        // isUserRefreshing is transient — true only WHILE the user-pull refresh is in
+        // flight (the load() finally clears the flag once refresh() returns). Hold the
+        // repository call suspended so we can observe the in-flight state, then release.
+        val inFlight = CompletableDeferred<Unit>()
+        coEvery { dashboardRepository.refresh(any(), any()) } coAnswers {
+            inFlight.await()
+            null
+        }
+
         val vm = viewModel()
-        advanceUntilIdle()
+        // Collect uiState so the WhileSubscribed sharing is active — otherwise the
+        // combine upstream (which folds _userPullInFlight into isUserRefreshing) never
+        // runs. The real UI always has a collector; the sibling tests use Turbine too.
+        vm.uiState.test {
+            awaitItem() // initial projection
 
-        vm.refresh()
-        snapshotFlow.value = DashboardSnapshot(stats = stats, refreshing = true, loaded = true)
-        advanceUntilIdle()
+            vm.refresh()
+            snapshotFlow.value = DashboardSnapshot(stats = stats, refreshing = true, loaded = true)
+            advanceUntilIdle()
 
-        val state = vm.uiState.value
-        assertTrue(state is DashboardUiState.Loaded)
-        assertTrue((state as DashboardUiState.Loaded).isUserRefreshing)
+            // The pull is still in flight (refresh() is suspended), so the flag is set.
+            val state = expectMostRecentItem()
+            assertTrue(state is DashboardUiState.Loaded)
+            assertTrue((state as DashboardUiState.Loaded).isUserRefreshing)
+
+            inFlight.complete(Unit)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test

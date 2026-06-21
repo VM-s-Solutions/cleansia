@@ -2420,7 +2420,6 @@
       "exchange_rate_must_be_positive": "Výmenný kurz musí byť kladné číslo"
     },
     "email": {
-      "sending_failed": "Nepodarilo sa odoslať e-mail",
       "invalid_format": "Neplatný formát e-mailu",
       "invalid_email": "Neplatná e-mailová adresa"
     },

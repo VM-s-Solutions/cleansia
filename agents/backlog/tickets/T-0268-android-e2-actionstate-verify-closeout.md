@@ -122,6 +122,18 @@ Wave-7 consistency-debt sweep is complete and auditable. It edits **no productio
        gates the one-shot `deleteAccount()` action (milder: single boolean, no `_error`).
     These are behavior-correct today; converting them to `ActionState` is a scoped (test-first)
     refactor like T-0252, recommended as a follow-up consistency ticket. Not touched here.
+- 2026-06-21 — done (pm reconcile/close). **VERIFY-CLOSE — no production edits** (scan + gate-run +
+  audit-mark only; AC1–AC4 green for the F14-named set → F14/E2 cleared). The scan **surfaced 3
+  genuine residual E2 violations** that postdate the 2026-06-01 audit / T-0252 (Wave 5) — the loose
+  `_submitting`/`_loading`-style action machines in customer `CreateRecurringViewModel`,
+  `DisputeDetailViewModel`, `DeleteAccountViewModel` (detail above) — which are **out of F14's named
+  set** and therefore (per AC4 + the Wave-7 instruction) **NOT fixed here**. They are carried as the
+  scoped follow-up **T-0270** (behavior-preserving conversion to the canonical T-0252 `ActionState` +
+  `SharedFlow` pattern; draft, sprint 8). The per-row/per-button in-flight discriminators
+  (`OrderDetailsViewModel._inFlightAction`, `OrdersListViewModel.inFlightActionOrderId`,
+  `RecurringBookingsViewModel._mutating`) are **recorded judgment-call NON-violations** (a single
+  `ActionState` Idle/Submitting/Error cannot express which-row/which-button) and are explicitly **NOT**
+  in T-0270's scope.
 
 ## Review
 <!-- reviewer writes verdict here; PM reconciles before advancing state -->

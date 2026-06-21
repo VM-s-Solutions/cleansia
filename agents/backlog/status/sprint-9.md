@@ -6,10 +6,9 @@
   E1/E2/E6/E7** from the codebase audit. T-0197 resolved **E5/ApiResult** only; these four were filed
   STILL-OPEN in `audits/consistency-violations.md` (F13/F14/F15/F16). All four are **Android-only,
   mobile-only, behavior-preserving** — no go-live / money / correctness impact.
-- **Status:** **🟢 IN PROGRESS — tickets created `ready`, awaiting orchestrator execution.** Backlog-only
-  pass (no code, no commits).
-- **Branch:** orchestrator's call (suggest `feature/wave-7-android-consistency` cut from `master`
-  tip = `b9e91cd8`, PR #81). PM never merges.
+- **Status:** **✅ COMPLETE (closed 2026-06-21) — 4/4 done, committed + pushed.** See §close-out.
+- **Branch:** `feature/wave7-android-consistency` (cut from `master` tip = `b9e91cd8`, PR #81),
+  committed + pushed at **`9c1989e4`**. PR to `master` is the owner's call. PM never merges.
 
 ---
 
@@ -159,3 +158,63 @@ the tool's narrow regex.
 - On close, the reviewer/PM clears the **F13/F14/F15/F16-E7** entries in
   `audits/consistency-violations.md` and updates this doc with the per-ticket landing + the final
   confirmed E6 count.
+
+---
+
+## §close-out — Wave 7 COMPLETE (2026-06-21)
+
+**All 4 tickets done, committed + pushed at `9c1989e4` on `feature/wave7-android-consistency`. PR to
+`master` is the owner's call (PM never merges).**
+
+**Orchestrator-verified on the real combined Android tree:** `:core` + partner-app + customer-app **all
+compile**; **partner-app 37/37** (was 26 — T-0267 added 11 E1 characterization tests), **customer-app
+201/201**, **`:core` 13/13**; **92 changed files encoding-clean**; the **E6 re-grep confirms only the
+scoped exclusions remain** (the `@Singleton` repo flows, the two NavHosts, `:core`
+`GlobalSnackbarHost`).
+
+**Per-ticket landing:**
+- **T-0266 (E7) — done.** Partner `features/<name>/{screens,viewmodels,components}/` split collapsed to
+  inline-singular `features/<name>/` across the 9 split features; pure move + package/import rewrite
+  (proven 0 function-body diffs by blob-sha comparison), plus `Details`→`Detail` singular rename
+  (`OrderDetail*`/`InvoiceDetail*` + the `NavRoute` entries). Deliberate inline features
+  (`devices`/`main`/`payroll`) left as-is.
+- **T-0267 (E1) — done.** Residual partner page-state flag-bags `InvoiceDetailsViewModel` +
+  `OrderPhotosViewModel` → sealed `*UiState`; +11 characterization tests (partner suite 26→37). The
+  dual-spinner list VMs, form-section value-holders, and `OrderNotesViewModel` recorded as judgment-call
+  NON-violations (not churned).
+- **T-0268 (E2) — done (VERIFY-CLOSE, no production edits).** The audit-named F14 set confirmed canonical
+  on the shared `ActionState`; F14 cleared. Its AC1 scan **surfaced 3 genuine post-Wave-5 E2 residuals**
+  (`CreateRecurringViewModel`, `DisputeDetailViewModel`, `DeleteAccountViewModel` on loose
+  `_submitting`/`_loading` booleans) → carried as **T-0270**. The per-row/per-button discriminators
+  (`OrderDetailsViewModel._inFlightAction`, `OrdersListViewModel.inFlightActionOrderId`,
+  `RecurringBookingsViewModel._mutating`) are recorded NON-violations, NOT in T-0270's scope.
+- **T-0269 (E6) — done.** `collectAsStateWithLifecycle()` sweep over the filtered ≈56 in-scope
+  screen/VM-flow collections across both apps; the `@Singleton` repo flows / NavHosts / `:core` infra
+  left as plain `collectAsState()` (correct). Confirmed by re-grep beyond the tool's narrow regex.
+
+**Audit closed:** `audits/consistency-violations.md` — **F13 (E1), F14 (E2), F15 (E6), F16-E7
+RESOLVED**; F14 carries the **small T-0270 residual**. The whole consistency sweep (backend F1–F8 +
+frontend F10–F12 across Waves 1–5; Android §E across Waves 5–7) is now essentially complete.
+
+**Follow-up filed:** **T-0270** (S, `[android]`, draft, sprint 8) — the 3 post-Wave-5 one-shot-action VMs
+onto the canonical `ActionState` + `SharedFlow` pattern. Behavior-preserving, customer-app-only, no
+manual steps.
+
+### Program-level state at Wave-7 close — ALL WAVES (0–7) COMPLETE
+
+The entire audit-driven program backlog is **done**. What remains:
+- **Engineering follow-up — exactly ONE open ticket:** **T-0270** (E2 residual, S, draft, sprint 8;
+  behavior-preserving, non-blocking). Reconciliation at this close: **T-0263, T-0264, T-0265 are all
+  `done`** (their frontmatter confirms it). T-0263's admin nswag-regen WAS confirmed and the frontend
+  half shipped (34/34 + 12/12 green) — it is **not** blocked; the stale "blocked" framing and the
+  unmoved **Q-W3-3** were reconciled-closed here (Q-W3-3 → resolved in `questions/open.md`). T-0265 is the
+  fix that lets the partner suite run green on plain JVM (hence Wave 7's 37/37).
+- **Standing OWNER items (PM never runs):** (1) the two ops — **Mapbox key rotation** + **Functions app
+  restart**; (2) the queued **owner manual steps** still pending apply/merge — the Wave-6 **ef-migrations**
+  (T-0261 UserMembership index + T-0237 catalog FK; in PROD apply the new indexes `CONCURRENTLY` by hand);
+  (3) the **PRs** to `master` (`feature/wave-6` carrying ADR-0011 + the mobile slice, and
+  `feature/wave7-android-consistency`); (4) **optional product / external-config** — IMP-1 Google OAuth
+  (needs a Google Cloud project), BUG-22 email-badge CSS.
+
+**No owner manual steps were generated BY Wave 7 itself** — all four tickets were mobile-only,
+behavior-preserving (no nswag-regen, no ef-migration, no i18n change). **No open blocking questions.**

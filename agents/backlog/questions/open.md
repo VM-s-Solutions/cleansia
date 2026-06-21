@@ -199,7 +199,7 @@ _No open Wave-1 *planning* questions remain._
   earnings display.
 - Answer: _(owner fills in)_
 
-### Q-W3-3 — [blocking: partial — AC4 display only] PdfGenerationFailed / PdfGenerationError missing from admin invoice DTOs
+### Q-W3-3 — [RESOLVED 2026-06-21 — not blocking] PdfGenerationFailed / PdfGenerationError missing from admin invoice DTOs
 - Raised by: frontend (T-0171d)
 - Date: 2026-06-10
 - Question: AC4 requires the admin invoice list/detail to *show* `PdfGenerationFailed` +
@@ -217,7 +217,13 @@ _No open Wave-1 *planning* questions remain._
   failed-flag + error-message display lands as a follow-up once the DTO fields exist.
 - Wave-3 close (2026-06-12): converted to ticket **T-0238** (backend DTO fields + admin nswag-regen +
   UI display). Answering here or approving T-0238 are the same decision.
-- Answer: _(owner fills in)_
+- **RESOLVED 2026-06-21 (PM reconcile): approved-in-substance and SHIPPED.** Both halves landed `done`:
+  **T-0238** added `PdfGenerationFailed`/`PdfGenerationError` to `EmployeeInvoiceDto` +
+  `EmployeeInvoiceDetailDto` (+ mappers), the owner's admin **nswag-regen** was confirmed, and **T-0263**
+  shipped the failed-vs-pending admin render + error text + i18n ×5 (`nx test invoice-management` 34/34,
+  `data-protection` 12/12, admin prod build clean). T-0171d AC4 / T-0238 AC3–AC4 fully satisfied. This
+  entry is closed (the AC3 PM-closure step that flipped it slipped at the Wave-6 reconcile; reconciled now).
+- Answer: **owner approved the DTO addition (= approving T-0238); delivered.**
 
 ---
 

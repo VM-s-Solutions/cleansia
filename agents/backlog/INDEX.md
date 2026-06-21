@@ -10,37 +10,76 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
-> ## 🟢 WAVE 7 — Android consistency debt (deferred E1/E2/E6/E7) — IN PROGRESS (planned 2026-06-21)
-> The whole ticketed backlog (Waves 0–6 + T-0197 mobile slice + T-0264/T-0265) is **DONE / merged to
-> `master`** (tip `b9e91cd8`, PR #81). Wave 7 clears the **last** engineering debt: the deferred Android
-> consistency-sweep rules **E1/E2/E6/E7** filed STILL-OPEN in `audits/consistency-violations.md`
-> (F13/F14/F15/F16). T-0197 closed **E5/ApiResult** only. All four are **Android-only, mobile-only,
-> behavior-preserving** — no go-live / money / correctness impact. **No new ADR** (E5/E7 ratified by
-> ADR-0011; E1/E2/E6 are §E rules). **No deliberation panel** (each is a mechanical canonicalization
-> against a ratified rule, no new behavior/decision → one-line no-decision note). Full plan + execution
-> lanes + the E6 real-vs-raw count: **`status/sprint-9.md`**. Branch: orchestrator's call. PM never merges.
+> ## 🏁 ALL WAVES (0–7) COMPLETE — the entire audit-driven program backlog is DONE (2026-06-21)
+> **Every ticketed wave is closed.** Waves 0–6 + the T-0197 mobile slice + T-0264/T-0265 are merged to
+> `master` (tip `b9e91cd8`, PR #81). **Wave 7 (Android consistency debt) is now COMPLETE** — 4 tickets
+> done, committed + pushed (`9c1989e4`) on `feature/wave7-android-consistency`; PR to `master` is the
+> owner's call (PM never merges). The **consistency audit (`audits/consistency-violations.md`) is
+> essentially fully resolved** — all backend (F1–F8), frontend (F10–F12), and Android §E rules
+> (E1/E2/E5/E6/E7) closed.
 >
-> **Reconciliation (audit was stale — verified on `master`, NOT taken at face value):** **T-0252 (Wave 5)
-> already did the audit-named E1/E2 work** — partner `Dashboard`/`Earnings`/`OrderDetails` are sealed,
-> `Login` is already canonical (`LoginFormState` + shared `ActionState`), and customer
-> `CreateDispute`/`Membership`/`Profile` + partner ex-`OrderAction inFlight` all use the shared
-> `ActionState`. So **E2 = verify-and-close (zero impl work)** and **E1 = the un-named partner residual
-> only**. **E6 filtered real count ≈ 56 occ / ~30 files** (raw grep = 85/36; the audit's "~22" undercounts
-> current master; excluded ≈29 = `@Singleton` repo flows + NavHost + `:core` infra, which are correctly
-> plain `collectAsState()`).
+> **What remains across the WHOLE program — exactly ONE open engineering follow-up + standing owner items:**
+> - **Engineering follow-up (the ONLY open ticket):** **T-0270** (E2 residual — 3 post-Wave-5
+>   one-shot-action VMs onto `ActionState`; S, `[android]`, draft, sprint 8; behavior-preserving,
+>   non-blocking). **Every other follow-up is `done`:** T-0263 (admin failed-PDF render — the owner's
+>   admin nswag-regen WAS confirmed and the frontend half shipped: 34/34 + 12/12 green; Q-W3-3 now
+>   reconciled-closed), T-0264 (vestigial locale keys), T-0265 (Android email-validation test-env gap —
+>   why the partner suite is green on plain JVM) are all **`done`** on `master`/the Wave-7 branch.
+> - **Standing OWNER items (PM never runs these):** the two ops tasks — **Mapbox key rotation** +
+>   **Functions app restart**; the queued **owner manual steps** still pending merge/apply (the Wave-6
+>   ef-migrations: T-0261 UserMembership index + T-0237 catalog FK → in PROD apply the new indexes
+>   `CONCURRENTLY` by hand; and the two open PRs to `master`); and the **optional product / external-config
+>   items** (IMP-1 Google OAuth needs a Google Cloud project; BUG-22 email-badge CSS). Full consolidated
+>   owner list: `status/sprint-9.md` §close-out.
 >
-> **CRITICAL serialization (orchestrator):** E7 (move partner files), E1 (refactor same partner VMs), E6
-> (edit same partner screens) **collide on the same partner files** → a single **strictly-serial
-> partner-files lane: T-0266 (E7) → T-0267 (E1) → T-0269 (E6)**. **T-0268 (E2 verify, no production edits)
-> runs concurrently with everything.** The **customer-app half of T-0269** is partner-disjoint and may run
-> early. Reviewer-per-developer on each; no security/optimizer gate. Detail + dispatch order: sprint-9 §2.
+> --- (Wave-7 close detail below; mobile-slice + Wave-6 history kept for traceability) ---
+>
+> ## ✅ WAVE 7 COMPLETE — Android consistency debt (deferred E1/E2/E6/E7) (closed 2026-06-21)
+> **Wave 7 is COMPLETE — all work committed + pushed on `feature/wave7-android-consistency` (`9c1989e4`).**
+> PR to `master` is the owner's call (PM never merges). It cleared the **last** engineering debt: the
+> deferred Android consistency-sweep rules **E1/E2/E6/E7** filed STILL-OPEN in
+> `audits/consistency-violations.md` (F13/F14/F15/F16). T-0197 had closed **E5/ApiResult** only. All four
+> were **Android-only, mobile-only, behavior-preserving** — no go-live / money / correctness impact. **No
+> new ADR** (E5/E7 ratified by ADR-0011; E1/E2/E6 are §E rules). **No deliberation panel** (each a
+> mechanical canonicalization against a ratified rule → one-line no-decision note). Plan + execution
+> lanes + the E6 real-vs-raw count: **`status/sprint-9.md`**.
+>
+> **Orchestrator-verified on the real Android tree:** `:core` + partner-app + customer-app **all compile**;
+> **partner-app 37/37** (was 26 — T-0267 added 11 E1 characterization tests), **customer-app 201/201**,
+> **`:core` 13/13**; **92 changed files encoding-clean**; the **E6 re-grep confirms only the scoped
+> exclusions remain** (Singleton-repo flows, the 2 NavHosts, `:core` `GlobalSnackbarHost`).
+>
+> **DONE (4):** **T-0266** (E7 — partner dir/naming collapsed to inline-singular `features/<name>/`; pure
+> move + package/import rewrite, 0 body diffs; `Details`→`Detail` singular rename) · **T-0267** (E1 —
+> residual partner page-state flag-bags `InvoiceDetailsViewModel` + `OrderPhotosViewModel` → sealed
+> `*UiState`; +11 characterization tests) · **T-0268** (E2 — **verify-and-close, NO production edits**;
+> the audit-named F14 set confirmed canonical on the shared `ActionState`, F14 cleared — **surfaced 3
+> genuine post-Wave-5 E2 residuals → carried as T-0270**) · **T-0269** (E6 —
+> `collectAsStateWithLifecycle()` sweep over the filtered ≈56 screen/VM-flow collections across both apps).
+>
+> **Audit closed:** `audits/consistency-violations.md` — **F13 (E1), F14 (E2), F15 (E6), F16-E7
+> RESOLVED**; F14 carries the **small T-0270 residual**. The consistency sweep is essentially complete.
+>
+> **NEW follow-up filed:** **T-0270** (S, `[android]`, draft, sprint 8) — convert the 3 one-shot-action
+> VMs that postdate T-0252 (`CreateRecurringViewModel`, `DisputeDetailViewModel`, `DeleteAccountViewModel`)
+> off loose `_submitting`/`_loading` booleans onto the shared `ActionState` + `SharedFlow` pattern.
+> Behavior-preserving. The per-row/per-button in-flight discriminators
+> (`OrderDetailsViewModel._inFlightAction`, `OrdersListViewModel.inFlightActionOrderId`,
+> `RecurringBookingsViewModel._mutating`) are **recorded NON-violations** (a single `ActionState` can't
+> express which-row/which-button) — **NOT** in T-0270's scope.
 >
 > | ID | Rule | Title | Size | Status | depends_on | Layers | sec | manual_step |
 > |----|------|-------|------|--------|-----------|--------|-----|-------------|
-> | **T-0266** | **E7** | Unify partner-app dir/naming → inline-singular `features/<name>/` (structural move, no logic) | M | **ready** | — | android | no | — |
-> | **T-0267** | **E1** | Convert residual partner flag-bag `*UiState` → sealed (`InvoiceDetails`+`OrderPhotos`; T-0252 did the rest) | M | **ready** | T-0266 | android | no | — |
-> | **T-0268** | **E2** | Verify-and-close shared `ActionState` coverage (already done by T-0252) — no production edits | S | **ready** | — | android | no | — |
-> | **T-0269** | **E6** | `collectAsStateWithLifecycle()` sweep — filtered ≈56 screen/VM-flow violations (both apps) | M | **ready** | T-0266, T-0267 | android | no | — |
+> | **T-0266** | **E7** | Unify partner-app dir/naming → inline-singular `features/<name>/` (structural move, no logic) | M | **done ✅** `9c1989e4` | — | android | no | — |
+> | **T-0267** | **E1** | Convert residual partner flag-bag `*UiState` → sealed (`InvoiceDetails`+`OrderPhotos`; T-0252 did the rest) | M | **done ✅** `9c1989e4` | T-0266✓ | android | no | — |
+> | **T-0268** | **E2** | Verify-and-close shared `ActionState` coverage (done by T-0252) — no production edits; surfaced T-0270 | S | **done ✅** `9c1989e4` (verify-close) | — | android | no | — |
+> | **T-0269** | **E6** | `collectAsStateWithLifecycle()` sweep — filtered ≈56 screen/VM-flow violations (both apps) | M | **done ✅** `9c1989e4` | T-0266✓, T-0267✓ | android | no | — |
+>
+> **Wave-7 close follow-up (filed 2026-06-21):**
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
+> |----|-------|------|--------|-----------|--------|-----|-------------|--------|
+> | **T-0270** | Convert 3 post-Wave-5 one-shot-action VMs (`CreateRecurring`/`DisputeDetail`/`DeleteAccount`) off loose `_submitting`/`_loading` booleans → shared `ActionState` + `SharedFlow` | S | **draft** (sprint 8) | — | android | no | — | T-0268 E2 verify-close AC4 residual |
 >
 > --- (mobile-slice + Wave-6 history below, kept for traceability) ---
 >

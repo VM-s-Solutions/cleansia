@@ -14,6 +14,14 @@ convertible to a canonicalization ticket. Severity reflects user/maintenance/cor
 not effort. **None of these block launch on their own**, but they are the spaghetti you asked to
 remove before PROD.
 
+> **STATUS (2026-06-21) — the consistency sweep is essentially COMPLETE.** Backend F1–F8 + frontend
+> F10–F12 were canonicalized across Waves 1–5 (T-0196 epic and its children + the long tail). The
+> Android §E rules are now all resolved: **E5/ApiResult (F16) — T-0197**; **E1 (F13) — T-0252 + T-0267**;
+> **E2 (F14) — T-0252, verified by T-0268**; **E6 (F15) — T-0269**; **E7 (F16) — T-0266**. The only
+> carried item is a **SMALL E2 residual — T-0270** (3 one-shot-action VMs that postdate this audit and
+> T-0252; behavior-correct today, queued for a canonicalization follow-up). F9 (soft-delete) shipped as
+> its own architect-owned ADR+sweep in Wave 1. See each finding below for the per-rule disposition.
+
 ---
 
 ## Backend — paged queries
@@ -103,6 +111,16 @@ remove before PROD.
   `DashboardViewModel` (single `data class` with multiple booleans → impossible states possible).
 - **Rule:** E1. **Fix:** sealed `*UiState` (Loading/Error/Loaded).
 - **Proposed ticket:** `Convert partner-app flag-bag UiStates to sealed states` · M · [android]
+- **RESOLVED (E1) — T-0252 (Wave 5) + T-0267 (Wave 7, 2026-06-21).** The four audit-named partner VMs
+  (`Dashboard`/`Earnings`/`OrderDetails` sealed `*UiState`; `Login` already canonical via
+  `LoginFormState` + shared `ActionState` — the "Login is a flag-bag" line was stale) were done by
+  T-0252. The residual partner page-state flag-bags T-0252 did not name — `InvoiceDetailsViewModel`
+  and `OrderPhotosViewModel` — were converted to sealed `*UiState` by **T-0267**. Recorded
+  judgment-call NON-violations (NOT converted, by design): the dual-spinner pull-to-refresh list VMs
+  (`OrdersList`/`InvoicesList`/`RegistrationLock`), the partner form-section value-holder `*UiState`
+  (`PersonalSection`/`BankSection`/`Emergency`/`Identification`/`Documents`/`AddressSection`/`Profile`/
+  `Register`/`ForgotPassword`/`ConfirmEmail`/`Settings`), and `OrderNotesViewModel` (an §E2
+  action-effect holder, not §E1 page-state). **F13 closed.**
 
 ### F14 — loose action booleans instead of `ActionState` [minor] [type: spaghetti]
 - **Where:** customer `CreateDisputeViewModel`, `MembershipViewModel`, `ProfileViewModel` (loose
@@ -116,17 +134,33 @@ remove before PROD.
   discriminator layered on top (§E2 judgment-call non-issue). Gate: `check-consistency.mjs` mobile →
   **0 E2 violations**; the three T-0252 E2 VM tests green (`CreateDisputeViewModelTest` 8/8,
   `MembershipViewModelTest` 10/10, `ProfileViewModelTest` 9/9). **F14 closed.**
-- **NOTE (separate follow-up, NOT F14):** three one-shot ACTION paths shipped AFTER this audit still
-  use a loose `_submitting`-style boolean (genuine but out of F14's named set, surfaced by T-0268):
+- **SMALL RESIDUAL — carried as T-0270 (NOT F14, postdates this audit + T-0252):** three one-shot
+  ACTION paths shipped AFTER this audit still use a loose `_submitting`/`_loading`-style boolean as the
+  action machine (genuine but out of F14's named set, surfaced by T-0268's AC1 scan):
   `recurring/CreateRecurringViewModel` (`_submitting` + `_submitOutcome` StateFlow),
   `disputes/DisputeDetailViewModel` (`_sending`, `_uploadingEvidence`),
-  `profile/DeleteAccountViewModel` (`_loading` gating `deleteAccount()`). Recommend a scoped
-  `Standardize post-Wave-5 one-shot actions on ActionState` follow-up — not folded into F14.
+  `profile/DeleteAccountViewModel` (`_loading` gating `deleteAccount()`). Filed as **T-0270**
+  (`Standardize post-Wave-5 one-shot actions on ActionState`, S, `[android]`, draft, sprint 8) —
+  behavior-preserving conversion to the canonical T-0252 `ActionState` + `SharedFlow` pattern; NOT
+  folded into F14. The per-row/per-button in-flight discriminators
+  (`OrderDetailsViewModel._inFlightAction`, `OrdersListViewModel.inFlightActionOrderId`,
+  `RecurringBookingsViewModel._mutating`) are **recorded NON-violations** (a single `ActionState` can't
+  express which-row/which-button) and are out of T-0270's scope.
 
 ### F15 — `collectAsState()` instead of lifecycle-aware [major] [type: bug/leak]
 - **Where:** `customer/features/recurring/RecurringBookingsScreen.kt:77`
 - **Rule:** E6. **Fix:** `collectAsStateWithLifecycle()`.
 - **Proposed ticket:** `Fix RecurringBookingsScreen state collection (lifecycle)` · S · [android]
+- **RESOLVED (E6) — T-0269 (Wave 7, 2026-06-21).** The audit named only `RecurringBookingsScreen` and
+  scoped "~22"; the real **filtered** count (screen/composable collections of a VM-owned lifecycle
+  flow) was **≈56 occ / ~30 files** across both apps (raw `grep collectAsState()` = 85/36). T-0269 swept
+  every in-scope screen-body VM-flow collection to `collectAsStateWithLifecycle()` across customer-app
+  and partner-app (the latter on the post-T-0266 settled paths). **Correctly excluded NON-violations
+  (left as plain `collectAsState()`):** `@Singleton` app-scoped repository flows collected in screens
+  (`loyaltyRepo`/`referralRepo`/`orderRepo`/`catalogRepo`/`membership` — the flow outlives the screen),
+  the two NavHost-level collections (`CleansiaNavHost`, `PartnerNavHost`), and the `:core`
+  `GlobalSnackbarHost` infra. The dev confirmed by re-grep (not only the tool's narrow
+  `viewModel`/`vm`-receiver regex). **F15 closed.**
 
 ### F16 — divergent repo contract (`T?` vs `ApiResult<T>`) + dir/naming split [major] [type: spaghetti]
 - **Where:** customer-app repos returned `T?` (snackbar in repo); partner-app returns `ApiResult<T>`
@@ -140,14 +174,19 @@ remove before PROD.
   referral, recurring, user, settings, + the remaining repo). Orchestrator-verified: `:core` + partner-app
   + customer-app all compile, customer-app 201/201 unit tests pass, **`check-consistency mobile` reports
   ZERO E5 violations for customer-app**, all 64 changed files encoding-clean. **E5 closed.**
-- **STILL OPEN — separate rules, NOT resolved by T-0197 (their own future tickets):**
-  - **E1/E2 (sealed `*UiState` + shared `ActionState`)** — see F13/F14 below; T-0197 deliberately did not
-    touch UiState shape (its scope was only the repo → VM error channel).
-  - **E6 (`collectAsStateWithLifecycle()`)** — 22 instances of `collectAsState()` remain across the mobile
-    screens; see F15.
-  - **E7 (dir/naming — inline-singular `features/<name>/` convention)** — still its own ticket.
+- **E7 — RESOLVED (T-0266, Wave 7, 2026-06-21).** The partner-app dir/naming divergence
+  (`features/<name>/{screens,viewmodels,components}/` split across `auth`/`dashboard`/`earnings`/
+  `invoices`/`notifications`/`onboarding`/`orders`/`profile`/`settings`) was collapsed to the
+  customer-app inline-singular `features/<name>/` convention — a pure structural move + package/import
+  rewrite (proven move/rename/package-only, 0 function-body diffs by blob-sha comparison), plus
+  renaming the surviving `Details` plural-drift to singular (`OrderDetail*`/`InvoiceDetail*`). Deliberate
+  inline features (`devices`/`main`/`payroll`) and sub-namespaces left as-is. **E7 closed.**
+- **The other deferred §E rules, now ALSO resolved in Wave 7 (see F13/F14/F15):** **E1 — RESOLVED**
+  (T-0252 + T-0267, F13). **E6 — RESOLVED** (T-0269, F15). **E2 — RESOLVED** (T-0252, verified +
+  closed by T-0268, F14) **with a SMALL residual carried as T-0270** (3 post-Wave-5 one-shot-action VMs
+  on loose `_submitting`/`_loading` booleans — see the F14 note).
 - **Proposed ticket:** ~~`ADR + migrate customer-app repos to ApiResult<T> and unify mobile structure`~~
-  **DONE for the E5/ApiResult half (T-0197); E7 structure unification remains a separate ticket.**
+  **DONE — E5/ApiResult (T-0197) + E7 structure (T-0266). All §E mobile-consistency rules resolved.**
 
 ---
 

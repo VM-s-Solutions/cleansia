@@ -55,7 +55,7 @@ import java.util.Locale
 
 /**
  * Read-only period pay breakdown — matches the EarningsSummaryScreen /
- * InvoiceDetailsScreen visual language (flat 16dp-rounded surface cards,
+ * InvoiceDetailScreen visual language (flat 16dp-rounded surface cards,
  * 44dp IconHalo, primary micro-labels). No settlement actions by design:
  * the cleaner sees their own numbers, settlement lives admin-side.
  */

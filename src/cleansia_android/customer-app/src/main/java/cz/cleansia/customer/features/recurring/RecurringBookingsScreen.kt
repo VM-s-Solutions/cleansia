@@ -37,7 +37,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,6 +49,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.recurring.RecurrenceFrequency
 import cz.cleansia.customer.core.recurring.RecurringBookingTemplateDto
@@ -74,10 +74,10 @@ fun RecurringBookingsScreen(
     onCreateNew: () -> Unit = {},
     viewModel: RecurringBookingsViewModel = hiltViewModel(),
 ) {
-    val templates by viewModel.templates.collectAsState()
-    val loading by viewModel.loading.collectAsState()
-    val loaded by viewModel.loaded.collectAsState()
-    val mutating by viewModel.mutating.collectAsState()
+    val templates by viewModel.templates.collectAsStateWithLifecycle()
+    val loading by viewModel.loading.collectAsStateWithLifecycle()
+    val loaded by viewModel.loaded.collectAsStateWithLifecycle()
+    val mutating by viewModel.mutating.collectAsStateWithLifecycle()
 
     var pendingDeleteId by remember { mutableStateOf<String?>(null) }
 

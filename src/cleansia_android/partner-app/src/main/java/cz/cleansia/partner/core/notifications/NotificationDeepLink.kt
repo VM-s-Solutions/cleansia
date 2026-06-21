@@ -5,7 +5,7 @@ import cz.cleansia.partner.navigation.NavRoute
 
 /**
  * Bidirectional bridge between FCM data payloads and the partner app's typed
- * Compose-Nav routes (`NavRoute.OrderDetails`, etc.). Mirrors the customer-app
+ * Compose-Nav routes (`NavRoute.OrderDetail`, etc.). Mirrors the customer-app
  * object; the only difference is the route types it resolves to.
  *
  * Why serialize through Intent extras instead of passing a route object
@@ -56,7 +56,7 @@ object NotificationDeepLink {
         "order.cancelled",
         "order.on_the_way",
         "dispute.reply",
-        -> orderId?.takeIf { it.isNotBlank() }?.let { NavRoute.OrderDetails(orderId = it) }
+        -> orderId?.takeIf { it.isNotBlank() }?.let { NavRoute.OrderDetail(orderId = it) }
         // Digest — no single order to open. Land on the bottom-nav
         // scaffold (Main). NavRoute.Orders is a nested tab inside Main,
         // not a root destination, so navigating to it directly throws

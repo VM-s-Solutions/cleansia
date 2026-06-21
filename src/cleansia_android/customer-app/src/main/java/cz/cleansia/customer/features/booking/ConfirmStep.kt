@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
 import cz.cleansia.core.ui.components.CleansiaTextField
 import cz.cleansia.customer.ui.theme.selectionTint
@@ -82,9 +83,9 @@ fun ConfirmStep(
     val bookingVm: BookingViewModel = androidx.hilt.navigation.compose.hiltViewModel()
     // Wave 4 — sealed [QuoteState] replaces nullable quote. Unwrap once so the
     // catalog-sum fallback below keeps its existing single null-coalesce shape.
-    val quoteState by bookingVm.quoteState.collectAsState()
+    val quoteState by bookingVm.quoteState.collectAsStateWithLifecycle()
     val quote = (quoteState as? QuoteState.Quoted)?.response
-    val promoState by bookingVm.promoCodeState.collectAsState()
+    val promoState by bookingVm.promoCodeState.collectAsStateWithLifecycle()
     // [totalPrice] is the raw subtotal — what the backend's PriceMatchesAsync
     // validates against, so submission must echo it unchanged. Discounts are
     // applied client-side here for display.

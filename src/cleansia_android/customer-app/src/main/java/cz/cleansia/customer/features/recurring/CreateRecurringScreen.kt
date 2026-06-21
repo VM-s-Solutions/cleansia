@@ -69,6 +69,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.recurring.RecurrenceFrequency
 import cz.cleansia.customer.features.addresses.AddressManagerSheet
@@ -106,9 +107,9 @@ fun CreateRecurringScreen(
     onCreated: () -> Unit,
     viewModel: CreateRecurringViewModel = hiltViewModel(),
 ) {
-    val state by viewModel.state.collectAsState()
-    val submitting by viewModel.submitting.collectAsState()
-    val outcome by viewModel.submitOutcome.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val submitting by viewModel.submitting.collectAsStateWithLifecycle()
+    val outcome by viewModel.submitOutcome.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
     // TODO(W3.3): refactor to VM injection — pull snackbar into

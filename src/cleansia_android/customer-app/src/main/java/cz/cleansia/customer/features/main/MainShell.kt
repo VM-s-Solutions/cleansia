@@ -36,7 +36,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,6 +44,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -138,7 +138,7 @@ fun MainShell(
     // on the singleton UserRepository so EditProfileScreen can read the same
     // snapshot without a second call.
     val profileVm: ProfileViewModel = hiltViewModel()
-    val currentUser by profileVm.currentUser.collectAsState()
+    val currentUser by profileVm.currentUser.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) {
         if (currentUser == null) profileVm.refresh()
     }

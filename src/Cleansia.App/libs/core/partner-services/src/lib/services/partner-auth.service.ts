@@ -18,7 +18,6 @@ import {
   RegisterCommand,
   RegisterEmployeeCommand,
   ResendConfirmationEmailCommand,
-  UserProfile,
 } from '../client/partner-client';
 
 @Injectable({
@@ -46,10 +45,7 @@ export class PartnerAuthService {
     rememberMe = false
   ): Observable<JwtTokenResponse> {
     return this.partnerClient.authClient.login(
-      // trustedDeviceToken stays undefined: the trusted-device lockout bypass
-      // reads the raw refresh token server-side from the HttpOnly cookie
-      // (cookie wins, never JS-readable) — the browser must not supply it.
-      new PartnerLoginCommand({ email, password, rememberMe, trustedDeviceToken: undefined })
+      new PartnerLoginCommand({ email, password, rememberMe })
     );
   }
 
@@ -151,13 +147,7 @@ export class PartnerAuthService {
     // and required profile, so we send placeholders here that satisfy the
     // generated TS contract. The refresh token itself is in the cookie.
     return this.partnerClient.authClient
-      .refreshToken(
-        new RefreshTokenCommand({
-          token: '',
-          requiredProfile: UserProfile.Employee,
-          requiredAudience: undefined,
-        })
-      )
+      .refreshToken(new RefreshTokenCommand({ token: '' }))
       .pipe(
         tap((authResult) => this.setSession(authResult)),
         map(() => true)

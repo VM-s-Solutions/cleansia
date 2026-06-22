@@ -13980,7 +13980,6 @@ export class AdminLoginCommand implements IAdminLoginCommand {
     email!: string | undefined;
     password!: string | undefined;
     rememberMe!: boolean;
-    trustedDeviceToken!: string | undefined;
 
     constructor(data?: IAdminLoginCommand) {
         if (data) {
@@ -13996,7 +13995,6 @@ export class AdminLoginCommand implements IAdminLoginCommand {
             this.email = Data["email"];
             this.password = Data["password"];
             this.rememberMe = Data["rememberMe"];
-            this.trustedDeviceToken = Data["trustedDeviceToken"];
         }
     }
 
@@ -14012,7 +14010,6 @@ export class AdminLoginCommand implements IAdminLoginCommand {
         data["email"] = this.email;
         data["password"] = this.password;
         data["rememberMe"] = this.rememberMe;
-        data["trustedDeviceToken"] = this.trustedDeviceToken;
         return data;
     }
 }
@@ -14021,7 +14018,6 @@ export interface IAdminLoginCommand {
     email: string | undefined;
     password: string | undefined;
     rememberMe: boolean;
-    trustedDeviceToken: string | undefined;
 }
 
 export class AdminOverrideOrderStatusCommand implements IAdminOverrideOrderStatusCommand {
@@ -24824,8 +24820,6 @@ export enum ReferralStatus {
 
 export class RefreshTokenCommand implements IRefreshTokenCommand {
     token!: string | undefined;
-    requiredProfile!: UserProfile;
-    requiredAudience!: string | undefined;
 
     constructor(data?: IRefreshTokenCommand) {
         if (data) {
@@ -24839,8 +24833,6 @@ export class RefreshTokenCommand implements IRefreshTokenCommand {
     init(Data?: any) {
         if (Data) {
             this.token = Data["token"];
-            this.requiredProfile = Data["requiredProfile"];
-            this.requiredAudience = Data["requiredAudience"];
         }
     }
 
@@ -24854,16 +24846,12 @@ export class RefreshTokenCommand implements IRefreshTokenCommand {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["token"] = this.token;
-        data["requiredProfile"] = this.requiredProfile;
-        data["requiredAudience"] = this.requiredAudience;
         return data;
     }
 }
 
 export interface IRefreshTokenCommand {
     token: string | undefined;
-    requiredProfile: UserProfile;
-    requiredAudience: string | undefined;
 }
 
 export enum RefundReason {
@@ -28100,12 +28088,6 @@ export interface IUserConsentDto {
     grantedAt: Date | undefined;
     withdrawnAt: Date | undefined;
     createdOn: Date;
-}
-
-export enum UserProfile {
-    Customer = 1,
-    Employee = 2,
-    Administrator = 100,
 }
 
 function formatDate(d: Date) {

@@ -13,7 +13,6 @@ import {
   JwtTokenResponse,
   LogoutCommand,
   RefreshTokenCommand,
-  UserProfile,
 } from '../client/admin-client';
 
 @Injectable({
@@ -40,15 +39,7 @@ export class AdminAuthService {
     rememberMe = false
   ): Observable<JwtTokenResponse> {
     return this.adminClient.adminAuthClient.login(
-      // trustedDeviceToken stays undefined: the trusted-device lockout bypass
-      // reads the raw refresh token server-side from the HttpOnly cookie
-      // (cookie wins, never JS-readable) — the browser must not supply it.
-      new AdminLoginCommand({
-        email,
-        password,
-        rememberMe,
-        trustedDeviceToken: undefined,
-      })
+      new AdminLoginCommand({ email, password, rememberMe })
     );
   }
 
@@ -69,13 +60,7 @@ export class AdminAuthService {
 
   refreshSession(): Observable<boolean> {
     return this.adminClient.adminAuthClient
-      .refreshToken(
-        new RefreshTokenCommand({
-          token: '',
-          requiredProfile: UserProfile.Administrator,
-          requiredAudience: undefined,
-        })
-      )
+      .refreshToken(new RefreshTokenCommand({ token: '' }))
       .pipe(
         tap((authResult) => this.setSession(authResult)),
         map(() => true)

@@ -20,6 +20,16 @@ or break tenant isolation — and block it until fixed. Name the **concrete** ri
 - `agents/backlog/security/` — your prior findings & checklists
 
 ## Workflow per security-touching ticket
+
+**Gate 0 (evidence discipline) governs every finding you raise** — security findings over-report the
+worst. Before you call anything a vulnerability: trace it to file:line, name the concrete exploit
+trigger (the exact request/sequence), and confirm no existing guard already prevents it (a
+`[Permission]`/`Policy.*` gate, a query filter that tenant-scopes the read, an idempotency claim, a
+validator, a DB constraint, a rate-limit window). **Most "vulns" die at the guard check.** If you
+can't complete the exploit trace, it's a question, not a FAIL. A FAIL means exploitable *as written,
+reachable today* — clearly mark a latent multi-tenant/go-live risk as latent, not as a live breach.
+See `agents/process/quality-gates.md` Gate 0.
+
 Walk S1–S10 against the diff and report each applicable item PASS/FAIL in the ticket's `## Review`
 section (and append serious findings to `agents/backlog/security/<area>.md`):
 

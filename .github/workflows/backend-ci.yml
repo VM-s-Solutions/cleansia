@@ -26,6 +26,30 @@ jobs:
         run: dotnet build Cleansia.Api.sln --configuration Release --no-restore
         working-directory: ./src
 
-      - name: Run tests
-        run: dotnet test Cleansia.Api.sln --configuration Release --no-build --verbosity normal
+      # Fast unit tests first so the pipeline fails quickly on a logic regression
+      # without waiting on the container-backed suites below.
+      - name: Unit tests (Cleansia.Tests)
+        run: >-
+          dotnet test Cleansia.Tests/Cleansia.Tests.csproj
+          --configuration Release --no-build --verbosity normal
+          -- xUnit.parallelizeTestCollections=false
+        working-directory: ./src
+
+      # Integration + host tests spin a real Postgres via Testcontainers (Docker is
+      # available on ubuntu-latest). These are the suites that catch the multi-tenant /
+      # FK / migration / webhook bugs that unit tests (SQLite/mocked) cannot. Run
+      # single-threaded — the metrics MeterListener and the shared Postgres container
+      # are sensitive to collection-parallel runs.
+      - name: Integration tests (real Postgres)
+        run: >-
+          dotnet test Cleansia.IntegrationTests/Cleansia.IntegrationTests.csproj
+          --configuration Release --no-build --verbosity normal
+          -- xUnit.parallelizeTestCollections=false
+        working-directory: ./src
+
+      - name: Host tests (authz/isolation, real Postgres)
+        run: >-
+          dotnet test Cleansia.HostTests/Cleansia.HostTests.csproj
+          --configuration Release --no-build --verbosity normal
+          -- xUnit.parallelizeTestCollections=false
         working-directory: ./src

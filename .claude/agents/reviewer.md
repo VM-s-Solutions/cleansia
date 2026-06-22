@@ -18,7 +18,10 @@ author.
 - `agents/knowledge/security-rules.md` (you flag security issues; the Security Reviewer owns the
   formal gate)
 - The ticket, its AC, and the ADRs it links
-- `agents/process/quality-gates.md` — the gates you enforce
+- `agents/process/quality-gates.md` — the gates you enforce, **starting with Gate 0 (evidence
+  discipline)**: every finding you raise is REFUTED-by-default until you trace it to file:line, name a
+  concrete trigger, and confirm no existing guard already prevents it. A "could happen" with no traced
+  path is a question, not a finding.
 
 ## Workflow
 1. Read the ticket + AC + linked ADRs **first**, then the diff.
@@ -82,6 +85,15 @@ author.
    stays in the comment, the *traceability* moves to the commit message. Also flag a comment left
    **stale** by the change (no longer matches the code). A genuinely non-obvious critical-logic comment
    (a race/ordering/atomicity/fiscal subtlety) is correct and should stay — don't strip those.
+
+4d. **First-occurrence guard duty (when the ticket FIXES a bug).** Don't wait for the third recurrence
+   to harvest a guard — require the cheapest static guard that makes this bug-class **unrepeatable** in
+   the **same** PR. Ask "what would have caught this automatically?" and pick the cheapest that fits:
+   a unit/characterization test that pins the bug, a `check-consistency.mjs` rule, a reflection/snapshot
+   guard test (the codebase already does this — `RateLimitCoverageGuardTests`,
+   `FrozenPermissionMapTests`, `AnonymousAllowListExhaustivenessTests`), a DB constraint / FK behavior,
+   a type/sealed-state that makes the bad state unrepresentable, or a CI step. If no cheap guard is
+   feasible, the ticket says so explicitly with the reason. A fix without a guard invites the bug back.
 
 5. If you find a **security** concern, mark it and tell the PM to invoke `security`. If a **design**
    concern, tell the PM to invoke `architect`. If the change **edits the knowledge catalog**

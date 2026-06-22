@@ -18,10 +18,18 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > essentially fully resolved** — all backend (F1–F8), frontend (F10–F12), and Android §E rules
 > (E1/E2/E5/E6/E7) closed.
 >
-> **What remains across the WHOLE program — exactly ONE open engineering follow-up + standing owner items:**
-> - **Engineering follow-up (the ONLY open ticket):** **T-0270** (E2 residual — 3 post-Wave-5
->   one-shot-action VMs onto `ActionState`; S, `[android]`, draft, sprint 8; behavior-preserving,
->   non-blocking). **Every other follow-up is `done`:** T-0263 (admin failed-PDF render — the owner's
+> **What remains across the WHOLE program — TWO open engineering follow-ups + standing owner items:**
+> - **Engineering follow-ups (the open tickets):**
+>   - **T-0270** (E2 residual — 3 post-Wave-5 one-shot-action VMs onto `ActionState`; S, `[android]`,
+>     draft, sprint 8; behavior-preserving, non-blocking).
+>   - **T-0271** (Phase-0 E2E smoke — customer **booking → checkout-intent** critical path in a real
+>     browser, run in seeded CI; M, `[frontend]`+`[backend]`, **ready**, sprint 8). **Closes the no-E2E
+>     gap** a retrospective surfaced: unit/integration/host tests cover the API seams but **nothing**
+>     verified the rendered customer journey end-to-end — a dead CTA / broken route / wizard step that
+>     won't advance is invisible to API-level tests. The Nx Playwright harness already exists but holds
+>     only the scaffold `example.spec.ts`; this is the thin "decide the E2E layer early" smoke (one
+>     spec + CI seed/boot wiring, no new framework), expandable later.
+> - **Every other follow-up is `done`:** T-0263 (admin failed-PDF render — the owner's
 >   admin nswag-regen WAS confirmed and the frontend half shipped: 34/34 + 12/12 green; Q-W3-3 now
 >   reconciled-closed), T-0264 (vestigial locale keys), T-0265 (Android email-validation test-env gap —
 >   why the partner suite is green on plain JVM) are all **`done`** on `master`/the Wave-7 branch.
@@ -80,6 +88,18 @@ One row per ticket. Source of truth for "what's the team doing right now".
 > | ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
 > |----|-------|------|--------|-----------|--------|-----|-------------|--------|
 > | **T-0270** | Convert 3 post-Wave-5 one-shot-action VMs (`CreateRecurring`/`DisputeDetail`/`DeleteAccount`) off loose `_submitting`/`_loading` booleans → shared `ActionState` + `SharedFlow` | S | **draft** (sprint 8) | — | android | no | — | T-0268 E2 verify-close AC4 residual |
+>
+> **Quality-foundation follow-up (filed 2026-06-21) — closes the no-E2E gap a retrospective surfaced:**
+>
+> | ID | Title | Size | Status | depends_on | Layers | sec | manual_step | Source |
+> |----|-------|------|--------|-----------|--------|-----|-------------|--------|
+> | **T-0271** | **Phase-0 E2E smoke** — customer **booking → checkout-intent** critical path in a real browser, run in seeded CI (one Playwright spec replacing the scaffold `example.spec.ts` + CI seed/boot wiring; reuses the existing Nx Playwright harness — no new framework). Thin "decide the E2E layer early" smoke; partner/admin/full-regression are explicit follow-ups. | M | **ready** (sprint 8) | — | frontend, backend | no | — | Workflow retrospective (no rendered-route/E2E coverage of the revenue path; harness = scaffold-only) |
+>
+> **T-0271 deferred-to-implementer seams:** the **Stripe handoff** (drive-to-handoff vs Stripe
+> test-mode vs network-stub — recommend drive-to-handoff; **if** test-mode needs a CI secret that's an
+> owner-only `manual_steps` flag to raise, not self-provision) and the **seed mechanism** (prefer the
+> existing `sql-scripts/insert_seed_data.sql` or a test-only seed against a disposable CI Postgres).
+> `manual_steps: []` unless the Stripe-test-mode-secret flag is raised.
 >
 > --- (mobile-slice + Wave-6 history below, kept for traceability) ---
 >

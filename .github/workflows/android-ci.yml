@@ -1,0 +1,56 @@
+name: Android CI
+
+on:
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./src/cleansia_android
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        # Provides ANDROID_HOME / ANDROID_SDK_ROOT so Gradle resolves the SDK without a
+        # local.properties sdk.dir entry (which is dev-machine-only and not committed).
+        uses: android-actions/setup-android@v3
+
+      - name: Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          build-root-directory: ./src/cleansia_android
+
+      # Defensive: gradlew is committed with the executable bit (100755), but a
+      # Windows-side checkout can drop it — keep CI self-healing on Linux runners.
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      # JVM-only: compile all 3 modules and run their unit suites. No emulator /
+      # instrumented tests — these are the :core + partner-app + customer-app
+      # testDebugUnitTest suites the orchestrator ran every wave (and CI did not).
+      - name: Compile (all modules)
+        run: ./gradlew :core:compileDebugKotlin :partner-app:compileDebugKotlin :customer-app:compileDebugKotlin --no-daemon
+
+      - name: Unit tests (all modules)
+        run: ./gradlew :core:testDebugUnitTest :partner-app:testDebugUnitTest :customer-app:testDebugUnitTest --no-daemon
+
+      - name: Upload test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-test-reports
+          path: ./src/cleansia_android/**/build/reports/tests/
+          retention-days: 7

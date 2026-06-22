@@ -10,6 +10,46 @@ One row per ticket. Source of truth for "what's the team doing right now".
 
 ## Active
 
+> ## 🟣 WAVE 9 PLANNED — Admin Action Audit Log (ADR-0012, planned 2026-06-22) — backlog only, not yet dispatched
+> **ADR-0012 (`adr/0012-admin-action-audit-log.md`) is `accepted`.** Owner approved building the **full**
+> audit-log feature now (backend + admin UI + tests). **7 tickets filed (T-0282…T-0288).** Full plan —
+> wave table, the 6-piece→5-ticket mapping, dependency-ordered batches, lanes (the Policy.cs/PolicyBuilder
+> cluster = one writer), the owner manual-steps bundle B1, and the Q-AUDIT-01 default resolution:
+> **`status/sprint-11.md`**. No code, no commits yet.
+>
+> **Q-AUDIT-01 RESOLVED (owner's "default now, ratify before prod"):** retention = **keep audit rows
+> indefinitely, no auto-prune** (a window is a separate pre-prod call); PII = snapshots store **ids +
+> changed fields only, never raw subject PII**; the GDPR-delete audit keeps **actor + scope + subject id**
+> and **legitimately survives** the subject's erasure (legal-basis exception). Moved open→answered; the
+> exact window + redaction list is a **pre-PROD readiness-checklist** ratification, not a blocker. Baked
+> into T-0282 / T-0284 / T-0287.
+>
+> **Reviewer-per-developer on every ticket. Security gate on T-0283 / T-0284 / T-0285** (the compliance/
+> authz seam). QA on all. No `L` tickets (the ADR's 6-piece outline → 5 feature tickets; the test bundle
+> is test-first inside each per the ADR test list).
+>
+> | ID | Title | Size | Status | Batch | depends_on | Layers | sec | manual_step |
+> |----|-------|------|--------|-------|-----------|--------|-----|-------------|
+> | **T-0282** | `AdminActionAudit` entity + EF config (TenantId + global filter + 4 indexes) + migration | M | **ready** | **9A FIRST/ALONE** | — | db, backend | no | **ef-migration** |
+> | **T-0283** | `AuditLogBehavior` (inner-to-UoW, atomic) + `IAuditContext` + `IAuditFailureSink` + `[AuditAction]` + generic capture | M | **ready** | 9B | **T-0282** | backend | **yes** | — |
+> | **T-0284** | Sensitive-five before/after snapshots via `IAuditContext` (typed, pre-redacted, no raw subject PII) | M | **ready** | 9C | **T-0283** | backend | **yes** | — |
+> | **T-0285** | `GetPagedAdminActionAudits` query (canonical `PagedData`) + new `AdminOnly` view policy (**owns Policy.cs/PolicyBuilder**) | M | **ready** | 9B | **T-0282** | backend | **yes** | **nswag-regen** |
+> | **T-0286** | Admin `audit-log` feature lib (facade+signals+`cleansia-table`, filters, 5 locales, per-resource history) | M | **ready** (held on regen) | 9D | **T-0285** + regen | frontend | no | **nswag-regen** |
+> | **T-0287** | Outbox retention-prune timer — Dispatched `OutboxMessage` + old `ProcessedMessage` rows (config-driven) | S | **ready** | independent | — | backend | no | — |
+> | **T-0288** | Fix latent broken `order-management.component.spec.ts` (HttpClient inject — no test provider) | S | **ready** | independent | — | frontend | no | — |
+>
+> **Lanes/serialization:** **9A (T-0282) lands FIRST/ALONE** on the schema — the `AdminActionAudit` table
+> is the spine; hold 9B/9C/9D until the owner confirms the migration. **9B = T-0283 ∥ T-0285** (disjoint
+> files — behavior vs query+policy). **9C = T-0284** after T-0283 (serialize per sensitive-handler file,
+> one writer each). **9D = T-0286** after T-0285 **and** the owner admin nswag-regen (facade authored
+> test-first, held from `done` until regen + admin prod-build clean). **T-0285 is the SOLE writer of
+> Policy.cs/PolicyBuilder.cs this wave** (both move together or `AssertComplete` fails boot). **T-0287 +
+> T-0288 are independent** — fan out from day 1. **Owner manual-steps BUNDLE B1** (run once): the T-0282
+> ef-migration (table + 4 indexes; PROD = `CONCURRENTLY`), then the T-0285 admin nswag-regen + all-three
+> prod-builds → releases T-0286. **T-0281 (E2E sibling smokes) stays in Wave 8's close, NOT this wave.**
+>
+> --- (Wave-8 banner below) ---
+>
 > ## 🟢 WAVE 8 IN PROGRESS — Pre-iOS Cleanup (planned 2026-06-22) — backlog only, not yet dispatched
 > **The audit-driven program (Waves 0–7) is closed + merged. Wave 8 is a discrete pre-iOS cleanup wave.**
 > Scope = `audits/AUDIT-2026-06-22-pre-ios-cleanup.md` (13 findings) + owner points P1–P4. **10 tickets

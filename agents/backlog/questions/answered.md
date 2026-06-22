@@ -104,3 +104,34 @@ permanent record so a settled decision is never re-litigated.
 ### Q-RATELIMIT-01 — Distributed (cross-instance) rate limiter trigger
 - Answered: 2026-06-01 · **Answer (owner): go with default** — API instances pinned to 1; in-process
   limiter acceptable for Wave 0. Scaling >1 instance requires a distributed-limiter superseding ADR first.
+
+---
+
+### Q-AUDIT-01 — Admin-action-audit retention window + actor-PII aging (ADR-0012)
+- Raised by: architect (AUD-AUDITLOG / ADR-0012 D6) · Owner: owner | legal · Resolve-by: pre-prod
+  (but **non-blocking for implementation**) · Answered: 2026-06-22
+- Question: the regulatory **minimum retention window** for `AdminActionAudit` rows (refund,
+  order-status override, pay-config change, GDPR delete/export, loyalty grant/revoke, dispute resolve),
+  and whether the **actor's** PII (email) must age out independently of the accountability record.
+- **Answer (owner, 2026-06-22) — DEFAULT NOW, RATIFY-BEFORE-PROD.** The owner chose "sensible default
+  now, ratify the exact window + redaction list before production." The default is **baked into the
+  Wave-9 tickets and locked in here**:
+  1. **Retention = keep audit rows INDEFINITELY for now** — **no auto-prune of the audit table**.
+     Accountability data is cheap and legally safer to keep; a retention window is a **separate pre-prod
+     decision**, not a launch blocker. The `Cleansia.Functions` cleanup seam MUST NOT delete
+     `AdminActionAudit` rows (enforced by ADR-0012 D6 + T-0287 AC2's explicit exclusion).
+  2. **PII = the before/after snapshots store entity ids + the CHANGED fields ONLY, never raw subject
+     PII** (no name/email/address/card data). Enforced by ADR-0012 D4.1 + **T-0284 AC2/AC3** (typed,
+     producer-redacted snapshots, reviewed at the type level).
+  3. **GDPR-delete is a legal-basis exception to erasure** — the GDPR-delete audit keeps **actor + scope
+     + subject id**, NOT the subject's personal data, so the audit row **legitimately survives** the
+     subject's erasure (the audit log is the accountability record of "an admin deleted user X"). Enforced
+     by ADR-0012 D6 + **T-0284 AC3** (survives-erasure test, scope+ids only).
+- **Status:** this is a **default the owner ratifies pre-prod** — the owner ratifies the **exact retention
+  window** + the **exact redaction list** before production. Until then the append-only / no-auto-delete /
+  PII-minimized default ships; an eventual answer only **narrows** retention (a config/cleanup-policy
+  value) and does **not** change the seam. **RESOLVED (default adopted; pre-prod ratification still owed —
+  carried on the pre-PROD readiness checklist, NOT as an open question).**
+- **Locked into:** ADR-0012 D6 / D4.1 + the Wave-9 tickets T-0282 (no-delete config) / T-0284 (PII-min +
+  survives-erasure) / T-0287 AC2 (cleanup excludes the audit table). Living doc
+  `architecture/decisions/audit-log.md` "Open questions" updated to point here.

@@ -21,7 +21,10 @@ each gets a line on the pre-PROD readiness checklist.
 
 ### Pre-prod blocking index (the only questions that block go-live)
 <!-- PM keeps this list in sync: one line per OPEN question whose Resolve-by is `pre-prod`. -->
-- _(none currently open — Q-REFUND-01 is `pre-prod` but scoped to DE/AT/ES go-live only, not the CZ/SK/PL launch)_
+- _(Q-REFUND-01 is `pre-prod` but scoped to DE/AT/ES go-live only, not the CZ/SK/PL launch)_
+- _(Q-AUDIT-01 — RESOLVED 2026-06-22: owner adopted the append-only / no-auto-delete / PII-minimized
+  **default**; moved to `answered.md`. The pre-prod **ratification** of the exact retention window +
+  redaction list is now a **pre-PROD readiness-checklist item**, not an open question.)_
 
 Format:
 
@@ -274,3 +277,14 @@ _No open Wave-1 *planning* questions remain._
   resolve copy does NOT over-promise ("submitted", not "refunded"; Stripe may-remain-pending disclaimer).
 - Status: **owner/security confirmation pending** (carried at Wave-3 close, sprint-5 §8.3 item 5).
 - Answer: _(owner fills in)_
+
+---
+
+## Admin action audit log question (2026-06-22) — raised by ADR-0012 (AUD-AUDITLOG)
+
+> **Q-AUDIT-01 RESOLVED 2026-06-22 — moved to `answered.md`.** The owner adopted the **default**
+> (append-only / no-auto-delete / PII-minimized: snapshots store ids + changed fields only, never raw
+> subject PII; the GDPR-delete audit keeps actor + scope + subject id and legitimately survives the
+> subject's erasure as a legal-basis exception). Baked into Wave-9 tickets T-0282 / T-0284 / T-0287. The
+> **pre-prod ratification** of the exact retention window + redaction list is a **pre-PROD readiness
+> checklist** item (owner/legal), not an open question. No open Wave-9 / audit-log questions remain.
